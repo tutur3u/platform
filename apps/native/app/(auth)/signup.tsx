@@ -59,7 +59,7 @@ export default function SignupScreen() {
         password?: string;
         confirmPassword?: string;
       } = {};
-      result.error.errors.forEach((err) => {
+      result.error.issues.forEach((err) => {
         const field = err.path[0] as keyof typeof fieldErrors;
         fieldErrors[field] = err.message;
       });

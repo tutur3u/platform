@@ -1969,7 +1969,7 @@ export function TimerControls({
       t,
       sessionExceedsThreshold,
       currentUserId,
-      queryClient.invalidateQueries,
+      queryClient,
     ]
   );
 

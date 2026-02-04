@@ -11,11 +11,11 @@ export async function FinanceCategoryStatistics({ wsId }: { wsId: string }) {
   const enabled =
     forceEnable || (await verifyHasSecrets(wsId, ['ENABLE_FINANCE']));
 
-  const { permissions } = await getPermissions({
+  const { containsPermission } = await getPermissions({
     wsId,
   });
 
-  if (!enabled || !permissions.includes('manage_finance')) return null;
+  if (!enabled || !containsPermission('manage_finance')) return null;
 
   return (
     <div className="my-2 font-semibold text-2xl">

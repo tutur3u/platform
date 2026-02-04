@@ -158,10 +158,10 @@ export default function NotificationPreferencesTable({
     preferences,
     hasInitialized,
     isInitializing,
-    eventGroups.forEach,
+    eventGroups,
     isWorkspace,
-    updateAccount.mutateAsync,
-    updateWorkspace.mutateAsync,
+    updateAccount,
+    updateWorkspace,
     wsId,
   ]);
 
@@ -188,7 +188,7 @@ export default function NotificationPreferencesTable({
     });
 
     setLocalPreferences(prefs);
-  }, [preferences, hasInitialized, eventGroups.forEach]);
+  }, [preferences, hasInitialized, eventGroups]);
 
   // Filter groups based on search query
   const filteredGroups = useMemo(() => {

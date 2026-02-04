@@ -55,7 +55,7 @@ export default function LoginForm() {
 
   useEffect(() => {
     if (DEV_MODE) form.setFocus('email');
-  }, [form.setFocus]);
+  }, [form]);
 
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);

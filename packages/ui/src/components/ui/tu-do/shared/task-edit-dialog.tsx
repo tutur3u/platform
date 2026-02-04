@@ -434,17 +434,7 @@ export function TaskEditDialog({
       personalScheduleData.task.calendar_hours ?? null
     );
     formState.setAutoSchedule(!!personalScheduleData.task.auto_schedule);
-  }, [
-    personalScheduleData?.task,
-    isOpen,
-    isCreateMode,
-    formState.setTotalDuration,
-    formState.setIsSplittable,
-    formState.setMinSplitDurationMinutes,
-    formState.setMaxSplitDurationMinutes,
-    formState.setCalendarHours,
-    formState.setAutoSchedule,
-  ]);
+  }, [personalScheduleData?.task, isOpen, isCreateMode, formState]);
 
   const draftStorageKey = getDraftStorageKey(boardId);
 
