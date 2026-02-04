@@ -1,12 +1,14 @@
 -- Enable post and report approval by default for all workspaces
--- This migration adds the configuration keys to workspace_configs
--- and updates the approval handlers to respect these configurations.
+-- This migration adds the configuration keys to workspace_configs,
+-- updates the approval handlers to respect these configurations,
+-- and aligns RLS policies for main tables with their logs tables.
 
--- 1. Update handle_report_approval to respect ENABLE_REPORT_APPROVAL
+-- 1. Update handle_report_approval to respect ENABLE_REPORT_APPROVAL and fix fall-through logic
 CREATE OR REPLACE FUNCTION public.handle_report_approval()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 DECLARE
     v_ws_id uuid;
@@ -43,6 +45,7 @@ BEGIN
     v_has_create_permission := has_workspace_permission(v_ws_id, v_user_id, 'create_user_groups_reports');
     
     -- If approval is disabled, auto-approve if user has create permission
+    -- Then exit to prevent falling into approval-enabled logic
     IF NOT v_enable_approval THEN
         IF v_has_create_permission THEN
             NEW.report_approval_status := 'APPROVED';
@@ -51,8 +54,8 @@ BEGIN
             NEW.rejected_by := NULL;
             NEW.rejected_at := NULL;
             NEW.rejection_reason := NULL;
-            RETURN NEW;
         END IF;
+        RETURN NEW;
     END IF;
 
     -- If user has approve permission, allow their chosen status (APPROVED or REJECTED)
@@ -117,11 +120,12 @@ BEGIN
 END;
 $$;
 
--- 3. Update handle_post_approval to respect ENABLE_POST_APPROVAL
+-- 2. Update handle_post_approval to respect ENABLE_POST_APPROVAL and fix fall-through logic
 CREATE OR REPLACE FUNCTION public.handle_post_approval()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 DECLARE
     v_ws_id uuid;
@@ -158,6 +162,7 @@ BEGIN
     v_has_create_permission := has_workspace_permission(v_ws_id, v_user_id, 'create_user_groups_posts');
     
     -- If approval is disabled, auto-approve if user has create permission
+    -- Then exit to prevent falling into approval-enabled logic
     IF NOT v_enable_approval THEN
         IF v_has_create_permission THEN
             NEW.post_approval_status := 'APPROVED';
@@ -166,8 +171,8 @@ BEGIN
             NEW.rejected_by := NULL;
             NEW.rejected_at := NULL;
             NEW.rejection_reason := NULL;
-            RETURN NEW;
         END IF;
+        RETURN NEW;
     END IF;
 
     -- If user has approve permission, allow their chosen status (APPROVED or REJECTED)
@@ -231,3 +236,132 @@ BEGIN
     RETURN NEW;
 END;
 $$;
+
+-- 3. Align RLS policies for main tables with their logs tables
+
+-- 3a. external_user_monthly_reports
+DROP POLICY IF EXISTS "Allow insert access for workspace users" ON "public"."external_user_monthly_reports";
+DROP POLICY IF EXISTS "Allow member managers to manage reports" ON "public"."external_user_monthly_reports";
+DROP POLICY IF EXISTS "Allow read access for workspace users" ON "public"."external_user_monthly_reports";
+DROP POLICY IF EXISTS "Allow update access for workspace_users" ON "public"."external_user_monthly_reports";
+
+CREATE POLICY "Allow view reports"
+ON "public"."external_user_monthly_reports"
+AS PERMISSIVE
+FOR SELECT
+TO authenticated
+USING (
+  public.has_workspace_permission(
+    (SELECT wu.ws_id FROM workspace_users wu WHERE wu.id = external_user_monthly_reports.user_id),
+    auth.uid(),
+    'view_user_groups_reports'
+  )
+);
+
+CREATE POLICY "Allow create reports"
+ON "public"."external_user_monthly_reports"
+AS PERMISSIVE
+FOR INSERT
+TO authenticated
+WITH CHECK (
+  public.has_workspace_permission(
+    (SELECT wu.ws_id FROM workspace_users wu WHERE wu.id = external_user_monthly_reports.user_id),
+    auth.uid(),
+    'create_user_groups_reports'
+  )
+);
+
+CREATE POLICY "Allow update reports"
+ON "public"."external_user_monthly_reports"
+AS PERMISSIVE
+FOR UPDATE
+TO authenticated
+USING (
+  public.has_workspace_permission(
+    (SELECT wu.ws_id FROM workspace_users wu WHERE wu.id = external_user_monthly_reports.user_id),
+    auth.uid(),
+    'update_user_groups_reports'
+  )
+)
+WITH CHECK (
+  public.has_workspace_permission(
+    (SELECT wu.ws_id FROM workspace_users wu WHERE wu.id = external_user_monthly_reports.user_id),
+    auth.uid(),
+    'update_user_groups_reports'
+  )
+);
+
+CREATE POLICY "Allow delete reports"
+ON "public"."external_user_monthly_reports"
+AS PERMISSIVE
+FOR DELETE
+TO authenticated
+USING (
+  public.has_workspace_permission(
+    (SELECT wu.ws_id FROM workspace_users wu WHERE wu.id = external_user_monthly_reports.user_id),
+    auth.uid(),
+    'delete_user_groups_reports'
+  )
+);
+
+-- 3b. user_group_posts
+DROP POLICY IF EXISTS "Allow access for workspace users" ON "public"."user_group_posts";
+
+CREATE POLICY "Allow view posts"
+ON "public"."user_group_posts"
+AS PERMISSIVE
+FOR SELECT
+TO authenticated
+USING (
+  public.has_workspace_permission(
+    (SELECT wug.ws_id FROM workspace_user_groups wug WHERE wug.id = user_group_posts.group_id),
+    auth.uid(),
+    'view_user_groups_posts'
+  )
+);
+
+CREATE POLICY "Allow create posts"
+ON "public"."user_group_posts"
+AS PERMISSIVE
+FOR INSERT
+TO authenticated
+WITH CHECK (
+  public.has_workspace_permission(
+    (SELECT wug.ws_id FROM workspace_user_groups wug WHERE wug.id = user_group_posts.group_id),
+    auth.uid(),
+    'create_user_groups_posts'
+  )
+);
+
+CREATE POLICY "Allow update posts"
+ON "public"."user_group_posts"
+AS PERMISSIVE
+FOR UPDATE
+TO authenticated
+USING (
+  public.has_workspace_permission(
+    (SELECT wug.ws_id FROM workspace_user_groups wug WHERE wug.id = user_group_posts.group_id),
+    auth.uid(),
+    'update_user_groups_posts'
+  )
+)
+WITH CHECK (
+  public.has_workspace_permission(
+    (SELECT wug.ws_id FROM workspace_user_groups wug WHERE wug.id = user_group_posts.group_id),
+    auth.uid(),
+    'update_user_groups_posts'
+  )
+);
+
+CREATE POLICY "Allow delete posts"
+ON "public"."user_group_posts"
+AS PERMISSIVE
+FOR DELETE
+TO authenticated
+USING (
+  public.has_workspace_permission(
+    (SELECT wug.ws_id FROM workspace_user_groups wug WHERE wug.id = user_group_posts.group_id),
+    auth.uid(),
+    'delete_user_groups_posts'
+  )
+);
