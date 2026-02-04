@@ -40,7 +40,7 @@ export interface SerwistNextConfig {
 export interface TurbopackSerwistConfig {
   /**
    * Additional packages to mark as external for the server.
-   * 'esbuild' is always included automatically.
+   * 'esbuild-wasm' is always included automatically.
    */
   additionalExternalPackages?: string[];
 }

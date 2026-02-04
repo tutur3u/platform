@@ -108,11 +108,11 @@ describe('createSerwistConfig', () => {
 });
 
 describe('getTurbopackConfig', () => {
-  it('should return config with esbuild in serverExternalPackages', () => {
+  it('should return config with esbuild-wasm in serverExternalPackages', () => {
     const config = getTurbopackConfig();
 
     expect(config.serverExternalPackages).toBeDefined();
-    expect(config.serverExternalPackages).toContain('esbuild');
+    expect(config.serverExternalPackages).toContain('esbuild-wasm');
   });
 
   it('should include additional external packages', () => {
@@ -120,7 +120,7 @@ describe('getTurbopackConfig', () => {
       additionalExternalPackages: ['custom-pkg', 'another-pkg'],
     });
 
-    expect(config.serverExternalPackages).toContain('esbuild');
+    expect(config.serverExternalPackages).toContain('esbuild-wasm');
     expect(config.serverExternalPackages).toContain('custom-pkg');
     expect(config.serverExternalPackages).toContain('another-pkg');
   });
@@ -132,7 +132,7 @@ describe('getTurbopackConfig', () => {
       reactStrictMode: true,
     };
 
-    expect(nextConfig.serverExternalPackages).toContain('esbuild');
+    expect(nextConfig.serverExternalPackages).toContain('esbuild-wasm');
     expect(nextConfig.reactStrictMode).toBe(true);
   });
 });

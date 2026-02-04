@@ -31,7 +31,7 @@ export function getTurbopackConfig(
   const { additionalExternalPackages = [] } = config;
 
   return {
-    // esbuild is required for on-the-fly service worker compilation
-    serverExternalPackages: ['esbuild', ...additionalExternalPackages],
+    // esbuild-wasm is required for on-the-fly service worker compilation
+    serverExternalPackages: ['esbuild-wasm', ...additionalExternalPackages],
   };
 }

@@ -59,6 +59,7 @@ describe('createSerwistRoute', () => {
 
     expect(result.GET).toBeDefined();
     // The handler should be from the mocked createSerwistRoute, not the dev stub
+    // With lazy loading, we need to call GET to trigger the module load
     const response = await result.GET({} as never, {
       params: Promise.resolve({ path: 'sw.js' }),
     });
@@ -72,7 +73,12 @@ describe('createSerwistRoute', () => {
       '@serwist/turbopack'
     );
 
-    createSerwistRoute({ swSrc: 'custom/sw.ts' });
+    const result = createSerwistRoute({ swSrc: 'custom/sw.ts' });
+
+    // With lazy loading, the mock isn't called until we invoke a handler
+    await result.GET({} as never, {
+      params: Promise.resolve({ path: 'sw.js' }),
+    });
 
     expect(mockCreateSerwistRoute).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -88,7 +94,14 @@ describe('createSerwistRoute', () => {
       '@serwist/turbopack'
     );
 
-    createSerwistRoute({ offlineFallbackUrl: '/custom-offline' });
+    const result = createSerwistRoute({
+      offlineFallbackUrl: '/custom-offline',
+    });
+
+    // Trigger lazy load
+    await result.GET({} as never, {
+      params: Promise.resolve({ path: 'sw.js' }),
+    });
 
     expect(mockCreateSerwistRoute).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -106,7 +119,12 @@ describe('createSerwistRoute', () => {
       '@serwist/turbopack'
     );
 
-    createSerwistRoute({ revision: 'test-revision-abc' });
+    const result = createSerwistRoute({ revision: 'test-revision-abc' });
+
+    // Trigger lazy load
+    await result.GET({} as never, {
+      params: Promise.resolve({ path: 'sw.js' }),
+    });
 
     expect(mockCreateSerwistRoute).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -124,7 +142,12 @@ describe('createSerwistRoute', () => {
       '@serwist/turbopack'
     );
 
-    createSerwistRoute();
+    const result = createSerwistRoute();
+
+    // Trigger lazy load
+    await result.GET({} as never, {
+      params: Promise.resolve({ path: 'sw.js' }),
+    });
 
     expect(mockCreateSerwistRoute).toHaveBeenCalledWith(
       expect.objectContaining({
