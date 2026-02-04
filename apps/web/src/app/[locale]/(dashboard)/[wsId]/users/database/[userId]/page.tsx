@@ -1,5 +1,5 @@
 import { Users } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient, createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUserReport } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
@@ -466,9 +466,9 @@ async function getCouponData({
 }
 
 async function getWorkspaceSettings(wsId: string) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
-  const { data, error } = await supabase
+  const { data, error } = await sbAdmin
     .from('workspace_settings')
     .select(
       'referral_count_cap, referral_increment_percent, referral_reward_type, referral_promotion_id'
