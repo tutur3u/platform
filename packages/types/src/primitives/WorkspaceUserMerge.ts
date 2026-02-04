@@ -93,3 +93,48 @@ export interface BulkMergeUsersResponse {
   successCount: number;
   failCount: number;
 }
+
+/**
+ * Request body for phased merge operation
+ * Allows resuming from a specific phase if a previous attempt timed out
+ */
+export interface PhasedMergeRequest {
+  sourceId: string;
+  targetId: string;
+  /** Starting phase (1-5). Default is 1. Use for resuming after timeout. */
+  startPhase?: number;
+}
+
+/**
+ * Result of a single phase execution
+ */
+export interface PhaseResult {
+  success: boolean;
+  phase: number;
+  error?: string;
+  message?: string;
+  migrated_tables?: string[];
+  migrated_count?: number;
+  collision_tables?: string[];
+  collision_details?: CollisionDetail[];
+  custom_fields_merged?: number;
+  link_transferred?: boolean;
+  source_deleted?: boolean;
+  source_platform_user_id?: string;
+  target_platform_user_id?: string;
+}
+
+/**
+ * Result of a phased merge operation
+ * Extends MergeResult with phase-specific information for progress tracking and resumption
+ */
+export interface PhasedMergeResult extends MergeResult {
+  /** Last successfully completed phase (0-5) */
+  completedPhase: number;
+  /** Next phase to run if partial (only present if partial=true) */
+  nextPhase?: number;
+  /** True if merge was interrupted before completion */
+  partial: boolean;
+  /** Detailed results from each phase that was executed */
+  phaseResults?: PhaseResult[];
+}

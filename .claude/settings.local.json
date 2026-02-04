@@ -41,7 +41,8 @@
       "Bash(node scripts/check.js:*)",
       "Bash(npm view:*)",
       "Bash(npx tsc:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(tail:*)"
     ]
   }
 }

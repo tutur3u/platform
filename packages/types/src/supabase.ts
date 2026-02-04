@@ -20189,6 +20189,35 @@ export type Database = {
         Args: { _source_id: string; _target_id: string; _ws_id: string };
         Returns: Json;
       };
+      merge_workspace_users_phase1: {
+        Args: { _source_id: string; _target_id: string; _ws_id: string };
+        Returns: Json;
+      };
+      merge_workspace_users_phase2: {
+        Args: { _source_id: string; _target_id: string; _ws_id: string };
+        Returns: Json;
+      };
+      merge_workspace_users_phase3: {
+        Args: { _source_id: string; _target_id: string; _ws_id: string };
+        Returns: Json;
+      };
+      merge_workspace_users_phase4: {
+        Args: { _source_id: string; _target_id: string; _ws_id: string };
+        Returns: Json;
+      };
+      merge_workspace_users_phase5: {
+        Args: { _source_id: string; _target_id: string; _ws_id: string };
+        Returns: Json;
+      };
+      merge_workspace_users_phased: {
+        Args: {
+          _source_id: string;
+          _start_phase?: number;
+          _target_id: string;
+          _ws_id: string;
+        };
+        Returns: Json;
+      };
       normalize_task_sort_keys: { Args: never; Returns: undefined };
       nova_get_all_challenges_with_user_stats: {
         Args: { user_id: string };
