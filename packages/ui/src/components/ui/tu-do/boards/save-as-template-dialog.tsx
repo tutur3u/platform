@@ -143,6 +143,8 @@ export function SaveAsTemplateDialog({
       // Update file status to uploaded
       file.status = 'uploaded';
       file.finalPath = publicUrl;
+
+      setBackgroundUrl(publicUrl);
     } catch (error) {
       file.status = 'error';
       const errorMessage =
@@ -223,7 +225,7 @@ export function SaveAsTemplateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-screen overflow-y-auto sm:max-w-xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Bookmark className="h-5 w-5" />
@@ -299,46 +301,6 @@ export function SaveAsTemplateDialog({
             </p>
           </div>
 
-          {/* Background Image */}
-          <div className="space-y-2">
-            <Label>Background Image (Optional)</Label>
-            <p className="text-muted-foreground text-xs">
-              Upload a background image for your template. Only one image is
-              allowed.
-            </p>
-            {backgroundUrl ? (
-              <div className="space-y-2">
-                <div className="relative aspect-video w-full overflow-hidden rounded-lg border">
-                  {/* biome-ignore lint/performance/noImgElement: preview image */}
-                  <img
-                    src={backgroundUrl}
-                    alt="Template background"
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRemoveBackground}
-                  className="w-full"
-                >
-                  Remove Background
-                </Button>
-              </div>
-            ) : (
-              <FileUploader
-                value={backgroundFiles}
-                onValueChange={setBackgroundFiles}
-                onUpload={handleBackgroundUpload}
-                accept={{ 'image/*': ['.png', '.jpg', '.jpeg', '.webp'] }}
-                maxSize={5 * 1024 * 1024}
-                maxFileCount={1}
-                multiple={false}
-              />
-            )}
-          </div>
-
           {/* Import Options */}
           <div className="space-y-3">
             <Label>{t('ws-board-templates.save_dialog.include_label')}</Label>
@@ -390,6 +352,46 @@ export function SaveAsTemplateDialog({
                 </Label>
               </div>
             </div>
+          </div>
+
+          {/* Background Image */}
+          <div className="space-y-2">
+            <Label>Background Image (Optional)</Label>
+            <p className="text-muted-foreground text-xs">
+              Upload a background image for your template. Only one image is
+              allowed.
+            </p>
+            {backgroundUrl ? (
+              <div className="space-y-2">
+                <div className="relative aspect-video w-full overflow-hidden rounded-lg border">
+                  {/* biome-ignore lint/performance/noImgElement: preview image */}
+                  <img
+                    src={backgroundUrl}
+                    alt="Template background"
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRemoveBackground}
+                  className="w-full"
+                >
+                  Remove Background
+                </Button>
+              </div>
+            ) : (
+              <FileUploader
+                value={backgroundFiles}
+                onValueChange={setBackgroundFiles}
+                onUpload={handleBackgroundUpload}
+                accept={{ 'image/*': ['.png', '.jpg', '.jpeg', '.webp'] }}
+                maxSize={5 * 1024 * 1024}
+                maxFileCount={1}
+                multiple={false}
+              />
+            )}
           </div>
         </div>
 
