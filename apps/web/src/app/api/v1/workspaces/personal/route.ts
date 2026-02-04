@@ -5,7 +5,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { checkWorkspaceCreationLimit } from '@tuturuuu/utils/workspace-limits';
 import { NextResponse } from 'next/server';
-import { getOrCreatePolarCustomer } from '@/utils/customer-session';
+import { createPolarCustomer } from '@/utils/customer-helper';
 import { createFreeSubscription } from '@/utils/subscription-helper';
 
 export async function POST() {
@@ -50,7 +50,7 @@ export async function POST() {
     );
   }
 
-  const { data, error } = await supabase
+  const { data: workspace, error: createError } = await supabase
     .from('workspaces')
     .insert({
       name: 'PERSONAL',
@@ -59,8 +59,8 @@ export async function POST() {
     .select('id')
     .single();
 
-  if (error) {
-    console.error(error);
+  if (createError || !workspace) {
+    console.error('Error creating team workspace:', createError);
     return NextResponse.json(
       { message: 'Failed to create personal workspace' },
       { status: 500 }
@@ -72,28 +72,26 @@ export async function POST() {
     const polar = createPolarClient();
     const sbAdmin = await createAdminClient();
 
-    // Get or create Polar customer using user ID as external customer ID
-    const customerId = await getOrCreatePolarCustomer({
+    // Get or create Polar customer using workspace ID as external customer ID
+    await createPolarCustomer({
       polar,
       supabase,
-      userId: user.id,
+      wsId: workspace.id,
     });
 
     // Create free subscription for the workspace
     const subscription = await createFreeSubscription(
       polar,
       sbAdmin,
-      data.id,
-      customerId
+      workspace.id
     );
-
     if (subscription) {
       console.log(
-        `Created free subscription ${subscription.id} for workspace ${data.id}`
+        `Created free subscription ${subscription.id} for workspace ${workspace.id}`
       );
     } else {
       console.log(
-        `Skipped free subscription creation for workspace ${data.id} (may already have active subscription)`
+        `Skipped free subscription creation for workspace ${workspace.id} (may already have active subscription)`
       );
     }
   } catch (error) {
@@ -102,7 +100,7 @@ export async function POST() {
     // Workspace creation succeeded, subscription creation is best-effort
   }
 
-  return NextResponse.json({ id: data.id });
+  return NextResponse.json({ id: workspace.id });
 }
 
 export async function PATCH(req: Request) {

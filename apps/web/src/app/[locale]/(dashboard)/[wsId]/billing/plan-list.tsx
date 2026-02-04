@@ -9,6 +9,7 @@ import {
   Info,
   Shield,
   Sparkles,
+  Users,
   Zap,
 } from '@tuturuuu/icons';
 import type { Product } from '@tuturuuu/payment/polar';
@@ -75,29 +76,45 @@ export function PlanList({
   };
 
   const allPlans = products
-    .map((product) => ({
-      id: product.id,
-      name: getSimplePlanName(product.name),
-      fullName: product.name,
-      price:
-        product.prices.length > 0
-          ? product.prices[0] && 'priceAmount' in product.prices[0]
-            ? product.prices[0].priceAmount
-            : 0
-          : 0,
-      billingCycle: product.recurringInterval,
-      features: product.benefits
-        ? product.benefits
-            .map((benefit) =>
-              'description' in benefit ? (benefit.description as string) : ''
-            )
-            .filter(Boolean)
-        : [],
-      isEnterprise: product.name.toLowerCase().includes('enterprise'),
-      isPro: product.name.toLowerCase().includes('pro'),
-      isPlus: product.name.toLowerCase().includes('plus'),
-      isFree: product.name.toLowerCase().includes('free'),
-    }))
+    .map((product) => {
+      const firstPrice =
+        product.prices.length > 0 ? (product.prices[0] as any) : null;
+      const price =
+        firstPrice && 'priceAmount' in firstPrice ? firstPrice.priceAmount : 0;
+
+      const isSeatBased =
+        firstPrice &&
+        'amountType' in firstPrice &&
+        firstPrice.amountType === 'seat_based';
+
+      const minSeats = isSeatBased
+        ? (firstPrice?.seatTiers?.minimumSeats ?? null)
+        : null;
+      const maxSeats = isSeatBased
+        ? (firstPrice?.seatTiers?.maximumSeats ?? null)
+        : null;
+
+      return {
+        id: product.id,
+        name: getSimplePlanName(product.name),
+        fullName: product.name,
+        price,
+        billingCycle: product.recurringInterval,
+        features: product.benefits
+          ? product.benefits
+              .map((benefit) =>
+                'description' in benefit ? (benefit.description as string) : ''
+              )
+              .filter(Boolean)
+          : [],
+        isEnterprise: product.name.toLowerCase().includes('enterprise'),
+        isPro: product.name.toLowerCase().includes('pro'),
+        isPlus: product.name.toLowerCase().includes('plus'),
+        isFree: product.name.toLowerCase().includes('free'),
+        minSeats,
+        maxSeats,
+      };
+    })
     .sort((a, b) => a.price - b.price);
 
   // Filter plans by selected billing cycle (Free plan shown in both)
@@ -371,6 +388,18 @@ export function PlanList({
                           </span>
                         )}
                       </div>
+
+                      {/* Seat Limits */}
+                      {(plan.minSeats || plan.maxSeats) && (
+                        <div className="mt-1 flex items-center gap-1.5 font-medium text-muted-foreground text-xs">
+                          <Users className="h-3.5 w-3.5" />
+                          <span>
+                            {plan.maxSeats
+                              ? `${plan.minSeats || 1}-${plan.maxSeats} ${t('seats')}`
+                              : `Min ${plan.minSeats || 1} ${t('seats')}`}
+                          </span>
+                        </div>
+                      )}
 
                       {/* Savings indicator for yearly plans */}
                       {plan.billingCycle === 'year' && (

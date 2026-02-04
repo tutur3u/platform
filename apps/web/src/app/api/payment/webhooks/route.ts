@@ -9,13 +9,13 @@ import {
 } from '@/utils/subscription-helper';
 
 // Helper function to report initial seat usage to Polar
-async function reportInitialUsage(ws_id: string, customerId: string) {
+export async function reportInitialUsage(wsId: string, customerId: string) {
   const sbAdmin = await createAdminClient();
 
   const { count: initialUserCount, error: countError } = await sbAdmin
-    .from('workspace_users')
+    .from('workspace_members')
     .select('*', { count: 'exact', head: true })
-    .eq('ws_id', ws_id);
+    .eq('ws_id', wsId);
 
   if (countError) throw countError;
 
@@ -39,19 +39,30 @@ async function reportInitialUsage(ws_id: string, customerId: string) {
 }
 
 // Helper function to sync subscription data from Polar to DB
-async function syncSubscriptionToDatabase(subscription: Subscription) {
+export async function syncSubscriptionToDatabase(subscription: Subscription) {
   const sbAdmin = await createAdminClient();
-  const ws_id = subscription.metadata?.wsId;
 
-  if (!ws_id || typeof ws_id !== 'string') {
-    console.error('Webhook Error: Workspace ID (wsId) not found in metadata.');
-    throw new Response('Webhook Error: Missing wsId in metadata', {
+  const wsId = subscription.metadata?.wsId;
+
+  if (!wsId || typeof wsId !== 'string') {
+    console.error('Webhook Error: Workspace ID not found.');
+    throw new Response('Webhook Error: Workspace ID not found.', {
       status: 400,
     });
   }
 
+  // Check if product is seat-based
+  const { data: product } = await sbAdmin
+    .from('workspace_subscription_products')
+    .select('pricing_model, price_per_seat')
+    .eq('id', subscription.product.id)
+    .single();
+
+  const isSeatBased = product?.pricing_model === 'seat_based';
+  const seatCount = isSeatBased ? (subscription.seats ?? 1) : null;
+
   const subscriptionData = {
-    ws_id: ws_id,
+    ws_id: wsId,
     status: subscription.status as any,
     polar_subscription_id: subscription.id,
     product_id: subscription.product.id,
@@ -76,6 +87,10 @@ async function syncSubscriptionToDatabase(subscription: Subscription) {
         : subscription.modifiedAt
           ? new Date(subscription.modifiedAt).toISOString()
           : null,
+    // Seat-based pricing fields
+    pricing_model: isSeatBased ? ('seat_based' as const) : ('fixed' as const),
+    seat_count: seatCount,
+    price_per_seat: product?.price_per_seat ?? null,
   };
 
   // Update existing subscription
@@ -91,25 +106,23 @@ async function syncSubscriptionToDatabase(subscription: Subscription) {
     throw new Error(`Database Error: ${dbError.message}`);
   }
 
-  return { ws_id, subscriptionData };
+  return { subscriptionData, isSeatBased };
 }
 
 // Helper function to sync order data from Polar to DB
-async function syncOrderToDatabase(order: Order) {
+export async function syncOrderToDatabase(order: Order) {
   const sbAdmin = await createAdminClient();
-  const ws_id = order.metadata?.wsId;
+  const wsId = order.metadata?.wsId;
 
-  if (!ws_id || typeof ws_id !== 'string') {
-    console.error(
-      'Webhook Error: Workspace ID (wsId) not found in order metadata.'
-    );
-    throw new Response('Webhook Error: Missing wsId in order metadata', {
+  if (!wsId || typeof wsId !== 'string') {
+    console.error('Webhook Error: Workspace ID not found.');
+    throw new Response('Webhook Error: Workspace ID not found.', {
       status: 400,
     });
   }
 
   const orderData = {
-    ws_id: ws_id,
+    ws_id: wsId,
     polar_order_id: order.id,
     status: order.status as any,
     polar_subscription_id: order.subscriptionId,
@@ -117,7 +130,6 @@ async function syncOrderToDatabase(order: Order) {
     total_amount: order.totalAmount,
     currency: order.currency,
     billing_reason: order.billingReason as any,
-    user_id: order.customer.externalId,
     created_at:
       order.createdAt instanceof Date
         ? order.createdAt.toISOString()
@@ -143,7 +155,7 @@ async function syncOrderToDatabase(order: Order) {
     throw new Error(`Database Error: ${dbError.message}`);
   }
 
-  return { ws_id, orderData };
+  return { wsId, orderData };
 }
 
 export const POST = Webhooks({
@@ -170,21 +182,47 @@ export const POST = Webhooks({
           ? (metadataProductTier.toUpperCase() as WorkspaceProductTier)
           : null;
 
+      // Extract price from first price entry
+      const firstPrice =
+        product.prices.length > 0 ? (product.prices[0] as any) : null;
+
+      const price =
+        firstPrice && 'priceAmount' in firstPrice ? firstPrice.priceAmount : 0;
+
+      // Find seat-based price if it exists
+      const seatBasedPrice = product.prices.find(
+        (p: any) => 'amountType' in p && p.amountType === 'seat_based'
+      ) as any;
+
+      const isSeatBased = !!seatBasedPrice;
+
+      const pricePerSeat = isSeatBased
+        ? (seatBasedPrice?.seatTiers?.tiers?.[0]?.pricePerSeat ?? null)
+        : null;
+
+      const minSeats = isSeatBased
+        ? (seatBasedPrice?.seatTiers?.minimumSeats ?? null)
+        : null;
+
+      const maxSeats = isSeatBased
+        ? (seatBasedPrice?.seatTiers?.maximumSeats ?? null)
+        : null;
+
       const { error: dbError } = await sbAdmin
         .from('workspace_subscription_products')
         .insert({
           id: product.id,
           name: product.name,
           description: product.description || '',
-          price:
-            product.prices.length > 0
-              ? product.prices[0] && 'priceAmount' in product.prices[0]
-                ? product.prices[0].priceAmount
-                : 0
-              : 0,
+          price,
           recurring_interval: product.recurringInterval,
           tier,
           archived: product.isArchived,
+          // Seat-based pricing fields
+          pricing_model: isSeatBased ? 'seat_based' : 'fixed',
+          price_per_seat: pricePerSeat,
+          min_seats: minSeats,
+          max_seats: maxSeats,
         });
 
       if (dbError) {
@@ -226,20 +264,49 @@ export const POST = Webhooks({
           ? (metadataProductTier.toUpperCase() as WorkspaceProductTier)
           : null;
 
+      // Extract price from first price entry
+      const firstPrice = product.prices[0] as any;
+
+      const price =
+        product.prices.length > 0
+          ? firstPrice && 'priceAmount' in firstPrice
+            ? firstPrice.priceAmount
+            : 0
+          : 0;
+
+      // Find seat-based price if it exists
+      const seatBasedPrice = product.prices.find(
+        (p: any) => 'amountType' in p && p.amountType === 'seat_based'
+      ) as any;
+
+      const isSeatBased = !!seatBasedPrice;
+
+      const pricePerSeat = isSeatBased
+        ? (seatBasedPrice?.seatTiers?.tiers?.[0]?.pricePerSeat ?? null)
+        : null;
+
+      const minSeats = isSeatBased
+        ? (seatBasedPrice?.seatTiers?.minimumSeats ?? null)
+        : null;
+
+      const maxSeats = isSeatBased
+        ? (seatBasedPrice?.seatTiers?.maximumSeats ?? null)
+        : null;
+
       const { error: dbError } = await sbAdmin
         .from('workspace_subscription_products')
         .update({
           name: product.name,
           description: product.description || '',
-          price:
-            product.prices.length > 0
-              ? product.prices[0] && 'priceAmount' in product.prices[0]
-                ? product.prices[0].priceAmount
-                : 0
-              : 0,
+          price,
           recurring_interval: product.recurringInterval,
           tier,
           archived: product.isArchived,
+          // Seat-based pricing fields
+          pricing_model: isSeatBased ? 'seat_based' : 'fixed',
+          price_per_seat: pricePerSeat,
+          min_seats: minSeats,
+          max_seats: maxSeats,
         })
         .eq('id', product.id);
 
@@ -264,20 +331,27 @@ export const POST = Webhooks({
   // Handle new subscription creation
   onSubscriptionCreated: async (payload) => {
     try {
-      const { ws_id } = await syncSubscriptionToDatabase(payload.data);
+      const { subscriptionData } = await syncSubscriptionToDatabase(
+        payload.data
+      );
       console.log('Webhook: Subscription created:', payload.data.id);
 
       // Report initial usage for new subscriptions
       if (payload.data.status === 'active') {
         try {
-          await reportInitialUsage(ws_id, payload.data.customer.id);
+          await reportInitialUsage(
+            subscriptionData.ws_id,
+            payload.data.customer.id
+          );
         } catch (e) {
           // Log but don't fail - subscription is already saved
           console.error('Webhook: Failed to report initial usage', e);
         }
       }
 
-      console.log(`Webhook: Subscription created for workspace ${ws_id}.`);
+      console.log(
+        `Webhook: Subscription created for workspace ${subscriptionData.ws_id}.`
+      );
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
       console.error('Webhook: Subscription created error:', errorMessage);
@@ -288,7 +362,9 @@ export const POST = Webhooks({
   // Handle ALL subscription updates (status changes, plan changes, cancellations, etc.)
   onSubscriptionUpdated: async (payload) => {
     try {
-      const { ws_id } = await syncSubscriptionToDatabase(payload.data);
+      const { subscriptionData } = await syncSubscriptionToDatabase(
+        payload.data
+      );
       console.log(
         `Webhook: Subscription updated: ${payload.data.id}, status: ${payload.data.status}`
       );
@@ -296,7 +372,10 @@ export const POST = Webhooks({
       // If subscription just became active, report usage
       if (payload.data.status === 'active') {
         try {
-          await reportInitialUsage(ws_id, payload.data.customer.id);
+          await reportInitialUsage(
+            subscriptionData.ws_id,
+            payload.data.customer.id
+          );
         } catch (e) {
           console.error('Webhook: Failed to report usage on activation', e);
         }
@@ -305,46 +384,48 @@ export const POST = Webhooks({
       // If subscription is fully canceled, check if workspace needs a free subscription
       if (payload.data.status === 'canceled') {
         console.log(
-          `Webhook: Subscription ${payload.data.id} is fully canceled, checking if workspace ${ws_id} needs a free subscription`
+          `Webhook: Subscription ${payload.data.id} is fully canceled, checking if workspace ${subscriptionData.ws_id} needs a free subscription`
         );
 
         const sbAdmin = await createAdminClient();
         const polar = createPolarClient();
 
         // Check if workspace has any other active subscriptions
-        const hasActive = await hasActiveSubscription(sbAdmin, ws_id);
+        const hasActive = await hasActiveSubscription(
+          sbAdmin,
+          subscriptionData.ws_id
+        );
 
         if (!hasActive) {
           console.log(
-            `Webhook: Workspace ${ws_id} has no active subscriptions, creating free subscription`
+            `Webhook: Workspace ${subscriptionData.ws_id} has no active subscriptions, creating free subscription`
           );
 
           // Create a free subscription for this workspace
           const freeSubscription = await createFreeSubscription(
             polar,
             sbAdmin,
-            ws_id,
-            payload.data.customer.id
+            subscriptionData.ws_id
           );
 
           if (freeSubscription) {
             console.log(
-              `Webhook: Successfully created free subscription ${freeSubscription.id} for workspace ${ws_id}`
+              `Webhook: Successfully created free subscription ${freeSubscription.id} for workspace ${subscriptionData.ws_id}`
             );
           } else {
             console.warn(
-              `Webhook: Could not create free subscription for workspace ${ws_id}`
+              `Webhook: Could not create free subscription for workspace ${subscriptionData.ws_id}`
             );
           }
         } else {
           console.log(
-            `Webhook: Workspace ${ws_id} still has active subscriptions, no free subscription needed`
+            `Webhook: Workspace ${subscriptionData.ws_id} still has active subscriptions, no free subscription needed`
           );
         }
       }
 
       console.log(
-        `Webhook: Subscription updated for workspace ${ws_id}, status: ${payload.data.status}`
+        `Webhook: Subscription updated for workspace ${subscriptionData.ws_id}, status: ${payload.data.status}`
       );
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
@@ -356,11 +437,11 @@ export const POST = Webhooks({
   // Handle new order creation
   onOrderCreated: async (payload) => {
     try {
-      const { ws_id, orderData } = await syncOrderToDatabase(payload.data);
+      const { wsId, orderData } = await syncOrderToDatabase(payload.data);
       console.log(
         `Webhook: Order created: ${payload.data.id}, status: ${orderData.status}, billing_reason: ${orderData.billing_reason}`
       );
-      console.log(`Webhook: Order created for workspace ${ws_id}.`);
+      console.log(`Webhook: Order created for workspace ${wsId}.`);
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
       console.error('Webhook: Order created error:', errorMessage);
@@ -371,12 +452,12 @@ export const POST = Webhooks({
   // Handle order updates (status changes, payment confirmations, refunds, etc.)
   onOrderUpdated: async (payload) => {
     try {
-      const { ws_id, orderData } = await syncOrderToDatabase(payload.data);
+      const { wsId, orderData } = await syncOrderToDatabase(payload.data);
       console.log(
         `Webhook: Order updated: ${payload.data.id}, status: ${orderData.status}, billing_reason: ${orderData.billing_reason}`
       );
       console.log(
-        `Webhook: Order updated for workspace ${ws_id}, new status: ${orderData.status}`
+        `Webhook: Order updated for workspace ${wsId}, new status: ${orderData.status}`
       );
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';

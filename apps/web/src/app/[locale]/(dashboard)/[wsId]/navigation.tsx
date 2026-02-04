@@ -25,6 +25,7 @@ import {
   Clock,
   ClockCheck,
   ClockFading,
+  CreditCard,
   Database,
   FileText,
   Fish,
@@ -1110,7 +1111,6 @@ export async function WorkspaceNavigationLinks({
           title: t('sidebar_tabs.billing'),
           href: `/${personalOrWsId}/billing`,
           icon: <CircleDollarSign className="h-5 w-5" />,
-          disabled: withoutPermission('manage_subscription'),
         },
         {
           title: t('sidebar_tabs.usage'),
@@ -1243,6 +1243,15 @@ export async function WorkspaceNavigationLinks({
           title: t('workspace-settings-layout.platform_roles'),
           href: `/${personalOrWsId}/platform/roles`,
           icon: <ShieldUser className="h-5 w-5" />,
+          disabled:
+            ENABLE_AI_ONLY || withoutPermission('manage_workspace_roles'),
+          requireRootWorkspace: true,
+          requireRootMember: true,
+        },
+        {
+          title: 'Platform Subscriptions',
+          href: `/${personalOrWsId}/platform/subscriptions`,
+          icon: <CreditCard className="h-5 w-5" />,
           disabled:
             ENABLE_AI_ONLY || withoutPermission('manage_workspace_roles'),
           requireRootWorkspace: true,
