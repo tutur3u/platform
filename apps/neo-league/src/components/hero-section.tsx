@@ -27,7 +27,7 @@ export default function HeroSection() {
           </div>
 
           <p
-            className="mx-auto max-w-4xl animate-slide-up text-foreground/70 text-lg"
+            className="mx-auto max-w-4xl animate-slide-up text-foreground/70 text-xl"
             style={{ animationDelay: '0.3s' }}
           >
             Engineer integrated IoT solutions addressing{' '}

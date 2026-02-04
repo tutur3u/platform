@@ -50,7 +50,7 @@ export default function SponsorsSection() {
 
           {/* Silver Sponsors */}
           <div className="space-y-8">
-            <h3 className="text-center font-black text-2xl text-gray-400 uppercase shadow-text md:text-3xl">
+            <h3 className="text-center font-black text-2xl text-gray-300 uppercase shadow-text md:text-3xl">
               Silver Sponsors
             </h3>
             <div className="flex flex-wrap items-center justify-center gap-6">

@@ -2,7 +2,7 @@ import Image from 'next/image';
 
 export default function AboutClubSection() {
   return (
-    <section className="relative overflow-hidden px-6 py-20 md:px-8 md:py-28">
+    <section className="relative overflow-hidden bg-secondary/10 px-6 py-20 md:px-8 md:py-28">
       {/* Decorative background elements */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
@@ -27,7 +27,7 @@ export default function AboutClubSection() {
         ═══════════════════════════════════════════════════════════════════ */}
         <div className="mb-28 grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
           {/* Left Column - Content */}
-          <div className="order-2 animate-slide-up lg:order-1">
+          <div className="animate-slide-up">
             {/* Logo Badge */}
             <div className="mb-6 flex items-center gap-3">
               <div className="relative h-14 w-14 overflow-hidden rounded-xl border-2 border-white/50 bg-white/30 p-2 shadow-lg backdrop-blur-sm">
@@ -62,12 +62,12 @@ export default function AboutClubSection() {
             </div>
 
             {/* Description */}
-            <p className="mb-6 max-w-lg text-foreground/80 text-lg leading-relaxed">
-              Neo Culture Tech (NCT) is a vibrant and dynamic student club at
-              RMIT University Vietnam, dedicated to fostering a passion for
+            <p className="mb-6 w-full font-bold text-foreground text-lg leading-relaxed md:max-w-lg">
+              RMIT Neo Culture Technology Club is a vibrant and dynamic
+              student-led organization dedicated to fostering a passion for
               technology and innovation within the university community.
             </p>
-            <p className="max-w-lg text-foreground/70 leading-relaxed">
+            <p className="w-full text-foreground/70 leading-relaxed md:max-w-lg">
               We believe in the power of technology to shape the future and
               empower individuals to make a positive impact on the world. Our
               mission is to create a welcoming and inclusive environment where
@@ -77,10 +77,7 @@ export default function AboutClubSection() {
           </div>
 
           {/* Right Column - Images */}
-          <div
-            className="order-1 animate-slide-up lg:order-2"
-            style={{ animationDelay: '0.15s' }}
-          >
+          <div className="animate-slide-up" style={{ animationDelay: '0.15s' }}>
             <div className="relative">
               {/* Main Feature Image */}
               <div className="relative aspect-4/3 overflow-hidden rounded-2xl shadow-2xl">
@@ -125,7 +122,7 @@ export default function AboutClubSection() {
           <div className="mb-12 grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
             {/* Left Column - Images */}
             <div
-              className="grid animate-slide-up grid-cols-2 gap-4"
+              className="order-2 grid animate-slide-up grid-cols-2 gap-4 md:order-1"
               style={{ animationDelay: '0.1s' }}
             >
               <div className="relative aspect-3/4 overflow-hidden rounded-2xl shadow-xl">
@@ -160,7 +157,7 @@ export default function AboutClubSection() {
 
             {/* Right Column - Content */}
             <div
-              className="animate-slide-up"
+              className="order-1 animate-slide-up md:order-2"
               style={{ animationDelay: '0.2s' }}
             >
               {/* Header */}
