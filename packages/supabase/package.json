@@ -12,7 +12,7 @@
   "packageManager": "bun@1.3.8",
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
-    "@supabase/supabase-js": "^2.93.3",
+    "@supabase/supabase-js": "^2.94.1",
     "@ncthub/types": "workspace:*",
     "next": "16.1.6",
     "react": "^19.2.4",
@@ -21,8 +21,8 @@
   },
   "devDependencies": {
     "@ncthub/typescript-config": "workspace:*",
-    "@types/node": "^25.1.0",
-    "@types/react": "^19.2.10",
+    "@types/node": "^25.2.0",
+    "@types/react": "^19.2.11",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   },
