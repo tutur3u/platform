@@ -18,6 +18,7 @@ import {
   ChartTooltipContent,
 } from '../../../chart';
 import { Skeleton } from '../../../skeleton';
+import { Tabs, TabsList, TabsTrigger } from '../../../tabs';
 import { CategoryBreakdownDialog } from './category-breakdown-dialog';
 
 // Initialize dayjs plugins for timezone-aware date operations
@@ -68,8 +69,8 @@ interface CategoryDonutChartProps {
   transactions: Transaction[];
   currency?: string;
   className?: string;
-  /** If true, show only expense categories. If false, show only income. If undefined, show all. */
-  type?: 'income' | 'expense';
+  /** Initial type filter. Defaults to 'expense', falls back to 'all' if no expense data exists. */
+  initialType?: 'all' | 'income' | 'expense';
   /** Workspace ID for immersive dialog RPC calls */
   workspaceId?: string;
   /** Period start date for immersive dialog */
@@ -96,7 +97,7 @@ export function CategoryDonutChart({
   transactions,
   currency = 'USD',
   className,
-  type,
+  initialType = 'expense',
   workspaceId,
   periodStart,
   periodEnd,
@@ -108,6 +109,9 @@ export function CategoryDonutChart({
   const { resolvedTheme } = useTheme();
   const [isConfidential, setIsConfidential] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [type, setType] = useState<'all' | 'expense' | 'income'>(initialType);
+  // Track if we've already tried to auto-fallback to 'all'
+  const [hasTriedFallback, setHasTriedFallback] = useState(false);
 
   // Extract date string from period timestamps (handles both YYYY-MM-DD and full ISO timestamps)
   // IMPORTANT: Do NOT convert to UTC - extract the date directly from the local ISO string
@@ -172,7 +176,7 @@ export function CategoryDonutChart({
       workspaceId,
       periodStartDate,
       periodEndDate,
-      type || 'all',
+      type,
       timezone,
     ],
     queryFn: async () => {
@@ -306,7 +310,7 @@ export function CategoryDonutChart({
       if (tx.amount === null && tx.is_amount_confidential) return;
       if (!tx.amount) return;
 
-      // Filter by type if specified
+      // Filter by type if specified (skip filtering for 'all')
       if (type === 'income' && tx.amount < 0) return;
       if (type === 'expense' && tx.amount > 0) return;
 
@@ -402,6 +406,25 @@ export function CategoryDonutChart({
   // Show loading state when fetching categories
   const isCategoryFetching = shouldFetchCategories && isCategoriesLoading;
 
+  // Auto-fallback to 'all' if expense data is empty
+  useEffect(() => {
+    if (
+      !isCategoryFetching &&
+      categoryData.length === 0 &&
+      type === 'expense' &&
+      !hasTriedFallback
+    ) {
+      setType('all');
+      setHasTriedFallback(true);
+    }
+  }, [isCategoryFetching, categoryData.length, type, hasTriedFallback]);
+
+  // Reset fallback flag when period changes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally reset when period/workspace context changes
+  useEffect(() => {
+    setHasTriedFallback(false);
+  }, [periodStart, periodEnd, workspaceId]);
+
   const total = useMemo(
     () => categoryData.reduce((sum, item) => sum + item.value, 0),
     [categoryData]
@@ -461,101 +484,130 @@ export function CategoryDonutChart({
 
   return (
     <>
-      <div
-        className={cn(
-          'space-y-2',
-          canOpenDialog && 'cursor-pointer transition-opacity hover:opacity-80',
-          className
-        )}
-        onClick={canOpenDialog ? () => setDialogOpen(true) : undefined}
-        role={canOpenDialog ? 'button' : undefined}
-        tabIndex={canOpenDialog ? 0 : undefined}
-        onKeyDown={
-          canOpenDialog
-            ? (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  setDialogOpen(true);
-                }
-              }
-            : undefined
-        }
-      >
-        <ChartContainer config={chartConfig} className="mx-auto h-36 w-36">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={categoryData}
-                cx="50%"
-                cy="50%"
-                innerRadius={35}
-                outerRadius={60}
-                paddingAngle={1}
-                dataKey="value"
-                stroke="none"
-              >
-                {categoryData.map((entry) => (
-                  <Cell key={entry.name} fill={entry.color} />
-                ))}
-              </Pie>
-              <ChartTooltip
-                content={
-                  <ChartTooltipContent
-                    formatter={(value, name) => [
-                      <span
-                        key={String(name)}
-                        className="font-medium text-foreground"
-                      >
-                        {formatValue(Number(value))} (
-                        {categoryData
-                          .find((c) => c.name === name)
-                          ?.percentage.toFixed(0)}
-                        %)
-                      </span>,
-                      name,
-                    ]}
-                  />
-                }
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        </ChartContainer>
-
-        {/* Legend - show as many as reasonably fit */}
-        <div className="space-y-1">
-          {legendItems.map((item) => (
-            <div
-              key={item.name}
-              className="flex items-center justify-between gap-2 text-xs"
+      <div className={cn('space-y-2', className)}>
+        {/* Type filter tabs */}
+        <Tabs
+          value={type}
+          onValueChange={(v) => setType(v as 'all' | 'expense' | 'income')}
+          className="w-full"
+        >
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="all" className="text-xs">
+              {t('all')}
+            </TabsTrigger>
+            <TabsTrigger
+              value="expense"
+              className="text-xs data-[state=active]:bg-dynamic-red/10 data-[state=active]:text-dynamic-red"
             >
-              <div className="flex min-w-0 items-center gap-1.5">
-                <div
-                  className="h-2 w-2 shrink-0 rounded-full"
-                  style={{ backgroundColor: item.color }}
+              {t('expense')}
+            </TabsTrigger>
+            <TabsTrigger
+              value="income"
+              className="text-xs data-[state=active]:bg-dynamic-green/10 data-[state=active]:text-dynamic-green"
+            >
+              {t('income')}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        <div
+          className={cn(
+            'space-y-2',
+            canOpenDialog &&
+              'cursor-pointer transition-opacity hover:opacity-80'
+          )}
+          onClick={canOpenDialog ? () => setDialogOpen(true) : undefined}
+          role={canOpenDialog ? 'button' : undefined}
+          tabIndex={canOpenDialog ? 0 : undefined}
+          onKeyDown={
+            canOpenDialog
+              ? (e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setDialogOpen(true);
+                  }
+                }
+              : undefined
+          }
+        >
+          <ChartContainer config={chartConfig} className="mx-auto h-36 w-36">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={categoryData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={35}
+                  outerRadius={60}
+                  paddingAngle={1}
+                  dataKey="value"
+                  stroke="none"
+                >
+                  {categoryData.map((entry) => (
+                    <Cell key={entry.name} fill={entry.color} />
+                  ))}
+                </Pie>
+                <ChartTooltip
+                  content={
+                    <ChartTooltipContent
+                      formatter={(value, name) => [
+                        <span
+                          key={String(name)}
+                          className="font-medium text-foreground"
+                        >
+                          {formatValue(Number(value))} (
+                          {categoryData
+                            .find((c) => c.name === name)
+                            ?.percentage.toFixed(0)}
+                          %)
+                        </span>,
+                        name,
+                      ]}
+                    />
+                  }
                 />
-                <span className="truncate text-muted-foreground">
-                  {item.name}
+              </PieChart>
+            </ResponsiveContainer>
+          </ChartContainer>
+
+          {/* Legend - show as many as reasonably fit */}
+          <div className="space-y-1">
+            {legendItems.map((item) => (
+              <div
+                key={item.name}
+                className="flex items-center justify-between gap-2 text-xs"
+              >
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <div
+                    className="h-2 w-2 shrink-0 rounded-full"
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <span className="truncate text-muted-foreground">
+                    {item.name}
+                  </span>
+                </div>
+                <span className="shrink-0 font-medium tabular-nums">
+                  {isConfidential ? '•••' : `${item.percentage.toFixed(0)}%`}
                 </span>
               </div>
-              <span className="shrink-0 font-medium tabular-nums">
-                {isConfidential ? '•••' : `${item.percentage.toFixed(0)}%`}
-              </span>
-            </div>
-          ))}
-          {remainingCount > 0 && (
-            <div className="text-center text-[10px] text-muted-foreground">
-              +{remainingCount} more
-            </div>
-          )}
-        </div>
-
-        {/* Total */}
-        <div className="border-t pt-2 text-center">
-          <div className="font-semibold text-sm tabular-nums">
-            {formatValue(total)}
+            ))}
+            {remainingCount > 0 && (
+              <div className="text-center text-[10px] text-muted-foreground">
+                +{remainingCount} more
+              </div>
+            )}
           </div>
-          <div className="text-muted-foreground text-xs">
-            {canOpenDialog ? t('tap-for-details') : t('category-distribution')}
+
+          {/* Total */}
+          <div className="border-t pt-2 text-center">
+            <div className="font-semibold text-sm tabular-nums">
+              {formatValue(total)}
+            </div>
+            <div className="text-muted-foreground text-xs">
+              {canOpenDialog
+                ? t('tap-for-details')
+                : t('category-distribution')}
+            </div>
           </div>
         </div>
       </div>

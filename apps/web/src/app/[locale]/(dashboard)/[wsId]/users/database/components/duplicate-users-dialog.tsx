@@ -2,6 +2,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import {
+  AlertTriangle,
   ChevronLeft,
   ChevronRight,
   Filter,
@@ -49,7 +50,7 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { DuplicateClusterCard } from './duplicate-cluster-card';
 
 interface Props {
@@ -76,6 +77,10 @@ export function DuplicateUsersDialog({ wsId, onMergeComplete }: Props) {
   );
   const [showBulkConfirm, setShowBulkConfirm] = useState(false);
   const [showMergeConfirm, setShowMergeConfirm] = useState(false);
+  const [lastMergeResult, setLastMergeResult] = useState<MergeResult | null>(
+    null
+  );
+  const [showCollisionWarning, setShowCollisionWarning] = useState(false);
 
   // Filter clusters based on selected filter
   // 'linked-virtual': Only clusters with at least one platform-linked user
@@ -98,7 +103,30 @@ export function DuplicateUsersDialog({ wsId, onMergeComplete }: Props) {
     setCurrentClusterIndex(0);
     setSelectedTargets(new Map());
     setShowMergeConfirm(false);
+    setLastMergeResult(null);
+    setShowCollisionWarning(false);
   };
+
+  // Check if a cluster has both users linked to different platform accounts
+  const isBothLinkedCluster = useCallback(
+    (cluster: DuplicateCluster, targetId: string) => {
+      const sourceUsers = cluster.users.filter((u) => u.id !== targetId);
+      const targetUser = cluster.users.find((u) => u.id === targetId);
+
+      if (!targetUser) return false;
+
+      // Check if target is linked
+      if (!targetUser.isLinked) return false;
+
+      // Check if any source user is also linked (to a different platform user)
+      return sourceUsers.some(
+        (source) =>
+          source.isLinked &&
+          source.linkedPlatformUserId !== targetUser.linkedPlatformUserId
+      );
+    },
+    []
+  );
 
   const handlePreviousCluster = () => {
     if (currentClusterIndex > 0) {
@@ -207,7 +235,14 @@ export function DuplicateUsersDialog({ wsId, onMergeComplete }: Props) {
       setProgress(100);
 
       if (result.success) {
-        toast.success(t('duplicate_merge_success'));
+        // Check if there were collisions (data loss)
+        if (result.collisionTables && result.collisionTables.length > 0) {
+          setLastMergeResult(result);
+          setShowCollisionWarning(true);
+          toast.warning(t('merge_collision_occurred'));
+        } else {
+          toast.success(t('duplicate_merge_success'));
+        }
 
         // Remove the merged cluster from allClusters
         const remainingClusters = allClusters.filter(
@@ -570,6 +605,15 @@ export function DuplicateUsersDialog({ wsId, onMergeComplete }: Props) {
                           )?.fullName || currentTargetId,
                       })}
                 </p>
+                {currentCluster &&
+                  isBothLinkedCluster(currentCluster, currentTargetId) && (
+                    <div className="flex items-start gap-2 rounded-md border border-destructive/50 bg-destructive/10 p-3">
+                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                      <p className="text-destructive text-sm">
+                        {t('both_linked_warning')}
+                      </p>
+                    </div>
+                  )}
                 <p className="font-medium text-destructive">
                   {t('merge_warning')}
                 </p>
@@ -586,8 +630,60 @@ export function DuplicateUsersDialog({ wsId, onMergeComplete }: Props) {
                 }
               }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={
+                currentCluster !== undefined &&
+                isBothLinkedCluster(currentCluster, currentTargetId)
+              }
             >
               {t('merge_users')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Collision warning dialog */}
+      <AlertDialog
+        open={showCollisionWarning}
+        onOpenChange={setShowCollisionWarning}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              {t('collision_warning_title')}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>{t('collision_warning_description')}</p>
+                {lastMergeResult?.collisionDetails &&
+                  lastMergeResult.collisionDetails.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="font-medium text-sm">
+                        {t('collision_affected_tables')}:
+                      </p>
+                      <ul className="list-inside list-disc space-y-1 text-muted-foreground text-sm">
+                        {lastMergeResult.collisionDetails.map(
+                          (detail, index) => (
+                            <li key={index}>
+                              <span className="font-mono">{detail.table}</span>:{' '}
+                              {t('collision_records_deleted', {
+                                count: detail.deleted_count,
+                              })}
+                            </li>
+                          )
+                        )}
+                      </ul>
+                    </div>
+                  )}
+                <p className="text-muted-foreground text-sm">
+                  {t('collision_warning_note')}
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowCollisionWarning(false)}>
+              {t('collision_understood')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

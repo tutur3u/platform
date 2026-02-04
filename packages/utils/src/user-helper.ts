@@ -98,7 +98,8 @@ export async function getCurrentWorkspaceUser(
     const sbAdmin = await createAdminClient();
     // Note: ensure_workspace_user_link is defined in migration 20260112060000
     // Using type assertion since RPC types are generated after migration is applied
-    const rpc = sbAdmin.rpc as unknown as (
+    // IMPORTANT: Must use .bind() to preserve the Supabase client's `this` context
+    const rpc = sbAdmin.rpc.bind(sbAdmin) as unknown as (
       fn: string,
       args: Record<string, unknown>
     ) => Promise<{ error: Error | null }>;

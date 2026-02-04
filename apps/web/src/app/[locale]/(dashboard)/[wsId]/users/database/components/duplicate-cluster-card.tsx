@@ -1,10 +1,19 @@
 'use client';
 
-import { Check, Link, Link2Off, Mail, Phone, User } from '@tuturuuu/icons';
+import {
+  AlertTriangle,
+  Check,
+  Link,
+  Link2Off,
+  Mail,
+  Phone,
+  User,
+} from '@tuturuuu/icons';
 import type {
   DuplicateCluster,
   DuplicateUser,
 } from '@tuturuuu/types/primitives';
+import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Avatar, AvatarFallback } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -12,6 +21,7 @@ import { Label } from '@tuturuuu/ui/label';
 import { RadioGroup, RadioGroupItem } from '@tuturuuu/ui/radio-group';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
+import { useMemo } from 'react';
 
 interface Props {
   cluster: DuplicateCluster;
@@ -39,6 +49,20 @@ export function DuplicateClusterCard({
     }
   };
 
+  // Check if this cluster has both users linked to different platform accounts
+  const isBothLinkedConflict = useMemo(() => {
+    const sourceUsers = cluster.users.filter((u) => u.id !== selectedTargetId);
+    const targetUser = cluster.users.find((u) => u.id === selectedTargetId);
+
+    if (!targetUser?.isLinked) return false;
+
+    return sourceUsers.some(
+      (source) =>
+        source.isLinked &&
+        source.linkedPlatformUserId !== targetUser.linkedPlatformUserId
+    );
+  }, [cluster.users, selectedTargetId]);
+
   return (
     <Card className="border-border">
       <CardHeader className="pb-3">
@@ -55,6 +79,15 @@ export function DuplicateClusterCard({
         <p className="text-muted-foreground text-sm">
           {t('duplicate_select_target')}
         </p>
+
+        {isBothLinkedConflict && (
+          <Alert variant="destructive" className="border-destructive/50">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription className="text-sm">
+              {t('both_linked_cluster_warning')}
+            </AlertDescription>
+          </Alert>
+        )}
 
         <RadioGroup
           value={selectedTargetId}
