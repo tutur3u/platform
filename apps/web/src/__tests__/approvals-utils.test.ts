@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  getStatusColorClasses,
   type ApprovalStatus,
+  getStatusColorClasses,
 } from '@/app/[locale]/(dashboard)/[wsId]/users/approvals/utils';
 
 describe('approvals utils', () => {
