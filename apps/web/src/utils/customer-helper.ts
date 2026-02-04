@@ -1,6 +1,6 @@
 import type { Polar } from '@tuturuuu/payment/polar';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
-import { generateEmailSubadressing } from '@tuturuuu/utils/email/client';
+import { generateEmailSubaddressing } from '@tuturuuu/utils/email/client';
 import { convertWorkspaceIDToExternalID } from './subscription-helper';
 
 interface CreateCustomerSessionOptions {
@@ -70,8 +70,8 @@ export async function createPolarCustomer({
 
   const newCustomer = await polar.customers.create({
     email: isPersonalWorkspace
-      ? generateEmailSubadressing(ownerEmail, wsId)
-      : ownerEmail,
+      ? ownerEmail
+      : generateEmailSubaddressing(ownerEmail, wsId),
     name: isPersonalWorkspace ? workspace.users.display_name : workspace.name,
     externalId: isPersonalWorkspace
       ? ownerId

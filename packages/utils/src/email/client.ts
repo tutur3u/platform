@@ -77,7 +77,7 @@ export const suggestEmails = (text: string): string[] => {
   return suggestions;
 };
 
-export function generateEmailSubadressing(email: string, wsId: string) {
+export function generateEmailSubaddressing(email: string, wsId: string) {
   const atIndex = email.indexOf('@');
   if (atIndex === -1) return email; // Invalid email, return as is
 
