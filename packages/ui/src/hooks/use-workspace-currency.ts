@@ -1,6 +1,12 @@
+import {
+  getCurrencyLocale,
+  type SupportedCurrency,
+} from '@tuturuuu/utils/currencies';
+
 import { useWorkspaceConfig } from './use-workspace-config';
 
-export type SupportedCurrency = 'VND' | 'USD';
+// Re-export for convenience
+export type { SupportedCurrency } from '@tuturuuu/utils/currencies';
 
 export const useWorkspaceCurrency = (wsId: string) => {
   const { data, isLoading, error } = useWorkspaceConfig<SupportedCurrency>(
@@ -13,7 +19,7 @@ export const useWorkspaceCurrency = (wsId: string) => {
 
   return {
     currency,
-    locale: currency === 'VND' ? 'vi-VN' : 'en-US',
+    locale: getCurrencyLocale(currency),
     isLoading,
     error,
   };

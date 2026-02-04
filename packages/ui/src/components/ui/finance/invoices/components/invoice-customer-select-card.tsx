@@ -46,11 +46,11 @@ export function InvoiceCustomerSelectCard({
   const t = useTranslations();
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="px-3">
         <CardTitle>{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-2 p-3 pt-0">
         {errorMessage && (
           <div className="text-destructive text-sm">{errorMessage}</div>
         )}

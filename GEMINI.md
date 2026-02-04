@@ -104,6 +104,7 @@ This section summarizes the key operating procedures for AI agents working in th
 - **🚫 USING `useEffect` FOR DATA FETCHING - THIS IS THE #1 MOST CRITICAL VIOLATION 🚫**
 - **Using raw `fetch()` without TanStack Query wrapper in client components.**
 - **Manual state management (useState + useEffect) for API calls - ABSOLUTELY FORBIDDEN.**
+- **Using absolute Windows drive paths with `apply_patch` - use repo-relative paths to avoid parsing errors.**
 
 ### Data Fetching Strategy (CRITICAL)
 

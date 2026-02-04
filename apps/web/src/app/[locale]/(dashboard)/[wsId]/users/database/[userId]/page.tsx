@@ -1,10 +1,12 @@
 import { Users } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUserReport } from '@tuturuuu/types';
-import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
-import { invoiceColumns } from '@tuturuuu/ui/finance/invoices/columns';
+import { InvoiceUserHistoryAccordion } from '@tuturuuu/ui/finance/invoices/components/invoice-user-history-accordion';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import moment from 'moment';
@@ -13,7 +15,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { CustomDataTable } from '@/components/custom-data-table';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import LinkedPromotionsClient from './linked-promotions-client';
 import ReferralSectionClient from './referral-section-client';
@@ -30,19 +31,11 @@ interface Props {
     wsId: string;
     userId: string;
   }>;
-  searchParams: Promise<{
-    q: string;
-    page: string;
-    pageSize: string;
-  }>;
 }
 
 const EMAIL_PAGE_SIZE = 10;
 
-export default async function WorkspaceUserDetailsPage({
-  params,
-  searchParams,
-}: Props) {
+export default async function WorkspaceUserDetailsPage({ params }: Props) {
   const t = await getTranslations('user-data-table');
   const { wsId: id, userId } = await params;
   const workspace = await getWorkspace(id);
@@ -81,23 +74,11 @@ export default async function WorkspaceUserDetailsPage({
     userId,
   });
 
-  const { data: rawInvoiceData, count: invoiceCount } = await getInvoiceData(
-    wsId,
-    userId,
-    await searchParams
-  );
-
   const { data: sentEmails, count: sentEmailCount } = await getUserSentEmails({
     wsId,
     userId,
     pageSize: EMAIL_PAGE_SIZE,
   });
-
-  const invoiceData = rawInvoiceData.map((d) => ({
-    ...d,
-    href: `/${wsId}/finance/invoices/${d.id}`,
-    ws_id: wsId,
-  }));
 
   // Fetch referral data
   const workspaceSettings = await getWorkspaceSettings(wsId);
@@ -306,25 +287,7 @@ export default async function WorkspaceUserDetailsPage({
       </div>
 
       {hasPrivateInfo && (
-        <>
-          <div className="mt-4 mb-2 font-semibold text-lg">
-            {t('invoices')} ({invoiceCount})
-          </div>
-          <CustomDataTable
-            data={invoiceData}
-            columnGenerator={invoiceColumns}
-            namespace="invoice-data-table"
-            count={invoiceCount}
-            defaultVisibility={{
-              id: false,
-              customer: false,
-              customer_id: false,
-              price: false,
-              total_diff: false,
-              note: false,
-            }}
-          />
-        </>
+        <InvoiceUserHistoryAccordion wsId={wsId} userId={userId} />
       )}
     </div>
   );
@@ -505,51 +468,10 @@ async function getCouponData({
   return { data, count };
 }
 
-async function getInvoiceData(
-  wsId: string,
-  userId: string,
-  {
-    q,
-    page = '1',
-    pageSize = '10',
-  }: { q?: string; page?: string; pageSize?: string }
-) {
-  const supabase = await createClient();
-
-  const queryBuilder = supabase
-    .from('finance_invoices')
-    .select('*, customer:workspace_users!customer_id(full_name)', {
-      count: 'exact',
-    })
-    .eq('ws_id', wsId)
-    .eq('customer_id', userId)
-    .order('created_at', { ascending: false });
-
-  if (q) queryBuilder.ilike('notice', `%${q}%`);
-
-  if (page && pageSize) {
-    const parsedPage = parseInt(page, 10);
-    const parsedSize = parseInt(pageSize, 10);
-    const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize;
-    queryBuilder.range(start, end).limit(parsedSize);
-  }
-
-  const { data: rawData, error, count } = await queryBuilder;
-  if (error) throw error;
-
-  const data = rawData.map(({ customer, ...rest }) => ({
-    ...rest,
-    customer: customer?.full_name || '-',
-  }));
-
-  return { data, count } as { data: Invoice[]; count: number };
-}
-
 async function getWorkspaceSettings(wsId: string) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
-  const { data, error } = await supabase
+  const { data, error } = await sbAdmin
     .from('workspace_settings')
     .select(
       'referral_count_cap, referral_increment_percent, referral_reward_type, referral_promotion_id'
