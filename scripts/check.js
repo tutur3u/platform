@@ -41,7 +41,7 @@ const colors = {
 // Check definitions
 const checks = [
   {
-    name: 'Biome (formatting)',
+    name: 'Biome (format & lint)',
     command: 'bun',
     args: ['biome', 'check'],
     parseOutput: (stdout) => {
