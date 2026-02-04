@@ -1,11 +1,12 @@
-import { createSerwistConfig } from '@tuturuuu/offline/config';
+import { getTurbopackConfig } from '@tuturuuu/offline/config';
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin();
-const withSerwist = createSerwistConfig();
+const serwistConfig = getTurbopackConfig();
 
 const nextConfig: NextConfig = {
+  ...serwistConfig,
   reactCompiler: true,
   reactStrictMode: true,
   // cacheComponents: true,
@@ -13,7 +14,7 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  serverExternalPackages: [],
+  serverExternalPackages: [...(serwistConfig.serverExternalPackages ?? [])],
   transpilePackages: [
     '@tuturuuu/ai',
     '@tuturuuu/ui',
@@ -46,4 +47,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSerwist(withNextIntl(nextConfig));
+export default withNextIntl(nextConfig);

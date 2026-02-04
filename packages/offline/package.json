@@ -12,16 +12,18 @@
   },
   "dependencies": {
     "@serwist/next": "^9.5.3",
-    "serwist": "^9.5.3"
+    "@serwist/turbopack": "^10.0.0-preview.14",
+    "esbuild": "^0.27.2",
+    "serwist": "^10.0.0-preview.14"
   },
   "peerDependencies": {
-    "next": ">=16.1.1",
-    "react": ">=19.2.3"
+    "next": ">=16.1.6",
+    "react": ">=19.2.4"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^25.2.0",
-    "@types/react": "^19.2.10",
+    "@types/react": "^19.2.11",
     "next": "^16.1.6",
     "react": "^19.2.4",
     "typescript": "^5.9.3",
@@ -31,7 +33,9 @@
     "./worker": "./src/worker/index.ts",
     "./config": "./src/config/index.ts",
     "./manifest": "./src/manifest/index.ts",
-    "./components": "./src/components/index.tsx"
+    "./components": "./src/components/index.tsx",
+    "./route": "./src/route/index.ts",
+    "./provider": "./src/provider/index.tsx"
   },
   "packageManager": "bun@1.3.8"
 }

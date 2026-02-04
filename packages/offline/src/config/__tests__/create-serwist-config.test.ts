@@ -1,5 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createSerwistConfig } from '../create-serwist-config';
+import { getTurbopackConfig } from '../create-turbopack-config';
 
 // Mock @serwist/next
 vi.mock('@serwist/next', () => ({
@@ -12,6 +13,18 @@ vi.mock('@serwist/next', () => ({
 }));
 
 describe('createSerwistConfig', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  it('should emit deprecation warning', () => {
+    createSerwistConfig();
+
+    expect(console.warn).toHaveBeenCalledWith(
+      expect.stringContaining('createSerwistConfig is deprecated')
+    );
+  });
+
   it('should create a config with default values', () => {
     const withSerwist = createSerwistConfig();
     const result = withSerwist({ reactStrictMode: true }) as {
@@ -91,5 +104,35 @@ describe('createSerwistConfig', () => {
 
     expect(result.reactStrictMode).toBe(true);
     expect(result.poweredByHeader).toBe(false);
+  });
+});
+
+describe('getTurbopackConfig', () => {
+  it('should return config with esbuild in serverExternalPackages', () => {
+    const config = getTurbopackConfig();
+
+    expect(config.serverExternalPackages).toBeDefined();
+    expect(config.serverExternalPackages).toContain('esbuild');
+  });
+
+  it('should include additional external packages', () => {
+    const config = getTurbopackConfig({
+      additionalExternalPackages: ['custom-pkg', 'another-pkg'],
+    });
+
+    expect(config.serverExternalPackages).toContain('esbuild');
+    expect(config.serverExternalPackages).toContain('custom-pkg');
+    expect(config.serverExternalPackages).toContain('another-pkg');
+  });
+
+  it('should return partial NextConfig that can be spread', () => {
+    const config = getTurbopackConfig();
+    const nextConfig = {
+      ...config,
+      reactStrictMode: true,
+    };
+
+    expect(nextConfig.serverExternalPackages).toContain('esbuild');
+    expect(nextConfig.reactStrictMode).toBe(true);
   });
 });
