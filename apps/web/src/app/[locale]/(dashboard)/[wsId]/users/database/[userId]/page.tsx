@@ -1,5 +1,8 @@
 import { Users } from '@tuturuuu/icons';
-import { createClient, createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  createClient,
+  createAdminClient,
+} from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUserReport } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
