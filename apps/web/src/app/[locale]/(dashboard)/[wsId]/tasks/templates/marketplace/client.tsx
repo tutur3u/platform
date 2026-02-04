@@ -31,6 +31,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
 import { formatDistanceToNow } from 'date-fns';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
@@ -235,10 +236,26 @@ function FeaturedTemplateCard({
   return (
     <Link href={`/${wsId}/tasks/templates/${template.id}`}>
       <Card className="group relative h-full overflow-hidden border-border/50 bg-linear-to-br from-background via-background to-muted/30 transition-all hover:border-primary/50 hover:shadow-xl">
+        <div className="aspect-video w-full overflow-hidden border-b bg-muted/50">
+          {template.backgroundUrl ? (
+            <Image
+              src={template.backgroundUrl}
+              alt={template.name}
+              width={600}
+              height={338}
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-dynamic-blue/5 to-dynamic-purple/5">
+              <KanbanSquare className="h-12 w-12 text-muted-foreground/20" />
+            </div>
+          )}
+        </div>
+
         {/* Gradient overlay on hover */}
         <div
           className={cn(
-            'absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100',
+            'pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100',
             index === 0
               ? 'bg-linear-to-br from-dynamic-purple/5 via-transparent to-dynamic-blue/5'
               : 'bg-linear-to-br from-dynamic-blue/5 via-transparent to-dynamic-green/5'
@@ -317,6 +334,21 @@ function MarketplaceTemplateCard({
   return (
     <Link href={`/${wsId}/tasks/templates/${template.id}`}>
       <Card className="group h-full overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg">
+        <div className="aspect-video w-full overflow-hidden border-b bg-muted/50">
+          {template.backgroundUrl ? (
+            <Image
+              src={template.backgroundUrl}
+              alt={template.name}
+              width={400}
+              height={225}
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-secondary/30">
+              <KanbanSquare className="h-10 w-10 text-muted-foreground/20" />
+            </div>
+          )}
+        </div>
         <CardHeader className="pb-3">
           <div className="flex items-start gap-3">
             <div className="rounded-lg bg-linear-to-br from-dynamic-purple/10 via-dynamic-pink/5 to-dynamic-blue/10 p-2.5 transition-colors group-hover:from-dynamic-purple/20 group-hover:to-dynamic-blue/20">

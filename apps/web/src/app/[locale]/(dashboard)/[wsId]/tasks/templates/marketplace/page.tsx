@@ -93,6 +93,7 @@ async function getPublicTemplates(): Promise<{ templates: BoardTemplate[] }> {
       name,
       description,
       visibility,
+      background_url,
       content,
       created_at,
       updated_at
@@ -120,6 +121,7 @@ async function getPublicTemplates(): Promise<{ templates: BoardTemplate[] }> {
       name: template.name,
       description: template.description,
       visibility: template.visibility as 'private' | 'workspace' | 'public',
+      backgroundUrl: template.background_url,
       createdAt: template.created_at,
       updatedAt: template.updated_at,
       isOwner: template.created_by === user?.id,

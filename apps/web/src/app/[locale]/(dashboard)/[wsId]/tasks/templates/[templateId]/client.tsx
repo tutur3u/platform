@@ -42,6 +42,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -62,28 +63,28 @@ const priorityConfig = {
     label: 'Critical',
     icon: Zap,
     color: 'text-dynamic-red',
-    bgColor: 'bg-dynamic-red/10',
+    bgColor: 'bg-dynamic-red',
     borderColor: 'border-dynamic-red/30',
   },
   high: {
     label: 'High',
     icon: ArrowUp,
     color: 'text-dynamic-orange',
-    bgColor: 'bg-dynamic-orange/10',
+    bgColor: 'bg-dynamic-orange',
     borderColor: 'border-dynamic-orange/30',
   },
   normal: {
     label: 'Normal',
     icon: Circle,
     color: 'text-dynamic-blue',
-    bgColor: 'bg-dynamic-blue/10',
+    bgColor: 'bg-dynamic-blue',
     borderColor: 'border-dynamic-blue/30',
   },
   low: {
     label: 'Low',
     icon: AlertCircle,
     color: 'text-dynamic-green',
-    bgColor: 'bg-dynamic-green/10',
+    bgColor: 'bg-dynamic-green',
     borderColor: 'border-dynamic-green/30',
   },
 } as const;
@@ -126,7 +127,7 @@ function TaskPreviewCard({ task }: { task: TemplateTask }) {
       <div
         className={cn(
           'absolute top-0 left-0 h-full w-1 rounded-l-lg',
-          config.bgColor.replace('/10', '')
+          config.bgColor
         )}
       />
 
@@ -259,121 +260,158 @@ export default function TemplateDetailClient({ wsId, template }: Props) {
       </Link>
 
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex items-start gap-4">
-          <div className="rounded-lg bg-primary/10 p-3">
-            <Bookmark className="h-6 w-6 text-primary" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="font-bold text-2xl tracking-tight">
-                {template.name}
-              </h1>
-              <Badge
-                variant="outline"
-                className={cn(
-                  'flex items-center gap-1',
-                  template.visibility === 'private' &&
-                    'border-dynamic-orange/30 text-dynamic-orange',
-                  template.visibility === 'workspace' &&
-                    'border-dynamic-blue/30 text-dynamic-blue',
-                  template.visibility === 'public' &&
-                    'border-dynamic-green/30 text-dynamic-green'
-                )}
-              >
-                {visibilityIcon}
-                {t(`visibility.${template.visibility}`)}
-              </Badge>
-            </div>
-            {template.description && (
-              <p className="mt-1 text-muted-foreground">
-                {template.description}
-              </p>
+      <div className="grid gap-8 lg:grid-cols-3">
+        {/* Left Column: Image Display */}
+        <div className="overflow-hidden rounded-xl border bg-muted/30 lg:col-span-2">
+          <div className="aspect-video w-full">
+            {template.backgroundUrl ? (
+              <Image
+                src={template.backgroundUrl}
+                alt={template.name}
+                width={1200}
+                height={675}
+                className="h-full w-full object-cover"
+                priority
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-secondary/20">
+                <KanbanSquare className="h-16 w-16 text-muted-foreground/20" />
+              </div>
             )}
-            <div className="mt-2 flex items-center gap-4 text-muted-foreground text-sm">
-              <div className="flex items-center gap-1">
-                <KanbanSquare className="h-4 w-4" />
-                <span>
-                  {template.stats.lists} {t('gallery.lists')}
-                </span>
-              </div>
-              <div className="flex items-center gap-1">
-                <ListTodo className="h-4 w-4" />
-                <span>
-                  {template.stats.tasks} {t('gallery.tasks')}
-                </span>
-              </div>
-              {template.stats.labels > 0 && (
-                <div className="flex items-center gap-1">
-                  <Tags className="h-4 w-4" />
-                  <span>
-                    {template.stats.labels} {t('gallery.labels')}
-                  </span>
-                </div>
-              )}
-            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {template.isOwner && (
-            <>
-              <Button
-                variant="outline"
-                onClick={() => setShareDialogOpen(true)}
-              >
-                <Share2 className="mr-2 h-4 w-4" />
-                {t('share.manage')}
-              </Button>
-              <Button variant="outline" onClick={() => setEditDialogOpen(true)}>
-                <Pencil className="mr-2 h-4 w-4" />
-                {t('detail.edit')}
-              </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
+        {/* Right Column: Content & Actions */}
+        <div className="flex flex-col gap-6 lg:col-span-1">
+          <div className="flex items-start gap-3">
+            <div className="rounded-lg bg-primary/10 p-2.5">
+              <Bookmark className="h-5 w-5 text-primary" />
+            </div>
+            <div className="min-w-0 flex-1 space-y-2">
+              <div className="space-y-1">
+                <h1 className="font-bold text-2xl leading-tight tracking-tight">
+                  {template.name}
+                </h1>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge
                     variant="outline"
-                    className="text-dynamic-red/80 hover:bg-dynamic-red/10 hover:text-dynamic-red"
+                    className={cn(
+                      'flex w-fit items-center gap-1',
+                      template.visibility === 'private' &&
+                        'border-dynamic-orange/30 text-dynamic-orange',
+                      template.visibility === 'workspace' &&
+                        'border-dynamic-blue/30 text-dynamic-blue',
+                      template.visibility === 'public' &&
+                        'border-dynamic-green/30 text-dynamic-green'
+                    )}
                   >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    {t('detail.delete')}
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="flex items-center gap-2">
-                      <AlertTriangle className="h-5 w-5 text-dynamic-red" />
-                      {t('detail.delete_confirm_title')}
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {t('detail.delete_confirm_description', {
-                        name: template.name,
-                      })}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel disabled={isDeleting}>
-                      {t('common.cancel')}
-                    </AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleDelete}
-                      disabled={isDeleting}
-                      className="bg-dynamic-red text-white hover:bg-dynamic-red/90"
+                    {visibilityIcon}
+                    {t(`visibility.${template.visibility}`)}
+                  </Badge>
+                </div>
+              </div>
+              {template.description && (
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  {template.description}
+                </p>
+              )}
+              <div className="flex flex-wrap items-center gap-4 pt-2 text-muted-foreground text-sm">
+                <div className="flex items-center gap-1.5">
+                  <KanbanSquare className="h-4 w-4" />
+                  <span>
+                    {template.stats.lists} {t('gallery.lists')}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <ListTodo className="h-4 w-4" />
+                  <span>
+                    {template.stats.tasks} {t('gallery.tasks')}
+                  </span>
+                </div>
+                {template.stats.labels > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <Tags className="h-4 w-4" />
+                    <span>
+                      {template.stats.labels} {t('gallery.labels')}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="flex flex-col gap-3">
+            <Button
+              onClick={() => setUseDialogOpen(true)}
+              size="lg"
+              className="w-full font-semibold shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl"
+            >
+              <Plus className="mr-2 h-5 w-5" />
+              {t('detail.use_template')}
+            </Button>
+
+            {template.isOwner && (
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShareDialogOpen(true)}
+                  className="w-full"
+                >
+                  <Share2 className="mr-2 h-4 w-4" />
+                  {t('share.manage')}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setEditDialogOpen(true)}
+                  className="w-full"
+                >
+                  <Pencil className="mr-2 h-4 w-4" />
+                  {t('detail.edit')}
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="col-span-2 w-full text-dynamic-red/80 hover:bg-dynamic-red/10 hover:text-dynamic-red"
                     >
-                      {isDeleting && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      )}
+                      <Trash2 className="mr-2 h-4 w-4" />
                       {t('detail.delete')}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </>
-          )}
-          <Button onClick={() => setUseDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            {t('detail.use_template')}
-          </Button>
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5 text-dynamic-red" />
+                        {t('detail.delete_confirm_title')}
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {t('detail.delete_confirm_description', {
+                          name: template.name,
+                        })}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel disabled={isDeleting}>
+                        {t('common.cancel')}
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDelete}
+                        disabled={isDeleting}
+                        className="bg-dynamic-red text-white hover:bg-dynamic-red/90"
+                      >
+                        {isDeleting && (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        {t('detail.delete')}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

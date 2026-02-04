@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
@@ -159,7 +160,22 @@ function TemplateCard({ template, wsId }: TemplateCardProps) {
 
   return (
     <Link href={`/${wsId}/tasks/templates/${template.id}`}>
-      <Card className="h-full transition-all hover:border-primary/50 hover:shadow-md">
+      <Card className="h-full overflow-hidden transition-all hover:border-primary/50 hover:shadow-md">
+        <div className="aspect-video w-full overflow-hidden border-b bg-muted/30">
+          {template.backgroundUrl ? (
+            <Image
+              src={template.backgroundUrl}
+              alt={template.name}
+              width={400}
+              height={225}
+              className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center">
+              <KanbanSquare className="h-10 w-10 text-muted-foreground/20" />
+            </div>
+          )}
+        </div>
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-2">
