@@ -23,6 +23,8 @@ const VIEW_MODES = ['daily', 'weekly', 'monthly', 'yearly'] as const;
 interface TransactionsInfinitePageProps {
   wsId: string;
   currency?: string;
+  /** IANA timezone identifier for period grouping (e.g., 'America/New_York'). Defaults to 'UTC'. */
+  timezone?: string | null;
   canExport?: boolean;
   exportContent?: React.ReactNode;
   canUpdateTransactions?: boolean;
@@ -39,6 +41,7 @@ interface TransactionsInfinitePageProps {
 export function TransactionsInfinitePage({
   wsId,
   currency,
+  timezone,
   canExport,
   exportContent,
   canUpdateTransactions,
@@ -171,6 +174,7 @@ export function TransactionsInfinitePage({
         <InfiniteTransactionsList
           wsId={wsId}
           currency={currency}
+          timezone={timezone}
           viewMode={viewMode}
           canUpdateTransactions={canUpdateTransactions}
           canDeleteTransactions={canDeleteTransactions}

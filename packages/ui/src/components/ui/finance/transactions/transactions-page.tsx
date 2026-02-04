@@ -73,6 +73,7 @@ export default async function TransactionsPage({ wsId }: Props) {
       <TransactionsInfinitePage
         wsId={wsId}
         currency={currency ?? 'USD'}
+        timezone={workspace.timezone}
         canExport={canExportFinanceData}
         exportContent={
           <ExportDialogContent wsId={wsId} exportType="transactions" />

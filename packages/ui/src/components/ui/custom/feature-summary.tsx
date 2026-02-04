@@ -1,3 +1,5 @@
+'use client';
+
 import { Cog, Plus } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';

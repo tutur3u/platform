@@ -19,6 +19,7 @@ interface InvoiceCheckoutSummaryProps {
   onResetRounding: () => void;
   showRoundingControls?: boolean;
   roundingDisabled?: boolean;
+  currency?: string;
 }
 
 export function InvoiceCheckoutSummary({
@@ -33,6 +34,7 @@ export function InvoiceCheckoutSummary({
   onResetRounding,
   showRoundingControls = true,
   roundingDisabled = false,
+  currency = 'VND',
 }: InvoiceCheckoutSummaryProps) {
   const t = useTranslations();
   return (
@@ -42,7 +44,7 @@ export function InvoiceCheckoutSummary({
           <span className="text-muted-foreground">
             {t('ws-invoices.subtotal')}
           </span>
-          <span>{formatCurrency(subtotal)}</span>
+          <span>{formatCurrency(subtotal, currency)}</span>
         </div>
 
         {discountAmount !== undefined && discountLabel && (
@@ -51,7 +53,7 @@ export function InvoiceCheckoutSummary({
               {t('ws-invoices.discount')} ({discountLabel})
             </span>
             <span className={discountClassName}>
-              -{formatCurrency(discountAmount)}
+              -{formatCurrency(discountAmount, currency)}
             </span>
           </div>
         )}
@@ -60,7 +62,7 @@ export function InvoiceCheckoutSummary({
 
         <div className="flex justify-between font-semibold">
           <span>{t('ws-invoices.total')}</span>
-          <span>{formatCurrency(roundedTotal)}</span>
+          <span>{formatCurrency(roundedTotal, currency)}</span>
         </div>
 
         {Math.abs(roundedTotal - totalBeforeRounding) > 0.01 && (
@@ -68,7 +70,7 @@ export function InvoiceCheckoutSummary({
             <span>{t('ws-invoices.adjustment')}</span>
             <span>
               {roundedTotal > totalBeforeRounding ? '+' : ''}
-              {formatCurrency(roundedTotal - totalBeforeRounding)}
+              {formatCurrency(roundedTotal - totalBeforeRounding, currency)}
             </span>
           </div>
         )}

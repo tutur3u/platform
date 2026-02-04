@@ -14,7 +14,7 @@ import {
 } from '@tuturuuu/icons';
 import type { DebtLoanWithBalance } from '@tuturuuu/types/primitives/DebtLoan';
 import type { Wallet as WalletType } from '@tuturuuu/types/primitives/Wallet';
-import { cn } from '@tuturuuu/utils/format';
+import { cn, formatCurrency } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -140,15 +140,6 @@ export function DebtLoanDetailPage({ wsId, debtId }: Props) {
     setIsEditDialogOpen(false);
     queryClient.invalidateQueries({ queryKey: ['debt-loan', wsId, debtId] });
     queryClient.invalidateQueries({ queryKey: ['debt-loan-summary', wsId] });
-  };
-
-  const formatCurrency = (amount: number, currency: string = 'VND') => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
   };
 
   const getStatusColor = (status: string) => {
@@ -372,7 +363,7 @@ export function DebtLoanDetailPage({ wsId, debtId }: Props) {
                   {t('start_date')}:
                 </span>
                 <span className="font-medium">
-                  {new Date(debtLoan.start_date).toLocaleDateString('vi-VN')}
+                  {new Date(debtLoan.start_date).toLocaleDateString()}
                 </span>
               </div>
 
@@ -388,7 +379,7 @@ export function DebtLoanDetailPage({ wsId, debtId }: Props) {
                     {t('due_date')}:
                   </span>
                   <span className="font-medium">
-                    {new Date(debtLoan.due_date).toLocaleDateString('vi-VN')}
+                    {new Date(debtLoan.due_date).toLocaleDateString()}
                     {isOverdue && ` (${t('overdue')})`}
                   </span>
                 </div>

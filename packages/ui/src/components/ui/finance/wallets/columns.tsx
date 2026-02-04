@@ -7,8 +7,9 @@ import { Badge } from '@tuturuuu/ui/badge';
 import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { WalletRowActions } from '@tuturuuu/ui/finance/wallets/row-actions';
-import { cn } from '@tuturuuu/utils/format';
+import { cn, formatCurrency } from '@tuturuuu/utils/format';
 import moment from 'moment';
+import Link from 'next/link';
 import { WalletIconDisplay } from './wallet-icon-display';
 
 interface WalletExtraData {
@@ -78,7 +79,13 @@ export const walletColumns = ({
             imageSrc={row.original.image_src}
             size="sm"
           />
-          <span>{row.getValue('name') || '-'}</span>
+          <Link
+            href={row.original.href || '#'}
+            onClick={(e) => e.stopPropagation()}
+            className="font-semibold hover:underline"
+          >
+            {row.getValue('name') || '-'}
+          </Link>
         </div>
       ),
     },
@@ -106,15 +113,10 @@ export const walletColumns = ({
         const balance = Number(row.getValue('balance')) || 0;
         // Use workspace currency for display consistency
         const currency = workspaceCurrency;
-        const locale = currency === 'VND' ? 'vi-VN' : 'en-US';
 
-        const formattedBalance = Intl.NumberFormat(locale, {
-          style: 'currency',
-          currency,
-          minimumFractionDigits: 0,
-          maximumFractionDigits: currency === 'VND' ? 0 : 2,
+        const formattedBalance = formatCurrency(balance, currency, undefined, {
           signDisplay: 'exceptZero',
-        }).format(balance);
+        });
 
         const isPositive = balance > 0;
         const isNegative = balance < 0;

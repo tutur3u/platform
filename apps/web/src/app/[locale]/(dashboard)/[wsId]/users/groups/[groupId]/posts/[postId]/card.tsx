@@ -12,6 +12,7 @@ import {
   Send,
   X,
 } from '@tuturuuu/icons';
+import type { UserGroupPost } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
@@ -42,18 +43,6 @@ interface Props {
     email_id?: string | null;
   }> | null;
   isLoadingChecks?: boolean;
-}
-
-export interface UserGroupPost {
-  id?: string;
-  title: string | null;
-  content: string | null;
-  ws_id?: string;
-  name?: string;
-  created_at?: string;
-  notes: string | null;
-  group_id?: string;
-  group_name?: string;
 }
 
 function UserCard({
@@ -167,6 +156,8 @@ function UserCard({
     }
   };
 
+  const isApproved = post.post_approval_status === 'APPROVED';
+
   return (
     <Card className="w-full rounded-lg p-4 shadow-md">
       <div className="mb-4 flex items-center">
@@ -203,7 +194,7 @@ function UserCard({
           name="notes"
           placeholder="Notes"
           defaultValue={check?.notes || ''}
-          disabled={isLoadingCheck || !check}
+          disabled={isLoadingCheck || !check || !isApproved}
         />
       </form>
 
@@ -218,7 +209,7 @@ function UserCard({
             <Button
               type="submit"
               form={`notes-form-${user.id}`}
-              disabled={isSaving || !check}
+              disabled={isSaving || !check || !isApproved}
               variant="outline"
               className="w-full border"
             >
@@ -243,7 +234,7 @@ function UserCard({
                   : '',
                 'w-full border'
               )}
-              disabled={isSaving || !check}
+              disabled={isSaving || !check || !isApproved}
             >
               <X />
             </Button>
@@ -262,7 +253,7 @@ function UserCard({
                   : '',
                 'w-full border'
               )}
-              disabled={isSaving || !check}
+              disabled={isSaving || !check || !isApproved}
             >
               <CircleSlash />
             </Button>
@@ -277,7 +268,7 @@ function UserCard({
                   : '',
                 'w-full border'
               )}
-              disabled={isSaving || !check}
+              disabled={isSaving || !check || !isApproved}
             >
               <Check />
             </Button>
@@ -307,7 +298,8 @@ function UserCard({
                 !isEmail(user.email) ||
                 check?.is_completed == null ||
                 isSaving ||
-                !check
+                !check ||
+                !isApproved
               }
               variant={
                 localLoading ||

@@ -12,6 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
+import { formatCurrency } from '@tuturuuu/utils/format';
 import { getAvatarPlaceholder, getInitials } from '@tuturuuu/utils/name-helper';
 import moment from 'moment';
 
@@ -34,7 +35,6 @@ export const invoiceColumns = ({
   extraData?: InvoiceExtraData;
 }): ColumnDef<Invoice>[] => {
   const currency = extraData?.currency || 'USD';
-  const currencyLocale = currency === 'VND' ? 'vi-VN' : 'en-US';
 
   return [
     // {
@@ -182,10 +182,7 @@ export const invoiceColumns = ({
       ),
       cell: ({ row }) => (
         <div className="min-w-32">
-          {Intl.NumberFormat(currencyLocale, {
-            style: 'currency',
-            currency,
-          }).format(row.getValue<number>('price') || 0)}
+          {formatCurrency(row.getValue<number>('price') || 0, currency)}
         </div>
       ),
     },
@@ -202,11 +199,9 @@ export const invoiceColumns = ({
         <div className="min-w-32">
           {row.getValue('total_diff') === 0
             ? '-'
-            : Intl.NumberFormat(currencyLocale, {
-                style: 'currency',
-                currency,
+            : formatCurrency(row.getValue('total_diff'), currency, undefined, {
                 signDisplay: 'always',
-              }).format(row.getValue('total_diff'))}
+              })}
         </div>
       ),
     },
@@ -224,22 +219,21 @@ export const invoiceColumns = ({
           <TooltipProvider>
             <Tooltip delayDuration={0}>
               <TooltipTrigger className="font-semibold">
-                {Intl.NumberFormat(currencyLocale, {
-                  style: 'currency',
-                  currency,
-                }).format(
+                {formatCurrency(
                   (row.getValue<number>('price') || 0) +
-                    (row.getValue<number>('total_diff') || 0)
+                    (row.getValue<number>('total_diff') || 0),
+                  currency
                 )}
               </TooltipTrigger>
               <TooltipContent className="text-center font-semibold">
                 <div>
                   <span className="text-blue-600 dark:text-blue-300">
-                    {Intl.NumberFormat(currencyLocale, {
-                      style: 'currency',
+                    {formatCurrency(
+                      row.getValue<number>('price') || 0,
                       currency,
-                      signDisplay: 'never',
-                    }).format(row.getValue<number>('price') || 0)}
+                      undefined,
+                      { signDisplay: 'never' }
+                    )}
                   </span>{' '}
                   {(row.getValue<number>('total_diff') || 0) < 0 ? '-' : '+'}{' '}
                   <span
@@ -249,11 +243,12 @@ export const invoiceColumns = ({
                         : 'text-green-600 dark:text-green-300'
                     }
                   >
-                    {Intl.NumberFormat(currencyLocale, {
-                      style: 'currency',
+                    {formatCurrency(
+                      row.getValue<number>('total_diff') || 0,
                       currency,
-                      signDisplay: 'never',
-                    }).format(row.getValue<number>('total_diff') || 0)}
+                      undefined,
+                      { signDisplay: 'never' }
+                    )}
                   </span>
                 </div>
               </TooltipContent>

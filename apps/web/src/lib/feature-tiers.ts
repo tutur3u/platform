@@ -45,10 +45,10 @@ export const FEATURE_TIERS: Record<FeatureId, WorkspaceProductTier> = {
   finance: 'FREE',
   users: 'FREE',
   inventory: 'FREE',
+  whiteboards: 'FREE',
 
   // PLUS tier features
   documents: 'PLUS',
-  whiteboards: 'PLUS',
   chat: 'PLUS',
   time_tracker: 'PLUS',
   workforce: 'PLUS',

@@ -15,6 +15,7 @@ import { ProductCard } from '@tuturuuu/ui/finance/invoices/invoiceId/product-car
 import { PromotionCard } from '@tuturuuu/ui/finance/invoices/invoiceId/promotion-card';
 import { Separator } from '@tuturuuu/ui/separator';
 import { availableConfigs } from '@tuturuuu/utils/configs/reports';
+import { formatCurrency } from '@tuturuuu/utils/format';
 import { getAvatarPlaceholder, getInitials } from '@tuturuuu/utils/name-helper';
 import 'dayjs/locale/vi';
 import moment from 'moment';
@@ -110,25 +111,16 @@ export default async function InvoiceDetailsPage({
               <DetailItem
                 icon={<DollarSign className="h-5 w-5" />}
                 label={t('invoice-data-table.final_price')}
-                value={`${Intl.NumberFormat(
-                  currency === 'VND' ? 'vi-VN' : 'en-US',
-                  {
-                    style: 'currency',
-                    currency,
-                  }
-                ).format(invoice.price)} + ${Intl.NumberFormat(
-                  currency === 'VND' ? 'vi-VN' : 'en-US',
-                  {
-                    style: 'currency',
-                    currency,
-                  }
-                ).format(invoice.total_diff)} = ${Intl.NumberFormat(
-                  currency === 'VND' ? 'vi-VN' : 'en-US',
-                  {
-                    style: 'currency',
-                    currency,
-                  }
-                ).format(invoice.price + invoice.total_diff)}`}
+                value={`${formatCurrency(
+                  invoice.price,
+                  currency
+                )} + ${formatCurrency(
+                  invoice.total_diff,
+                  currency
+                )} = ${formatCurrency(
+                  invoice.price + invoice.total_diff,
+                  currency
+                )}`}
               />
               <DetailItem
                 icon={<Calendar className="h-5 w-5" />}
@@ -162,6 +154,7 @@ export default async function InvoiceDetailsPage({
             }}
             products={products}
             promotions={promotions}
+            currency={currency}
           />
         </div>
 
@@ -177,7 +170,6 @@ export default async function InvoiceDetailsPage({
                   <ProductCard
                     key={index}
                     product={product}
-                    locale={locale}
                     workspaceId={wsId}
                     currency={currency}
                   />
@@ -202,7 +194,6 @@ export default async function InvoiceDetailsPage({
                     <PromotionCard
                       key={index}
                       promotion={promotion}
-                      locale={locale}
                       currency={currency}
                     />
                   ))}

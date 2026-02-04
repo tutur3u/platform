@@ -86,25 +86,52 @@ export function isValidHttpUrl(url: string | null | undefined): boolean {
 }
 
 /**
+ * Get the locale for a specific currency
+ * @param currency - The currency code
+ * @returns The locale string
+ */
+export function getCurrencyLocale(currency = 'VND'): string {
+  const currencyToLocale: Record<string, string> = {
+    VND: 'vi-VN',
+    USD: 'en-US',
+    EUR: 'de-DE',
+    GBP: 'en-GB',
+    JPY: 'ja-JP',
+    CNY: 'zh-CN',
+    AUD: 'en-AU',
+    CAD: 'en-CA',
+    KRW: 'ko-KR',
+    INR: 'hi-IN',
+    SGD: 'en-SG',
+    MYR: 'ms-MY',
+    THB: 'th-TH',
+    PHP: 'en-PH',
+    IDR: 'id-ID',
+    HKD: 'zh-HK',
+    TWD: 'zh-TW',
+  };
+  return currencyToLocale[currency.toUpperCase()] || 'en-US';
+}
+
+/**
  * Format a number as currency with locale-specific formatting
  * @param amount - The amount to format
- * @param locale - The locale to use (default: 'vi-VN')
  * @param currency - The currency code (default: 'VND')
+ * @param locale - The locale to use (optional, derived from currency if not provided)
  * @param options - Additional Intl.NumberFormat options
  * @returns Formatted currency string
  */
 export function formatCurrency(
   amount: number,
-  locale = 'vi-VN',
   currency = 'VND',
+  locale?: string,
   options?: Partial<Intl.NumberFormatOptions>
 ): string {
   const { signDisplay = 'auto', ...rest } = options || {};
-  return new Intl.NumberFormat(locale, {
+  const effectiveLocale = locale || getCurrencyLocale(currency);
+  return new Intl.NumberFormat(effectiveLocale, {
     style: 'currency',
     currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
     signDisplay,
     ...rest,
   }).format(amount);

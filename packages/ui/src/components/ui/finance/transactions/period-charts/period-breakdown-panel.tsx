@@ -11,9 +11,17 @@ import {
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import type { TransactionViewMode } from '@tuturuuu/types/primitives/TransactionPeriod';
-import { cn } from '@tuturuuu/utils/format';
-import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { cn, getCurrencyLocale } from '@tuturuuu/utils/format';
+import dayjs from 'dayjs';
+import timezonePlugin from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
+import { useTranslations } from 'next-intl';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
+// Initialize dayjs plugins for timezone-aware date operations
+dayjs.extend(utc);
+dayjs.extend(timezonePlugin);
+
 import { Button } from '../../../button';
 import {
   Collapsible,
@@ -44,6 +52,8 @@ interface PeriodBreakdownPanelProps {
   periodStart: string;
   periodEnd?: string;
   currency?: string;
+  /** IANA timezone identifier for period calculations (e.g., 'America/New_York'). Defaults to 'UTC'. */
+  timezone?: string;
   periodStats?: {
     totalIncome: number;
     totalExpense: number;
@@ -66,6 +76,7 @@ export function PeriodBreakdownPanel({
   periodStart,
   periodEnd,
   currency = 'USD',
+  timezone = 'UTC',
   periodStats,
   previousPeriodStats,
   isLoading = false,
@@ -73,7 +84,6 @@ export function PeriodBreakdownPanel({
   workspaceId,
 }: PeriodBreakdownPanelProps) {
   const t = useTranslations('finance-transactions');
-  const locale = useLocale();
   const [isConfidential, setIsConfidential] = useState(true);
 
   // Default expanded state: collapsed for daily, expanded for weekly+
@@ -112,14 +122,37 @@ export function PeriodBreakdownPanel({
     };
   }, []);
 
+  // Extract date string from period timestamps (handles both YYYY-MM-DD and full ISO timestamps)
+  // IMPORTANT: Do NOT convert to UTC - extract the date directly from the local ISO string
+  const extractDateString = useCallback((timestamp: string): string => {
+    // If it's already just a date (YYYY-MM-DD), return as-is
+    if (/^\d{4}-\d{2}-\d{2}$/.test(timestamp)) {
+      return timestamp;
+    }
+    // ISO timestamps start with YYYY-MM-DDTHH:MM:SS
+    // Extract the date part directly WITHOUT converting to UTC
+    // This preserves the local date when timezone offset is included
+    const dateMatch = timestamp.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (dateMatch?.[1]) {
+      return dateMatch[1];
+    }
+    // Fallback: use original timestamp
+    return timestamp;
+  }, []);
+
+  const periodStartDate = useMemo(
+    () => extractDateString(periodStart),
+    [periodStart, extractDateString]
+  );
+
   // Calculate period end date based on viewMode if not provided
   const computedPeriodEnd = useMemo(() => {
-    if (periodEnd) return periodEnd;
+    if (periodEnd) return extractDateString(periodEnd);
 
-    const start = new Date(periodStart);
+    const start = new Date(periodStartDate);
     switch (viewMode) {
       case 'daily':
-        return periodStart; // Same day
+        return periodStartDate; // Same day
       case 'weekly': {
         const end = new Date(start);
         end.setDate(end.getDate() + 6); // 7 days
@@ -134,9 +167,9 @@ export function PeriodBreakdownPanel({
         return end.toISOString().split('T')[0];
       }
       default:
-        return periodStart;
+        return periodStartDate;
     }
-  }, [periodStart, periodEnd, viewMode]);
+  }, [periodStartDate, periodEnd, viewMode, extractDateString]);
 
   // For daily view without pre-computed stats, fetch from RPC
   const shouldFetchStats =
@@ -146,15 +179,21 @@ export function PeriodBreakdownPanel({
     queryKey: [
       'period-stats',
       workspaceId,
-      periodStart,
+      periodStartDate,
       computedPeriodEnd,
       viewMode,
+      timezone,
     ],
     queryFn: async () => {
       const supabase = createClient();
-      // Create start/end timestamps for the day
-      const startDate = `${periodStart}T00:00:00.000Z`;
-      const endDate = `${computedPeriodEnd}T23:59:59.999Z`;
+      // Create start/end timestamps in the user's timezone
+      // IMPORTANT: Use the resolved timezone, not UTC, to ensure we query the correct local day
+      const startDate = dayjs
+        .tz(`${periodStartDate} 00:00:00`, timezone)
+        .toISOString();
+      const endDate = dayjs
+        .tz(`${computedPeriodEnd} 23:59:59.999`, timezone)
+        .toISOString();
 
       const { data, error } = await supabase.rpc('get_transaction_stats', {
         p_ws_id: workspaceId!, // Safe: query is only enabled when workspaceId exists
@@ -244,7 +283,7 @@ export function PeriodBreakdownPanel({
 
   const formatCompactValue = (value: number) => {
     if (isConfidential) return '•••';
-    return new Intl.NumberFormat(locale, {
+    return new Intl.NumberFormat(getCurrencyLocale(currency), {
       style: 'currency',
       currency,
       notation: 'compact',
@@ -377,8 +416,9 @@ export function PeriodBreakdownPanel({
               transactions={transactions}
               currency={currency}
               workspaceId={workspaceId}
-              periodStart={periodStart}
+              periodStart={periodStartDate}
               periodEnd={computedPeriodEnd}
+              timezone={timezone}
             />
           </div>
         )}
@@ -418,8 +458,9 @@ export function PeriodBreakdownPanel({
                 transactions={transactions}
                 currency={currency}
                 workspaceId={workspaceId}
-                periodStart={periodStart}
+                periodStart={periodStartDate}
                 periodEnd={computedPeriodEnd}
+                timezone={timezone}
               />
             </div>
           )}
@@ -430,7 +471,7 @@ export function PeriodBreakdownPanel({
               <ActivityDistributionChart
                 transactions={transactions}
                 viewMode={viewMode}
-                periodStart={periodStart}
+                periodStart={periodStartDate}
                 currency={currency}
               />
             </div>

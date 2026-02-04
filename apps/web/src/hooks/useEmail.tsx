@@ -1,8 +1,8 @@
+import type { UserGroupPost } from '@tuturuuu/types/db';
 import { toast } from '@tuturuuu/ui/sonner';
 import { atom, useAtom } from 'jotai';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import type { UserGroupPost } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/posts';
 
 interface EmailState {
   loading: boolean;
@@ -34,7 +34,7 @@ const useEmail = () => {
     wsId: string;
     groupId: string;
     postId: string;
-    post: UserGroupPost;
+    post: Partial<UserGroupPost>;
     users: {
       id: string;
       email: string;

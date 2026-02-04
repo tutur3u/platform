@@ -1,7 +1,10 @@
 {
   "editor.codeActionsOnSave": {
     "source.organizeImports.biome": "explicit",
-    "source.fixAll.biome": "explicit"
+    "source.organizeImports": "explicit",
+    "source.sortMembers": "explicit",
+    "source.fixAll.biome": "explicit",
+    "source.fixAll": "explicit"
   },
   "editor.formatOnPaste": false,
   "editor.formatOnSave": true,

@@ -45,12 +45,14 @@ const getCookie = (name: string): string | null => {
 };
 
 // Dynamic color palette using CSS variables
+// NOTE: CSS variables --chart-N already contain full hsl() values (e.g., "hsl(12 76% 61%)"),
+// so we use var(--chart-N) directly without wrapping in hsl()
 const CATEGORY_COLORS = [
-  'hsl(var(--chart-1))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
+  'var(--chart-1)',
+  'var(--chart-2)',
+  'var(--chart-3)',
+  'var(--chart-4)',
+  'var(--chart-5)',
   '#f87171', // red-400
   '#fb923c', // orange-400
   '#fbbf24', // amber-400
@@ -93,6 +95,8 @@ interface CategoryBreakdownDialogProps {
   periodStart: string;
   periodEnd?: string;
   currency?: string;
+  /** IANA timezone identifier for period calculations (e.g., 'America/New_York'). Defaults to 'UTC'. */
+  timezone?: string;
   /** Pre-computed data as fallback from parent - used while RPC loads */
   initialCategoryData?: CategoryData[];
   /** Initial type to display */
@@ -106,6 +110,7 @@ export function CategoryBreakdownDialog({
   periodStart,
   periodEnd,
   currency = 'USD',
+  timezone = 'UTC',
   initialCategoryData,
   initialType = 'expense',
 }: CategoryBreakdownDialogProps) {
@@ -185,6 +190,7 @@ export function CategoryBreakdownDialog({
       periodStart,
       periodEnd,
       type,
+      timezone,
     ],
     queryFn: async () => {
       const supabase = createClient();
@@ -196,6 +202,7 @@ export function CategoryBreakdownDialog({
         _transaction_type: type,
         _interval: 'daily', // Single period aggregation
         _anchor_to_latest: false,
+        _timezone: timezone, // Pass timezone for correct date grouping
       });
 
       if (error) throw error;
