@@ -38,7 +38,9 @@
       "Bash(git stash:*)",
       "Bash(bunx vitest run:*)",
       "Bash(node scripts/check-migration-timestamps.js:*)",
-      "Bash(node scripts/check.js:*)"
+      "Bash(node scripts/check.js:*)",
+      "Bash(npm view:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }
