@@ -76,17 +76,7 @@ export function UsageLogsFilters() {
     startTransition(() => {
       router.replace(newUrl, { scroll: false });
     });
-  }, [
-    fromDate,
-    toDate,
-    statusFilter,
-    methodFilter,
-    pathname,
-    router,
-    params.delete,
-    params.set,
-    params.toString,
-  ]);
+  }, [fromDate, toDate, statusFilter, methodFilter, pathname, router, params]);
 
   const handleClearFilters = () => {
     setFromDate(undefined);

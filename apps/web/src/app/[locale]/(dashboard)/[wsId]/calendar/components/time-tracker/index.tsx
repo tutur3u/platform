@@ -280,16 +280,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [
-    tracker.isOpen,
-    tracker.isRunning,
-    newSessionTitle,
-    selectedTaskId,
-    handleStartTimer,
-    tracker.pauseTimer,
-    tracker.setIsOpen,
-    tracker.stopTimer,
-  ]);
+  }, [tracker, newSessionTitle, selectedTaskId, handleStartTimer]);
 
   return (
     <>

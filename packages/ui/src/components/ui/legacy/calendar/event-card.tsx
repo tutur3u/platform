@@ -466,7 +466,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     overlapGroup,
     hoveredBaseEventId,
     hoveredEventColumn,
-    endDate.isBefore,
+    endDate,
   ]);
 
   // Event resizing - only enable for non-multi-day events or the start/end segments
@@ -658,7 +658,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     _dayPosition,
     event._originalId,
     startHours,
-    endDate.clone,
+    endDate,
     scheduleUpdate,
     showStatusFeedback, // Update visual state
     updateVisualState,

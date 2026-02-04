@@ -389,7 +389,7 @@ export default function GroupReportsClient({
       groupNameFallback,
       reportDetailQuery.data,
       healthcareVitalsQuery.data,
-      usersQuery.data?.find,
+      usersQuery.data,
     ]);
 
   // Compute effective creator (group manager) name for preview/export only

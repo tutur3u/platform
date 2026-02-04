@@ -6,11 +6,11 @@ export async function InventoryCategoryStatistics({ wsId }: { wsId: string }) {
 
   const enabled = true;
 
-  const { permissions } = await getPermissions({
+  const { containsPermission } = await getPermissions({
     wsId,
   });
 
-  if (!enabled || !permissions.includes('view_inventory')) return null;
+  if (!enabled || !containsPermission('view_inventory')) return null;
 
   return (
     <div className="mt-4 mb-2 font-semibold text-2xl">

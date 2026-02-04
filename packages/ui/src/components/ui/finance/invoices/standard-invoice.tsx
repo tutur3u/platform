@@ -73,7 +73,7 @@ export function StandardInvoice({
       }
       router.replace(`?${params.toString()}`, { scroll: false });
     },
-    [searchParams, router.replace]
+    [searchParams, router]
   );
 
   // Data queries

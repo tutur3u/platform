@@ -84,8 +84,17 @@ interface ImageOptions {
   onVideoUpload?: (file: File) => Promise<string>;
 }
 
+// Extend ImageResizeOptions to include the additional Tiptap Image options
+interface ExtendedImageResizeOptions {
+  inline: boolean;
+  allowBase64: boolean;
+  HTMLAttributes: Record<string, any>;
+  minWidth?: number;
+  maxWidth?: number;
+}
+
 export const CustomImage = (options: ImageOptions = {}) => {
-  const baseExtension = ImageResize.extend({
+  const baseExtension = ImageResize.extend<ExtendedImageResizeOptions>({
     addAttributes() {
       const parentAttrs = this.parent?.() || {};
 
@@ -611,11 +620,13 @@ export const CustomImage = (options: ImageOptions = {}) => {
     },
   });
 
+  // Configure the extension with the options
+  // Using type assertion since these options exist at runtime but aren't in ImageResizeOptions type
   return baseExtension.configure({
-    inline: true, // Make images block-level to prevent text wrapping
+    inline: true,
     allowBase64: false,
     HTMLAttributes: {
       class: 'rounded-md my-4 block w-full',
     },
-  });
+  } as Partial<ExtendedImageResizeOptions>);
 };
