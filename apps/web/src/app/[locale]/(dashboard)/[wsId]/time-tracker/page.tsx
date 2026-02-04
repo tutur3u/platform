@@ -160,6 +160,7 @@ export default async function TimeTrackerPage({
                 <TimerCardWrapper
                   timerDataPromise={timerDataPromise}
                   wsId={wsId}
+                  userId={user.id}
                   workspace={workspace}
                 />
               </Suspense>
@@ -184,10 +185,12 @@ export default async function TimeTrackerPage({
 async function TimerCardWrapper({
   timerDataPromise,
   wsId,
+  userId,
   workspace,
 }: {
   timerDataPromise: Promise<Awaited<ReturnType<typeof fetchTimerData>>>;
   wsId: string;
+  userId: string;
   workspace: Awaited<
     ReturnType<typeof import('@tuturuuu/utils/workspace-helper').getWorkspace>
   >;
@@ -196,6 +199,7 @@ async function TimerCardWrapper({
   return (
     <OverviewTimer
       wsId={wsId}
+      userId={userId}
       categories={timerData.categories}
       initialRunningSession={timerData.runningSession}
       workspace={workspace}

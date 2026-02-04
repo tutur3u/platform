@@ -41,10 +41,8 @@ export interface FilterState {
   searchQuery: string;
   categoryId: string;
   duration: string;
-  productivity: string;
   timeOfDay: string;
   projectContext: string;
-  sessionQuality: string;
 }
 
 export interface ActionStates {

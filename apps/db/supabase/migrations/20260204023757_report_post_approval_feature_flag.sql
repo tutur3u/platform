@@ -245,6 +245,11 @@ DROP POLICY IF EXISTS "Allow member managers to manage reports" ON "public"."ext
 DROP POLICY IF EXISTS "Allow read access for workspace users" ON "public"."external_user_monthly_reports";
 DROP POLICY IF EXISTS "Allow update access for workspace_users" ON "public"."external_user_monthly_reports";
 
+DROP POLICY IF EXISTS "Allow view reports" ON "public"."external_user_monthly_reports";
+DROP POLICY IF EXISTS "Allow create reports" ON "public"."external_user_monthly_reports";
+DROP POLICY IF EXISTS "Allow update reports" ON "public"."external_user_monthly_reports";
+DROP POLICY IF EXISTS "Allow delete reports" ON "public"."external_user_monthly_reports";
+
 CREATE POLICY "Allow view reports"
 ON "public"."external_user_monthly_reports"
 AS PERMISSIVE
@@ -306,6 +311,10 @@ USING (
 
 -- 3b. user_group_posts
 DROP POLICY IF EXISTS "Allow access for workspace users" ON "public"."user_group_posts";
+DROP POLICY IF EXISTS "Allow view posts" ON "public"."user_group_posts";
+DROP POLICY IF EXISTS "Allow create posts" ON "public"."user_group_posts";
+DROP POLICY IF EXISTS "Allow update posts" ON "public"."user_group_posts";
+DROP POLICY IF EXISTS "Allow delete posts" ON "public"."user_group_posts";
 
 CREATE POLICY "Allow view posts"
 ON "public"."user_group_posts"

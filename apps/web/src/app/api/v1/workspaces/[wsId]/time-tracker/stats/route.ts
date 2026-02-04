@@ -7,6 +7,17 @@ const querySchema = z.object({
   userId: process.env.NODE_ENV === 'development' ? z.string() : z.uuid(),
   isPersonal: z.enum(['true', 'false']).transform((val) => val === 'true'),
   timezone: z.string().default('UTC'),
+  summaryOnly: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((val) => val === 'true'),
+  daysBack: z
+    .string()
+    .optional()
+    .refine((val) => val === undefined || /^\d+$/.test(val), {
+      message: 'daysBack must be a non-negative integer',
+    })
+    .transform((val) => (val ? Number.parseInt(val, 10) : 365)),
 });
 
 const dailyActivitySchema = z.object({
@@ -42,7 +53,7 @@ export async function GET(
       );
     }
 
-    const { userId, isPersonal, timezone } = result.data;
+    const { userId, isPersonal, timezone, summaryOnly, daysBack } = result.data;
 
     const supabase = await createClient();
 
@@ -65,6 +76,7 @@ export async function GET(
       p_ws_id: normalizedWsId,
       p_is_personal: isPersonal,
       p_timezone: timezone,
+      p_days_back: summaryOnly ? 0 : daysBack,
     });
 
     if (error) {
