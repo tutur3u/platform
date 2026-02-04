@@ -1,6 +1,6 @@
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { Node, nodeInputRule } from '@tiptap/react';
-import { Plugin, PluginKey, type EditorState } from 'prosemirror-state';
+import { type EditorState, Plugin, PluginKey } from 'prosemirror-state';
 import { toast } from '../sonner';
 import { getVideoDimensions, MAX_VIDEO_SIZE } from './media-utils';
 import {

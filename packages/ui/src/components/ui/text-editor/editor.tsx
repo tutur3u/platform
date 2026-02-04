@@ -272,7 +272,9 @@ export function RichTextEditor({
       readOnly,
     }),
     // Migrate inline images to block-level for backward compatibility
-    content: allowCollaboration ? undefined : migrateInlineImagesToBlock(content),
+    content: allowCollaboration
+      ? undefined
+      : migrateInlineImagesToBlock(content),
     editable: editable && !readOnly,
     immediatelyRender: false,
     editorProps: {

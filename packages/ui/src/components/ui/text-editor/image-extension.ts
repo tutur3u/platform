@@ -1,5 +1,5 @@
 import { Decoration, DecorationSet, type EditorView } from '@tiptap/pm/view';
-import { Plugin, PluginKey, type EditorState } from 'prosemirror-state';
+import { type EditorState, Plugin, PluginKey } from 'prosemirror-state';
 import ImageResize from 'tiptap-extension-resize-image';
 import {
   getImageDimensions,
