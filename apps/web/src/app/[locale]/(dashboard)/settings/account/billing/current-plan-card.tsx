@@ -51,7 +51,7 @@ export default function CurrentPlanCard() {
         </div>
 
         {/* Upgrade Preview */}
-        {/*<div className="flex flex-col justify-between rounded-lg border bg-linear-to-br from-purple-50 to-blue-50 p-6 dark:from-purple-950/20 dark:to-blue-950/20">
+        <div className="flex flex-col justify-between rounded-lg border bg-linear-to-br from-purple-50 to-blue-50 p-6 dark:from-purple-950/20 dark:to-blue-950/20">
           <div>
             <p className="font-medium text-muted-foreground text-sm uppercase tracking-wider">
               Next tier: {t('pro-plan')}
@@ -68,7 +68,7 @@ export default function CurrentPlanCard() {
               Unlimited meetings, advanced AI features, and priority support.
             </p>
           </div>
-        </div>*/}
+        </div>
       </div>
     </div>
   );
