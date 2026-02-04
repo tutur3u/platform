@@ -1,7 +1,7 @@
 import { Users } from '@tuturuuu/icons';
 import {
-  createClient,
   createAdminClient,
+  createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUserReport } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
