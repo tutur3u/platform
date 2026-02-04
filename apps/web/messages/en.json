@@ -5988,6 +5988,18 @@
       "weekly": "Weekly",
       "weekly_goal_min": "Weekly Goal (minutes, optional)"
     },
+    "approvals": {
+      "title": "Approvals",
+      "description": "Configure approval workflows for posts and reports",
+      "enable_post_approval": "Enable Post Approval",
+      "enable_post_approval_description": "When enabled, all posts in user groups will require approval from a person with adequate permissions.",
+      "enable_report_approval": "Enable Report Approval",
+      "enable_report_approval_description": "When enabled, all reports in user groups will require approval from a person with adequate permissions.",
+      "save": "Save Changes",
+      "saving": "Saving...",
+      "update_error": "Failed to update approval settings",
+      "update_success": "Approval settings updated successfully"
+    },
     "user": {
       "profile": "Profile",
       "profile_description": "Manage your profile information",

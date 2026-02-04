@@ -19207,6 +19207,7 @@ export type Database = {
       get_task_workspace_id: { Args: { p_task_id: string }; Returns: string };
       get_time_tracker_stats: {
         Args: {
+          p_days_back?: number;
           p_is_personal?: boolean;
           p_timezone?: string;
           p_user_id: string;

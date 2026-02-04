@@ -101,6 +101,7 @@ import NotificationSettings from './account/notification-settings';
 import SecuritySettings from './account/security-settings';
 import SessionSettings from './account/session-settings';
 import AppearanceSettings from './appearance-settings';
+import { ApprovalsSettings } from './approvals/approvals-settings';
 import AttendanceDisplaySettings from './attendance/attendance-display-settings';
 import { CalendarSettingsContent } from './calendar/calendar-settings-content';
 import { CalendarSettingsWrapper } from './calendar/calendar-settings-wrapper';
@@ -347,6 +348,13 @@ export function SettingsDialog({
                   'Groups',
                   'Excluded',
                 ],
+              },
+              {
+                name: 'approvals',
+                label: t('settings.approvals.title'),
+                icon: ClipboardList,
+                description: t('settings.approvals.description'),
+                keywords: ['Approvals', 'Posts', 'Reports'],
               },
             ],
           },
@@ -942,6 +950,12 @@ export function SettingsDialog({
                 {activeTab === 'database_filters' && wsId && (
                   <div className="h-full">
                     <UsersManagementSettings wsId={wsId} />
+                  </div>
+                )}
+
+                {activeTab === 'approvals' && wsId && (
+                  <div className="h-full">
+                    <ApprovalsSettings wsId={wsId} />
                   </div>
                 )}
 

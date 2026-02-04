@@ -5988,6 +5988,18 @@
       "weekly": "Hàng tuần",
       "weekly_goal_min": "Mục tiêu hàng tuần (phút, tùy chọn)"
     },
+    "approvals": {
+      "title": "Phê duyệt",
+      "description": "Cấu hình quy trình phê duyệt cho bài viết và báo cáo",
+      "enable_post_approval": "Bật phê duyệt bài viết",
+      "enable_post_approval_description": "Khi được bật, tất cả bài viết trong nhóm người dùng sẽ yêu cầu sự phê duyệt từ người có quyền hạn phù hợp.",
+      "enable_report_approval": "Bật phê duyệt báo cáo",
+      "enable_report_approval_description": "Khi được bật, tất cả báo cáo trong nhóm người dùng sẽ yêu cầu sự phê duyệt từ người có quyền hạn phù hợp.",
+      "save": "Lưu thay đổi",
+      "saving": "Đang lưu...",
+      "update_error": "Không thể cập nhật cài đặt phê duyệt",
+      "update_success": "Cập nhật cài đặt phê duyệt thành công"
+    },
     "user": {
       "profile": "Hồ sơ",
       "profile_description": "Quản lý thông tin hồ sơ của bạn",
