@@ -23,14 +23,18 @@ export async function createCustomerSession({
   supabase,
   wsId,
 }: CreateCustomerSessionOptions) {
-  const polarCustomerId = await getPolarCustomer({
+  const polarCustomer = await getPolarCustomer({
     polar,
     supabase,
     wsId,
   });
 
+  if (!polarCustomer) {
+    throw new Error('Polar customer not found for workspace');
+  }
+
   const session = await polar.customerSessions.create({
-    customerId: polarCustomerId,
+    customerId: polarCustomer.id,
   });
 
   return session;
@@ -78,12 +82,13 @@ export async function createPolarCustomer({
       : convertWorkspaceIDToExternalID(wsId),
   });
 
-  if (!newCustomer?.id) {
+  if (!newCustomer) {
     throw new Error('Failed to create new customer in Polar');
   }
 
-  console.log('Created new Polar customer:', newCustomer.id);
-  return newCustomer.id;
+  console.log('Created new Polar customer:', newCustomer);
+
+  return newCustomer;
 }
 
 /**
@@ -97,32 +102,23 @@ export async function getPolarCustomer({
   // Get workspace with owner email (join through users table)
   const { data: workspace, error: workspaceError } = await supabase
     .from('workspaces')
-    .select('*, users!creator_id(display_name, user_private_details(email))')
+    .select('*')
     .eq('id', wsId)
     .single();
 
   if (workspaceError || !workspace) {
-    throw new Error('Unable to retrieve workspace information');
+    return null;
   }
 
   const ownerId = workspace.creator_id;
-  const ownerEmail = workspace.users?.user_private_details?.email;
-
-  if (!ownerEmail) {
-    throw new Error('Unable to retrieve workspace owner email');
-  }
 
   const isPersonalWorkspace = workspace.personal;
 
-  const newCustomer = await polar.customers.getExternal({
+  const customer = await polar.customers.getExternal({
     externalId: isPersonalWorkspace
       ? ownerId
       : convertWorkspaceIDToExternalID(wsId),
   });
 
-  if (!newCustomer?.id) {
-    throw new Error('Failed to get Polar customer');
-  }
-
-  return newCustomer.id;
+  return customer;
 }

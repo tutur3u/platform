@@ -91,9 +91,9 @@ const ensureSubscription = async (wsId: string) => {
     const supabase = await createClient();
     const polar = createPolarClient();
 
-    const customerId = await getPolarCustomer({ polar, supabase, wsId });
+    const customer = await getPolarCustomer({ polar, supabase, wsId });
 
-    if (!customerId) {
+    if (!customer) {
       // Create Polar customer if not exists
       await createPolarCustomer({ polar, supabase, wsId });
     }
