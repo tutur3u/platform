@@ -151,27 +151,50 @@ export default function InvoiceCard({
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
-        allowTaint: true,
         backgroundColor: isDarkPreview ? '#1a1a1a' : '#ffffff',
-        width: element.scrollWidth,
-        height: element.scrollHeight,
+        width: element.offsetWidth,
+        height: element.offsetHeight,
       });
 
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) return;
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `invoice-${invoice.id}.png`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-        },
-        'image/png',
-        1.0
-      );
+      await new Promise<void>((resolve, reject) => {
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(new Error('Failed to create image'));
+              return;
+            }
+
+            try {
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = url;
+
+              const sanitizedId = invoice.id
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/đ/g, 'd')
+                .replace(/Đ/g, 'D')
+                .replace(/[^a-z0-9]/gi, '_')
+                .toLowerCase()
+                .replace(/_+/g, '_')
+                .replace(/^_|_$/g, '');
+
+              link.download = `invoice-${sanitizedId}.png`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              URL.revokeObjectURL(url);
+              resolve();
+            } catch (error) {
+              reject(error);
+            }
+          },
+          'image/png',
+          1.0
+        );
+      });
+    } catch (error) {
+      console.error('PNG export failed:', error);
     } finally {
       setIsExporting(false);
     }
