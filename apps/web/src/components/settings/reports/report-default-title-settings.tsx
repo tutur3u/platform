@@ -1,4 +1,3 @@
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -12,6 +11,7 @@ import {
 } from '@tuturuuu/ui/form';
 import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { Input } from '@tuturuuu/ui/input';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';

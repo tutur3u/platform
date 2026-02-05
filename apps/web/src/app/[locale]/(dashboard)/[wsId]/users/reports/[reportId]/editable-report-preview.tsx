@@ -104,7 +104,17 @@ export default function EditableReportPreview({
     scoreCalculationMethod,
   });
 
-  const getConfig = (id: string) => configs.find((c) => c.id === id)?.value;
+  const configMap = useMemo(() => {
+    const map = new Map<string, string>();
+    configs.forEach((config) => {
+      if (config.id && config.value) {
+        map.set(config.id, config.value);
+      }
+    });
+    return map;
+  }, [configs]);
+
+  const getConfig = (id: string) => configMap.get(id);
 
   const getDefaultReportTitle = () => {
     const baseTitle = getConfig('REPORT_DEFAULT_TITLE')?.trim();

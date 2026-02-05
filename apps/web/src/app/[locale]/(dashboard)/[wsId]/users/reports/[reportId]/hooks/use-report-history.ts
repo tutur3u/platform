@@ -6,12 +6,19 @@ import type { ReportLogEntry } from '@tuturuuu/types';
 import { formatDistanceToNow } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
 import { useLocale } from 'next-intl';
-import { useState } from 'react';
-import { useLatestApprovedLog } from '../../../approvals/hooks/use-approvals';
+import { useMemo, useState } from 'react';
+import type { SelectedLog } from '../components/report-history';
 
 export type ReportHistoryEntry = ReportLogEntry & {
   creator_name?: string | null;
 };
+
+interface ReportLogWithCreator extends ReportLogEntry {
+  creator: {
+    full_name: string | null;
+    display_name: string | null;
+  } | null;
+}
 
 export function useReportHistory({
   wsId,
@@ -28,23 +35,13 @@ export function useReportHistory({
   const supabase = createClient();
 
   const isRejected = reportApprovalStatus === 'REJECTED';
-  const { data: latestApprovedLog, isLoading: isLoadingApprovedLog } =
-    useLatestApprovedLog(isRejected ? reportId || null : null);
 
-  const isLoadingRejectedBase = isRejected && isLoadingApprovedLog;
-
-  const [selectedLog, setSelectedLog] = useState<{
-    id: string;
-    title?: string | null;
-    content?: string | null;
-    feedback?: string | null;
-    score?: number | null;
-    scores?: number[] | null;
-  } | null>(null);
+  const [selectedLog, setSelectedLog] = useState<SelectedLog | null>(null);
 
   const logsQuery: UseQueryResult<ReportHistoryEntry[]> = useQuery({
     queryKey: ['ws', wsId, 'report', reportId, 'logs'],
     enabled: Boolean(reportId) && !isNew,
+    staleTime: 5 * 60 * 1000,
     queryFn: async (): Promise<ReportHistoryEntry[]> => {
       const { data, error } = await supabase
         .from('external_user_monthly_report_logs')
@@ -54,7 +51,7 @@ export function useReportHistory({
         .eq('report_id', reportId as string)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data ?? []).map((raw: any) => ({
+      return (data ?? []).map((raw: ReportLogWithCreator) => ({
         ...raw,
         creator_name: raw.creator?.display_name
           ? raw.creator.display_name
@@ -62,6 +59,16 @@ export function useReportHistory({
       }));
     },
   });
+
+  const latestApprovedLog = useMemo(() => {
+    if (!isRejected || !logsQuery.data) return null;
+    return (
+      logsQuery.data.find((log) => log.report_approval_status === 'APPROVED') ||
+      null
+    );
+  }, [isRejected, logsQuery.data]);
+
+  const isLoadingRejectedBase = isRejected && logsQuery.isLoading;
 
   const formatRelativeTime = (dateIso?: string) => {
     if (!dateIso) return '';

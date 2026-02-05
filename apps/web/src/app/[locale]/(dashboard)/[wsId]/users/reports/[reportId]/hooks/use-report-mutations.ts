@@ -240,7 +240,11 @@ export function useReportMutations({
       }
     },
     onError: (err) => {
-      toast.error(err?.message || t('ws-reports.failed_delete_report'));
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : t('ws-reports.failed_delete_report')
+      );
     },
   });
 

@@ -11,7 +11,7 @@ import {
 import { useLocale, useTranslations } from 'next-intl';
 import type { ReportHistoryEntry } from '../hooks/use-report-history';
 
-interface SelectedLog {
+export interface SelectedLog {
   id: string;
   title?: string | null;
   content?: string | null;
