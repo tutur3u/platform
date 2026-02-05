@@ -54,8 +54,14 @@ export default function BillingSettings({ wsId }: BillingSettingsProps) {
     return <NoSubscriptionFound wsId={wsId} error="SUBSCRIPTION_NOT_FOUND" />;
   }
 
-  const { subscription, products, orders, seatStatus, hasManagePermission } =
-    data;
+  const {
+    isPersonalWorkspace,
+    subscription,
+    products,
+    orders,
+    seatStatus,
+    hasManagePermission,
+  } = data;
 
   const dateLocale = locale === 'vi' ? vi : enUS;
   const formatDate = (date: string) =>
@@ -89,6 +95,7 @@ export default function BillingSettings({ wsId }: BillingSettingsProps) {
   return (
     <div className="space-y-6">
       <BillingClient
+        isPersonalWorkspace={isPersonalWorkspace}
         currentPlan={currentPlan}
         products={products}
         product_id={subscription?.product.id || ''}

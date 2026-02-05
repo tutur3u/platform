@@ -1,5 +1,6 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { createPolarCustomer, getPolarCustomer } from '@/utils/customer-helper';
 import { getSeatStatus } from '@/utils/seat-limits';
@@ -208,13 +209,19 @@ export async function GET(
     }
 
     // Fetch all billing data in parallel
-    const [products, subscriptionResult, orders, hasManagePermission] =
-      await Promise.all([
-        fetchProducts(),
-        ensureSubscription(wsId),
-        fetchWorkspaceOrders(wsId),
-        checkManageSubscriptionPermission(wsId, user.id),
-      ]);
+    const [
+      isPersonal,
+      products,
+      subscriptionResult,
+      orders,
+      hasManagePermission,
+    ] = await Promise.all([
+      isPersonalWorkspace(wsId),
+      fetchProducts(),
+      ensureSubscription(wsId),
+      fetchWorkspaceOrders(wsId),
+      checkManageSubscriptionPermission(wsId, user.id),
+    ]);
 
     // Handle subscription creation failure
     if (!subscriptionResult.subscription) {
@@ -230,6 +237,7 @@ export async function GET(
     const seatStatus = await getSeatStatus(supabase, wsId);
 
     return NextResponse.json({
+      isPersonalWorkspace: isPersonal,
       subscription,
       products,
       orders,
