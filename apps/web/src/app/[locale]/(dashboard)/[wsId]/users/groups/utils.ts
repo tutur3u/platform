@@ -67,6 +67,7 @@ export async function fetchManagersForGroups(
     avatar_url?: string | null;
     display_name?: string | null;
     email?: string | null;
+    platform_user_id?: string | null;
   }): ManagerUser | null => {
     if (!user.id) return null;
     return {
@@ -75,13 +76,14 @@ export async function fetchManagersForGroups(
       avatar_url: user.avatar_url ?? null,
       display_name: user.display_name ?? null,
       email: user.email ?? null,
+      hasLinkedPlatformUser: !!user.platform_user_id,
     };
   };
 
   const { data: managersData, error: managersError } = await supabase
     .from('workspace_user_groups_users')
     .select(
-      'group_id, user:workspace_users!inner(id, full_name, avatar_url, display_name, email)'
+      'group_id, user:workspace_users!inner(id, full_name, avatar_url, display_name, email, workspace_user_linked_users(platform_user_id))'
     )
     .in('group_id', groupIds)
     .eq('role', 'TEACHER');
@@ -110,7 +112,26 @@ export async function fetchManagersForGroups(
           : [];
 
       users.forEach((user) => {
-        const manager = toManagerUser(user ?? {});
+        if (!user) return;
+
+        // Extract platform_user_id from the linked_users join
+        const linkedUsers = user.workspace_user_linked_users;
+        const platformUserId = linkedUsers
+          ? Array.isArray(linkedUsers)
+            ? linkedUsers[0]?.platform_user_id
+            : (linkedUsers as { platform_user_id?: string }).platform_user_id
+          : undefined;
+
+        const userWithPlatformId = {
+          id: user.id,
+          full_name: user.full_name,
+          avatar_url: user.avatar_url,
+          display_name: user.display_name,
+          email: user.email,
+          platform_user_id: platformUserId,
+        };
+
+        const manager = toManagerUser(userWithPlatformId);
         if (manager) groupManagers.push(manager);
       });
       return acc;

@@ -18,5 +18,6 @@ export interface UserGroup extends Entity {
     avatar_url?: string | null;
     display_name?: string | null;
     email?: string | null;
+    hasLinkedPlatformUser?: boolean;
   }[];
 }

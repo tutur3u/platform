@@ -1,7 +1,7 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
-import { Check, Users, X } from '@tuturuuu/icons';
+import { Check, Link2, Link2Off, Users, X } from '@tuturuuu/icons';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
@@ -98,9 +98,16 @@ export const getUserGroupColumns = ({
               </AvatarFallback>
             </Avatar>
             <div className="flex flex-col overflow-hidden">
-              <span className="truncate font-medium text-sm">
-                {m.full_name || m.display_name || m.email}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="truncate font-medium text-sm">
+                  {m.full_name || m.display_name || m.email}
+                </span>
+                {m.hasLinkedPlatformUser ? (
+                  <Link2 className="h-3.5 w-3.5 shrink-0 text-dynamic-green" />
+                ) : (
+                  <Link2Off className="h-3.5 w-3.5 shrink-0 text-dynamic-red" />
+                )}
+              </div>
               {m.email && (m.full_name || m.display_name) && (
                 <span className="truncate text-muted-foreground text-xs">
                   {m.email}
@@ -138,9 +145,16 @@ export const getUserGroupColumns = ({
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col overflow-hidden">
-                      <span className="truncate font-medium text-sm">
-                        {m.full_name || m.display_name}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="truncate font-medium text-sm">
+                          {m.full_name || m.display_name}
+                        </span>
+                        {m.hasLinkedPlatformUser ? (
+                          <Link2 className="h-3.5 w-3.5 shrink-0 text-dynamic-green" />
+                        ) : (
+                          <Link2Off className="h-3.5 w-3.5 shrink-0 text-dynamic-red" />
+                        )}
+                      </div>
                       <span className="truncate text-muted-foreground text-xs">
                         {m.email}
                       </span>
