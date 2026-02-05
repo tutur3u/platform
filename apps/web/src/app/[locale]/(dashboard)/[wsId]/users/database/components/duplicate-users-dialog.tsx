@@ -3,6 +3,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle,
+  CheckCircle,
   ChevronLeft,
   ChevronRight,
   Filter,
@@ -16,6 +17,7 @@ import type {
   DuplicateCluster,
   DuplicateDetectionResponse,
   MergeResult,
+  PhasedMergeResult,
 } from '@tuturuuu/types/primitives';
 import {
   AlertDialog,
@@ -82,6 +84,24 @@ export function DuplicateUsersDialog({ wsId, onMergeComplete }: Props) {
   );
   const [showCollisionWarning, setShowCollisionWarning] = useState(false);
 
+  // Progress tracking for phased merge
+  const [mergePhase, setMergePhase] = useState<string>('');
+  const [currentTable, setCurrentTable] = useState<string>('');
+  const [tablesCompleted, setTablesCompleted] = useState<number>(0);
+  const [finalPhaseCompleted, setFinalPhaseCompleted] = useState<number>(0);
+
+  // Total operations: 26 table/column pairs + 4 final phases
+  const TOTAL_TABLES = 26;
+  const TOTAL_FINAL_PHASES = 4; // phases 2, 3, 4, 5
+
+  // Phase display names for final phases
+  const FINAL_PHASE_NAMES: Record<number, string> = {
+    2: 'Composite records',
+    3: 'Custom fields',
+    4: 'Platform link',
+    5: 'Final cleanup',
+  };
+
   // Filter clusters based on selected filter
   // 'linked-virtual': Only clusters with at least one platform-linked user
   // 'all': All clusters including virtual-only merges
@@ -105,6 +125,10 @@ export function DuplicateUsersDialog({ wsId, onMergeComplete }: Props) {
     setShowMergeConfirm(false);
     setLastMergeResult(null);
     setShowCollisionWarning(false);
+    setMergePhase('');
+    setCurrentTable('');
+    setTablesCompleted(0);
+    setFinalPhaseCompleted(0);
   };
 
   // Check if a cluster has both users linked to different platform accounts
@@ -197,9 +221,15 @@ export function DuplicateUsersDialog({ wsId, onMergeComplete }: Props) {
     cluster: DuplicateCluster,
     targetId: string
   ) => {
+    const MAX_RETRIES = 5;
+
     try {
       setState('merging');
       setProgress(0);
+      setMergePhase('Starting...');
+      setCurrentTable('');
+      setTablesCompleted(0);
+      setFinalPhaseCompleted(0);
 
       // Get source IDs (all users that are NOT the target)
       const sourceUsers = cluster.users.filter((u) => u.id !== targetId);
@@ -213,31 +243,121 @@ export function DuplicateUsersDialog({ wsId, onMergeComplete }: Props) {
         throw new Error('No source user found');
       }
 
-      setProgress(30);
+      setMergePhase('Migrating data...');
 
-      const response = await fetch(`/api/v1/workspaces/${wsId}/users/merge`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sourceId: sourceUser.id,
-          targetId: targetId,
-        }),
-      });
+      // Automatic retry loop: if the server returns a partial completion
+      // (e.g. timeout on a specific table), we resume from where it left off
+      let nextTableIndex = 0;
+      let retries = 0;
+      let finalResult: PhasedMergeResult | null = null;
 
-      setProgress(70);
+      while (retries < MAX_RETRIES) {
+        const response = await fetch(`/api/v1/workspaces/${wsId}/users/merge`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sourceId: sourceUser.id,
+            targetId: targetId,
+            startTableIndex: nextTableIndex,
+          }),
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to merge users');
+        const result: PhasedMergeResult = await response.json();
+
+        // Update progress based on completed operations
+        const totalOps = TOTAL_TABLES + TOTAL_FINAL_PHASES;
+
+        if (result.phaseResults && result.phaseResults.length > 0) {
+          const phase1Result = result.phaseResults.find((p) => p.phase === 1);
+          if (phase1Result) {
+            setTablesCompleted(TOTAL_TABLES);
+          }
+
+          const finalPhasesCompleted = result.phaseResults.filter(
+            (p) => typeof p.phase === 'number' && p.phase >= 2 && p.phase <= 5
+          ).length;
+          setFinalPhaseCompleted(finalPhasesCompleted);
+
+          const completedOps =
+            (phase1Result ? TOTAL_TABLES : 0) + finalPhasesCompleted;
+          setProgress(Math.round((completedOps / totalOps) * 100));
+        }
+
+        // If partial with a nextTableIndex, automatically retry from there
+        if (
+          result.partial &&
+          !result.success &&
+          result.nextTableIndex != null
+        ) {
+          nextTableIndex = result.nextTableIndex;
+          retries++;
+
+          // Show current progress to user
+          if (result.currentTable) {
+            setCurrentTable(result.currentTable);
+            setMergePhase(
+              `Retrying from ${result.currentTable} (attempt ${retries + 1}/${MAX_RETRIES})...`
+            );
+          }
+
+          // Update table progress based on completed index
+          if (result.completedTableIndex != null) {
+            setTablesCompleted(
+              Math.min(result.completedTableIndex + 1, TOTAL_TABLES)
+            );
+            setProgress(
+              Math.round(((result.completedTableIndex + 1) / totalOps) * 100)
+            );
+          }
+
+          continue;
+        }
+
+        // If partial failure for a different reason (phase 2-5 timeout), stop
+        if (result.partial && !result.success) {
+          if (result.nextPhase) {
+            const phaseName =
+              FINAL_PHASE_NAMES[result.nextPhase] ??
+              `Phase ${result.nextPhase}`;
+            setMergePhase(`Paused at: ${phaseName}`);
+          }
+          toast.warning(
+            'Merge paused due to an error. Please try again to continue.'
+          );
+          setState('reviewing');
+          return;
+        }
+
+        if (!response.ok && !result.success) {
+          throw new Error(result.error || 'Failed to merge users');
+        }
+
+        // Success!
+        finalResult = result;
+        break;
       }
 
-      const result: MergeResult = await response.json();
-      setProgress(100);
+      // Exhausted retries without success
+      if (!finalResult) {
+        toast.warning(
+          `Merge could not complete after ${MAX_RETRIES} retries. Please try again.`
+        );
+        setState('reviewing');
+        return;
+      }
 
-      if (result.success) {
+      setProgress(100);
+      setMergePhase('Complete!');
+      setTablesCompleted(TOTAL_TABLES);
+      setFinalPhaseCompleted(TOTAL_FINAL_PHASES);
+
+      if (finalResult.success) {
         // Check if there were collisions (data loss)
-        if (result.collisionTables && result.collisionTables.length > 0) {
-          setLastMergeResult(result);
+        if (
+          finalResult.collisionTables &&
+          finalResult.collisionTables.length > 0
+        ) {
+          setLastMergeResult(finalResult);
           setShowCollisionWarning(true);
           toast.warning(t('merge_collision_occurred'));
         } else {
@@ -266,11 +386,12 @@ export function DuplicateUsersDialog({ wsId, onMergeComplete }: Props) {
           setState('reviewing');
         }
       } else {
-        throw new Error(result.error || 'Merge failed');
+        throw new Error(finalResult.error || 'Merge failed');
       }
     } catch (error) {
       console.error('Error merging users:', error);
       toast.error(t('duplicate_merge_failed'));
+      setMergePhase('Failed');
       setState('reviewing');
     }
   };
@@ -382,7 +503,7 @@ export function DuplicateUsersDialog({ wsId, onMergeComplete }: Props) {
           </Button>
         </DialogTrigger>
 
-        <DialogContent className="flex max-h-[85vh] flex-col overflow-hidden sm:max-w-[650px]">
+        <DialogContent className="flex max-h-[85vh] flex-col overflow-hidden sm:max-w-162.5">
           <DialogHeader className="shrink-0">
             <DialogTitle>{t('duplicates')}</DialogTitle>
             <DialogDescription>{t('duplicates_description')}</DialogDescription>
@@ -401,7 +522,7 @@ export function DuplicateUsersDialog({ wsId, onMergeComplete }: Props) {
           {/* Detecting/Merging state - show progress */}
           {(state === 'detecting' || state === 'merging') && (
             <div className="flex flex-1 flex-col justify-center gap-4 py-8">
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-sm">
                     {state === 'detecting'
@@ -413,6 +534,83 @@ export function DuplicateUsersDialog({ wsId, onMergeComplete }: Props) {
                   </span>
                 </div>
                 <Progress value={progress} className="h-2" />
+
+                {/* Progress details for merging state */}
+                {state === 'merging' && mergePhase && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      <span className="text-muted-foreground">
+                        {mergePhase}
+                      </span>
+                    </div>
+
+                    {/* Current table being processed */}
+                    {currentTable && (
+                      <div className="rounded-md bg-muted/50 px-3 py-2 text-xs">
+                        <span className="text-muted-foreground">
+                          Processing:{' '}
+                        </span>
+                        <span className="font-mono">{currentTable}</span>
+                      </div>
+                    )}
+
+                    {/* Progress indicators - simplified view */}
+                    <div className="grid grid-cols-2 gap-2">
+                      {/* Tables migration progress */}
+                      <div
+                        className={`flex flex-col items-center gap-1 rounded-md p-3 text-xs ${
+                          tablesCompleted >= TOTAL_TABLES
+                            ? 'bg-green-500/10 text-green-600 dark:text-green-400'
+                            : tablesCompleted > 0
+                              ? 'bg-primary/10 text-primary'
+                              : 'bg-muted text-muted-foreground'
+                        }`}
+                      >
+                        <div className="flex items-center gap-1">
+                          {tablesCompleted >= TOTAL_TABLES ? (
+                            <CheckCircle className="h-4 w-4" />
+                          ) : tablesCompleted > 0 ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : null}
+                          <span className="font-medium">Data Migration</span>
+                        </div>
+                        <span className="text-[10px]">
+                          {tablesCompleted >= TOTAL_TABLES
+                            ? 'Complete'
+                            : `${TOTAL_TABLES} tables`}
+                        </span>
+                      </div>
+
+                      {/* Final phases progress */}
+                      <div
+                        className={`flex flex-col items-center gap-1 rounded-md p-3 text-xs ${
+                          finalPhaseCompleted >= TOTAL_FINAL_PHASES
+                            ? 'bg-green-500/10 text-green-600 dark:text-green-400'
+                            : finalPhaseCompleted > 0 ||
+                                tablesCompleted >= TOTAL_TABLES
+                              ? 'bg-primary/10 text-primary'
+                              : 'bg-muted text-muted-foreground'
+                        }`}
+                      >
+                        <div className="flex items-center gap-1">
+                          {finalPhaseCompleted >= TOTAL_FINAL_PHASES ? (
+                            <CheckCircle className="h-4 w-4" />
+                          ) : finalPhaseCompleted > 0 ||
+                            tablesCompleted >= TOTAL_TABLES ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : null}
+                          <span className="font-medium">Finalization</span>
+                        </div>
+                        <span className="text-[10px]">
+                          {finalPhaseCompleted >= TOTAL_FINAL_PHASES
+                            ? 'Complete'
+                            : `${finalPhaseCompleted}/${TOTAL_FINAL_PHASES} phases`}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -458,7 +656,7 @@ export function DuplicateUsersDialog({ wsId, onMergeComplete }: Props) {
                         handleFilterChange(v as ClusterFilter)
                       }
                     >
-                      <SelectTrigger className="h-8 w-[180px]">
+                      <SelectTrigger className="h-8 w-45">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>

@@ -4361,7 +4361,7 @@
           "question": "Tôi có tiết kiệm với thanh toán hàng năm không?"
         },
         "q3": {
-          "answer": "Gói trả phí được tính theo người dùng, theo workspace. Gói Miễn Phí có sẵn cho tất cả workspaces theo mặc định.",
+          "answer": "Mỗi workspace có gói riêng. Gói trả phí tính theo người dùng trong workspace đó. Bạn có thể dùng gói khác nhau cho các workspace khác nhau. Mỗi tài khoản được tối đa 10 workspace miễn phí—workspace thêm cần gói trả phí.",
           "question": "Giá theo workspace hoạt động thế nào?"
         },
         "q4": {
@@ -4419,7 +4419,7 @@
         ],
         "title": "Trả theo nhu cầu sử dụng"
       },
-      "subtitle": "Theo workspace, theo người. Bắt đầu miễn phí, scale khi cần.",
+      "subtitle": "Mỗi workspace có gói riêng, tính phí theo người dùng. Tối đa 10 workspace miễn phí mỗi tài khoản.",
       "tiers": {
         "enterprise": {
           "cta": "Liên Hệ Tư Vấn",

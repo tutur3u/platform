@@ -4361,8 +4361,8 @@
           "question": "Do I save money with annual billing?"
         },
         "q3": {
-          "answer": "Paid plans are billed per user, per workspace. The Free tier is available for all workspaces by default.",
-          "question": "How does pricing work per workspace?"
+          "answer": "Each workspace has its own plan. Paid plans are billed per user within that workspace. You can have different plans for different workspaces. Every account gets up to 10 free workspaces—additional workspaces require a paid plan.",
+          "question": "How does per-workspace pricing work?"
         },
         "q4": {
           "answer": "Contact our sales team for custom pricing, dedicated support, and enterprise features tailored to your organization.",
@@ -4419,7 +4419,7 @@
         ],
         "title": "Pay As You Go"
       },
-      "subtitle": "Per workspace, per user on paid plans. Start free, scale as you grow.",
+      "subtitle": "Plans are per workspace, billed per user. Up to 10 free workspaces per account.",
       "tiers": {
         "enterprise": {
           "cta": "Contact Sales",
@@ -4474,7 +4474,7 @@
         "pro": {
           "badge": "Most Powerful",
           "cta": "Get Pro",
-          "description": "For teams that need full power",
+          "description": "For power teams that need it all",
           "features": [
             "Everything in Plus +",
             "Unlimited AI",

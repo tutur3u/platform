@@ -20189,8 +20189,71 @@ export type Database = {
         Args: { _source_id: string; _target_id: string; _ws_id: string };
         Returns: Json;
       };
+      merge_workspace_users_batch_update: {
+        Args: {
+          _batch_size?: number;
+          _column_name: string;
+          _source_id: string;
+          _table_name: string;
+          _target_id: string;
+          _ws_id: string;
+        };
+        Returns: Json;
+      };
       merge_workspace_users_phase1: {
         Args: { _source_id: string; _target_id: string; _ws_id: string };
+        Returns: Json;
+      };
+      merge_workspace_users_phase1a: {
+        Args: { _source_id: string; _target_id: string; _ws_id: string };
+        Returns: Json;
+      };
+      merge_workspace_users_phase1a_batch: {
+        Args: {
+          _batch_size?: number;
+          _source_id: string;
+          _target_id: string;
+          _ws_id: string;
+        };
+        Returns: Json;
+      };
+      merge_workspace_users_phase1b: {
+        Args: { _source_id: string; _target_id: string; _ws_id: string };
+        Returns: Json;
+      };
+      merge_workspace_users_phase1b_batch: {
+        Args: {
+          _batch_size?: number;
+          _source_id: string;
+          _target_id: string;
+          _ws_id: string;
+        };
+        Returns: Json;
+      };
+      merge_workspace_users_phase1c: {
+        Args: { _source_id: string; _target_id: string; _ws_id: string };
+        Returns: Json;
+      };
+      merge_workspace_users_phase1c_batch: {
+        Args: {
+          _batch_size?: number;
+          _source_id: string;
+          _target_id: string;
+          _ws_id: string;
+        };
+        Returns: Json;
+      };
+      merge_workspace_users_phase1d: {
+        Args: { _source_id: string; _target_id: string; _ws_id: string };
+        Returns: Json;
+      };
+      merge_workspace_users_phase1d_batch: {
+        Args: {
+          _batch_size?: number;
+          _source_id: string;
+          _target_id: string;
+          _ws_id: string;
+        };
         Returns: Json;
       };
       merge_workspace_users_phase2: {
@@ -20213,6 +20276,17 @@ export type Database = {
         Args: {
           _source_id: string;
           _start_phase?: number;
+          _target_id: string;
+          _ws_id: string;
+        };
+        Returns: Json;
+      };
+      merge_workspace_users_table_batch: {
+        Args: {
+          _batch_size?: number;
+          _column_name: string;
+          _source_id: string;
+          _table_name: string;
           _target_id: string;
           _ws_id: string;
         };

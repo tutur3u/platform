@@ -96,13 +96,16 @@ export interface BulkMergeUsersResponse {
 
 /**
  * Request body for phased merge operation
- * Allows resuming from a specific phase if a previous attempt timed out
+ * Allows resuming from a specific table/phase if a previous attempt timed out
  */
 export interface PhasedMergeRequest {
   sourceId: string;
   targetId: string;
-  /** Starting phase (1-5). Default is 1. Use for resuming after timeout. */
-  startPhase?: number;
+  /**
+   * Starting table index (0-25). Default is 0. Use for resuming after timeout.
+   * There are 26 table/column pairs in phase 1, then phases 2-5 for finalization.
+   */
+  startTableIndex?: number;
 }
 
 /**
@@ -137,4 +140,14 @@ export interface PhasedMergeResult extends MergeResult {
   partial: boolean;
   /** Detailed results from each phase that was executed */
   phaseResults?: PhaseResult[];
+  /** Last completed table index during phase 1 (0-25) */
+  completedTableIndex?: number;
+  /** Next table index to process if timed out during phase 1 */
+  nextTableIndex?: number;
+  /** Current table being processed when timeout occurred */
+  currentTable?: string;
+  /** Current column being processed when timeout occurred */
+  currentColumn?: string;
+  /** Total rows updated across all operations */
+  totalRowsUpdated?: number;
 }
