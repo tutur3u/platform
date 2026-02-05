@@ -93,7 +93,7 @@ async function getPublicTemplates(): Promise<{ templates: BoardTemplate[] }> {
       name,
       description,
       visibility,
-      background_url,
+      background_path,
       content,
       created_at,
       updated_at
@@ -107,35 +107,52 @@ async function getPublicTemplates(): Promise<{ templates: BoardTemplate[] }> {
     return { templates: [] };
   }
 
-  const transformedTemplates: BoardTemplate[] = templates.map((template) => {
-    const content = template.content as {
-      lists?: Array<{ tasks?: unknown[] }>;
-      labels?: unknown[];
-    };
+  // Transform templates and generate signed URLs for backgrounds
+  const transformedTemplates: BoardTemplate[] = await Promise.all(
+    templates.map(async (template) => {
+      const content = template.content as {
+        lists?: Array<{ tasks?: unknown[] }>;
+        labels?: unknown[];
+      };
 
-    return {
-      id: template.id,
-      wsId: template.ws_id,
-      createdBy: template.created_by,
-      sourceBoardId: template.source_board_id,
-      name: template.name,
-      description: template.description,
-      visibility: template.visibility as 'private' | 'workspace' | 'public',
-      backgroundUrl: template.background_url,
-      createdAt: template.created_at,
-      updatedAt: template.updated_at,
-      isOwner: template.created_by === user?.id,
-      stats: {
-        lists: content.lists?.length || 0,
-        tasks:
-          content.lists?.reduce(
-            (acc, list) => acc + (list.tasks?.length || 0),
-            0
-          ) || 0,
-        labels: content.labels?.length || 0,
-      },
-    };
-  });
+      // Generate signed URL if there's a background path
+      let backgroundUrl: string | null = null;
+      if (template.background_path) {
+        try {
+          const { data: signedUrlData } = await supabase.storage
+            .from('workspaces')
+            .createSignedUrl(template.background_path, 3600); // 1 hour expiry
+
+          backgroundUrl = signedUrlData?.signedUrl || null;
+        } catch (error) {
+          console.error('Error generating signed URL for template:', error);
+        }
+      }
+
+      return {
+        id: template.id,
+        wsId: template.ws_id,
+        createdBy: template.created_by,
+        sourceBoardId: template.source_board_id,
+        name: template.name,
+        description: template.description,
+        visibility: template.visibility as 'private' | 'workspace' | 'public',
+        backgroundUrl, // Signed URL for display
+        createdAt: template.created_at,
+        updatedAt: template.updated_at,
+        isOwner: template.created_by === user?.id,
+        stats: {
+          lists: content.lists?.length || 0,
+          tasks:
+            content.lists?.reduce(
+              (acc, list) => acc + (list.tasks?.length || 0),
+              0
+            ) || 0,
+          labels: content.labels?.length || 0,
+        },
+      };
+    })
+  );
 
   return { templates: transformedTemplates };
 }

@@ -65,7 +65,10 @@ export function SaveAsTemplateDialog({
   const [includeDates, setIncludeDates] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [backgroundFiles, setBackgroundFiles] = useState<StatedFile[]>([]);
-  const [backgroundUrl, setBackgroundUrl] = useState<string | null>(null);
+  const [backgroundPath, setBackgroundPath] = useState<string | null>(null); // Storage path
+  const [backgroundPreviewUrl, setBackgroundPreviewUrl] = useState<
+    string | null
+  >(null);
 
   // Initialize template name when dialog opens
   useEffect(() => {
@@ -77,7 +80,8 @@ export function SaveAsTemplateDialog({
       setIncludeLabels(true);
       setIncludeDates(true);
       setBackgroundFiles([]);
-      setBackgroundUrl(null);
+      setBackgroundPath(null);
+      setBackgroundPreviewUrl(null);
     }
   }, [open, board]);
 
@@ -135,16 +139,24 @@ export function SaveAsTemplateDialog({
         throw new Error('Failed to upload background image');
       }
 
-      // Get public URL
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from('workspaces').getPublicUrl(data.path);
+      // Generate a temporary signed URL for preview (valid for 1 hour)
+      const { data: signedUrlData, error: signedUrlError } =
+        await supabase.storage
+          .from('workspaces')
+          .createSignedUrl(data.path, 3600); // 1 hour expiry
+
+      if (signedUrlError) {
+        console.error('Error creating signed URL:', signedUrlError);
+        throw new Error('Failed to generate preview URL');
+      }
 
       // Update file status to uploaded
       file.status = 'uploaded';
-      file.finalPath = publicUrl;
+      file.finalPath = data.path; // Store the storage path
 
-      setBackgroundUrl(publicUrl);
+      // Store path and signed URL separately
+      setBackgroundPath(data.path); // This is what we send to the API
+      setBackgroundPreviewUrl(signedUrlData.signedUrl); // This is what we display
     } catch (error) {
       file.status = 'error';
       const errorMessage =
@@ -154,7 +166,8 @@ export function SaveAsTemplateDialog({
   };
 
   const handleRemoveBackground = () => {
-    setBackgroundUrl(null);
+    setBackgroundPath(null);
+    setBackgroundPreviewUrl(null);
     setBackgroundFiles([]);
   };
 
@@ -180,7 +193,7 @@ export function SaveAsTemplateDialog({
             includeTasks,
             includeLabels,
             includeDates,
-            backgroundUrl: backgroundUrl || undefined,
+            backgroundPath: backgroundPath || undefined,
           }),
         }
       );
@@ -363,12 +376,12 @@ export function SaveAsTemplateDialog({
               Upload a background image for your template. Only one image is
               allowed.
             </p>
-            {backgroundUrl ? (
+            {backgroundPreviewUrl ? (
               <div className="space-y-2">
                 <div className="relative aspect-video w-full overflow-hidden rounded-lg border">
                   {/* biome-ignore lint/performance/noImgElement: preview image */}
                   <img
-                    src={backgroundUrl}
+                    src={backgroundPreviewUrl}
                     alt="Template background"
                     className="h-full w-full object-cover"
                   />

@@ -11,7 +11,7 @@ interface SaveTemplateRequest {
   includeTasks?: boolean;
   includeLabels?: boolean;
   includeDates?: boolean;
-  backgroundUrl?: string;
+  backgroundPath?: string; // Storage path, not URL
 }
 
 interface Params {
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       includeTasks = true,
       includeLabels = true,
       includeDates = true,
-      backgroundUrl,
+      backgroundPath,
     } = body;
 
     if (!name || name.trim().length === 0) {
@@ -238,7 +238,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         description: description?.trim() || null,
         visibility,
         content: content as unknown as Json,
-        background_url: backgroundUrl || null,
+        background_path: backgroundPath || null,
       });
 
     if (insertError) {
