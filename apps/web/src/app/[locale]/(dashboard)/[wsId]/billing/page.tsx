@@ -81,7 +81,7 @@ const checkManageSubscriptionPermission = async (
   return data ?? false;
 };
 
-const ensureSubscription = async (wsId: string) => {
+export const ensureSubscription = async (wsId: string) => {
   // Check for existing subscription first
   const existing = await fetchSubscription(wsId);
   if (existing) return { subscription: existing, error: null };

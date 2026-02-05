@@ -95,11 +95,11 @@ import BasicInfo from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings
 import UserAvatar from '../../app/[locale]/settings-avatar';
 import DisplayNameInput from '../../app/[locale]/settings-display-name-input';
 import EmailInput from '../../app/[locale]/settings-email-input';
-import BillingSettings from './account/billing-settings';
 import MyWorkspacesSettings from './account/my-workspaces-settings';
 import NotificationSettings from './account/notification-settings';
 import SecuritySettings from './account/security-settings';
 import SessionSettings from './account/session-settings';
+import WorkspaceBillingContent from './account/workspace-billing-content';
 import AppearanceSettings from './appearance-settings';
 import { ApprovalsSettings } from './approvals/approvals-settings';
 import AttendanceDisplaySettings from './attendance/attendance-display-settings';
@@ -976,9 +976,9 @@ export function SettingsDialog({
                   <ReportDefaultTitleSettings workspaceId={workspace.id} />
                 )}
 
-                {activeTab === 'billing' && (
+                {activeTab === 'billing' && wsId && (
                   <div className="h-full">
-                    <BillingSettings />
+                    <WorkspaceBillingContent wsId={wsId} />
                   </div>
                 )}
 
