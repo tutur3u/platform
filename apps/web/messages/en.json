@@ -8248,6 +8248,16 @@
       "ongoing": "ongoing",
       "optional_description": "Optional description",
       "overlapping_session": "Overlapping session",
+      "pending_requests": {
+        "collapse": "Collapse",
+        "created": "Created {date}",
+        "expand": "Expand",
+        "info_requested_by": "Info requested by {name}",
+        "loading": "Loading requests...",
+        "pending_count": "{count} pending",
+        "title": "Pending Requests",
+        "view_all": "View all {count} requests"
+      },
       "previous": "Previous",
       "productivity_insights": "Productivity Insights",
       "productivity_type": "Productivity Type",

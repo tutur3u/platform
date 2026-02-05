@@ -40,6 +40,8 @@ export interface BaseMissedEntryDialogProps {
   categories: TimeTrackingCategory[] | null;
   wsId: string;
   workspace: Workspace;
+  /** When true, skip proof/approval for entries older than threshold (users with manage permission) */
+  canSkipProof?: boolean;
 }
 
 // Props for normal missed entry mode

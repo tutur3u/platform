@@ -4,6 +4,7 @@
 export { formatDuration } from '@/lib/time-format';
 export { EditSessionDialog } from './edit-session-dialog';
 export { MonthView } from './month-view';
+export { PendingRequestsBanner } from './pending-requests-banner';
 export { PeriodNavigation } from './period-navigation';
 export { SessionFilters } from './session-filters';
 export { SessionHistory } from './session-history';

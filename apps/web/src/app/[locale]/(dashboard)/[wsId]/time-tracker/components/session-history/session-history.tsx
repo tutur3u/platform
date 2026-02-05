@@ -35,6 +35,7 @@ import MissedEntryDialog from '../missed-entry-dialog';
 import { WorkspaceSelectDialog } from '../workspace-select-dialog';
 import { EditSessionDialog } from './edit-session-dialog';
 import { MonthView } from './month-view';
+import { PendingRequestsBanner } from './pending-requests-banner';
 import { PeriodNavigation } from './period-navigation';
 import { SessionFilters } from './session-filters';
 import { SessionStats } from './session-stats';
@@ -62,6 +63,10 @@ export function SessionHistory({
   userId,
   categories,
   workspace,
+  isPersonal,
+  currentUser,
+  canManageTimeTrackingRequests,
+  canBypassTimeTrackingRequestApproval,
 }: Omit<SessionHistoryProps, 'tasks'>) {
   const t = useTranslations('time-tracker.session_history');
   const { data: thresholdData, isLoading: isLoadingThreshold } =
@@ -326,6 +331,21 @@ export function SessionHistory({
 
   return (
     <>
+      {!isPersonal && currentUser && (
+        <div className="mb-4">
+          <PendingRequestsBanner
+            wsId={wsId}
+            currentUser={currentUser}
+            canManageTimeTrackingRequests={
+              canManageTimeTrackingRequests ?? false
+            }
+            canBypassTimeTrackingRequestApproval={
+              canBypassTimeTrackingRequestApproval ?? false
+            }
+          />
+        </div>
+      )}
+
       <Card className="shadow-sm">
         <CardHeader className="gap-4 p-4 md:p-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -566,6 +586,7 @@ export function SessionHistory({
         workspace={workspace}
         prefillStartTime={prefillStartTime}
         prefillEndTime={prefillEndTime}
+        canSkipProof={canManageTimeTrackingRequests}
       />
 
       {/* Move Session Dialog */}

@@ -2,11 +2,10 @@
 
 import { BarChart2, Loader2 } from '@tuturuuu/icons';
 import { Progress } from '@tuturuuu/ui/progress';
-import { cn } from '@tuturuuu/utils/format';
+import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import { useTranslations } from 'next-intl';
 import { formatDuration } from '@/lib/time-format';
 import type { PeriodStats } from '@/lib/time-tracker-utils';
-import { getCategoryColor } from './session-utils';
 
 interface SessionStatsProps {
   periodStats?: PeriodStats;
@@ -18,7 +17,7 @@ export function SessionStats({ periodStats, isLoading }: SessionStatsProps) {
 
   if (isLoading) {
     return (
-      <div className="mb-6 flex min-h-[200px] items-center justify-center rounded-lg border p-4">
+      <div className="mb-6 flex min-h-50 items-center justify-center rounded-lg border p-4">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
@@ -47,15 +46,18 @@ export function SessionStats({ periodStats, isLoading }: SessionStatsProps) {
             (periodStats?.totalDuration || 0) > 0
               ? (cat.duration / (periodStats?.totalDuration || 1)) * 100
               : 0;
+          const catStyles = computeAccessibleLabelStyles(cat.color || 'blue');
           return (
             <div key={cat.name}>
               <div className="mb-1 flex justify-between text-sm">
                 <div className="flex items-center gap-2">
                   <div
-                    className={cn(
-                      'h-2 w-2 rounded-full',
-                      getCategoryColor(cat.color)
-                    )}
+                    className="h-2 w-2 rounded-full"
+                    style={
+                      catStyles
+                        ? { backgroundColor: catStyles.text }
+                        : undefined
+                    }
                   />
                   <span>{cat.name}</span>
                 </div>
@@ -71,7 +73,9 @@ export function SessionStats({ periodStats, isLoading }: SessionStatsProps) {
               <Progress
                 value={percentage}
                 className="h-2"
-                indicatorClassName={getCategoryColor(cat.color)}
+                indicatorStyle={
+                  catStyles ? { backgroundColor: catStyles.text } : undefined
+                }
               />
             </div>
           );

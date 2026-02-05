@@ -26,7 +26,7 @@ import type { MissedEntryDialogProps } from './types';
 import { useMissedEntryForm } from './use-missed-entry-form';
 
 export default function MissedEntryDialog(props: MissedEntryDialogProps) {
-  const { open, categories, wsId, mode = 'normal' } = props;
+  const { open, categories, wsId, mode = 'normal', canSkipProof } = props;
 
   const t = useTranslations('time-tracker.missed_entry_dialog');
 
@@ -96,6 +96,10 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
     isErrorThreshold,
     isExceededMode,
   ]);
+
+  // Users with manage permission can skip proof/approval for old entries
+  const effectiveIsOlderThanThreshold =
+    canSkipProof && isNormalMode ? false : isStartTimeOlderThanThreshold;
 
   const isLoading = form.isCreatingMissedEntry || form.isDiscarding;
 
@@ -235,7 +239,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
           <ValidationErrors errors={form.validationErrors} />
 
           {/* Warning and image upload for entries older than threshold */}
-          {isStartTimeOlderThanThreshold && !isExceededMode && (
+          {effectiveIsOlderThanThreshold && !isExceededMode && (
             <div className="space-y-4">
               <div className="rounded-lg border border-dynamic-orange bg-dynamic-orange/10 p-3">
                 <div className="flex items-start gap-2">
@@ -296,7 +300,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
           isLoading={isLoading}
           isCreating={form.isCreatingMissedEntry}
           isDiscarding={form.isDiscarding}
-          isStartTimeOlderThanThreshold={isStartTimeOlderThanThreshold}
+          isStartTimeOlderThanThreshold={effectiveIsOlderThanThreshold}
           isLoadingThreshold={isLoadingThreshold}
           hasImages={form.images.length > 0}
           hasTitle={!!form.missedEntryTitle.trim()}
@@ -304,7 +308,7 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
           hasEndTime={!!form.missedEntryEndTime}
           hasValidationErrors={Object.keys(form.validationErrors).length > 0}
           onSubmit={() =>
-            form.createMissedEntry(isStartTimeOlderThanThreshold, thresholdDays)
+            form.createMissedEntry(effectiveIsOlderThanThreshold, thresholdDays)
           }
           onCancel={form.closeMissedEntryDialog}
           onDiscard={form.handleDiscardSession}

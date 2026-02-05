@@ -13,11 +13,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { cn } from '@tuturuuu/utils/format';
+import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import { useTranslations } from 'next-intl';
 import type { SessionWithRelations } from '../../types';
 import type { FilterState } from './session-types';
-import { getCategoryColor } from './session-utils';
 
 interface SessionFiltersProps {
   filters: FilterState;
@@ -117,10 +116,13 @@ export function SessionFilters({
                       <SelectItem key={category.id} value={category.id}>
                         <div className="flex items-center gap-2">
                           <div
-                            className={cn(
-                              'h-3 w-3 rounded-full',
-                              getCategoryColor(category.color || 'BLUE')
-                            )}
+                            className="h-3 w-3 rounded-full"
+                            style={{
+                              backgroundColor:
+                                computeAccessibleLabelStyles(
+                                  category.color || 'blue'
+                                )?.text ?? undefined,
+                            }}
                           />
                           {category.name}
                         </div>

@@ -8248,6 +8248,16 @@
       "ongoing": "đang diễn ra",
       "optional_description": "Mô tả tùy chọn",
       "overlapping_session": "Phiên trùng lặp",
+      "pending_requests": {
+        "collapse": "Thu gọn",
+        "created": "Tạo ngày {date}",
+        "expand": "Mở rộng",
+        "info_requested_by": "Yêu cầu thông tin bởi {name}",
+        "loading": "Đang tải yêu cầu...",
+        "pending_count": "{count} đang chờ",
+        "title": "Yêu Cầu Đang Chờ",
+        "view_all": "Xem tất cả {count} yêu cầu"
+      },
       "previous": "Trước",
       "productivity_insights": "Thông Tin Năng Suất",
       "productivity_type": "Loại Năng Suất",
