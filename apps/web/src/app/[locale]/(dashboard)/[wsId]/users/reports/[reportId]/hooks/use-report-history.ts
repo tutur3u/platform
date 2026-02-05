@@ -38,6 +38,13 @@ export function useReportHistory({
 
   const [selectedLog, setSelectedLog] = useState<SelectedLog | null>(null);
 
+  // Reset selected log when report changes
+  const [prevReportId, setPrevReportId] = useState(reportId);
+  if (reportId !== prevReportId) {
+    setSelectedLog(null);
+    setPrevReportId(reportId);
+  }
+
   const logsQuery: UseQueryResult<ReportHistoryEntry[]> = useQuery({
     queryKey: ['ws', wsId, 'report', reportId, 'logs'],
     enabled: Boolean(reportId) && !isNew,
