@@ -19447,6 +19447,7 @@ export type Database = {
       get_task_workspace_id: { Args: { p_task_id: string }; Returns: string };
       get_time_tracker_stats: {
         Args: {
+          p_days_back?: number;
           p_is_personal?: boolean;
           p_timezone?: string;
           p_user_id: string;
@@ -19462,6 +19463,22 @@ export type Database = {
       };
       get_time_tracking_daily_activity: {
         Args: { p_days_back?: number; p_user_id?: string; p_ws_id: string };
+        Returns: Json;
+      };
+      get_time_tracking_period_stats: {
+        Args: {
+          p_category_id?: string;
+          p_date_from: string;
+          p_date_to: string;
+          p_duration?: string;
+          p_project_context?: string;
+          p_search_query?: string;
+          p_task_id?: string;
+          p_time_of_day?: string;
+          p_timezone?: string;
+          p_user_id: string;
+          p_ws_id: string;
+        };
         Returns: Json;
       };
       get_time_tracking_sessions_paginated: {
@@ -20172,6 +20189,109 @@ export type Database = {
         Args: { _source_id: string; _target_id: string; _ws_id: string };
         Returns: Json;
       };
+      merge_workspace_users_batch_update: {
+        Args: {
+          _batch_size?: number;
+          _column_name: string;
+          _source_id: string;
+          _table_name: string;
+          _target_id: string;
+          _ws_id: string;
+        };
+        Returns: Json;
+      };
+      merge_workspace_users_phase1: {
+        Args: { _source_id: string; _target_id: string; _ws_id: string };
+        Returns: Json;
+      };
+      merge_workspace_users_phase1a: {
+        Args: { _source_id: string; _target_id: string; _ws_id: string };
+        Returns: Json;
+      };
+      merge_workspace_users_phase1a_batch: {
+        Args: {
+          _batch_size?: number;
+          _source_id: string;
+          _target_id: string;
+          _ws_id: string;
+        };
+        Returns: Json;
+      };
+      merge_workspace_users_phase1b: {
+        Args: { _source_id: string; _target_id: string; _ws_id: string };
+        Returns: Json;
+      };
+      merge_workspace_users_phase1b_batch: {
+        Args: {
+          _batch_size?: number;
+          _source_id: string;
+          _target_id: string;
+          _ws_id: string;
+        };
+        Returns: Json;
+      };
+      merge_workspace_users_phase1c: {
+        Args: { _source_id: string; _target_id: string; _ws_id: string };
+        Returns: Json;
+      };
+      merge_workspace_users_phase1c_batch: {
+        Args: {
+          _batch_size?: number;
+          _source_id: string;
+          _target_id: string;
+          _ws_id: string;
+        };
+        Returns: Json;
+      };
+      merge_workspace_users_phase1d: {
+        Args: { _source_id: string; _target_id: string; _ws_id: string };
+        Returns: Json;
+      };
+      merge_workspace_users_phase1d_batch: {
+        Args: {
+          _batch_size?: number;
+          _source_id: string;
+          _target_id: string;
+          _ws_id: string;
+        };
+        Returns: Json;
+      };
+      merge_workspace_users_phase2: {
+        Args: { _source_id: string; _target_id: string; _ws_id: string };
+        Returns: Json;
+      };
+      merge_workspace_users_phase3: {
+        Args: { _source_id: string; _target_id: string; _ws_id: string };
+        Returns: Json;
+      };
+      merge_workspace_users_phase4: {
+        Args: { _source_id: string; _target_id: string; _ws_id: string };
+        Returns: Json;
+      };
+      merge_workspace_users_phase5: {
+        Args: { _source_id: string; _target_id: string; _ws_id: string };
+        Returns: Json;
+      };
+      merge_workspace_users_phased: {
+        Args: {
+          _source_id: string;
+          _start_phase?: number;
+          _target_id: string;
+          _ws_id: string;
+        };
+        Returns: Json;
+      };
+      merge_workspace_users_table_batch: {
+        Args: {
+          _batch_size?: number;
+          _column_name: string;
+          _source_id: string;
+          _table_name: string;
+          _target_id: string;
+          _ws_id: string;
+        };
+        Returns: Json;
+      };
       normalize_task_sort_keys: { Args: never; Returns: undefined };
       nova_get_all_challenges_with_user_stats: {
         Args: { user_id: string };
@@ -20520,6 +20640,10 @@ export type Database = {
           session_data: Json;
           user_id: string;
         }[];
+      };
+      workspace_has_available_seats: {
+        Args: { target_ws_id: string };
+        Returns: boolean;
       };
     };
     Enums: {

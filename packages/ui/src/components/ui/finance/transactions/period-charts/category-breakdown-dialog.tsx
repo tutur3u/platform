@@ -99,8 +99,8 @@ interface CategoryBreakdownDialogProps {
   timezone?: string;
   /** Pre-computed data as fallback from parent - used while RPC loads */
   initialCategoryData?: CategoryData[];
-  /** Initial type to display */
-  initialType?: 'expense' | 'income';
+  /** Initial type to display. Defaults to 'expense', falls back to 'all' if no expense data exists. */
+  initialType?: 'all' | 'expense' | 'income';
 }
 
 export function CategoryBreakdownDialog({
@@ -117,11 +117,13 @@ export function CategoryBreakdownDialog({
   const t = useTranslations('finance-transactions');
   const locale = useLocale();
   const [isConfidential, setIsConfidential] = useState(true);
-  const [type, setType] = useState<'expense' | 'income'>(initialType);
+  const [type, setType] = useState<'all' | 'expense' | 'income'>(initialType);
   // Track hidden categories by name
   const [hiddenCategories, setHiddenCategories] = useState<Set<string>>(
     new Set()
   );
+  // Track if we've already tried to auto-fallback to 'all'
+  const [hasTriedFallback, setHasTriedFallback] = useState(false);
 
   // Sync with confidential mode cookie
   useEffect(() => {
@@ -150,11 +152,12 @@ export function CategoryBreakdownDialog({
     };
   }, []);
 
-  // Reset type and hidden categories when dialog opens
+  // Reset type, hidden categories, and fallback flag when dialog opens
   useEffect(() => {
     if (open) {
       setType(initialType);
       setHiddenCategories(new Set());
+      setHasTriedFallback(false);
     }
   }, [open, initialType]);
 
@@ -294,6 +297,19 @@ export function CategoryBreakdownDialog({
     [visibleCategoryData]
   );
 
+  // Auto-fallback to 'all' if expense data is empty
+  useEffect(() => {
+    if (
+      !isLoading &&
+      allCategoryData.length === 0 &&
+      type === 'expense' &&
+      !hasTriedFallback
+    ) {
+      setType('all');
+      setHasTriedFallback(true);
+    }
+  }, [isLoading, allCategoryData.length, type, hasTriedFallback]);
+
   const formatValue = (value: number) => {
     if (isConfidential) return '•••••';
     return new Intl.NumberFormat(locale, {
@@ -356,10 +372,13 @@ export function CategoryBreakdownDialog({
             </div>
             <Tabs
               value={type}
-              onValueChange={(v) => setType(v as 'expense' | 'income')}
+              onValueChange={(v) => setType(v as 'all' | 'expense' | 'income')}
               className="shrink-0"
             >
-              <TabsList className="grid w-full grid-cols-2 sm:w-[220px]">
+              <TabsList className="grid w-full grid-cols-3 sm:w-[280px]">
+                <TabsTrigger value="all" className="text-sm">
+                  {t('all')}
+                </TabsTrigger>
                 <TabsTrigger
                   value="expense"
                   className="text-sm data-[state=active]:bg-dynamic-red/10 data-[state=active]:text-dynamic-red"
@@ -460,7 +479,9 @@ export function CategoryBreakdownDialog({
                       'font-bold text-3xl tabular-nums sm:text-4xl',
                       type === 'expense'
                         ? 'text-dynamic-red'
-                        : 'text-dynamic-green'
+                        : type === 'income'
+                          ? 'text-dynamic-green'
+                          : 'text-foreground'
                     )}
                   >
                     {formatValue(totalVisible)}
@@ -468,7 +489,9 @@ export function CategoryBreakdownDialog({
                   <div className="mt-1 text-muted-foreground">
                     {type === 'expense'
                       ? t('total-expenses')
-                      : t('total-income')}
+                      : type === 'income'
+                        ? t('total-income')
+                        : t('total')}
                     {hasHiddenCategories && (
                       <span className="ml-1 text-xs">({t('filtered')})</span>
                     )}

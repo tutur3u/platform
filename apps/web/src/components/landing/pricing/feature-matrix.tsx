@@ -31,13 +31,6 @@ const featureCategories = [
         enterprise: 'advanced',
       },
       {
-        name: 'workspaces',
-        free: '1',
-        plus: 'unlimited',
-        pro: 'unlimited',
-        enterprise: 'unlimited',
-      },
-      {
         name: 'qrGenerator',
         free: true,
         plus: true,
@@ -225,7 +218,7 @@ export function FeatureMatrix() {
       <CollapsibleContent>
         {/* Horizontal scroll wrapper */}
         <div className="mt-8 overflow-x-auto rounded-xl border border-foreground/10">
-          <div className="min-w-[600px]">
+          <div className="min-w-150">
             {/* Fixed Header */}
             <div className="grid grid-cols-[minmax(140px,1fr)_repeat(4,minmax(80px,1fr))] border-foreground/10 border-b bg-muted/50 sm:grid-cols-[minmax(180px,1.5fr)_repeat(4,1fr)]">
               <div className="px-3 py-3 font-medium text-foreground/60 text-sm sm:px-4">
@@ -252,7 +245,7 @@ export function FeatureMatrix() {
                 {featureCategories.map((category) => (
                   <Fragment key={category.category}>
                     {/* Category Header */}
-                    <div className="col-span-5 border-foreground/10 border-b bg-foreground/[0.02] px-3 py-2 sm:px-4">
+                    <div className="col-span-5 border-foreground/10 border-b bg-foreground/2 px-3 py-2 sm:px-4">
                       <span className="font-medium text-foreground/70 text-xs uppercase tracking-wider">
                         {t(`matrix.categories.${category.category}` as any)}
                       </span>

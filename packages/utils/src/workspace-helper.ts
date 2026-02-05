@@ -488,14 +488,14 @@ export async function getPermissions({
   const resolvedWorkspaceId = resolveWorkspaceId(wsId);
   const sbAdmin = await createAdminClient();
 
-  const permissionsQuery = supabase
+  const permissionsQuery = sbAdmin
     .from('workspace_role_members')
     .select('workspace_roles!inner(workspace_role_permissions(permission))')
     .eq('user_id', user.id)
     .eq('workspace_roles.ws_id', resolvedWorkspaceId)
     .eq('workspace_roles.workspace_role_permissions.enabled', true);
 
-  const workspaceQuery = supabase
+  const workspaceQuery = sbAdmin
     .from('workspaces')
     .select('creator_id')
     .eq('id', resolvedWorkspaceId)

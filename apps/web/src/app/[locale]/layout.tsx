@@ -5,6 +5,7 @@ import { type Locale, routing, supportedLocales } from '@/i18n/routing';
 import '@mantine/core/styles.layer.css';
 import '@mantine/charts/styles.layer.css';
 import '@/style/prosemirror.css';
+import { SerwistProvider } from '@tuturuuu/offline/provider';
 import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
 import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
@@ -72,20 +73,22 @@ export default async function RootLayout({ children, params }: Props) {
           font.className
         )}
       >
-        <VercelAnalytics />
-        <VercelInsights />
-        <Suspense>
-          <NuqsAdapter>
-            <Providers>
-              <FadeSettingInitializer />
-              {children}
-            </Providers>
-          </NuqsAdapter>
-        </Suspense>
-        <TailwindIndicator />
-        <ProductionIndicator />
-        <StaffToolbar />
-        <Toaster />
+        <SerwistProvider>
+          <VercelAnalytics />
+          <VercelInsights />
+          <Suspense>
+            <NuqsAdapter>
+              <Providers>
+                <FadeSettingInitializer />
+                {children}
+              </Providers>
+            </NuqsAdapter>
+          </Suspense>
+          <TailwindIndicator />
+          <ProductionIndicator />
+          <StaffToolbar />
+          <Toaster />
+        </SerwistProvider>
       </body>
     </html>
   );

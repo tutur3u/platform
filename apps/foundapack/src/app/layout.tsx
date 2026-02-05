@@ -23,22 +23,11 @@ const caveat = Caveat({
 });
 
 export const metadata: Metadata = {
-  title: 'Foundapack - Where No Student Founder Builds Alone',
-  description:
-    'A peer-driven community for students and early-stage founders to grow together through shared support and real-world experience. Find your founder pack.',
-  keywords: [
-    'student founders',
-    'startup community',
-    'peer support',
-    'early-stage founders',
-    'founder community',
-    'entrepreneurship',
-  ],
-  authors: [{ name: 'Tuturuuu' }],
+  title: 'Foundapack',
+  description: 'Foundapack is no longer a part of Tuturuuu.',
   openGraph: {
-    title: 'Foundapack - Where No Student Founder Builds Alone',
-    description:
-      'A peer-driven community for students and early-stage founders to grow together through shared support and real-world experience.',
+    title: 'Foundapack',
+    description: 'Foundapack is no longer a part of Tuturuuu.',
     type: 'website',
   },
 };

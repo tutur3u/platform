@@ -1,15 +1,6 @@
 'use client';
 
-import {
-  Briefcase,
-  Clock,
-  Filter,
-  Search,
-  Star,
-  Sun,
-  Tag,
-  TrendingUp,
-} from '@tuturuuu/icons';
+import { Briefcase, Clock, Filter, Search, Sun, Tag } from '@tuturuuu/icons';
 import type { TimeTrackingCategory } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
@@ -55,10 +46,8 @@ export function SessionFilters({
   const hasActiveFilters =
     filters.categoryId !== 'all' ||
     filters.duration !== 'all' ||
-    filters.productivity !== 'all' ||
     filters.timeOfDay !== 'all' ||
-    filters.projectContext !== 'all' ||
-    filters.sessionQuality !== 'all';
+    filters.projectContext !== 'all';
 
   return (
     <div className="flex items-center gap-2">
@@ -170,37 +159,6 @@ export function SessionFilters({
               <div className="space-y-3 border-t pt-3">
                 <div>
                   <Label className="flex items-center gap-2 font-medium text-sm">
-                    <TrendingUp className="h-3 w-3" />
-                    {t('productivity_type')}
-                  </Label>
-                  <Select
-                    value={filters.productivity}
-                    onValueChange={(value) =>
-                      onFilterChange('productivity', value)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('all_productivity_types')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{t('all_types')}</SelectItem>
-                      <SelectItem value="deep-work">
-                        {t('deep_work')}
-                      </SelectItem>
-                      <SelectItem value="focused">{t('focused')}</SelectItem>
-                      <SelectItem value="standard">{t('standard')}</SelectItem>
-                      <SelectItem value="scattered">
-                        {t('scattered')}
-                      </SelectItem>
-                      <SelectItem value="interrupted">
-                        {t('interrupted')}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label className="flex items-center gap-2 font-medium text-sm">
                     <Sun className="h-3 w-3" />
                     {t('time_of_day')}
                   </Label>
@@ -251,34 +209,6 @@ export function SessionFilters({
                       </SelectItem>
                       <SelectItem value="general">
                         {t('general_tasks')}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label className="flex items-center gap-2 font-medium text-sm">
-                    <Star className="h-3 w-3" />
-                    {t('session_quality')}
-                  </Label>
-                  <Select
-                    value={filters.sessionQuality}
-                    onValueChange={(value) =>
-                      onFilterChange('sessionQuality', value)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('all_qualities')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{t('all_qualities')}</SelectItem>
-                      <SelectItem value="excellent">
-                        {t('excellent')}
-                      </SelectItem>
-                      <SelectItem value="good">{t('good')}</SelectItem>
-                      <SelectItem value="average">{t('average')}</SelectItem>
-                      <SelectItem value="needs-improvement">
-                        {t('needs_improvement')}
                       </SelectItem>
                     </SelectContent>
                   </Select>

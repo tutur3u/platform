@@ -35,6 +35,11 @@ export const reportConfigs: (WorkspaceConfig & {
     defaultValue: '',
   },
   {
+    id: 'REPORT_DEFAULT_TITLE',
+    type: 'TEXT',
+    defaultValue: '',
+  },
+  {
     id: 'REPORT_INTRO',
     type: 'TEXT',
     defaultValue: '',

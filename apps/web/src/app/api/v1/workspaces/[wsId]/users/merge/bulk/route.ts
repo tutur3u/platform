@@ -26,6 +26,13 @@ const BulkMergeRequestSchema = z.object({
   merges: z.array(MergeItemSchema).min(1).max(100), // Limit to 100 merges at a time
 });
 
+interface RpcCollisionDetail {
+  table: string;
+  deleted_count: number;
+  pk_column: string;
+  deleted_pk_values: string[];
+}
+
 interface RpcMergeResult {
   success: boolean;
   error?: string;
@@ -33,7 +40,10 @@ interface RpcMergeResult {
   target_user_id: string;
   migrated_tables: string[];
   collision_tables: string[];
+  collision_details?: RpcCollisionDetail[];
   custom_fields_merged: number;
+  source_platform_user_id?: string;
+  target_platform_user_id?: string;
 }
 
 export async function POST(req: Request, { params }: Params) {
@@ -133,7 +143,10 @@ export async function POST(req: Request, { params }: Params) {
           targetUserId: rpcResult.target_user_id,
           migratedTables: rpcResult.migrated_tables,
           collisionTables: rpcResult.collision_tables,
+          collisionDetails: rpcResult.collision_details,
           customFieldsMerged: rpcResult.custom_fields_merged,
+          sourcePlatformUserId: rpcResult.source_platform_user_id,
+          targetPlatformUserId: rpcResult.target_platform_user_id,
         });
         successCount++;
       } catch (mergeError) {

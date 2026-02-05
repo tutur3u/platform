@@ -65,17 +65,23 @@ export function StatsCardClient({
 
   // Fetch stats with proper timezone
   const { data: stats, isLoading } = useQuery({
-    queryKey: ['time-tracker-stats', workspaceId, userId, userTimezone],
+    queryKey: [
+      'time-tracker-stats',
+      workspaceId,
+      userId,
+      userTimezone,
+      'summary',
+    ],
     queryFn: async () => {
       const response = await fetch(
-        `/api/v1/workspaces/${workspaceId}/time-tracker/stats?userId=${userId}&isPersonal=${isPersonal}&timezone=${userTimezone}`
+        `/api/v1/workspaces/${workspaceId}/time-tracker/stats?userId=${userId}&isPersonal=${isPersonal}&timezone=${userTimezone}&summaryOnly=true`
       );
       if (!response.ok) {
         throw new Error('Failed to fetch time tracking stats');
       }
       return response.json() as Promise<StatsData>;
     },
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 60 * 1000, // Increase stale time to 1 minute
   });
 
   // Fetch goals

@@ -2,12 +2,27 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import {
+  escapeLikePattern,
+  sanitizeSearchQuery,
+} from '@tuturuuu/utils/search-helper';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
+  getProjectContextCategory,
+  getTimeOfDayCategory,
+} from '@/lib/time-tracker-utils';
+import {
   getWorkspaceConfig,
+  isPersonalWorkspace,
   normalizeWorkspaceId,
 } from '@/lib/workspace-helper';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const cursorSchema = z.object({
   lastStartTime: z.iso.datetime({ offset: true }),
@@ -54,6 +69,14 @@ export async function GET(
     const dateFrom = url.searchParams.get('dateFrom');
     const dateTo = url.searchParams.get('dateTo');
     const targetUserId = url.searchParams.get('userId'); // New parameter for viewing other users
+    const userTimezone = url.searchParams.get('timezone') || 'UTC';
+
+    // Filter parameters
+    const searchQuery = url.searchParams.get('searchQuery');
+    const duration = url.searchParams.get('duration');
+    const timeOfDay = url.searchParams.get('timeOfDay');
+    const projectContext = url.searchParams.get('projectContext');
+
     const limit = Math.min(
       parseInt(url.searchParams.get('limit') || '10', 10),
       50
@@ -176,14 +199,43 @@ export async function GET(
       }
 
       // Apply filters
-      if (categoryId) {
+      if (categoryId && categoryId !== 'all') {
         query = query.eq('category_id', categoryId);
         countQuery = countQuery.eq('category_id', categoryId);
       }
 
-      if (taskId) {
+      if (taskId && taskId !== 'all') {
         query = query.eq('task_id', taskId);
         countQuery = countQuery.eq('task_id', taskId);
+      }
+
+      const sanitizedSearchQuery = sanitizeSearchQuery(searchQuery);
+      if (sanitizedSearchQuery) {
+        const escapedSearchQuery = escapeLikePattern(sanitizedSearchQuery);
+        const searchPattern = `%${escapedSearchQuery}%`;
+        query = query.or(
+          `title.ilike.${searchPattern},description.ilike.${searchPattern}`
+        );
+        countQuery = countQuery.or(
+          `title.ilike.${searchPattern},description.ilike.${searchPattern}`
+        );
+      }
+
+      if (duration && duration !== 'all') {
+        if (duration === 'short') {
+          query = query.lt('duration_seconds', 1800);
+          countQuery = countQuery.lt('duration_seconds', 1800);
+        } else if (duration === 'medium') {
+          query = query
+            .gte('duration_seconds', 1800)
+            .lt('duration_seconds', 7200);
+          countQuery = countQuery
+            .gte('duration_seconds', 1800)
+            .lt('duration_seconds', 7200);
+        } else if (duration === 'long') {
+          query = query.gte('duration_seconds', 7200);
+          countQuery = countQuery.gte('duration_seconds', 7200);
+        }
       }
 
       if (dateFrom) {
@@ -231,8 +283,33 @@ export async function GET(
 
       if (error) throw error;
 
+      let filteredSessions = data || [];
+
+      // Post-filter by time of day and project context if requested
+      // (These are harder to do in simple SQL with complex logic)
+      if (
+        (timeOfDay && timeOfDay !== 'all') ||
+        (projectContext && projectContext !== 'all')
+      ) {
+        filteredSessions = filteredSessions.filter((session) => {
+          if (timeOfDay && timeOfDay !== 'all') {
+            const cat = getTimeOfDayCategory(session.start_time, userTimezone);
+            if (cat !== timeOfDay) return false;
+          }
+
+          if (projectContext && projectContext !== 'all') {
+            const cat = getProjectContextCategory(session);
+            if (cat !== projectContext) return false;
+          }
+
+          return true;
+        });
+      }
+
       const hasMore = (data?.length || 0) > limit;
-      const sessions = hasMore ? data?.slice(0, limit) : data;
+      const sessions = hasMore
+        ? filteredSessions.slice(0, limit)
+        : filteredSessions;
       const lastSession =
         hasMore && data && data[limit - 1] ? data[limit - 1] : null;
       const nextCursor = lastSession
@@ -248,186 +325,40 @@ export async function GET(
     }
 
     if (type === 'stats') {
-      // Calculate time statistics
-      const today = new Date();
-      const startOfToday = new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate()
-      );
-      // Use ISO week (Monday-based) for consistency with frontend
-      const startOfWeek = new Date(today);
-      const dayOfWeek = today.getDay();
-      const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Monday = 0, Sunday = 6
-      startOfWeek.setDate(today.getDate() - daysToSubtract);
-      startOfWeek.setHours(0, 0, 0, 0);
-      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      const isPersonal = await isPersonalWorkspace(normalizedWsId);
 
-      // Get all sessions with category information for breakdown
-      // Filter out sessions with pending_approval=true (they haven't been approved yet)
-      const [todayData, weekData, monthData, allSessionsData] =
-        await Promise.all([
-          supabase
-            .from('time_tracking_sessions')
-            .select('duration_seconds, category_id')
-            .eq('ws_id', normalizedWsId)
-            .eq('user_id', queryUserId)
-            .eq('pending_approval', false)
-            .gte('start_time', startOfToday.toISOString())
-            .not('duration_seconds', 'is', null),
-          supabase
-            .from('time_tracking_sessions')
-            .select('duration_seconds, category_id')
-            .eq('ws_id', normalizedWsId)
-            .eq('user_id', queryUserId)
-            .eq('pending_approval', false)
-            .gte('start_time', startOfWeek.toISOString())
-            .not('duration_seconds', 'is', null),
-          supabase
-            .from('time_tracking_sessions')
-            .select('duration_seconds, category_id')
-            .eq('ws_id', normalizedWsId)
-            .eq('user_id', queryUserId)
-            .eq('pending_approval', false)
-            .gte('start_time', startOfMonth.toISOString())
-            .not('duration_seconds', 'is', null),
-          // Get all sessions for streak calculation
-          supabase
-            .from('time_tracking_sessions')
-            .select('start_time, duration_seconds')
-            .eq('ws_id', normalizedWsId)
-            .eq('user_id', queryUserId)
-            .eq('pending_approval', false)
-            .not('duration_seconds', 'is', null)
-            .order('start_time', { ascending: false }),
-        ]);
-
-      // Calculate total times
-      const totalTodayTime =
-        todayData.data?.reduce(
-          (sum, session) => sum + (session.duration_seconds || 0),
-          0
-        ) || 0;
-
-      const totalWeekTime =
-        weekData.data?.reduce(
-          (sum, session) => sum + (session.duration_seconds || 0),
-          0
-        ) || 0;
-
-      const totalMonthTime =
-        monthData.data?.reduce(
-          (sum, session) => sum + (session.duration_seconds || 0),
-          0
-        ) || 0;
-
-      // Calculate category breakdowns
-      const todayByCategory: Record<string, number> = {};
-      const weekByCategory: Record<string, number> = {};
-      const monthByCategory: Record<string, number> = {};
-
-      todayData.data?.forEach((session) => {
-        const categoryKey = session.category_id || 'general';
-        todayByCategory[categoryKey] =
-          (todayByCategory[categoryKey] || 0) + (session.duration_seconds || 0);
+      // Call the optimized RPC function
+      const { data, error } = await supabase.rpc('get_time_tracker_stats', {
+        p_user_id: queryUserId,
+        p_ws_id: normalizedWsId,
+        p_is_personal: isPersonal,
+        p_timezone: userTimezone,
+        p_days_back: 0, // Summary only
       });
 
-      weekData.data?.forEach((session) => {
-        const categoryKey = session.category_id || 'general';
-        weekByCategory[categoryKey] =
-          (weekByCategory[categoryKey] || 0) + (session.duration_seconds || 0);
-      });
-
-      monthData.data?.forEach((session) => {
-        const categoryKey = session.category_id || 'general';
-        monthByCategory[categoryKey] =
-          (monthByCategory[categoryKey] || 0) + (session.duration_seconds || 0);
-      });
-
-      // Calculate streak - count consecutive days with activity
-      let streak = 0;
-      if (allSessionsData.data && allSessionsData.data.length > 0) {
-        const activityDays = new Set<string>();
-        allSessionsData.data.forEach((session) => {
-          const sessionDate = new Date(session.start_time);
-          activityDays.add(sessionDate.toDateString());
-        });
-
-        const currentDate = new Date(startOfToday);
-
-        // If today has activity, start counting from today
-        if (activityDays.has(currentDate.toDateString())) {
-          while (activityDays.has(currentDate.toDateString())) {
-            streak++;
-            currentDate.setDate(currentDate.getDate() - 1);
-          }
-        } else {
-          // If today has no activity, check yesterday and count backwards
-          currentDate.setDate(currentDate.getDate() - 1);
-          while (activityDays.has(currentDate.toDateString())) {
-            streak++;
-            currentDate.setDate(currentDate.getDate() - 1);
-          }
-        }
+      if (error) {
+        console.error('Error fetching time tracking stats:', error);
+        return NextResponse.json(
+          { error: 'Failed to fetch stats' },
+          { status: 500 }
+        );
       }
 
-      // Calculate daily activity for the past year (for heatmap)
-      const oneYearAgo = new Date(today);
-      oneYearAgo.setFullYear(today.getFullYear() - 1);
-
-      const yearData = await supabase
-        .from('time_tracking_sessions')
-        .select('start_time, duration_seconds')
-        .eq('ws_id', normalizedWsId)
-        .eq('user_id', queryUserId)
-        .eq('pending_approval', false)
-        .gte('start_time', oneYearAgo.toISOString())
-        .not('duration_seconds', 'is', null);
-
-      // Process daily activity for heatmap
-      const dailyActivityMap = new Map<
-        string,
-        { duration: number; sessions: number }
-      >();
-
-      yearData.data?.forEach((session) => {
-        const dateStr = new Date(session.start_time)
-          .toISOString()
-          .split('T')[0];
-        if (!dateStr) return;
-
-        const existing = dailyActivityMap.get(dateStr) || {
-          duration: 0,
-          sessions: 0,
-        };
-        dailyActivityMap.set(dateStr, {
-          duration: existing.duration + (session.duration_seconds || 0),
-          sessions: existing.sessions + 1,
+      const rawStats = data?.[0];
+      if (!rawStats) {
+        return NextResponse.json({
+          stats: { todayTime: 0, weekTime: 0, monthTime: 0, streak: 0 },
         });
-      });
+      }
 
-      const dailyActivity = Array.from(dailyActivityMap.entries()).map(
-        ([date, data]) => ({
-          date,
-          duration: data.duration,
-          sessions: data.sessions,
-        })
-      );
-
-      const stats = {
-        todayTime: totalTodayTime,
-        weekTime: totalWeekTime,
-        monthTime: totalMonthTime,
-        streak,
-        categoryBreakdown: {
-          today: todayByCategory,
-          week: weekByCategory,
-          month: monthByCategory,
+      return NextResponse.json({
+        stats: {
+          todayTime: rawStats.today_time,
+          weekTime: rawStats.week_time,
+          monthTime: rawStats.month_time,
+          streak: rawStats.streak,
         },
-        dailyActivity,
-      };
-
-      return NextResponse.json({ stats });
+      });
     }
 
     return NextResponse.json(
