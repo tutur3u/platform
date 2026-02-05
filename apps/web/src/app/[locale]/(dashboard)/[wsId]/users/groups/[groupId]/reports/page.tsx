@@ -24,19 +24,9 @@ interface Props {
     wsId: string;
     groupId: string;
   }>;
-  searchParams: Promise<{
-    q: string;
-    page: string;
-    pageSize: string;
-    userId?: string;
-    reportId?: string;
-  }>;
 }
 
-export default async function UserGroupDetailsPage({
-  params,
-  searchParams,
-}: Props) {
+export default async function UserGroupDetailsPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, groupId }) => {
@@ -55,7 +45,6 @@ export default async function UserGroupDetailsPage({
         if (!canViewUserGroupsReports) {
           notFound();
         }
-        const { reportId, userId } = await searchParams;
         const group = await getData(wsId, groupId);
 
         const canCheckUserAttendance = containsPermission(
@@ -166,8 +155,6 @@ export default async function UserGroupDetailsPage({
             <GroupReportsClient
               wsId={wsId}
               groupId={groupId}
-              initialUserId={userId}
-              initialReportId={reportId}
               groupNameFallback={group.name || t('ws-user-groups.singular')}
               canCheckUserAttendance={canCheckUserAttendance}
               canCreateReports={canCreateReports}
