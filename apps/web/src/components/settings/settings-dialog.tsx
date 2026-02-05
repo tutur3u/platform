@@ -98,11 +98,9 @@ import EmailInput from '../../app/[locale]/settings-email-input';
 import FullNameInput from '../../app/[locale]/settings-full-name-input';
 import AccountManagementSettings from './account/account-management-settings';
 import AccountStatusSection from './account/account-status-section';
-import MyWorkspacesSettings from './account/my-workspaces-settings';
 import NotificationSettings from './account/notification-settings';
 import SecuritySettings from './account/security-settings';
 import SessionSettings from './account/session-settings';
-import WorkspaceBillingContent from './account/workspace-billing-content';
 import AppearanceSettings from './appearance-settings';
 import { ApprovalsSettings } from './approvals/approvals-settings';
 import AttendanceDisplaySettings from './attendance/attendance-display-settings';
@@ -125,7 +123,9 @@ import { TimeTrackerGeneralSettings } from './time-tracker/time-tracker-general-
 import { TimeTrackerGoalsSettings } from './time-tracker/time-tracker-goals-settings';
 import { WorkspaceBreakTypesSettings } from './time-tracker/workspace-break-types-settings';
 import UsersManagementSettings from './users/users-management-settings';
+import BillingSettings from './workspace/billing-settings';
 import MembersSettings from './workspace/members-settings';
+import MyWorkspacesSettings from './workspace/my-workspaces-settings';
 import UserStatusSettings from './workspace/user-status-settings';
 
 interface SettingsDialogProps {
@@ -414,7 +414,7 @@ export function SettingsDialog({
                 keywords: ['Members', 'Team'],
               },
               {
-                name: 'billing',
+                name: 'workspace_billing',
                 label: t('billing.billing'),
                 icon: CreditCard,
                 description: t('settings-account.billing-description'),
@@ -978,6 +978,12 @@ export function SettingsDialog({
                   </div>
                 )}
 
+                {activeTab === 'workspace_billing' && wsId && (
+                  <div className="h-full">
+                    <BillingSettings wsId={wsId} />
+                  </div>
+                )}
+
                 {activeTab === 'user_status' && wsId && (
                   <div className="h-full">
                     <UserStatusSettings wsId={wsId} />
@@ -998,12 +1004,6 @@ export function SettingsDialog({
 
                 {activeTab === 'report_default_title' && workspace?.id && (
                   <ReportDefaultTitleSettings workspaceId={workspace.id} />
-                )}
-
-                {activeTab === 'billing' && wsId && (
-                  <div className="h-full">
-                    <WorkspaceBillingContent wsId={wsId} />
-                  </div>
                 )}
 
                 {activeTab === 'finance_navigation' && workspace?.id && (

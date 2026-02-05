@@ -9,13 +9,11 @@ import { BillingClient } from '@/app/[locale]/(dashboard)/[wsId]/billing/billing
 import BillingHistory from '@/app/[locale]/(dashboard)/[wsId]/billing/billing-history';
 import { NoSubscriptionFound } from '@/app/[locale]/(dashboard)/[wsId]/billing/no-subscription-found';
 
-interface WorkspaceBillingContentProps {
+interface BillingSettingsProps {
   wsId: string;
 }
 
-export default function WorkspaceBillingContent({
-  wsId,
-}: WorkspaceBillingContentProps) {
+export default function BillingSettings({ wsId }: BillingSettingsProps) {
   const t = useTranslations('billing');
   const locale = useLocale();
 
