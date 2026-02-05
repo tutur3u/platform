@@ -36,12 +36,13 @@ export async function POST() {
       );
     }
 
-    // 1. Fetch all active subscriptions that are NOT seat-based
+    // Fetch all active subscriptions that are NOT seat-based
     const { data: subscriptions, error: subError } = await sbAdmin
       .from('workspace_subscriptions')
       .select(
         `
         *,
+        workspaces!inner (personal),
         workspace_subscription_products!inner (
           id,
           name,
@@ -51,7 +52,8 @@ export async function POST() {
       `
       )
       .eq('status', 'active')
-      .neq('pricing_model', 'seat_based');
+      .eq('workspaces.personal', false)
+      .neq('workspace_subscription_products.pricing_model', 'seat_based');
 
     if (subError) {
       throw new Error(`Failed to fetch subscriptions: ${subError.message}`);
@@ -66,101 +68,31 @@ export async function POST() {
       });
     }
 
-    // 2. Fetch all active seat-based products to map against
-    const { data: seatProducts, error: prodError } = await sbAdmin
-      .from('workspace_subscription_products')
-      .select('*')
-      .eq('pricing_model', 'seat_based')
-      .eq('archived', false);
-
-    if (prodError) {
-      throw new Error(`Failed to fetch products: ${prodError.message}`);
-    }
-
     const polar = createPolarClient();
     let processed = 0;
-    let skipped = 0;
+    const skipped = 0;
     let errors = 0;
     const errorDetails: any[] = [];
 
-    // 3. Iterate and migrate
+    // Iterate and cancel old subscriptions - webhooks will create new seat-based ones
     for (const sub of subscriptions) {
       try {
-        const currentProduct = sub.workspace_subscription_products;
-        if (!currentProduct) {
-          skipped++;
-          continue;
-        }
-
-        // Find matching seat-based product
-        const targetProduct = seatProducts.find(
-          (p) =>
-            p.tier === currentProduct.tier &&
-            p.recurring_interval === currentProduct.recurring_interval
+        console.log(
+          `Cancelling subscription ${sub.id} (${sub.polar_subscription_id}). Webhook will create new seat-based subscription.`
         );
 
-        if (!targetProduct) {
-          console.log(
-            `Skipping sub ${sub.id}: No matching seat-based product for tier ${currentProduct.tier} / ${currentProduct.recurring_interval}`
-          );
-          skipped++;
-          continue;
-        }
-
-        // Calculate member count for initial seats
-        const { count: memberCount } = await sbAdmin
-          .from('workspace_members')
-          .select('*', { count: 'exact', head: true })
-          .eq('ws_id', sub.ws_id);
-
-        const seats = Math.max(1, memberCount ?? 1);
+        // Cancel the old fixed-price subscription
+        await polar.subscriptions.revoke({
+          id: sub.polar_subscription_id,
+        });
 
         console.log(
-          `Migrating sub ${sub.id} (${sub.polar_subscription_id}) to product ${targetProduct.id} with ${seats} seats`
+          `Successfully cancelled subscription ${sub.id}. Webhook will handle creating new seat-based subscription.`
         );
-
-        // STEP 1: Change the product (fixed-price → seat-based)
-        console.log(`Step 1: Changing product to ${targetProduct.id}...`);
-        await polar.subscriptions.update({
-          id: sub.polar_subscription_id,
-          subscriptionUpdate: {
-            productId: targetProduct.id,
-            prorationBehavior: 'invoice',
-          },
-        });
-
-        // STEP 2: Set the initial seat count
-        console.log(`Step 2: Setting seat count to ${seats}...`);
-        await polar.subscriptions.update({
-          id: sub.polar_subscription_id,
-          subscriptionUpdate: {
-            seats,
-            prorationBehavior: 'invoice',
-          },
-        });
-
-        console.log(`Successfully migrated subscription ${sub.id}`);
-
-        // Update local DB to reflect change immediately
-        const { error: updateError } = await sbAdmin
-          .from('workspace_subscriptions')
-          .update({
-            pricing_model: 'seat_based',
-            product_id: targetProduct.id,
-            seat_count: seats,
-            price_per_seat: targetProduct.price_per_seat,
-          })
-          .eq('id', sub.id);
-
-        if (updateError) {
-          throw new Error(
-            `Failed to update local subscription record: ${updateError.message}`
-          );
-        }
 
         processed++;
       } catch (err) {
-        console.error(`Error migrating sub ${sub.id}:`, err);
+        console.error(`Error cancelling sub ${sub.id}:`, err);
         errors++;
         errorDetails.push({
           id: sub.id,

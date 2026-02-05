@@ -57,9 +57,8 @@ export default function PlatformSubscriptionsMigrationPage() {
         <AlertTriangle className="h-4 w-4" />
         <AlertTitle>Admin-Only Feature</AlertTitle>
         <AlertDescription>
-          This action will migrate ALL active fixed-price subscriptions in the
-          system to seat-based pricing with immediate proration invoices. Use
-          with extreme caution.
+          This action will cancel ALL active non-seat-based subscriptions in the
+          system. Use with extreme caution.
         </AlertDescription>
       </Alert>
 
@@ -67,7 +66,7 @@ export default function PlatformSubscriptionsMigrationPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Zap className="h-5 w-5" />
-            Migrate to Seat-Based Pricing
+            Revoke Old Subscriptions
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -75,17 +74,17 @@ export default function PlatformSubscriptionsMigrationPage() {
             <p className="font-medium">This migration will:</p>
             <ul className="list-inside list-disc space-y-1 text-muted-foreground">
               <li>
-                Scan all active subscriptions currently using fixed pricing
+                Scan all active non-seat-based subscriptions (excluding personal
+                workspaces)
+              </li>
+              <li>Revoke old subscriptions in Polar immediately</li>
+              <li>
+                Webhook system automatically recreates subscriptions for free
+                plan
               </li>
               <li>
-                Find matching seat-based products for the same tier and billing
-                cycle
+                Users can now upgrade to seat-based plans for their workspaces
               </li>
-              <li>
-                Update subscriptions in Polar with immediate proration behavior
-              </li>
-              <li>Set initial seat count based on current workspace members</li>
-              <li>Generate invoices for any pricing differences</li>
             </ul>
           </div>
 

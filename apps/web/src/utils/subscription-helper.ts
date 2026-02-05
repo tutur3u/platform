@@ -5,8 +5,8 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 export async function getFreeProduct(supabase: TypedSupabaseClient) {
   const { data: freeProduct, error } = await supabase
     .from('workspace_subscription_products')
-    .select('id, name, tier')
-    .eq('tier', 'FREE')
+    .select('*')
+    .eq('pricing_model', 'free')
     .eq('archived', false)
     .limit(1)
     .maybeSingle();

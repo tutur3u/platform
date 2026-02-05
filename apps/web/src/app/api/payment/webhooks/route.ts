@@ -88,9 +88,7 @@ export async function syncSubscriptionToDatabase(subscription: Subscription) {
           ? new Date(subscription.modifiedAt).toISOString()
           : null,
     // Seat-based pricing fields
-    pricing_model: isSeatBased ? ('seat_based' as const) : ('fixed' as const),
     seat_count: seatCount,
-    price_per_seat: product?.price_per_seat ?? null,
   };
 
   // Update existing subscription
