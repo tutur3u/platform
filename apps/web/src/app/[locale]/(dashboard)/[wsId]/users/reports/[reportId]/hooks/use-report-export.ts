@@ -1,6 +1,7 @@
 'use client';
 
 import { toast } from '@tuturuuu/ui/sonner';
+import { escape as escapeString } from 'lodash';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -39,12 +40,14 @@ export function useReportExport({
       })
       .join('\n');
 
+    const escapedTitle = escapeString(previewTitle || t('common.untitled'));
+
     const printContent = `
       <!DOCTYPE html>
       <html>
         <head>
           <meta charset="utf-8">
-          <title>${t('ws-reports.report')} - ${previewTitle || t('common.untitled')}</title>
+          <title>${t('ws-reports.report')} - ${escapedTitle}</title>
           <meta name="viewport" content="width=device-width, initial-scale=1">
           ${stylesheets}
           <style>
