@@ -97,9 +97,16 @@ export const getUserGroupColumns = ({
                 {m.full_name?.[0] || m.display_name?.[0] || '?'}
               </AvatarFallback>
             </Avatar>
-            <span className="line-clamp-1">
-              {m.full_name || m.display_name || m.email}
-            </span>
+            <div className="flex flex-col overflow-hidden">
+              <span className="truncate font-medium text-sm">
+                {m.full_name || m.display_name || m.email}
+              </span>
+              {m.email && (m.full_name || m.display_name) && (
+                <span className="truncate text-muted-foreground text-xs">
+                  {m.email}
+                </span>
+              )}
+            </div>
           </div>
         );
       }
