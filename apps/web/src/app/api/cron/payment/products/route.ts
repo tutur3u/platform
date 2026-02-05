@@ -1,6 +1,6 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { Constants, type WorkspaceProductTier } from '@tuturuuu/types';
+import type { WorkspaceProductTier } from '@tuturuuu/types';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -50,45 +50,35 @@ export async function GET(req: NextRequest) {
         for (const product of products) {
           try {
             // Extract product_tier from metadata
-            const validTiers = Constants.public.Enums.workspace_product_tier;
             const metadataProductTier = product.metadata?.product_tier;
 
-            // Only set tier if it matches valid enum values
+            if (
+              !metadataProductTier ||
+              typeof metadataProductTier !== 'string'
+            ) {
+              throw new Error('Missing or invalid product_tier in metadata');
+            }
+
             const tier =
-              metadataProductTier &&
-              typeof metadataProductTier === 'string' &&
-              validTiers.includes(
-                metadataProductTier.toUpperCase() as WorkspaceProductTier
-              )
-                ? (metadataProductTier.toUpperCase() as WorkspaceProductTier)
-                : null;
+              metadataProductTier.toUpperCase() as WorkspaceProductTier;
 
-            // Extract price from first price entry
-            const firstPrice =
-              product.prices.length > 0 ? (product.prices[0] as any) : null;
+            const firstPrice = product.prices.find((p) => 'amountType' in p);
 
-            const price =
-              firstPrice && 'priceAmount' in firstPrice
-                ? firstPrice.priceAmount
-                : 0;
+            const isSeatBased = firstPrice?.amountType === 'seat_based';
+            const isFixed = firstPrice?.amountType === 'fixed';
 
-            // Find seat-based price if it exists
-            const seatBasedPrice = product.prices.find(
-              (p: any) => 'amountType' in p && p.amountType === 'seat_based'
-            ) as any;
-
-            const isSeatBased = !!seatBasedPrice;
+            const price = isFixed ? firstPrice.priceAmount : null;
 
             const pricePerSeat = isSeatBased
-              ? (seatBasedPrice?.seatTiers?.tiers?.[0]?.pricePerSeat ?? null)
+              ? (firstPrice?.seatTiers?.tiers?.[0]?.pricePerSeat ?? null)
               : null;
 
             const minSeats = isSeatBased
-              ? (seatBasedPrice?.seatTiers?.minimumSeats ?? null)
+              ? firstPrice?.seatTiers?.minimumSeats
               : null;
 
             const maxSeats = isSeatBased
-              ? (seatBasedPrice?.seatTiers?.maximumSeats ?? null)
+              ? firstPrice?.seatTiers?.maximumSeats
               : null;
 
             // Prepare product data
@@ -100,9 +90,7 @@ export async function GET(req: NextRequest) {
               recurring_interval: product.recurringInterval || 'month',
               tier,
               archived: product.isArchived ?? false,
-              pricing_model: isSeatBased
-                ? ('seat_based' as const)
-                : ('fixed' as const),
+              pricing_model: firstPrice?.amountType,
               price_per_seat: pricePerSeat,
               min_seats: minSeats,
               max_seats: maxSeats,

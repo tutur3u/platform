@@ -72,31 +72,20 @@ export function PlanListDialog({
 
   const allPlans = products
     .map((product) => {
-      // Find seat-based price if it exists
-      const seatBasedPrice = product.prices.find(
-        (p: any) => 'amountType' in p && p.amountType === 'seat_based'
-      ) as any;
+      const firstPrice = product.prices.find((p) => 'amountType' in p);
 
-      const fixedPrice = product.prices.find(
-        (p: any) => 'amountType' in p && p.amountType === 'fixed'
-      ) as any;
+      const isSeatBased = firstPrice?.amountType === 'seat_based';
+      const isFixed = firstPrice?.amountType === 'fixed';
 
-      const isSeatBased = !!seatBasedPrice;
-      const isFixed = !!fixedPrice;
-
-      const price = isSeatBased ? null : isFixed ? fixedPrice.priceAmount : 0;
+      const price = isFixed ? firstPrice.priceAmount : null;
 
       const pricePerSeat = isSeatBased
-        ? seatBasedPrice?.seatTiers?.tiers?.[0]?.pricePerSeat
+        ? (firstPrice?.seatTiers?.tiers?.[0]?.pricePerSeat ?? null)
         : null;
 
-      const minSeats = isSeatBased
-        ? seatBasedPrice?.seatTiers?.minimumSeats
-        : null;
+      const minSeats = isSeatBased ? firstPrice?.seatTiers?.minimumSeats : null;
 
-      const maxSeats = isSeatBased
-        ? seatBasedPrice?.seatTiers?.maximumSeats
-        : null;
+      const maxSeats = isSeatBased ? firstPrice?.seatTiers?.maximumSeats : null;
 
       if (
         (isPersonalWorkspace && isSeatBased) ||
@@ -110,7 +99,7 @@ export function PlanListDialog({
         id: product.id,
         name: getSimplePlanName(product.name),
         fullName: product.name,
-        isSeatBased,
+        pricingModel: firstPrice?.amountType || 'free',
         price,
         pricePerSeat,
         billingCycle: product.recurringInterval,
@@ -121,20 +110,20 @@ export function PlanListDialog({
               )
               .filter(Boolean)
           : [],
-        isEnterprise: product.name.toLowerCase().includes('enterprise'),
-        isPro: product.name.toLowerCase().includes('pro'),
-        isPlus: product.name.toLowerCase().includes('plus'),
-        isFree: product.name.toLowerCase().includes('free'),
+        isEnterprise: product.metadata.product_tier === 'ENTERPRISE',
+        isPro: product.metadata.product_tier === 'PRO',
+        isPlus: product.metadata.product_tier === 'PLUS',
+        isFree: product.metadata.product_tier === 'FREE',
         minSeats,
         maxSeats,
       };
     })
     .filter((plan) => plan !== null)
     .sort((a, b) => {
-      if (a.isSeatBased && b.isSeatBased)
-        return a.pricePerSeat - b.pricePerSeat;
+      if (a.pricingModel === 'seat_based' && b.pricingModel === 'seat_based')
+        return (a.pricePerSeat ?? 0) - (b.pricePerSeat ?? 0);
 
-      return a.price - b.price;
+      return (a.price ?? 0) - (b.price ?? 0);
     });
 
   // Filter plans by selected billing cycle (Free plan shown in both)
@@ -213,13 +202,10 @@ export function PlanListDialog({
       };
     }
 
-    const currentPlanData = allPlans.find(
-      (p) => p.id === currentPlan.productId
-    );
-
     // Check if switching between incompatible pricing models
     const isIncompatiblePricingModel =
-      currentPlanData && currentPlanData.isSeatBased !== plan.isSeatBased;
+      currentPlan.pricingModel !== 'free' &&
+      currentPlan.pricingModel !== plan.pricingModel;
 
     if (isIncompatiblePricingModel) {
       return {
@@ -231,7 +217,12 @@ export function PlanListDialog({
       };
     }
 
-    const isDowngrade = currentPlanData && plan.price < currentPlanData.price;
+    const isDowngrade =
+      currentPlan.tier !== 'FREE' &&
+      ((plan.pricingModel === 'fixed' &&
+        (plan.price ?? 0) < (currentPlan.price ?? 0)) ||
+        (plan.pricingModel === 'seat_based' &&
+          (plan.pricePerSeat ?? 0) < (currentPlan.pricePerSeat ?? 0)));
 
     if (isDowngrade) {
       return {
@@ -333,6 +324,8 @@ export function PlanListDialog({
           <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
             {filteredPlans.map((plan) => {
               const isCurrentPlan = plan.id === currentPlan.productId;
+              const isSeatBased = plan.pricingModel === 'seat_based';
+              const isFixed = plan.pricingModel === 'fixed';
               const styles = getPlanStyles(plan, isCurrentPlan);
               const PlanIcon = styles.Icon;
 
@@ -411,13 +404,15 @@ export function PlanListDialog({
                           )}
                         >
                           $
-                          {plan.isSeatBased && plan.pricePerSeat
+                          {isSeatBased && plan.pricePerSeat
                             ? centToDollar(plan.pricePerSeat)
-                            : centToDollar(plan.price)}
+                            : isFixed && plan.price
+                              ? centToDollar(plan.price)
+                              : 0}
                         </span>
                         {plan.billingCycle && (
                           <span className="text-muted-foreground text-sm">
-                            {plan.isSeatBased ? t('per-seat') : ''}
+                            {isSeatBased ? t('per-seat') : ''}
                             {plan.billingCycle === 'month'
                               ? t('per-month')
                               : t('per-year')}

@@ -32,7 +32,7 @@ export interface Plan {
   id: string;
   productId: string;
   name: string;
-  tier: WorkspaceProductTier | null;
+  tier: WorkspaceProductTier;
   billingCycle: string | null;
   startDate: string;
   nextBillingDate: string;
@@ -40,7 +40,7 @@ export interface Plan {
   status: string;
   features?: string[];
   // Seat-based pricing fields
-  pricingModel: 'fixed' | 'seat_based' | null;
+  pricingModel: 'fixed' | 'seat_based' | 'custom' | 'free' | 'metered_unit';
   seatCount: number | null;
   price: number | null;
   pricePerSeat: number | null;

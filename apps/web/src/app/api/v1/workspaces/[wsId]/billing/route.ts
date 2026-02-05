@@ -159,9 +159,7 @@ export async function fetchSubscription(wsId: string) {
     cancelAtPeriodEnd: dbSub.cancel_at_period_end,
     product: dbSub.workspace_subscription_products,
     // Seat-based pricing fields
-    pricingModel: dbSub.pricing_model,
     seatCount: dbSub.seat_count,
-    pricePerSeat: dbSub.price_per_seat,
   };
 }
 

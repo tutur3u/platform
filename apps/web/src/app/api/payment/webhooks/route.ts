@@ -2,7 +2,7 @@ import type { Order, Subscription } from '@tuturuuu/payment/polar';
 import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { Webhooks } from '@tuturuuu/payment/polar/next';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { Constants, type WorkspaceProductTier } from '@tuturuuu/types';
+import type { WorkspaceProductTier } from '@tuturuuu/types';
 import {
   createFreeSubscription,
   hasActiveSubscription,
@@ -169,61 +169,54 @@ export const POST = Webhooks({
       const product = payload.data;
 
       // Extract product_tier from metadata
-      const validTiers = Constants.public.Enums.workspace_product_tier;
       const metadataProductTier = product.metadata?.product_tier;
 
-      // Only set tier if it matches valid enum values
-      const tier =
-        metadataProductTier &&
-        typeof metadataProductTier === 'string' &&
-        validTiers.includes(
-          metadataProductTier.toUpperCase() as WorkspaceProductTier
-        )
-          ? (metadataProductTier.toUpperCase() as WorkspaceProductTier)
-          : null;
+      if (!metadataProductTier || typeof metadataProductTier !== 'string') {
+        console.error(
+          'Webhook Error: product_tier metadata is missing or invalid.'
+        );
+        throw new Response(
+          'Webhook Error: product_tier metadata is missing or invalid.',
+          {
+            status: 400,
+          }
+        );
+      }
 
-      // Extract price from first price entry
-      const firstPrice =
-        product.prices.length > 0 ? (product.prices[0] as any) : null;
+      const tier = metadataProductTier.toUpperCase() as WorkspaceProductTier;
 
-      const price =
-        firstPrice && 'priceAmount' in firstPrice ? firstPrice.priceAmount : 0;
+      const firstPrice = product.prices.find((p) => 'amountType' in p);
 
-      // Find seat-based price if it exists
-      const seatBasedPrice = product.prices.find(
-        (p: any) => 'amountType' in p && p.amountType === 'seat_based'
-      ) as any;
+      const isSeatBased = firstPrice?.amountType === 'seat_based';
+      const isFixed = firstPrice?.amountType === 'fixed';
 
-      const isSeatBased = !!seatBasedPrice;
+      const price = isFixed ? firstPrice.priceAmount : null;
 
       const pricePerSeat = isSeatBased
-        ? (seatBasedPrice?.seatTiers?.tiers?.[0]?.pricePerSeat ?? null)
+        ? (firstPrice?.seatTiers?.tiers?.[0]?.pricePerSeat ?? null)
         : null;
 
-      const minSeats = isSeatBased
-        ? (seatBasedPrice?.seatTiers?.minimumSeats ?? null)
-        : null;
+      const minSeats = isSeatBased ? firstPrice?.seatTiers?.minimumSeats : null;
 
-      const maxSeats = isSeatBased
-        ? (seatBasedPrice?.seatTiers?.maximumSeats ?? null)
-        : null;
+      const maxSeats = isSeatBased ? firstPrice?.seatTiers?.maximumSeats : null;
+
+      const productData = {
+        id: product.id,
+        name: product.name,
+        description: product.description || '',
+        price: price,
+        recurring_interval: product.recurringInterval || 'month',
+        tier,
+        archived: product.isArchived ?? false,
+        pricing_model: firstPrice?.amountType,
+        price_per_seat: pricePerSeat,
+        min_seats: minSeats,
+        max_seats: maxSeats,
+      };
 
       const { error: dbError } = await sbAdmin
         .from('workspace_subscription_products')
-        .insert({
-          id: product.id,
-          name: product.name,
-          description: product.description || '',
-          price,
-          recurring_interval: product.recurringInterval,
-          tier,
-          archived: product.isArchived,
-          // Seat-based pricing fields
-          pricing_model: isSeatBased ? 'seat_based' : 'fixed',
-          price_per_seat: pricePerSeat,
-          min_seats: minSeats,
-          max_seats: maxSeats,
-        });
+        .insert(productData);
 
       if (dbError) {
         console.error('Webhook: Product insert error:', dbError.message);
@@ -251,47 +244,37 @@ export const POST = Webhooks({
       const product = payload.data;
 
       // Extract product_tier from metadata
-      const validTiers = Constants.public.Enums.workspace_product_tier;
       const metadataProductTier = product.metadata?.product_tier;
 
+      if (!metadataProductTier || typeof metadataProductTier !== 'string') {
+        console.error(
+          'Webhook Error: product_tier metadata is missing or invalid.'
+        );
+        throw new Response(
+          'Webhook Error: product_tier metadata is missing or invalid.',
+          {
+            status: 400,
+          }
+        );
+      }
+
       // Only set tier if it matches valid enum values
-      const tier =
-        metadataProductTier &&
-        typeof metadataProductTier === 'string' &&
-        validTiers.includes(
-          metadataProductTier.toUpperCase() as WorkspaceProductTier
-        )
-          ? (metadataProductTier.toUpperCase() as WorkspaceProductTier)
-          : null;
+      const tier = metadataProductTier.toUpperCase() as WorkspaceProductTier;
 
-      // Extract price from first price entry
-      const firstPrice = product.prices[0] as any;
+      const firstPrice = product.prices.find((p) => 'amountType' in p);
 
-      const price =
-        product.prices.length > 0
-          ? firstPrice && 'priceAmount' in firstPrice
-            ? firstPrice.priceAmount
-            : 0
-          : 0;
+      const isSeatBased = firstPrice?.amountType === 'seat_based';
+      const isFixed = firstPrice?.amountType === 'fixed';
 
-      // Find seat-based price if it exists
-      const seatBasedPrice = product.prices.find(
-        (p: any) => 'amountType' in p && p.amountType === 'seat_based'
-      ) as any;
-
-      const isSeatBased = !!seatBasedPrice;
+      const price = isFixed ? firstPrice.priceAmount : null;
 
       const pricePerSeat = isSeatBased
-        ? (seatBasedPrice?.seatTiers?.tiers?.[0]?.pricePerSeat ?? null)
+        ? (firstPrice?.seatTiers?.tiers?.[0]?.pricePerSeat ?? null)
         : null;
 
-      const minSeats = isSeatBased
-        ? (seatBasedPrice?.seatTiers?.minimumSeats ?? null)
-        : null;
+      const minSeats = isSeatBased ? firstPrice?.seatTiers?.minimumSeats : null;
 
-      const maxSeats = isSeatBased
-        ? (seatBasedPrice?.seatTiers?.maximumSeats ?? null)
-        : null;
+      const maxSeats = isSeatBased ? firstPrice?.seatTiers?.maximumSeats : null;
 
       const { error: dbError } = await sbAdmin
         .from('workspace_subscription_products')
@@ -299,7 +282,7 @@ export const POST = Webhooks({
           name: product.name,
           description: product.description || '',
           price,
-          recurring_interval: product.recurringInterval,
+          recurring_interval: product.recurringInterval as string,
           tier,
           archived: product.isArchived,
           // Seat-based pricing fields

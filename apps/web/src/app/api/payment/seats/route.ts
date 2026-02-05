@@ -49,7 +49,9 @@ export async function GET(req: Request) {
     // Get subscription and member count
     const { data: subscription } = await sbAdmin
       .from('workspace_subscriptions')
-      .select('pricing_model, seat_count, price_per_seat')
+      .select(
+        '*, workspace_subscription_products(pricing_model, price_per_seat)'
+      )
       .eq('ws_id', wsId)
       .eq('status', 'active')
       .order('created_at', { ascending: false })
@@ -61,7 +63,9 @@ export async function GET(req: Request) {
       .select('*', { count: 'exact', head: true })
       .eq('ws_id', wsId);
 
-    const isSeatBased = subscription?.pricing_model === 'seat_based';
+    const product = subscription?.workspace_subscription_products;
+
+    const isSeatBased = product?.pricing_model === 'seat_based';
     const seatCount = isSeatBased ? (subscription?.seat_count ?? 1) : Infinity;
     const currentMembers = memberCount ?? 0;
     const availableSeats = isSeatBased
@@ -74,7 +78,7 @@ export async function GET(req: Request) {
       memberCount: currentMembers,
       availableSeats,
       canAddMember: availableSeats > 0,
-      pricePerSeat: subscription?.price_per_seat ?? null,
+      pricePerSeat: product?.price_per_seat ?? null,
     });
   } catch (error) {
     console.error('Error getting seat status:', error);
@@ -128,7 +132,9 @@ export async function POST(req: Request) {
     // Get current seat-based subscription with product limits
     const { data: subscription } = await sbAdmin
       .from('workspace_subscriptions')
-      .select('*, workspace_subscription_products(max_seats, min_seats)')
+      .select(
+        '*, workspace_subscription_products(max_seats, min_seats, price_per_seat)'
+      )
       .eq('ws_id', wsId)
       .eq('status', 'active')
       .eq('pricing_model', 'seat_based')
@@ -212,7 +218,8 @@ export async function POST(req: Request) {
       previousSeats,
       newSeats: newSeatCount,
       seatChange: newSeatCount - previousSeats,
-      pricePerSeat: subscription.price_per_seat,
+      pricePerSeat:
+        subscription.workspace_subscription_products?.price_per_seat,
     });
   } catch (error) {
     console.error('Error updating seats:', error);
