@@ -740,6 +740,7 @@
     "never_used": "Never used",
     "no_expiration": "Never expires",
     "status": "Status",
+    "updated_at": "Updated At",
     "value": "Value"
   },
   "api-key-usage-logs-table": {
