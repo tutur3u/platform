@@ -5,9 +5,9 @@ import { Loader2 } from '@tuturuuu/icons';
 import { format } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
 import { useLocale, useTranslations } from 'next-intl';
-import { BillingClient } from '@/app/[locale]/(dashboard)/[wsId]/billing/billing-client';
-import BillingHistory from '@/app/[locale]/(dashboard)/[wsId]/billing/billing-history';
-import { NoSubscriptionFound } from '@/app/[locale]/(dashboard)/[wsId]/billing/no-subscription-found';
+import { BillingClient } from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/billing-client';
+import BillingHistory from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/billing-history';
+import { NoSubscriptionFound } from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/no-subscription-found';
 
 interface BillingSettingsProps {
   wsId: string;
