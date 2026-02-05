@@ -262,6 +262,7 @@ export default function TemplateDetailClient({ wsId, template }: Props) {
       {/* Back Button */}
       <Button
         onClick={handleBack}
+        variant="link"
         className="inline-flex items-center gap-2 text-muted-foreground text-sm transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
