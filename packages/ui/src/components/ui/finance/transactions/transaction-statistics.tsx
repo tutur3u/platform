@@ -9,6 +9,8 @@ import {
 } from '@tuturuuu/icons';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { Badge } from '@tuturuuu/ui/badge';
+import type { ExchangeRate } from '@tuturuuu/utils/exchange-rates';
+import { convertCurrency } from '@tuturuuu/utils/exchange-rates';
 import { cn, getCurrencyLocale } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
@@ -24,6 +26,7 @@ interface TransactionStatisticsProps {
   };
   isLoading?: boolean;
   currency?: string;
+  exchangeRates?: ExchangeRate[];
 }
 
 export function TransactionStatistics({
@@ -31,12 +34,14 @@ export function TransactionStatistics({
   stats,
   isLoading,
   currency = 'USD',
+  exchangeRates = [],
 }: TransactionStatisticsProps) {
   const t = useTranslations();
 
   const localStatistics = useMemo(() => {
     if (stats) return stats;
 
+    let hasConvertedAmounts = false;
     const amounts = transactions
       .filter(
         (transaction) =>
@@ -45,7 +50,28 @@ export function TransactionStatistics({
             transaction.is_amount_confidential
           )
       )
-      .map((transaction) => transaction.amount ?? 0);
+      .map((transaction) => {
+        let amt = transaction.amount ?? 0;
+        if (
+          transaction.wallet_currency &&
+          currency &&
+          transaction.wallet_currency.toUpperCase() !==
+            currency.toUpperCase() &&
+          exchangeRates.length > 0
+        ) {
+          const converted = convertCurrency(
+            amt,
+            transaction.wallet_currency,
+            currency,
+            exchangeRates
+          );
+          if (converted !== null) {
+            amt = converted;
+            hasConvertedAmounts = true;
+          }
+        }
+        return amt;
+      });
 
     const totalTransactions = transactions.length;
     const totalIncome = amounts.filter((a) => a > 0).reduce((a, b) => a + b, 0);
@@ -54,10 +80,12 @@ export function TransactionStatistics({
       .reduce((a, b) => a + b, 0);
     const netTotal = totalIncome + totalExpense;
 
-    const hasRedactedAmounts = transactions.some(
-      (transaction) =>
-        transaction.amount === undefined && transaction.is_amount_confidential
-    );
+    const hasRedactedAmounts =
+      hasConvertedAmounts ||
+      transactions.some(
+        (transaction) =>
+          transaction.amount === undefined && transaction.is_amount_confidential
+      );
 
     return {
       totalTransactions,
@@ -66,7 +94,7 @@ export function TransactionStatistics({
       netTotal,
       hasRedactedAmounts,
     };
-  }, [transactions, stats]);
+  }, [transactions, stats, currency, exchangeRates]);
 
   const statistics = stats || localStatistics;
   const isNetPositive = statistics.netTotal >= 0;

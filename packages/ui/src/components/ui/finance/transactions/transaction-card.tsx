@@ -31,7 +31,9 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { ConfidentialAmount } from '@tuturuuu/ui/finance/transactions/confidential-field';
 import { WalletIconDisplay } from '@tuturuuu/ui/finance/wallets/wallet-icon-display';
-import { cn } from '@tuturuuu/utils/format';
+import { useExchangeRates } from '@tuturuuu/ui/hooks/use-exchange-rates';
+import { convertCurrency } from '@tuturuuu/utils/exchange-rates';
+import { cn, formatCurrency } from '@tuturuuu/utils/format';
 import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import moment from 'moment';
 import Link from 'next/link';
@@ -70,7 +72,33 @@ export function TransactionCard({
 }: TransactionCardProps) {
   const t = useTranslations('workspace-finance-transactions');
   const [isHovered, setIsHovered] = useState(false);
+  const effectiveCurrency = transaction.wallet_currency || currency;
   const isExpense = (transaction.amount || 0) < 0;
+
+  // Currency conversion for foreign-currency transactions
+  const isForeignCurrency =
+    effectiveCurrency.toUpperCase() !== currency.toUpperCase();
+  const { data: exchangeRateData } = useExchangeRates();
+  const convertedAmount = useMemo(() => {
+    if (
+      !isForeignCurrency ||
+      transaction.amount == null ||
+      !exchangeRateData?.data
+    )
+      return null;
+    return convertCurrency(
+      transaction.amount,
+      effectiveCurrency,
+      currency,
+      exchangeRateData.data
+    );
+  }, [
+    isForeignCurrency,
+    transaction.amount,
+    effectiveCurrency,
+    currency,
+    exchangeRateData?.data,
+  ]);
 
   // Check if transaction is confidential
   const isConfidential =
@@ -312,24 +340,36 @@ export function TransactionCard({
 
             {/* Amount + Actions */}
             <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-              <ConfidentialAmount
-                amount={transaction.amount ?? null}
-                isConfidential={transaction.is_amount_confidential || false}
-                currency={currency}
-                className={cn(
-                  'font-bold text-sm tabular-nums transition-all duration-200 sm:text-xl',
-                  isConfidential
-                    ? 'text-dynamic-orange'
-                    : !hasCustomStyling &&
-                        (isExpense ? 'text-dynamic-red' : 'text-dynamic-green'),
-                  isHovered && 'scale-105'
+              <div className="flex flex-col items-end">
+                <ConfidentialAmount
+                  amount={transaction.amount ?? null}
+                  isConfidential={transaction.is_amount_confidential || false}
+                  currency={effectiveCurrency}
+                  className={cn(
+                    'font-bold text-sm tabular-nums transition-all duration-200 sm:text-xl',
+                    isConfidential
+                      ? 'text-dynamic-orange'
+                      : !hasCustomStyling &&
+                          (isExpense
+                            ? 'text-dynamic-red'
+                            : 'text-dynamic-green'),
+                    isHovered && 'scale-105'
+                  )}
+                  style={
+                    hasCustomStyling && !isConfidential && customColorStyles
+                      ? { color: customColorStyles.text }
+                      : undefined
+                  }
+                />
+                {isForeignCurrency && convertedAmount != null && (
+                  <span className="text-[10px] text-muted-foreground tabular-nums sm:text-xs">
+                    ≈{' '}
+                    {formatCurrency(convertedAmount, currency, undefined, {
+                      signDisplay: 'exceptZero',
+                    })}
+                  </span>
                 )}
-                style={
-                  hasCustomStyling && !isConfidential && customColorStyles
-                    ? { color: customColorStyles.text }
-                    : undefined
-                }
-              />
+              </div>
               {(canEdit || canDelete) && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild onClick={handleMenuClick}>

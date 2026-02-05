@@ -1,5 +1,6 @@
 'use client';
 
+import { cn } from '@tuturuuu/utils/format';
 import {
   cloneElement,
   type ReactElement,
@@ -69,11 +70,10 @@ export default function ModifiableDialogTrigger<T>({
       <DialogContent
         onOpenAutoFocus={(e) => e.preventDefault()}
         // onInteractOutside={(e) => e.preventDefault()}
-        className={
-          requireExpansion
-            ? 'md:max-w-2xl lg:max-w-4xl xl:max-w-6xl'
-            : undefined
-        }
+        className={cn(
+          'max-h-[85vh] overflow-y-auto',
+          requireExpansion && 'md:max-w-2xl lg:max-w-4xl xl:max-w-6xl'
+        )}
         onWheel={(e) => e.stopPropagation()}
       >
         <DialogHeader>

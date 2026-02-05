@@ -6,6 +6,7 @@ import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigg
 import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
 import { walletColumns } from '@tuturuuu/ui/finance/wallets/columns';
 import { WalletForm } from '@tuturuuu/ui/finance/wallets/form';
+import { useExchangeRates } from '@tuturuuu/ui/hooks/use-exchange-rates';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useCallback, useState } from 'react';
@@ -40,6 +41,7 @@ export function WalletsDataTable({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
+  const { data: exchangeRatesResponse } = useExchangeRates();
 
   // State for edit dialog
   const [selectedWallet, setSelectedWallet] = useState<Wallet | null>(null);
@@ -91,6 +93,7 @@ export function WalletsDataTable({
           canUpdateWallets,
           canDeleteWallets,
           currency,
+          exchangeRates: exchangeRatesResponse?.data,
           isPersonalWorkspace,
         }}
         filters={filters}
