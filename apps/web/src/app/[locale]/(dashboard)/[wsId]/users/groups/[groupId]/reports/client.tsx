@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { Loader2 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUserReport } from '@tuturuuu/types';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
@@ -15,8 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { parseAsString, useQueryStates } from 'nuqs';
 import { useEffect, useMemo, useState } from 'react';
 import { availableConfigs } from '@/constants/configs/reports';
 import EditableReportPreview from '../../../reports/[reportId]/editable-report-preview';
@@ -54,27 +55,21 @@ export default function GroupReportsClient({
   canDeleteReports,
 }: Props) {
   const t = useTranslations();
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
 
-  const userId = searchParams.get('userId') ?? initialUserId ?? undefined;
+  const [queryParams, setQueryParams] = useQueryStates(
+    {
+      userId: parseAsString,
+      reportId: parseAsString,
+    },
+    {
+      history: 'replace',
+    }
+  );
+
+  const userId = queryParams.userId || initialUserId;
   const reportId =
-    searchParams.get('reportId') ??
+    queryParams.reportId ||
     (userId === initialUserId ? initialReportId : undefined);
-
-  const updateSearchParams = (next: { userId?: string; reportId?: string }) => {
-    const sp = new URLSearchParams(searchParams.toString());
-    if (next.userId !== undefined) {
-      if (next.userId) sp.set('userId', next.userId);
-      else sp.delete('userId');
-    }
-    if (next.reportId !== undefined) {
-      if (next.reportId) sp.set('reportId', next.reportId);
-      else sp.delete('reportId');
-    }
-    router.replace(`${pathname}?${sp.toString()}`);
-  };
 
   const supabase = createClient();
 
@@ -292,6 +287,12 @@ export default function GroupReportsClient({
       });
   }, [configsQuery.data]);
 
+  const isLoading =
+    usersQuery.isLoading ||
+    (Boolean(userId) && reportsQuery.isLoading) ||
+    (Boolean(reportId && reportId !== 'new') && reportDetailQuery.isLoading) ||
+    configsQuery.isLoading;
+
   // Query to fetch healthcare vitals scores for the selected user
   const healthcareVitalsQuery = useQuery({
     queryKey: [
@@ -427,9 +428,9 @@ export default function GroupReportsClient({
                   : Array.isArray(val)
                     ? val[0]
                     : '';
-              updateSearchParams({
-                userId: nextUserId || undefined,
-                reportId: undefined,
+              setQueryParams({
+                userId: nextUserId || null,
+                reportId: null,
               });
             }}
             className="w-full max-w-sm"
@@ -441,7 +442,7 @@ export default function GroupReportsClient({
                 <Select
                   value={reportId ?? ''}
                   onValueChange={(val) =>
-                    updateSearchParams({ reportId: val || undefined })
+                    setQueryParams({ reportId: val || null })
                   }
                   disabled={reportsQuery.isLoading}
                 >
@@ -464,7 +465,7 @@ export default function GroupReportsClient({
           <div className="flex flex-row items-center gap-2">
             <Button
               type="button"
-              onClick={() => updateSearchParams({ reportId: 'new' })}
+              onClick={() => setQueryParams({ reportId: 'new' })}
               disabled={!canCreateReports}
             >
               {t('common.new')}
@@ -474,9 +475,18 @@ export default function GroupReportsClient({
       </div>
 
       {Boolean(groupId && userId) &&
-        selectedReport &&
-        configsData.length > 0 && (
+        (isLoading ? (
+          <div className="flex min-h-[400px] w-full items-center justify-center rounded-lg border border-dashed py-20">
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="h-8 w-8 animate-spin text-dynamic-blue" />
+              <p className="text-muted-foreground text-sm">
+                {t('common.loading')}
+              </p>
+            </div>
+          </div>
+        ) : selectedReport && configsData.length > 0 ? (
           <EditableReportPreview
+            key={reportId === 'new' ? `new-${userId}-${groupId}` : reportId}
             wsId={wsId}
             report={{
               ...selectedReport,
@@ -502,7 +512,7 @@ export default function GroupReportsClient({
             onChangeManagerAction={(name) => setSelectedManagerName(name)}
             canCheckUserAttendance={canCheckUserAttendance}
           />
-        )}
+        ) : null)}
     </div>
   );
 }
