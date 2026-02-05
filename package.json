@@ -138,5 +138,8 @@
   "workspaces": ["apps/*", "packages/*"],
   "overrides": {
     "lightningcss": "1.29.1"
+  },
+  "dependencies": {
+    "@tuturuuu/hooks": "workspace:*"
   }
 }

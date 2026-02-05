@@ -74,6 +74,7 @@
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/trigger": "workspace:*",
+    "@tuturuuu/hooks": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@types/debug": "^4.1.12",
     "browser-image-compression": "^2.0.2",

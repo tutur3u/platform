@@ -23,6 +23,7 @@
     "@react-navigation/native": "^7.1.8",
     "@supabase/supabase-js": "^2.94.0",
     "@tanstack/react-query": "^5.90.20",
+    "@tuturuuu/hooks": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
