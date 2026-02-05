@@ -69,9 +69,11 @@ describe('seat-limits utils', () => {
 
     it('should return correct seat status for seat-based pricing', async () => {
       const subscription = {
-        pricing_model: 'seat_based',
         seat_count: 5,
-        price_per_seat: 1000,
+        workspace_subscription_products: {
+          pricing_model: 'seat_based',
+          price_per_seat: 1000,
+        },
       };
       const supabase = createMockSupabase(subscription, 3);
       const status = await getSeatStatus(supabase as any, wsId);
@@ -86,7 +88,9 @@ describe('seat-limits utils', () => {
 
     it('should cap available seats at 0 when over limit', async () => {
       const subscription = {
-        pricing_model: 'seat_based',
+        workspace_subscription_products: {
+          pricing_model: 'seat_based',
+        },
         seat_count: 5,
       };
       const supabase = createMockSupabase(subscription, 7);
@@ -98,8 +102,10 @@ describe('seat-limits utils', () => {
 
     it('should increase available seats when member count decreases', async () => {
       const subscription = {
-        pricing_model: 'seat_based',
         seat_count: 5,
+        workspace_subscription_products: {
+          pricing_model: 'seat_based',
+        },
       };
 
       // Case 1: 5 members, 0 available
@@ -118,14 +124,20 @@ describe('seat-limits utils', () => {
 
   describe('enforceSeatLimit', () => {
     it('should allow adding member when not seat-based', async () => {
-      const supabase = createMockSupabase({ pricing_model: 'fixed' }, 100);
+      const subscription = {
+        workspace_subscription_products: { pricing_model: 'fixed' },
+      };
+      const supabase = createMockSupabase(subscription, 100);
       const result = await enforceSeatLimit(supabase as any, wsId);
 
       expect(result.allowed).toBe(true);
     });
 
     it('should allow adding member when seats are available', async () => {
-      const subscription = { pricing_model: 'seat_based', seat_count: 5 };
+      const subscription = {
+        workspace_subscription_products: { pricing_model: 'seat_based' },
+        seat_count: 5,
+      };
       const supabase = createMockSupabase(subscription, 4);
       const result = await enforceSeatLimit(supabase as any, wsId);
 
@@ -133,7 +145,10 @@ describe('seat-limits utils', () => {
     });
 
     it('should block adding member when seat limit is reached', async () => {
-      const subscription = { pricing_model: 'seat_based', seat_count: 5 };
+      const subscription = {
+        workspace_subscription_products: { pricing_model: 'seat_based' },
+        seat_count: 5,
+      };
       const supabase = createMockSupabase(subscription, 5);
       const result = await enforceSeatLimit(supabase as any, wsId);
 
@@ -144,14 +159,20 @@ describe('seat-limits utils', () => {
 
   describe('canCreateInvitation', () => {
     it('should allow invitation when not seat-based', async () => {
-      const supabase = createMockSupabase({ pricing_model: 'fixed' }, 100);
+      const subscription = {
+        workspace_subscription_products: { pricing_model: 'fixed' },
+      };
+      const supabase = createMockSupabase(subscription, 100);
       const result = await canCreateInvitation(supabase as any, wsId);
 
       expect(result.allowed).toBe(true);
     });
 
     it('should account for pending invitations', async () => {
-      const subscription = { pricing_model: 'seat_based', seat_count: 10 };
+      const subscription = {
+        workspace_subscription_products: { pricing_model: 'seat_based' },
+        seat_count: 10,
+      };
       // 5 members + 3 workspace invites + 1 email invite = 9 used
       const supabase = createMockSupabase(subscription, 5, {
         workspace: 3,
@@ -164,7 +185,10 @@ describe('seat-limits utils', () => {
     });
 
     it('should block invitation when pending + members reach limit', async () => {
-      const subscription = { pricing_model: 'seat_based', seat_count: 10 };
+      const subscription = {
+        workspace_subscription_products: { pricing_model: 'seat_based' },
+        seat_count: 10,
+      };
       // 7 members + 2 workspace invites + 1 email invite = 10 used
       const supabase = createMockSupabase(subscription, 7, {
         workspace: 2,
