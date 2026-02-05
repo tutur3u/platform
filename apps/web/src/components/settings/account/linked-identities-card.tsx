@@ -107,6 +107,7 @@ export default function LinkedIdentitiesCard({
   const handleLinkIdentity = async (provider: string) => {
     try {
       setLinkLoading(provider);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await linkIdentity(supabase, provider as any, {
         redirectTo: `${window.location.origin}/settings/account/security?linked=${provider}`,
       });

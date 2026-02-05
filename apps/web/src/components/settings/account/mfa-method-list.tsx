@@ -13,6 +13,7 @@ interface MFAMethod {
   id: string;
   titleKey: string;
   descriptionKey: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   icon: React.ComponentType<any>;
   status: MFAStatus;
   dialog: React.ReactNode;
