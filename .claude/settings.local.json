@@ -48,7 +48,8 @@
       "Bash(node scripts/i18n-sort.js:*)",
       "Bash(npx @biomejs/biome check:*)",
       "Bash(bunx @biomejs/biome check:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(npx biome check:*)"
     ]
   }
 }

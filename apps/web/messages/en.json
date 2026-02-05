@@ -8182,9 +8182,12 @@
       "cannot_edit_old_session": "Start time and end time cannot be edited for sessions older than {days} {dayLabel}. This session is from {date}.",
       "cannot_move_running": "Cannot move running sessions. Please stop the session first.",
       "category": "Category",
+      "category_legend": "Categories",
       "clear_all_filters": "🧹 Clear All Filters",
+      "click_to_edit": "Click to edit session",
       "completed": "completed",
       "completed_count": "{completed} completed",
+      "daily_total": "Daily total",
       "day": "day",
       "day_plural": "days",
       "day_singular": "day",
@@ -8312,6 +8315,7 @@
       "total": "total",
       "total_time": "Total Time",
       "try_different_period": "Try a different time period or adjusting your filters",
+      "uncategorized": "Uncategorized",
       "validation_duration_too_short": "Duration must be at least 1 minute",
       "validation_end_before_start": "End time must be after start time",
       "validation_future_date_time": "Cannot use future date/time: {dateTime}",
@@ -8319,6 +8323,7 @@
       "validation_future_start_time": "Start time cannot be in the future: {dateTime}",
       "validation_invalid_time": "Invalid time",
       "week": "week",
+      "week_overview": "Week Overview",
       "weekly_breakdown": "Weekly Breakdown"
     },
     "simple": {

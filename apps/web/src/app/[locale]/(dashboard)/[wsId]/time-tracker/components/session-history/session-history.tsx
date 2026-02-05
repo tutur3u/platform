@@ -21,6 +21,11 @@ import {
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@tuturuuu/ui/collapsible';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import timezone from 'dayjs/plugin/timezone';
@@ -51,6 +56,7 @@ import {
 } from './session-utils';
 import { StackedSessionItem } from './stacked-session-item';
 import { useSessionActions } from './use-session-actions';
+import { WeekCalendarGrid } from './week-calendar-grid';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -77,6 +83,17 @@ export function SessionHistory({
   const [currentDate, setCurrentDate] = useState(dayjs());
 
   const userTimezone = dayjs.tz.guess();
+
+  // Week overview collapsible state — persisted to localStorage
+  const [overviewOpen, setOverviewOpen] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    const stored = localStorage.getItem('time-tracker-week-overview-open');
+    return stored === null ? true : stored === 'true';
+  });
+  const handleOverviewToggle = useCallback((open: boolean) => {
+    setOverviewOpen(open);
+    localStorage.setItem('time-tracker-week-overview-open', String(open));
+  }, []);
 
   // Filter state
   const [filters, setFilters] = useState<FilterState>({
@@ -448,10 +465,46 @@ export function SessionHistory({
           ) : (
             // Day/Week View Layout
             <>
-              <SessionStats
-                periodStats={periodStats}
-                isLoading={isPeriodStatsLoading}
-              />
+              <Collapsible
+                open={overviewOpen}
+                onOpenChange={handleOverviewToggle}
+                className="mb-4 rounded-lg md:border md:p-4"
+              >
+                <CollapsibleTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between rounded-lg px-1 py-2 text-left font-medium text-muted-foreground text-sm transition-colors hover:text-foreground"
+                  >
+                    {t('week_overview')}
+                    <ChevronDown
+                      className={`h-4 w-4 transition-transform ${
+                        overviewOpen ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="mt-4 space-y-4">
+                    <SessionStats
+                      periodStats={periodStats}
+                      isLoading={isPeriodStatsLoading}
+                    />
+
+                    {viewMode === 'week' &&
+                      sessionsForPeriod &&
+                      sessionsForPeriod.length > 0 && (
+                        <WeekCalendarGrid
+                          sessions={sessionsForPeriod}
+                          startOfPeriod={startOfPeriod}
+                          endOfPeriod={endOfPeriod}
+                          categories={categories}
+                          userTimezone={userTimezone}
+                          onSessionClick={(session) => openEditDialog(session)}
+                        />
+                      )}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
 
               <div className="space-y-6">
                 {sortSessionGroups(Object.entries(groupedStackedSessions)).map(

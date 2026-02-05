@@ -8182,9 +8182,12 @@
       "cannot_edit_old_session": "Thời gian bắt đầu và kết thúc không thể chỉnh sửa cho các phiên cũ hơn {days} {dayLabel}. Phiên này từ {date}.",
       "cannot_move_running": "Không thể di chuyển các phiên đang chạy. Vui lòng dừng phiên trước.",
       "category": "Danh mục",
+      "category_legend": "Danh mục",
       "clear_all_filters": "🧹 Xóa Tất Cả Bộ Lọc",
+      "click_to_edit": "Nhấn để chỉnh sửa phiên",
       "completed": "đã hoàn thành",
       "completed_count": "{completed} đã hoàn thành",
+      "daily_total": "Tổng hàng ngày",
       "day": "ngày",
       "day_plural": "ngày",
       "day_singular": "ngày",
@@ -8312,6 +8315,7 @@
       "total": "tổng",
       "total_time": "Tổng Thời Gian",
       "try_different_period": "Thử một khoảng thời gian khác hoặc điều chỉnh bộ lọc của bạn",
+      "uncategorized": "Chưa phân loại",
       "validation_duration_too_short": "Thời lượng phải ít nhất 1 phút",
       "validation_end_before_start": "Thời gian kết thúc phải sau thời gian bắt đầu",
       "validation_future_date_time": "Không thể sử dụng ngày/giờ trong tương lai: {dateTime}",
@@ -8319,6 +8323,7 @@
       "validation_future_start_time": "Thời gian bắt đầu không thể trong tương lai: {dateTime}",
       "validation_invalid_time": "Thời gian không hợp lệ",
       "week": "tuần",
+      "week_overview": "Tổng Quan Tuần",
       "weekly_breakdown": "Phân Tích Theo Tuần"
     },
     "simple": {
