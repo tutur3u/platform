@@ -56,6 +56,7 @@
     "./editor": "./src/editor/index.ts",
     "./abuse-protection": "./src/abuse-protection/index.ts",
     "./currencies": "./src/currencies.ts",
+    "./exchange-rates": "./src/exchange-rates.ts",
     "./encryption": "./src/encryption/index.ts",
     "./finance": "./src/finance/index.ts"
   },
