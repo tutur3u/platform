@@ -4,7 +4,7 @@
     "@biomejs/biome": "^2.3.14",
     "@lingual/i18n-check": "^0.8.19",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@typescript/native-preview": "^7.0.0-dev.20260203.1",
+    "@typescript/native-preview": "^7.0.0-dev.20260204.1",
     "@vitest/coverage-v8": "^4.0.18",
     "lightningcss": "1.31.1",
     "lucide-static": "^0.563.0",
