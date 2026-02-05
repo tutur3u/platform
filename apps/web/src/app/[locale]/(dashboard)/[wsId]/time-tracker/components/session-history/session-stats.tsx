@@ -1,19 +1,30 @@
 'use client';
 
-import { BarChart2 } from '@tuturuuu/icons';
+import { BarChart2, Loader2 } from '@tuturuuu/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { formatDuration } from '@/lib/time-format';
-import type { PeriodStats } from './session-utils';
+import type { PeriodStats } from '@/lib/time-tracker-utils';
 import { getCategoryColor } from './session-utils';
 
 interface SessionStatsProps {
-  periodStats: PeriodStats;
+  periodStats?: PeriodStats;
+  isLoading?: boolean;
 }
 
-export function SessionStats({ periodStats }: SessionStatsProps) {
+export function SessionStats({ periodStats, isLoading }: SessionStatsProps) {
   const t = useTranslations('time-tracker.session_history');
+
+  if (isLoading) {
+    return (
+      <div className="mb-6 flex min-h-[200px] items-center justify-center rounded-lg border p-4">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!periodStats) return null;
 
   return (
     <div className="mb-6 rounded-lg border p-4">

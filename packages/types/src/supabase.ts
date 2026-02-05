@@ -19447,6 +19447,7 @@ export type Database = {
       get_task_workspace_id: { Args: { p_task_id: string }; Returns: string };
       get_time_tracker_stats: {
         Args: {
+          p_days_back?: number;
           p_is_personal?: boolean;
           p_timezone?: string;
           p_user_id: string;
@@ -19462,6 +19463,22 @@ export type Database = {
       };
       get_time_tracking_daily_activity: {
         Args: { p_days_back?: number; p_user_id?: string; p_ws_id: string };
+        Returns: Json;
+      };
+      get_time_tracking_period_stats: {
+        Args: {
+          p_category_id?: string;
+          p_date_from: string;
+          p_date_to: string;
+          p_duration?: string;
+          p_project_context?: string;
+          p_search_query?: string;
+          p_task_id?: string;
+          p_time_of_day?: string;
+          p_timezone?: string;
+          p_user_id: string;
+          p_ws_id: string;
+        };
         Returns: Json;
       };
       get_time_tracking_sessions_paginated: {

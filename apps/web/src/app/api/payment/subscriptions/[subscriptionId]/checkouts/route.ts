@@ -93,6 +93,7 @@ export async function POST(
 
     const checkoutSession = await polar.checkouts.create({
       subscriptionId: subscription.polar_subscription_id,
+      metadata: { wsId },
       products: [productId],
       successUrl: `${BASE_URL}/${wsId}/billing/success?checkoutId={CHECKOUT_ID}`,
       isBusinessCustomer: true,

@@ -25,17 +25,19 @@ export function HeatmapCardClient({
   const userTimezone = dayjs.tz.guess();
 
   const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ['time-tracker-stats', wsId, userId, userTimezone],
+    queryKey: ['time-tracker-stats', wsId, userId, userTimezone, 'heatmap'],
     queryFn: async () => {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/time-tracker/stats?userId=${userId}&isPersonal=${isPersonal}&timezone=${userTimezone}`
+        `/api/v1/workspaces/${wsId}/time-tracker/stats?userId=${userId}&isPersonal=${isPersonal}&timezone=${userTimezone}&daysBack=365`
       );
       if (!response.ok) throw new Error('Failed to fetch stats');
       return response.json() as Promise<{
         dailyActivity: DailyActivity[];
       }>;
     },
-    staleTime: 30 * 1000,
+    staleTime: 15 * 60 * 1000, // 15 minutes (heatmap data changes slowly)
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+    gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
   });
 
   if (statsLoading) {

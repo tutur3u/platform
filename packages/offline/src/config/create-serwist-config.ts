@@ -18,24 +18,35 @@ function getGitRevision(): string {
 }
 
 /**
- * Creates a Serwist configuration wrapper for Next.js.
+ * @deprecated Use `createSerwistRoute` from `@tuturuuu/offline/route` instead.
+ * The webpack-based approach is being replaced by the Turbopack-compatible
+ * route handler pattern. See migration guide for details.
+ *
+ * Creates a Serwist configuration wrapper for Next.js (webpack only).
  *
  * @param config - Configuration options for Serwist
  * @returns A function that wraps your Next.js config with Serwist
  *
  * @example
  * ```ts
- * // In your next.config.ts:
+ * // Migration: Replace this pattern:
  * import { createSerwistConfig } from '@tuturuuu/offline/config';
- *
  * const withSerwist = createSerwistConfig();
+ * export default withSerwist(nextConfig);
  *
- * export default withSerwist({
- *   // Your Next.js config
- * });
+ * // With the new route handler pattern:
+ * // 1. Use getTurbopackConfig() in next.config.ts
+ * // 2. Create app/serwist/[path]/route.ts with createSerwistRoute()
+ * // 3. Add SerwistProvider to your layout
  * ```
  */
 export function createSerwistConfig(config: SerwistNextConfig = {}) {
+  console.warn(
+    '[@tuturuuu/offline] createSerwistConfig is deprecated. ' +
+      'Migrate to the Turbopack-compatible route handler pattern using ' +
+      'createSerwistRoute() from @tuturuuu/offline/route. ' +
+      'See https://github.com/serwist/serwist/issues/294 for details.'
+  );
   const {
     swSrc = 'src/app/sw.ts',
     swDest = 'public/sw.js',
