@@ -8,6 +8,7 @@ import {
   CheckCircle,
   Loader2,
   Sparkles,
+  Users,
   Zap,
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
@@ -28,21 +29,10 @@ import { useCallback, useEffect, useState } from 'react';
 import type { ProrationPreview } from '@/app/api/payment/subscriptions/[subscriptionId]/preview/route';
 import { centToDollar } from '@/utils/price-helper';
 
-interface TargetPlan {
-  id: string;
-  name: string;
-  price: number;
-  billingCycle: string;
-  features: string[];
-}
-
 interface PlanChangeConfirmationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  currentPlanName: string;
-  currentPlanPrice: number;
-  currentPlanBillingCycle: string;
-  targetPlan: TargetPlan;
+  targetPlanId: string;
   subscriptionId: string;
   onSuccess?: () => void;
 }
@@ -50,10 +40,7 @@ interface PlanChangeConfirmationDialogProps {
 export function PlanChangeConfirmationDialog({
   open,
   onOpenChange,
-  currentPlanName,
-  currentPlanPrice,
-  currentPlanBillingCycle,
-  targetPlan,
+  targetPlanId,
   subscriptionId,
   onSuccess,
 }: PlanChangeConfirmationDialogProps) {
@@ -65,11 +52,11 @@ export function PlanChangeConfirmationDialog({
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<ProrationPreview | null>(null);
 
-  const isUpgrade = targetPlan.price > currentPlanPrice;
+  const isUpgrade = preview ? preview.isUpgrade : false;
 
   // Fetch proration preview when dialog opens
   const fetchPreview = useCallback(async () => {
-    if (!open || !subscriptionId || !targetPlan.id) return;
+    if (!open || !subscriptionId || !targetPlanId) return;
 
     setIsLoadingPreview(true);
     setError(null);
@@ -80,7 +67,7 @@ export function PlanChangeConfirmationDialog({
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ productId: targetPlan.id }),
+          body: JSON.stringify({ productId: targetPlanId }),
         }
       );
 
@@ -99,14 +86,14 @@ export function PlanChangeConfirmationDialog({
     } finally {
       setIsLoadingPreview(false);
     }
-  }, [open, subscriptionId, targetPlan.id]);
+  }, [open, subscriptionId, targetPlanId]);
 
   useEffect(() => {
     fetchPreview();
   }, [fetchPreview]);
 
   const handleConfirm = async () => {
-    if (!subscriptionId || !targetPlan.id) {
+    if (!subscriptionId || !targetPlanId) {
       setError('Invalid subscription or plan');
       return;
     }
@@ -120,7 +107,7 @@ export function PlanChangeConfirmationDialog({
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ productId: targetPlan.id }),
+          body: JSON.stringify({ productId: targetPlanId }),
         }
       );
 
@@ -168,8 +155,12 @@ export function PlanChangeConfirmationDialog({
       .trim();
   };
 
-  const simplifiedCurrentPlanName = getSimplePlanName(currentPlanName);
-  const simplifiedTargetPlanName = getSimplePlanName(targetPlan.name);
+  const simplifiedCurrentPlanName = getSimplePlanName(
+    preview?.currentPlan.name ?? ''
+  );
+  const simplifiedTargetPlanName = getSimplePlanName(
+    preview?.newPlan.name ?? ''
+  );
 
   return (
     <Dialog open={open} onOpenChange={handleCancel}>
@@ -216,10 +207,28 @@ export function PlanChangeConfirmationDialog({
                 </span>
               </div>
               <p className="font-semibold">{simplifiedCurrentPlanName}</p>
-              <p className="text-muted-foreground text-sm">
-                ${centToDollar(currentPlanPrice)}/
-                {currentPlanBillingCycle === 'month' ? t('mo') : t('yr')}
-              </p>
+              {preview?.currentPlan.pricingModel === 'seat_based' &&
+              preview.currentPlan.seatCount ? (
+                <div className="space-y-0.5">
+                  <p className="text-muted-foreground text-xs">
+                    ${centToDollar(preview.currentPlan.pricePerSeat ?? 0)}/seat
+                    × {preview.currentPlan.seatCount} seats
+                  </p>
+                  <p className="text-muted-foreground text-sm">
+                    ${centToDollar(preview?.currentPlan.price ?? 0)}/
+                    {preview?.currentPlan.billingCycle === 'month'
+                      ? t('mo')
+                      : t('yr')}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">
+                  ${centToDollar(preview?.currentPlan.price ?? 0)}/
+                  {preview?.currentPlan.billingCycle === 'month'
+                    ? t('mo')
+                    : t('yr')}
+                </p>
+              )}
             </div>
 
             {/* Arrow */}
@@ -258,10 +267,28 @@ export function PlanChangeConfirmationDialog({
                 </span>
               </div>
               <p className="font-semibold">{simplifiedTargetPlanName}</p>
-              <p className="text-muted-foreground text-sm">
-                ${centToDollar(targetPlan.price)}/
-                {targetPlan.billingCycle === 'month' ? t('mo') : t('yr')}
-              </p>
+              {preview?.newPlan.pricingModel === 'seat_based' &&
+              preview.newPlan.seatCount ? (
+                <div className="space-y-0.5">
+                  <p className="text-muted-foreground text-xs">
+                    ${centToDollar(preview.newPlan.pricePerSeat ?? 0)}/seat ×{' '}
+                    {preview.newPlan.seatCount} seats
+                  </p>
+                  <p className="text-muted-foreground text-sm">
+                    ${centToDollar(preview?.newPlan.price ?? 0)}/
+                    {preview?.newPlan.billingCycle === 'month'
+                      ? t('mo')
+                      : t('yr')}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">
+                  ${centToDollar(preview?.newPlan.price ?? 0)}/
+                  {preview?.newPlan.billingCycle === 'month'
+                    ? t('mo')
+                    : t('yr')}
+                </p>
+              )}
             </div>
           </div>
 
@@ -281,6 +308,22 @@ export function PlanChangeConfirmationDialog({
               </div>
             ) : preview ? (
               <div className="space-y-2 text-sm">
+                {/* Seat count info for seat-based plans */}
+                {(preview.currentPlan.pricingModel === 'seat_based' ||
+                  preview.newPlan.pricingModel === 'seat_based') && (
+                  <div className="flex items-center justify-between rounded-md bg-muted/50 p-2">
+                    <span className="flex items-center gap-1.5 text-muted-foreground">
+                      <Users className="h-3.5 w-3.5" />
+                      {t('current-seats')}
+                    </span>
+                    <span className="font-medium">
+                      {preview.currentPlan.seatCount ||
+                        preview.newPlan.seatCount ||
+                        1}
+                    </span>
+                  </div>
+                )}
+
                 {/* Credit for unused current plan */}
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">
@@ -288,6 +331,14 @@ export function PlanChangeConfirmationDialog({
                       plan: simplifiedCurrentPlanName,
                     })}{' '}
                     ({preview.daysRemaining} {t('days')})
+                    {preview.currentPlan.pricingModel === 'seat_based' &&
+                      preview.currentPlan.seatCount && (
+                        <span className="block text-xs">
+                          ($
+                          {centToDollar(preview.currentPlan.pricePerSeat ?? 0)}
+                          /seat × {preview.currentPlan.seatCount})
+                        </span>
+                      )}
                   </span>
                   <span className="font-medium text-dynamic-green">
                     -${centToDollar(preview.currentPlan.remainingValue)}
@@ -313,6 +364,13 @@ export function PlanChangeConfirmationDialog({
                         ({preview.daysRemaining} {t('days')})
                       </span>
                     )}
+                    {preview.newPlan.pricingModel === 'seat_based' &&
+                      preview.newPlan.seatCount && (
+                        <span className="block text-xs">
+                          (${centToDollar(preview.newPlan.pricePerSeat ?? 0)}
+                          /seat × {preview.newPlan.seatCount})
+                        </span>
+                      )}
                   </span>
                   <span className="font-medium">
                     +${centToDollar(preview.newPlan.proratedCharge)}
@@ -410,7 +468,7 @@ export function PlanChangeConfirmationDialog({
                         <span>
                           {t('next-billing-info', {
                             date: formatDate(preview.nextBillingDate),
-                            amount: `$${centToDollar(targetPlan.price)}`,
+                            amount: `$${centToDollar(preview?.newPlan.price ?? 0)}`,
                           })}
                         </span>
                       </li>

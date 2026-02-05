@@ -29,7 +29,8 @@ import type { Plan } from './billing-client';
 import { PlanChangeConfirmationDialog } from './plan-change-confirmation-dialog';
 import PurchaseLink from './purchase-link';
 
-interface PlanListProps {
+interface PlanListDialogProps {
+  isPersonalWorkspace: boolean;
   currentPlan: Plan;
   products: Product[];
   wsId: string;
@@ -39,21 +40,14 @@ interface PlanListProps {
 
 type BillingCycleTab = 'month' | 'year';
 
-interface TargetPlanForDialog {
-  id: string;
-  name: string;
-  price: number;
-  billingCycle: string;
-  features: string[];
-}
-
-export function PlanList({
+export function PlanListDialog({
+  isPersonalWorkspace,
   currentPlan,
   products,
   wsId,
   open,
   onOpenChange,
-}: PlanListProps) {
+}: PlanListDialogProps) {
   const t = useTranslations('billing');
 
   // Default to yearly tab for better value proposition, unless current plan is monthly
@@ -63,8 +57,9 @@ export function PlanList({
 
   // State for plan change confirmation dialog
   const [showPlanChangeDialog, setShowPlanChangeDialog] = useState(false);
-  const [selectedTargetPlan, setSelectedTargetPlan] =
-    useState<TargetPlanForDialog | null>(null);
+  const [selectedTargetPlan, setSelectedTargetPlan] = useState<string | null>(
+    null
+  );
 
   // Helper to simplify plan names (remove "Tuturuuu Workspace" prefix and billing cycle suffix)
   const getSimplePlanName = (name: string): string => {
@@ -77,28 +72,47 @@ export function PlanList({
 
   const allPlans = products
     .map((product) => {
-      const firstPrice =
-        product.prices.length > 0 ? (product.prices[0] as any) : null;
-      const price =
-        firstPrice && 'priceAmount' in firstPrice ? firstPrice.priceAmount : 0;
+      // Find seat-based price if it exists
+      const seatBasedPrice = product.prices.find(
+        (p: any) => 'amountType' in p && p.amountType === 'seat_based'
+      ) as any;
 
-      const isSeatBased =
-        firstPrice &&
-        'amountType' in firstPrice &&
-        firstPrice.amountType === 'seat_based';
+      const fixedPrice = product.prices.find(
+        (p: any) => 'amountType' in p && p.amountType === 'fixed'
+      ) as any;
+
+      const isSeatBased = !!seatBasedPrice;
+      const isFixed = !!fixedPrice;
+
+      const price = isSeatBased ? null : isFixed ? fixedPrice.priceAmount : 0;
+
+      const pricePerSeat = isSeatBased
+        ? seatBasedPrice?.seatTiers?.tiers?.[0]?.pricePerSeat
+        : null;
 
       const minSeats = isSeatBased
-        ? (firstPrice?.seatTiers?.minimumSeats ?? null)
+        ? seatBasedPrice?.seatTiers?.minimumSeats
         : null;
+
       const maxSeats = isSeatBased
-        ? (firstPrice?.seatTiers?.maximumSeats ?? null)
+        ? seatBasedPrice?.seatTiers?.maximumSeats
         : null;
+
+      if (
+        (isPersonalWorkspace && isSeatBased) ||
+        (!isPersonalWorkspace && !isSeatBased)
+      ) {
+        // Exclude seat-based plans for personal workspaces
+        return null;
+      }
 
       return {
         id: product.id,
         name: getSimplePlanName(product.name),
         fullName: product.name,
+        isSeatBased,
         price,
+        pricePerSeat,
         billingCycle: product.recurringInterval,
         features: product.benefits
           ? product.benefits
@@ -115,11 +129,17 @@ export function PlanList({
         maxSeats,
       };
     })
-    .sort((a, b) => a.price - b.price);
+    .filter((plan) => plan !== null)
+    .sort((a, b) => {
+      if (a.isSeatBased && b.isSeatBased)
+        return a.pricePerSeat - b.pricePerSeat;
+
+      return a.price - b.price;
+    });
 
   // Filter plans by selected billing cycle (Free plan shown in both)
   const filteredPlans = allPlans.filter(
-    (plan) => plan.isFree || plan.billingCycle === selectedCycle
+    (plan) => plan.billingCycle === selectedCycle
   );
 
   // Get plan styling based on tier
@@ -189,12 +209,28 @@ export function PlanList({
         icon: CheckCircle,
         variant: 'outline' as const,
         disabled: true,
+        isIncompatible: false,
       };
     }
 
     const currentPlanData = allPlans.find(
       (p) => p.id === currentPlan.productId
     );
+
+    // Check if switching between incompatible pricing models
+    const isIncompatiblePricingModel =
+      currentPlanData && currentPlanData.isSeatBased !== plan.isSeatBased;
+
+    if (isIncompatiblePricingModel) {
+      return {
+        text: t('incompatible-pricing-model'),
+        icon: Info,
+        variant: 'outline' as const,
+        disabled: true,
+        isIncompatible: true,
+      };
+    }
+
     const isDowngrade = currentPlanData && plan.price < currentPlanData.price;
 
     if (isDowngrade) {
@@ -203,6 +239,7 @@ export function PlanList({
         icon: ArrowDownCircle,
         variant: 'outline' as const,
         disabled: plan.isFree, // Disable downgrade to Free plan via button
+        isIncompatible: false,
       };
     }
 
@@ -211,18 +248,13 @@ export function PlanList({
       icon: ArrowUpCircle,
       variant: 'default' as const,
       disabled: false,
+      isIncompatible: false,
     };
   };
 
   // Handle plan change for existing subscriptions
   const handlePlanChange = (plan: (typeof allPlans)[0]) => {
-    setSelectedTargetPlan({
-      id: plan.id,
-      name: plan.fullName,
-      price: plan.price,
-      billingCycle: plan.billingCycle || 'month',
-      features: plan.features,
-    });
+    setSelectedTargetPlan(plan.id);
     setShowPlanChangeDialog(true);
   };
 
@@ -378,10 +410,14 @@ export function PlanList({
                               : styles.iconColor
                           )}
                         >
-                          ${centToDollar(plan.price)}
+                          $
+                          {plan.isSeatBased && plan.pricePerSeat
+                            ? centToDollar(plan.pricePerSeat)
+                            : centToDollar(plan.price)}
                         </span>
                         {plan.billingCycle && (
                           <span className="text-muted-foreground text-sm">
+                            {plan.isSeatBased ? t('per-seat') : ''}
                             {plan.billingCycle === 'month'
                               ? t('per-month')
                               : t('per-year')}
@@ -454,19 +490,23 @@ export function PlanList({
                         const ButtonIcon = buttonConfig.icon;
 
                         return buttonConfig.disabled ? (
-                          <Button
-                            variant={buttonConfig.variant}
-                            className={cn(
-                              'w-full',
-                              isCurrentPlan &&
-                                'border-primary/30 bg-primary/5 text-primary'
-                            )}
-                            disabled
-                            size="sm"
-                          >
-                            <ButtonIcon className="mr-2 h-4 w-4" />
-                            {buttonConfig.text}
-                          </Button>
+                          <div className="space-y-2">
+                            <Button
+                              variant={buttonConfig.variant}
+                              className={cn(
+                                'w-full',
+                                isCurrentPlan &&
+                                  'border-primary/30 bg-primary/5 text-primary',
+                                buttonConfig.isIncompatible &&
+                                  'border-muted bg-muted/30 text-muted-foreground'
+                              )}
+                              disabled
+                              size="sm"
+                            >
+                              <ButtonIcon className="mr-2 h-4 w-4" />
+                              {buttonConfig.text}
+                            </Button>
+                          </div>
                         ) : (
                           <PurchaseLink
                             subscriptionId={currentPlan.id}
@@ -519,10 +559,7 @@ export function PlanList({
         <PlanChangeConfirmationDialog
           open={showPlanChangeDialog}
           onOpenChange={setShowPlanChangeDialog}
-          currentPlanName={currentPlan.name}
-          currentPlanPrice={currentPlan.price}
-          currentPlanBillingCycle={currentPlan.billingCycle || 'month'}
-          targetPlan={selectedTargetPlan}
+          targetPlanId={selectedTargetPlan}
           subscriptionId={currentPlan.id}
           onSuccess={handlePlanChangeSuccess}
         />

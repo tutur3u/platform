@@ -9,6 +9,9 @@ export interface ProrationPreview {
     price: number;
     billingCycle: string;
     remainingValue: number;
+    pricingModel: 'fixed' | 'seat_based';
+    seatCount?: number;
+    pricePerSeat?: number;
   };
   newPlan: {
     id: string;
@@ -16,6 +19,9 @@ export interface ProrationPreview {
     price: number;
     billingCycle: string;
     proratedCharge: number;
+    pricingModel: 'fixed' | 'seat_based';
+    seatCount?: number;
+    pricePerSeat?: number;
   };
   netAmount: number; // Positive = charge, Negative = credit
   daysRemaining: number;
@@ -65,7 +71,11 @@ export async function POST(
         id,
         name,
         price,
-        recurring_interval
+        recurring_interval,
+        pricing_model,
+        price_per_seat,
+        min_seats,
+        max_seats
       )
     `
     )
@@ -151,6 +161,21 @@ export async function POST(
     );
   }
 
+  // Get current seat count from subscription
+  const currentSeatCount = subscription.seat_count || 1;
+
+  // Calculate actual prices based on pricing model
+  const currentActualPrice =
+    currentProduct.pricing_model === 'seat_based' &&
+    currentProduct.price_per_seat
+      ? currentProduct.price_per_seat * currentSeatCount
+      : (currentProduct.price ?? 0);
+
+  const targetActualPrice =
+    targetProduct.pricing_model === 'seat_based' && targetProduct.price_per_seat
+      ? targetProduct.price_per_seat * currentSeatCount
+      : (targetProduct.price ?? 0);
+
   // Calculate proration
   if (!subscription.current_period_start || !subscription.current_period_end) {
     return NextResponse.json(
@@ -184,9 +209,9 @@ export async function POST(
       : 0;
 
   // Calculate prorated amounts
-  // Current plan: credit for unused portion
+  // Current plan: credit for unused portion (using actual price based on seats)
   const currentPlanRemainingValue = Math.round(
-    (currentProduct.price ?? 0) * prorationFactor
+    currentActualPrice * prorationFactor
   );
 
   let newPlanProratedCharge: number;
@@ -194,13 +219,11 @@ export async function POST(
     currentProduct.recurring_interval !== targetProduct.recurring_interval;
 
   if (!billingCycleChanged) {
-    // Same billing cycle - simple proration
-    newPlanProratedCharge = Math.round(
-      (targetProduct.price ?? 0) * prorationFactor
-    );
+    // Same billing cycle - simple proration (using actual price based on seats)
+    newPlanProratedCharge = Math.round(targetActualPrice * prorationFactor);
   } else {
-    // Different billing cycle - charge full price for new cycle
-    newPlanProratedCharge = targetProduct.price ?? 0;
+    // Different billing cycle - charge full price for new cycle (using actual price based on seats)
+    newPlanProratedCharge = targetActualPrice;
   }
 
   // Calculate next billing date
@@ -224,22 +247,42 @@ export async function POST(
   // Calculate net amount (what user pays or receives as credit)
   const netAmount = newPlanProratedCharge - currentPlanRemainingValue;
 
-  const isUpgrade = (targetProduct.price ?? 0) > (currentProduct.price ?? 0);
+  const isUpgrade = targetActualPrice > currentActualPrice;
 
   const preview: ProrationPreview = {
     currentPlan: {
       id: currentProduct.id,
       name: currentProduct.name ?? '',
-      price: currentProduct.price ?? 0,
+      price: currentActualPrice,
       billingCycle: currentProduct.recurring_interval ?? 'month',
       remainingValue: currentPlanRemainingValue,
+      pricingModel:
+        (currentProduct.pricing_model as 'fixed' | 'seat_based') ?? 'fixed',
+      seatCount:
+        currentProduct.pricing_model === 'seat_based'
+          ? currentSeatCount
+          : undefined,
+      pricePerSeat:
+        currentProduct.pricing_model === 'seat_based'
+          ? (currentProduct.price_per_seat ?? undefined)
+          : undefined,
     },
     newPlan: {
       id: targetProduct.id,
       name: targetProduct.name ?? '',
-      price: targetProduct.price ?? 0,
+      price: targetActualPrice,
       billingCycle: targetProduct.recurring_interval ?? 'month',
       proratedCharge: newPlanProratedCharge,
+      pricingModel:
+        (targetProduct.pricing_model as 'fixed' | 'seat_based') ?? 'fixed',
+      seatCount:
+        targetProduct.pricing_model === 'seat_based'
+          ? currentSeatCount
+          : undefined,
+      pricePerSeat:
+        targetProduct.pricing_model === 'seat_based'
+          ? (targetProduct.price_per_seat ?? undefined)
+          : undefined,
     },
     netAmount,
     daysRemaining,

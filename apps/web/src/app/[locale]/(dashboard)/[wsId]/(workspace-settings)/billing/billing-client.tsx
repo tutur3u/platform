@@ -25,7 +25,7 @@ import { centToDollar } from '@/utils/price-helper';
 import type { SeatStatus } from '@/utils/seat-limits';
 import { AdjustSeatsDialog } from './adjust-seats-dialog';
 import { PaymentMethodsCard } from './payment-methods-card';
-import { PlanList } from './plan-list';
+import { PlanListDialog } from './plan-list-dialog';
 import { SubscriptionConfirmationDialog } from './subscription-confirmation-dialog';
 
 export interface Plan {
@@ -33,7 +33,6 @@ export interface Plan {
   productId: string;
   name: string;
   tier: WorkspaceProductTier | null;
-  price: number;
   billingCycle: string | null;
   startDate: string;
   nextBillingDate: string;
@@ -41,13 +40,15 @@ export interface Plan {
   status: string;
   features?: string[];
   // Seat-based pricing fields
-  pricingModel?: 'fixed' | 'seat_based' | null;
-  seatCount?: number | null;
-  pricePerSeat?: number | null;
-  maxSeats?: number | null;
+  pricingModel: 'fixed' | 'seat_based' | null;
+  seatCount: number | null;
+  price: number | null;
+  pricePerSeat: number | null;
+  maxSeats: number | null;
 }
 
 interface BillingClientProps {
+  isPersonalWorkspace: boolean;
   currentPlan: Plan;
   wsId: string;
   products: Product[];
@@ -65,6 +66,7 @@ function getSimplePlanName(name: string): string {
 }
 
 export function BillingClient({
+  isPersonalWorkspace,
   currentPlan,
   products,
   wsId,
@@ -199,7 +201,10 @@ export function BillingClient({
               {/* Pricing */}
               <div className="flex items-baseline gap-1">
                 <span className="font-black text-4xl tracking-tight">
-                  ${centToDollar(currentPlan.price)}
+                  $
+                  {isSeatBased
+                    ? centToDollar(currentPlan.pricePerSeat ?? 0)
+                    : centToDollar(currentPlan.price ?? 0)}
                 </span>
                 {currentPlan.billingCycle && (
                   <span className="text-lg text-muted-foreground">
@@ -378,7 +383,8 @@ export function BillingClient({
       />
 
       {/* Dialogs */}
-      <PlanList
+      <PlanListDialog
+        isPersonalWorkspace={isPersonalWorkspace}
         currentPlan={currentPlan}
         products={products}
         wsId={wsId}

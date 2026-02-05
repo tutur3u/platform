@@ -1,5 +1,6 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { format } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
 import type { Metadata } from 'next';
@@ -220,6 +221,7 @@ export default async function BillingPage({
         if (!user) return notFound();
 
         const [
+          isPersonal,
           products,
           subscriptionResult,
           orders,
@@ -227,6 +229,7 @@ export default async function BillingPage({
           locale,
           t,
         ] = await Promise.all([
+          isPersonalWorkspace(wsId),
           fetchProducts(),
           ensureSubscription(wsId), // Try to ensure subscription exists
           fetchWorkspaceOrders(wsId),
@@ -279,6 +282,7 @@ export default async function BillingPage({
         return (
           <div className="container mx-auto max-w-6xl px-4 py-8">
             <BillingClient
+              isPersonalWorkspace={isPersonal}
               currentPlan={currentPlan}
               products={products}
               product_id={subscription?.product.id || ''}
