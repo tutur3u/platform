@@ -43,7 +43,6 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -248,16 +247,26 @@ export default function TemplateDetailClient({ wsId, template }: Props) {
       <Globe className="h-4 w-4" />
     );
 
+  const handleBack = () => {
+    // Check if there's history to go back to
+    if (window.history.length > 1) {
+      router.back();
+    } else {
+      // Fallback to templates page if no history
+      router.push(`/${wsId}/tasks/templates`);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Back Link */}
-      <Link
-        href={`/${wsId}/tasks/templates`}
+      {/* Back Button */}
+      <Button
+        onClick={handleBack}
         className="inline-flex items-center gap-2 text-muted-foreground text-sm transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
         {t('detail.back_to_templates')}
-      </Link>
+      </Button>
 
       {/* Header */}
       <div className="grid gap-8 lg:grid-cols-3">
