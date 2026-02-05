@@ -51,6 +51,29 @@ export async function POST(req: Request, { params }: Params) {
     const { wsId: rawWsId } = await params;
     const wsId = await normalizeWorkspaceId(rawWsId);
 
+    // Verify the caller is a workspace member
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { data: membership } = await supabase
+      .from('workspace_members')
+      .select('user_id')
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (!membership) {
+      return NextResponse.json(
+        { message: 'Not a member of this workspace' },
+        { status: 403 }
+      );
+    }
+
     // Check permissions - require both delete_users and update_users
     const { withoutPermission } = await getPermissions({ wsId });
     if (
@@ -85,12 +108,46 @@ export async function POST(req: Request, { params }: Params) {
       }
     }
 
-    const supabase = await createClient();
+    // Validate all source/target users belong to this workspace (RLS-enforced)
+    const allUserIds = [
+      ...new Set(merges.flatMap((m) => [m.sourceId, m.targetId])),
+    ];
+    const { data: wsUsers, error: wsUsersError } = await supabase
+      .from('workspace_users')
+      .select('id')
+      .eq('ws_id', wsId)
+      .in('id', allUserIds);
+
+    if (wsUsersError) {
+      return NextResponse.json(
+        {
+          message: 'Error validating workspace membership',
+          error: wsUsersError.message,
+        },
+        { status: 500 }
+      );
+    }
+
+    const validIds = new Set((wsUsers ?? []).map((u: { id: string }) => u.id));
+    const invalidIds = allUserIds.filter((id) => !validIds.has(id));
+    if (invalidIds.length > 0) {
+      return NextResponse.json(
+        {
+          message: 'Some users not found in workspace',
+          invalidUserIds: invalidIds,
+        },
+        { status: 404 }
+      );
+    }
+
     const results: MergeResult[] = [];
     let successCount = 0;
     let failCount = 0;
 
-    // Process merges sequentially to avoid race conditions
+    // Process merges sequentially to avoid race conditions.
+    // Uses user-context client because the merge_workspace_users RPC is
+    // SECURITY DEFINER (bypasses RLS internally) but validates auth.uid()
+    // at the top — the admin client would have auth.uid()=NULL and fail.
     for (const merge of merges) {
       try {
         // Note: The RPC function is defined in migration but types are generated after migration is applied

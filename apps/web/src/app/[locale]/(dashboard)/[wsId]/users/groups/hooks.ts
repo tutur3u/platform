@@ -26,6 +26,7 @@ export type ManagerUser = {
   avatar_url: string | null;
   display_name: string | null;
   email: string | null;
+  hasLinkedPlatformUser: boolean;
 };
 
 export function useUserGroups(

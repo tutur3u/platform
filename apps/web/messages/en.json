@@ -10717,6 +10717,7 @@
     "delete-member-description": "You can delete this member from the workspace.",
     "description": "Manage members of your workspace.",
     "edit_role": "Edit role",
+    "edit-member-description": "Edit this member's profile information.",
     "enter_email_or_username": "Enter an email or username",
     "error": "Error",
     "expand_permissions": "Expand permissions",
