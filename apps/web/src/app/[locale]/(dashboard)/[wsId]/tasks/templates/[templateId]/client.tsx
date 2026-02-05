@@ -466,7 +466,7 @@ export default function TemplateDetailClient({ wsId, template }: Props) {
                   getStatusColor(list.status)
                 )}
               >
-                <CardHeader className="space-y-3 pb-4">
+                <CardHeader className="space-y-2 pb-4">
                   <div className="flex items-start justify-between gap-2">
                     <CardTitle className="flex items-center gap-2 text-base">
                       <KanbanSquare className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -475,14 +475,6 @@ export default function TemplateDetailClient({ wsId, template }: Props) {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
-                    {/* Status badge */}
-                    <Badge
-                      variant="secondary"
-                      className="font-medium text-xs capitalize"
-                    >
-                      {list.status}
-                    </Badge>
-
                     {/* Task count */}
                     <div className="flex items-center gap-1 text-muted-foreground text-xs">
                       <ListTodo className="h-3.5 w-3.5" />
