@@ -16,6 +16,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
+import EditUserDialog from './edit-user-dialog';
 import LinkedPromotionsClient from './linked-promotions-client';
 import ReferralSectionClient from './referral-section-client';
 import SentEmailsClient from './sent-emails-client';
@@ -118,6 +119,8 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
           )}
         </div>
       )}
+
+      {canUpdateUsers && <EditUserDialog wsId={wsId} data={data} />}
 
       <div className="grid h-fit gap-4 md:grid-cols-2">
         <div className="grid gap-4">
