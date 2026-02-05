@@ -1171,7 +1171,7 @@ The classic "works on my machine" problem stems from environment inconsistencies
 // Developers, staging, and production use same variables
 
 NEXT_PUBLIC_SUPABASE_URL=
-SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_SECRET_KEY=
 TRIGGER_API_KEY=
 DATABASE_URL=
 
@@ -1190,7 +1190,7 @@ DATABASE_URL=
   "env": {
     // Required in all environments
     "NEXT_PUBLIC_SUPABASE_URL": "@supabase-url",
-    "SUPABASE_SERVICE_ROLE_KEY": "@supabase-service-key"
+    "SUPABASE_SECRET_KEY": "@supabase-service-key"
   },
 
   "build": {

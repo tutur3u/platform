@@ -149,7 +149,7 @@ export async function POST(req: NextRequest) {
     // Verify the request is authorized
     const authHeader = req.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseServiceKey = process.env.SUPABASE_SECRET_KEY;
 
     // Accept either CRON_SECRET or service role key for authorization
     const isAuthorized =

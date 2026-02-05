@@ -42,7 +42,9 @@
       "Bash(npm view:*)",
       "Bash(npx tsc:*)",
       "Bash(git log:*)",
-      "Bash(tail:*)"
+      "Bash(tail:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:supabase.com)"
     ]
   }
 }
