@@ -95,6 +95,9 @@ import BasicInfo from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings
 import UserAvatar from '../../app/[locale]/settings-avatar';
 import DisplayNameInput from '../../app/[locale]/settings-display-name-input';
 import EmailInput from '../../app/[locale]/settings-email-input';
+import FullNameInput from '../../app/[locale]/settings-full-name-input';
+import AccountManagementSettings from './account/account-management-settings';
+import AccountStatusSection from './account/account-status-section';
 import MyWorkspacesSettings from './account/my-workspaces-settings';
 import NotificationSettings from './account/notification-settings';
 import SecuritySettings from './account/security-settings';
@@ -285,6 +288,13 @@ export function SettingsDialog({
           icon: Laptop,
           description: t('settings.user.sessions_description'),
           keywords: ['Sessions', 'Devices'],
+        },
+        {
+          name: 'accounts',
+          label: t('settings-nav.accounts.name'),
+          icon: Users,
+          description: t('settings-nav.accounts.description'),
+          keywords: ['Accounts'],
         },
       ],
     },
@@ -603,7 +613,7 @@ export function SettingsDialog({
     .filter((group) => group.items.length > 0);
 
   return (
-    <DialogContent className="flex h-[80vh] flex-col overflow-hidden p-0 md:max-h-200 md:max-w-225 lg:max-h-250 lg:max-w-250 xl:max-w-300">
+    <DialogContent className="flex h-[90vh] flex-col overflow-hidden p-0 md:max-h-200 md:max-w-225 lg:max-h-250 lg:max-w-250 xl:max-w-300">
       <DialogTitle className="sr-only">{t('common.settings')}</DialogTitle>
       <DialogDescription className="sr-only">
         {t('common.settings')}
@@ -813,6 +823,7 @@ export function SettingsDialog({
                       >
                         <UserAvatar user={user} />
                       </SettingItemTab>
+                      <AccountStatusSection user={user} />
                       <Separator />
                       <SettingItemTab
                         title={t('settings-account.display-name')}
@@ -822,7 +833,14 @@ export function SettingsDialog({
                       >
                         <DisplayNameInput defaultValue={user?.display_name} />
                       </SettingItemTab>
-                      <Separator />
+                      <SettingItemTab
+                        title={t('settings-account.full-name')}
+                        description={t(
+                          'settings-account.full-name-description'
+                        )}
+                      >
+                        <FullNameInput defaultValue={user?.full_name} />
+                      </SettingItemTab>
                       <SettingItemTab
                         title="Email"
                         description={t('settings-account.email-description')}
@@ -845,6 +863,12 @@ export function SettingsDialog({
                 {activeTab === 'sessions' && (
                   <div className="h-full">
                     <SessionSettings />
+                  </div>
+                )}
+
+                {activeTab === 'accounts' && (
+                  <div className="h-full">
+                    <AccountManagementSettings />
                   </div>
                 )}
 

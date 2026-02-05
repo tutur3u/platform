@@ -1,16 +1,18 @@
+'use client';
+
 import { Settings } from '@tuturuuu/icons';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Badge } from '@tuturuuu/ui/badge';
-import { getTranslations } from 'next-intl/server';
+import { useTranslations } from 'next-intl';
 
 interface AccountStatusSectionProps {
   user: WorkspaceUser | null;
 }
 
-export default async function AccountStatusSection({
+export default function AccountStatusSection({
   user,
 }: AccountStatusSectionProps) {
-  const t = await getTranslations('settings-account');
+  const t = useTranslations('settings-account');
 
   return (
     <div className="rounded-lg border bg-linear-to-r from-emerald-50/50 to-green-50/50 p-4 dark:from-emerald-950/20 dark:to-green-950/20">

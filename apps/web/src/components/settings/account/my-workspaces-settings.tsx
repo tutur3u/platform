@@ -3,7 +3,7 @@
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Separator } from '@tuturuuu/ui/separator';
-import WorkspaceSettingsCard from '@/app/[locale]/(dashboard)/settings/account/workspaces/workspace-settings-card';
+import WorkspaceSettingsCard from './workspace-settings-card';
 
 interface Props {
   user: WorkspaceUser;
@@ -48,17 +48,7 @@ export default function MyWorkspacesSettings({ user, workspace }: Props) {
         </>
       )}
 
-      <div>
-        <h3 className="font-medium text-lg">
-          {workspace ? 'All Workspaces' : 'My Workspaces'}
-        </h3>
-        <p className="mb-4 text-muted-foreground text-sm">
-          {workspace
-            ? 'View and switch between all your workspaces'
-            : 'Manage all your workspaces'}
-        </p>
-        <WorkspaceSettingsCard user={user} />
-      </div>
+      <WorkspaceSettingsCard user={user} />
     </div>
   );
 }
