@@ -120,7 +120,7 @@ export async function POST() {
         );
 
         // STEP 1: Change the product (fixed-price → seat-based)
-        console.log(`  Step 1: Changing product to ${targetProduct.id}...`);
+        console.log(`Step 1: Changing product to ${targetProduct.id}...`);
         await polar.subscriptions.update({
           id: sub.polar_subscription_id,
           subscriptionUpdate: {
@@ -130,7 +130,7 @@ export async function POST() {
         });
 
         // STEP 2: Set the initial seat count
-        console.log(`  Step 2: Setting seat count to ${seats}...`);
+        console.log(`Step 2: Setting seat count to ${seats}...`);
         await polar.subscriptions.update({
           id: sub.polar_subscription_id,
           subscriptionUpdate: {
@@ -139,7 +139,7 @@ export async function POST() {
           },
         });
 
-        console.log(`  Successfully migrated subscription ${sub.id}`);
+        console.log(`Successfully migrated subscription ${sub.id}`);
 
         // Update local DB to reflect change immediately
         const { error: updateError } = await sbAdmin
