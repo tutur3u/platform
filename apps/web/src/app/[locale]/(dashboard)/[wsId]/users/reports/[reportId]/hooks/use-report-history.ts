@@ -6,7 +6,7 @@ import type { ReportLogEntry } from '@tuturuuu/types';
 import { formatDistanceToNow } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
 import { useLocale } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { SelectedLog } from '../components/report-history';
 
 export type ReportHistoryEntry = ReportLogEntry & {
@@ -20,6 +20,16 @@ interface ReportLogWithCreator extends ReportLogEntry {
   } | null;
 }
 
+export interface UseReportHistoryReturn {
+  logsQuery: UseQueryResult<ReportHistoryEntry[]>;
+  selectedLog: SelectedLog | null;
+  setSelectedLog: (log: SelectedLog | null) => void;
+  formatRelativeTime: (dateIso?: string) => string;
+  latestApprovedLog: ReportHistoryEntry | null;
+  isLoadingRejectedBase: boolean;
+  isRejected: boolean;
+}
+
 export function useReportHistory({
   wsId,
   reportId,
@@ -30,13 +40,19 @@ export function useReportHistory({
   reportId?: string;
   reportApprovalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
   isNew: boolean;
-}) {
+}): UseReportHistoryReturn {
   const locale = useLocale();
   const supabase = createClient();
 
   const isRejected = reportApprovalStatus === 'REJECTED';
 
   const [selectedLog, setSelectedLog] = useState<SelectedLog | null>(null);
+
+  // Reset selected log when report changes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reportId is used as a trigger to reset selected log
+  useEffect(() => {
+    setSelectedLog(null);
+  }, [reportId]);
 
   const logsQuery: UseQueryResult<ReportHistoryEntry[]> = useQuery({
     queryKey: ['ws', wsId, 'report', reportId, 'logs'],
