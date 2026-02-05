@@ -134,7 +134,7 @@ export function Combobox({
                 options.find((option) => option.value === selectedValue)?.label
             )
             .filter(Boolean)
-            .join(', ')
+            .join(', ') || undefined
         : undefined;
 
   const isSelected = (value: string) => {

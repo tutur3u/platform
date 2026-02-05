@@ -34,6 +34,7 @@ import { WalletIconDisplay } from '@tuturuuu/ui/finance/wallets/wallet-icon-disp
 import { cn } from '@tuturuuu/utils/format';
 import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import moment from 'moment';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
@@ -280,18 +281,23 @@ export function TransactionCard({
                 </Badge>
               )}
               {transaction.wallet && (
-                <Badge
-                  variant="outline"
-                  className="gap-1 border-muted-foreground/30 bg-muted/50 px-1.5 py-0.5 font-medium text-[11px] text-muted-foreground sm:px-2 sm:text-xs"
+                <Link
+                  href={`/${wsId}/finance/wallets/${transaction.wallet_id}`}
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <WalletIconDisplay
-                    icon={wallet?.icon}
-                    imageSrc={wallet?.image_src}
-                    size="sm"
-                    className="h-3 w-3"
-                  />
-                  {transaction.wallet}
-                </Badge>
+                  <Badge
+                    variant="outline"
+                    className="gap-1 border-muted-foreground/30 bg-muted/50 px-1.5 py-0.5 font-medium text-[11px] text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-primary sm:px-2 sm:text-xs"
+                  >
+                    <WalletIconDisplay
+                      icon={wallet?.icon}
+                      imageSrc={wallet?.image_src}
+                      size="sm"
+                      className="h-3 w-3"
+                    />
+                    {transaction.wallet}
+                  </Badge>
+                </Link>
               )}
               {isConfidential && (
                 <Badge

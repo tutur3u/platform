@@ -27,6 +27,8 @@ interface TransactionsInfinitePageProps {
   timezone?: string | null;
   canExport?: boolean;
   exportContent?: React.ReactNode;
+  canCreateTransactions?: boolean;
+  canCreateConfidentialTransactions?: boolean;
   canUpdateTransactions?: boolean;
   canDeleteTransactions?: boolean;
   canUpdateConfidentialTransactions?: boolean;
@@ -44,6 +46,8 @@ export function TransactionsInfinitePage({
   timezone,
   canExport,
   exportContent,
+  canCreateTransactions,
+  canCreateConfidentialTransactions,
   canUpdateTransactions,
   canDeleteTransactions,
   canUpdateConfidentialTransactions,
@@ -176,6 +180,8 @@ export function TransactionsInfinitePage({
           currency={currency}
           timezone={timezone}
           viewMode={viewMode}
+          canCreateTransactions={canCreateTransactions}
+          canCreateConfidentialTransactions={canCreateConfidentialTransactions}
           canUpdateTransactions={canUpdateTransactions}
           canDeleteTransactions={canDeleteTransactions}
           canUpdateConfidentialTransactions={canUpdateConfidentialTransactions}

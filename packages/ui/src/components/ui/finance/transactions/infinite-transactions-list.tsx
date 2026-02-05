@@ -11,6 +11,7 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
+  Plus,
   TrendingDown,
   TrendingUp,
 } from '@tuturuuu/icons';
@@ -65,6 +66,8 @@ interface InfiniteTransactionsListProps {
   timezone?: string | null;
   /** View mode for transaction grouping */
   viewMode?: TransactionViewMode;
+  canCreateTransactions?: boolean;
+  canCreateConfidentialTransactions?: boolean;
   canUpdateTransactions?: boolean;
   canDeleteTransactions?: boolean;
   canUpdateConfidentialTransactions?: boolean;
@@ -103,6 +106,8 @@ export function InfiniteTransactionsList({
   currency,
   timezone: timezoneProp,
   viewMode = 'daily',
+  canCreateTransactions,
+  canCreateConfidentialTransactions,
   canUpdateTransactions,
   canDeleteTransactions,
   canUpdateConfidentialTransactions,
@@ -122,6 +127,9 @@ export function InfiniteTransactionsList({
   const [transactionToDelete, setTransactionToDelete] =
     useState<Transaction | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [createForGroupDate, setCreateForGroupDate] = useState<string | null>(
+    null
+  );
 
   // Resolve timezone: if 'auto' or null/undefined, use browser timezone
   const resolvedTimezone = useMemo(
@@ -774,9 +782,9 @@ export function InfiniteTransactionsList({
                   </div>
                 </div>
 
-                {/* Right: Daily total */}
-                {!allAmountsRedacted ? (
-                  <div className="flex items-center gap-3">
+                {/* Right: Daily total + Add transaction */}
+                <div className="flex items-center gap-3">
+                  {!allAmountsRedacted ? (
                     <div className="flex flex-col items-start gap-1 sm:items-end">
                       <span className="text-muted-foreground text-xs">
                         {t('workspace-finance-transactions.net-total')}
@@ -818,14 +826,28 @@ export function InfiniteTransactionsList({
                         </div>
                       </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <span className="font-medium text-sm italic">
-                      {t('workspace-finance-transactions.amount-redacted')}
-                    </span>
-                  </div>
-                )}
+                  ) : (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <span className="font-medium text-sm italic">
+                        {t('workspace-finance-transactions.amount-redacted')}
+                      </span>
+                    </div>
+                  )}
+
+                  {canCreateTransactions && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8 shrink-0"
+                      onClick={() => setCreateForGroupDate(group.date)}
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span className="sr-only">
+                        {t('ws-transactions.create')}
+                      </span>
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -968,6 +990,36 @@ export function InfiniteTransactionsList({
               onFinish={() => {
                 handleTransactionUpdate();
                 handleCloseDialog();
+              }}
+            />
+          }
+        />
+      )}
+
+      {/* Create Transaction Dialog (date-prefilled from group header) */}
+      {canCreateTransactions && (
+        <ModifiableDialogTrigger
+          data={{
+            wallet_id: walletId,
+            taken_at: createForGroupDate ?? undefined,
+          }}
+          open={!!createForGroupDate}
+          title={t('ws-transactions.create')}
+          createDescription={t('ws-transactions.create_description')}
+          setOpen={(open) => {
+            if (!open) setCreateForGroupDate(null);
+          }}
+          forceDefault
+          form={
+            <TransactionForm
+              wsId={wsId}
+              canCreateTransactions={canCreateTransactions}
+              canCreateConfidentialTransactions={
+                canCreateConfidentialTransactions
+              }
+              onFinish={() => {
+                handleTransactionUpdate();
+                setCreateForGroupDate(null);
               }}
             />
           }
