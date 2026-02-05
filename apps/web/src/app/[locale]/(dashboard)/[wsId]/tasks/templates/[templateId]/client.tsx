@@ -88,24 +88,40 @@ const priorityConfig = {
   },
 } as const;
 
-// Status color mapping
+// Status color mapping (matches Tudo status-section.tsx)
 const statusColors = {
-  todo: 'bg-dynamic-slate/10 border-dynamic-slate/30',
-  'in-progress': 'bg-dynamic-blue/10 border-dynamic-blue/30',
-  'in progress': 'bg-dynamic-blue/10 border-dynamic-blue/30',
+  not_started: 'bg-dynamic-gray/10 border-dynamic-gray/30',
+  active: 'bg-dynamic-blue/10 border-dynamic-blue/30',
   done: 'bg-dynamic-green/10 border-dynamic-green/30',
-  completed: 'bg-dynamic-green/10 border-dynamic-green/30',
-  blocked: 'bg-dynamic-red/10 border-dynamic-red/30',
-  review: 'bg-dynamic-purple/10 border-dynamic-purple/30',
-  backlog: 'bg-dynamic-gray/10 border-dynamic-gray/30',
+  closed: 'bg-dynamic-purple/10 border-dynamic-purple/30',
+  documents: 'bg-dynamic-cyan/10 border-dynamic-cyan/30',
+} as const;
+
+// Status border accent colors (for the left border indicator)
+const statusBorderAccentColors = {
+  not_started: 'border-l-dynamic-gray',
+  active: 'border-l-dynamic-blue',
+  done: 'border-l-dynamic-green',
+  closed: 'border-l-dynamic-purple',
+  documents: 'border-l-dynamic-cyan',
 } as const;
 
 // Helper to get status color
 const getStatusColor = (status: string): string => {
-  const normalizedStatus = status.toLowerCase().replace(/\s+/g, '-');
+  const normalizedStatus = status.toLowerCase().replace(/\s+/g, '_');
   return (
     statusColors[normalizedStatus as keyof typeof statusColors] ||
     'bg-dynamic-gray/10 border-dynamic-gray/30'
+  );
+};
+
+// Helper to get status border accent color
+const getStatusBorderAccent = (status: string): string => {
+  const normalizedStatus = status.toLowerCase().replace(/\s+/g, '_');
+  return (
+    statusBorderAccentColors[
+      normalizedStatus as keyof typeof statusBorderAccentColors
+    ] || 'border-l-dynamic-gray'
   );
 };
 
@@ -463,7 +479,8 @@ export default function TemplateDetailClient({ wsId, template }: Props) {
                 key={index}
                 className={cn(
                   'overflow-hidden border-l-4 transition-all hover:shadow-lg',
-                  getStatusColor(list.status)
+                  getStatusColor(list.status),
+                  getStatusBorderAccent(list.status)
                 )}
               >
                 <CardHeader className="space-y-2 pb-4">
