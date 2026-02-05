@@ -78,6 +78,8 @@ export default async function TransactionsPage({ wsId }: Props) {
         exportContent={
           <ExportDialogContent wsId={wsId} exportType="transactions" />
         }
+        canCreateTransactions={canCreateTransactions}
+        canCreateConfidentialTransactions={canCreateConfidentialTransactions}
         canUpdateTransactions={canUpdateTransactions}
         canDeleteTransactions={canDeleteTransactions}
         canUpdateConfidentialTransactions={canUpdateConfidentialTransactions}

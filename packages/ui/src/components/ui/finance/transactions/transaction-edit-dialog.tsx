@@ -60,7 +60,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import type * as React from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getWalletImagePath } from '../wallets/wallet-images';
 import { ConfidentialToggle } from './confidential-field';
 
@@ -228,6 +228,12 @@ export function TransactionEditDialog({
     enabled: isOpen,
   });
   const wallets = Array.isArray(walletsData) ? walletsData : [];
+
+  // Derive currency suffix from selected wallet
+  const selectedWalletCurrency = useMemo(
+    () => wallets.find((w) => w.id === walletId)?.currency,
+    [wallets, walletId]
+  );
 
   // Fetch tags
   const { data: tagsData } = useQuery<
@@ -640,6 +646,7 @@ export function TransactionEditDialog({
                     placeholder="0"
                     disabled={isDisabled || !canUpdateTransactions}
                     locale={locale}
+                    currencySuffix={selectedWalletCurrency}
                     className={cn(
                       'font-bold text-2xl tabular-nums',
                       isExpense ? 'text-dynamic-red' : 'text-dynamic-green',

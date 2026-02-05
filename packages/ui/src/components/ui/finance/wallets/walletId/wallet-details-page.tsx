@@ -5,7 +5,11 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { InfiniteTransactionsList } from '@tuturuuu/ui/finance/transactions/infinite-transactions-list';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
-import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  getWorkspace,
+  getWorkspaceConfig,
+} from '@tuturuuu/utils/workspace-helper';
 import 'dayjs/locale/vi';
 import moment from 'moment';
 import { notFound } from 'next/navigation';
@@ -14,7 +18,7 @@ import { Suspense } from 'react';
 import { Card } from '../../../card';
 import { WalletIconDisplay } from '../wallet-icon-display';
 import { WalletInterestSection } from './interest';
-import { WalletDeleteButton } from './wallet-delete-button';
+import { WalletDetailsActions } from './wallet-details-actions';
 import WalletRoleAccessDialog from './wallet-role-access-dialog';
 
 interface Props {
@@ -28,12 +32,17 @@ interface Props {
 }
 
 export default async function WalletDetailsPage({ wsId, walletId }: Props) {
-  const [t, workspace, { withoutPermission, containsPermission }] =
-    await Promise.all([
-      getTranslations(),
-      getWorkspace(wsId),
-      getPermissions({ wsId }),
-    ]);
+  const [
+    t,
+    workspace,
+    { withoutPermission, containsPermission },
+    defaultCurrency,
+  ] = await Promise.all([
+    getTranslations(),
+    getWorkspace(wsId),
+    getPermissions({ wsId }),
+    getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY'),
+  ]);
   const canManageRoles = !withoutPermission('manage_workspace_roles');
 
   // Transaction permissions
@@ -55,11 +64,18 @@ export default async function WalletDetailsPage({ wsId, walletId }: Props) {
     'view_confidential_category'
   );
   const hasManageFinance = containsPermission('manage_finance');
+  const canUpdateWallets = containsPermission('update_wallets');
+  const canCreateTransactions = containsPermission('create_transactions');
+  const canCreateConfidentialTransactions = containsPermission(
+    'create_confidential_transactions'
+  );
   const canDeleteWallets = containsPermission('delete_wallets');
 
   const { wallet } = await getData(wsId, walletId, hasManageFinance);
 
   if (!wallet) notFound();
+
+  const currency = defaultCurrency || 'USD';
 
   return (
     <div className="flex min-h-full w-full flex-col">
@@ -78,13 +94,16 @@ export default async function WalletDetailsPage({ wsId, walletId }: Props) {
             />
           }
         />
-        {canDeleteWallets && (
-          <WalletDeleteButton
-            wsId={wsId}
-            walletId={walletId}
-            walletName={wallet.name ?? undefined}
-          />
-        )}
+        <WalletDetailsActions
+          wsId={wsId}
+          walletId={walletId}
+          wallet={wallet as Wallet}
+          canUpdateWallets={canUpdateWallets}
+          canCreateTransactions={canCreateTransactions}
+          canCreateConfidentialTransactions={canCreateConfidentialTransactions}
+          canDeleteWallets={canDeleteWallets}
+          isPersonalWorkspace={workspace.personal}
+        />
       </div>
       <Separator className="my-4" />
       <div className="grid h-fit gap-4 md:grid-cols-2">
@@ -108,13 +127,10 @@ export default async function WalletDetailsPage({ wsId, walletId }: Props) {
             <DetailItem
               icon={<DollarSign className="h-5 w-5" />}
               label={t('wallet-data-table.balance')}
-              value={Intl.NumberFormat(
-                wallet.currency === 'VND' ? 'vi-VN' : 'en-US',
-                {
-                  style: 'currency',
-                  currency: wallet.currency || 'USD',
-                }
-              ).format(wallet.balance || 0)}
+              value={Intl.NumberFormat(currency === 'VND' ? 'vi-VN' : 'en-US', {
+                style: 'currency',
+                currency,
+              }).format(wallet.balance || 0)}
             />
             <DetailItem
               icon={<CreditCard className="h-5 w-5" />}
@@ -166,7 +182,9 @@ export default async function WalletDetailsPage({ wsId, walletId }: Props) {
         <InfiniteTransactionsList
           wsId={wsId}
           walletId={walletId}
-          currency={wallet.currency ?? 'USD'}
+          currency={currency}
+          canCreateTransactions={canCreateTransactions}
+          canCreateConfidentialTransactions={canCreateConfidentialTransactions}
           canUpdateTransactions={canUpdateTransactions}
           canDeleteTransactions={canDeleteTransactions}
           canUpdateConfidentialTransactions={canUpdateConfidentialTransactions}
