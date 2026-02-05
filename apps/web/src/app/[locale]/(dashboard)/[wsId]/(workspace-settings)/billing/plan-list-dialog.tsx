@@ -126,6 +126,8 @@ export function PlanListDialog({
       return (a.price ?? 0) - (b.price ?? 0);
     });
 
+  console.log('allPlans', allPlans);
+
   // Filter plans by selected billing cycle (Free plan shown in both)
   const filteredPlans = allPlans.filter(
     (plan) => plan.billingCycle === selectedCycle
@@ -389,7 +391,7 @@ export function PlanListDialog({
                           />
                         </div>
                         <h3 className="font-bold text-lg tracking-tight">
-                          {plan.isFree ? t('free-tier') : plan.name}
+                          {plan.name}
                         </h3>
                       </div>
 
@@ -537,15 +539,17 @@ export function PlanListDialog({
           </div>
 
           {/* Important Note */}
-          <div className="mt-6 flex items-start gap-3 rounded-xl border border-border/50 bg-muted/30 p-4">
-            <Info className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
-            <div>
-              <p className="font-semibold text-sm">{t('plan-note-title')}</p>
-              <p className="mt-0.5 text-muted-foreground text-xs">
-                {t('plan-desc')}
-              </p>
+          {currentPlan.tier !== 'FREE' && (
+            <div className="mt-6 flex items-start gap-3 rounded-xl border border-border/50 bg-muted/30 p-4">
+              <Info className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
+              <div>
+                <p className="font-semibold text-sm">{t('plan-note-title')}</p>
+                <p className="mt-0.5 text-muted-foreground text-xs">
+                  {t('plan-desc')}
+                </p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </DialogContent>
 
