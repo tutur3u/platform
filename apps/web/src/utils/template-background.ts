@@ -64,14 +64,19 @@ export async function uploadTemplateBackground(
     throw new Error('Failed to upload background image');
   }
 
-  // Get public URL
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from('workspaces').getPublicUrl(data.path);
+  // Generate a temporary signed URL for preview (valid for 1 hour)
+  const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+    .from('workspaces')
+    .createSignedUrl(data.path, 3600); // 1 hour expiry
+
+  if (signedUrlError) {
+    console.error('Error creating signed URL:', signedUrlError);
+    throw new Error('Failed to generate preview URL');
+  }
 
   return {
-    url: publicUrl,
-    path: data.path,
+    url: signedUrlData.signedUrl, // Temporary preview URL
+    path: data.path, // Store this in DB
   };
 }
 

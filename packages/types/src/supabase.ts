@@ -751,7 +751,7 @@ export type Database = {
       };
       board_templates: {
         Row: {
-          background_url: string | null;
+          background_path: string | null;
           content: Json;
           created_at: string;
           created_by: string | null;
@@ -764,7 +764,7 @@ export type Database = {
           ws_id: string;
         };
         Insert: {
-          background_url?: string | null;
+          background_path?: string | null;
           content: Json;
           created_at?: string;
           created_by?: string | null;
@@ -777,7 +777,7 @@ export type Database = {
           ws_id: string;
         };
         Update: {
-          background_url?: string | null;
+          background_path?: string | null;
           content?: Json;
           created_at?: string;
           created_by?: string | null;
@@ -16694,36 +16694,7 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
+        Relationships: [];
       };
       calendar_event_participants: {
         Row: {
@@ -18489,7 +18460,7 @@ export type Database = {
       get_auth_provider_stats: {
         Args: never;
         Returns: {
-          last_sign_in_avg: string;
+          last_sign_in_avg: unknown;
           percentage: number;
           provider: string;
           user_count: number;
@@ -19664,7 +19635,7 @@ export type Database = {
         Args: { user_id: string };
         Returns: {
           active_sessions: number;
-          current_session_age: string;
+          current_session_age: unknown;
           total_sessions: number;
         }[];
       };
@@ -20039,6 +20010,10 @@ export type Database = {
             Returns: number;
           };
       hard_delete_soft_deleted_items: { Args: never; Returns: undefined };
+      has_board_template_edit_permission: {
+        Args: { p_template_id: string };
+        Returns: boolean;
+      };
       has_task_permission: {
         Args: { p_permission: string; p_task_id: string };
         Returns: boolean;
