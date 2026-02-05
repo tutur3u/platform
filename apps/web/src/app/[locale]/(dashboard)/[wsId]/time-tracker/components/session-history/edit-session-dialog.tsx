@@ -20,6 +20,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
+import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
@@ -32,7 +33,6 @@ import { TaskCombobox } from '../task-combobox';
 import { useWorkspaceTasks } from '../use-workspace-tasks';
 import type { EditFormState } from './session-types';
 import {
-  getCategoryColor,
   isDatetimeMoreThanThresholdAgo,
   isSessionOlderThanThreshold,
 } from './session-utils';
@@ -246,10 +246,13 @@ export function EditSessionDialog({
                     <SelectItem key={category.id} value={category.id}>
                       <div className="flex items-center gap-2">
                         <div
-                          className={cn(
-                            'h-3 w-3 rounded-full',
-                            getCategoryColor(category.color || 'BLUE')
-                          )}
+                          className="h-3 w-3 rounded-full"
+                          style={{
+                            backgroundColor:
+                              computeAccessibleLabelStyles(
+                                category.color || 'blue'
+                              )?.text ?? undefined,
+                          }}
                         />
                         {category.name}
                       </div>

@@ -1,5 +1,9 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
+import {
+  getCurrentSupabaseUser,
+  getCurrentUser,
+} from '@tuturuuu/utils/user-helper';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
@@ -18,7 +22,7 @@ export default async function TimeTrackerHistoryPage({
 }) {
   return (
     <WorkspaceWrapper params={params}>
-      {async ({ wsId, workspace }) => {
+      {async ({ wsId, workspace, isPersonal }) => {
         const user = await getCurrentSupabaseUser();
         const supabase = await createClient();
 
@@ -29,12 +33,36 @@ export default async function TimeTrackerHistoryPage({
           .select('*')
           .eq('ws_id', wsId);
 
+        // Fetch permissions and current user for non-personal workspaces
+        let currentUser = null;
+        let canManageTimeTrackingRequests = false;
+        let canBypassTimeTrackingRequestApproval = false;
+
+        if (!isPersonal) {
+          const [{ containsPermission }, resolvedCurrentUser] =
+            await Promise.all([getPermissions({ wsId }), getCurrentUser()]);
+
+          currentUser = resolvedCurrentUser;
+          canManageTimeTrackingRequests = containsPermission(
+            'manage_time_tracking_requests'
+          );
+          canBypassTimeTrackingRequestApproval = containsPermission(
+            'bypass_time_tracking_request_approval'
+          );
+        }
+
         return (
           <SessionHistory
             wsId={wsId}
             userId={user.id}
             categories={categories}
             workspace={workspace}
+            isPersonal={isPersonal}
+            currentUser={currentUser}
+            canManageTimeTrackingRequests={canManageTimeTrackingRequests}
+            canBypassTimeTrackingRequestApproval={
+              canBypassTimeTrackingRequestApproval
+            }
           />
         );
       }}

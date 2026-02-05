@@ -14,13 +14,13 @@ import {
 import { Button } from '@tuturuuu/ui/button';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
+import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
 import { formatDuration } from '@/lib/time-format';
 import type { PeriodStats } from '@/lib/time-tracker-utils';
 import type { SessionWithRelations } from '../../types';
 import type { StackedSession } from './session-types';
-import { getCategoryColor } from './session-utils';
 
 interface MonthViewProps {
   periodStats?: PeriodStats;
@@ -106,7 +106,7 @@ export function MonthView({
             {t('top_activities_this_month')}
           </h3>
           {isLoadingStats ? (
-            <div className="flex h-[200px] items-center justify-center">
+            <div className="flex h-50 items-center justify-center">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : (
@@ -116,6 +116,9 @@ export function MonthView({
                   (periodStats?.totalDuration || 0) > 0
                     ? (cat.duration / (periodStats?.totalDuration || 1)) * 100
                     : 0;
+                const catStyles = computeAccessibleLabelStyles(
+                  cat.color || 'blue'
+                );
                 return (
                   <div key={cat.name} className="group">
                     <div className="mb-2 flex items-center justify-between">
@@ -125,10 +128,12 @@ export function MonthView({
                         </div>
                         <div className="flex min-w-0 items-center gap-2">
                           <div
-                            className={cn(
-                              'h-3 w-3 shrink-0 rounded-full',
-                              getCategoryColor(cat.color)
-                            )}
+                            className="h-3 w-3 shrink-0 rounded-full"
+                            style={
+                              catStyles
+                                ? { backgroundColor: catStyles.text }
+                                : undefined
+                            }
                           />
                           <span className="truncate font-medium">
                             {cat.name}
@@ -147,7 +152,11 @@ export function MonthView({
                     <Progress
                       value={percentage}
                       className="h-2"
-                      indicatorClassName={getCategoryColor(cat.color)}
+                      indicatorStyle={
+                        catStyles
+                          ? { backgroundColor: catStyles.text }
+                          : undefined
+                      }
                     />
                   </div>
                 );
@@ -162,7 +171,7 @@ export function MonthView({
             {t('productivity_insights')}
           </h3>
           {isLoadingStats ? (
-            <div className="flex h-[200px] items-center justify-center">
+            <div className="flex h-50 items-center justify-center">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : (
@@ -311,12 +320,13 @@ export function MonthView({
                             {session.category && (
                               <div className="flex items-center gap-1">
                                 <div
-                                  className={cn(
-                                    'h-2 w-2 rounded-full',
-                                    getCategoryColor(
-                                      session.category.color || 'BLUE'
-                                    )
-                                  )}
+                                  className="h-2 w-2 rounded-full"
+                                  style={{
+                                    backgroundColor:
+                                      computeAccessibleLabelStyles(
+                                        session.category.color || 'blue'
+                                      )?.text ?? undefined,
+                                  }}
                                 />
                                 <span className="text-muted-foreground text-xs">
                                   {session.category.name}

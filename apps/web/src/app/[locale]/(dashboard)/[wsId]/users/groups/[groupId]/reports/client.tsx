@@ -8,6 +8,7 @@ import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
+import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
 import { useWorkspaceConfigs } from '@tuturuuu/ui/hooks/use-workspace-config';
 import {
   Select,
@@ -34,8 +35,6 @@ type ReportWithNames = WorkspaceUserReport & {
 interface Props {
   wsId: string;
   groupId: string;
-  initialUserId?: string;
-  initialReportId?: string;
   groupNameFallback: string;
   canCheckUserAttendance: boolean;
   canCreateReports: boolean;
@@ -46,8 +45,6 @@ interface Props {
 export default function GroupReportsClient({
   wsId,
   groupId,
-  initialUserId,
-  initialReportId,
   groupNameFallback,
   canCheckUserAttendance,
   canCreateReports,
@@ -55,6 +52,11 @@ export default function GroupReportsClient({
   canDeleteReports,
 }: Props) {
   const t = useTranslations();
+
+  const [scoreCalculationMethod] = useLocalStorage<'AVERAGE' | 'LATEST'>(
+    'scoreCalculationMethod',
+    'LATEST'
+  );
 
   const [queryParams, setQueryParams] = useQueryStates(
     {
@@ -66,10 +68,8 @@ export default function GroupReportsClient({
     }
   );
 
-  const userId = queryParams.userId || initialUserId;
-  const reportId =
-    queryParams.reportId ||
-    (userId === initialUserId ? initialReportId : undefined);
+  const userId = queryParams.userId;
+  const reportId = queryParams.reportId;
 
   const supabase = createClient();
 
@@ -133,6 +133,31 @@ export default function GroupReportsClient({
       })) ?? [],
     [reportsQuery.data]
   );
+
+  // Auto-select first user when users load and none is selected
+  useEffect(() => {
+    if (!userId && usersQuery.data && usersQuery.data.length > 0) {
+      const firstUser = usersQuery.data[0];
+      if (firstUser?.id) {
+        setQueryParams({ userId: firstUser.id, reportId: null });
+      }
+    }
+  }, [userId, usersQuery.data, setQueryParams]);
+
+  // Auto-select first report when reports load and none is selected
+  // If no reports exist, default to "new"
+  useEffect(() => {
+    if (userId && !reportId && reportsQuery.data) {
+      if (reportsQuery.data.length > 0) {
+        const firstReport = reportsQuery.data[0];
+        if (firstReport?.id) {
+          setQueryParams({ reportId: firstReport.id });
+        }
+      } else if (canCreateReports) {
+        setQueryParams({ reportId: 'new' });
+      }
+    }
+  }, [userId, reportId, reportsQuery.data, setQueryParams, canCreateReports]);
 
   const reportDetailQuery = useQuery<ReportWithNames | null>({
     queryKey: [
@@ -360,9 +385,11 @@ export default function GroupReportsClient({
               : baseValue;
           });
 
-        const averageScore =
+        const representativeScore =
           scores.length > 0
-            ? scores.reduce((sum, score) => sum + score, 0) / scores.length
+            ? scoreCalculationMethod === 'LATEST'
+              ? (scores[scores.length - 1] ?? null)
+              : scores.reduce((sum, score) => sum + score, 0) / scores.length
             : null;
 
         const userFullName =
@@ -376,7 +403,7 @@ export default function GroupReportsClient({
           // creator_name will be overridden below via selectedManagerName when passed to preview
           created_at: new Date().toISOString(),
           scores: scores.length > 0 ? scores : [],
-          score: averageScore,
+          score: representativeScore,
         } as Partial<ReportWithNames>;
       }
       // Only use cached detail data when a valid reportId is present
@@ -391,6 +418,7 @@ export default function GroupReportsClient({
       reportDetailQuery.data,
       healthcareVitalsQuery.data,
       usersQuery.data,
+      scoreCalculationMethod,
     ]);
 
   // Compute effective creator (group manager) name for preview/export only
@@ -447,9 +475,14 @@ export default function GroupReportsClient({
                   disabled={reportsQuery.isLoading}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={t('user-data-table.report')} />
+                    <SelectValue placeholder={t('ws-reports.select_report')} />
                   </SelectTrigger>
                   <SelectContent>
+                    {canCreateReports && (
+                      <SelectItem value="new">
+                        + {t('ws-reports.new_report')}
+                      </SelectItem>
+                    )}
                     {reportsOptions.map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>
                         {opt.label}
@@ -476,7 +509,7 @@ export default function GroupReportsClient({
 
       {Boolean(groupId && userId) &&
         (isLoading ? (
-          <div className="flex min-h-[400px] w-full items-center justify-center rounded-lg border border-dashed py-20">
+          <div className="flex min-h-100 w-full items-center justify-center rounded-lg border border-dashed py-20">
             <div className="flex flex-col items-center gap-2">
               <Loader2 className="h-8 w-8 animate-spin text-dynamic-blue" />
               <p className="text-muted-foreground text-sm">

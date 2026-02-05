@@ -17,7 +17,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { parseAsString, useQueryStates } from 'nuqs';
+import { useEffect, useState } from 'react';
 import GroupReportsClient from '../groups/[groupId]/reports/client';
 
 interface Props {
@@ -28,8 +29,6 @@ interface Props {
   canCreateReports: boolean;
   canUpdateReports: boolean;
   canDeleteReports: boolean;
-  initialUserId?: string;
-  initialReportId?: string;
 }
 
 export default function GroupReportsSelector({
@@ -40,14 +39,22 @@ export default function GroupReportsSelector({
   canCreateReports,
   canUpdateReports,
   canDeleteReports,
-  initialUserId,
-  initialReportId,
 }: Props) {
   const t = useTranslations();
   const tc = useTranslations('common');
 
   const [open, setOpen] = useState(false);
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+
+  const [filterParams, setFilterParams] = useQueryStates(
+    {
+      groupId: parseAsString,
+      userId: parseAsString,
+      reportId: parseAsString,
+    },
+    { history: 'replace' }
+  );
+
+  const selectedGroupId = filterParams.groupId;
 
   const [query, setQuery] = useState('');
   const [debouncedQuery] = useDebounce(query, 300);
@@ -64,16 +71,17 @@ export default function GroupReportsSelector({
       debouncedQuery,
     ],
     queryFn: async () => {
-      if (!debouncedQuery) return [];
-
       if (hasManageUsers) {
-        const { data, error } = await supabase
+        let q = supabase
           .from('workspace_user_groups_with_guest')
           .select('id, name, ws_id')
-          .eq('ws_id', wsId)
-          .ilike('name', `%${debouncedQuery}%`)
-          .order('name')
-          .limit(20);
+          .eq('ws_id', wsId);
+
+        if (debouncedQuery) {
+          q = q.ilike('name', `%${debouncedQuery}%`);
+        }
+
+        const { data, error } = await q.order('name').limit(20);
 
         if (error) throw error;
         return data || [];
@@ -86,22 +94,22 @@ export default function GroupReportsSelector({
         return [];
       }
 
-      const { data, error } = await supabase
+      let q = supabase
         .from('workspace_user_groups_with_guest')
         .select('id, name, workspace_user_groups_users!inner(user_id)')
         .eq('ws_id', wsId)
-        .eq('workspace_user_groups_users.user_id', workspaceUserId)
-        .ilike('name', `%${debouncedQuery}%`)
-        .order('name')
-        .limit(20);
+        .eq('workspace_user_groups_users.user_id', workspaceUserId);
+
+      if (debouncedQuery) {
+        q = q.ilike('name', `%${debouncedQuery}%`);
+      }
+
+      const { data, error } = await q.order('name').limit(20);
 
       if (error) throw error;
       return data || [];
     },
-    enabled:
-      !!wsId &&
-      (hasManageUsers || !!workspaceUserId) &&
-      debouncedQuery.length > 0,
+    enabled: !!wsId && (hasManageUsers || !!workspaceUserId),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
@@ -125,6 +133,17 @@ export default function GroupReportsSelector({
 
   const groups = searchGroupsQuery.data ?? [];
   const selectedGroup = selectedGroupQuery.data;
+
+  // Auto-select first group when groups load and none is selected
+  useEffect(() => {
+    if (!selectedGroupId && groups.length > 0 && groups[0]?.id) {
+      setFilterParams({
+        groupId: groups[0].id,
+        userId: null,
+        reportId: null,
+      });
+    }
+  }, [selectedGroupId, groups, setFilterParams]);
 
   return (
     <div className="space-y-6">
@@ -162,7 +181,11 @@ export default function GroupReportsSelector({
                         key={group.id}
                         value={group.name || ''}
                         onSelect={() => {
-                          setSelectedGroupId(group.id);
+                          setFilterParams({
+                            groupId: group.id,
+                            userId: null,
+                            reportId: null,
+                          });
                           setOpen(false);
                         }}
                       >
@@ -179,11 +202,7 @@ export default function GroupReportsSelector({
                     ))}
                   </CommandGroup>
                 ) : (
-                  <CommandEmpty>
-                    {query
-                      ? tc('no_results_found')
-                      : t('ws-user-groups.search_group_placeholder')}
-                  </CommandEmpty>
+                  <CommandEmpty>{tc('no_results_found')}</CommandEmpty>
                 )}
               </CommandList>
             </Command>
@@ -197,8 +216,6 @@ export default function GroupReportsSelector({
           <GroupReportsClient
             wsId={wsId}
             groupId={selectedGroupId}
-            initialUserId={initialUserId}
-            initialReportId={initialReportId}
             groupNameFallback={selectedGroup.name || ''}
             canCheckUserAttendance={canCheckUserAttendance}
             canCreateReports={canCreateReports}

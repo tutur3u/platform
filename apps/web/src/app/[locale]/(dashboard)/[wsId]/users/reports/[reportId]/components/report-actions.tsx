@@ -1,8 +1,10 @@
 'use client';
 
 import {
+  Check,
   Download,
   ImageIcon,
+  Monitor,
   Moon,
   Palette,
   Printer,
@@ -17,12 +19,15 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { useTranslations } from 'next-intl';
 
+type ReportTheme = 'auto' | 'light' | 'dark';
+
 interface ReportActionsProps {
   isPendingApproval: boolean;
   isExporting: boolean;
   handlePrintExport: () => void;
   handlePngExport: () => void;
-  setIsDarkPreview: (isDark: boolean) => void;
+  reportTheme: ReportTheme;
+  setReportTheme: (theme: ReportTheme) => void;
 }
 
 export function ReportActions({
@@ -30,7 +35,8 @@ export function ReportActions({
   isExporting,
   handlePrintExport,
   handlePngExport,
-  setIsDarkPreview,
+  reportTheme,
+  setReportTheme,
 }: ReportActionsProps) {
   const t = useTranslations();
 
@@ -88,13 +94,26 @@ export function ReportActions({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            <DropdownMenuItem onClick={() => setIsDarkPreview(false)}>
+            <DropdownMenuItem onClick={() => setReportTheme('auto')}>
+              <Monitor className="h-4 w-4" />
+              {t('common.auto')}
+              {reportTheme === 'auto' && (
+                <Check className="ml-auto h-3.5 w-3.5 text-muted-foreground" />
+              )}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setReportTheme('light')}>
               <Sun className="h-4 w-4" />
               {t('common.light')}
+              {reportTheme === 'light' && (
+                <Check className="ml-auto h-3.5 w-3.5 text-muted-foreground" />
+              )}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setIsDarkPreview(true)}>
+            <DropdownMenuItem onClick={() => setReportTheme('dark')}>
               <Moon className="h-4 w-4" />
               {t('common.dark')}
+              {reportTheme === 'dark' && (
+                <Check className="ml-auto h-3.5 w-3.5 text-muted-foreground" />
+              )}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -7,10 +7,12 @@ import type * as React from 'react';
 function Progress({
   className,
   indicatorClassName,
+  indicatorStyle,
   value,
   ...props
 }: React.ComponentProps<typeof ProgressPrimitive.Root> & {
   indicatorClassName?: string;
+  indicatorStyle?: React.CSSProperties;
 }) {
   return (
     <ProgressPrimitive.Root
@@ -27,7 +29,10 @@ function Progress({
           'h-full w-full flex-1 bg-primary transition-all',
           indicatorClassName
         )}
-        style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
+        style={{
+          transform: `translateX(-${100 - (value || 0)}%)`,
+          ...indicatorStyle,
+        }}
       />
     </ProgressPrimitive.Root>
   );
