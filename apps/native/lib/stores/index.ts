@@ -1,3 +1,4 @@
+export { useWorkspaces } from '@/hooks/features/workspaces';
 export type { AuthStore } from './auth-store';
 export {
   useAuthError,
@@ -20,5 +21,4 @@ export {
   useCurrentWorkspace,
   useWorkspaceId,
   useWorkspaceStore,
-  useWorkspaces,
 } from './workspace-store';

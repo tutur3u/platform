@@ -1,12 +1,28 @@
 import 'react-native-url-polyfill/auto';
 
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
-
 import type { Database } from '@tuturuuu/types';
+import { Platform } from 'react-native';
 
 import { secureStorage } from './secure-storage';
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const normalizeUrl = (url?: string) => {
+  if (!url) return url;
+  let normalized = url.replace(/\/$/, '');
+
+  // Handle localhost mapping for Android emulator
+  if (
+    __DEV__ &&
+    Platform.OS === 'android' &&
+    normalized.includes('localhost')
+  ) {
+    normalized = normalized.replace('localhost', '10.0.2.2');
+  }
+
+  return normalized;
+};
+
+const supabaseUrl = normalizeUrl(process.env.EXPO_PUBLIC_SUPABASE_URL);
 const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {

@@ -1,4 +1,15 @@
-const normalizeBaseUrl = (value: string) => value.replace(/\/$/, '');
+import { Platform } from 'react-native';
+
+const normalizeBaseUrl = (value: string) => {
+  let url = value.replace(/\/$/, '');
+
+  // Handle localhost mapping for Android emulator
+  if (__DEV__ && Platform.OS === 'android' && url.includes('localhost')) {
+    url = url.replace('localhost', '10.0.2.2');
+  }
+
+  return url;
+};
 
 export const apiConfig = {
   baseUrl: normalizeBaseUrl(

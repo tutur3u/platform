@@ -3,11 +3,7 @@ import { Link, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import {
-  useAuthStore,
-  useCurrentWorkspace,
-  useWorkspaceStore,
-} from '@/lib/stores';
+import { useAuthStore, useCurrentWorkspace, useWorkspaces } from '@/lib/stores';
 
 type QuickActionItem = {
   title: string;
@@ -52,7 +48,7 @@ export default function DashboardScreen() {
   const { wsId } = useLocalSearchParams<{ wsId: string }>();
   const { user } = useAuthStore();
   const workspace = useCurrentWorkspace();
-  const { workspaces } = useWorkspaceStore();
+  const { data: workspaces } = useWorkspaces();
 
   const greeting = getGreeting();
 
@@ -95,7 +91,7 @@ export default function DashboardScreen() {
                 </Text>
               )}
             </View>
-            {workspaces.length > 1 && (
+            {(workspaces?.length ?? 0) > 1 && (
               <Link href="/(protected)/workspace-select" asChild>
                 <Pressable className="rounded-lg border border-zinc-200 px-3 py-2 active:bg-zinc-50 dark:border-zinc-700 dark:active:bg-zinc-700">
                   <Text className="font-medium text-sm text-zinc-700 dark:text-zinc-300">

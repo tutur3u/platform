@@ -4,8 +4,9 @@ import { Platform } from 'react-native';
 import { create } from 'zustand';
 
 import { passwordLoginApi, sendOtpApi, verifyOtpApi } from '@/lib/api/auth';
-
+import { queryClient } from '../query/client';
 import { supabase } from '../supabase/client';
+import { useWorkspaceStore } from './workspace-store';
 
 type AuthState = {
   user: User | null;
@@ -360,6 +361,8 @@ export const useAuthStore = create<AuthStore>((set, _get) => ({
     set({ isLoading: true });
 
     await supabase.auth.signOut();
+    queryClient.clear();
+    useWorkspaceStore.getState().clearWorkspaces();
 
     set({
       user: null,
