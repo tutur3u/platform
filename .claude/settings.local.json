@@ -44,7 +44,10 @@
       "Bash(git log:*)",
       "Bash(tail:*)",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:supabase.com)"
+      "WebFetch(domain:supabase.com)",
+      "Bash(node scripts/i18n-sort.js:*)",
+      "Bash(npx @biomejs/biome check:*)",
+      "Bash(bunx @biomejs/biome check:*)"
     ]
   }
 }
