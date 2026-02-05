@@ -1,22 +1,9 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { format } from 'date-fns';
-import { enUS, vi } from 'date-fns/locale';
-import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import { getLocale, getTranslations } from 'next-intl/server';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { NextResponse } from 'next/server';
 import { createPolarCustomer, getPolarCustomer } from '@/utils/customer-helper';
 import { getSeatStatus } from '@/utils/seat-limits';
 import { createFreeSubscription } from '@/utils/subscription-helper';
-import { BillingClient } from './billing-client';
-import BillingHistory from './billing-history';
-import { NoSubscriptionFound } from './no-subscription-found';
-
-export const metadata: Metadata = {
-  title: 'Billing',
-  description: 'Manage Billing in your Tuturuuu workspace.',
-};
 
 const fetchProducts = async () => {
   try {
@@ -81,7 +68,7 @@ const checkManageSubscriptionPermission = async (
   return data ?? false;
 };
 
-const ensureSubscription = async (wsId: string) => {
+export const ensureSubscription = async (wsId: string) => {
   // Check for existing subscription first
   const existing = await fetchSubscription(wsId);
   if (existing) return { subscription: existing, error: null };
@@ -203,94 +190,57 @@ export async function waitForSubscriptionSync(
   return null;
 }
 
-export default async function BillingPage({
-  params,
-}: {
-  params: Promise<{ wsId: string }>;
-}) {
-  return (
-    <WorkspaceWrapper params={params}>
-      {async ({ wsId }) => {
-        // Get user first
-        const supabase = await createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ wsId: string }> }
+) {
+  try {
+    const { wsId } = await params;
 
-        if (!user) return notFound();
+    // Authenticate user
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-        const [
-          products,
-          subscriptionResult,
-          orders,
-          hasManageSubscriptionPermission,
-          locale,
-          t,
-        ] = await Promise.all([
-          fetchProducts(),
-          ensureSubscription(wsId), // Try to ensure subscription exists
-          fetchWorkspaceOrders(wsId),
-          checkManageSubscriptionPermission(wsId, user.id),
-          getLocale(),
-          getTranslations('billing'),
-        ]);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-        // Handle subscription creation failure
-        if (!subscriptionResult.subscription) {
-          return (
-            <NoSubscriptionFound wsId={wsId} error={subscriptionResult.error} />
-          );
-        }
+    // Fetch all billing data in parallel
+    const [products, subscriptionResult, orders, hasManagePermission] =
+      await Promise.all([
+        fetchProducts(),
+        ensureSubscription(wsId),
+        fetchWorkspaceOrders(wsId),
+        checkManageSubscriptionPermission(wsId, user.id),
+      ]);
 
-        const subscription = subscriptionResult.subscription;
+    // Handle subscription creation failure
+    if (!subscriptionResult.subscription) {
+      return NextResponse.json(
+        { error: subscriptionResult.error || 'SUBSCRIPTION_NOT_FOUND' },
+        { status: 404 }
+      );
+    }
 
-        // Get seat status for the workspace
-        const seatStatus = await getSeatStatus(supabase, wsId);
+    const subscription = subscriptionResult.subscription;
 
-        const dateLocale = locale === 'vi' ? vi : enUS;
-        const formatDate = (date: string) =>
-          format(new Date(date), 'd MMM, yyyy', { locale: dateLocale });
+    // Get seat status for the workspace
+    const seatStatus = await getSeatStatus(supabase, wsId);
 
-        const currentPlan = {
-          id: subscription.id,
-          productId: subscription.product.id,
-          name: subscription.product.name || t('no-plan'),
-          tier: subscription.product.tier,
-          price: subscription.product.price ?? 0,
-          billingCycle: subscription.product.recurring_interval,
-          startDate: subscription.createdAt
-            ? formatDate(subscription.createdAt)
-            : '-',
-          nextBillingDate: subscription.currentPeriodEnd
-            ? formatDate(subscription.currentPeriodEnd)
-            : '-',
-          cancelAtPeriodEnd: subscription.cancelAtPeriodEnd ?? false,
-          status: subscription.status || 'unknown',
-          features: subscription.product.description
-            ? [subscription.product.description]
-            : [t('premium-features')],
-          // Seat-based pricing fields
-          pricingModel: subscription.pricingModel,
-          seatCount: subscription.seatCount,
-          pricePerSeat: subscription.pricePerSeat,
-          maxSeats: subscription.product.max_seats,
-        };
-
-        return (
-          <div className="container mx-auto max-w-6xl px-4 py-8">
-            <BillingClient
-              currentPlan={currentPlan}
-              products={products}
-              product_id={subscription?.product.id || ''}
-              wsId={wsId}
-              seatStatus={seatStatus}
-              hasManageSubscriptionPermission={hasManageSubscriptionPermission}
-            />
-
-            <BillingHistory orders={orders} />
-          </div>
-        );
-      }}
-    </WorkspaceWrapper>
-  );
+    return NextResponse.json({
+      subscription,
+      products,
+      orders,
+      seatStatus,
+      hasManagePermission,
+    });
+  } catch (error) {
+    console.error('Error fetching workspace billing:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import SessionsCard from '@/app/[locale]/(dashboard)/settings/account/sessions/sessions-card';
+import SessionsCard from './sessions-card';
 
 export default function SessionSettings() {
   return (

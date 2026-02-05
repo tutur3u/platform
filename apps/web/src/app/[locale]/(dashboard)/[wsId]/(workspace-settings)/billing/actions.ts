@@ -1,6 +1,9 @@
 'use server';
 
-import type { CustomerPaymentMethod } from '@tuturuuu/payment/polar';
+import type {
+  AddressInput,
+  CustomerPaymentMethod,
+} from '@tuturuuu/payment/polar';
 import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
@@ -166,6 +169,74 @@ export async function deleteWorkspacePaymentMethod(
         error instanceof Error
           ? error.message
           : 'Failed to delete payment method',
+    };
+  }
+}
+
+/**
+ * Update billing address for the current user
+ */
+export async function updateBillingAddress(
+  name: string,
+  address: AddressInput
+): Promise<ActionResult> {
+  try {
+    const user = await getCurrentSupabaseUser();
+
+    if (!user) {
+      return {
+        success: false,
+        error: 'Unauthorized - please log in',
+      };
+    }
+
+    const polar = createPolarClient();
+    const supabase = await createClient();
+
+    // Get the user's personal workspace to use for billing
+    const { data: personalWorkspace } = await supabase
+      .from('workspaces')
+      .select('id')
+      .eq('creator_id', user.id)
+      .eq('personal', true)
+      .single();
+
+    if (!personalWorkspace) {
+      return {
+        success: false,
+        error: 'Personal workspace not found',
+      };
+    }
+
+    // Create a customer session to authenticate with customer portal
+    const session = await createCustomerSession({
+      polar,
+      supabase,
+      wsId: personalWorkspace.id,
+    });
+
+    // Update customer billing address using customer portal API
+    await polar.customerPortal.customers.update(
+      {
+        customerSession: session.token,
+      },
+      {
+        billingName: name,
+        billingAddress: address,
+      }
+    );
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error('Failed to update billing address:', error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to update billing address',
     };
   }
 }

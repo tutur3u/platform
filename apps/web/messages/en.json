@@ -740,6 +740,7 @@
     "never_used": "Never used",
     "no_expiration": "Never expires",
     "status": "Status",
+    "updated_at": "Updated At",
     "value": "Value"
   },
   "api-key-usage-logs-table": {
@@ -11348,7 +11349,7 @@
     "create": "Create secret",
     "create_description": "Create a new secret",
     "create_secret": "Create Secret",
-    "description": "A custom value to interact with our platform in a secure and confidental way.",
+    "description": "A custom value to interact with our platform in a secure and confidential way.",
     "edit_existing_workspace_secret": "Edit an existing secret for this workspace.",
     "edit_secret": "Edit Secret",
     "name": "Name",

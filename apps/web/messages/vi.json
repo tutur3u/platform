@@ -740,6 +740,7 @@
     "never_used": "Chưa sử dụng",
     "no_expiration": "Không bao giờ hết hạn",
     "status": "Trạng thái",
+    "updated_at": "Cập nhật lần cuối",
     "value": "Giá trị"
   },
   "api-key-usage-logs-table": {

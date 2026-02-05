@@ -86,6 +86,7 @@ function formatUserAgent(userAgent: string) {
 }
 
 // Time ago formatter that leverages i18n translations
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getTimeAgoFormatter(t: any) {
   return (dateString: string) => {
     const date = new Date(dateString);
