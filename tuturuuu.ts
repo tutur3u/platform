@@ -41,4 +41,5 @@ export const ci = {
   'vercel-production-tumeet.yaml': true,
   'native-build-ios.yaml': true,
   'native-build-android.yaml': true,
+  'native-expo-check.yaml': true,
 };
