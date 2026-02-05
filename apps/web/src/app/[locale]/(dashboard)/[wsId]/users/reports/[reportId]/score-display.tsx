@@ -2,8 +2,17 @@
 
 import { RefreshCw } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@tuturuuu/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 
 interface HealthcareVital {
   id: string;
@@ -23,9 +32,10 @@ interface ScoreDisplayProps {
   // Report ID for unique keys
   reportId?: string;
   // For fetching new scores
-  onFetchNewScores?: () => void;
+  onFetchNewScores?: (options?: { force?: boolean }) => Promise<any>;
   isFetchingNewScores?: boolean;
   factorEnabled?: boolean;
+  scoreCalculationMethod?: 'AVERAGE' | 'LATEST';
 }
 
 export default function ScoreDisplay({
@@ -37,36 +47,22 @@ export default function ScoreDisplay({
   onFetchNewScores,
   isFetchingNewScores = false,
   factorEnabled = false,
+  scoreCalculationMethod = 'AVERAGE',
 }: ScoreDisplayProps) {
   const t = useTranslations();
-  // Calculate average score from healthcare vitals
-  const calculateAverageFromVitals = (
-    vitals: HealthcareVital[]
-  ): number | null => {
-    const validVitals = vitals.filter(
-      (vital) => vital.value !== null && vital.value !== undefined
-    );
-    if (validVitals.length === 0) return null;
 
-    const totalScore = validVitals
-      .map((vital) => {
-        const baseValue = vital.value ?? 0;
-        // Apply factor only if feature flag is enabled
-        return factorEnabled ? baseValue * (vital.factor ?? 1) : baseValue;
-      })
-      .reduce((a, b) => a + b, 0);
+  const [showConfirmEmptyDialog, setShowConfirmEmptyDialog] = useState(false);
 
-    return totalScore / validVitals.length;
-  };
-
-  // Calculate average score from existing scores
-  const calculateAverageFromScores = (
-    scores: number[] | null
-  ): number | null => {
-    if (!scores || scores.length === 0) return null;
-
-    const totalScore = scores.reduce((a, b) => a + b, 0);
-    return totalScore / scores.length;
+  const handleFetch = async (options?: { force?: boolean }) => {
+    if (!onFetchNewScores) return;
+    try {
+      const result = await onFetchNewScores(options);
+      if (result?.needsConfirmation) {
+        setShowConfirmEmptyDialog(true);
+      }
+    } catch (error) {
+      console.error('Failed to fetch new scores:', error);
+    }
   };
 
   // Get individual scores with metadata for display
@@ -97,15 +93,34 @@ export default function ScoreDisplay({
     }));
   };
 
-  // Get average score
-  const getAverageScore = (): number | null => {
-    if (isNew && healthcareVitals.length > 0) {
-      return calculateAverageFromVitals(healthcareVitals);
+  // Get representative score
+  const getRepresentativeScore = (): number | null => {
+    const currentScores =
+      isNew && healthcareVitals.length > 0
+        ? healthcareVitals
+            .filter(
+              (vital) => vital.value !== null && vital.value !== undefined
+            )
+            .map((vital) => {
+              const baseValue = vital.value ?? 0;
+              return factorEnabled
+                ? baseValue * (vital.factor ?? 1)
+                : baseValue;
+            })
+        : scores || [];
+
+    if (currentScores.length === 0) return null;
+
+    if (scoreCalculationMethod === 'LATEST') {
+      const lastScore = currentScores[currentScores.length - 1];
+      return lastScore !== undefined ? lastScore : null;
     }
-    return calculateAverageFromScores(scores);
+
+    const totalScore = currentScores.reduce((a, b) => a + b, 0);
+    return totalScore / currentScores.length;
   };
 
-  const averageScore = getAverageScore();
+  const representativeScore = getRepresentativeScore();
   const individualScoresWithMetadata = getIndividualScoresWithMetadata();
 
   // Loading state
@@ -117,14 +132,70 @@ export default function ScoreDisplay({
     );
   }
 
+  const fetchButton = !isNew && onFetchNewScores && (
+    <Button
+      size="sm"
+      variant="outline"
+      onClick={() => handleFetch()}
+      disabled={isFetchingNewScores}
+      className="gap-2"
+    >
+      <RefreshCw
+        className={`h-4 w-4 ${isFetchingNewScores ? 'animate-spin' : ''}`}
+      />
+      {isFetchingNewScores
+        ? t('common.loading')
+        : t('ws-reports.fetch_new_scores')}
+    </Button>
+  );
+
+  const confirmEmptyDialog = (
+    <Dialog
+      open={showConfirmEmptyDialog}
+      onOpenChange={setShowConfirmEmptyDialog}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t('ws-reports.no_scores_fetched_title')}</DialogTitle>
+          <DialogDescription>
+            {t('ws-reports.no_scores_fetched_confirm')}
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setShowConfirmEmptyDialog(false)}
+          >
+            {t('ws-reports.keep_old_scores')}
+          </Button>
+          <Button
+            onClick={() => {
+              handleFetch({ force: true });
+              setShowConfirmEmptyDialog(false);
+            }}
+          >
+            {t('ws-reports.use_empty_data')}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
   // No data state
   if (
     (isNew && healthcareVitals.length === 0) ||
     (!isNew && (!scores || scores.length === 0))
   ) {
     return (
-      <div className="text-dynamic-red">
-        {isNew ? 'No healthcare vitals available' : t('ws-reports.no_scores')}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="font-semibold text-lg">
+            {t('ws-reports.user_data')}
+          </div>
+          {fetchButton}
+        </div>
+        <div className="text-dynamic-red">{t('ws-reports.no_scores')}</div>
+        {confirmEmptyDialog}
       </div>
     );
   }
@@ -134,38 +205,27 @@ export default function ScoreDisplay({
       {/* Header with Fetch New Scores button for existing reports */}
       <div className="flex items-center justify-between">
         <div className="font-semibold text-lg">{t('ws-reports.user_data')}</div>
-        {!isNew && onFetchNewScores && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={onFetchNewScores}
-            disabled={isFetchingNewScores}
-            className="gap-2"
-          >
-            <RefreshCw
-              className={`h-4 w-4 ${isFetchingNewScores ? 'animate-spin' : ''}`}
-            />
-            {isFetchingNewScores
-              ? t('common.loading')
-              : t('ws-reports.fetch_new_scores')}
-          </Button>
-        )}
+        {fetchButton}
       </div>
 
-      {/* Average Score Display */}
+      {confirmEmptyDialog}
+
+      {/* Representative Score Display */}
       <div className="flex items-center gap-1">
-        {t('ws-reports.average_score')}:
+        {t('ws-reports.representative_score')}:
         <div className="flex flex-wrap gap-1">
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex h-8 min-w-8 cursor-help items-center justify-center rounded bg-foreground px-2 font-semibold text-background">
-                {averageScore?.toFixed(1) || '-'}
+                {representativeScore?.toFixed(1) || '-'}
               </div>
             </TooltipTrigger>
             <TooltipContent>
               <div className="space-y-1">
                 <div className="font-semibold">
-                  {t('ws-reports.average_score')}
+                  {scoreCalculationMethod === 'LATEST'
+                    ? t('ws-reports.latest')
+                    : t('ws-reports.average')}
                 </div>
                 <div className="text-muted-foreground text-xs">
                   {individualScoresWithMetadata.length} {t('ws-reports.scores')}

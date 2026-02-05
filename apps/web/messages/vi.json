@@ -5938,6 +5938,11 @@
       "sidebar_hover": "Di chuột",
       "title": "Tùy chọn"
     },
+    "reports": {
+      "default_title": "Tiêu đề báo cáo mặc định",
+      "default_title_description": "Đặt tiêu đề cơ bản khi tạo báo cáo mới",
+      "title": "Báo cáo"
+    },
     "tasks": {
       "always_enabled_personal": "Tính năng này luôn được bật cho không gian làm việc cá nhân",
       "auto_assign_to_self": "Tự động gán cho bản thân",
@@ -10913,6 +10918,7 @@
   "ws-reports": {
     "approval_status": "Trạng thái phê duyệt",
     "approved": "Đã phê duyệt",
+    "average": "Trung bình",
     "average_score": "Điểm trung bình",
     "brand_location": "Vị trí thương hiệu",
     "brand_logo_url": "URL logo thương hiệu",
@@ -10939,6 +10945,8 @@
     "fetch_new_scores": "Lấy điểm mới",
     "group_manager": "Quản lý nhóm",
     "history": "Lịch sử",
+    "keep_old_scores": "Giữ điểm cũ",
+    "latest": "Mới nhất",
     "lead_email_footer": "Lời kết thúc email",
     "lead_email_greeting": "Lời mở đầu email",
     "lead_email_signature_name": "Tên chữ ký",
@@ -10956,6 +10964,8 @@
     "needs_approval_description": "Báo cáo này cần được phê duyệt trước khi có thể xuất.",
     "no_history": "Không có lịch sử",
     "no_scores": "Không có dữ liệu điểm",
+    "no_scores_fetched_confirm": "Lần lấy điểm mới này không trả về kết quả nào. Bạn muốn sử dụng dữ liệu trống này hay giữ lại điểm cũ?",
+    "no_scores_fetched_title": "Không tìm thấy điểm",
     "pending": "Đang chờ",
     "png": "PNG",
     "print": "In",
@@ -10965,6 +10975,7 @@
     "report_conclusion": "Đoạn kết báo cáo",
     "report_content_text": "Chữ hiển thị cho mục nội dung báo cáo",
     "report_created": "Đã tạo báo cáo",
+    "report_default_title": "Tiêu đề báo cáo mặc định",
     "report_deleted": "Đã xóa báo cáo",
     "report_export_not_found": "Không tìm thấy bản xem trước báo cáo",
     "report_feedback_text": "Chữ hiển thị cho mục phản hồi báo cáo",
@@ -10975,16 +10986,30 @@
     "report_title_prefix": "Tiền tố tiêu đề báo cáo",
     "report_title_suffix": "Hậu tố tiêu đề báo cáo",
     "reports": "Báo cáo",
+    "representative_score": "Điểm đại diện",
     "reset_to_current": "Khôi phục về hiện tại",
     "reset_value": "Đặt lại giá trị",
+    "score_calculation_method": "Phương thức tính điểm",
     "scores": "Điểm",
     "scores_updated": "Đã cập nhật điểm thành công",
     "theme": "Giao diện",
     "updated_report": "đã cập nhật báo cáo",
     "updated_report-number": "Bản cập nhật #{number}",
+    "use_empty_data": "Sử dụng dữ liệu trống",
     "user_data": "Chỉ số người dùng",
     "value": "Giá trị",
     "viewing_history_snapshot": "Đang xem ảnh chụp lịch sử"
+  },
+  "ws-reports-settings": {
+    "default_title_help": "Giá trị này dùng làm tiêu đề cơ bản; tháng hiện tại sẽ được thêm tự động.",
+    "default_title_label": "Tiêu đề báo cáo",
+    "default_title_placeholder": "Báo cáo hàng tháng",
+    "description": "Cấu hình tiêu đề cơ bản cho báo cáo mới. Tháng hiện tại sẽ được thêm tự động.",
+    "save": "Lưu",
+    "saving": "Đang lưu...",
+    "title": "Tiêu đề báo cáo mặc định",
+    "update_error": "Không thể cập nhật tiêu đề báo cáo",
+    "update_success": "Đã cập nhật tiêu đề báo cáo"
   },
   "ws-roles": {
     "active_roles": "Vai trò đang hoạt động",
