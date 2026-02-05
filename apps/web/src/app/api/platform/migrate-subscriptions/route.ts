@@ -115,19 +115,31 @@ export async function POST() {
 
         const seats = Math.max(1, memberCount ?? 1);
 
-        // Execute update via Polar
         console.log(
           `Migrating sub ${sub.id} (${sub.polar_subscription_id}) to product ${targetProduct.id} with ${seats} seats`
         );
 
+        // STEP 1: Change the product (fixed-price → seat-based)
+        console.log(`  Step 1: Changing product to ${targetProduct.id}...`);
         await polar.subscriptions.update({
           id: sub.polar_subscription_id,
           subscriptionUpdate: {
             productId: targetProduct.id,
+            prorationBehavior: 'invoice',
+          },
+        });
+
+        // STEP 2: Set the initial seat count
+        console.log(`  Step 2: Setting seat count to ${seats}...`);
+        await polar.subscriptions.update({
+          id: sub.polar_subscription_id,
+          subscriptionUpdate: {
             seats,
             prorationBehavior: 'invoice',
           },
         });
+
+        console.log(`  Successfully migrated subscription ${sub.id}`);
 
         // Update local DB to reflect change immediately
         const { error: updateError } = await sbAdmin
