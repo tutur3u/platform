@@ -11,9 +11,11 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { useForm, useWatch } from '@tuturuuu/ui/hooks/use-form';
+import { useWorkspaceCurrency } from '@tuturuuu/ui/hooks/use-workspace-currency';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
+import { SUPPORTED_CURRENCIES } from '@tuturuuu/utils/currencies';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
@@ -30,16 +32,45 @@ interface Props {
   isPersonalWorkspace?: boolean;
 }
 
-const FormSchema = z.object({
-  id: z.string().optional(),
-  name: z.string().min(1).max(255),
-  description: z.string().max(500).optional(),
-  balance: z.number().optional(),
-  type: z.string(),
-  // type: z.enum(['STANDARD', 'CREDIT']),
-  icon: z.string().nullable().optional(),
-  image_src: z.string().nullable().optional(),
-});
+const FormSchema = z
+  .object({
+    id: z.string().optional(),
+    name: z.string().min(1).max(255),
+    description: z.string().max(500).optional(),
+    balance: z.number().optional(),
+    type: z.string(),
+    currency: z.string().min(1),
+    icon: z.string().nullable().optional(),
+    image_src: z.string().nullable().optional(),
+    limit: z.number().positive().optional(),
+    statement_date: z.number().min(1).max(31).optional(),
+    payment_date: z.number().min(1).max(31).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.type === 'CREDIT') {
+      if (!data.limit || data.limit <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['limit'],
+          message: 'Credit limit is required for credit wallets',
+        });
+      }
+      if (!data.statement_date) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['statement_date'],
+          message: 'Statement date is required for credit wallets',
+        });
+      }
+      if (!data.payment_date) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['payment_date'],
+          message: 'Payment date is required for credit wallets',
+        });
+      }
+    }
+  });
 
 export function WalletForm({
   wsId,
@@ -48,6 +79,7 @@ export function WalletForm({
   isPersonalWorkspace,
 }: Props) {
   const t = useTranslations();
+  const { currency: workspaceCurrency } = useWorkspaceCurrency(wsId);
 
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -66,10 +98,16 @@ export function WalletForm({
       description: data?.description || '',
       balance: data?.balance || 0,
       type: data?.type || 'STANDARD',
+      currency: data?.currency || workspaceCurrency || 'USD',
       icon: data?.icon || null,
       image_src: data?.image_src || null,
+      limit: data?.limit ?? undefined,
+      statement_date: data?.statement_date ?? undefined,
+      payment_date: data?.payment_date ?? undefined,
     },
   });
+
+  const walletType = useWatch({ control: form.control, name: 'type' });
 
   // Handle icon change - update both local state and form
   const handleIconChange = useCallback(
@@ -236,7 +274,6 @@ export function WalletForm({
                 <SelectField
                   id="wallet-type"
                   placeholder="Select a type"
-                  defaultValue="STANDARD"
                   options={[
                     {
                       value: 'STANDARD',
@@ -245,17 +282,129 @@ export function WalletForm({
                     {
                       value: 'CREDIT',
                       label: t('wallet-data-table.credit'),
-                      disabled: true,
                     },
                   ]}
                   classNames={{ root: 'w-full' }}
-                  {...field}
+                  value={field.value}
+                  onValueChange={field.onChange}
                 />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+
+        <FormField
+          control={form.control}
+          name="currency"
+          render={({ field }) => (
+            <FormItem className="w-full">
+              <FormLabel>{t('wallet-data-table.wallet_currency')}</FormLabel>
+              <FormControl>
+                <SelectField
+                  id="wallet-currency"
+                  placeholder={t('wallet-data-table.select_currency')}
+                  options={SUPPORTED_CURRENCIES.map((c) => ({
+                    value: c.code,
+                    label: `${c.code} - ${c.name}`,
+                  }))}
+                  classNames={{ root: 'w-full' }}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {walletType === 'CREDIT' && (
+          <div className="space-y-2 rounded-lg border p-3">
+            <div className="font-medium text-sm">
+              {t('wallet-data-table.credit_details')}
+            </div>
+
+            <FormField
+              control={form.control}
+              name="limit"
+              disabled={loading}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('wallet-data-table.credit_limit')}</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      {...field}
+                      value={field.value ?? ''}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        field.onChange(Number.isNaN(val) ? undefined : val);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-2">
+              <FormField
+                control={form.control}
+                name="statement_date"
+                disabled={loading}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t('wallet-data-table.statement_date')}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={31}
+                        placeholder="1"
+                        {...field}
+                        value={field.value ?? ''}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10);
+                          field.onChange(Number.isNaN(val) ? undefined : val);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="payment_date"
+                disabled={loading}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('wallet-data-table.payment_date')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={31}
+                        placeholder="1"
+                        {...field}
+                        value={field.value ?? ''}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10);
+                          field.onChange(Number.isNaN(val) ? undefined : val);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+        )}
 
         <div className="h-2" />
 

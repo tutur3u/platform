@@ -3,10 +3,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { Check, Eye, EyeOff, RotateCcw } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
+import { convertCurrency } from '@tuturuuu/utils/exchange-rates';
 import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts';
+import { useExchangeRates } from '../../../../../hooks/use-exchange-rates';
 import { Button } from '../../../button';
 import {
   type ChartConfig,
@@ -101,18 +104,22 @@ interface CategoryBreakdownDialogProps {
   initialCategoryData?: CategoryData[];
   /** Initial type to display. Defaults to 'expense', falls back to 'all' if no expense data exists. */
   initialType?: 'all' | 'expense' | 'income';
+  /** Transaction list for client-side computation (handles currency conversion + type filtering) */
+  transactions?: Transaction[];
 }
 
 export function CategoryBreakdownDialog({
   open,
   onOpenChange,
   workspaceId,
+  walletId,
   periodStart,
   periodEnd,
   currency = 'USD',
   timezone = 'UTC',
   initialCategoryData,
   initialType = 'expense',
+  transactions,
 }: CategoryBreakdownDialogProps) {
   const t = useTranslations('finance-transactions');
   const locale = useLocale();
@@ -122,8 +129,6 @@ export function CategoryBreakdownDialog({
   const [hiddenCategories, setHiddenCategories] = useState<Set<string>>(
     new Set()
   );
-  // Track if we've already tried to auto-fallback to 'all'
-  const [hasTriedFallback, setHasTriedFallback] = useState(false);
 
   // Sync with confidential mode cookie
   useEffect(() => {
@@ -152,12 +157,11 @@ export function CategoryBreakdownDialog({
     };
   }, []);
 
-  // Reset type, hidden categories, and fallback flag when dialog opens
+  // Reset type and hidden categories when dialog opens
   useEffect(() => {
     if (open) {
       setType(initialType);
       setHiddenCategories(new Set());
-      setHasTriedFallback(false);
     }
   }, [open, initialType]);
 
@@ -185,41 +189,221 @@ export function CategoryBreakdownDialog({
     setHiddenCategories(new Set());
   };
 
-  // Fetch category breakdown via RPC
-  const { data: rpcData, isLoading } = useQuery({
-    queryKey: [
-      'category-breakdown-dialog',
-      workspaceId,
-      periodStart,
-      periodEnd,
-      type,
-      timezone,
-    ],
-    queryFn: async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase.rpc('get_category_breakdown', {
-        _ws_id: workspaceId,
-        _start_date: periodStart,
-        _end_date: periodEnd,
-        include_confidential: true,
-        _transaction_type: type,
-        _interval: 'daily', // Single period aggregation
-        _anchor_to_latest: false,
-        _timezone: timezone, // Pass timezone for correct date grouping
+  // --- Client-side computation (when transactions provided) ---
+  const { data: exchangeRatesData } = useExchangeRates();
+  const exchangeRates = exchangeRatesData?.data ?? [];
+
+  const computeClientCategories = useCallback(
+    (
+      txType: 'all' | 'expense' | 'income'
+    ): { data: CategoryData[]; isEstimated: boolean } => {
+      if (!transactions || transactions.length === 0) {
+        return { data: [] as CategoryData[], isEstimated: false };
+      }
+
+      const categoryMap = new Map<
+        string,
+        { value: number; color: string | null; icon: string | null }
+      >();
+      let hasConvertedAmounts = false;
+
+      transactions.forEach((tx) => {
+        if (tx.amount === null && tx.is_amount_confidential) return;
+        if (!tx.amount) return;
+
+        if (txType === 'income' && tx.amount < 0) return;
+        if (txType === 'expense' && tx.amount > 0) return;
+
+        const categoryName =
+          tx.is_category_confidential && !tx.category
+            ? t('no-category')
+            : tx.category || t('no-category');
+
+        let amount = Math.abs(tx.amount);
+        if (
+          tx.wallet_currency &&
+          currency &&
+          tx.wallet_currency.toUpperCase() !== currency.toUpperCase() &&
+          exchangeRates.length > 0
+        ) {
+          const converted = convertCurrency(
+            amount,
+            tx.wallet_currency,
+            currency,
+            exchangeRates
+          );
+          if (converted !== null) {
+            amount = converted;
+            hasConvertedAmounts = true;
+          }
+        }
+
+        const existing = categoryMap.get(categoryName);
+        if (existing) {
+          categoryMap.set(categoryName, {
+            value: existing.value + amount,
+            color: existing.color ?? tx.category_color ?? null,
+            icon: existing.icon ?? null,
+          });
+        } else {
+          categoryMap.set(categoryName, {
+            value: amount,
+            color: tx.category_color ?? null,
+            icon: null,
+          });
+        }
       });
 
-      if (error) throw error;
-      return data as CategoryBreakdownData[];
+      const total = Array.from(categoryMap.values()).reduce(
+        (sum, item) => sum + item.value,
+        0
+      );
+      if (total === 0)
+        return { data: [] as CategoryData[], isEstimated: false };
+
+      const sorted = Array.from(categoryMap.entries())
+        .map(([name, data], index) => ({
+          name,
+          value: data.value,
+          color: data.color || CATEGORY_COLORS[index % CATEGORY_COLORS.length]!,
+          percentage: (data.value / total) * 100,
+          icon: data.icon,
+        }))
+        .sort((a, b) => b.value - a.value);
+
+      return { data: sorted, isEstimated: hasConvertedAmounts };
     },
-    staleTime: 5 * 60 * 1000, // 5 minute cache
+    [transactions, currency, exchangeRates, t]
+  );
+
+  // Compute client-side data for all 3 types
+  const clientAllResult = useMemo(
+    () => computeClientCategories('all'),
+    [computeClientCategories]
+  );
+  const clientExpenseResult = useMemo(
+    () => computeClientCategories('expense'),
+    [computeClientCategories]
+  );
+  const clientIncomeResult = useMemo(
+    () => computeClientCategories('income'),
+    [computeClientCategories]
+  );
+
+  // Stable color map from "all" type ensures consistent colors across tabs
+  const categoryColorMap = useMemo(() => {
+    const map = new Map<string, string>();
+    clientAllResult.data.forEach((item, index) => {
+      map.set(
+        item.name,
+        item.color || CATEGORY_COLORS[index % CATEGORY_COLORS.length]!
+      );
+    });
+    return map;
+  }, [clientAllResult.data]);
+
+  // Select client data for current type with consistent colors
+  const clientCategoryDataForType = useMemo(() => {
+    const result =
+      type === 'all'
+        ? clientAllResult
+        : type === 'expense'
+          ? clientExpenseResult
+          : clientIncomeResult;
+    const dataWithColors = result.data.map((item, index) => ({
+      ...item,
+      color:
+        categoryColorMap.get(item.name) ||
+        item.color ||
+        CATEGORY_COLORS[index % CATEGORY_COLORS.length]!,
+    }));
+    return { data: dataWithColors, isEstimated: result.isEstimated };
+  }, [
+    type,
+    clientAllResult,
+    clientExpenseResult,
+    clientIncomeResult,
+    categoryColorMap,
+  ]);
+
+  const useClientSide = !!transactions && transactions.length > 0;
+  const isEstimated = useClientSide && clientCategoryDataForType.isEstimated;
+
+  // Fetch category breakdown for a given transaction type
+  const fetchCategoryBreakdown = async (txType: string) => {
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc('get_category_breakdown', {
+      _ws_id: workspaceId,
+      _start_date: periodStart,
+      _end_date: periodEnd,
+      include_confidential: true,
+      _transaction_type: txType,
+      _interval: 'daily',
+      _anchor_to_latest: false,
+      _timezone: timezone,
+      _wallet_ids: walletId ? [walletId] : undefined,
+    });
+    if (error) throw error;
+    return data as CategoryBreakdownData[];
+  };
+
+  const queryBase = {
+    staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
-    enabled: open && !!workspaceId,
+    enabled: open && !!workspaceId && !useClientSide,
+  };
+
+  const keyBase = [
+    'category-breakdown-dialog',
+    workspaceId,
+    walletId,
+    periodStart,
+    periodEnd,
+    timezone,
+  ];
+
+  // Prefetch all 3 types in parallel when dialog opens for instant tab switching
+  const { data: rpcDataAll, isLoading: isLoadingAll } = useQuery({
+    queryKey: [...keyBase, 'all'],
+    queryFn: () => fetchCategoryBreakdown('all'),
+    ...queryBase,
   });
 
-  // Process RPC data into chart-ready format (all categories)
+  const { data: rpcDataExpense, isLoading: isLoadingExpense } = useQuery({
+    queryKey: [...keyBase, 'expense'],
+    queryFn: () => fetchCategoryBreakdown('expense'),
+    ...queryBase,
+  });
+
+  const { data: rpcDataIncome, isLoading: isLoadingIncome } = useQuery({
+    queryKey: [...keyBase, 'income'],
+    queryFn: () => fetchCategoryBreakdown('income'),
+    ...queryBase,
+  });
+
+  // Select the right data for the current tab
+  const rpcData =
+    type === 'all'
+      ? rpcDataAll
+      : type === 'expense'
+        ? rpcDataExpense
+        : rpcDataIncome;
+  const isLoading =
+    type === 'all'
+      ? isLoadingAll
+      : type === 'expense'
+        ? isLoadingExpense
+        : isLoadingIncome;
+
+  // Process data into chart-ready format (all categories)
   const allCategoryData = useMemo(() => {
+    // When transactions are available, use client-side computation
+    // (handles currency conversion, correct type filtering, and stable colors)
+    if (useClientSide) {
+      return clientCategoryDataForType.data;
+    }
+
     if (!rpcData || rpcData.length === 0) {
-      // Use initial data as fallback while loading
       return initialCategoryData || [];
     }
 
@@ -248,7 +432,6 @@ export function CategoryBreakdownDialog({
       }
     });
 
-    // Calculate total for percentages
     const total = Array.from(categoryMap.values()).reduce(
       (sum, item) => sum + item.value,
       0
@@ -256,7 +439,6 @@ export function CategoryBreakdownDialog({
 
     if (total === 0) return [];
 
-    // Convert to array and sort by value (descending)
     const sorted = Array.from(categoryMap.entries())
       .map(([name, data], index) => ({
         name,
@@ -268,7 +450,13 @@ export function CategoryBreakdownDialog({
       .sort((a, b) => b.value - a.value);
 
     return sorted;
-  }, [rpcData, initialCategoryData, t]);
+  }, [
+    useClientSide,
+    clientCategoryDataForType.data,
+    rpcData,
+    initialCategoryData,
+    t,
+  ]);
 
   // Filter out hidden categories for chart display
   const visibleCategoryData = useMemo(() => {
@@ -297,27 +485,21 @@ export function CategoryBreakdownDialog({
     [visibleCategoryData]
   );
 
-  // Auto-fallback to 'all' if expense data is empty
-  useEffect(() => {
-    if (
-      !isLoading &&
-      allCategoryData.length === 0 &&
-      type === 'expense' &&
-      !hasTriedFallback
-    ) {
-      setType('all');
-      setHasTriedFallback(true);
-    }
-  }, [isLoading, allCategoryData.length, type, hasTriedFallback]);
+  // No loading needed when using client-side computation
+  const effectiveIsLoading = useClientSide ? false : isLoading;
 
   const formatValue = (value: number) => {
     if (isConfidential) return '•••••';
-    return new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
+    const prefix = isEstimated ? '≈ ' : '';
+    return (
+      prefix +
+      new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(value)
+    );
   };
 
   const formatPercentage = (percentage: number) => {
@@ -400,7 +582,7 @@ export function CategoryBreakdownDialog({
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
           {/* Left: Pie Chart */}
           <div className="flex shrink-0 flex-col items-center justify-center border-b p-6 lg:w-2/5 lg:border-r lg:border-b-0 lg:p-8">
-            {isLoading && !initialCategoryData ? (
+            {effectiveIsLoading && !initialCategoryData ? (
               <div className="flex flex-col items-center gap-6">
                 <Skeleton className="h-48 w-48 rounded-full sm:h-64 sm:w-64" />
                 <div className="space-y-2 text-center">
@@ -537,7 +719,7 @@ export function CategoryBreakdownDialog({
               </TooltipProvider>
             </div>
 
-            {isLoading && !initialCategoryData ? (
+            {effectiveIsLoading && !initialCategoryData ? (
               <div className="space-y-4 p-6">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} className="space-y-2">

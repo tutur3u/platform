@@ -11,6 +11,7 @@ import {
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import type { TransactionViewMode } from '@tuturuuu/types/primitives/TransactionPeriod';
+import { convertCurrency } from '@tuturuuu/utils/exchange-rates';
 import { cn, getCurrencyLocale } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import timezonePlugin from 'dayjs/plugin/timezone';
@@ -22,6 +23,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 dayjs.extend(utc);
 dayjs.extend(timezonePlugin);
 
+import { useExchangeRates } from '../../../../../hooks/use-exchange-rates';
 import { Button } from '../../../button';
 import {
   Collapsible,
@@ -68,6 +70,8 @@ interface PeriodBreakdownPanelProps {
   className?: string;
   /** Workspace ID for immersive category breakdown dialog */
   workspaceId?: string;
+  /** Wallet ID to scope category breakdown to a specific wallet */
+  walletId?: string;
 }
 
 export function PeriodBreakdownPanel({
@@ -82,9 +86,12 @@ export function PeriodBreakdownPanel({
   isLoading = false,
   className,
   workspaceId,
+  walletId,
 }: PeriodBreakdownPanelProps) {
   const t = useTranslations('finance-transactions');
   const [isConfidential, setIsConfidential] = useState(true);
+  const { data: exchangeRatesData } = useExchangeRates();
+  const exchangeRates = exchangeRatesData?.data ?? [];
 
   // Default expanded state: collapsed for daily, expanded for weekly+
   const defaultExpanded = viewMode !== 'daily';
@@ -233,6 +240,7 @@ export function PeriodBreakdownPanel({
     let totalIncome = 0;
     let totalExpense = 0;
     let hasRedactedAmounts = false;
+    let hasConvertedAmounts = false;
 
     transactions.forEach((tx) => {
       if (tx.amount === null && tx.is_amount_confidential) {
@@ -241,10 +249,31 @@ export function PeriodBreakdownPanel({
       }
       if (!tx.amount) return;
 
-      if (tx.amount > 0) {
-        totalIncome += tx.amount;
+      let amount = tx.amount;
+
+      // Convert to target currency if different
+      if (
+        tx.wallet_currency &&
+        currency &&
+        tx.wallet_currency.toUpperCase() !== currency.toUpperCase() &&
+        exchangeRates.length > 0
+      ) {
+        const converted = convertCurrency(
+          amount,
+          tx.wallet_currency,
+          currency,
+          exchangeRates
+        );
+        if (converted !== null) {
+          amount = converted;
+          hasConvertedAmounts = true;
+        }
+      }
+
+      if (amount > 0) {
+        totalIncome += amount;
       } else {
-        totalExpense += tx.amount;
+        totalExpense += amount;
       }
     });
 
@@ -253,17 +282,36 @@ export function PeriodBreakdownPanel({
       totalExpense,
       netTotal: totalIncome + totalExpense,
       transactionCount: transactions.length,
-      hasRedactedAmounts,
+      hasRedactedAmounts: hasRedactedAmounts || hasConvertedAmounts,
     };
-  }, [transactions]);
+  }, [transactions, currency, exchangeRates]);
+
+  // Detect if any transaction requires currency conversion
+  const hasMixedCurrencies = useMemo(() => {
+    if (!currency) return false;
+    return transactions.some(
+      (tx) =>
+        tx.wallet_currency &&
+        tx.wallet_currency.toUpperCase() !== currency.toUpperCase()
+    );
+  }, [transactions, currency]);
 
   // Use pre-computed periodStats, RPC stats, or client-calculated stats
   const stats = useMemo(() => {
+    // When mixed currencies need conversion, always prefer client-side calculation
+    // because RPC sums raw amounts without currency conversion
+    if (hasMixedCurrencies) return clientStats;
     // Priority: periodStats (from parent) > rpcStats (from RPC) > clientStats (calculated)
     if (periodStats) return periodStats;
     if (shouldFetchStats && rpcStats) return rpcStats;
     return clientStats;
-  }, [periodStats, shouldFetchStats, rpcStats, clientStats]);
+  }, [
+    hasMixedCurrencies,
+    periodStats,
+    shouldFetchStats,
+    rpcStats,
+    clientStats,
+  ]);
 
   // Show loading state when fetching RPC stats
   const isStatsFetching = shouldFetchStats && isStatsLoading;
@@ -352,6 +400,7 @@ export function PeriodBreakdownPanel({
           <div className="rounded-lg bg-dynamic-green/10 p-2 text-center">
             <TrendingUp className="mx-auto mb-1 h-3 w-3 text-dynamic-green" />
             <div className="font-semibold text-dynamic-green text-xs tabular-nums">
+              {stats.hasRedactedAmounts && '≈ '}
               {formatCompactValue(stats.totalIncome)}
             </div>
             <div className="text-[10px] text-muted-foreground">
@@ -363,6 +412,7 @@ export function PeriodBreakdownPanel({
           <div className="rounded-lg bg-dynamic-red/10 p-2 text-center">
             <TrendingDown className="mx-auto mb-1 h-3 w-3 text-dynamic-red" />
             <div className="font-semibold text-dynamic-red text-xs tabular-nums">
+              {stats.hasRedactedAmounts && '≈ '}
               {formatCompactValue(Math.abs(stats.totalExpense))}
             </div>
             <div className="text-[10px] text-muted-foreground">
@@ -416,6 +466,7 @@ export function PeriodBreakdownPanel({
               transactions={transactions}
               currency={currency}
               workspaceId={workspaceId}
+              walletId={walletId}
               periodStart={periodStartDate}
               periodEnd={computedPeriodEnd}
               timezone={timezone}
@@ -458,6 +509,7 @@ export function PeriodBreakdownPanel({
                 transactions={transactions}
                 currency={currency}
                 workspaceId={workspaceId}
+                walletId={walletId}
                 periodStart={periodStartDate}
                 periodEnd={computedPeriodEnd}
                 timezone={timezone}

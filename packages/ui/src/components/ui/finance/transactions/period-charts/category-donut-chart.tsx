@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
+import { convertCurrency } from '@tuturuuu/utils/exchange-rates';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import timezonePlugin from 'dayjs/plugin/timezone';
@@ -11,6 +12,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useEffect, useMemo, useState } from 'react';
 import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts';
+import { useExchangeRates } from '../../../../../hooks/use-exchange-rates';
 import {
   type ChartConfig,
   ChartContainer,
@@ -73,6 +75,8 @@ interface CategoryDonutChartProps {
   initialType?: 'all' | 'income' | 'expense';
   /** Workspace ID for immersive dialog RPC calls */
   workspaceId?: string;
+  /** Wallet ID to scope category breakdown to a specific wallet */
+  walletId?: string;
   /** Period start date for immersive dialog */
   periodStart?: string;
   /** Period end date for immersive dialog */
@@ -99,6 +103,7 @@ export function CategoryDonutChart({
   className,
   initialType = 'expense',
   workspaceId,
+  walletId,
   periodStart,
   periodEnd,
   timezone = 'UTC',
@@ -110,8 +115,8 @@ export function CategoryDonutChart({
   const [isConfidential, setIsConfidential] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [type, setType] = useState<'all' | 'expense' | 'income'>(initialType);
-  // Track if we've already tried to auto-fallback to 'all'
-  const [hasTriedFallback, setHasTriedFallback] = useState(false);
+  const { data: exchangeRatesData } = useExchangeRates();
+  const exchangeRates = exchangeRatesData?.data ?? [];
 
   // Extract date string from period timestamps (handles both YYYY-MM-DD and full ISO timestamps)
   // IMPORTANT: Do NOT convert to UTC - extract the date directly from the local ISO string
@@ -174,6 +179,7 @@ export function CategoryDonutChart({
     queryKey: [
       'category-donut',
       workspaceId,
+      walletId,
       periodStartDate,
       periodEndDate,
       type,
@@ -199,6 +205,7 @@ export function CategoryDonutChart({
         _interval: 'daily',
         _anchor_to_latest: false,
         _timezone: timezone, // Pass timezone for correct date grouping
+        _wallet_ids: walletId ? [walletId] : undefined,
       });
 
       if (error) throw error;
@@ -299,11 +306,12 @@ export function CategoryDonutChart({
   }, [rpcCategoryData, t, resolvedTheme]);
 
   // Aggregate transactions by category (fallback when RPC not available)
-  const clientCategoryData = useMemo(() => {
+  const clientCategoryResult = useMemo(() => {
     const categoryMap = new Map<
       string,
       { value: number; color: string | null }
     >();
+    let hasConvertedAmounts = false;
 
     transactions.forEach((tx) => {
       // Skip confidential amounts
@@ -319,7 +327,27 @@ export function CategoryDonutChart({
           ? t('no-category')
           : tx.category || t('no-category');
 
-      const amount = Math.abs(tx.amount);
+      let amount = Math.abs(tx.amount);
+
+      // Convert to target currency if different
+      if (
+        tx.wallet_currency &&
+        currency &&
+        tx.wallet_currency.toUpperCase() !== currency.toUpperCase() &&
+        exchangeRates.length > 0
+      ) {
+        const converted = convertCurrency(
+          amount,
+          tx.wallet_currency,
+          currency,
+          exchangeRates
+        );
+        if (converted !== null) {
+          amount = converted;
+          hasConvertedAmounts = true;
+        }
+      }
+
       const existing = categoryMap.get(categoryName);
 
       if (existing) {
@@ -341,7 +369,7 @@ export function CategoryDonutChart({
       0
     );
 
-    if (total === 0) return [];
+    if (total === 0) return { data: [] as CategoryData[], isEstimated: false };
 
     // Convert to array and sort by value
     const sorted = Array.from(categoryMap.entries())
@@ -392,38 +420,37 @@ export function CategoryDonutChart({
       }
     }
 
-    return result;
-  }, [transactions, type, t, resolvedTheme]);
+    return { data: result, isEstimated: hasConvertedAmounts };
+  }, [transactions, type, t, resolvedTheme, currency, exchangeRates]);
+
+  const clientCategoryData = clientCategoryResult.data;
 
   // Use RPC data if available, otherwise fall back to client data
+  // When mixed currencies are present and client data has conversions, prefer client-side
+  // since the RPC can't do currency conversion
+  const hasClientConversions = clientCategoryResult.isEstimated;
   const categoryData = useMemo(() => {
+    if (
+      hasClientConversions &&
+      shouldFetchCategories &&
+      clientCategoryData.length > 0
+    ) {
+      // Prefer client-side aggregation when currency conversion is needed
+      return clientCategoryData;
+    }
     if (shouldFetchCategories && rpcProcessedData) {
       return rpcProcessedData;
     }
     return clientCategoryData;
-  }, [shouldFetchCategories, rpcProcessedData, clientCategoryData]);
+  }, [
+    shouldFetchCategories,
+    rpcProcessedData,
+    clientCategoryData,
+    hasClientConversions,
+  ]);
 
   // Show loading state when fetching categories
   const isCategoryFetching = shouldFetchCategories && isCategoriesLoading;
-
-  // Auto-fallback to 'all' if expense data is empty
-  useEffect(() => {
-    if (
-      !isCategoryFetching &&
-      categoryData.length === 0 &&
-      type === 'expense' &&
-      !hasTriedFallback
-    ) {
-      setType('all');
-      setHasTriedFallback(true);
-    }
-  }, [isCategoryFetching, categoryData.length, type, hasTriedFallback]);
-
-  // Reset fallback flag when period changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally reset when period/workspace context changes
-  useEffect(() => {
-    setHasTriedFallback(false);
-  }, [periodStart, periodEnd, workspaceId]);
 
   const total = useMemo(
     () => categoryData.reduce((sum, item) => sum + item.value, 0),
@@ -439,34 +466,6 @@ export function CategoryDonutChart({
       maximumFractionDigits: 0,
     }).format(value);
   };
-
-  // Show loading skeleton when fetching category data
-  if (isCategoryFetching) {
-    return (
-      <div className={cn('space-y-2', className)}>
-        <Skeleton className="mx-auto h-36 w-36 rounded-full" />
-        <div className="flex flex-wrap justify-center gap-1 px-2">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-4 w-16" />
-          ))}
-        </div>
-        <Skeleton className="mx-auto h-6 w-20" />
-      </div>
-    );
-  }
-
-  if (categoryData.length === 0) {
-    return (
-      <div
-        className={cn(
-          'flex h-32 items-center justify-center text-muted-foreground text-xs',
-          className
-        )}
-      >
-        {t('not-enough-data')}
-      </div>
-    );
-  }
 
   const chartConfig = categoryData.reduce((acc, item) => {
     acc[item.name] = {
@@ -485,7 +484,7 @@ export function CategoryDonutChart({
   return (
     <>
       <div className={cn('space-y-2', className)}>
-        {/* Type filter tabs */}
+        {/* Type filter tabs — always visible so users can switch types */}
         <Tabs
           value={type}
           onValueChange={(v) => setType(v as 'all' | 'expense' | 'income')}
@@ -510,106 +509,124 @@ export function CategoryDonutChart({
           </TabsList>
         </Tabs>
 
-        <div
-          className={cn(
-            'space-y-2',
-            canOpenDialog &&
-              'cursor-pointer transition-opacity hover:opacity-80'
-          )}
-          onClick={canOpenDialog ? () => setDialogOpen(true) : undefined}
-          role={canOpenDialog ? 'button' : undefined}
-          tabIndex={canOpenDialog ? 0 : undefined}
-          onKeyDown={
-            canOpenDialog
-              ? (e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    setDialogOpen(true);
+        {/* Content: loading / empty / chart */}
+        {isCategoryFetching ? (
+          <div className="space-y-2">
+            <Skeleton className="mx-auto h-36 w-36 rounded-full" />
+            <div className="flex flex-wrap justify-center gap-1 px-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-4 w-16" />
+              ))}
+            </div>
+            <Skeleton className="mx-auto h-6 w-20" />
+          </div>
+        ) : categoryData.length === 0 ? (
+          <div className="flex h-32 items-center justify-center text-muted-foreground text-xs">
+            {t('not-enough-data')}
+          </div>
+        ) : (
+          <div
+            className={cn(
+              'space-y-2',
+              canOpenDialog &&
+                'cursor-pointer transition-opacity hover:opacity-80'
+            )}
+            onClick={canOpenDialog ? () => setDialogOpen(true) : undefined}
+            role={canOpenDialog ? 'button' : undefined}
+            tabIndex={canOpenDialog ? 0 : undefined}
+            onKeyDown={
+              canOpenDialog
+                ? (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setDialogOpen(true);
+                    }
                   }
-                }
-              : undefined
-          }
-        >
-          <ChartContainer config={chartConfig} className="mx-auto h-36 w-36">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={categoryData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={35}
-                  outerRadius={60}
-                  paddingAngle={1}
-                  dataKey="value"
-                  stroke="none"
-                >
-                  {categoryData.map((entry) => (
-                    <Cell key={entry.name} fill={entry.color} />
-                  ))}
-                </Pie>
-                <ChartTooltip
-                  content={
-                    <ChartTooltipContent
-                      formatter={(value, name) => [
-                        <span
-                          key={String(name)}
-                          className="font-medium text-foreground"
-                        >
-                          {formatValue(Number(value))} (
-                          {categoryData
-                            .find((c) => c.name === name)
-                            ?.percentage.toFixed(0)}
-                          %)
-                        </span>,
-                        name,
-                      ]}
-                    />
-                  }
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </ChartContainer>
-
-          {/* Legend - show as many as reasonably fit */}
-          <div className="space-y-1">
-            {legendItems.map((item) => (
-              <div
-                key={item.name}
-                className="flex items-center justify-between gap-2 text-xs"
-              >
-                <div className="flex min-w-0 items-center gap-1.5">
-                  <div
-                    className="h-2 w-2 shrink-0 rounded-full"
-                    style={{ backgroundColor: item.color }}
+                : undefined
+            }
+          >
+            <ChartContainer config={chartConfig} className="mx-auto h-36 w-36">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={categoryData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={35}
+                    outerRadius={60}
+                    paddingAngle={1}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {categoryData.map((entry) => (
+                      <Cell key={entry.name} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip
+                    content={
+                      <ChartTooltipContent
+                        formatter={(value, name) => [
+                          <span
+                            key={String(name)}
+                            className="font-medium text-foreground"
+                          >
+                            {formatValue(Number(value))} (
+                            {categoryData
+                              .find((c) => c.name === name)
+                              ?.percentage.toFixed(0)}
+                            %)
+                          </span>,
+                          name,
+                        ]}
+                      />
+                    }
                   />
-                  <span className="truncate text-muted-foreground">
-                    {item.name}
+                </PieChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+
+            {/* Legend - show as many as reasonably fit */}
+            <div className="space-y-1">
+              {legendItems.map((item) => (
+                <div
+                  key={item.name}
+                  className="flex items-center justify-between gap-2 text-xs"
+                >
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <div
+                      className="h-2 w-2 shrink-0 rounded-full"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="truncate text-muted-foreground">
+                      {item.name}
+                    </span>
+                  </div>
+                  <span className="shrink-0 font-medium tabular-nums">
+                    {isConfidential ? '•••' : `${item.percentage.toFixed(0)}%`}
                   </span>
                 </div>
-                <span className="shrink-0 font-medium tabular-nums">
-                  {isConfidential ? '•••' : `${item.percentage.toFixed(0)}%`}
-                </span>
-              </div>
-            ))}
-            {remainingCount > 0 && (
-              <div className="text-center text-[10px] text-muted-foreground">
-                +{remainingCount} more
-              </div>
-            )}
-          </div>
+              ))}
+              {remainingCount > 0 && (
+                <div className="text-center text-[10px] text-muted-foreground">
+                  +{remainingCount} more
+                </div>
+              )}
+            </div>
 
-          {/* Total */}
-          <div className="border-t pt-2 text-center">
-            <div className="font-semibold text-sm tabular-nums">
-              {formatValue(total)}
-            </div>
-            <div className="text-muted-foreground text-xs">
-              {canOpenDialog
-                ? t('tap-for-details')
-                : t('category-distribution')}
+            {/* Total */}
+            <div className="border-t pt-2 text-center">
+              <div className="font-semibold text-sm tabular-nums">
+                {hasClientConversions && '≈ '}
+                {formatValue(total)}
+              </div>
+              <div className="text-muted-foreground text-xs">
+                {canOpenDialog
+                  ? t('tap-for-details')
+                  : t('category-distribution')}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Immersive Category Breakdown Dialog */}
@@ -618,12 +635,14 @@ export function CategoryDonutChart({
           open={dialogOpen}
           onOpenChange={setDialogOpen}
           workspaceId={workspaceId}
+          walletId={walletId}
           periodStart={periodStartDate}
           periodEnd={periodEndDate}
           currency={currency}
           timezone={timezone}
           initialCategoryData={categoryData}
           initialType={type}
+          transactions={transactions}
         />
       )}
     </>

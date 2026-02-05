@@ -15,6 +15,7 @@ export interface Transaction {
   category_color?: string | null;
   wallet_id?: string;
   wallet?: string;
+  wallet_currency?: string;
   ws_id?: string;
   taken_at?: string;
   is_amount_confidential?: boolean;

@@ -91,7 +91,7 @@ async function getData(
 
   const queryBuilder = supabase
     .from('workspace_wallets')
-    .select('*', {
+    .select('*, credit_wallets(limit, statement_date, payment_date)', {
       count: 'exact',
     })
     .eq('ws_id', wsId);
@@ -141,5 +141,28 @@ async function getData(
   const { data, error, count } = await queryBuilder;
   if (error) throw error;
 
-  return { data, count } as { data: Wallet[]; count: number };
+  // Flatten credit_wallets join data onto wallet objects
+  const flatData = (data || []).map(
+    ({
+      credit_wallets,
+      ...wallet
+    }: {
+      credit_wallets?: {
+        limit: number;
+        statement_date: number;
+        payment_date: number;
+      } | null;
+    } & Record<string, unknown>) => ({
+      ...wallet,
+      ...(credit_wallets
+        ? {
+            limit: credit_wallets.limit,
+            statement_date: credit_wallets.statement_date,
+            payment_date: credit_wallets.payment_date,
+          }
+        : {}),
+    })
+  );
+
+  return { data: flatData, count } as { data: Wallet[]; count: number };
 }

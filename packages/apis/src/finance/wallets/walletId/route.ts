@@ -25,7 +25,7 @@ export async function GET(_: Request, { params }: Params) {
 
   const { data, error } = await supabase
     .from('workspace_wallets')
-    .select('*')
+    .select('*, credit_wallets(limit, statement_date, payment_date)')
     .eq('id', id)
     .single();
 
@@ -37,7 +37,23 @@ export async function GET(_: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json(data);
+  // Flatten credit data onto the wallet object
+  const { credit_wallets, ...wallet } = data as typeof data & {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    credit_wallets: any;
+  };
+  const result = {
+    ...wallet,
+    ...(credit_wallets
+      ? {
+          limit: credit_wallets.limit,
+          statement_date: credit_wallets.statement_date,
+          payment_date: credit_wallets.payment_date,
+        }
+      : {}),
+  };
+
+  return NextResponse.json(result);
 }
 
 export async function PUT(req: Request, { params }: Params) {
@@ -55,9 +71,12 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
+  // Extract credit-specific fields before updating the wallet
+  const { limit, statement_date, payment_date, ...walletData } = data;
+
   const { error } = await supabase
     .from('workspace_wallets')
-    .update(data)
+    .update(walletData)
     .eq('id', id);
 
   if (error) {
@@ -66,6 +85,29 @@ export async function PUT(req: Request, { params }: Params) {
       { message: 'Error updating workspace wallets' },
       { status: 500 }
     );
+  }
+
+  // Handle credit wallet data based on type
+  if (data.type === 'CREDIT') {
+    const { error: creditError } = await supabase
+      .from('credit_wallets')
+      .upsert({
+        wallet_id: id,
+        statement_date: statement_date ?? 1,
+        payment_date: payment_date ?? 1,
+        limit: limit ?? 0,
+      });
+
+    if (creditError) {
+      console.log(creditError);
+      return NextResponse.json(
+        { message: 'Error updating credit wallet data' },
+        { status: 500 }
+      );
+    }
+  } else if (data.type === 'STANDARD') {
+    // Remove credit data if switching from CREDIT to STANDARD
+    await supabase.from('credit_wallets').delete().eq('wallet_id', id);
   }
 
   return NextResponse.json({ message: 'success' });

@@ -31,7 +31,7 @@ export async function GET(_: Request, { params }: Params) {
     // User has full access - return all wallets
     const { data, error } = await supabase
       .from('workspace_wallets')
-      .select('*')
+      .select('*, credit_wallets(limit, statement_date, payment_date)')
       .eq('ws_id', wsId)
       .order('name', { ascending: true });
 
@@ -43,7 +43,7 @@ export async function GET(_: Request, { params }: Params) {
       );
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json(flattenCreditData(data));
   }
 
   // User doesn't have manage_finance - check wallet whitelist
@@ -92,7 +92,7 @@ export async function GET(_: Request, { params }: Params) {
   // Fetch wallet details
   const { data: wallets, error: walletsError } = await supabase
     .from('workspace_wallets')
-    .select('*')
+    .select('*, credit_wallets(limit, statement_date, payment_date)')
     .eq('ws_id', wsId)
     .in('id', walletIds)
     .order('name', { ascending: true });
@@ -163,13 +163,27 @@ export async function GET(_: Request, { params }: Params) {
     { viewing_window: string | null; custom_days: number | null }
   >());
 
-  const walletsWithWindow = (wallets || []).map((wallet) => ({
+  const walletsWithWindow = flattenCreditData(wallets || []).map((wallet) => ({
     ...wallet,
     viewing_window: walletMap.get(wallet.id)?.viewing_window,
     custom_days: walletMap.get(wallet.id)?.custom_days,
   }));
 
   return NextResponse.json(walletsWithWindow);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function flattenCreditData(wallets: any[]) {
+  return wallets.map(({ credit_wallets, ...wallet }) => ({
+    ...wallet,
+    ...(credit_wallets
+      ? {
+          limit: credit_wallets.limit,
+          statement_date: credit_wallets.statement_date,
+          payment_date: credit_wallets.payment_date,
+        }
+      : {}),
+  }));
 }
 
 export async function POST(req: Request, { params }: Params) {
@@ -204,9 +218,11 @@ export async function POST(req: Request, { params }: Params) {
     walletData.report_opt_in = data.report_opt_in;
   if (data.type) walletData.type = data.type;
 
-  const { error } = await supabase
+  const { data: upsertedWallet, error } = await supabase
     .from('workspace_wallets')
-    .upsert([walletData as never]);
+    .upsert([walletData as never])
+    .select('id')
+    .single();
 
   if (error) {
     console.log(error);
@@ -214,6 +230,26 @@ export async function POST(req: Request, { params }: Params) {
       { message: 'Error creating workspace wallets' },
       { status: 500 }
     );
+  }
+
+  // Handle credit wallet data
+  if (data.type === 'CREDIT' && upsertedWallet) {
+    const { error: creditError } = await supabase
+      .from('credit_wallets')
+      .upsert({
+        wallet_id: upsertedWallet.id,
+        statement_date: data.statement_date ?? 1,
+        payment_date: data.payment_date ?? 1,
+        limit: data.limit ?? 0,
+      });
+
+    if (creditError) {
+      console.log(creditError);
+      return NextResponse.json(
+        { message: 'Error creating credit wallet data' },
+        { status: 500 }
+      );
+    }
   }
 
   return NextResponse.json({ message: 'success' });
