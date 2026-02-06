@@ -34,7 +34,7 @@ jobs:
         working-directory: apps/mobile
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -50,7 +50,7 @@ jobs:
         run: flutter build ios --flavor development --target lib/main_development.dart --no-codesign
 
       - name: Upload iOS app artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ios-dev-app
           path: apps/mobile/build/ios/iphoneos/Runner.app
