@@ -10,6 +10,8 @@
     "aaron-bond.better-comments", // Better Comments
     "PKief.material-icon-theme", // Material Icon Theme
     "lokalise.i18n-ally", // i18n Ally
-    "expo.vscode-expo-tools" // Expo Tools
+    "dart-code.dart-code", // Dart Code
+    "dart-code.flutter", // Flutter
+    "felixangelov.bloc" // Flutter Bloc
   ]
 }
