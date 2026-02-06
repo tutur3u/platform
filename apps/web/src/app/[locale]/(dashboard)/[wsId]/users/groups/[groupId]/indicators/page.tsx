@@ -1,22 +1,9 @@
-import {
-  CalendarIcon,
-  ChartColumn,
-  FileUser,
-  UserCheck,
-} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { Button } from '@tuturuuu/ui/button';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Separator } from '@tuturuuu/ui/separator';
-import { cn } from '@tuturuuu/utils/format';
-import 'dayjs/locale/vi';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import GroupIndicatorsManager from './group-indicators-manager';
 
@@ -38,12 +25,9 @@ export default async function UserGroupIndicatorsPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, groupId }) => {
-        // Layout handles group selection when groupId is '~'
         if (groupId === '~') {
           return null;
         }
-
-        const t = await getTranslations();
 
         const { containsPermission } = await getPermissions({
           wsId,
@@ -54,9 +38,6 @@ export default async function UserGroupIndicatorsPage({ params }: Props) {
         if (!canViewUserGroupsScores) {
           notFound();
         }
-        const canCheckUserAttendance = containsPermission(
-          'check_user_attendance'
-        );
         const canCreateUserGroupsScores = containsPermission(
           'create_user_groups_scores'
         );
@@ -73,102 +54,17 @@ export default async function UserGroupIndicatorsPage({ params }: Props) {
         const { data: users } = await getUserData(wsId, groupId);
 
         return (
-          <>
-            <FeatureSummary
-              title={
-                <>
-                  <h1 className="w-full font-bold text-2xl">
-                    {group.name || t('ws-user-groups.singular')}
-                  </h1>
-                  <Separator className="my-2" />
-                </>
-              }
-              description={
-                <div className="grid flex-wrap gap-2 md:flex">
-                  <Link href={`/${wsId}/users/groups/${groupId}`}>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      className={cn(
-                        'border font-semibold max-sm:w-full',
-                        'border-foreground/20 bg-foreground/10 text-foreground hover:bg-foreground/20'
-                      )}
-                    >
-                      <CalendarIcon className="h-5 w-5" />
-                      {t('infrastructure-tabs.overview')}
-                    </Button>
-                  </Link>
-                  <Link href={`/${wsId}/users/groups/${groupId}/schedule`}>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      className={cn(
-                        'border font-semibold max-sm:w-full',
-                        'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
-                      )}
-                    >
-                      <CalendarIcon className="h-5 w-5" />
-                      {t('ws-user-group-details.schedule')}
-                    </Button>
-                  </Link>
-                  {canCheckUserAttendance && (
-                    <Link href={`/${wsId}/users/groups/${groupId}/attendance`}>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        className={cn(
-                          'border font-semibold max-sm:w-full',
-                          'border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20'
-                        )}
-                      >
-                        <UserCheck className="h-5 w-5" />
-                        {t('ws-user-group-details.attendance')}
-                      </Button>
-                    </Link>
-                  )}
-                  <Link href={`/${wsId}/users/groups/${groupId}/reports`}>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      className={cn(
-                        'border font-semibold max-sm:w-full',
-                        'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20'
-                      )}
-                    >
-                      <FileUser className="h-5 w-5" />
-                      {t('ws-user-group-details.reports')}
-                    </Button>
-                  </Link>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className={cn(
-                      'border font-semibold max-sm:w-full',
-                      'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20'
-                    )}
-                    disabled
-                  >
-                    <ChartColumn className="h-5 w-5" />
-                    {t('ws-user-group-details.metrics')}
-                  </Button>
-                </div>
-              }
-              createTitle={t('ws-user-groups.add_user')}
-              createDescription={t('ws-user-groups.add_user_description')}
-            />
-            <Separator className="my-4" />
-            <GroupIndicatorsManager
-              wsId={wsId}
-              groupId={groupId}
-              groupName={group.name}
-              users={users}
-              initialGroupIndicators={groupIndicators}
-              initialUserIndicators={indicators}
-              canCreateUserGroupsScores={canCreateUserGroupsScores}
-              canUpdateUserGroupsScores={canUpdateUserGroupsScores}
-              canDeleteUserGroupsScores={canDeleteUserGroupsScores}
-            />
-          </>
+          <GroupIndicatorsManager
+            wsId={wsId}
+            groupId={groupId}
+            groupName={group.name}
+            users={users}
+            initialGroupIndicators={groupIndicators}
+            initialUserIndicators={indicators}
+            canCreateUserGroupsScores={canCreateUserGroupsScores}
+            canUpdateUserGroupsScores={canUpdateUserGroupsScores}
+            canDeleteUserGroupsScores={canDeleteUserGroupsScores}
+          />
         );
       }}
     </WorkspaceWrapper>
@@ -212,8 +108,8 @@ async function getIndicators(groupId: string) {
   const { data: rawData, error } = await supabase
     .from('user_indicators')
     .select(`
-    user_id, 
-    indicator_id, 
+    user_id,
+    indicator_id,
     value,
     healthcare_vitals!inner(group_id)
   `)

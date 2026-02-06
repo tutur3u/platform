@@ -1,6 +1,9 @@
 'use client';
 
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import {
+  useSessionHistoryQuery,
+  useWorkspaceTimeThreshold,
+} from '@tuturuuu/hooks';
 import {
   ChevronDown,
   Clock,
@@ -32,7 +35,6 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
 import { formatDuration } from '@/lib/time-format';
 import type { PeriodStats } from '@/lib/time-tracker-utils';
 import type { SessionWithRelations } from '../../types';
@@ -114,102 +116,27 @@ export function SessionHistory({
 
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  // Fetch sessions for the current period with infinite query
   const {
-    data: sessionsInfiniteData,
-    isLoading: isLoadingSessions,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useInfiniteQuery<{
-    sessions: SessionWithRelations[];
-    total: number;
-    hasMore: boolean;
-    nextCursor: string | null;
-  }>({
-    queryKey: [
-      'time-tracking-sessions',
-      wsId,
-      userId,
-      'history',
-      startOfPeriod.toISOString(),
-      endOfPeriod.toISOString(),
-      filters,
-    ],
-    queryFn: async ({ pageParam }) => {
-      const params = new URLSearchParams({
-        type: 'history',
-        limit: PAGINATION_LIMIT.toString(),
-        dateFrom: startOfPeriod.toISOString(),
-        dateTo: endOfPeriod.toISOString(),
-        userId: userId,
-        timezone: userTimezone,
-        searchQuery: filters.searchQuery,
-        categoryId: filters.categoryId,
-        duration: filters.duration,
-        timeOfDay: filters.timeOfDay,
-        projectContext: filters.projectContext,
-      });
-      if (pageParam) {
-        params.set('cursor', pageParam as string);
-      }
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/time-tracking/sessions?${params}`
-      );
-      if (!response.ok) {
-        throw new Error('Failed to fetch sessions');
-      }
-      return response.json();
+    sessions,
+    sessionsQuery: {
+      isLoading: isLoadingSessions,
+      fetchNextPage,
+      hasNextPage,
+      isFetchingNextPage,
     },
-    initialPageParam: null as string | null,
-    getNextPageParam: (lastPage) => {
-      return lastPage.nextCursor;
+    periodStatsQuery: {
+      data: fetchedPeriodStats,
+      isLoading: isLoadingStats,
+      isFetching: isFetchingStats,
     },
-    staleTime: 30 * 1000, // 30 seconds
-  });
-
-  // Extract sessions from response
-  const sessions = useMemo(
-    () => sessionsInfiniteData?.pages.flatMap((page) => page.sessions) ?? [],
-    [sessionsInfiniteData]
-  );
-
-  // Fetch period stats independently of paginated sessions
-  const {
-    data: fetchedPeriodStats,
-    isLoading: isLoadingStats,
-    isFetching: isFetchingStats,
-  } = useQuery<PeriodStats>({
-    queryKey: [
-      'time-tracking-sessions',
-      wsId,
-      userId,
-      'period-stats',
-      startOfPeriod.toISOString(),
-      endOfPeriod.toISOString(),
-      filters,
-    ],
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        dateFrom: startOfPeriod.toISOString(),
-        dateTo: endOfPeriod.toISOString(),
-        timezone: userTimezone,
-        userId: userId,
-        searchQuery: filters.searchQuery,
-        categoryId: filters.categoryId,
-        duration: filters.duration,
-        timeOfDay: filters.timeOfDay,
-        projectContext: filters.projectContext,
-      });
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/time-tracking/stats/period?${params}`
-      );
-      if (!response.ok) {
-        throw new Error('Failed to fetch period stats');
-      }
-      return response.json();
-    },
-    staleTime: 30 * 1000,
+  } = useSessionHistoryQuery<SessionWithRelations, PeriodStats>({
+    wsId,
+    userId,
+    startOfPeriodIso: startOfPeriod.toISOString(),
+    endOfPeriodIso: endOfPeriod.toISOString(),
+    timezone: userTimezone,
+    filters,
+    paginationLimit: PAGINATION_LIMIT,
   });
 
   // Intersection Observer for auto-loading

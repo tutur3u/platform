@@ -33,6 +33,7 @@ Tuturuuu is a Turborepo monorepo containing multiple Next.js applications and sh
 - **tudo**: Task management with hierarchical structure
 - **tumeet**: Meeting management
 - **shortener**: URL shortener service
+- **mobile**: Flutter mobile app (iOS/Android) — BLoC/Cubit architecture, GoRouter, Supabase Flutter
 - **db**: Supabase database configuration and migrations
 - **discord**: Python Discord bot/utilities
 
@@ -194,7 +195,6 @@ bun trigger:deploy
 10. **NEVER** use emojis in UI code - use lucide-react icons via `@tuturuuu/icons`
 11. **NEVER** use `useEffect` for data fetching - THIS IS THE #1 VIOLATION - use TanStack Query's `useQuery`/`useMutation` instead
 12. **NEVER** use raw `fetch()` in client components without TanStack Query wrapper
-13. **NEVER** use absolute Windows drive paths with `apply_patch` - prefer repo-relative paths to avoid tool parsing errors
 
 ### Mandatory Actions
 
@@ -724,6 +724,29 @@ Steps:
 5. Add minimal tests
 6. Run filtered build + tests
 
+### Mobile App (Flutter)
+
+Located at `apps/mobile/`, the Flutter app uses:
+
+- **State Management:** `flutter_bloc` (Cubits for feature state)
+- **Navigation:** `go_router` with auth-aware redirects (ShellRoute for bottom tabs)
+- **Auth:** `supabase_flutter` + `flutter_secure_storage` for token persistence
+- **Linting:** `very_good_analysis` (strict ruleset)
+- **Build Flavors:** development, staging, production (separate `main_*.dart` entry points)
+- **Localization:** ARB files in `lib/l10n/arb/` (English + Vietnamese), generated files tracked in git
+- **CI:** `mobile.yaml` uses `VeryGoodOpenSource/very_good_workflows` for format check, analysis, tests
+
+**Dart Formatting:** Run `dart format lib test` from `apps/mobile/` before pushing. The CI enforces `dart format --set-exit-if-changed`. Note: `bun format` / Biome does NOT cover Dart files.
+
+**API Integration:** The mobile app calls `/api/v1/auth/mobile/*` endpoints that return Supabase session tokens (not cookies).
+
+### Known Gotchas
+
+- **PostgREST URL Length:** `.in('column', ids)` with ~1000 UUIDs creates ~37KB URLs exceeding proxy limits (~8KB). Use `.eq(column, value)` updates instead.
+- **Admin Client Trigger Bypass:** Tables with `BEFORE UPDATE` triggers checking `auth.uid()` (e.g., `user_group_posts`) can be bypassed with `createAdminClient()` (`sbAdmin`). Always validate permissions with user-context client first.
+- **TypeScript useMemo Inference:** When `useMemo` returns either `[]` or `{ data: [], isEstimated }`, TypeScript infers `never[]`. Fix: explicitly type early returns as `{ data: [] as MyType[], isEstimated: false }`.
+- **Finance Module:** `get_category_breakdown` RPC accepts `_wallet_ids UUID[]` for wallet scoping. Exchange rates use USD as base currency. For estimated amounts, set `hasRedactedAmounts = true` and show `≈` prefix.
+
 ## Quick Reference
 
 | Goal                     | Command                                       | Notes                                |
@@ -771,3 +794,21 @@ Before requesting review:
 ## Reference
 
 For comprehensive operational guidelines, see **[AGENTS.md](./AGENTS.md)** - the canonical operating manual for AI assistants working in this repository.
+
+## Session Retrospective (2026-02-04)
+
+### Mistakes/Issues Encountered
+- No automated tests were added for the new mobile auth API routes due to missing route-handler test harness in `apps/web`.
+
+### Lessons Learned
+- Mobile auth endpoints should always return Supabase session tokens and include CORS headers, since native clients do not rely on cookies.
+- When introducing a new mobile API base URL, add a local `.env.example` and update the app README to keep onboarding clear.
+
+### Documentation Updates Made
+- Added this retrospective entry to document the missing-test gap and mobile auth patterns.
+
+### Proposed Future Improvements
+- Add a lightweight testing guideline/template for Next.js route handlers so new API endpoints can be covered by unit tests.
+- Clarify how to satisfy the `bun check` requirement when lint/format commands are user-only.
+
+

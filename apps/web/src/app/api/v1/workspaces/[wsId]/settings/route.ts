@@ -1,8 +1,6 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
+import { authorizeRequest } from '@/lib/api-auth';
 
 interface Params {
   params: Promise<{
@@ -10,19 +8,20 @@ interface Params {
   }>;
 }
 
-export async function GET(_: NextRequest, { params }: Params) {
+export async function GET(request: NextRequest, { params }: Params) {
   try {
-    const { wsId } = await params;
-    const supabase = await createClient();
-    const sbAdmin = await createAdminClient();
-    // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { data: authData, error: authError } =
+      await authorizeRequest(request);
+    if (authError || !authData) {
+      return (
+        authError ??
+        NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      );
     }
+
+    const { user, supabase } = authData;
+    const { wsId } = await params;
+    const sbAdmin = await createAdminClient();
 
     // Verify workspace access
     const { data: memberCheck } = await supabase

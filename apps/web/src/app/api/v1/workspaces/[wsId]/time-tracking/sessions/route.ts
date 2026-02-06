@@ -12,6 +12,7 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { authorizeRequest } from '@/lib/api-auth';
 import {
   getProjectContextCategory,
   getTimeOfDayCategory,
@@ -37,16 +38,16 @@ export async function GET(
   try {
     const { wsId } = await params;
     const normalizedWsId = await normalizeWorkspaceId(wsId);
-    const supabase = await createClient();
-
-    // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { data: authData, error: authError } =
+      await authorizeRequest(request);
+    if (authError || !authData) {
+      return (
+        authError ??
+        NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      );
     }
+
+    const { user, supabase } = authData;
 
     // Verify workspace access
     const { data: memberCheck } = await supabase

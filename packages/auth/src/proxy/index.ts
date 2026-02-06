@@ -167,6 +167,10 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
 
   return async function authProxy(req: NextRequest): Promise<NextResponse> {
     try {
+      if (skipApiRoutes && req.nextUrl.pathname.startsWith('/api')) {
+        return NextResponse.next();
+      }
+
       // Make sure user session is always refreshed
       const { res, claims } = await updateSession(req);
 

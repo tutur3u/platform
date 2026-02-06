@@ -263,7 +263,8 @@ export function useReportMutations({
             name,
             unit,
             factor,
-            group_id
+            group_id,
+            created_at
           )
         `)
         .eq('user_id', report.user_id)
@@ -271,13 +272,21 @@ export function useReportMutations({
 
       if (vitalsError) throw vitalsError;
 
-      const vitals = (vitalsData ?? []).map((item) => ({
-        id: item.healthcare_vitals.id,
-        name: item.healthcare_vitals.name,
-        unit: item.healthcare_vitals.unit,
-        factor: item.healthcare_vitals.factor,
-        value: item.value,
-      }));
+      // Sort by healthcare_vitals.created_at ASC to ensure
+      // scores[scores.length - 1] corresponds to the latest column
+      const vitals = (vitalsData ?? [])
+        .sort(
+          (a, b) =>
+            new Date(a.healthcare_vitals.created_at ?? 0).getTime() -
+            new Date(b.healthcare_vitals.created_at ?? 0).getTime()
+        )
+        .map((item) => ({
+          id: item.healthcare_vitals.id,
+          name: item.healthcare_vitals.name,
+          unit: item.healthcare_vitals.unit,
+          factor: item.healthcare_vitals.factor,
+          value: item.value,
+        }));
 
       const scores = vitals
         .filter((vital) => vital.value !== null && vital.value !== undefined)
