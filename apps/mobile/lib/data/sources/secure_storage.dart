@@ -7,10 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// iOS: Keychain Services
 /// Android: Keystore (encrypted shared preferences)
 class SupabaseSecureStorage extends LocalStorage {
-  SupabaseSecureStorage()
-    : _storage = const FlutterSecureStorage(
-        aOptions: AndroidOptions(encryptedSharedPreferences: true),
-      );
+  SupabaseSecureStorage() : _storage = const FlutterSecureStorage();
 
   final FlutterSecureStorage _storage;
 
