@@ -1183,10 +1183,6 @@ Rules:
 - Keep Python isolated; do not assume Node environment variables exist unless duplicated.
 - If adding dependencies: update (or create) `requirements.txt` with pinned versions.
 
-### 6.8 Windows Path Safety
-
-- When using `apply_patch`, prefer repo-relative paths (e.g., `apps/web/...`) instead of absolute `C:\...` paths to avoid drive-letter parsing issues on Windows.
-
 ## 7. Agent Collaboration Protocol
 
 ### 7.1 Roles & Handoffs
@@ -1528,20 +1524,6 @@ This continuous improvement process ensures that the operating guidelines evolve
 ### Proposed Future Improvements
 - Add a lightweight testing guideline/template for Next.js route handlers so new API endpoints can be covered by unit tests.
 - Clarify how to satisfy the `bun check` requirement when lint/format commands are user-only.
-
-## Session Retrospective (2026-02-06)
-
-### Mistakes/Issues Encountered
-- Used an absolute Windows drive path with `apply_patch` before confirming repo-relative paths were unsupported.
-
-### Lessons Learned
-- If repo-relative paths fail with `apply_patch`, pause and ask for approval before using absolute paths.
-
-### Documentation Updates Made
-- Added this retrospective entry to document the `apply_patch` path issue and response.
-
-### Proposed Future Improvements
-- Add a brief note on handling special characters in repo-relative paths and when to request approval for absolute paths.
 
 ## 13. AI Model Usage & Fallback Policy
 

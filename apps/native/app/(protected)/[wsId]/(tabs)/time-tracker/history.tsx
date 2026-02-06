@@ -2,8 +2,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSessionHistoryQuery } from '@tuturuuu/hooks/hooks/use-session-history-query';
 import type {
   TimeTrackingCategory,
+  TimeTrackingPeriodStats,
   TimeTrackingSession,
 } from '@tuturuuu/types';
+import {
+  formatTimeTrackerDateRange,
+  getTimeTrackerPeriodBounds,
+  type TimeTrackerViewMode,
+} from '@tuturuuu/utils/time-tracker-period';
+import { useGlobalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -14,89 +21,17 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { PeriodStats } from '@/components/time-tracker/period-stats';
 import { formatDuration } from '@/hooks/features/time-tracker';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { createAuthorizedFetcher } from '@/lib/api/fetcher';
 import { apiConfig } from '@/lib/config/api';
 import { useSession } from '@/lib/stores/auth-store';
-import { useGlobalSearchParams } from 'expo-router';
 
-type ViewMode = 'day' | 'week' | 'month';
+type ViewMode = TimeTrackerViewMode;
 
 type SessionWithRelations = TimeTrackingSession & {
   category?: TimeTrackingCategory | null;
-};
-
-const buildStartOfDay = (date: Date) => {
-  const start = new Date(date);
-  start.setHours(0, 0, 0, 0);
-  return start;
-};
-
-const buildEndOfDay = (date: Date) => {
-  const end = new Date(date);
-  end.setHours(23, 59, 59, 999);
-  return end;
-};
-
-const buildStartOfIsoWeek = (date: Date) => {
-  const start = new Date(date);
-  const day = start.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  start.setDate(start.getDate() + diff);
-  start.setHours(0, 0, 0, 0);
-  return start;
-};
-
-const buildEndOfIsoWeek = (date: Date) => {
-  const start = buildStartOfIsoWeek(date);
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
-  end.setHours(23, 59, 59, 999);
-  return end;
-};
-
-const buildStartOfMonth = (date: Date) => {
-  const start = new Date(date.getFullYear(), date.getMonth(), 1);
-  start.setHours(0, 0, 0, 0);
-  return start;
-};
-
-const buildEndOfMonth = (date: Date) => {
-  const end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-  end.setHours(23, 59, 59, 999);
-  return end;
-};
-
-const formatDateRange = (start: Date, end: Date, viewMode: ViewMode) => {
-  if (viewMode === 'day') {
-    return start.toLocaleDateString(undefined, {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      year:
-        start.getFullYear() !== new Date().getFullYear()
-          ? 'numeric'
-          : undefined,
-    });
-  }
-
-  if (viewMode === 'month') {
-    return start.toLocaleDateString(undefined, {
-      month: 'long',
-      year: 'numeric',
-    });
-  }
-
-  return `${start.toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-  })} - ${end.toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year:
-      end.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined,
-  })}`;
 };
 
 export default function SessionHistoryScreen() {
@@ -141,26 +76,10 @@ export default function SessionHistoryScreen() {
     setCurrentDate(new Date());
   };
 
-  const { startOfPeriod, endOfPeriod } = useMemo(() => {
-    if (viewMode === 'day') {
-      return {
-        startOfPeriod: buildStartOfDay(currentDate),
-        endOfPeriod: buildEndOfDay(currentDate),
-      };
-    }
-
-    if (viewMode === 'month') {
-      return {
-        startOfPeriod: buildStartOfMonth(currentDate),
-        endOfPeriod: buildEndOfMonth(currentDate),
-      };
-    }
-
-    return {
-      startOfPeriod: buildStartOfIsoWeek(currentDate),
-      endOfPeriod: buildEndOfIsoWeek(currentDate),
-    };
-  }, [currentDate, viewMode]);
+  const { startOfPeriod, endOfPeriod } = useMemo(
+    () => getTimeTrackerPeriodBounds(currentDate, viewMode, userTimezone),
+    [currentDate, viewMode, userTimezone]
+  );
 
   const filters = useMemo(
     () => ({
@@ -180,9 +99,7 @@ export default function SessionHistoryScreen() {
 
   const { sessions, sessionsQuery, periodStatsQuery } = useSessionHistoryQuery<
     SessionWithRelations,
-    {
-      sessionCount?: number;
-    }
+    TimeTrackingPeriodStats
   >({
     wsId: wsId ?? '',
     userId,
@@ -410,7 +327,7 @@ export default function SessionHistoryScreen() {
           </Pressable>
 
           <Text className="font-semibold text-base text-zinc-900 dark:text-white">
-            {formatDateRange(startOfPeriod, endOfPeriod, viewMode)}
+            {formatTimeTrackerDateRange(startOfPeriod, endOfPeriod, viewMode)}
           </Text>
 
           <Pressable
@@ -472,6 +389,12 @@ export default function SessionHistoryScreen() {
           }
           return renderItem({ item: item as SessionItem });
         }}
+        ListHeaderComponent={
+          <PeriodStats
+            periodStats={periodStatsQuery.data}
+            isLoading={periodStatsQuery.isLoading}
+          />
+        }
         contentContainerClassName="px-6 pb-6 flex-grow"
         ListEmptyComponent={!isLoading ? renderEmptyState : null}
         refreshControl={

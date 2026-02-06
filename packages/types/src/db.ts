@@ -375,6 +375,30 @@ export type TimeTrackingGoalWithCategory = TimeTrackingGoal & {
   category: TimeTrackingCategory | null;
 };
 
+/**
+ * Period statistics for time tracking sessions
+ * Used across web and mobile apps for session history analytics
+ */
+export interface TimeTrackingPeriodStats {
+  totalDuration: number;
+  breakdown: { name: string; duration: number; color: string }[];
+  timeOfDayBreakdown: {
+    morning: number;
+    afternoon: number;
+    evening: number;
+    night: number;
+  };
+  bestTimeOfDay: string;
+  longestSession: {
+    title: string;
+    duration_seconds: number | null;
+  } | null;
+  shortSessions: number;
+  mediumSessions: number;
+  longSessions: number;
+  sessionCount: number;
+}
+
 export type AuroraStatisticalForecast = Tables<'aurora_statistical_forecast'>;
 export type AuroraStatisticalMetrics = Tables<'aurora_statistical_metrics'>;
 export type AuroraMLForecast = Tables<'aurora_ml_forecast'>;
