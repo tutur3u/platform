@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { Link, router } from 'expo-router';
 import { useEffect } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -118,18 +118,16 @@ export default function HomeScreen() {
         className="mb-8 flex-row gap-3"
       >
         <Link href="/(auth)/login" asChild>
-          <View className="flex-1 items-center rounded-xl bg-primary p-4">
-            <Text className="font-semibold text-primary-foreground">
-              Sign In
-            </Text>
-          </View>
+          <Pressable className="flex-1 items-center rounded-xl bg-blue-600 p-4 active:bg-blue-700">
+            <Text className="font-semibold text-white">Sign In</Text>
+          </Pressable>
         </Link>
         <Link href="/(auth)/signup" asChild>
-          <View className="flex-1 items-center rounded-xl bg-secondary p-4">
-            <Text className="font-semibold text-secondary-foreground">
+          <Pressable className="flex-1 items-center rounded-xl bg-zinc-100 p-4 dark:bg-zinc-800">
+            <Text className="font-semibold text-zinc-900 dark:text-white">
               Sign Up
             </Text>
-          </View>
+          </Pressable>
         </Link>
       </Animated.View>
 

@@ -1,6 +1,6 @@
 import type { Workspace } from '@tuturuuu/types';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect } from 'react';
 import {
   ActivityIndicator,
@@ -11,31 +11,23 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
+import { useWorkspaces } from '@/hooks/features/workspaces';
 import { useAuthStore, useWorkspaceStore } from '@/lib/stores';
 
 export default function WorkspaceSelectScreen() {
   const { user, signOut } = useAuthStore();
-  const {
-    workspaces,
-    currentWorkspace,
-    isLoading,
-    error,
-    fetchWorkspaces,
-    selectWorkspace,
-  } = useWorkspaceStore();
+  const { currentWorkspace, selectWorkspace } = useWorkspaceStore();
+  const { switching } = useLocalSearchParams<{ switching: string }>();
 
-  // Fetch workspaces on mount
-  useEffect(() => {
-    fetchWorkspaces();
-  }, [fetchWorkspaces]);
+  const { data: workspaces, isLoading, error, refetch } = useWorkspaces();
+  const workspaceList = (workspaces || []) as Workspace[];
 
-  // Auto-navigate if workspace already selected
+  // Auto-navigate if workspace already selected and not switching
   useEffect(() => {
-    if (currentWorkspace) {
+    if (currentWorkspace && !switching) {
       router.replace(`/(protected)/${currentWorkspace.id}/(tabs)`);
     }
-  }, [currentWorkspace]);
+  }, [currentWorkspace, switching]);
 
   const handleSelectWorkspace = (workspace: Workspace) => {
     selectWorkspace(workspace);
@@ -119,11 +111,10 @@ export default function WorkspaceSelectScreen() {
       {/* Error State */}
       {error && (
         <View className="mx-6 mt-4 rounded-lg bg-red-50 p-4 dark:bg-red-900/20">
-          <Text className="text-red-600 dark:text-red-400">{error}</Text>
-          <Pressable
-            onPress={() => fetchWorkspaces()}
-            className="mt-2 self-start"
-          >
+          <Text className="text-red-600 dark:text-red-400">
+            {error instanceof Error ? error.message : 'An error occurred'}
+          </Text>
+          <Pressable onPress={() => refetch()} className="mt-2 self-start">
             <Text className="font-medium text-red-700 dark:text-red-300">
               Try again
             </Text>
@@ -133,18 +124,18 @@ export default function WorkspaceSelectScreen() {
 
       {/* Workspace List */}
       <FlatList
-        data={workspaces}
+        data={workspaceList}
         keyExtractor={(item) => item.id}
         renderItem={renderWorkspaceItem}
         contentContainerClassName="p-6 flex-grow"
         ListEmptyComponent={!isLoading ? renderEmptyState : null}
         refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={fetchWorkspaces} />
+          <RefreshControl refreshing={isLoading} onRefresh={refetch} />
         }
       />
 
       {/* Loading Overlay */}
-      {isLoading && workspaces.length === 0 && (
+      {isLoading && workspaceList.length === 0 && (
         <View className="absolute inset-0 items-center justify-center bg-zinc-50/80 dark:bg-zinc-900/80">
           <ActivityIndicator size="large" color="#3b82f6" />
           <Text className="mt-4 text-zinc-500 dark:text-zinc-400">

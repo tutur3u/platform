@@ -1,6 +1,7 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { useEffect } from 'react';
-
+import { useMemo } from 'react';
+import { ActivityIndicator, Text, View } from 'react-native';
+import { useWorkspace } from '@/hooks/features/workspaces';
 import { useWorkspaceStore } from '@/lib/stores';
 
 /**
@@ -11,14 +12,25 @@ import { useWorkspaceStore } from '@/lib/stores';
  */
 export default function WorkspaceLayout() {
   const { wsId } = useLocalSearchParams<{ wsId: string }>();
-  const { selectWorkspaceById, currentWorkspace } = useWorkspaceStore();
+  const { currentWorkspace } = useWorkspaceStore();
+  const shouldFetchWorkspace = useMemo(
+    () => !!wsId && currentWorkspace?.id !== wsId,
+    [currentWorkspace?.id, wsId]
+  );
 
-  // Ensure workspace is selected when navigating directly via deep link
-  useEffect(() => {
-    if (wsId && (!currentWorkspace || currentWorkspace.id !== wsId)) {
-      selectWorkspaceById(wsId);
-    }
-  }, [wsId, currentWorkspace, selectWorkspaceById]);
+  useWorkspace(wsId, { enabled: shouldFetchWorkspace });
+
+  // Show loading if workspace in store doesn't match workspace in URL
+  if (wsId && (!currentWorkspace || currentWorkspace.id !== wsId)) {
+    return (
+      <View className="flex-1 items-center justify-center bg-white dark:bg-zinc-900">
+        <ActivityIndicator size="large" color="#3b82f6" />
+        <Text className="mt-4 text-zinc-500 dark:text-zinc-400">
+          Loading workspace...
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

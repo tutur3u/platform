@@ -104,7 +104,6 @@ This section summarizes the key operating procedures for AI agents working in th
 - **🚫 USING `useEffect` FOR DATA FETCHING - THIS IS THE #1 MOST CRITICAL VIOLATION 🚫**
 - **Using raw `fetch()` without TanStack Query wrapper in client components.**
 - **Manual state management (useState + useEffect) for API calls - ABSOLUTELY FORBIDDEN.**
-- **Using absolute Windows drive paths with `apply_patch` - use repo-relative paths to avoid parsing errors.**
 
 ### Data Fetching Strategy (CRITICAL)
 
@@ -216,3 +215,21 @@ Tasks in kanban boards (`task.tsx`, `task-edit-dialog.tsx`, components in `packa
 **CRITICAL**: The `public.users` table does NOT contain an `email` field. User email addresses are stored in `public.user_private_details` for privacy and security reasons. When you need to query or access user email information, always use the `user_private_details` table, not the `users` table.
 
 **Type Inference**: Always prefer importing database types from `packages/types/src/db.ts` (e.g., `Workspace`, `WorkspaceTask`, `TaskWithRelations`, `TaskProjectWithRelations`) rather than manually defining types or directly using the raw generated types. This file provides convenient type aliases and extended types based on the Supabase schema. Only use these types AFTER migrations have been run by the user via `bun sb:push` and types regenerated via `bun sb:typegen`. Never attempt to run migrations yourself.
+
+## Session Retrospective (2026-02-04)
+
+### Mistakes/Issues Encountered
+- No automated tests were added for the new mobile auth API routes due to missing route-handler test harness in `apps/web`.
+
+### Lessons Learned
+- Mobile auth endpoints should always return Supabase session tokens and include CORS headers, since native clients do not rely on cookies.
+- When introducing a new mobile API base URL, add a local `.env.example` and update the app README to keep onboarding clear.
+
+### Documentation Updates Made
+- Added this retrospective entry to document the missing-test gap and mobile auth patterns.
+
+### Proposed Future Improvements
+- Add a lightweight testing guideline/template for Next.js route handlers so new API endpoints can be covered by unit tests.
+- Clarify how to satisfy the `bun check` requirement when lint/format commands are user-only.
+
+

@@ -10,6 +10,8 @@
  */
 
 export type {
+  TimeTrackingCategory,
+  TimeTrackingPeriodStats,
   TimeTrackingSession,
   Workspace,
   WorkspaceCalendar,

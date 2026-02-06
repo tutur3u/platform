@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Link, useLocalSearchParams } from 'expo-router';
+import { Link } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { MissedEntryDialog } from '@/components/time-tracker/missed-entry-dialog';
 import {
   formatDuration,
   formatDurationClock,
@@ -21,9 +22,10 @@ import {
 } from '@/hooks/features/time-tracker';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '@/lib/stores';
+import { useWorkspaceId } from '@/lib/stores/workspace-store';
 
 export default function TimeTrackerScreen() {
-  const { wsId } = useLocalSearchParams<{ wsId: string }>();
+  const wsId = useWorkspaceId();
   const colorScheme = useColorScheme();
   const { user } = useAuthStore();
 
@@ -43,6 +45,7 @@ export default function TimeTrackerScreen() {
     null
   );
   const [elapsedTime, setElapsedTime] = useState('00:00:00');
+  const [missedEntryDialogOpen, setMissedEntryDialogOpen] = useState(false);
 
   const activeSession = runningSession?.[0];
 
@@ -100,16 +103,24 @@ export default function TimeTrackerScreen() {
           <Text className="font-bold text-2xl text-zinc-900 dark:text-white">
             Time Tracker
           </Text>
-          <Link
-            href={`/(protected)/${wsId}/(tabs)/time-tracker/history`}
-            asChild
-          >
-            <Pressable className="rounded-lg bg-zinc-200 px-3 py-2 active:bg-zinc-300 dark:bg-zinc-700 dark:active:bg-zinc-600">
-              <Text className="font-medium text-sm text-zinc-700 dark:text-zinc-300">
-                History
-              </Text>
+          <View className="flex-row gap-2">
+            <Pressable
+              onPress={() => setMissedEntryDialogOpen(true)}
+              className="rounded-lg bg-blue-600 px-3 py-2 active:bg-blue-700"
+            >
+              <Text className="font-medium text-sm text-white">Add Entry</Text>
             </Pressable>
-          </Link>
+            <Link
+              href={`/(protected)/${wsId}/(tabs)/time-tracker/history`}
+              asChild
+            >
+              <Pressable className="rounded-lg bg-zinc-200 px-3 py-2 active:bg-zinc-300 dark:bg-zinc-700 dark:active:bg-zinc-600">
+                <Text className="font-medium text-sm text-zinc-700 dark:text-zinc-300">
+                  History
+                </Text>
+              </Pressable>
+            </Link>
+          </View>
         </View>
 
         {/* Timer Card */}
@@ -336,6 +347,13 @@ export default function TimeTrackerScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Missed Entry Dialog */}
+      <MissedEntryDialog
+        open={missedEntryDialogOpen}
+        onOpenChange={setMissedEntryDialogOpen}
+        wsId={wsId ?? ''}
+      />
     </SafeAreaView>
   );
 }

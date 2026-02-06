@@ -1,3 +1,4 @@
+import type { SessionHistoryFilters } from '@tuturuuu/hooks/hooks/use-session-history-query';
 import type {
   TimeTrackingCategory,
   Workspace,
@@ -42,13 +43,7 @@ export type TaskWithDetails = {
     ticket_prefix?: string | null;
   };
 
-export interface FilterState {
-  searchQuery: string;
-  categoryId: string;
-  duration: string;
-  timeOfDay: string;
-  projectContext: string;
-}
+export type FilterState = SessionHistoryFilters;
 
 export interface ActionStates {
   [key: string]: boolean;

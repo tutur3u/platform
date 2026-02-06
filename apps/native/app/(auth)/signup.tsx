@@ -17,7 +17,7 @@ import { useAuthStore } from '@/lib/stores';
 
 const signupSchema = z
   .object({
-    email: z.string().email('Please enter a valid email address'),
+    email: z.email('Please enter a valid email address'),
     password: z
       .string()
       .min(8, 'Password must be at least 8 characters')
@@ -87,13 +87,18 @@ export default function SignupScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-zinc-900">
+    <SafeAreaView className="bg-white dark:bg-zinc-900" style={{ flex: 1 }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
+        style={{ flex: 1 }}
       >
         <ScrollView
-          contentContainerClassName="flex-grow justify-center px-6"
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: 'center',
+            paddingHorizontal: 24,
+          }}
           keyboardShouldPersistTaps="handled"
         >
           {/* Header */}
