@@ -61,13 +61,35 @@ class WorkspaceSelectPage extends StatelessWidget {
 
               return ListTile(
                 leading: CircleAvatar(
-                  child: Text(
-                    workspace.name != null && workspace.name!.isNotEmpty
-                        ? workspace.name![0].toUpperCase()
-                        : 'W',
-                  ),
+                  child: workspace.personal
+                      ? const Icon(Icons.person)
+                      : Text(
+                          workspace.name != null && workspace.name!.isNotEmpty
+                              ? workspace.name![0].toUpperCase()
+                              : 'W',
+                        ),
                 ),
-                title: Text(workspace.name ?? workspace.id),
+                title: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        workspace.name ?? workspace.id,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (workspace.personal) ...[
+                      const SizedBox(width: 8),
+                      Chip(
+                        label: Text(
+                          l10n.workspacePersonalBadge,
+                          style: Theme.of(context).textTheme.labelSmall,
+                        ),
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ],
+                  ],
+                ),
                 trailing: isSelected
                     ? Icon(
                         Icons.check_circle,

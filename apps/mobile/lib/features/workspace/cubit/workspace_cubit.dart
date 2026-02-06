@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/workspace_repository.dart';
@@ -13,21 +15,35 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
 
   final WorkspaceRepository _repo;
 
-  /// Loads workspaces and restores the last selected workspace.
+  /// Loads workspaces and resolves the default workspace.
+  ///
+  /// Resolution order:
+  /// 1. Server-side default (`user_private_details.default_workspace_id`)
+  /// 2. SharedPreferences cache (offline fallback)
+  /// 3. Auto-select if only one workspace exists
   Future<void> loadWorkspaces() async {
     emit(state.copyWith(status: WorkspaceStatus.loading));
 
     try {
       final workspaces = await _repo.getWorkspaces();
-      final saved = await _repo.loadSelectedWorkspace();
 
-      // Restore saved workspace if it still exists in the list
       Workspace? current;
-      if (saved != null) {
-        current = workspaces.where((w) => w.id == saved.id).firstOrNull;
+
+      // 1. Try server-side default
+      final serverDefault = await _repo.getDefaultWorkspace();
+      if (serverDefault != null) {
+        current = workspaces.where((w) => w.id == serverDefault.id).firstOrNull;
       }
 
-      // Auto-select first if only one workspace
+      // 2. Fallback to SharedPreferences cache
+      if (current == null) {
+        final saved = await _repo.loadSelectedWorkspace();
+        if (saved != null) {
+          current = workspaces.where((w) => w.id == saved.id).firstOrNull;
+        }
+      }
+
+      // 3. Auto-select if only one workspace
       current ??= workspaces.length == 1 ? workspaces.first : null;
 
       emit(
@@ -47,10 +63,13 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
     }
   }
 
-  /// Selects a workspace and persists the choice.
+  /// Selects a workspace, persists locally, and syncs to server.
   Future<void> selectWorkspace(Workspace workspace) async {
     emit(state.copyWith(currentWorkspace: workspace));
     await _repo.saveSelectedWorkspace(workspace);
+
+    // Fire-and-forget server-side sync
+    unawaited(_repo.updateDefaultWorkspace(workspace.id));
   }
 
   /// Clears workspace selection (on logout).

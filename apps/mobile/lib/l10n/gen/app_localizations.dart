@@ -361,6 +361,60 @@ abstract class AppLocalizations {
   /// **'Create task'**
   String get tasksCreate;
 
+  /// No description provided for @tasksAllCaughtUp.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re all caught up!'**
+  String get tasksAllCaughtUp;
+
+  /// No description provided for @tasksAllCaughtUpSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No pending tasks right now'**
+  String get tasksAllCaughtUpSubtitle;
+
+  /// No description provided for @tasksOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue'**
+  String get tasksOverdue;
+
+  /// No description provided for @tasksDueToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Due today'**
+  String get tasksDueToday;
+
+  /// No description provided for @tasksUpcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get tasksUpcoming;
+
+  /// No description provided for @tasksPriorityCritical.
+  ///
+  /// In en, this message translates to:
+  /// **'Critical'**
+  String get tasksPriorityCritical;
+
+  /// No description provided for @tasksPriorityHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get tasksPriorityHigh;
+
+  /// No description provided for @tasksPriorityNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get tasksPriorityNormal;
+
+  /// No description provided for @tasksPriorityLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get tasksPriorityLow;
+
   /// No description provided for @calendarTitle.
   ///
   /// In en, this message translates to:
@@ -397,6 +451,54 @@ abstract class AppLocalizations {
   /// **'Categories'**
   String get financeCategories;
 
+  /// No description provided for @financeRecentTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent transactions'**
+  String get financeRecentTransactions;
+
+  /// No description provided for @financeNoWallets.
+  ///
+  /// In en, this message translates to:
+  /// **'No wallets yet'**
+  String get financeNoWallets;
+
+  /// No description provided for @financeNoTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'No transactions yet'**
+  String get financeNoTransactions;
+
+  /// No description provided for @financeIncome.
+  ///
+  /// In en, this message translates to:
+  /// **'Income'**
+  String get financeIncome;
+
+  /// No description provided for @financeExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'Expense'**
+  String get financeExpense;
+
+  /// No description provided for @financeViewAll.
+  ///
+  /// In en, this message translates to:
+  /// **'View all'**
+  String get financeViewAll;
+
+  /// No description provided for @financeSearchTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'Search transactions'**
+  String get financeSearchTransactions;
+
+  /// No description provided for @financeNoSearchResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching transactions'**
+  String get financeNoSearchResults;
+
   /// No description provided for @timerTitle.
   ///
   /// In en, this message translates to:
@@ -421,6 +523,276 @@ abstract class AppLocalizations {
   /// **'History'**
   String get timerHistory;
 
+  /// No description provided for @timerRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get timerRunning;
+
+  /// No description provided for @timerPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get timerPaused;
+
+  /// No description provided for @timerStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped'**
+  String get timerStopped;
+
+  /// No description provided for @timerPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get timerPause;
+
+  /// No description provided for @timerResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get timerResume;
+
+  /// No description provided for @timerSessionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Session title'**
+  String get timerSessionTitle;
+
+  /// No description provided for @timerCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get timerCategory;
+
+  /// No description provided for @timerNoCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'No category'**
+  String get timerNoCategory;
+
+  /// No description provided for @timerAddCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Add category'**
+  String get timerAddCategory;
+
+  /// No description provided for @timerCategoryName.
+  ///
+  /// In en, this message translates to:
+  /// **'Category name'**
+  String get timerCategoryName;
+
+  /// No description provided for @timerRecentSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent sessions'**
+  String get timerRecentSessions;
+
+  /// No description provided for @timerSeeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'See all'**
+  String get timerSeeAll;
+
+  /// No description provided for @timerNoSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'No sessions yet'**
+  String get timerNoSessions;
+
+  /// No description provided for @timerToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get timerToday;
+
+  /// No description provided for @timerThisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'This week'**
+  String get timerThisWeek;
+
+  /// No description provided for @timerThisMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'This month'**
+  String get timerThisMonth;
+
+  /// No description provided for @timerStreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Streak'**
+  String get timerStreak;
+
+  /// No description provided for @timerStatsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Statistics'**
+  String get timerStatsTitle;
+
+  /// No description provided for @timerActivityHeatmap.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity'**
+  String get timerActivityHeatmap;
+
+  /// No description provided for @timerEditSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit session'**
+  String get timerEditSession;
+
+  /// No description provided for @timerDeleteSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete session'**
+  String get timerDeleteSession;
+
+  /// No description provided for @timerDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this session?'**
+  String get timerDeleteConfirm;
+
+  /// No description provided for @timerAddMissedEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Add missed entry'**
+  String get timerAddMissedEntry;
+
+  /// No description provided for @timerStartTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Start time'**
+  String get timerStartTime;
+
+  /// No description provided for @timerEndTime.
+  ///
+  /// In en, this message translates to:
+  /// **'End time'**
+  String get timerEndTime;
+
+  /// No description provided for @timerDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get timerDuration;
+
+  /// No description provided for @timerSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get timerSave;
+
+  /// No description provided for @timerPomodoro.
+  ///
+  /// In en, this message translates to:
+  /// **'Pomodoro'**
+  String get timerPomodoro;
+
+  /// No description provided for @timerPomodoroSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Pomodoro settings'**
+  String get timerPomodoroSettings;
+
+  /// No description provided for @timerFocusTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus time'**
+  String get timerFocusTime;
+
+  /// No description provided for @timerShortBreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Short break'**
+  String get timerShortBreak;
+
+  /// No description provided for @timerLongBreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Long break'**
+  String get timerLongBreak;
+
+  /// No description provided for @timerSessionsUntilLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions until long break'**
+  String get timerSessionsUntilLong;
+
+  /// No description provided for @timerRequestsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests'**
+  String get timerRequestsTitle;
+
+  /// No description provided for @timerRequestPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get timerRequestPending;
+
+  /// No description provided for @timerRequestApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved'**
+  String get timerRequestApproved;
+
+  /// No description provided for @timerRequestRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get timerRequestRejected;
+
+  /// No description provided for @timerRequestNeedsInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs info'**
+  String get timerRequestNeedsInfo;
+
+  /// No description provided for @timerApprove.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get timerApprove;
+
+  /// No description provided for @timerReject.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get timerReject;
+
+  /// No description provided for @timerRequestInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Request info'**
+  String get timerRequestInfo;
+
+  /// No description provided for @timerManagementTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Management'**
+  String get timerManagementTitle;
+
+  /// No description provided for @timerTotalSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Total sessions'**
+  String get timerTotalSessions;
+
+  /// No description provided for @timerActiveUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Active users'**
+  String get timerActiveUsers;
+
+  /// No description provided for @timerDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} days'**
+  String timerDays(int count);
+
   /// No description provided for @settingsTitle.
   ///
   /// In en, this message translates to:
@@ -432,6 +804,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Profile'**
   String get settingsProfile;
+
+  /// No description provided for @settingsLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get settingsLanguage;
+
+  /// No description provided for @settingsLanguageSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System default'**
+  String get settingsLanguageSystem;
+
+  /// No description provided for @settingsLanguageEnglish.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get settingsLanguageEnglish;
+
+  /// No description provided for @settingsLanguageVietnamese.
+  ///
+  /// In en, this message translates to:
+  /// **'Vietnamese'**
+  String get settingsLanguageVietnamese;
 
   /// No description provided for @settingsTheme.
   ///
@@ -457,6 +853,12 @@ abstract class AppLocalizations {
   /// **'System'**
   String get settingsThemeSystem;
 
+  /// No description provided for @settingsSwitchWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch workspace'**
+  String get settingsSwitchWorkspace;
+
   /// No description provided for @settingsSignOut.
   ///
   /// In en, this message translates to:
@@ -468,6 +870,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Are you sure you want to sign out?'**
   String get settingsSignOutConfirm;
+
+  /// No description provided for @workspacePickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch workspace'**
+  String get workspacePickerTitle;
+
+  /// No description provided for @workspacePersonalBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal'**
+  String get workspacePersonalBadge;
 
   /// No description provided for @commonRetry.
   ///

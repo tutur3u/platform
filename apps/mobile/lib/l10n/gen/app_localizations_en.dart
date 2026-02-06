@@ -146,6 +146,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tasksCreate => 'Create task';
 
   @override
+  String get tasksAllCaughtUp => 'You\'re all caught up!';
+
+  @override
+  String get tasksAllCaughtUpSubtitle => 'No pending tasks right now';
+
+  @override
+  String get tasksOverdue => 'Overdue';
+
+  @override
+  String get tasksDueToday => 'Due today';
+
+  @override
+  String get tasksUpcoming => 'Upcoming';
+
+  @override
+  String get tasksPriorityCritical => 'Critical';
+
+  @override
+  String get tasksPriorityHigh => 'High';
+
+  @override
+  String get tasksPriorityNormal => 'Normal';
+
+  @override
+  String get tasksPriorityLow => 'Low';
+
+  @override
   String get calendarTitle => 'Calendar';
 
   @override
@@ -164,6 +191,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeCategories => 'Categories';
 
   @override
+  String get financeRecentTransactions => 'Recent transactions';
+
+  @override
+  String get financeNoWallets => 'No wallets yet';
+
+  @override
+  String get financeNoTransactions => 'No transactions yet';
+
+  @override
+  String get financeIncome => 'Income';
+
+  @override
+  String get financeExpense => 'Expense';
+
+  @override
+  String get financeViewAll => 'View all';
+
+  @override
+  String get financeSearchTransactions => 'Search transactions';
+
+  @override
+  String get financeNoSearchResults => 'No matching transactions';
+
+  @override
   String get timerTitle => 'Time tracker';
 
   @override
@@ -176,10 +227,159 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerHistory => 'History';
 
   @override
+  String get timerRunning => 'Running';
+
+  @override
+  String get timerPaused => 'Paused';
+
+  @override
+  String get timerStopped => 'Stopped';
+
+  @override
+  String get timerPause => 'Pause';
+
+  @override
+  String get timerResume => 'Resume';
+
+  @override
+  String get timerSessionTitle => 'Session title';
+
+  @override
+  String get timerCategory => 'Category';
+
+  @override
+  String get timerNoCategory => 'No category';
+
+  @override
+  String get timerAddCategory => 'Add category';
+
+  @override
+  String get timerCategoryName => 'Category name';
+
+  @override
+  String get timerRecentSessions => 'Recent sessions';
+
+  @override
+  String get timerSeeAll => 'See all';
+
+  @override
+  String get timerNoSessions => 'No sessions yet';
+
+  @override
+  String get timerToday => 'Today';
+
+  @override
+  String get timerThisWeek => 'This week';
+
+  @override
+  String get timerThisMonth => 'This month';
+
+  @override
+  String get timerStreak => 'Streak';
+
+  @override
+  String get timerStatsTitle => 'Statistics';
+
+  @override
+  String get timerActivityHeatmap => 'Activity';
+
+  @override
+  String get timerEditSession => 'Edit session';
+
+  @override
+  String get timerDeleteSession => 'Delete session';
+
+  @override
+  String get timerDeleteConfirm => 'Delete this session?';
+
+  @override
+  String get timerAddMissedEntry => 'Add missed entry';
+
+  @override
+  String get timerStartTime => 'Start time';
+
+  @override
+  String get timerEndTime => 'End time';
+
+  @override
+  String get timerDuration => 'Duration';
+
+  @override
+  String get timerSave => 'Save';
+
+  @override
+  String get timerPomodoro => 'Pomodoro';
+
+  @override
+  String get timerPomodoroSettings => 'Pomodoro settings';
+
+  @override
+  String get timerFocusTime => 'Focus time';
+
+  @override
+  String get timerShortBreak => 'Short break';
+
+  @override
+  String get timerLongBreak => 'Long break';
+
+  @override
+  String get timerSessionsUntilLong => 'Sessions until long break';
+
+  @override
+  String get timerRequestsTitle => 'Requests';
+
+  @override
+  String get timerRequestPending => 'Pending';
+
+  @override
+  String get timerRequestApproved => 'Approved';
+
+  @override
+  String get timerRequestRejected => 'Rejected';
+
+  @override
+  String get timerRequestNeedsInfo => 'Needs info';
+
+  @override
+  String get timerApprove => 'Approve';
+
+  @override
+  String get timerReject => 'Reject';
+
+  @override
+  String get timerRequestInfo => 'Request info';
+
+  @override
+  String get timerManagementTitle => 'Management';
+
+  @override
+  String get timerTotalSessions => 'Total sessions';
+
+  @override
+  String get timerActiveUsers => 'Active users';
+
+  @override
+  String timerDays(int count) {
+    return '$count days';
+  }
+
+  @override
   String get settingsTitle => 'Settings';
 
   @override
   String get settingsProfile => 'Profile';
+
+  @override
+  String get settingsLanguage => 'Language';
+
+  @override
+  String get settingsLanguageSystem => 'System default';
+
+  @override
+  String get settingsLanguageEnglish => 'English';
+
+  @override
+  String get settingsLanguageVietnamese => 'Vietnamese';
 
   @override
   String get settingsTheme => 'Theme';
@@ -194,10 +394,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsThemeSystem => 'System';
 
   @override
+  String get settingsSwitchWorkspace => 'Switch workspace';
+
+  @override
   String get settingsSignOut => 'Sign out';
 
   @override
   String get settingsSignOutConfirm => 'Are you sure you want to sign out?';
+
+  @override
+  String get workspacePickerTitle => 'Switch workspace';
+
+  @override
+  String get workspacePersonalBadge => 'Personal';
 
   @override
   String get commonRetry => 'Retry';

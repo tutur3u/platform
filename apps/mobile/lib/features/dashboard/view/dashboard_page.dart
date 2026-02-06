@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
+import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 class DashboardPage extends StatelessWidget {
@@ -17,8 +18,21 @@ class DashboardPage extends StatelessWidget {
           buildWhen: (prev, curr) =>
               prev.currentWorkspace != curr.currentWorkspace,
           builder: (context, state) {
-            return Text(
-              state.currentWorkspace?.name ?? l10n.appTitle,
+            return GestureDetector(
+              onTap: () => showWorkspacePickerSheet(context),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      state.currentWorkspace?.name ?? l10n.appTitle,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.arrow_drop_down),
+                ],
+              ),
             );
           },
         ),

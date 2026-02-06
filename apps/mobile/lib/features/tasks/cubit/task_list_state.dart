@@ -1,30 +1,46 @@
 part of 'task_list_cubit.dart';
 
-const _sentinel = Object();
-
 enum TaskListStatus { initial, loading, loaded, error }
 
 class TaskListState extends Equatable {
   const TaskListState({
     this.status = TaskListStatus.initial,
-    this.tasks = const [],
+    this.overdueTasks = const [],
+    this.todayTasks = const [],
+    this.upcomingTasks = const [],
     this.error,
   });
 
   final TaskListStatus status;
-  final List<Task> tasks;
+  final List<UserTask> overdueTasks;
+  final List<UserTask> todayTasks;
+  final List<UserTask> upcomingTasks;
   final String? error;
+
+  int get totalActiveTasks =>
+      overdueTasks.length + todayTasks.length + upcomingTasks.length;
 
   TaskListState copyWith({
     TaskListStatus? status,
-    List<Task>? tasks,
-    Object? error = _sentinel,
+    List<UserTask>? overdueTasks,
+    List<UserTask>? todayTasks,
+    List<UserTask>? upcomingTasks,
+    String? error,
+    bool clearError = false,
   }) => TaskListState(
     status: status ?? this.status,
-    tasks: tasks ?? this.tasks,
-    error: error == _sentinel ? this.error : error as String?,
+    overdueTasks: overdueTasks ?? this.overdueTasks,
+    todayTasks: todayTasks ?? this.todayTasks,
+    upcomingTasks: upcomingTasks ?? this.upcomingTasks,
+    error: clearError ? null : (error ?? this.error),
   );
 
   @override
-  List<Object?> get props => [status, tasks, error];
+  List<Object?> get props => [
+    status,
+    overdueTasks,
+    todayTasks,
+    upcomingTasks,
+    error,
+  ];
 }

@@ -14,10 +14,12 @@ class CalendarRepository {
         .eq('ws_id', wsId);
 
     if (start != null) {
-      query = query.gte('end_at', start.toIso8601String());
+      query = query.or(
+        'end_at.gte.${start.toUtc().toIso8601String()},end_at.is.null',
+      );
     }
     if (end != null) {
-      query = query.lte('start_at', end.toIso8601String());
+      query = query.lte('start_at', end.toUtc().toIso8601String());
     }
 
     final response = await query.order('start_at');

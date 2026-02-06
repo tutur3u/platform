@@ -9,21 +9,33 @@ class Transaction extends Equatable {
     this.walletId,
     this.takenAt,
     this.createdAt,
+    this.categoryName,
+    this.walletName,
+    this.walletCurrency,
   });
 
-  factory Transaction.fromJson(Map<String, dynamic> json) => Transaction(
-    id: json['id'] as String,
-    amount: (json['amount'] as num?)?.toDouble(),
-    description: json['description'] as String?,
-    categoryId: json['category_id'] as String?,
-    walletId: json['wallet_id'] as String?,
-    takenAt: json['taken_at'] != null
-        ? DateTime.parse(json['taken_at'] as String)
-        : null,
-    createdAt: json['created_at'] != null
-        ? DateTime.parse(json['created_at'] as String)
-        : null,
-  );
+  factory Transaction.fromJson(Map<String, dynamic> json) {
+    // Handle nested category/wallet from PostgREST join.
+    final category = json['category'] as Map<String, dynamic>?;
+    final wallet = json['wallet'] as Map<String, dynamic>?;
+
+    return Transaction(
+      id: json['id'] as String,
+      amount: (json['amount'] as num?)?.toDouble(),
+      description: json['description'] as String?,
+      categoryId: json['category_id'] as String?,
+      walletId: json['wallet_id'] as String?,
+      takenAt: json['taken_at'] != null
+          ? DateTime.parse(json['taken_at'] as String)
+          : null,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : null,
+      categoryName: category?['name'] as String?,
+      walletName: wallet?['name'] as String?,
+      walletCurrency: wallet?['currency'] as String?,
+    );
+  }
 
   final String id;
   final double? amount;
@@ -32,6 +44,15 @@ class Transaction extends Equatable {
   final String? walletId;
   final DateTime? takenAt;
   final DateTime? createdAt;
+
+  /// Joined from `transaction_categories.name`.
+  final String? categoryName;
+
+  /// Joined from `workspace_wallets.name`.
+  final String? walletName;
+
+  /// Joined from `workspace_wallets.currency`.
+  final String? walletCurrency;
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -52,5 +73,8 @@ class Transaction extends Equatable {
     walletId,
     takenAt,
     createdAt,
+    categoryName,
+    walletName,
+    walletCurrency,
   ];
 }

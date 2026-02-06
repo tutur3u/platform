@@ -11,25 +11,33 @@ import 'package:mobile/features/auth/view/signup_page.dart';
 import 'package:mobile/features/calendar/view/calendar_page.dart';
 import 'package:mobile/features/dashboard/view/dashboard_page.dart';
 import 'package:mobile/features/finance/view/finance_page.dart';
+import 'package:mobile/features/finance/view/transaction_list_page.dart';
 import 'package:mobile/features/settings/view/settings_page.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/tasks/view/task_list_page.dart';
+import 'package:mobile/features/time_tracker/view/time_tracker_management_page.dart';
 import 'package:mobile/features/time_tracker/view/time_tracker_page.dart';
+import 'package:mobile/features/time_tracker/view/time_tracker_requests_page.dart';
+import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
+import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/view/workspace_select_page.dart';
 
-/// Creates the app-level [GoRouter] with auth-aware redirects.
-GoRouter createAppRouter(AuthCubit authCubit) {
+/// Creates the app-level [GoRouter] with auth- and workspace-aware redirects.
+GoRouter createAppRouter(AuthCubit authCubit, WorkspaceCubit workspaceCubit) {
   return GoRouter(
     debugLogDiagnostics: true,
-    refreshListenable: _AuthRefreshNotifier(authCubit),
+    refreshListenable: _AppRefreshNotifier(authCubit, workspaceCubit),
     redirect: (context, state) {
       final authState = authCubit.state;
+      final wsState = workspaceCubit.state;
+
       final isAuthRoute =
           state.matchedLocation == Routes.login ||
           state.matchedLocation == Routes.signUp ||
           state.matchedLocation == Routes.forgotPassword;
+      final isWsSelectRoute = state.matchedLocation == Routes.workspaceSelect;
 
-      // Still loading → stay put
+      // Still loading auth → stay put
       if (authState.status == AuthStatus.unknown) return null;
 
       // Not authenticated → redirect to login
@@ -37,8 +45,28 @@ GoRouter createAppRouter(AuthCubit authCubit) {
         return Routes.login;
       }
 
-      // Authenticated but on auth route → go home
+      // Authenticated but on auth route → go to appropriate destination
       if (authState.status == AuthStatus.authenticated && isAuthRoute) {
+        if (wsState.hasWorkspace) return Routes.home;
+        if (wsState.status == WorkspaceStatus.loaded) {
+          return Routes.workspaceSelect;
+        }
+        // Workspaces still loading → go home (will re-redirect once loaded)
+        return Routes.home;
+      }
+
+      // From here on, user is authenticated and NOT on an auth route.
+      if (authState.status != AuthStatus.authenticated) return null;
+
+      // Workspace loaded but none selected → go to picker
+      if (!isWsSelectRoute &&
+          wsState.status == WorkspaceStatus.loaded &&
+          !wsState.hasWorkspace) {
+        return Routes.workspaceSelect;
+      }
+
+      // On workspace-select but already has a workspace → go home
+      if (isWsSelectRoute && wsState.hasWorkspace) {
         return Routes.home;
       }
 
@@ -63,6 +91,22 @@ GoRouter createAppRouter(AuthCubit authCubit) {
       GoRoute(
         path: Routes.workspaceSelect,
         builder: (context, state) => const WorkspaceSelectPage(),
+      ),
+
+      // ── Time tracker sub-pages (full-page, outside shell) ──
+      GoRoute(
+        path: Routes.timerRequests,
+        builder: (context, state) => const TimeTrackerRequestsPage(),
+      ),
+      GoRoute(
+        path: Routes.timerManagement,
+        builder: (context, state) => const TimeTrackerManagementPage(),
+      ),
+
+      // ── Finance sub-pages (full-page, outside shell) ──
+      GoRoute(
+        path: Routes.transactions,
+        builder: (context, state) => const TransactionListPage(),
       ),
 
       // ── Main shell with bottom navigation ────────
@@ -99,17 +143,21 @@ GoRouter createAppRouter(AuthCubit authCubit) {
   );
 }
 
-/// Notifies [GoRouter] when auth state changes so it can re-evaluate redirects.
-class _AuthRefreshNotifier extends ChangeNotifier {
-  _AuthRefreshNotifier(AuthCubit cubit) {
-    _sub = cubit.stream.listen((_) => notifyListeners());
+/// Notifies [GoRouter] when auth or workspace state changes so it can
+/// re-evaluate redirects.
+class _AppRefreshNotifier extends ChangeNotifier {
+  _AppRefreshNotifier(AuthCubit authCubit, WorkspaceCubit workspaceCubit) {
+    _authSub = authCubit.stream.listen((_) => notifyListeners());
+    _wsSub = workspaceCubit.stream.listen((_) => notifyListeners());
   }
 
-  late final StreamSubscription<AuthState> _sub;
+  late final StreamSubscription<AuthState> _authSub;
+  late final StreamSubscription<WorkspaceState> _wsSub;
 
   @override
   Future<void> dispose() async {
-    await _sub.cancel();
+    await _authSub.cancel();
+    await _wsSub.cancel();
     super.dispose();
   }
 }

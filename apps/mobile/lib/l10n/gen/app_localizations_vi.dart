@@ -146,6 +146,33 @@ class AppLocalizationsVi extends AppLocalizations {
   String get tasksCreate => 'Tạo công việc';
 
   @override
+  String get tasksAllCaughtUp => 'Đã hoàn thành tất cả!';
+
+  @override
+  String get tasksAllCaughtUpSubtitle => 'Không có công việc cần xử lý';
+
+  @override
+  String get tasksOverdue => 'Quá hạn';
+
+  @override
+  String get tasksDueToday => 'Hôm nay';
+
+  @override
+  String get tasksUpcoming => 'Sắp tới';
+
+  @override
+  String get tasksPriorityCritical => 'Nghiêm trọng';
+
+  @override
+  String get tasksPriorityHigh => 'Cao';
+
+  @override
+  String get tasksPriorityNormal => 'Bình thường';
+
+  @override
+  String get tasksPriorityLow => 'Thấp';
+
+  @override
   String get calendarTitle => 'Lịch';
 
   @override
@@ -164,6 +191,30 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeCategories => 'Danh mục';
 
   @override
+  String get financeRecentTransactions => 'Giao dịch gần đây';
+
+  @override
+  String get financeNoWallets => 'Chưa có ví';
+
+  @override
+  String get financeNoTransactions => 'Chưa có giao dịch';
+
+  @override
+  String get financeIncome => 'Thu nhập';
+
+  @override
+  String get financeExpense => 'Chi tiêu';
+
+  @override
+  String get financeViewAll => 'Xem tất cả';
+
+  @override
+  String get financeSearchTransactions => 'Tìm kiếm giao dịch';
+
+  @override
+  String get financeNoSearchResults => 'Không tìm thấy giao dịch';
+
+  @override
   String get timerTitle => 'Bấm giờ';
 
   @override
@@ -176,10 +227,159 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerHistory => 'Lịch sử';
 
   @override
+  String get timerRunning => 'Đang chạy';
+
+  @override
+  String get timerPaused => 'Tạm dừng';
+
+  @override
+  String get timerStopped => 'Đã dừng';
+
+  @override
+  String get timerPause => 'Tạm dừng';
+
+  @override
+  String get timerResume => 'Tiếp tục';
+
+  @override
+  String get timerSessionTitle => 'Tiêu đề phiên';
+
+  @override
+  String get timerCategory => 'Danh mục';
+
+  @override
+  String get timerNoCategory => 'Không có danh mục';
+
+  @override
+  String get timerAddCategory => 'Thêm danh mục';
+
+  @override
+  String get timerCategoryName => 'Tên danh mục';
+
+  @override
+  String get timerRecentSessions => 'Phiên gần đây';
+
+  @override
+  String get timerSeeAll => 'Xem tất cả';
+
+  @override
+  String get timerNoSessions => 'Chưa có phiên nào';
+
+  @override
+  String get timerToday => 'Hôm nay';
+
+  @override
+  String get timerThisWeek => 'Tuần này';
+
+  @override
+  String get timerThisMonth => 'Tháng này';
+
+  @override
+  String get timerStreak => 'Chuỗi ngày';
+
+  @override
+  String get timerStatsTitle => 'Thống kê';
+
+  @override
+  String get timerActivityHeatmap => 'Hoạt động';
+
+  @override
+  String get timerEditSession => 'Sửa phiên';
+
+  @override
+  String get timerDeleteSession => 'Xóa phiên';
+
+  @override
+  String get timerDeleteConfirm => 'Xóa phiên này?';
+
+  @override
+  String get timerAddMissedEntry => 'Thêm mục bị thiếu';
+
+  @override
+  String get timerStartTime => 'Thời gian bắt đầu';
+
+  @override
+  String get timerEndTime => 'Thời gian kết thúc';
+
+  @override
+  String get timerDuration => 'Thời lượng';
+
+  @override
+  String get timerSave => 'Lưu';
+
+  @override
+  String get timerPomodoro => 'Pomodoro';
+
+  @override
+  String get timerPomodoroSettings => 'Cài đặt Pomodoro';
+
+  @override
+  String get timerFocusTime => 'Thời gian tập trung';
+
+  @override
+  String get timerShortBreak => 'Nghỉ ngắn';
+
+  @override
+  String get timerLongBreak => 'Nghỉ dài';
+
+  @override
+  String get timerSessionsUntilLong => 'Phiên trước khi nghỉ dài';
+
+  @override
+  String get timerRequestsTitle => 'Yêu cầu';
+
+  @override
+  String get timerRequestPending => 'Đang chờ';
+
+  @override
+  String get timerRequestApproved => 'Đã duyệt';
+
+  @override
+  String get timerRequestRejected => 'Bị từ chối';
+
+  @override
+  String get timerRequestNeedsInfo => 'Cần thêm thông tin';
+
+  @override
+  String get timerApprove => 'Duyệt';
+
+  @override
+  String get timerReject => 'Từ chối';
+
+  @override
+  String get timerRequestInfo => 'Yêu cầu thông tin';
+
+  @override
+  String get timerManagementTitle => 'Quản lý';
+
+  @override
+  String get timerTotalSessions => 'Tổng số phiên';
+
+  @override
+  String get timerActiveUsers => 'Người dùng hoạt động';
+
+  @override
+  String timerDays(int count) {
+    return '$count ngày';
+  }
+
+  @override
   String get settingsTitle => 'Cài đặt';
 
   @override
   String get settingsProfile => 'Hồ sơ';
+
+  @override
+  String get settingsLanguage => 'Ngôn ngữ';
+
+  @override
+  String get settingsLanguageSystem => 'Mặc định hệ thống';
+
+  @override
+  String get settingsLanguageEnglish => 'Tiếng Anh';
+
+  @override
+  String get settingsLanguageVietnamese => 'Tiếng Việt';
 
   @override
   String get settingsTheme => 'Giao diện';
@@ -194,10 +394,19 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsThemeSystem => 'Hệ thống';
 
   @override
+  String get settingsSwitchWorkspace => 'Chuyển không gian làm việc';
+
+  @override
   String get settingsSignOut => 'Đăng xuất';
 
   @override
   String get settingsSignOutConfirm => 'Bạn có chắc muốn đăng xuất không?';
+
+  @override
+  String get workspacePickerTitle => 'Chuyển không gian làm việc';
+
+  @override
+  String get workspacePersonalBadge => 'Cá nhân';
 
   @override
   String get commonRetry => 'Thử lại';

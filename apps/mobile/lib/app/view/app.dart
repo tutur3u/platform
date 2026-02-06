@@ -6,9 +6,12 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/app_router.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
+import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/workspace_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/settings/cubit/locale_cubit.dart';
+import 'package:mobile/features/settings/cubit/locale_state.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -22,8 +25,10 @@ class App extends StatefulWidget {
 class _AppState extends State<App> {
   late final AuthRepository _authRepo;
   late final WorkspaceRepository _workspaceRepo;
+  late final SettingsRepository _settingsRepo;
   late final AuthCubit _authCubit;
   late final WorkspaceCubit _workspaceCubit;
+  late final LocaleCubit _localeCubit;
   late final GoRouter _router;
 
   @override
@@ -31,9 +36,12 @@ class _AppState extends State<App> {
     super.initState();
     _authRepo = AuthRepository();
     _workspaceRepo = WorkspaceRepository();
+    _settingsRepo = SettingsRepository();
     _authCubit = AuthCubit(authRepository: _authRepo);
     _workspaceCubit = WorkspaceCubit(workspaceRepository: _workspaceRepo);
-    _router = createAppRouter(_authCubit);
+    _localeCubit = LocaleCubit(settingsRepository: _settingsRepo);
+    _router = createAppRouter(_authCubit, _workspaceCubit);
+    unawaited(_localeCubit.loadLocale());
   }
 
   @override
@@ -41,6 +49,7 @@ class _AppState extends State<App> {
     _router.dispose();
     unawaited(_authCubit.close());
     unawaited(_workspaceCubit.close());
+    unawaited(_localeCubit.close());
     super.dispose();
   }
 
@@ -50,6 +59,7 @@ class _AppState extends State<App> {
       providers: [
         BlocProvider.value(value: _authCubit),
         BlocProvider.value(value: _workspaceCubit),
+        BlocProvider.value(value: _localeCubit),
       ],
       child: BlocListener<AuthCubit, AuthState>(
         listenWhen: (prev, curr) => prev.status != curr.status,
@@ -60,12 +70,17 @@ class _AppState extends State<App> {
             unawaited(context.read<WorkspaceCubit>().clearWorkspaces());
           }
         },
-        child: MaterialApp.router(
-          theme: AppTheme.light,
-          darkTheme: AppTheme.dark,
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          routerConfig: _router,
+        child: BlocBuilder<LocaleCubit, LocaleState>(
+          builder: (context, localeState) {
+            return MaterialApp.router(
+              theme: AppTheme.light,
+              darkTheme: AppTheme.dark,
+              locale: localeState.locale,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              routerConfig: _router,
+            );
+          },
         ),
       ),
     );

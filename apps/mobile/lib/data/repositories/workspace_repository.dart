@@ -32,6 +32,70 @@ class WorkspaceRepository {
         .toList();
   }
 
+  /// Fetches the server-side default workspace for the current user.
+  ///
+  /// Mirrors `getUserDefaultWorkspace()` from the web app:
+  /// 1. Read `default_workspace_id` from `user_private_details`
+  /// 2. Validate the user has access to that workspace
+  /// 3. Fall back to personal workspace if invalid/unset
+  Future<Workspace?> getDefaultWorkspace() async {
+    final userId = supabase.auth.currentUser?.id;
+    if (userId == null) return null;
+
+    try {
+      final row = await supabase
+          .from('user_private_details')
+          .select('default_workspace_id')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      final defaultId = row?['default_workspace_id'] as String?;
+
+      if (defaultId != null) {
+        // Validate user still has access to this workspace
+        final member = await supabase
+            .from('workspace_members')
+            .select('ws_id, workspaces(*)')
+            .eq('user_id', userId)
+            .eq('ws_id', defaultId)
+            .maybeSingle();
+
+        if (member != null) {
+          final ws = member['workspaces'] as Map<String, dynamic>?;
+          if (ws != null) return Workspace.fromJson(ws);
+        }
+      }
+
+      // Fallback: find personal workspace
+      final personalRow = await supabase
+          .from('workspace_members')
+          .select('ws_id, workspaces(*)')
+          .eq('user_id', userId)
+          .eq('workspaces.personal', true)
+          .maybeSingle();
+
+      if (personalRow != null) {
+        final ws = personalRow['workspaces'] as Map<String, dynamic>?;
+        if (ws != null) return Workspace.fromJson(ws);
+      }
+    } on Object catch (_) {
+      // Non-critical — caller falls back to SharedPreferences
+    }
+
+    return null;
+  }
+
+  /// Persists the default workspace on the server.
+  Future<void> updateDefaultWorkspace(String workspaceId) async {
+    final userId = supabase.auth.currentUser?.id;
+    if (userId == null) return;
+
+    await supabase
+        .from('user_private_details')
+        .update({'default_workspace_id': workspaceId})
+        .eq('user_id', userId);
+  }
+
   /// Fetches a single workspace by ID.
   Future<Workspace?> getWorkspaceById(String wsId) async {
     final response = await supabase
