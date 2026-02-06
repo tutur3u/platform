@@ -17,9 +17,9 @@ class TimeTrackerPage extends StatelessWidget {
             Text(
               '00:00:00',
               style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                    fontWeight: FontWeight.w300,
-                    fontFeatures: [const FontFeature.tabularFigures()],
-                  ),
+                fontWeight: FontWeight.w300,
+                fontFeatures: [const FontFeature.tabularFigures()],
+              ),
             ),
             const SizedBox(height: 32),
             FilledButton.icon(

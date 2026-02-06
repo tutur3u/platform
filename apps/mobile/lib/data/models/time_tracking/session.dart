@@ -51,25 +51,25 @@ class TimeTrackingSession extends Equatable {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'description': description,
-        'category_id': categoryId,
-        'start_at': startAt?.toIso8601String(),
-        'end_at': endAt?.toIso8601String(),
-        'ws_id': wsId,
-        'created_at': createdAt?.toIso8601String(),
-      };
+    'id': id,
+    'title': title,
+    'description': description,
+    'category_id': categoryId,
+    'start_at': startAt?.toIso8601String(),
+    'end_at': endAt?.toIso8601String(),
+    'ws_id': wsId,
+    'created_at': createdAt?.toIso8601String(),
+  };
 
   @override
   List<Object?> get props => [
-        id,
-        title,
-        description,
-        categoryId,
-        categoryName,
-        startAt,
-        endAt,
-        wsId,
-      ];
+    id,
+    title,
+    description,
+    categoryId,
+    categoryName,
+    startAt,
+    endAt,
+    wsId,
+  ];
 }

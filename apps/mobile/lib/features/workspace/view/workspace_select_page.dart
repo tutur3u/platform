@@ -31,8 +31,7 @@ class WorkspaceSelectPage extends StatelessWidget {
             itemCount: state.workspaces.length,
             itemBuilder: (context, index) {
               final workspace = state.workspaces[index];
-              final isSelected =
-                  workspace.id == state.currentWorkspace?.id;
+              final isSelected = workspace.id == state.currentWorkspace?.id;
 
               return ListTile(
                 leading: CircleAvatar(
@@ -48,9 +47,9 @@ class WorkspaceSelectPage extends StatelessWidget {
                       )
                     : null,
                 onTap: () async {
-                  await context
-                      .read<WorkspaceCubit>()
-                      .selectWorkspace(workspace);
+                  await context.read<WorkspaceCubit>().selectWorkspace(
+                    workspace,
+                  );
                   if (context.mounted) context.go(Routes.home);
                 },
               );

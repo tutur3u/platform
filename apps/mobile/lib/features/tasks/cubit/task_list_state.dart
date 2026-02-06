@@ -17,12 +17,11 @@ class TaskListState extends Equatable {
     TaskListStatus? status,
     List<Task>? tasks,
     String? error,
-  }) =>
-      TaskListState(
-        status: status ?? this.status,
-        tasks: tasks ?? this.tasks,
-        error: error,
-      );
+  }) => TaskListState(
+    status: status ?? this.status,
+    tasks: tasks ?? this.tasks,
+    error: error,
+  );
 
   @override
   List<Object?> get props => [status, tasks, error];

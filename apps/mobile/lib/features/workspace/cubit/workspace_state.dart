@@ -23,13 +23,12 @@ class WorkspaceState extends Equatable {
     List<Workspace>? workspaces,
     Workspace? currentWorkspace,
     String? error,
-  }) =>
-      WorkspaceState(
-        status: status ?? this.status,
-        workspaces: workspaces ?? this.workspaces,
-        currentWorkspace: currentWorkspace ?? this.currentWorkspace,
-        error: error,
-      );
+  }) => WorkspaceState(
+    status: status ?? this.status,
+    workspaces: workspaces ?? this.workspaces,
+    currentWorkspace: currentWorkspace ?? this.currentWorkspace,
+    error: error,
+  );
 
   @override
   List<Object?> get props => [status, workspaces, currentWorkspace, error];

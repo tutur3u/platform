@@ -8,8 +8,8 @@ import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 /// Ported from apps/native/lib/stores/workspace-store.ts (Zustand → Cubit).
 class WorkspaceCubit extends Cubit<WorkspaceState> {
   WorkspaceCubit({required WorkspaceRepository workspaceRepository})
-      : _repo = workspaceRepository,
-        super(const WorkspaceState());
+    : _repo = workspaceRepository,
+      super(const WorkspaceState());
 
   final WorkspaceRepository _repo;
 
@@ -24,9 +24,7 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
       // Restore saved workspace if it still exists in the list
       Workspace? current;
       if (saved != null) {
-        current = workspaces
-            .where((w) => w.id == saved.id)
-            .firstOrNull;
+        current = workspaces.where((w) => w.id == saved.id).firstOrNull;
       }
 
       // Auto-select first if only one workspace

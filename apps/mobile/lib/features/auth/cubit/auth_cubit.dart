@@ -10,8 +10,8 @@ import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 /// Ported from apps/native/lib/stores/auth-store.ts (Zustand → Cubit).
 class AuthCubit extends Cubit<AuthState> {
   AuthCubit({required AuthRepository authRepository})
-      : _repo = authRepository,
-        super(const AuthState.unknown()) {
+    : _repo = authRepository,
+      super(const AuthState.unknown()) {
     _init();
   }
 

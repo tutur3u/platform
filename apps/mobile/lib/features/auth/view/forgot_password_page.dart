@@ -81,8 +81,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: BlocBuilder<AuthCubit, AuthState>(
             buildWhen: (prev, curr) =>
-                prev.isLoading != curr.isLoading ||
-                prev.error != curr.error,
+                prev.isLoading != curr.isLoading || prev.error != curr.error,
             builder: (context, state) {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,

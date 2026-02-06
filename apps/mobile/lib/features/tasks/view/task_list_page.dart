@@ -14,8 +14,7 @@ class TaskListPage extends StatelessWidget {
     return BlocProvider(
       create: (context) {
         final cubit = TaskListCubit(taskRepository: TaskRepository());
-        final wsId =
-            context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+        final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
         if (wsId != null) cubit.loadTasks(wsId);
         return cubit;
       },

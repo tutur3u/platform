@@ -37,10 +37,7 @@ class TaskRepository {
   }
 
   Future<void> updateTask(String taskId, Map<String, dynamic> data) async {
-    await supabase
-        .from('workspace_tasks')
-        .update(data)
-        .eq('id', taskId);
+    await supabase.from('workspace_tasks').update(data).eq('id', taskId);
   }
 
   Future<void> deleteTask(String taskId) async {

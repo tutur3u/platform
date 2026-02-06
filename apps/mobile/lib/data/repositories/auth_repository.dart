@@ -12,7 +12,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Ported from apps/native/lib/stores/auth-store.ts.
 class AuthRepository {
   AuthRepository({ApiClient? apiClient})
-      : _apiClient = apiClient ?? ApiClient();
+    : _apiClient = apiClient ?? ApiClient();
 
   final ApiClient _apiClient;
 

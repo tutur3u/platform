@@ -57,8 +57,7 @@ class ShellPage extends StatelessWidget {
   }
 
   static int _calculateSelectedIndex(BuildContext context) {
-    final location =
-        GoRouterState.of(context).matchedLocation;
+    final location = GoRouterState.of(context).matchedLocation;
 
     if (location.startsWith(Routes.tasks)) return 1;
     if (location.startsWith(Routes.calendar)) return 2;

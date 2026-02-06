@@ -27,8 +27,8 @@ class OtpInput extends StatelessWidget {
       maxLength: 6,
       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            letterSpacing: 8,
-          ),
+        letterSpacing: 8,
+      ),
       onChanged: (value) {
         if (value.length == 6) onCompleted?.call(value);
       },

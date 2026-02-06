@@ -116,8 +116,7 @@ class _SignUpPageState extends State<SignUpPage> {
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: BlocBuilder<AuthCubit, AuthState>(
             buildWhen: (prev, curr) =>
-                prev.isLoading != curr.isLoading ||
-                prev.error != curr.error,
+                prev.isLoading != curr.isLoading || prev.error != curr.error,
             builder: (context, state) {
               return ListView(
                 children: [

@@ -62,9 +62,6 @@ class CalendarRepository {
   }
 
   Future<void> deleteEvent(String eventId) async {
-    await supabase
-        .from('workspace_calendar_events')
-        .delete()
-        .eq('id', eventId);
+    await supabase.from('workspace_calendar_events').delete().eq('id', eventId);
   }
 }

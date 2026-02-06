@@ -7,8 +7,8 @@ part 'task_list_state.dart';
 
 class TaskListCubit extends Cubit<TaskListState> {
   TaskListCubit({required TaskRepository taskRepository})
-      : _repo = taskRepository,
-        super(const TaskListState());
+    : _repo = taskRepository,
+      super(const TaskListState());
 
   final TaskRepository _repo;
 

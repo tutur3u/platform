@@ -22,11 +22,11 @@ class TimeTrackingCategory extends Equatable {
   final String? wsId;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'color': color,
-        'ws_id': wsId,
-      };
+    'id': id,
+    'name': name,
+    'color': color,
+    'ws_id': wsId,
+  };
 
   @override
   List<Object?> get props => [id, name, color, wsId];

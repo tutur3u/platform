@@ -38,10 +38,7 @@ class FinanceRepository {
     int limit = 50,
     int offset = 0,
   }) async {
-    var query = supabase
-        .from('wallet_transactions')
-        .select()
-        .eq('ws_id', wsId);
+    var query = supabase.from('wallet_transactions').select().eq('ws_id', wsId);
 
     if (walletId != null) {
       query = query.eq('wallet_id', walletId);

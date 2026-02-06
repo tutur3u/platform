@@ -22,11 +22,11 @@ class TransactionCategory extends Equatable {
   final String? wsId;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'is_expense': isExpense,
-        'ws_id': wsId,
-      };
+    'id': id,
+    'name': name,
+    'is_expense': isExpense,
+    'ws_id': wsId,
+  };
 
   @override
   List<Object?> get props => [id, name, isExpense, wsId];

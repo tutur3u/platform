@@ -7,8 +7,7 @@ import 'package:mobile/core/config/api_config.dart';
 ///
 /// Ported from apps/native/lib/api/client.ts.
 class ApiClient {
-  ApiClient({http.Client? httpClient})
-      : _client = httpClient ?? http.Client();
+  ApiClient({http.Client? httpClient}) : _client = httpClient ?? http.Client();
 
   final http.Client _client;
 

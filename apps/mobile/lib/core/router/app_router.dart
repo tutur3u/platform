@@ -23,7 +23,8 @@ GoRouter createAppRouter(AuthCubit authCubit) {
     refreshListenable: _AuthRefreshNotifier(authCubit),
     redirect: (context, state) {
       final authState = authCubit.state;
-      final isAuthRoute = state.matchedLocation == Routes.login ||
+      final isAuthRoute =
+          state.matchedLocation == Routes.login ||
           state.matchedLocation == Routes.signUp ||
           state.matchedLocation == Routes.forgotPassword;
 
