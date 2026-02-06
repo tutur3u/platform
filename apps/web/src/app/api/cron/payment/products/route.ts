@@ -86,7 +86,7 @@ export async function GET(req: NextRequest) {
               id: product.id,
               name: product.name,
               description: product.description || '',
-              price: price,
+              price,
               recurring_interval: product.recurringInterval || 'month',
               tier,
               archived: product.isArchived ?? false,

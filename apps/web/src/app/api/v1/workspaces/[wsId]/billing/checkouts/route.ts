@@ -24,6 +24,20 @@ export async function POST(
     );
   }
 
+  if (seats && typeof seats !== 'number') {
+    return NextResponse.json(
+      { error: 'Seats must be a number' },
+      { status: 400 }
+    );
+  }
+
+  if (seats < 1 || seats > 1000) {
+    return NextResponse.json(
+      { error: 'Seats must be between 1 and 1000' },
+      { status: 400 }
+    );
+  }
+
   const supabase = await createClient();
   const user = await getCurrentSupabaseUser();
 
@@ -49,6 +63,29 @@ export async function POST(
 
   if (!hasManageSubscriptionPermission) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  }
+
+  if (seats) {
+    const { count: memberCount, error: memberCountError } = await supabase
+      .from('workspace_members')
+      .select('*', { count: 'exact', head: true })
+      .eq('ws_id', wsId);
+
+    if (memberCountError) {
+      return NextResponse.json(
+        { error: memberCountError.message },
+        { status: 500 }
+      );
+    }
+
+    if (memberCount && seats < memberCount) {
+      return NextResponse.json(
+        {
+          error: `Seat count (${seats}) cannot be less than current active members (${memberCount})`,
+        },
+        { status: 400 }
+      );
+    }
   }
 
   try {

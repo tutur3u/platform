@@ -99,9 +99,7 @@ export function PlanListDialog({
         id: product.id,
         name: getSimplePlanName(product.name),
         fullName: product.name,
-        pricingModel: firstPrice?.amountType || 'free',
         price,
-        pricePerSeat,
         billingCycle: product.recurringInterval,
         features: product.benefits
           ? product.benefits
@@ -114,6 +112,9 @@ export function PlanListDialog({
         isPro: product.metadata.product_tier === 'PRO',
         isPlus: product.metadata.product_tier === 'PLUS',
         isFree: product.metadata.product_tier === 'FREE',
+        // Seat-based pricing fields
+        pricingModel: firstPrice?.amountType || 'free',
+        pricePerSeat,
         minSeats,
         maxSeats,
       };
