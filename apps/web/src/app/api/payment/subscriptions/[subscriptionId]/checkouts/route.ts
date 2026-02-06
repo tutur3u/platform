@@ -97,7 +97,7 @@ export async function POST(
       products: [productId],
       successUrl: `${BASE_URL}/${wsId}/billing/success?checkoutId={CHECKOUT_ID}`,
       isBusinessCustomer: true,
-      ...(seats ? { seats } : {}),
+      seats,
     });
 
     return NextResponse.json({ url: checkoutSession.url });
