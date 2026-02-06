@@ -7,7 +7,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { createPolarCustomer, getPolarCustomer } from '@/utils/customer-helper';
+import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
 import { getSeatStatus } from '@/utils/seat-limits';
 import { createFreeSubscription } from '@/utils/subscription-helper';
 import { BillingClient } from './billing-client';
@@ -92,12 +92,8 @@ export const ensureSubscription = async (wsId: string) => {
     const supabase = await createClient();
     const polar = createPolarClient();
 
-    const customer = await getPolarCustomer({ polar, supabase, wsId });
-
-    if (!customer) {
-      // Create Polar customer if not exists
-      await createPolarCustomer({ polar, supabase, wsId });
-    }
+    // Get or create Polar customer
+    await getOrCreatePolarCustomer({ polar, supabase, wsId });
 
     // Create free tier subscription
     const subscription = await createFreeSubscription(polar, supabase, wsId);

@@ -1,10 +1,12 @@
+import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
-import { v4 as uuid } from 'uuid';
+import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
+import { createFreeSubscription } from '@/utils/subscription-helper';
 
 export async function POST() {
   const supabase = await createClient();
@@ -36,9 +38,12 @@ export async function POST() {
   }
 
   let created = 0;
-  let skipped = 0;
+  const skipped = 0;
   let errors = 0;
   const errorDetails: Array<{ id: string; error: string }> = [];
+
+  // Initialize Polar client
+  const polar = createPolarClient();
 
   try {
     // Find all workspaces
@@ -97,79 +102,26 @@ export async function POST() {
     // Process each workspace
     for (const workspace of workspacesWithoutSubs) {
       try {
-        const isPersonal = workspace.personal;
+        // Get or create Polar customer
+        await getOrCreatePolarCustomer({
+          polar,
+          supabase: sbAdmin,
+          wsId: workspace.id,
+        });
 
-        // Find the appropriate free product
-        let productQuery = sbAdmin
-          .from('workspace_subscription_products')
-          .select('id, pricing_model, tier')
-          .eq('pricing_model', isPersonal ? 'free' : 'seat_based');
+        // Create free subscription using helper function
+        // This will handle both personal (amountType=free) and non-personal (amountType=seated, tier=FREE)
+        const subscription = await createFreeSubscription(
+          polar,
+          sbAdmin,
+          workspace.id
+        );
 
-        if (!isPersonal) {
-          productQuery = productQuery.eq('tier', 'FREE');
-        }
-
-        const { data: products, error: productError } =
-          await productQuery.limit(1);
-
-        if (productError) {
+        if (!subscription) {
           errors++;
           errorDetails.push({
             id: workspace.id,
-            error: `Failed to find free product: ${productError.message}`,
-          });
-          continue;
-        }
-
-        const freeProduct = products?.[0];
-
-        if (!freeProduct) {
-          errors++;
-          errorDetails.push({
-            id: workspace.id,
-            error: `No free product found for ${isPersonal ? 'personal' : 'non-personal'} workspace`,
-          });
-          continue;
-        }
-
-        // Check if subscription already exists for this product
-        const { data: existingSub, error: checkError } = await sbAdmin
-          .from('workspace_subscriptions')
-          .select('id')
-          .eq('ws_id', workspace.id)
-          .eq('product_id', freeProduct.id)
-          .maybeSingle();
-
-        if (checkError) {
-          errors++;
-          errorDetails.push({
-            id: workspace.id,
-            error: `Failed to check existing subscription: ${checkError.message}`,
-          });
-          continue;
-        }
-
-        if (existingSub) {
-          skipped++;
-          continue;
-        }
-
-        // Create free subscription
-        const { error: createError } = await sbAdmin
-          .from('workspace_subscriptions')
-          .insert({
-            ws_id: workspace.id,
-            product_id: freeProduct.id,
-            status: 'active',
-            current_period_start: new Date().toISOString(),
-            polar_subscription_id: `migration_${uuid()}`,
-          });
-
-        if (createError) {
-          errors++;
-          errorDetails.push({
-            id: workspace.id,
-            error: `Failed to create subscription: ${createError.message}`,
+            error: 'Failed to create free subscription',
           });
           continue;
         }
