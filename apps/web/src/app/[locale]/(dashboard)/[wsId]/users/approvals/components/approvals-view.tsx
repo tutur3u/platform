@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  CheckCheckIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronsLeftIcon,
@@ -72,14 +73,18 @@ export function ApprovalsView({ wsId, kind, canApprove }: ApprovalsViewProps) {
     isError,
     error,
     approveItem,
+    approveAllItems,
     rejectItem,
     isApproving,
+    isApprovingAll,
+    approveAllProgress,
     isRejecting,
     formatDate,
     getStatusLabel,
     detailItem,
     setDetailItem,
     closeDetailDialog,
+    totalPendingCount,
   } = useApprovals({
     wsId,
     kind,
@@ -230,25 +235,54 @@ export function ApprovalsView({ wsId, kind, canApprove }: ApprovalsViewProps) {
           )}
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-muted-foreground text-sm">
-            {t('list.itemsPerPage')}:
-          </span>
-          <Select
-            value={currentLimit.toString()}
-            onValueChange={(value) => updateLimit(Number.parseInt(value, 10))}
-          >
-            <SelectTrigger className="w-20">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {[5, 10, 25, 50, 100].map((limit) => (
-                <SelectItem key={limit} value={limit.toString()}>
-                  {limit}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex items-center gap-4">
+          {canApprove && totalPendingCount > 0 && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => approveAllItems()}
+              disabled={isApprovingAll}
+              className="h-9 gap-2 bg-dynamic-green hover:bg-dynamic-green/90"
+            >
+              {isApprovingAll ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {approveAllProgress
+                    ? t('actions.approveAllProgress', {
+                        current: approveAllProgress.current,
+                        total: approveAllProgress.total,
+                      })
+                    : t('actions.approveAll', { count: totalPendingCount })}
+                </>
+              ) : (
+                <>
+                  <CheckCheckIcon className="h-4 w-4" />
+                  {t('actions.approveAll', { count: totalPendingCount })}
+                </>
+              )}
+            </Button>
+          )}
+
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground text-sm">
+              {t('list.itemsPerPage')}:
+            </span>
+            <Select
+              value={currentLimit.toString()}
+              onValueChange={(value) => updateLimit(Number.parseInt(value, 10))}
+            >
+              <SelectTrigger className="w-20">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[5, 10, 25, 50, 100].map((limit) => (
+                  <SelectItem key={limit} value={limit.toString()}>
+                    {limit}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 

@@ -44,8 +44,11 @@ interface UseApprovalsResult {
   setRejectReason: (reason: string) => void;
   closeRejectDialog: () => void;
   approveItem: (itemId: string) => void;
+  approveAllItems: () => void;
   rejectItem: (params: { id: string; reason: string }) => void;
   isApproving: boolean;
+  isApprovingAll: boolean;
+  approveAllProgress: { current: number; total: number } | null;
   isRejecting: boolean;
   formatDate: (value?: string | null) => string;
   getStatusLabel: (status: ApprovalStatus) => string;
@@ -53,6 +56,8 @@ interface UseApprovalsResult {
   detailItem: ApprovalItem | null;
   setDetailItem: (item: ApprovalItem | null) => void;
   closeDetailDialog: () => void;
+  pendingItemIds: string[];
+  totalPendingCount: number;
 }
 
 export type ApprovalItem =
@@ -78,6 +83,10 @@ export function useApprovals({
   } | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [detailItem, setDetailItem] = useState<ApprovalItem | null>(null);
+  const [approveAllProgress, setApproveAllProgress] = useState<{
+    current: number;
+    total: number;
+  } | null>(null);
 
   const reportsQuery = useQuery({
     queryKey: ['ws', wsId, 'approvals', 'reports', status, page, limit],
@@ -346,38 +355,138 @@ export function useApprovals({
     },
   });
 
-  const { items, totalCount, totalPages, isError, error } = useMemo(() => {
-    if (kind === 'reports') {
-      return {
-        items: (reportsQuery.data?.items ?? []).map((item) => ({
+  const approveAllMutation = useMutation({
+    mutationFn: async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error(tCommon('error'));
+
+      // Fetch ALL pending items (not just current page)
+      let allPendingIds: string[] = [];
+
+      if (kind === 'reports') {
+        const { data, error } = await supabase
+          .from('external_user_monthly_reports')
+          .select('id, user:workspace_users!user_id!inner(ws_id)')
+          .eq('user.ws_id', wsId)
+          .eq('report_approval_status', 'PENDING');
+        if (error) throw error;
+        allPendingIds = (data ?? []).map((item) => item.id);
+      } else {
+        const { data, error } = await supabase
+          .from('user_group_posts')
+          .select('id, workspace_user_groups!inner(ws_id)')
+          .eq('workspace_user_groups.ws_id', wsId)
+          .eq('post_approval_status', 'PENDING');
+        if (error) throw error;
+        allPendingIds = (data ?? []).map((item) => item.id);
+      }
+
+      if (allPendingIds.length === 0) return;
+
+      const BATCH_SIZE = 100;
+      const totalItems = allPendingIds.length;
+      setApproveAllProgress({ current: 0, total: totalItems });
+
+      // Process in batches of 100
+      for (let i = 0; i < allPendingIds.length; i += BATCH_SIZE) {
+        const batch = allPendingIds.slice(i, i + BATCH_SIZE);
+        const now = new Date().toISOString();
+
+        if (kind === 'reports') {
+          const { error } = await supabase
+            .from('external_user_monthly_reports')
+            .update({
+              report_approval_status: 'APPROVED' as ApprovalStatus,
+              approved_at: now,
+              rejected_by: null,
+              rejected_at: null,
+              rejection_reason: null,
+            })
+            .in('id', batch);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from('user_group_posts')
+            .update({
+              post_approval_status: 'APPROVED' as ApprovalStatus,
+              approved_at: now,
+              rejected_by: null,
+              rejected_at: null,
+              rejection_reason: null,
+            })
+            .in('id', batch);
+          if (error) throw error;
+        }
+
+        setApproveAllProgress({
+          current: Math.min(i + BATCH_SIZE, totalItems),
+          total: totalItems,
+        });
+      }
+    },
+    onSuccess: async () => {
+      toast.success(t('actions.allApproved'));
+      setDetailItem(null);
+      setApproveAllProgress(null);
+      await queryClient.invalidateQueries({
+        queryKey: ['ws', wsId, 'approvals', kind],
+      });
+
+      if (kind === 'posts') {
+        await queryClient.invalidateQueries({
+          queryKey: ['group-posts', wsId],
+        });
+      }
+    },
+    onError: (error) => {
+      setApproveAllProgress(null);
+      toast.error(error instanceof Error ? error.message : tCommon('error'));
+    },
+  });
+
+  const { items, totalCount, totalPages, isError, error, pendingItemIds } =
+    useMemo(() => {
+      if (kind === 'reports') {
+        const mappedItems = (reportsQuery.data?.items ?? []).map((item) => ({
           ...item,
           kind: 'reports' as const,
-        })),
-        totalCount: reportsQuery.data?.totalCount ?? 0,
-        totalPages: reportsQuery.data?.totalPages ?? 0,
-        isError: reportsQuery.isError,
-        error: reportsQuery.error as Error | null,
-      };
-    }
-    return {
-      items: (postsQuery.data?.items ?? []).map((item) => ({
+        }));
+        return {
+          items: mappedItems,
+          totalCount: reportsQuery.data?.totalCount ?? 0,
+          totalPages: reportsQuery.data?.totalPages ?? 0,
+          isError: reportsQuery.isError,
+          error: reportsQuery.error as Error | null,
+          pendingItemIds: mappedItems
+            .filter((item) => item.report_approval_status === 'PENDING')
+            .map((item) => item.id),
+        };
+      }
+      const mappedItems = (postsQuery.data?.items ?? []).map((item) => ({
         ...item,
         kind: 'posts' as const,
-      })),
-      totalCount: postsQuery.data?.totalCount ?? 0,
-      totalPages: postsQuery.data?.totalPages ?? 0,
-      isError: postsQuery.isError,
-      error: postsQuery.error as Error | null,
-    };
-  }, [
-    kind,
-    postsQuery.data,
-    postsQuery.isError,
-    postsQuery.error,
-    reportsQuery.data,
-    reportsQuery.isError,
-    reportsQuery.error,
-  ]);
+      }));
+      return {
+        items: mappedItems,
+        totalCount: postsQuery.data?.totalCount ?? 0,
+        totalPages: postsQuery.data?.totalPages ?? 0,
+        isError: postsQuery.isError,
+        error: postsQuery.error as Error | null,
+        pendingItemIds: mappedItems
+          .filter((item) => item.post_approval_status === 'PENDING')
+          .map((item) => item.id),
+      };
+    }, [
+      kind,
+      postsQuery.data,
+      postsQuery.isError,
+      postsQuery.error,
+      reportsQuery.data,
+      reportsQuery.isError,
+      reportsQuery.error,
+    ]);
 
   const loading =
     kind === 'reports' ? reportsQuery.isLoading : postsQuery.isLoading;
@@ -410,10 +519,15 @@ export function useApprovals({
     rejectReason,
     setRejectTarget,
     setRejectReason,
+    pendingItemIds,
+    totalPendingCount: totalCount,
     closeRejectDialog,
     approveItem: approveMutation.mutate,
+    approveAllItems: () => approveAllMutation.mutate(),
     rejectItem: rejectMutation.mutate,
     isApproving: approveMutation.isPending,
+    isApprovingAll: approveAllMutation.isPending,
+    approveAllProgress,
     isRejecting: rejectMutation.isPending,
     formatDate,
     getStatusLabel,
