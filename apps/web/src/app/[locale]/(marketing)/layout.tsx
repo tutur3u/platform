@@ -12,10 +12,7 @@ export default function Layout({ children }: LayoutProps) {
     <>
       <ScrollToTop />
       <Navbar hideMetadata />
-      <div
-        id="main-content"
-        className="flex flex-col overflow-x-clip pt-14.25"
-      >
+      <div id="main-content" className="flex flex-col overflow-x-clip pt-14.25">
         {children}
       </div>
       <Footer />
