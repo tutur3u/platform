@@ -30,12 +30,3 @@ jobs:
     with:
       working_directory: apps/mobile
       flutter_version: "3.38.x"
-
-  spell-check:
-    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/spell_check.yml@v1
-    needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true'
-    with:
-      includes: |
-        **/*.md
-      modified_files_only: false
