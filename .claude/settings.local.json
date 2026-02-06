@@ -62,7 +62,11 @@
       "Bash(time zsh:*)",
       "Bash(gh run list:*)",
       "Bash(dart format:*)",
-      "Bash(dart analyze:*)"
+      "Bash(dart analyze:*)",
+      "Bash(flutter pub:*)",
+      "Bash(dart run:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(flutter test:*)"
     ]
   }
 }
