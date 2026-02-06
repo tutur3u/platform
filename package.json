@@ -137,7 +137,7 @@
   ],
   "workspaces": ["apps/*", "packages/*"],
   "dependencies": {
-    "@react-native/virtualized-lists": "0.81.5",
+    "@react-native/virtualized-lists": "0.83.1",
     "@react-navigation/core": "^7.14.0",
     "@supabase/auth-js": "^2.95.2",
     "@supabase/functions-js": "^2.95.2",
