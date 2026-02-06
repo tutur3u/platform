@@ -1,4 +1,4 @@
-name: Native Build iOS
+name: Mobile Build Android
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -10,31 +10,37 @@ on:
       - main
     paths:
       - "apps/mobile/**"
-      - ".github/workflows/native-build-ios.yaml"
+      - ".github/workflows/mobile-build-android.yaml"
   pull_request:
     branches:
       - main
     paths:
       - "apps/mobile/**"
-      - ".github/workflows/native-build-ios.yaml"
+      - ".github/workflows/mobile-build-android.yaml"
 
 jobs:
   check-ci:
     uses: ./.github/workflows/ci-check.yml
     with:
-      workflow_name: native-build-ios.yaml
+      workflow_name: mobile-build-android.yaml
 
-  build-ios:
-    name: Build iOS (Development, no codesign)
+  build-android:
+    name: Build Android APK (Development)
     needs: [check-ci]
     if: needs.check-ci.outputs.should_run == 'true'
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: apps/mobile
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -46,12 +52,12 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build iOS (development flavor, no codesign)
-        run: flutter build ios --flavor development --target lib/main_development.dart --no-codesign
+      - name: Build APK (development flavor)
+        run: flutter build apk --flavor development --target lib/main_development.dart
 
-      - name: Upload iOS app artifact
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v6
         with:
-          name: ios-dev-app
-          path: apps/mobile/build/ios/iphoneos/Runner.app
+          name: android-dev-apk
+          path: apps/mobile/build/app/outputs/flutter-apk/app-development-release.apk
           retention-days: 7

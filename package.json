@@ -138,17 +138,5 @@
   "workspaces": ["apps/*", "packages/*"],
   "overrides": {
     "lightningcss": "1.29.1"
-  },
-  "dependencies": {
-    "@tuturuuu/hooks": "workspace:*",
-    "@react-native/virtualized-lists": "0.81.5",
-    "@react-navigation/core": "^7.14.0",
-    "@supabase/auth-js": "^2.95.2",
-    "@supabase/functions-js": "^2.95.2",
-    "@supabase/postgrest-js": "^2.95.2",
-    "@supabase/realtime-js": "^2.95.2",
-    "@supabase/storage-js": "^2.95.2",
-    "@tanstack/query-core": "^5.90.20",
-    "@types/node": "^25.2.1"
   }
 }

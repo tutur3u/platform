@@ -1,0 +1,7 @@
+{
+    "@@locale": "vi",
+    "counterAppBarTitle": "Bộ đếm",
+    "@counterAppBarTitle": {
+        "description": "Văn bản hiển thị trên AppBar của trang Bộ đếm"
+    }
+}
