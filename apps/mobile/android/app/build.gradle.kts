@@ -71,12 +71,19 @@ android {
             dimension = "default"
             applicationIdSuffix = ".dev"
             manifestPlaceholders["appName"] = "[DEV] Mobile"
+            // Use debug signing for dev flavor release builds.
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 
     buildTypes {
         getByName("release") {
-            signingConfig = signingConfigs.getByName("release")
+            // Only apply release signing if a valid keystore is configured;
+            // otherwise let flavor-level signingConfig (e.g. debug for dev) take effect.
+            val releaseSigning = signingConfigs.getByName("release")
+            if (releaseSigning.storeFile?.exists() == true) {
+                signingConfig = releaseSigning
+            }
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android.txt"),
