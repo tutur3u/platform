@@ -14,7 +14,7 @@ class CalendarRepository {
         .eq('ws_id', wsId);
 
     if (start != null) {
-      query = query.gte('start_at', start.toIso8601String());
+      query = query.gte('end_at', start.toIso8601String());
     }
     if (end != null) {
       query = query.lte('start_at', end.toIso8601String());

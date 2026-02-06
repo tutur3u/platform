@@ -21,6 +21,32 @@ class WorkspaceSelectPage extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
 
+          if (state.status == WorkspaceStatus.error) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 48,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    state.error ?? l10n.workspaceSelectEmpty,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton.tonal(
+                    onPressed: () =>
+                        context.read<WorkspaceCubit>().loadWorkspaces(),
+                    child: Text(l10n.commonRetry),
+                  ),
+                ],
+              ),
+            );
+          }
+
           if (state.workspaces.isEmpty) {
             return Center(
               child: Text(l10n.workspaceSelectEmpty),
@@ -36,7 +62,9 @@ class WorkspaceSelectPage extends StatelessWidget {
               return ListTile(
                 leading: CircleAvatar(
                   child: Text(
-                    (workspace.name ?? 'W')[0].toUpperCase(),
+                    workspace.name != null && workspace.name!.isNotEmpty
+                        ? workspace.name![0].toUpperCase()
+                        : 'W',
                   ),
                 ),
                 title: Text(workspace.name ?? workspace.id),

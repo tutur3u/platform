@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
@@ -100,6 +102,14 @@ GoRouter createAppRouter(AuthCubit authCubit) {
 /// Notifies [GoRouter] when auth state changes so it can re-evaluate redirects.
 class _AuthRefreshNotifier extends ChangeNotifier {
   _AuthRefreshNotifier(AuthCubit cubit) {
-    cubit.stream.listen((_) => notifyListeners());
+    _sub = cubit.stream.listen((_) => notifyListeners());
+  }
+
+  late final StreamSubscription<AuthState> _sub;
+
+  @override
+  Future<void> dispose() async {
+    await _sub.cancel();
+    super.dispose();
   }
 }

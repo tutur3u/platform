@@ -1,6 +1,8 @@
 import 'package:equatable/equatable.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
+const _sentinel = Object();
+
 enum AuthStatus {
   /// Initial state while checking persisted session.
   unknown,
@@ -36,12 +38,12 @@ class AuthState extends Equatable {
   AuthState copyWith({
     AuthStatus? status,
     User? user,
-    String? error,
+    Object? error = _sentinel,
     bool? isLoading,
   }) => AuthState._(
     status: status ?? this.status,
     user: user ?? this.user,
-    error: error,
+    error: error == _sentinel ? this.error : error as String?,
     isLoading: isLoading ?? this.isLoading,
   );
 

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -21,14 +22,16 @@ class ApiClient {
     final url = Uri.parse('${ApiConfig.baseUrl}$path');
 
     try {
-      final response = await _client.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode(body),
-      );
+      final response = await _client
+          .post(
+            url,
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 30));
 
       Map<String, dynamic>? parsed;
       if (response.body.isNotEmpty) {
@@ -50,6 +53,11 @@ class ApiClient {
       return parsed ?? {};
     } on ApiException {
       rethrow;
+    } on TimeoutException {
+      throw const ApiException(
+        message: 'Request timed out',
+        statusCode: 0,
+      );
     } catch (e) {
       throw ApiException(
         message: e.toString(),

@@ -60,7 +60,7 @@ class WorkspaceRepository {
       return Workspace.fromJson(
         jsonDecode(json) as Map<String, dynamic>,
       );
-    } on Exception catch (_) {
+    } on Object catch (_) {
       return null;
     }
   }

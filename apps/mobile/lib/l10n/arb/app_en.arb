@@ -82,5 +82,7 @@
     "settingsThemeDark": "Dark",
     "settingsThemeSystem": "System",
     "settingsSignOut": "Sign out",
-    "settingsSignOutConfirm": "Are you sure you want to sign out?"
+    "settingsSignOutConfirm": "Are you sure you want to sign out?",
+
+    "commonRetry": "Retry"
 }

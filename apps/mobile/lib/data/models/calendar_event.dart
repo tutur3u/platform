@@ -63,5 +63,6 @@ class CalendarEvent extends Equatable {
     color,
     isAllDay,
     wsId,
+    createdAt,
   ];
 }

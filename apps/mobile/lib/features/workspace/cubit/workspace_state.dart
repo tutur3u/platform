@@ -1,6 +1,8 @@
 import 'package:equatable/equatable.dart';
 import 'package:mobile/data/models/workspace.dart';
 
+const _sentinel = Object();
+
 enum WorkspaceStatus { initial, loading, loaded, error }
 
 class WorkspaceState extends Equatable {
@@ -21,13 +23,15 @@ class WorkspaceState extends Equatable {
   WorkspaceState copyWith({
     WorkspaceStatus? status,
     List<Workspace>? workspaces,
-    Workspace? currentWorkspace,
-    String? error,
+    Object? currentWorkspace = _sentinel,
+    Object? error = _sentinel,
   }) => WorkspaceState(
     status: status ?? this.status,
     workspaces: workspaces ?? this.workspaces,
-    currentWorkspace: currentWorkspace ?? this.currentWorkspace,
-    error: error,
+    currentWorkspace: currentWorkspace == _sentinel
+        ? this.currentWorkspace
+        : currentWorkspace as Workspace?,
+    error: error == _sentinel ? this.error : error as String?,
   );
 
   @override

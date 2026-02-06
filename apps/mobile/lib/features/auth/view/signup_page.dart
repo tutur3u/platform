@@ -17,6 +17,7 @@ class _SignUpPageState extends State<SignUpPage> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   String? _passwordError;
+  String? _confirmPasswordError;
   bool _signUpSuccess = false;
 
   @override
@@ -48,6 +49,11 @@ class _SignUpPageState extends State<SignUpPage> {
 
     if (email.isEmpty || password.isEmpty) return;
 
+    setState(() {
+      _passwordError = null;
+      _confirmPasswordError = null;
+    });
+
     final pwError = _validatePassword(password);
     if (pwError != null) {
       setState(() => _passwordError = pwError);
@@ -55,11 +61,11 @@ class _SignUpPageState extends State<SignUpPage> {
     }
 
     if (password != confirm) {
-      setState(() => _passwordError = context.l10n.signUpPasswordMismatch);
+      setState(
+        () => _confirmPasswordError = context.l10n.signUpPasswordMismatch,
+      );
       return;
     }
-
-    setState(() => _passwordError = null);
 
     final success = await context.read<AuthCubit>().signUp(email, password);
     if (success && mounted) {
@@ -147,6 +153,7 @@ class _SignUpPageState extends State<SignUpPage> {
                     decoration: InputDecoration(
                       labelText: l10n.signUpConfirmPassword,
                       border: const OutlineInputBorder(),
+                      errorText: _confirmPasswordError,
                     ),
                     obscureText: true,
                     textInputAction: TextInputAction.done,

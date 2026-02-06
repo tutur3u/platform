@@ -116,6 +116,9 @@ app.*.map.json
 !.idea/dictionaries/
 !.idea/runConfigurations/
 
+# Linux ephemeral plugin symlinks
+**/linux/flutter/ephemeral/
+
 # Generated l10n files — tracked in this project so CI/tests
 # work without requiring `flutter gen-l10n` as a build step.
 # lib/l10n/gen/

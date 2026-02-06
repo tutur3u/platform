@@ -66,7 +66,9 @@
       "Bash(flutter pub:*)",
       "Bash(dart run:*)",
       "Bash(flutter analyze:*)",
-      "Bash(flutter test:*)"
+      "Bash(flutter test:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(flutter gen-l10n:*)"
     ]
   }
 }

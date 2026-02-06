@@ -198,4 +198,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settingsSignOutConfirm => 'Bạn có chắc muốn đăng xuất không?';
+
+  @override
+  String get commonRetry => 'Thử lại';
 }

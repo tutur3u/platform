@@ -198,4 +198,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsSignOutConfirm => 'Are you sure you want to sign out?';
+
+  @override
+  String get commonRetry => 'Retry';
 }

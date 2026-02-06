@@ -31,7 +31,11 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
   Bloc.observer = const AppBlocObserver();
 
   // Initialize Supabase with secure storage
-  await initSupabase();
+  try {
+    await initSupabase();
+  } on Object catch (e, st) {
+    log('Failed to initialize Supabase: $e', stackTrace: st);
+  }
 
   runApp(await builder());
 }

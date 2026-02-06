@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/app_router.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
@@ -23,6 +24,7 @@ class _AppState extends State<App> {
   late final WorkspaceRepository _workspaceRepo;
   late final AuthCubit _authCubit;
   late final WorkspaceCubit _workspaceCubit;
+  late final GoRouter _router;
 
   @override
   void initState() {
@@ -31,10 +33,12 @@ class _AppState extends State<App> {
     _workspaceRepo = WorkspaceRepository();
     _authCubit = AuthCubit(authRepository: _authRepo);
     _workspaceCubit = WorkspaceCubit(workspaceRepository: _workspaceRepo);
+    _router = createAppRouter(_authCubit);
   }
 
   @override
   void dispose() {
+    _router.dispose();
     unawaited(_authCubit.close());
     unawaited(_workspaceCubit.close());
     super.dispose();
@@ -61,7 +65,7 @@ class _AppState extends State<App> {
           darkTheme: AppTheme.dark,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          routerConfig: createAppRouter(_authCubit),
+          routerConfig: _router,
         ),
       ),
     );

@@ -60,7 +60,7 @@ class AuthCubit extends Cubit<AuthState> {
       }
     }
     emit(state.copyWith(isLoading: false, error: result.error));
-    return result.success;
+    return false;
   }
 
   // ── Password ────────────────────────────────────
@@ -76,7 +76,7 @@ class AuthCubit extends Cubit<AuthState> {
       }
     }
     emit(state.copyWith(isLoading: false, error: result.error));
-    return result.success;
+    return false;
   }
 
   Future<bool> signUp(String email, String password) async {
@@ -103,11 +103,11 @@ class AuthCubit extends Cubit<AuthState> {
     emit(const AuthState.unauthenticated());
   }
 
-  void clearError() => emit(state.copyWith());
+  void clearError() => emit(state.copyWith(error: null));
 
   @override
-  Future<void> close() {
-    unawaited(_authSub?.cancel());
+  Future<void> close() async {
+    await _authSub?.cancel();
     _repo.dispose();
     return super.close();
   }

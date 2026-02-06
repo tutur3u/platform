@@ -157,7 +157,7 @@ class _LoginPageState extends State<LoginPage>
               ),
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.done,
-              enabled: !_otpSent || !state.isLoading,
+              enabled: !_otpSent && !state.isLoading,
             ),
             if (_otpSent) ...[
               const SizedBox(height: 16),

@@ -24,4 +24,12 @@ class AuthSessionPayload {
   final int? expiresIn;
   final int? expiresAt;
   final String? tokenType;
+
+  Map<String, dynamic> toJson() => {
+    'access_token': accessToken,
+    'refresh_token': refreshToken,
+    'expires_in': expiresIn,
+    'expires_at': expiresAt,
+    'token_type': tokenType,
+  };
 }

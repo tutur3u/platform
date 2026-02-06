@@ -49,6 +49,42 @@ class _TaskListView extends StatelessWidget {
               return const Center(child: CircularProgressIndicator());
             }
 
+            if (state.status == TaskListStatus.error) {
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      state.error ?? l10n.tasksEmpty,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton.tonal(
+                      onPressed: () {
+                        final wsId = context
+                            .read<WorkspaceCubit>()
+                            .state
+                            .currentWorkspace
+                            ?.id;
+                        if (wsId != null) {
+                          unawaited(
+                            context.read<TaskListCubit>().loadTasks(wsId),
+                          );
+                        }
+                      },
+                      child: Text(l10n.commonRetry),
+                    ),
+                  ],
+                ),
+              );
+            }
+
             if (state.tasks.isEmpty) {
               return Center(child: Text(l10n.tasksEmpty));
             }

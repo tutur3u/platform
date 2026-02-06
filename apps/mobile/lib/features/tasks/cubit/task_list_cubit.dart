@@ -27,11 +27,24 @@ class TaskListCubit extends Cubit<TaskListState> {
 
   Future<void> toggleTaskCompletion(Task task) async {
     final updated = task.copyWith(completed: !(task.completed ?? false));
-    await _repo.updateTask(task.id, {'completed': updated.completed});
+    final previousTasks = state.tasks;
 
-    final tasks = state.tasks
+    // Optimistic update
+    final optimisticTasks = previousTasks
         .map((t) => t.id == task.id ? updated : t)
         .toList();
-    emit(state.copyWith(tasks: tasks));
+    emit(state.copyWith(tasks: optimisticTasks));
+
+    try {
+      await _repo.updateTask(task.id, {'completed': updated.completed});
+    } on Exception catch (e) {
+      // Rollback on failure
+      emit(
+        state.copyWith(
+          tasks: previousTasks,
+          error: e.toString(),
+        ),
+      );
+    }
   }
 }

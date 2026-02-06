@@ -82,5 +82,7 @@
     "settingsThemeDark": "Tối",
     "settingsThemeSystem": "Hệ thống",
     "settingsSignOut": "Đăng xuất",
-    "settingsSignOutConfirm": "Bạn có chắc muốn đăng xuất không?"
+    "settingsSignOutConfirm": "Bạn có chắc muốn đăng xuất không?",
+
+    "commonRetry": "Thử lại"
 }

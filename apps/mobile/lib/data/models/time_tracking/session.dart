@@ -71,5 +71,6 @@ class TimeTrackingSession extends Equatable {
     startAt,
     endAt,
     wsId,
+    createdAt,
   ];
 }

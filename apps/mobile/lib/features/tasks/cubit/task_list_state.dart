@@ -1,5 +1,7 @@
 part of 'task_list_cubit.dart';
 
+const _sentinel = Object();
+
 enum TaskListStatus { initial, loading, loaded, error }
 
 class TaskListState extends Equatable {
@@ -16,11 +18,11 @@ class TaskListState extends Equatable {
   TaskListState copyWith({
     TaskListStatus? status,
     List<Task>? tasks,
-    String? error,
+    Object? error = _sentinel,
   }) => TaskListState(
     status: status ?? this.status,
     tasks: tasks ?? this.tasks,
-    error: error,
+    error: error == _sentinel ? this.error : error as String?,
   );
 
   @override
