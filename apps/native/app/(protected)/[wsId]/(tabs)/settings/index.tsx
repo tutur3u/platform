@@ -52,7 +52,8 @@ export default function SettingsScreen() {
           label: 'Switch Workspace',
           icon: 'swap-horizontal-outline',
           type: 'action',
-          onPress: () => router.push('/(protected)/workspace-select'),
+          onPress: () =>
+            router.push('/(protected)/workspace-select?switching=true'),
         },
       ],
     },

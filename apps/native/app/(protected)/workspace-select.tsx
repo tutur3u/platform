@@ -1,6 +1,6 @@
 import type { Workspace } from '@tuturuuu/types';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect } from 'react';
 import {
   ActivityIndicator,
@@ -17,16 +17,17 @@ import { useAuthStore, useWorkspaceStore } from '@/lib/stores';
 export default function WorkspaceSelectScreen() {
   const { user, signOut } = useAuthStore();
   const { currentWorkspace, selectWorkspace } = useWorkspaceStore();
+  const { switching } = useLocalSearchParams<{ switching: string }>();
 
   const { data: workspaces, isLoading, error, refetch } = useWorkspaces();
   const workspaceList = (workspaces || []) as Workspace[];
 
-  // Auto-navigate if workspace already selected
+  // Auto-navigate if workspace already selected and not switching
   useEffect(() => {
-    if (currentWorkspace) {
+    if (currentWorkspace && !switching) {
       router.replace(`/(protected)/${currentWorkspace.id}/(tabs)`);
     }
-  }, [currentWorkspace]);
+  }, [currentWorkspace, switching]);
 
   const handleSelectWorkspace = (workspace: Workspace) => {
     selectWorkspace(workspace);

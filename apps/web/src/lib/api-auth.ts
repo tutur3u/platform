@@ -21,9 +21,6 @@ export async function authorizeRequest(
     ? authHeader.replace('Bearer ', '').trim()
     : undefined;
 
-  let supabase = (await createClient()) as TypedSupabaseClient;
-  let user: SupabaseUser | null = null;
-
   if (accessToken) {
     const adminClient = (await createAdminClient({
       noCookie: true,
@@ -40,9 +37,9 @@ export async function authorizeRequest(
       };
     }
 
-    user = tokenUser;
-    supabase = adminClient;
+    return { data: { user: tokenUser, supabase: adminClient }, error: null };
   } else {
+    const supabase = (await createClient()) as TypedSupabaseClient;
     const {
       data: { user: cookieUser },
       error: authError,
@@ -55,17 +52,8 @@ export async function authorizeRequest(
       };
     }
 
-    user = cookieUser;
+    return { data: { user: cookieUser, supabase }, error: null };
   }
-
-  if (!user) {
-    return {
-      data: null,
-      error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
-  }
-
-  return { data: { user, supabase }, error: null };
 }
 
 export async function authorize(

@@ -47,8 +47,12 @@ const quickActions: QuickActionItem[] = [
 export default function DashboardScreen() {
   const { wsId } = useLocalSearchParams<{ wsId: string }>();
   const { user } = useAuthStore();
-  const workspace = useCurrentWorkspace();
+  const currentWorkspace = useCurrentWorkspace();
   const { data: workspaces } = useWorkspaces();
+
+  const workspace =
+    workspaces?.find((w) => w.id === wsId) ??
+    (currentWorkspace?.id === wsId ? currentWorkspace : null);
 
   const greeting = getGreeting();
 
@@ -92,7 +96,13 @@ export default function DashboardScreen() {
               )}
             </View>
             {(workspaces?.length ?? 0) > 1 && (
-              <Link href="/(protected)/workspace-select" asChild>
+              <Link
+                href={{
+                  pathname: '/(protected)/workspace-select',
+                  params: { switching: 'true' },
+                }}
+                asChild
+              >
                 <Pressable className="rounded-lg border border-zinc-200 px-3 py-2 active:bg-zinc-50 dark:border-zinc-700 dark:active:bg-zinc-700">
                   <Text className="font-medium text-sm text-zinc-700 dark:text-zinc-300">
                     Switch

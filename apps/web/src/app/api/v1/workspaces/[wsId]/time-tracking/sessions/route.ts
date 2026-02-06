@@ -1,4 +1,7 @@
-import { createAdminClient, createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   escapeLikePattern,
   sanitizeSearchQuery,

@@ -68,14 +68,36 @@ const buildEndOfMonth = (date: Date) => {
   return end;
 };
 
-const formatDateRange = (start: Date, end: Date) =>
-  `${start.toLocaleDateString(undefined, {
+const formatDateRange = (start: Date, end: Date, viewMode: ViewMode) => {
+  if (viewMode === 'day') {
+    return start.toLocaleDateString(undefined, {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year:
+        start.getFullYear() !== new Date().getFullYear()
+          ? 'numeric'
+          : undefined,
+    });
+  }
+
+  if (viewMode === 'month') {
+    return start.toLocaleDateString(undefined, {
+      month: 'long',
+      year: 'numeric',
+    });
+  }
+
+  return `${start.toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
   })} - ${end.toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
+    year:
+      end.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined,
   })}`;
+};
 
 export default function SessionHistoryScreen() {
   const wsId = useWorkspaceId();
@@ -83,9 +105,41 @@ export default function SessionHistoryScreen() {
   const session = useSession();
   const userId = session?.user?.id ?? '';
   const [viewMode, setViewMode] = useState<ViewMode>('week');
-  const [currentDate] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(new Date());
   const userTimezone =
     Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+
+  const handlePrevious = () => {
+    setCurrentDate((prev) => {
+      const next = new Date(prev);
+      if (viewMode === 'day') {
+        next.setDate(next.getDate() - 1);
+      } else if (viewMode === 'week') {
+        next.setDate(next.getDate() - 7);
+      } else if (viewMode === 'month') {
+        next.setMonth(next.getMonth() - 1);
+      }
+      return next;
+    });
+  };
+
+  const handleNext = () => {
+    setCurrentDate((prev) => {
+      const next = new Date(prev);
+      if (viewMode === 'day') {
+        next.setDate(next.getDate() + 1);
+      } else if (viewMode === 'week') {
+        next.setDate(next.getDate() + 7);
+      } else if (viewMode === 'month') {
+        next.setMonth(next.getMonth() + 1);
+      }
+      return next;
+    });
+  };
+
+  const handleToday = () => {
+    setCurrentDate(new Date());
+  };
 
   const { startOfPeriod, endOfPeriod } = useMemo(() => {
     if (viewMode === 'day') {
@@ -333,9 +387,42 @@ export default function SessionHistoryScreen() {
               </Text>
             </View>
           </View>
-          <Text className="text-sm text-zinc-500 dark:text-zinc-400">
-            {formatDateRange(startOfPeriod, endOfPeriod)}
+          <Pressable
+            onPress={handleToday}
+            className="rounded-full bg-zinc-200 px-3 py-1 dark:bg-zinc-800"
+          >
+            <Text className="font-medium text-xs text-zinc-700 dark:text-zinc-300">
+              Today
+            </Text>
+          </Pressable>
+        </View>
+
+        <View className="mt-6 flex-row items-center justify-between">
+          <Pressable
+            onPress={handlePrevious}
+            className="h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm dark:bg-zinc-800"
+          >
+            <Ionicons
+              name="chevron-back"
+              size={20}
+              color={colorScheme === 'dark' ? '#fff' : '#000'}
+            />
+          </Pressable>
+
+          <Text className="font-semibold text-base text-zinc-900 dark:text-white">
+            {formatDateRange(startOfPeriod, endOfPeriod, viewMode)}
           </Text>
+
+          <Pressable
+            onPress={handleNext}
+            className="h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm dark:bg-zinc-800"
+          >
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={colorScheme === 'dark' ? '#fff' : '#000'}
+            />
+          </Pressable>
         </View>
 
         <View className="mt-4 flex-row items-center rounded-full bg-white p-1 shadow-sm dark:bg-zinc-800">

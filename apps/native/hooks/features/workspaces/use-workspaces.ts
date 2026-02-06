@@ -1,3 +1,4 @@
+import type { UseQueryOptions } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
 import type { Workspace } from '@tuturuuu/types';
 import { queryKeys } from '@/lib/query';
@@ -7,11 +8,26 @@ import { supabase } from '@/lib/supabase';
 /**
  * Fetch all workspaces the user has access to
  */
-export function useWorkspaces() {
+type UseWorkspacesOptions = Omit<
+  UseQueryOptions<Workspace[], Error>,
+  'queryKey' | 'queryFn' | 'enabled'
+> & {
+  enabled?: boolean;
+};
+
+type UseWorkspaceOptions = Omit<
+  UseQueryOptions<Workspace | null, Error>,
+  'queryKey' | 'queryFn' | 'enabled'
+> & {
+  enabled?: boolean;
+};
+
+export function useWorkspaces(options: UseWorkspacesOptions = {}) {
   const { user } = useAuthStore();
   const userId = user?.id ?? '';
+  const { enabled = true, ...rest } = options;
 
-  return useQuery<Workspace[]>({
+  return useQuery<Workspace[], Error>({
     queryKey: queryKeys.workspaces.list(userId),
     queryFn: async () => {
       const { data, error } = await supabase
@@ -26,15 +42,21 @@ export function useWorkspaces() {
 
       return (data ?? []) as Workspace[];
     },
-    enabled: !!userId,
+    enabled: !!userId && enabled,
+    ...rest,
   });
 }
 
 /**
  * Fetch a single workspace by ID
  */
-export function useWorkspace(wsId: string | undefined) {
-  return useQuery<Workspace | null>({
+export function useWorkspace(
+  wsId: string | undefined,
+  options: UseWorkspaceOptions = {}
+) {
+  const { enabled = true, ...rest } = options;
+
+  return useQuery<Workspace | null, Error>({
     queryKey: queryKeys.workspaces.detail(wsId ?? ''),
     queryFn: async () => {
       if (!wsId) return null;
@@ -48,9 +70,9 @@ export function useWorkspace(wsId: string | undefined) {
       if (error) {
         throw new Error(error.message);
       }
-
       return data;
     },
-    enabled: !!wsId,
+    enabled: !!wsId && enabled,
+    ...rest,
   });
 }
