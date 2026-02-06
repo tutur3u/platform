@@ -10,6 +10,7 @@ export const ci = {
   'discord-python-ci.yml': true,
   'external-internal-packages.yaml': true,
   'i18n-check.yaml': true,
+  'mobile.yaml': true,
   'release-ai-package.yaml': true,
   'release-supabase-package.yaml': true,
   'release-types-package.yaml': true,
@@ -21,7 +22,6 @@ export const ci = {
   'supabase-types.yaml': true,
   'turbo-unit-tests.yaml': true,
   'type-check.yaml': true,
-  'mobile.yaml': true,
   'vercel-preview-calendar.yaml': true,
   'vercel-preview-finance.yaml': true,
   'vercel-preview-foundapack.yaml': true,
@@ -42,5 +42,4 @@ export const ci = {
   'vercel-production-tumeet.yaml': true,
   'native-build-ios.yaml': true,
   'native-build-android.yaml': true,
-  'native-expo-check.yaml': true,
 };
