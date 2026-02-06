@@ -1,103 +1,63 @@
-name: Native Build (Android)
+name: Native Build Android
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 on:
-    push:
-        branches:
-            - main
-        paths:
-            - "apps/native/**"
-            - ".github/workflows/native-build-android.yaml"
-    pull_request:
-        branches:
-            - main
-        paths:
-            - "apps/native/**"
-            - ".github/workflows/native-build-android.yaml"
-    workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/mobile/**"
+      - ".github/workflows/native-build-android.yaml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "apps/mobile/**"
+      - ".github/workflows/native-build-android.yaml"
 
 jobs:
-    check-ci:
-        uses: ./.github/workflows/ci-check.yml
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: native-build-android.yaml
+
+  build-android:
+    name: Build Android APK (Development)
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
         with:
-            workflow_name: native-build-android.yaml
+          distribution: temurin
+          java-version: 17
 
-    check-draft:
-        name: Check Draft Status
-        runs-on: ubuntu-latest
-        outputs:
-            is_draft: ${{ steps.check.outputs.is_draft }}
-        steps:
-            - name: Check if PR is draft
-              id: check
-              run: |
-                  if [ "${{ github.event_name }}" == "pull_request" ]; then
-                    echo "is_draft=${{ github.event.pull_request.draft }}" >> $GITHUB_OUTPUT
-                  else
-                    echo "is_draft=false" >> $GITHUB_OUTPUT
-                  fi
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.38.x"
+          channel: stable
+          cache: true
 
-    build:
-        name: Build Android
-        needs: [check-ci, check-draft]
-        if: needs.check-ci.outputs.should_run == 'true' && needs.check-draft.outputs.is_draft != 'true'
-        runs-on: ubuntu-latest
-        timeout-minutes: 45
-        defaults:
-            run:
-                working-directory: apps/native
+      - name: Install dependencies
+        run: flutter pub get
 
-        steps:
-            - name: Check out code
-              uses: actions/checkout@v6
+      - name: Build APK (development flavor)
+        run: flutter build apk --flavor development --target lib/main_development.dart
 
-            - name: Setup bun
-              uses: oven-sh/setup-bun@v2
-              with:
-                  bun-version: latest
-
-            - name: Setup Node.js
-              uses: actions/setup-node@v6
-              with:
-                  node-version: 24
-
-            - name: Setup Java
-              uses: actions/setup-java@v5
-              with:
-                  distribution: "temurin"
-                  java-version: "17"
-
-            - name: Setup Android SDK
-              uses: android-actions/setup-android@v3
-
-            - name: Install dependencies
-              run: bun install
-
-            - name: Install root dependencies
-              run: bun install
-              working-directory: .
-
-            - name: Generate native Android project
-              run: bunx expo prebuild --platform android --clean
-
-            - name: Setup Gradle cache
-              uses: actions/cache@v5
-              with:
-                  path: |
-                      ~/.gradle/caches
-                      ~/.gradle/wrapper
-                  key: ${{ runner.os }}-gradle-${{ hashFiles('apps/native/android/**/*.gradle*', 'apps/native/android/gradle-wrapper.properties') }}
-                  restore-keys: |
-                      ${{ runner.os }}-gradle-
-
-            - name: Build Android (Debug APK)
-              run: |
-                  cd android
-                  ./gradlew assembleDebug --no-daemon
-
-            - name: Upload build artifacts
-              uses: actions/upload-artifact@v6
-              if: success()
-              with:
-                  name: android-debug-apk
-                  path: apps/native/android/app/build/outputs/apk/debug/app-debug.apk
-                  retention-days: 7
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: android-dev-apk
+          path: apps/mobile/build/app/outputs/flutter-apk/app-development-release.apk
+          retention-days: 7

@@ -56,7 +56,8 @@
       "Bash(bunx --bun biome check:*)",
       "Bash(bunx --bun biome:*)",
       "Bash(bunx expo install:*)",
-      "Bash(bunx --bun tsgo:*)"
+      "Bash(bunx --bun tsgo:*)",
+      "Bash(flutter build:*)"
     ]
   }
 }
