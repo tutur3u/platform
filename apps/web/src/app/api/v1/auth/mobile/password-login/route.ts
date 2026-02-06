@@ -16,7 +16,7 @@ import { z } from 'zod';
 import { jsonWithCors, optionsWithCors } from '../shared';
 
 const PasswordLoginSchema = z.object({
-  email: z.string().email(),
+  email: z.email(),
   password: z.string().min(6),
   locale: z.string().optional(),
   deviceId: z.string().optional(),

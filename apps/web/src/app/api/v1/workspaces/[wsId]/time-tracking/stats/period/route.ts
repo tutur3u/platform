@@ -1,11 +1,7 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { sanitizeSearchQuery } from '@tuturuuu/utils/search-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { authorizeRequest } from '@/lib/api-auth';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const timezoneEnumValues = (() => {
@@ -92,46 +88,16 @@ export async function GET(
   try {
     const { wsId } = await params;
     const normalizedWsId = await normalizeWorkspaceId(wsId);
-    const authHeader =
-      request.headers.get('authorization') ??
-      request.headers.get('Authorization');
-    const accessToken = authHeader?.startsWith('Bearer ')
-      ? authHeader.replace('Bearer ', '').trim()
-      : undefined;
-
-    let supabase = await createClient();
-    let user: SupabaseUser | null = null;
-
-    if (accessToken) {
-      const adminClient = await createAdminClient({ noCookie: true });
-      const {
-        data: { user: tokenUser },
-        error: tokenError,
-      } = await adminClient.auth.getUser(accessToken);
-
-      if (tokenError || !tokenUser) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-
-      user = tokenUser;
-      supabase = adminClient;
-    } else {
-      // Get authenticated user from cookies
-      const {
-        data: { user: cookieUser },
-        error: authError,
-      } = await supabase.auth.getUser();
-      if (authError || !cookieUser) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      user = cookieUser;
+    const { data: authData, error: authError } =
+      await authorizeRequest(request);
+    if (authError || !authData) {
+      return (
+        authError ??
+        NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      );
     }
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    console.log('Authenticated user:', user.id);
+    const { user, supabase } = authData;
 
     // Verify workspace access
     const { data: memberCheck } = await supabase
