@@ -1029,7 +1029,12 @@
         "error-code": "Mã Lỗi",
         "timeout-description": "Gói dịch vụ của bạn đang được thiết lập. Vui lòng làm mới trang sau giây lát để xem thông tin gói dịch vụ.",
         "title": "Không Tìm Thấy Gói Dịch Vụ",
-        "workspace-id": "ID Workspace"
+        "workspace-id": "ID Workspace",
+        "workspace-subscription-required": {
+          "action": "Hoàn tất thanh toán",
+          "description": "Workspace của nhóm bạn yêu cầu một gói dịch vụ đang hoạt động để tiếp tục. Vui lòng hoàn tất thanh toán cho gói miễn phí theo số lượng thành viên để đảm bảo tất cả thành viên của bạn đều được hỗ trợ.",
+          "title": "Cần thực hiện: Hoàn tất thiết lập"
+        }
       },
       "retry": "Thử Lại"
     },

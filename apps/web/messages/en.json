@@ -1029,7 +1029,12 @@
         "error-code": "Error Code",
         "timeout-description": "Your subscription is being set up. Please refresh the page in a moment to see your subscription details.",
         "title": "Subscription Not Found",
-        "workspace-id": "Workspace ID"
+        "workspace-id": "Workspace ID",
+        "workspace-subscription-required": {
+          "action": "Complete Checkout",
+          "description": "Your team workspace requires an active subscription to continue. Please complete the checkout for the free seat-based plan to ensure all your members are covered.",
+          "title": "Action Required: Complete Setup"
+        }
       },
       "retry": "Retry Setup"
     },

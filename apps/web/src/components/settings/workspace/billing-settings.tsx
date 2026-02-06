@@ -18,16 +18,10 @@ export default function BillingSettings({ wsId }: BillingSettingsProps) {
   const locale = useLocale();
 
   // Fetch billing data using React Query
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['workspace-billing', wsId],
     queryFn: async () => {
       const response = await fetch(`/api/v1/workspaces/${wsId}/billing`);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch billing data');
-      }
-
       return response.json();
     },
     staleTime: 30000, // 30 seconds
@@ -41,17 +35,15 @@ export default function BillingSettings({ wsId }: BillingSettingsProps) {
     );
   }
 
-  if (error) {
+  if (data?.error || !data?.subscription) {
     return (
       <NoSubscriptionFound
         wsId={wsId}
-        error={error instanceof Error ? error.message : 'UNKNOWN_ERROR'}
+        error={data?.error || 'SUBSCRIPTION_NOT_FOUND'}
+        seatStatus={data?.seatStatus}
+        targetProductId={data?.targetProductId}
       />
     );
-  }
-
-  if (!data?.subscription) {
-    return <NoSubscriptionFound wsId={wsId} error="SUBSCRIPTION_NOT_FOUND" />;
   }
 
   const {
@@ -86,9 +78,9 @@ export default function BillingSettings({ wsId }: BillingSettingsProps) {
       ? [subscription.product.description]
       : [t('premium-features')],
     // Seat-based pricing fields
-    pricingModel: subscription.pricingModel,
+    pricingModel: subscription.product.pricing_model || 'free',
     seatCount: subscription.seatCount,
-    pricePerSeat: subscription.pricePerSeat,
+    pricePerSeat: subscription.product.price_per_seat,
     maxSeats: subscription.product.max_seats,
   };
 
@@ -98,7 +90,6 @@ export default function BillingSettings({ wsId }: BillingSettingsProps) {
         isPersonalWorkspace={isPersonalWorkspace}
         currentPlan={currentPlan}
         products={products}
-        product_id={subscription?.product.id || ''}
         wsId={wsId}
         seatStatus={seatStatus}
         hasManageSubscriptionPermission={hasManagePermission}

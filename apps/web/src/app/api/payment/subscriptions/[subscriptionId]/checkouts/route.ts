@@ -15,7 +15,7 @@ export async function POST(
 
   const { subscriptionId } = await params;
 
-  const { wsId, productId } = await request.json();
+  const { wsId, productId, seats } = await request.json();
 
   // Validate that you have the info you need
   if (!subscriptionId || !productId || !wsId) {
@@ -97,6 +97,7 @@ export async function POST(
       products: [productId],
       successUrl: `${BASE_URL}/${wsId}/billing/success?checkoutId={CHECKOUT_ID}`,
       isBusinessCustomer: true,
+      ...(seats ? { seats } : {}),
     });
 
     return NextResponse.json({ url: checkoutSession.url });
