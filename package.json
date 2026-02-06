@@ -4,7 +4,7 @@
     "@biomejs/biome": "^2.3.14",
     "@lingual/i18n-check": "^0.8.19",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@typescript/native-preview": "^7.0.0-dev.20260204.1",
+    "@typescript/native-preview": "^7.0.0-dev.20260205.1",
     "@vitest/coverage-v8": "^4.0.18",
     "lightningcss": "1.31.1",
     "lucide-static": "^0.563.0",
@@ -21,6 +21,7 @@
   "scripts": {
     "clean": "rm bun.lock && bunx npkill --delete-all -y",
     "setup": "bun i && bun run build -F @tuturuuu/types -F @tuturuuu/supabase -F @tuturuuu/masonry",
+    "native:check": "cd apps/native && bunx expo install --check",
     "build": "turbo run build",
     "build:web": "turbo run build -F @tuturuuu/web",
     "build:tudo": "turbo run build -F @tuturuuu/tudo",
