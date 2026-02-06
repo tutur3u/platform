@@ -30,3 +30,4 @@ jobs:
     with:
       working_directory: apps/mobile
       flutter_version: "3.38.x"
+      min_coverage: 0

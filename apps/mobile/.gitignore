@@ -100,6 +100,9 @@ app.*.symbols
 # Obfuscation related
 app.*.map.json
 
+# Environment variables (contains secrets)
+.env
+
 # Exceptions to the above rules.
 !**/ios/**/default.mode1v3
 !**/ios/**/default.mode2v3

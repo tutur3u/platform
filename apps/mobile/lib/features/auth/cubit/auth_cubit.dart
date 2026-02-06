@@ -30,7 +30,9 @@ class AuthCubit extends Cubit<AuthState> {
       final event = authState.event;
       final session = authState.session;
 
-      if (event == supa.AuthChangeEvent.signedIn && session?.user != null) {
+      if ((event == supa.AuthChangeEvent.signedIn ||
+              event == supa.AuthChangeEvent.tokenRefreshed) &&
+          session?.user != null) {
         emit(AuthState.authenticated(session!.user));
       } else if (event == supa.AuthChangeEvent.signedOut) {
         emit(const AuthState.unauthenticated());
@@ -50,6 +52,13 @@ class AuthCubit extends Cubit<AuthState> {
   Future<bool> verifyOtp(String email, String otp) async {
     emit(state.copyWith(isLoading: true));
     final result = await _repo.verifyOtp(email, otp);
+    if (result.success) {
+      final user = await _repo.getCurrentUser();
+      if (user != null) {
+        emit(AuthState.authenticated(user));
+        return true;
+      }
+    }
     emit(state.copyWith(isLoading: false, error: result.error));
     return result.success;
   }
@@ -59,6 +68,13 @@ class AuthCubit extends Cubit<AuthState> {
   Future<bool> signInWithPassword(String email, String password) async {
     emit(state.copyWith(isLoading: true));
     final result = await _repo.passwordLogin(email, password);
+    if (result.success) {
+      final user = await _repo.getCurrentUser();
+      if (user != null) {
+        emit(AuthState.authenticated(user));
+        return true;
+      }
+    }
     emit(state.copyWith(isLoading: false, error: result.error));
     return result.success;
   }

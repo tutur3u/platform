@@ -72,11 +72,15 @@ class AuthRepository {
       }
 
       final payload = AuthSessionPayload.fromJson(sessionJson);
-      await supabase.auth.setSession(payload.accessToken);
+      await supabase.auth.setSession(payload.refreshToken);
 
       return (success: true, error: null);
     } on ApiException catch (e) {
       return (success: false, error: e.message);
+    } on AuthException catch (e) {
+      return (success: false, error: e.message);
+    } on Exception catch (e) {
+      return (success: false, error: e.toString());
     }
   }
 
@@ -112,11 +116,15 @@ class AuthRepository {
       }
 
       final payload = AuthSessionPayload.fromJson(sessionJson);
-      await supabase.auth.setSession(payload.accessToken);
+      await supabase.auth.setSession(payload.refreshToken);
 
       return (success: true, error: null, retryAfter: null);
     } on ApiException catch (e) {
       return (success: false, error: e.message, retryAfter: e.retryAfter);
+    } on AuthException catch (e) {
+      return (success: false, error: e.message, retryAfter: null);
+    } on Exception catch (e) {
+      return (success: false, error: e.toString(), retryAfter: null);
     }
   }
 
