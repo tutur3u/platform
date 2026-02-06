@@ -58,7 +58,10 @@
       "Bash(bunx expo install:*)",
       "Bash(bunx --bun tsgo:*)",
       "Bash(flutter build:*)",
-      "Bash(git status:*)"
+      "Bash(git status:*)",
+      "Bash(time zsh:*)",
+      "Bash(gh run list:*)",
+      "Bash(dart format:*)"
     ]
   }
 }
