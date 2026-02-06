@@ -23,7 +23,8 @@ class WorkspaceRepository {
     final list = response as List<dynamic>;
     return list
         .map((row) {
-          final ws = row['workspaces'] as Map<String, dynamic>?;
+          final record = row as Map<String, dynamic>;
+          final ws = record['workspaces'] as Map<String, dynamic>?;
           if (ws == null) return null;
           return Workspace.fromJson(ws);
         })
@@ -59,7 +60,7 @@ class WorkspaceRepository {
       return Workspace.fromJson(
         jsonDecode(json) as Map<String, dynamic>,
       );
-    } catch (_) {
+    } on Exception catch (_) {
       return null;
     }
   }

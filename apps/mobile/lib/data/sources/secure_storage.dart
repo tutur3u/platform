@@ -24,7 +24,7 @@ class SupabaseSecureStorage extends LocalStorage {
 
   @override
   Future<bool> hasAccessToken() async {
-    return await _storage.containsKey(key: supabasePersistSessionKey);
+    return _storage.containsKey(key: supabasePersistSessionKey);
   }
 
   @override

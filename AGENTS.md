@@ -82,6 +82,7 @@ platform/
 │   ├── shortener/    # App (Next.js)
 │   ├── tumeet/       # App (Next.js)
 │   ├── tudo/         # App (Next.js)
+│   ├── mobile/       # Flutter mobile app (iOS/Android)
 │   ├── db/           # Supabase migrations, scripts, typegen
 │   └── discord/      # Python Discord bot/utilities
 ├── packages/
@@ -1525,6 +1526,7 @@ This continuous improvement process ensures that the operating guidelines evolve
 - Add a lightweight testing guideline/template for Next.js route handlers so new API endpoints can be covered by unit tests.
 - Clarify how to satisfy the `bun check` requirement when lint/format commands are user-only.
 
+
 ## 13. AI Model Usage & Fallback Policy
 
 ### 13.1 Model Selection Principles
@@ -1572,7 +1574,63 @@ Document any deviation inside PR description (Reason + Observed Failure Mode).
 - Prefer streaming for user-perceivable partial progress (`streamObject`).
 - For bulk inserts (e.g., large flashcard sets) validate size thresholds (< defined row cap) before DB write; chunk if necessary.
 
-## 14. Glossary
+## 14. Mobile App (Flutter)
+
+The Flutter mobile app lives at `apps/mobile/` and targets iOS and Android.
+
+### 14.1 Architecture
+
+- **State Management:** `flutter_bloc` (Cubits) — no Zustand equivalent needed
+- **Navigation:** `go_router` with auth-aware redirects (ShellRoute for bottom tabs)
+- **Auth:** `supabase_flutter` with `flutter_secure_storage` for token persistence
+- **Linting:** `very_good_analysis` (strict ruleset from Very Good Ventures)
+- **Code Generation:** `build_runner` for JSON serialization + `intl` for l10n
+
+### 14.2 Build Flavors
+
+Three entry points: `main_development.dart`, `main_staging.dart`, `main_production.dart`. Build with `flutter run -t lib/main_<flavor>.dart`.
+
+### 14.3 Localization
+
+- ARB files in `lib/l10n/arb/` (English + Vietnamese)
+- Generated files in `lib/l10n/gen/` are tracked in git (not `.gitignored`)
+- `analysis_options.yaml` excludes `lib/l10n/gen/*` from analysis
+
+### 14.4 CI Workflows
+
+- `.github/workflows/mobile.yaml` — format check, analysis, tests (uses `VeryGoodOpenSource/very_good_workflows`)
+- `.github/workflows/mobile-build-android.yaml` — Android build
+- `.github/workflows/mobile-build-ios.yaml` — iOS build
+
+**Common CI Failure:** `dart format --set-exit-if-changed lib test` fails when Dart files are unformatted. Fix: run `dart format lib test` from `apps/mobile/` and commit.
+
+### 14.5 API Integration
+
+The mobile app calls the same mobile auth endpoints as the former Expo app (`/api/v1/auth/mobile/*`). These endpoints return Supabase session tokens (not cookies) since native clients handle auth differently.
+
+## 15. Known Gotchas & Patterns
+
+### 15.1 PostgREST URL Length Limits
+
+PostgREST `.in('column', ids)` with large arrays (~1000 UUIDs) generates ~37KB URLs that exceed proxy limits (~8KB). **Fix:** Use direct `.eq(column, value)` updates or batch with smaller chunks instead of `SELECT ... WHERE id IN (...)` patterns.
+
+### 15.2 Admin Client for Trigger Bypass
+
+Some tables (`user_group_posts`, `external_user_monthly_reports`) have `BEFORE UPDATE` triggers that check `auth.uid()` permissions. When performing bulk operations (e.g., user merge), use `createAdminClient()` (named `sbAdmin` by convention) so `auth.uid()` returns NULL, bypassing trigger permission checks via their `IF v_user_id IS NULL THEN RETURN NEW` guard. Always validate workspace membership with the user-context client BEFORE creating the admin client.
+
+### 15.3 TypeScript Inference with useMemo
+
+When a `useMemo` returns either `[]` or `{ data: [], isEstimated }`, TypeScript infers `never[] | { data, isEstimated }`. Fix by explicitly typing early returns: `return { data: [] as MyType[], isEstimated: false }`.
+
+### 15.4 Finance Module Conventions
+
+- `get_category_breakdown` RPC accepts `_wallet_ids UUID[]` for wallet-scoped filtering
+- `Transaction` type has optional `wallet_currency?: string` — use for multi-currency detection
+- Exchange rates: `useExchangeRates()` hook, `convertCurrency()` utility, USD as base currency
+- For estimated/converted amounts: set `hasRedactedAmounts = true` and show `≈` prefix
+- When RPC calls can't do currency conversion, prefer client-side aggregation when mixed currencies detected
+
+## 16. Glossary
 
 | Term                     | Definition                                                                                                                                   |
 | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |

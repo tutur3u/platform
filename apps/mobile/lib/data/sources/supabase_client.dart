@@ -6,7 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Initializes the Supabase client with secure token storage.
 ///
-/// Must be called once in [bootstrap] before the app starts.
+/// Must be called once in `bootstrap()` before the app starts.
 Future<void> initSupabase() async {
   var url = Env.supabaseUrl.replaceAll(RegExp(r'/$'), '');
 
@@ -19,7 +19,6 @@ Future<void> initSupabase() async {
     url: url,
     anonKey: Env.supabaseAnonKey,
     authOptions: FlutterAuthClientOptions(
-      autoRefreshToken: true,
       localStorage: SupabaseSecureStorage(),
     ),
   );

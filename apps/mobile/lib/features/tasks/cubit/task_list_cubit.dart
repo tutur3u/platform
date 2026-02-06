@@ -18,7 +18,7 @@ class TaskListCubit extends Cubit<TaskListState> {
     try {
       final tasks = await _repo.getTasks(wsId);
       emit(state.copyWith(status: TaskListStatus.loaded, tasks: tasks));
-    } catch (e) {
+    } on Exception catch (e) {
       emit(
         state.copyWith(status: TaskListStatus.error, error: e.toString()),
       );

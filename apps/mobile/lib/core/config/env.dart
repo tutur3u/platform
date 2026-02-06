@@ -12,7 +12,6 @@ class Env {
 
   static const supabaseAnonKey = String.fromEnvironment(
     'SUPABASE_ANON_KEY',
-    defaultValue: '',
   );
 
   static const apiBaseUrl = String.fromEnvironment(

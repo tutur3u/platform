@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/router/app_router.dart';
@@ -33,8 +35,8 @@ class _AppState extends State<App> {
 
   @override
   void dispose() {
-    _authCubit.close();
-    _workspaceCubit.close();
+    unawaited(_authCubit.close());
+    unawaited(_workspaceCubit.close());
     super.dispose();
   }
 
@@ -49,9 +51,9 @@ class _AppState extends State<App> {
         listenWhen: (prev, curr) => prev.status != curr.status,
         listener: (context, state) {
           if (state.status == AuthStatus.authenticated) {
-            context.read<WorkspaceCubit>().loadWorkspaces();
+            unawaited(context.read<WorkspaceCubit>().loadWorkspaces());
           } else if (state.status == AuthStatus.unauthenticated) {
-            context.read<WorkspaceCubit>().clearWorkspaces();
+            unawaited(context.read<WorkspaceCubit>().clearWorkspaces());
           }
         },
         child: MaterialApp.router(

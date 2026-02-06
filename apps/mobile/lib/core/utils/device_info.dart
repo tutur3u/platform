@@ -18,7 +18,7 @@ Future<String?> getDeviceId() async {
       return android.id;
     }
     return null;
-  } catch (_) {
+  } on Exception catch (_) {
     return null;
   }
 }
@@ -27,7 +27,7 @@ Future<String?> getDeviceId() async {
 String getLocale() {
   try {
     return Platform.localeName.split('.').first;
-  } catch (_) {
+  } on Exception catch (_) {
     return 'en';
   }
 }

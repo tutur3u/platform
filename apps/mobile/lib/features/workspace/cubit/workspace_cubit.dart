@@ -37,7 +37,7 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
           currentWorkspace: current,
         ),
       );
-    } catch (e) {
+    } on Exception catch (e) {
       emit(
         state.copyWith(
           status: WorkspaceStatus.error,

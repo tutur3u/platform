@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
@@ -15,7 +17,7 @@ class TaskListPage extends StatelessWidget {
       create: (context) {
         final cubit = TaskListCubit(taskRepository: TaskRepository());
         final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-        if (wsId != null) cubit.loadTasks(wsId);
+        if (wsId != null) unawaited(cubit.loadTasks(wsId));
         return cubit;
       },
       child: const _TaskListView(),
@@ -38,7 +40,7 @@ class _TaskListView extends StatelessWidget {
         listener: (context, state) {
           final wsId = state.currentWorkspace?.id;
           if (wsId != null) {
-            context.read<TaskListCubit>().loadTasks(wsId);
+            unawaited(context.read<TaskListCubit>().loadTasks(wsId));
           }
         },
         child: BlocBuilder<TaskListCubit, TaskListState>(
@@ -66,7 +68,9 @@ class _TaskListView extends StatelessWidget {
                       : null,
                   value: task.completed ?? false,
                   onChanged: (_) {
-                    context.read<TaskListCubit>().toggleTaskCompletion(task);
+                    unawaited(
+                      context.read<TaskListCubit>().toggleTaskCompletion(task),
+                    );
                   },
                 );
               },

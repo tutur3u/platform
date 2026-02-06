@@ -210,6 +210,24 @@ Tasks in kanban boards (`task.tsx`, `task-edit-dialog.tsx`, components in `packa
 - **Centralized Settings (CRITICAL):** ALL application settings MUST be implemented within `apps/web/src/components/settings/settings-dialog.tsx`. This includes user profile, account, workspace, and product-specific settings (e.g., calendar). **NEVER** create separate settings pages or standalone modals. Add new settings as tabs within the centralized dialog, grouping them logically (User Settings, Preferences, Workspace, Product-specific). Pass `workspace` prop to child components instead of raw `wsId`.
 - **CI/Workflow Configuration (CRITICAL):** When adding or modifying GitHub Actions workflows in `.github/workflows/`, you **MUST** also update `tuturuuu.ts` at the repository root. Add an entry for the new workflow filename (e.g., `"my-workflow.yaml": true`). The workflow must include a `check-ci` job that calls `.github/workflows/ci-check.yml` and all main jobs must depend on it with `needs: [check-ci]` and `if: needs.check-ci.outputs.should_run == 'true'`. This enables centralized enable/disable control of all CI workflows.
 
+### Mobile App (Flutter)
+
+Located at `apps/mobile/`, the Flutter app uses BLoC/Cubit state management, `go_router` navigation, and `supabase_flutter` for auth. Key points:
+
+- **Build Flavors:** `main_development.dart`, `main_staging.dart`, `main_production.dart`
+- **Linting:** `very_good_analysis` (strict ruleset)
+- **Localization:** ARB files in `lib/l10n/arb/` (English + Vietnamese), generated files tracked in git
+- **CI:** `mobile.yaml` uses `VeryGoodOpenSource/very_good_workflows` — enforces `dart format --set-exit-if-changed`
+- **Dart Formatting:** Run `dart format lib test` from `apps/mobile/` before pushing. `bun format` / Biome does NOT cover Dart files.
+- **API:** Calls `/api/v1/auth/mobile/*` endpoints returning Supabase session tokens (not cookies)
+
+### Known Gotchas
+
+- **PostgREST URL Length:** `.in('column', ids)` with ~1000 UUIDs creates ~37KB URLs exceeding proxy limits (~8KB). Use `.eq(column, value)` updates instead.
+- **Admin Client Trigger Bypass:** Tables with `BEFORE UPDATE` triggers checking `auth.uid()` can be bypassed with `createAdminClient()` (`sbAdmin`). Always validate permissions with user-context client first.
+- **TypeScript useMemo Inference:** When `useMemo` returns either `[]` or `{ data: [], isEstimated }`, TypeScript infers `never[]`. Fix: explicitly type early returns as `{ data: [] as MyType[], isEstimated: false }`.
+- **Finance Module:** `get_category_breakdown` RPC accepts `_wallet_ids UUID[]` for wallet scoping. Exchange rates use USD as base currency. For estimated amounts, set `hasRedactedAmounts = true` and show `≈` prefix.
+
 ### Database Schema Notes
 
 **CRITICAL**: The `public.users` table does NOT contain an `email` field. User email addresses are stored in `public.user_private_details` for privacy and security reasons. When you need to query or access user email information, always use the `user_private_details` table, not the `users` table.
@@ -231,5 +249,6 @@ Tasks in kanban boards (`task.tsx`, `task-edit-dialog.tsx`, components in `packa
 ### Proposed Future Improvements
 - Add a lightweight testing guideline/template for Next.js route handlers so new API endpoints can be covered by unit tests.
 - Clarify how to satisfy the `bun check` requirement when lint/format commands are user-only.
+
 
 

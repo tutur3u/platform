@@ -12,7 +12,7 @@ class AuthCubit extends Cubit<AuthState> {
   AuthCubit({required AuthRepository authRepository})
     : _repo = authRepository,
       super(const AuthState.unknown()) {
-    _init();
+    unawaited(_init());
   }
 
   final AuthRepository _repo;
@@ -41,14 +41,14 @@ class AuthCubit extends Cubit<AuthState> {
   // ── OTP ─────────────────────────────────────────
 
   Future<({bool success, int? retryAfter})> sendOtp(String email) async {
-    emit(state.copyWith(isLoading: true, error: null));
+    emit(state.copyWith(isLoading: true));
     final result = await _repo.sendOtp(email);
     emit(state.copyWith(isLoading: false, error: result.error));
     return (success: result.success, retryAfter: result.retryAfter);
   }
 
   Future<bool> verifyOtp(String email, String otp) async {
-    emit(state.copyWith(isLoading: true, error: null));
+    emit(state.copyWith(isLoading: true));
     final result = await _repo.verifyOtp(email, otp);
     emit(state.copyWith(isLoading: false, error: result.error));
     return result.success;
@@ -57,14 +57,14 @@ class AuthCubit extends Cubit<AuthState> {
   // ── Password ────────────────────────────────────
 
   Future<bool> signInWithPassword(String email, String password) async {
-    emit(state.copyWith(isLoading: true, error: null));
+    emit(state.copyWith(isLoading: true));
     final result = await _repo.passwordLogin(email, password);
     emit(state.copyWith(isLoading: false, error: result.error));
     return result.success;
   }
 
   Future<bool> signUp(String email, String password) async {
-    emit(state.copyWith(isLoading: true, error: null));
+    emit(state.copyWith(isLoading: true));
     final result = await _repo.signUp(email, password);
     emit(state.copyWith(isLoading: false, error: result.error));
     return result.success;
@@ -73,7 +73,7 @@ class AuthCubit extends Cubit<AuthState> {
   // ── Password reset ──────────────────────────────
 
   Future<bool> resetPassword(String email) async {
-    emit(state.copyWith(isLoading: true, error: null));
+    emit(state.copyWith(isLoading: true));
     final result = await _repo.resetPassword(email);
     emit(state.copyWith(isLoading: false, error: result.error));
     return result.success;
@@ -87,11 +87,11 @@ class AuthCubit extends Cubit<AuthState> {
     emit(const AuthState.unauthenticated());
   }
 
-  void clearError() => emit(state.copyWith(error: null));
+  void clearError() => emit(state.copyWith());
 
   @override
   Future<void> close() {
-    _authSub?.cancel();
+    unawaited(_authSub?.cancel());
     _repo.dispose();
     return super.close();
   }

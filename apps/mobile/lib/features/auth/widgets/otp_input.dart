@@ -16,10 +16,10 @@ class OtpInput extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextField(
       controller: controller,
-      decoration: InputDecoration(
+      decoration: const InputDecoration(
         labelText: 'OTP',
         hintText: '000000',
-        border: const OutlineInputBorder(),
+        border: OutlineInputBorder(),
         counterText: '',
       ),
       keyboardType: TextInputType.number,
