@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useWorkspaceTimeThreshold } from '@tuturuuu/hooks';
 import * as Icons from '@tuturuuu/icons';
 import {
   Apple,
@@ -67,7 +68,6 @@ import type { ComponentProps, ElementType } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSessionExceedsThreshold } from '@/hooks/useSessionExceedsThreshold';
 import { useWorkspaceBreakTypes } from '@/hooks/useWorkspaceBreakTypes';
-import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
 import type {
   ExtendedWorkspaceTask,
   SessionWithRelations,

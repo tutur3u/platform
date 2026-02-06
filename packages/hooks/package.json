@@ -10,6 +10,10 @@
     "test:watch": "vitest",
     "type-check": "tsgo --build"
   },
+  "dependencies": {
+    "browser-image-compression": "^2.0.2",
+    "dayjs": "^1.11.13"
+  },
   "peerDependencies": {
     "@tanstack/react-query": "^5.90.12",
     "react": "^19.0.0",

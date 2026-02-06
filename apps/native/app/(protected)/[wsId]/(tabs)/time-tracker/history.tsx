@@ -10,7 +10,6 @@ import {
   getTimeTrackerPeriodBounds,
   type TimeTrackerViewMode,
 } from '@tuturuuu/utils/time-tracker-period';
-import { useGlobalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -27,6 +26,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { createAuthorizedFetcher } from '@/lib/api/fetcher';
 import { apiConfig } from '@/lib/config/api';
 import { useSession } from '@/lib/stores/auth-store';
+import { useWorkspaceId } from '@/lib/stores/workspace-store';
 
 type ViewMode = TimeTrackerViewMode;
 
@@ -35,7 +35,7 @@ type SessionWithRelations = TimeTrackingSession & {
 };
 
 export default function SessionHistoryScreen() {
-  const wsId = useGlobalSearchParams<{ wsId: string }>().wsId;
+  const wsId = useWorkspaceId();
   const colorScheme = useColorScheme();
   const session = useSession();
   const userId = session?.user?.id ?? '';

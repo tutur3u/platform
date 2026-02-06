@@ -27,18 +27,27 @@ const getCategoryColorRgb = (color: string): string => {
 const ProgressBar = ({
   percentage,
   color,
+  isDark,
 }: {
   percentage: number;
   color: string;
+  isDark: boolean;
 }) => {
-  const colorScheme = useColorScheme();
   const rgb = getCategoryColorRgb(color);
 
   return (
-    <View className="h-2 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
+    <View
+      style={{
+        height: 8,
+        overflow: 'hidden',
+        borderRadius: 9999,
+        backgroundColor: isDark ? '#3f3f46' : '#e4e4e7',
+      }}
+    >
       <View
-        className="h-full rounded-full"
         style={{
+          height: '100%',
+          borderRadius: 9999,
           width: `${Math.min(100, Math.max(0, percentage))}%`,
           backgroundColor: `rgb(${rgb})`,
         }}
@@ -49,15 +58,34 @@ const ProgressBar = ({
 
 export function PeriodStats({ periodStats, isLoading }: PeriodStatsProps) {
   const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   if (isLoading) {
     return (
-      <View className="mb-6 min-h-[180px] items-center justify-center rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800">
+      <View
+        style={{
+          marginBottom: 24,
+          minHeight: 180,
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: 16,
+          borderWidth: 1,
+          borderColor: isDark ? '#3f3f46' : '#e4e4e7',
+          backgroundColor: isDark ? '#27272a' : '#fff',
+          padding: 16,
+        }}
+      >
         <ActivityIndicator
           size="small"
-          color={colorScheme === 'dark' ? '#a1a1aa' : '#71717a'}
+          color={isDark ? '#a1a1aa' : '#71717a'}
         />
-        <Text className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+        <Text
+          style={{
+            marginTop: 8,
+            fontSize: 12,
+            color: isDark ? '#a1a1aa' : '#71717a',
+          }}
+        >
           Loading stats...
         </Text>
       </View>
@@ -67,26 +95,67 @@ export function PeriodStats({ periodStats, isLoading }: PeriodStatsProps) {
   if (!periodStats || periodStats.sessionCount === 0) return null;
 
   return (
-    <View className="mb-6 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
-      <View className="mb-3 flex-row items-center gap-2">
+    <View
+      style={{
+        marginBottom: 24,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: isDark ? '#3f3f46' : '#e4e4e7',
+        backgroundColor: isDark ? '#27272a' : '#fff',
+        padding: 16,
+      }}
+    >
+      <View
+        style={{
+          marginBottom: 12,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 8,
+        }}
+      >
         <Ionicons
           name="stats-chart"
           size={16}
-          color={colorScheme === 'dark' ? '#a1a1aa' : '#71717a'}
+          color={isDark ? '#a1a1aa' : '#71717a'}
         />
-        <Text className="font-medium text-sm text-zinc-600 dark:text-zinc-400">
+        <Text
+          style={{
+            fontWeight: '500',
+            fontSize: 14,
+            color: isDark ? '#a1a1aa' : '#52525b',
+          }}
+        >
           Summary
         </Text>
       </View>
 
-      <View className="gap-4">
+      <View style={{ gap: 16 }}>
         {/* Total Time */}
         <View>
-          <View className="mb-1 flex-row items-center justify-between">
-            <Text className="font-medium text-sm text-zinc-900 dark:text-white">
+          <View
+            style={{
+              marginBottom: 4,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <Text
+              style={{
+                fontWeight: '500',
+                fontSize: 14,
+                color: isDark ? '#fff' : '#18181b',
+              }}
+            >
               Total Time
             </Text>
-            <Text className="font-bold text-sm text-zinc-900 dark:text-white">
+            <Text
+              style={{
+                fontWeight: '700',
+                fontSize: 14,
+                color: isDark ? '#fff' : '#18181b',
+              }}
+            >
               {formatDuration(
                 new Date(
                   Date.now() - periodStats.totalDuration * 1000
@@ -95,7 +164,14 @@ export function PeriodStats({ periodStats, isLoading }: PeriodStatsProps) {
               )}
             </Text>
           </View>
-          <View className="h-2 overflow-hidden rounded-full bg-zinc-900 dark:bg-white" />
+          <View
+            style={{
+              height: 8,
+              overflow: 'hidden',
+              borderRadius: 9999,
+              backgroundColor: isDark ? '#fff' : '#18181b',
+            }}
+          />
         </View>
 
         {/* Category Breakdown */}
@@ -110,21 +186,62 @@ export function PeriodStats({ periodStats, isLoading }: PeriodStatsProps) {
 
             return (
               <View key={cat.name}>
-                <View className="mb-1 flex-row items-center justify-between">
-                  <View className="flex-row items-center gap-2">
+                <View
+                  style={{
+                    marginBottom: 4,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 8,
+                    }}
+                  >
                     <View
-                      className="h-2 w-2 rounded-full"
-                      style={{ backgroundColor: `rgb(${rgb})` }}
+                      style={{
+                        height: 8,
+                        width: 8,
+                        borderRadius: 9999,
+                        backgroundColor: `rgb(${rgb})`,
+                      }}
                     />
-                    <Text className="text-sm text-zinc-700 dark:text-zinc-300">
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        color: isDark ? '#d4d4d8' : '#3f3f46',
+                      }}
+                    >
                       {cat.name}
                     </Text>
                   </View>
-                  <View className="flex-row items-center gap-3">
-                    <Text className="w-10 text-right text-xs text-zinc-500 dark:text-zinc-400">
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 12,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        width: 40,
+                        textAlign: 'right',
+                        fontSize: 12,
+                        color: isDark ? '#a1a1aa' : '#71717a',
+                      }}
+                    >
                       {percentage.toFixed(0)}%
                     </Text>
-                    <Text className="font-medium text-sm text-zinc-900 dark:text-white">
+                    <Text
+                      style={{
+                        fontWeight: '500',
+                        fontSize: 14,
+                        color: isDark ? '#fff' : '#18181b',
+                      }}
+                    >
                       {formatDuration(
                         new Date(
                           Date.now() - cat.duration * 1000
@@ -134,7 +251,11 @@ export function PeriodStats({ periodStats, isLoading }: PeriodStatsProps) {
                     </Text>
                   </View>
                 </View>
-                <ProgressBar percentage={percentage} color={cat.color} />
+                <ProgressBar
+                  percentage={percentage}
+                  color={cat.color}
+                  isDark={isDark}
+                />
               </View>
             );
           }

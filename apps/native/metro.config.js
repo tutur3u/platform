@@ -30,6 +30,30 @@ const singletonPackages = {
     nativeNodeModules,
     '@tanstack/react-query'
   ),
+  '@react-navigation/native': path.resolve(
+    nativeNodeModules,
+    '@react-navigation/native'
+  ),
+  '@react-navigation/core': path.resolve(
+    nativeNodeModules,
+    '@react-navigation/core'
+  ),
+  '@react-navigation/bottom-tabs': path.resolve(
+    nativeNodeModules,
+    '@react-navigation/bottom-tabs'
+  ),
+  '@react-navigation/elements': path.resolve(
+    nativeNodeModules,
+    '@react-navigation/elements'
+  ),
+  '@react-navigation/native-stack': path.resolve(
+    nativeNodeModules,
+    '@react-navigation/native-stack'
+  ),
+  '@react-navigation/routers': path.resolve(
+    nativeNodeModules,
+    '@react-navigation/routers'
+  ),
 };
 
 config.resolver.extraNodeModules = singletonPackages;

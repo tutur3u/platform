@@ -1,6 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
+import { useWorkspaceTimeThreshold } from '@tuturuuu/hooks';
 import {
   CalendarIcon,
   CheckCircle2Icon,
@@ -39,7 +40,6 @@ import { format } from 'date-fns';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useMemo } from 'react';
-import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
 import { useAvailableUsers, useRequests } from '../hooks/use-requests';
 import { ThresholdSettingsDialog } from '../threshold-settings-dialog';
 import type { RequestsViewProps } from '../utils';

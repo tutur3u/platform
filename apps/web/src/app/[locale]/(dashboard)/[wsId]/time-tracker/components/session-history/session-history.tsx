@@ -1,6 +1,9 @@
 'use client';
 
-import { useSessionHistoryQuery } from '@tuturuuu/hooks/hooks/use-session-history-query';
+import {
+  useSessionHistoryQuery,
+  useWorkspaceTimeThreshold,
+} from '@tuturuuu/hooks';
 import {
   ChevronDown,
   Clock,
@@ -32,7 +35,6 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useWorkspaceTimeThreshold } from '@/hooks/useWorkspaceTimeThreshold';
 import { formatDuration } from '@/lib/time-format';
 import type { PeriodStats } from '@/lib/time-tracker-utils';
 import type { SessionWithRelations } from '../../types';
