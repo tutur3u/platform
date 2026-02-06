@@ -56,7 +56,7 @@ import {
 } from './session-utils';
 import { StackedSessionItem } from './stacked-session-item';
 import { useSessionActions } from './use-session-actions';
-import { CompactWeekSummary, WeekCalendarGrid } from './week-calendar-grid';
+import { CompactWeekSummary } from './week-calendar-grid';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -364,7 +364,7 @@ export function SessionHistory({
       )}
 
       <Card className="shadow-sm">
-        <CardHeader className="gap-4 p-4 md:p-6">
+        <CardHeader className="gap-4 p-4 md:px-6 md:py-4">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <CardTitle className="flex items-center gap-2 text-xl md:text-2xl">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-dynamic-orange/10 ring-1 ring-dynamic-orange/20">
@@ -419,15 +419,16 @@ export function SessionHistory({
           />
         </CardHeader>
 
-        <CardContent className="p-4 md:p-6">
-          {isLoadingSessions ? (
+        <CardContent className="p-4 md:px-6 md:py-3">
+          {isLoadingSessions && !isPeriodStatsReady ? (
             <div className="flex flex-col items-center justify-center py-12 md:py-16">
               <Loader2 className="h-10 w-10 animate-spin text-dynamic-orange md:h-12 md:w-12" />
               <p className="mt-4 text-muted-foreground text-sm">
                 {t('loading_sessions')}
               </p>
             </div>
-          ) : sessionsForPeriod?.length === 0 ? (
+          ) : sessionsForPeriod?.length === 0 &&
+            (!isPeriodStatsReady || (periodStats?.sessionCount || 0) === 0) ? (
             <div className="flex flex-col items-center justify-center py-12 md:py-16">
               <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-linear-to-br from-dynamic-orange/10 to-dynamic-orange/5 ring-1 ring-dynamic-orange/20 md:h-24 md:w-24">
                 <Clock className="h-10 w-10 text-dynamic-orange md:h-12 md:w-12" />
@@ -465,20 +466,6 @@ export function SessionHistory({
           ) : (
             // Day/Week View Layout
             <>
-              {viewMode === 'week' &&
-                sessionsForPeriod &&
-                sessionsForPeriod.length > 0 && (
-                  <div className="mb-4">
-                    <CompactWeekSummary
-                      sessions={sessionsForPeriod}
-                      startOfPeriod={startOfPeriod}
-                      categories={categories}
-                      userTimezone={userTimezone}
-                      onSessionClick={(session) => openEditDialog(session)}
-                    />
-                  </div>
-                )}
-
               <Collapsible
                 open={overviewOpen}
                 onOpenChange={handleOverviewToggle}
@@ -505,22 +492,16 @@ export function SessionHistory({
                     />
 
                     {/* Desktop-only: full calendar grid (CompactWeekSummary covers mobile) */}
-                    {viewMode === 'week' &&
-                      sessionsForPeriod &&
-                      sessionsForPeriod.length > 0 && (
-                        <div className="hidden md:block">
-                          <WeekCalendarGrid
-                            sessions={sessionsForPeriod}
-                            startOfPeriod={startOfPeriod}
-                            endOfPeriod={endOfPeriod}
-                            categories={categories}
-                            userTimezone={userTimezone}
-                            onSessionClick={(session) =>
-                              openEditDialog(session)
-                            }
-                          />
-                        </div>
-                      )}
+                    {viewMode === 'week' && (
+                      <div className="hidden md:block">
+                        <CompactWeekSummary
+                          sessions={sessions}
+                          startOfPeriod={startOfPeriod}
+                          categories={categories}
+                          userTimezone={userTimezone}
+                        />
+                      </div>
+                    )}
                   </div>
                 </CollapsibleContent>
               </Collapsible>
