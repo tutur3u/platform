@@ -20,6 +20,7 @@ import {
   isPersonalWorkspace,
   normalizeWorkspaceId,
 } from '@/lib/workspace-helper';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -462,28 +463,38 @@ export async function POST(
 
       // Only apply restrictions if threshold is explicitly set (not null)
       if (thresholdDays !== null && thresholdDays !== undefined) {
-        // If threshold is 0, all missed entries must go through request flow
-        if (thresholdDays === 0) {
-          return NextResponse.json(
-            {
-              error:
-                'All missed entries must be submitted as requests for approval',
-            },
-            { status: 400 }
-          );
-        }
+        // Check if user has permission to bypass approval
+        const { containsPermission } = await getPermissions({
+          wsId: normalizedWsId,
+        });
+        const canBypass = containsPermission(
+          'bypass_time_tracking_request_approval'
+        );
 
-        // Check if start time is older than threshold days
-        const thresholdAgo = new Date();
-        thresholdAgo.setDate(thresholdAgo.getDate() - thresholdDays);
+        if (!canBypass) {
+          // If threshold is 0, all missed entries must go through request flow
+          if (thresholdDays === 0) {
+            return NextResponse.json(
+              {
+                error:
+                  'All missed entries must be submitted as requests for approval',
+              },
+              { status: 400 }
+            );
+          }
 
-        if (start < thresholdAgo) {
-          return NextResponse.json(
-            {
-              error: `Cannot add missed entries older than ${thresholdDays} day${thresholdDays !== 1 ? 's' : ''}. Please submit a request for approval if you need to add older entries.`,
-            },
-            { status: 400 }
-          );
+          // Check if start time is older than threshold days
+          const thresholdAgo = new Date();
+          thresholdAgo.setDate(thresholdAgo.getDate() - thresholdDays);
+
+          if (start < thresholdAgo) {
+            return NextResponse.json(
+              {
+                error: `Cannot add missed entries older than ${thresholdDays} day${thresholdDays !== 1 ? 's' : ''}. Please submit a request for approval if you need to add older entries.`,
+              },
+              { status: 400 }
+            );
+          }
         }
       }
 

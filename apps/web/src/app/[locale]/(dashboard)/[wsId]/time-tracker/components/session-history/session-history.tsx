@@ -639,7 +639,7 @@ export function SessionHistory({
         workspace={workspace}
         prefillStartTime={prefillStartTime}
         prefillEndTime={prefillEndTime}
-        canSkipProof={canManageTimeTrackingRequests}
+        canSkipProof={canBypassTimeTrackingRequestApproval}
       />
 
       {/* Move Session Dialog */}
