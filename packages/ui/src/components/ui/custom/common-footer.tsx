@@ -211,6 +211,18 @@ export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
             >
               {t('common.privacy')}
             </Link>
+            <Link
+              href={`${TUTURUUU_URL}/community-guidelines`}
+              className="text-foreground/80 text-sm hover:text-foreground hover:underline md:w-fit"
+            >
+              {t('common.community-guidelines')}
+            </Link>
+            <Link
+              href={`${TUTURUUU_URL}/acceptable-use`}
+              className="text-foreground/80 text-sm hover:text-foreground hover:underline md:w-fit"
+            >
+              {t('common.acceptable-use')}
+            </Link>
           </div>
 
           <div className="grid gap-1 md:items-start">

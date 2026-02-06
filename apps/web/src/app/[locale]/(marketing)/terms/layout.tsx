@@ -3,7 +3,8 @@ import type { ReactNode } from 'react';
 
 export const metadata: Metadata = {
   title: 'Terms of Service',
-  description: 'Review the terms and conditions for using Tuturuuu products.',
+  description:
+    'Terms of Service for Tuturuuu JSC — an open-source AI-powered productivity platform incorporated in Vietnam.',
 };
 
 export default function TermsLayout({ children }: { children: ReactNode }) {
