@@ -18,10 +18,10 @@ Future<void> initSupabase() async {
   await Supabase.initialize(
     url: url,
     anonKey: Env.supabaseAnonKey,
-    authOptions: const FlutterAuthClientOptions(
+    authOptions: FlutterAuthClientOptions(
       autoRefreshToken: true,
+      localStorage: SupabaseSecureStorage(),
     ),
-    localStorage: SupabaseSecureStorage(),
   );
 }
 

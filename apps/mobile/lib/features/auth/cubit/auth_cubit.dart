@@ -3,8 +3,7 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'
-    show AuthChangeEvent, AuthState as SupaAuthState;
+import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
 /// Manages authentication state across the app.
 ///
@@ -17,7 +16,7 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   final AuthRepository _repo;
-  StreamSubscription<SupaAuthState>? _authSub;
+  StreamSubscription<supa.AuthState>? _authSub;
 
   Future<void> _init() async {
     final user = await _repo.getCurrentUser();
@@ -31,10 +30,9 @@ class AuthCubit extends Cubit<AuthState> {
       final event = authState.event;
       final session = authState.session;
 
-      if (event == AuthChangeEvent.signedIn && session?.user != null) {
+      if (event == supa.AuthChangeEvent.signedIn && session?.user != null) {
         emit(AuthState.authenticated(session!.user));
-      } else if (event == AuthChangeEvent.signedOut ||
-          event == AuthChangeEvent.tokenRefreshFailure) {
+      } else if (event == supa.AuthChangeEvent.signedOut) {
         emit(const AuthState.unauthenticated());
       }
     });
