@@ -74,7 +74,7 @@ async function getTemplate(
       description,
       visibility,
       content,
-      background_url,
+      background_path,
       created_at,
       updated_at
     `
@@ -102,6 +102,20 @@ async function getTemplate(
     };
   };
 
+  // Generate signed URL if there's a background path
+  let backgroundUrl: string | null = null;
+  if (template.background_path) {
+    try {
+      const { data: signedUrlData } = await supabase.storage
+        .from('workspaces')
+        .createSignedUrl(template.background_path, 3600); // 1 hour expiry
+
+      backgroundUrl = signedUrlData?.signedUrl || null;
+    } catch (error) {
+      console.error('Error generating signed URL for template:', error);
+    }
+  }
+
   return {
     id: template.id,
     wsId: template.ws_id,
@@ -110,7 +124,7 @@ async function getTemplate(
     name: template.name,
     description: template.description,
     visibility: template.visibility as 'private' | 'workspace' | 'public',
-    backgroundUrl: template.background_url,
+    backgroundUrl, // Signed URL for display
     createdAt: template.created_at,
     updatedAt: template.updated_at,
     isOwner: template.created_by === user?.id,

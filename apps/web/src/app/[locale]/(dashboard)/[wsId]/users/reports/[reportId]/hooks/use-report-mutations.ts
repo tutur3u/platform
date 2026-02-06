@@ -23,7 +23,7 @@ export function useReportMutations({
   isNew,
   healthcareVitals = [],
   factorEnabled = false,
-  scoreCalculationMethod = 'AVERAGE',
+  scoreCalculationMethod = 'LATEST',
 }: {
   wsId: string;
   report: UserReport;

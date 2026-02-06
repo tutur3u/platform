@@ -136,6 +136,7 @@ export default async function WorkspaceUserDetailsPage({
 
       {(reportId !== 'new' || (!!groupId && !!userId)) && (
         <EditableReportPreview
+          key={reportId === 'new' ? `new-${userId}-${groupId}` : reportId}
           wsId={wsId}
           report={{
             ...report,

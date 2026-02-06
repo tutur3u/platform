@@ -13,29 +13,19 @@ export const metadata: Metadata = {
   description: 'Manage Reports in the Users area of your Tuturuuu workspace.',
 };
 
-interface SearchParams {
-  userId?: string;
-  reportId?: string;
-}
-
 interface Props {
   params: Promise<{
     locale: string;
     wsId: string;
   }>;
-  searchParams: Promise<SearchParams>;
 }
 
-export default async function WorkspaceUserReportsPage({
-  params,
-  searchParams,
-}: Props) {
+export default async function WorkspaceUserReportsPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
         const t = await getTranslations();
         const user = await getCurrentWorkspaceUser(wsId);
-        const { userId, reportId } = await searchParams;
 
         if (!user) {
           console.error('Failed to fetch current workspace user');
@@ -83,8 +73,6 @@ export default async function WorkspaceUserReportsPage({
               canCreateReports={canCreateReports}
               canUpdateReports={canUpdateReports}
               canDeleteReports={canDeleteReports}
-              initialUserId={userId}
-              initialReportId={reportId}
             />
           </>
         );

@@ -64,9 +64,10 @@ export function EditTemplateDialog({
   );
   const [editVisibility, setEditVisibility] = useState(templateVisibility);
   const [backgroundFiles, setBackgroundFiles] = useState<StatedFile[]>([]);
-  const [backgroundUrl, setBackgroundUrl] = useState<string | null>(
-    templateBackgroundUrl || null
-  );
+  const [backgroundPath, setBackgroundPath] = useState<string | null>(null); // Storage path
+  const [backgroundPreviewUrl, setBackgroundPreviewUrl] = useState<
+    string | null
+  >(templateBackgroundUrl || null);
 
   const nameId = useId();
   const descId = useId();
@@ -81,7 +82,7 @@ export function EditTemplateDialog({
     setIsEditing(true);
     try {
       // Delete old background if it was changed or removed
-      if (backgroundUrl !== templateBackgroundUrl && templateBackgroundUrl) {
+      if (backgroundPath !== null && templateBackgroundUrl) {
         try {
           // Extract path from URL if it's a full URL
           const oldPath = templateBackgroundUrl.includes('/')
@@ -103,7 +104,7 @@ export function EditTemplateDialog({
             name: editName.trim(),
             description: editDescription.trim() || null,
             visibility: editVisibility,
-            backgroundUrl: backgroundUrl,
+            backgroundPath: backgroundPath || undefined,
           }),
         }
       );
@@ -130,8 +131,9 @@ export function EditTemplateDialog({
     await handleTemplateBackgroundUpload(
       files,
       wsId,
-      (url, _path) => {
-        setBackgroundUrl(url);
+      (url, path) => {
+        setBackgroundPreviewUrl(url); // Store signed URL for preview
+        setBackgroundPath(path); // Store storage path for API
       },
       (error) => {
         console.error('Background upload error:', error);
@@ -140,7 +142,8 @@ export function EditTemplateDialog({
   };
 
   const handleRemoveBackground = () => {
-    setBackgroundUrl(null);
+    setBackgroundPath(null);
+    setBackgroundPreviewUrl(null);
     setBackgroundFiles([]);
   };
 
@@ -211,12 +214,12 @@ export function EditTemplateDialog({
               Upload a background image for your template. Only one image is
               allowed.
             </p>
-            {backgroundUrl ? (
+            {backgroundPreviewUrl ? (
               <div className="space-y-2">
                 <div className="relative aspect-video w-full overflow-hidden rounded-lg border">
                   {/* biome-ignore lint/performance/noImgElement: preview image */}
                   <img
-                    src={backgroundUrl}
+                    src={backgroundPreviewUrl}
                     alt="Template background"
                     className="h-full w-full object-cover"
                   />

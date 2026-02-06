@@ -1,6 +1,6 @@
 'use client';
 
-import NotificationsCard from '@/app/[locale]/(dashboard)/settings/account/notifications/notifications-card';
+import NotificationsCard from './notifications-card';
 
 export default function NotificationSettings() {
   return (

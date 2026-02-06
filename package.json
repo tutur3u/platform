@@ -4,9 +4,8 @@
     "@biomejs/biome": "^2.3.14",
     "@lingual/i18n-check": "^0.8.19",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@typescript/native-preview": "^7.0.0-dev.20260203.1",
+    "@typescript/native-preview": "^7.0.0-dev.20260205.1",
     "@vitest/coverage-v8": "^4.0.18",
-    "lightningcss": "1.31.1",
     "lucide-static": "^0.563.0",
     "turbo": "^2.8.3",
     "typescript": "^5.9.3",
@@ -21,6 +20,7 @@
   "scripts": {
     "clean": "rm bun.lock && bunx npkill --delete-all -y",
     "setup": "bun i && bun run build -F @tuturuuu/types -F @tuturuuu/supabase -F @tuturuuu/masonry",
+    "native:check": "cd apps/native && bunx expo install --check",
     "build": "turbo run build",
     "build:web": "turbo run build -F @tuturuuu/web",
     "build:tudo": "turbo run build -F @tuturuuu/tudo",
@@ -140,6 +140,15 @@
     "lightningcss": "1.29.1"
   },
   "dependencies": {
-    "@tuturuuu/hooks": "workspace:*"
+    "@tuturuuu/hooks": "workspace:*",
+    "@react-native/virtualized-lists": "0.81.5",
+    "@react-navigation/core": "^7.14.0",
+    "@supabase/auth-js": "^2.95.2",
+    "@supabase/functions-js": "^2.95.2",
+    "@supabase/postgrest-js": "^2.95.2",
+    "@supabase/realtime-js": "^2.95.2",
+    "@supabase/storage-js": "^2.95.2",
+    "@tanstack/query-core": "^5.90.20",
+    "@types/node": "^25.2.1"
   }
 }

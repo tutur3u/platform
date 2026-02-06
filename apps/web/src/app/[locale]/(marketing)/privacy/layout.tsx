@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 export const metadata: Metadata = {
   title: 'Privacy Policy',
   description:
-    'Learn how Tuturuuu collects, stores, and protects customer data.',
+    'Privacy Policy for Tuturuuu JSC — how we collect, process, and protect your data as an open-source platform.',
 };
 
 export default function PrivacyLayout({ children }: { children: ReactNode }) {

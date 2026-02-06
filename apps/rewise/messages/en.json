@@ -1131,7 +1131,7 @@
     "api_key": "API Key",
     "api_keys": "API Keys",
     "create_key": "Create API Key",
-    "description": "Secret keys to access your workspace data externally via Tuturuuu Platform API in a secure and confidental way.",
+    "description": "Secret keys to access your workspace data externally via Tuturuuu Platform API in a secure and confidential way.",
     "edit_existing_workspace_key": "Edit an existing API key for this workspace.",
     "edit_key": "Edit API Key",
     "name": "Name",
@@ -1289,7 +1289,7 @@
   "ws-secrets": {
     "add_new_workspace_secret": "Add a new secret for this workspace.",
     "create_secret": "Create Secret",
-    "description": "A custom value to interact with our platform in a secure and confidental way.",
+    "description": "A custom value to interact with our platform in a secure and confidential way.",
     "edit_existing_workspace_secret": "Edit an existing secret for this workspace.",
     "edit_secret": "Edit Secret",
     "name": "Name",

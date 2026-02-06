@@ -290,7 +290,20 @@ export function createPOST(
 
       const totalCostUSD =
         cost.inputCost + cost.outputCost + cost.reasoningCost;
-      const exchangeRate = 26000; // VND per USD
+
+      // Fetch dynamic USD→VND exchange rate via DB function, fallback to 26000
+      let exchangeRate = 26000;
+      try {
+        const { data: rate } = await sbAdmin.rpc('get_exchange_rate', {
+          p_from_currency: 'USD',
+          p_to_currency: 'VND',
+        });
+        if (rate && Number(rate) > 0) {
+          exchangeRate = Number(rate);
+        }
+      } catch {
+        // Use fallback rate
+      }
       const totalCostVND = totalCostUSD * exchangeRate;
 
       // Format VND cost: show up to 3 decimal places if under 1 VND, otherwise whole number

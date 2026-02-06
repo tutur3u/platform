@@ -21,6 +21,11 @@ import {
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@tuturuuu/ui/collapsible';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import timezone from 'dayjs/plugin/timezone';
@@ -35,6 +40,7 @@ import MissedEntryDialog from '../missed-entry-dialog';
 import { WorkspaceSelectDialog } from '../workspace-select-dialog';
 import { EditSessionDialog } from './edit-session-dialog';
 import { MonthView } from './month-view';
+import { PendingRequestsBanner } from './pending-requests-banner';
 import { PeriodNavigation } from './period-navigation';
 import { SessionFilters } from './session-filters';
 import { SessionStats } from './session-stats';
@@ -50,6 +56,7 @@ import {
 } from './session-utils';
 import { StackedSessionItem } from './stacked-session-item';
 import { useSessionActions } from './use-session-actions';
+import { WeekCalendarGrid } from './week-calendar-grid';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -62,6 +69,10 @@ export function SessionHistory({
   userId,
   categories,
   workspace,
+  isPersonal,
+  currentUser,
+  canManageTimeTrackingRequests,
+  canBypassTimeTrackingRequestApproval,
 }: Omit<SessionHistoryProps, 'tasks'>) {
   const t = useTranslations('time-tracker.session_history');
   const { data: thresholdData, isLoading: isLoadingThreshold } =
@@ -72,6 +83,17 @@ export function SessionHistory({
   const [currentDate, setCurrentDate] = useState(dayjs());
 
   const userTimezone = dayjs.tz.guess();
+
+  // Week overview collapsible state — persisted to localStorage
+  const [overviewOpen, setOverviewOpen] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    const stored = localStorage.getItem('time-tracker-week-overview-open');
+    return stored === null ? true : stored === 'true';
+  });
+  const handleOverviewToggle = useCallback((open: boolean) => {
+    setOverviewOpen(open);
+    localStorage.setItem('time-tracker-week-overview-open', String(open));
+  }, []);
 
   // Filter state
   const [filters, setFilters] = useState<FilterState>({
@@ -251,6 +273,21 @@ export function SessionHistory({
 
   return (
     <>
+      {!isPersonal && currentUser && (
+        <div className="mb-4">
+          <PendingRequestsBanner
+            wsId={wsId}
+            currentUser={currentUser}
+            canManageTimeTrackingRequests={
+              canManageTimeTrackingRequests ?? false
+            }
+            canBypassTimeTrackingRequestApproval={
+              canBypassTimeTrackingRequestApproval ?? false
+            }
+          />
+        </div>
+      )}
+
       <Card className="shadow-sm">
         <CardHeader className="gap-4 p-4 md:p-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -353,10 +390,46 @@ export function SessionHistory({
           ) : (
             // Day/Week View Layout
             <>
-              <SessionStats
-                periodStats={periodStats}
-                isLoading={isPeriodStatsLoading}
-              />
+              <Collapsible
+                open={overviewOpen}
+                onOpenChange={handleOverviewToggle}
+                className="mb-4 rounded-lg md:border md:p-4"
+              >
+                <CollapsibleTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between rounded-lg px-1 py-2 text-left font-medium text-muted-foreground text-sm transition-colors hover:text-foreground"
+                  >
+                    {t('week_overview')}
+                    <ChevronDown
+                      className={`h-4 w-4 transition-transform ${
+                        overviewOpen ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="mt-4 space-y-4">
+                    <SessionStats
+                      periodStats={periodStats}
+                      isLoading={isPeriodStatsLoading}
+                    />
+
+                    {viewMode === 'week' &&
+                      sessionsForPeriod &&
+                      sessionsForPeriod.length > 0 && (
+                        <WeekCalendarGrid
+                          sessions={sessionsForPeriod}
+                          startOfPeriod={startOfPeriod}
+                          endOfPeriod={endOfPeriod}
+                          categories={categories}
+                          userTimezone={userTimezone}
+                          onSessionClick={(session) => openEditDialog(session)}
+                        />
+                      )}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
 
               <div className="space-y-6">
                 {sortSessionGroups(Object.entries(groupedStackedSessions)).map(
@@ -491,6 +564,7 @@ export function SessionHistory({
         workspace={workspace}
         prefillStartTime={prefillStartTime}
         prefillEndTime={prefillEndTime}
+        canSkipProof={canManageTimeTrackingRequests}
       />
 
       {/* Move Session Dialog */}

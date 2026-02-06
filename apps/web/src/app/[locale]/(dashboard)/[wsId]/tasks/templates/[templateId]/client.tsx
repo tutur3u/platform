@@ -43,7 +43,6 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -89,24 +88,40 @@ const priorityConfig = {
   },
 } as const;
 
-// Status color mapping
+// Status color mapping (matches Tudo status-section.tsx)
 const statusColors = {
-  todo: 'bg-dynamic-slate/10 border-dynamic-slate/30',
-  'in-progress': 'bg-dynamic-blue/10 border-dynamic-blue/30',
-  'in progress': 'bg-dynamic-blue/10 border-dynamic-blue/30',
+  not_started: 'bg-dynamic-gray/10 border-dynamic-gray/30',
+  active: 'bg-dynamic-blue/10 border-dynamic-blue/30',
   done: 'bg-dynamic-green/10 border-dynamic-green/30',
-  completed: 'bg-dynamic-green/10 border-dynamic-green/30',
-  blocked: 'bg-dynamic-red/10 border-dynamic-red/30',
-  review: 'bg-dynamic-purple/10 border-dynamic-purple/30',
-  backlog: 'bg-dynamic-gray/10 border-dynamic-gray/30',
+  closed: 'bg-dynamic-purple/10 border-dynamic-purple/30',
+  documents: 'bg-dynamic-cyan/10 border-dynamic-cyan/30',
+} as const;
+
+// Status border accent colors (for the left border indicator)
+const statusBorderAccentColors = {
+  not_started: 'border-l-dynamic-gray',
+  active: 'border-l-dynamic-blue',
+  done: 'border-l-dynamic-green',
+  closed: 'border-l-dynamic-purple',
+  documents: 'border-l-dynamic-cyan',
 } as const;
 
 // Helper to get status color
 const getStatusColor = (status: string): string => {
-  const normalizedStatus = status.toLowerCase().replace(/\s+/g, '-');
+  const normalizedStatus = status.toLowerCase().replace(/\s+/g, '_');
   return (
     statusColors[normalizedStatus as keyof typeof statusColors] ||
     'bg-dynamic-gray/10 border-dynamic-gray/30'
+  );
+};
+
+// Helper to get status border accent color
+const getStatusBorderAccent = (status: string): string => {
+  const normalizedStatus = status.toLowerCase().replace(/\s+/g, '_');
+  return (
+    statusBorderAccentColors[
+      normalizedStatus as keyof typeof statusBorderAccentColors
+    ] || 'border-l-dynamic-gray'
   );
 };
 
@@ -248,16 +263,27 @@ export default function TemplateDetailClient({ wsId, template }: Props) {
       <Globe className="h-4 w-4" />
     );
 
+  const handleBack = () => {
+    // Check if there's history to go back to
+    if (window.history.length > 1) {
+      router.back();
+    } else {
+      // Fallback to templates page if no history
+      router.push(`/${wsId}/tasks/templates`);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Back Link */}
-      <Link
-        href={`/${wsId}/tasks/templates`}
+      {/* Back Button */}
+      <Button
+        onClick={handleBack}
+        variant="link"
         className="inline-flex items-center gap-2 text-muted-foreground text-sm transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
         {t('detail.back_to_templates')}
-      </Link>
+      </Button>
 
       {/* Header */}
       <div className="grid gap-8 lg:grid-cols-3">
@@ -453,10 +479,11 @@ export default function TemplateDetailClient({ wsId, template }: Props) {
                 key={index}
                 className={cn(
                   'overflow-hidden border-l-4 transition-all hover:shadow-lg',
-                  getStatusColor(list.status)
+                  getStatusColor(list.status),
+                  getStatusBorderAccent(list.status)
                 )}
               >
-                <CardHeader className="space-y-3 pb-4">
+                <CardHeader className="space-y-2 pb-4">
                   <div className="flex items-start justify-between gap-2">
                     <CardTitle className="flex items-center gap-2 text-base">
                       <KanbanSquare className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -465,14 +492,6 @@ export default function TemplateDetailClient({ wsId, template }: Props) {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
-                    {/* Status badge */}
-                    <Badge
-                      variant="secondary"
-                      className="font-medium text-xs capitalize"
-                    >
-                      {list.status}
-                    </Badge>
-
                     {/* Task count */}
                     <div className="flex items-center gap-1 text-muted-foreground text-xs">
                       <ListTodo className="h-3.5 w-3.5" />

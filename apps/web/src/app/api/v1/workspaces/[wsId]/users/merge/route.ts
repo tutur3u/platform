@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type {
   MergeUsersRequest,
   PhasedMergeResult,
@@ -92,9 +95,6 @@ const FINAL_PHASES = [
   { name: '5', fn: 'merge_workspace_users_phase5' },
 ] as const;
 
-const BATCH_SIZE = 1000;
-const MAX_BATCH_ITERATIONS = 500; // Safety limit per table
-
 interface MigrateResult {
   table: string;
   column: string;
@@ -106,86 +106,76 @@ interface MigrateResult {
  * Migrate all rows in a single table/column from sourceId to targetId
  * using direct Supabase query builder calls (no RPC overhead).
  *
- * Processes in batches of BATCH_SIZE to keep each query fast and
- * well within PostgREST connection timeout limits.
+ * Uses an admin (service_role) client to bypass RLS and BEFORE UPDATE
+ * triggers that check auth.uid() — e.g. the handle_post_approval trigger
+ * on user_group_posts which would otherwise reset approval status or
+ * raise permission errors during merge operations.
  */
 async function migrateTableColumn(
   supabase: AnySupabaseClient,
   table: string,
   column: string,
   sourceId: string,
-  targetId: string,
-  batchSize: number
+  targetId: string
 ): Promise<MigrateResult> {
-  let totalUpdated = 0;
+  // Count affected rows first (lightweight HEAD request)
+  const { count, error: countError } = await supabase
+    .from(table)
+    .select('*', { count: 'exact', head: true })
+    .eq(column, sourceId);
 
-  // Special case: user_indicators has no `id` column (composite PK)
-  // Do a single unbatched update since row count is typically small
-  if (table === 'user_indicators') {
-    const { error } = await supabase
-      .from(table)
-      .update({ [column]: targetId })
-      .eq(column, sourceId);
-
-    if (error) {
-      return { table, column, totalRowsUpdated: 0, error: error.message };
-    }
-    return { table, column, totalRowsUpdated: 1 };
+  if (countError) {
+    return { table, column, totalRowsUpdated: 0, error: countError.message };
   }
 
-  // Standard batched migration: SELECT ids, then UPDATE WHERE id IN (...)
-  let iterations = 0;
-  while (iterations < MAX_BATCH_ITERATIONS) {
-    iterations++;
-
-    // 1. Select a batch of row IDs that still reference sourceId
-    const { data: rows, error: selectError } = await supabase
-      .from(table)
-      .select('id')
-      .eq(column, sourceId)
-      .limit(batchSize);
-
-    if (selectError) {
-      return {
-        table,
-        column,
-        totalRowsUpdated: totalUpdated,
-        error: selectError.message,
-      };
-    }
-
-    // No more rows to migrate for this table/column
-    if (!rows || rows.length === 0) break;
-
-    // 2. Update those specific rows to point at targetId
-    const ids = rows.map((r: { id: string }) => r.id);
-    const { error: updateError } = await supabase
-      .from(table)
-      .update({ [column]: targetId })
-      .in('id', ids);
-
-    if (updateError) {
-      return {
-        table,
-        column,
-        totalRowsUpdated: totalUpdated,
-        error: updateError.message,
-      };
-    }
-
-    totalUpdated += rows.length;
-
-    // If we got fewer than batchSize, there's no more data
-    if (rows.length < batchSize) break;
+  const rowCount = count ?? 0;
+  if (rowCount === 0) {
+    return { table, column, totalRowsUpdated: 0 };
   }
 
-  return { table, column, totalRowsUpdated: totalUpdated };
+  // Update all matching rows in a single query.
+  // Using .eq() keeps the URL small (no .in() with hundreds of UUIDs).
+  // The admin client bypasses RLS so there's no per-row policy overhead,
+  // making single-query updates fast even for large tables.
+  const { error } = await supabase
+    .from(table)
+    .update({ [column]: targetId })
+    .eq(column, sourceId);
+
+  if (error) {
+    return { table, column, totalRowsUpdated: 0, error: error.message };
+  }
+
+  return { table, column, totalRowsUpdated: rowCount };
 }
 
 export async function POST(req: Request, { params }: Params) {
   try {
     const { wsId: rawWsId } = await params;
     const wsId = await normalizeWorkspaceId(rawWsId);
+
+    // Verify the caller is a workspace member
+    const supabaseAuth = await createClient();
+    const {
+      data: { user },
+    } = await supabaseAuth.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { data: membership } = await supabaseAuth
+      .from('workspace_members')
+      .select('user_id')
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (!membership) {
+      return NextResponse.json(
+        { message: 'Not a member of this workspace' },
+        { status: 403 }
+      );
+    }
 
     // Check permissions - require both delete_users and update_users
     const { withoutPermission } = await getPermissions({ wsId });
@@ -221,10 +211,10 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
-    const supabase = await createClient();
-
-    // Validate source and target users exist in this workspace
-    const { data: sourceUser, error: sourceError } = await supabase
+    // Validate source and target users exist in this workspace BEFORE
+    // creating the admin client. Uses user-context client so RLS ensures
+    // the caller can actually see these workspace users.
+    const { data: sourceUser, error: sourceError } = await supabaseAuth
       .from('workspace_users')
       .select('id')
       .eq('id', sourceId)
@@ -244,7 +234,7 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
-    const { data: targetUser, error: targetError } = await supabase
+    const { data: targetUser, error: targetError } = await supabaseAuth
       .from('workspace_users')
       .select('id')
       .eq('id', targetId)
@@ -263,6 +253,13 @@ export async function POST(req: Request, { params }: Params) {
         { status: 404 }
       );
     }
+
+    // Admin client for data migration — only created AFTER workspace
+    // membership is validated above. Bypasses RLS and auth.uid()-based
+    // triggers (e.g. handle_post_approval on user_group_posts which
+    // resets approval status on any UPDATE when the caller lacks
+    // approve_posts permission).
+    const sbAdmin = await createAdminClient();
 
     // Track progress
     const phaseResults: PhaseResult[] = [];
@@ -290,12 +287,11 @@ export async function POST(req: Request, { params }: Params) {
       const { table, column } = pair;
 
       const result = await migrateTableColumn(
-        supabase,
+        sbAdmin,
         table,
         column,
         sourceId,
-        targetId,
-        BATCH_SIZE
+        targetId
       );
 
       if (result.error) {
@@ -353,7 +349,11 @@ export async function POST(req: Request, { params }: Params) {
 
     // =========================================================================
     // PHASES 2-5: Composite PKs, custom fields, link transfer, final merge
-    // These operate on small data sets, so RPC calls are fine here
+    // These RPC functions are SECURITY DEFINER (bypass RLS internally) but
+    // validate auth.uid() at the top — so they MUST be called with the
+    // user-context client, NOT the admin client (which has auth.uid()=NULL).
+    // Phase 1 uses sbAdmin because direct queries trigger BEFORE UPDATE
+    // approval triggers that check auth.uid(); phases 2-5 don't touch those.
     // =========================================================================
     for (let i = 0; i < FINAL_PHASES.length; i++) {
       const phase = FINAL_PHASES[i];
@@ -361,7 +361,7 @@ export async function POST(req: Request, { params }: Params) {
 
       const phaseNumber = i + 2; // Phases 2, 3, 4, 5
 
-      const { data, error } = await (supabase.rpc as CallableFunction)(
+      const { data, error } = await (supabaseAuth.rpc as CallableFunction)(
         phase.fn,
         {
           _source_id: sourceId,

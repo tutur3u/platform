@@ -11,7 +11,6 @@ import {
   FolderOpen,
   Lock,
   Settings2,
-  Tag,
   Wallet,
 } from '@tuturuuu/icons';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
@@ -51,7 +50,6 @@ import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { Textarea } from '@tuturuuu/ui/textarea';
 import { fetcher } from '@tuturuuu/utils/fetcher';
 import { cn } from '@tuturuuu/utils/format';
 import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
@@ -61,7 +59,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import type * as React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import * as z from 'zod';
 import { getWalletImagePath } from '../wallets/wallet-images';
 
@@ -259,6 +257,13 @@ export function TransactionForm({
   const hasUpdatePermission = canUpdateTransactions && data?.id;
   const hasFormPermission = hasCreatePermission || hasUpdatePermission;
 
+  // Derive currency suffix from selected wallet
+  const selectedWalletId = form.watch('origin_wallet_id');
+  const selectedWalletCurrency = useMemo(
+    () => wallets?.find((w) => w.id === selectedWalletId)?.currency,
+    [wallets, selectedWalletId]
+  );
+
   // Check confidential transaction permissions
   const canManageConfidential =
     (hasCreatePermission && canCreateConfidentialTransactions) ||
@@ -444,28 +449,14 @@ export function TransactionForm({
           className="flex flex-col space-y-3"
         >
           <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="mb-3 grid w-full grid-cols-3">
+            <TabsList className="mb-3 grid w-full grid-cols-2">
               <TabsTrigger value="basic" className="gap-1.5">
                 <Wallet className="h-4 w-4" />
-                <span className="hidden sm:inline">
-                  {t('transaction-data-table.tab_basic')}
-                </span>
+                {t('transaction-data-table.tab_basic')}
               </TabsTrigger>
-              <TabsTrigger value="details" className="gap-1.5">
-                <Tag className="h-4 w-4" />
-                <span className="hidden sm:inline">
-                  {t('transaction-data-table.tab_details')}
-                </span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="advanced"
-                className="gap-1.5"
-                disabled={!canManageConfidential}
-              >
+              <TabsTrigger value="more" className="gap-1.5">
                 <Settings2 className="h-4 w-4" />
-                <span className="hidden sm:inline">
-                  {t('transaction-data-table.tab_advanced')}
-                </span>
+                {t('transaction-data-table.tab_more')}
               </TabsTrigger>
             </TabsList>
 
@@ -578,6 +569,29 @@ export function TransactionForm({
                         onChange={field.onChange}
                         disabled={field.disabled}
                         placeholder="0"
+                        currencySuffix={selectedWalletCurrency}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="description"
+                disabled={loading || !hasFormPermission}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t('transaction-data-table.description')}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={t(
+                          'transaction-data-table.description_placeholder'
+                        )}
+                        {...field}
                       />
                     </FormControl>
                     <FormMessage />
@@ -637,29 +651,8 @@ export function TransactionForm({
               </Popover>
             </TabsContent>
 
-            {/* Tab 2: Details - Description and Tags */}
-            <TabsContent value="details" className="space-y-4">
-              <FormField
-                control={form.control}
-                name="description"
-                disabled={loading || !hasFormPermission}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      {t('transaction-data-table.description')}
-                    </FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder={t('transaction-data-table.description')}
-                        {...field}
-                        rows={3}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
+            {/* Tab 2: More - Tags, Report, and Confidential settings */}
+            <TabsContent value="more" className="space-y-4">
               <FormField
                 control={form.control}
                 name="tag_ids"
@@ -700,10 +693,7 @@ export function TransactionForm({
                   </FormItem>
                 )}
               />
-            </TabsContent>
 
-            {/* Tab 3: Advanced - Report opt-in and Confidential settings */}
-            <TabsContent value="advanced" className="space-y-3">
               <FormField
                 control={form.control}
                 name="report_opt_in"
@@ -729,89 +719,90 @@ export function TransactionForm({
                 )}
               />
 
-              {/* Compact confidential section */}
-              <div className="rounded-lg border border-dynamic-orange/30 bg-dynamic-orange/5 p-3">
-                <div className="mb-3 flex items-center gap-2">
-                  <Lock className="h-4 w-4 text-dynamic-orange" />
-                  <span className="font-medium text-sm">
-                    {t('workspace-finance-transactions.mark-as-confidential')}
-                  </span>
+              {canManageConfidential && (
+                <div className="rounded-lg border border-dynamic-orange/30 bg-dynamic-orange/5 p-3">
+                  <div className="mb-3 flex items-center gap-2">
+                    <Lock className="h-4 w-4 text-dynamic-orange" />
+                    <span className="font-medium text-sm">
+                      {t('workspace-finance-transactions.mark-as-confidential')}
+                    </span>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <FormField
+                      control={form.control}
+                      name="is_amount_confidential"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center justify-between rounded-md bg-background/50 px-3 py-2">
+                          <div className="flex items-center gap-2">
+                            <Coins className="h-4 w-4 text-muted-foreground" />
+                            <FormLabel className="mt-0! font-normal text-sm">
+                              {t(
+                                'workspace-finance-transactions.confidential-amount'
+                              )}
+                            </FormLabel>
+                          </div>
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value || false}
+                              onCheckedChange={field.onChange}
+                              disabled={loading}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="is_description_confidential"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center justify-between rounded-md bg-background/50 px-3 py-2">
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                            <FormLabel className="mt-0! font-normal text-sm">
+                              {t(
+                                'workspace-finance-transactions.confidential-description'
+                              )}
+                            </FormLabel>
+                          </div>
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value || false}
+                              onCheckedChange={field.onChange}
+                              disabled={loading}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="is_category_confidential"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center justify-between rounded-md bg-background/50 px-3 py-2">
+                          <div className="flex items-center gap-2">
+                            <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                            <FormLabel className="mt-0! font-normal text-sm">
+                              {t(
+                                'workspace-finance-transactions.confidential-category'
+                              )}
+                            </FormLabel>
+                          </div>
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value || false}
+                              onCheckedChange={field.onChange}
+                              disabled={loading}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
-
-                <div className="grid gap-2">
-                  <FormField
-                    control={form.control}
-                    name="is_amount_confidential"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center justify-between rounded-md bg-background/50 px-3 py-2">
-                        <div className="flex items-center gap-2">
-                          <Coins className="h-4 w-4 text-muted-foreground" />
-                          <FormLabel className="mt-0! font-normal text-sm">
-                            {t(
-                              'workspace-finance-transactions.confidential-amount'
-                            )}
-                          </FormLabel>
-                        </div>
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value || false}
-                            onCheckedChange={field.onChange}
-                            disabled={!canManageConfidential || loading}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="is_description_confidential"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center justify-between rounded-md bg-background/50 px-3 py-2">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                          <FormLabel className="mt-0! font-normal text-sm">
-                            {t(
-                              'workspace-finance-transactions.confidential-description'
-                            )}
-                          </FormLabel>
-                        </div>
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value || false}
-                            onCheckedChange={field.onChange}
-                            disabled={!canManageConfidential || loading}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="is_category_confidential"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center justify-between rounded-md bg-background/50 px-3 py-2">
-                        <div className="flex items-center gap-2">
-                          <FolderOpen className="h-4 w-4 text-muted-foreground" />
-                          <FormLabel className="mt-0! font-normal text-sm">
-                            {t(
-                              'workspace-finance-transactions.confidential-category'
-                            )}
-                          </FormLabel>
-                        </div>
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value || false}
-                            onCheckedChange={field.onChange}
-                            disabled={!canManageConfidential || loading}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
+              )}
             </TabsContent>
           </Tabs>
 

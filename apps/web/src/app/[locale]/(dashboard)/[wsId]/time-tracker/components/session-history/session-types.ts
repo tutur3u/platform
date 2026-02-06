@@ -4,6 +4,7 @@ import type {
   Workspace,
   WorkspaceTask,
 } from '@tuturuuu/types';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import type { SessionWithRelations } from '../../types';
 
 export type ViewMode = 'day' | 'week' | 'month';
@@ -28,6 +29,10 @@ export interface SessionHistoryProps {
   categories: TimeTrackingCategory[] | null;
   tasks: TaskWithDetails[] | null;
   workspace: Workspace;
+  isPersonal?: boolean;
+  currentUser?: WorkspaceUser | null;
+  canManageTimeTrackingRequests?: boolean;
+  canBypassTimeTrackingRequestApproval?: boolean;
 }
 
 export type TaskWithDetails = {

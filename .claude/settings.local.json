@@ -42,7 +42,21 @@
       "Bash(npm view:*)",
       "Bash(npx tsc:*)",
       "Bash(git log:*)",
-      "Bash(tail:*)"
+      "Bash(tail:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:supabase.com)",
+      "Bash(node scripts/i18n-sort.js:*)",
+      "Bash(npx @biomejs/biome check:*)",
+      "Bash(bunx @biomejs/biome check:*)",
+      "Bash(wc:*)",
+      "Bash(npx biome check:*)",
+      "WebFetch(domain:reactnativereusables.com)",
+      "WebFetch(domain:www.nativewind.dev)",
+      "WebFetch(domain:www.npmjs.com)",
+      "Bash(bunx --bun biome check:*)",
+      "Bash(bunx --bun biome:*)",
+      "Bash(bunx expo install:*)",
+      "Bash(bunx --bun tsgo:*)"
     ]
   }
 }

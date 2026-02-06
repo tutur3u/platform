@@ -38,8 +38,8 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/diff": "^8.0.0",
-    "@types/node": "^25.2.0",
-    "@types/react": "^19.2.10",
+    "@types/node": "^25.2.1",
+    "@types/react": "^19.2.13",
     "@vitejs/plugin-react": "^5.1.3",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
@@ -56,6 +56,7 @@
     "./editor": "./src/editor/index.ts",
     "./abuse-protection": "./src/abuse-protection/index.ts",
     "./currencies": "./src/currencies.ts",
+    "./exchange-rates": "./src/exchange-rates.ts",
     "./encryption": "./src/encryption/index.ts",
     "./finance": "./src/finance/index.ts"
   },

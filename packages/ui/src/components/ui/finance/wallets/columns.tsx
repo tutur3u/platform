@@ -1,12 +1,21 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
-import { Check, TrendingDown, TrendingUp, X } from '@tuturuuu/icons';
+import {
+  Check,
+  CreditCard,
+  TrendingDown,
+  TrendingUp,
+  Wallet as WalletIcon,
+  X,
+} from '@tuturuuu/icons';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import { Badge } from '@tuturuuu/ui/badge';
 import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { WalletRowActions } from '@tuturuuu/ui/finance/wallets/row-actions';
+import type { ExchangeRate } from '@tuturuuu/utils/exchange-rates';
+import { convertCurrency } from '@tuturuuu/utils/exchange-rates';
 import { cn, formatCurrency } from '@tuturuuu/utils/format';
 import moment from 'moment';
 import Link from 'next/link';
@@ -16,6 +25,7 @@ interface WalletExtraData {
   canUpdateWallets?: boolean;
   canDeleteWallets?: boolean;
   currency?: string;
+  exchangeRates?: ExchangeRate[];
   isPersonalWorkspace?: boolean;
 }
 
@@ -111,50 +121,84 @@ export const walletColumns = ({
       ),
       cell: ({ row }) => {
         const balance = Number(row.getValue('balance')) || 0;
-        // Use workspace currency for display consistency
-        const currency = workspaceCurrency;
+        const walletCurrency = row.original.currency || workspaceCurrency;
 
-        const formattedBalance = formatCurrency(balance, currency, undefined, {
-          signDisplay: 'exceptZero',
-        });
+        const formattedBalance = formatCurrency(
+          balance,
+          walletCurrency,
+          undefined,
+          { signDisplay: 'auto' }
+        );
+
+        // Show converted amount if wallet currency differs from workspace currency
+        const exchangeRates = extraData?.exchangeRates;
+        let convertedText: string | null = null;
+        if (
+          walletCurrency !== workspaceCurrency &&
+          exchangeRates &&
+          exchangeRates.length > 0 &&
+          balance !== 0
+        ) {
+          const converted = convertCurrency(
+            balance,
+            walletCurrency,
+            workspaceCurrency,
+            exchangeRates
+          );
+          if (converted !== null) {
+            convertedText = formatCurrency(
+              Math.abs(converted),
+              workspaceCurrency,
+              undefined,
+              { signDisplay: 'never', maximumFractionDigits: 0 }
+            );
+          }
+        }
 
         const isPositive = balance > 0;
         const isNegative = balance < 0;
         const isNeutral = balance === 0;
 
         return (
-          <div className="flex items-center gap-2">
-            {isPositive && (
-              <Badge
-                variant="outline"
-                className={cn(
-                  'border-dynamic-green/30 bg-dynamic-green/10 font-semibold text-dynamic-green',
-                  'flex items-center gap-1'
-                )}
-              >
-                <TrendingUp className="h-3 w-3" />
-                {formattedBalance}
-              </Badge>
-            )}
-            {isNegative && (
-              <Badge
-                variant="outline"
-                className={cn(
-                  'border-dynamic-red/30 bg-dynamic-red/10 font-semibold text-dynamic-red',
-                  'flex items-center gap-1'
-                )}
-              >
-                <TrendingDown className="h-3 w-3" />
-                {formattedBalance}
-              </Badge>
-            )}
-            {isNeutral && (
-              <Badge
-                variant="outline"
-                className="font-semibold text-muted-foreground"
-              >
-                {formattedBalance}
-              </Badge>
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-2">
+              {isPositive && (
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    'border-dynamic-green/30 bg-dynamic-green/10 font-semibold text-dynamic-green',
+                    'flex items-center gap-1'
+                  )}
+                >
+                  <TrendingUp className="h-3 w-3" />
+                  {formattedBalance}
+                </Badge>
+              )}
+              {isNegative && (
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    'border-dynamic-red/30 bg-dynamic-red/10 font-semibold text-dynamic-red',
+                    'flex items-center gap-1'
+                  )}
+                >
+                  <TrendingDown className="h-3 w-3" />
+                  {formattedBalance}
+                </Badge>
+              )}
+              {isNeutral && (
+                <Badge
+                  variant="outline"
+                  className="font-semibold text-muted-foreground"
+                >
+                  {formattedBalance}
+                </Badge>
+              )}
+            </div>
+            {convertedText && (
+              <span className="text-muted-foreground text-xs">
+                {'\u2248'} {convertedText}
+              </span>
             )}
           </div>
         );
@@ -169,7 +213,29 @@ export const walletColumns = ({
           title={t(`${namespace}.type`)}
         />
       ),
-      cell: ({ row }) => <div>{row.getValue('type') || '-'}</div>,
+      cell: ({ row }) => {
+        const type = row.getValue('type') as string;
+        if (!type) return <div>-</div>;
+        const isCredit = type === 'CREDIT';
+        return (
+          <Badge
+            variant="outline"
+            className={cn(
+              'flex w-fit items-center gap-1',
+              isCredit
+                ? 'border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple'
+                : 'border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue'
+            )}
+          >
+            {isCredit ? (
+              <CreditCard className="h-3 w-3" />
+            ) : (
+              <WalletIcon className="h-3 w-3" />
+            )}
+            {t(`${namespace}.${type.toLowerCase()}`)}
+          </Badge>
+        );
+      },
     },
     {
       accessorKey: 'currency',

@@ -92,11 +92,8 @@ import { useState } from 'react';
 import { useUserBooleanConfig } from '@/hooks/use-user-config';
 import WorkspaceAvatarSettings from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/avatar';
 import BasicInfo from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/basic-info';
-import UserAvatar from '../../app/[locale]/settings-avatar';
-import DisplayNameInput from '../../app/[locale]/settings-display-name-input';
-import EmailInput from '../../app/[locale]/settings-email-input';
-import BillingSettings from './account/billing-settings';
-import MyWorkspacesSettings from './account/my-workspaces-settings';
+import AccountManagementSettings from './account/account-management-settings';
+import AccountStatusSection from './account/account-status-section';
 import NotificationSettings from './account/notification-settings';
 import SecuritySettings from './account/security-settings';
 import SessionSettings from './account/session-settings';
@@ -115,6 +112,10 @@ import InvoiceSettings from './finance/invoice-settings';
 import InvoiceVisibilitySettings from './finance/invoice-visibility-settings';
 import ReferralSettings from './inventory/referral-settings';
 import { ReportDefaultTitleSettings } from './reports/report-default-title-settings';
+import UserAvatar from './settings-avatar';
+import DisplayNameInput from './settings-display-name-input';
+import EmailInput from './settings-email-input';
+import FullNameInput from './settings-full-name-input';
 import SidebarSettings from './sidebar-settings';
 import { TaskSettings } from './tasks/task-settings';
 import { TimeTrackerCategoriesSettings } from './time-tracker/time-tracker-categories-settings';
@@ -122,7 +123,9 @@ import { TimeTrackerGeneralSettings } from './time-tracker/time-tracker-general-
 import { TimeTrackerGoalsSettings } from './time-tracker/time-tracker-goals-settings';
 import { WorkspaceBreakTypesSettings } from './time-tracker/workspace-break-types-settings';
 import UsersManagementSettings from './users/users-management-settings';
+import BillingSettings from './workspace/billing-settings';
 import MembersSettings from './workspace/members-settings';
+import MyWorkspacesSettings from './workspace/my-workspaces-settings';
 import UserStatusSettings from './workspace/user-status-settings';
 
 interface SettingsDialogProps {
@@ -286,6 +289,13 @@ export function SettingsDialog({
           description: t('settings.user.sessions_description'),
           keywords: ['Sessions', 'Devices'],
         },
+        {
+          name: 'accounts',
+          label: t('settings-nav.accounts.name'),
+          icon: Users,
+          description: t('settings-nav.accounts.description'),
+          keywords: ['Accounts'],
+        },
       ],
     },
     {
@@ -404,7 +414,7 @@ export function SettingsDialog({
                 keywords: ['Members', 'Team'],
               },
               {
-                name: 'billing',
+                name: 'workspace_billing',
                 label: t('billing.billing'),
                 icon: CreditCard,
                 description: t('settings-account.billing-description'),
@@ -603,7 +613,7 @@ export function SettingsDialog({
     .filter((group) => group.items.length > 0);
 
   return (
-    <DialogContent className="flex h-[80vh] flex-col overflow-hidden p-0 md:max-h-200 md:max-w-225 lg:max-h-250 lg:max-w-250 xl:max-w-300">
+    <DialogContent className="flex h-[90vh] flex-col overflow-hidden p-0 md:max-h-200 md:max-w-225 lg:max-h-250 lg:max-w-250 xl:max-w-300">
       <DialogTitle className="sr-only">{t('common.settings')}</DialogTitle>
       <DialogDescription className="sr-only">
         {t('common.settings')}
@@ -813,6 +823,7 @@ export function SettingsDialog({
                       >
                         <UserAvatar user={user} />
                       </SettingItemTab>
+                      <AccountStatusSection user={user} />
                       <Separator />
                       <SettingItemTab
                         title={t('settings-account.display-name')}
@@ -822,7 +833,14 @@ export function SettingsDialog({
                       >
                         <DisplayNameInput defaultValue={user?.display_name} />
                       </SettingItemTab>
-                      <Separator />
+                      <SettingItemTab
+                        title={t('settings-account.full-name')}
+                        description={t(
+                          'settings-account.full-name-description'
+                        )}
+                      >
+                        <FullNameInput defaultValue={user?.full_name} />
+                      </SettingItemTab>
                       <SettingItemTab
                         title="Email"
                         description={t('settings-account.email-description')}
@@ -845,6 +863,12 @@ export function SettingsDialog({
                 {activeTab === 'sessions' && (
                   <div className="h-full">
                     <SessionSettings />
+                  </div>
+                )}
+
+                {activeTab === 'accounts' && (
+                  <div className="h-full">
+                    <AccountManagementSettings />
                   </div>
                 )}
 
@@ -954,6 +978,12 @@ export function SettingsDialog({
                   </div>
                 )}
 
+                {activeTab === 'workspace_billing' && wsId && (
+                  <div className="h-full">
+                    <BillingSettings wsId={wsId} />
+                  </div>
+                )}
+
                 {activeTab === 'user_status' && wsId && (
                   <div className="h-full">
                     <UserStatusSettings wsId={wsId} />
@@ -974,12 +1004,6 @@ export function SettingsDialog({
 
                 {activeTab === 'report_default_title' && workspace?.id && (
                   <ReportDefaultTitleSettings workspaceId={workspace.id} />
-                )}
-
-                {activeTab === 'billing' && (
-                  <div className="h-full">
-                    <BillingSettings />
-                  </div>
                 )}
 
                 {activeTab === 'finance_navigation' && workspace?.id && (

@@ -8,6 +8,7 @@ import {
   useEffect,
   useImperativeHandle,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -27,6 +28,26 @@ export interface CurrencyInputProps
   maximumFractionDigits?: number;
   /** Currency symbol to display as prefix */
   currencySymbol?: string;
+  /** Currency code or label shown as a muted suffix (e.g. "VND", "USD") */
+  currencySuffix?: string;
+  /** Hide the quick-action helpers below the input */
+  hideHelpers?: boolean;
+}
+
+/** Format a number compactly for button labels: 1000 → "1K", 1000000 → "1M" */
+function compactLabel(n: number): string {
+  if (n >= 1_000_000) return `${n / 1_000_000}M`;
+  if (n >= 1_000) return `${n / 1_000}K`;
+  return String(n);
+}
+
+/** Get the rounding unit based on value magnitude */
+function getRoundingUnit(v: number): number {
+  if (v >= 100_000) return 10_000;
+  if (v >= 10_000) return 1_000;
+  if (v >= 1_000) return 100;
+  if (v >= 100) return 10;
+  return 1;
 }
 
 /**
@@ -37,6 +58,7 @@ export interface CurrencyInputProps
  * - On blur: Formats to locale-specific display
  * - Handles decimal input properly
  * - Supports copy/paste with number extraction
+ * - Shows contextual helpers (multipliers, rounding) when focused
  */
 export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
   (
@@ -46,9 +68,11 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
       locale = 'en-US',
       maximumFractionDigits = 2,
       currencySymbol,
+      currencySuffix,
       className,
       disabled,
       placeholder = '0',
+      hideHelpers,
       ...props
     },
     ref
@@ -244,27 +268,194 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
       e.preventDefault();
     };
 
+    // Apply a helper value — keeps focus on the input
+    const applyValue = useCallback(
+      (newValue: number) => {
+        const clamped = Math.max(0, newValue);
+        onChange(clamped);
+        setDisplayValue(formatForDisplay(clamped));
+        // Re-focus and select after a tick
+        setTimeout(() => {
+          inputRef.current?.focus();
+          inputRef.current?.select();
+        }, 0);
+      },
+      [onChange, formatForDisplay]
+    );
+
+    // Round a number to the configured fraction digits
+    const roundToFraction = useCallback(
+      (n: number) => {
+        const factor = 10 ** maximumFractionDigits;
+        return Math.round(n * factor) / factor;
+      },
+      [maximumFractionDigits]
+    );
+
+    // Compute grouped helper sections based on current value
+    type HelperItem = {
+      label: string;
+      value: number;
+      variant: 'multiply' | 'divide' | 'preset' | 'round';
+    };
+    type HelperGroup = { key: string; items: HelperItem[] };
+
+    const helperGroups = useMemo((): HelperGroup[] => {
+      if (disabled || hideHelpers) return [];
+
+      const v = value ?? 0;
+
+      if (v <= 0) {
+        // Quick presets for empty field
+        const presets = [10, 50, 100, 500, 1_000, 5_000, 10_000, 50_000];
+        return [
+          {
+            key: 'presets',
+            items: presets.map((p) => ({
+              label: compactLabel(p),
+              value: p,
+              variant: 'preset' as const,
+            })),
+          },
+        ];
+      }
+
+      const groups: HelperGroup[] = [];
+
+      // Multipliers
+      groups.push({
+        key: 'multiply',
+        items: [
+          { label: '×10', value: v * 10, variant: 'multiply' },
+          { label: '×100', value: v * 100, variant: 'multiply' },
+          { label: '×1K', value: v * 1000, variant: 'multiply' },
+        ],
+      });
+
+      // Dividers — only show when result is > 0 after rounding
+      const divItems: HelperItem[] = [];
+      for (const d of [10, 100, 1000]) {
+        const result = roundToFraction(v / d);
+        if (result > 0) {
+          divItems.push({
+            label: `÷${compactLabel(d)}`,
+            value: result,
+            variant: 'divide',
+          });
+        }
+      }
+      if (divItems.length > 0) {
+        groups.push({ key: 'divide', items: divItems });
+      }
+
+      // Smart rounding
+      const unit = getRoundingUnit(v);
+      if (unit > 1) {
+        const roundedDown = Math.floor(v / unit) * unit;
+        const roundedUp = Math.ceil(v / unit) * unit;
+        const roundItems: HelperItem[] = [];
+
+        if (roundedDown > 0 && roundedDown !== v) {
+          roundItems.push({
+            label: `↓ ${compactLabel(roundedDown)}`,
+            value: roundedDown,
+            variant: 'round',
+          });
+        }
+        if (roundedUp !== v) {
+          roundItems.push({
+            label: `↑ ${compactLabel(roundedUp)}`,
+            value: roundedUp,
+            variant: 'round',
+          });
+        }
+        if (roundItems.length > 0) {
+          groups.push({ key: 'round', items: roundItems });
+        }
+      }
+
+      return groups;
+    }, [value, disabled, hideHelpers, roundToFraction]);
+
+    const showHelpers = isFocused && helperGroups.length > 0;
+
     return (
-      <div className="relative">
-        {currencySymbol && (
-          <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground">
-            {currencySymbol}
-          </span>
-        )}
-        <Input
-          ref={inputRef}
-          type="text"
-          inputMode="decimal"
-          className={cn(currencySymbol && 'pl-8', className)}
-          value={displayValue}
-          onChange={handleChange}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          onKeyDown={handleKeyDown}
-          disabled={disabled}
-          placeholder={placeholder}
-          {...props}
-        />
+      <div>
+        <div className="relative">
+          {currencySymbol && (
+            <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground">
+              {currencySymbol}
+            </span>
+          )}
+          <Input
+            ref={inputRef}
+            type="text"
+            inputMode="decimal"
+            className={cn(
+              currencySymbol && 'pl-8',
+              currencySuffix && 'pr-14',
+              className
+            )}
+            value={displayValue}
+            onChange={handleChange}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            disabled={disabled}
+            placeholder={placeholder}
+            {...props}
+          />
+          {currencySuffix && (
+            <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground/60 text-sm">
+              {currencySuffix}
+            </span>
+          )}
+        </div>
+
+        {/* Helpers toolbar */}
+        <div
+          className={cn(
+            'overflow-hidden transition-all duration-200',
+            showHelpers
+              ? 'mt-1.5 max-h-24 opacity-100'
+              : 'pointer-events-none mt-0 max-h-0 opacity-0'
+          )}
+        >
+          <div className="flex flex-wrap items-center gap-1">
+            {helperGroups.map((group, gi) => (
+              <div key={group.key} className="contents">
+                {gi > 0 && (
+                  <div className="mx-0.5 h-4 w-px shrink-0 bg-border" />
+                )}
+                {group.items.map((h) => (
+                  <button
+                    key={h.label}
+                    type="button"
+                    tabIndex={-1}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      applyValue(h.value);
+                    }}
+                    className={cn(
+                      'rounded-md border px-2 py-0.5 font-medium text-xs transition-colors',
+                      'select-none outline-none',
+                      h.variant === 'multiply' &&
+                        'border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20',
+                      h.variant === 'divide' &&
+                        'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange hover:bg-dynamic-orange/20',
+                      h.variant === 'preset' &&
+                        'border-border bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground',
+                      h.variant === 'round' &&
+                        'border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20'
+                    )}
+                  >
+                    {h.label}
+                  </button>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

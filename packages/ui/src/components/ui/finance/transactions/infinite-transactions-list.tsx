@@ -11,6 +11,7 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
+  Plus,
   TrendingDown,
   TrendingUp,
 } from '@tuturuuu/icons';
@@ -33,6 +34,7 @@ import {
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
+import { convertCurrency } from '@tuturuuu/utils/exchange-rates';
 import { cn, getCurrencyLocale } from '@tuturuuu/utils/format';
 import { resolveAutoTimezone } from '@tuturuuu/utils/timezone';
 import dayjs from 'dayjs';
@@ -51,6 +53,7 @@ import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigg
 import { useLocale, useTranslations } from 'next-intl';
 import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useExchangeRates } from '../../../../hooks/use-exchange-rates';
 import { TransactionForm } from './form';
 import { PeriodBreakdownPanel } from './period-charts';
 import { TransactionCard } from './transaction-card';
@@ -65,6 +68,8 @@ interface InfiniteTransactionsListProps {
   timezone?: string | null;
   /** View mode for transaction grouping */
   viewMode?: TransactionViewMode;
+  canCreateTransactions?: boolean;
+  canCreateConfidentialTransactions?: boolean;
   canUpdateTransactions?: boolean;
   canDeleteTransactions?: boolean;
   canUpdateConfidentialTransactions?: boolean;
@@ -103,6 +108,8 @@ export function InfiniteTransactionsList({
   currency,
   timezone: timezoneProp,
   viewMode = 'daily',
+  canCreateTransactions,
+  canCreateConfidentialTransactions,
   canUpdateTransactions,
   canDeleteTransactions,
   canUpdateConfidentialTransactions,
@@ -116,12 +123,17 @@ export function InfiniteTransactionsList({
   const locale = useLocale();
   const queryClient = useQueryClient();
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const { data: exchangeRatesData } = useExchangeRates();
+  const exchangeRates = exchangeRatesData?.data ?? [];
   const [selectedTransaction, setSelectedTransaction] =
     useState<Transaction | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] =
     useState<Transaction | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [createForGroupDate, setCreateForGroupDate] = useState<string | null>(
+    null
+  );
 
   // Resolve timezone: if 'auto' or null/undefined, use browser timezone
   const resolvedTimezone = useMemo(
@@ -625,6 +637,7 @@ export function InfiniteTransactionsList({
           stats={stats}
           isLoading={isStatsLoading}
           currency={currency}
+          exchangeRates={exchangeRates}
         />
       )}
 
@@ -632,42 +645,79 @@ export function InfiniteTransactionsList({
         // Use pre-computed period stats if available (for period-based views)
         const hasPeriodStats = !!group.periodStats;
 
-        // Calculate stats from transactions if not pre-computed
-        const dailyTotal = hasPeriodStats
-          ? group.periodStats!.netTotal
-          : group.transactions.reduce(
-              (sum: number, transaction: Transaction) => {
-                if (
-                  transaction.amount === null &&
-                  transaction.is_amount_confidential
-                ) {
-                  return sum;
-                }
-                return sum + (transaction.amount || 0);
-              },
-              0
+        // Helper to convert a transaction amount to the target currency
+        const convertTxAmount = (tx: Transaction): number => {
+          const amt = tx.amount || 0;
+          if (
+            tx.wallet_currency &&
+            currency &&
+            tx.wallet_currency.toUpperCase() !== currency.toUpperCase() &&
+            exchangeRates.length > 0
+          ) {
+            return (
+              convertCurrency(
+                amt,
+                tx.wallet_currency,
+                currency,
+                exchangeRates
+              ) ?? amt
             );
+          }
+          return amt;
+        };
+
+        // Detect if any transaction requires currency conversion
+        const hasConvertedAmounts = group.transactions.some(
+          (tx: Transaction) =>
+            tx.wallet_currency &&
+            currency &&
+            tx.wallet_currency.toUpperCase() !== currency.toUpperCase()
+        );
+
+        // When mixed currencies exist, always use client-side conversion
+        // because server periodStats sum raw amounts without currency conversion
+        const useClientSideStats = hasConvertedAmounts;
+
+        // Calculate stats from transactions if not pre-computed (or forced by mixed currencies)
+        const dailyTotal =
+          hasPeriodStats && !useClientSideStats
+            ? group.periodStats!.netTotal
+            : group.transactions.reduce(
+                (sum: number, transaction: Transaction) => {
+                  if (
+                    transaction.amount === null &&
+                    transaction.is_amount_confidential
+                  ) {
+                    return sum;
+                  }
+                  return sum + convertTxAmount(transaction);
+                },
+                0
+              );
 
         const isPositive = dailyTotal >= 0;
 
-        const hasRedactedAmounts = hasPeriodStats
-          ? group.periodStats!.hasRedactedAmounts
-          : group.transactions.some(
-              (transaction: Transaction) =>
-                transaction.amount === null &&
-                transaction.is_amount_confidential
-            );
+        const hasRedactedAmounts =
+          hasPeriodStats && !useClientSideStats
+            ? group.periodStats!.hasRedactedAmounts
+            : hasConvertedAmounts ||
+              group.transactions.some(
+                (transaction: Transaction) =>
+                  transaction.amount === null &&
+                  transaction.is_amount_confidential
+              );
 
-        const allAmountsRedacted = hasPeriodStats
-          ? group.periodStats!.transactionCount > 0 &&
-            group.periodStats!.totalIncome === 0 &&
-            group.periodStats!.totalExpense === 0 &&
-            group.periodStats!.hasRedactedAmounts
-          : group.transactions.every(
-              (transaction: Transaction) =>
-                transaction.amount === null &&
-                transaction.is_amount_confidential
-            );
+        const allAmountsRedacted =
+          hasPeriodStats && !useClientSideStats
+            ? group.periodStats!.transactionCount > 0 &&
+              group.periodStats!.totalIncome === 0 &&
+              group.periodStats!.totalExpense === 0 &&
+              group.periodStats!.hasRedactedAmounts
+            : group.transactions.every(
+                (transaction: Transaction) =>
+                  transaction.amount === null &&
+                  transaction.is_amount_confidential
+              );
 
         const isExpanded = expandedGroups.has(group.date);
         const displayCount = isExpanded ? group.transactions.length : 3;
@@ -680,25 +730,27 @@ export function InfiniteTransactionsList({
         let income: number;
         let expense: number;
 
-        if (hasPeriodStats) {
+        if (hasPeriodStats && !useClientSideStats) {
           income = group.periodStats!.totalIncome;
           expense = group.periodStats!.totalExpense;
         } else {
-          const amounts = group.transactions
-            .filter(
-              (transaction: Transaction) =>
-                !(
-                  transaction.amount === null &&
-                  transaction.is_amount_confidential
-                )
+          let incomeSum = 0;
+          let expenseSum = 0;
+          group.transactions.forEach((transaction: Transaction) => {
+            if (
+              transaction.amount === null &&
+              transaction.is_amount_confidential
             )
-            .map((transaction: Transaction) => transaction.amount || 0);
-          income = amounts
-            .filter((a: number) => a > 0)
-            .reduce((a: number, b: number) => a + b, 0);
-          expense = amounts
-            .filter((a: number) => a < 0)
-            .reduce((a: number, b: number) => a + b, 0);
+              return;
+            const converted = convertTxAmount(transaction);
+            if (converted > 0) {
+              incomeSum += converted;
+            } else {
+              expenseSum += converted;
+            }
+          });
+          income = incomeSum;
+          expense = expenseSum;
         }
 
         return (
@@ -774,9 +826,9 @@ export function InfiniteTransactionsList({
                   </div>
                 </div>
 
-                {/* Right: Daily total */}
-                {!allAmountsRedacted ? (
-                  <div className="flex items-center gap-3">
+                {/* Right: Daily total + Add transaction */}
+                <div className="flex items-center gap-3">
+                  {!allAmountsRedacted ? (
                     <div className="flex flex-col items-start gap-1 sm:items-end">
                       <span className="text-muted-foreground text-xs">
                         {t('workspace-finance-transactions.net-total')}
@@ -818,14 +870,28 @@ export function InfiniteTransactionsList({
                         </div>
                       </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <span className="font-medium text-sm italic">
-                      {t('workspace-finance-transactions.amount-redacted')}
-                    </span>
-                  </div>
-                )}
+                  ) : (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <span className="font-medium text-sm italic">
+                        {t('workspace-finance-transactions.amount-redacted')}
+                      </span>
+                    </div>
+                  )}
+
+                  {canCreateTransactions && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8 shrink-0"
+                      onClick={() => setCreateForGroupDate(group.date)}
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span className="sr-only">
+                        {t('ws-transactions.create')}
+                      </span>
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -900,6 +966,7 @@ export function InfiniteTransactionsList({
                     timezone={resolvedTimezone}
                     periodStats={group.periodStats}
                     workspaceId={wsId}
+                    walletId={walletId}
                   />
                 </div>
               </aside>
@@ -968,6 +1035,36 @@ export function InfiniteTransactionsList({
               onFinish={() => {
                 handleTransactionUpdate();
                 handleCloseDialog();
+              }}
+            />
+          }
+        />
+      )}
+
+      {/* Create Transaction Dialog (date-prefilled from group header) */}
+      {canCreateTransactions && (
+        <ModifiableDialogTrigger
+          data={{
+            wallet_id: walletId,
+            taken_at: createForGroupDate ?? undefined,
+          }}
+          open={!!createForGroupDate}
+          title={t('ws-transactions.create')}
+          createDescription={t('ws-transactions.create_description')}
+          setOpen={(open) => {
+            if (!open) setCreateForGroupDate(null);
+          }}
+          forceDefault
+          form={
+            <TransactionForm
+              wsId={wsId}
+              canCreateTransactions={canCreateTransactions}
+              canCreateConfidentialTransactions={
+                canCreateConfidentialTransactions
+              }
+              onFinish={() => {
+                handleTransactionUpdate();
+                setCreateForGroupDate(null);
               }}
             />
           }

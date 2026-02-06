@@ -7,6 +7,11 @@ export type Json =
   | Json[];
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: '14.1';
+  };
   public: {
     Tables: {
       abuse_events: {
@@ -751,7 +756,7 @@ export type Database = {
       };
       board_templates: {
         Row: {
-          background_url: string | null;
+          background_path: string | null;
           content: Json;
           created_at: string;
           created_by: string | null;
@@ -764,7 +769,7 @@ export type Database = {
           ws_id: string;
         };
         Insert: {
-          background_url?: string | null;
+          background_path?: string | null;
           content: Json;
           created_at?: string;
           created_by?: string | null;
@@ -777,7 +782,7 @@ export type Database = {
           ws_id: string;
         };
         Update: {
-          background_url?: string | null;
+          background_path?: string | null;
           content?: Json;
           created_at?: string;
           created_by?: string | null;
@@ -1917,6 +1922,51 @@ export type Database = {
           name?: string;
         };
         Relationships: [];
+      };
+      currency_exchange_rates: {
+        Row: {
+          base_currency: string;
+          created_at: string | null;
+          date: string;
+          fetched_at: string | null;
+          id: string;
+          rate: number;
+          target_currency: string;
+        };
+        Insert: {
+          base_currency?: string;
+          created_at?: string | null;
+          date?: string;
+          fetched_at?: string | null;
+          id?: string;
+          rate: number;
+          target_currency: string;
+        };
+        Update: {
+          base_currency?: string;
+          created_at?: string | null;
+          date?: string;
+          fetched_at?: string | null;
+          id?: string;
+          rate?: number;
+          target_currency?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'currency_exchange_rates_base_currency_fkey';
+            columns: ['base_currency'];
+            isOneToOne: false;
+            referencedRelation: 'currencies';
+            referencedColumns: ['code'];
+          },
+          {
+            foreignKeyName: 'currency_exchange_rates_target_currency_fkey';
+            columns: ['target_currency'];
+            isOneToOne: false;
+            referencedRelation: 'currencies';
+            referencedColumns: ['code'];
+          },
+        ];
       };
       discord_guild_members: {
         Row: {
@@ -16694,36 +16744,7 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
+        Relationships: [];
       };
       calendar_event_participants: {
         Row: {
@@ -18451,6 +18472,21 @@ export type Database = {
           total_tokens: number;
         }[];
       };
+      get_ai_execution_monthly_cost: {
+        Args: {
+          p_exchange_rate?: number;
+          p_month?: number;
+          p_pricing?: Json;
+          p_ws_id: string;
+          p_year?: number;
+        };
+        Returns: {
+          avg_daily_cost: number;
+          executions: number;
+          total_cost_usd: number;
+          total_cost_vnd: number;
+        }[];
+      };
       get_ai_execution_monthly_cost_v2: {
         Args: {
           p_exchange_rate?: number;
@@ -18464,6 +18500,26 @@ export type Database = {
           executions: number;
           total_cost_usd: number;
           total_cost_vnd: number;
+        }[];
+      };
+      get_ai_execution_summary: {
+        Args: {
+          p_end_date?: string;
+          p_exchange_rate?: number;
+          p_pricing?: Json;
+          p_start_date?: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          avg_cost_per_execution: number;
+          avg_tokens_per_execution: number;
+          total_cost_usd: number;
+          total_cost_vnd: number;
+          total_executions: number;
+          total_input_tokens: number;
+          total_output_tokens: number;
+          total_reasoning_tokens: number;
+          total_tokens: number;
         }[];
       };
       get_ai_execution_summary_v2: {
@@ -18489,7 +18545,7 @@ export type Database = {
       get_auth_provider_stats: {
         Args: never;
         Returns: {
-          last_sign_in_avg: string;
+          last_sign_in_avg: unknown;
           percentage: number;
           provider: string;
           user_count: number;
@@ -18605,6 +18661,7 @@ export type Database = {
               _start_date?: string;
               _timezone?: string;
               _transaction_type?: string;
+              _wallet_ids?: string[];
               _ws_id: string;
               include_confidential?: boolean;
             };
@@ -18817,6 +18874,14 @@ export type Database = {
           mau: number;
           wau: number;
         }[];
+      };
+      get_exchange_rate: {
+        Args: {
+          p_date?: string;
+          p_from_currency: string;
+          p_to_currency: string;
+        };
+        Returns: number;
       };
       get_feature_adoption: {
         Args: { feature_action_prefix: string };
@@ -19664,7 +19729,7 @@ export type Database = {
         Args: { user_id: string };
         Returns: {
           active_sessions: number;
-          current_session_age: string;
+          current_session_age: unknown;
           total_sessions: number;
         }[];
       };

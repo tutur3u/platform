@@ -58,7 +58,8 @@ export interface CostBreakdown {
 
 export function calculateCost(
   modelName: string,
-  usage: TokenUsage
+  usage: TokenUsage,
+  exchangeRate = 26000
 ): CostBreakdown {
   const model = ALLOWED_MODELS.find((model) => model.name === modelName);
 
@@ -75,7 +76,6 @@ export function calculateCost(
     model.price.per1MReasoningTokens;
 
   const totalCostUSD = inputCost + outputCost + reasoningCost;
-  const exchangeRate = 26000; // VND per USD
   const totalCostVND = totalCostUSD * exchangeRate;
 
   return {

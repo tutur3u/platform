@@ -26,6 +26,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { cn } from '@tuturuuu/utils/format';
+import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
@@ -44,7 +45,6 @@ import type {
   StackedSession,
   TaskWithDetails,
 } from './session-types';
-import { getCategoryColor } from './session-utils';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -178,16 +178,28 @@ export function StackedSessionItem({
 
             {/* Category and Task */}
             <div className="flex flex-wrap items-center gap-1.5 md:gap-2">
-              {stackedSession?.category && (
-                <Badge
-                  className={cn(
-                    'shrink-0 font-medium text-white text-xs shadow-sm',
-                    getCategoryColor(stackedSession?.category.color || 'BLUE')
-                  )}
-                >
-                  {stackedSession?.category.name}
-                </Badge>
-              )}
+              {stackedSession?.category &&
+                (() => {
+                  const catStyles = computeAccessibleLabelStyles(
+                    stackedSession.category.color || 'blue'
+                  );
+                  return (
+                    <Badge
+                      className="shrink-0 border font-medium text-xs shadow-sm"
+                      style={
+                        catStyles
+                          ? {
+                              backgroundColor: catStyles.bg,
+                              borderColor: catStyles.border,
+                              color: catStyles.text,
+                            }
+                          : undefined
+                      }
+                    >
+                      {stackedSession.category.name}
+                    </Badge>
+                  );
+                })()}
               {stackedSession?.task && (
                 <div className="flex min-w-0 items-center gap-1.5 rounded-md border border-dynamic-blue/20 bg-linear-to-r from-dynamic-blue/10 to-dynamic-blue/5 px-2 py-1">
                   <CheckCircle className="h-3 w-3 shrink-0 text-dynamic-blue" />

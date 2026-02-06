@@ -1,11 +1,18 @@
-import { Calendar, CreditCard, DollarSign } from '@tuturuuu/icons';
+import { Calendar, CreditCard, DollarSign, Globe } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Wallet } from '@tuturuuu/types';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { InfiniteTransactionsList } from '@tuturuuu/ui/finance/transactions/infinite-transactions-list';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
-import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import type { ExchangeRate } from '@tuturuuu/utils/exchange-rates';
+import { convertCurrency } from '@tuturuuu/utils/exchange-rates';
+import { formatCurrency } from '@tuturuuu/utils/format';
+import {
+  getPermissions,
+  getWorkspace,
+  getWorkspaceConfig,
+} from '@tuturuuu/utils/workspace-helper';
 import 'dayjs/locale/vi';
 import moment from 'moment';
 import { notFound } from 'next/navigation';
@@ -13,8 +20,9 @@ import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { Card } from '../../../card';
 import { WalletIconDisplay } from '../wallet-icon-display';
+import { CreditWalletSummary } from './credit-wallet-summary';
 import { WalletInterestSection } from './interest';
-import { WalletDeleteButton } from './wallet-delete-button';
+import { WalletDetailsActions } from './wallet-details-actions';
 import WalletRoleAccessDialog from './wallet-role-access-dialog';
 
 interface Props {
@@ -28,12 +36,17 @@ interface Props {
 }
 
 export default async function WalletDetailsPage({ wsId, walletId }: Props) {
-  const [t, workspace, { withoutPermission, containsPermission }] =
-    await Promise.all([
-      getTranslations(),
-      getWorkspace(wsId),
-      getPermissions({ wsId }),
-    ]);
+  const [
+    t,
+    workspace,
+    { withoutPermission, containsPermission },
+    defaultCurrency,
+  ] = await Promise.all([
+    getTranslations(),
+    getWorkspace(wsId),
+    getPermissions({ wsId }),
+    getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY'),
+  ]);
   const canManageRoles = !withoutPermission('manage_workspace_roles');
 
   // Transaction permissions
@@ -55,11 +68,44 @@ export default async function WalletDetailsPage({ wsId, walletId }: Props) {
     'view_confidential_category'
   );
   const hasManageFinance = containsPermission('manage_finance');
+  const canUpdateWallets = containsPermission('update_wallets');
+  const canCreateTransactions = containsPermission('create_transactions');
+  const canCreateConfidentialTransactions = containsPermission(
+    'create_confidential_transactions'
+  );
   const canDeleteWallets = containsPermission('delete_wallets');
 
   const { wallet } = await getData(wsId, walletId, hasManageFinance);
 
   if (!wallet) notFound();
+
+  const currency = wallet.currency || defaultCurrency || 'USD';
+  const workspaceCurrency = defaultCurrency || 'USD';
+
+  // Fetch exchange rates for conversion display
+  const exchangeRates = await getExchangeRates();
+  let convertedBalanceText: string | null = null;
+  if (
+    currency !== workspaceCurrency &&
+    exchangeRates.length > 0 &&
+    wallet.balance &&
+    wallet.balance !== 0
+  ) {
+    const converted = convertCurrency(
+      wallet.balance,
+      currency,
+      workspaceCurrency,
+      exchangeRates
+    );
+    if (converted !== null) {
+      convertedBalanceText = formatCurrency(
+        Math.abs(converted),
+        workspaceCurrency,
+        undefined,
+        { signDisplay: 'never', maximumFractionDigits: 0 }
+      );
+    }
+  }
 
   return (
     <div className="flex min-h-full w-full flex-col">
@@ -78,13 +124,16 @@ export default async function WalletDetailsPage({ wsId, walletId }: Props) {
             />
           }
         />
-        {canDeleteWallets && (
-          <WalletDeleteButton
-            wsId={wsId}
-            walletId={walletId}
-            walletName={wallet.name ?? undefined}
-          />
-        )}
+        <WalletDetailsActions
+          wsId={wsId}
+          walletId={walletId}
+          wallet={wallet as Wallet}
+          canUpdateWallets={canUpdateWallets}
+          canCreateTransactions={canCreateTransactions}
+          canCreateConfidentialTransactions={canCreateConfidentialTransactions}
+          canDeleteWallets={canDeleteWallets}
+          isPersonalWorkspace={workspace.personal}
+        />
       </div>
       <Separator className="my-4" />
       <div className="grid h-fit gap-4 md:grid-cols-2">
@@ -108,13 +157,24 @@ export default async function WalletDetailsPage({ wsId, walletId }: Props) {
             <DetailItem
               icon={<DollarSign className="h-5 w-5" />}
               label={t('wallet-data-table.balance')}
-              value={Intl.NumberFormat(
-                wallet.currency === 'VND' ? 'vi-VN' : 'en-US',
-                {
-                  style: 'currency',
-                  currency: wallet.currency || 'USD',
-                }
-              ).format(wallet.balance || 0)}
+              value={
+                <span>
+                  {Intl.NumberFormat(currency === 'VND' ? 'vi-VN' : 'en-US', {
+                    style: 'currency',
+                    currency,
+                  }).format(wallet.balance || 0)}
+                  {convertedBalanceText && (
+                    <span className="ml-2 text-muted-foreground text-sm">
+                      {'\u2248'} {convertedBalanceText}
+                    </span>
+                  )}
+                </span>
+              }
+            />
+            <DetailItem
+              icon={<Globe className="h-5 w-5" />}
+              label={t('wallet-data-table.currency')}
+              value={currency}
             />
             <DetailItem
               icon={<CreditCard className="h-5 w-5" />}
@@ -123,6 +183,49 @@ export default async function WalletDetailsPage({ wsId, walletId }: Props) {
                 `wallet-data-table.${(wallet.type as 'CREDIT' | 'STANDARD').toLowerCase() as 'credit' | 'standard'}`
               )}
             />
+            {wallet.type === 'CREDIT' && (
+              <>
+                <Separator className="my-1" />
+                <div className="font-semibold text-sm">
+                  {t('wallet-data-table.credit_details')}
+                </div>
+                <DetailItem
+                  icon={<DollarSign className="h-5 w-5" />}
+                  label={t('wallet-data-table.credit_limit')}
+                  value={
+                    wallet.limit != null
+                      ? Intl.NumberFormat(
+                          currency === 'VND' ? 'vi-VN' : 'en-US',
+                          { style: 'currency', currency }
+                        ).format(wallet.limit)
+                      : '-'
+                  }
+                />
+                <DetailItem
+                  icon={<Calendar className="h-5 w-5" />}
+                  label={t('wallet-data-table.statement_date')}
+                  value={
+                    wallet.statement_date != null
+                      ? t('wallet-data-table.day_of_month', {
+                          day: wallet.statement_date,
+                        })
+                      : '-'
+                  }
+                />
+                <DetailItem
+                  icon={<Calendar className="h-5 w-5" />}
+                  label={t('wallet-data-table.payment_date')}
+                  value={
+                    wallet.payment_date != null
+                      ? t('wallet-data-table.day_of_month', {
+                          day: wallet.payment_date,
+                        })
+                      : '-'
+                  }
+                />
+                <Separator className="my-1" />
+              </>
+            )}
             <DetailItem
               icon={<Calendar className="h-5 w-5" />}
               label={t('wallet-data-table.created_at')}
@@ -152,6 +255,12 @@ export default async function WalletDetailsPage({ wsId, walletId }: Props) {
           <Separator className="my-4" />
         </>
       )}
+      {wallet.type === 'CREDIT' && (
+        <>
+          <CreditWalletSummary wsId={wsId} wallet={wallet as Wallet} />
+          <Separator className="my-4" />
+        </>
+      )}
       {/* Interest Tracking Section - for Momo/ZaloPay wallets */}
       <WalletInterestSection wsId={wsId} wallet={wallet as Wallet} />
       <Suspense
@@ -166,7 +275,9 @@ export default async function WalletDetailsPage({ wsId, walletId }: Props) {
         <InfiniteTransactionsList
           wsId={wsId}
           walletId={walletId}
-          currency={wallet.currency ?? 'USD'}
+          currency={currency}
+          canCreateTransactions={canCreateTransactions}
+          canCreateConfidentialTransactions={canCreateConfidentialTransactions}
           canUpdateTransactions={canUpdateTransactions}
           canDeleteTransactions={canDeleteTransactions}
           canUpdateConfidentialTransactions={canUpdateConfidentialTransactions}
@@ -214,13 +325,32 @@ async function getData(
     throw new Error('Unauthorized');
   }
 
-  const { data: wallet, error: walletError } = await supabase
+  const { data: rawWallet, error: walletError } = await supabase
     .from('workspace_wallets')
-    .select('*')
+    .select('*, credit_wallets(limit, statement_date, payment_date)')
     .eq('id', walletId)
     .single();
 
   if (walletError) throw walletError;
+
+  // Flatten credit_wallets join data
+  const { credit_wallets, ...walletBase } = rawWallet as typeof rawWallet & {
+    credit_wallets?: {
+      limit: number;
+      statement_date: number;
+      payment_date: number;
+    } | null;
+  };
+  const wallet = {
+    ...walletBase,
+    ...(credit_wallets
+      ? {
+          limit: credit_wallets.limit,
+          statement_date: credit_wallets.statement_date,
+          payment_date: credit_wallets.payment_date,
+        }
+      : {}),
+  };
 
   if (!hasManageFinance) {
     // Get user's role IDs
@@ -250,4 +380,24 @@ async function getData(
   }
 
   return { wallet };
+}
+
+async function getExchangeRates(): Promise<ExchangeRate[]> {
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from('currency_exchange_rates')
+      .select('base_currency, target_currency, rate, date')
+      .eq('base_currency', 'USD')
+      .order('date', { ascending: false })
+      .limit(30);
+    return (data || []).map((r) => ({
+      base_currency: r.base_currency,
+      target_currency: r.target_currency,
+      rate: Number(r.rate),
+      date: r.date,
+    }));
+  } catch {
+    return [];
+  }
 }
