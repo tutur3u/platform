@@ -6,6 +6,7 @@ import {
   escapeLikePattern,
   sanitizeSearchQuery,
 } from '@tuturuuu/utils/search-helper';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
@@ -20,7 +21,6 @@ import {
   isPersonalWorkspace,
   normalizeWorkspaceId,
 } from '@/lib/workspace-helper';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -450,7 +450,14 @@ export async function POST(
         );
       }
 
-      // Only apply threshold restrictions for non-personal workspaces
+      // Check if user has permission to bypass approval
+      const { containsPermission } = await getPermissions({
+        wsId: normalizedWsId,
+      });
+      const canBypass = containsPermission(
+        'bypass_time_tracking_request_approval'
+      );
+
       // Fetch workspace threshold setting
       const { data: workspaceSettings } = await sbAdmin
         .from('workspace_settings')
@@ -462,39 +469,30 @@ export async function POST(
       const thresholdDays = workspaceSettings?.missed_entry_date_threshold;
 
       // Only apply restrictions if threshold is explicitly set (not null)
-      if (thresholdDays !== null && thresholdDays !== undefined) {
-        // Check if user has permission to bypass approval
-        const { containsPermission } = await getPermissions({
-          wsId: normalizedWsId,
-        });
-        const canBypass = containsPermission(
-          'bypass_time_tracking_request_approval'
-        );
+      // and user does NOT have bypass permission
+      if (!canBypass && thresholdDays !== null && thresholdDays !== undefined) {
+        // If threshold is 0, all missed entries must go through request flow
+        if (thresholdDays === 0) {
+          return NextResponse.json(
+            {
+              error:
+                'All missed entries must be submitted as requests for approval',
+            },
+            { status: 400 }
+          );
+        }
 
-        if (!canBypass) {
-          // If threshold is 0, all missed entries must go through request flow
-          if (thresholdDays === 0) {
-            return NextResponse.json(
-              {
-                error:
-                  'All missed entries must be submitted as requests for approval',
-              },
-              { status: 400 }
-            );
-          }
+        // Check if start time is older than threshold days
+        const thresholdAgo = new Date();
+        thresholdAgo.setDate(thresholdAgo.getDate() - thresholdDays);
 
-          // Check if start time is older than threshold days
-          const thresholdAgo = new Date();
-          thresholdAgo.setDate(thresholdAgo.getDate() - thresholdDays);
-
-          if (start < thresholdAgo) {
-            return NextResponse.json(
-              {
-                error: `Cannot add missed entries older than ${thresholdDays} day${thresholdDays !== 1 ? 's' : ''}. Please submit a request for approval if you need to add older entries.`,
-              },
-              { status: 400 }
-            );
-          }
+        if (start < thresholdAgo) {
+          return NextResponse.json(
+            {
+              error: `Cannot add missed entries older than ${thresholdDays} day${thresholdDays !== 1 ? 's' : ''}. Please submit a request for approval if you need to add older entries.`,
+            },
+            { status: 400 }
+          );
         }
       }
 
@@ -510,21 +508,78 @@ export async function POST(
         );
       }
 
-      // Create completed session (not running)
-      const { data, error } = await sbAdmin
+      const sessionPayload = {
+        ws_id: normalizedWsId,
+        user_id: user.id,
+        title: title.trim(),
+        description: description?.trim() || null,
+        category_id: categoryId || null,
+        task_id: taskId || null,
+        start_time: start.toISOString(),
+        end_time: end.toISOString(),
+        duration_seconds: durationSeconds,
+        is_running: false,
+      };
+
+      let insertedId: string;
+
+      if (canBypass) {
+        // Use RPC to set bypass flag and insert in the same transaction.
+        // The RPC sets time_tracking.bypass_insert_limit = 'on' before
+        // inserting, so the BEFORE INSERT trigger skips threshold checks.
+        const { data: rpcId, error: rpcError } = await sbAdmin.rpc(
+          'insert_time_tracking_session_with_bypass',
+          {
+            p_ws_id: sessionPayload.ws_id,
+            p_user_id: sessionPayload.user_id,
+            p_title: sessionPayload.title,
+            p_description: sessionPayload.description,
+            p_category_id: sessionPayload.category_id,
+            p_task_id: sessionPayload.task_id,
+            p_start_time: sessionPayload.start_time,
+            p_end_time: sessionPayload.end_time,
+            p_duration_seconds: sessionPayload.duration_seconds,
+            p_is_running: sessionPayload.is_running,
+          }
+        );
+
+        if (rpcError) {
+          if (rpcError.code === 'P0001') {
+            return NextResponse.json(
+              { error: rpcError.message },
+              { status: 400 }
+            );
+          }
+          throw rpcError;
+        }
+
+        insertedId = rpcId;
+      } else {
+        // Regular insert (trigger will enforce threshold checks)
+        const { data: insertData, error } = await sbAdmin
+          .from('time_tracking_sessions')
+          .insert(sessionPayload)
+          .select('id')
+          .single();
+
+        if (error) {
+          if (
+            error.message?.includes('older than one day is not allowed') ||
+            error.message?.includes('must be submitted as requests') ||
+            error.code === '23514' ||
+            error.code === 'P0001'
+          ) {
+            return NextResponse.json({ error: error.message }, { status: 400 });
+          }
+          throw error;
+        }
+
+        insertedId = insertData.id;
+      }
+
+      // Fetch the full session with relations
+      const { data, error: fetchError } = await sbAdmin
         .from('time_tracking_sessions')
-        .insert({
-          ws_id: normalizedWsId,
-          user_id: user.id,
-          title: title.trim(),
-          description: description?.trim() || null,
-          category_id: categoryId || null,
-          task_id: taskId || null,
-          start_time: start.toISOString(),
-          end_time: end.toISOString(),
-          duration_seconds: durationSeconds,
-          is_running: false,
-        })
         .select(
           `
           *,
@@ -532,24 +587,10 @@ export async function POST(
           task:tasks(*)
         `
         )
+        .eq('id', insertedId)
         .single();
 
-      if (error) {
-        // Check if error is from the trigger restriction
-        if (
-          error.message?.includes('older than one day is not allowed') ||
-          error.code === '23514'
-        ) {
-          return NextResponse.json(
-            {
-              error:
-                'Cannot add missed entries older than 1 day. Please contact support if you need to add older entries. ',
-            },
-            { status: 400 }
-          );
-        }
-        throw error;
-      }
+      if (fetchError) throw fetchError;
 
       return NextResponse.json({ session: data }, { status: 201 });
     }
