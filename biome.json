@@ -7,7 +7,8 @@
     "useIgnoreFile": true
   },
   "files": {
-    "ignoreUnknown": false
+    "ignoreUnknown": false,
+    "includes": ["**", "!dist", "!**/dist", "!apps/mobile"]
   },
   "formatter": {
     "enabled": true,

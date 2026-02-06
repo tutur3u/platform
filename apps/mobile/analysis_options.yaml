@@ -5,3 +5,4 @@ analyzer:
 linter:
   rules:
     public_member_api_docs: false
+    use_null_aware_elements: false

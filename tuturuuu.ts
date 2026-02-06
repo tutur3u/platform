@@ -40,6 +40,6 @@ export const ci = {
   'vercel-production-shortener.yaml': true,
   'vercel-production-tudo.yaml': true,
   'vercel-production-tumeet.yaml': true,
-  'native-build-ios.yaml': true,
-  'native-build-android.yaml': true,
+  'mobile-build-ios.yaml': true,
+  'mobile-build-android.yaml': true,
 };
