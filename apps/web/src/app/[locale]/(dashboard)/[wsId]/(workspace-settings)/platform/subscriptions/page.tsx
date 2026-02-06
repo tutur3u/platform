@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation } from '@tanstack/react-query';
-import { AlertTriangle, Loader2, Zap } from '@tuturuuu/icons';
+import { AlertTriangle, Loader2, UserPlus, Zap } from '@tuturuuu/icons';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -10,6 +10,7 @@ import { useState } from 'react';
 
 export default function PlatformSubscriptionsMigrationPage() {
   const [migrationResult, setMigrationResult] = useState<any>(null);
+  const [freeMigrationResult, setFreeMigrationResult] = useState<any>(null);
 
   const migrateMutation = useMutation({
     mutationFn: async () => {
@@ -39,6 +40,39 @@ export default function PlatformSubscriptionsMigrationPage() {
     },
     onError: (error) => {
       toast.error('Migration failed', {
+        description: error instanceof Error ? error.message : 'Unknown error',
+      });
+    },
+  });
+
+  const migrateFreeMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch('/api/platform/migrate-free-subscriptions', {
+        method: 'POST',
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Migration failed');
+      }
+
+      return data;
+    },
+    onSuccess: (data) => {
+      setFreeMigrationResult(data);
+      if (data.errors === 0) {
+        toast.success('Free subscription migration completed successfully', {
+          description: `Created ${data.created} subscriptions, skipped ${data.skipped}`,
+        });
+      } else {
+        toast.warning('Free subscription migration completed with errors', {
+          description: `Created ${data.created}, skipped ${data.skipped}, errors ${data.errors}`,
+        });
+      }
+    },
+    onError: (error) => {
+      toast.error('Free subscription migration failed', {
         description: error instanceof Error ? error.message : 'Unknown error',
       });
     },
@@ -153,6 +187,101 @@ export default function PlatformSubscriptionsMigrationPage() {
               <>
                 <Zap className="mr-2 h-4 w-4" />
                 Execute Global Migration
+              </>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <UserPlus className="h-5 w-5" />
+            Add Free Subscriptions
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2 text-sm">
+            <p className="font-medium">This migration will:</p>
+            <ul className="list-inside list-disc space-y-1 text-muted-foreground">
+              <li>Find all workspaces without active subscriptions</li>
+              <li>
+                Personal workspaces: Subscribe to free product
+                (pricing_model='free')
+              </li>
+              <li>
+                Non-personal workspaces: Subscribe to free seat-based product
+                (tier='FREE')
+              </li>
+              <li>Skip workspaces that already have active subscriptions</li>
+            </ul>
+          </div>
+
+          {freeMigrationResult && (
+            <div className="rounded-lg border bg-muted p-4">
+              <h3 className="mb-2 font-semibold">Migration Results</h3>
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                <div>
+                  <p className="text-muted-foreground">Created</p>
+                  <p className="font-bold text-dynamic-green text-lg">
+                    {freeMigrationResult.created}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Skipped</p>
+                  <p className="font-bold text-dynamic-yellow text-lg">
+                    {freeMigrationResult.skipped}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Errors</p>
+                  <p className="font-bold text-dynamic-red text-lg">
+                    {freeMigrationResult.errors}
+                  </p>
+                </div>
+              </div>
+              {freeMigrationResult.errorDetails &&
+                freeMigrationResult.errorDetails.length > 0 && (
+                  <div className="mt-4">
+                    <p className="mb-2 font-medium text-sm">Error Details:</p>
+                    <div className="max-h-40 space-y-1 overflow-y-auto text-xs">
+                      {freeMigrationResult.errorDetails.map(
+                        (err: any, idx: number) => (
+                          <div
+                            key={idx}
+                            className="rounded bg-destructive/10 p-2"
+                          >
+                            <span className="font-mono">ID: {err.id}</span> -{' '}
+                            {err.error}
+                          </div>
+                        )
+                      )}
+                    </div>
+                  </div>
+                )}
+              {freeMigrationResult.message && (
+                <p className="mt-4 text-muted-foreground text-sm">
+                  {freeMigrationResult.message}
+                </p>
+              )}
+            </div>
+          )}
+
+          <Button
+            onClick={() => migrateFreeMutation.mutate()}
+            disabled={migrateFreeMutation.isPending}
+            variant="default"
+            className="w-full"
+          >
+            {migrateFreeMutation.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating Free Subscriptions...
+              </>
+            ) : (
+              <>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Add Free Subscriptions
               </>
             )}
           </Button>
