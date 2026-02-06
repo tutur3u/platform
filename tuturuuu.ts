@@ -21,6 +21,7 @@ export const ci = {
   'supabase-types.yaml': true,
   'turbo-unit-tests.yaml': true,
   'type-check.yaml': true,
+  'mobile.yaml': true,
   'vercel-preview-calendar.yaml': true,
   'vercel-preview-finance.yaml': true,
   'vercel-preview-foundapack.yaml': true,
