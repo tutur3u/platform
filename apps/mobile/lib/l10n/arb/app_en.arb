@@ -1,7 +1,86 @@
 {
     "@@locale": "en",
+    "appTitle": "Tuturuuu",
     "counterAppBarTitle": "Counter",
     "@counterAppBarTitle": {
         "description": "Text shown in the AppBar of the Counter Page"
-    }
+    },
+
+    "loginTitle": "Welcome back",
+    "loginSubtitle": "Sign in to continue",
+    "loginTabOtp": "OTP",
+    "loginTabPassword": "Password",
+    "loginSendOtp": "Send OTP",
+    "loginVerifyOtp": "Verify OTP",
+    "loginRetryAfter": "Retry in {seconds}s",
+    "@loginRetryAfter": {
+        "placeholders": {
+            "seconds": {
+                "type": "int"
+            }
+        }
+    },
+    "loginSignIn": "Sign in",
+    "loginForgotPassword": "Forgot password?",
+    "loginSignUpPrompt": "Don't have an account? Sign up",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+
+    "signUpTitle": "Create account",
+    "signUpButton": "Create account",
+    "signUpConfirmPassword": "Confirm password",
+    "signUpPasswordMinLength": "Password must be at least 8 characters",
+    "signUpPasswordUppercase": "Password must contain an uppercase letter",
+    "signUpPasswordLowercase": "Password must contain a lowercase letter",
+    "signUpPasswordNumber": "Password must contain a number",
+    "signUpPasswordMismatch": "Passwords do not match",
+    "signUpSuccessTitle": "Check your email",
+    "signUpSuccessMessage": "We sent a confirmation link to your email. Please verify to continue.",
+    "signUpBackToLogin": "Back to login",
+
+    "forgotPasswordTitle": "Reset password",
+    "forgotPasswordDescription": "Enter your email and we'll send you a link to reset your password.",
+    "forgotPasswordSendReset": "Send reset link",
+    "forgotPasswordSentTitle": "Email sent",
+    "forgotPasswordSentMessage": "Check your inbox for the password reset link.",
+    "forgotPasswordBackToLogin": "Back to login",
+
+    "workspaceSelectTitle": "Select workspace",
+    "workspaceSelectEmpty": "No workspaces found",
+
+    "navHome": "Home",
+    "navTasks": "Tasks",
+    "navCalendar": "Calendar",
+    "navFinance": "Finance",
+    "navTimer": "Timer",
+    "navSettings": "Settings",
+
+    "dashboardGreeting": "Welcome back!",
+    "dashboardQuickActions": "Quick actions",
+
+    "tasksTitle": "Tasks",
+    "tasksEmpty": "No tasks yet",
+    "tasksCreate": "Create task",
+
+    "calendarTitle": "Calendar",
+    "calendarEmpty": "No events",
+
+    "financeTitle": "Finance",
+    "financeWallets": "Wallets",
+    "financeTransactions": "Transactions",
+    "financeCategories": "Categories",
+
+    "timerTitle": "Time tracker",
+    "timerStart": "Start",
+    "timerStop": "Stop",
+    "timerHistory": "History",
+
+    "settingsTitle": "Settings",
+    "settingsProfile": "Profile",
+    "settingsTheme": "Theme",
+    "settingsThemeLight": "Light",
+    "settingsThemeDark": "Dark",
+    "settingsThemeSystem": "System",
+    "settingsSignOut": "Sign out",
+    "settingsSignOutConfirm": "Are you sure you want to sign out?"
 }

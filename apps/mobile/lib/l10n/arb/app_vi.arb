@@ -1,7 +1,86 @@
 {
     "@@locale": "vi",
+    "appTitle": "Tuturuuu",
     "counterAppBarTitle": "Bộ đếm",
     "@counterAppBarTitle": {
         "description": "Văn bản hiển thị trên AppBar của trang Bộ đếm"
-    }
+    },
+
+    "loginTitle": "Chào mừng trở lại",
+    "loginSubtitle": "Đăng nhập để tiếp tục",
+    "loginTabOtp": "OTP",
+    "loginTabPassword": "Mật khẩu",
+    "loginSendOtp": "Gửi OTP",
+    "loginVerifyOtp": "Xác thực OTP",
+    "loginRetryAfter": "Thử lại sau {seconds} giây",
+    "@loginRetryAfter": {
+        "placeholders": {
+            "seconds": {
+                "type": "int"
+            }
+        }
+    },
+    "loginSignIn": "Đăng nhập",
+    "loginForgotPassword": "Quên mật khẩu?",
+    "loginSignUpPrompt": "Chưa có tài khoản? Đăng ký",
+    "emailLabel": "Email",
+    "passwordLabel": "Mật khẩu",
+
+    "signUpTitle": "Tạo tài khoản",
+    "signUpButton": "Tạo tài khoản",
+    "signUpConfirmPassword": "Xác nhận mật khẩu",
+    "signUpPasswordMinLength": "Mật khẩu phải có ít nhất 8 ký tự",
+    "signUpPasswordUppercase": "Mật khẩu phải chứa chữ hoa",
+    "signUpPasswordLowercase": "Mật khẩu phải chứa chữ thường",
+    "signUpPasswordNumber": "Mật khẩu phải chứa số",
+    "signUpPasswordMismatch": "Mật khẩu không khớp",
+    "signUpSuccessTitle": "Kiểm tra email",
+    "signUpSuccessMessage": "Chúng tôi đã gửi liên kết xác nhận đến email của bạn. Vui lòng xác minh để tiếp tục.",
+    "signUpBackToLogin": "Quay lại đăng nhập",
+
+    "forgotPasswordTitle": "Đặt lại mật khẩu",
+    "forgotPasswordDescription": "Nhập email và chúng tôi sẽ gửi cho bạn liên kết đặt lại mật khẩu.",
+    "forgotPasswordSendReset": "Gửi liên kết đặt lại",
+    "forgotPasswordSentTitle": "Đã gửi email",
+    "forgotPasswordSentMessage": "Kiểm tra hộp thư đến để tìm liên kết đặt lại mật khẩu.",
+    "forgotPasswordBackToLogin": "Quay lại đăng nhập",
+
+    "workspaceSelectTitle": "Chọn không gian làm việc",
+    "workspaceSelectEmpty": "Không tìm thấy không gian làm việc",
+
+    "navHome": "Trang chủ",
+    "navTasks": "Công việc",
+    "navCalendar": "Lịch",
+    "navFinance": "Tài chính",
+    "navTimer": "Bấm giờ",
+    "navSettings": "Cài đặt",
+
+    "dashboardGreeting": "Chào mừng trở lại!",
+    "dashboardQuickActions": "Thao tác nhanh",
+
+    "tasksTitle": "Công việc",
+    "tasksEmpty": "Chưa có công việc",
+    "tasksCreate": "Tạo công việc",
+
+    "calendarTitle": "Lịch",
+    "calendarEmpty": "Không có sự kiện",
+
+    "financeTitle": "Tài chính",
+    "financeWallets": "Ví",
+    "financeTransactions": "Giao dịch",
+    "financeCategories": "Danh mục",
+
+    "timerTitle": "Bấm giờ",
+    "timerStart": "Bắt đầu",
+    "timerStop": "Dừng",
+    "timerHistory": "Lịch sử",
+
+    "settingsTitle": "Cài đặt",
+    "settingsProfile": "Hồ sơ",
+    "settingsTheme": "Giao diện",
+    "settingsThemeLight": "Sáng",
+    "settingsThemeDark": "Tối",
+    "settingsThemeSystem": "Hệ thống",
+    "settingsSignOut": "Đăng xuất",
+    "settingsSignOutConfirm": "Bạn có chắc muốn đăng xuất không?"
 }
