@@ -54,3 +54,10 @@ jobs:
 
       - name: Build APK (development flavor)
         run: flutter build apk --flavor development --target lib/main_development.dart
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-dev-apk
+          path: apps/mobile/build/app/outputs/flutter-apk/app-development-release.apk
+          retention-days: 7
