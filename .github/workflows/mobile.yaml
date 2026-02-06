@@ -1,0 +1,32 @@
+name: mobile
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: mobile.yaml
+
+  semantic-pull-request:
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/semantic_pull_request.yml@v1
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
+
+  build:
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v1
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
+    with:
+      working_directory: apps/mobile
+      flutter_version: "3.38.x"

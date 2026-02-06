@@ -162,21 +162,6 @@ const checks = [
       return 'Passed';
     },
   },
-  {
-    name: 'Native dependencies',
-    command: 'bun',
-    args: ['native:check'],
-    parseOutput: (stdout) => {
-      const clean = stripAnsi(stdout);
-      if (clean.includes('Dependencies are up to date')) {
-        return 'Dependencies up to date';
-      }
-      if (clean.includes('All dependencies are in sync')) {
-        return 'All in sync';
-      }
-      return 'Passed';
-    },
-  },
 ];
 
 /**
