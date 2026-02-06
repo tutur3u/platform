@@ -8,9 +8,17 @@ on:
   push:
     branches:
       - main
+    paths:
+      - "apps/mobile/**"
+      - "apps/native/**"
+      - ".github/workflows/mobile.yaml"
   pull_request:
     branches:
       - main
+    paths:
+      - "apps/mobile/**"
+      - "apps/native/**"
+      - ".github/workflows/mobile.yaml"
 
 jobs:
   check-ci:
