@@ -204,15 +204,8 @@ export default function PlatformSubscriptionsMigrationPage() {
           <div className="space-y-2 text-sm">
             <p className="font-medium">This migration will:</p>
             <ul className="list-inside list-disc space-y-1 text-muted-foreground">
-              <li>Find all workspaces without active subscriptions</li>
-              <li>
-                Personal workspaces: Subscribe to free product
-                (pricing_model='free')
-              </li>
-              <li>
-                Non-personal workspaces: Subscribe to free seat-based product
-                (tier='FREE')
-              </li>
+              <li>Find all personal workspaces without active subscriptions</li>
+              <li>Subscribe personal workspaces to free product</li>
               <li>Skip workspaces that already have active subscriptions</li>
             </ul>
           </div>

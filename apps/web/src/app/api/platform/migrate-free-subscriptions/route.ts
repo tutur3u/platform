@@ -38,7 +38,7 @@ export async function POST() {
   }
 
   let created = 0;
-  const skipped = 0;
+  let skipped = 0;
   let errors = 0;
   const errorDetails: Array<{ id: string; error: string }> = [];
 
@@ -46,62 +46,41 @@ export async function POST() {
   const polar = createPolarClient();
 
   try {
-    // Find all workspaces
-    const { data: allWorkspaces, error: wsError } = await sbAdmin
+    // Find all personal workspaces
+    const { data: personalWorkspaces, error: wsError } = await sbAdmin
       .from('workspaces')
-      .select('id, personal');
+      .select('id, workspace_subscriptions!left(id, status)')
+      .eq('personal', true);
 
     if (wsError) {
-      console.error('Error fetching workspaces:', wsError);
+      console.error('Error fetching personal workspaces:', wsError);
       return NextResponse.json(
-        { error: 'Failed to fetch workspaces' },
+        { error: 'Failed to fetch personal workspaces' },
         { status: 500 }
       );
     }
 
-    if (!allWorkspaces || allWorkspaces.length === 0) {
+    if (!personalWorkspaces || personalWorkspaces.length === 0) {
       return NextResponse.json({
         created: 0,
         skipped: 0,
         errors: 0,
-        message: 'No workspaces found',
+        message: 'No personal workspaces found',
       });
     }
 
-    // Get all active subscriptions
-    const { data: activeSubscriptions, error: subError } = await sbAdmin
-      .from('workspace_subscriptions')
-      .select('ws_id')
-      .eq('status', 'active');
-
-    if (subError) {
-      console.error('Error fetching subscriptions:', subError);
-      return NextResponse.json(
-        { error: 'Failed to fetch subscriptions' },
-        { status: 500 }
-      );
-    }
-
-    // Filter workspaces without active subscriptions
-    const activeWsIds = new Set(
-      activeSubscriptions?.map((sub) => sub.ws_id) || []
-    );
-    const workspacesWithoutSubs = allWorkspaces.filter(
-      (ws) => !activeWsIds.has(ws.id)
-    );
-
-    if (workspacesWithoutSubs.length === 0) {
-      return NextResponse.json({
-        created: 0,
-        skipped: 0,
-        errors: 0,
-        message: 'No workspaces found without active subscriptions',
-      });
-    }
-
-    // Process each workspace
-    for (const workspace of workspacesWithoutSubs) {
+    // Process each personal workspace
+    for (const workspace of personalWorkspaces) {
       try {
+        if (
+          workspace.workspace_subscriptions.some(
+            (sub) => sub.status === 'active'
+          )
+        ) {
+          // Skip workspaces with active subscriptions
+          skipped++;
+          continue;
+        }
         // Get or create Polar customer
         await getOrCreatePolarCustomer({
           polar,
@@ -110,7 +89,6 @@ export async function POST() {
         });
 
         // Create free subscription using helper function
-        // This will handle both personal (amountType=free) and non-personal (amountType=seated, tier=FREE)
         const subscription = await createFreeSubscription(
           polar,
           sbAdmin,
