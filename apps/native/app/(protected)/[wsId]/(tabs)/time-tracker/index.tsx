@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Link, useLocalSearchParams } from 'expo-router';
+import { Link, useGlobalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -23,7 +23,10 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '@/lib/stores';
 
 export default function TimeTrackerScreen() {
-  const { wsId } = useLocalSearchParams<{ wsId: string }>();
+const { wsId } = useGlobalSearchParams<{ wsId: string }>();
+  
+  // Log it to see exactly what is being captured
+  console.log('Current Workspace ID:', wsId);
   const colorScheme = useColorScheme();
   const { user } = useAuthStore();
 

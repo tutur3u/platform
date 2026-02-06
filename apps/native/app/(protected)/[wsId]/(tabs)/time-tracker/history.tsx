@@ -19,7 +19,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { createAuthorizedFetcher } from '@/lib/api/fetcher';
 import { apiConfig } from '@/lib/config/api';
 import { useSession } from '@/lib/stores/auth-store';
-import { useWorkspaceId } from '@/lib/stores/workspace-store';
+import { useGlobalSearchParams } from 'expo-router';
 
 type ViewMode = 'day' | 'week' | 'month';
 
@@ -100,7 +100,7 @@ const formatDateRange = (start: Date, end: Date, viewMode: ViewMode) => {
 };
 
 export default function SessionHistoryScreen() {
-  const wsId = useWorkspaceId();
+  const wsId = useGlobalSearchParams<{ wsId: string }>().wsId;
   const colorScheme = useColorScheme();
   const session = useSession();
   const userId = session?.user?.id ?? '';

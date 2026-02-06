@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { Workspace } from '@tuturuuu/types';
 import { queryKeys } from '@/lib/query';
 import { useAuthStore } from '@/lib/stores/auth-store';
+import { useWorkspaceStore } from '@/lib/stores/workspace-store';
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -70,6 +71,16 @@ export function useWorkspace(
       if (error) {
         throw new Error(error.message);
       }
+
+      if (data) {
+        const { currentWorkspace, selectWorkspace } =
+          useWorkspaceStore.getState();
+
+        if (currentWorkspace?.id !== data.id) {
+          selectWorkspace(data);
+        }
+      }
+
       return data;
     },
     enabled: !!wsId && enabled,
