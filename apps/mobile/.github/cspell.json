@@ -15,11 +15,5 @@
     }
   ],
   "useGitignore": true,
-  "words": [
-    "Contador",
-    "localizable",
-    "mostrado",
-    "página",
-    "Texto"
-  ]
+  "words": ["Contador", "localizable", "mostrado", "página", "Texto"]
 }
