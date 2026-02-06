@@ -29,11 +29,18 @@ dependencies:
 dev_dependencies:
   bloc_test: ^10.0.0
   build_runner: ^2.4.14
+  flutter_launcher_icons: ^0.14.3
   flutter_test:
     sdk: flutter
   json_serializable: ^6.9.4
   mocktail: ^1.0.4
   very_good_analysis: ^10.1.0
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/app_icon.png
+  remove_alpha_ios: true
 
 flutter:
   generate: true

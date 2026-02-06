@@ -61,7 +61,8 @@
       "Bash(git status:*)",
       "Bash(time zsh:*)",
       "Bash(gh run list:*)",
-      "Bash(dart format:*)"
+      "Bash(dart format:*)",
+      "Bash(dart analyze:*)"
     ]
   }
 }
