@@ -48,7 +48,7 @@ sqlx = { version = "0.8.6", default-features = false, features = ["runtime-tokio
 
 # JWT: JSON Web Token implementation for authentication
 # Note: Using 9.3.0 as 10.x has compilation issues in some environments
-jsonwebtoken = "9.3.0"
+jsonwebtoken = "10.3.0"
 
 # Bcrypt: Password hashing library for secure password storage
 bcrypt = "0.17.1"

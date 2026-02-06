@@ -2,8 +2,10 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    "preserveSymlinks": true,
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@tuturuuu/types": ["./types/tuturuuu-types"]
     }
   },
   "include": [

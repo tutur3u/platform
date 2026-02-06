@@ -1,10 +1,7 @@
 import '../global.css';
 
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from '@react-navigation/native';
+import { ThemeProvider } from '@react-navigation/native';
+import { PortalHost } from '@rn-primitives/portal';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -14,6 +11,7 @@ import 'react-native-reanimated';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AppProviders } from '@/lib/providers';
 import { useAuthStore } from '@/lib/stores';
+import { NAV_THEME } from '@/lib/theme';
 
 // Keep splash screen visible while we initialize auth
 SplashScreen.preventAutoHideAsync();
@@ -35,7 +33,9 @@ function RootLayoutContent() {
   }, [isInitialized]);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider
+      value={colorScheme === 'dark' ? NAV_THEME.dark : NAV_THEME.light}
+    >
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="(auth)" />
@@ -46,6 +46,7 @@ function RootLayoutContent() {
         />
       </Stack>
       <StatusBar style="auto" />
+      <PortalHost />
     </ThemeProvider>
   );
 }

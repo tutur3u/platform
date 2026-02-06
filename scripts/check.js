@@ -27,6 +27,29 @@ function stripAnsi(str) {
   return str.replace(ANSI_REGEX, '');
 }
 
+/**
+ * Calculate the display width of a string, accounting for emojis
+ * Emojis like ✅ and ❌ take up 2 display columns
+ */
+function getDisplayWidth(str) {
+  const stripped = stripAnsi(str);
+  let width = 0;
+  for (const char of stripped) {
+    const code = char.codePointAt(0);
+    // Emojis and other wide characters (simplified check)
+    if (
+      code > 0x1f600 ||
+      (code >= 0x2600 && code <= 0x27bf) ||
+      (code >= 0x2700 && code <= 0x27bf)
+    ) {
+      width += 2;
+    } else {
+      width += 1;
+    }
+  }
+  return width;
+}
+
 // ANSI color codes
 const colors = {
   reset: '\x1b[0m',
@@ -139,6 +162,21 @@ const checks = [
       return 'Passed';
     },
   },
+  {
+    name: 'Native dependencies',
+    command: 'bun',
+    args: ['native:check'],
+    parseOutput: (stdout) => {
+      const clean = stripAnsi(stdout);
+      if (clean.includes('Dependencies are up to date')) {
+        return 'Dependencies up to date';
+      }
+      if (clean.includes('All dependencies are in sync')) {
+        return 'All in sync';
+      }
+      return 'Passed';
+    },
+  },
 ];
 
 /**
@@ -206,9 +244,9 @@ function createLine(leftChar, midChar, rightChar, colWidths) {
  */
 function createRow(cells, colWidths) {
   const paddedCells = cells.map((cell, i) => {
-    const stripped = stripAnsi(cell);
-    const padding = colWidths[i] - stripped.length;
-    return ` ${cell}${' '.repeat(padding + 1)}`;
+    const displayWidth = getDisplayWidth(cell);
+    const padding = colWidths[i] - displayWidth + 1;
+    return ` ${cell}${' '.repeat(Math.max(0, padding))}`;
   });
   return `│${paddedCells.join('│')}│`;
 }
@@ -242,7 +280,7 @@ function printSummaryTable(results) {
     col2Header.length,
     ...results.map((r) => {
       const prefix = r.success ? '✅ ' : '❌ ';
-      return prefix.length + r.status.length;
+      return getDisplayWidth(prefix) + r.status.length;
     })
   );
   const colWidths = [col1Width, col2Width];

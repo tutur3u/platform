@@ -240,9 +240,9 @@ export default function VietnameseWomensDayPage() {
     <main className="relative mx-auto w-full overflow-x-hidden text-balance">
       {/* Simplified Background */}
       <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute top-0 -left-1/4 h-[40rem] w-[40rem] rounded-full bg-linear-to-br from-dynamic-pink/20 via-dynamic-purple/10 to-transparent blur-3xl" />
-        <div className="absolute top-1/3 -right-1/4 h-[40rem] w-[40rem] rounded-full bg-linear-to-br from-dynamic-purple/20 via-dynamic-pink/10 to-transparent blur-3xl" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,182,193,0.03)_1px,transparent_1px)] bg-[size:48px_48px]" />
+        <div className="absolute top-0 -left-1/4 h-160 w-160 rounded-full bg-linear-to-br from-dynamic-pink/20 via-dynamic-purple/10 to-transparent blur-3xl" />
+        <div className="absolute top-1/3 -right-1/4 h-160 w-160 rounded-full bg-linear-to-br from-dynamic-purple/20 via-dynamic-pink/10 to-transparent blur-3xl" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,182,193,0.03)_1px,transparent_1px)] bg-size-[48px_48px]" />
       </div>
 
       {/* Language Switcher */}
@@ -392,7 +392,7 @@ export default function VietnameseWomensDayPage() {
             {/* Executive Leadership */}
             <div className="grid gap-8 text-center md:grid-cols-2 md:items-center md:text-balance">
               <div className="group relative overflow-hidden rounded-2xl border-2 border-dynamic-purple/30 shadow-xl transition-all hover:border-dynamic-purple/50 hover:shadow-2xl">
-                <div className="relative aspect-[4/3] bg-dynamic-purple/5">
+                <div className="relative aspect-4/3 bg-dynamic-purple/5">
                   <Image
                     src="/media/marketing/events/women-in-tech/first-women-coo-with-first-women-people-and-operations-coordinator.jpeg"
                     alt={t('womenInLeadership.executives.name')}
@@ -441,7 +441,7 @@ export default function VietnameseWomensDayPage() {
                 </p>
               </div>
               <div className="group relative order-1 overflow-hidden rounded-2xl border-2 border-dynamic-pink/30 shadow-xl transition-all hover:border-dynamic-pink/50 hover:shadow-2xl md:order-2">
-                <div className="relative aspect-[4/3] bg-dynamic-pink/5">
+                <div className="relative aspect-4/3 bg-dynamic-pink/5">
                   <Image
                     src="/media/marketing/events/women-in-tech/anh-thu-first-women-contributor.jpg"
                     alt={t('womenInLeadership.engineering.name')}
@@ -458,7 +458,7 @@ export default function VietnameseWomensDayPage() {
             {/* Next-Generation Marketing */}
             <div className="grid gap-8 text-center md:grid-cols-2 md:items-center md:text-balance">
               <div className="group relative overflow-hidden rounded-2xl border-2 border-dynamic-blue/30 shadow-xl transition-all hover:border-dynamic-blue/50 hover:shadow-2xl">
-                <div className="relative aspect-[4/3] bg-dynamic-blue/5">
+                <div className="relative aspect-4/3 bg-dynamic-blue/5">
                   <Image
                     src="/media/marketing/events/women-in-tech/next-generation-of-women-marketing-leader.jpg"
                     alt={t('womenInLeadership.marketing.name')}
@@ -507,7 +507,7 @@ export default function VietnameseWomensDayPage() {
                 </p>
               </div>
               <div className="group relative order-1 overflow-hidden rounded-2xl border-2 border-dynamic-green/30 shadow-xl transition-all hover:border-dynamic-green/50 hover:shadow-2xl md:order-2">
-                <div className="relative aspect-[4/3] bg-dynamic-green/5">
+                <div className="relative aspect-4/3 bg-dynamic-green/5">
                   <Image
                     src="/media/marketing/events/women-in-tech/linh-dan-first-remote-women-software-engineer-intern.jpeg"
                     alt={t('womenInLeadership.remote.name')}
@@ -1389,7 +1389,7 @@ export default function VietnameseWomensDayPage() {
             </p>
           </div>
 
-          <div className="grid gap-8 text-pretty text-center md:grid-cols-2 xl:grid-cols-6">
+          <div className="grid gap-8 text-center md:grid-cols-2 xl:grid-cols-6">
             {/* AllMind Partnership - Sophie & Sweet */}
             <Card className="h-full overflow-hidden border-2 border-dynamic-blue/30 bg-dynamic-blue/10 p-0 shadow-xl transition-all hover:border-dynamic-blue/50 hover:shadow-2xl xl:col-span-2">
               <div className="relative aspect-video overflow-hidden">

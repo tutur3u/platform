@@ -267,6 +267,65 @@ function DayColumnBlocks({
   );
 }
 
+interface CompactWeekSummaryProps {
+  sessions: SessionWithRelations[];
+  startOfPeriod: dayjs.Dayjs;
+  categories: TimeTrackingCategory[] | null;
+  userTimezone: string;
+  onSessionClick?: (session: SessionWithRelations) => void;
+}
+
+/**
+ * Compact day-by-day summary showing colored category bars per day.
+ * Originally the mobile-only view inside WeekCalendarGrid, now exported
+ * so it can be rendered independently (always visible above the collapsible).
+ */
+export function CompactWeekSummary({
+  sessions,
+  startOfPeriod,
+  categories,
+  userTimezone,
+  onSessionClick,
+}: CompactWeekSummaryProps) {
+  const weekStart = useMemo(
+    () => startOfPeriod.tz(userTimezone).startOf('isoWeek'),
+    [startOfPeriod, userTimezone]
+  );
+
+  const blocks = useMemo(() => {
+    const raw = buildTimeBlocks(sessions, weekStart, userTimezone);
+    return resolveOverlaps(raw);
+  }, [sessions, weekStart, userTimezone]);
+
+  const todayIndex = useMemo(() => {
+    const today = dayjs().tz(userTimezone);
+    const diff = today.diff(weekStart, 'day');
+    return diff >= 0 && diff < 7 ? diff : -1;
+  }, [weekStart, userTimezone]);
+
+  const dayLabels = useMemo(
+    () =>
+      Array.from({ length: 7 }, (_, i) => {
+        const day = weekStart.add(i, 'day');
+        return {
+          short: day.format('ddd'),
+          date: day.format('D'),
+        };
+      }),
+    [weekStart]
+  );
+
+  return (
+    <MobileWeekView
+      blocks={blocks}
+      dayLabels={dayLabels}
+      todayIndex={todayIndex}
+      categories={categories}
+      onSessionClick={onSessionClick}
+    />
+  );
+}
+
 function MobileWeekView({
   blocks,
   dayLabels,

@@ -2,6 +2,8 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { Json } from '@tuturuuu/types';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import dayjs from 'dayjs';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -249,6 +251,12 @@ export async function PATCH(
 
     const sbAdmin = await createAdminClient();
 
+    // Check if user has permission to bypass approval for time tracking
+    const { containsPermission } = await getPermissions({ wsId });
+    const canBypass = containsPermission(
+      'bypass_time_tracking_request_approval'
+    );
+
     if (action === 'stop') {
       // Check if session has pending approval (means it was paused with a break and has a request pending)
       // If so, skip threshold validation since approval was already handled during pause
@@ -257,7 +265,8 @@ export async function PATCH(
       // Validate threshold before stopping - checks ENTIRE CHAIN from root
       // This ensures pause exemption doesn't bypass approval requirements
       // BUT skip if session already has pending approval (request already submitted)
-      if (!hasPendingApproval) {
+      // OR if user has bypass_time_tracking_request_approval permission
+      if (!hasPendingApproval && !canBypass) {
         const thresholdCheck = await checkSessionThreshold(
           wsId,
           session.start_time,
@@ -368,8 +377,9 @@ export async function PATCH(
       // This allows the break to be created and displayed to the user immediately.
       const isBreakPause = breakTypeId || breakTypeName;
 
-      if (!isBreakPause) {
+      if (!isBreakPause && !canBypass) {
         // Only validate threshold if NOT pausing for a break
+        // AND user does NOT have bypass permission
         // Validate threshold before pausing - checks ENTIRE CHAIN from root
         // This ensures pause doesn't bypass approval requirements when they are strict
         const thresholdCheck = await checkSessionThreshold(
@@ -637,7 +647,8 @@ export async function PATCH(
         // Check if editing time fields is requested
         const isEditingTime = startTime !== undefined || endTime !== undefined;
 
-        if (isEditingTime) {
+        // Only apply threshold restrictions if user does NOT have bypass permission
+        if (isEditingTime && !canBypass) {
           // Fetch workspace threshold setting
           const { data: workspaceSettings } = await sbAdmin
             .from('workspace_settings')
@@ -706,6 +717,66 @@ export async function PATCH(
         }
       }
 
+      // If user has bypass permission and is editing time fields, use the
+      // bypass RPC so the DB trigger also skips threshold checks
+      const hasTimeFieldUpdates =
+        updateData.start_time !== undefined ||
+        updateData.end_time !== undefined ||
+        updateData.duration_seconds !== undefined;
+
+      if (canBypass && hasTimeFieldUpdates) {
+        // Build JSONB fields object for the RPC
+        const fields: Record<string, unknown> = {};
+        if (updateData.title !== undefined) fields.title = updateData.title;
+        if (updateData.description !== undefined)
+          fields.description = updateData.description;
+        if (updateData.category_id !== undefined)
+          fields.category_id = updateData.category_id;
+        if (updateData.task_id !== undefined)
+          fields.task_id = updateData.task_id;
+        if (updateData.start_time !== undefined)
+          fields.start_time = updateData.start_time;
+        if (updateData.end_time !== undefined)
+          fields.end_time = updateData.end_time;
+        if (updateData.duration_seconds !== undefined)
+          fields.duration_seconds = updateData.duration_seconds;
+
+        const { error: rpcError } = await sbAdmin.rpc(
+          'update_time_tracking_session_with_bypass',
+          {
+            p_session_id: sessionId,
+            p_fields: fields as Json,
+          }
+        );
+
+        if (rpcError) {
+          if (rpcError.code === 'P0001') {
+            return NextResponse.json(
+              { error: rpcError.message },
+              { status: 400 }
+            );
+          }
+          throw rpcError;
+        }
+
+        // Fetch the updated session with relations
+        const { data, error: fetchError } = await sbAdmin
+          .from('time_tracking_sessions')
+          .select(
+            `
+            *,
+            category:time_tracking_categories(*),
+            task:tasks(*)
+          `
+          )
+          .eq('id', sessionId)
+          .single();
+
+        if (fetchError) throw fetchError;
+        return NextResponse.json({ session: data });
+      }
+
+      // Regular update (trigger will enforce threshold checks)
       const { data, error } = await sbAdmin
         .from('time_tracking_sessions')
         .update(updateData)
@@ -719,7 +790,16 @@ export async function PATCH(
         )
         .single();
 
-      if (error) throw error;
+      if (error) {
+        if (
+          error.message?.includes('older than') ||
+          error.message?.includes('must be submitted as requests') ||
+          error.code === 'P0001'
+        ) {
+          return NextResponse.json({ error: error.message }, { status: 400 });
+        }
+        throw error;
+      }
       return NextResponse.json({ session: data });
     }
 

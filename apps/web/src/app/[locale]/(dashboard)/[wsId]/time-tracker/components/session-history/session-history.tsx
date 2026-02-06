@@ -56,7 +56,7 @@ import {
 } from './session-utils';
 import { StackedSessionItem } from './stacked-session-item';
 import { useSessionActions } from './use-session-actions';
-import { WeekCalendarGrid } from './week-calendar-grid';
+import { CompactWeekSummary, WeekCalendarGrid } from './week-calendar-grid';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -86,9 +86,9 @@ export function SessionHistory({
 
   // Week overview collapsible state — persisted to localStorage
   const [overviewOpen, setOverviewOpen] = useState(() => {
-    if (typeof window === 'undefined') return true;
+    if (typeof window === 'undefined') return false;
     const stored = localStorage.getItem('time-tracker-week-overview-open');
-    return stored === null ? true : stored === 'true';
+    return stored === null ? false : stored === 'true';
   });
   const handleOverviewToggle = useCallback((open: boolean) => {
     setOverviewOpen(open);
@@ -465,6 +465,20 @@ export function SessionHistory({
           ) : (
             // Day/Week View Layout
             <>
+              {viewMode === 'week' &&
+                sessionsForPeriod &&
+                sessionsForPeriod.length > 0 && (
+                  <div className="mb-4">
+                    <CompactWeekSummary
+                      sessions={sessionsForPeriod}
+                      startOfPeriod={startOfPeriod}
+                      categories={categories}
+                      userTimezone={userTimezone}
+                      onSessionClick={(session) => openEditDialog(session)}
+                    />
+                  </div>
+                )}
+
               <Collapsible
                 open={overviewOpen}
                 onOpenChange={handleOverviewToggle}
@@ -490,17 +504,22 @@ export function SessionHistory({
                       isLoading={isPeriodStatsLoading}
                     />
 
+                    {/* Desktop-only: full calendar grid (CompactWeekSummary covers mobile) */}
                     {viewMode === 'week' &&
                       sessionsForPeriod &&
                       sessionsForPeriod.length > 0 && (
-                        <WeekCalendarGrid
-                          sessions={sessionsForPeriod}
-                          startOfPeriod={startOfPeriod}
-                          endOfPeriod={endOfPeriod}
-                          categories={categories}
-                          userTimezone={userTimezone}
-                          onSessionClick={(session) => openEditDialog(session)}
-                        />
+                        <div className="hidden md:block">
+                          <WeekCalendarGrid
+                            sessions={sessionsForPeriod}
+                            startOfPeriod={startOfPeriod}
+                            endOfPeriod={endOfPeriod}
+                            categories={categories}
+                            userTimezone={userTimezone}
+                            onSessionClick={(session) =>
+                              openEditDialog(session)
+                            }
+                          />
+                        </div>
                       )}
                   </div>
                 </CollapsibleContent>
@@ -639,7 +658,7 @@ export function SessionHistory({
         workspace={workspace}
         prefillStartTime={prefillStartTime}
         prefillEndTime={prefillEndTime}
-        canSkipProof={canManageTimeTrackingRequests}
+        canSkipProof={canBypassTimeTrackingRequestApproval}
       />
 
       {/* Move Session Dialog */}

@@ -20163,6 +20163,21 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      insert_time_tracking_session_with_bypass: {
+        Args: {
+          p_category_id?: string;
+          p_description?: string;
+          p_duration_seconds?: number;
+          p_end_time?: string;
+          p_is_running?: boolean;
+          p_start_time?: string;
+          p_task_id?: string;
+          p_title: string;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
       is_board_template_accessible: {
         Args: { p_template_id: string };
         Returns: boolean;
@@ -20633,6 +20648,10 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      update_time_tracking_session_with_bypass: {
+        Args: { p_fields: Json; p_session_id: string };
+        Returns: string;
       };
       upsert_calendar_events_and_count: {
         Args: { events: Json };
