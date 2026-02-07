@@ -69,18 +69,10 @@ const checkManageSubscriptionPermission = async (
   return data ?? false;
 };
 
-export const ensureSubscription = async (wsId: string, isPersonal: boolean) => {
+export const ensureSubscription = async (wsId: string) => {
   // Check for existing subscription first
   const existing = await fetchSubscription(wsId);
   if (existing) return { subscription: existing, error: null };
-
-  // For non-personal workspaces, we require manual checkout
-  if (!isPersonal) {
-    return {
-      subscription: null,
-      error: 'WORKSPACE_SUBSCRIPTION_REQUIRED',
-    };
-  }
 
   // No subscription found - attempt to create one
   try {
@@ -210,47 +202,33 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if workspace is personal
-    const isPersonal = await isPersonalWorkspace(wsId);
-
     // Fetch all billing data in parallel
-    const [products, subscriptionResult, orders, hasManagePermission] =
-      await Promise.all([
-        fetchProducts(),
-        ensureSubscription(wsId, isPersonal),
-        fetchWorkspaceOrders(wsId),
-        checkManageSubscriptionPermission(wsId, user.id),
-      ]);
-
-    // Get seat status for the workspace
-    const seatStatus = await getSeatStatus(supabase, wsId);
+    const [
+      isPersonal,
+      products,
+      subscriptionResult,
+      orders,
+      hasManagePermission,
+    ] = await Promise.all([
+      isPersonalWorkspace(wsId),
+      fetchProducts(),
+      ensureSubscription(wsId),
+      fetchWorkspaceOrders(wsId),
+      checkManageSubscriptionPermission(wsId, user.id),
+    ]);
 
     // Handle subscription creation failure
     if (!subscriptionResult.subscription) {
-      // Find the free seat-based product for non-personal workspaces
-      let targetProductId = null;
-      if (!isPersonal) {
-        const { data: product } = await supabase
-          .from('workspace_subscription_products')
-          .select('id')
-          .eq('pricing_model', 'seat_based')
-          .eq('tier', 'FREE')
-          .eq('archived', false)
-          .maybeSingle();
-        targetProductId = product?.id;
-      }
-
       return NextResponse.json(
-        {
-          error: subscriptionResult.error || 'SUBSCRIPTION_NOT_FOUND',
-          seatStatus,
-          targetProductId,
-        },
+        { error: subscriptionResult.error || 'SUBSCRIPTION_NOT_FOUND' },
         { status: 404 }
       );
     }
 
     const subscription = subscriptionResult.subscription;
+
+    // Get seat status for the workspace
+    const seatStatus = await getSeatStatus(supabase, wsId);
 
     return NextResponse.json({
       isPersonalWorkspace: isPersonal,

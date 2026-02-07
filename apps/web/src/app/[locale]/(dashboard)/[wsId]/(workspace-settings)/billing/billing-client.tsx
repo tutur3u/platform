@@ -52,6 +52,7 @@ interface BillingClientProps {
   currentPlan: Plan;
   wsId: string;
   products: Product[];
+  product_id: string;
   seatStatus?: SeatStatus;
   hasManageSubscriptionPermission: boolean;
 }

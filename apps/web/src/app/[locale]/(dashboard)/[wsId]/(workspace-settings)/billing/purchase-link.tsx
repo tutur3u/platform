@@ -11,8 +11,6 @@ interface PurchaseLinkProps {
   customerEmail?: string;
   theme?: 'light' | 'dark' | 'auto';
   className?: string;
-  /** Number of seats for seat-based products */
-  seats?: number;
   /** Called when user wants to change an existing subscription. If provided, opens in-app dialog instead of external portal */
   onPlanChange?: () => void;
 }
@@ -25,26 +23,23 @@ export default function PurchaseLink({
   className,
   children,
   onPlanChange,
-  seats,
 }: PropsWithChildren<PurchaseLinkProps>) {
   const mutation = useMutation({
     mutationFn: async () => {
-      const url = subscriptionId
-        ? `/api/payment/subscriptions/${subscriptionId}/checkouts`
-        : `/api/v1/workspaces/${wsId}/billing/checkouts`;
-
-      // Create new checkout session
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          wsId,
-          productId,
-          seats,
-        }),
-      });
+      // Create new checkout session for new subscriptions
+      const response = await fetch(
+        `/api/payment/subscriptions/${subscriptionId}/checkouts`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            wsId,
+            productId,
+          }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error('Failed to create checkout session');

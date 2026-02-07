@@ -84,7 +84,7 @@ export async function POST() {
         // Get or create Polar customer
         await getOrCreatePolarCustomer({
           polar,
-          supabase,
+          supabase: sbAdmin,
           wsId: workspace.id,
         });
 

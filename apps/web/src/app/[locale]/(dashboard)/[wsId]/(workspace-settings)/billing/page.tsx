@@ -82,18 +82,10 @@ const checkManageSubscriptionPermission = async (
   return data ?? false;
 };
 
-export const ensureSubscription = async (wsId: string, isPersonal: boolean) => {
+export const ensureSubscription = async (wsId: string) => {
   // Check for existing subscription first
   const existing = await fetchSubscription(wsId);
   if (existing) return { subscription: existing, error: null };
-
-  // For non-personal workspaces, we require manual checkout
-  if (!isPersonal) {
-    return {
-      subscription: null,
-      error: 'WORKSPACE_SUBSCRIPTION_REQUIRED',
-    };
-  }
 
   // No subscription found - attempt to create one
   try {
@@ -222,9 +214,8 @@ export default async function BillingPage({
 
         if (!user) return notFound();
 
-        const isPersonal = await isPersonalWorkspace(wsId);
-
         const [
+          isPersonal,
           products,
           subscriptionResult,
           orders,
@@ -232,8 +223,9 @@ export default async function BillingPage({
           locale,
           t,
         ] = await Promise.all([
+          isPersonalWorkspace(wsId),
           fetchProducts(),
-          ensureSubscription(wsId, isPersonal),
+          ensureSubscription(wsId), // Try to ensure subscription exists
           fetchWorkspaceOrders(wsId),
           checkManageSubscriptionPermission(wsId, user.id),
           getLocale(),
@@ -242,28 +234,8 @@ export default async function BillingPage({
 
         // Handle subscription creation failure
         if (!subscriptionResult.subscription) {
-          const seatStatus = await getSeatStatus(supabase, wsId);
-
-          // Find the free seat-based product for non-personal workspaces
-          let targetProductId = null;
-          if (!isPersonal) {
-            const { data: product } = await supabase
-              .from('workspace_subscription_products')
-              .select('id')
-              .eq('pricing_model', 'seat_based')
-              .eq('tier', 'FREE')
-              .eq('archived', false)
-              .maybeSingle();
-            targetProductId = product?.id;
-          }
-
           return (
-            <NoSubscriptionFound
-              wsId={wsId}
-              error={subscriptionResult.error}
-              seatStatus={seatStatus}
-              targetProductId={targetProductId}
-            />
+            <NoSubscriptionFound wsId={wsId} error={subscriptionResult.error} />
           );
         }
 
@@ -307,6 +279,7 @@ export default async function BillingPage({
               isPersonalWorkspace={isPersonal}
               currentPlan={currentPlan}
               products={products}
+              product_id={subscription?.product.id || ''}
               wsId={wsId}
               seatStatus={seatStatus}
               hasManageSubscriptionPermission={hasManageSubscriptionPermission}

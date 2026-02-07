@@ -7,24 +7,15 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { DEV_MODE } from '@/constants/common';
-import type { SeatStatus } from '@/utils/seat-limits';
-import PurchaseLink from './purchase-link';
 
 interface NoSubscriptionFoundProps {
   wsId: string;
   error: string | null;
-  seatStatus?: SeatStatus;
-  targetProductId?: string | null;
 }
 
 const isDevelopment = DEV_MODE === true;
 
-export function NoSubscriptionFound({
-  wsId,
-  error,
-  seatStatus,
-  targetProductId,
-}: NoSubscriptionFoundProps) {
+export function NoSubscriptionFound({ wsId, error }: NoSubscriptionFoundProps) {
   const t = useTranslations('billing.no-subscription');
   const router = useRouter();
 
@@ -50,18 +41,6 @@ export function NoSubscriptionFound({
             ? 'Failed to create subscription via Polar API. Check Polar configuration and product setup.'
             : undefined,
           prodDescription: t('prod.description'),
-        };
-      case 'WORKSPACE_SUBSCRIPTION_REQUIRED':
-        return {
-          code: 'WORKSPACE_SUB_REQUIRED',
-          devDescription: isDevelopment
-            ? 'Non-personal workspaces require a manual checkout for the free seat-based plan. Automatic creation is disabled for these workspaces.'
-            : undefined,
-          prodDescription: t(
-            'prod.workspace-subscription-required.description'
-          ),
-          title: t('prod.workspace-subscription-required.title'),
-          actionLabel: t('prod.workspace-subscription-required.action'),
         };
       default:
         return {
@@ -101,68 +80,46 @@ export function NoSubscriptionFound({
             )}
 
             <div className="space-y-4">
-              {error === 'WORKSPACE_SUBSCRIPTION_REQUIRED' &&
-              targetProductId ? (
-                <div className="rounded-lg text-center">
-                  <p className="mb-4 text-dynamic-foreground/80">
-                    {errorDetails.prodDescription}
-                  </p>
-                  <PurchaseLink
-                    subscriptionId={null}
-                    productId={targetProductId}
-                    wsId={wsId}
-                    seats={seatStatus?.memberCount || 1}
-                    className="w-full"
-                  >
-                    {errorDetails.actionLabel}
-                  </PurchaseLink>
-                </div>
-              ) : (
-                <>
-                  <div>
-                    <h3 className="mb-2 font-semibold">
-                      {t('dev.polar-config.title')}
-                    </h3>
-                    <ul className="ml-6 list-disc space-y-1 text-dynamic-foreground/70 text-sm">
-                      <li>{t('dev.polar-config.sandbox')}</li>
-                      <li>{t('dev.polar-config.token')}</li>
-                    </ul>
-                  </div>
+              <div>
+                <h3 className="mb-2 font-semibold">
+                  {t('dev.polar-config.title')}
+                </h3>
+                <ul className="ml-6 list-disc space-y-1 text-dynamic-foreground/70 text-sm">
+                  <li>{t('dev.polar-config.sandbox')}</li>
+                  <li>{t('dev.polar-config.token')}</li>
+                </ul>
+              </div>
 
-                  <div>
-                    <h3 className="mb-2 font-semibold">
-                      {t('dev.webhook-config.title')}
-                    </h3>
-                    <ul className="ml-6 list-disc space-y-1 text-dynamic-foreground/70 text-sm">
-                      <li>
-                        {t('dev.webhook-config.ngrok')}{' '}
-                        <Link
-                          href="https://ngrok.com/download"
-                          className="text-blue-600 underline"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          https://ngrok.com/download
-                        </Link>
-                      </li>
-                      <li>{t('dev.webhook-config.url')}</li>
-                      <li>{t('dev.webhook-config.secret')}</li>
-                    </ul>
-                  </div>
+              <div>
+                <h3 className="mb-2 font-semibold">
+                  {t('dev.webhook-config.title')}
+                </h3>
+                <ul className="ml-6 list-disc space-y-1 text-dynamic-foreground/70 text-sm">
+                  <li>
+                    {t('dev.webhook-config.ngrok')}{' '}
+                    <Link
+                      href="https://ngrok.com/download"
+                      className="text-blue-600 underline"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      https://ngrok.com/download
+                    </Link>
+                  </li>
+                  <li>{t('dev.webhook-config.url')}</li>
+                  <li>{t('dev.webhook-config.secret')}</li>
+                </ul>
+              </div>
 
-                  <div>
-                    <h3 className="mb-2 font-semibold">
-                      {t('dev.reload.title')}
-                    </h3>
-                    <p className="text-dynamic-foreground/70 text-sm">
-                      {t('dev.reload.description')}
-                    </p>
-                  </div>
-                </>
-              )}
+              <div>
+                <h3 className="mb-2 font-semibold">{t('dev.reload.title')}</h3>
+                <p className="text-dynamic-foreground/70 text-sm">
+                  {t('dev.reload.description')}
+                </p>
+              </div>
             </div>
 
-            <Button variant="outline" onClick={handleRetry} className="w-full">
+            <Button onClick={handleRetry} className="w-full">
               <RefreshCw className="mr-2 h-4 w-4" />
               {t('retry')}
             </Button>
@@ -192,7 +149,7 @@ export function NoSubscriptionFound({
               <span className="text-dynamic-foreground/60">
                 {t('prod.error-code')}:
               </span>
-              <span className="font-mono">{error}</span>
+              <span className="font-mono">SUB_CREATE_FAILED</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-dynamic-foreground/60">
@@ -202,38 +159,20 @@ export function NoSubscriptionFound({
             </div>
           </div>
 
-          <div className="flex flex-col gap-3">
-            {error === 'WORKSPACE_SUBSCRIPTION_REQUIRED' && targetProductId && (
-              <PurchaseLink
-                subscriptionId={null}
-                productId={targetProductId}
-                wsId={wsId}
-                seats={seatStatus?.memberCount || 1}
-                className="w-full"
+          <div className="flex gap-3">
+            <Button onClick={handleRetry} variant="outline" className="flex-1">
+              <RefreshCw className="mr-2 h-4 w-4" />
+              {t('retry')}
+            </Button>
+            <Button asChild className="flex-1">
+              <Link
+                href="mailto:support@tuturuuu.com"
+                rel="noopener noreferrer"
               >
-                {errorDetails.actionLabel}
-              </PurchaseLink>
-            )}
-
-            <div className="flex gap-3">
-              <Button
-                onClick={handleRetry}
-                variant="outline"
-                className="flex-1"
-              >
-                <RefreshCw className="mr-2 h-4 w-4" />
-                {t('retry')}
-              </Button>
-              <Button asChild className="flex-1" variant="ghost">
-                <Link
-                  href="mailto:support@tuturuuu.com"
-                  rel="noopener noreferrer"
-                >
-                  <Mail className="mr-2 h-4 w-4" />
-                  {t('contact-support')}
-                </Link>
-              </Button>
-            </div>
+                <Mail className="mr-2 h-4 w-4" />
+                {t('contact-support')}
+              </Link>
+            </Button>
           </div>
         </CardContent>
       </Card>

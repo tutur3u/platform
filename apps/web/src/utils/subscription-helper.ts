@@ -35,6 +35,8 @@ export async function createFreeSubscription(
     return null;
   }
 
+  let externalCustomerId: string;
+
   const { data: workspace } = await supabase
     .from('workspaces')
     .select('*')
@@ -48,18 +50,37 @@ export async function createFreeSubscription(
     return null;
   }
 
-  // Get the appropriate FREE product for workspace
-  const { data: freeProduct, error: productError } = await supabase
+  const isPersonal = workspace.personal;
+
+  if (isPersonal) {
+    externalCustomerId = workspace.creator_id;
+  } else {
+    externalCustomerId = `workspace_${wsId}`;
+  }
+
+  // Get the appropriate FREE product based on workspace type
+  // Personal workspace: amountType=free (pricing_model='free')
+  // Non-personal workspace: amountType=seated (pricing_model='seat_based') with tier='FREE'
+  let productQuery = supabase
     .from('workspace_subscription_products')
     .select('*')
-    .eq('pricing_model', 'free')
-    .eq('archived', false)
+    .eq('archived', false);
+
+  if (isPersonal) {
+    productQuery = productQuery.eq('pricing_model', 'free');
+  } else {
+    productQuery = productQuery
+      .eq('pricing_model', 'seat_based')
+      .eq('tier', 'FREE');
+  }
+
+  const { data: freeProduct, error: productError } = await productQuery
     .limit(1)
     .maybeSingle();
 
   if (productError || !freeProduct) {
     console.error(
-      `No FREE tier product found for workspace, cannot create free subscription:`,
+      `No FREE tier product found for ${isPersonal ? 'personal' : 'non-personal'} workspace, cannot create free subscription:`,
       productError
     );
     return null;
@@ -70,7 +91,7 @@ export async function createFreeSubscription(
     // Note: Polar's subscriptions.create() only works for free products
     const subscription = await polar.subscriptions.create({
       productId: freeProduct.id,
-      externalCustomerId: workspace.creator_id,
+      externalCustomerId,
       metadata: { wsId },
     });
 
