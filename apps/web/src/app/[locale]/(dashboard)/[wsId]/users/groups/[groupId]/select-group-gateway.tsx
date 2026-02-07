@@ -17,7 +17,16 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
-export default function SelectGroupGateway({ wsId }: { wsId: string }) {
+interface SelectGroupGatewayProps {
+  wsId: string;
+  /** Group IDs the user can access. `null` means admin — show all groups. */
+  accessibleGroupIds: string[] | null;
+}
+
+export default function SelectGroupGateway({
+  wsId,
+  accessibleGroupIds,
+}: SelectGroupGatewayProps) {
   const t = useTranslations('ws-user-groups');
   const tc = useTranslations('common');
   const router = useRouter();
@@ -26,14 +35,23 @@ export default function SelectGroupGateway({ wsId }: { wsId: string }) {
   const [selectedGroupId, setSelectedGroupId] = useState<string | undefined>();
 
   const query = useQuery<{ data: UserGroup[]; count: number }>({
-    queryKey: ['ws-user-groups', wsId],
+    queryKey: ['ws-user-groups', wsId, accessibleGroupIds],
     queryFn: async () => {
+      if (accessibleGroupIds !== null && accessibleGroupIds.length === 0) {
+        return { data: [], count: 0 };
+      }
+
       const supabase = await createClient();
-      const { data, error, count } = await supabase
+      let builder = supabase
         .from('workspace_user_groups_with_amount')
         .select('id, name, amount', { count: 'exact' })
-        .eq('ws_id', wsId)
-        .order('name');
+        .eq('ws_id', wsId);
+
+      if (accessibleGroupIds !== null) {
+        builder = builder.in('id', accessibleGroupIds);
+      }
+
+      const { data, error, count } = await builder.order('name');
       if (error) throw error;
       return { data: (data || []) as UserGroup[], count: count || 0 };
     },

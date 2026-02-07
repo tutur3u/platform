@@ -24,10 +24,6 @@ export default async function UserGroupDetailsPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, groupId }) => {
-        if (groupId === '~') {
-          return null;
-        }
-
         const t = await getTranslations();
         const { containsPermission } = await getPermissions({
           wsId,

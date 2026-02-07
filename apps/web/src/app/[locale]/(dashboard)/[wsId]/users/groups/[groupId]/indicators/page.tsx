@@ -25,10 +25,6 @@ export default async function UserGroupIndicatorsPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, groupId }) => {
-        if (groupId === '~') {
-          return null;
-        }
-
         const { containsPermission } = await getPermissions({
           wsId,
         });
