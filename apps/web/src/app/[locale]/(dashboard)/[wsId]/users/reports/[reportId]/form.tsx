@@ -150,9 +150,7 @@ export default function UserReportForm({
               className="w-full"
               disabled={!form.formState.isDirty || !canUpdate || isSubmitting}
             >
-              {isSubmitting && (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              )}
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
               {submitLabel}
             </Button>
             {!isNew && onDelete && canDelete && (

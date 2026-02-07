@@ -265,10 +265,7 @@ export function useTaskRealtimeSync({
           // Only update if no pending name update (avoid conflicts with debounced saves)
           // Use refs to get current values without triggering effect re-runs
           if (!pendingNameRef.current && updatedTask.name !== nameRef.current) {
-            console.log(
-              'Updating task name from realtime:',
-              updatedTask.name
-            );
+            console.log('Updating task name from realtime:', updatedTask.name);
             setName(updatedTask.name);
           }
 
@@ -304,10 +301,7 @@ export function useTaskRealtimeSync({
           const currentStartDate = startDateRef.current?.toISOString();
           const newStartDate = updatedStartDate?.toISOString();
           if (currentStartDate !== newStartDate) {
-            console.log(
-              'Updating start date from realtime:',
-              updatedStartDate
-            );
+            console.log('Updating start date from realtime:', updatedStartDate);
             setStartDate(updatedStartDate);
           }
 

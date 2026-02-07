@@ -421,7 +421,9 @@ export default function EditableReportPreview({
                 onChangeManager={(name) => onChangeManagerAction?.(name)}
                 canUpdate={canUpdateReports}
                 canDelete={canDeleteReports}
-                isSubmitting={createMutation.isPending || updateMutation.isPending}
+                isSubmitting={
+                  createMutation.isPending || updateMutation.isPending
+                }
               />
             )}
           </CollapsibleContent>
