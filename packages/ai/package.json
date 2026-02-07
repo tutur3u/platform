@@ -9,7 +9,7 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "packageManager": "bun@1.3.7",
+  "packageManager": "bun@1.3.8",
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^2.2.12",
     "@ai-sdk/anthropic": "^1.2.12",
@@ -42,7 +42,7 @@
     "@ncthub/supabase": "workspace:*",
     "@ncthub/utils": "workspace:*",
     "ai": "^4.3.19",
-    "next": "16.1.1",
+    "next": "16.1.6",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "zod": "^3.25.76"
@@ -50,8 +50,8 @@
   "devDependencies": {
     "@ncthub/types": "workspace:*",
     "@ncthub/typescript-config": "workspace:*",
-    "@types/node": "^25.1.0",
-    "@types/react": "^19.2.10",
+    "@types/node": "^25.2.1",
+    "@types/react": "^19.2.13",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   },

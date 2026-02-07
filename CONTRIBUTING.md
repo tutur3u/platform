@@ -1,4 +1,4 @@
-# Contributing to Tuturuuu
+# Contributing to NCT Hub
 
 We welcome contributions from the community to help strengthen our project and better serve our users. Please follow these guidelines if you wish to contribute:
 
@@ -47,11 +47,11 @@ Contributors are expected to comply with our conduct principles:
 - Be considerate, constructive, and helpful
 - Be professional, ethical, and take responsibility
 
-Thank you again for your interest in contributing to Tuturuuu! Together we can build an exceptional experience for our users.
+Thank you again for your interest in contributing to NCT Hub! Together we can build an exceptional experience for our users.
 
 ## Local Setup
 
-To setup Tuturuuu locally, you'll need:
+To setup NCT Hub locally, you'll need:
 
 - bun installed (our package manager of choice)
 - A database (we recommend PostgreSQL)
@@ -62,7 +62,7 @@ Then, follow these steps:
 
 2. Install dependencies: `bun install`
 
-3. Create a `.env` file with your database URL and other secrets (ask a maintainer for an example)
+3. Create a `.env.local` file with your database URL and other secrets (ask a maintainer for an example)
 
 4. Start local supabase development: `bun supabase start`
 
