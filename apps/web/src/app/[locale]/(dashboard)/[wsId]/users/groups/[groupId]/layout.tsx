@@ -58,6 +58,11 @@ export default async function Layout({ children, params }: LayoutProps) {
   const canApprovePosts = containsPermission('approve_posts');
   const canViewRequests = canApproveReports || canApprovePosts;
 
+  // Get rejected counts for badge
+  const rejectedCount = canViewRequests
+    ? await getRejectedCount(wsId, groupId, canApproveReports, canApprovePosts)
+    : 0;
+
   const commonHref = `/${wsId}/users/groups/${groupId}`;
 
   return (
@@ -105,6 +110,7 @@ export default async function Layout({ children, params }: LayoutProps) {
                 title={t('ws-user-group-details.requests')}
                 icon={<ClipboardList className="h-5 w-5" />}
                 className="border-dynamic-orange/20 bg-dynamic-orange/10 text-dynamic-orange hover:bg-dynamic-orange/20"
+                badge={rejectedCount}
               />
             )}
             {canViewUserGroupsScores && (
@@ -139,4 +145,42 @@ async function getData(wsId: string, groupId: string) {
     notFound();
   }
   return data as UserGroup;
+}
+
+async function getRejectedCount(
+  wsId: string,
+  groupId: string,
+  canApproveReports: boolean,
+  canApprovePosts: boolean
+): Promise<number> {
+  const supabase = await createClient();
+  let count = 0;
+
+  if (canApproveReports) {
+    const { count: reportCount } = await supabase
+      .from('external_user_monthly_reports')
+      .select('id, user:workspace_users!user_id!inner(ws_id)', {
+        count: 'exact',
+        head: true,
+      })
+      .eq('user.ws_id', wsId)
+      .eq('group_id', groupId)
+      .eq('report_approval_status', 'REJECTED');
+    count += reportCount ?? 0;
+  }
+
+  if (canApprovePosts) {
+    const { count: postCount } = await supabase
+      .from('user_group_posts')
+      .select('id, workspace_user_groups!inner(ws_id)', {
+        count: 'exact',
+        head: true,
+      })
+      .eq('workspace_user_groups.ws_id', wsId)
+      .eq('group_id', groupId)
+      .eq('post_approval_status', 'REJECTED');
+    count += postCount ?? 0;
+  }
+
+  return count;
 }

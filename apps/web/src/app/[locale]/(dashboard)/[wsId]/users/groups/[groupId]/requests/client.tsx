@@ -41,7 +41,7 @@ export function GroupRequestsClient({
             kind="reports"
             canApprove={canApproveReports}
             groupId={groupId}
-            defaultStatus="all"
+            defaultStatus="rejected"
           />
         </TabsContent>
       )}
@@ -53,7 +53,7 @@ export function GroupRequestsClient({
             kind="posts"
             canApprove={canApprovePosts}
             groupId={groupId}
-            defaultStatus="all"
+            defaultStatus="rejected"
           />
         </TabsContent>
       )}

@@ -276,32 +276,34 @@ export function ApprovalsView({
         </div>
 
         <div className="flex items-center gap-4">
-          {canApprove && totalPendingCount > 0 && (
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => approveAllItems()}
-              disabled={isApprovingAll}
-              className="h-9 gap-2 bg-dynamic-green hover:bg-dynamic-green/90"
-            >
-              {isApprovingAll ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {approveAllProgress
-                    ? t('actions.approveAllProgress', {
-                        current: approveAllProgress.current,
-                        total: approveAllProgress.total,
-                      })
-                    : t('actions.approveAll', { count: totalPendingCount })}
-                </>
-              ) : (
-                <>
-                  <CheckCheckIcon className="h-4 w-4" />
-                  {t('actions.approveAll', { count: totalPendingCount })}
-                </>
-              )}
-            </Button>
-          )}
+          {canApprove &&
+            totalPendingCount > 0 &&
+            currentStatus === 'pending' && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => approveAllItems()}
+                disabled={isApprovingAll}
+                className="h-9 gap-2 bg-dynamic-green hover:bg-dynamic-green/90"
+              >
+                {isApprovingAll ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {approveAllProgress
+                      ? t('actions.approveAllProgress', {
+                          current: approveAllProgress.current,
+                          total: approveAllProgress.total,
+                        })
+                      : t('actions.approveAll', { count: totalPendingCount })}
+                  </>
+                ) : (
+                  <>
+                    <CheckCheckIcon className="h-4 w-4" />
+                    {t('actions.approveAll', { count: totalPendingCount })}
+                  </>
+                )}
+              </Button>
+            )}
 
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground text-sm">

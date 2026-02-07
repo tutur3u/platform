@@ -2,6 +2,7 @@
 
 import {
   Check,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   FileText,
@@ -13,6 +14,11 @@ import {
   XIcon,
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@tuturuuu/ui/collapsible';
 import {
   Dialog,
   DialogContent,
@@ -225,62 +231,87 @@ export function ApprovalDetailDialog({
 
   // Current version content component
   const CurrentVersionContent = () => (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Content Section */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-          <FileText className="h-4 w-4" />
-          {t('detail.content')}
-        </div>
-        {renderContent(item.content)}
-      </div>
+      <Collapsible defaultOpen>
+        <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg bg-muted/50 px-3 py-2 transition-colors hover:bg-muted/80 [&[data-state=open]>svg]:rotate-180">
+          <div className="flex items-center gap-2 font-medium text-sm">
+            <FileText className="h-4 w-4" />
+            {t('detail.content')}
+          </div>
+          <ChevronDown className="h-4 w-4 transition-transform duration-200" />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pt-2">
+          {renderContent(item.content)}
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Report-specific fields */}
       {isReport ? (
         <>
           {/* Score Section */}
           {'score' in item && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                <Trophy className="h-4 w-4" />
-                {t('detail.score')}
-              </div>
-              {renderScore(item.score as number | null)}
-            </div>
+            <Collapsible defaultOpen>
+              <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg bg-muted/50 px-3 py-2 transition-colors hover:bg-muted/80 [&[data-state=open]>svg]:rotate-180">
+                <div className="flex items-center gap-2 font-medium text-sm">
+                  <Trophy className="h-4 w-4" />
+                  {t('detail.score')}
+                </div>
+                <ChevronDown className="h-4 w-4 transition-transform duration-200" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2">
+                {renderScore(item.score as number | null)}
+              </CollapsibleContent>
+            </Collapsible>
           )}
 
           {/* Scores Array Section */}
           {'scores' in item && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                <Star className="h-4 w-4" />
-                {t('detail.scores')}
-              </div>
-              {renderScoresArray(item.scores as number[] | null)}
-            </div>
+            <Collapsible defaultOpen>
+              <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg bg-muted/50 px-3 py-2 transition-colors hover:bg-muted/80 [&[data-state=open]>svg]:rotate-180">
+                <div className="flex items-center gap-2 font-medium text-sm">
+                  <Star className="h-4 w-4" />
+                  {t('detail.scores')}
+                </div>
+                <ChevronDown className="h-4 w-4 transition-transform duration-200" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2">
+                {renderScoresArray(item.scores as number[] | null)}
+              </CollapsibleContent>
+            </Collapsible>
           )}
 
           {/* Feedback Section */}
           {'feedback' in item && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                <MessageSquare className="h-4 w-4" />
-                {t('detail.feedback')}
-              </div>
-              {renderFeedbackOrNotes(item.feedback as string | null)}
-            </div>
+            <Collapsible defaultOpen>
+              <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg bg-muted/50 px-3 py-2 transition-colors hover:bg-muted/80 [&[data-state=open]>svg]:rotate-180">
+                <div className="flex items-center gap-2 font-medium text-sm">
+                  <MessageSquare className="h-4 w-4" />
+                  {t('detail.feedback')}
+                </div>
+                <ChevronDown className="h-4 w-4 transition-transform duration-200" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2">
+                {renderFeedbackOrNotes(item.feedback as string | null)}
+              </CollapsibleContent>
+            </Collapsible>
           )}
         </>
       ) : (
         /* Post-specific fields */
         item.notes && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-              <MessageSquare className="h-4 w-4" />
-              {t('detail.notes')}
-            </div>
-            {renderFeedbackOrNotes(item.notes as string | null)}
-          </div>
+          <Collapsible defaultOpen>
+            <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg bg-muted/50 px-3 py-2 transition-colors hover:bg-muted/80 [&[data-state=open]>svg]:rotate-180">
+              <div className="flex items-center gap-2 font-medium text-sm">
+                <MessageSquare className="h-4 w-4" />
+                {t('detail.notes')}
+              </div>
+              <ChevronDown className="h-4 w-4 transition-transform duration-200" />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2">
+              {renderFeedbackOrNotes(item.notes as string | null)}
+            </CollapsibleContent>
+          </Collapsible>
         )
       )}
     </div>
@@ -434,7 +465,7 @@ export function ApprovalDetailDialog({
           </div>
         </DialogHeader>
 
-        <div className="flex flex-col gap-0 md:grid md:grid-cols-[1fr,320px]">
+        <div className="flex max-h-[calc(90vh-10rem)] flex-col gap-0 overflow-y-auto md:grid md:grid-cols-[1fr,320px]">
           {/* Left Column - Main Content */}
           <div className="order-2 space-y-0 lg:order-1">
             {isCompareMode ? (
@@ -567,7 +598,7 @@ export function ApprovalDetailDialog({
               </div>
             ) : (
               // Single view for posts or reports without previous version
-              <div className="flex h-full flex-col">
+              <div className="flex h-[calc(90vh-8rem)] flex-col">
                 <div className="border-border border-b bg-dynamic-blue/5 px-6 py-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 font-medium text-dynamic-blue text-sm">
@@ -582,7 +613,7 @@ export function ApprovalDetailDialog({
                     <span className="font-medium">{modifierName}</span>
                   </div>
                 </div>
-                <ScrollArea className="h-[calc(90vh-11rem)]">
+                <ScrollArea className="flex-1">
                   <div className="p-6">
                     <CurrentVersionContent />
                   </div>
