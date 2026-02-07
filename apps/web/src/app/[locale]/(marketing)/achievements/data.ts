@@ -305,7 +305,7 @@ export const achievements: Achievement[] = [
         isNctMember: false,
       },
     ],
-    achievementDescription: 'TBU',
+    achievementDescription: '',
     eventLink:
       'https://www.facebook.com/groups/congdongsvuit/posts/1705153630393663/',
     year: 2025,
