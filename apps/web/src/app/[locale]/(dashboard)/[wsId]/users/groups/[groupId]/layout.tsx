@@ -1,4 +1,10 @@
-import { Calendar, ChartColumn, FileUser, UserCheck } from '@tuturuuu/icons';
+import {
+  Calendar,
+  ChartColumn,
+  ClipboardList,
+  FileUser,
+  UserCheck,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import LinkButton from '@tuturuuu/ui/custom/education/modules/link-button';
@@ -48,6 +54,9 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   const canCheckUserAttendance = containsPermission('check_user_attendance');
   const canViewUserGroupsScores = containsPermission('view_user_groups_scores');
+  const canApproveReports = containsPermission('approve_reports');
+  const canApprovePosts = containsPermission('approve_posts');
+  const canViewRequests = canApproveReports || canApprovePosts;
 
   const commonHref = `/${wsId}/users/groups/${groupId}`;
 
@@ -90,6 +99,14 @@ export default async function Layout({ children, params }: LayoutProps) {
               icon={<FileUser className="h-5 w-5" />}
               className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20"
             />
+            {canViewRequests && (
+              <LinkButton
+                href={`${commonHref}/requests`}
+                title={t('ws-user-group-details.requests')}
+                icon={<ClipboardList className="h-5 w-5" />}
+                className="border-dynamic-orange/20 bg-dynamic-orange/10 text-dynamic-orange hover:bg-dynamic-orange/20"
+              />
+            )}
             {canViewUserGroupsScores && (
               <LinkButton
                 href={`${commonHref}/indicators`}

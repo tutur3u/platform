@@ -21,6 +21,7 @@ interface UseApprovalsOptions {
   status?: 'all' | 'pending' | 'approved' | 'rejected';
   page?: number;
   limit?: number;
+  groupId?: string;
 }
 
 interface PaginatedResult<T> {
@@ -77,6 +78,7 @@ export function useApprovals({
   status = 'all',
   page = 1,
   limit = 10,
+  groupId,
 }: UseApprovalsOptions): UseApprovalsResult {
   const t = useTranslations('approvals');
   const tCommon = useTranslations('common');
@@ -101,7 +103,16 @@ export function useApprovals({
   const mutatingItemIdRef = useRef<string | null>(null);
 
   const reportsQuery = useQuery({
-    queryKey: ['ws', wsId, 'approvals', 'reports', status, page, limit],
+    queryKey: [
+      'ws',
+      wsId,
+      'approvals',
+      'reports',
+      status,
+      page,
+      limit,
+      groupId,
+    ],
     enabled: kind === 'reports',
     queryFn: async (): Promise<PaginatedResult<ReportApprovalItem>> => {
       // Build base query for count (without head: true to support relation filters)
@@ -111,6 +122,10 @@ export function useApprovals({
           count: 'exact',
         })
         .eq('user.ws_id', wsId);
+
+      if (groupId) {
+        countQuery = countQuery.eq('group_id', groupId);
+      }
 
       // Apply status filter
       if (status !== 'all') {
@@ -130,6 +145,10 @@ export function useApprovals({
           'id, title, content, feedback, score, scores, created_at, updated_by, report_approval_status, rejection_reason, approved_at, rejected_at, modifier:workspace_users!updated_by(display_name, full_name), user:workspace_users!user_id!inner(full_name, ws_id), ...workspace_user_groups(group_name:name)'
         )
         .eq('user.ws_id', wsId);
+
+      if (groupId) {
+        dataQuery = dataQuery.eq('group_id', groupId);
+      }
 
       // Apply status filter
       if (status !== 'all') {
@@ -183,7 +202,7 @@ export function useApprovals({
   });
 
   const postsQuery = useQuery({
-    queryKey: ['ws', wsId, 'approvals', 'posts', status, page, limit],
+    queryKey: ['ws', wsId, 'approvals', 'posts', status, page, limit, groupId],
     enabled: kind === 'posts',
     queryFn: async (): Promise<PaginatedResult<PostApprovalItem>> => {
       // Build base query for count (without head: true to support relation filters)
@@ -191,6 +210,10 @@ export function useApprovals({
         .from('user_group_posts')
         .select('id, workspace_user_groups!inner(ws_id)', { count: 'exact' })
         .eq('workspace_user_groups.ws_id', wsId);
+
+      if (groupId) {
+        countQuery = countQuery.eq('group_id', groupId);
+      }
 
       // Apply status filter
       if (status !== 'all') {
@@ -210,6 +233,10 @@ export function useApprovals({
           'id, title, content, notes, created_at, updated_by, post_approval_status, rejection_reason, approved_at, rejected_at, modifier:workspace_users!updated_by(display_name, full_name), ...workspace_user_groups(group_name:name, ws_id)'
         )
         .eq('workspace_user_groups.ws_id', wsId);
+
+      if (groupId) {
+        dataQuery = dataQuery.eq('group_id', groupId);
+      }
 
       // Apply status filter
       if (status !== 'all') {
@@ -417,19 +444,23 @@ export function useApprovals({
       let allPendingIds: string[] = [];
 
       if (kind === 'reports') {
-        const { data, error } = await supabase
+        let q = supabase
           .from('external_user_monthly_reports')
           .select('id, user:workspace_users!user_id!inner(ws_id)')
           .eq('user.ws_id', wsId)
           .eq('report_approval_status', 'PENDING');
+        if (groupId) q = q.eq('group_id', groupId);
+        const { data, error } = await q;
         if (error) throw error;
         allPendingIds = (data ?? []).map((item) => item.id);
       } else {
-        const { data, error } = await supabase
+        let q = supabase
           .from('user_group_posts')
           .select('id, workspace_user_groups!inner(ws_id)')
           .eq('workspace_user_groups.ws_id', wsId)
           .eq('post_approval_status', 'PENDING');
+        if (groupId) q = q.eq('group_id', groupId);
+        const { data, error } = await q;
         if (error) throw error;
         allPendingIds = (data ?? []).map((item) => item.id);
       }

@@ -5,12 +5,28 @@ import { escape as escapeString } from 'lodash';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
+function sanitizeFilename(text: string): string {
+  return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .replace(/[^a-z0-9]/gi, '_')
+    .toLowerCase()
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '');
+}
+
 export function useReportExport({
   previewTitle,
   isDarkPreview,
+  userName,
+  groupName,
 }: {
   previewTitle: string;
   isDarkPreview: boolean;
+  userName?: string;
+  groupName?: string;
 }) {
   const t = useTranslations();
   const [isExporting, setIsExporting] = useState(false);
@@ -185,19 +201,13 @@ export function useReportExport({
               const link = document.createElement('a');
               link.href = url;
 
-              const sanitizedTitle = previewTitle
-                ? previewTitle
-                    .normalize('NFD')
-                    .replace(/[\u0300-\u036f]/g, '')
-                    .replace(/đ/g, 'd')
-                    .replace(/Đ/g, 'D')
-                    .replace(/[^a-z0-9]/gi, '_')
-                    .toLowerCase()
-                    .replace(/_+/g, '_')
-                    .replace(/^_|_$/g, '')
-                : 'report';
+              const parts = [
+                userName && sanitizeFilename(userName),
+                groupName && sanitizeFilename(groupName),
+                previewTitle ? sanitizeFilename(previewTitle) : 'report',
+              ].filter(Boolean);
 
-              const fileName = `${sanitizedTitle}.png`;
+              const fileName = `${parts.join('_')}.png`;
 
               link.download = fileName;
               document.body.appendChild(link);

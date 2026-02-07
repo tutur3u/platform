@@ -295,6 +295,8 @@ export default function EditableReportPreview({
   const { handlePrintExport, handlePngExport, isExporting } = useReportExport({
     previewTitle,
     isDarkPreview: resolvedReportTheme === 'dark',
+    userName: report.user_name,
+    groupName: report.group_name,
   });
 
   const isPendingApproval = report.report_approval_status === 'PENDING';

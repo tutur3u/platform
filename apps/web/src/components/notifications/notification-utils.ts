@@ -90,6 +90,10 @@ export const ALL_NOTIFICATION_TYPES: NotificationType[] = [
   'system_announcement',
   'account_update',
   'security_alert',
+  'report_approved',
+  'report_rejected',
+  'post_approved',
+  'post_rejected',
 ];
 
 export const MENTION_TYPES: NotificationType[] = ['task_mention'];
@@ -141,6 +145,10 @@ const ICON_MAP: Record<string, typeof Bell> = {
   system_announcement: Bell,
   account_update: UserPlus,
   security_alert: Shield,
+  report_approved: CheckCircle2,
+  report_rejected: AlertCircle,
+  post_approved: CheckCircle2,
+  post_rejected: AlertCircle,
 };
 
 export function getNotificationIcon(
@@ -159,7 +167,7 @@ export function getEntityLink(
   notification: Notification,
   currentWsId: string
 ): string | null {
-  const { entity_type, entity_id, ws_id } = notification;
+  const { entity_type, entity_id, ws_id, data } = notification;
   const targetWsId = ws_id || currentWsId;
 
   if (entity_type === 'task' && entity_id) {
@@ -168,6 +176,26 @@ export function getEntityLink(
 
   if (entity_type === 'workspace' && entity_id) {
     return `/${entity_id}`;
+  }
+
+  if (entity_type === 'report' && entity_id) {
+    const groupId =
+      data && typeof data === 'object' && 'group_id' in data
+        ? (data as Record<string, unknown>).group_id
+        : null;
+    return groupId
+      ? `/${targetWsId}/users/reports/${entity_id}?groupId=${groupId}`
+      : `/${targetWsId}/users/reports/${entity_id}`;
+  }
+
+  if (entity_type === 'post' && entity_id) {
+    const groupId =
+      data && typeof data === 'object' && 'group_id' in data
+        ? (data as Record<string, unknown>).group_id
+        : null;
+    return groupId
+      ? `/${targetWsId}/users/groups/${groupId}/posts/${entity_id}`
+      : null;
   }
 
   return null;

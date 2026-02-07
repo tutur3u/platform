@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import { DiffViewer } from '@tuturuuu/ui/diff-viewer';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
@@ -285,72 +286,6 @@ export function ApprovalDetailDialog({
     </div>
   );
 
-  // Previous version content component
-  const PreviousVersionContent = () => {
-    if (!previousVersion) return null;
-    return (
-      <div className="space-y-4">
-        {/* Content Section */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-            <FileText className="h-4 w-4" />
-            {t('detail.content')}
-          </div>
-          {renderContent(previousVersion.content, true)}
-        </div>
-
-        {/* Report-specific fields */}
-        {isReport ? (
-          <>
-            {/* Score Section */}
-            {previousReportVersion?.score != null && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                  <Trophy className="h-4 w-4" />
-                  {t('detail.score')}
-                </div>
-                {renderScore(previousReportVersion.score, true)}
-              </div>
-            )}
-
-            {/* Scores Array Section */}
-            {previousReportVersion?.scores && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                  <Star className="h-4 w-4" />
-                  {t('detail.scores')}
-                </div>
-                {renderScoresArray(previousReportVersion.scores, true)}
-              </div>
-            )}
-
-            {/* Feedback Section */}
-            {previousReportVersion?.feedback && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                  <MessageSquare className="h-4 w-4" />
-                  {t('detail.feedback')}
-                </div>
-                {renderFeedbackOrNotes(previousReportVersion.feedback, true)}
-              </div>
-            )}
-          </>
-        ) : (
-          /* Post-specific fields */
-          previousPostVersion?.notes && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                <MessageSquare className="h-4 w-4" />
-                {t('detail.notes')}
-              </div>
-              {renderFeedbackOrNotes(previousPostVersion.notes, true)}
-            </div>
-          )
-        )}
-      </div>
-    );
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-hidden p-0 md:max-w-6xl">
@@ -503,51 +438,132 @@ export function ApprovalDetailDialog({
           {/* Left Column - Main Content */}
           <div className="order-2 space-y-0 lg:order-1">
             {isCompareMode ? (
-              // Side-by-side comparison for reports with previous version
-              <div className="grid h-[calc(90vh-8rem)] grid-cols-2 gap-0">
-                {/* Previous Version */}
-                <div className="border-border border-r">
-                  <div className="border-border border-b bg-muted/30 px-4 py-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                        {t('detail.previousApprovedVersion')}
-                      </div>
-                      {previousVersion?.approved_at && (
-                        <span className="text-muted-foreground text-xs">
-                          {formatDate(previousVersion.approved_at)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <ScrollArea className="h-[calc(90vh-12rem)]">
-                    <div className="p-4">
-                      <PreviousVersionContent />
-                    </div>
-                  </ScrollArea>
-                </div>
-
-                {/* Current Version */}
-                <div className="border-border border-l">
-                  <div className="border-border border-b bg-dynamic-blue/5 px-4 py-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 font-medium text-dynamic-blue text-sm">
-                        {t('detail.currentVersion')}
-                      </div>
-                      <span className="text-muted-foreground text-xs">
-                        {t('detail.pendingApproval')}
+              // Diff comparison for reports with previous version
+              <div className="flex h-[calc(90vh-8rem)] flex-col">
+                <div className="flex items-center justify-between border-border border-b bg-muted/30 px-4 py-3">
+                  <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                    {t('detail.previousApprovedVersion')}
+                    {previousVersion?.approved_at && (
+                      <span className="font-normal text-muted-foreground text-xs">
+                        ({formatDate(previousVersion.approved_at)})
                       </span>
-                    </div>
-                    <div className="mt-1 flex items-center gap-1 text-muted-foreground text-xs">
-                      <span>{t('labels.last_modified_by')}</span>
-                      <span className="font-medium">{modifierName}</span>
-                    </div>
+                    )}
+                    <span className="text-foreground/40">→</span>
+                    <span className="text-dynamic-blue">
+                      {t('detail.currentVersion')}
+                    </span>
                   </div>
-                  <ScrollArea className="h-[calc(90vh-12rem)]">
-                    <div className="p-4">
-                      <CurrentVersionContent />
-                    </div>
-                  </ScrollArea>
+                  <div className="flex items-center gap-1 text-muted-foreground text-xs">
+                    <span>{t('labels.last_modified_by')}</span>
+                    <span className="font-medium">{modifierName}</span>
+                  </div>
                 </div>
+                <ScrollArea className="flex-1">
+                  <div className="space-y-4 p-4">
+                    {/* Content Diff */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                        <FileText className="h-4 w-4" />
+                        {t('detail.content')}
+                      </div>
+                      <DiffViewer
+                        oldValue={previousVersion?.content}
+                        newValue={item.content}
+                        oldLabel={t('detail.previousApprovedVersion')}
+                        newLabel={t('detail.currentVersion')}
+                        granularity="word"
+                        viewMode="unified"
+                        showLineNumbers={false}
+                      />
+                      {previousVersion?.content === (item.content ?? '') &&
+                        renderContent(item.content)}
+                    </div>
+
+                    {/* Report-specific diffs */}
+                    {isReport && (
+                      <>
+                        {'score' in item && (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                              <Trophy className="h-4 w-4" />
+                              {t('detail.score')}
+                            </div>
+                            <div className="flex items-center gap-4">
+                              {previousReportVersion?.score != null && (
+                                <>
+                                  {renderScore(
+                                    previousReportVersion.score,
+                                    true
+                                  )}
+                                  <span className="text-muted-foreground">
+                                    →
+                                  </span>
+                                </>
+                              )}
+                              {renderScore(item.score as number | null)}
+                            </div>
+                          </div>
+                        )}
+
+                        {'scores' in item && (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                              <Star className="h-4 w-4" />
+                              {t('detail.scores')}
+                            </div>
+                            {renderScoresArray(item.scores as number[] | null)}
+                          </div>
+                        )}
+
+                        {'feedback' in item && (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                              <MessageSquare className="h-4 w-4" />
+                              {t('detail.feedback')}
+                            </div>
+                            <DiffViewer
+                              oldValue={previousReportVersion?.feedback}
+                              newValue={item.feedback as string | null}
+                              oldLabel={t('detail.previousApprovedVersion')}
+                              newLabel={t('detail.currentVersion')}
+                              granularity="word"
+                              viewMode="unified"
+                              showLineNumbers={false}
+                            />
+                            {previousReportVersion?.feedback ===
+                              ((item.feedback as string | null) ?? '') &&
+                              renderFeedbackOrNotes(
+                                item.feedback as string | null
+                              )}
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {/* Post-specific diffs */}
+                    {!isReport &&
+                      (item.notes || previousPostVersion?.notes) && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                            <MessageSquare className="h-4 w-4" />
+                            {t('detail.notes')}
+                          </div>
+                          <DiffViewer
+                            oldValue={previousPostVersion?.notes}
+                            newValue={item.notes as string | null}
+                            oldLabel={t('detail.previousApprovedVersion')}
+                            newLabel={t('detail.currentVersion')}
+                            granularity="word"
+                            viewMode="unified"
+                            showLineNumbers={false}
+                          />
+                          {previousPostVersion?.notes ===
+                            ((item.notes as string | null) ?? '') &&
+                            renderFeedbackOrNotes(item.notes as string | null)}
+                        </div>
+                      )}
+                  </div>
+                </ScrollArea>
               </div>
             ) : (
               // Single view for posts or reports without previous version
