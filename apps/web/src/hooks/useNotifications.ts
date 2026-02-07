@@ -23,7 +23,11 @@ export type NotificationType =
   | 'workspace_invite'
   | 'system_announcement'
   | 'account_update'
-  | 'security_alert';
+  | 'security_alert'
+  | 'report_approved'
+  | 'report_rejected'
+  | 'post_approved'
+  | 'post_rejected';
 
 export interface NotificationActor {
   id: string;

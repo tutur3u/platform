@@ -64,6 +64,7 @@ interface TaskDialogState {
   parentTaskId?: string; // For creating subtasks (legacy, kept for backward compatibility)
   parentTaskName?: string; // Name of parent task for subtasks (legacy)
   pendingRelationship?: PendingRelationship; // Generic relationship for new tasks
+  draftId?: string; // When editing an existing draft
 }
 
 interface TaskDialogContextValue {
@@ -111,6 +112,22 @@ interface TaskDialogContextValue {
     listId: string,
     availableLists?: TaskList[]
   ) => void;
+
+  // Open dialog for editing an existing draft (reuses full TaskEditDialog)
+  editDraft: (draft: {
+    id: string;
+    name: string;
+    description?: string | null;
+    priority?: string | null;
+    board_id?: string | null;
+    list_id?: string | null;
+    start_date?: string | null;
+    end_date?: string | null;
+    estimation_points?: number | null;
+    label_ids?: string[];
+    assignee_ids?: string[];
+    project_ids?: string[];
+  }) => Promise<void>;
 
   // Close dialog
   closeDialog: () => void;
@@ -352,6 +369,113 @@ export function TaskDialogProvider({
     []
   );
 
+  const editDraft = useCallback(
+    async (draft: {
+      id: string;
+      name: string;
+      description?: string | null;
+      priority?: string | null;
+      board_id?: string | null;
+      list_id?: string | null;
+      start_date?: string | null;
+      end_date?: string | null;
+      estimation_points?: number | null;
+      label_ids?: string[];
+      assignee_ids?: string[];
+      project_ids?: string[];
+    }) => {
+      const supabase = createClient();
+
+      // Fetch label metadata so names/colors render correctly
+      let labels: Array<{
+        id: string;
+        name: string;
+        color: string;
+        created_at: string;
+      }> = [];
+      if (draft.label_ids && draft.label_ids.length > 0) {
+        const { data } = await supabase
+          .from('workspace_task_labels')
+          .select('id, name, color, created_at')
+          .in('id', draft.label_ids);
+        labels = (data || []).map((l) => ({
+          id: l.id,
+          name: l.name ?? '',
+          color: l.color ?? '',
+          created_at: l.created_at ?? '',
+        }));
+      }
+
+      // Fetch assignee metadata so display names/avatars render correctly
+      let assignees: Array<{
+        id: string;
+        user_id: string;
+        display_name?: string | null;
+        avatar_url?: string | null;
+      }> = [];
+      if (draft.assignee_ids && draft.assignee_ids.length > 0) {
+        const { data } = await supabase
+          .from('users')
+          .select('id, display_name, avatar_url')
+          .in('id', draft.assignee_ids);
+        assignees = (data || []).map((u) => ({
+          id: u.id,
+          user_id: u.id,
+          display_name: u.display_name,
+          avatar_url: u.avatar_url,
+        }));
+      }
+
+      // Fetch project metadata so names render correctly
+      let projects: Array<{
+        id: string;
+        name: string;
+        status: string | null;
+      }> = [];
+      if (draft.project_ids && draft.project_ids.length > 0) {
+        const { data } = await supabase
+          .from('task_projects')
+          .select('id, name, status')
+          .in('id', draft.project_ids);
+        projects = (data || []).map((p) => ({
+          id: p.id,
+          name: p.name ?? '',
+          status: p.status,
+        }));
+      }
+
+      // Create a fake Task pre-populated with draft data + resolved metadata
+      const fakeTask: Task = {
+        id: `draft-${draft.id}`,
+        name: draft.name,
+        description: draft.description || '',
+        priority: (draft.priority as Task['priority']) || null,
+        list_id: draft.list_id || '',
+        start_date: draft.start_date || undefined,
+        end_date: draft.end_date || undefined,
+        estimation_points: draft.estimation_points ?? null,
+        display_number: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        deleted: false,
+        archived: false,
+        labels,
+        assignees,
+        projects,
+      } as Task;
+
+      setState({
+        isOpen: true,
+        task: fakeTask,
+        boardId: draft.board_id || '',
+        mode: 'create',
+        collaborationMode: false,
+        draftId: draft.id,
+      });
+    },
+    []
+  );
+
   const closeDialog = useCallback(() => {
     setState({
       isOpen: false,
@@ -418,6 +542,7 @@ export function TaskDialogProvider({
       createTask,
       createSubtask,
       createTaskWithRelationship,
+      editDraft,
       closeDialog,
       onUpdate,
       onClose,
@@ -432,6 +557,7 @@ export function TaskDialogProvider({
       createTask,
       createSubtask,
       createTaskWithRelationship,
+      editDraft,
       closeDialog,
       onUpdate,
       onClose,

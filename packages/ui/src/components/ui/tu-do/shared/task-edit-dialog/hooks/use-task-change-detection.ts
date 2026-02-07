@@ -13,9 +13,13 @@ export interface UseTaskChangeDetectionProps {
   endDate: Date | undefined;
   selectedListId: string;
   estimationPoints: number | null | undefined;
+  selectedLabels: Array<{ id: string }>;
+  selectedAssignees: Array<{ id: string; user_id?: string | null }>;
   isCreateMode: boolean;
   isLoading: boolean;
   collaborationMode: boolean;
+  /** When editing an existing draft, require changes before enabling save */
+  draftId?: string;
 }
 
 export interface UseTaskChangeDetectionReturn {
@@ -37,9 +41,12 @@ export function useTaskChangeDetection({
   endDate,
   selectedListId,
   estimationPoints,
+  selectedLabels,
+  selectedAssignees,
   isCreateMode,
   isLoading,
   collaborationMode,
+  draftId,
 }: UseTaskChangeDetectionProps): UseTaskChangeDetectionReturn {
   // Parse description from string to JSONContent
   const parseDescription = useCallback((desc?: string): JSONContent | null => {
@@ -61,6 +68,18 @@ export function useTaskChangeDetection({
 
   // Snapshot of the original task values
   const initialSnapshot = useMemo(() => {
+    const labelIds = (task?.labels || [])
+      .map((l) => l.id)
+      .sort()
+      .join(',');
+    const assigneeIds = (task?.assignees || [])
+      .map(
+        (a) =>
+          ('user_id' in a ? (a as { user_id?: string }).user_id : a.id) || a.id
+      )
+      .sort()
+      .join(',');
+
     return {
       name: (task?.name || '').trim(),
       description: JSON.stringify(parseDescription(task?.description) || null),
@@ -71,10 +90,29 @@ export function useTaskChangeDetection({
       end: task?.end_date ? new Date(task?.end_date).toISOString() : undefined,
       listId: task?.list_id,
       estimationPoints: task?.estimation_points ?? null,
+      labelIds,
+      assigneeIds,
     } as const;
   }, [task, parseDescription]);
 
   // Snapshot of current form values
+  const currentLabelIds = useMemo(
+    () =>
+      selectedLabels
+        .map((l) => l.id)
+        .sort()
+        .join(','),
+    [selectedLabels]
+  );
+  const currentAssigneeIds = useMemo(
+    () =>
+      selectedAssignees
+        .map((a) => a.user_id || a.id)
+        .sort()
+        .join(','),
+    [selectedAssignees]
+  );
+
   const currentSnapshot = useMemo(() => {
     return {
       name: (name || '').trim(),
@@ -84,6 +122,8 @@ export function useTaskChangeDetection({
       end: endDate?.toISOString(),
       listId: selectedListId,
       estimationPoints: estimationPoints ?? null,
+      labelIds: currentLabelIds,
+      assigneeIds: currentAssigneeIds,
     } as const;
   }, [
     name,
@@ -93,6 +133,8 @@ export function useTaskChangeDetection({
     endDate,
     selectedListId,
     estimationPoints,
+    currentLabelIds,
+    currentAssigneeIds,
   ]);
 
   // Detect if there are unsaved changes
@@ -109,16 +151,21 @@ export function useTaskChangeDetection({
       initialSnapshot.start !== currentSnapshot.start ||
       initialSnapshot.end !== currentSnapshot.end ||
       initialSnapshot.listId !== currentSnapshot.listId ||
-      initialSnapshot.estimationPoints !== currentSnapshot.estimationPoints
+      initialSnapshot.estimationPoints !== currentSnapshot.estimationPoints ||
+      initialSnapshot.labelIds !== currentSnapshot.labelIds ||
+      initialSnapshot.assigneeIds !== currentSnapshot.assigneeIds
     );
   }, [initialSnapshot, currentSnapshot, collaborationMode]);
 
   // Determine if save is allowed
   const canSave = useMemo(() => {
     const hasName = !!(name || '').trim();
+    // Editing a draft: require changes (like edit mode)
+    if (isCreateMode && draftId)
+      return hasName && hasUnsavedChanges && !isLoading;
     if (isCreateMode) return hasName && !isLoading;
     return hasName && hasUnsavedChanges && !isLoading;
-  }, [isCreateMode, name, hasUnsavedChanges, isLoading]);
+  }, [isCreateMode, draftId, name, hasUnsavedChanges, isLoading]);
 
   return {
     hasUnsavedChanges,

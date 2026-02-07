@@ -503,7 +503,7 @@ export function BoardHeader({
           {/* Online Users */}
           {!isPersonalWorkspace && (
             <BoardUserPresenceAvatarsComponent
-              channelName={`board-presence-${board.id}`}
+              boardId={board.id}
               currentMetadata={presenceMetadata}
               onFiltersChange={onFiltersChange}
               onListStatusFilterChange={onListStatusFilterChange}

@@ -34,6 +34,8 @@ interface EditorExtensionsOptions {
   writePlaceholder?: string;
   doc?: Y.Doc | null;
   provider?: SupabaseProvider | null;
+  /** User info for CollaborationCaret labels (name shown on remote cursors). */
+  collaborationUser?: { name: string; color: string } | null;
   onImageUpload?: (file: File) => Promise<string>;
   onVideoUpload?: (file: File) => Promise<string>;
   /** Translations for mention chip dialogs */
@@ -64,6 +66,7 @@ export function getEditorExtensions({
   writePlaceholder = 'Write something...',
   doc = null,
   provider = null,
+  collaborationUser = null,
   onImageUpload,
   onVideoUpload,
   mentionTranslations,
@@ -82,6 +85,7 @@ export function getEditorExtensions({
       ? [
           CollaborationCaret.configure({
             provider: provider,
+            user: collaborationUser ?? undefined,
           }),
         ]
       : []),

@@ -15,6 +15,7 @@ export interface SupabaseProviderConfig {
   awareness?: awarenessProtocol.Awareness;
   resyncInterval?: number | false;
   saveDebounceMs?: number; // Debounce time for database saves (default: 1000ms)
+  broadcastDebounceMs?: number; // Debounce time for broadcasting updates (0 = immediate, default: 0)
 }
 
 export default class SupabaseProvider extends EventEmitter {
@@ -35,6 +36,8 @@ export default class SupabaseProvider extends EventEmitter {
 
   public version: number = 0;
   private readonly saveDebounceMs: number = 1000; // Default debounce time
+  private readonly broadcastDebounceMs: number = 0; // Default: immediate
+  private broadcastDebounceTimeout: NodeJS.Timeout | undefined;
   private destroyed: boolean = false;
   private _dirty: boolean = false; // Set on local edits, cleared after resync
   private awarenessDebounceTimeout: NodeJS.Timeout | undefined;
@@ -65,7 +68,19 @@ export default class SupabaseProvider extends EventEmitter {
         `document updated locally (${update.length} bytes), broadcasting update to peers`
       );
 
-      this.emit('message', update);
+      if (this.broadcastDebounceMs > 0) {
+        // Debounced broadcast for free tier — coalesce rapid edits
+        if (this.broadcastDebounceTimeout) {
+          clearTimeout(this.broadcastDebounceTimeout);
+        }
+        this.broadcastDebounceTimeout = setTimeout(() => {
+          this.emit('message', update);
+        }, this.broadcastDebounceMs);
+      } else {
+        // Immediate broadcast for paid tier
+        this.emit('message', update);
+      }
+
       this.debouncedSave(); // Use debounced save instead of immediate
     }
   }
@@ -84,9 +99,16 @@ export default class SupabaseProvider extends EventEmitter {
   }
 
   /**
-   * Immediately save any pending changes without waiting for debounce period
+   * Immediately save any pending changes without waiting for debounce period.
+   * Also flushes any pending broadcast.
    */
   flushSave() {
+    // Flush pending broadcast first
+    if (this.broadcastDebounceTimeout) {
+      clearTimeout(this.broadcastDebounceTimeout);
+      this.broadcastDebounceTimeout = undefined;
+    }
+
     if (this.saveTimeout) {
       clearTimeout(this.saveTimeout);
       this.saveTimeout = undefined;
@@ -319,8 +341,9 @@ export default class SupabaseProvider extends EventEmitter {
     this.config = config || {};
     this.id = doc.clientID;
 
-    // Initialize save debounce time (default: 1000ms)
+    // Initialize debounce times
     (this as any).saveDebounceMs = this.config.saveDebounceMs ?? 1000;
+    (this as any).broadcastDebounceMs = this.config.broadcastDebounceMs ?? 0;
 
     this.supabase = supabase;
     this.on('connect', this.onConnect);
@@ -543,6 +566,10 @@ export default class SupabaseProvider extends EventEmitter {
 
     if (this.awarenessDebounceTimeout) {
       clearTimeout(this.awarenessDebounceTimeout);
+    }
+
+    if (this.broadcastDebounceTimeout) {
+      clearTimeout(this.broadcastDebounceTimeout);
     }
 
     // Save any pending changes before destroying

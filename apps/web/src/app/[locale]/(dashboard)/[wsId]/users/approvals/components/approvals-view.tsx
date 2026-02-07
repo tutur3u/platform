@@ -40,9 +40,17 @@ interface ApprovalsViewProps {
   wsId: string;
   kind: 'reports' | 'posts';
   canApprove: boolean;
+  groupId?: string;
+  defaultStatus?: 'all' | 'pending' | 'approved' | 'rejected';
 }
 
-export function ApprovalsView({ wsId, kind, canApprove }: ApprovalsViewProps) {
+export function ApprovalsView({
+  wsId,
+  kind,
+  canApprove,
+  groupId,
+  defaultStatus = 'pending',
+}: ApprovalsViewProps) {
   const t = useTranslations('approvals');
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -54,7 +62,7 @@ export function ApprovalsView({ wsId, kind, canApprove }: ApprovalsViewProps) {
         | 'all'
         | 'pending'
         | 'approved'
-        | 'rejected') || 'pending';
+        | 'rejected') || defaultStatus;
     const rawPage = Number.parseInt(searchParams.get('page') || '1', 10);
     const safePage = Number.isNaN(rawPage) || rawPage < 1 ? 1 : rawPage;
     const rawLimit = Number.parseInt(searchParams.get('limit') || '10', 10);
@@ -64,7 +72,7 @@ export function ApprovalsView({ wsId, kind, canApprove }: ApprovalsViewProps) {
       currentPage: safePage,
       currentLimit: safeLimit,
     };
-  }, [searchParams]);
+  }, [searchParams, defaultStatus]);
 
   const {
     items,
@@ -93,11 +101,12 @@ export function ApprovalsView({ wsId, kind, canApprove }: ApprovalsViewProps) {
     status: currentStatus,
     page: currentPage,
     limit: currentLimit,
+    groupId,
   });
 
   const hasActiveFilters = useMemo(() => {
-    return currentStatus && currentStatus !== 'pending';
-  }, [currentStatus]);
+    return currentStatus && currentStatus !== defaultStatus;
+  }, [currentStatus, defaultStatus]);
 
   const { startIndex, endIndex } = useMemo(
     () => ({
@@ -194,11 +203,11 @@ export function ApprovalsView({ wsId, kind, canApprove }: ApprovalsViewProps) {
                 {t('filters.status')}
               </label>
               <Select
-                value={currentStatus || 'pending'}
+                value={currentStatus || defaultStatus}
                 onValueChange={(value) =>
                   updateFilters(
                     'status',
-                    value === 'pending' ? undefined : value
+                    value === defaultStatus ? undefined : value
                   )
                 }
               >
@@ -228,7 +237,7 @@ export function ApprovalsView({ wsId, kind, canApprove }: ApprovalsViewProps) {
                 size="sm"
                 onClick={() => {
                   const params = new URLSearchParams();
-                  params.set('status', 'pending');
+                  params.set('status', defaultStatus);
                   router.push(`?${params.toString()}`, { scroll: false });
                 }}
                 className="h-8 gap-1.5 text-xs"
@@ -267,32 +276,34 @@ export function ApprovalsView({ wsId, kind, canApprove }: ApprovalsViewProps) {
         </div>
 
         <div className="flex items-center gap-4">
-          {canApprove && totalPendingCount > 0 && (
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => approveAllItems()}
-              disabled={isApprovingAll}
-              className="h-9 gap-2 bg-dynamic-green hover:bg-dynamic-green/90"
-            >
-              {isApprovingAll ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {approveAllProgress
-                    ? t('actions.approveAllProgress', {
-                        current: approveAllProgress.current,
-                        total: approveAllProgress.total,
-                      })
-                    : t('actions.approveAll', { count: totalPendingCount })}
-                </>
-              ) : (
-                <>
-                  <CheckCheckIcon className="h-4 w-4" />
-                  {t('actions.approveAll', { count: totalPendingCount })}
-                </>
-              )}
-            </Button>
-          )}
+          {canApprove &&
+            totalPendingCount > 0 &&
+            currentStatus === 'pending' && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => approveAllItems()}
+                disabled={isApprovingAll}
+                className="h-9 gap-2 bg-dynamic-green hover:bg-dynamic-green/90"
+              >
+                {isApprovingAll ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {approveAllProgress
+                      ? t('actions.approveAllProgress', {
+                          current: approveAllProgress.current,
+                          total: approveAllProgress.total,
+                        })
+                      : t('actions.approveAll', { count: totalPendingCount })}
+                  </>
+                ) : (
+                  <>
+                    <CheckCheckIcon className="h-4 w-4" />
+                    {t('actions.approveAll', { count: totalPendingCount })}
+                  </>
+                )}
+              </Button>
+            )}
 
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground text-sm">
@@ -330,7 +341,9 @@ export function ApprovalsView({ wsId, kind, canApprove }: ApprovalsViewProps) {
       ) : items.length === 0 ? (
         <Card className="border-border/60 bg-linear-to-br from-muted/30 to-muted/10">
           <CardContent className="flex flex-col items-center justify-center py-16">
-            {currentStatus === 'pending' || !currentStatus ? (
+            {currentStatus === 'pending' ||
+            currentStatus === defaultStatus ||
+            !currentStatus ? (
               <>
                 <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-dynamic-green/10 ring-1 ring-dynamic-green/20">
                   <CheckCheck className="h-8 w-8 text-dynamic-green" />

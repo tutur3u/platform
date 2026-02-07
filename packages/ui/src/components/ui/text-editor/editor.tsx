@@ -61,6 +61,8 @@ interface RichTextEditorProps {
   onEditorReady?: (editor: Editor) => void;
   yjsDoc?: Y.Doc | null;
   yjsProvider?: SupabaseProvider | null;
+  /** User info for collaboration cursor labels. */
+  collaborationUser?: { name: string; color: string } | null;
   boardId?: string;
   availableLists?: TaskList[];
   queryClient?: QueryClient;
@@ -111,6 +113,7 @@ export function RichTextEditor({
   queryClient,
   yjsDoc = null,
   yjsProvider = null,
+  collaborationUser = null,
   allowCollaboration = false,
   editable = true,
   mentionTranslations,
@@ -266,6 +269,8 @@ export function RichTextEditor({
       writePlaceholder,
       doc: allowCollaboration && yjsDoc ? yjsDoc : undefined,
       provider: allowCollaboration && yjsProvider ? yjsProvider : undefined,
+      collaborationUser:
+        allowCollaboration && collaborationUser ? collaborationUser : undefined,
       onImageUpload: onImageUploadRef.current,
       onVideoUpload: onImageUploadRef.current,
       mentionTranslations,

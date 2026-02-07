@@ -1,7 +1,8 @@
 'use client';
-import { Flag, Plus, Sparkles, Users, X } from '@tuturuuu/icons';
+import { FileEdit, Flag, Plus, Sparkles, Users, X } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
@@ -28,11 +29,24 @@ interface UserTaskSettings {
   task_auto_assign_to_self: boolean;
 }
 
+export interface DraftData {
+  name: string;
+  description?: string;
+  priority?: TaskPriority | null;
+  start_date?: string;
+  end_date?: string;
+  estimation_points?: number | null;
+  label_ids?: string[];
+  assignee_ids?: string[];
+}
+
 interface Props {
   listId: string;
   onTaskCreated: () => void;
   userTaskSettings?: UserTaskSettings;
   currentUserId?: string;
+  draftModeEnabled?: boolean;
+  onSaveAsDraft?: (data: DraftData) => Promise<void>;
 }
 
 export function TaskForm({
@@ -40,6 +54,8 @@ export function TaskForm({
   onTaskCreated,
   userTaskSettings,
   currentUserId,
+  draftModeEnabled,
+  onSaveAsDraft,
 }: Props) {
   const [isAdding, setIsAdding] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -114,6 +130,31 @@ export function TaskForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
+
+    // Draft mode: save as draft instead of creating a task
+    if (draftModeEnabled && onSaveAsDraft) {
+      setIsSubmitting(true);
+      try {
+        await onSaveAsDraft({
+          name: name.trim(),
+          description: description.trim() || undefined,
+          priority: priority,
+          start_date: startDate?.toISOString(),
+          end_date: endDate?.toISOString(),
+          estimation_points: estimationPoints,
+          label_ids: selectedLabels.map((l: { id: string }) => l.id),
+          assignee_ids: selectedAssignees,
+        });
+        handleReset();
+        onTaskCreated();
+      } catch (error) {
+        console.error('Error saving draft:', error);
+        toast.error('Failed to save draft');
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -381,7 +422,7 @@ export function TaskForm({
                   placeholder="Add a description..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="min-h-[60px] text-xs"
+                  className="min-h-15 text-xs"
                 />
               </div>
 
@@ -432,6 +473,17 @@ export function TaskForm({
             </div>
           )}
 
+          {/* Draft mode indicator */}
+          {draftModeEnabled && (
+            <Badge
+              variant="outline"
+              className="border-dynamic-orange/40 bg-dynamic-orange/10 text-dynamic-orange text-xs"
+            >
+              <FileEdit className="mr-1 h-3 w-3" />
+              Draft mode
+            </Badge>
+          )}
+
           {/* Action Buttons */}
           <div className="flex items-center gap-2 pt-2">
             <Button
@@ -443,7 +495,12 @@ export function TaskForm({
               {isSubmitting ? (
                 <>
                   <div className="mr-2 h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  Creating...
+                  {draftModeEnabled ? 'Saving...' : 'Creating...'}
+                </>
+              ) : draftModeEnabled ? (
+                <>
+                  <FileEdit className="mr-2 h-3 w-3" />
+                  Save as Draft
                 </>
               ) : (
                 <>

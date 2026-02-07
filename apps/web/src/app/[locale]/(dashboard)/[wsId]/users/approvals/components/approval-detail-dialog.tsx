@@ -2,6 +2,7 @@
 
 import {
   Check,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   FileText,
@@ -14,12 +15,18 @@ import {
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@tuturuuu/ui/collapsible';
+import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import { DiffViewer } from '@tuturuuu/ui/diff-viewer';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
@@ -224,132 +231,91 @@ export function ApprovalDetailDialog({
 
   // Current version content component
   const CurrentVersionContent = () => (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Content Section */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-          <FileText className="h-4 w-4" />
-          {t('detail.content')}
-        </div>
-        {renderContent(item.content)}
-      </div>
+      <Collapsible defaultOpen>
+        <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg bg-muted/50 px-3 py-2 transition-colors hover:bg-muted/80 [&[data-state=open]>svg]:rotate-180">
+          <div className="flex items-center gap-2 font-medium text-sm">
+            <FileText className="h-4 w-4" />
+            {t('detail.content')}
+          </div>
+          <ChevronDown className="h-4 w-4 transition-transform duration-200" />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pt-2">
+          {renderContent(item.content)}
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Report-specific fields */}
       {isReport ? (
         <>
           {/* Score Section */}
           {'score' in item && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                <Trophy className="h-4 w-4" />
-                {t('detail.score')}
-              </div>
-              {renderScore(item.score as number | null)}
-            </div>
+            <Collapsible defaultOpen>
+              <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg bg-muted/50 px-3 py-2 transition-colors hover:bg-muted/80 [&[data-state=open]>svg]:rotate-180">
+                <div className="flex items-center gap-2 font-medium text-sm">
+                  <Trophy className="h-4 w-4" />
+                  {t('detail.score')}
+                </div>
+                <ChevronDown className="h-4 w-4 transition-transform duration-200" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2">
+                {renderScore(item.score as number | null)}
+              </CollapsibleContent>
+            </Collapsible>
           )}
 
           {/* Scores Array Section */}
           {'scores' in item && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                <Star className="h-4 w-4" />
-                {t('detail.scores')}
-              </div>
-              {renderScoresArray(item.scores as number[] | null)}
-            </div>
+            <Collapsible defaultOpen>
+              <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg bg-muted/50 px-3 py-2 transition-colors hover:bg-muted/80 [&[data-state=open]>svg]:rotate-180">
+                <div className="flex items-center gap-2 font-medium text-sm">
+                  <Star className="h-4 w-4" />
+                  {t('detail.scores')}
+                </div>
+                <ChevronDown className="h-4 w-4 transition-transform duration-200" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2">
+                {renderScoresArray(item.scores as number[] | null)}
+              </CollapsibleContent>
+            </Collapsible>
           )}
 
           {/* Feedback Section */}
           {'feedback' in item && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                <MessageSquare className="h-4 w-4" />
-                {t('detail.feedback')}
-              </div>
-              {renderFeedbackOrNotes(item.feedback as string | null)}
-            </div>
+            <Collapsible defaultOpen>
+              <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg bg-muted/50 px-3 py-2 transition-colors hover:bg-muted/80 [&[data-state=open]>svg]:rotate-180">
+                <div className="flex items-center gap-2 font-medium text-sm">
+                  <MessageSquare className="h-4 w-4" />
+                  {t('detail.feedback')}
+                </div>
+                <ChevronDown className="h-4 w-4 transition-transform duration-200" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2">
+                {renderFeedbackOrNotes(item.feedback as string | null)}
+              </CollapsibleContent>
+            </Collapsible>
           )}
         </>
       ) : (
         /* Post-specific fields */
         item.notes && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-              <MessageSquare className="h-4 w-4" />
-              {t('detail.notes')}
-            </div>
-            {renderFeedbackOrNotes(item.notes as string | null)}
-          </div>
+          <Collapsible defaultOpen>
+            <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg bg-muted/50 px-3 py-2 transition-colors hover:bg-muted/80 [&[data-state=open]>svg]:rotate-180">
+              <div className="flex items-center gap-2 font-medium text-sm">
+                <MessageSquare className="h-4 w-4" />
+                {t('detail.notes')}
+              </div>
+              <ChevronDown className="h-4 w-4 transition-transform duration-200" />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2">
+              {renderFeedbackOrNotes(item.notes as string | null)}
+            </CollapsibleContent>
+          </Collapsible>
         )
       )}
     </div>
   );
-
-  // Previous version content component
-  const PreviousVersionContent = () => {
-    if (!previousVersion) return null;
-    return (
-      <div className="space-y-4">
-        {/* Content Section */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-            <FileText className="h-4 w-4" />
-            {t('detail.content')}
-          </div>
-          {renderContent(previousVersion.content, true)}
-        </div>
-
-        {/* Report-specific fields */}
-        {isReport ? (
-          <>
-            {/* Score Section */}
-            {previousReportVersion?.score != null && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                  <Trophy className="h-4 w-4" />
-                  {t('detail.score')}
-                </div>
-                {renderScore(previousReportVersion.score, true)}
-              </div>
-            )}
-
-            {/* Scores Array Section */}
-            {previousReportVersion?.scores && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                  <Star className="h-4 w-4" />
-                  {t('detail.scores')}
-                </div>
-                {renderScoresArray(previousReportVersion.scores, true)}
-              </div>
-            )}
-
-            {/* Feedback Section */}
-            {previousReportVersion?.feedback && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                  <MessageSquare className="h-4 w-4" />
-                  {t('detail.feedback')}
-                </div>
-                {renderFeedbackOrNotes(previousReportVersion.feedback, true)}
-              </div>
-            )}
-          </>
-        ) : (
-          /* Post-specific fields */
-          previousPostVersion?.notes && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                <MessageSquare className="h-4 w-4" />
-                {t('detail.notes')}
-              </div>
-              {renderFeedbackOrNotes(previousPostVersion.notes, true)}
-            </div>
-          )
-        )}
-      </div>
-    );
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -499,59 +465,140 @@ export function ApprovalDetailDialog({
           </div>
         </DialogHeader>
 
-        <div className="flex flex-col gap-0 md:grid md:grid-cols-[1fr,320px]">
+        <div className="flex max-h-[calc(90vh-10rem)] flex-col gap-0 overflow-y-auto md:grid md:grid-cols-[1fr,320px]">
           {/* Left Column - Main Content */}
           <div className="order-2 space-y-0 lg:order-1">
             {isCompareMode ? (
-              // Side-by-side comparison for reports with previous version
-              <div className="grid h-[calc(90vh-8rem)] grid-cols-2 gap-0">
-                {/* Previous Version */}
-                <div className="border-border border-r">
-                  <div className="border-border border-b bg-muted/30 px-4 py-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                        {t('detail.previousApprovedVersion')}
-                      </div>
-                      {previousVersion?.approved_at && (
-                        <span className="text-muted-foreground text-xs">
-                          {formatDate(previousVersion.approved_at)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <ScrollArea className="h-[calc(90vh-12rem)]">
-                    <div className="p-4">
-                      <PreviousVersionContent />
-                    </div>
-                  </ScrollArea>
-                </div>
-
-                {/* Current Version */}
-                <div className="border-border border-l">
-                  <div className="border-border border-b bg-dynamic-blue/5 px-4 py-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 font-medium text-dynamic-blue text-sm">
-                        {t('detail.currentVersion')}
-                      </div>
-                      <span className="text-muted-foreground text-xs">
-                        {t('detail.pendingApproval')}
+              // Diff comparison for reports with previous version
+              <div className="flex h-[calc(90vh-8rem)] flex-col">
+                <div className="flex items-center justify-between border-border border-b bg-muted/30 px-4 py-3">
+                  <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                    {t('detail.previousApprovedVersion')}
+                    {previousVersion?.approved_at && (
+                      <span className="font-normal text-muted-foreground text-xs">
+                        ({formatDate(previousVersion.approved_at)})
                       </span>
-                    </div>
-                    <div className="mt-1 flex items-center gap-1 text-muted-foreground text-xs">
-                      <span>{t('labels.last_modified_by')}</span>
-                      <span className="font-medium">{modifierName}</span>
-                    </div>
+                    )}
+                    <span className="text-foreground/40">→</span>
+                    <span className="text-dynamic-blue">
+                      {t('detail.currentVersion')}
+                    </span>
                   </div>
-                  <ScrollArea className="h-[calc(90vh-12rem)]">
-                    <div className="p-4">
-                      <CurrentVersionContent />
-                    </div>
-                  </ScrollArea>
+                  <div className="flex items-center gap-1 text-muted-foreground text-xs">
+                    <span>{t('labels.last_modified_by')}</span>
+                    <span className="font-medium">{modifierName}</span>
+                  </div>
                 </div>
+                <ScrollArea className="flex-1">
+                  <div className="space-y-4 p-4">
+                    {/* Content Diff */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                        <FileText className="h-4 w-4" />
+                        {t('detail.content')}
+                      </div>
+                      <DiffViewer
+                        oldValue={previousVersion?.content}
+                        newValue={item.content}
+                        oldLabel={t('detail.previousApprovedVersion')}
+                        newLabel={t('detail.currentVersion')}
+                        granularity="word"
+                        viewMode="unified"
+                        showLineNumbers={false}
+                      />
+                      {previousVersion?.content === (item.content ?? '') &&
+                        renderContent(item.content)}
+                    </div>
+
+                    {/* Report-specific diffs */}
+                    {isReport && (
+                      <>
+                        {'score' in item && (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                              <Trophy className="h-4 w-4" />
+                              {t('detail.score')}
+                            </div>
+                            <div className="flex items-center gap-4">
+                              {previousReportVersion?.score != null && (
+                                <>
+                                  {renderScore(
+                                    previousReportVersion.score,
+                                    true
+                                  )}
+                                  <span className="text-muted-foreground">
+                                    →
+                                  </span>
+                                </>
+                              )}
+                              {renderScore(item.score as number | null)}
+                            </div>
+                          </div>
+                        )}
+
+                        {'scores' in item && (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                              <Star className="h-4 w-4" />
+                              {t('detail.scores')}
+                            </div>
+                            {renderScoresArray(item.scores as number[] | null)}
+                          </div>
+                        )}
+
+                        {'feedback' in item && (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                              <MessageSquare className="h-4 w-4" />
+                              {t('detail.feedback')}
+                            </div>
+                            <DiffViewer
+                              oldValue={previousReportVersion?.feedback}
+                              newValue={item.feedback as string | null}
+                              oldLabel={t('detail.previousApprovedVersion')}
+                              newLabel={t('detail.currentVersion')}
+                              granularity="word"
+                              viewMode="unified"
+                              showLineNumbers={false}
+                            />
+                            {previousReportVersion?.feedback ===
+                              ((item.feedback as string | null) ?? '') &&
+                              renderFeedbackOrNotes(
+                                item.feedback as string | null
+                              )}
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {/* Post-specific diffs */}
+                    {!isReport &&
+                      (item.notes || previousPostVersion?.notes) && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                            <MessageSquare className="h-4 w-4" />
+                            {t('detail.notes')}
+                          </div>
+                          <DiffViewer
+                            oldValue={previousPostVersion?.notes}
+                            newValue={item.notes as string | null}
+                            oldLabel={t('detail.previousApprovedVersion')}
+                            newLabel={t('detail.currentVersion')}
+                            granularity="word"
+                            viewMode="unified"
+                            showLineNumbers={false}
+                          />
+                          {previousPostVersion?.notes ===
+                            ((item.notes as string | null) ?? '') &&
+                            renderFeedbackOrNotes(item.notes as string | null)}
+                        </div>
+                      )}
+                  </div>
+                </ScrollArea>
               </div>
             ) : (
               // Single view for posts or reports without previous version
-              <div className="flex h-full flex-col">
+              <div className="flex h-[calc(90vh-8rem)] flex-col">
                 <div className="border-border border-b bg-dynamic-blue/5 px-6 py-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 font-medium text-dynamic-blue text-sm">
@@ -566,7 +613,7 @@ export function ApprovalDetailDialog({
                     <span className="font-medium">{modifierName}</span>
                   </div>
                 </div>
-                <ScrollArea className="h-[calc(90vh-11rem)]">
+                <ScrollArea className="flex-1">
                   <div className="p-6">
                     <CurrentVersionContent />
                   </div>

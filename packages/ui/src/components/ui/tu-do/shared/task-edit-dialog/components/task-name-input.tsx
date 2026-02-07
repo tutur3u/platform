@@ -1,4 +1,5 @@
 import { Input } from '@tuturuuu/ui/input';
+import { useTranslations } from 'next-intl';
 
 interface TaskNameInputProps {
   name: string;
@@ -25,10 +26,12 @@ export function TaskNameInput({
   flushNameUpdate,
   disabled,
 }: TaskNameInputProps) {
+  const t = useTranslations('ws-task-boards.dialog');
   return (
     <div className="group">
       <Input
         ref={titleInputRef}
+        data-task-name-input
         disabled={disabled}
         value={name}
         onChange={(e) => {
@@ -98,7 +101,7 @@ export function TaskNameInput({
             }
           }
         }}
-        placeholder="What needs to be done?"
+        placeholder={t('task_name_placeholder')}
         className="h-auto border-0 bg-transparent px-4 pt-4 pb-2 font-bold text-2xl text-foreground leading-tight tracking-tight shadow-none transition-colors placeholder:text-muted-foreground/30 focus-visible:outline-0 focus-visible:ring-0 disabled:opacity-100 md:px-8 md:pt-4 md:pb-2 md:text-2xl"
         autoFocus
       />

@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, waitFor } from '@testing-library/react';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -75,12 +76,27 @@ const mockList: TaskList = {
   deleted: false,
 };
 
+function createTestQueryClient() {
+  return new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+}
+
+function Wrapper({ children }: { children: React.ReactNode }) {
+  const queryClient = createTestQueryClient();
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TaskDialogProvider>{children}</TaskDialogProvider>
+    </QueryClientProvider>
+  );
+}
+
 describe('TaskDialogManager', () => {
   it('should render nothing when dialog is not open', () => {
     const { container } = render(
-      <TaskDialogProvider>
+      <Wrapper>
         <TaskDialogManager wsId="workspace-1" />
-      </TaskDialogProvider>
+      </Wrapper>
     );
 
     expect(container.firstChild).toBeNull();
@@ -99,9 +115,9 @@ describe('TaskDialogManager', () => {
     };
 
     const { queryByTestId } = render(
-      <TaskDialogProvider>
+      <Wrapper>
         <TestComponent />
-      </TaskDialogProvider>
+      </Wrapper>
     );
 
     // Initially, dialog should not be rendered
@@ -128,9 +144,9 @@ describe('TaskDialogManager', () => {
     };
 
     const { getByTestId } = render(
-      <TaskDialogProvider>
+      <Wrapper>
         <TestComponent />
-      </TaskDialogProvider>
+      </Wrapper>
     );
 
     await waitFor(() => {
@@ -145,9 +161,9 @@ describe('TaskDialogManager', () => {
 
   it('should handle Suspense boundary correctly', async () => {
     const { container } = render(
-      <TaskDialogProvider>
+      <Wrapper>
         <TaskDialogManager wsId="workspace-1" />
-      </TaskDialogProvider>
+      </Wrapper>
     );
 
     // Should not crash during lazy loading
@@ -166,9 +182,9 @@ describe('TaskDialogManager', () => {
     };
 
     const { getByTestId } = render(
-      <TaskDialogProvider>
+      <Wrapper>
         <TestComponent />
-      </TaskDialogProvider>
+      </Wrapper>
     );
 
     await waitFor(() => {
@@ -193,9 +209,9 @@ describe('TaskDialogManager', () => {
     };
 
     const { getByTestId } = render(
-      <TaskDialogProvider>
+      <Wrapper>
         <TestComponent />
-      </TaskDialogProvider>
+      </Wrapper>
     );
 
     await waitFor(() => {

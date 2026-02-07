@@ -1,4 +1,12 @@
-import { Check, CheckCheck, CircleHelp, Clock, Send, X } from '@tuturuuu/icons';
+import {
+  AlertCircle,
+  Check,
+  CheckCheck,
+  CircleHelp,
+  Clock,
+  Send,
+  X,
+} from '@tuturuuu/icons';
 import {
   createAdminClient,
   createClient,
@@ -126,6 +134,27 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
                       </div>
                     )}
                   </div>
+                  {approvalStatus === 'REJECTED' && post.rejection_reason && (
+                    <div className="mt-2 flex items-start gap-2 rounded-md border border-dynamic-red/20 bg-dynamic-red/5 p-3">
+                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-dynamic-red" />
+                      <div>
+                        <p className="font-medium text-dynamic-red text-sm">
+                          {t('ws-user-groups.rejection_reason')}
+                        </p>
+                        <p className="mt-0.5 text-dynamic-red/80 text-sm">
+                          {post.rejection_reason}
+                        </p>
+                        {post.rejected_at && (
+                          <p className="mt-1 text-muted-foreground text-xs">
+                            {format(
+                              new Date(post.rejected_at),
+                              'HH:mm, dd/MM/yyyy'
+                            )}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
                   <Separator />
                 </div>
               }

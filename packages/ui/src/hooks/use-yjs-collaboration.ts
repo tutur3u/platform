@@ -77,6 +77,8 @@ export function useYjsCollaboration(
     console.log('🔄 Initializing SupabaseProvider for document:', id);
 
     // Create SupabaseProvider - it handles everything internally
+    // Yjs collaboration is only active inside the task edit dialog,
+    // so all tiers get immediate broadcasting for responsive text editing.
     const provider = new SupabaseProvider(doc, supabase, {
       id: id,
       channel: channel,
@@ -84,7 +86,7 @@ export function useYjsCollaboration(
       columnName: columnName,
       awareness,
       resyncInterval: 30000,
-      saveDebounceMs: 300, // Faster saves for better UX (broadcasts are still instant)
+      saveDebounceMs: 300, // Faster saves for better UX
     });
 
     providerRef.current = provider;

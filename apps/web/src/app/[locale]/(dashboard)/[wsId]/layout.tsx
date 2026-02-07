@@ -1,5 +1,6 @@
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { WorkspacePresenceProvider } from '@tuturuuu/ui/tu-do/providers/workspace-presence-provider';
 import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
@@ -164,13 +165,19 @@ export default async function Layout({ children, params }: LayoutProps) {
         }
       >
         <RealtimeLogProvider wsId={wsId}>
-          <TaskDialogWrapper
-            isPersonalWorkspace={!!workspace.personal}
+          <WorkspacePresenceProvider
             wsId={wsId}
+            tier={workspace.tier ?? null}
+            enabled={!workspace.personal}
           >
-            {workspace.personal && <PersonalWorkspaceCollaborationBanner />}
-            {children}
-          </TaskDialogWrapper>
+            <TaskDialogWrapper
+              isPersonalWorkspace={!!workspace.personal}
+              wsId={wsId}
+            >
+              {workspace.personal && <PersonalWorkspaceCollaborationBanner />}
+              {children}
+            </TaskDialogWrapper>
+          </WorkspacePresenceProvider>
         </RealtimeLogProvider>
       </Structure>
     </SidebarProvider>

@@ -1,5 +1,6 @@
 'use client';
 
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
@@ -12,14 +13,31 @@ export default function LinkButton({
   icon,
   className,
   disabled,
+  badge,
 }: {
   href: string;
   title: ReactNode;
   icon: ReactNode;
   className?: string;
   disabled?: boolean;
+  badge?: number;
 }) {
   const pathname = usePathname();
+
+  const content = (
+    <>
+      {icon}
+      {title}
+      {badge !== undefined && badge > 0 && (
+        <Badge
+          variant="destructive"
+          className="ml-1 h-5 min-w-5 justify-center px-1.5 text-xs"
+        >
+          {badge > 99 ? '99+' : badge}
+        </Badge>
+      )}
+    </>
+  );
 
   if (href === pathname || disabled)
     return (
@@ -29,8 +47,7 @@ export default function LinkButton({
         className={cn('border font-semibold max-md:w-full', className)}
         disabled
       >
-        {icon}
-        {title}
+        {content}
       </Button>
     );
 
@@ -42,8 +59,7 @@ export default function LinkButton({
         className={cn('border font-semibold max-md:w-full', className)}
         disabled={disabled}
       >
-        {icon}
-        {title}
+        {content}
       </Button>
     </Link>
   );

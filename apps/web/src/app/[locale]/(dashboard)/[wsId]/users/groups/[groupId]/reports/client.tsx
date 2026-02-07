@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Loader2 } from '@tuturuuu/icons';
+import { AlertCircle, Loader2 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUserReport } from '@tuturuuu/types';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
@@ -130,6 +130,12 @@ export default function GroupReportsClient({
       reportsQuery.data?.map((r) => ({
         value: r.id,
         label: r.title || 'No title',
+        status: (r as any).report_approval_status as
+          | 'PENDING'
+          | 'APPROVED'
+          | 'REJECTED'
+          | null
+          | undefined,
       })) ?? [],
     [reportsQuery.data]
   );
@@ -494,7 +500,18 @@ export default function GroupReportsClient({
                     )}
                     {reportsOptions.map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
+                        <span className="flex items-center gap-2">
+                          {opt.status === 'APPROVED' && (
+                            <span className="inline-block h-2 w-2 shrink-0 rounded-full bg-dynamic-green" />
+                          )}
+                          {opt.status === 'REJECTED' && (
+                            <span className="inline-block h-2 w-2 shrink-0 rounded-full bg-dynamic-red" />
+                          )}
+                          {opt.status === 'PENDING' && (
+                            <span className="inline-block h-2 w-2 shrink-0 rounded-full bg-dynamic-yellow" />
+                          )}
+                          {opt.label}
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -527,45 +544,62 @@ export default function GroupReportsClient({
             </div>
           </div>
         ) : selectedReport && configsData.length > 0 ? (
-          <EditableReportPreview
-            key={reportId === 'new' ? `new-${userId}-${groupId}` : reportId}
-            wsId={wsId}
-            report={{
-              ...selectedReport,
-              // normalize potential nulls to undefined to match prop type
-              user_name: selectedReport?.user_name ?? undefined,
-              group_name:
-                selectedReport.group_name ??
-                groupQuery.data?.name ??
-                groupNameFallback,
-              // Frontend-only override of the displayed group manager name
-              creator_name: effectiveCreatorName ?? undefined,
-            }}
-            configs={configsData}
-            isNew={reportId === 'new'}
-            canUpdateReports={canUpdateReports}
-            canDeleteReports={canDeleteReports}
-            groupId={groupId}
-            healthcareVitals={healthcareVitalsQuery.data ?? []}
-            healthcareVitalsLoading={healthcareVitalsQuery.isLoading}
-            factorEnabled={ENABLE_FACTOR_CALCULATION}
-            managerOptions={managerOptions}
-            selectedManagerName={effectiveCreatorName ?? undefined}
-            onChangeManagerAction={(name) => setSelectedManagerName(name)}
-            canCheckUserAttendance={canCheckUserAttendance}
-            feedbackUser={
-              userId
-                ? ({
-                    id: userId,
-                    full_name: usersQuery.data?.find((u) => u.id === userId)
-                      ?.full_name,
-                  } as WorkspaceUser)
-                : null
-            }
-            feedbackGroupName={groupQuery.data?.name ?? groupNameFallback}
-            canEditFeedback={canUpdateReports}
-            canDeleteFeedback={canDeleteReports}
-          />
+          <>
+            {reportDetail?.report_approval_status === 'REJECTED' && (
+              <div className="mb-4 flex items-start gap-2 rounded-md border border-dynamic-red/20 bg-dynamic-red/5 p-3">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-dynamic-red" />
+                <div>
+                  <p className="font-medium text-dynamic-red text-sm">
+                    {t('ws-reports.rejected')}
+                  </p>
+                  {reportDetail.rejection_reason && (
+                    <p className="mt-0.5 text-dynamic-red/80 text-sm">
+                      {reportDetail.rejection_reason}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+            <EditableReportPreview
+              key={reportId === 'new' ? `new-${userId}-${groupId}` : reportId}
+              wsId={wsId}
+              report={{
+                ...selectedReport,
+                // normalize potential nulls to undefined to match prop type
+                user_name: selectedReport?.user_name ?? undefined,
+                group_name:
+                  selectedReport.group_name ??
+                  groupQuery.data?.name ??
+                  groupNameFallback,
+                // Frontend-only override of the displayed group manager name
+                creator_name: effectiveCreatorName ?? undefined,
+              }}
+              configs={configsData}
+              isNew={reportId === 'new'}
+              canUpdateReports={canUpdateReports}
+              canDeleteReports={canDeleteReports}
+              groupId={groupId}
+              healthcareVitals={healthcareVitalsQuery.data ?? []}
+              healthcareVitalsLoading={healthcareVitalsQuery.isLoading}
+              factorEnabled={ENABLE_FACTOR_CALCULATION}
+              managerOptions={managerOptions}
+              selectedManagerName={effectiveCreatorName ?? undefined}
+              onChangeManagerAction={(name) => setSelectedManagerName(name)}
+              canCheckUserAttendance={canCheckUserAttendance}
+              feedbackUser={
+                userId
+                  ? ({
+                      id: userId,
+                      full_name: usersQuery.data?.find((u) => u.id === userId)
+                        ?.full_name,
+                    } as WorkspaceUser)
+                  : null
+              }
+              feedbackGroupName={groupQuery.data?.name ?? groupNameFallback}
+              canEditFeedback={canUpdateReports}
+              canDeleteFeedback={canDeleteReports}
+            />
+          </>
         ) : null)}
     </div>
   );

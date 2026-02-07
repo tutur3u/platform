@@ -7,11 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: '14.1';
-  };
   public: {
     Tables: {
       abuse_events: {
@@ -7604,6 +7599,120 @@ export type Database = {
           },
           {
             foreignKeyName: 'task_cycles_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_drafts: {
+        Row: {
+          assignee_ids: string[] | null;
+          board_id: string | null;
+          created_at: string | null;
+          creator_id: string;
+          description: string | null;
+          end_date: string | null;
+          estimation_points: number | null;
+          id: string;
+          label_ids: string[] | null;
+          list_id: string | null;
+          name: string;
+          priority: Database['public']['Enums']['task_priority'] | null;
+          project_ids: string[] | null;
+          start_date: string | null;
+          updated_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          assignee_ids?: string[] | null;
+          board_id?: string | null;
+          created_at?: string | null;
+          creator_id?: string;
+          description?: string | null;
+          end_date?: string | null;
+          estimation_points?: number | null;
+          id?: string;
+          label_ids?: string[] | null;
+          list_id?: string | null;
+          name: string;
+          priority?: Database['public']['Enums']['task_priority'] | null;
+          project_ids?: string[] | null;
+          start_date?: string | null;
+          updated_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          assignee_ids?: string[] | null;
+          board_id?: string | null;
+          created_at?: string | null;
+          creator_id?: string;
+          description?: string | null;
+          end_date?: string | null;
+          estimation_points?: number | null;
+          id?: string;
+          label_ids?: string[] | null;
+          list_id?: string | null;
+          name?: string;
+          priority?: Database['public']['Enums']['task_priority'] | null;
+          project_ids?: string[] | null;
+          start_date?: string | null;
+          updated_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_drafts_board_id_fkey';
+            columns: ['board_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_drafts_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_drafts_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_drafts_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_drafts_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_drafts_list_id_fkey';
+            columns: ['list_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_lists';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_drafts_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_drafts_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
@@ -16732,7 +16841,36 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       calendar_event_participants: {
         Row: {
@@ -18533,7 +18671,7 @@ export type Database = {
       get_auth_provider_stats: {
         Args: never;
         Returns: {
-          last_sign_in_avg: unknown;
+          last_sign_in_avg: string;
           percentage: number;
           provider: string;
           user_count: number;
@@ -19717,7 +19855,7 @@ export type Database = {
         Args: { user_id: string };
         Returns: {
           active_sessions: number;
-          current_session_age: unknown;
+          current_session_age: string;
           total_sessions: number;
         }[];
       };

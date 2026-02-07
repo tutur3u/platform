@@ -34,6 +34,13 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
   const isPersonalWorkspace = workspace?.personal ?? false;
 
   const {
+    value: draftModeEnabled,
+    setValue: setDraftModeEnabled,
+    isLoading: draftModeLoading,
+    isPending: draftModePending,
+  } = useUserBooleanConfig('TASK_DRAFT_MODE_ENABLED', false);
+
+  const {
     value: expandTunaSections,
     setValue: setExpandTunaSections,
     isLoading: expandTunaSectionsLoading,
@@ -123,6 +130,17 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
             checked={settings?.fade_completed_tasks ?? false}
             onCheckedChange={handleFadeCompletedToggle}
             disabled={isLoading || updateSettings.isPending}
+          />
+        </SettingItemTab>
+        <Separator />
+        <SettingItemTab
+          title={t('draft_mode')}
+          description={t('draft_mode_description')}
+        >
+          <Switch
+            checked={draftModeEnabled}
+            onCheckedChange={setDraftModeEnabled}
+            disabled={draftModeLoading || draftModePending}
           />
         </SettingItemTab>
         <Separator />
