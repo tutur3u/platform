@@ -10,6 +10,7 @@ import {
   Shield,
   Sparkles,
   Users,
+  X,
   Zap,
 } from '@tuturuuu/icons';
 import type { Product } from '@tuturuuu/payment/polar';
@@ -203,22 +204,15 @@ export function PlanListDialog({
         icon: CheckCircle,
         variant: 'outline' as const,
         disabled: true,
-        isIncompatible: false,
       };
     }
 
-    // Check if switching between incompatible pricing models
-    const isIncompatiblePricingModel =
-      currentPlan.pricingModel !== 'free' &&
-      currentPlan.pricingModel !== plan.pricingModel;
-
-    if (isIncompatiblePricingModel) {
+    if (currentPlan.tier !== 'FREE' && plan.isFree) {
       return {
-        text: t('incompatible-pricing-model'),
-        icon: Info,
+        text: 'Can not downgrade to Free',
+        icon: X,
         variant: 'outline' as const,
         disabled: true,
-        isIncompatible: true,
       };
     }
 
@@ -235,7 +229,6 @@ export function PlanListDialog({
         icon: ArrowDownCircle,
         variant: 'outline' as const,
         disabled: plan.isFree, // Disable downgrade to Free plan via button
-        isIncompatible: false,
       };
     }
 
@@ -496,9 +489,7 @@ export function PlanListDialog({
                               className={cn(
                                 'w-full',
                                 isCurrentPlan &&
-                                  'border-primary/30 bg-primary/5 text-primary',
-                                buttonConfig.isIncompatible &&
-                                  'border-muted bg-muted/30 text-muted-foreground'
+                                  'border-primary/30 bg-primary/5 text-primary'
                               )}
                               disabled
                               size="sm"

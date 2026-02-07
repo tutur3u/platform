@@ -284,7 +284,7 @@ export const POST = Webhooks({
           tier,
           archived: product.isArchived,
           // Seat-based pricing fields
-          pricing_model: isSeatBased ? 'seat_based' : 'fixed',
+          pricing_model: firstPrice?.amountType,
           price_per_seat: pricePerSeat,
           min_seats: minSeats,
           max_seats: maxSeats,

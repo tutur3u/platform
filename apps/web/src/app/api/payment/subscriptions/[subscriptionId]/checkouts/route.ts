@@ -132,9 +132,10 @@ export async function POST(
       subscriptionId: subscription.polar_subscription_id,
       metadata: { wsId },
       products: [productId],
-      successUrl: `${BASE_URL}/${wsId}/billing/success?checkoutId={CHECKOUT_ID}`,
-      isBusinessCustomer: true,
+      requireBillingAddress: true,
       seats,
+      embedOrigin: BASE_URL,
+      successUrl: `${BASE_URL}/${wsId}/billing/success?checkoutId={CHECKOUT_ID}`,
     });
 
     return NextResponse.json({ url: checkoutSession.url });
