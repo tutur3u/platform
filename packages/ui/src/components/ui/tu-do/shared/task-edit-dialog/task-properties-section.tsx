@@ -317,6 +317,18 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
 
   const t = useTranslations();
 
+  // Translate standard list names (To Do, In Progress, Done, Closed)
+  const translateListName = (name: string): string => {
+    const normalized = name.toLowerCase().replace(/\s+/g, '');
+    const translations: Record<string, string> = {
+      todo: t('common.list_name_to_do'),
+      inprogress: t('common.list_name_in_progress'),
+      done: t('common.list_name_done'),
+      closed: t('common.list_name_closed'),
+    };
+    return translations[normalized] ?? name;
+  };
+
   const { weekStartsOn, timezone, timeFormat } = useCalendarPreferences();
 
   const [isMetadataExpanded, setIsMetadataExpanded] = useState(false);
@@ -619,8 +631,14 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   className="h-5 shrink-0 gap-1 border border-dynamic-green/30 bg-dynamic-green/15 px-2 font-medium text-[10px] text-dynamic-green"
                 >
                   <ListTodo className="h-2.5 w-2.5" />
-                  {availableLists?.find((l) => l.id === selectedListId)?.name ||
-                    t('ws-task-boards.dialog.field.list')}
+                  {(() => {
+                    const listName = availableLists?.find(
+                      (l) => l.id === selectedListId
+                    )?.name;
+                    return listName
+                      ? translateListName(listName)
+                      : t('ws-task-boards.dialog.field.list');
+                  })()}
                 </Badge>
               )}
               {(startDate || endDate) && (
@@ -826,8 +844,14 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   <ListTodo className="h-3.5 w-3.5" />
                   <span>
                     {selectedListId
-                      ? availableLists?.find((l) => l.id === selectedListId)
-                          ?.name || t('ws-task-boards.dialog.field.list')
+                      ? (() => {
+                          const listName = availableLists?.find(
+                            (l) => l.id === selectedListId
+                          )?.name;
+                          return listName
+                            ? translateListName(listName)
+                            : t('ws-task-boards.dialog.field.list');
+                        })()
                       : t('ws-task-boards.dialog.field.list')}
                   </span>
                 </button>
@@ -856,7 +880,9 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             selectedListId === list.id && 'bg-muted font-medium'
                           )}
                         >
-                          <span className="flex-1">{list.name}</span>
+                          <span className="flex-1">
+                            {translateListName(list.name)}
+                          </span>
                           {selectedListId === list.id && (
                             <Check className="h-4 w-4 shrink-0 text-primary" />
                           )}

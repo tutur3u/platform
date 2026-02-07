@@ -8,6 +8,7 @@ import {
   Loader2,
   ShieldAlert,
 } from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { DialogDescription, DialogTitle } from '@tuturuuu/ui/dialog';
 import { Switch } from '@tuturuuu/ui/switch';
@@ -219,6 +220,8 @@ interface TaskDialogHeaderProps {
   onOpenShareDialog?: () => void;
   /** Whether the dialog is in read-only mode */
   disabled?: boolean;
+  /** Callback to scroll the editor to a collaborator's cursor position */
+  onScrollToUserCursor?: (userId: string, displayName: string) => void;
 }
 
 export function TaskDialogHeader({
@@ -256,6 +259,7 @@ export function TaskDialogHeader({
   isPersonalWorkspace = false,
   onOpenShareDialog,
   disabled = false,
+  onScrollToUserCursor,
 }: TaskDialogHeaderProps) {
   const t = useTranslations();
 
@@ -286,13 +290,12 @@ export function TaskDialogHeader({
     iconColorClass = 'text-dynamic-orange',
   } = resolvedHeaderInfo;
 
-  // When the title input scrolls out of view, show ticket ID + task name in the header
+  // When the title input scrolls out of view, show ticket ID badge + task name in the header
   const trimmedTaskName = taskName?.trim();
-  const scrollTitle =
-    !isTitleVisible && trimmedTaskName
-      ? !isCreateMode && displayNumber
-        ? `${getTicketIdentifier(ticketPrefix, displayNumber)} - ${trimmedTaskName}`
-        : trimmedTaskName
+  const showScrollTitle = !isTitleVisible && !!trimmedTaskName;
+  const ticketId =
+    !isCreateMode && displayNumber
+      ? getTicketIdentifier(ticketPrefix, displayNumber)
       : null;
 
   return (
@@ -308,10 +311,24 @@ export function TaskDialogHeader({
           {icon ?? <ListTodo className={cn('h-4 w-4', iconColorClass)} />}
         </div>
         <div className="flex min-w-0 flex-col gap-0.5">
-          <DialogTitle className="truncate font-semibold text-base text-foreground md:text-lg">
-            {scrollTitle ?? title}
+          <DialogTitle className="flex items-center gap-1.5 truncate font-semibold text-base text-foreground md:text-lg">
+            {showScrollTitle ? (
+              <>
+                {ticketId && (
+                  <Badge
+                    variant="secondary"
+                    className="shrink-0 border border-border/60 px-1.5 py-0 font-mono text-[10px] text-muted-foreground md:text-xs"
+                  >
+                    {ticketId}
+                  </Badge>
+                )}
+                <span className="truncate">{trimmedTaskName}</span>
+              </>
+            ) : (
+              title
+            )}
           </DialogTitle>
-          {!scrollTitle && description && (
+          {!showScrollTitle && description && (
             <DialogDescription className="truncate text-muted-foreground text-xs md:text-sm">
               {description}
             </DialogDescription>
@@ -399,6 +416,8 @@ export function TaskDialogHeader({
             taskId={taskId}
             boardId={boardId}
             isViewing={isOpen}
+            compact={false}
+            onClickUser={onScrollToUserCursor}
           />
         )}
 

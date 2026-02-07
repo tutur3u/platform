@@ -18,20 +18,20 @@ import {
   WifiOffIcon,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { WorkspaceProductTier } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { useOptionalWorkspacePresenceContext } from '@tuturuuu/ui/tu-do/providers/workspace-presence-provider';
 import {
-  useOptionalWorkspacePresenceContext,
-  WorkspacePresenceProvider,
-} from '@tuturuuu/ui/tu-do/providers/workspace-presence-provider';
-import { UserPresenceAvatars } from '@tuturuuu/ui/tu-do/shared/user-presence-avatars';
+  PresenceAvatarList,
+  type PresenceViewerEntry,
+} from '@tuturuuu/ui/tu-do/shared/user-presence-avatars';
 import { cn } from '@tuturuuu/utils/format';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useWhiteboardCollaboration } from '@/hooks/useWhiteboardCollaboration';
@@ -53,8 +53,6 @@ interface CustomWhiteboardProps {
     appState?: Partial<AppState>;
     files?: BinaryFiles;
   };
-  workspaceTier?: WorkspaceProductTier | null;
-  isPersonalWorkspace?: boolean;
 }
 
 // Auto-save debounce interval (1 second for responsive saving)
@@ -69,33 +67,10 @@ export function CustomWhiteboard({
   boardId,
   boardName,
   initialData,
-  workspaceTier,
-  isPersonalWorkspace,
 }: CustomWhiteboardProps) {
-  return (
-    <WorkspacePresenceProvider
-      wsId={wsId}
-      tier={workspaceTier ?? null}
-      enabled={!isPersonalWorkspace}
-    >
-      <CustomWhiteboardInner
-        wsId={wsId}
-        boardId={boardId}
-        boardName={boardName}
-        initialData={initialData}
-      />
-    </WorkspacePresenceProvider>
-  );
-}
-
-function CustomWhiteboardInner({
-  wsId,
-  boardId,
-  boardName,
-  initialData,
-}: Omit<CustomWhiteboardProps, 'workspaceTier' | 'isPersonalWorkspace'>) {
   const supabase = createClient();
   const { resolvedTheme } = useTheme();
+  const t = useTranslations('ws-presence');
   const wsPresence = useOptionalWorkspacePresenceContext();
 
   const [excalidrawAPI, setExcalidrawAPI] =
@@ -114,26 +89,47 @@ function CustomWhiteboardInner({
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pendingChangesRef = useRef(false);
 
-  // Track whiteboard location in workspace presence
+  // Track whiteboard location in workspace presence (stable function ref)
+  const wsUpdateLocation = wsPresence?.updateLocation;
   useEffect(() => {
-    if (!wsPresence) return;
-    wsPresence.updateLocation({ type: 'whiteboard', boardId });
-  }, [wsPresence, boardId]);
+    if (!wsUpdateLocation) return;
+    wsUpdateLocation({ type: 'whiteboard', boardId });
+  }, [wsUpdateLocation, boardId]);
 
-  // Build presence state for whiteboard viewers from workspace presence
+  // Build viewer entries for the shared PresenceAvatarList component
   const whiteboardViewers = wsPresence?.getWhiteboardViewers(boardId) ?? [];
-  const whiteboardPresenceState = useMemo(() => {
-    const state: Record<string, Array<{ user: any; online_at: string }>> = {};
+  const whiteboardViewerEntries = useMemo<PresenceViewerEntry[]>(() => {
+    const byUser = new Map<
+      string,
+      {
+        user: (typeof whiteboardViewers)[0]['user'];
+        online_at: string;
+        away: boolean;
+        count: number;
+      }
+    >();
     for (const viewer of whiteboardViewers) {
       const userId = viewer.user.id;
       if (!userId) continue;
-      if (!state[userId]) state[userId] = [];
-      state[userId]!.push({
-        user: viewer.user,
-        online_at: viewer.online_at,
-      });
+      const existing = byUser.get(userId);
+      if (existing) {
+        existing.count++;
+        if (!viewer.away) existing.away = false;
+      } else {
+        byUser.set(userId, {
+          user: viewer.user,
+          online_at: viewer.online_at,
+          away: !!viewer.away,
+          count: 1,
+        });
+      }
     }
-    return state;
+    return Array.from(byUser.values()).map((v) => ({
+      user: v.user,
+      online_at: v.online_at,
+      away: v.away,
+      presenceCount: v.count,
+    }));
   }, [whiteboardViewers]);
 
   // Helper to deep clone elements array
@@ -567,11 +563,11 @@ function CustomWhiteboardInner({
           </Tooltip>
 
           {/* Collaborator Avatars */}
-          <UserPresenceAvatars
-            presenceState={whiteboardPresenceState as any}
+          <PresenceAvatarList
+            viewers={whiteboardViewerEntries}
             currentUserId={currentUserId}
             maxDisplay={5}
-            avatarClassName="h-7 w-7"
+            activeLabel={t('on_this_whiteboard')}
           />
         </div>
       </div>

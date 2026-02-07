@@ -30,7 +30,7 @@ function isExcalidrawFormat(data: unknown): boolean {
 export default async function WhiteboardPage({ params }: WhiteboardPageProps) {
   return (
     <WorkspaceWrapper params={params}>
-      {async ({ wsId, workspace }) => {
+      {async ({ wsId }) => {
         const { boardId } = await params;
         const supabase = await createClient();
 
@@ -60,8 +60,6 @@ export default async function WhiteboardPage({ params }: WhiteboardPageProps) {
             boardId={boardId}
             boardName={whiteboard.title}
             initialData={initialData}
-            workspaceTier={workspace.tier}
-            isPersonalWorkspace={workspace.personal}
           />
         );
       }}

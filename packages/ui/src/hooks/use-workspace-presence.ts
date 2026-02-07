@@ -16,6 +16,7 @@ export interface WorkspacePresenceState {
   user: User;
   online_at: string;
   location: PresenceLocation;
+  away?: boolean;
   metadata?: Record<string, any>;
 }
 
@@ -32,6 +33,8 @@ export interface UseWorkspacePresenceResult {
     location: PresenceLocation,
     metadata?: Record<string, any>
   ) => void;
+  /** Update metadata only without changing the current location. */
+  updateMetadata: (metadata: Record<string, any>) => void;
   getBoardViewers: (boardId: string) => WorkspacePresenceState[];
   getTaskViewers: (taskId: string) => WorkspacePresenceState[];
   getWhiteboardViewers: (boardId: string) => WorkspacePresenceState[];
@@ -39,6 +42,16 @@ export interface UseWorkspacePresenceResult {
   isBoardOverLimit: (boardId: string) => boolean;
 }
 
+const MAX_RETRIES = 3;
+
+/**
+ * Workspace-level presence hook with **lazy channel initialization**.
+ *
+ * The Supabase presence channel is NOT created on mount. It is created the
+ * first time `updateLocation` is called (i.e. when the user navigates to a
+ * board or opens a task dialog). This avoids unnecessary subscriptions on
+ * pages that don't need realtime (settings, user management, etc.).
+ */
 export function useWorkspacePresence({
   wsId,
   enabled = true,
@@ -54,55 +67,72 @@ export function useWorkspacePresence({
   const isCleanedUpRef = useRef(false);
   const locationRef = useRef<PresenceLocation>({ type: 'other' });
   const metadataRef = useRef<Record<string, any> | undefined>(undefined);
+  const awayRef = useRef(false);
   const userDataRef = useRef<User | null>(null);
-  const MAX_RETRIES = 3;
+  const setupPromiseRef = useRef<Promise<boolean> | null>(null);
 
   const channelName = `ws-presence-${wsId}`;
+  // Derived key that captures both channel identity AND enabled state.
+  // When enabled flips to false the key changes, triggering cleanup effects.
+  const channelKey = enabled ? channelName : '';
 
-  useEffect(() => {
-    if (!enabled || !wsId) return;
-    isCleanedUpRef.current = false;
+  // ---------------------------------------------------------------------------
+  // Lazy channel setup — returns true if channel is ready, false otherwise.
+  // Deduplicates concurrent calls via setupPromiseRef.
+  // ---------------------------------------------------------------------------
+  const ensureChannel = useCallback(async (): Promise<boolean> => {
+    // Already set up
+    if (channelRef.current) return true;
+    if (!channelKey || isCleanedUpRef.current) return false;
 
-    const supabase = createClient();
+    // Deduplicate: if a setup is already in-flight, wait for it
+    if (setupPromiseRef.current) return setupPromiseRef.current;
 
-    const setupPresence = async () => {
-      if (isCleanedUpRef.current) return;
+    const promise = (async (): Promise<boolean> => {
+      const supabase = createClient();
 
       try {
+        if (isCleanedUpRef.current) return false;
+
         const {
           data: { user },
         } = await supabase.auth.getUser();
 
-        if (!user?.id) return;
+        if (!user?.id || isCleanedUpRef.current) return false;
 
-        const { data: userData, error: userDataError } = await supabase
-          .from('users')
-          .select('display_name, avatar_url')
-          .eq('id', user.id)
-          .single();
+        // Fetch user profile data once
+        if (!userDataRef.current) {
+          const { data: userData, error: userDataError } = await supabase
+            .from('users')
+            .select('display_name, avatar_url')
+            .eq('id', user.id)
+            .single();
 
-        if (userDataError) {
-          if (DEV_MODE) {
-            console.error('Error fetching user data:', userDataError);
+          if (userDataError) {
+            if (DEV_MODE) {
+              console.error('Error fetching user data:', userDataError);
+            }
+            return false;
           }
-          return;
+
+          setCurrentUserId(user.id);
+          userDataRef.current = {
+            id: user.id,
+            display_name: userData?.display_name,
+            email: user.email,
+            avatar_url: userData?.avatar_url,
+          };
         }
 
-        setCurrentUserId(user.id);
-        userDataRef.current = {
-          id: user.id,
-          display_name: userData?.display_name,
-          email: user.email,
-          avatar_url: userData?.avatar_url,
-        };
+        if (isCleanedUpRef.current) return false;
 
-        // Clean up existing channel
+        // Clean up any stale channel
         if (channelRef.current) {
           await supabase.removeChannel(channelRef.current);
           channelRef.current = null;
         }
 
-        const channel = supabase.channel(channelName, {
+        const channel = supabase.channel(channelKey, {
           config: {
             presence: {
               key: user.id,
@@ -113,120 +143,176 @@ export function useWorkspacePresence({
 
         channelRef.current = channel;
 
-        channel
-          .on('presence', { event: 'sync' }, () => {
-            const newState =
-              channel.presenceState() as RealtimePresenceState<WorkspacePresenceState>;
-            setPresenceState({ ...newState });
-          })
-          .on('presence', { event: 'join' }, ({ key }) => {
-            if (DEV_MODE) {
-              console.log('Workspace presence join:', key);
-            }
-          })
-          .on('presence', { event: 'leave' }, ({ key }) => {
-            if (DEV_MODE) {
-              console.log('Workspace presence leave:', key);
-            }
-          })
-          .subscribe(async (status) => {
-            if (DEV_MODE) {
-              console.log('Workspace presence status:', status);
-            }
-
-            switch (status) {
-              case 'SUBSCRIBED': {
-                const trackStatus = await channel.track({
-                  user: userDataRef.current!,
-                  online_at: new Date().toISOString(),
-                  location: locationRef.current,
-                  metadata: metadataRef.current,
-                });
-
-                if (trackStatus === 'timed out' && !isCleanedUpRef.current) {
-                  setTimeout(async () => {
-                    if (!isCleanedUpRef.current && channelRef.current) {
-                      await channelRef.current.track({
-                        user: userDataRef.current!,
-                        online_at: new Date().toISOString(),
-                        location: locationRef.current,
-                        metadata: metadataRef.current,
-                      });
-                    }
-                  }, 1000);
-                }
-
-                retryCountRef.current = 0;
-                break;
+        // Subscribe and wait for SUBSCRIBED status
+        return new Promise<boolean>((resolve) => {
+          channel
+            .on('presence', { event: 'sync' }, () => {
+              if (isCleanedUpRef.current) return;
+              const newState =
+                channel.presenceState() as RealtimePresenceState<WorkspacePresenceState>;
+              setPresenceState({ ...newState });
+            })
+            .on('presence', { event: 'join' }, ({ key }) => {
+              if (DEV_MODE) {
+                console.log('Workspace presence join:', key);
               }
-              case 'CHANNEL_ERROR':
-              case 'TIMED_OUT':
-                if (
-                  retryCountRef.current < MAX_RETRIES &&
-                  !isCleanedUpRef.current
-                ) {
-                  retryCountRef.current++;
-                  setTimeout(() => {
-                    setupPresence();
-                  }, 2000 * retryCountRef.current);
-                }
-                break;
-              case 'CLOSED':
-                if (DEV_MODE) {
-                  console.info('Workspace presence channel closed');
-                }
-                break;
-            }
-          });
+            })
+            .on('presence', { event: 'leave' }, ({ key }) => {
+              if (DEV_MODE) {
+                console.log('Workspace presence leave:', key);
+              }
+            })
+            .subscribe((status) => {
+              if (DEV_MODE) {
+                console.log('Workspace presence status:', status);
+              }
+
+              switch (status) {
+                case 'SUBSCRIBED':
+                  retryCountRef.current = 0;
+                  resolve(true);
+                  break;
+                case 'CHANNEL_ERROR':
+                case 'TIMED_OUT':
+                  if (
+                    retryCountRef.current < MAX_RETRIES &&
+                    !isCleanedUpRef.current
+                  ) {
+                    retryCountRef.current++;
+                    setupPromiseRef.current = null; // allow retry
+                    setTimeout(() => {
+                      ensureChannel();
+                    }, 2000 * retryCountRef.current);
+                  }
+                  resolve(false);
+                  break;
+                case 'CLOSED':
+                  if (DEV_MODE) {
+                    console.info('Workspace presence channel closed');
+                  }
+                  resolve(false);
+                  break;
+              }
+            });
+        });
       } catch (error) {
         if (DEV_MODE) {
           console.error('Error setting up workspace presence:', error);
         }
         if (retryCountRef.current < MAX_RETRIES && !isCleanedUpRef.current) {
           retryCountRef.current++;
+          setupPromiseRef.current = null;
           setTimeout(() => {
-            setupPresence();
+            ensureChannel();
           }, 2000 * retryCountRef.current);
         }
+        return false;
       }
-    };
+    })();
 
-    setupPresence();
+    setupPromiseRef.current = promise;
+    return promise;
+  }, [channelKey]);
+
+  // ---------------------------------------------------------------------------
+  // Cleanup on unmount or when channelKey changes
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    // Skip setup when disabled (channelKey is empty)
+    if (!channelKey) return;
+    isCleanedUpRef.current = false;
 
     return () => {
       isCleanedUpRef.current = true;
       retryCountRef.current = 0;
+      setupPromiseRef.current = null;
       if (channelRef.current) {
         createClient().removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };
-  }, [channelName, enabled, wsId]);
+  }, [channelKey]);
 
+  // ---------------------------------------------------------------------------
+  // Track presence (sends data to Supabase)
+  // ---------------------------------------------------------------------------
+  const trackPresence = useCallback(async () => {
+    if (isCleanedUpRef.current) return;
+
+    const ready = await ensureChannel();
+    if (
+      !ready ||
+      !channelRef.current ||
+      !userDataRef.current ||
+      isCleanedUpRef.current
+    )
+      return;
+
+    try {
+      await channelRef.current.track({
+        user: userDataRef.current,
+        online_at: new Date().toISOString(),
+        location: locationRef.current,
+        away: awayRef.current,
+        metadata: metadataRef.current,
+      });
+    } catch (error) {
+      if (DEV_MODE) {
+        console.error('Error tracking workspace presence:', error);
+      }
+    }
+  }, [ensureChannel]);
+
+  // ---------------------------------------------------------------------------
+  // Public: update location (triggers lazy channel creation + track)
+  // ---------------------------------------------------------------------------
   const updateLocation = useCallback(
     async (location: PresenceLocation, metadata?: Record<string, any>) => {
       locationRef.current = location;
-      metadataRef.current = metadata;
-
-      if (!channelRef.current || !userDataRef.current || isCleanedUpRef.current)
-        return;
-
-      try {
-        await channelRef.current.track({
-          user: userDataRef.current,
-          online_at: new Date().toISOString(),
-          location,
-          metadata,
-        });
-      } catch (error) {
-        if (DEV_MODE) {
-          console.error('Error updating workspace presence location:', error);
-        }
-      }
+      if (metadata !== undefined) metadataRef.current = metadata;
+      await trackPresence();
     },
-    []
+    [trackPresence]
   );
 
+  // ---------------------------------------------------------------------------
+  // Public: update metadata without changing location
+  // ---------------------------------------------------------------------------
+  const updateMetadata = useCallback(
+    async (metadata: Record<string, any>) => {
+      metadataRef.current = metadata;
+      await trackPresence();
+    },
+    [trackPresence]
+  );
+
+  // ---------------------------------------------------------------------------
+  // Track page visibility to update away status (only if channel is active)
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (!channelKey) return;
+
+    const handleVisibilityChange = () => {
+      const isAway =
+        typeof document !== 'undefined' &&
+        document.visibilityState === 'hidden';
+      if (awayRef.current !== isAway) {
+        awayRef.current = isAway;
+        // Only send visibility update if channel is already active
+        if (channelRef.current) {
+          trackPresence();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () =>
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [channelKey, trackPresence]);
+
+  // ---------------------------------------------------------------------------
+  // Derived helpers
+  // ---------------------------------------------------------------------------
   const allPresences = useMemo(() => {
     const result: WorkspacePresenceState[] = [];
     for (const presences of Object.values(presenceState)) {
@@ -265,7 +351,6 @@ export function useWorkspacePresence({
 
   const getBoardPresenceCount = useCallback(
     (boardId: string): number => {
-      // Deduplicate by user id
       const userIds = new Set<string>();
       for (const p of allPresences) {
         if (
@@ -288,14 +373,28 @@ export function useWorkspacePresence({
     [getBoardPresenceCount, maxPresencePerBoard]
   );
 
-  return {
-    presenceState,
-    currentUserId,
-    updateLocation,
-    getBoardViewers,
-    getTaskViewers,
-    getWhiteboardViewers,
-    getBoardPresenceCount,
-    isBoardOverLimit,
-  };
+  return useMemo(
+    () => ({
+      presenceState,
+      currentUserId,
+      updateLocation,
+      updateMetadata,
+      getBoardViewers,
+      getTaskViewers,
+      getWhiteboardViewers,
+      getBoardPresenceCount,
+      isBoardOverLimit,
+    }),
+    [
+      presenceState,
+      currentUserId,
+      updateLocation,
+      updateMetadata,
+      getBoardViewers,
+      getTaskViewers,
+      getWhiteboardViewers,
+      getBoardPresenceCount,
+      isBoardOverLimit,
+    ]
+  );
 }

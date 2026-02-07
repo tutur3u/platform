@@ -503,7 +503,7 @@ async function handleSaveAsDraft({
       setDescription(null);
       setTimeout(() => {
         const input = document.querySelector<HTMLInputElement>(
-          'input[placeholder="What needs to be done?"]'
+          'input[data-task-name-input]'
         );
         input?.focus();
       }, 0);
@@ -789,7 +789,7 @@ async function handleCreateTask({
       setDescription(null);
       setTimeout(() => {
         const input = document.querySelector<HTMLInputElement>(
-          'input[placeholder="What needs to be done?"]'
+          'input[data-task-name-input]'
         );
         input?.focus();
       }, 0);

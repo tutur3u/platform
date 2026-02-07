@@ -26,7 +26,6 @@ import {
 import { BoardEstimationConfigDialog } from '../boards/boardId/task-dialogs/BoardEstimationConfigDialog';
 import { TaskNewLabelDialog } from '../boards/boardId/task-dialogs/TaskNewLabelDialog';
 import { TaskNewProjectDialog } from '../boards/boardId/task-dialogs/TaskNewProjectDialog';
-import { useOptionalWorkspacePresenceContext } from '../providers/workspace-presence-provider';
 import { createInitialSuggestionState } from './mention-system/types';
 import { SyncWarningDialog } from './sync-warning-dialog';
 import { MobileFloatingSaveButton } from './task-edit-dialog/components/mobile-floating-save-button';
@@ -154,9 +153,6 @@ export function TaskEditDialog({
   const queryClient = useQueryClient();
   const t = useTranslations('common');
 
-  // Workspace presence context — used for tier-based Yjs debounce
-  const wsPresence = useOptionalWorkspacePresenceContext();
-
   // Disable editing if we are viewing via a shared link
   // User requested: always disable editing for shared tasks, regardless of permission
   const disabled = !!shareCode;
@@ -249,7 +245,6 @@ export function TaskEditDialog({
         }
       : null,
     enabled: isOpen && !isCreateMode && collaborationMode && !!task?.id,
-    tier: wsPresence?.tier ?? null,
   });
 
   const isYjsSyncing = useMemo(() => {
@@ -973,6 +968,39 @@ export function TaskEditDialog({
     setEditorInstance(editor);
   }, []);
 
+  // Navigate to a collaborator's cursor position in the editor.
+  // The CollaborationCaret extension renders `<span class="collaboration-carets__label">`
+  // with the user's display name. We match by name and scroll it into view.
+  const scrollToUserCursor = useCallback(
+    (_userId: string, displayName: string) => {
+      if (!editorInstance) return;
+
+      // Search inside the ProseMirror editor DOM for caret labels
+      const labels = editorInstance.view.dom.querySelectorAll(
+        '.collaboration-carets__label'
+      );
+      for (const label of labels) {
+        if (label.textContent?.trim() === displayName) {
+          // Scroll the parent caret element into view (the label is positioned absolute)
+          const caret = label.closest('.collaboration-carets__caret');
+          (caret ?? label).scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          });
+          // Briefly flash the label so the user spots it
+          const el = label as HTMLElement;
+          el.style.opacity = '1';
+          el.style.animation = 'none';
+          setTimeout(() => {
+            el.style.animation = '';
+          }, 2000);
+          return;
+        }
+      }
+    },
+    [editorInstance]
+  );
+
   // Keyboard shortcuts
   const hasUnsavedChangesRef = useRef<boolean>(false);
   hasUnsavedChangesRef.current = hasUnsavedChanges;
@@ -1233,6 +1261,9 @@ export function TaskEditDialog({
                     : undefined
                 }
                 disabled={disabled}
+                onScrollToUserCursor={
+                  collaborationMode ? scrollToUserCursor : undefined
+                }
               />
             )}
 
@@ -1388,6 +1419,14 @@ export function TaskEditDialog({
                   flushEditorPendingRef={flushEditorPendingRef}
                   yjsDoc={doc}
                   yjsProvider={provider}
+                  collaborationUser={
+                    user
+                      ? {
+                          name: user.display_name || '',
+                          color: userColor || '',
+                        }
+                      : null
+                  }
                   onImageUpload={handleImageUpload}
                   onEditorReady={handleEditorReady}
                   disabled={disabled}

@@ -5,7 +5,7 @@ import {
   type UseWorkspacePresenceResult,
   useWorkspacePresence,
 } from '@tuturuuu/ui/hooks/use-workspace-presence';
-import { createContext, type ReactNode, useContext } from 'react';
+import { createContext, type ReactNode, useContext, useMemo } from 'react';
 
 const REALTIME_LIMITS: Record<
   WorkspaceProductTier,
@@ -48,11 +48,14 @@ export function WorkspacePresenceProvider({
     maxPresencePerBoard,
   });
 
-  const value: WorkspacePresenceContextValue = {
-    ...presenceResult,
-    tier,
-    cursorsEnabled,
-  };
+  const value = useMemo<WorkspacePresenceContextValue>(
+    () => ({
+      ...presenceResult,
+      tier,
+      cursorsEnabled,
+    }),
+    [presenceResult, tier, cursorsEnabled]
+  );
 
   return (
     <WorkspacePresenceContext.Provider value={value}>
