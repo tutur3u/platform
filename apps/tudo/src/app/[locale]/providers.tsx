@@ -1,6 +1,7 @@
 import { NextIntlClientProvider } from 'next-intl';
 import { ThemeProvider } from 'next-themes';
 import type { ReactNode } from 'react';
+import { ClientProviders } from './client-providers';
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
@@ -19,7 +20,7 @@ export function Providers({ children }: { children: ReactNode }) {
         // see https://github.com/pacocoursey/next-themes?tab=readme-ov-file#using-with-cloudflare-rocket-loader
         // for more details
       >
-        {children}
+        <ClientProviders>{children}</ClientProviders>
       </ThemeProvider>
     </NextIntlClientProvider>
   );
