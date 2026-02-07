@@ -83,7 +83,7 @@ export function useYjsCollaboration(
       tableName: tableName,
       columnName: columnName,
       awareness,
-      resyncInterval: 5000,
+      resyncInterval: 30000,
       saveDebounceMs: 300, // Faster saves for better UX (broadcasts are still instant)
     });
 

@@ -4,6 +4,7 @@ import debug from 'debug';
 import { EventEmitter } from 'eventemitter3';
 import * as awarenessProtocol from 'y-protocols/awareness';
 import * as Y from 'yjs';
+import { isPageVisible } from './use-page-visibility';
 
 export interface SupabaseProviderConfig {
   channel: string;
@@ -35,6 +36,8 @@ export default class SupabaseProvider extends EventEmitter {
   public version: number = 0;
   private readonly saveDebounceMs: number = 1000; // Default debounce time
   private destroyed: boolean = false;
+  private _dirty: boolean = false; // Set on local edits, cleared after resync
+  private awarenessDebounceTimeout: NodeJS.Timeout | undefined;
 
   isOnline(online?: boolean): boolean {
     if (!online && online !== false) return this.connected;
@@ -55,6 +58,8 @@ export default class SupabaseProvider extends EventEmitter {
         this.logger('skipping broadcast - empty update');
         return;
       }
+
+      this._dirty = true;
 
       this.logger(
         `document updated locally (${update.length} bytes), broadcasting update to peers`
@@ -96,7 +101,14 @@ export default class SupabaseProvider extends EventEmitter {
       this.awareness,
       changedClients
     );
-    this.emit('awareness', awarenessUpdate);
+
+    // Debounce awareness broadcasts to coalesce rapid cursor/selection changes
+    if (this.awarenessDebounceTimeout) {
+      clearTimeout(this.awarenessDebounceTimeout);
+    }
+    this.awarenessDebounceTimeout = setTimeout(() => {
+      this.emit('awareness', awarenessUpdate);
+    }, 150);
   }
 
   removeSelfFromAwarenessOnUnload() {
@@ -329,8 +341,9 @@ export default class SupabaseProvider extends EventEmitter {
       if (this.config.resyncInterval && this.config.resyncInterval < 3000) {
         throw new Error('resync interval of less than 3 seconds');
       }
+      const interval = this.config.resyncInterval || 30000;
       this.logger(
-        `setting resync interval to every ${(this.config.resyncInterval || 5000) / 1000} seconds`
+        `setting resync interval to every ${interval / 1000} seconds`
       );
       this.resyncInterval = setInterval(() => {
         // Only resync if connected and not destroyed
@@ -338,6 +351,20 @@ export default class SupabaseProvider extends EventEmitter {
           this.logger('skipping resync - not connected or destroyed');
           return;
         }
+
+        // Skip resync when page is hidden (no one is watching)
+        if (!isPageVisible()) {
+          this.logger('skipping resync - page not visible');
+          return;
+        }
+
+        // Skip resync if no local changes since last resync
+        if (!this._dirty) {
+          this.logger('skipping resync - no local changes');
+          return;
+        }
+
+        this._dirty = false;
 
         this.logger('resyncing (resync interval elapsed)');
         const update = Y.encodeStateAsUpdate(this.doc);
@@ -356,7 +383,7 @@ export default class SupabaseProvider extends EventEmitter {
             payload: Array.from(update),
           });
         }
-      }, this.config.resyncInterval || 5000);
+      }, interval);
     }
 
     if (typeof window !== 'undefined') {
@@ -512,6 +539,10 @@ export default class SupabaseProvider extends EventEmitter {
 
     if (this.resyncInterval) {
       clearInterval(this.resyncInterval);
+    }
+
+    if (this.awarenessDebounceTimeout) {
+      clearTimeout(this.awarenessDebounceTimeout);
     }
 
     // Save any pending changes before destroying
