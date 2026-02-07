@@ -12,7 +12,7 @@ import type {
 } from '@tuturuuu/types/db';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { ApprovalStatus } from '../utils';
 
 interface UseApprovalsOptions {
@@ -27,6 +27,11 @@ interface PaginatedResult<T> {
   items: T[];
   totalCount: number;
   totalPages: number;
+}
+
+interface SessionStats {
+  approved: number;
+  rejected: number;
 }
 
 interface UseApprovalsResult {
@@ -58,6 +63,8 @@ interface UseApprovalsResult {
   closeDetailDialog: () => void;
   pendingItemIds: string[];
   totalPendingCount: number;
+  // Session stats
+  sessionStats: SessionStats;
 }
 
 export type ApprovalItem =
@@ -87,6 +94,11 @@ export function useApprovals({
     current: number;
     total: number;
   } | null>(null);
+  const [sessionStats, setSessionStats] = useState<SessionStats>({
+    approved: 0,
+    rejected: 0,
+  });
+  const mutatingItemIdRef = useRef<string | null>(null);
 
   const reportsQuery = useQuery({
     queryKey: ['ws', wsId, 'approvals', 'reports', status, page, limit],
@@ -242,8 +254,32 @@ export function useApprovals({
     },
   });
 
+  // Compute the next item to show after an approve/reject action
+  const advanceToNextItem = useCallback(
+    (actedItemId: string) => {
+      const currentItems =
+        kind === 'reports'
+          ? (reportsQuery.data?.items ?? [])
+          : (postsQuery.data?.items ?? []);
+      const idx = currentItems.findIndex((i) => i.id === actedItemId);
+      if (idx === -1) {
+        setDetailItem(null);
+        return;
+      }
+      // Try next item, then previous, then close
+      const nextItem = currentItems[idx + 1] ?? currentItems[idx - 1];
+      if (nextItem) {
+        setDetailItem({ ...nextItem, kind } as ApprovalItem);
+      } else {
+        setDetailItem(null);
+      }
+    },
+    [kind, reportsQuery.data?.items, postsQuery.data?.items]
+  );
+
   const approveMutation = useMutation({
     mutationFn: async (itemId: string) => {
+      mutatingItemIdRef.current = itemId;
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -280,7 +316,13 @@ export function useApprovals({
     },
     onSuccess: async () => {
       toast.success(t('actions.approved'));
-      setDetailItem(null);
+      setSessionStats((prev) => ({ ...prev, approved: prev.approved + 1 }));
+      if (mutatingItemIdRef.current) {
+        advanceToNextItem(mutatingItemIdRef.current);
+        mutatingItemIdRef.current = null;
+      } else {
+        setDetailItem(null);
+      }
       await queryClient.invalidateQueries({
         queryKey: ['ws', wsId, 'approvals', kind],
       });
@@ -294,12 +336,14 @@ export function useApprovals({
       }
     },
     onError: (error) => {
+      mutatingItemIdRef.current = null;
       toast.error(error instanceof Error ? error.message : tCommon('error'));
     },
   });
 
   const rejectMutation = useMutation({
     mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
+      mutatingItemIdRef.current = id;
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -336,7 +380,13 @@ export function useApprovals({
     },
     onSuccess: async () => {
       toast.success(t('actions.rejected'));
-      setDetailItem(null);
+      setSessionStats((prev) => ({ ...prev, rejected: prev.rejected + 1 }));
+      if (mutatingItemIdRef.current) {
+        advanceToNextItem(mutatingItemIdRef.current);
+        mutatingItemIdRef.current = null;
+      } else {
+        setDetailItem(null);
+      }
       setRejectReason('');
       await queryClient.invalidateQueries({
         queryKey: ['ws', wsId, 'approvals', kind],
@@ -351,6 +401,7 @@ export function useApprovals({
       }
     },
     onError: (error) => {
+      mutatingItemIdRef.current = null;
       toast.error(error instanceof Error ? error.message : tCommon('error'));
     },
   });
@@ -534,6 +585,7 @@ export function useApprovals({
     detailItem,
     setDetailItem,
     closeDetailDialog,
+    sessionStats,
   };
 }
 

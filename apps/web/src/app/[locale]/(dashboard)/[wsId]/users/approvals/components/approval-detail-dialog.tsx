@@ -2,6 +2,8 @@
 
 import {
   Check,
+  ChevronLeft,
+  ChevronRight,
   FileText,
   Loader2,
   MessageSquare,
@@ -22,7 +24,7 @@ import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   type ApprovalItem,
   useLatestApprovedLog,
@@ -40,6 +42,8 @@ interface ApprovalDetailDialogProps {
   onReject: (params: { id: string; reason: string }) => void;
   isApproving: boolean;
   isRejecting: boolean;
+  items?: ApprovalItem[];
+  onNavigateToItem?: (item: ApprovalItem) => void;
 }
 
 export function ApprovalDetailDialog({
@@ -52,6 +56,8 @@ export function ApprovalDetailDialog({
   onReject,
   isApproving,
   isRejecting,
+  items = [],
+  onNavigateToItem,
 }: ApprovalDetailDialogProps) {
   const t = useTranslations('approvals');
   const [showRejectForm, setShowRejectForm] = useState(false);
@@ -70,6 +76,17 @@ export function ApprovalDetailDialog({
       setRejectReason('');
     }
   }, [open]);
+
+  const currentIndex = useMemo(
+    () => (item ? items.findIndex((i) => i.id === item.id) : -1),
+    [item, items]
+  );
+  const hasPrev = currentIndex > 0;
+  const hasNext = currentIndex >= 0 && currentIndex < items.length - 1;
+  const positionLabel =
+    items.length > 0 && currentIndex >= 0
+      ? `${currentIndex + 1} / ${items.length}`
+      : null;
 
   if (!item) return null;
 
@@ -350,6 +367,37 @@ export function ApprovalDetailDialog({
               </DialogDescription>
             </div>
             <div className="flex items-center gap-2">
+              {items.length > 1 && onNavigateToItem && (
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (hasPrev) onNavigateToItem(items[currentIndex - 1]!);
+                    }}
+                    disabled={!hasPrev || isApproving || isRejecting}
+                    className="h-7 w-7 p-0"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  {positionLabel && (
+                    <span className="min-w-12 text-center text-muted-foreground text-xs tabular-nums">
+                      {positionLabel}
+                    </span>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (hasNext) onNavigateToItem(items[currentIndex + 1]!);
+                    }}
+                    disabled={!hasNext || isApproving || isRejecting}
+                    className="h-7 w-7 p-0"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
               <span
                 className={cn(
                   'inline-flex items-center rounded-full border px-2 py-0.5 font-medium text-xs',

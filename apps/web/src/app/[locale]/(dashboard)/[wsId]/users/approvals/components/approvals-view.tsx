@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  CheckCheck,
   CheckCheckIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -30,7 +31,7 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useApprovals } from '../hooks/use-approvals';
 import { getStatusColorClasses, STATUS_LABELS } from '../utils';
 import { ApprovalDetailDialog } from './approval-detail-dialog';
@@ -85,6 +86,7 @@ export function ApprovalsView({ wsId, kind, canApprove }: ApprovalsViewProps) {
     setDetailItem,
     closeDetailDialog,
     totalPendingCount,
+    sessionStats,
   } = useApprovals({
     wsId,
     kind,
@@ -105,17 +107,38 @@ export function ApprovalsView({ wsId, kind, canApprove }: ApprovalsViewProps) {
     [currentPage, currentLimit, totalCount]
   );
 
+  const updatePage = useCallback(
+    (page: number) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('page', page.toString());
+      router.push(`?${params.toString()}`, { scroll: false });
+    },
+    [router, searchParams]
+  );
+
+  // Auto-adjust pagination when current page becomes empty after actions
+  useEffect(() => {
+    if (!loading && items.length === 0 && totalCount > 0 && currentPage > 1) {
+      const validPage = Math.min(
+        currentPage,
+        Math.ceil(totalCount / currentLimit)
+      );
+      updatePage(Math.max(1, validPage));
+    }
+  }, [
+    items.length,
+    totalCount,
+    currentPage,
+    currentLimit,
+    loading,
+    updatePage,
+  ]);
+
   const updateFilters = (key: 'status', value: string | undefined) => {
     const params = new URLSearchParams(searchParams.toString());
     if (value) params.set(key, value);
     else params.delete(key);
     params.set('page', '1');
-    router.push(`?${params.toString()}`, { scroll: false });
-  };
-
-  const updatePage = (page: number) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('page', page.toString());
     router.push(`?${params.toString()}`, { scroll: false });
   };
 
@@ -233,6 +256,14 @@ export function ApprovalsView({ wsId, kind, canApprove }: ApprovalsViewProps) {
               })}
             </p>
           )}
+          {(sessionStats.approved > 0 || sessionStats.rejected > 0) && (
+            <p className="text-muted-foreground text-xs">
+              {t('actions.sessionSummary', {
+                approved: sessionStats.approved,
+                rejected: sessionStats.rejected,
+              })}
+            </p>
+          )}
         </div>
 
         <div className="flex items-center gap-4">
@@ -299,17 +330,31 @@ export function ApprovalsView({ wsId, kind, canApprove }: ApprovalsViewProps) {
       ) : items.length === 0 ? (
         <Card className="border-border/60 bg-linear-to-br from-muted/30 to-muted/10">
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-dynamic-blue/10 ring-1 ring-dynamic-blue/20">
-              <ClockIcon className="h-8 w-8 text-dynamic-blue" />
-            </div>
-            <h3 className="mt-4 font-semibold text-foreground text-lg">
-              {t('list.noItemsTitle')}
-            </h3>
-            <p className="mt-2 text-center text-muted-foreground text-sm">
-              {hasActiveFilters
-                ? t('list.noItemsMessage')
-                : t('list.noItemsDefault')}
-            </p>
+            {currentStatus === 'pending' || !currentStatus ? (
+              <>
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-dynamic-green/10 ring-1 ring-dynamic-green/20">
+                  <CheckCheck className="h-8 w-8 text-dynamic-green" />
+                </div>
+                <h3 className="mt-4 font-semibold text-foreground text-lg">
+                  {t('list.allCaughtUpTitle')}
+                </h3>
+                <p className="mt-2 text-center text-muted-foreground text-sm">
+                  {t('list.allCaughtUpMessage')}
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-dynamic-blue/10 ring-1 ring-dynamic-blue/20">
+                  <ClockIcon className="h-8 w-8 text-dynamic-blue" />
+                </div>
+                <h3 className="mt-4 font-semibold text-foreground text-lg">
+                  {t('list.noItemsTitle')}
+                </h3>
+                <p className="mt-2 text-center text-muted-foreground text-sm">
+                  {t('list.noItemsMessage')}
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -482,6 +527,8 @@ export function ApprovalsView({ wsId, kind, canApprove }: ApprovalsViewProps) {
         onReject={rejectItem}
         isApproving={isApproving}
         isRejecting={isRejecting}
+        items={items}
+        onNavigateToItem={setDetailItem}
       />
     </div>
   );
