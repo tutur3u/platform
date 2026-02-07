@@ -211,6 +211,7 @@
       "import": "./src/components/ui/finance/transactions/categories/hooks.ts"
     },
     "./tu-do/boards/*": "./src/components/ui/tu-do/boards/*.tsx",
+    "./tu-do/drafts/*": "./src/components/ui/tu-do/drafts/*.tsx",
     "./legacy/calendar/settings/types": {
       "types": "./src/components/ui/legacy/calendar/settings/types.ts",
       "import": "./src/components/ui/legacy/calendar/settings/types.ts"
