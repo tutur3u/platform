@@ -20,7 +20,7 @@ export interface Achievement {
 export const achievements: Achievement[] = [
   {
     name: 'RMIT Hack-A-Venture 2025',
-    achievement: 'Champion',
+    achievement: '🏆 Champion',
     teamName: 'Aquaholics In Paris',
     image: '/hall-of-fames/hackaventure2025.jpg',
     teamMembers: [
