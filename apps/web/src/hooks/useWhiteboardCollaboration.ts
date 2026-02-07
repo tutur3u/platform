@@ -3,14 +3,17 @@ import type { Collaborator, SocketId } from '@excalidraw/excalidraw/types';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import type { User } from '@tuturuuu/types/primitives/User';
+import type { WorkspacePresenceState } from '@tuturuuu/ui/hooks/use-workspace-presence';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useExcalidrawCursor } from './useExcalidrawCursor';
 import { useExcalidrawElementSync } from './useExcalidrawElementSync';
-import {
-  type CurrentUserInfo,
-  type UserPresenceState,
-  useExcalidrawPresence,
-} from './useExcalidrawPresence';
+
+export interface CurrentUserInfo {
+  id: string;
+  displayName: string;
+  avatarUrl?: string;
+  email?: string;
+}
 
 // Collaboration colors (distinct, accessible colors)
 const COLLABORATOR_COLORS = [
@@ -57,6 +60,9 @@ export interface UseWhiteboardCollaborationConfig {
   boardId: string;
   wsId: string;
   enabled?: boolean;
+  /** External presence state from workspace presence provider */
+  externalPresenceState?: RealtimePresenceState<WorkspacePresenceState>;
+  externalCurrentUserId?: string;
   onRemoteElementsChange?: (elements: ExcalidrawElement[]) => void;
   onError?: (error: Error) => void;
 }
@@ -64,7 +70,6 @@ export interface UseWhiteboardCollaborationConfig {
 export interface UseWhiteboardCollaborationResult {
   // State
   collaborators: Map<SocketId, Collaborator>;
-  presenceState: RealtimePresenceState<UserPresenceState>;
   currentUserId: string | undefined;
   isConnected: boolean;
   isSynced: boolean;
@@ -75,13 +80,14 @@ export interface UseWhiteboardCollaborationResult {
     currentElements: readonly ExcalidrawElement[]
   ) => void;
   broadcastCursorPosition: (x: number, y: number, tool?: string) => void;
-  disconnect: () => void;
 }
 
 export function useWhiteboardCollaboration({
   boardId,
   wsId,
   enabled = true,
+  externalPresenceState,
+  externalCurrentUserId,
   onRemoteElementsChange,
   onError,
 }: UseWhiteboardCollaborationConfig): UseWhiteboardCollaborationResult {
@@ -91,9 +97,17 @@ export function useWhiteboardCollaboration({
 
   const channelName = `whiteboard-${wsId}-${boardId}`;
 
-  // Fetch current user data
+  // Use external user ID if provided, otherwise fetch locally
+  const resolvedUserId = externalCurrentUserId || currentUserId;
+
+  // Fetch current user data (needed for cursor broadcasting even when using workspace presence)
   useEffect(() => {
     if (!enabled || !boardId) return;
+    // Skip user fetch if external presence provides the user ID
+    if (externalCurrentUserId) {
+      setCurrentUserId(externalCurrentUserId);
+      return;
+    }
 
     isCleanedUpRef.current = false;
     const supabase = createClient();
@@ -133,44 +147,32 @@ export function useWhiteboardCollaboration({
     return () => {
       isCleanedUpRef.current = true;
     };
-  }, [boardId, enabled, onError]);
+  }, [boardId, enabled, externalCurrentUserId, onError]);
 
   // Create current user object with color
   const currentUser = useMemo<CurrentUserInfo>(() => {
     return {
-      id: currentUserId || '',
+      id: resolvedUserId || '',
       displayName: currentUserData?.display_name || 'Unknown',
       email: currentUserData?.email || '',
       avatarUrl: currentUserData?.avatar_url || undefined,
     };
-  }, [currentUserData, currentUserId]);
+  }, [currentUserData, resolvedUserId]);
 
-  // Set up presence tracking
-  const {
-    presenceState,
-    isConnected: isPresenceConnected,
-    disconnect: disconnectPresence,
-  } = useExcalidrawPresence({
-    channelName,
-    currentUser,
-    enabled: enabled && !!boardId,
-    onError,
-  });
-
-  // Set up element sync
+  // Set up element sync (independent of presence)
   const {
     broadcastChanges: broadcastElementChanges,
     isConnected: isElementSyncConnected,
     error: elementSyncError,
   } = useExcalidrawElementSync({
     channelName,
-    userId: currentUserId || '',
-    enabled: enabled && !!currentUserId,
+    userId: resolvedUserId || '',
+    enabled: enabled && !!resolvedUserId,
     onRemoteChanges: onRemoteElementsChange,
     onError,
   });
 
-  // Set up cursor sync
+  // Set up cursor sync (independent of presence)
   const {
     remoteCursors,
     broadcastCursor: broadcastCursorPosition,
@@ -179,56 +181,75 @@ export function useWhiteboardCollaboration({
   } = useExcalidrawCursor({
     channelName,
     user: currentUser,
-    enabled: enabled && !!currentUserId,
+    enabled: enabled && !!resolvedUserId,
   });
 
-  // Combine presence state with cursor positions to create collaborators
+  // Build collaborators from external workspace presence (if provided) or from cursor data
   const collaborators = useMemo(() => {
     const collabMap = new Map<SocketId, Collaborator>();
 
-    // Add users from presence state
-    for (const [userId, presences] of Object.entries(presenceState)) {
-      const presence = presences[0]; // Take first presence entry
-      if (!presence) continue;
+    if (externalPresenceState) {
+      // Use workspace presence for user list
+      for (const [userId, presences] of Object.entries(externalPresenceState)) {
+        const presence = presences[0];
+        if (!presence) continue;
 
-      const cursor = remoteCursors.get(userId);
-      const color = {
-        background: getCollaboratorColor(userId),
-        stroke: getCollaboratorColor(userId),
-      };
+        const cursor = remoteCursors.get(userId);
+        const color = {
+          background: getCollaboratorColor(userId),
+          stroke: getCollaboratorColor(userId),
+        };
 
-      collabMap.set(userId as SocketId, {
-        id: userId,
-        socketId: userId as SocketId,
-        username: presence.user.display_name || 'Unknown',
-        avatarUrl: presence.user.avatar_url || undefined,
-        color,
-        pointer: cursor
-          ? {
-              x: cursor.x,
-              y: cursor.y,
-              tool: cursor.tool as 'pointer' | 'laser',
-            }
-          : undefined,
-      });
+        collabMap.set(userId as SocketId, {
+          id: userId,
+          socketId: userId as SocketId,
+          username: presence.user.display_name || 'Unknown',
+          avatarUrl: presence.user.avatar_url || undefined,
+          color,
+          pointer: cursor
+            ? {
+                x: cursor.x,
+                y: cursor.y,
+                tool: cursor.tool as 'pointer' | 'laser',
+              }
+            : undefined,
+        });
+      }
+    } else {
+      // Fallback: build from cursor data only
+      for (const [userId, cursor] of remoteCursors.entries()) {
+        const color = {
+          background: getCollaboratorColor(userId),
+          stroke: getCollaboratorColor(userId),
+        };
+
+        collabMap.set(userId as SocketId, {
+          id: userId,
+          socketId: userId as SocketId,
+          username: 'Collaborator',
+          color,
+          pointer: {
+            x: cursor.x,
+            y: cursor.y,
+            tool: cursor.tool as 'pointer' | 'laser',
+          },
+        });
+      }
     }
 
     return collabMap;
-  }, [presenceState, remoteCursors]);
+  }, [externalPresenceState, remoteCursors]);
 
-  // Overall connection status
-  const isConnected =
-    isPresenceConnected && isElementSyncConnected && isCursorConnected;
+  // Overall connection status (no separate presence channel needed)
+  const isConnected = isElementSyncConnected && isCursorConnected;
   const isSynced = isConnected && !elementSyncError && !cursorError;
 
   return {
     collaborators,
-    presenceState,
     isConnected,
     isSynced,
-    currentUserId,
+    currentUserId: resolvedUserId,
     broadcastElementChanges,
     broadcastCursorPosition,
-    disconnect: disconnectPresence,
   };
 }

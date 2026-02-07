@@ -17,6 +17,8 @@ export interface YjsCollaborationConfig {
   id: string;
   user: CollaborationUser | null;
   enabled?: boolean;
+  /** Workspace tier — used to control broadcast debounce (free = 2s, paid = immediate) */
+  tier?: string | null;
   onSync?: (synced: boolean) => void;
   onError?: (error: Error) => void;
   onSave?: (version: number) => void;
@@ -44,6 +46,7 @@ export function useYjsCollaboration(
     id,
     user,
     enabled = true,
+    tier,
     onSync,
     onError,
     onSave,
@@ -76,6 +79,9 @@ export function useYjsCollaboration(
 
     console.log('🔄 Initializing SupabaseProvider for document:', id);
 
+    // Free tier: 2s broadcast debounce to reduce realtime costs; paid: immediate
+    const broadcastDebounceMs = !tier || tier === 'FREE' ? 2000 : 0;
+
     // Create SupabaseProvider - it handles everything internally
     const provider = new SupabaseProvider(doc, supabase, {
       id: id,
@@ -84,7 +90,8 @@ export function useYjsCollaboration(
       columnName: columnName,
       awareness,
       resyncInterval: 30000,
-      saveDebounceMs: 300, // Faster saves for better UX (broadcasts are still instant)
+      saveDebounceMs: 300, // Faster saves for better UX
+      broadcastDebounceMs,
     });
 
     providerRef.current = provider;
@@ -164,6 +171,7 @@ export function useYjsCollaboration(
     doc,
     awareness,
     enabled,
+    tier,
     onSync,
     onError,
     onSave,

@@ -1,6 +1,10 @@
 'use client';
 
-import type { Workspace, WorkspaceTaskBoard } from '@tuturuuu/types';
+import type {
+  Workspace,
+  WorkspaceProductTier,
+  WorkspaceTaskBoard,
+} from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useSemanticTaskSearch } from '@tuturuuu/ui/hooks/use-semantic-task-search';
@@ -19,6 +23,7 @@ export type ViewType = 'kanban' | 'list' | 'timeline';
 
 interface Props {
   workspace: Workspace;
+  workspaceTier?: WorkspaceProductTier | null;
   board: WorkspaceTaskBoard;
   tasks: Task[];
   lists: TaskList[];
@@ -28,6 +33,7 @@ interface Props {
 
 export function BoardViews({
   workspace,
+  workspaceTier,
   board,
   tasks,
   lists,
@@ -380,6 +386,7 @@ export function BoardViews({
         return (
           <KanbanBoard
             workspace={workspace}
+            workspaceTier={workspaceTier}
             boardId={board.id}
             tasks={effectiveTasks}
             lists={filteredLists}
@@ -413,6 +420,7 @@ export function BoardViews({
         return (
           <KanbanBoard
             workspace={workspace}
+            workspaceTier={workspaceTier}
             boardId={board.id}
             tasks={effectiveTasks}
             lists={filteredLists}

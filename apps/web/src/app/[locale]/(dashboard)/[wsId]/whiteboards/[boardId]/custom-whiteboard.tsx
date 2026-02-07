@@ -18,11 +18,16 @@ import {
   WifiOffIcon,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { WorkspaceProductTier } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import {
+  useOptionalWorkspacePresenceContext,
+  WorkspacePresenceProvider,
+} from '@tuturuuu/ui/tu-do/providers/workspace-presence-provider';
 import { UserPresenceAvatars } from '@tuturuuu/ui/tu-do/shared/user-presence-avatars';
 import { cn } from '@tuturuuu/utils/format';
 import dynamic from 'next/dynamic';
@@ -48,6 +53,8 @@ interface CustomWhiteboardProps {
     appState?: Partial<AppState>;
     files?: BinaryFiles;
   };
+  workspaceTier?: WorkspaceProductTier | null;
+  isPersonalWorkspace?: boolean;
 }
 
 // Auto-save debounce interval (1 second for responsive saving)
@@ -62,9 +69,34 @@ export function CustomWhiteboard({
   boardId,
   boardName,
   initialData,
+  workspaceTier,
+  isPersonalWorkspace,
 }: CustomWhiteboardProps) {
+  return (
+    <WorkspacePresenceProvider
+      wsId={wsId}
+      tier={workspaceTier ?? null}
+      enabled={!isPersonalWorkspace}
+    >
+      <CustomWhiteboardInner
+        wsId={wsId}
+        boardId={boardId}
+        boardName={boardName}
+        initialData={initialData}
+      />
+    </WorkspacePresenceProvider>
+  );
+}
+
+function CustomWhiteboardInner({
+  wsId,
+  boardId,
+  boardName,
+  initialData,
+}: Omit<CustomWhiteboardProps, 'workspaceTier' | 'isPersonalWorkspace'>) {
   const supabase = createClient();
   const { resolvedTheme } = useTheme();
+  const wsPresence = useOptionalWorkspacePresenceContext();
 
   const [excalidrawAPI, setExcalidrawAPI] =
     useState<ExcalidrawImperativeAPI | null>(null);
@@ -82,6 +114,28 @@ export function CustomWhiteboard({
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pendingChangesRef = useRef(false);
 
+  // Track whiteboard location in workspace presence
+  useEffect(() => {
+    if (!wsPresence) return;
+    wsPresence.updateLocation({ type: 'whiteboard', boardId });
+  }, [wsPresence, boardId]);
+
+  // Build presence state for whiteboard viewers from workspace presence
+  const whiteboardViewers = wsPresence?.getWhiteboardViewers(boardId) ?? [];
+  const whiteboardPresenceState = useMemo(() => {
+    const state: Record<string, Array<{ user: any; online_at: string }>> = {};
+    for (const viewer of whiteboardViewers) {
+      const userId = viewer.user.id;
+      if (!userId) continue;
+      if (!state[userId]) state[userId] = [];
+      state[userId]!.push({
+        user: viewer.user,
+        online_at: viewer.online_at,
+      });
+    }
+    return state;
+  }, [whiteboardViewers]);
+
   // Helper to deep clone elements array
   const cloneElements = useCallback(
     (elements: readonly ExcalidrawElement[]): ExcalidrawElement[] => {
@@ -90,10 +144,9 @@ export function CustomWhiteboard({
     []
   );
 
-  // Set up collaboration
+  // Set up collaboration (cursor + element sync only — presence is handled by workspace provider)
   const {
     collaborators,
-    presenceState,
     isConnected,
     currentUserId,
     broadcastElementChanges,
@@ -102,6 +155,8 @@ export function CustomWhiteboard({
     boardId,
     wsId,
     enabled: true,
+    externalPresenceState: wsPresence ? wsPresence.presenceState : undefined,
+    externalCurrentUserId: wsPresence?.currentUserId,
     onRemoteElementsChange: useCallback(
       (remoteElements: ExcalidrawElement[]) => {
         if (!excalidrawAPI) return;
@@ -124,8 +179,6 @@ export function CustomWhiteboard({
       toast.error('Collaboration connection issue. Changes may not sync.');
     }, []),
   });
-
-  console.log(collaborators);
 
   // Update Excalidraw collaborators when they change
   useEffect(() => {
@@ -515,7 +568,7 @@ export function CustomWhiteboard({
 
           {/* Collaborator Avatars */}
           <UserPresenceAvatars
-            presenceState={presenceState}
+            presenceState={whiteboardPresenceState as any}
             currentUserId={currentUserId}
             maxDisplay={5}
             avatarClassName="h-7 w-7"

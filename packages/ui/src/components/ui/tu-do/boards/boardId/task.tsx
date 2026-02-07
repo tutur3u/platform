@@ -1701,6 +1701,7 @@ function TaskCardInner({
               {!isPersonalWorkspace && (
                 <TaskViewerAvatarsComponent
                   taskId={task.id}
+                  boardId={boardId}
                   isViewing={
                     dialogStateFromProvider.isOpen &&
                     dialogStateFromProvider.task?.id === task.id

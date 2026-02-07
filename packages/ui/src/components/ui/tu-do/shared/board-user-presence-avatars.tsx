@@ -5,7 +5,6 @@ import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import type { UserPresenceState } from '@tuturuuu/ui/hooks/usePresence';
-import { usePresence } from '@tuturuuu/ui/hooks/usePresence';
 import {
   HoverCard,
   HoverCardContent,
@@ -13,6 +12,8 @@ import {
 } from '@tuturuuu/ui/hover-card';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
+import { useEffect, useMemo } from 'react';
+import { useOptionalWorkspacePresenceContext } from '../providers/workspace-presence-provider';
 import type { BoardFiltersMetadata, TaskFilters } from './task-filter.types';
 
 export type ListStatusFilter = 'all' | 'active' | 'not_started';
@@ -95,26 +96,52 @@ function isMatchingFilters(
 
 /**
  * Component for board-specific presence avatars with navigation functionality.
- * Uses composition pattern to extend base avatar behavior without modifying shared components.
+ * Uses workspace presence context when available, falls back to per-board channel.
  */
 export function BoardUserPresenceAvatarsComponent({
-  channelName,
+  boardId,
   currentMetadata,
   onFiltersChange,
   onListStatusFilterChange,
 }: {
-  channelName: string;
+  boardId: string;
   currentMetadata?: BoardFiltersMetadata;
   onFiltersChange: (filters: TaskFilters) => void;
   onListStatusFilterChange: (filter: ListStatusFilter) => void;
 }) {
-  const { presenceState, currentUserId } = usePresence(
-    channelName,
-    currentMetadata
-  );
+  const wsPresence = useOptionalWorkspacePresenceContext();
+
+  // Update location in workspace presence when metadata changes
+  useEffect(() => {
+    if (!wsPresence || !boardId) return;
+    wsPresence.updateLocation(
+      { type: 'board', boardId },
+      currentMetadata as Record<string, any> | undefined
+    );
+  }, [wsPresence, boardId, currentMetadata]);
+
+  const boardViewers = wsPresence?.getBoardViewers(boardId) ?? [];
+  const currentUserId = wsPresence?.currentUserId;
+
+  // Convert workspace presence to the RealtimePresenceState format expected by BoardUserPresenceAvatars
+  const presenceState: RealtimePresenceState<UserPresenceState> =
+    useMemo(() => {
+      const state: RealtimePresenceState<UserPresenceState> = {};
+      for (const viewer of boardViewers) {
+        const userId = viewer.user.id;
+        if (!userId) continue;
+        if (!state[userId]) state[userId] = [];
+        state[userId]!.push({
+          user: viewer.user,
+          online_at: viewer.online_at,
+          metadata: viewer.metadata,
+          presence_ref: userId,
+        });
+      }
+      return state;
+    }, [boardViewers]);
 
   const applyUserBoardView = (metadata: BoardFiltersMetadata) => {
-    // Apply list status filter
     if (metadata?.listStatusFilter) {
       onListStatusFilterChange(metadata.listStatusFilter as ListStatusFilter);
     }
@@ -123,7 +150,6 @@ export function BoardUserPresenceAvatarsComponent({
       metadata?.filters?.assignees?.some((a) => a.id === currentUserId) ||
       false;
 
-    // Apply filters
     if (metadata?.filters) {
       onFiltersChange({
         ...metadata.filters,

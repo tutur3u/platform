@@ -4,7 +4,6 @@ import { User } from '@tuturuuu/icons';
 import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import type { UserPresenceState } from '@tuturuuu/ui/hooks/usePresence';
-import { usePresence } from '@tuturuuu/ui/hooks/usePresence';
 import {
   HoverCard,
   HoverCardContent,
@@ -12,8 +11,8 @@ import {
 } from '@tuturuuu/ui/hover-card';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import { useEffect } from 'react';
-import { useTaskViewerContext } from '../providers/task-viewer-provider';
+import { useEffect, useMemo } from 'react';
+import { useOptionalWorkspacePresenceContext } from '../providers/workspace-presence-provider';
 
 interface UserPresenceAvatarsProps {
   presenceState: RealtimePresenceState<UserPresenceState>;
@@ -30,24 +29,46 @@ interface UserPresenceAvatarsProps {
 
 export function TaskViewerAvatarsComponent({
   taskId,
+  boardId,
   isViewing,
 }: {
   taskId: string;
+  boardId?: string;
   isViewing: boolean;
 }) {
-  const { getTaskViewers, currentUserId, viewTask, unviewTask } =
-    useTaskViewerContext();
+  const wsPresence = useOptionalWorkspacePresenceContext();
 
+  // Update location to include taskId when viewing
   useEffect(() => {
-    if (isViewing) {
-      viewTask(taskId);
-    } else {
-      unviewTask(taskId);
-    }
-  }, [taskId, isViewing, viewTask, unviewTask]);
+    if (!wsPresence) return;
 
-  // Get viewers for the board (not per task)
-  const presenceState = getTaskViewers(taskId);
+    if (isViewing) {
+      wsPresence.updateLocation({ type: 'board', boardId, taskId });
+    } else {
+      // Revert to just board location (no task)
+      wsPresence.updateLocation({ type: 'board', boardId });
+    }
+  }, [wsPresence, taskId, boardId, isViewing]);
+
+  const taskViewers = wsPresence?.getTaskViewers(taskId) ?? [];
+  const currentUserId = wsPresence?.currentUserId;
+
+  // Convert to presenceState format
+  const presenceState: RealtimePresenceState<UserPresenceState> =
+    useMemo(() => {
+      const state: RealtimePresenceState<UserPresenceState> = {};
+      for (const viewer of taskViewers) {
+        const userId = viewer.user.id;
+        if (!userId) continue;
+        if (!state[userId]) state[userId] = [];
+        state[userId]!.push({
+          user: viewer.user,
+          online_at: viewer.online_at,
+          presence_ref: userId,
+        });
+      }
+      return state;
+    }, [taskViewers]);
 
   return (
     <UserPresenceAvatars
@@ -55,30 +76,6 @@ export function TaskViewerAvatarsComponent({
       currentUserId={currentUserId}
       maxDisplay={5}
       avatarClassName="size-4 sm:size-5"
-    />
-  );
-}
-
-export function UserPresenceAvatarsComponent({
-  channelName,
-  currentUser,
-}: {
-  channelName: string;
-  currentUser?: {
-    id: string;
-    email: string;
-    display_name?: string;
-    avatar_url?: string;
-  };
-}) {
-  const { presenceState, currentUserId } = usePresence(channelName);
-
-  return (
-    <UserPresenceAvatars
-      presenceState={presenceState}
-      currentUserId={currentUserId}
-      maxDisplay={5}
-      currentUser={currentUser}
     />
   );
 }

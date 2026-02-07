@@ -30,7 +30,8 @@ export type FeatureId =
   | 'ai_lab'
   | 'voice_assistant'
   | 'workforce'
-  | 'tuna';
+  | 'tuna'
+  | 'realtime_cursors';
 
 /**
  * Feature tier requirements configuration
@@ -48,6 +49,7 @@ export const FEATURE_TIERS: Record<FeatureId, WorkspaceProductTier> = {
   whiteboards: 'FREE',
 
   // PLUS tier features
+  realtime_cursors: 'PLUS',
   documents: 'PLUS',
   chat: 'PLUS',
   time_tracker: 'PLUS',
@@ -59,6 +61,19 @@ export const FEATURE_TIERS: Record<FeatureId, WorkspaceProductTier> = {
   voice_assistant: 'PRO',
   tuna: 'PRO',
 };
+
+/**
+ * Per-board realtime concurrency limits by tier
+ */
+export const REALTIME_LIMITS = {
+  FREE: { maxPresencePerBoard: 10 },
+  PLUS: { maxPresencePerBoard: 50 },
+  PRO: { maxPresencePerBoard: 50 },
+  ENTERPRISE: { maxPresencePerBoard: 50 },
+} as const satisfies Record<
+  WorkspaceProductTier,
+  { maxPresencePerBoard: number }
+>;
 
 /**
  * Get the tier index for comparison

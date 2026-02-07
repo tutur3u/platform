@@ -1,5 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { Workspace } from '@tuturuuu/types';
+import type { Workspace, WorkspaceProductTier } from '@tuturuuu/types';
 import {
   getTaskBoard,
   getTaskLists,
@@ -14,7 +14,7 @@ interface Props {
   params: {
     wsId: string;
     boardId: string;
-    workspace?: Workspace;
+    workspace?: Workspace & { tier?: WorkspaceProductTier | null };
   };
 }
 
@@ -47,6 +47,7 @@ export default async function TaskBoardPage({ params }: Props) {
   return (
     <BoardClient
       workspace={resolvedWorkspace}
+      workspaceTier={(resolvedWorkspace as any)?.tier ?? null}
       initialBoard={board}
       initialTasks={tasks}
       initialLists={lists}

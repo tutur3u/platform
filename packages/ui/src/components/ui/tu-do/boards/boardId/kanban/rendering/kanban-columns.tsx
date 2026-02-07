@@ -19,6 +19,7 @@ interface KanbanColumnsProps {
   boardId: string;
   workspaceId: string;
   isPersonalWorkspace: boolean;
+  cursorsEnabled?: boolean;
   disableSort: boolean;
   selectedTasks: Set<string>;
   isMultiSelectMode: boolean;
@@ -48,6 +49,7 @@ export function KanbanColumns({
   boardId,
   workspaceId,
   isPersonalWorkspace,
+  cursorsEnabled = true,
   disableSort,
   selectedTasks,
   isMultiSelectMode,
@@ -168,8 +170,8 @@ export function KanbanColumns({
         </div>
       </SortableContext>
 
-      {/* Overlay for collaborator cursors */}
-      {!isPersonalWorkspace && boardId && (
+      {/* Overlay for collaborator cursors (gated on tier — free workspaces don't get board cursors) */}
+      {!isPersonalWorkspace && boardId && cursorsEnabled && (
         <CursorOverlayMultiWrapper
           channelName={`board-cursor-${boardId}`}
           containerRef={boardRef}
