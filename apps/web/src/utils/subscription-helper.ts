@@ -58,23 +58,11 @@ export async function createFreeSubscription(
     externalCustomerId = `workspace_${wsId}`;
   }
 
-  // Get the appropriate FREE product based on workspace type
-  // Personal workspace: amountType=free (pricing_model='free')
-  // Non-personal workspace: amountType=seated (pricing_model='seat_based') with tier='FREE'
-  let productQuery = supabase
+  const { data: freeProduct, error: productError } = await supabase
     .from('workspace_subscription_products')
     .select('*')
-    .eq('archived', false);
-
-  if (isPersonal) {
-    productQuery = productQuery.eq('pricing_model', 'free');
-  } else {
-    productQuery = productQuery
-      .eq('pricing_model', 'seat_based')
-      .eq('tier', 'FREE');
-  }
-
-  const { data: freeProduct, error: productError } = await productQuery
+    .eq('archived', false)
+    .eq('pricing_model', 'free')
     .limit(1)
     .maybeSingle();
 

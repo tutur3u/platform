@@ -12,10 +12,10 @@ export default function PlatformSubscriptionsMigrationPage() {
   const [migrationResult, setMigrationResult] = useState<any>(null);
   const [freeMigrationResult, setFreeMigrationResult] = useState<any>(null);
 
-  const migrateMutation = useMutation({
+  const cancelSubscriptionMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch('/api/platform/migrate-subscriptions', {
-        method: 'POST',
+      const res = await fetch('/api/platform/subscriptions', {
+        method: 'DELETE',
       });
 
       const data = await res.json();
@@ -45,9 +45,9 @@ export default function PlatformSubscriptionsMigrationPage() {
     },
   });
 
-  const migrateFreeMutation = useMutation({
+  const createFreeSubscriptionMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch('/api/platform/migrate-free-subscriptions', {
+      const res = await fetch('/api/platform/subscriptions', {
         method: 'POST',
       });
 
@@ -91,8 +91,8 @@ export default function PlatformSubscriptionsMigrationPage() {
         <AlertTriangle className="h-4 w-4" />
         <AlertTitle>Admin-Only Feature</AlertTitle>
         <AlertDescription>
-          This action will cancel ALL active non-seat-based subscriptions in the
-          system. Use with extreme caution.
+          This action will cancel ALL active subscriptions in the system. Use
+          with extreme caution.
         </AlertDescription>
       </Alert>
 
@@ -107,17 +107,15 @@ export default function PlatformSubscriptionsMigrationPage() {
           <div className="space-y-2 text-sm">
             <p className="font-medium">This migration will:</p>
             <ul className="list-inside list-disc space-y-1 text-muted-foreground">
-              <li>
-                Scan all active non-seat-based subscriptions (excluding personal
-                workspaces)
-              </li>
+              <li>Scan all active subscriptions</li>
               <li>Revoke old subscriptions in Polar immediately</li>
               <li>
                 Webhook system automatically recreates subscriptions for free
                 plan
               </li>
               <li>
-                Users can now upgrade to seat-based plans for their workspaces
+                User can then upgrade to fixed-price plan (personal workspace)
+                or seat-based plan (team workspace)
               </li>
             </ul>
           </div>
@@ -173,20 +171,20 @@ export default function PlatformSubscriptionsMigrationPage() {
           )}
 
           <Button
-            onClick={() => migrateMutation.mutate()}
-            disabled={migrateMutation.isPending}
+            onClick={() => cancelSubscriptionMutation.mutate()}
+            disabled={cancelSubscriptionMutation.isPending}
             variant="destructive"
             className="w-full"
           >
-            {migrateMutation.isPending ? (
+            {cancelSubscriptionMutation.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Migrating...
+                Cancelling...
               </>
             ) : (
               <>
                 <Zap className="mr-2 h-4 w-4" />
-                Execute Global Migration
+                Cancel Old Subscriptions
               </>
             )}
           </Button>
@@ -204,8 +202,8 @@ export default function PlatformSubscriptionsMigrationPage() {
           <div className="space-y-2 text-sm">
             <p className="font-medium">This migration will:</p>
             <ul className="list-inside list-disc space-y-1 text-muted-foreground">
-              <li>Find all personal workspaces without active subscriptions</li>
-              <li>Subscribe personal workspaces to free product</li>
+              <li>Find all workspaces without active subscriptions</li>
+              <li>Subscribe workspaces to free product</li>
               <li>Skip workspaces that already have active subscriptions</li>
             </ul>
           </div>
@@ -261,15 +259,15 @@ export default function PlatformSubscriptionsMigrationPage() {
           )}
 
           <Button
-            onClick={() => migrateFreeMutation.mutate()}
-            disabled={migrateFreeMutation.isPending}
+            onClick={() => createFreeSubscriptionMutation.mutate()}
+            disabled={createFreeSubscriptionMutation.isPending}
             variant="default"
             className="w-full"
           >
-            {migrateFreeMutation.isPending ? (
+            {createFreeSubscriptionMutation.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creating Free Subscriptions...
+                Creating...
               </>
             ) : (
               <>
