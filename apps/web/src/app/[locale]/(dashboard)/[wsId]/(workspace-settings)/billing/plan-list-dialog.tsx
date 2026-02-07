@@ -76,6 +76,7 @@ export function PlanListDialog({
 
       const isSeatBased = firstPrice?.amountType === 'seat_based';
       const isFixed = firstPrice?.amountType === 'fixed';
+      const isFreeModel = firstPrice?.amountType === 'free';
 
       const price = isFixed ? firstPrice.priceAmount : null;
 
@@ -88,8 +89,9 @@ export function PlanListDialog({
       const maxSeats = isSeatBased ? firstPrice?.seatTiers?.maximumSeats : null;
 
       if (
-        (isPersonalWorkspace && isSeatBased) ||
-        (!isPersonalWorkspace && !isSeatBased)
+        !isFreeModel &&
+        ((isPersonalWorkspace && isSeatBased) ||
+          (!isPersonalWorkspace && !isSeatBased))
       ) {
         // Exclude seat-based plans for personal workspaces
         return null;
@@ -121,17 +123,17 @@ export function PlanListDialog({
     })
     .filter((plan) => plan !== null)
     .sort((a, b) => {
+      if (a!.isFree) return -1;
+
       if (a.pricingModel === 'seat_based' && b.pricingModel === 'seat_based')
         return (a.pricePerSeat ?? 0) - (b.pricePerSeat ?? 0);
 
       return (a.price ?? 0) - (b.price ?? 0);
     });
 
-  console.log('allPlans', allPlans);
-
   // Filter plans by selected billing cycle (Free plan shown in both)
   const filteredPlans = allPlans.filter(
-    (plan) => plan.billingCycle === selectedCycle
+    (plan) => plan.isFree || plan.billingCycle === selectedCycle
   );
 
   // Get plan styling based on tier
@@ -261,7 +263,7 @@ export function PlanListDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto sm:max-w-4xl lg:max-w-5xl">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto sm:max-w-4xl lg:max-w-6xl">
         {/* Decorative Background */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-40">
           <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-blue/30 via-dynamic-purple/20 to-transparent blur-3xl" />

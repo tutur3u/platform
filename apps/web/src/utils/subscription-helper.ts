@@ -20,7 +20,7 @@ export async function hasActiveSubscription(
   return (count ?? 0) > 0;
 }
 
-// Helper function to create a free subscription for a personal workspace in Polar
+// Helper function to create a free subscription for a workspace in Polar
 export async function createFreeSubscription(
   polar: Polar,
   supabase: TypedSupabaseClient,
@@ -39,17 +39,16 @@ export async function createFreeSubscription(
     .from('workspaces')
     .select('*')
     .eq('id', wsId)
-    .eq('personal', true)
     .maybeSingle();
 
   if (!workspace) {
     console.error(
-      `Personal workspace not found for wsId ${wsId}, cannot create free subscription`
+      `Workspace not found for wsId ${wsId}, cannot create free subscription`
     );
     return null;
   }
 
-  // Get the appropriate FREE product for personal workspace
+  // Get the appropriate FREE product for workspace
   const { data: freeProduct, error: productError } = await supabase
     .from('workspace_subscription_products')
     .select('*')
