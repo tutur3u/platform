@@ -503,8 +503,8 @@ export default function GroupReportsClient({
             </div>
           )}
         </div>
-        {userId && canCreateReports ? (
-          <div className="flex flex-row items-center gap-2">
+        <div className="flex flex-row items-center gap-2">
+          {userId && canCreateReports ? (
             <Button
               type="button"
               onClick={() => setQueryParams({ reportId: 'new' })}
@@ -512,8 +512,8 @@ export default function GroupReportsClient({
             >
               {t('common.new')}
             </Button>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
       </div>
 
       {Boolean(groupId && userId) &&
@@ -553,6 +553,18 @@ export default function GroupReportsClient({
             selectedManagerName={effectiveCreatorName ?? undefined}
             onChangeManagerAction={(name) => setSelectedManagerName(name)}
             canCheckUserAttendance={canCheckUserAttendance}
+            feedbackUser={
+              userId
+                ? ({
+                    id: userId,
+                    full_name: usersQuery.data?.find((u) => u.id === userId)
+                      ?.full_name,
+                  } as WorkspaceUser)
+                : null
+            }
+            feedbackGroupName={groupQuery.data?.name ?? groupNameFallback}
+            canEditFeedback={canUpdateReports}
+            canDeleteFeedback={canDeleteReports}
           />
         ) : null)}
     </div>

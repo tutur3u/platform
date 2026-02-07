@@ -1,3 +1,4 @@
+import { Loader2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { AutosizeTextarea } from '@tuturuuu/ui/custom/autosize-textarea';
 import {
@@ -33,6 +34,7 @@ export default function UserReportForm({
   onChangeManager,
   canUpdate = true,
   canDelete = false,
+  isSubmitting = false,
 }: {
   isNew: boolean;
   form: UseFormReturn<z.infer<typeof UserReportFormSchema>>;
@@ -45,6 +47,7 @@ export default function UserReportForm({
   onChangeManager?: (name?: string) => void;
   canUpdate?: boolean;
   canDelete?: boolean;
+  isSubmitting?: boolean;
 }) {
   const t = useTranslations();
   return (
@@ -145,8 +148,9 @@ export default function UserReportForm({
             <Button
               type="submit"
               className="w-full"
-              disabled={!form.formState.isDirty || !canUpdate}
+              disabled={!form.formState.isDirty || !canUpdate || isSubmitting}
             >
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
               {submitLabel}
             </Button>
             {!isNew && onDelete && canDelete && (

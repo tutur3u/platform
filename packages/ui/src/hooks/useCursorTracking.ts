@@ -4,6 +4,7 @@ import type { User } from '@tuturuuu/types/primitives/User';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import type { RefObject } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { usePageVisibility } from './use-page-visibility';
 
 export interface CursorPosition {
   x: number;
@@ -23,6 +24,7 @@ export function useCursorTracking(
     new Map()
   );
   const [error, setError] = useState<boolean>(false);
+  const pageVisible = usePageVisibility();
   const channelRef = useRef<RealtimeChannel | null>(null);
   const isCleanedUpRef = useRef(false);
   const throttleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -34,7 +36,8 @@ export function useCursorTracking(
   const animationFrameId = useRef<number | null>(null);
 
   const ANIMATION_FACTOR = 0.2;
-  const THROTTLE_MS = 50; // Broadcast cursor position every 50ms max
+  const THROTTLE_MS = 250; // Broadcast cursor position every 250ms max (4/sec)
+  const MOVEMENT_THRESHOLD = 5; // Min px distance to trigger a broadcast
   const CURSOR_TIMEOUT = 5000; // Remove cursor if no update for 5 seconds
   const MAX_ERROR_COUNT = 3; // Disable after 3 consecutive errors
 
@@ -101,6 +104,9 @@ export function useCursorTracking(
     [handleError] // No dependencies - uses only refs
   );
 
+  const pageVisibleRef = useRef(pageVisible);
+  pageVisibleRef.current = pageVisible;
+
   const smoothAnimate = useCallback(() => {
     currentPosition.current.x +=
       (targetPosition.current.x - currentPosition.current.x) * ANIMATION_FACTOR;
@@ -114,9 +120,9 @@ export function useCursorTracking(
       targetPosition.current.y - currentPosition.current.y
     );
 
-    // If the distance between the target and actual position is greater than 0.5px, broadcast the cursor
-    // This is to prevent the cursor from being broadcasted too often, allowing stale cursors to be removed
-    if (distance > 0.5) {
+    // Only broadcast when the tab is visible and the cursor has moved enough
+    // to avoid wasting broadcasts on animation tail or background tabs
+    if (distance > MOVEMENT_THRESHOLD && pageVisibleRef.current) {
       broadcastCursor(
         currentPosition.current.x,
         currentPosition.current.y,

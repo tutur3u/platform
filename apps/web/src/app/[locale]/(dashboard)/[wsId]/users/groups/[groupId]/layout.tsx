@@ -11,7 +11,7 @@ import {
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
-import { verifyGroupAccess } from '../utils';
+import { getUserGroupMemberships, verifyGroupAccess } from '../utils';
 import SelectGroupGateway from './select-group-gateway';
 
 interface LayoutProps {
@@ -27,12 +27,17 @@ export default async function Layout({ children, params }: LayoutProps) {
   const { wsId: id, groupId } = await params;
   const wsId = await normalizeWorkspaceId(id);
 
-  if (groupId === '~') {
-    return <SelectGroupGateway wsId={wsId} />;
-  }
-
   const { containsPermission } = await getPermissions({ wsId });
   const hasManageUsersPermission = containsPermission('manage_users');
+
+  if (groupId === '~') {
+    const accessibleGroupIds = hasManageUsersPermission
+      ? null
+      : await getUserGroupMemberships(wsId);
+    return (
+      <SelectGroupGateway wsId={wsId} accessibleGroupIds={accessibleGroupIds} />
+    );
+  }
 
   if (!hasManageUsersPermission) {
     await verifyGroupAccess(wsId, groupId);

@@ -46,11 +46,6 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, groupId, postId }) => {
-        // Layout handles group selection when groupId is '~'
-        if (groupId === '~') {
-          return null;
-        }
-
         const t = await getTranslations();
         const { containsPermission } = await getPermissions({ wsId });
         const canViewUserGroupsPosts = containsPermission(

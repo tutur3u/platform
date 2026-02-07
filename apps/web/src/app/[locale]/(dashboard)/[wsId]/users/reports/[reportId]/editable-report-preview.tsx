@@ -7,6 +7,7 @@ import {
   Undo,
 } from '@tuturuuu/icons';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Collapsible,
@@ -25,6 +26,7 @@ import type { ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import * as z from 'zod';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
+import UserFeedbackSection from '../../groups/[groupId]/reports/user-feedback-section';
 import { DeleteReportDialog } from './components/delete-report-dialog';
 import { ReportActions } from './components/report-actions';
 import { ReportHistory } from './components/report-history';
@@ -58,6 +60,10 @@ export default function EditableReportPreview({
   canCheckUserAttendance,
   canUpdateReports = false,
   canDeleteReports = false,
+  feedbackUser,
+  feedbackGroupName,
+  canEditFeedback = false,
+  canDeleteFeedback = false,
 }: {
   wsId: string;
   report: UserReport;
@@ -79,6 +85,10 @@ export default function EditableReportPreview({
   canCheckUserAttendance?: boolean;
   canUpdateReports?: boolean;
   canDeleteReports?: boolean;
+  feedbackUser?: WorkspaceUser | null;
+  feedbackGroupName?: string;
+  canEditFeedback?: boolean;
+  canDeleteFeedback?: boolean;
 }) {
   const locale = useLocale();
   const t = useTranslations();
@@ -411,6 +421,9 @@ export default function EditableReportPreview({
                 onChangeManager={(name) => onChangeManagerAction?.(name)}
                 canUpdate={canUpdateReports}
                 canDelete={canDeleteReports}
+                isSubmitting={
+                  createMutation.isPending || updateMutation.isPending
+                }
               />
             )}
           </CollapsibleContent>
@@ -456,6 +469,17 @@ export default function EditableReportPreview({
               />
             </CollapsibleContent>
           </Collapsible>
+        )}
+
+        {feedbackUser && feedbackGroupName && (
+          <UserFeedbackSection
+            user={feedbackUser}
+            groupName={feedbackGroupName}
+            wsId={wsId}
+            groupId={groupId || report.group_id || ''}
+            canEditFeedback={canEditFeedback}
+            canDeleteFeedback={canDeleteFeedback}
+          />
         )}
       </div>
 

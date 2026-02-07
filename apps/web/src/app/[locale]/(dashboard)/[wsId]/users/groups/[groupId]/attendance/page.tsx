@@ -29,10 +29,6 @@ export default async function UserGroupAttendancePage({
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, groupId }) => {
-        if (groupId === '~') {
-          return null;
-        }
-
         const { containsPermission } = await getPermissions({
           wsId,
         });

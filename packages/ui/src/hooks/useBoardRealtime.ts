@@ -358,9 +358,12 @@ export function useBoardRealtime(
         }
       );
     }
-    // Set up listeners for task-related tables using helper function
-    // NOTE: These listeners fetch updated relations for the specific task and merge
-    // into cache, avoiding full refetch which would cause UI flicker.
+    // These relation listeners are intentionally UNFILTERED (no server-side filter).
+    // Unlike `tasks` (filterable by `list_id`) and `task_lists` (by `board_id`),
+    // these tables lack a `board_id` column, so server-side filtering isn't possible
+    // without schema denormalization. Client-side filtering via `stableTaskIds.includes()`
+    // inside the callback keeps overhead low (~1,860 events/week at current scale).
+    // Revisit with server-side filtering if DAU exceeds 100+ users.
     setupTaskRelationListener(
       'task_assignees',
       'task assignees (catches all tasks including newly created ones)'

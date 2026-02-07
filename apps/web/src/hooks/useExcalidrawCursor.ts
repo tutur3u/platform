@@ -1,5 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { RealtimeChannel } from '@tuturuuu/supabase/next/realtime';
+import { usePageVisibility } from '@tuturuuu/ui/hooks/use-page-visibility';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -36,7 +37,7 @@ export function useExcalidrawCursor({
   channelName,
   user,
   enabled = true,
-  throttleMs = 50,
+  throttleMs = 250,
   cursorTimeoutMs = 5000,
 }: ExcalidrawCursorConfig): ExcalidrawCursorResult {
   const [remoteCursors, setRemoteCursors] = useState<
@@ -45,11 +46,15 @@ export function useExcalidrawCursor({
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState(false);
 
+  const pageVisible = usePageVisibility();
+
   const channelRef = useRef<RealtimeChannel | null>(null);
   const isCleanedUpRef = useRef(false);
   const lastBroadcastTimeRef = useRef(0);
   const throttleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const errorCountRef = useRef(0);
+  const pageVisibleRef = useRef(pageVisible);
+  pageVisibleRef.current = pageVisible;
 
   const MAX_ERROR_COUNT = 3;
 
@@ -68,6 +73,7 @@ export function useExcalidrawCursor({
     async (x: number, y: number, tool?: string) => {
       if (!channelRef.current || !enabled) return;
       if (errorCountRef.current >= MAX_ERROR_COUNT) return;
+      if (!pageVisibleRef.current) return;
 
       const now = Date.now();
       const timeSinceLastBroadcast = now - lastBroadcastTimeRef.current;

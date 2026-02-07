@@ -89,6 +89,20 @@ export function useReportMutations({
             : null;
       }
 
+      // Check for duplicate report with same user, group, and title
+      const { data: existing } = await supabase
+        .from('external_user_monthly_reports')
+        .select('id')
+        .eq('user_id', report.user_id)
+        .eq('group_id', report.group_id)
+        .eq('title', payload.title)
+        .limit(1)
+        .maybeSingle();
+
+      if (existing) {
+        throw new Error(t('ws-reports.duplicate_report_exists'));
+      }
+
       const now = new Date().toISOString();
       const { data, error } = await supabase
         .from('external_user_monthly_reports')
