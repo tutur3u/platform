@@ -3,6 +3,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@ncthub/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@ncthub/ui/tabs';
 import { getInitials } from '@ncthub/utils/name-helper';
+import AnimatedSection from '../animated-section';
 import { leaders, teams } from './data';
 
 export default function OrganizersTeamSection() {
@@ -27,23 +28,22 @@ export default function OrganizersTeamSection() {
             </h3>
             <div className="flex flex-wrap justify-center gap-8">
               {leaders.map((leader, index) => (
-                <div
-                  key={index}
-                  className="card-hover flex w-72 flex-col items-center"
-                >
-                  <Avatar className="h-auto w-3/4 rounded-none">
-                    <AvatarImage src={leader.avatar} alt={leader.name} />
-                    <AvatarFallback className="gradient-bg font-black text-3xl text-white">
-                      {getInitials(leader.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="glass-card w-full rounded-2xl px-8 py-12 text-center">
-                    <h4 className="mb-2 font-black text-xl">{leader.name}</h4>
-                    <p className="font-medium text-lg text-secondary">
-                      {leader.role}
-                    </p>
+                <AnimatedSection key={index} delay={index * 0.1}>
+                  <div className="card-hover flex w-72 flex-col items-center">
+                    <Avatar className="h-auto w-3/4 rounded-none">
+                      <AvatarImage src={leader.avatar} alt={leader.name} />
+                      <AvatarFallback className="gradient-bg font-black text-3xl text-white">
+                        {getInitials(leader.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="glass-card w-full rounded-2xl px-8 py-12 text-center">
+                      <h4 className="mb-2 font-black text-xl">{leader.name}</h4>
+                      <p className="font-medium text-lg text-secondary">
+                        {leader.role}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                </AnimatedSection>
               ))}
             </div>
           </div>
@@ -88,25 +88,33 @@ export default function OrganizersTeamSection() {
                   {/* Team Members Grid */}
                   <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                     {team.members.map((member, memberIndex) => (
-                      <div
+                      <AnimatedSection
                         key={memberIndex}
-                        className="group flex flex-col items-center text-center"
+                        delay={
+                          Math.floor(memberIndex / 5) * 0.08 +
+                          (memberIndex % 5) * 0.03
+                        }
                       >
-                        <Avatar className="mb-3 h-20 w-20 transition-transform duration-300 group-hover:scale-110 sm:h-24 sm:w-24">
-                          <AvatarImage src={member.avatar} alt={member.name} />
-                          <AvatarFallback className="bg-secondary/20 font-bold text-lg">
-                            {getInitials(member.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="font-semibold text-foreground text-sm">
-                          {member.name}
-                        </span>
-                        {member.role && (
-                          <span className="text-foreground/60 text-xs">
-                            {member.role}
+                        <div className="group flex flex-col items-center text-center">
+                          <Avatar className="mb-3 h-20 w-20 transition-transform duration-300 group-hover:scale-110 sm:h-24 sm:w-24">
+                            <AvatarImage
+                              src={member.avatar}
+                              alt={member.name}
+                            />
+                            <AvatarFallback className="bg-secondary/20 font-bold text-lg">
+                              {getInitials(member.name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-semibold text-foreground text-sm">
+                            {member.name}
                           </span>
-                        )}
-                      </div>
+                          {member.role && (
+                            <span className="text-foreground/60 text-xs">
+                              {member.role}
+                            </span>
+                          )}
+                        </div>
+                      </AnimatedSection>
                     ))}
                   </div>
                 </div>

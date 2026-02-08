@@ -1,4 +1,8 @@
+'use client';
+
 import Image from 'next/image';
+
+import AnimatedSection from './animated-section';
 
 export default function SponsorsSection() {
   const bronzeCategories = [
@@ -29,18 +33,17 @@ export default function SponsorsSection() {
             </h3>
             <div className="flex items-center justify-center gap-8">
               {[1, 2].map((index) => (
-                <div
-                  key={index}
-                  className="glass-card card-hover h-30 max-w-md flex-1 rounded-2xl p-6"
-                >
-                  <Image
-                    src="/sponsor_example.png"
-                    alt={`Gold Sponsor ${index}`}
-                    width={100}
-                    height={100}
-                    className="h-full w-full object-contain"
-                  />
-                </div>
+                <AnimatedSection key={index} delay={index * 0.1}>
+                  <div className="glass-card card-hover h-30 max-w-md flex-1 rounded-2xl p-6">
+                    <Image
+                      src="/sponsor_example.png"
+                      alt={`Gold Sponsor ${index}`}
+                      width={100}
+                      height={100}
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
+                </AnimatedSection>
               ))}
             </div>
           </div>
@@ -52,18 +55,17 @@ export default function SponsorsSection() {
             </h3>
             <div className="flex flex-wrap items-center justify-center gap-6">
               {[1, 2, 3, 4].map((index) => (
-                <div
-                  key={index}
-                  className="glass-card card-hover h-25 flex-1 rounded-2xl p-5"
-                >
-                  <Image
-                    src="/sponsor_example.png"
-                    alt={`Silver Sponsor ${index}`}
-                    width={100}
-                    height={100}
-                    className="h-full w-full object-contain"
-                  />
-                </div>
+                <AnimatedSection key={index} delay={index * 0.08}>
+                  <div className="glass-card card-hover h-25 flex-1 rounded-2xl p-5">
+                    <Image
+                      src="/sponsor_example.png"
+                      alt={`Silver Sponsor ${index}`}
+                      width={100}
+                      height={100}
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
+                </AnimatedSection>
               ))}
             </div>
           </div>
@@ -74,28 +76,30 @@ export default function SponsorsSection() {
               Bronze Sponsors
             </h3>
             <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-              {bronzeCategories.map((category) => (
-                <div key={category} className="space-y-4">
-                  <h4 className="text-center font-bold text-lg text-primary uppercase shadow-text">
-                    {category}
-                  </h4>
-                  <div className="flex flex-col gap-4">
-                    {[1, 2, 3, 4].map((index) => (
-                      <div
-                        key={index}
-                        className="glass-card card-hover h-25 rounded-xl p-4"
-                      >
-                        <Image
-                          src="/sponsor_example.png"
-                          alt={`${category} ${index}`}
-                          width={100}
-                          height={100}
-                          className="h-full w-full object-contain"
-                        />
-                      </div>
-                    ))}
+              {bronzeCategories.map((category, catIndex) => (
+                <AnimatedSection key={category} delay={catIndex * 0.1}>
+                  <div className="space-y-4">
+                    <h4 className="text-center font-bold text-lg text-primary uppercase shadow-text">
+                      {category}
+                    </h4>
+                    <div className="flex flex-col gap-4">
+                      {[1, 2, 3, 4].map((index) => (
+                        <div
+                          key={index}
+                          className="glass-card card-hover h-25 rounded-xl p-4"
+                        >
+                          <Image
+                            src="/sponsor_example.png"
+                            alt={`${category} ${index}`}
+                            width={100}
+                            height={100}
+                            className="h-full w-full object-contain"
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                </AnimatedSection>
               ))}
             </div>
           </div>

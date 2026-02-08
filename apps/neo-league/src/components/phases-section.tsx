@@ -1,3 +1,7 @@
+'use client';
+
+import AnimatedSection from './animated-section';
+
 export default function PhasesSection() {
   const phases = [
     {
@@ -89,18 +93,20 @@ export default function PhasesSection() {
 
         <div className="grid gap-8 md:grid-cols-3">
           {phases.map((phase, index) => (
-            <div key={index} className="group relative">
-              <div className="glass-card card-hover h-full rounded-2xl p-8">
-                <div className="gradient-bg absolute -top-4 -right-4 flex h-16 w-16 items-center justify-center rounded-full font-black text-white text-xl shadow-lg">
-                  {phase.round}
+            <AnimatedSection key={index} delay={index * 0.1}>
+              <div className="group relative">
+                <div className="glass-card card-hover h-full rounded-2xl p-8">
+                  <div className="gradient-bg absolute -top-4 -right-4 flex h-16 w-16 items-center justify-center rounded-full font-black text-white text-xl shadow-lg">
+                    {phase.round}
+                  </div>
+                  <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-xl bg-secondary/30 text-primary dark:bg-secondary/20">
+                    {phase.icon}
+                  </div>
+                  <h3 className="mb-4 font-black text-2xl">{phase.title}</h3>
+                  <p className="text-foreground">{phase.description}</p>
                 </div>
-                <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-xl bg-secondary/30 text-primary dark:bg-secondary/20">
-                  {phase.icon}
-                </div>
-                <h3 className="mb-4 font-black text-2xl">{phase.title}</h3>
-                <p className="text-foreground">{phase.description}</p>
               </div>
-            </div>
+            </AnimatedSection>
           ))}
         </div>
       </div>

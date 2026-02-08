@@ -1,6 +1,9 @@
+'use client';
+
 import { Avatar, AvatarFallback, AvatarImage } from '@ncthub/ui/avatar';
 import { getInitials } from '@ncthub/utils/name-helper';
 
+import AnimatedSection from '../animated-section';
 import { mentors } from './data';
 
 export default function MentorsSection() {
@@ -19,18 +22,23 @@ export default function MentorsSection() {
 
         <div className="grid grid-cols-2 gap-6 lg:grid-cols-4">
           {mentors.map((mentor, index) => (
-            <div key={index} className="card-hover flex flex-col items-center">
-              <Avatar className="h-auto w-3/4 rounded-none">
-                <AvatarImage src={mentor.avatar} alt={mentor.name} />
-                <AvatarFallback className="gradient-bg font-black text-2xl text-white">
-                  {getInitials(mentor.name)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="glass-card w-full rounded-xl px-6 py-8 text-center">
-                <h4 className="mb-1 font-black">{mentor.name}</h4>
-                <p className="text-base text-foreground">{mentor.field}</p>
+            <AnimatedSection
+              key={index}
+              delay={Math.floor(index / 4) * 0.1 + (index % 4) * 0.05}
+            >
+              <div className="card-hover flex flex-col items-center">
+                <Avatar className="h-auto w-3/4 rounded-none">
+                  <AvatarImage src={mentor.avatar} alt={mentor.name} />
+                  <AvatarFallback className="gradient-bg font-black text-2xl text-white">
+                    {getInitials(mentor.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="glass-card w-full rounded-xl px-6 py-8 text-center">
+                  <h4 className="mb-1 font-black">{mentor.name}</h4>
+                  <p className="text-base text-foreground">{mentor.field}</p>
+                </div>
               </div>
-            </div>
+            </AnimatedSection>
           ))}
         </div>
       </div>

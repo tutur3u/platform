@@ -1,3 +1,7 @@
+'use client';
+
+import AnimatedSection from './animated-section';
+
 export default function DatesSection() {
   const importantDates = [
     {
@@ -46,44 +50,45 @@ export default function DatesSection() {
 
           <div className="space-y-12">
             {importantDates.map((item, index) => (
-              <div
-                key={index}
-                className={`relative flex items-center ${
-                  index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'
-                }`}
-              >
-                {/* Circle with Round Number */}
-                <div className="absolute left-6 z-10 flex h-12 w-12 -translate-x-1/2 items-center justify-center md:left-1/2">
-                  <div className="gradient-bg flex h-12 w-12 items-center justify-center rounded-full font-black text-white shadow-lg ring-4 ring-background">
-                    {item.round}
-                  </div>
-                </div>
-
-                {/* Content Card */}
+              <AnimatedSection key={index} delay={index * 0.1}>
                 <div
-                  className={`ml-16 w-full md:ml-0 md:w-[calc(50%-3rem)] ${
-                    index % 2 === 0 ? 'md:pr-8' : 'md:pl-8'
+                  className={`relative flex items-center ${
+                    index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'
                   }`}
                 >
-                  <div className="glass-card card-hover rounded-2xl p-6">
-                    <div className="mb-2 flex items-center justify-between">
-                      <span className="rounded-full bg-primary/20 px-3 py-1 font-bold text-primary text-xs">
-                        {item.type}
-                      </span>
-                      <span className="gradient-text font-black text-lg">
-                        {item.date}
-                      </span>
+                  {/* Circle with Round Number */}
+                  <div className="absolute left-6 z-10 flex h-12 w-12 -translate-x-1/2 items-center justify-center md:left-1/2">
+                    <div className="gradient-bg flex h-12 w-12 items-center justify-center rounded-full font-black text-white shadow-lg ring-4 ring-background">
+                      {item.round}
                     </div>
-                    <h3 className="mb-2 font-black text-xl">{item.event}</h3>
-                    <p className="text-foreground text-sm">
-                      {item.description}
-                    </p>
                   </div>
-                </div>
 
-                {/* Spacer for alternating layout on desktop */}
-                <div className="hidden md:block md:w-[calc(50%-3rem)]" />
-              </div>
+                  {/* Content Card */}
+                  <div
+                    className={`ml-16 w-full md:ml-0 md:w-[calc(50%-3rem)] ${
+                      index % 2 === 0 ? 'md:pr-8' : 'md:pl-8'
+                    }`}
+                  >
+                    <div className="glass-card card-hover rounded-2xl p-6">
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="rounded-full bg-primary/20 px-3 py-1 font-bold text-primary text-xs">
+                          {item.type}
+                        </span>
+                        <span className="gradient-text font-black text-lg">
+                          {item.date}
+                        </span>
+                      </div>
+                      <h3 className="mb-2 font-black text-xl">{item.event}</h3>
+                      <p className="text-foreground text-sm">
+                        {item.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Spacer for alternating layout on desktop */}
+                  <div className="hidden md:block md:w-[calc(50%-3rem)]" />
+                </div>
+              </AnimatedSection>
             ))}
           </div>
 

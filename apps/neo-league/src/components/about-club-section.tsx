@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import AnimationSection from './animated-section';
 
 export default function AboutClubSection() {
   return (
@@ -9,7 +10,7 @@ export default function AboutClubSection() {
         ═══════════════════════════════════════════════════════════════════ */}
         <div className="mb-28 grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
           {/* Left Column - Content */}
-          <div className="animate-slide-up">
+          <AnimationSection>
             {/* Logo Badge */}
             <div className="mb-6 flex items-center gap-3">
               <div className="relative h-14 w-14 overflow-hidden rounded-xl border-2 border-white/50 bg-white/30 p-2 shadow-lg backdrop-blur-sm">
@@ -56,10 +57,10 @@ export default function AboutClubSection() {
               everyone feels empowered to learn, grow, and contribute their
               unique talents.
             </p>
-          </div>
+          </AnimationSection>
 
           {/* Right Column - Images */}
-          <div className="animate-slide-up" style={{ animationDelay: '0.15s' }}>
+          <AnimationSection delay={0.2}>
             <div className="relative">
               {/* Main Feature Image */}
               <div className="relative aspect-4/3 overflow-hidden rounded-2xl shadow-2xl">
@@ -94,7 +95,7 @@ export default function AboutClubSection() {
                 </div>
               </div>
             </div>
-          </div>
+          </AnimationSection>
         </div>
 
         {/* ═══════════════════════════════════════════════════════════════════
@@ -103,9 +104,9 @@ export default function AboutClubSection() {
         <div className="mb-28">
           <div className="mb-12 grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
             {/* Left Column - Images */}
-            <div
-              className="order-2 grid animate-slide-up grid-cols-2 gap-4 md:order-1"
-              style={{ animationDelay: '0.1s' }}
+            <AnimationSection
+              className="order-2 grid grid-cols-2 gap-4 md:order-1"
+              delay={0.1}
             >
               <div className="relative aspect-3/4 overflow-hidden rounded-2xl shadow-xl">
                 <Image
@@ -135,13 +136,10 @@ export default function AboutClubSection() {
                   </span>
                 </div>
               </div>
-            </div>
+            </AnimationSection>
 
             {/* Right Column - Content */}
-            <div
-              className="order-1 animate-slide-up md:order-2"
-              style={{ animationDelay: '0.2s' }}
-            >
+            <AnimationSection className="order-1 md:order-2" delay={0.2}>
               {/* Header */}
               <div className="mb-6">
                 <p className="mb-2 font-semibold text-primary-foreground text-sm uppercase tracking-[0.25em]">
@@ -185,16 +183,16 @@ export default function AboutClubSection() {
                   INCLUSION
                 </span>
               </div>
-            </div>
+            </AnimationSection>
           </div>
         </div>
 
         {/* ═══════════════════════════════════════════════════════════════════
             OUR PREVIOUS ACTIVITIES SECTION
         ═══════════════════════════════════════════════════════════════════ */}
-        <div>
+        <div className="space-y-10">
           {/* Header */}
-          <div className="mb-10 text-center">
+          <div className="text-center">
             <h3
               className="gradient-text mb-4 animate-slide-up font-black text-3xl md:text-4xl"
               style={{ animationDelay: '0.15s' }}
@@ -215,7 +213,7 @@ export default function AboutClubSection() {
 
           {/* Accent Line Center */}
           <div
-            className="mx-auto mb-10 flex w-fit animate-slide-up items-center gap-2"
+            className="mx-auto flex w-fit animate-slide-up items-center gap-2"
             style={{ animationDelay: '0.25s' }}
           >
             <div className="h-1 w-8 rounded-full bg-brand-light-yellow" />
