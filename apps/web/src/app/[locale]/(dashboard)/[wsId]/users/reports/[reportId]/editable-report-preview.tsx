@@ -300,7 +300,13 @@ export default function EditableReportPreview({
     (selectedLog ? selectedLog.score : representativeScoreValue)?.toFixed(1) ||
     '';
 
-  const { handlePrintExport, handlePngExport, isExporting } = useReportExport({
+  const {
+    handlePrintExport,
+    handlePngExport,
+    isExporting,
+    defaultExportType,
+    setDefaultExportType,
+  } = useReportExport({
     previewTitle,
     isDarkPreview: resolvedReportTheme === 'dark',
     userName: report.user_name,
@@ -556,6 +562,8 @@ export default function EditableReportPreview({
           onReject={() => setShowRejectDialog(true)}
           isApproving={approveMutation.isPending}
           isRejecting={rejectMutation.isPending}
+          defaultExportType={defaultExportType}
+          setDefaultExportType={setDefaultExportType}
         />
 
         <ReportPreview

@@ -5,6 +5,7 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
+  Download,
   Loader2,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
@@ -13,6 +14,12 @@ import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
 import { useWorkspaceConfigs } from '@tuturuuu/ui/hooks/use-workspace-config';
 import {
@@ -22,11 +29,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { useTranslations } from 'next-intl';
+import { toast } from '@tuturuuu/ui/sonner';
+import { useLocale, useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
 import { parseAsString, useQueryStates } from 'nuqs';
 import { useEffect, useMemo, useState } from 'react';
 import { availableConfigs } from '@/constants/configs/reports';
 import EditableReportPreview from '../../../reports/[reportId]/editable-report-preview';
+import {
+  type ReportStatusCounts,
+  ReportStatusIndicator,
+} from '../../../reports/components/report-status-indicator';
+import { BulkReportExporter } from './components/bulk-report-exporter';
 
 // Feature flag for experimental factor functionality
 const ENABLE_FACTOR_CALCULATION = false;
@@ -59,6 +73,14 @@ export default function GroupReportsClient({
   canDeleteReports,
 }: Props) {
   const t = useTranslations();
+  const locale = useLocale();
+  const { resolvedTheme } = useTheme();
+
+  const [bulkExportOpen, setBulkExportOpen] = useState(false);
+  const [bulkReportsToExport, setBulkReportsToExport] = useState<
+    WorkspaceUserReport[]
+  >([]);
+  const [isPreparingBulkExport, setIsPreparingBulkExport] = useState(false);
 
   const [scoreCalculationMethod] = useLocalStorage<'AVERAGE' | 'LATEST'>(
     'scoreCalculationMethod',
@@ -130,6 +152,33 @@ export default function GroupReportsClient({
     return new Set((groupManagersQuery.data ?? []).map((m) => m.id));
   }, [groupManagersQuery.data]);
 
+  // Fetch aggregate report status per user within this group
+  const userStatusQuery = useQuery({
+    queryKey: ['ws', wsId, 'group', groupId, 'user-report-status-summary'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc(
+        'get_user_report_status_summary',
+        { _group_id: groupId, _ws_id: wsId }
+      );
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!groupId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+
+  const userStatusMap = useMemo(() => {
+    const map = new Map<string, ReportStatusCounts>();
+    for (const row of userStatusQuery.data ?? []) {
+      map.set(row.user_id, {
+        pending_count: row.pending_count,
+        approved_count: row.approved_count,
+        rejected_count: row.rejected_count,
+      });
+    }
+    return map;
+  }, [userStatusQuery.data]);
+
   const filteredUsers = useMemo(() => {
     if (!usersQuery.data) return [];
     return usersQuery.data.filter((u) => !managerUserIds.has(u.id));
@@ -140,8 +189,9 @@ export default function GroupReportsClient({
       filteredUsers.map((u) => ({
         value: u.id,
         label: u.full_name || 'No name',
+        icon: <ReportStatusIndicator counts={userStatusMap.get(u.id)} />,
       })) ?? [],
-    [filteredUsers]
+    [filteredUsers, userStatusMap]
   );
 
   const currentUserIndex = useMemo(() => {
@@ -483,8 +533,65 @@ export default function GroupReportsClient({
     [groupManagersQuery.data]
   );
 
+  const handleBulkExport = async (filter: 'ALL' | 'APPROVED') => {
+    const titleFilter = selectedReport?.title;
+
+    if (!titleFilter) {
+      toast.error(t('ws-reports.export_title_missing'));
+      return;
+    }
+
+    setIsPreparingBulkExport(true);
+    try {
+      let query = supabase
+        .from('external_user_monthly_reports')
+        .select(
+          '*, user:workspace_users!user_id!inner(full_name, ws_id), creator:workspace_users!creator_id(full_name), ...workspace_user_groups(group_name:name)'
+        )
+        .eq('group_id', groupId)
+        .eq('workspace_users.ws_id', wsId)
+        .eq('title', titleFilter);
+
+      if (filter === 'APPROVED') {
+        query = query.eq('report_approval_status', 'APPROVED');
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        toast.error(t('ws-reports.no_reports_found'));
+        return;
+      }
+
+      const mappedReports = data.map((raw: any) => ({
+        ...raw,
+        user_name: raw.user?.full_name,
+        creator_name: raw.creator?.full_name,
+        group_name: raw.group_name,
+      }));
+
+      setBulkReportsToExport(mappedReports);
+      setBulkExportOpen(true);
+    } catch (error) {
+      console.error('Failed to fetch reports for bulk export:', error);
+      toast.error(t('ws-reports.failed_fetch_reports'));
+    } finally {
+      setIsPreparingBulkExport(false);
+    }
+  };
+
   return (
     <div className="flex min-h-full w-full flex-col">
+      <BulkReportExporter
+        open={bulkExportOpen}
+        onOpenChange={setBulkExportOpen}
+        reports={bulkReportsToExport}
+        configs={configsData}
+        lang={locale}
+        theme={resolvedTheme === 'dark' ? 'dark' : 'light'}
+      />
       <div className="mb-4 flex flex-row items-center justify-between gap-2">
         <div className="flex flex-1 flex-col gap-2 md:flex-row md:items-center">
           <div className="flex w-full items-center gap-1 sm:w-80 md:w-96">
@@ -589,6 +696,31 @@ export default function GroupReportsClient({
               {t('common.new')}
             </Button>
           ) : null}
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                disabled={isPreparingBulkExport}
+                className="gap-2"
+              >
+                {isPreparingBulkExport ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                {t('ws-reports.export')}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleBulkExport('ALL')}>
+                {t('ws-reports.export_all_images')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleBulkExport('APPROVED')}>
+                {t('ws-reports.export_approved_images')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 

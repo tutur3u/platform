@@ -1,6 +1,5 @@
 'use client';
 
-import { ExternalLink } from '@tuturuuu/icons';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import {
   Accordion,
@@ -119,11 +118,17 @@ export function InvoiceUserHistoryAccordion({
                           </p>
                           <Link
                             href={`/${wsId}/finance/invoices/${invoice.id}`}
-                            className="mt-0.5 shrink-0 text-muted-foreground transition-colors hover:text-primary"
+                            className="mt-0.5 shrink-0"
                             target="_blank"
                             rel="noopener noreferrer"
                           >
-                            <ExternalLink className="h-3 w-3" />
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs"
+                            >
+                              {t('ws-invoices.view_bill')}
+                            </Button>
                           </Link>
                         </div>
                         <div className="shrink-0 text-right">

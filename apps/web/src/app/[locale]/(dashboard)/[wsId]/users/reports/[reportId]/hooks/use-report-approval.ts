@@ -43,6 +43,25 @@ export function createReportQueryInvalidator(
         queryKey: ['ws', wsId, 'approvals', 'reports'],
       }),
     ];
+    // Invalidate group-level and workspace-level status summaries
+    promises.push(
+      queryClient.invalidateQueries({
+        queryKey: ['ws', wsId, 'group-report-status-summary'],
+      })
+    );
+    if (report.group_id) {
+      promises.push(
+        queryClient.invalidateQueries({
+          queryKey: [
+            'ws',
+            wsId,
+            'group',
+            report.group_id,
+            'user-report-status-summary',
+          ],
+        })
+      );
+    }
     if (report.group_id && report.user_id) {
       promises.push(
         queryClient.invalidateQueries({

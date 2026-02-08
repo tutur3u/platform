@@ -132,19 +132,40 @@ export function useReportMutations({
     },
     onSuccess: async (data) => {
       toast.success(t('ws-reports.report_created'));
-      if (report.user_id && report.group_id) {
-        await queryClient.invalidateQueries({
-          queryKey: [
-            'ws',
-            wsId,
-            'group',
-            report.group_id,
-            'user',
-            report.user_id,
-            'reports',
-          ],
-        });
+      const statusPromises = [
+        queryClient.invalidateQueries({
+          queryKey: ['ws', wsId, 'group-report-status-summary'],
+        }),
+      ];
+      if (report.group_id) {
+        statusPromises.push(
+          queryClient.invalidateQueries({
+            queryKey: [
+              'ws',
+              wsId,
+              'group',
+              report.group_id,
+              'user-report-status-summary',
+            ],
+          })
+        );
       }
+      if (report.user_id && report.group_id) {
+        statusPromises.push(
+          queryClient.invalidateQueries({
+            queryKey: [
+              'ws',
+              wsId,
+              'group',
+              report.group_id,
+              'user',
+              report.user_id,
+              'reports',
+            ],
+          })
+        );
+      }
+      await Promise.all(statusPromises);
       const isGroupContext = pathname.includes('/users/groups/');
       const sp = new URLSearchParams(searchParams.toString());
       if (report.user_id) sp.set('userId', report.user_id);
@@ -224,19 +245,40 @@ export function useReportMutations({
     },
     onSuccess: async () => {
       toast.success(t('ws-reports.report_deleted'));
-      if (report.user_id && report.group_id) {
-        await queryClient.invalidateQueries({
-          queryKey: [
-            'ws',
-            wsId,
-            'group',
-            report.group_id,
-            'user',
-            report.user_id,
-            'reports',
-          ],
-        });
+      const deletePromises = [
+        queryClient.invalidateQueries({
+          queryKey: ['ws', wsId, 'group-report-status-summary'],
+        }),
+      ];
+      if (report.group_id) {
+        deletePromises.push(
+          queryClient.invalidateQueries({
+            queryKey: [
+              'ws',
+              wsId,
+              'group',
+              report.group_id,
+              'user-report-status-summary',
+            ],
+          })
+        );
       }
+      if (report.user_id && report.group_id) {
+        deletePromises.push(
+          queryClient.invalidateQueries({
+            queryKey: [
+              'ws',
+              wsId,
+              'group',
+              report.group_id,
+              'user',
+              report.user_id,
+              'reports',
+            ],
+          })
+        );
+      }
+      await Promise.all(deletePromises);
       const isGroupContext = pathname.includes('/users/groups/');
       const sp = new URLSearchParams(searchParams.toString());
       if (report.user_id) sp.set('userId', report.user_id);
@@ -349,8 +391,26 @@ export function useReportMutations({
       if (data.needsConfirmation) return;
 
       toast.success(t('ws-reports.scores_updated'));
+      const scoresPromises = [
+        queryClient.invalidateQueries({
+          queryKey: ['ws', wsId, 'group-report-status-summary'],
+        }),
+      ];
+      if (report.group_id) {
+        scoresPromises.push(
+          queryClient.invalidateQueries({
+            queryKey: [
+              'ws',
+              wsId,
+              'group',
+              report.group_id,
+              'user-report-status-summary',
+            ],
+          })
+        );
+      }
       if (report.id) {
-        await Promise.all([
+        scoresPromises.push(
           queryClient.invalidateQueries({
             queryKey: [
               'ws',
@@ -373,9 +433,10 @@ export function useReportMutations({
               report.user_id,
               'healthcare-vitals',
             ],
-          }),
-        ]);
+          })
+        );
       }
+      await Promise.all(scoresPromises);
     },
     onError: (err) => {
       toast.error(

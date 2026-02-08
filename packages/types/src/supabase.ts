@@ -19046,6 +19046,15 @@ export type Database = {
         }[];
       };
       get_finance_invoices_count: { Args: { ws_id: string }; Returns: number };
+      get_group_report_status_summary: {
+        Args: { _ws_id: string };
+        Returns: {
+          approved_count: number;
+          group_id: string;
+          pending_count: number;
+          rejected_count: number;
+        }[];
+      };
       get_grouped_sessions_paginated: {
         Args: {
           p_end_date?: string;
@@ -19837,6 +19846,15 @@ export type Database = {
           cumulative_users: number;
           new_users: number;
           period: string;
+        }[];
+      };
+      get_user_report_status_summary: {
+        Args: { _group_id: string; _ws_id: string };
+        Returns: {
+          approved_count: number;
+          pending_count: number;
+          rejected_count: number;
+          user_id: string;
         }[];
       };
       get_user_session_stats: {

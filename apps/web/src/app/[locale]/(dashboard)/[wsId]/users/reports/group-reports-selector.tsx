@@ -20,8 +20,12 @@ import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { parseAsString, useQueryStates } from 'nuqs';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import GroupReportsClient from '../groups/[groupId]/reports/client';
+import {
+  type ReportStatusCounts,
+  ReportStatusIndicator,
+} from './components/report-status-indicator';
 
 interface Props {
   wsId: string;
@@ -169,6 +173,33 @@ export default function GroupReportsSelector({
     },
   });
 
+  // Fetch aggregate report status per group for the workspace
+  const groupStatusQuery = useQuery({
+    queryKey: ['ws', wsId, 'group-report-status-summary'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc(
+        'get_group_report_status_summary',
+        { _ws_id: wsId }
+      );
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!wsId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+
+  const groupStatusMap = useMemo(() => {
+    const map = new Map<string, ReportStatusCounts>();
+    for (const row of groupStatusQuery.data ?? []) {
+      map.set(row.group_id, {
+        pending_count: row.pending_count,
+        approved_count: row.approved_count,
+        rejected_count: row.rejected_count,
+      });
+    }
+    return map;
+  }, [groupStatusQuery.data]);
+
   // Auto-select first group when groups load and none is selected
   useEffect(() => {
     if (!selectedGroupId && groups.length > 0 && groups[0]?.id) {
@@ -192,9 +223,16 @@ export default function GroupReportsSelector({
                 aria-expanded={open}
                 className="w-full max-w-sm justify-between"
               >
-                {selectedGroup
-                  ? selectedGroup.name
-                  : t('ws-user-groups.select_group_placeholder')}
+                <span className="flex items-center gap-2">
+                  {selectedGroupId && (
+                    <ReportStatusIndicator
+                      counts={groupStatusMap.get(selectedGroupId)}
+                    />
+                  )}
+                  {selectedGroup
+                    ? selectedGroup.name
+                    : t('ws-user-groups.select_group_placeholder')}
+                </span>
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
@@ -233,7 +271,14 @@ export default function GroupReportsSelector({
                                 : 'opacity-0'
                             )}
                           />
-                          {group.name}
+                          <span className="flex items-center gap-2">
+                            {group.name}
+                            {group.id && (
+                              <ReportStatusIndicator
+                                counts={groupStatusMap.get(group.id)}
+                              />
+                            )}
+                          </span>
                         </CommandItem>
                       ))}
                     </CommandGroup>
