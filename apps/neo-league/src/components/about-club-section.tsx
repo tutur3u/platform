@@ -2,25 +2,7 @@ import Image from 'next/image';
 
 export default function AboutClubSection() {
   return (
-    <section className="relative overflow-hidden bg-secondary/10 px-6 py-20 md:px-8 md:py-28">
-      {/* Decorative background elements */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div
-          className="absolute -top-32 right-1/4 h-96 w-96 rounded-full opacity-20"
-          style={{
-            background:
-              'radial-gradient(circle, var(--brand-light-yellow) 0%, transparent 70%)',
-          }}
-        />
-        <div
-          className="absolute bottom-0 left-0 h-80 w-80 rounded-full opacity-15"
-          style={{
-            background:
-              'radial-gradient(circle, var(--brand-light-blue) 0%, transparent 70%)',
-          }}
-        />
-      </div>
-
+    <section className="relative px-6 py-20 md:px-8 md:py-28">
       <div className="relative mx-auto max-w-7xl">
         {/* ═══════════════════════════════════════════════════════════════════
             WHO WE ARE SECTION

@@ -12,7 +12,7 @@ import SponsorsSection from '@/components/sponsors-section';
 
 export default function Home() {
   return (
-    <div className="flex flex-col">
+    <div className="gradient-background flex flex-col overflow-hidden">
       <HeroSection />
       <AboutClubSection />
       <AboutNeoLeagueSection />

@@ -7,8 +7,8 @@ export default function ContactSection() {
         <div className="glass-card relative overflow-hidden rounded-3xl p-8 text-center md:p-12">
           {/* Background decoration */}
           <div className="gradient-bg absolute inset-0 opacity-5" />
-          <div className="blob -top-40 -right-40 h-64 w-64" />
-          <div className="blob -bottom-24 -left-24 h-48 w-48" />
+          <div className="blob absolute -top-40 -right-40 h-64 w-64" />
+          <div className="blob absolute -bottom-24 -left-24 h-48 w-48" />
 
           <div className="relative z-10">
             <h2 className="mb-4 font-black text-3xl md:text-4xl">

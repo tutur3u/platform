@@ -11,7 +11,7 @@ import Link from 'next/link';
 
 export default function Footer() {
   return (
-    <footer className="border-primary/10 border-t bg-background py-12">
+    <footer className="gradient-background border-primary/10 border-t py-12">
       <div className="mx-auto max-w-7xl space-y-8 px-6">
         {/* Top Section - Logos */}
         <div className="flex flex-col justify-between gap-8 md:flex-row md:items-center">

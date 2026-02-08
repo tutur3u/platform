@@ -3,14 +3,14 @@ import Link from 'next/link';
 
 export default function HeroSection() {
   return (
-    <section className="relative flex min-h-screen items-center justify-center overflow-hidden">
+    <section className="relative flex min-h-screen items-center justify-center">
       {/* Animated Blobs */}
       <div
-        className="blob -top-20 -right-20 h-64 w-64 animate-float"
+        className="blob absolute -top-20 -right-20 h-64 w-64 animate-float"
         style={{ animationDelay: '2s' }}
       />
       <div
-        className="blob -bottom-40 -left-40 h-128 w-lg animate-float"
+        className="blob absolute -bottom-40 -left-80 h-128 w-lg animate-float"
         style={{ animationDelay: '4s' }}
       />
 

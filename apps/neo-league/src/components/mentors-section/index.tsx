@@ -4,10 +4,7 @@ import { mentors } from './data';
 
 export default function MentorsSection() {
   return (
-    <section
-      id="mentors"
-      className="bg-secondary/10 px-6 py-20 md:px-8 md:py-24"
-    >
+    <section id="mentors" className="px-6 py-20 md:px-8 md:py-24">
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
           <h2 className="mb-4 font-black text-3xl shadow-text md:text-4xl">

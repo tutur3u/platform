@@ -39,7 +39,17 @@ const missions = [
 
 export default function AboutNeoLeagueSection() {
   return (
-    <section id="about" className="overflow-x-hidden py-16 md:py-24">
+    <section id="about" className="relative py-16 md:py-24">
+      {/* Decorative background elements */}
+      <div
+        className="blob absolute -top-20 -right-80 h-192 w-3xl animate-float"
+        style={{ animationDelay: '2s' }}
+      />
+      <div
+        className="blob absolute bottom-80 -left-80 h-128 w-lg animate-float"
+        style={{ animationDelay: '4s' }}
+      />
+
       <div className="mx-auto px-8 md:px-16">
         <div className="mb-24 md:mb-32">
           {/* Banner Image */}
@@ -68,9 +78,9 @@ export default function AboutNeoLeagueSection() {
               <div className="h-px w-12 bg-linear-to-l from-transparent to-brand-dark-blue" />
             </div>
 
-            <h2 className="mb-8 text-center font-black text-4xl leading-tight shadow-text md:text-5xl lg:text-6xl">
+            <h2 className="mb-8 text-center font-normal text-4xl leading-tight shadow-text md:text-5xl lg:text-6xl">
               ABOUT{' '}
-              <span className="relative inline-block text-secondary">
+              <span className="relative inline-block font-black text-primary">
                 NEO LEAGUE
               </span>
             </h2>
@@ -108,11 +118,11 @@ export default function AboutNeoLeagueSection() {
               height={150}
               className="absolute top-0 right-0 -z-10 hidden w-auto -translate-y-3/4 md:block md:h-64"
             />
-            <h3 className="mb-8 text-center font-black text-3xl text-brand-dark-blue shadow-text md:text-4xl lg:text-5xl">
+            <h3 className="mb-8 text-center font-black text-3xl text-primary shadow-text md:text-4xl lg:text-5xl">
               OUR VISION
             </h3>
 
-            <div className="mx-auto max-w-4xl">
+            <div className="mx-auto max-w-6xl">
               <p className="text-center text-foreground/90 text-xl leading-relaxed">
                 NEO League Season 2 empowers STEM students to become innovators.
                 We foster a hands-on community using IoT solutions to build

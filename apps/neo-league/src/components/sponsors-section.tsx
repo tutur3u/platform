@@ -9,10 +9,7 @@ export default function SponsorsSection() {
   ];
 
   return (
-    <section
-      id="sponsors"
-      className="bg-secondary/10 px-6 py-20 md:px-8 md:py-24"
-    >
+    <section id="sponsors" className="px-6 py-20 md:px-8 md:py-24">
       <div className="mx-auto max-w-7xl">
         {/* Section Header */}
         <div className="mb-16 text-center">

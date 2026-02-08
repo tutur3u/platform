@@ -31,7 +31,7 @@ export default function DatesSection() {
   ];
 
   return (
-    <section id="dates" className="bg-secondary/10 px-6 py-20 md:px-8 md:py-24">
+    <section id="dates" className="px-6 py-20 md:px-8 md:py-24">
       <div className="mx-auto max-w-4xl">
         <div className="mb-16 text-center">
           <h2 className="mb-4 font-black text-3xl shadow-text md:text-4xl">

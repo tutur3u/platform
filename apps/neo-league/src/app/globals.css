@@ -49,6 +49,10 @@
 }
 
 /* Gradient Background */
+.gradient-background {
+  background: linear-gradient(90deg, #5ac7df 0%, var(--background) 100%);
+}
+
 .gradient-bg {
   background: linear-gradient(
     45deg,
@@ -148,10 +152,9 @@
 
 /* Decorative Elements */
 .blob {
-  position: absolute;
   background-color: #ffc11d;
   border-radius: 50%;
-  filter: blur(60px);
+  filter: blur(30px);
   opacity: 0.3;
   pointer-events: none;
 }
