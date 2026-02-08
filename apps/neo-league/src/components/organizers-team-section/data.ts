@@ -56,8 +56,7 @@ export const teams: Team[] = [
   },
   {
     name: 'Marcom',
-    description:
-      'Communication TBU',
+    description: 'Communication TBU',
     members: [
       {
         name: 'Nhat Vo',
