@@ -449,7 +449,7 @@ export default function EditableReportPreview({
         {canApproveReports && (
           <RejectDialog
             open={showRejectDialog}
-            title={report.title}
+            title={report.title ?? ''}
             reason={rejectReason}
             onReasonChange={setRejectReason}
             onOpenChange={(open) => {

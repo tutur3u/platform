@@ -188,7 +188,9 @@ export function useReportMutations({
           score: payload.score,
           updated_at: new Date().toISOString(),
           // Auto-approve when user with approval permission saves
-          ...(canApproveReports ? buildApproveFields() : {}),
+          ...(canApproveReports && report.report_approval_status !== 'APPROVED'
+            ? buildApproveFields()
+            : {}),
         })
         .eq('id', report.id);
       if (error) throw error;
@@ -366,7 +368,6 @@ export function useReportMutations({
   });
 
   const { approveMutation, rejectMutation } = useReportApproval({
-    wsId,
     report,
     invalidateReportQueries,
   });

@@ -35,42 +35,46 @@ export function createReportQueryInvalidator(
 ) {
   return async () => {
     if (!report.id) return;
-    await Promise.all([
+    const promises = [
       queryClient.invalidateQueries({
         queryKey: ['ws', wsId, 'report', report.id, 'logs'],
       }),
       queryClient.invalidateQueries({
-        queryKey: [
-          'ws',
-          wsId,
-          'group',
-          report.group_id,
-          'user',
-          report.user_id,
-          'report',
-          report.id,
-        ],
-      }),
-      queryClient.invalidateQueries({
-        queryKey: [
-          'ws',
-          wsId,
-          'group',
-          report.group_id,
-          'user',
-          report.user_id,
-          'reports',
-        ],
-      }),
-      queryClient.invalidateQueries({
         queryKey: ['ws', wsId, 'approvals', 'reports'],
       }),
-    ]);
+    ];
+    if (report.group_id && report.user_id) {
+      promises.push(
+        queryClient.invalidateQueries({
+          queryKey: [
+            'ws',
+            wsId,
+            'group',
+            report.group_id,
+            'user',
+            report.user_id,
+            'report',
+            report.id,
+          ],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [
+            'ws',
+            wsId,
+            'group',
+            report.group_id,
+            'user',
+            report.user_id,
+            'reports',
+          ],
+        })
+      );
+    }
+    await Promise.all(promises);
   };
 }
 
 interface UseReportApprovalOptions {
-  wsId: string;
   report: UserReport;
   invalidateReportQueries: () => Promise<void>;
 }
