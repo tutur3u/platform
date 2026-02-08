@@ -130,35 +130,6 @@
         "typescript": "^5.9.3",
       },
     },
-    "apps/foundapack": {
-      "name": "@tuturuuu/foundapack",
-      "version": "0.1.0",
-      "dependencies": {
-        "@tuturuuu/icons": "workspace:*",
-        "@tuturuuu/ui": "workspace:*",
-        "@tuturuuu/utils": "workspace:*",
-        "@tuturuuu/vercel": "workspace:*",
-        "framer-motion": "^12.33.0",
-        "next": "^16.1.6",
-        "next-themes": "^0.4.6",
-        "react": "^19.2.4",
-        "react-dom": "^19.2.4",
-      },
-      "devDependencies": {
-        "@tailwindcss/postcss": "^4.1.18",
-        "@testing-library/react": "^16.3.2",
-        "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^25.2.1",
-        "@types/react": "^19.2.13",
-        "@types/react-dom": "^19.2.3",
-        "@vitejs/plugin-react": "^5.1.3",
-        "babel-plugin-react-compiler": "^1.0.0",
-        "jsdom": "^28.0.0",
-        "postcss": "^8.5.6",
-        "typescript": "^5.9.3",
-        "vitest": "^4.0.18",
-      },
-    },
     "apps/nova": {
       "name": "@tuturuuu/nova",
       "version": "0.14.0",
@@ -2360,8 +2331,6 @@
     "@tuturuuu/external": ["@tuturuuu/external@workspace:apps/external"],
 
     "@tuturuuu/finance": ["@tuturuuu/finance@workspace:apps/finance"],
-
-    "@tuturuuu/foundapack": ["@tuturuuu/foundapack@workspace:apps/foundapack"],
 
     "@tuturuuu/games": ["@tuturuuu/games@workspace:packages/games"],
 
