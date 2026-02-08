@@ -1,7 +1,12 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { AlertCircle, Loader2 } from '@tuturuuu/icons';
+import {
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUserReport } from '@tuturuuu/types';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
@@ -100,6 +105,20 @@ export default function GroupReportsClient({
       })) ?? [],
     [usersQuery.data]
   );
+
+  const currentUserIndex = useMemo(() => {
+    if (!userId || !usersQuery.data) return -1;
+    return usersQuery.data.findIndex((u) => u.id === userId);
+  }, [userId, usersQuery.data]);
+
+  const totalUsers = usersQuery.data?.length ?? 0;
+
+  const goToUser = (index: number) => {
+    const user = usersQuery.data?.[index];
+    if (user?.id) {
+      setQueryParams({ userId: user.id, reportId: null });
+    }
+  };
 
   const reportsQuery = useQuery({
     queryKey: ['ws', wsId, 'group', groupId, 'user', userId, 'reports'],
@@ -459,27 +478,56 @@ export default function GroupReportsClient({
     <div className="flex min-h-full w-full flex-col">
       <div className="mb-4 flex flex-row items-center justify-between gap-2">
         <div className="flex flex-1 flex-col gap-2 md:flex-row md:items-center">
-          <Combobox
-            t={t}
-            key="user-combobox"
-            options={userOptions}
-            selected={userId ?? ''}
-            placeholder={t('user-data-table.user')}
-            disabled={usersQuery.isLoading}
-            onChange={(val) => {
-              const nextUserId =
-                typeof val === 'string'
-                  ? val
-                  : Array.isArray(val)
-                    ? val[0]
-                    : '';
-              setQueryParams({
-                userId: nextUserId || null,
-                reportId: null,
-              });
-            }}
-            className="w-full max-w-sm"
-          />
+          <div className="flex w-full items-center gap-1 sm:w-80 md:w-96">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 shrink-0"
+              disabled={usersQuery.isLoading || currentUserIndex <= 0}
+              onClick={() => goToUser(currentUserIndex - 1)}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Combobox
+              t={t}
+              key="user-combobox"
+              options={userOptions}
+              selected={userId ?? ''}
+              label={
+                currentUserIndex >= 0 && totalUsers > 0
+                  ? `${userOptions[currentUserIndex]?.label} (${currentUserIndex + 1}/${totalUsers})`
+                  : undefined
+              }
+              placeholder={t('user-data-table.user')}
+              disabled={usersQuery.isLoading}
+              onChange={(val) => {
+                const nextUserId =
+                  typeof val === 'string'
+                    ? val
+                    : Array.isArray(val)
+                      ? val[0]
+                      : '';
+                setQueryParams({
+                  userId: nextUserId || null,
+                  reportId: null,
+                });
+              }}
+              className="min-w-0 flex-1"
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 shrink-0"
+              disabled={
+                usersQuery.isLoading ||
+                currentUserIndex < 0 ||
+                currentUserIndex >= totalUsers - 1
+              }
+              onClick={() => goToUser(currentUserIndex + 1)}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
 
           {Boolean(userId) && (
             <div className="flex items-center gap-2">

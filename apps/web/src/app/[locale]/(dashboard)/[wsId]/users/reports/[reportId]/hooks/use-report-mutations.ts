@@ -6,6 +6,11 @@ import type { WorkspaceUserReport } from '@tuturuuu/types';
 import { toast } from '@tuturuuu/ui/sonner';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import {
+  buildApproveFields,
+  createReportQueryInvalidator,
+  useReportApproval,
+} from './use-report-approval';
 
 export type UserReport = Partial<WorkspaceUserReport> & {
   user_name?: string;
@@ -24,6 +29,7 @@ export function useReportMutations({
   healthcareVitals = [],
   factorEnabled = false,
   scoreCalculationMethod = 'LATEST',
+  canApproveReports = false,
 }: {
   wsId: string;
   report: UserReport;
@@ -37,6 +43,7 @@ export function useReportMutations({
   }>;
   factorEnabled?: boolean;
   scoreCalculationMethod?: 'AVERAGE' | 'LATEST';
+  canApproveReports?: boolean;
 }) {
   const t = useTranslations();
   const supabase = createClient();
@@ -158,6 +165,12 @@ export function useReportMutations({
     },
   });
 
+  const invalidateReportQueries = createReportQueryInvalidator(
+    queryClient,
+    wsId,
+    report
+  );
+
   const updateMutation = useMutation({
     mutationFn: async (payload: {
       title: string;
@@ -174,42 +187,17 @@ export function useReportMutations({
           feedback: payload.feedback,
           score: payload.score,
           updated_at: new Date().toISOString(),
+          // Auto-approve when user with approval permission saves
+          ...(canApproveReports && report.report_approval_status !== 'APPROVED'
+            ? buildApproveFields()
+            : {}),
         })
         .eq('id', report.id);
       if (error) throw error;
     },
     onSuccess: async () => {
       toast.success(t('ws-reports.report_saved'));
-      if (report.id) {
-        await Promise.all([
-          queryClient.invalidateQueries({
-            queryKey: ['ws', wsId, 'report', report.id, 'logs'],
-          }),
-          queryClient.invalidateQueries({
-            queryKey: [
-              'ws',
-              wsId,
-              'group',
-              report.group_id,
-              'user',
-              report.user_id,
-              'report',
-              report.id,
-            ],
-          }),
-          queryClient.invalidateQueries({
-            queryKey: [
-              'ws',
-              wsId,
-              'group',
-              report.group_id,
-              'user',
-              report.user_id,
-              'reports',
-            ],
-          }),
-        ]);
-      }
+      await invalidateReportQueries();
     },
     onError: (err) => {
       toast.error(
@@ -379,10 +367,17 @@ export function useReportMutations({
     },
   });
 
+  const { approveMutation, rejectMutation } = useReportApproval({
+    report,
+    invalidateReportQueries,
+  });
+
   return {
     createMutation,
     updateMutation,
     deleteMutation,
     updateScoresMutation,
+    approveMutation,
+    rejectMutation,
   };
 }

@@ -25,6 +25,7 @@ import { useTheme } from 'next-themes';
 import type { ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import * as z from 'zod';
+import { RejectDialog } from '../../approvals/components/reject-dialog';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import UserFeedbackSection from '../../groups/[groupId]/reports/user-feedback-section';
 import { DeleteReportDialog } from './components/delete-report-dialog';
@@ -119,6 +120,8 @@ export default function EditableReportPreview({
     updateMutation,
     deleteMutation,
     updateScoresMutation,
+    approveMutation,
+    rejectMutation,
   } = useReportMutations({
     wsId,
     report,
@@ -126,6 +129,7 @@ export default function EditableReportPreview({
     healthcareVitals,
     factorEnabled,
     scoreCalculationMethod,
+    canApproveReports,
   });
 
   const configMap = useMemo(() => {
@@ -256,6 +260,8 @@ export default function EditableReportPreview({
       : reportTheme;
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
   const [formOpen, setFormOpen] = useState(true);
   const [attendanceOpen, setAttendanceOpen] = useState(true);
 
@@ -440,6 +446,28 @@ export default function EditableReportPreview({
           onConfirm={() => deleteMutation.mutate()}
         />
 
+        {canApproveReports && (
+          <RejectDialog
+            open={showRejectDialog}
+            title={report.title ?? ''}
+            reason={rejectReason}
+            onReasonChange={setRejectReason}
+            onOpenChange={(open) => {
+              setShowRejectDialog(open);
+              if (!open) setRejectReason('');
+            }}
+            onConfirm={() => {
+              rejectMutation.mutate(rejectReason, {
+                onSuccess: () => {
+                  setShowRejectDialog(false);
+                  setRejectReason('');
+                },
+              });
+            }}
+            isSubmitting={rejectMutation.isPending}
+          />
+        )}
+
         {report.user_id && canCheckUserAttendance && (
           <Collapsible
             open={attendanceOpen}
@@ -521,6 +549,13 @@ export default function EditableReportPreview({
           handlePngExport={handlePngExport}
           reportTheme={reportTheme}
           setReportTheme={setReportTheme}
+          canApproveReports={canApproveReports}
+          isNew={isNew}
+          approvalStatus={report.report_approval_status}
+          onApprove={() => approveMutation.mutate()}
+          onReject={() => setShowRejectDialog(true)}
+          isApproving={approveMutation.isPending}
+          isRejecting={rejectMutation.isPending}
         />
 
         <ReportPreview
