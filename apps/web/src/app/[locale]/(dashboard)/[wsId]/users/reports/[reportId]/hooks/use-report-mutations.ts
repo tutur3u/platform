@@ -326,6 +326,18 @@ export function useReportMutations({
           scores: scores.length > 0 ? scores : null,
           score: calculatedScore,
           updated_at: new Date().toISOString(),
+          // Auto-approve when user with approval permission saves
+          ...(canApproveReports && report.report_approval_status !== 'APPROVED'
+            ? buildApproveFields()
+            : // If user cannot approve and report was REJECTED, reset to PENDING so they can resubmit
+              !canApproveReports && report.report_approval_status === 'REJECTED'
+              ? {
+                  report_approval_status: 'PENDING' as const,
+                  rejected_at: null,
+                  rejection_reason: null,
+                  rejected_by: null,
+                }
+              : {}),
         })
         .eq('id', report.id);
 
