@@ -22,7 +22,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useTranslations } from 'next-intl';
-import type { ApprovalStatus } from '../../../../approvals/utils';
+import type { ApprovalStatus } from '../../../approvals/utils';
 
 type ReportTheme = 'auto' | 'light' | 'dark';
 
