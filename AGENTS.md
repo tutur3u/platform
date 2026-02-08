@@ -1451,7 +1451,7 @@ Label Stability in README:
 
 ## 12. Session Retrospective & Continuous Improvement
 
-**MANDATORY FOR ALL CO-WORKING SESSIONS**
+### **MANDATORY FOR ALL CO-WORKING SESSIONS**
 
 At the END of every co-working session, agents MUST conduct a retrospective review to ensure continuous improvement of the operating guidelines.
 
@@ -1505,27 +1505,12 @@ At session end, provide a brief summary:
 
 - ❌ **NEVER** end a session without reviewing these guideline files
 - ❌ **NEVER** repeat the same mistake twice without documenting it
+- ❌ **NEVER** add session logs, empty notes, or observations that don't introduce new reusable knowledge — these files are shared with all agents and must stay concise and actionable
 - ✅ **ALWAYS** update documentation when discovering gaps or ambiguities
 - ✅ **ALWAYS** leave the guidelines better than you found them (Boy Scout Rule for docs)
+- ✅ **ALWAYS** verify that new content is not already covered elsewhere in these files before adding it — eliminate redundancy, don't create it
 
 This continuous improvement process ensures that the operating guidelines evolve with real-world usage and become more robust over time.
-
-## Session Retrospective (2026-02-04)
-
-### Mistakes/Issues Encountered
-- No automated tests were added for the new mobile auth API routes due to missing route-handler test harness in `apps/web`.
-
-### Lessons Learned
-- Mobile auth endpoints should always return Supabase session tokens and include CORS headers, since native clients do not rely on cookies.
-- When introducing a new mobile API base URL, add a local `.env.example` and update the app README to keep onboarding clear.
-
-### Documentation Updates Made
-- Added this retrospective entry to document the missing-test gap and mobile auth patterns.
-
-### Proposed Future Improvements
-- Add a lightweight testing guideline/template for Next.js route handlers so new API endpoints can be covered by unit tests.
-- Clarify how to satisfy the `bun check` requirement when lint/format commands are user-only.
-
 
 ## 13. AI Model Usage & Fallback Policy
 
