@@ -22,9 +22,9 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useTranslations } from 'next-intl';
+import type { ApprovalStatus } from '../../../../approvals/utils';
 
 type ReportTheme = 'auto' | 'light' | 'dark';
-type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | null | undefined;
 
 interface ReportActionsProps {
   isPendingApproval: boolean;
@@ -35,7 +35,7 @@ interface ReportActionsProps {
   setReportTheme: (theme: ReportTheme) => void;
   canApproveReports?: boolean;
   isNew?: boolean;
-  approvalStatus?: ApprovalStatus;
+  approvalStatus?: ApprovalStatus | null;
   onApprove?: () => void;
   onReject?: () => void;
   isApproving?: boolean;

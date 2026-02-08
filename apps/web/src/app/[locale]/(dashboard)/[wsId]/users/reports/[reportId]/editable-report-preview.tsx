@@ -457,9 +457,12 @@ export default function EditableReportPreview({
               if (!open) setRejectReason('');
             }}
             onConfirm={() => {
-              rejectMutation.mutate(rejectReason);
-              setShowRejectDialog(false);
-              setRejectReason('');
+              rejectMutation.mutate(rejectReason, {
+                onSuccess: () => {
+                  setShowRejectDialog(false);
+                  setRejectReason('');
+                },
+              });
             }}
             isSubmitting={rejectMutation.isPending}
           />
