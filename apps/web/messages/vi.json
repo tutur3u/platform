@@ -765,6 +765,7 @@
       "confirmReject": "Xác Nhận Từ Chối",
       "reject": "Từ chối",
       "rejected": "Đã ghi nhận từ chối.",
+      "openReport": "Mở báo cáo",
       "sessionSummary": "Phiên này: {approved} đã duyệt, {rejected} đã từ chối",
       "viewDetails": "Xem Chi Tiết"
     },
@@ -795,14 +796,20 @@
     },
     "empty": "Hiện chưa có mục cần phê duyệt.",
     "filters": {
+      "allCreators": "Tất cả người tạo",
+      "allGroups": "Tất cả nhóm",
+      "allUsers": "Tất cả người dùng",
       "clearFilters": "Xóa bộ lọc",
+      "creator": "Người tạo",
       "description": "Lọc phê duyệt theo trạng thái và các tiêu chí khác.",
+      "group": "Nhóm",
       "status": "Trạng thái",
       "status_all": "Tất cả",
       "status_approved": "Đã duyệt",
       "status_pending": "Đang chờ",
       "status_rejected": "Từ chối",
-      "title": "Bộ lọc"
+      "title": "Bộ lọc",
+      "user": "Người dùng"
     },
     "labels": {
       "approved_at": "Duyệt lúc",

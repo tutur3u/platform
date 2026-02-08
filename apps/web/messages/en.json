@@ -765,6 +765,7 @@
       "confirmReject": "Confirm Rejection",
       "reject": "Reject",
       "rejected": "Rejection recorded.",
+      "openReport": "Open report",
       "sessionSummary": "This session: {approved} approved, {rejected} rejected",
       "viewDetails": "View Details"
     },
@@ -795,14 +796,20 @@
     },
     "empty": "No approvals to review right now.",
     "filters": {
+      "allCreators": "All creators",
+      "allGroups": "All groups",
+      "allUsers": "All users",
       "clearFilters": "Clear filters",
+      "creator": "Creator",
       "description": "Filter approvals by status and other criteria.",
+      "group": "Group",
       "status": "Status",
       "status_all": "All",
       "status_approved": "Approved",
       "status_pending": "Pending",
       "status_rejected": "Rejected",
-      "title": "Filters"
+      "title": "Filters",
+      "user": "User"
     },
     "labels": {
       "approved_at": "Approved",

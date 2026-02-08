@@ -59,6 +59,7 @@ export default function EditableReportPreview({
   onChangeManagerAction,
   canCheckUserAttendance,
   canUpdateReports = false,
+  canApproveReports = false,
   canDeleteReports = false,
   feedbackUser,
   feedbackGroupName,
@@ -83,6 +84,7 @@ export default function EditableReportPreview({
   selectedManagerName?: string;
   onChangeManagerAction?: (name?: string) => void;
   canCheckUserAttendance?: boolean;
+  canApproveReports?: boolean;
   canUpdateReports?: boolean;
   canDeleteReports?: boolean;
   feedbackUser?: WorkspaceUser | null;
@@ -299,7 +301,8 @@ export default function EditableReportPreview({
     groupName: report.group_name,
   });
 
-  const isPendingApproval = report.report_approval_status === 'PENDING';
+  const isPendingApproval =
+    report.report_approval_status === 'PENDING' && !canApproveReports;
 
   return (
     <div className="grid h-fit gap-4 xl:grid-cols-3">

@@ -37,6 +37,7 @@ interface Props {
   groupId: string;
   groupNameFallback: string;
   canCheckUserAttendance: boolean;
+  canApproveReports: boolean;
   canCreateReports: boolean;
   canUpdateReports: boolean;
   canDeleteReports: boolean;
@@ -47,6 +48,7 @@ export default function GroupReportsClient({
   groupId,
   groupNameFallback,
   canCheckUserAttendance,
+  canApproveReports,
   canCreateReports,
   canUpdateReports,
   canDeleteReports,
@@ -576,6 +578,7 @@ export default function GroupReportsClient({
               }}
               configs={configsData}
               isNew={reportId === 'new'}
+              canApproveReports={canApproveReports}
               canUpdateReports={canUpdateReports}
               canDeleteReports={canDeleteReports}
               groupId={groupId}

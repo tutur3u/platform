@@ -5,6 +5,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ExternalLink,
   FileText,
   Loader2,
   MessageSquare,
@@ -30,6 +31,7 @@ import { DiffViewer } from '@tuturuuu/ui/diff-viewer';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -40,6 +42,7 @@ import {
 import { getStatusColorClasses } from '../utils';
 
 interface ApprovalDetailDialogProps {
+  wsId: string;
   item: ApprovalItem | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -54,6 +57,7 @@ interface ApprovalDetailDialogProps {
 }
 
 export function ApprovalDetailDialog({
+  wsId,
   item,
   open,
   onOpenChange,
@@ -363,6 +367,22 @@ export function ApprovalDetailDialog({
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
+              )}
+              {isReport && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 gap-1"
+                  asChild
+                >
+                  <Link
+                    href={`/${wsId}/users/reports?groupId=${item.group_id ?? ''}&userId=${item.user_id ?? ''}&reportId=${item.id}`}
+                    target="_blank"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    {t('actions.openReport')}
+                  </Link>
+                </Button>
               )}
               <span
                 className={cn(

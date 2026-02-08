@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import {
   CheckCheck,
   CheckCheckIcon,
@@ -13,6 +14,7 @@ import {
   XCircleIcon,
   XIcon,
 } from '@tuturuuu/icons';
+import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
@@ -55,8 +57,17 @@ export function ApprovalsView({
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const supabase = createClient();
+
   // Memoize URL params
-  const { currentStatus, currentPage, currentLimit } = useMemo(() => {
+  const {
+    currentStatus,
+    currentPage,
+    currentLimit,
+    currentGroupId,
+    currentUserId,
+    currentCreatorId,
+  } = useMemo(() => {
     const rawStatus =
       (searchParams.get('status') as
         | 'all'
@@ -71,6 +82,9 @@ export function ApprovalsView({
       currentStatus: rawStatus,
       currentPage: safePage,
       currentLimit: safeLimit,
+      currentGroupId: searchParams.get('groupId') || undefined,
+      currentUserId: searchParams.get('userId') || undefined,
+      currentCreatorId: searchParams.get('creatorId') || undefined,
     };
   }, [searchParams, defaultStatus]);
 
@@ -101,12 +115,89 @@ export function ApprovalsView({
     status: currentStatus,
     page: currentPage,
     limit: currentLimit,
-    groupId,
+    groupId: currentGroupId ?? groupId,
+    userId: currentUserId,
+    creatorId: currentCreatorId,
+  });
+
+  // Fetch group options for filter
+  const groupsQuery = useQuery({
+    queryKey: ['ws', wsId, 'approvals', 'filter-groups'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('workspace_user_groups_with_amount')
+        .select('id, name')
+        .eq('ws_id', wsId)
+        .order('name');
+      if (error) throw error;
+      return (data ?? []) as Array<{ id: string; name: string | null }>;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Fetch user options for filter (reports only)
+  const usersQuery = useQuery({
+    queryKey: ['ws', wsId, 'approvals', 'filter-users', currentGroupId],
+    enabled: kind === 'reports',
+    queryFn: async () => {
+      let q = supabase
+        .from('workspace_users')
+        .select('id, full_name')
+        .eq('ws_id', wsId)
+        .order('full_name', { ascending: true, nullsFirst: false });
+      if (currentGroupId) {
+        const { data: groupUserIds } = await supabase
+          .from('workspace_user_groups_users')
+          .select('user_id')
+          .eq('group_id', currentGroupId);
+        const ids = (groupUserIds ?? []).map((r) => r.user_id);
+        if (ids.length > 0) q = q.in('id', ids);
+        else return [];
+      }
+      const { data, error } = await q.limit(200);
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        id: string;
+        full_name: string | null;
+      }>;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Fetch creator options for filter (reports only)
+  const creatorsQuery = useQuery({
+    queryKey: ['ws', wsId, 'approvals', 'filter-creators'],
+    enabled: kind === 'reports',
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('workspace_users')
+        .select('id, full_name')
+        .eq('ws_id', wsId)
+        .order('full_name', { ascending: true, nullsFirst: false })
+        .limit(200);
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        id: string;
+        full_name: string | null;
+      }>;
+    },
+    staleTime: 5 * 60 * 1000,
   });
 
   const hasActiveFilters = useMemo(() => {
-    return currentStatus && currentStatus !== defaultStatus;
-  }, [currentStatus, defaultStatus]);
+    return (
+      (currentStatus && currentStatus !== defaultStatus) ||
+      !!currentGroupId ||
+      !!currentUserId ||
+      !!currentCreatorId
+    );
+  }, [
+    currentStatus,
+    defaultStatus,
+    currentGroupId,
+    currentUserId,
+    currentCreatorId,
+  ]);
 
   const { startIndex, endIndex } = useMemo(
     () => ({
@@ -143,7 +234,10 @@ export function ApprovalsView({
     updatePage,
   ]);
 
-  const updateFilters = (key: 'status', value: string | undefined) => {
+  const updateFilters = (
+    key: 'status' | 'groupId' | 'userId' | 'creatorId',
+    value: string | undefined
+  ) => {
     const params = new URLSearchParams(searchParams.toString());
     if (value) params.set(key, value);
     else params.delete(key);
@@ -228,6 +322,117 @@ export function ApprovalsView({
                 </SelectContent>
               </Select>
             </div>
+
+            {!groupId && (
+              <div className="space-y-2">
+                <label
+                  htmlFor="group-filter"
+                  className="font-medium text-sm leading-none"
+                >
+                  {t('filters.group')}
+                </label>
+                <Select
+                  value={currentGroupId ?? 'all'}
+                  onValueChange={(value) =>
+                    updateFilters(
+                      'groupId',
+                      value === 'all' ? undefined : value
+                    )
+                  }
+                >
+                  <SelectTrigger
+                    id="group-filter"
+                    className="border-border/60 hover:bg-accent/50"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">
+                      {t('filters.allGroups')}
+                    </SelectItem>
+                    {(groupsQuery.data ?? []).map((group) => (
+                      <SelectItem key={group.id} value={group.id}>
+                        {group.name || t('labels.unknown_group')}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {kind === 'reports' && (
+              <>
+                <div className="space-y-2">
+                  <label
+                    htmlFor="user-filter"
+                    className="font-medium text-sm leading-none"
+                  >
+                    {t('filters.user')}
+                  </label>
+                  <Select
+                    value={currentUserId ?? 'all'}
+                    onValueChange={(value) =>
+                      updateFilters(
+                        'userId',
+                        value === 'all' ? undefined : value
+                      )
+                    }
+                  >
+                    <SelectTrigger
+                      id="user-filter"
+                      className="border-border/60 hover:bg-accent/50"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">
+                        {t('filters.allUsers')}
+                      </SelectItem>
+                      {(usersQuery.data ?? []).map((user) => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.full_name || t('labels.unknown_user')}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label
+                    htmlFor="creator-filter"
+                    className="font-medium text-sm leading-none"
+                  >
+                    {t('filters.creator')}
+                  </label>
+                  <Select
+                    value={currentCreatorId ?? 'all'}
+                    onValueChange={(value) =>
+                      updateFilters(
+                        'creatorId',
+                        value === 'all' ? undefined : value
+                      )
+                    }
+                  >
+                    <SelectTrigger
+                      id="creator-filter"
+                      className="border-border/60 hover:bg-accent/50"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">
+                        {t('filters.allCreators')}
+                      </SelectItem>
+                      {(creatorsQuery.data ?? []).map((creator) => (
+                        <SelectItem key={creator.id} value={creator.id}>
+                          {creator.full_name || t('labels.unknown_user')}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
           </div>
 
           {hasActiveFilters && (
@@ -529,6 +734,7 @@ export function ApprovalsView({
       )}
 
       <ApprovalDetailDialog
+        wsId={wsId}
         item={detailItem}
         open={!!detailItem}
         onOpenChange={(open) => {

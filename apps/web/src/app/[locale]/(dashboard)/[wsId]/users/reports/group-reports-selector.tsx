@@ -26,6 +26,7 @@ interface Props {
   workspaceUserId?: string;
   hasManageUsers: boolean;
   canCheckUserAttendance: boolean;
+  canApproveReports: boolean;
   canCreateReports: boolean;
   canUpdateReports: boolean;
   canDeleteReports: boolean;
@@ -36,6 +37,7 @@ export default function GroupReportsSelector({
   workspaceUserId,
   hasManageUsers,
   canCheckUserAttendance,
+  canApproveReports,
   canCreateReports,
   canUpdateReports,
   canDeleteReports,
@@ -218,6 +220,7 @@ export default function GroupReportsSelector({
             groupId={selectedGroupId}
             groupNameFallback={selectedGroup.name || ''}
             canCheckUserAttendance={canCheckUserAttendance}
+            canApproveReports={canApproveReports}
             canCreateReports={canCreateReports}
             canUpdateReports={canUpdateReports}
             canDeleteReports={canDeleteReports}

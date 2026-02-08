@@ -39,6 +39,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         const canCheckUserAttendance = containsPermission(
           'check_user_attendance'
         );
+        const canApproveReports = containsPermission('approve_reports');
         const canCreateReports = containsPermission(
           'create_user_groups_reports'
         );
@@ -55,6 +56,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
             groupId={groupId}
             groupNameFallback={group.name || t('ws-user-groups.singular')}
             canCheckUserAttendance={canCheckUserAttendance}
+            canApproveReports={canApproveReports}
             canCreateReports={canCreateReports}
             canUpdateReports={canUpdateReports}
             canDeleteReports={canDeleteReports}
