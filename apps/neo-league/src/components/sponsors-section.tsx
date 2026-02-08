@@ -17,7 +17,7 @@ export default function SponsorsSection() {
       <div className="mx-auto max-w-7xl">
         {/* Section Header */}
         <div className="mb-16 text-center">
-          <h2 className="mb-4 font-black text-3xl shadow-text md:text-4xl">
+          <h2 className="mb-4 font-black text-3xl  md:text-4xl">
             OUR <span className="text-secondary">SPONSORS</span>
           </h2>
           <p className="mx-auto max-w-2xl font-bold text-foreground text-lg">
