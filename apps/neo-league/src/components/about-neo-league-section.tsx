@@ -95,7 +95,7 @@ export default function AboutNeoLeagueSection() {
                 showcase their ability in hardware development using IoT
                 solutions.
               </p>
-              <p className="text-base text-foreground/75 leading-relaxed md:text-lg">
+              <p className="text-base text-foreground/70 leading-relaxed md:text-lg">
                 Teams of four tackle progressively challenging tasks based on
                 relevant themes, applying their skills to real-world problems
                 through three main rounds—from virtual preliminaries to the

@@ -2,16 +2,8 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from '@ncthub/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@ncthub/ui/tabs';
+import { getInitials } from '@ncthub/utils/name-helper';
 import { leaders, teams } from './data';
-
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((word) => word.charAt(0))
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-}
 
 export default function OrganizersTeamSection() {
   return (
@@ -37,18 +29,20 @@ export default function OrganizersTeamSection() {
               {leaders.map((leader, index) => (
                 <div
                   key={index}
-                  className="glass-card card-hover w-72 rounded-2xl px-8 py-12 text-center"
+                  className="card-hover flex w-72 flex-col items-center"
                 >
-                  <Avatar className="mx-auto mb-6 h-36 w-36 bg-foreground/70">
+                  <Avatar className="h-auto w-3/4 rounded-none">
                     <AvatarImage src={leader.avatar} alt={leader.name} />
                     <AvatarFallback className="gradient-bg font-black text-3xl text-white">
                       {getInitials(leader.name)}
                     </AvatarFallback>
                   </Avatar>
-                  <h4 className="mb-2 font-black text-xl">{leader.name}</h4>
-                  <p className="font-medium text-lg text-secondary">
-                    {leader.role}
-                  </p>
+                  <div className="glass-card w-full rounded-2xl px-8 py-12 text-center">
+                    <h4 className="mb-2 font-black text-xl">{leader.name}</h4>
+                    <p className="font-medium text-lg text-secondary">
+                      {leader.role}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>
