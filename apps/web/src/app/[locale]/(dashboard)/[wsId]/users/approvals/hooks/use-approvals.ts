@@ -154,7 +154,7 @@ export function useApprovals({
       let dataQuery = supabase
         .from('external_user_monthly_reports')
         .select(
-          'id, title, content, feedback, score, scores, created_at, updated_by, user_id, group_id, creator_id, report_approval_status, rejection_reason, approved_at, rejected_at, modifier:workspace_users!updated_by(display_name, full_name), creator:workspace_users!creator_id(full_name), user:workspace_users!user_id!inner(full_name, ws_id), ...workspace_user_groups(group_name:name)'
+          'id, title, content, feedback, score, scores, created_at, updated_by, user_id, group_id, creator_id, report_approval_status, rejection_reason, approved_at, rejected_at, modifier:workspace_users!updated_by(display_name, full_name, email), creator:workspace_users!creator_id(full_name), user:workspace_users!user_id!inner(full_name, ws_id), ...workspace_user_groups(group_name:name)'
         )
         .eq('user.ws_id', wsId);
 
@@ -191,6 +191,7 @@ export function useApprovals({
         const userName = Array.isArray(user)
           ? user?.[0]?.full_name
           : user?.full_name;
+
         return {
           id: row.id,
           title: row.title,
@@ -209,17 +210,33 @@ export function useApprovals({
           rejected_at: row.rejected_at,
           group_name: row.group_name,
           user_name: userName,
-          modifier_name: row.modifier?.display_name
-            ? row.modifier.display_name
-            : row.modifier?.full_name,
+          modifier_name:
+            row.modifier?.display_name ||
+            row.modifier?.full_name ||
+            row.modifier?.email ||
+            row.creator?.full_name ||
+            null,
           creator_name: row.creator?.full_name,
         };
       });
 
+      // Deduplicate items based on user_id, group_id, and title
+      // We keep the first occurrence since the query is ordered by updated_at desc
+      const uniqueItems = items.filter(
+        (item, index, self) =>
+          index ===
+          self.findIndex(
+            (t) =>
+              t.user_id === item.user_id &&
+              t.group_id === item.group_id &&
+              t.title === item.title
+          )
+      );
+
       const totalCount = count ?? 0;
       const totalPages = Math.ceil(totalCount / limit);
 
-      return { items, totalCount, totalPages };
+      return { items: uniqueItems, totalCount, totalPages };
     },
   });
 
@@ -252,7 +269,7 @@ export function useApprovals({
       let dataQuery = supabase
         .from('user_group_posts')
         .select(
-          'id, title, content, notes, created_at, updated_by, post_approval_status, rejection_reason, approved_at, rejected_at, modifier:workspace_users!updated_by(display_name, full_name), ...workspace_user_groups(group_name:name, ws_id)'
+          'id, title, content, notes, created_at, updated_by, post_approval_status, rejection_reason, approved_at, rejected_at, group_id, modifier:workspace_users!updated_by(display_name, full_name, email), ...workspace_user_groups(group_name:name, ws_id)'
         )
         .eq('workspace_user_groups.ws_id', wsId);
 
@@ -280,20 +297,13 @@ export function useApprovals({
       if (error) throw error;
       const rows = data as PostApprovalQueryResult[] | null;
       const items = (rows ?? []).map((row) => ({
-        id: row.id,
-        title: row.title,
-        content: row.content,
-        notes: row.notes,
-        created_at: row.created_at,
-        updated_by: row.updated_by,
-        post_approval_status: row.post_approval_status,
-        rejection_reason: row.rejection_reason,
-        approved_at: row.approved_at,
-        rejected_at: row.rejected_at,
+        ...row,
         group_name: row.group_name,
-        modifier_name: row.modifier?.display_name
-          ? row.modifier.display_name
-          : row.modifier?.full_name,
+        modifier_name:
+          row.modifier?.display_name ||
+          row.modifier?.full_name ||
+          row.modifier?.email ||
+          null,
       }));
 
       const totalCount = count ?? 0;

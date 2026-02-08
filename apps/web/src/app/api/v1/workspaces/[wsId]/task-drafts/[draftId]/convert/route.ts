@@ -128,7 +128,7 @@ export async function POST(
     }
 
     // Add projects one by one to ensure triggers fire
-    const projectIds = (draft.project_ids as string[]) || [];
+    const projectIds = ((draft as any).project_ids as string[]) || [];
     for (const projectId of projectIds) {
       const { error } = await supabase.from('task_project_tasks').insert({
         task_id: newTask.id,

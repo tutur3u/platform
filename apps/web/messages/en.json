@@ -769,6 +769,9 @@
       "sessionSummary": "This session: {approved} approved, {rejected} rejected",
       "viewDetails": "View Details"
     },
+    "common": {
+      "empty": "Empty"
+    },
     "description": "Review and approve user reports and posts.",
     "detail": {
       "actions": "Actions",
@@ -12225,6 +12228,7 @@
     "edit_post_description": "Make changes to your post here.",
     "email_blocked_not_approved": "Email blocked - post not approved",
     "group_label": "Group",
+    "managers": "Managers",
     "name": "Group Name",
     "no_groups": "No groups available",
     "no_posts_to_show": "No posts to show.",

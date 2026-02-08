@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Check, ChevronsUpDown } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Command,
@@ -16,6 +17,7 @@ import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { parseAsString, useQueryStates } from 'nuqs';
 import { useEffect, useState } from 'react';
@@ -43,6 +45,7 @@ export default function GroupReportsSelector({
   canDeleteReports,
 }: Props) {
   const t = useTranslations();
+
   const tc = useTranslations('common');
 
   const [open, setOpen] = useState(false);
@@ -136,6 +139,36 @@ export default function GroupReportsSelector({
   const groups = searchGroupsQuery.data ?? [];
   const selectedGroup = selectedGroupQuery.data;
 
+  // Query to fetch all group managers (teachers) for the selected group
+  const groupManagersQuery = useQuery({
+    queryKey: ['ws', wsId, 'group', selectedGroupId, 'managers'],
+    enabled: Boolean(selectedGroupId),
+    queryFn: async (): Promise<
+      Array<{ id: string; full_name: string | null }>
+    > => {
+      const { data, error } = await supabase
+        .from('workspace_user_groups_users')
+        .select('user:workspace_users!inner(id, full_name, ws_id)')
+        .eq('group_id', selectedGroupId!)
+        .eq('role', 'TEACHER')
+        .eq('user.ws_id', wsId);
+      if (error) throw error;
+      const rows = (data ?? []) as Array<{ user: any }>;
+      const managers: Array<{ id: string; full_name: string | null }> = [];
+      for (const row of rows) {
+        const u = row?.user;
+        if (Array.isArray(u)) {
+          const first = u[0];
+          if (first)
+            managers.push({ id: first.id, full_name: first.full_name ?? null });
+        } else if (u) {
+          managers.push({ id: u.id, full_name: u.full_name ?? null });
+        }
+      }
+      return managers;
+    },
+  });
+
   // Auto-select first group when groups load and none is selected
   useEffect(() => {
     if (!selectedGroupId && groups.length > 0 && groups[0]?.id) {
@@ -150,66 +183,86 @@ export default function GroupReportsSelector({
   return (
     <div className="space-y-6">
       <div className="space-y-4">
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={open}
-              className="w-full max-w-sm justify-between"
-            >
-              {selectedGroup
-                ? selectedGroup.name
-                : t('ws-user-groups.select_group_placeholder')}
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-100 max-w-(--radix-popover-trigger-width) p-0">
-            <Command shouldFilter={false}>
-              <CommandInput
-                placeholder={t('ws-user-groups.select_group_placeholder')}
-                value={query}
-                onValueChange={setQuery}
-              />
-              <CommandList>
-                {searchGroupsQuery.isLoading ? (
-                  <div className="py-6 text-center text-muted-foreground text-sm">
-                    {tc('loading')}
-                  </div>
-                ) : groups.length > 0 ? (
-                  <CommandGroup>
-                    {groups.map((group) => (
-                      <CommandItem
-                        key={group.id}
-                        value={group.name || ''}
-                        onSelect={() => {
-                          setFilterParams({
-                            groupId: group.id,
-                            userId: null,
-                            reportId: null,
-                          });
-                          setOpen(false);
-                        }}
-                      >
-                        <Check
-                          className={cn(
-                            'mr-2 h-4 w-4',
-                            selectedGroupId === group.id
-                              ? 'opacity-100'
-                              : 'opacity-0'
-                          )}
-                        />
-                        {group.name}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                ) : (
-                  <CommandEmpty>{tc('no_results_found')}</CommandEmpty>
-                )}
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
+        <div className="flex flex-col gap-2">
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={open}
+                className="w-full max-w-sm justify-between"
+              >
+                {selectedGroup
+                  ? selectedGroup.name
+                  : t('ws-user-groups.select_group_placeholder')}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-100 max-w-(--radix-popover-trigger-width) p-0">
+              <Command shouldFilter={false}>
+                <CommandInput
+                  placeholder={t('ws-user-groups.select_group_placeholder')}
+                  value={query}
+                  onValueChange={setQuery}
+                />
+                <CommandList>
+                  {searchGroupsQuery.isLoading ? (
+                    <div className="py-6 text-center text-muted-foreground text-sm">
+                      {tc('loading')}
+                    </div>
+                  ) : groups.length > 0 ? (
+                    <CommandGroup>
+                      {groups.map((group) => (
+                        <CommandItem
+                          key={group.id}
+                          value={group.name || ''}
+                          onSelect={() => {
+                            setFilterParams({
+                              groupId: group.id,
+                              userId: null,
+                              reportId: null,
+                            });
+                            setOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              'mr-2 h-4 w-4',
+                              selectedGroupId === group.id
+                                ? 'opacity-100'
+                                : 'opacity-0'
+                            )}
+                          />
+                          {group.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  ) : (
+                    <CommandEmpty>{tc('no_results_found')}</CommandEmpty>
+                  )}
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+
+          {groupManagersQuery.data && groupManagersQuery.data.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-muted-foreground text-sm">
+                {t('ws-user-groups.managers')}:
+              </span>
+              {groupManagersQuery.data.map((manager) => (
+                <Link
+                  key={manager.id}
+                  href={`/${wsId}/users/database/${manager.id}`}
+                >
+                  <Badge variant="secondary" className="hover:bg-secondary/80">
+                    {manager.full_name}
+                  </Badge>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {selectedGroupId && selectedGroup && (

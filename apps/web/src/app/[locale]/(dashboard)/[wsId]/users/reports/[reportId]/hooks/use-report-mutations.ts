@@ -156,11 +156,18 @@ export function useReportMutations({
         router.replace(`/${wsId}/users/reports?${sp.toString()}`);
       }
     },
-    onError: (err) => {
+    onError: (err: any) => {
+      const isDuplicate =
+        err?.code === '23505' ||
+        err?.message?.includes('duplicate key value') ||
+        err?.message === t('ws-reports.duplicate_report_exists');
+
       toast.error(
-        err instanceof Error
-          ? err.message
-          : t('ws-reports.failed_create_report')
+        isDuplicate
+          ? t('ws-reports.duplicate_report_exists')
+          : err instanceof Error
+            ? err.message
+            : t('ws-reports.failed_create_report')
       );
     },
   });

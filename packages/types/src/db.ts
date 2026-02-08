@@ -276,6 +276,7 @@ export type ReportApprovalQueryResult = {
   modifier?: {
     full_name?: string | null;
     display_name?: string | null;
+    email?: string | null;
   } | null;
   creator?: {
     full_name?: string | null;
@@ -357,8 +358,10 @@ export type PostApprovalQueryResult = {
   modifier?: {
     full_name?: string | null;
     display_name?: string | null;
+    email?: string | null;
   } | null;
   group_name?: string | null;
+  group_id?: string | null;
 };
 
 /**

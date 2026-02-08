@@ -769,6 +769,9 @@
       "sessionSummary": "Phiên này: {approved} đã duyệt, {rejected} đã từ chối",
       "viewDetails": "Xem Chi Tiết"
     },
+    "common": {
+      "empty": "Trống"
+    },
     "description": "Xem và phê duyệt báo cáo, bài đăng của người dùng.",
     "detail": {
       "actions": "Thao Tác",
@@ -12225,6 +12228,7 @@
     "edit_post_description": "Thực hiện thay đổi cho bài viết của bạn ở đây.",
     "email_blocked_not_approved": "Email bị chặn - bài viết chưa được phê duyệt",
     "group_label": "Nhóm",
+    "managers": "Quản lý",
     "name": "Tên nhóm",
     "no_groups": "Không có nhóm nào",
     "no_posts_to_show": "Không có bài viết nào để hiển thị.",

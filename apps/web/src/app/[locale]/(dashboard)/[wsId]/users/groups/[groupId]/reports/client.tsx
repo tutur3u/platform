@@ -97,24 +97,62 @@ export default function GroupReportsClient({
     },
   });
 
+  // Query to fetch all group managers (teachers)
+  const groupManagersQuery = useQuery({
+    queryKey: ['ws', wsId, 'group', groupId, 'managers'],
+    queryFn: async (): Promise<
+      Array<{ id: string; full_name: string | null }>
+    > => {
+      const { data, error } = await supabase
+        .from('workspace_user_groups_users')
+        .select('user:workspace_users!inner(id, full_name, ws_id)')
+        .eq('group_id', groupId)
+        .eq('role', 'TEACHER')
+        .eq('user.ws_id', wsId);
+      if (error) throw error;
+      const rows = (data ?? []) as Array<{ user: any }>;
+      const managers: Array<{ id: string; full_name: string | null }> = [];
+      for (const row of rows) {
+        const u = row?.user;
+        if (Array.isArray(u)) {
+          const first = u[0];
+          if (first)
+            managers.push({ id: first.id, full_name: first.full_name ?? null });
+        } else if (u) {
+          managers.push({ id: u.id, full_name: u.full_name ?? null });
+        }
+      }
+      return managers;
+    },
+  });
+
+  const managerUserIds = useMemo(() => {
+    return new Set((groupManagersQuery.data ?? []).map((m) => m.id));
+  }, [groupManagersQuery.data]);
+
+  const filteredUsers = useMemo(() => {
+    if (!usersQuery.data) return [];
+    return usersQuery.data.filter((u) => !managerUserIds.has(u.id));
+  }, [usersQuery.data, managerUserIds]);
+
   const userOptions: ComboboxOption[] = useMemo(
     () =>
-      usersQuery.data?.map((u) => ({
+      filteredUsers.map((u) => ({
         value: u.id,
         label: u.full_name || 'No name',
       })) ?? [],
-    [usersQuery.data]
+    [filteredUsers]
   );
 
   const currentUserIndex = useMemo(() => {
-    if (!userId || !usersQuery.data) return -1;
-    return usersQuery.data.findIndex((u) => u.id === userId);
-  }, [userId, usersQuery.data]);
+    if (!userId) return -1;
+    return filteredUsers.findIndex((u) => u.id === userId);
+  }, [userId, filteredUsers]);
 
-  const totalUsers = usersQuery.data?.length ?? 0;
+  const totalUsers = filteredUsers.length;
 
   const goToUser = (index: number) => {
-    const user = usersQuery.data?.[index];
+    const user = filteredUsers[index];
     if (user?.id) {
       setQueryParams({ userId: user.id, reportId: null });
     }
@@ -163,13 +201,13 @@ export default function GroupReportsClient({
 
   // Auto-select first user when users load and none is selected
   useEffect(() => {
-    if (!userId && usersQuery.data && usersQuery.data.length > 0) {
-      const firstUser = usersQuery.data[0];
+    if (!userId && filteredUsers.length > 0) {
+      const firstUser = filteredUsers[0];
       if (firstUser?.id) {
         setQueryParams({ userId: firstUser.id, reportId: null });
       }
     }
-  }, [userId, usersQuery.data, setQueryParams]);
+  }, [userId, filteredUsers, setQueryParams]);
 
   // Auto-select first report when reports load and none is selected
   // If no reports exist, default to "new"
@@ -248,35 +286,6 @@ export default function GroupReportsClient({
         id: string;
         name: string | null;
       };
-    },
-  });
-
-  // Query to fetch all group managers (teachers)
-  const groupManagersQuery = useQuery({
-    queryKey: ['ws', wsId, 'group', groupId, 'managers'],
-    queryFn: async (): Promise<
-      Array<{ id: string; full_name: string | null }>
-    > => {
-      const { data, error } = await supabase
-        .from('workspace_user_groups_users')
-        .select('user:workspace_users!inner(id, full_name, ws_id)')
-        .eq('group_id', groupId)
-        .eq('role', 'TEACHER')
-        .eq('user.ws_id', wsId);
-      if (error) throw error;
-      const rows = (data ?? []) as Array<{ user: any }>;
-      const managers: Array<{ id: string; full_name: string | null }> = [];
-      for (const row of rows) {
-        const u = row?.user;
-        if (Array.isArray(u)) {
-          const first = u[0];
-          if (first)
-            managers.push({ id: first.id, full_name: first.full_name ?? null });
-        } else if (u) {
-          managers.push({ id: u.id, full_name: u.full_name ?? null });
-        }
-      }
-      return managers;
     },
   });
 

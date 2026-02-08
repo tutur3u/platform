@@ -16,6 +16,7 @@ import {
   XIcon,
 } from '@tuturuuu/icons';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Collapsible,
@@ -133,17 +134,49 @@ export function ApprovalDetailDialog({
       if (match) {
         const key = match?.[1]?.trim() || '';
         if (key === 'user_name') {
+          const userId = item?.kind === 'reports' ? item.user_id : undefined;
+          const userName =
+            (item?.kind === 'reports' ? item.user_name : undefined) || '...';
+          if (userId) {
+            return (
+              <Link
+                key={key + index}
+                href={`/${wsId}/users/database/${userId}`}
+              >
+                <Badge
+                  variant="secondary"
+                  className="cursor-pointer hover:bg-secondary/80"
+                >
+                  {userName}
+                </Badge>
+              </Link>
+            );
+          }
           return (
-            <span key={key + index} className="font-semibold">
-              {(item?.kind === 'reports' ? item.user_name : undefined) || '...'}
-            </span>
+            <Badge key={key + index} variant="secondary">
+              {userName}
+            </Badge>
           );
         }
         if (key === 'group_name') {
+          const groupId = item?.group_id;
+          const groupName = item?.group_name || '...';
+          if (groupId) {
+            return (
+              <Link key={key + index} href={`/${wsId}/users/groups/${groupId}`}>
+                <Badge
+                  variant="outline"
+                  className="cursor-pointer hover:bg-muted"
+                >
+                  {groupName}
+                </Badge>
+              </Link>
+            );
+          }
           return (
-            <span key={key + index} className="font-semibold">
-              {item?.group_name || '...'}
-            </span>
+            <Badge key={key + index} variant="outline">
+              {groupName}
+            </Badge>
           );
         }
         if (key === 'group_manager_name') {
@@ -531,13 +564,37 @@ export function ApprovalDetailDialog({
                 {t('labels.created_at')} {formatDate(item.created_at)}
               </span>
               {item.group_name && (
-                <span>
-                  {t('labels.group')}: {item.group_name}
+                <span className="flex items-center gap-1">
+                  {t('labels.group')}:
+                  {item.group_id ? (
+                    <Link href={`/${wsId}/users/groups/${item.group_id}`}>
+                      <Badge
+                        variant="outline"
+                        className="cursor-pointer hover:bg-muted"
+                      >
+                        {item.group_name}
+                      </Badge>
+                    </Link>
+                  ) : (
+                    <Badge variant="outline">{item.group_name}</Badge>
+                  )}
                 </span>
               )}
               {isReport && item.user_name && (
-                <span>
-                  {t('labels.user')}: {item.user_name}
+                <span className="flex items-center gap-1">
+                  {t('labels.user')}:
+                  {item.user_id ? (
+                    <Link href={`/${wsId}/users/database/${item.user_id}`}>
+                      <Badge
+                        variant="secondary"
+                        className="cursor-pointer hover:bg-secondary/80"
+                      >
+                        {item.user_name}
+                      </Badge>
+                    </Link>
+                  ) : (
+                    <Badge variant="secondary">{item.user_name}</Badge>
+                  )}
                 </span>
               )}
             </div>
@@ -788,19 +845,41 @@ export function ApprovalDetailDialog({
                     <span>{formatDate(item.created_at)}</span>
                   </div>
                   {isReport && item.user_name && (
-                    <div className="flex justify-between">
+                    <div className="flex items-center justify-between">
                       <span className="text-muted-foreground">
                         {t('labels.user')}
                       </span>
-                      <span>{item.user_name}</span>
+                      {item.user_id ? (
+                        <Link href={`/${wsId}/users/database/${item.user_id}`}>
+                          <Badge
+                            variant="secondary"
+                            className="cursor-pointer hover:bg-secondary/80"
+                          >
+                            {item.user_name}
+                          </Badge>
+                        </Link>
+                      ) : (
+                        <Badge variant="secondary">{item.user_name}</Badge>
+                      )}
                     </div>
                   )}
                   {item.group_name && (
-                    <div className="flex justify-between">
+                    <div className="flex items-center justify-between">
                       <span className="text-muted-foreground">
                         {t('labels.group')}
                       </span>
-                      <span>{item.group_name}</span>
+                      {item.group_id ? (
+                        <Link href={`/${wsId}/users/groups/${item.group_id}`}>
+                          <Badge
+                            variant="outline"
+                            className="cursor-pointer hover:bg-muted"
+                          >
+                            {item.group_name}
+                          </Badge>
+                        </Link>
+                      ) : (
+                        <Badge variant="outline">{item.group_name}</Badge>
+                      )}
                     </div>
                   )}
                   <div className="flex justify-between">

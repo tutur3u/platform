@@ -7,6 +7,11 @@ export type Json =
   | Json[];
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: '14.1';
+  };
   public: {
     Tables: {
       abuse_events: {
@@ -16853,36 +16858,7 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
+        Relationships: [];
       };
       calendar_event_participants: {
         Row: {
@@ -18683,7 +18659,7 @@ export type Database = {
       get_auth_provider_stats: {
         Args: never;
         Returns: {
-          last_sign_in_avg: string;
+          last_sign_in_avg: unknown;
           percentage: number;
           provider: string;
           user_count: number;
@@ -19867,7 +19843,7 @@ export type Database = {
         Args: { user_id: string };
         Returns: {
           active_sessions: number;
-          current_session_age: string;
+          current_session_age: unknown;
           total_sessions: number;
         }[];
       };

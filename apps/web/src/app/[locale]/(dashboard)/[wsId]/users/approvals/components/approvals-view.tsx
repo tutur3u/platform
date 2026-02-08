@@ -15,6 +15,7 @@ import {
   XIcon,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
@@ -31,6 +32,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo } from 'react';
@@ -599,16 +601,46 @@ export function ApprovalsView({
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="font-semibold text-sm">{title}</div>
-                        <div className="text-muted-foreground text-xs">
-                          {item.kind === 'reports' && (
-                            <span>
-                              {item.user_name || t('labels.unknown_user')}
-                            </span>
+                        <div className="flex flex-wrap items-center gap-1 text-muted-foreground text-xs">
+                          {item.kind === 'reports' &&
+                            item.user_name &&
+                            (item.user_id ? (
+                              <Link
+                                href={`/${wsId}/users/database/${item.user_id}`}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Badge
+                                  variant="secondary"
+                                  className="cursor-pointer hover:bg-secondary/80"
+                                >
+                                  {item.user_name}
+                                </Badge>
+                              </Link>
+                            ) : (
+                              <Badge variant="secondary">
+                                {item.user_name}
+                              </Badge>
+                            ))}
+                          {item.kind === 'reports' && item.user_name && (
+                            <span className="mx-0.5">•</span>
                           )}
-                          {item.kind === 'reports' && <span> • </span>}
-                          <span>
-                            {item.group_name || t('labels.unknown_group')}
-                          </span>
+                          {item.group_id ? (
+                            <Link
+                              href={`/${wsId}/users/groups/${item.group_id}`}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Badge
+                                variant="outline"
+                                className="cursor-pointer hover:bg-muted"
+                              >
+                                {item.group_name || t('labels.unknown_group')}
+                              </Badge>
+                            </Link>
+                          ) : (
+                            <Badge variant="outline">
+                              {item.group_name || t('labels.unknown_group')}
+                            </Badge>
+                          )}
                         </div>
                       </div>
                       <span
