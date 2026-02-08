@@ -784,6 +784,7 @@
       "noData": "No data",
       "notes": "Notes",
       "pendingApproval": "Pending Approval",
+      "pendingApprovalDescription": "This report is pending approval. Please review the content below.",
       "postSubtitle": "Group Post",
       "previousApprovedVersion": "Previous Approved Version",
       "rejectionReasonLabel": "Rejection Reason",

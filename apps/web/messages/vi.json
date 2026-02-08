@@ -784,6 +784,7 @@
       "noData": "Không có dữ liệu",
       "notes": "Ghi chú",
       "pendingApproval": "Đang Chờ Phê Duyệt",
+      "pendingApprovalDescription": "Báo cáo này đang chờ phê duyệt. Vui lòng xem nội dung bên dưới.",
       "postSubtitle": "Bài Đăng Nhóm",
       "previousApprovedVersion": "Phiên Bản Đã Duyệt Trước Đó",
       "rejectionReasonLabel": "Lý Do Từ Chối",

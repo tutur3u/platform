@@ -9,17 +9,20 @@ import {
   FileText,
   Loader2,
   MessageSquare,
+  Shield as ShieldIcon,
   Star,
   Trophy,
   X,
   XIcon,
 } from '@tuturuuu/icons';
+import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@tuturuuu/ui/collapsible';
+import ReportPreview from '@tuturuuu/ui/custom/report-preview';
 import {
   Dialog,
   DialogContent,
@@ -28,12 +31,16 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { DiffViewer } from '@tuturuuu/ui/diff-viewer';
+import { useWorkspaceConfigs } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
+import type { ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
+import { availableConfigs } from '@/constants/configs/reports';
 import {
   type ApprovalItem,
   useLatestApprovedLog,
@@ -71,8 +78,95 @@ export function ApprovalDetailDialog({
   onNavigateToItem,
 }: ApprovalDetailDialogProps) {
   const t = useTranslations('approvals');
+  const { resolvedTheme } = useTheme();
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
+
+  // Extract config IDs from availableConfigs for batch fetching (filter out any without id)
+  const configIds = useMemo(
+    () =>
+      availableConfigs
+        .map((config) => config.id)
+        .filter((id): id is string => Boolean(id)),
+    []
+  );
+
+  // Use batch query to fetch workspace configs
+  const configsQuery = useWorkspaceConfigs(wsId, configIds);
+
+  // Transform the fetched config data into WorkspaceConfig[] format
+  const configsData: WorkspaceConfig[] = useMemo(() => {
+    const fetchedConfigs = configsQuery.data;
+    if (!fetchedConfigs) return [];
+
+    // Merge fetched values with availableConfigs defaults
+    return availableConfigs
+      .filter((config): config is typeof config & { id: string } =>
+        Boolean(config.id)
+      )
+      .map((baseConfig) => {
+        const fetchedValue = fetchedConfigs[baseConfig.id];
+        return {
+          ...baseConfig,
+          value: fetchedValue ?? baseConfig.defaultValue,
+        } as WorkspaceConfig;
+      });
+  }, [configsQuery.data]);
+
+  const configMap = useMemo(() => {
+    const map = new Map<string, string>();
+    configsData.forEach((config) => {
+      if (config.id && config.value) {
+        map.set(config.id, config.value);
+      }
+    });
+    return map;
+  }, [configsData]);
+
+  const getConfig = (id: string) => configMap.get(id);
+
+  const parseDynamicText = (text?: string | null): ReactNode => {
+    if (!text) return '';
+    const segments = text.split(/({{.*?}})/g).filter(Boolean);
+    const parsedText = segments.map((segment, index) => {
+      const match = segment.match(/{{(.*?)}}/);
+      if (match) {
+        const key = match?.[1]?.trim() || '';
+        if (key === 'user_name') {
+          return (
+            <span key={key + index} className="font-semibold">
+              {(item?.kind === 'reports' ? item.user_name : undefined) || '...'}
+            </span>
+          );
+        }
+        if (key === 'group_name') {
+          return (
+            <span key={key + index} className="font-semibold">
+              {item?.group_name || '...'}
+            </span>
+          );
+        }
+        if (key === 'group_manager_name') {
+          return (
+            <span key={key + index} className="font-semibold">
+              {(item?.kind === 'reports' ? item.creator_name : undefined) ||
+                '...'}
+            </span>
+          );
+        }
+        return (
+          <span
+            key={key + index}
+            className="rounded bg-foreground px-1 py-0.5 font-semibold text-background"
+          >
+            {key}
+          </span>
+        );
+      }
+      return segment;
+    });
+    return parsedText;
+  };
 
   // Fetch latest approved log using useQuery hook
   const reportId = item?.kind === 'reports' && open ? item.id : null;
@@ -246,7 +340,42 @@ export function ApprovalDetailDialog({
           <ChevronDown className="h-4 w-4 transition-transform duration-200" />
         </CollapsibleTrigger>
         <CollapsibleContent className="pt-2">
-          {renderContent(item.content)}
+          {isReport ? (
+            <div className="rounded-lg border bg-card p-4">
+              <ReportPreview
+                t={t}
+                lang="en" // Ideally this should be dynamic but useLocale is at top level
+                parseDynamicText={parseDynamicText}
+                getConfig={getConfig}
+                theme={resolvedTheme === 'dark' ? 'dark' : 'light'}
+                data={{
+                  title: item.title || '',
+                  content: item.content || '',
+                  score: (item.score as number | null)?.toFixed(1) || '',
+                  feedback: (item.feedback as string | null) || '',
+                }}
+                notice={
+                  !canApprove ? (
+                    <div className="mb-4 rounded-lg border border-dynamic-orange/30 bg-dynamic-orange/10 p-4">
+                      <div className="flex items-start gap-3">
+                        <ShieldIcon className="mt-0.5 h-5 w-5 text-dynamic-orange" />
+                        <div className="flex-1">
+                          <div className="font-semibold text-dynamic-orange">
+                            {t('detail.pendingApproval')}
+                          </div>
+                          <div className="mt-1 text-dynamic-orange/80 text-sm">
+                            {t('detail.pendingApprovalDescription')}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : undefined
+                }
+              />
+            </div>
+          ) : (
+            renderContent(item.content)
+          )}
         </CollapsibleContent>
       </Collapsible>
 
