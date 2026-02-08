@@ -14,7 +14,7 @@ export default function Footer() {
     <footer className="gradient-background border-primary/10 border-t py-12">
       <div className="mx-auto max-w-7xl space-y-8 px-6">
         {/* Top Section - Logos */}
-        <div className="flex flex-col justify-between gap-8 md:flex-row md:items-center">
+        <div className="flex flex-col items-center justify-between gap-8 md:flex-row">
           {/* Neo League Logo */}
           <div className="w-80">
             <Image
@@ -55,11 +55,11 @@ export default function Footer() {
         {/* Main Footer Content */}
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {/* Our Socials */}
-          <div className="space-y-4">
+          <div className="space-y-4 text-center md:text-left">
             <h3 className="font-black text-brand-dark-blue text-lg">
               Our Socials
             </h3>
-            <div className="flex gap-4">
+            <div className="flex justify-center gap-4 md:justify-start">
               <Link
                 href="https://facebook.com/RMITNeoCultureTech"
                 target="_blank"
@@ -91,13 +91,13 @@ export default function Footer() {
           </div>
 
           {/* Contact Us */}
-          <div className="space-y-4">
+          <div className="space-y-4 text-center md:text-left">
             <h3 className="font-black text-brand-dark-blue text-lg">
               Contact Us
             </h3>
             <div className="space-y-2 text-primary text-sm">
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4" />
+              <div className="flex items-center justify-center gap-2 md:justify-start">
+                <Phone className="h-4 w-4 shrink-0" />
                 <div>
                   <p>
                     <span className="font-bold">Ngo Van Tai</span>
@@ -106,8 +106,8 @@ export default function Footer() {
                   <span className="font-bold">0918498056</span>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4" />
+              <div className="flex items-center justify-center gap-2 md:justify-start">
+                <Phone className="h-4 w-4 shrink-0" />
                 <div>
                   <p>
                     <span className="font-bold">Nguyen Ha Gia Tam</span>
@@ -116,8 +116,8 @@ export default function Footer() {
                   <span className="font-bold">0765386296</span>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
+              <div className="flex items-center justify-center gap-2 md:justify-start">
+                <Mail className="h-4 w-4 shrink-0" />
                 <a
                   href="mailto:neoculturetechclub.sgs@rmit.edu.vn"
                   className="font-bold hover:underline"
@@ -125,8 +125,8 @@ export default function Footer() {
                   neoculturetechclub.sgs@rmit.edu.vn
                 </a>
               </div>
-              <div className="flex items-center gap-2">
-                <Globe className="h-4 w-4" />
+              <div className="flex items-center justify-center gap-2 md:justify-start">
+                <Globe className="h-4 w-4 shrink-0" />
                 <a
                   href="https://rmitnct.club"
                   target="_blank"
@@ -140,7 +140,7 @@ export default function Footer() {
           </div>
 
           {/* Core Values */}
-          <div className="space-y-4">
+          <div className="space-y-4 text-center md:text-left">
             <h3 className="font-black text-brand-dark-blue text-lg">
               Core Values
             </h3>
