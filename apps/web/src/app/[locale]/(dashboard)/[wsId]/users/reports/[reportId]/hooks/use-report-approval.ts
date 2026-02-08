@@ -41,14 +41,25 @@ export function createReportQueryInvalidator(
       }),
       queryClient.invalidateQueries({
         queryKey: [
-          'ws', wsId, 'group', report.group_id,
-          'user', report.user_id, 'report', report.id,
+          'ws',
+          wsId,
+          'group',
+          report.group_id,
+          'user',
+          report.user_id,
+          'report',
+          report.id,
         ],
       }),
       queryClient.invalidateQueries({
         queryKey: [
-          'ws', wsId, 'group', report.group_id,
-          'user', report.user_id, 'reports',
+          'ws',
+          wsId,
+          'group',
+          report.group_id,
+          'user',
+          report.user_id,
+          'reports',
         ],
       }),
       queryClient.invalidateQueries({
