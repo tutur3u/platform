@@ -2,14 +2,18 @@
 
 import {
   Check,
+  CheckCircle,
   Download,
   ImageIcon,
+  Loader2,
   Monitor,
   Moon,
   Palette,
   Printer,
   Sun,
+  XCircle,
 } from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
@@ -20,6 +24,7 @@ import {
 import { useTranslations } from 'next-intl';
 
 type ReportTheme = 'auto' | 'light' | 'dark';
+type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | null | undefined;
 
 interface ReportActionsProps {
   isPendingApproval: boolean;
@@ -28,6 +33,13 @@ interface ReportActionsProps {
   handlePngExport: () => void;
   reportTheme: ReportTheme;
   setReportTheme: (theme: ReportTheme) => void;
+  canApproveReports?: boolean;
+  isNew?: boolean;
+  approvalStatus?: ApprovalStatus;
+  onApprove?: () => void;
+  onReject?: () => void;
+  isApproving?: boolean;
+  isRejecting?: boolean;
 }
 
 export function ReportActions({
@@ -37,11 +49,84 @@ export function ReportActions({
   handlePngExport,
   reportTheme,
   setReportTheme,
+  canApproveReports = false,
+  isNew = false,
+  approvalStatus,
+  onApprove,
+  onReject,
+  isApproving = false,
+  isRejecting = false,
 }: ReportActionsProps) {
   const t = useTranslations();
 
+  const showApprovalActions = canApproveReports && !isNew && approvalStatus;
+
   return (
-    <div className="-mb-2 flex items-center justify-end gap-2">
+    <div className="-mb-2 flex items-center justify-between gap-2">
+      {showApprovalActions ? (
+        <div className="flex items-center gap-2">
+          {approvalStatus === 'APPROVED' && (
+            <Badge
+              variant="outline"
+              className="border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green"
+            >
+              <CheckCircle className="mr-1 h-3 w-3" />
+              {t('ws-reports.approved')}
+            </Badge>
+          )}
+          {approvalStatus === 'REJECTED' && (
+            <Badge
+              variant="outline"
+              className="border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red"
+            >
+              <XCircle className="mr-1 h-3 w-3" />
+              {t('ws-reports.rejected')}
+            </Badge>
+          )}
+          {approvalStatus === 'PENDING' && (
+            <Badge
+              variant="outline"
+              className="border-dynamic-yellow/30 bg-dynamic-yellow/10 text-dynamic-yellow"
+            >
+              {t('ws-reports.pending')}
+            </Badge>
+          )}
+          {approvalStatus !== 'APPROVED' && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1 border-dynamic-green/30 text-dynamic-green hover:bg-dynamic-green/10"
+              onClick={onApprove}
+              disabled={isApproving || isRejecting}
+            >
+              {isApproving ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <CheckCircle className="h-3.5 w-3.5" />
+              )}
+              {t('ws-reports.approve')}
+            </Button>
+          )}
+          {approvalStatus !== 'REJECTED' && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1 border-dynamic-red/30 text-dynamic-red hover:bg-dynamic-red/10"
+              onClick={onReject}
+              disabled={isApproving || isRejecting}
+            >
+              {isRejecting ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <XCircle className="h-3.5 w-3.5" />
+              )}
+              {t('ws-reports.reject')}
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div />
+      )}
       <div className="flex items-center gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

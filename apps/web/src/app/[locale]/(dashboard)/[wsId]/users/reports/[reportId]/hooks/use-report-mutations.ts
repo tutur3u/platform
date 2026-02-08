@@ -24,6 +24,7 @@ export function useReportMutations({
   healthcareVitals = [],
   factorEnabled = false,
   scoreCalculationMethod = 'LATEST',
+  canApproveReports = false,
 }: {
   wsId: string;
   report: UserReport;
@@ -37,6 +38,7 @@ export function useReportMutations({
   }>;
   factorEnabled?: boolean;
   scoreCalculationMethod?: 'AVERAGE' | 'LATEST';
+  canApproveReports?: boolean;
 }) {
   const t = useTranslations();
   const supabase = createClient();
@@ -158,6 +160,41 @@ export function useReportMutations({
     },
   });
 
+  const invalidateReportQueries = async () => {
+    if (!report.id) return;
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: ['ws', wsId, 'report', report.id, 'logs'],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: [
+          'ws',
+          wsId,
+          'group',
+          report.group_id,
+          'user',
+          report.user_id,
+          'report',
+          report.id,
+        ],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: [
+          'ws',
+          wsId,
+          'group',
+          report.group_id,
+          'user',
+          report.user_id,
+          'reports',
+        ],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ['ws', wsId, 'approvals', 'reports'],
+      }),
+    ]);
+  };
+
   const updateMutation = useMutation({
     mutationFn: async (payload: {
       title: string;
@@ -174,42 +211,23 @@ export function useReportMutations({
           feedback: payload.feedback,
           score: payload.score,
           updated_at: new Date().toISOString(),
+          // Auto-approve when user with approval permission saves
+          ...(canApproveReports
+            ? {
+                report_approval_status: 'APPROVED' as const,
+                approved_at: new Date().toISOString(),
+                rejected_by: null,
+                rejected_at: null,
+                rejection_reason: null,
+              }
+            : {}),
         })
         .eq('id', report.id);
       if (error) throw error;
     },
     onSuccess: async () => {
       toast.success(t('ws-reports.report_saved'));
-      if (report.id) {
-        await Promise.all([
-          queryClient.invalidateQueries({
-            queryKey: ['ws', wsId, 'report', report.id, 'logs'],
-          }),
-          queryClient.invalidateQueries({
-            queryKey: [
-              'ws',
-              wsId,
-              'group',
-              report.group_id,
-              'user',
-              report.user_id,
-              'report',
-              report.id,
-            ],
-          }),
-          queryClient.invalidateQueries({
-            queryKey: [
-              'ws',
-              wsId,
-              'group',
-              report.group_id,
-              'user',
-              report.user_id,
-              'reports',
-            ],
-          }),
-        ]);
-      }
+      await invalidateReportQueries();
     },
     onError: (err) => {
       toast.error(
@@ -379,10 +397,68 @@ export function useReportMutations({
     },
   });
 
+  const approveMutation = useMutation({
+    mutationFn: async () => {
+      if (!report.id) throw new Error('Missing report id');
+      const { error } = await supabase
+        .from('external_user_monthly_reports')
+        .update({
+          report_approval_status: 'APPROVED' as const,
+          approved_at: new Date().toISOString(),
+          rejected_by: null,
+          rejected_at: null,
+          rejection_reason: null,
+        })
+        .eq('id', report.id);
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      toast.success(t('ws-reports.report_approved'));
+      await invalidateReportQueries();
+    },
+    onError: (err) => {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : t('ws-reports.failed_approve_report')
+      );
+    },
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: async (reason: string) => {
+      if (!report.id) throw new Error('Missing report id');
+      const { error } = await supabase
+        .from('external_user_monthly_reports')
+        .update({
+          report_approval_status: 'REJECTED' as const,
+          rejected_at: new Date().toISOString(),
+          rejection_reason: reason,
+          approved_by: null,
+          approved_at: null,
+        })
+        .eq('id', report.id);
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      toast.success(t('ws-reports.report_rejected'));
+      await invalidateReportQueries();
+    },
+    onError: (err) => {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : t('ws-reports.failed_reject_report')
+      );
+    },
+  });
+
   return {
     createMutation,
     updateMutation,
     deleteMutation,
     updateScoresMutation,
+    approveMutation,
+    rejectMutation,
   };
 }
