@@ -1,7 +1,8 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { createPolarCustomer, getPolarCustomer } from '@/utils/customer-helper';
+import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
 import { getSeatStatus } from '@/utils/seat-limits';
 import { createFreeSubscription } from '@/utils/subscription-helper';
 
@@ -78,12 +79,8 @@ export const ensureSubscription = async (wsId: string) => {
     const supabase = await createClient();
     const polar = createPolarClient();
 
-    const customer = await getPolarCustomer({ polar, supabase, wsId });
-
-    if (!customer) {
-      // Create Polar customer if not exists
-      await createPolarCustomer({ polar, supabase, wsId });
-    }
+    // Get or create Polar customer
+    await getOrCreatePolarCustomer({ polar, supabase, wsId });
 
     // Create free tier subscription
     const subscription = await createFreeSubscription(polar, supabase, wsId);
@@ -158,9 +155,7 @@ export async function fetchSubscription(wsId: string) {
     cancelAtPeriodEnd: dbSub.cancel_at_period_end,
     product: dbSub.workspace_subscription_products,
     // Seat-based pricing fields
-    pricingModel: dbSub.pricing_model,
     seatCount: dbSub.seat_count,
-    pricePerSeat: dbSub.price_per_seat,
   };
 }
 
@@ -208,13 +203,19 @@ export async function GET(
     }
 
     // Fetch all billing data in parallel
-    const [products, subscriptionResult, orders, hasManagePermission] =
-      await Promise.all([
-        fetchProducts(),
-        ensureSubscription(wsId),
-        fetchWorkspaceOrders(wsId),
-        checkManageSubscriptionPermission(wsId, user.id),
-      ]);
+    const [
+      isPersonal,
+      products,
+      subscriptionResult,
+      orders,
+      hasManagePermission,
+    ] = await Promise.all([
+      isPersonalWorkspace(wsId),
+      fetchProducts(),
+      ensureSubscription(wsId),
+      fetchWorkspaceOrders(wsId),
+      checkManageSubscriptionPermission(wsId, user.id),
+    ]);
 
     // Handle subscription creation failure
     if (!subscriptionResult.subscription) {
@@ -230,6 +231,7 @@ export async function GET(
     const seatStatus = await getSeatStatus(supabase, wsId);
 
     return NextResponse.json({
+      isPersonalWorkspace: isPersonal,
       subscription,
       products,
       orders,

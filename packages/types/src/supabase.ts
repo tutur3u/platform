@@ -15506,8 +15506,8 @@ export type Database = {
           pricing_model:
             | Database['public']['Enums']['workspace_pricing_model']
             | null;
-          recurring_interval: string | null;
-          tier: Database['public']['Enums']['workspace_product_tier'] | null;
+          recurring_interval: string;
+          tier: Database['public']['Enums']['workspace_product_tier'];
         };
         Insert: {
           archived?: boolean;
@@ -15522,8 +15522,8 @@ export type Database = {
           pricing_model?:
             | Database['public']['Enums']['workspace_pricing_model']
             | null;
-          recurring_interval?: string | null;
-          tier?: Database['public']['Enums']['workspace_product_tier'] | null;
+          recurring_interval: string;
+          tier: Database['public']['Enums']['workspace_product_tier'];
         };
         Update: {
           archived?: boolean;
@@ -15538,8 +15538,8 @@ export type Database = {
           pricing_model?:
             | Database['public']['Enums']['workspace_pricing_model']
             | null;
-          recurring_interval?: string | null;
-          tier?: Database['public']['Enums']['workspace_product_tier'] | null;
+          recurring_interval?: string;
+          tier?: Database['public']['Enums']['workspace_product_tier'];
         };
         Relationships: [];
       };
@@ -15551,10 +15551,6 @@ export type Database = {
           current_period_start: string | null;
           id: string;
           polar_subscription_id: string;
-          price_per_seat: number | null;
-          pricing_model:
-            | Database['public']['Enums']['workspace_pricing_model']
-            | null;
           product_id: string | null;
           seat_count: number | null;
           status: Database['public']['Enums']['subscription_status'] | null;
@@ -15568,10 +15564,6 @@ export type Database = {
           current_period_start?: string | null;
           id?: string;
           polar_subscription_id: string;
-          price_per_seat?: number | null;
-          pricing_model?:
-            | Database['public']['Enums']['workspace_pricing_model']
-            | null;
           product_id?: string | null;
           seat_count?: number | null;
           status?: Database['public']['Enums']['subscription_status'] | null;
@@ -15585,10 +15577,6 @@ export type Database = {
           current_period_start?: string | null;
           id?: string;
           polar_subscription_id?: string;
-          price_per_seat?: number | null;
-          pricing_model?:
-            | Database['public']['Enums']['workspace_pricing_model']
-            | null;
           product_id?: string | null;
           seat_count?: number | null;
           status?: Database['public']['Enums']['subscription_status'] | null;
@@ -20236,6 +20224,10 @@ export type Database = {
             Returns: number;
           };
       hard_delete_soft_deleted_items: { Args: never; Returns: undefined };
+      has_board_template_edit_permission: {
+        Args: { p_template_id: string };
+        Returns: boolean;
+      };
       has_task_permission: {
         Args: { p_permission: string; p_task_id: string };
         Returns: boolean;
@@ -22707,7 +22699,12 @@ export type Database = {
         | 'gemini-2.0-flash-lite'
         | 'gemini-2.5-flash-lite';
       workspace_calendar_type: 'primary' | 'tasks' | 'habits' | 'custom';
-      workspace_pricing_model: 'fixed' | 'seat_based';
+      workspace_pricing_model:
+        | 'fixed'
+        | 'seat_based'
+        | 'custom'
+        | 'free'
+        | 'metered_unit';
       workspace_product_tier: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
       workspace_role_permission:
         | 'view_infrastructure'
@@ -24789,7 +24786,13 @@ export const Constants = {
         'gemini-2.5-flash-lite',
       ],
       workspace_calendar_type: ['primary', 'tasks', 'habits', 'custom'],
-      workspace_pricing_model: ['fixed', 'seat_based'],
+      workspace_pricing_model: [
+        'fixed',
+        'seat_based',
+        'custom',
+        'free',
+        'metered_unit',
+      ],
       workspace_product_tier: ['FREE', 'PLUS', 'PRO', 'ENTERPRISE'],
       workspace_role_permission: [
         'view_infrastructure',

@@ -15,12 +15,26 @@ export async function POST(
 
   const { subscriptionId } = await params;
 
-  const { wsId, productId } = await request.json();
+  const { wsId, productId, seats } = await request.json();
 
   // Validate that you have the info you need
   if (!subscriptionId || !productId || !wsId) {
     return NextResponse.json(
       { error: 'Subscription ID, Product ID and Workspace ID are required' },
+      { status: 400 }
+    );
+  }
+
+  if (seats && typeof seats !== 'number') {
+    return NextResponse.json(
+      { error: 'Seats must be a number' },
+      { status: 400 }
+    );
+  }
+
+  if (seats < 1 || seats > 1000) {
+    return NextResponse.json(
+      { error: 'Seats must be between 1 and 1000' },
       { status: 400 }
     );
   }
@@ -87,6 +101,29 @@ export async function POST(
     );
   }
 
+  if (seats) {
+    const { count: memberCount, error: memberCountError } = await supabase
+      .from('workspace_members')
+      .select('*', { count: 'exact', head: true })
+      .eq('ws_id', wsId);
+
+    if (memberCountError) {
+      return NextResponse.json(
+        { error: memberCountError.message },
+        { status: 500 }
+      );
+    }
+
+    if (memberCount && seats < memberCount) {
+      return NextResponse.json(
+        {
+          error: `Seat count (${seats}) cannot be less than current active members (${memberCount})`,
+        },
+        { status: 400 }
+      );
+    }
+  }
+
   // HERE is where you add the metadata
   try {
     const polar = createPolarClient();
@@ -95,8 +132,10 @@ export async function POST(
       subscriptionId: subscription.polar_subscription_id,
       metadata: { wsId },
       products: [productId],
+      requireBillingAddress: true,
+      seats,
+      embedOrigin: BASE_URL,
       successUrl: `${BASE_URL}/${wsId}/billing/success?checkoutId={CHECKOUT_ID}`,
-      isBusinessCustomer: true,
     });
 
     return NextResponse.json({ url: checkoutSession.url });

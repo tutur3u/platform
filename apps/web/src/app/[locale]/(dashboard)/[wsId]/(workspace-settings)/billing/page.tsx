@@ -1,12 +1,13 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { format } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { createPolarCustomer, getPolarCustomer } from '@/utils/customer-helper';
+import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
 import { getSeatStatus } from '@/utils/seat-limits';
 import { createFreeSubscription } from '@/utils/subscription-helper';
 import { BillingClient } from './billing-client';
@@ -91,12 +92,8 @@ export const ensureSubscription = async (wsId: string) => {
     const supabase = await createClient();
     const polar = createPolarClient();
 
-    const customer = await getPolarCustomer({ polar, supabase, wsId });
-
-    if (!customer) {
-      // Create Polar customer if not exists
-      await createPolarCustomer({ polar, supabase, wsId });
-    }
+    // Get or create Polar customer
+    await getOrCreatePolarCustomer({ polar, supabase, wsId });
 
     // Create free tier subscription
     const subscription = await createFreeSubscription(polar, supabase, wsId);
@@ -171,9 +168,7 @@ export async function fetchSubscription(wsId: string) {
     cancelAtPeriodEnd: dbSub.cancel_at_period_end,
     product: dbSub.workspace_subscription_products,
     // Seat-based pricing fields
-    pricingModel: dbSub.pricing_model,
     seatCount: dbSub.seat_count,
-    pricePerSeat: dbSub.price_per_seat,
   };
 }
 
@@ -220,6 +215,7 @@ export default async function BillingPage({
         if (!user) return notFound();
 
         const [
+          isPersonal,
           products,
           subscriptionResult,
           orders,
@@ -227,6 +223,7 @@ export default async function BillingPage({
           locale,
           t,
         ] = await Promise.all([
+          isPersonalWorkspace(wsId),
           fetchProducts(),
           ensureSubscription(wsId), // Try to ensure subscription exists
           fetchWorkspaceOrders(wsId),
@@ -270,15 +267,16 @@ export default async function BillingPage({
             ? [subscription.product.description]
             : [t('premium-features')],
           // Seat-based pricing fields
-          pricingModel: subscription.pricingModel,
+          pricingModel: subscription.product.pricing_model || 'free',
+          pricePerSeat: subscription.product.price_per_seat,
           seatCount: subscription.seatCount,
-          pricePerSeat: subscription.pricePerSeat,
           maxSeats: subscription.product.max_seats,
         };
 
         return (
           <div className="container mx-auto max-w-6xl px-4 py-8">
             <BillingClient
+              isPersonalWorkspace={isPersonal}
               currentPlan={currentPlan}
               products={products}
               product_id={subscription?.product.id || ''}

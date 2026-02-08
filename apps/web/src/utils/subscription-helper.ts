@@ -1,24 +1,6 @@
 import type { Polar } from '@tuturuuu/payment/polar';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 
-// Helper function to get the FREE tier product from the database
-export async function getFreeProduct(supabase: TypedSupabaseClient) {
-  const { data: freeProduct, error } = await supabase
-    .from('workspace_subscription_products')
-    .select('id, name, tier')
-    .eq('tier', 'FREE')
-    .eq('archived', false)
-    .limit(1)
-    .maybeSingle();
-
-  if (error) {
-    console.error('Error fetching free product:', error.message);
-    return null;
-  }
-
-  return freeProduct;
-}
-
 // Helper function to check if a workspace has any active subscriptions
 export async function hasActiveSubscription(
   supabase: TypedSupabaseClient,
@@ -44,15 +26,6 @@ export async function createFreeSubscription(
   supabase: TypedSupabaseClient,
   wsId: string
 ) {
-  // Get the FREE tier product
-  const freeProduct = await getFreeProduct(supabase);
-  if (!freeProduct) {
-    console.error(
-      'No FREE tier product found, cannot create free subscription'
-    );
-    return null;
-  }
-
   // Check if the workspace already has an active subscription
   const hasActive = await hasActiveSubscription(supabase, wsId);
   if (hasActive) {
@@ -77,10 +50,28 @@ export async function createFreeSubscription(
     return null;
   }
 
-  if (workspace.personal) {
+  const isPersonal = workspace.personal;
+
+  if (isPersonal) {
     externalCustomerId = workspace.creator_id;
   } else {
     externalCustomerId = `workspace_${wsId}`;
+  }
+
+  const { data: freeProduct, error: productError } = await supabase
+    .from('workspace_subscription_products')
+    .select('*')
+    .eq('archived', false)
+    .eq('pricing_model', 'free')
+    .limit(1)
+    .maybeSingle();
+
+  if (productError || !freeProduct) {
+    console.error(
+      `No FREE tier product found for ${isPersonal ? 'personal' : 'non-personal'} workspace, cannot create free subscription:`,
+      productError
+    );
+    return null;
   }
 
   try {
