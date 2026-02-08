@@ -7,22 +7,10 @@
     "enabled": false
   },
   "crons": [
-    // {
-    //   "path": "/api/cron/discord/wol/daily/remind",
-    //   "schedule": "0 14 * * *"
-    // },
     {
       "path": "/api/cron/discord/daily-report",
       "schedule": "0 16 * * *"
     },
-    // {
-    //   "path": "/api/cron/tasks/generate-embeddings",
-    //   "schedule": "0 2 * * *"
-    // },
-    // {
-    //   "path": "/api/cron/calendar/smart-schedule",
-    //   "schedule": "0 * * * *"
-    // },
     {
       "path": "/api/cron/payment/products",
       "schedule": "0 * * * *"
