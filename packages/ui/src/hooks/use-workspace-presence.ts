@@ -70,6 +70,9 @@ export function useWorkspacePresence({
   const awayRef = useRef(false);
   const userDataRef = useRef<User | null>(null);
   const setupPromiseRef = useRef<Promise<boolean> | null>(null);
+  // Stable ref so subscribe callbacks can call the latest trackPresence
+  // without a circular useCallback dependency.
+  const trackPresenceRef = useRef<(() => Promise<void>) | null>(null);
 
   const channelName = `ws-presence-${wsId}`;
   // Derived key that captures both channel identity AND enabled state.
@@ -173,25 +176,56 @@ export function useWorkspacePresence({
                   resolve(true);
                   break;
                 case 'CHANNEL_ERROR':
-                case 'TIMED_OUT':
+                case 'TIMED_OUT': {
+                  // Clear stale channel so ensureChannel recreates
+                  // instead of short-circuiting on the dead reference.
+                  const deadCh = channelRef.current;
+                  channelRef.current = null;
+                  setupPromiseRef.current = null;
+                  if (deadCh) {
+                    supabase.removeChannel(deadCh).catch(() => {});
+                  }
                   if (
                     retryCountRef.current < MAX_RETRIES &&
                     !isCleanedUpRef.current
                   ) {
                     retryCountRef.current++;
-                    setupPromiseRef.current = null; // allow retry
                     setTimeout(() => {
-                      ensureChannel();
+                      trackPresenceRef.current?.();
                     }, 2000 * retryCountRef.current);
                   }
                   resolve(false);
                   break;
-                case 'CLOSED':
+                }
+                case 'CLOSED': {
                   if (DEV_MODE) {
                     console.info('Workspace presence channel closed');
                   }
+                  // The subscribe callback fires CLOSED even after an
+                  // earlier SUBSCRIBED (e.g. WebSocket drops). At that
+                  // point the promise is already resolved, so
+                  // resolve(false) is a no-op — but we still need to
+                  // clear the dead channel ref so ensureChannel
+                  // recreates on the next call instead of returning
+                  // true for a dead channel.
+                  if (!isCleanedUpRef.current) {
+                    const deadCh = channelRef.current;
+                    channelRef.current = null;
+                    setupPromiseRef.current = null;
+                    if (deadCh) {
+                      supabase.removeChannel(deadCh).catch(() => {});
+                    }
+                    // Attempt reconnection
+                    if (retryCountRef.current < MAX_RETRIES) {
+                      retryCountRef.current++;
+                      setTimeout(() => {
+                        trackPresenceRef.current?.();
+                      }, 2000 * retryCountRef.current);
+                    }
+                  }
                   resolve(false);
                   break;
+                }
               }
             });
         });
@@ -199,11 +233,12 @@ export function useWorkspacePresence({
         if (DEV_MODE) {
           console.error('Error setting up workspace presence:', error);
         }
+        channelRef.current = null;
+        setupPromiseRef.current = null;
         if (retryCountRef.current < MAX_RETRIES && !isCleanedUpRef.current) {
           retryCountRef.current++;
-          setupPromiseRef.current = null;
           setTimeout(() => {
-            ensureChannel();
+            trackPresenceRef.current?.();
           }, 2000 * retryCountRef.current);
         }
         return false;
@@ -262,6 +297,9 @@ export function useWorkspacePresence({
       }
     }
   }, [ensureChannel]);
+
+  // Keep ref in sync so subscribe callbacks can call the latest version
+  trackPresenceRef.current = trackPresence;
 
   // ---------------------------------------------------------------------------
   // Public: update location (triggers lazy channel creation + track)

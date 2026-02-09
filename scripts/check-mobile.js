@@ -107,9 +107,7 @@ const checks = [
         return 'All tests passed';
       }
       // Match "X tests passed, Y failed"
-      const resultMatch = clean.match(
-        /(\d+) tests? passed.*?(\d+) failed/i
-      );
+      const resultMatch = clean.match(/(\d+) tests? passed.*?(\d+) failed/i);
       if (resultMatch) {
         return `${resultMatch[1]} passed, ${resultMatch[2]} failed`;
       }
