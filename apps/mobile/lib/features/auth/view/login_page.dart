@@ -44,6 +44,7 @@ class _LoginPageState extends State<LoginPage>
   Future<void> _handleSendOtp() async {
     final email = _emailController.text.trim();
     if (email.isEmpty) return;
+    if (Env.isTurnstileConfigured && _captchaToken == null) return;
 
     final captcha = _captchaToken;
     setState(() => _captchaToken = null);
@@ -162,6 +163,7 @@ class _LoginPageState extends State<LoginPage>
       builder: (context, state) {
         return Column(
           children: [
+            const SizedBox(height: 4),
             TextField(
               controller: _emailController,
               decoration: InputDecoration(
@@ -170,6 +172,7 @@ class _LoginPageState extends State<LoginPage>
               ),
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _handleSendOtp(),
               enabled: !_otpSent && !state.isLoading,
             ),
             if (_otpSent) ...[
@@ -230,6 +233,7 @@ class _LoginPageState extends State<LoginPage>
       builder: (context, state) {
         return Column(
           children: [
+            const SizedBox(height: 4),
             TextField(
               controller: _emailController,
               decoration: InputDecoration(

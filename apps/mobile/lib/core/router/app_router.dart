@@ -40,8 +40,12 @@ GoRouter createAppRouter(AuthCubit authCubit, WorkspaceCubit workspaceCubit) {
       final isMfaRoute = state.matchedLocation == Routes.mfaVerify;
       final isWsSelectRoute = state.matchedLocation == Routes.workspaceSelect;
 
-      // Still loading auth → stay put
-      if (authState.status == AuthStatus.unknown) return null;
+      // Still loading auth → keep on auth routes, redirect others to login.
+      // In practice this rarely triggers since AuthCubit resolves state
+      // synchronously from the cached Supabase session.
+      if (authState.status == AuthStatus.unknown) {
+        return isAuthRoute ? null : Routes.login;
+      }
 
       // Not authenticated → redirect to login
       if (authState.status == AuthStatus.unauthenticated && !isAuthRoute) {

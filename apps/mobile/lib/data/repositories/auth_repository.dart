@@ -221,6 +221,12 @@ class AuthRepository {
 
   // ── Session management ──────────────────────────
 
+  /// Returns the cached current user synchronously.
+  ///
+  /// Safe to call after `Supabase.initialize()` has completed (which happens
+  /// in `main()` before `runApp()`).
+  User? getCurrentUserSync() => supabase.auth.currentUser;
+
   Future<User?> getCurrentUser() async {
     return supabase.auth.currentUser;
   }

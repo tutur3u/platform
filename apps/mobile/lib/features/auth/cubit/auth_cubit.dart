@@ -11,25 +11,26 @@ import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 class AuthCubit extends Cubit<AuthState> {
   AuthCubit({required AuthRepository authRepository})
     : _repo = authRepository,
-      super(const AuthState.unknown()) {
-    unawaited(_init());
+      super(_resolveInitialState(authRepository)) {
+    _setupAuthListener();
   }
 
   final AuthRepository _repo;
   StreamSubscription<supa.AuthState>? _authSub;
 
-  Future<void> _init() async {
-    final user = await _repo.getCurrentUser();
-    if (user != null) {
-      if (_repo.checkMfaRequired()) {
-        emit(AuthState.mfaRequired(user));
-      } else {
-        emit(AuthState.authenticated(user));
-      }
-    } else {
-      emit(const AuthState.unauthenticated());
-    }
+  /// Resolves auth state synchronously from the cached Supabase session.
+  ///
+  /// `supabase.auth.currentUser` is populated during `Supabase.initialize()`
+  /// which completes in `main()` before `runApp()`, so the cached user is
+  /// always available by the time this cubit is created.
+  static AuthState _resolveInitialState(AuthRepository repo) {
+    final user = repo.getCurrentUserSync();
+    if (user == null) return const AuthState.unauthenticated();
+    if (repo.checkMfaRequired()) return AuthState.mfaRequired(user);
+    return AuthState.authenticated(user);
+  }
 
+  void _setupAuthListener() {
     _authSub = _repo.onAuthStateChange().listen((authState) {
       final event = authState.event;
       final session = authState.session;
