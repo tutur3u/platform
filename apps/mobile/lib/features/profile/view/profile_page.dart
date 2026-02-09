@@ -458,7 +458,7 @@ class _EditableTextFieldState extends State<_EditableTextField> {
     if (widget.emptyMessage != null) {
       final isInvalidEmail =
           widget.keyboardType == TextInputType.emailAddress &&
-              !value.contains('@');
+          !value.contains('@');
       if (value.isEmpty || isInvalidEmail) {
         shad.showToast(
           context: context,
@@ -588,8 +588,9 @@ class _EmailField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _EditableTextField(
-          label:
-              newEmail != null ? l10n.profileCurrentEmail : l10n.profileEmail,
+          label: newEmail != null
+              ? l10n.profileCurrentEmail
+              : l10n.profileEmail,
           hint: l10n.profileEmailHint,
           defaultValue: email,
           emptyMessage: 'Please enter a valid email address',

@@ -83,9 +83,9 @@ class _WorkspaceSelectPageState extends State<WorkspaceSelectPage> {
                         });
 
                         try {
-                          await context
-                              .read<WorkspaceCubit>()
-                              .selectWorkspace(workspace);
+                          await context.read<WorkspaceCubit>().selectWorkspace(
+                            workspace,
+                          );
                           if (!context.mounted) {
                             return;
                           }
@@ -97,8 +97,8 @@ class _WorkspaceSelectPageState extends State<WorkspaceSelectPage> {
                             context: context,
                             builder: (context, overlay) =>
                                 shad.Alert.destructive(
-                              title: Text(l10n.workspaceSelectError),
-                            ),
+                                  title: Text(l10n.workspaceSelectError),
+                                ),
                           );
                         } finally {
                           if (context.mounted) {

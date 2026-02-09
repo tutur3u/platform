@@ -49,7 +49,7 @@ class _SignUpPageState extends State<SignUpPage> {
     // Validate all FormFields by accessing the Form state
     final formState = _formKey.currentState;
     if (formState == null) return;
-    
+
     // Trigger validation - this will cause FormField validators to run
     // and display any validation errors
     if (!formState.validate()) return;
@@ -134,72 +134,75 @@ class _SignUpPageState extends State<SignUpPage> {
                 key: _formKey,
                 child: ListView(
                   children: [
-                  const shad.Gap(32),
-                  shad.FormField(
-                    key: const shad.FormKey<String>(#signUpEmail),
-                    label: Text(l10n.emailLabel),
-                    child: shad.TextField(
-                      controller: _emailController,
-                      hintText: l10n.emailLabel,
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next,
-                    ),
-                  ),
-                  const shad.Gap(16),
-                  shad.FormField(
-                    key: const shad.FormKey<String>(#signUpPassword),
-                    label: Text(l10n.passwordLabel),
-                    validator:
-                      ((value) =>
-                          _validatePassword(_passwordController.text))
-                        as shad.Validator<String>?,
-                    child: shad.TextField(
-                      controller: _passwordController,
-                      hintText: l10n.passwordLabel,
-                      obscureText: true,
-                      textInputAction: TextInputAction.next,
-                    ),
-                  ),
-                  const shad.Gap(16),
-                  shad.FormField(
-                    key: const shad.FormKey<String>(#signUpConfirmPassword),
-                    label: Text(l10n.signUpConfirmPassword),
-                    validator: ((value) {
-                      if (_confirmPasswordController.text !=
-                          _passwordController.text) {
-                        return context.l10n.signUpPasswordMismatch;
-                      }
-                      return null;
-                    }) as shad.Validator<String>?,
-                    child: shad.TextField(
-                      controller: _confirmPasswordController,
-                      hintText: l10n.signUpConfirmPassword,
-                      obscureText: true,
-                      textInputAction: TextInputAction.done,
-                      onSubmitted: (_) => _handleSignUp(),
-                    ),
-                  ),
-                  if (state.error != null) ...[
-                    const shad.Gap(16),
-                    Text(
-                      state.error!,
-                      style: TextStyle(
-                        color: shad.Theme.of(context).colorScheme.destructive,
+                    const shad.Gap(32),
+                    shad.FormField(
+                      key: const shad.FormKey<String>(#signUpEmail),
+                      label: Text(l10n.emailLabel),
+                      child: shad.TextField(
+                        controller: _emailController,
+                        hintText: l10n.emailLabel,
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
                       ),
-                      textAlign: TextAlign.center,
+                    ),
+                    const shad.Gap(16),
+                    shad.FormField(
+                      key: const shad.FormKey<String>(#signUpPassword),
+                      label: Text(l10n.passwordLabel),
+                      validator:
+                          ((value) =>
+                                  _validatePassword(_passwordController.text))
+                              as shad.Validator<String>?,
+                      child: shad.TextField(
+                        controller: _passwordController,
+                        hintText: l10n.passwordLabel,
+                        obscureText: true,
+                        textInputAction: TextInputAction.next,
+                      ),
+                    ),
+                    const shad.Gap(16),
+                    shad.FormField(
+                      key: const shad.FormKey<String>(#signUpConfirmPassword),
+                      label: Text(l10n.signUpConfirmPassword),
+                      validator:
+                          ((value) {
+                                if (_confirmPasswordController.text !=
+                                    _passwordController.text) {
+                                  return context.l10n.signUpPasswordMismatch;
+                                }
+                                return null;
+                              })
+                              as shad.Validator<String>?,
+                      child: shad.TextField(
+                        controller: _confirmPasswordController,
+                        hintText: l10n.signUpConfirmPassword,
+                        obscureText: true,
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => _handleSignUp(),
+                      ),
+                    ),
+                    if (state.error != null) ...[
+                      const shad.Gap(16),
+                      Text(
+                        state.error!,
+                        style: TextStyle(
+                          color: shad.Theme.of(context).colorScheme.destructive,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                    const shad.Gap(24),
+                    shad.PrimaryButton(
+                      onPressed: state.isLoading ? null : _handleSignUp,
+                      child: state.isLoading
+                          ? const shad.CircularProgressIndicator(size: 20)
+                          : Text(l10n.signUpButton),
                     ),
                   ],
-                  const shad.Gap(24),
-                  shad.PrimaryButton(
-                    onPressed: state.isLoading ? null : _handleSignUp,
-                    child: state.isLoading
-                        ? const shad.CircularProgressIndicator(size: 20)
-                        : Text(l10n.signUpButton),
-                  ),
-                ],
-              ),
-            );
-          }),
+                ),
+              );
+            },
+          ),
         ),
       ),
     );

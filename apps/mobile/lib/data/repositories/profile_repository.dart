@@ -14,10 +14,10 @@ class ProfileRepository {
     http.Client? httpClient,
     bool ownsApiClient = false,
     bool ownsHttpClient = false,
-  })  : _apiClient = apiClient ?? ApiClient(),
-        _httpClient = httpClient ?? http.Client(),
-        _ownsApiClient = apiClient == null || ownsApiClient,
-        _ownsHttpClient = httpClient == null || ownsHttpClient;
+  }) : _apiClient = apiClient ?? ApiClient(),
+       _httpClient = httpClient ?? http.Client(),
+       _ownsApiClient = apiClient == null || ownsApiClient,
+       _ownsHttpClient = httpClient == null || ownsHttpClient;
 
   final ApiClient _apiClient;
   final http.Client _httpClient;
