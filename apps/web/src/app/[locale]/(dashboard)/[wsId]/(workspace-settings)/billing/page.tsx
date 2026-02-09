@@ -1,3 +1,4 @@
+import type { CustomerSeat } from '@tuturuuu/payment/polar';
 import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
@@ -159,6 +160,20 @@ export async function fetchSubscription(wsId: string) {
 
   if (!dbSub.workspace_subscription_products) return null;
 
+  let seatList: CustomerSeat[] = [];
+
+  try {
+    const polar = createPolarClient();
+
+    const { seats } = await polar.customerSeats.listSeats({
+      subscriptionId: dbSub.polar_subscription_id,
+    });
+
+    seatList = seats;
+  } catch (err) {
+    console.error('Failed to fetch seat list:', err);
+  }
+
   return {
     id: dbSub.id,
     status: dbSub.status,
@@ -169,6 +184,7 @@ export async function fetchSubscription(wsId: string) {
     product: dbSub.workspace_subscription_products,
     // Seat-based pricing fields
     seatCount: dbSub.seat_count,
+    seatList,
   };
 }
 
@@ -270,19 +286,20 @@ export default async function BillingPage({
           pricingModel: subscription.product.pricing_model || 'free',
           pricePerSeat: subscription.product.price_per_seat,
           seatCount: subscription.seatCount,
+          seatList: subscription.seatList,
           maxSeats: subscription.product.max_seats,
         };
 
         return (
           <div className="container mx-auto max-w-6xl px-4 py-8">
             <BillingClient
+              wsId={wsId}
               isPersonalWorkspace={isPersonal}
+              hasManageSubscriptionPermission={hasManageSubscriptionPermission}
               currentPlan={currentPlan}
               products={products}
-              product_id={subscription?.product.id || ''}
-              wsId={wsId}
               seatStatus={seatStatus}
-              hasManageSubscriptionPermission={hasManageSubscriptionPermission}
+              locale={locale}
             />
 
             <BillingHistory orders={orders} />

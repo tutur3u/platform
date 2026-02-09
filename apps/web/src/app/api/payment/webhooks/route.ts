@@ -340,10 +340,10 @@ export const POST = Webhooks({
         );
         try {
           const polar = createPolarClient();
-          const supabase = await createAdminClient();
+          const sbAdmin = await createAdminClient();
           await assignSeatsToAllMembers(
             polar,
-            supabase,
+            sbAdmin,
             subscriptionData.ws_id,
             payload.data.id
           );
@@ -393,10 +393,10 @@ export const POST = Webhooks({
           );
           try {
             const polar = createPolarClient();
-            const supabase = await createAdminClient();
+            const sbAdmin = await createAdminClient();
             await assignSeatsToAllMembers(
               polar,
-              supabase,
+              sbAdmin,
               subscriptionData.ws_id,
               payload.data.id
             );

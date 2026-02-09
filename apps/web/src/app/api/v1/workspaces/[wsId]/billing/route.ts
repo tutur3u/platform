@@ -1,3 +1,4 @@
+import type { CustomerSeat } from '@tuturuuu/payment/polar';
 import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
@@ -146,6 +147,20 @@ export async function fetchSubscription(wsId: string) {
 
   if (!dbSub.workspace_subscription_products) return null;
 
+  let seatList: CustomerSeat[] = [];
+
+  try {
+    const polar = createPolarClient();
+
+    const { seats } = await polar.customerSeats.listSeats({
+      subscriptionId: dbSub.polar_subscription_id,
+    });
+
+    seatList = seats;
+  } catch (err) {
+    console.error('Failed to fetch seat list:', err);
+  }
+
   return {
     id: dbSub.id,
     status: dbSub.status,
@@ -156,6 +171,7 @@ export async function fetchSubscription(wsId: string) {
     product: dbSub.workspace_subscription_products,
     // Seat-based pricing fields
     seatCount: dbSub.seat_count,
+    seatList,
   };
 }
 
@@ -232,11 +248,12 @@ export async function GET(
 
     return NextResponse.json({
       isPersonalWorkspace: isPersonal,
+      hasManagePermission,
       subscription,
       products,
       orders,
+      seatList: subscription.seatList,
       seatStatus,
-      hasManagePermission,
     });
   } catch (error) {
     console.error('Error fetching workspace billing:', error);

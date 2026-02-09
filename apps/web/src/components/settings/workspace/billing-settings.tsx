@@ -56,11 +56,12 @@ export default function BillingSettings({ wsId }: BillingSettingsProps) {
 
   const {
     isPersonalWorkspace,
+    hasManagePermission,
     subscription,
     products,
     orders,
+    seatList,
     seatStatus,
-    hasManagePermission,
   } = data;
 
   const dateLocale = locale === 'vi' ? vi : enUS;
@@ -95,13 +96,13 @@ export default function BillingSettings({ wsId }: BillingSettingsProps) {
   return (
     <div className="space-y-6">
       <BillingClient
+        wsId={wsId}
         isPersonalWorkspace={isPersonalWorkspace}
+        hasManageSubscriptionPermission={hasManagePermission}
         currentPlan={currentPlan}
         products={products}
-        product_id={subscription?.product.id || ''}
-        wsId={wsId}
+        seatList={seatList}
         seatStatus={seatStatus}
-        hasManageSubscriptionPermission={hasManagePermission}
       />
 
       <BillingHistory orders={orders} />

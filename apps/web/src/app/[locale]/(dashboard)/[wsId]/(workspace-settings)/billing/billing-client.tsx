@@ -9,15 +9,24 @@ import {
   Package,
   Plus,
   Sparkles,
+  User,
   Users,
   X,
   Zap,
 } from '@tuturuuu/icons';
-import type { Product } from '@tuturuuu/payment/polar';
+import type { CustomerSeat, Product } from '@tuturuuu/payment/polar';
 import type { WorkspaceProductTier } from '@tuturuuu/types/db';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@tuturuuu/ui/accordion';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
+import { format } from 'date-fns';
+import { enUS, vi } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -42,19 +51,20 @@ export interface Plan {
   // Seat-based pricing fields
   pricingModel: 'fixed' | 'seat_based' | 'custom' | 'free' | 'metered_unit';
   seatCount: number | null;
+  seatList: CustomerSeat[];
   price: number | null;
   pricePerSeat: number | null;
   maxSeats: number | null;
 }
 
 interface BillingClientProps {
-  isPersonalWorkspace: boolean;
-  currentPlan: Plan;
   wsId: string;
-  products: Product[];
-  product_id: string;
-  seatStatus?: SeatStatus;
+  isPersonalWorkspace: boolean;
   hasManageSubscriptionPermission: boolean;
+  currentPlan: Plan;
+  products: Product[];
+  seatStatus?: SeatStatus;
+  locale?: string;
 }
 
 function getSimplePlanName(name: string): string {
@@ -66,18 +76,21 @@ function getSimplePlanName(name: string): string {
 }
 
 export function BillingClient({
+  wsId,
   isPersonalWorkspace,
+  hasManageSubscriptionPermission,
   currentPlan,
   products,
-  wsId,
   seatStatus,
-  hasManageSubscriptionPermission,
+  locale = 'en',
 }: BillingClientProps) {
   const [showUpgradeOptions, setShowUpgradeOptions] = useState(false);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
   const [showAdjustSeatsDialog, setShowAdjustSeatsDialog] = useState(false);
   const t = useTranslations('billing');
   const router = useRouter();
+
+  const dateLocale = locale === 'vi' ? vi : enUS;
 
   const isPaidPlan = currentPlan.tier && currentPlan.tier !== 'FREE';
   const isEnterprisePlan = currentPlan.tier === 'ENTERPRISE';
@@ -273,6 +286,69 @@ export function BillingClient({
                         })}
                       </p>
                     )}
+
+                  {/* Seat Assignments Accordion */}
+                  {currentPlan.seatList.length > 0 && (
+                    <Accordion type="single" collapsible className="mt-4">
+                      <AccordionItem
+                        value="seat-assignments"
+                        className="border-0"
+                      >
+                        <AccordionTrigger className="py-2 hover:no-underline">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-sm">
+                              {t('seat-assignments')}
+                            </span>
+                            <Badge variant="secondary" className="text-xs">
+                              {currentPlan.seatList.length}
+                            </Badge>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="space-y-2 pt-2">
+                            {currentPlan.seatList.map((seat) => (
+                              <div
+                                key={seat.id}
+                                className="flex items-center justify-between gap-2 rounded-lg border bg-background p-3 transition-colors hover:bg-muted/50"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                                    <User className="h-4 w-4 text-primary" />
+                                  </div>
+                                  <div>
+                                    {seat.customerEmail && (
+                                      <p className="font-medium text-sm">
+                                        {seat.customerEmail}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-3">
+                                  {seat.claimedAt && (
+                                    <div className="text-right">
+                                      <p className="text-muted-foreground text-xs">
+                                        {t('assigned-on')}
+                                      </p>
+                                      <p className="text-xs">
+                                        {format(
+                                          new Date(seat.claimedAt),
+                                          'd MMM, yyyy',
+                                          {
+                                            locale: dateLocale,
+                                          }
+                                        )}
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  )}
                 </div>
               )}
 
