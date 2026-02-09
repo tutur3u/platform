@@ -26,7 +26,6 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
-import { enUS, vi } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -64,7 +63,6 @@ interface BillingClientProps {
   currentPlan: Plan;
   products: Product[];
   seatStatus?: SeatStatus;
-  locale?: string;
 }
 
 function getSimplePlanName(name: string): string {
@@ -82,15 +80,12 @@ export function BillingClient({
   currentPlan,
   products,
   seatStatus,
-  locale = 'en',
 }: BillingClientProps) {
   const [showUpgradeOptions, setShowUpgradeOptions] = useState(false);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
   const [showAdjustSeatsDialog, setShowAdjustSeatsDialog] = useState(false);
   const t = useTranslations('billing');
   const router = useRouter();
-
-  const dateLocale = locale === 'vi' ? vi : enUS;
 
   const isPaidPlan = currentPlan.tier && currentPlan.tier !== 'FREE';
   const isEnterprisePlan = currentPlan.tier === 'ENTERPRISE';
@@ -333,10 +328,7 @@ export function BillingClient({
                                       <p className="text-xs">
                                         {format(
                                           new Date(seat.claimedAt),
-                                          'd MMM, yyyy',
-                                          {
-                                            locale: dateLocale,
-                                          }
+                                          'd MMM, yyyy'
                                         )}
                                       </p>
                                     </div>
