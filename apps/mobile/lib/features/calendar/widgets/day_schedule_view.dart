@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/features/calendar/utils/event_layout.dart';
@@ -71,10 +73,12 @@ class _DayScheduleViewState extends State<DayScheduleView> {
     final targetHour = isToday ? (now.hour - 1).clamp(0, 20) : 8;
     final offset = targetHour * _hourHeight;
 
-    _scrollController.animateTo(
-      offset.clamp(0, _scrollController.position.maxScrollExtent),
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
+    unawaited(
+      _scrollController.animateTo(
+        offset.clamp(0, _scrollController.position.maxScrollExtent),
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      ),
     );
   }
 
@@ -186,7 +190,7 @@ class _DayScheduleViewState extends State<DayScheduleView> {
                       ),
                       // Current time indicator.
                       if (_isToday)
-                        CurrentTimeIndicator(hourHeight: _hourHeight),
+                        const CurrentTimeIndicator(hourHeight: _hourHeight),
                     ],
                   ),
                 ),

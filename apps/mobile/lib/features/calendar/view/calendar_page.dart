@@ -84,8 +84,7 @@ class _CalendarView extends StatelessWidget {
             icon: const Icon(Icons.today),
             tooltip: l10n.calendarToday,
             onPressed: () {
-              final cubit = context.read<CalendarCubit>();
-              cubit.goToToday();
+              final cubit = context.read<CalendarCubit>()..goToToday();
               final wsId = context
                   .read<WorkspaceCubit>()
                   .state
@@ -160,8 +159,8 @@ class _CalendarView extends StatelessWidget {
                       events: state.events,
                       firstDayOfWeek: firstDayOfWeek,
                       onDateSelected: (date) {
-                        final cubit = context.read<CalendarCubit>();
-                        cubit.selectDate(date);
+                        final cubit = context.read<CalendarCubit>()
+                          ..selectDate(date);
                         final wsId = context
                             .read<WorkspaceCubit>()
                             .state
@@ -215,9 +214,9 @@ class _CalendarView extends StatelessWidget {
           onEventTap: (event) => _showEventDetail(context, event),
           onCreateAtTime: (time) => _createEvent(context, startTime: time),
           onDaySelected: (date) {
-            final cubit = context.read<CalendarCubit>();
-            cubit.selectDate(date);
-            cubit.setViewMode(CalendarViewMode.day);
+            context.read<CalendarCubit>()
+              ..selectDate(date)
+              ..setViewMode(CalendarViewMode.day);
           },
           onSwipe: (delta) => _navigateDays(context, delta),
         );
@@ -227,9 +226,9 @@ class _CalendarView extends StatelessWidget {
           events: state.events,
           firstDayOfWeek: firstDayOfWeek,
           onDaySelected: (date) {
-            final cubit = context.read<CalendarCubit>();
-            cubit.selectDate(date);
-            cubit.setViewMode(CalendarViewMode.day);
+            context.read<CalendarCubit>()
+              ..selectDate(date)
+              ..setViewMode(CalendarViewMode.day);
           },
         );
       case CalendarViewMode.month:
@@ -239,9 +238,9 @@ class _CalendarView extends StatelessWidget {
           events: state.events,
           firstDayOfWeek: firstDayOfWeek,
           onDaySelected: (date) {
-            final cubit = context.read<CalendarCubit>();
-            cubit.selectDate(date);
-            cubit.setViewMode(CalendarViewMode.day);
+            context.read<CalendarCubit>()
+              ..selectDate(date)
+              ..setViewMode(CalendarViewMode.day);
           },
         );
       case CalendarViewMode.agenda:
@@ -251,9 +250,9 @@ class _CalendarView extends StatelessWidget {
           isLoadingMore: state.isLoadingMore,
           onEventTap: (event) => _showEventDetail(context, event),
           onDaySelected: (date) {
-            final cubit = context.read<CalendarCubit>();
-            cubit.selectDate(date);
-            cubit.setViewMode(CalendarViewMode.day);
+            context.read<CalendarCubit>()
+              ..selectDate(date)
+              ..setViewMode(CalendarViewMode.day);
           },
           onLoadMore: () {
             final wsId = context
@@ -272,8 +271,7 @@ class _CalendarView extends StatelessWidget {
   }
 
   void _navigateDays(BuildContext context, int delta) {
-    final cubit = context.read<CalendarCubit>();
-    cubit.navigateDay(delta);
+    final cubit = context.read<CalendarCubit>()..navigateDay(delta);
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId != null) {
       unawaited(

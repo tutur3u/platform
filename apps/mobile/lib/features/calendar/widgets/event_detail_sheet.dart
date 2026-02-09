@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/data/models/calendar_event.dart';
@@ -170,27 +172,29 @@ class _EventDetailContent extends StatelessWidget {
   void _confirmDelete(BuildContext context) {
     final l10n = context.l10n;
 
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.calendarDeleteEvent),
-        content: Text(l10n.calendarDeleteConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(l10n.calendarEventCancel),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop(); // Close dialog.
-              Navigator.of(context).pop('delete'); // Close sheet.
-            },
-            child: Text(
-              l10n.calendarEventDelete,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(l10n.calendarDeleteEvent),
+          content: Text(l10n.calendarDeleteConfirm),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(l10n.calendarEventCancel),
             ),
-          ),
-        ],
+            TextButton(
+              onPressed: () {
+                Navigator.of(ctx).pop(); // Close dialog.
+                Navigator.of(context).pop('delete'); // Close sheet.
+              },
+              child: Text(
+                l10n.calendarEventDelete,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

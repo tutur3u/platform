@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/data/models/calendar_event.dart';
@@ -64,10 +66,12 @@ class _ThreeDayViewState extends State<ThreeDayView> {
     final targetHour = _isToday ? (now.hour - 1).clamp(0, 20) : 8;
     final offset = targetHour * _hourHeight;
 
-    _scrollController.animateTo(
-      offset.clamp(0, _scrollController.position.maxScrollExtent),
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
+    unawaited(
+      _scrollController.animateTo(
+        offset.clamp(0, _scrollController.position.maxScrollExtent),
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      ),
     );
   }
 
@@ -142,7 +146,7 @@ class _ThreeDayViewState extends State<ThreeDayView> {
             child: Row(
               children: [
                 // Time gutter spacer.
-                SizedBox(width: _timeGutterWidth),
+                const SizedBox(width: _timeGutterWidth),
                 // Day columns.
                 ...dates.map((date) {
                   final isToday = date == today;

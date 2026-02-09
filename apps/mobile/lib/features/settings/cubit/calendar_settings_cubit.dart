@@ -69,9 +69,12 @@ class CalendarSettingsCubit extends Cubit<CalendarSettingsState> {
     if (userId == null) return;
 
     try {
-      await supabase.from('users').update({
-        'first_day_of_week': _firstDayOfWeekToString(value),
-      }).eq('id', userId);
+      await supabase
+          .from('users')
+          .update({
+            'first_day_of_week': _firstDayOfWeekToString(value),
+          })
+          .eq('id', userId);
     } on Exception catch (_) {
       // Rollback on failure would be ideal, but the preference isn't critical
       // enough to warrant the complexity.
