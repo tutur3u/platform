@@ -135,7 +135,7 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     // Initialize Supabase client
     console.log('🔍 [DEBUG] Creating Supabase client...');
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     // Get the current authenticated user
     const {

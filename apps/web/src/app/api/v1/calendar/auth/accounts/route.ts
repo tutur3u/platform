@@ -21,7 +21,7 @@ const disconnectQuerySchema = z.object({
 });
 
 export async function GET(request: Request): Promise<NextResponse> {
-  const supabase = await createClient();
+  const supabase = await createClient(request);
 
   const {
     data: { user },
@@ -92,7 +92,7 @@ export async function GET(request: Request): Promise<NextResponse> {
 }
 
 export async function DELETE(request: Request): Promise<NextResponse> {
-  const supabase = await createClient();
+  const supabase = await createClient(request);
 
   const {
     data: { user },
