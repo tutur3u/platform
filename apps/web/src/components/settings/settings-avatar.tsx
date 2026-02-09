@@ -1,7 +1,6 @@
 'use client';
 
 import { Loader2, UserIcon } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
@@ -21,7 +20,6 @@ import { Label } from '@tuturuuu/ui/label';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -47,7 +45,6 @@ const AVATAR_SIZE = 500;
 export default function UserAvatar({ user }: AvatarProps) {
   const t = useTranslations();
   const router = useRouter();
-  const supabase = createClient();
 
   const [open, setOpen] = useState(false);
   const [cropperOpen, setCropperOpen] = useState(false);
@@ -114,24 +111,39 @@ export default function UserAvatar({ user }: AvatarProps) {
         throw new Error('File is too large (max 2MB)');
       }
 
-      const filePath = `${generateRandomUUID()}`;
+      const filename = finalFile.name;
 
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, finalFile);
+      const urlRes = await fetch('/api/v1/users/me/avatar/upload-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ filename }),
+      });
 
-      if (uploadError) throw uploadError;
+      if (!urlRes.ok) throw new Error('Failed to get upload URL');
 
-      const { data: urlData } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
+      const { uploadUrl, publicUrl } = await urlRes.json();
 
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({ avatar_url: urlData.publicUrl })
-        .eq('id', user.id);
+      const uploadRes = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': finalFile.type,
+        },
+        body: finalFile,
+      });
 
-      if (updateError) throw updateError;
+      if (!uploadRes.ok) throw new Error('Failed to upload file');
+
+      const updateRes = await fetch('/api/v1/users/me/profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ avatar_url: publicUrl }),
+      });
+
+      if (!updateRes.ok) throw new Error('Failed to update profile');
 
       toast({
         title: t('settings-account.avatar_updated'),
@@ -161,12 +173,11 @@ export default function UserAvatar({ user }: AvatarProps) {
       return;
     }
 
-    const { error: updateError } = await supabase
-      .from('users')
-      .update({ avatar_url: null })
-      .eq('id', user.id);
+    const res = await fetch('/api/v1/users/me/avatar', {
+      method: 'DELETE',
+    });
 
-    if (updateError) {
+    if (!res.ok) {
       toast({
         title: t('settings-account.remove_failed'),
         description: t('settings-account.avatar_remove_error'),
