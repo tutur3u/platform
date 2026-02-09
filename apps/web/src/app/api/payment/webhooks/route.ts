@@ -162,26 +162,27 @@ export const POST = Webhooks({
   onProductCreated: async (payload) => {
     console.log('Product created:', payload);
 
+    const product = payload.data;
+
+    // Validate metadata before entering try-catch to ensure proper error response
+    const metadataProductTier = product.metadata?.product_tier;
+
+    if (!metadataProductTier || typeof metadataProductTier !== 'string') {
+      console.error(
+        'Webhook Error: product_tier metadata is missing or invalid.'
+      );
+      throw new Response(
+        'Webhook Error: product_tier metadata is missing or invalid.',
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const tier = metadataProductTier.toUpperCase() as WorkspaceProductTier;
+
     try {
       const sbAdmin = await createAdminClient();
-      const product = payload.data;
-
-      // Extract product_tier from metadata
-      const metadataProductTier = product.metadata?.product_tier;
-
-      if (!metadataProductTier || typeof metadataProductTier !== 'string') {
-        console.error(
-          'Webhook Error: product_tier metadata is missing or invalid.'
-        );
-        throw new Response(
-          'Webhook Error: product_tier metadata is missing or invalid.',
-          {
-            status: 400,
-          }
-        );
-      }
-
-      const tier = metadataProductTier.toUpperCase() as WorkspaceProductTier;
 
       const firstPrice = product.prices.find((p) => 'amountType' in p);
 
@@ -237,27 +238,28 @@ export const POST = Webhooks({
   onProductUpdated: async (payload) => {
     console.log('Product updated:', payload);
 
+    const product = payload.data;
+
+    // Validate metadata before entering try-catch to ensure proper error response
+    const metadataProductTier = product.metadata?.product_tier;
+
+    if (!metadataProductTier || typeof metadataProductTier !== 'string') {
+      console.error(
+        'Webhook Error: product_tier metadata is missing or invalid.'
+      );
+      throw new Response(
+        'Webhook Error: product_tier metadata is missing or invalid.',
+        {
+          status: 400,
+        }
+      );
+    }
+
+    // Only set tier if it matches valid enum values
+    const tier = metadataProductTier.toUpperCase() as WorkspaceProductTier;
+
     try {
       const sbAdmin = await createAdminClient();
-      const product = payload.data;
-
-      // Extract product_tier from metadata
-      const metadataProductTier = product.metadata?.product_tier;
-
-      if (!metadataProductTier || typeof metadataProductTier !== 'string') {
-        console.error(
-          'Webhook Error: product_tier metadata is missing or invalid.'
-        );
-        throw new Response(
-          'Webhook Error: product_tier metadata is missing or invalid.',
-          {
-            status: 400,
-          }
-        );
-      }
-
-      // Only set tier if it matches valid enum values
-      const tier = metadataProductTier.toUpperCase() as WorkspaceProductTier;
 
       const firstPrice = product.prices.find((p) => 'amountType' in p);
 

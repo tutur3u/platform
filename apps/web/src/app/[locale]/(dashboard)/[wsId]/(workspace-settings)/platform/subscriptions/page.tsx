@@ -172,7 +172,10 @@ export default function PlatformSubscriptionsMigrationPage() {
 
           <Button
             onClick={() => cancelSubscriptionMutation.mutate()}
-            disabled={cancelSubscriptionMutation.isPending}
+            disabled={
+              cancelSubscriptionMutation.isPending ||
+              createFreeSubscriptionMutation.isPending
+            }
             variant="destructive"
             className="w-full"
           >
@@ -260,7 +263,10 @@ export default function PlatformSubscriptionsMigrationPage() {
 
           <Button
             onClick={() => createFreeSubscriptionMutation.mutate()}
-            disabled={createFreeSubscriptionMutation.isPending}
+            disabled={
+              createFreeSubscriptionMutation.isPending ||
+              cancelSubscriptionMutation.isPending
+            }
             variant="default"
             className="w-full"
           >

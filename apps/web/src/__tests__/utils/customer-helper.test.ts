@@ -27,6 +27,11 @@ describe('customer-helper', () => {
     vi.clearAllMocks();
   });
 
+  afterAll(() => {
+    // Restore console spy to prevent test leaks
+    mockConsoleLog.mockRestore();
+  });
+
   describe('createCustomerSession', () => {
     it('should create a customer session for existing customer', async () => {
       const mockWorkspace = {

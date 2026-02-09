@@ -25,9 +25,9 @@ export async function POST(
     );
   }
 
-  if (seats && typeof seats !== 'number') {
+  if (seats && !Number.isInteger(seats)) {
     return NextResponse.json(
-      { error: 'Seats must be a number' },
+      { error: 'Seats must be an integer' },
       { status: 400 }
     );
   }

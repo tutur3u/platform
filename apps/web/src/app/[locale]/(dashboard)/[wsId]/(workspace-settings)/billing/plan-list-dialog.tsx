@@ -209,7 +209,7 @@ export function PlanListDialog({
 
     if (currentPlan.tier !== 'FREE' && plan.isFree) {
       return {
-        text: 'Can not downgrade to Free',
+        text: t('cannot-downgrade-to-free'),
         icon: X,
         variant: 'outline' as const,
         disabled: true,

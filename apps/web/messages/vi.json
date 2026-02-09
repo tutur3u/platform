@@ -957,6 +957,7 @@
     "billing-info": "Quản lý thông tin thanh toán của bạn",
     "cancel": "Hủy",
     "cancel-subscription": "Hủy đăng ký",
+    "cannot-downgrade-to-free": "Không thể hạ cấp xuống miễn phí",
     "charge": "phí",
     "charged-now": "Bạn sẽ bị tính {amount} ngay bây giờ",
     "choose-plan-description": "Chọn gói phù hợp nhất với nhu cầu của bạn.",

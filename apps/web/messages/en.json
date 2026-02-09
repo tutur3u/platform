@@ -957,6 +957,7 @@
     "billing-info": "Manage your billing information and subscriptions here.",
     "cancel": "Cancel",
     "cancel-subscription": "Cancel Subscription",
+    "cannot-downgrade-to-free": "Cannot downgrade to Free",
     "charge": "charge",
     "charged-now": "You'll be charged {amount} now",
     "choose-plan-description": "Choose the plan that best fits your needs.",
