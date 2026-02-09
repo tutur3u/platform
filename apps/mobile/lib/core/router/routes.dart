@@ -4,6 +4,7 @@ abstract final class Routes {
   static const login = '/login';
   static const signUp = '/signup';
   static const forgotPassword = '/forgot-password';
+  static const mfaVerify = '/mfa-verify';
 
   // Workspace
   static const workspaceSelect = '/workspace-select';

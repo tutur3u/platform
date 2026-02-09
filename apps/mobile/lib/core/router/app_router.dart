@@ -7,6 +7,7 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/auth/view/forgot_password_page.dart';
 import 'package:mobile/features/auth/view/login_page.dart';
+import 'package:mobile/features/auth/view/mfa_verify_page.dart';
 import 'package:mobile/features/auth/view/signup_page.dart';
 import 'package:mobile/features/calendar/view/calendar_page.dart';
 import 'package:mobile/features/dashboard/view/dashboard_page.dart';
@@ -34,14 +35,31 @@ GoRouter createAppRouter(AuthCubit authCubit, WorkspaceCubit workspaceCubit) {
       final isAuthRoute =
           state.matchedLocation == Routes.login ||
           state.matchedLocation == Routes.signUp ||
-          state.matchedLocation == Routes.forgotPassword;
+          state.matchedLocation == Routes.forgotPassword ||
+          state.matchedLocation == Routes.mfaVerify;
+      final isMfaRoute = state.matchedLocation == Routes.mfaVerify;
       final isWsSelectRoute = state.matchedLocation == Routes.workspaceSelect;
 
-      // Still loading auth → stay put
-      if (authState.status == AuthStatus.unknown) return null;
+      // Still loading auth → keep on auth routes, redirect others to login.
+      // In practice this rarely triggers since AuthCubit resolves state
+      // synchronously from the cached Supabase session.
+      if (authState.status == AuthStatus.unknown) {
+        return isAuthRoute ? null : Routes.login;
+      }
 
       // Not authenticated → redirect to login
       if (authState.status == AuthStatus.unauthenticated && !isAuthRoute) {
+        return Routes.login;
+      }
+
+      // MFA required → redirect to MFA verify page
+      if (authState.status == AuthStatus.mfaRequired && !isMfaRoute) {
+        return Routes.mfaVerify;
+      }
+
+      // On MFA page but no longer needed
+      if (isMfaRoute && authState.status != AuthStatus.mfaRequired) {
+        if (authState.status == AuthStatus.authenticated) return Routes.home;
         return Routes.login;
       }
 
@@ -85,6 +103,10 @@ GoRouter createAppRouter(AuthCubit authCubit, WorkspaceCubit workspaceCubit) {
       GoRoute(
         path: Routes.forgotPassword,
         builder: (context, state) => const ForgotPasswordPage(),
+      ),
+      GoRoute(
+        path: Routes.mfaVerify,
+        builder: (context, state) => const MfaVerifyPage(),
       ),
 
       // ── Workspace selection ──────────────────────

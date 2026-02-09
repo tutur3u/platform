@@ -409,5 +409,23 @@ class AppLocalizationsVi extends AppLocalizations {
   String get workspacePersonalBadge => 'Cá nhân';
 
   @override
+  String get mfaTitle => 'Xác thực hai yếu tố';
+
+  @override
+  String get mfaSubtitle => 'Nhập mã từ ứng dụng xác thực của bạn';
+
+  @override
+  String get mfaVerify => 'Xác thực';
+
+  @override
+  String get mfaInvalidCode => 'Mã xác thực không hợp lệ. Vui lòng thử lại.';
+
+  @override
+  String get mfaSignOut => 'Đăng xuất';
+
+  @override
+  String get captchaError => 'Kiểm tra bảo mật thất bại. Vui lòng thử lại.';
+
+  @override
   String get commonRetry => 'Thử lại';
 }

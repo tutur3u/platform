@@ -8,6 +8,7 @@ import {
   extractIPFromHeaders,
   recordPasswordLoginFailure,
 } from '@tuturuuu/utils/abuse-protection';
+import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { validateEmail } from '@tuturuuu/utils/email/server';
 import { headers } from 'next/headers';
 import type { NextRequest } from 'next/server';
@@ -66,8 +67,14 @@ export async function POST(request: NextRequest) {
           : String(error || 'Invalid email');
       return jsonWithCors({ error: message }, { status: 400 });
     }
-    const supabase = await createClient();
+    const sbAdmin = await createAdminClient();
     const captchaOptions = captchaToken ? { captchaToken } : {};
+
+    // In development, when no captcha token is provided, use the admin client
+    // which bypasses GoTrue's captcha validation. In production, always use the
+    // regular client to enforce captcha.
+    const useAdminAuth = DEV_MODE && !captchaToken;
+    const supabase = useAdminAuth ? sbAdmin : await createClient();
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email: validatedEmail,
@@ -98,7 +105,6 @@ export async function POST(request: NextRequest) {
       return jsonWithCors({ error: 'Session not found' }, { status: 500 });
     }
 
-    const sbAdmin = await createAdminClient();
     const metadata: Record<string, string> = {
       locale: normalizedLocale,
       origin: 'TUTURUUU',
