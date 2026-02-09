@@ -214,7 +214,7 @@ bun trigger:deploy
 14. **Always** break down components following single responsibility principle and extract complex logic to utilities/hooks
 15. **Always** use TanStack Query for ALL client-side data fetching - raw fetch/useEffect patterns are forbidden
 16. **Always** implement new settings within `apps/web/src/components/settings/settings-dialog.tsx` - never create separate settings pages
-17. **Always** run `bun check` at the end of your work - this unified command runs formatting, tests, type-checking, and i18n checks. All checks MUST pass.
+17. **Always** run the appropriate check command at the end of your work: `bun check` for web/TS/JS changes (formatting, tests, type-checking, i18n), `bun check:mobile` for Flutter/Dart changes. Run both if a task touches both web and mobile code. All checks MUST pass.
 18. **Always** add new GitHub Actions workflows to `tuturuuu.ts` configuration - when creating or modifying workflows in `.github/workflows/`, add an entry to the `ci` object in `tuturuuu.ts` and ensure the workflow includes the `check-ci` job dependency
 19. **Always** conduct a **Session Retrospective** at the END of every co-working session - review `AGENTS.md`, `CLAUDE.md`, and `GEMINI.md`, document mistakes made and lessons learned, and update these files with new rules or clarifications to prevent repeating errors in future sessions. This is NON-NEGOTIABLE.
 20. **Never** add session logs, empty notes, or observations to these files unless they introduce new reusable knowledge not already covered — these files are shared with all agents and must stay concise and actionable. Redundancy degrades signal quality.
@@ -737,9 +737,9 @@ Located at `apps/mobile/`, the Flutter app uses:
 - **Localization:** ARB files in `lib/l10n/arb/` (English + Vietnamese), generated files tracked in git
 - **CI:** `mobile.yaml` uses `VeryGoodOpenSource/very_good_workflows` for format check, analysis, tests
 
-**Dart Formatting:** Run `dart format lib test` from `apps/mobile/` before pushing. The CI enforces `dart format --set-exit-if-changed`. Note: `bun format` / Biome does NOT cover Dart files.
+**Verification (MANDATORY):** Always run `bun check:mobile` after making changes to `apps/mobile/`. This runs `dart format --set-exit-if-changed lib test && flutter analyze && flutter test` — the mobile equivalent of `bun check`. All three checks MUST pass. Note: `bun format` / Biome does NOT cover Dart files.
 
-**API Integration:** The mobile app calls `/api/v1/auth/mobile/*` endpoints that return Supabase session tokens (not cookies).
+**API Integration & Cross-App Dependencies:** The mobile app connects to `apps/web` API routes (e.g., `/api/v1/calendar/*`, `/api/v1/auth/mobile/*`) returning Supabase session tokens (not cookies). Agents may propose updates to these web API routes when working on mobile features, provided: (1) backward compatibility is maintained, (2) `createClient(request)` is used in all routes so Bearer token auth works for mobile, (3) good design patterns are followed (Zod validation, proper error codes, consistent response shapes).
 
 ### Known Gotchas
 
@@ -763,6 +763,7 @@ Located at `apps/mobile/`, the Flutter app uses:
 | Format                   | `bun format`                                  | USER-ONLY; agent suggests fixes      |
 | Type check               | `bun type-check`                              | REQUIRED; do NOT use `npx tsgo`      |
 | Verify all checks        | `bun check`                                   | REQUIRED; runs ff, test, tc, i18n    |
+| Verify mobile            | `bun check:mobile`                            | REQUIRED for `apps/mobile/` changes  |
 | New migration            | `bun sb:new`                                  | Edit generated SQL file              |
 | Apply migrations locally | `bun sb:up`                                   | Safe for agents                      |
 | Apply migrations remote  | `bun sb:push`                                 | USER-ONLY; NEVER agents              |
