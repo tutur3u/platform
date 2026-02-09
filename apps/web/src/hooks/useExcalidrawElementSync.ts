@@ -42,6 +42,7 @@ export function useExcalidrawElementSync({
   const isCleanedUpRef = useRef(false);
   const pendingChangesRef = useRef<ElementChange[]>([]);
   const errorCountRef = useRef(0);
+  const destroyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const MAX_ERROR_COUNT = 3;
 
@@ -147,111 +148,129 @@ export function useExcalidrawElementSync({
     [enabled, debouncedFlush]
   );
 
-  // Set up the channel
+  // Set up the channel — uses deferred cleanup so StrictMode's
+  // mount → cleanup → remount reuses the existing channel.
   useEffect(() => {
     if (!enabled || !channelName) return;
 
+    // ── StrictMode reuse path ───────────────────────────────────────
+    if (destroyTimerRef.current) {
+      clearTimeout(destroyTimerRef.current);
+      destroyTimerRef.current = null;
+
+      if (channelRef.current) {
+        if (DEV_MODE) {
+          console.log('♻️ Reusing element sync channel (StrictMode)');
+        }
+        isCleanedUpRef.current = false;
+        return () => {
+          isCleanedUpRef.current = true;
+          debouncedFlush.cancel();
+          const channel = channelRef.current;
+          destroyTimerRef.current = setTimeout(() => {
+            destroyTimerRef.current = null;
+            if (channel && channelRef.current === channel) {
+              createClient().removeChannel(channel);
+              channelRef.current = null;
+            }
+          }, 100);
+        };
+      }
+    }
+
+    // ── Fresh creation path ─────────────────────────────────────────
     isCleanedUpRef.current = false;
     const supabase = createClient();
 
-    const setupChannel = async () => {
-      if (isCleanedUpRef.current) return;
+    // Clean up stale channel from a previous config if present
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
 
-      try {
-        // Clean up existing channel
-        if (channelRef.current) {
-          await supabase.removeChannel(channelRef.current);
-          channelRef.current = null;
+    const channel = supabase.channel(`${channelName}-elements`, {
+      config: {
+        broadcast: {
+          self: false, // Don't receive own broadcasts
+        },
+      },
+    });
+
+    channelRef.current = channel;
+
+    channel
+      .on(
+        'broadcast',
+        { event: 'element-changes' },
+        (payload: {
+          payload: {
+            senderId: string;
+            changes: ElementChange[];
+            timestamp: number;
+          };
+        }) => {
+          try {
+            const { senderId, changes } = payload.payload;
+
+            // Ignore own broadcasts (extra safety)
+            if (senderId === userId) return;
+
+            if (DEV_MODE) {
+              console.log(
+                `Received ${changes.length} element changes from ${senderId}`
+              );
+            }
+
+            // Extract elements from changes and notify
+            const remoteElements = changes.map((c) => c.element);
+
+            if (onRemoteChanges && remoteElements.length > 0) {
+              onRemoteChanges(remoteElements);
+            }
+
+            // Reset error count on successful receive
+            errorCountRef.current = 0;
+          } catch (err) {
+            handleError(err);
+          }
+        }
+      )
+      .subscribe((status) => {
+        if (DEV_MODE) {
+          console.log('Element sync channel status:', status);
         }
 
-        const channel = supabase.channel(`${channelName}-elements`, {
-          config: {
-            broadcast: {
-              self: false, // Don't receive own broadcasts
-            },
-          },
-        });
+        switch (status) {
+          case 'SUBSCRIBED':
+            setIsConnected(true);
+            errorCountRef.current = 0;
+            break;
+          case 'CHANNEL_ERROR':
+            setIsConnected(false);
+            handleError(new Error('Channel error'));
+            break;
+          case 'TIMED_OUT':
+            setIsConnected(false);
+            handleError(new Error('Channel timed out'));
+            break;
+          case 'CLOSED':
+            setIsConnected(false);
+            break;
+        }
+      });
 
-        channelRef.current = channel;
-
-        channel
-          .on(
-            'broadcast',
-            { event: 'element-changes' },
-            (payload: {
-              payload: {
-                senderId: string;
-                changes: ElementChange[];
-                timestamp: number;
-              };
-            }) => {
-              try {
-                const { senderId, changes } = payload.payload;
-
-                // Ignore own broadcasts (extra safety)
-                if (senderId === userId) return;
-
-                if (DEV_MODE) {
-                  console.log(
-                    `Received ${changes.length} element changes from ${senderId}`
-                  );
-                }
-
-                // Extract elements from changes and notify
-                const remoteElements = changes.map((c) => c.element);
-
-                if (onRemoteChanges && remoteElements.length > 0) {
-                  onRemoteChanges(remoteElements);
-                }
-
-                // Reset error count on successful receive
-                errorCountRef.current = 0;
-              } catch (err) {
-                handleError(err);
-              }
-            }
-          )
-          .subscribe((status) => {
-            if (DEV_MODE) {
-              console.log('Element sync channel status:', status);
-            }
-
-            switch (status) {
-              case 'SUBSCRIBED':
-                setIsConnected(true);
-                errorCountRef.current = 0;
-                break;
-              case 'CHANNEL_ERROR':
-                setIsConnected(false);
-                handleError(new Error('Channel error'));
-                break;
-              case 'TIMED_OUT':
-                setIsConnected(false);
-                handleError(new Error('Channel timed out'));
-                break;
-              case 'CLOSED':
-                setIsConnected(false);
-                break;
-            }
-          });
-      } catch (err) {
-        handleError(err);
-      }
-    };
-
-    setupChannel();
-
+    // Deferred cleanup — gives StrictMode a chance to cancel and reuse
     return () => {
       isCleanedUpRef.current = true;
-
-      // Cancel pending debounce and flush immediately
       debouncedFlush.cancel();
-
-      // Remove channel
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
+      const ch = channelRef.current;
+      destroyTimerRef.current = setTimeout(() => {
+        destroyTimerRef.current = null;
+        if (ch && channelRef.current === ch) {
+          supabase.removeChannel(ch);
+          channelRef.current = null;
+        }
+      }, 100);
     };
   }, [
     channelName,
