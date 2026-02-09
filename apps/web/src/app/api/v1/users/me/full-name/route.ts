@@ -14,7 +14,7 @@ export async function PATCH(req: NextRequest) {
       NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     );
 
-  const { user, supabase } = authData!;
+  const { user, supabase } = authData;
 
   try {
     const body = await req.json();
@@ -28,7 +28,7 @@ export async function PATCH(req: NextRequest) {
     if (error) {
       console.error('Error updating full name:', error);
       return NextResponse.json(
-        { message: 'Error updating full name', error: error.message },
+        { message: 'Error updating full name' },
         { status: 500 }
       );
     }
@@ -44,10 +44,7 @@ export async function PATCH(req: NextRequest) {
 
     console.error('Request error:', error);
     return NextResponse.json(
-      {
-        message: 'Error processing request',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
+      { message: 'Internal server error' },
       { status: 500 }
     );
   }

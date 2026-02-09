@@ -223,6 +223,7 @@ class _ManagementSessionTile extends StatelessWidget {
     final durationText = _formatDuration(dur);
 
     return shad.GhostButton(
+      // TODO(tuturuuu): Implement session details page.
       onPressed: () {},
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

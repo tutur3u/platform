@@ -15,7 +15,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     );
 
-  const { user, supabase } = authData!;
+  const { user, supabase } = authData;
   const { configId: id } = await params;
 
   const { data, error } = await supabase
@@ -48,7 +48,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
       NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     );
 
-  const { user, supabase } = authData!;
+  const { user, supabase } = authData;
   const { configId: id } = await params;
 
   const { value } = await req.json();
@@ -84,7 +84,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
       NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     );
 
-  const { user, supabase } = authData!;
+  const { user, supabase } = authData;
   const { configId: id } = await params;
 
   const { error } = await supabase

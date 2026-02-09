@@ -47,6 +47,7 @@
 
     "workspaceSelectTitle": "Select workspace",
     "workspaceSelectEmpty": "No workspaces found",
+    "workspaceSelectError": "Failed to switch workspace",
 
     "navHome": "Home",
     "navTasks": "Tasks",

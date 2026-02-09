@@ -204,7 +204,7 @@ class SettingsPage extends StatelessWidget {
               actions: [
                 shad.OutlineButton(
                   onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text('Cancel'),
+                  child: Text(l10n.profileCancel),
                 ),
                 shad.DestructiveButton(
                   onPressed: () {

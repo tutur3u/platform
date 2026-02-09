@@ -13,7 +13,19 @@ class ApiClient {
 
   final http.Client _client;
 
-  Map<String, String> _getHeaders({String? contentType}) {
+  Future<void> _ensureValidSession() async {
+    try {
+      await supabase.auth.refreshSession();
+    } catch (e) {
+      throw ApiException(
+        message: 'Failed to refresh session: $e',
+        statusCode: 0,
+      );
+    }
+  }
+
+  Future<Map<String, String>> _getHeaders({String? contentType}) async {
+    await _ensureValidSession();
     final session = supabase.auth.currentSession;
     final token = session?.accessToken;
 
@@ -32,7 +44,7 @@ class ApiClient {
       final response = await _client
           .get(
             url,
-            headers: _getHeaders(),
+            headers: await _getHeaders(),
           )
           .timeout(const Duration(seconds: 30));
 
@@ -65,7 +77,7 @@ class ApiClient {
       final response = await _client
           .post(
             url,
-            headers: _getHeaders(contentType: 'application/json'),
+            headers: await _getHeaders(contentType: 'application/json'),
             body: jsonEncode(body),
           )
           .timeout(const Duration(seconds: 30));
@@ -99,7 +111,7 @@ class ApiClient {
       final response = await _client
           .patch(
             url,
-            headers: _getHeaders(contentType: 'application/json'),
+            headers: await _getHeaders(contentType: 'application/json'),
             body: jsonEncode(body),
           )
           .timeout(const Duration(seconds: 30));
@@ -130,7 +142,7 @@ class ApiClient {
       final response = await _client
           .delete(
             url,
-            headers: _getHeaders(),
+            headers: await _getHeaders(),
           )
           .timeout(const Duration(seconds: 30));
 
@@ -173,7 +185,22 @@ class ApiClient {
 
   /// Parse JSON string into Map.
   Map<String, dynamic> parseJson(String jsonString) {
-    return jsonDecode(jsonString) as Map<String, dynamic>;
+    try {
+      final decoded = jsonDecode(jsonString);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+
+      throw const FormatException('Expected a JSON object');
+    } on FormatException catch (e) {
+      throw FormatException(
+        'Failed to parse JSON: ${e.message}. Input: $jsonString',
+      );
+    } on Exception catch (e) {
+      throw FormatException(
+        'Failed to parse JSON: $e. Input: $jsonString',
+      );
+    }
   }
 
   void dispose() => _client.close();

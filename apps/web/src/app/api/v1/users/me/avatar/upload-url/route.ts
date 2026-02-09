@@ -3,7 +3,10 @@ import { z } from 'zod';
 import { authorizeRequest } from '@/lib/api-auth';
 
 const PostAvatarUploadSchema = z.object({
-  filename: z.string(),
+  filename: z
+    .string()
+    .min(3)
+    .regex(/^[^\\/]+\.[^\\/]+$/),
 });
 
 export async function POST(req: NextRequest) {
@@ -14,7 +17,7 @@ export async function POST(req: NextRequest) {
       NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     );
 
-  const { user, supabase } = authData!;
+  const { user, supabase } = authData;
 
   try {
     const body = await req.json();
@@ -59,10 +62,7 @@ export async function POST(req: NextRequest) {
 
     console.error('Request error:', error);
     return NextResponse.json(
-      {
-        message: 'Error processing request',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
+      { message: 'Internal server error' },
       { status: 500 }
     );
   }

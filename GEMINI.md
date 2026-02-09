@@ -75,6 +75,9 @@ The frontend is built with React, Next.js, and Tailwind CSS, with a component li
 - **Commits:** Commits should follow the Conventional Commits specification. **ALWAYS ask for user approval before creating commits** – never commit without explicit confirmation. Prefer atomic commits by scope when changes span multiple areas.
 - **Environment Variables:** Global environment variables are defined in `turbo.json`. Each application can also have its own `.env.local` file for local development.
 - **Internationalization:** The project supports multiple languages via `next-intl`. **CRITICAL**: Always provide translations for both English (`en.json`) AND Vietnamese (`vi.json`) when adding user-facing strings to `apps/web/messages/{locale}.json`. Never add translations only for English - Vietnamese translations are mandatory.
+- **Flutter Localization:** When updating `apps/mobile/lib/l10n/arb/*.arb`, regenerate or update `apps/mobile/lib/l10n/gen/*` so tracked outputs stay in sync.
+- **Flutter Editable Fields:** When refactoring duplicated editable fields into shared widgets, preserve per-field validation and success messaging. Email fields should keep the `@` check and any email-specific success note (use `TextInputType.emailAddress` or an explicit parameter).
+- **Flutter Analyzer Hygiene:** Use `on Exception catch (e)` (or specific exception types) instead of bare `catch`, avoid catching `Error` subclasses like `TypeError`, guard `BuildContext` usage after `await` with `if (!context.mounted) return;`, and do not `return` inside `finally` blocks.
 - **Type Inference:** Always prefer importing database types from `packages/types/src/db.ts` (only after user runs migrations via `bun sb:push` and typegen via `bun sb:typegen`). Never attempt to run these commands yourself.
 - **Code Quality & Refactoring:** Files >400 LOC and components >200 LOC should be refactored into smaller, focused units. Apply best practices to ALL code, regardless of age. Follow single responsibility principle, extract utilities/hooks for complex logic, and leave code better than you found it. Code quality and developer experience are top priorities, not optional.
 
@@ -94,6 +97,7 @@ This section summarizes the key operating procedures for AI agents working in th
 - **Code Quality First:** Proactively refactor long files (>400 LOC) and components (>200 LOC); maintain high DX standards for ALL code, both old and new. Code quality is never optional.
 - **Session Retrospective (MANDATORY):** At the END of every co-working session, ALWAYS review `AGENTS.md`, `CLAUDE.md`, and `GEMINI.md`. Document mistakes made, lessons learned, and proposed improvements. Update these files with new rules or clarifications to prevent repeating errors in future sessions. This continuous improvement practice is NON-NEGOTIABLE.
 - **No Redundant Session Logs:** NEVER add session logs, empty notes, or observations to these files unless they introduce new reusable knowledge not already covered. These files are shared with all agents — redundancy degrades signal quality. Verify new content isn't already documented elsewhere before adding.
+- **Dart Usage Searches:** When checking Dart symbol usage, scope searches to `apps/mobile/**` to avoid unrelated hits from the global Pub cache.
 
 ### Prohibited Actions
 

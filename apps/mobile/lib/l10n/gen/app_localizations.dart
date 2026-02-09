@@ -295,6 +295,12 @@ abstract class AppLocalizations {
   /// **'No workspaces found'**
   String get workspaceSelectEmpty;
 
+  /// No description provided for @workspaceSelectError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to switch workspace'**
+  String get workspaceSelectError;
+
   /// No description provided for @navHome.
   ///
   /// In en, this message translates to:

@@ -319,6 +319,7 @@ class _TransactionTile extends StatelessWidget {
     ].join(' \u00b7 ');
 
     return shad.GhostButton(
+      // TODO(tuturuuu): Implement transaction details page.
       onPressed: () {},
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

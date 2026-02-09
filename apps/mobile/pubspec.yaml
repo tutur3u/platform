@@ -25,6 +25,7 @@ dependencies:
   image_picker: ^1.2.1
   intl: ^0.20.2
   json_annotation: ^4.9.0
+  mime: ^2.0.0
   package_info_plus: ^9.0.0
   shadcn_flutter: ^0.0.49
   shared_preferences: ^2.5.3

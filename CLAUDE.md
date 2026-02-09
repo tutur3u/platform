@@ -196,6 +196,10 @@ bun trigger:deploy
 11. **NEVER** use `useEffect` for data fetching - THIS IS THE #1 VIOLATION - use TanStack Query's `useQuery`/`useMutation` instead
 12. **NEVER** use raw `fetch()` in client components without TanStack Query wrapper
 
+### Dart/Flutter Usage Lookup
+
+When searching for Dart symbol usages, prefer workspace-scoped searches (e.g., `apps/mobile/**`) instead of tools that can scan the global Pub cache. Pub cache hits are outside the repo and can mislead refactors.
+
 ### Mandatory Actions
 
 1. **Touch ONLY** files required for the change (Least Privilege)
@@ -208,16 +212,17 @@ bun trigger:deploy
 8. **Always** add new documentation pages to `apps/docs/mint.json` navigation
 9. **Always** update main navigation (`apps/web/src/app/[locale]/(dashboard)/[wsId]/navigation.tsx`) when adding new routes - add to both `aliases` array and `children` navigation items with proper icons and permissions
 10. **Always** provide translations for both English AND Vietnamese when adding user-facing strings to `apps/web/messages/{locale}.json`
-11. **Always** infer types from `packages/types/src/db.ts` (only after user runs migrations via `bun sb:push` and typegen via `bun sb:typegen`) - never attempt to run these commands yourself
-12. **Always** refactor files >400 LOC and components >200 LOC into smaller, focused units
-13. **Always** apply best practices to both old and new code - code quality is never optional
-14. **Always** break down components following single responsibility principle and extract complex logic to utilities/hooks
-15. **Always** use TanStack Query for ALL client-side data fetching - raw fetch/useEffect patterns are forbidden
-16. **Always** implement new settings within `apps/web/src/components/settings/settings-dialog.tsx` - never create separate settings pages
-17. **Always** run `bun check` at the end of your work - this unified command runs formatting, tests, type-checking, and i18n checks. All checks MUST pass.
-18. **Always** add new GitHub Actions workflows to `tuturuuu.ts` configuration - when creating or modifying workflows in `.github/workflows/`, add an entry to the `ci` object in `tuturuuu.ts` and ensure the workflow includes the `check-ci` job dependency
-19. **Always** conduct a **Session Retrospective** at the END of every co-working session - review `AGENTS.md`, `CLAUDE.md`, and `GEMINI.md`, document mistakes made and lessons learned, and update these files with new rules or clarifications to prevent repeating errors in future sessions. This is NON-NEGOTIABLE.
-20. **Never** add session logs, empty notes, or observations to these files unless they introduce new reusable knowledge not already covered — these files are shared with all agents and must stay concise and actionable. Redundancy degrades signal quality.
+11. **Always** keep Flutter l10n outputs in sync: when updating `apps/mobile/lib/l10n/arb/*.arb`, regenerate or update `apps/mobile/lib/l10n/gen/*`
+12. **Always** infer types from `packages/types/src/db.ts` (only after user runs migrations via `bun sb:push` and typegen via `bun sb:typegen`) - never attempt to run these commands yourself
+13. **Always** refactor files >400 LOC and components >200 LOC into smaller, focused units
+14. **Always** apply best practices to both old and new code - code quality is never optional
+15. **Always** break down components following single responsibility principle and extract complex logic to utilities/hooks
+16. **Always** use TanStack Query for ALL client-side data fetching - raw fetch/useEffect patterns are forbidden
+17. **Always** implement new settings within `apps/web/src/components/settings/settings-dialog.tsx` - never create separate settings pages
+18. **Always** run `bun check` at the end of your work - this unified command runs formatting, tests, type-checking, and i18n checks. All checks MUST pass.
+19. **Always** add new GitHub Actions workflows to `tuturuuu.ts` configuration - when creating or modifying workflows in `.github/workflows/`, add an entry to the `ci` object in `tuturuuu.ts` and ensure the workflow includes the `check-ci` job dependency
+20. **Always** conduct a **Session Retrospective** at the END of every co-working session - review `AGENTS.md`, `CLAUDE.md`, and `GEMINI.md`, document mistakes made and lessons learned, and update these files with new rules or clarifications to prevent repeating errors in future sessions. This is NON-NEGOTIABLE.
+21. **Never** add session logs, empty notes, or observations to these files unless they introduce new reusable knowledge not already covered — these files are shared with all agents and must stay concise and actionable. Redundancy degrades signal quality.
 
 ### Escalate When
 
@@ -743,10 +748,8 @@ Located at `apps/mobile/`, the Flutter app uses:
 
 ### Known Gotchas
 
-- **PostgREST URL Length:** `.in('column', ids)` with ~1000 UUIDs creates ~37KB URLs exceeding proxy limits (~8KB). Use `.eq(column, value)` updates instead.
-- **Admin Client Trigger Bypass:** Tables with `BEFORE UPDATE` triggers checking `auth.uid()` (e.g., `user_group_posts`) can be bypassed with `createAdminClient()` (`sbAdmin`). Always validate permissions with user-context client first.
-- **TypeScript useMemo Inference:** When `useMemo` returns either `[]` or `{ data: [], isEstimated }`, TypeScript infers `never[]`. Fix: explicitly type early returns as `{ data: [] as MyType[], isEstimated: false }`.
-- **Finance Module:** `get_category_breakdown` RPC accepts `_wallet_ids UUID[]` for wallet scoping. Exchange rates use USD as base currency. For estimated amounts, set `hasRedactedAmounts = true` and show `≈` prefix.
+- **Flutter Editable Fields:** When extracting shared editable text widgets, preserve per-field validation and success messaging. Email fields should keep the `@` check and any email-specific success note (use `TextInputType.emailAddress` or an explicit parameter).
+- **Flutter Analyzer Hygiene:** Prefer `on Exception catch (e)` (or a specific type) over bare `catch`, avoid catching `Error` subclasses like `TypeError`, guard `BuildContext` usage after `await` with `if (!context.mounted) return;`, and never `return` from a `finally` block.
 
 ## Quick Reference
 

@@ -113,6 +113,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workspaceSelectEmpty => 'No workspaces found';
 
   @override
+  String get workspaceSelectError => 'Failed to switch workspace';
+
+  @override
   String get navHome => 'Home';
 
   @override

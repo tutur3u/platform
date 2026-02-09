@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { authorizeRequest } from '@/lib/api-auth';
 
 const PatchProfileSchema = z.object({
-  display_name: z.string().max(50).optional(),
+  display_name: z.string().min(1).max(50).optional(),
   avatar_url: z.string().url().nullable().optional(),
 });
 
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
       NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     );
 
-  const { user, supabase } = authData!;
+  const { user, supabase } = authData;
 
   try {
     // Fetch user profile data
@@ -52,10 +52,7 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error('Request error:', error);
     return NextResponse.json(
-      {
-        message: 'Error processing request',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
+      { message: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -69,21 +66,15 @@ export async function PATCH(req: NextRequest) {
       NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     );
 
-  const { user, supabase } = authData!;
+  const { user, supabase } = authData;
 
   try {
     const body = await req.json();
     const validatedData = PatchProfileSchema.parse(body);
 
-    const updates: Record<string, any> = {};
-
-    if ('display_name' in validatedData) {
-      updates.display_name = validatedData.display_name;
-    }
-
-    if ('avatar_url' in validatedData) {
-      updates.avatar_url = validatedData.avatar_url;
-    }
+    const updates: z.infer<typeof PatchProfileSchema> = {
+      ...validatedData,
+    };
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json(
@@ -100,7 +91,7 @@ export async function PATCH(req: NextRequest) {
     if (error) {
       console.error('Error updating user:', error);
       return NextResponse.json(
-        { message: 'Error updating profile', error: error.message },
+        { message: 'Internal server error' },
         { status: 500 }
       );
     }
@@ -116,10 +107,7 @@ export async function PATCH(req: NextRequest) {
 
     console.error('Request error:', error);
     return NextResponse.json(
-      {
-        message: 'Error processing request',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
+      { message: 'Internal server error' },
       { status: 500 }
     );
   }

@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { authorizeRequest } from '@/lib/api-auth';
 
-export async function DELETE(req: NextRequest) {
+export async function DELETE(req: NextRequest): Promise<Response> {
   const { data: authData, error: authError } = await authorizeRequest(req);
   if (authError || !authData)
     return (
@@ -9,7 +9,7 @@ export async function DELETE(req: NextRequest) {
       NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     );
 
-  const { user, supabase } = authData!;
+  const { user, supabase } = authData;
 
   try {
     // Get current avatar URL to delete from storage
@@ -28,7 +28,7 @@ export async function DELETE(req: NextRequest) {
     if (updateError) {
       console.error('Error removing avatar URL:', updateError);
       return NextResponse.json(
-        { message: 'Error removing avatar', error: updateError.message },
+        { message: 'Error removing avatar' },
         { status: 500 }
       );
     }

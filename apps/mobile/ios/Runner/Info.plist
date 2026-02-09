@@ -5,6 +5,7 @@
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>en</string>
+		<string>vi</string>
 		<string>es</string>
 	</array>
 	<key>CFBundleDevelopmentRegion</key>
@@ -53,10 +54,8 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>This app needs access to your photo library to pick an avatar.</string>
+	<string></string>
 	<key>NSCameraUsageDescription</key>
-	<string>This app needs access to your camera to take a profile picture.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>This app needs access to your microphone for video recording.</string>
+	<string></string>
 </dict>
 </plist>

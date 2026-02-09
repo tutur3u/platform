@@ -21,7 +21,10 @@ class ProfilePage extends StatelessWidget {
     return BlocProvider(
       create: (context) {
         final cubit = ProfileCubit(
-          profileRepository: ProfileRepository(),
+          profileRepository: ProfileRepository(
+            ownsApiClient: true,
+            ownsHttpClient: true,
+          ),
         );
         unawaited(cubit.loadProfile());
         return cubit;
@@ -406,348 +409,208 @@ class _AccountStatusCard extends StatelessWidget {
   }
 }
 
-class _DisplayNameField extends StatefulWidget {
+class _EditableTextField extends StatefulWidget {
+  const _EditableTextField({
+    required this.label,
+    required this.hint,
+    required this.onSave,
+    this.defaultValue,
+    this.emptyMessage,
+    this.keyboardType,
+  });
+
+  final String label;
+  final String hint;
+  final String? defaultValue;
+  final Future<bool> Function(String) onSave;
+  final String? emptyMessage;
+  final TextInputType? keyboardType;
+
+  @override
+  State<_EditableTextField> createState() => _EditableTextFieldState();
+}
+
+class _EditableTextFieldState extends State<_EditableTextField> {
+  late final TextEditingController _controller;
+  bool _hasChanges = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.defaultValue ?? '');
+    _controller.addListener(_onTextChanged);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onTextChanged() {
+    setState(() {
+      _hasChanges = _controller.text != (widget.defaultValue ?? '');
+    });
+  }
+
+  Future<void> _save(BuildContext context) async {
+    final value = _controller.text.trim();
+    if (widget.emptyMessage != null) {
+      final isInvalidEmail =
+          widget.keyboardType == TextInputType.emailAddress &&
+              !value.contains('@');
+      if (value.isEmpty || isInvalidEmail) {
+        shad.showToast(
+          context: context,
+          builder: (context, overlay) => shad.Alert.destructive(
+            title: Text(context.l10n.profileUpdateError),
+            content: Text(widget.emptyMessage!),
+          ),
+        );
+        return;
+      }
+    }
+
+    final success = await widget.onSave(value);
+
+    if (success && context.mounted) {
+      setState(() {
+        _hasChanges = false;
+      });
+      shad.showToast(
+        context: context,
+        builder: (context, overlay) => shad.Alert(
+          title: Text(context.l10n.profileUpdateSuccess),
+          content: widget.keyboardType == TextInputType.emailAddress
+              ? Text(context.l10n.profileEmailUpdateNote)
+              : null,
+        ),
+      );
+    } else if (context.mounted) {
+      shad.showToast(
+        context: context,
+        builder: (context, overlay) => shad.Alert.destructive(
+          title: Text(context.l10n.profileUpdateError),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<ProfileCubit, ProfileState>(
+      buildWhen: (prev, curr) => prev.isLoading != curr.isLoading,
+      builder: (context, state) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(widget.label),
+            const shad.Gap(8),
+            Row(
+              children: [
+                Expanded(
+                  child: shad.TextField(
+                    controller: _controller,
+                    placeholder: Text(widget.hint),
+                    keyboardType: widget.keyboardType,
+                    enabled: !state.isLoading,
+                  ),
+                ),
+                if (_hasChanges) ...[
+                  const shad.Gap(8),
+                  shad.PrimaryButton(
+                    onPressed: state.isLoading ? null : () => _save(context),
+                    density: shad.ButtonDensity.icon,
+                    child: state.isLoading
+                        ? const shad.CircularProgressIndicator(size: 16)
+                        : const Icon(Icons.check, size: 20),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _DisplayNameField extends StatelessWidget {
   const _DisplayNameField({this.defaultValue});
 
   final String? defaultValue;
 
   @override
-  State<_DisplayNameField> createState() => _DisplayNameFieldState();
-}
-
-class _DisplayNameFieldState extends State<_DisplayNameField> {
-  late final TextEditingController _controller;
-  bool _hasChanges = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.defaultValue ?? '');
-    _controller.addListener(_onTextChanged);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _onTextChanged() {
-    setState(() {
-      _hasChanges = _controller.text != (widget.defaultValue ?? '');
-    });
-  }
-
-  Future<void> _save(BuildContext context) async {
-    final value = _controller.text.trim();
-    if (value.isEmpty) {
-      shad.showToast(
-        context: context,
-        builder: (context, overlay) => shad.Alert.destructive(
-          title: Text(context.l10n.profileUpdateError),
-          content: const Text('Display name cannot be empty'),
-        ),
-      );
-      return;
-    }
-
-    final cubit = context.read<ProfileCubit>();
-    final success = await cubit.updateDisplayName(value);
-
-    if (success && context.mounted) {
-      setState(() {
-        _hasChanges = false;
-      });
-      shad.showToast(
-        context: context,
-        builder: (context, overlay) => shad.Alert(
-          title: Text(context.l10n.profileUpdateSuccess),
-        ),
-      );
-    } else if (context.mounted) {
-      shad.showToast(
-        context: context,
-        builder: (context, overlay) => shad.Alert.destructive(
-          title: Text(context.l10n.profileUpdateError),
-        ),
-      );
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
-    return BlocBuilder<ProfileCubit, ProfileState>(
-      buildWhen: (prev, curr) => prev.isLoading != curr.isLoading,
-      builder: (context, state) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(l10n.profileDisplayName),
-            const shad.Gap(8),
-            Row(
-              children: [
-                Expanded(
-                  child: shad.TextField(
-                    controller: _controller,
-                    placeholder: Text(l10n.profileDisplayNameHint),
-                    enabled: !state.isLoading,
-                  ),
-                ),
-                if (_hasChanges) ...[
-                  const shad.Gap(8),
-                  shad.PrimaryButton(
-                    onPressed: state.isLoading ? null : () => _save(context),
-                    density: shad.ButtonDensity.icon,
-                    child: state.isLoading
-                        ? const shad.CircularProgressIndicator(size: 16)
-                        : const Icon(Icons.check, size: 20),
-                  ),
-                ],
-              ],
-            ),
-          ],
-        );
-      },
+    return _EditableTextField(
+      label: l10n.profileDisplayName,
+      hint: l10n.profileDisplayNameHint,
+      defaultValue: defaultValue,
+      emptyMessage: 'Display name cannot be empty',
+      onSave: (value) => context.read<ProfileCubit>().updateDisplayName(value),
     );
   }
 }
 
-class _FullNameField extends StatefulWidget {
+class _FullNameField extends StatelessWidget {
   const _FullNameField({this.defaultValue});
 
   final String? defaultValue;
 
   @override
-  State<_FullNameField> createState() => _FullNameFieldState();
-}
-
-class _FullNameFieldState extends State<_FullNameField> {
-  late final TextEditingController _controller;
-  bool _hasChanges = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.defaultValue ?? '');
-    _controller.addListener(_onTextChanged);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _onTextChanged() {
-    setState(() {
-      _hasChanges = _controller.text != (widget.defaultValue ?? '');
-    });
-  }
-
-  Future<void> _save(BuildContext context) async {
-    final value = _controller.text.trim();
-    if (value.isEmpty) {
-      shad.showToast(
-        context: context,
-        builder: (context, overlay) => shad.Alert.destructive(
-          title: Text(context.l10n.profileUpdateError),
-          content: const Text('Full name cannot be empty'),
-        ),
-      );
-      return;
-    }
-
-    final cubit = context.read<ProfileCubit>();
-    final success = await cubit.updateFullName(value);
-
-    if (success && context.mounted) {
-      setState(() {
-        _hasChanges = false;
-      });
-      shad.showToast(
-        context: context,
-        builder: (context, overlay) => shad.Alert(
-          title: Text(context.l10n.profileUpdateSuccess),
-        ),
-      );
-    } else if (context.mounted) {
-      shad.showToast(
-        context: context,
-        builder: (context, overlay) => shad.Alert.destructive(
-          title: Text(context.l10n.profileUpdateError),
-        ),
-      );
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
-    return BlocBuilder<ProfileCubit, ProfileState>(
-      buildWhen: (prev, curr) => prev.isLoading != curr.isLoading,
-      builder: (context, state) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(l10n.profileFullName),
-            const shad.Gap(8),
-            Row(
-              children: [
-                Expanded(
-                  child: shad.TextField(
-                    controller: _controller,
-                    placeholder: Text(l10n.profileFullNameHint),
-                    enabled: !state.isLoading,
-                  ),
-                ),
-                if (_hasChanges) ...[
-                  const shad.Gap(8),
-                  shad.PrimaryButton(
-                    onPressed: state.isLoading ? null : () => _save(context),
-                    density: shad.ButtonDensity.icon,
-                    child: state.isLoading
-                        ? const shad.CircularProgressIndicator(size: 16)
-                        : const Icon(Icons.check, size: 20),
-                  ),
-                ],
-              ],
-            ),
-          ],
-        );
-      },
+    return _EditableTextField(
+      label: l10n.profileFullName,
+      hint: l10n.profileFullNameHint,
+      defaultValue: defaultValue,
+      emptyMessage: 'Full name cannot be empty',
+      onSave: (value) => context.read<ProfileCubit>().updateFullName(value),
     );
   }
 }
 
-class _EmailField extends StatefulWidget {
+class _EmailField extends StatelessWidget {
   const _EmailField({this.email, this.newEmail});
 
   final String? email;
   final String? newEmail;
 
   @override
-  State<_EmailField> createState() => _EmailFieldState();
-}
-
-class _EmailFieldState extends State<_EmailField> {
-  late final TextEditingController _controller;
-  bool _hasChanges = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.email ?? '');
-    _controller.addListener(_onTextChanged);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _onTextChanged() {
-    setState(() {
-      _hasChanges = _controller.text != (widget.email ?? '');
-    });
-  }
-
-  Future<void> _save(BuildContext context) async {
-    final value = _controller.text.trim();
-    if (value.isEmpty || !value.contains('@')) {
-      shad.showToast(
-        context: context,
-        builder: (context, overlay) => shad.Alert.destructive(
-          title: Text(context.l10n.profileUpdateError),
-          content: const Text('Please enter a valid email address'),
-        ),
-      );
-      return;
-    }
-
-    final cubit = context.read<ProfileCubit>();
-    final success = await cubit.updateEmail(value);
-
-    if (success && context.mounted) {
-      setState(() {
-        _hasChanges = false;
-      });
-      shad.showToast(
-        context: context,
-        builder: (context, overlay) => shad.Alert(
-          title: Text(context.l10n.profileUpdateSuccess),
-          content: Text(context.l10n.profileEmailUpdateNote),
-        ),
-      );
-    } else if (context.mounted) {
-      shad.showToast(
-        context: context,
-        builder: (context, overlay) => shad.Alert.destructive(
-          title: Text(context.l10n.profileUpdateError),
-        ),
-      );
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = shad.Theme.of(context);
 
-    return BlocBuilder<ProfileCubit, ProfileState>(
-      buildWhen: (prev, curr) => prev.isLoading != curr.isLoading,
-      builder: (context, state) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.newEmail != null
-                  ? l10n.profileCurrentEmail
-                  : l10n.profileEmail,
-            ),
-            const shad.Gap(8),
-            Row(
-              children: [
-                Expanded(
-                  child: shad.TextField(
-                    controller: _controller,
-                    placeholder: Text(l10n.profileEmailHint),
-                    keyboardType: TextInputType.emailAddress,
-                    enabled: !state.isLoading,
-                  ),
-                ),
-                if (_hasChanges) ...[
-                  const shad.Gap(8),
-                  shad.PrimaryButton(
-                    onPressed: state.isLoading ? null : () => _save(context),
-                    density: shad.ButtonDensity.icon,
-                    child: state.isLoading
-                        ? const shad.CircularProgressIndicator(size: 16)
-                        : const Icon(Icons.check, size: 20),
-                  ),
-                ],
-              ],
-            ),
-            if (widget.newEmail != null) ...[
-              const shad.Gap(16),
-              Text(l10n.profileNewEmail),
-              const shad.Gap(8),
-              shad.TextField(
-                initialValue: widget.newEmail,
-                enabled: false,
-              ),
-              const shad.Gap(8),
-              Text(
-                l10n.profileEmailUpdateNote,
-                style: theme.typography.textMuted,
-              ),
-            ],
-          ],
-        );
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _EditableTextField(
+          label:
+              newEmail != null ? l10n.profileCurrentEmail : l10n.profileEmail,
+          hint: l10n.profileEmailHint,
+          defaultValue: email,
+          emptyMessage: 'Please enter a valid email address',
+          keyboardType: TextInputType.emailAddress,
+          onSave: (value) => context.read<ProfileCubit>().updateEmail(value),
+        ),
+        if (newEmail != null) ...[
+          const shad.Gap(16),
+          Text(l10n.profileNewEmail),
+          const shad.Gap(8),
+          shad.TextField(
+            initialValue: newEmail,
+            enabled: false,
+          ),
+          const shad.Gap(8),
+          Text(
+            l10n.profileEmailUpdateNote,
+            style: theme.typography.textMuted,
+          ),
+        ],
+      ],
     );
   }
 }

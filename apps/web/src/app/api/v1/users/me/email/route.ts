@@ -14,18 +14,23 @@ export async function PATCH(req: NextRequest) {
       NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     );
 
-  const { supabase } = authData!;
+  const { user, supabase } = authData;
+  const authHeader =
+    req.headers.get('authorization') ?? req.headers.get('Authorization');
+  const isBearerToken = authHeader?.startsWith('Bearer ') ?? false;
 
   try {
     const body = await req.json();
     const { email } = PatchEmailSchema.parse(body);
 
-    const { error } = await supabase.auth.updateUser({ email });
+    const { error } = isBearerToken
+      ? await supabase.auth.admin.updateUserById(user.id, { email })
+      : await supabase.auth.updateUser({ email });
 
     if (error) {
       console.error('Error updating email:', error);
       return NextResponse.json(
-        { message: 'Error updating email', error: error.message },
+        { message: 'Error updating email' },
         { status: 500 }
       );
     }
@@ -41,10 +46,7 @@ export async function PATCH(req: NextRequest) {
 
     console.error('Request error:', error);
     return NextResponse.json(
-      {
-        message: 'Error processing request',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
+      { message: 'Error processing request' },
       { status: 500 }
     );
   }

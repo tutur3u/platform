@@ -180,7 +180,7 @@ class _LoginPageState extends State<LoginPage> {
                 child: shad.InputOTP(
                   onChanged: (value) async {
                     _otpController.text = value.otpToString();
-                    if (value.length == 6) {
+                    if (value.every((e) => e != null)) {
                       await _handleVerifyOtp();
                     }
                   },

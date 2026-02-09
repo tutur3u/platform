@@ -3,6 +3,7 @@ import {
   updateUserDefaultWorkspace,
 } from '@tuturuuu/utils/user-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { authorizeRequest } from '@/lib/api-auth';
 
 export async function GET(req: NextRequest) {
@@ -37,7 +38,19 @@ export async function PATCH(req: NextRequest) {
       );
 
     const { user, supabase } = authData;
-    const { workspaceId } = await req.json();
+    const bodySchema = z.object({
+      workspaceId: z.string().min(1),
+    });
+    const parsedBody = bodySchema.safeParse(await req.json());
+
+    if (!parsedBody.success) {
+      return NextResponse.json(
+        { error: 'Invalid request data', errors: parsedBody.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const { workspaceId } = parsedBody.data;
 
     // Handle clearing the default workspace
     if (!workspaceId || workspaceId === '') {

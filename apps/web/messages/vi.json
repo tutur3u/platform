@@ -6346,7 +6346,8 @@
     "workspace-activity": "Hoạt động không gian làm việc",
     "workspace-activity-description": "Thông báo về thay đổi và cập nhật không gian làm việc",
     "workspace-settings-description": "Cài đặt không gian làm việc mặc định",
-    "workspaces-usage": "Không gian làm việc"
+    "workspaces-usage": "Không gian làm việc",
+    "avatar_compression_error": "Đã xảy ra lỗi khi nén hình đại diện của bạn"
   },
   "settings-appearance": {
     "12-hour": "12 giờ",

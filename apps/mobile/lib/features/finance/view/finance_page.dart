@@ -312,6 +312,7 @@ class _TransactionTile extends StatelessWidget {
     final formatted = formatCurrency(amount, currency);
 
     return shad.GhostButton(
+      // TODO(tuturuuu): Implement transaction details navigation.
       onPressed: () {},
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

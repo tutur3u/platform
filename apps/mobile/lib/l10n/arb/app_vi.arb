@@ -47,6 +47,7 @@
 
     "workspaceSelectTitle": "Chọn không gian làm việc",
     "workspaceSelectEmpty": "Không tìm thấy không gian làm việc",
+    "workspaceSelectError": "Không thể chuyển không gian làm việc",
 
     "navHome": "Trang chủ",
     "navTasks": "Công việc",

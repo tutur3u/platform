@@ -6346,7 +6346,8 @@
     "workspace-activity": "Workspace Activity",
     "workspace-activity-description": "Notifications about workspace changes and updates",
     "workspace-settings-description": "Default workspace settings",
-    "workspaces-usage": "Workspaces"
+    "workspaces-usage": "Workspaces",
+    "avatar_compression_error": "There was an error compressing your avatar"
   },
   "settings-appearance": {
     "12-hour": "12-hour",

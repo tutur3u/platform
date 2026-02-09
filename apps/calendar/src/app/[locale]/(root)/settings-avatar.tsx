@@ -1,5 +1,6 @@
 'use client';
 
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Settings, UserIcon } from '@tuturuuu/icons';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -15,13 +16,13 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { Form } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Label } from '@tuturuuu/ui/label';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useState } from 'react'; 
 import * as z from 'zod';
 
 interface AvatarProps {
@@ -43,16 +44,106 @@ const AVATAR_SIZE = 500;
 export default function UserAvatar({ user }: AvatarProps) {
   const t = useTranslations();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const [open, setOpen] = useState(false);
-
-  const [saving, setSaving] = useState(false);
   const [previewSrc, setPreviewSrc] = useState<string | null>(
     user?.avatar_url || null
   );
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
+  });
+
+  const uploadAvatarMutation = useMutation({
+    mutationFn: async ({
+      compressedFile,
+      filename,
+    }: {
+      compressedFile: File;
+      filename: string;
+    }) => {
+      // Step 1: Get upload URL
+      const urlRes = await fetch('/api/v1/users/me/avatar/upload-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ filename }),
+      });
+
+      if (!urlRes.ok) throw new Error('Failed to get upload URL');
+
+      const { uploadUrl, publicUrl } = await urlRes.json();
+
+      // Step 2: Upload file to storage
+      const uploadRes = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': compressedFile.type,
+        },
+        body: compressedFile,
+      });
+
+      if (!uploadRes.ok) throw new Error('Failed to upload file');
+
+      // Step 3: Update user profile with new avatar URL
+      const updateRes = await fetch('/api/v1/users/me/profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ avatar_url: publicUrl }),
+      });
+
+      if (!updateRes.ok) throw new Error('Failed to update profile');
+
+      return { publicUrl };
+    },
+    onMutate: async () => {
+      // Optimistic update: set preview to loading state if needed
+      // The preview is already set from handleFileSelect
+    },
+    onSuccess: () => {
+      toast.success(t('settings-account.avatar_updated'));
+      // Invalidate user queries to refetch data
+      queryClient.invalidateQueries({ queryKey: ['user', 'me'] });
+      router.refresh();
+      setOpen(false);
+      form.reset();
+    },
+    onError: (error) => {
+      console.error('Error uploading avatar:', error);
+      toast.error(t('settings-account.avatar_update_error'));
+      form.reset();
+    },
+  });
+
+  const removeAvatarMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch('/api/v1/users/me/avatar', {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) throw new Error('Failed to remove avatar');
+    },
+    onMutate: async () => {
+      // Optimistically remove avatar preview
+      setPreviewSrc(null);
+    },
+    onSuccess: () => {
+      toast.success(t('settings-account.avatar_removed'));
+      // Invalidate user queries to refetch data
+      queryClient.invalidateQueries({ queryKey: ['user', 'me'] });
+      router.refresh();
+      form.reset();
+    },
+    onError: (error) => {
+      console.error('Error removing avatar:', error);
+      // Rollback optimistic update
+      setPreviewSrc(user?.avatar_url || null);
+      toast.error(t('settings-account.avatar_remove_error'));
+    },
   });
 
   const compressImage = (file: File): Promise<Blob> => {
@@ -93,8 +184,6 @@ export default function UserAvatar({ user }: AvatarProps) {
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     if (!data.file) return;
 
-    setSaving(true);
-
     try {
       const compressedBlob = await compressImage(data.file);
       const compressedFile = new File([compressedBlob], data.file.name, {
@@ -107,87 +196,19 @@ export default function UserAvatar({ user }: AvatarProps) {
 
       const filename = data.file.name;
 
-      const urlRes = await fetch('/api/v1/users/me/avatar/upload-url', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ filename }),
-      });
-
-      if (!urlRes.ok) throw new Error('Failed to get upload URL');
-
-      const { uploadUrl, publicUrl } = await urlRes.json();
-
-      const uploadRes = await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': compressedFile.type,
-        },
-        body: compressedFile,
-      });
-
-      if (!uploadRes.ok) throw new Error('Failed to upload file');
-
-      const updateRes = await fetch('/api/v1/users/me/profile', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ avatar_url: publicUrl }),
-      });
-
-      if (!updateRes.ok) throw new Error('Failed to update profile');
-
-      toast({
-        title: 'Avatar updated',
-        description: 'Your avatar has been successfully updated.',
-      });
-      router.refresh();
-      setOpen(false);
+      uploadAvatarMutation.mutate({ compressedFile, filename });
     } catch (error) {
-      console.error('Error:', error);
-      toast({
-        title: 'Update failed',
-        description:
-          'There was an error updating your avatar. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      form.reset();
-      setSaving(false);
+      console.error('Error compressing file:', error);
+      toast.error(t('settings-account.avatar_compression_error'));
     }
   }
 
-  const removeAvatar = async () => {
-    setSaving(true);
-    setPreviewSrc(null);
-
+  const removeAvatar = () => {
     if (!user.avatar_url) {
-      setSaving(false);
       return;
     }
 
-    const res = await fetch('/api/v1/users/me/avatar', {
-      method: 'DELETE',
-    });
-
-    if (!res.ok) {
-      toast({
-        title: 'Remove failed',
-        description:
-          'There was an error removing your avatar. Please try again.',
-        variant: 'destructive',
-      });
-    } else {
-      toast({
-        title: 'Avatar removed',
-        description: 'Your avatar has been successfully removed.',
-      });
-      router.refresh();
-    }
-
-    setSaving(false);
+    removeAvatarMutation.mutate();
   };
 
   const handleFileSelect = async (file: File) => {
@@ -201,12 +222,7 @@ export default function UserAvatar({ user }: AvatarProps) {
       );
     } catch (error) {
       console.error('Error compressing image:', error);
-      toast({
-        title: 'Compression failed',
-        description:
-          'There was an error compressing your image. Please try again.',
-        variant: 'destructive',
-      });
+      toast.error(t('settings-account.avatar_compression_error'));
     }
   };
 
@@ -291,8 +307,12 @@ export default function UserAvatar({ user }: AvatarProps) {
                 />
               </div>
               {previewSrc && (
-                <Button variant="destructive" onClick={removeAvatar}>
-                  {saving ? (
+                <Button
+                  variant="destructive"
+                  onClick={removeAvatar}
+                  disabled={removeAvatarMutation.isPending}
+                >
+                  {removeAvatarMutation.isPending ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
                   ) : (
                     t('settings-account.remove_avatar')
@@ -301,9 +321,11 @@ export default function UserAvatar({ user }: AvatarProps) {
               )}
               <Button
                 type="submit"
-                disabled={saving || !form.getValues('file')}
+                disabled={
+                  uploadAvatarMutation.isPending || !form.getValues('file')
+                }
               >
-                {saving ? (
+                {uploadAvatarMutation.isPending ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
                   t('settings-account.save_avatar')

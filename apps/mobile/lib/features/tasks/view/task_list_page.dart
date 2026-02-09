@@ -268,6 +268,7 @@ class _TaskTile extends StatelessWidget {
     ].join(' / ');
 
     return shad.GhostButton(
+      // TODO(tuturuuu): Implement task details page.
       onPressed: () {},
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

@@ -1,18 +1,28 @@
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:mime/mime.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/sources/api_client.dart';
 
 /// Repository for profile operations.
 class ProfileRepository {
-  ProfileRepository({ApiClient? apiClient, http.Client? httpClient})
-    : _apiClient = apiClient ?? ApiClient(),
-      _httpClient = httpClient ?? http.Client();
+  /// When no clients are provided, this repository creates and owns them.
+  ProfileRepository({
+    ApiClient? apiClient,
+    http.Client? httpClient,
+    bool ownsApiClient = false,
+    bool ownsHttpClient = false,
+  })  : _apiClient = apiClient ?? ApiClient(),
+        _httpClient = httpClient ?? http.Client(),
+        _ownsApiClient = apiClient == null || ownsApiClient,
+        _ownsHttpClient = httpClient == null || ownsHttpClient;
 
   final ApiClient _apiClient;
   final http.Client _httpClient;
+  final bool _ownsApiClient;
+  final bool _ownsHttpClient;
 
   /// Fetches the current user's profile.
   Future<({UserProfile? profile, String? error})> getProfile() async {
@@ -39,6 +49,8 @@ class ProfileRepository {
       return (success: true, error: null);
     } on ApiException catch (e) {
       return (success: false, error: e.message);
+    } on Exception catch (e) {
+      return (success: false, error: e.toString());
     }
   }
 
@@ -55,6 +67,8 @@ class ProfileRepository {
       return (success: true, error: null);
     } on ApiException catch (e) {
       return (success: false, error: e.message);
+    } on Exception catch (e) {
+      return (success: false, error: e.toString());
     }
   }
 
@@ -69,6 +83,8 @@ class ProfileRepository {
       return (success: true, error: null);
     } on ApiException catch (e) {
       return (success: false, error: e.message);
+    } on Exception catch (e) {
+      return (success: false, error: e.toString());
     }
   }
 
@@ -97,11 +113,13 @@ class ProfileRepository {
   ) async {
     try {
       final bytes = await file.readAsBytes();
+      final contentType =
+          lookupMimeType(file.path) ?? 'application/octet-stream';
       final response = await _httpClient.put(
         Uri.parse(uploadUrl),
         body: bytes,
         headers: {
-          'Content-Type': 'image/jpeg',
+          'Content-Type': contentType,
         },
       );
 
@@ -144,7 +162,11 @@ class ProfileRepository {
   }
 
   void dispose() {
-    _apiClient.dispose();
-    _httpClient.close();
+    if (_ownsApiClient) {
+      _apiClient.dispose();
+    }
+    if (_ownsHttpClient) {
+      _httpClient.close();
+    }
   }
 }

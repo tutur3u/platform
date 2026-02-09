@@ -37,53 +37,41 @@ class ProfileCubit extends Cubit<ProfileState> {
 
   /// Updates display name.
   Future<bool> updateDisplayName(String displayName) async {
-    emit(state.copyWith(isLoading: true));
-
-    final result = await _repository.updateDisplayName(displayName);
-
-    if (result.success) {
-      // Reload profile to get updated data
-      await loadProfile();
-      emit(state.copyWith(isLoading: false));
-      return true;
-    } else {
-      emit(state.copyWith(isLoading: false, error: result.error));
-      return false;
-    }
+    return _updateProfileField(
+      () => _repository.updateDisplayName(displayName),
+    );
   }
 
   /// Updates full name.
   Future<bool> updateFullName(String fullName) async {
-    emit(state.copyWith(isLoading: true));
-
-    final result = await _repository.updateFullName(fullName);
-
-    if (result.success) {
-      // Reload profile to get updated data
-      await loadProfile();
-      emit(state.copyWith(isLoading: false));
-      return true;
-    } else {
-      emit(state.copyWith(isLoading: false, error: result.error));
-      return false;
-    }
+    return _updateProfileField(
+      () => _repository.updateFullName(fullName),
+    );
   }
 
   /// Updates email.
   Future<bool> updateEmail(String email) async {
+    return _updateProfileField(
+      () => _repository.updateEmail(email),
+    );
+  }
+
+  Future<bool> _updateProfileField(
+    Future<({bool success, String? error})> Function() update,
+  ) async {
     emit(state.copyWith(isLoading: true));
 
-    final result = await _repository.updateEmail(email);
+    final result = await update();
 
     if (result.success) {
       // Reload profile to get updated data
       await loadProfile();
       emit(state.copyWith(isLoading: false));
       return true;
-    } else {
-      emit(state.copyWith(isLoading: false, error: result.error));
-      return false;
     }
+
+    emit(state.copyWith(isLoading: false, error: result.error));
+    return false;
   }
 
   /// Uploads avatar.

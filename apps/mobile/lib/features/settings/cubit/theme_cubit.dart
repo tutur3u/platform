@@ -13,8 +13,13 @@ class ThemeCubit extends Cubit<ThemeState> {
 
   /// Loads the persisted theme mode.
   Future<void> loadThemeMode() async {
-    final mode = await _settingsRepository.getThemeMode();
-    emit(state.copyWith(themeMode: _parseThemeMode(mode)));
+    try {
+      final mode = await _settingsRepository.getThemeMode();
+      emit(state.copyWith(themeMode: _parseThemeMode(mode)));
+    } on Exception catch (e) {
+      debugPrint('Error loading theme mode: $e');
+      emit(state.copyWith(themeMode: ThemeMode.system));
+    }
   }
 
   /// Sets and persists the user's theme choice.

@@ -6,8 +6,16 @@ import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
-class WorkspaceSelectPage extends StatelessWidget {
+class WorkspaceSelectPage extends StatefulWidget {
   const WorkspaceSelectPage({super.key});
+
+  @override
+  State<WorkspaceSelectPage> createState() => _WorkspaceSelectPageState();
+}
+
+class _WorkspaceSelectPageState extends State<WorkspaceSelectPage> {
+  bool _isSelecting = false;
+  String? _selectingWorkspaceId;
 
   @override
   Widget build(BuildContext context) {
@@ -62,13 +70,45 @@ class WorkspaceSelectPage extends StatelessWidget {
             itemBuilder: (context, index) {
               final workspace = state.workspaces[index];
               final isSelected = workspace.id == state.currentWorkspace?.id;
+              final isLoading =
+                  _isSelecting && _selectingWorkspaceId == workspace.id;
 
               return shad.GhostButton(
-                onPressed: () async {
-                  await context.read<WorkspaceCubit>().selectWorkspace(
-                    workspace,
-                  );
-                },
+                onPressed: _isSelecting
+                    ? null
+                    : () async {
+                        setState(() {
+                          _isSelecting = true;
+                          _selectingWorkspaceId = workspace.id;
+                        });
+
+                        try {
+                          await context
+                              .read<WorkspaceCubit>()
+                              .selectWorkspace(workspace);
+                          if (!context.mounted) {
+                            return;
+                          }
+                        } on Exception catch (_) {
+                          if (!context.mounted) {
+                            return;
+                          }
+                          shad.showToast(
+                            context: context,
+                            builder: (context, overlay) =>
+                                shad.Alert.destructive(
+                              title: Text(l10n.workspaceSelectError),
+                            ),
+                          );
+                        } finally {
+                          if (context.mounted) {
+                            setState(() {
+                              _isSelecting = false;
+                              _selectingWorkspaceId = null;
+                            });
+                          }
+                        }
+                      },
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Row(
@@ -109,7 +149,9 @@ class WorkspaceSelectPage extends StatelessWidget {
                           ],
                         ),
                       ),
-                      if (isSelected)
+                      if (isLoading)
+                        const shad.CircularProgressIndicator(size: 16)
+                      else if (isSelected)
                         Icon(
                           Icons.check_circle,
                           color: shad.Theme.of(context).colorScheme.primary,

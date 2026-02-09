@@ -10,6 +10,8 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Shows a bottom sheet for switching between workspaces.
 void showWorkspacePickerSheet(BuildContext context) {
+  final workspaceCubit = context.read<WorkspaceCubit>();
+
   unawaited(
     shad.openDrawer<void>(
       context: context,
@@ -17,7 +19,9 @@ void showWorkspacePickerSheet(BuildContext context) {
       builder: (context) {
         final l10n = context.l10n;
 
-        return BlocBuilder<WorkspaceCubit, WorkspaceState>(
+        return BlocProvider<WorkspaceCubit>.value(
+          value: workspaceCubit,
+          child: BlocBuilder<WorkspaceCubit, WorkspaceState>(
           builder: (_, state) {
             return Column(
               mainAxisSize: MainAxisSize.min,
@@ -105,6 +109,7 @@ void showWorkspacePickerSheet(BuildContext context) {
               ],
             );
           },
+        ),
         );
       },
     ),

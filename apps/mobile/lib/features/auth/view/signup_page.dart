@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart'
     hide AppBar, FilledButton, Scaffold, TextButton, TextField;
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -18,8 +20,7 @@ class _SignUpPageState extends State<SignUpPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  String? _passwordError;
-  String? _confirmPasswordError;
+  final _formKey = GlobalKey<FormState>();
   bool _signUpSuccess = false;
 
   @override
@@ -45,29 +46,18 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 
   Future<void> _handleSignUp() async {
+    // Validate all FormFields by accessing the Form state
+    final formState = _formKey.currentState;
+    if (formState == null) return;
+    
+    // Trigger validation - this will cause FormField validators to run
+    // and display any validation errors
+    if (!formState.validate()) return;
+
     final email = _emailController.text.trim();
     final password = _passwordController.text;
-    final confirm = _confirmPasswordController.text;
 
-    if (email.isEmpty || password.isEmpty) return;
-
-    setState(() {
-      _passwordError = null;
-      _confirmPasswordError = null;
-    });
-
-    final pwError = _validatePassword(password);
-    if (pwError != null) {
-      setState(() => _passwordError = pwError);
-      return;
-    }
-
-    if (password != confirm) {
-      setState(
-        () => _confirmPasswordError = context.l10n.signUpPasswordMismatch,
-      );
-      return;
-    }
+    if (email.isEmpty) return;
 
     final success = await context.read<AuthCubit>().signUp(email, password);
     if (success && mounted) {
@@ -140,8 +130,10 @@ class _SignUpPageState extends State<SignUpPage> {
             buildWhen: (prev, curr) =>
                 prev.isLoading != curr.isLoading || prev.error != curr.error,
             builder: (context, state) {
-              return ListView(
-                children: [
+              return shad.Form(
+                key: _formKey,
+                child: ListView(
+                  children: [
                   const shad.Gap(32),
                   shad.FormField(
                     key: const shad.FormKey<String>(#signUpEmail),
@@ -157,6 +149,10 @@ class _SignUpPageState extends State<SignUpPage> {
                   shad.FormField(
                     key: const shad.FormKey<String>(#signUpPassword),
                     label: Text(l10n.passwordLabel),
+                    validator:
+                      ((value) =>
+                          _validatePassword(_passwordController.text))
+                        as shad.Validator<String>?,
                     child: shad.TextField(
                       controller: _passwordController,
                       hintText: l10n.passwordLabel,
@@ -164,21 +160,17 @@ class _SignUpPageState extends State<SignUpPage> {
                       textInputAction: TextInputAction.next,
                     ),
                   ),
-                  if (_passwordError != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4, left: 4),
-                      child: Text(
-                        _passwordError!,
-                        style: TextStyle(
-                          color: shad.Theme.of(context).colorScheme.destructive,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
                   const shad.Gap(16),
                   shad.FormField(
                     key: const shad.FormKey<String>(#signUpConfirmPassword),
                     label: Text(l10n.signUpConfirmPassword),
+                    validator: ((value) {
+                      if (_confirmPasswordController.text !=
+                          _passwordController.text) {
+                        return context.l10n.signUpPasswordMismatch;
+                      }
+                      return null;
+                    }) as shad.Validator<String>?,
                     child: shad.TextField(
                       controller: _confirmPasswordController,
                       hintText: l10n.signUpConfirmPassword,
@@ -187,17 +179,6 @@ class _SignUpPageState extends State<SignUpPage> {
                       onSubmitted: (_) => _handleSignUp(),
                     ),
                   ),
-                  if (_confirmPasswordError != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4, left: 4),
-                      child: Text(
-                        _confirmPasswordError!,
-                        style: TextStyle(
-                          color: shad.Theme.of(context).colorScheme.destructive,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
                   if (state.error != null) ...[
                     const shad.Gap(16),
                     Text(
@@ -216,9 +197,9 @@ class _SignUpPageState extends State<SignUpPage> {
                         : Text(l10n.signUpButton),
                   ),
                 ],
-              );
-            },
-          ),
+              ),
+            );
+          }),
         ),
       ),
     );

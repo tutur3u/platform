@@ -113,6 +113,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get workspaceSelectEmpty => 'Không tìm thấy không gian làm việc';
 
   @override
+  String get workspaceSelectError => 'Không thể chuyển không gian làm việc';
+
+  @override
   String get navHome => 'Trang chủ';
 
   @override
