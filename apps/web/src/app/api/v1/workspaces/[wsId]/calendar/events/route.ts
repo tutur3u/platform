@@ -14,7 +14,7 @@ interface Params {
 }
 
 export async function GET(request: Request, { params }: Params) {
-  const supabase = await createClient();
+  const supabase = await createClient(request);
   const { wsId } = await params;
 
   // Get the start_at and end_at from the URL
@@ -61,7 +61,7 @@ export async function GET(request: Request, { params }: Params) {
 }
 
 export async function POST(request: Request, { params }: Params) {
-  const supabase = await createClient();
+  const supabase = await createClient(request);
   const { wsId } = await params;
 
   try {

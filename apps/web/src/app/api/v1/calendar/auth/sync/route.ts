@@ -43,7 +43,7 @@ export async function POST(request: Request) {
   const body = await request.json();
   const { event }: { event: CalendarEvent } = body;
 
-  const supabase = await createClient();
+  const supabase = await createClient(request);
 
   const {
     data: { user },
@@ -187,7 +187,7 @@ export async function PUT(request: Request) {
     );
   }
 
-  const supabase = await createClient();
+  const supabase = await createClient(request);
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -337,7 +337,7 @@ export async function DELETE(request: Request) {
     );
   }
 
-  const supabase = await createClient();
+  const supabase = await createClient(request);
   const {
     data: { user },
   } = await supabase.auth.getUser();

@@ -8,6 +8,7 @@ class SettingsRepository {
   static const _calendarViewKey = 'calendar-view';
   static const _taskViewModeKey = 'task-view-mode';
   static const _localeKey = 'locale';
+  static const _lastTabRouteKey = 'last-tab-route';
 
   Future<String> getThemeMode() async {
     final prefs = await SharedPreferences.getInstance();
@@ -37,6 +38,18 @@ class SettingsRepository {
   Future<void> setTaskViewMode(String mode) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_taskViewModeKey, mode);
+  }
+
+  /// Returns the last visited shell tab route, or `null` if none saved.
+  Future<String?> getLastTabRoute() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_lastTabRouteKey);
+  }
+
+  /// Persists the user's last visited shell tab route.
+  Future<void> setLastTabRoute(String route) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_lastTabRouteKey, route);
   }
 
   /// Returns the persisted locale code (e.g. 'en', 'vi'), or `null` for system

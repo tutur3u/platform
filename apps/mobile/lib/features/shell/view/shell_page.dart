@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Shell layout with bottom navigation bar.
@@ -68,19 +71,15 @@ class ShellPage extends StatelessWidget {
   }
 
   void _onItemTapped(int index, BuildContext context) {
-    switch (index) {
-      case 0:
-        context.go(Routes.home);
-      case 1:
-        context.go(Routes.tasks);
-      case 2:
-        context.go(Routes.calendar);
-      case 3:
-        context.go(Routes.finance);
-      case 4:
-        context.go(Routes.timer);
-      case 5:
-        context.go(Routes.settings);
-    }
+    final route = switch (index) {
+      1 => Routes.tasks,
+      2 => Routes.calendar,
+      3 => Routes.finance,
+      4 => Routes.timer,
+      5 => Routes.settings,
+      _ => Routes.home,
+    };
+    context.go(route);
+    unawaited(SettingsRepository().setLastTabRoute(route));
   }
 }

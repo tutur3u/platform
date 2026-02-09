@@ -24,8 +24,8 @@ interface Params {
   }>;
 }
 
-export async function GET(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function GET(request: Request, { params }: Params) {
+  const supabase = await createClient(request);
   const { wsId, eventId } = await params;
 
   try {
@@ -57,7 +57,7 @@ export async function GET(_: Request, { params }: Params) {
 }
 
 export async function PUT(request: Request, { params }: Params) {
-  const supabase = await createClient();
+  const supabase = await createClient(request);
   const { wsId, eventId } = await params;
 
   try {
@@ -277,8 +277,8 @@ export async function PUT(request: Request, { params }: Params) {
   }
 }
 
-export async function DELETE(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function DELETE(request: Request, { params }: Params) {
+  const supabase = await createClient(request);
   const { wsId, eventId } = await params;
 
   try {

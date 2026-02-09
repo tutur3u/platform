@@ -58,6 +58,47 @@ describe('Supabase Server Client', () => {
         { name: 'test-cookie', value: 'test-value' },
       ]);
     });
+
+    it('should create a Bearer-token client when request has Authorization header', async () => {
+      const mockRequest = {
+        headers: new Headers({
+          Authorization: 'Bearer test-access-token',
+        }),
+      };
+
+      await createClient(mockRequest);
+
+      expect(createBrowserClient).toHaveBeenCalledWith(
+        'https://test.supabase.co',
+        'test-publishable-key',
+        expect.objectContaining({
+          global: {
+            headers: {
+              Authorization: 'Bearer test-access-token',
+            },
+          },
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+            detectSessionInUrl: false,
+          },
+        })
+      );
+      // Should NOT fall back to cookie-based client.
+      expect(createServerClient).not.toHaveBeenCalled();
+    });
+
+    it('should fall back to cookie auth when request has no Bearer token', async () => {
+      const mockRequest = {
+        headers: new Headers({}),
+      };
+
+      await createClient(mockRequest);
+
+      // No Bearer token → falls back to cookie-based createServerClient.
+      expect(createServerClient).toHaveBeenCalled();
+      expect(createBrowserClient).not.toHaveBeenCalled();
+    });
   });
 
   describe('createAdminClient', () => {

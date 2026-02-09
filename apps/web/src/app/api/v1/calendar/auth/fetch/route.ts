@@ -18,7 +18,7 @@ const getGoogleAuthClient = (tokens: {
 };
 
 export async function GET(request: Request) {
-  const supabase = await createClient();
+  const supabase = await createClient(request);
   const {
     data: { user },
     error: userError,

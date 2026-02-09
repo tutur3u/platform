@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/features/settings/cubit/locale_cubit.dart';
 import 'package:mobile/features/settings/cubit/locale_state.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -48,6 +49,20 @@ class SettingsPage extends StatelessWidget {
             title: Text(l10n.settingsTheme),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showThemeDialog(context),
+          ),
+          const Divider(),
+          BlocBuilder<CalendarSettingsCubit, CalendarSettingsState>(
+            builder: (context, calendarState) {
+              return ListTile(
+                leading: const Icon(Icons.calendar_today_outlined),
+                title: Text(l10n.settingsFirstDayOfWeek),
+                subtitle: Text(
+                  _firstDayDisplayName(calendarState.userPreference, l10n),
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _showFirstDayDialog(context),
+              );
+            },
           ),
           const Divider(),
           BlocBuilder<WorkspaceCubit, WorkspaceState>(
@@ -124,6 +139,66 @@ class SettingsPage extends StatelessWidget {
                 Navigator.pop(context);
               },
               child: Text(l10n.settingsLanguageVietnamese),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _firstDayDisplayName(
+    FirstDayOfWeek value,
+    AppLocalizations l10n,
+  ) {
+    switch (value) {
+      case FirstDayOfWeek.auto_:
+        return l10n.settingsFirstDayAuto;
+      case FirstDayOfWeek.sunday:
+        return l10n.settingsFirstDaySunday;
+      case FirstDayOfWeek.monday:
+        return l10n.settingsFirstDayMonday;
+      case FirstDayOfWeek.saturday:
+        return l10n.settingsFirstDaySaturday;
+    }
+  }
+
+  void _showFirstDayDialog(BuildContext context) {
+    final l10n = context.l10n;
+    final cubit = context.read<CalendarSettingsCubit>();
+
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (context) => SimpleDialog(
+          title: Text(l10n.settingsFirstDayOfWeek),
+          children: [
+            SimpleDialogOption(
+              onPressed: () {
+                unawaited(cubit.setFirstDayOfWeek(FirstDayOfWeek.auto_));
+                Navigator.pop(context);
+              },
+              child: Text(l10n.settingsFirstDayAuto),
+            ),
+            SimpleDialogOption(
+              onPressed: () {
+                unawaited(cubit.setFirstDayOfWeek(FirstDayOfWeek.sunday));
+                Navigator.pop(context);
+              },
+              child: Text(l10n.settingsFirstDaySunday),
+            ),
+            SimpleDialogOption(
+              onPressed: () {
+                unawaited(cubit.setFirstDayOfWeek(FirstDayOfWeek.monday));
+                Navigator.pop(context);
+              },
+              child: Text(l10n.settingsFirstDayMonday),
+            ),
+            SimpleDialogOption(
+              onPressed: () {
+                unawaited(cubit.setFirstDayOfWeek(FirstDayOfWeek.saturday));
+                Navigator.pop(context);
+              },
+              child: Text(l10n.settingsFirstDaySaturday),
             ),
           ],
         ),
