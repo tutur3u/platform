@@ -88,7 +88,6 @@ class HistoryTab extends StatelessWidget {
     );
   }
 
-
   List<_DayGroup> _groupByDay(List<TimeTrackingSession> sessions) {
     final dateFmt = DateFormat.yMMMEd();
     final groups = <String, List<TimeTrackingSession>>{};

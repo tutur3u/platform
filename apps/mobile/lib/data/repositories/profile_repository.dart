@@ -8,8 +8,8 @@ import 'package:mobile/data/sources/api_client.dart';
 /// Repository for profile operations.
 class ProfileRepository {
   ProfileRepository({ApiClient? apiClient, http.Client? httpClient})
-      : _apiClient = apiClient ?? ApiClient(),
-        _httpClient = httpClient ?? http.Client();
+    : _apiClient = apiClient ?? ApiClient(),
+      _httpClient = httpClient ?? http.Client();
 
   final ApiClient _apiClient;
   final http.Client _httpClient;
@@ -43,7 +43,9 @@ class ProfileRepository {
   }
 
   /// Updates full name.
-  Future<({bool success, String? error})> updateFullName(String fullName) async {
+  Future<({bool success, String? error})> updateFullName(
+    String fullName,
+  ) async {
     try {
       await _apiClient.patchJson(
         ProfileEndpoints.fullName,
@@ -72,7 +74,7 @@ class ProfileRepository {
 
   /// Gets signed upload URL for avatar.
   Future<({AvatarUploadUrlResponse? response, String? error})>
-      getAvatarUploadUrl(String filename) async {
+  getAvatarUploadUrl(String filename) async {
     try {
       final response = await _apiClient.postJson(
         ProfileEndpoints.avatarUploadUrl,
@@ -81,7 +83,7 @@ class ProfileRepository {
 
       return (
         response: AvatarUploadUrlResponse.fromJson(response),
-        error: null
+        error: null,
       );
     } on ApiException catch (e) {
       return (response: null, error: e.message);

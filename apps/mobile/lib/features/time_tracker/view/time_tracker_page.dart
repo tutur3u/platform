@@ -54,7 +54,7 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
     final l10n = context.l10n;
     final isPersonal =
         context.watch<WorkspaceCubit>().state.currentWorkspace?.personal ??
-            true;
+        true;
 
     return BlocListener<WorkspaceCubit, WorkspaceState>(
       listenWhen: (prev, curr) =>
@@ -102,22 +102,28 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
                           return shad.DropdownMenu(
                             children: [
                               shad.MenuButton(
-                                leading:
-                                    const Icon(Icons.timer_outlined, size: 16),
+                                leading: const Icon(
+                                  Icons.timer_outlined,
+                                  size: 16,
+                                ),
                                 onPressed: _showPomodoroSettings,
                                 child: Text(l10n.timerPomodoro),
                               ),
                               if (!isPersonal) ...[
                                 shad.MenuButton(
-                                  leading: const Icon(Icons.pending_actions,
-                                      size: 16),
+                                  leading: const Icon(
+                                    Icons.pending_actions,
+                                    size: 16,
+                                  ),
                                   onPressed: (context) =>
                                       context.push(Routes.timerRequests),
                                   child: Text(l10n.timerRequestsTitle),
                                 ),
                                 shad.MenuButton(
-                                  leading: const Icon(Icons.admin_panel_settings,
-                                      size: 16),
+                                  leading: const Icon(
+                                    Icons.admin_panel_settings,
+                                    size: 16,
+                                  ),
                                   onPressed: (context) =>
                                       context.push(Routes.timerManagement),
                                   child: Text(l10n.timerManagementTitle),
@@ -203,7 +209,7 @@ class _ErrorView extends StatelessWidget {
             onPressed: () {
               final wsId =
                   context.read<WorkspaceCubit>().state.currentWorkspace?.id ??
-                      '';
+                  '';
               final userId = supabase.auth.currentUser?.id ?? '';
               unawaited(
                 context.read<TimeTrackerCubit>().loadData(wsId, userId),
@@ -216,4 +222,3 @@ class _ErrorView extends StatelessWidget {
     );
   }
 }
-

@@ -123,35 +123,35 @@ class _TimeTrackerManagementPageState extends State<TimeTrackerManagementPage> {
             child: _loading
                 ? const Center(child: shad.CircularProgressIndicator())
                 : _error != null
-                    ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              _error!,
-                              style: theme.typography.p.copyWith(
-                                color: theme.colorScheme.destructive,
-                              ),
-                            ),
-                            const shad.Gap(8),
-                            shad.SecondaryButton(
-                              onPressed: _load,
-                              child: Text(l10n.commonRetry),
-                            ),
-                          ],
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _error!,
+                          style: theme.typography.p.copyWith(
+                            color: theme.colorScheme.destructive,
+                          ),
                         ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: _load,
-                        child: ListView.builder(
-                          itemCount: _sessions.length,
-                          padding: const EdgeInsets.only(bottom: 32),
-                          itemBuilder: (context, index) {
-                            final session = _sessions[index];
-                            return _ManagementSessionTile(session: session);
-                          },
+                        const shad.Gap(8),
+                        shad.SecondaryButton(
+                          onPressed: _load,
+                          child: Text(l10n.commonRetry),
                         ),
-                      ),
+                      ],
+                    ),
+                  )
+                : RefreshIndicator(
+                    onRefresh: _load,
+                    child: ListView.builder(
+                      itemCount: _sessions.length,
+                      padding: const EdgeInsets.only(bottom: 32),
+                      itemBuilder: (context, index) {
+                        final session = _sessions[index];
+                        return _ManagementSessionTile(session: session);
+                      },
+                    ),
+                  ),
           ),
         ],
       ),
@@ -277,4 +277,3 @@ class _ManagementSessionTile extends StatelessWidget {
     return '${m}m';
   }
 }
-

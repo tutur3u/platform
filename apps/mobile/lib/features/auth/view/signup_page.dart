@@ -14,7 +14,6 @@ class SignUpPage extends StatefulWidget {
   State<SignUpPage> createState() => _SignUpPageState();
 }
 
-
 class _SignUpPageState extends State<SignUpPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -224,5 +223,4 @@ class _SignUpPageState extends State<SignUpPage> {
       ),
     );
   }
-
 }

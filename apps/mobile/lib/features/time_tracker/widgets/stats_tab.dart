@@ -42,4 +42,3 @@ class StatsTab extends StatelessWidget {
     );
   }
 }
-

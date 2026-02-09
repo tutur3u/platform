@@ -116,13 +116,11 @@ class _QuickActionCard extends StatelessWidget {
           Text(
             label,
             style: shad.Theme.of(context).typography.small.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
     );
   }
 }
-
-

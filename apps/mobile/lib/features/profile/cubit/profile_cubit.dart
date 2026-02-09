@@ -7,8 +7,8 @@ import 'package:mobile/features/profile/cubit/profile_state.dart';
 /// Cubit for managing user profile state.
 class ProfileCubit extends Cubit<ProfileState> {
   ProfileCubit({required ProfileRepository profileRepository})
-      : _repository = profileRepository,
-        super(const ProfileState());
+    : _repository = profileRepository,
+      super(const ProfileState());
 
   final ProfileRepository _repository;
 

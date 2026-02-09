@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart' hide Scaffold, NavigationBar, NavigationBarTheme;
+import 'package:flutter/material.dart'
+    hide Scaffold, NavigationBar, NavigationBarTheme;
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -54,7 +55,6 @@ class ShellPage extends StatelessWidget {
       child: child,
     );
   }
-
 
   static int _calculateSelectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;

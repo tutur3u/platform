@@ -126,7 +126,9 @@ class _TransactionListViewState extends State<_TransactionListView> {
                 builder: (context, state) {
                   if (state.status == TransactionListStatus.loading &&
                       state.transactions.isEmpty) {
-                    return const Center(child: shad.CircularProgressIndicator());
+                    return const Center(
+                      child: shad.CircularProgressIndicator(),
+                    );
                   }
 
                   if (state.status == TransactionListStatus.error &&
@@ -283,9 +285,9 @@ class _DateHeader extends StatelessWidget {
       child: Text(
         label,
         style: shad.Theme.of(context).typography.small.copyWith(
-              fontWeight: FontWeight.w600,
-              color: shad.Theme.of(context).colorScheme.mutedForeground,
-            ),
+          fontWeight: FontWeight.w600,
+          color: shad.Theme.of(context).colorScheme.mutedForeground,
+        ),
       ),
     );
   }
@@ -334,7 +336,9 @@ class _TransactionTile extends StatelessWidget {
               child: Icon(
                 isExpense ? Icons.arrow_downward : Icons.arrow_upward,
                 size: 16,
-                color: isExpense ? colorScheme.destructive : colorScheme.primary,
+                color: isExpense
+                    ? colorScheme.destructive
+                    : colorScheme.primary,
               ),
             ),
             const shad.Gap(16),
@@ -362,7 +366,9 @@ class _TransactionTile extends StatelessWidget {
               formatCurrency(amount, currency),
               style: theme.typography.p.copyWith(
                 fontWeight: FontWeight.w600,
-                color: isExpense ? colorScheme.destructive : colorScheme.primary,
+                color: isExpense
+                    ? colorScheme.destructive
+                    : colorScheme.primary,
               ),
             ),
           ],
@@ -443,4 +449,3 @@ class _ErrorView extends StatelessWidget {
     );
   }
 }
-

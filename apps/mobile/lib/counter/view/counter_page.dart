@@ -66,5 +66,3 @@ class CounterText extends StatelessWidget {
     return Text('$count', style: theme.typography.h1);
   }
 }
-
-

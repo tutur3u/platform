@@ -329,7 +329,9 @@ class _TransactionTile extends StatelessWidget {
               child: Icon(
                 isExpense ? Icons.arrow_downward : Icons.arrow_upward,
                 size: 18,
-                color: isExpense ? colorScheme.destructive : colorScheme.primary,
+                color: isExpense
+                    ? colorScheme.destructive
+                    : colorScheme.primary,
               ),
             ),
             const shad.Gap(16),
@@ -361,7 +363,9 @@ class _TransactionTile extends StatelessWidget {
                   '$prefix$formatted',
                   style: theme.typography.p.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: isExpense ? colorScheme.destructive : colorScheme.primary,
+                    color: isExpense
+                        ? colorScheme.destructive
+                        : colorScheme.primary,
                   ),
                 ),
                 if (tx.takenAt != null)
@@ -390,4 +394,3 @@ void _reload(BuildContext context) {
     unawaited(context.read<FinanceCubit>().loadFinanceData(wsId));
   }
 }
-

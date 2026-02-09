@@ -95,8 +95,8 @@ class _RequestsViewState extends State<_RequestsView> {
                   shad.SecondaryButton(
                     onPressed: () => unawaited(
                       context.read<TimeTrackerRequestsCubit>().loadRequests(
-                            wsId,
-                          ),
+                        wsId,
+                      ),
                     ),
                     child: Text(l10n.commonRetry),
                   ),
@@ -204,7 +204,9 @@ class _RequestTile extends StatelessWidget {
                   ),
                   Text(
                     statusLabel,
-                    style: theme.typography.textSmall.copyWith(color: statusColor),
+                    style: theme.typography.textSmall.copyWith(
+                      color: statusColor,
+                    ),
                   ),
                 ],
               ),
@@ -227,4 +229,3 @@ class _RequestTile extends StatelessWidget {
     return '${local.month}/${local.day}';
   }
 }
-

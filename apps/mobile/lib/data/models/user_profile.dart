@@ -13,16 +13,16 @@ class UserProfile extends Equatable {
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
-        id: json['id'] as String,
-        email: json['email'] as String?,
-        displayName: json['display_name'] as String?,
-        avatarUrl: json['avatar_url'] as String?,
-        fullName: json['full_name'] as String?,
-        newEmail: json['new_email'] as String?,
-        createdAt: json['created_at'] != null
-            ? DateTime.parse(json['created_at'] as String)
-            : null,
-      );
+    id: json['id'] as String,
+    email: json['email'] as String?,
+    displayName: json['display_name'] as String?,
+    avatarUrl: json['avatar_url'] as String?,
+    fullName: json['full_name'] as String?,
+    newEmail: json['new_email'] as String?,
+    createdAt: json['created_at'] != null
+        ? DateTime.parse(json['created_at'] as String)
+        : null,
+  );
 
   final String id;
   final String? email;
@@ -33,14 +33,14 @@ class UserProfile extends Equatable {
   final DateTime? createdAt;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'email': email,
-        'display_name': displayName,
-        'avatar_url': avatarUrl,
-        'full_name': fullName,
-        'new_email': newEmail,
-        'created_at': createdAt?.toIso8601String(),
-      };
+    'id': id,
+    'email': email,
+    'display_name': displayName,
+    'avatar_url': avatarUrl,
+    'full_name': fullName,
+    'new_email': newEmail,
+    'created_at': createdAt?.toIso8601String(),
+  };
 
   UserProfile copyWith({
     String? id,
@@ -64,14 +64,14 @@ class UserProfile extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        email,
-        displayName,
-        avatarUrl,
-        fullName,
-        newEmail,
-        createdAt,
-      ];
+    id,
+    email,
+    displayName,
+    avatarUrl,
+    fullName,
+    newEmail,
+    createdAt,
+  ];
 }
 
 /// Response from avatar upload URL request.

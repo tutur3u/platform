@@ -61,10 +61,10 @@ class _TaskListView extends StatelessWidget {
           if (userId != null && ws != null) {
             unawaited(
               context.read<TaskListCubit>().loadTasks(
-                    userId: userId,
-                    wsId: ws.id,
-                    isPersonal: ws.personal,
-                  ),
+                userId: userId,
+                wsId: ws.id,
+                isPersonal: ws.personal,
+              ),
             );
           }
         },
@@ -296,7 +296,10 @@ class _TaskTile extends StatelessWidget {
                   if (task.priority != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
-                      child: _PriorityChip(priority: task.priority!, l10n: l10n),
+                      child: _PriorityChip(
+                        priority: task.priority!,
+                        l10n: l10n,
+                      ),
                     ),
                 ],
               ),
@@ -369,9 +372,9 @@ class _PriorityChip extends StatelessWidget {
       child: Text(
         label,
         style: shad.Theme.of(context).typography.textSmall.copyWith(
-              color: color,
-              fontWeight: FontWeight.w500,
-            ),
+          color: color,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }
@@ -387,11 +390,10 @@ void _reload(BuildContext context) {
   if (userId != null && ws != null) {
     unawaited(
       context.read<TaskListCubit>().loadTasks(
-            userId: userId,
-            wsId: ws.id,
-            isPersonal: ws.personal,
-          ),
+        userId: userId,
+        wsId: ws.id,
+        isPersonal: ws.personal,
+      ),
     );
   }
 }
-
