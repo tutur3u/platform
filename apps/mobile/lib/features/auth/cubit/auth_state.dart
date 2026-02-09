@@ -10,6 +10,9 @@ enum AuthStatus {
   /// User is authenticated and has a valid session.
   authenticated,
 
+  /// User is authenticated but must complete MFA verification.
+  mfaRequired,
+
   /// No valid session.
   unauthenticated,
 }
@@ -26,6 +29,9 @@ class AuthState extends Equatable {
 
   const AuthState.authenticated(User user)
     : this._(status: AuthStatus.authenticated, user: user);
+
+  const AuthState.mfaRequired(User user)
+    : this._(status: AuthStatus.mfaRequired, user: user);
 
   const AuthState.unauthenticated({String? error})
     : this._(status: AuthStatus.unauthenticated, error: error);

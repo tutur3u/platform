@@ -3,6 +3,7 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  flutter_inappwebview_linux
   file_selector_linux
   flutter_secure_storage_linux
   gtk

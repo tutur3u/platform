@@ -1057,6 +1057,42 @@ abstract class AppLocalizations {
   /// **'Personal'**
   String get workspacePersonalBadge;
 
+  /// No description provided for @mfaTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Two-factor authentication'**
+  String get mfaTitle;
+
+  /// No description provided for @mfaSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the code from your authenticator app'**
+  String get mfaSubtitle;
+
+  /// No description provided for @mfaVerify.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify'**
+  String get mfaVerify;
+
+  /// No description provided for @mfaInvalidCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid verification code. Please try again.'**
+  String get mfaInvalidCode;
+
+  /// No description provided for @mfaSignOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get mfaSignOut;
+
+  /// No description provided for @captchaError.
+  ///
+  /// In en, this message translates to:
+  /// **'Security check failed. Please try again.'**
+  String get captchaError;
+
   /// No description provided for @commonRetry.
   ///
   /// In en, this message translates to:

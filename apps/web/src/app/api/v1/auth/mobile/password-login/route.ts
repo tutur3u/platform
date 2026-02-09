@@ -8,6 +8,7 @@ import {
   extractIPFromHeaders,
   recordPasswordLoginFailure,
 } from '@tuturuuu/utils/abuse-protection';
+import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { validateEmail } from '@tuturuuu/utils/email/server';
 import { headers } from 'next/headers';
 import type { NextRequest } from 'next/server';
@@ -20,6 +21,7 @@ const PasswordLoginSchema = z.object({
   password: z.string().min(6),
   locale: z.string().optional(),
   deviceId: z.string().optional(),
+  captchaToken: z.string().optional(),
 });
 
 export async function OPTIONS() {
@@ -35,7 +37,7 @@ export async function POST(request: NextRequest) {
       return jsonWithCors({ error: 'Invalid request body' }, { status: 400 });
     }
 
-    const { email, password, locale, deviceId } = parsed.data;
+    const { email, password, locale, deviceId, captchaToken } = parsed.data;
     const normalizedLocale = locale || 'en';
 
     const headersList = await headers();
@@ -65,14 +67,26 @@ export async function POST(request: NextRequest) {
           : String(error || 'Invalid email');
       return jsonWithCors({ error: message }, { status: 400 });
     }
-    const supabase = await createClient();
+    const sbAdmin = await createAdminClient();
+    const captchaOptions = captchaToken ? { captchaToken } : {};
+
+    // In development, when no captcha token is provided, use the admin client
+    // which bypasses GoTrue's captcha validation. In production, always use the
+    // regular client to enforce captcha.
+    const useAdminAuth = DEV_MODE && !captchaToken;
+    const supabase = useAdminAuth ? sbAdmin : await createClient();
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email: validatedEmail,
       password,
+      options: { ...captchaOptions },
     });
 
     if (error) {
+      console.error(
+        '[mobile/password-login] signInWithPassword error:',
+        error.message
+      );
       void recordPasswordLoginFailure(ipAddress, validatedEmail);
       return jsonWithCors(
         {
@@ -91,7 +105,6 @@ export async function POST(request: NextRequest) {
       return jsonWithCors({ error: 'Session not found' }, { status: 500 });
     }
 
-    const sbAdmin = await createAdminClient();
     const metadata: Record<string, string> = {
       locale: normalizedLocale,
       origin: 'TUTURUUU',

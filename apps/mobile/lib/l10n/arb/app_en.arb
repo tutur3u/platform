@@ -191,5 +191,13 @@
     "workspacePickerTitle": "Switch workspace",
     "workspacePersonalBadge": "Personal",
 
+    "mfaTitle": "Two-factor authentication",
+    "mfaSubtitle": "Enter the code from your authenticator app",
+    "mfaVerify": "Verify",
+    "mfaInvalidCode": "Invalid verification code. Please try again.",
+    "mfaSignOut": "Sign out",
+
+    "captchaError": "Security check failed. Please try again.",
+
     "commonRetry": "Retry"
 }

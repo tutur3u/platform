@@ -19,8 +19,9 @@ class AuthRepository {
   // ── OTP ─────────────────────────────────────────
 
   Future<({bool success, String? error, int? retryAfter})> sendOtp(
-    String email,
-  ) async {
+    String email, {
+    String? captchaToken,
+  }) async {
     try {
       final deviceId = await getDeviceId();
       final response = await _apiClient.postJson(
@@ -29,6 +30,7 @@ class AuthRepository {
           'email': email,
           'locale': getLocale(),
           if (deviceId != null) 'deviceId': deviceId,
+          if (captchaToken != null) 'captchaToken': captchaToken,
         },
       );
 
@@ -88,8 +90,9 @@ class AuthRepository {
 
   Future<({bool success, String? error, int? retryAfter})> passwordLogin(
     String email,
-    String password,
-  ) async {
+    String password, {
+    String? captchaToken,
+  }) async {
     try {
       final deviceId = await getDeviceId();
       final response = await _apiClient.postJson(
@@ -99,6 +102,7 @@ class AuthRepository {
           'password': password,
           'locale': getLocale(),
           if (deviceId != null) 'deviceId': deviceId,
+          if (captchaToken != null) 'captchaToken': captchaToken,
         },
       );
 
@@ -125,6 +129,60 @@ class AuthRepository {
       return (success: false, error: e.message, retryAfter: null);
     } on Exception catch (e) {
       return (success: false, error: e.toString(), retryAfter: null);
+    }
+  }
+
+  // ── MFA ────────────────────────────────────────
+
+  /// Returns `true` if user has verified TOTP factors but session is at aal1.
+  bool checkMfaRequired() {
+    try {
+      final aal = supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      return aal.currentLevel == AuthenticatorAssuranceLevels.aal1 &&
+          aal.nextLevel == AuthenticatorAssuranceLevels.aal2;
+    } on Exception {
+      return false;
+    }
+  }
+
+  /// Returns verified TOTP factors for the current user.
+  Future<List<Factor>> getVerifiedTotpFactors() async {
+    final response = await supabase.auth.mfa.listFactors();
+    return response.totp
+        .where((f) => f.status == FactorStatus.verified)
+        .toList();
+  }
+
+  /// Attempts to verify a TOTP code against enrolled factors.
+  Future<({bool success, String? error})> verifyMfaCode(String code) async {
+    try {
+      final factors = await getVerifiedTotpFactors();
+      if (factors.isEmpty) {
+        return (success: false, error: 'No verified TOTP factors found');
+      }
+
+      for (final factor in factors) {
+        try {
+          final challenge = await supabase.auth.mfa.challenge(
+            factorId: factor.id,
+          );
+          await supabase.auth.mfa.verify(
+            factorId: factor.id,
+            challengeId: challenge.id,
+            code: code,
+          );
+          return (success: true, error: null);
+        } on AuthException {
+          // Try next factor if this one fails
+          continue;
+        }
+      }
+
+      return (success: false, error: 'Invalid verification code');
+    } on AuthException catch (e) {
+      return (success: false, error: e.message);
+    } on Exception catch (e) {
+      return (success: false, error: e.toString());
     }
   }
 
@@ -162,6 +220,12 @@ class AuthRepository {
   }
 
   // ── Session management ──────────────────────────
+
+  /// Returns the cached current user synchronously.
+  ///
+  /// Safe to call after `Supabase.initialize()` has completed (which happens
+  /// in `main()` before `runApp()`).
+  User? getCurrentUserSync() => supabase.auth.currentUser;
 
   Future<User?> getCurrentUser() async {
     return supabase.auth.currentUser;

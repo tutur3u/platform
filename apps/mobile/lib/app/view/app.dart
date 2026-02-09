@@ -49,6 +49,12 @@ class _AppState extends State<App> {
     _router = createAppRouter(_authCubit, _workspaceCubit);
     unawaited(_localeCubit.loadLocale());
     unawaited(_themeCubit.loadThemeMode());
+    // If auth resolved synchronously to authenticated, load workspaces now.
+    // BlocListener only fires on state *changes*, so it won't trigger for
+    // the initial state set in the AuthCubit constructor.
+    if (_authCubit.state.status == AuthStatus.authenticated) {
+      unawaited(_workspaceCubit.loadWorkspaces());
+    }
   }
 
   @override

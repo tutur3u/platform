@@ -8,8 +8,10 @@ import 'package:flutter/material.dart'
         TabController,
         TextButton,
         TextField;
+import 'package:cloudflare_turnstile/cloudflare_turnstile.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/config/env.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -30,6 +32,7 @@ class _LoginPageState extends State<LoginPage> {
   int _index = 0;
   bool _otpSent = false;
   int _retryAfter = 0;
+  String? _captchaToken;
 
   @override
   void dispose() {
@@ -39,13 +42,16 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-
   Future<void> _handleSendOtp() async {
     final email = _emailController.text.trim();
     if (email.isEmpty) return;
+    if (Env.isTurnstileConfigured && _captchaToken == null) return;
+
+    final captcha = _captchaToken;
+    setState(() => _captchaToken = null);
 
     final cubit = context.read<AuthCubit>();
-    final result = await cubit.sendOtp(email);
+    final result = await cubit.sendOtp(email, captchaToken: captcha);
 
     if (result.success && mounted) {
       setState(() {
@@ -70,7 +76,14 @@ class _LoginPageState extends State<LoginPage> {
     final password = _passwordController.text;
     if (email.isEmpty || password.isEmpty) return;
 
-    await context.read<AuthCubit>().signInWithPassword(email, password);
+    final captcha = _captchaToken;
+    setState(() => _captchaToken = null);
+
+    await context.read<AuthCubit>().signInWithPassword(
+      email,
+      password,
+      captchaToken: captcha,
+    );
   }
 
   @override
@@ -155,6 +168,7 @@ class _LoginPageState extends State<LoginPage> {
                 hintText: context.l10n.emailLabel,
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _handleSendOtp(),
                 enabled: !_otpSent && !state.isLoading,
               ),
             ),
@@ -190,8 +204,22 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ] else ...[
               const shad.Gap(16),
+              if (Env.isTurnstileConfigured) ...[
+                CloudflareTurnstile(
+                  siteKey: Env.turnstileSiteKey,
+                  baseUrl: Env.turnstileBaseUrl,
+                  onTokenReceived: (token) {
+                    setState(() => _captchaToken = token);
+                  },
+                ),
+                const shad.Gap(16),
+              ],
               shad.PrimaryButton(
-                onPressed: state.isLoading ? null : _handleSendOtp,
+                onPressed:
+                    state.isLoading ||
+                        (Env.isTurnstileConfigured && _captchaToken == null)
+                    ? null
+                    : _handleSendOtp,
                 child: state.isLoading
                     ? const shad.CircularProgressIndicator(size: 20)
                     : Text(
@@ -247,8 +275,22 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
             const shad.Gap(8),
+            if (Env.isTurnstileConfigured) ...[
+              CloudflareTurnstile(
+                siteKey: Env.turnstileSiteKey,
+                baseUrl: Env.turnstileBaseUrl,
+                onTokenReceived: (token) {
+                  setState(() => _captchaToken = token);
+                },
+              ),
+              const shad.Gap(8),
+            ],
             shad.PrimaryButton(
-              onPressed: state.isLoading ? null : _handlePasswordLogin,
+              onPressed:
+                  state.isLoading ||
+                      (Env.isTurnstileConfigured && _captchaToken == null)
+                  ? null
+                  : _handlePasswordLogin,
               child: state.isLoading
                   ? const shad.CircularProgressIndicator(size: 20)
                   : Text(context.l10n.loginSignIn),
@@ -258,5 +300,4 @@ class _LoginPageState extends State<LoginPage> {
       },
     );
   }
-
 }
