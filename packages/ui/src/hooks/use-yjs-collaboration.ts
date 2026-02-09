@@ -210,7 +210,6 @@ export function useYjsCollaboration(
         }
       }, 100);
     };
-    // biome-ignore lint/correctness/useExhaustiveDependencies: hasUser (boolean) guards provider creation; user/callback refs handle identity changes without provider churn
   }, [id, channel, tableName, columnName, hasUser, doc, awareness, enabled]);
 
   // Awareness update: sync user identity without recreating the provider

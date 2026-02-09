@@ -221,16 +221,18 @@ export function TaskEditDialog({
 
   // Memoize the user object for Yjs collaboration to prevent unstable references
   // from causing the SupabaseProvider to be destroyed and recreated every render
+  const userId = user?.id;
+  const userDisplayName = user?.display_name;
   const yjsUser = useMemo(
     () =>
-      user
+      userId
         ? {
-            id: user.id || '',
-            name: user.display_name || '',
+            id: userId || '',
+            name: userDisplayName || '',
             color: userColor || '',
           }
         : null,
-    [user?.id, user?.display_name, userColor]
+    [userId, userDisplayName, userColor]
   );
 
   // User task settings
@@ -439,24 +441,38 @@ export function TaskEditDialog({
   }, [personalScheduleData?.events]);
 
   // Sync "my scheduling settings" into the form state when opening the dialog
+  const {
+    setTotalDuration,
+    setIsSplittable,
+    setMinSplitDurationMinutes,
+    setMaxSplitDurationMinutes,
+    setCalendarHours,
+    setAutoSchedule,
+    setEndDate,
+  } = formState;
   useEffect(() => {
     if (!personalScheduleData?.task || !isOpen || isCreateMode) return;
-    formState.setTotalDuration(
-      personalScheduleData.task.total_duration ?? null
-    );
-    formState.setIsSplittable(!!personalScheduleData.task.is_splittable);
-    formState.setMinSplitDurationMinutes(
+    setTotalDuration(personalScheduleData.task.total_duration ?? null);
+    setIsSplittable(!!personalScheduleData.task.is_splittable);
+    setMinSplitDurationMinutes(
       personalScheduleData.task.min_split_duration_minutes ?? null
     );
-    formState.setMaxSplitDurationMinutes(
+    setMaxSplitDurationMinutes(
       personalScheduleData.task.max_split_duration_minutes ?? null
     );
-    formState.setCalendarHours(
-      personalScheduleData.task.calendar_hours ?? null
-    );
-    formState.setAutoSchedule(!!personalScheduleData.task.auto_schedule);
-    // biome-ignore lint/correctness/useExhaustiveDependencies: formState setters from useState are referentially stable
-  }, [personalScheduleData?.task, isOpen, isCreateMode, formState.setTotalDuration, formState.setIsSplittable, formState.setMinSplitDurationMinutes, formState.setMaxSplitDurationMinutes, formState.setCalendarHours, formState.setAutoSchedule]);
+    setCalendarHours(personalScheduleData.task.calendar_hours ?? null);
+    setAutoSchedule(!!personalScheduleData.task.auto_schedule);
+  }, [
+    personalScheduleData?.task,
+    isOpen,
+    isCreateMode,
+    setTotalDuration,
+    setIsSplittable,
+    setMinSplitDurationMinutes,
+    setMaxSplitDurationMinutes,
+    setCalendarHours,
+    setAutoSchedule,
+  ]);
 
   const draftStorageKey = getDraftStorageKey(boardId);
 
@@ -647,10 +663,10 @@ export function TaskEditDialog({
         days !== null
           ? dayjs().add(days, 'day').endOf('day').toDate()
           : undefined;
-      formState.setEndDate(newDate);
+      setEndDate(newDate);
       if (!isCreateMode) updateEndDate(newDate);
     },
-    [isCreateMode, formState.setEndDate, updateEndDate]
+    [isCreateMode, setEndDate, updateEndDate]
   );
 
   // Name update handlers
