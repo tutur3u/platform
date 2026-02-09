@@ -136,6 +136,108 @@ export async function GET(req: Request, { params }: Params) {
       }
     });
 
+    // Batch fetch transfer metadata for all transactions
+    const transfersByTxId: Record<
+      string,
+      {
+        linked_transaction_id: string;
+        linked_wallet_id: string;
+        linked_wallet_name: string;
+        linked_wallet_currency?: string;
+        linked_amount?: number;
+        is_origin: boolean;
+      }
+    > = {};
+
+    if (transactionIds.length > 0) {
+      const { data: transferLinks } = await supabase
+        .from('workspace_wallet_transfers')
+        .select('from_transaction_id, to_transaction_id')
+        .or(
+          `from_transaction_id.in.(${transactionIds.join(',')}),to_transaction_id.in.(${transactionIds.join(',')})`
+        );
+
+      if (transferLinks && transferLinks.length > 0) {
+        // Collect all linked transaction IDs we need to look up
+        const linkedTxIds = new Set<string>();
+        for (const link of transferLinks) {
+          linkedTxIds.add(link.from_transaction_id);
+          linkedTxIds.add(link.to_transaction_id);
+        }
+
+        // Fetch linked transactions with wallet info
+        const { data: linkedTxs } = await supabase
+          .from('wallet_transactions')
+          .select('id, amount, wallet_id')
+          .in('id', [...linkedTxIds]);
+
+        // Build wallet name/currency map (reuse existing map + fetch missing)
+        const allWalletIds = new Set(uniqueWalletIds);
+        (linkedTxs || []).forEach((tx) => {
+          if (tx.wallet_id) allWalletIds.add(tx.wallet_id);
+        });
+
+        const walletNameMap: Record<string, string> = {};
+        // Fetch wallet names + currencies for all relevant wallets
+        if (allWalletIds.size > 0) {
+          const { data: walletDetails } = await supabase
+            .from('workspace_wallets')
+            .select('id, name, currency')
+            .in('id', [...allWalletIds]);
+
+          (walletDetails || []).forEach((w) => {
+            walletNameMap[w.id] = w.name || '';
+            if (w.currency && !walletCurrencyMap[w.id]) {
+              walletCurrencyMap[w.id] = w.currency;
+            }
+          });
+        }
+
+        // Build lookup from transaction ID → wallet/amount
+        const txLookup: Record<string, { amount: number; wallet_id: string }> =
+          {};
+        (linkedTxs || []).forEach((tx) => {
+          txLookup[tx.id] = {
+            amount: tx.amount ?? 0,
+            wallet_id: tx.wallet_id,
+          };
+        });
+
+        // Map each transfer link to both sides
+        for (const link of transferLinks) {
+          const fromId = link.from_transaction_id;
+          const toId = link.to_transaction_id;
+          const fromTx = txLookup[fromId];
+          const toTx = txLookup[toId];
+
+          if (fromTx && toTx) {
+            // For from-transaction: linked to the to-transaction
+            if (transactionIds.includes(fromId)) {
+              transfersByTxId[fromId] = {
+                linked_transaction_id: toId,
+                linked_wallet_id: toTx.wallet_id,
+                linked_wallet_name: walletNameMap[toTx.wallet_id] || '',
+                linked_wallet_currency: walletCurrencyMap[toTx.wallet_id],
+                linked_amount: toTx.amount,
+                is_origin: true,
+              };
+            }
+            // For to-transaction: linked to the from-transaction
+            if (transactionIds.includes(toId)) {
+              transfersByTxId[toId] = {
+                linked_transaction_id: fromId,
+                linked_wallet_id: fromTx.wallet_id,
+                linked_wallet_name: walletNameMap[fromTx.wallet_id] || '',
+                linked_wallet_currency: walletCurrencyMap[fromTx.wallet_id],
+                linked_amount: fromTx.amount,
+                is_origin: false,
+              };
+            }
+          }
+        }
+      }
+    }
+
     const transactions = rawTransactions.map((t) => ({
       ...t,
       wallet: t.wallet_name,
@@ -149,6 +251,7 @@ export async function GET(req: Request, { params }: Params) {
         avatar_url: t.creator_avatar_url,
       },
       tags: tagsByTransaction[t.id] || [],
+      transfer: transfersByTxId[t.id] || undefined,
     }));
 
     // Generate next cursor

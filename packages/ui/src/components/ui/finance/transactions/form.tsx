@@ -2,11 +2,9 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  ArrowDownCircle,
-  ArrowUpCircle,
+  ArrowLeftRight,
   CalendarIcon,
   Coins,
-  CreditCard,
   FileText,
   FolderOpen,
   Lock,
@@ -21,10 +19,7 @@ import { Calendar } from '@tuturuuu/ui/calendar';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { CurrencyInput } from '@tuturuuu/ui/currency-input';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
-import {
-  getIconComponentByKey,
-  type PlatformIconKey,
-} from '@tuturuuu/ui/custom/icon-picker';
+import { getIconComponentByKey } from '@tuturuuu/ui/custom/icon-picker';
 import {
   Dialog,
   DialogContent,
@@ -32,6 +27,11 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { TransactionCategoryForm } from '@tuturuuu/ui/finance/transactions/categories/form';
+import {
+  getCategoryIcon,
+  getWalletIcon,
+} from '@tuturuuu/ui/finance/transactions/form-utils';
+import { TransferFields } from '@tuturuuu/ui/finance/transactions/transfer-fields';
 import { WalletForm } from '@tuturuuu/ui/finance/wallets/form';
 import {
   Form,
@@ -45,73 +45,22 @@ import {
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { Input } from '@tuturuuu/ui/input';
+import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { fetcher } from '@tuturuuu/utils/fetcher';
 import { cn } from '@tuturuuu/utils/format';
 import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import { format } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import type * as React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import * as z from 'zod';
-import { getWalletImagePath } from '../wallets/wallet-images';
-
-// Helper to get category icon - extracted to avoid lint warnings about JSX in iterables
-function getCategoryIcon(
-  category: TransactionCategory,
-  iconGetter: typeof getIconComponentByKey
-): React.ReactNode {
-  const IconComponent = category.icon
-    ? iconGetter(category.icon as PlatformIconKey)
-    : null;
-
-  if (IconComponent) {
-    return <IconComponent className="h-4 w-4" />;
-  }
-  if (category.is_expense === false) {
-    return <ArrowUpCircle className="h-4 w-4" />;
-  }
-  return <ArrowDownCircle className="h-4 w-4" />;
-}
-
-// Helper to get wallet icon - supports custom images, lucide icons, and type-based fallbacks
-function getWalletIcon(
-  wallet: WalletType,
-  iconGetter: typeof getIconComponentByKey
-): React.ReactNode {
-  // Priority 1: Custom image (bank/mobile logos)
-  if (wallet.image_src) {
-    return (
-      <Image
-        src={getWalletImagePath(wallet.image_src)}
-        alt=""
-        className="h-4 w-4 rounded-sm object-contain"
-        height={16}
-        width={16}
-      />
-    );
-  }
-  // Priority 2: Custom lucide icon
-  if (wallet.icon) {
-    const IconComponent = iconGetter(wallet.icon as PlatformIconKey);
-    if (IconComponent) {
-      return <IconComponent className="h-4 w-4" />;
-    }
-  }
-  // Priority 3: Fallback based on wallet type
-  return wallet.type === 'CREDIT' ? (
-    <CreditCard className="h-4 w-4" />
-  ) : (
-    <Wallet className="h-4 w-4" />
-  );
-}
 
 interface Props {
   wsId: string;
@@ -123,20 +72,48 @@ interface Props {
   canUpdateConfidentialTransactions?: boolean;
 }
 
-const FormSchema = z.object({
-  id: z.string().optional(),
-  description: z.string().optional(),
-  amount: z.number().positive(),
-  origin_wallet_id: z.string().min(1),
-  destination_wallet_id: z.string().optional(),
-  category_id: z.string().min(1),
-  taken_at: z.date(),
-  report_opt_in: z.boolean(),
-  tag_ids: z.array(z.string()).optional(),
-  is_amount_confidential: z.boolean().optional(),
-  is_description_confidential: z.boolean().optional(),
-  is_category_confidential: z.boolean().optional(),
-});
+const FormSchema = z
+  .object({
+    id: z.string().optional(),
+    description: z.string().optional(),
+    amount: z.number().positive(),
+    origin_wallet_id: z.string().min(1),
+    destination_wallet_id: z.string().optional(),
+    destination_amount: z.number().positive().optional(),
+    category_id: z.string().optional(),
+    taken_at: z.date(),
+    report_opt_in: z.boolean(),
+    tag_ids: z.array(z.string()).optional(),
+    is_transfer: z.boolean().optional(),
+    is_amount_confidential: z.boolean().optional(),
+    is_description_confidential: z.boolean().optional(),
+    is_category_confidential: z.boolean().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.is_transfer && (!data.category_id || data.category_id === '')) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Category is required',
+        path: ['category_id'],
+      });
+    }
+    if (data.is_transfer) {
+      if (!data.destination_wallet_id) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Destination wallet is required',
+          path: ['destination_wallet_id'],
+        });
+      }
+      if (data.origin_wallet_id === data.destination_wallet_id) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Source and destination wallets must be different',
+          path: ['destination_wallet_id'],
+        });
+      }
+    }
+  });
 
 export function TransactionForm({
   wsId,
@@ -152,6 +129,7 @@ export function TransactionForm({
   const queryClient = useQueryClient();
 
   const [loading, setLoading] = useState(false);
+  const [isTransfer, setIsTransfer] = useState(!!data?.transfer);
   const router = useRouter();
 
   const { data: categories, isLoading: categoriesLoading } = useQuery<
@@ -173,7 +151,6 @@ export function TransactionForm({
     queryFn: () => fetcher(`/api/workspaces/${wsId}/tags`),
   });
 
-  // Fetch existing tags for this transaction if editing
   const { data: existingTags } = useQuery<Array<{ tag_id: string }>>({
     queryKey: [`/api/workspaces/${wsId}/transactions/${data?.id}/tags`],
     queryFn: () =>
@@ -181,7 +158,6 @@ export function TransactionForm({
     enabled: !!data?.id,
   });
 
-  // Fetch default wallet and category from workspace settings (only for new transactions)
   const { data: defaultWalletId } = useWorkspaceConfig<string>(
     wsId,
     'default_wallet_id',
@@ -201,19 +177,29 @@ export function TransactionForm({
       description: data?.description || '',
       amount: data?.amount ? Math.abs(data.amount) : undefined,
       origin_wallet_id: data?.wallet_id || wallets?.[0]?.id || '',
+      destination_wallet_id: data?.transfer?.linked_wallet_id || '',
+      destination_amount: data?.transfer?.linked_amount
+        ? Math.abs(data.transfer.linked_amount)
+        : undefined,
       category_id: data?.category_id || '',
       taken_at: data?.taken_at ? new Date(data.taken_at) : new Date(),
       report_opt_in: data?.report_opt_in || true,
-      tag_ids: [],
-      is_amount_confidential: (data as any)?.is_amount_confidential || false,
+      tag_ids: [] as string[],
+      is_transfer: !!data?.transfer,
+      is_amount_confidential:
+        (data as Record<string, unknown>)?.is_amount_confidential === true,
       is_description_confidential:
-        (data as any)?.is_description_confidential || false,
+        (data as Record<string, unknown>)?.is_description_confidential === true,
       is_category_confidential:
-        (data as any)?.is_category_confidential || false,
+        (data as Record<string, unknown>)?.is_category_confidential === true,
     },
   });
 
-  // Update tag_ids when existingTags loads (async query completes after form init)
+  // Keep is_transfer in sync with local state
+  useEffect(() => {
+    form.setValue('is_transfer', isTransfer);
+  }, [isTransfer, form]);
+
   useEffect(() => {
     if (existingTags && existingTags.length > 0) {
       const tagIds = existingTags.map((t) => t.tag_id);
@@ -221,14 +207,10 @@ export function TransactionForm({
     }
   }, [existingTags, form]);
 
-  // Set default wallet when config/wallets load (only for new transactions without wallet)
   useEffect(() => {
-    // Skip if editing existing transaction or wallet already set
     if (data?.id || form.getValues('origin_wallet_id')) return;
-    // Skip if wallets haven't loaded yet
     if (!wallets || wallets.length === 0) return;
 
-    // Use configured default if valid, otherwise fall back to first wallet
     const targetWalletId =
       defaultWalletId && wallets.some((w) => w.id === defaultWalletId)
         ? defaultWalletId
@@ -239,38 +221,30 @@ export function TransactionForm({
     }
   }, [defaultWalletId, data?.id, form, wallets]);
 
-  // Set default category when config/categories load (only for new transactions without category)
   useEffect(() => {
-    // Skip if editing existing transaction or category already set
     if (data?.id || form.getValues('category_id')) return;
-    // Skip if categories haven't loaded yet or no default configured
     if (!categories || categories.length === 0 || !defaultCategoryId) return;
 
-    // Use configured default if valid
     if (categories.some((c) => c.id === defaultCategoryId)) {
       form.setValue('category_id', defaultCategoryId);
     }
   }, [defaultCategoryId, data?.id, form, categories]);
 
-  // Check permissions for form interaction
   const hasCreatePermission = canCreateTransactions && !data?.id;
   const hasUpdatePermission = canUpdateTransactions && data?.id;
   const hasFormPermission = hasCreatePermission || hasUpdatePermission;
 
-  // Derive currency suffix from selected wallet
   const selectedWalletId = form.watch('origin_wallet_id');
   const selectedWalletCurrency = useMemo(
     () => wallets?.find((w) => w.id === selectedWalletId)?.currency,
     [wallets, selectedWalletId]
   );
 
-  // Check confidential transaction permissions
   const canManageConfidential =
     (hasCreatePermission && canCreateConfidentialTransactions) ||
     (hasUpdatePermission && canUpdateConfidentialTransactions);
 
-  async function onSubmit(data: z.infer<typeof FormSchema>) {
-    // Check permissions before submitting
+  async function onSubmit(formData: z.infer<typeof FormSchema>) {
     if (!hasFormPermission) {
       toast.error(t('common.insufficient_permissions'));
       return;
@@ -278,35 +252,66 @@ export function TransactionForm({
 
     setLoading(true);
 
-    const res = await fetch(
-      data?.id
-        ? `/api/workspaces/${wsId}/transactions/${data.id}`
-        : `/api/workspaces/${wsId}/transactions`,
-      {
-        method: data?.id ? 'PUT' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+    if (isTransfer) {
+      // Transfer mode: POST to transfer endpoint
+      const res = await fetch(`/api/workspaces/${wsId}/transfers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...data,
-          amount:
-            categories?.find((c) => c.id === data.category_id)?.is_expense ===
-            false
-              ? Math.abs(data.amount)
-              : -Math.abs(data.amount),
+          origin_wallet_id: formData.origin_wallet_id,
+          destination_wallet_id: formData.destination_wallet_id,
+          amount: formData.amount,
+          destination_amount: formData.destination_amount,
+          description: formData.description,
+          taken_at: formData.taken_at,
+          report_opt_in: formData.report_opt_in,
+          tag_ids: formData.tag_ids,
         }),
-      }
-    );
-
-    if (res.ok) {
-      queryClient.invalidateQueries({
-        queryKey: [`/api/workspaces/${wsId}/transactions/infinite`],
       });
-      onFinish?.(data);
-      router.refresh();
+
+      if (res.ok) {
+        queryClient.invalidateQueries({
+          queryKey: [`/api/workspaces/${wsId}/transactions/infinite`],
+        });
+        onFinish?.(formData);
+        router.refresh();
+      } else {
+        setLoading(false);
+        const err = await res.json().catch(() => null);
+        toast.error(
+          err?.message || t('transaction-data-table.error_creating_transaction')
+        );
+      }
     } else {
-      setLoading(false);
-      toast.error(t('transaction-data-table.error_creating_transaction'));
+      // Normal transaction mode
+      const res = await fetch(
+        formData?.id
+          ? `/api/workspaces/${wsId}/transactions/${formData.id}`
+          : `/api/workspaces/${wsId}/transactions`,
+        {
+          method: formData?.id ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...formData,
+            amount:
+              categories?.find((c) => c.id === formData.category_id)
+                ?.is_expense === false
+                ? Math.abs(formData.amount)
+                : -Math.abs(formData.amount),
+          }),
+        }
+      );
+
+      if (res.ok) {
+        queryClient.invalidateQueries({
+          queryKey: [`/api/workspaces/${wsId}/transactions/infinite`],
+        });
+        onFinish?.(formData);
+        router.refresh();
+      } else {
+        setLoading(false);
+        toast.error(t('transaction-data-table.error_creating_transaction'));
+      }
     }
   }
 
@@ -321,7 +326,6 @@ export function TransactionForm({
   >(undefined);
   const [newTagColor, setNewTagColor] = useState('#3b82f6');
 
-  // Preset colors for quick tag creation
   const PRESET_TAG_COLORS = [
     '#ef4444',
     '#f97316',
@@ -350,7 +354,6 @@ export function TransactionForm({
         queryClient.invalidateQueries({
           queryKey: [`/api/workspaces/${wsId}/tags`],
         });
-        // Add the new tag to the selection
         const currentTags = form.getValues('tag_ids') || [];
         form.setValue('tag_ids', [...currentTags, createdTag.id]);
         setNewContent(undefined);
@@ -363,6 +366,9 @@ export function TransactionForm({
       toast.error(t('ws-tags.error_creating'));
     }
   };
+
+  // Disable transfer mode when editing existing non-transfer transactions
+  const canToggleTransfer = !data?.id || !!data?.transfer;
 
   return (
     <Dialog
@@ -448,6 +454,24 @@ export function TransactionForm({
           onSubmit={form.handleSubmit(onSubmit)}
           className="flex flex-col space-y-3"
         >
+          {/* Transfer mode toggle */}
+          {canToggleTransfer && (
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div className="flex items-center gap-2">
+                <ArrowLeftRight className="h-4 w-4 text-dynamic-blue" />
+                <Label htmlFor="transfer-toggle" className="text-sm">
+                  {t('transaction-data-table.transfer_mode')}
+                </Label>
+              </div>
+              <Switch
+                id="transfer-toggle"
+                checked={isTransfer}
+                onCheckedChange={setIsTransfer}
+                disabled={loading || !hasFormPermission}
+              />
+            </div>
+          )}
+
           <Tabs defaultValue="basic" className="w-full">
             <TabsList className="mb-3 grid w-full grid-cols-2">
               <TabsTrigger value="basic" className="gap-1.5">
@@ -493,9 +517,7 @@ export function TransactionForm({
                         onChange={field.onChange}
                         onCreate={(name) => {
                           setNewContentType('wallet');
-                          setNewContent({
-                            name,
-                          });
+                          setNewContent({ name });
                         }}
                         disabled={
                           loading || walletsLoading || !hasFormPermission
@@ -506,55 +528,112 @@ export function TransactionForm({
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="category_id"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>
-                        {t('transaction-data-table.category')}
-                      </FormLabel>
-                      <Combobox
-                        t={t}
-                        {...field}
-                        mode="single"
-                        options={
-                          categories
-                            ? categories.map((category) => ({
-                                value: category.id || '',
-                                label: category.name || '',
-                                icon: getCategoryIcon(
-                                  category,
-                                  getIconComponentByKey
-                                ),
-                                color: category.color
-                                  ? computeAccessibleLabelStyles(category.color)
-                                      ?.text
-                                  : undefined,
-                              }))
-                            : []
-                        }
-                        label={categoriesLoading ? 'Loading...' : undefined}
-                        placeholder={t(
-                          'transaction-data-table.select_category'
-                        )}
-                        selected={field.value ?? ''}
-                        onChange={field.onChange}
-                        onCreate={(name) => {
-                          setNewContentType('transaction-category');
-                          setNewContent({
-                            name,
-                          });
-                        }}
-                        disabled={
-                          loading || categoriesLoading || !hasFormPermission
-                        }
-                      />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {isTransfer ? (
+                  <FormField
+                    control={form.control}
+                    name="destination_wallet_id"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>
+                          {t('transaction-data-table.destination_wallet')}
+                        </FormLabel>
+                        <Combobox
+                          t={t}
+                          {...field}
+                          mode="single"
+                          options={
+                            wallets
+                              ? wallets
+                                  .filter((w) => w.id !== selectedWalletId)
+                                  .map((wallet) => ({
+                                    value: wallet.id || '',
+                                    label: wallet.name || '',
+                                    icon: getWalletIcon(
+                                      wallet,
+                                      getIconComponentByKey
+                                    ),
+                                  }))
+                              : []
+                          }
+                          label={walletsLoading ? 'Loading...' : undefined}
+                          placeholder={t(
+                            'transaction-data-table.select_destination_wallet'
+                          )}
+                          selected={field.value ?? ''}
+                          onChange={field.onChange}
+                          onCreate={(name) => {
+                            setNewContentType('wallet');
+                            setNewContent({ name });
+                          }}
+                          disabled={
+                            loading || walletsLoading || !hasFormPermission
+                          }
+                        />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ) : (
+                  <FormField
+                    control={form.control}
+                    name="category_id"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>
+                          {t('transaction-data-table.category')}
+                        </FormLabel>
+                        <Combobox
+                          t={t}
+                          {...field}
+                          mode="single"
+                          options={
+                            categories
+                              ? categories.map((category) => ({
+                                  value: category.id || '',
+                                  label: category.name || '',
+                                  icon: getCategoryIcon(
+                                    category,
+                                    getIconComponentByKey
+                                  ),
+                                  color: category.color
+                                    ? computeAccessibleLabelStyles(
+                                        category.color
+                                      )?.text
+                                    : undefined,
+                                }))
+                              : []
+                          }
+                          label={categoriesLoading ? 'Loading...' : undefined}
+                          placeholder={t(
+                            'transaction-data-table.select_category'
+                          )}
+                          selected={field.value ?? ''}
+                          onChange={field.onChange}
+                          onCreate={(name) => {
+                            setNewContentType('transaction-category');
+                            setNewContent({ name });
+                          }}
+                          disabled={
+                            loading || categoriesLoading || !hasFormPermission
+                          }
+                        />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
               </div>
+
+              {isTransfer && (
+                <TransferFields
+                  form={form}
+                  wallets={wallets}
+                  loading={loading}
+                  hasFormPermission={!!hasFormPermission}
+                  originWalletId={selectedWalletId}
+                  t={t}
+                />
+              )}
 
               <FormField
                 control={form.control}
@@ -719,7 +798,7 @@ export function TransactionForm({
                 )}
               />
 
-              {canManageConfidential && (
+              {canManageConfidential && !isTransfer && (
                 <div className="rounded-lg border border-dynamic-orange/30 bg-dynamic-orange/5 p-3">
                   <div className="mb-3 flex items-center gap-2">
                     <Lock className="h-4 w-4 text-dynamic-orange" />
@@ -817,7 +896,9 @@ export function TransactionForm({
               ? t('common.processing')
               : data?.id
                 ? t('ws-transactions.edit')
-                : t('ws-transactions.create')}
+                : isTransfer
+                  ? t('workspace-finance-transactions.transfer')
+                  : t('ws-transactions.create')}
           </Button>
         </form>
       </Form>

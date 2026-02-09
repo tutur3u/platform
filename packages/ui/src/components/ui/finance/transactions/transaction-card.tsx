@@ -3,6 +3,8 @@
 import { useQuery } from '@tanstack/react-query';
 import {
   ArrowDownCircle,
+  ArrowLeftRight,
+  ArrowRight,
   ArrowUpCircle,
   Calendar,
   FileText,
@@ -74,6 +76,7 @@ export function TransactionCard({
   const [isHovered, setIsHovered] = useState(false);
   const effectiveCurrency = transaction.wallet_currency || currency;
   const isExpense = (transaction.amount || 0) < 0;
+  const isTransfer = !!transaction.transfer;
 
   // Currency conversion for foreign-currency transactions
   const isForeignCurrency =
@@ -146,6 +149,11 @@ export function TransactionCard({
     return wallets.find((w) => w.id === transaction.wallet_id);
   }, [transaction.wallet_id, wallets]);
 
+  const linkedWallet = useMemo(() => {
+    if (!transaction.transfer?.linked_wallet_id || !wallets) return null;
+    return wallets.find((w) => w.id === transaction.transfer?.linked_wallet_id);
+  }, [transaction.transfer?.linked_wallet_id, wallets]);
+
   // Determine if we should use custom styling
   const hasCustomStyling = Boolean(customColorStyles);
 
@@ -168,6 +176,9 @@ export function TransactionCard({
     if (isConfidential) {
       return 'border-dynamic-orange/30 bg-linear-to-br from-dynamic-orange/5 to-transparent';
     }
+    if (isTransfer) {
+      return 'border-dynamic-blue/20 bg-linear-to-br from-dynamic-blue/5 to-transparent hover:border-dynamic-blue/40';
+    }
     if (hasCustomStyling && customColorStyles) {
       return ''; // Will use inline styles
     }
@@ -179,6 +190,7 @@ export function TransactionCard({
   // Determine accent bar color
   const getAccentBarColor = () => {
     if (isConfidential) return 'bg-dynamic-orange';
+    if (isTransfer) return 'bg-dynamic-blue';
     if (hasCustomStyling && customColorStyles) return ''; // Will use inline styles
     return isExpense ? 'bg-dynamic-red' : 'bg-dynamic-green';
   };
@@ -226,7 +238,9 @@ export function TransactionCard({
                 'shadow-sm ring-1 ring-black/5',
                 isConfidential
                   ? 'bg-linear-to-br from-dynamic-orange/20 to-dynamic-orange/10'
-                  : !hasCustomStyling &&
+                  : isTransfer
+                    ? 'bg-linear-to-br from-dynamic-blue/20 to-dynamic-blue/10'
+                    : !hasCustomStyling &&
                       (isExpense
                         ? 'bg-linear-to-br from-dynamic-red/20 to-dynamic-red/10'
                         : 'bg-linear-to-br from-dynamic-green/20 to-dynamic-green/10'),
@@ -242,6 +256,8 @@ export function TransactionCard({
             >
               {isConfidential ? (
                 <Lock className="h-4 w-4 text-dynamic-orange sm:h-6 sm:w-6" />
+              ) : isTransfer ? (
+                <ArrowLeftRight className="h-4 w-4 text-dynamic-blue sm:h-6 sm:w-6" />
               ) : CategoryIcon ? (
                 <CategoryIcon
                   className="h-4 w-4 sm:h-6 sm:w-6"
@@ -283,7 +299,14 @@ export function TransactionCard({
           <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
             {/* Badges */}
             <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 sm:gap-2">
-              {transaction.category && (
+              {isTransfer ? (
+                <Badge
+                  variant="outline"
+                  className="border-dynamic-blue/40 bg-dynamic-blue/10 font-semibold text-[11px] text-dynamic-blue transition-colors sm:text-xs"
+                >
+                  {t('transfer')}
+                </Badge>
+              ) : transaction.category ? (
                 <Badge
                   variant="outline"
                   className={cn(
@@ -307,25 +330,61 @@ export function TransactionCard({
                 >
                   {transaction.category}
                 </Badge>
-              )}
+              ) : null}
               {transaction.wallet && (
-                <Link
-                  href={`/${wsId}/finance/wallets/${transaction.wallet_id}`}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Badge
-                    variant="outline"
-                    className="gap-1 border-muted-foreground/30 bg-muted/50 px-1.5 py-0.5 font-medium text-[11px] text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-primary sm:px-2 sm:text-xs"
-                  >
-                    <WalletIconDisplay
-                      icon={wallet?.icon}
-                      imageSrc={wallet?.image_src}
-                      size="sm"
-                      className="h-3 w-3"
-                    />
-                    {transaction.wallet}
-                  </Badge>
-                </Link>
+                <div className="flex items-center gap-1">
+                  {isTransfer && transaction.transfer ? (
+                    <div className="flex items-center rounded-full border border-dynamic-blue/20 bg-dynamic-blue/5 py-0.5 pr-1 pl-1">
+                      <Link
+                        href={`/${wsId}/finance/wallets/${transaction.wallet_id}`}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <span className="flex items-center gap-1 rounded-full px-1.5 py-0.5 font-medium text-[11px] text-muted-foreground transition-colors hover:bg-dynamic-blue/10 hover:text-foreground sm:text-xs">
+                          <WalletIconDisplay
+                            icon={wallet?.icon}
+                            imageSrc={wallet?.image_src}
+                            size="sm"
+                            className="h-3 w-3"
+                          />
+                          {transaction.wallet}
+                        </span>
+                      </Link>
+                      <ArrowRight className="mx-0.5 h-3 w-3 shrink-0 text-dynamic-blue" />
+                      <Link
+                        href={`/${wsId}/finance/wallets/${transaction.transfer.linked_wallet_id}`}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <span className="flex items-center gap-1 rounded-full px-1.5 py-0.5 font-medium text-[11px] text-dynamic-blue transition-colors hover:bg-dynamic-blue/10 sm:text-xs">
+                          <WalletIconDisplay
+                            icon={linkedWallet?.icon}
+                            imageSrc={linkedWallet?.image_src}
+                            size="sm"
+                            className="h-3 w-3"
+                          />
+                          {transaction.transfer.linked_wallet_name}
+                        </span>
+                      </Link>
+                    </div>
+                  ) : (
+                    <Link
+                      href={`/${wsId}/finance/wallets/${transaction.wallet_id}`}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Badge
+                        variant="outline"
+                        className="gap-1 border-muted-foreground/30 bg-muted/50 px-1.5 py-0.5 font-medium text-[11px] text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-primary sm:px-2 sm:text-xs"
+                      >
+                        <WalletIconDisplay
+                          icon={wallet?.icon}
+                          imageSrc={wallet?.image_src}
+                          size="sm"
+                          className="h-3 w-3"
+                        />
+                        {transaction.wallet}
+                      </Badge>
+                    </Link>
+                  )}
+                </div>
               )}
               {isConfidential && (
                 <Badge
@@ -349,26 +408,47 @@ export function TransactionCard({
                     'font-bold text-sm tabular-nums transition-all duration-200 sm:text-xl',
                     isConfidential
                       ? 'text-dynamic-orange'
-                      : !hasCustomStyling &&
+                      : isTransfer
+                        ? 'text-dynamic-blue'
+                        : !hasCustomStyling &&
                           (isExpense
                             ? 'text-dynamic-red'
                             : 'text-dynamic-green'),
                     isHovered && 'scale-105'
                   )}
                   style={
-                    hasCustomStyling && !isConfidential && customColorStyles
+                    hasCustomStyling &&
+                    !isConfidential &&
+                    !isTransfer &&
+                    customColorStyles
                       ? { color: customColorStyles.text }
                       : undefined
                   }
                 />
-                {isForeignCurrency && convertedAmount != null && (
-                  <span className="text-[10px] text-muted-foreground tabular-nums sm:text-xs">
-                    ≈{' '}
-                    {formatCurrency(convertedAmount, currency, undefined, {
-                      signDisplay: 'exceptZero',
-                    })}
-                  </span>
-                )}
+                {isTransfer &&
+                  transaction.transfer?.linked_amount != null &&
+                  transaction.transfer?.linked_wallet_currency &&
+                  transaction.transfer.linked_wallet_currency.toUpperCase() !==
+                    effectiveCurrency.toUpperCase() && (
+                    <span className="text-[10px] text-dynamic-blue tabular-nums sm:text-xs">
+                      {formatCurrency(
+                        Math.abs(transaction.transfer.linked_amount),
+                        transaction.transfer.linked_wallet_currency,
+                        undefined,
+                        { signDisplay: 'always' }
+                      )}
+                    </span>
+                  )}
+                {!isTransfer &&
+                  isForeignCurrency &&
+                  convertedAmount != null && (
+                    <span className="text-[10px] text-muted-foreground tabular-nums sm:text-xs">
+                      ≈{' '}
+                      {formatCurrency(convertedAmount, currency, undefined, {
+                        signDisplay: 'exceptZero',
+                      })}
+                    </span>
+                  )}
               </div>
               {(canEdit || canDelete) && (
                 <DropdownMenu>

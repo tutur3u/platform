@@ -29,4 +29,12 @@ export interface Transaction {
     avatar_url?: string;
   };
   tags?: TransactionTag[];
+  transfer?: {
+    linked_transaction_id: string;
+    linked_wallet_id: string;
+    linked_wallet_name: string;
+    linked_wallet_currency?: string;
+    linked_amount?: number;
+    is_origin: boolean;
+  };
 }
