@@ -266,6 +266,9 @@ export type ReportApprovalQueryResult = {
   scores: number[] | null;
   created_at: string;
   updated_by?: string | null;
+  user_id?: string | null;
+  group_id?: string | null;
+  creator_id?: string | null;
   report_approval_status: Database['public']['Enums']['approval_status'];
   rejection_reason: string | null;
   approved_at: string | null;
@@ -273,6 +276,10 @@ export type ReportApprovalQueryResult = {
   modifier?: {
     full_name?: string | null;
     display_name?: string | null;
+    email?: string | null;
+  } | null;
+  creator?: {
+    full_name?: string | null;
   } | null;
   user?:
     | {
@@ -318,9 +325,13 @@ export function normalizeUser(
  * Report approval item with computed user_name field
  * Used in approvals view for external user monthly reports
  */
-export type ReportApprovalItem = Omit<ReportApprovalQueryResult, 'user'> & {
+export type ReportApprovalItem = Omit<
+  ReportApprovalQueryResult,
+  'user' | 'creator'
+> & {
   user_name?: string | null;
   modifier_name?: string | null;
+  creator_name?: string | null;
 };
 
 /**
@@ -347,8 +358,10 @@ export type PostApprovalQueryResult = {
   modifier?: {
     full_name?: string | null;
     display_name?: string | null;
+    email?: string | null;
   } | null;
   group_name?: string | null;
+  group_id?: string | null;
 };
 
 /**

@@ -47,6 +47,7 @@ export default async function WorkspaceUserReportsPage({ params }: Props) {
         const canCheckUserAttendance = containsPermission(
           'check_user_attendance'
         );
+        const canApproveReports = containsPermission('approve_reports');
         const canCreateReports = containsPermission(
           'create_user_groups_reports'
         );
@@ -70,6 +71,7 @@ export default async function WorkspaceUserReportsPage({ params }: Props) {
               workspaceUserId={user.virtual_user_id}
               hasManageUsers={hasManageUsers}
               canCheckUserAttendance={canCheckUserAttendance}
+              canApproveReports={canApproveReports}
               canCreateReports={canCreateReports}
               canUpdateReports={canUpdateReports}
               canDeleteReports={canDeleteReports}

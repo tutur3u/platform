@@ -11,7 +11,7 @@
     "type-check": "tsgo --build"
   },
   "dependencies": {
-    "@serwist/next": "^9.5.4",
+    "@serwist/next": "^9.5.5",
     "@serwist/turbopack": "^10.0.0-preview.14",
     "esbuild-wasm": "^0.27.3",
     "serwist": "^10.0.0-preview.14"
@@ -22,7 +22,7 @@
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.2.1",
+    "@types/node": "^25.2.2",
     "@types/react": "^19.2.13",
     "next": "^16.1.6",
     "react": "^19.2.4",

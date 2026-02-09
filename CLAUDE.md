@@ -217,6 +217,7 @@ bun trigger:deploy
 17. **Always** run `bun check` at the end of your work - this unified command runs formatting, tests, type-checking, and i18n checks. All checks MUST pass.
 18. **Always** add new GitHub Actions workflows to `tuturuuu.ts` configuration - when creating or modifying workflows in `.github/workflows/`, add an entry to the `ci` object in `tuturuuu.ts` and ensure the workflow includes the `check-ci` job dependency
 19. **Always** conduct a **Session Retrospective** at the END of every co-working session - review `AGENTS.md`, `CLAUDE.md`, and `GEMINI.md`, document mistakes made and lessons learned, and update these files with new rules or clarifications to prevent repeating errors in future sessions. This is NON-NEGOTIABLE.
+20. **Never** add session logs, empty notes, or observations to these files unless they introduce new reusable knowledge not already covered — these files are shared with all agents and must stay concise and actionable. Redundancy degrades signal quality.
 
 ### Escalate When
 
@@ -794,21 +795,3 @@ Before requesting review:
 ## Reference
 
 For comprehensive operational guidelines, see **[AGENTS.md](./AGENTS.md)** - the canonical operating manual for AI assistants working in this repository.
-
-## Session Retrospective (2026-02-04)
-
-### Mistakes/Issues Encountered
-- No automated tests were added for the new mobile auth API routes due to missing route-handler test harness in `apps/web`.
-
-### Lessons Learned
-- Mobile auth endpoints should always return Supabase session tokens and include CORS headers, since native clients do not rely on cookies.
-- When introducing a new mobile API base URL, add a local `.env.example` and update the app README to keep onboarding clear.
-
-### Documentation Updates Made
-- Added this retrospective entry to document the missing-test gap and mobile auth patterns.
-
-### Proposed Future Improvements
-- Add a lightweight testing guideline/template for Next.js route handlers so new API endpoints can be covered by unit tests.
-- Clarify how to satisfy the `bun check` requirement when lint/format commands are user-only.
-
-
