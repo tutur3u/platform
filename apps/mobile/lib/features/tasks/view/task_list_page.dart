@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart' hide Scaffold, AppBar;
+import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/data/models/user_task.dart';
 import 'package:mobile/data/repositories/task_repository.dart';

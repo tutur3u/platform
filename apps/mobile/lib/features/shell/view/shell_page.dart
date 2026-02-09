@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart'
-    hide Scaffold, NavigationBar, NavigationBarTheme;
+    hide NavigationBar, NavigationBarTheme, Scaffold;
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/l10n/l10n.dart';

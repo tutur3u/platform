@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart'
-    hide TextField, TextButton, FilledButton, AlertDialog;
+    hide AlertDialog, FilledButton, TextButton, TextField;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';

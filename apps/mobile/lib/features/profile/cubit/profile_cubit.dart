@@ -23,7 +23,6 @@ class ProfileCubit extends Cubit<ProfileState> {
         state.copyWith(
           status: ProfileStatus.loaded,
           profile: result.profile,
-          error: null,
         ),
       );
     } else {
@@ -143,7 +142,7 @@ class ProfileCubit extends Cubit<ProfileState> {
     }
   }
 
-  void clearError() => emit(state.copyWith(error: null));
+  void clearError() => emit(state.copyWith());
 
   @override
   Future<void> close() {

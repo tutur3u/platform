@@ -21,7 +21,7 @@ class ProfileRepository {
       return (profile: UserProfile.fromJson(json), error: null);
     } on ApiException catch (e) {
       return (profile: null, error: e.message);
-    } catch (e) {
+    } on Exception catch (e) {
       return (profile: null, error: e.toString());
     }
   }
@@ -138,7 +138,7 @@ class ProfileRepository {
       return (success: true, error: null);
     } on ApiException catch (e) {
       return (success: false, error: e.message);
-    } catch (e) {
+    } on Exception catch (e) {
       return (success: false, error: e.toString());
     }
   }

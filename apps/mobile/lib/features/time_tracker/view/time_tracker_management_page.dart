@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart' hide Scaffold, AppBar, TextField, Card;
+import 'package:flutter/material.dart' hide AppBar, Card, Scaffold, TextField;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';

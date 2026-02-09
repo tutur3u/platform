@@ -40,9 +40,11 @@ void showWorkspacePickerSheet(BuildContext context) {
                   return shad.GhostButton(
                     onPressed: () async {
                       final cubit = context.read<WorkspaceCubit>();
-                      // Close drawer and await completion before workspace change
+                      // Close drawer and await completion before
+                      // workspace change
                       await Navigator.maybePop(context);
-                      // Only then select workspace (triggers router refresh safely)
+                      // Only then select workspace
+                      // (triggers router refresh safely)
                       await cubit.selectWorkspace(workspace);
                     },
                     child: Padding(

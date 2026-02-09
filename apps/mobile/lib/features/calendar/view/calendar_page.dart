@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' hide Scaffold, AppBar;
+import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 

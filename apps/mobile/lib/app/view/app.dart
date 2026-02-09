@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart'
-    hide ThemeData, ThemeMode, NavigationBar, NavigationBarTheme;
+    hide NavigationBar, NavigationBarTheme, ThemeData, ThemeMode;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/app_router.dart';
@@ -98,7 +98,7 @@ class _AppState extends State<App> {
                   ),
                   themeMode: themeState.themeMode,
                   locale: localeState.locale,
-                  localizationsDelegates: [
+                  localizationsDelegates: const [
                     ...AppLocalizations.localizationsDelegates,
                     shad.ShadcnLocalizations.delegate,
                   ],

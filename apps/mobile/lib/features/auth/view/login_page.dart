@@ -1,3 +1,4 @@
+import 'package:cloudflare_turnstile/cloudflare_turnstile.dart';
 import 'package:flutter/material.dart'
     hide
         AppBar,
@@ -8,7 +9,6 @@ import 'package:flutter/material.dart'
         TabController,
         TextButton,
         TextField;
-import 'package:cloudflare_turnstile/cloudflare_turnstile.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/config/env.dart';

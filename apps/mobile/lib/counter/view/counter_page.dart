@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' hide Scaffold, AppBar;
+import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/counter/counter.dart';
 import 'package:mobile/l10n/l10n.dart';

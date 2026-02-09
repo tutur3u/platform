@@ -1,7 +1,8 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart'
-    hide Scaffold, AppBar, TextButton, FilledButton, AlertDialog;
+    hide AlertDialog, AppBar, FilledButton, Scaffold, TextButton;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
@@ -18,9 +19,13 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => ProfileCubit(
-        profileRepository: ProfileRepository(),
-      )..loadProfile(),
+      create: (context) {
+        final cubit = ProfileCubit(
+          profileRepository: ProfileRepository(),
+        );
+        unawaited(cubit.loadProfile());
+        return cubit;
+      },
       child: const _ProfileView(),
     );
   }
@@ -186,7 +191,7 @@ class _AvatarSection extends StatelessWidget {
                     child: shad.GhostButton(
                       onPressed: state.isLoading
                           ? null
-                          : () => _showAvatarOptions(context),
+                          : () => unawaited(_showAvatarOptions(context)),
                       density: shad.ButtonDensity.icon,
                       child: const Icon(Icons.edit, size: 16),
                     ),
@@ -218,8 +223,8 @@ class _AvatarSection extends StatelessWidget {
               children: [
                 shad.GhostButton(
                   onPressed: () => Navigator.pop(context, ImageSource.camera),
-                  child: Row(
-                    children: const [
+                  child: const Row(
+                    children: [
                       Icon(Icons.camera_alt),
                       shad.Gap(8),
                       Text('Camera'),
@@ -228,8 +233,8 @@ class _AvatarSection extends StatelessWidget {
                 ),
                 shad.GhostButton(
                   onPressed: () => Navigator.pop(context, ImageSource.gallery),
-                  child: Row(
-                    children: const [
+                  child: const Row(
+                    children: [
                       Icon(Icons.photo_library),
                       shad.Gap(8),
                       Text('Gallery'),
@@ -278,11 +283,11 @@ class _AvatarSection extends StatelessWidget {
     await cubit.uploadAvatar(File(croppedFile.path));
   }
 
-  void _showAvatarOptions(BuildContext context) {
+  Future<void> _showAvatarOptions(BuildContext context) async {
     final l10n = context.l10n;
     final cubit = context.read<ProfileCubit>();
 
-    showDialog<void>(
+    await showDialog<void>(
       context: context,
       builder: (dialogContext) => Center(
         child: SizedBox(
@@ -305,7 +310,7 @@ class _AvatarSection extends StatelessWidget {
                 shad.GhostButton(
                   onPressed: () {
                     Navigator.pop(dialogContext);
-                    _pickAndUploadAvatar(context);
+                    unawaited(_pickAndUploadAvatar(context));
                   },
                   child: Text(
                     avatarUrl != null
