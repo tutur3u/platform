@@ -15,7 +15,7 @@ export async function POST(
 
   const { subscriptionId } = await params;
 
-  const { wsId, productId, seats } = await request.json();
+  const { wsId, productId } = await request.json();
 
   // Validate that you have the info you need
   if (!subscriptionId || !productId || !wsId) {
@@ -25,48 +25,11 @@ export async function POST(
     );
   }
 
-  if (seats && !Number.isInteger(seats)) {
-    return NextResponse.json(
-      { error: 'Seats must be an integer' },
-      { status: 400 }
-    );
-  }
-
-  if (seats < 1 || seats > 1000) {
-    return NextResponse.json(
-      { error: 'Seats must be between 1 and 1000' },
-      { status: 400 }
-    );
-  }
-
   const supabase = await createClient();
   const user = await getCurrentSupabaseUser();
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  // Get subscription from database
-  const { data: subscription, error: subscriptionError } = await supabase
-    .from('workspace_subscriptions')
-    .select('*')
-    .eq('id', subscriptionId)
-    .eq('ws_id', wsId)
-    .maybeSingle();
-
-  if (subscriptionError) {
-    console.error('Error fetching subscription:', subscriptionError);
-    return NextResponse.json(
-      { error: 'An error occurred while fetching the subscription' },
-      { status: 500 }
-    );
-  }
-
-  if (!subscription) {
-    return NextResponse.json(
-      { error: 'Subscription not found' },
-      { status: 404 }
-    );
   }
 
   const {
@@ -101,27 +64,54 @@ export async function POST(
     );
   }
 
-  if (seats) {
-    const { count: memberCount, error: memberCountError } = await supabase
-      .from('workspace_members')
-      .select('*', { count: 'exact', head: true })
-      .eq('ws_id', wsId);
+  // Get subscription from database
+  const { data: subscription, error: subscriptionError } = await supabase
+    .from('workspace_subscriptions')
+    .select('*')
+    .eq('id', subscriptionId)
+    .maybeSingle();
 
-    if (memberCountError) {
-      return NextResponse.json(
-        { error: memberCountError.message },
-        { status: 500 }
-      );
-    }
+  if (subscriptionError) {
+    console.error('Error fetching subscription:', subscriptionError);
+    return NextResponse.json(
+      { error: 'An error occurred while fetching the subscription' },
+      { status: 500 }
+    );
+  }
 
-    if (memberCount && seats < memberCount) {
-      return NextResponse.json(
-        {
-          error: `Seat count (${seats}) cannot be less than current active members (${memberCount})`,
-        },
-        { status: 400 }
-      );
-    }
+  if (!subscription) {
+    return NextResponse.json(
+      { error: 'Subscription not found' },
+      { status: 404 }
+    );
+  }
+
+  const { count: memberCount, error: memberCountError } = await supabase
+    .from('workspace_members')
+    .select('*', { count: 'exact', head: true })
+    .eq('ws_id', wsId);
+
+  if (memberCountError) {
+    return NextResponse.json(
+      { error: memberCountError.message },
+      { status: 500 }
+    );
+  }
+
+  const seats = memberCount || 0;
+
+  if (seats && !Number.isInteger(seats)) {
+    return NextResponse.json(
+      { error: 'Seats must be an integer' },
+      { status: 400 }
+    );
+  }
+
+  if (seats < 1 || seats > 1000) {
+    return NextResponse.json(
+      { error: 'Seats must be between 1 and 1000' },
+      { status: 400 }
+    );
   }
 
   // HERE is where you add the metadata
