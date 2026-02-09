@@ -341,4 +341,21 @@ export const achievements: Achievement[] = [
     year: 2025,
     category: 'Competition',
   },
+  {
+    name: ' Sustainable Design Competition by Sustainable Textile Solution (STS)',
+    achievement: '4R Design award',
+    image: '/hall-of-fames/fashion_enterprise_program.jpg',
+    teamMembers: [
+      {
+        name: 'Vo Tran Minh Nhat',
+        role: 'Designer',
+        avatar: '/members/gen7/nhat.png',
+        isNctMember: true,
+      },
+    ],
+    achievementDescription:
+      'E-CLO competed with universities nationwide in a sustainable design challenge centered on material innovation and ethical product values. The project was awarded the Most Reality Award, receiving a 15 million VND prize.',
+    year: 2024,
+    category: 'Award',
+  },
 ];
