@@ -423,6 +423,7 @@ export function SessionHistory({
                       <div className="">
                         <CompactWeekSummary
                           sessions={sessions}
+                          periodStats={periodStats}
                           startOfPeriod={startOfPeriod}
                           categories={categories}
                           userTimezone={userTimezone}

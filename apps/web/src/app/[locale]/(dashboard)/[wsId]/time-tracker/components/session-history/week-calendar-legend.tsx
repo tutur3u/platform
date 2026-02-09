@@ -13,6 +13,8 @@ export function WeekCalendarLegend({ categories }: WeekCalendarLegendProps) {
 
   if (!categories || categories.length === 0) return null;
 
+  const uncategorizedStyles = computeAccessibleLabelStyles('GRAY');
+
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-muted-foreground text-xs">
       <span className="font-medium">{t('category_legend')}:</span>
@@ -28,18 +30,13 @@ export function WeekCalendarLegend({ categories }: WeekCalendarLegendProps) {
           </span>
         );
       })}
-      {(() => {
-        const catStyles = computeAccessibleLabelStyles('GRAY');
-        return (
-          <span className="flex items-center gap-1.5">
-            <span
-              className="inline-block h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: catStyles?.text }}
-            />
-            {t('uncategorized')}
-          </span>
-        );
-      })()}
+      <span className="flex items-center gap-1.5">
+        <span
+          className="inline-block h-2.5 w-2.5 rounded-full"
+          style={{ backgroundColor: uncategorizedStyles?.text }}
+        />
+        {t('uncategorized')}
+      </span>
     </div>
   );
 }

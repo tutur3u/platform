@@ -24,6 +24,8 @@ DECLARE
 	v_short_sessions INTEGER;
 	v_medium_sessions INTEGER;
 	v_long_sessions INTEGER;
+	v_short_duration_seconds INTEGER := 1800;
+	v_medium_duration_seconds INTEGER := 7200;
 BEGIN
 	WITH base AS (
 		SELECT
@@ -92,9 +94,13 @@ BEGIN
 			AND (
 				p_duration IS NULL
 				OR p_duration = 'all'
-				OR (p_duration = 'short' AND overlap_seconds < 1800)
-				OR (p_duration = 'medium' AND overlap_seconds >= 1800 AND overlap_seconds < 7200)
-				OR (p_duration = 'long' AND overlap_seconds >= 7200)
+				OR (p_duration = 'short' AND overlap_seconds < v_short_duration_seconds)
+				OR (
+					p_duration = 'medium'
+					AND overlap_seconds >= v_short_duration_seconds
+					AND overlap_seconds < v_medium_duration_seconds
+				)
+				OR (p_duration = 'long' AND overlap_seconds >= v_medium_duration_seconds)
 			)
 			AND (p_time_of_day IS NULL OR p_time_of_day = 'all' OR time_of_day = p_time_of_day)
 			AND (p_project_context IS NULL OR p_project_context = 'all' OR project_context = p_project_context)
@@ -103,7 +109,7 @@ BEGIN
 		-- Generate all days in the period to split multi-day sessions
 		SELECT generate_series(
 			(p_date_from AT TIME ZONE p_timezone)::DATE,
-			(p_date_to AT TIME ZONE p_timezone)::DATE,
+			date_trunc('day', (p_date_to AT TIME ZONE p_timezone) - INTERVAL '1 second')::DATE,
 			'1 day'::INTERVAL
 		)::DATE AS d
 	),
@@ -118,8 +124,16 @@ BEGIN
 				GREATEST(
 					0,
 					EXTRACT(
-						EPOCH FROM LEAST(f.end_local, (d.d + 1)::TIMESTAMP)
-						- GREATEST(f.start_local, d.d::TIMESTAMP)
+						EPOCH FROM LEAST(
+							f.end_local,
+							(d.d + 1)::TIMESTAMP,
+							period_end_local
+						)
+						- GREATEST(
+							f.start_local,
+							d.d::TIMESTAMP,
+							period_start_local
+						)
 					)
 				)
 			)::BIGINT AS cat_duration
@@ -128,15 +142,6 @@ BEGIN
 		WHERE f.start_local < (d.d + 1)::TIMESTAMP
 		  AND f.end_local >= d.d::TIMESTAMP
 		GROUP BY 1, 2, 3, 4
-		HAVING SUM(
-			GREATEST(
-				0,
-				EXTRACT(
-					EPOCH FROM LEAST(f.end_local, (d.d + 1)::TIMESTAMP)
-					- GREATEST(f.start_local, d.d::TIMESTAMP)
-				)
-			)
-		) > 0
 	)
 	SELECT
 		COALESCE(SUM(overlap_seconds), 0)::BIGINT,
@@ -214,9 +219,19 @@ BEGIN
 				GROUP BY 1
 			) d
 		),
-		COALESCE(SUM(CASE WHEN overlap_seconds < 1800 THEN 1 ELSE 0 END), 0)::INTEGER,
-		COALESCE(SUM(CASE WHEN overlap_seconds >= 1800 AND overlap_seconds < 7200 THEN 1 ELSE 0 END), 0)::INTEGER,
-		COALESCE(SUM(CASE WHEN overlap_seconds >= 7200 THEN 1 ELSE 0 END), 0)::INTEGER
+		COALESCE(SUM(CASE WHEN overlap_seconds < v_short_duration_seconds THEN 1 ELSE 0 END), 0)::INTEGER,
+		COALESCE(
+			SUM(
+				CASE
+						WHEN overlap_seconds >= v_short_duration_seconds
+							AND overlap_seconds < v_medium_duration_seconds
+						THEN 1
+						ELSE 0
+					END
+			),
+			0
+		)::INTEGER,
+		COALESCE(SUM(CASE WHEN overlap_seconds >= v_medium_duration_seconds THEN 1 ELSE 0 END), 0)::INTEGER
 	INTO
 		v_total_duration,
 		v_session_count,
@@ -243,4 +258,4 @@ BEGIN
 		'sessionCount', v_session_count
 	);
 END;
-$$ LANGUAGE plpgsql STABLE;
+$$ LANGUAGE plpgsql STABLE SET search_path = public, pg_catalog;

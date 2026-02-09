@@ -221,39 +221,24 @@ export async function GET(
       console.error('Period stats validation failed:', parsedStats.error);
     }
 
+    const data = parsedStats.success ? parsedStats.data : null;
+
     const normalizedStats = {
-      totalDuration:
-        (parsedStats.success ? parsedStats.data.totalDuration : 0) ?? 0,
-      breakdown: (parsedStats.success ? parsedStats.data.breakdown : []) ?? [],
-      timeOfDayBreakdown: (parsedStats.success
-        ? parsedStats.data.timeOfDayBreakdown
-        : {
-            morning: 0,
-            afternoon: 0,
-            evening: 0,
-            night: 0,
-          }) ?? {
+      totalDuration: data?.totalDuration ?? 0,
+      breakdown: data?.breakdown ?? [],
+      timeOfDayBreakdown: data?.timeOfDayBreakdown ?? {
         morning: 0,
         afternoon: 0,
         evening: 0,
         night: 0,
       },
-      bestTimeOfDay:
-        (parsedStats.success ? parsedStats.data.bestTimeOfDay : 'none') ??
-        'none',
-      longestSession: parsedStats.success
-        ? (parsedStats.data.longestSession ?? null)
-        : null,
-      shortSessions:
-        (parsedStats.success ? parsedStats.data.shortSessions : 0) ?? 0,
-      mediumSessions:
-        (parsedStats.success ? parsedStats.data.mediumSessions : 0) ?? 0,
-      longSessions:
-        (parsedStats.success ? parsedStats.data.longSessions : 0) ?? 0,
-      sessionCount:
-        (parsedStats.success ? parsedStats.data.sessionCount : 0) ?? 0,
-      dailyBreakdown:
-        (parsedStats.success ? parsedStats.data.dailyBreakdown : []) ?? [],
+      bestTimeOfDay: data?.bestTimeOfDay ?? 'none',
+      longestSession: data?.longestSession ?? null,
+      shortSessions: data?.shortSessions ?? 0,
+      mediumSessions: data?.mediumSessions ?? 0,
+      longSessions: data?.longSessions ?? 0,
+      sessionCount: data?.sessionCount ?? 0,
+      dailyBreakdown: data?.dailyBreakdown ?? [],
     };
 
     return NextResponse.json(normalizedStats);
