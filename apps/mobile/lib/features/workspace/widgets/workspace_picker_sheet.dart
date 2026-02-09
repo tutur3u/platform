@@ -38,12 +38,12 @@ void showWorkspacePickerSheet(BuildContext context) {
                   final isSelected = workspace.id == state.currentWorkspace?.id;
 
                   return shad.GhostButton(
-                    onPressed: () {
+                    onPressed: () async {
                       final cubit = context.read<WorkspaceCubit>();
-                      Navigator.pop(context);
-                      scheduleMicrotask(() {
-                        unawaited(cubit.selectWorkspace(workspace));
-                      });
+                      // Close drawer and await completion before workspace change
+                      await Navigator.maybePop(context);
+                      // Only then select workspace (triggers router refresh safely)
+                      await cubit.selectWorkspace(workspace);
                     },
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8),
