@@ -125,6 +125,7 @@ export function PlanListDialog({
     .filter((plan) => plan !== null)
     .sort((a, b) => {
       if (a!.isFree) return -1;
+      if (b!.isFree) return 1;
 
       if (a.pricingModel === 'seat_based' && b.pricingModel === 'seat_based')
         return (a.pricePerSeat ?? 0) - (b.pricePerSeat ?? 0);

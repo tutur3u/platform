@@ -5,7 +5,10 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { headers } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
-import { assignSeatToMember } from '@/utils/polar-seat-helper';
+import {
+  assignSeatToMember,
+  revokeSeatFromMember,
+} from '@/utils/polar-seat-helper';
 import { enforceSeatLimit } from '@/utils/seat-limits';
 
 interface Params {
@@ -196,6 +199,11 @@ export async function POST(req: Request, { params }: Params) {
   });
 
   if (error) {
+    // Rollback: revoke the Polar seat if it was assigned
+    if (seatAssignment.required && seatAssignment.success) {
+      await revokeSeatFromMember(polar, sbAdmin, wsId, data.user_id);
+    }
+
     console.log(error);
     return NextResponse.json(
       { message: 'Error creating workspace user' },

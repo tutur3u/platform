@@ -150,15 +150,26 @@ export async function revokeSeatFromMember(
   }
 
   try {
+    // Get the user's personal Polar customer to find their internal ID
+    const customer = await polar.customers.getExternal({
+      externalId: userId,
+    });
+
+    if (!customer) {
+      console.warn(
+        `No Polar customer found for user ${userId} - cannot revoke seat`
+      );
+      return;
+    }
+
     // List all seats for this subscription
     const seatsList = await polar.customerSeats.listSeats({
       subscriptionId: subscription.polar_subscription_id!,
     });
 
-    // Find the seat for this user (match by customerId from personal customer)
+    // Find the seat for this user (match by Polar's internal customerId)
     const userSeat = seatsList.seats.find((seat) => {
-      // Match by the personal customer's externalId
-      return seat.customerId === userId;
+      return seat.customerId === customer.id;
     });
 
     if (!userSeat) {

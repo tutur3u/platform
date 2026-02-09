@@ -83,6 +83,7 @@ export default function PurchaseLink({
   useEffect(() => {
     return () => {
       if (checkoutInstance) {
+        checkoutInstance.close();
         setCheckoutInstance(null);
       }
     };

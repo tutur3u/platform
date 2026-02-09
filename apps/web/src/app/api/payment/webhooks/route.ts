@@ -180,7 +180,28 @@ export const POST = Webhooks({
       );
     }
 
-    const tier = metadataProductTier.toUpperCase() as WorkspaceProductTier;
+    const tierValue = metadataProductTier.toUpperCase();
+    const validTiers: WorkspaceProductTier[] = [
+      'FREE',
+      'PLUS',
+      'PRO',
+      'ENTERPRISE',
+    ];
+    const tier = validTiers.includes(tierValue as WorkspaceProductTier)
+      ? (tierValue as WorkspaceProductTier)
+      : null;
+
+    if (!tier) {
+      console.error(
+        `Webhook Error: Invalid product_tier value: ${tierValue}. Expected one of: ${validTiers.join(', ')}`
+      );
+      throw new Response(
+        `Webhook Error: Invalid product_tier value: ${tierValue}`,
+        {
+          status: 400,
+        }
+      );
+    }
 
     try {
       const sbAdmin = await createAdminClient();
@@ -256,8 +277,28 @@ export const POST = Webhooks({
       );
     }
 
-    // Only set tier if it matches valid enum values
-    const tier = metadataProductTier.toUpperCase() as WorkspaceProductTier;
+    const tierValue = metadataProductTier.toUpperCase();
+    const validTiers: WorkspaceProductTier[] = [
+      'FREE',
+      'PLUS',
+      'PRO',
+      'ENTERPRISE',
+    ];
+    const tier = validTiers.includes(tierValue as WorkspaceProductTier)
+      ? (tierValue as WorkspaceProductTier)
+      : null;
+
+    if (!tier) {
+      console.error(
+        `Webhook Error: Invalid product_tier value: ${tierValue}. Expected one of: ${validTiers.join(', ')}`
+      );
+      throw new Response(
+        `Webhook Error: Invalid product_tier value: ${tierValue}`,
+        {
+          status: 400,
+        }
+      );
+    }
 
     try {
       const sbAdmin = await createAdminClient();

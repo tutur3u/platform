@@ -4,7 +4,10 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { assignSeatToMember } from '@/utils/polar-seat-helper';
+import {
+  assignSeatToMember,
+  revokeSeatFromMember,
+} from '@/utils/polar-seat-helper';
 import { enforceSeatLimit } from '@/utils/seat-limits';
 
 interface Params {
@@ -26,6 +29,21 @@ export async function POST(_: Request, { params }: Params) {
 
   if (authError || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  // Validate that user has a pending invite
+  const { data: pendingInvite } = await supabase
+    .from('workspace_invites')
+    .select('id')
+    .eq('ws_id', wsId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (!pendingInvite) {
+    return NextResponse.json(
+      { error: 'No pending invite found' },
+      { status: 404 }
+    );
   }
 
   // Check seat limit BEFORE adding member (existing gap - was missing)
@@ -65,6 +83,11 @@ export async function POST(_: Request, { params }: Params) {
     .insert({ ws_id: wsId, user_id: user.id });
 
   if (error) {
+    // Rollback: revoke the Polar seat if it was assigned
+    if (seatAssignment.required && seatAssignment.success) {
+      await revokeSeatFromMember(polar, sbAdmin, wsId, user.id);
+    }
+
     console.error('Error accepting invite:', error);
     return NextResponse.json({ error: error.message }, { status: 401 });
   }

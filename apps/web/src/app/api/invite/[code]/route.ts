@@ -196,6 +196,11 @@ export async function POST(_: Request, { params }: Params) {
       });
 
     if (memberError) {
+      // Rollback: revoke the Polar seat if it was assigned
+      if (seatAssignment.required && seatAssignment.success) {
+        await revokeSeatFromMember(polar, sbAdmin, wsId, user.id);
+      }
+
       // Check if it's a duplicate key violation (user already a member)
       if (memberError.code === '23505') {
         return NextResponse.json(
@@ -225,7 +230,7 @@ export async function POST(_: Request, { params }: Params) {
     ) {
       // Also revoke the Polar seat if it was assigned
       if (seatAssignment.required && seatAssignment.success) {
-        await revokeSeatFromMember(polar, supabase, wsId, user.id);
+        await revokeSeatFromMember(polar, sbAdmin, wsId, user.id);
       }
 
       // Rollback: remove the member we just added
