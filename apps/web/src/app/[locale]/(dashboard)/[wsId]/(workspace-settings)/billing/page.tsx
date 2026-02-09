@@ -40,18 +40,20 @@ export default async function BillingPage({
 
         const [
           isPersonal,
-          products,
-          subscriptionResult,
-          orders,
           hasManageSubscriptionPermission,
+          subscriptionResult,
+          products,
+          seatStatus,
+          orders,
           locale,
           t,
         ] = await Promise.all([
           isPersonalWorkspace(wsId),
-          fetchProducts(),
-          ensureSubscription(wsId), // Try to ensure subscription exists
-          fetchWorkspaceOrders(wsId),
           checkManageSubscriptionPermission(wsId, user.id),
+          ensureSubscription(wsId), // Try to ensure subscription exists
+          fetchProducts(),
+          getSeatStatus(supabase, wsId),
+          fetchWorkspaceOrders(wsId),
           getLocale(),
           getTranslations('billing'),
         ]);
@@ -64,9 +66,6 @@ export default async function BillingPage({
         }
 
         const subscription = subscriptionResult.subscription;
-
-        // Get seat status for the workspace
-        const seatStatus = await getSeatStatus(supabase, wsId);
 
         const dateLocale = locale === 'vi' ? vi : enUS;
         const formatDate = (date: string) =>

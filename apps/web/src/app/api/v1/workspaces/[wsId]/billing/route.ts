@@ -29,16 +29,18 @@ export async function GET(
     // Fetch all billing data in parallel
     const [
       isPersonal,
-      products,
-      subscriptionResult,
-      orders,
       hasManagePermission,
+      subscriptionResult,
+      products,
+      seatStatus,
+      orders,
     ] = await Promise.all([
       isPersonalWorkspace(wsId),
-      fetchProducts(),
-      ensureSubscription(wsId),
-      fetchWorkspaceOrders(wsId),
       checkManageSubscriptionPermission(wsId, user.id),
+      ensureSubscription(wsId),
+      fetchProducts(),
+      getSeatStatus(supabase, wsId),
+      fetchWorkspaceOrders(wsId),
     ]);
 
     // Handle subscription creation failure
@@ -50,9 +52,6 @@ export async function GET(
     }
 
     const subscription = subscriptionResult.subscription;
-
-    // Get seat status for the workspace
-    const seatStatus = await getSeatStatus(supabase, wsId);
 
     return NextResponse.json({
       isPersonalWorkspace: isPersonal,
