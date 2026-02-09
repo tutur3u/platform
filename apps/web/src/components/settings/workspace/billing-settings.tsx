@@ -60,7 +60,6 @@ export default function BillingSettings({ wsId }: BillingSettingsProps) {
     subscription,
     products,
     orders,
-    seatList,
     seatStatus,
   } = data;
 
@@ -88,8 +87,9 @@ export default function BillingSettings({ wsId }: BillingSettingsProps) {
       : [t('premium-features')],
     // Seat-based pricing fields
     pricingModel: subscription.pricingModel,
-    seatCount: subscription.seatCount,
     pricePerSeat: subscription.pricePerSeat,
+    seatCount: subscription.seatCount,
+    seatList: subscription.seatList,
     maxSeats: subscription.product.max_seats,
   };
 
@@ -101,7 +101,6 @@ export default function BillingSettings({ wsId }: BillingSettingsProps) {
         hasManageSubscriptionPermission={hasManagePermission}
         currentPlan={currentPlan}
         products={products}
-        seatList={seatList}
         seatStatus={seatStatus}
       />
 
