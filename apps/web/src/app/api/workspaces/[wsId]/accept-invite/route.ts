@@ -1,5 +1,11 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createPolarClient } from '@tuturuuu/payment/polar/client';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { assignSeatToMember } from '@/utils/polar-seat-helper';
+import { enforceSeatLimit } from '@/utils/seat-limits';
 
 interface Params {
   params: Promise<{
@@ -9,6 +15,7 @@ interface Params {
 
 export async function POST(_: Request, { params }: Params) {
   const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
   const { wsId } = await params;
 
   // Get authenticated user
@@ -19,6 +26,37 @@ export async function POST(_: Request, { params }: Params) {
 
   if (authError || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  // Check seat limit BEFORE adding member (existing gap - was missing)
+  const seatCheck = await enforceSeatLimit(sbAdmin, wsId);
+  if (!seatCheck.allowed) {
+    return NextResponse.json(
+      {
+        error: 'SEAT_LIMIT_REACHED',
+        message: seatCheck.message,
+        seatStatus: seatCheck.status,
+      },
+      { status: 403 }
+    );
+  }
+
+  // Assign Polar seat BEFORE adding member (if seat-based subscription)
+  const polar = createPolarClient();
+  const seatAssignment = await assignSeatToMember(
+    polar,
+    sbAdmin,
+    wsId,
+    user.id
+  );
+  if (seatAssignment.required && !seatAssignment.success) {
+    return NextResponse.json(
+      {
+        error: 'POLAR_SEAT_ASSIGNMENT_FAILED',
+        message: seatAssignment.error,
+      },
+      { status: 403 }
+    );
   }
 
   // Insert user as workspace member

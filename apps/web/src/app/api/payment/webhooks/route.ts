@@ -3,6 +3,7 @@ import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { Webhooks } from '@tuturuuu/payment/polar/next';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceProductTier } from '@tuturuuu/types';
+import { assignSeatsToAllMembers } from '@/utils/polar-seat-helper';
 import {
   createFreeSubscription,
   hasActiveSubscription,
@@ -314,13 +315,13 @@ export const POST = Webhooks({
   // Handle new subscription creation
   onSubscriptionCreated: async (payload) => {
     try {
-      const { subscriptionData } = await syncSubscriptionToDatabase(
-        payload.data
-      );
+      const { subscriptionData, isSeatBased } =
+        await syncSubscriptionToDatabase(payload.data);
       console.log('Webhook: Subscription created:', payload.data.id);
 
-      // Report initial usage for new subscriptions
-      if (payload.data.status === 'active') {
+      // Report initial usage for new subscriptions (only non-seat-based)
+      // Seat-based subscriptions use Polar Seats entity instead of events
+      if (payload.data.status === 'active' && !isSeatBased) {
         try {
           await reportInitialUsage(
             subscriptionData.ws_id,
@@ -329,6 +330,26 @@ export const POST = Webhooks({
         } catch (e) {
           // Log but don't fail - subscription is already saved
           console.error('Webhook: Failed to report initial usage', e);
+        }
+      }
+
+      // Assign Polar seats to all current members if seat-based subscription
+      if (payload.data.status === 'active' && isSeatBased) {
+        console.log(
+          `Webhook: Assigning seats to all members in workspace ${subscriptionData.ws_id}`
+        );
+        try {
+          const polar = createPolarClient();
+          const supabase = await createAdminClient();
+          await assignSeatsToAllMembers(
+            polar,
+            supabase,
+            subscriptionData.ws_id,
+            payload.data.id
+          );
+        } catch (e) {
+          // Log but don't fail - subscription is already saved
+          console.error('Webhook: Failed to assign seats to members', e);
         }
       }
 
@@ -345,22 +366,43 @@ export const POST = Webhooks({
   // Handle ALL subscription updates (status changes, plan changes, cancellations, etc.)
   onSubscriptionUpdated: async (payload) => {
     try {
-      const { subscriptionData } = await syncSubscriptionToDatabase(
-        payload.data
-      );
+      const { subscriptionData, isSeatBased } =
+        await syncSubscriptionToDatabase(payload.data);
       console.log(
         `Webhook: Subscription updated: ${payload.data.id}, status: ${payload.data.status}`
       );
 
-      // If subscription just became active, report usage
+      // If subscription just became active, handle usage reporting and seat assignment
       if (payload.data.status === 'active') {
-        try {
-          await reportInitialUsage(
-            subscriptionData.ws_id,
-            payload.data.customer.id
+        // Report usage for non-seat-based subscriptions only
+        if (!isSeatBased) {
+          try {
+            await reportInitialUsage(
+              subscriptionData.ws_id,
+              payload.data.customer.id
+            );
+          } catch (e) {
+            console.error('Webhook: Failed to report usage on activation', e);
+          }
+        }
+
+        // Assign seats for seat-based subscriptions (upgrade flow)
+        if (isSeatBased) {
+          console.log(
+            `Webhook: Subscription activated with seat-based pricing, assigning seats to all members in workspace ${subscriptionData.ws_id}`
           );
-        } catch (e) {
-          console.error('Webhook: Failed to report usage on activation', e);
+          try {
+            const polar = createPolarClient();
+            const supabase = await createAdminClient();
+            await assignSeatsToAllMembers(
+              polar,
+              supabase,
+              subscriptionData.ws_id,
+              payload.data.id
+            );
+          } catch (e) {
+            console.error('Webhook: Failed to assign seats on activation', e);
+          }
         }
       }
 

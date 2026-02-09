@@ -1,9 +1,12 @@
+import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { headers } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
+import { assignSeatToMember } from '@/utils/polar-seat-helper';
+import { enforceSeatLimit } from '@/utils/seat-limits';
 
 interface Params {
   params: Promise<{
@@ -144,8 +147,48 @@ async function getDataFromSession(
 
 export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
   const data = await req.json();
   const { wsId } = await params;
+
+  // Validate that we have a user_id
+  if (!data.user_id) {
+    return NextResponse.json(
+      { message: 'Missing user_id in request body' },
+      { status: 400 }
+    );
+  }
+
+  // Check seat limit BEFORE adding member
+  const seatCheck = await enforceSeatLimit(sbAdmin, wsId);
+  if (!seatCheck.allowed) {
+    return NextResponse.json(
+      {
+        message: 'SEAT_LIMIT_REACHED',
+        error: seatCheck.message,
+        seatStatus: seatCheck.status,
+      },
+      { status: 403 }
+    );
+  }
+
+  // Assign Polar seat BEFORE adding member (if seat-based subscription)
+  const polar = createPolarClient();
+  const seatAssignment = await assignSeatToMember(
+    polar,
+    sbAdmin,
+    wsId,
+    data.user_id
+  );
+  if (seatAssignment.required && !seatAssignment.success) {
+    return NextResponse.json(
+      {
+        message: 'POLAR_SEAT_ASSIGNMENT_FAILED',
+        error: seatAssignment.error,
+      },
+      { status: 403 }
+    );
+  }
 
   const { error } = await supabase.from('workspace_members').insert({
     ...data,

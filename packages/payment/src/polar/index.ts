@@ -4,6 +4,7 @@ export * from '@polar-sh/sdk/models/components/addressinput';
 export * from '@polar-sh/sdk/models/components/checkout';
 export * from '@polar-sh/sdk/models/components/customerorder';
 export * from '@polar-sh/sdk/models/components/customerpaymentmethod';
+export * from '@polar-sh/sdk/models/components/customerseat';
 export * from '@polar-sh/sdk/models/components/order';
 export * from '@polar-sh/sdk/models/components/paymentmethodcard';
 export * from '@polar-sh/sdk/models/components/product';
