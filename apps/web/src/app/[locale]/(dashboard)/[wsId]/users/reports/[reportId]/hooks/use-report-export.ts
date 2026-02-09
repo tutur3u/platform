@@ -1,19 +1,46 @@
 'use client';
 
+import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
 import { toast } from '@tuturuuu/ui/sonner';
 import { escape as escapeString } from 'lodash';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
+export type ExportType = 'print' | 'image';
+
+function sanitizeFilename(text: string): string {
+  return text
+    .replace(/[^a-zA-Z0-9\s\u00C0-\u024F\u1E00-\u1EFF]/g, '_')
+    .trim()
+    .replace(/\s+/g, '_')
+    .replace(/_+/g, '_');
+}
+
 export function useReportExport({
   previewTitle,
   isDarkPreview,
+  userName,
+  groupName,
 }: {
   previewTitle: string;
   isDarkPreview: boolean;
-}) {
+  userName?: string;
+  groupName?: string;
+}): {
+  handlePrintExport: () => void;
+  handlePngExport: () => Promise<void>;
+  isExporting: boolean;
+  defaultExportType: ExportType;
+  setDefaultExportType: (
+    value: ExportType | ((val: ExportType) => ExportType)
+  ) => void;
+} {
   const t = useTranslations();
   const [isExporting, setIsExporting] = useState(false);
+  const [defaultExportType, setDefaultExportType] = useLocalStorage<ExportType>(
+    'report-export-type',
+    'image'
+  );
 
   const handlePrintExport = () => {
     const printableArea = document.getElementById('printable-area');
@@ -72,7 +99,9 @@ export function useReportExport({
                 box-shadow: none !important;
                 margin: 0 !important;
                 background: white !important;
+                color: black !important;
               }
+              /* ... (keep existing styles) ... */
               .print\\:hidden {
                 display: none !important;
               }
@@ -185,19 +214,13 @@ export function useReportExport({
               const link = document.createElement('a');
               link.href = url;
 
-              const sanitizedTitle = previewTitle
-                ? previewTitle
-                    .normalize('NFD')
-                    .replace(/[\u0300-\u036f]/g, '')
-                    .replace(/đ/g, 'd')
-                    .replace(/Đ/g, 'D')
-                    .replace(/[^a-z0-9]/gi, '_')
-                    .toLowerCase()
-                    .replace(/_+/g, '_')
-                    .replace(/^_|_$/g, '')
-                : 'report';
+              const parts = [
+                userName && sanitizeFilename(userName),
+                groupName && sanitizeFilename(groupName),
+                previewTitle ? sanitizeFilename(previewTitle) : 'report',
+              ].filter(Boolean);
 
-              const fileName = `${sanitizedTitle}.png`;
+              const fileName = `${parts.join('_')}.png`;
 
               link.download = fileName;
               document.body.appendChild(link);
@@ -227,5 +250,7 @@ export function useReportExport({
     handlePrintExport,
     handlePngExport,
     isExporting,
+    defaultExportType,
+    setDefaultExportType,
   };
 }

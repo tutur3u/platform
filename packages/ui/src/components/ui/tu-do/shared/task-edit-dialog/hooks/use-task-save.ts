@@ -19,8 +19,11 @@ const supabase = createClient();
 
 export interface UseTaskSaveProps {
   // Core identifiers
+  wsId: string;
   boardId: string;
   taskId?: string;
+  saveAsDraft: boolean;
+  draftId?: string;
   isCreateMode: boolean;
   collaborationMode: boolean;
   isPersonalWorkspace: boolean;
@@ -116,8 +119,11 @@ export interface UseTaskSaveReturn {
 }
 
 export function useTaskSave({
+  wsId,
   boardId,
   taskId,
+  saveAsDraft,
+  draftId,
   isCreateMode,
   collaborationMode,
   isPersonalWorkspace,
@@ -210,6 +216,40 @@ export function useTaskSave({
       }
     }
 
+    if (isCreateMode && saveAsDraft) {
+      await handleSaveAsDraft({
+        wsId,
+        boardId,
+        draftId,
+        name,
+        descriptionString,
+        priority,
+        startDate,
+        endDate,
+        selectedListId,
+        estimationPoints,
+        selectedLabels,
+        selectedAssignees,
+        selectedProjects,
+        createMultiple,
+        queryClient,
+        toast,
+        onClose,
+        setIsLoading,
+        setIsSaving,
+        setName,
+        setDescription,
+        setPriority,
+        setStartDate,
+        setEndDate,
+        setEstimationPoints,
+        setSelectedLabels,
+        setSelectedAssignees,
+        setSelectedProjects,
+      });
+      return;
+    }
+
     if (isCreateMode) {
       await handleCreateTask({
         name,
@@ -280,6 +320,9 @@ export function useTaskSave({
     description,
     draftStorageKey,
     isCreateMode,
+    saveAsDraft,
+    draftId,
+    wsId,
     priority,
     startDate,
     endDate,
@@ -334,6 +377,159 @@ export function useTaskSave({
     handleSave,
     handleSaveRef,
   };
+}
+
+// Helper function for saving as draft
+async function handleSaveAsDraft({
+  wsId,
+  boardId,
+  draftId,
+  name,
+  descriptionString,
+  priority,
+  startDate,
+  endDate,
+  selectedListId,
+  estimationPoints,
+  selectedLabels,
+  selectedAssignees,
+  selectedProjects,
+  createMultiple,
+  queryClient,
+  toast,
+  onClose,
+  setIsLoading,
+  setIsSaving,
+  setName,
+  setDescription,
+  setPriority,
+  setStartDate,
+  setEndDate,
+  setEstimationPoints,
+  setSelectedLabels,
+  setSelectedAssignees,
+  setSelectedProjects,
+}: {
+  wsId: string;
+  boardId: string;
+  draftId?: string;
+  name: string;
+  descriptionString: string | null;
+  priority: 'critical' | 'high' | 'low' | 'normal' | null;
+  startDate: Date | undefined;
+  endDate: Date | undefined;
+  selectedListId: string;
+  estimationPoints: number | null | undefined;
+  selectedLabels: Array<{ id: string }>;
+  selectedAssignees: Array<{ id: string; user_id?: string | null }>;
+  selectedProjects: Array<{ id: string }>;
+  createMultiple: boolean;
+  queryClient: QueryClient;
+  toast: ReturnType<typeof useToast>['toast'];
+  onClose: () => void;
+  setIsLoading: (loading: boolean) => void;
+  setIsSaving: (saving: boolean) => void;
+  setName: React.Dispatch<React.SetStateAction<string>>;
+  setDescription: React.Dispatch<React.SetStateAction<JSONContent | null>>;
+  setPriority: React.Dispatch<
+    React.SetStateAction<'critical' | 'high' | 'low' | 'normal' | null>
+  >;
+  setStartDate: React.Dispatch<React.SetStateAction<Date | undefined>>;
+  setEndDate: React.Dispatch<React.SetStateAction<Date | undefined>>;
+  setEstimationPoints: React.Dispatch<
+    React.SetStateAction<number | null | undefined>
+  >;
+  setSelectedLabels: React.Dispatch<
+    React.SetStateAction<
+      Array<{ id: string; name: string; color: string; created_at: string }>
+    >
+  >;
+  setSelectedAssignees: React.Dispatch<
+    React.SetStateAction<
+      Array<{
+        id: string;
+        user_id?: string | null;
+        display_name?: string | null;
+        avatar_url?: string | null;
+      }>
+    >
+  >;
+  setSelectedProjects: React.Dispatch<
+    React.SetStateAction<Array<{ id: string; name: string }>>
+  >;
+}) {
+  try {
+    const draftPayload = {
+      name: name.trim(),
+      description: descriptionString || null,
+      priority: priority || null,
+      board_id: boardId || null,
+      list_id: selectedListId || null,
+      start_date: startDate ? startDate.toISOString() : null,
+      end_date: endDate ? endDate.toISOString() : null,
+      estimation_points: estimationPoints ?? null,
+      label_ids: selectedLabels.map((l) => l.id),
+      assignee_ids: selectedAssignees.map((a) => a.user_id || a.id),
+      project_ids: selectedProjects.map((p) => p.id),
+    };
+
+    const url = draftId
+      ? `/api/v1/workspaces/${wsId}/task-drafts/${draftId}`
+      : `/api/v1/workspaces/${wsId}/task-drafts`;
+
+    const res = await fetch(url, {
+      method: draftId ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(draftPayload),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to save draft');
+    }
+
+    // Invalidate drafts query so the drafts page updates
+    await queryClient.invalidateQueries({ queryKey: ['task-drafts'] });
+
+    toast({
+      title: draftId ? 'Draft updated' : 'Saved as draft',
+      description: draftId
+        ? 'Your draft has been updated.'
+        : 'Task saved to Drafts. You can convert it to a task later.',
+    });
+
+    if (createMultiple) {
+      setName('');
+      setDescription(null);
+      setTimeout(() => {
+        const input = document.querySelector<HTMLInputElement>(
+          'input[data-task-name-input]'
+        );
+        input?.focus();
+      }, 0);
+    } else {
+      setName('');
+      setDescription(null);
+      setPriority(null);
+      setStartDate(undefined);
+      setEndDate(undefined);
+      setEstimationPoints(null);
+      setSelectedLabels([]);
+      setSelectedAssignees([]);
+      setSelectedProjects([]);
+      onClose();
+    }
+  } catch (error: unknown) {
+    console.error('Error saving draft:', error);
+    toast({
+      title: 'Error saving draft',
+      description: (error as Error).message || 'Please try again later',
+      variant: 'destructive',
+    });
+  } finally {
+    setIsLoading(false);
+    setIsSaving(false);
+  }
 }
 
 // Helper function for creating tasks
@@ -593,7 +789,7 @@ async function handleCreateTask({
       setDescription(null);
       setTimeout(() => {
         const input = document.querySelector<HTMLInputElement>(
-          'input[placeholder="What needs to be done?"]'
+          'input[data-task-name-input]'
         );
         input?.focus();
       }, 0);

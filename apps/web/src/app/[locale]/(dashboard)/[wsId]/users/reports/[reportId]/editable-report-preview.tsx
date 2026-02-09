@@ -7,6 +7,7 @@ import {
   Undo,
 } from '@tuturuuu/icons';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Collapsible,
@@ -24,7 +25,9 @@ import { useTheme } from 'next-themes';
 import type { ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import * as z from 'zod';
+import { RejectDialog } from '../../approvals/components/reject-dialog';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
+import UserFeedbackSection from '../../groups/[groupId]/reports/user-feedback-section';
 import { DeleteReportDialog } from './components/delete-report-dialog';
 import { ReportActions } from './components/report-actions';
 import { ReportHistory } from './components/report-history';
@@ -57,7 +60,12 @@ export default function EditableReportPreview({
   onChangeManagerAction,
   canCheckUserAttendance,
   canUpdateReports = false,
+  canApproveReports = false,
   canDeleteReports = false,
+  feedbackUser,
+  feedbackGroupName,
+  canEditFeedback = false,
+  canDeleteFeedback = false,
 }: {
   wsId: string;
   report: UserReport;
@@ -77,8 +85,13 @@ export default function EditableReportPreview({
   selectedManagerName?: string;
   onChangeManagerAction?: (name?: string) => void;
   canCheckUserAttendance?: boolean;
+  canApproveReports?: boolean;
   canUpdateReports?: boolean;
   canDeleteReports?: boolean;
+  feedbackUser?: WorkspaceUser | null;
+  feedbackGroupName?: string;
+  canEditFeedback?: boolean;
+  canDeleteFeedback?: boolean;
 }) {
   const locale = useLocale();
   const t = useTranslations();
@@ -107,6 +120,8 @@ export default function EditableReportPreview({
     updateMutation,
     deleteMutation,
     updateScoresMutation,
+    approveMutation,
+    rejectMutation,
   } = useReportMutations({
     wsId,
     report,
@@ -114,6 +129,7 @@ export default function EditableReportPreview({
     healthcareVitals,
     factorEnabled,
     scoreCalculationMethod,
+    canApproveReports,
   });
 
   const configMap = useMemo(() => {
@@ -244,6 +260,8 @@ export default function EditableReportPreview({
       : reportTheme;
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
   const [formOpen, setFormOpen] = useState(true);
   const [attendanceOpen, setAttendanceOpen] = useState(true);
 
@@ -282,12 +300,21 @@ export default function EditableReportPreview({
     (selectedLog ? selectedLog.score : representativeScoreValue)?.toFixed(1) ||
     '';
 
-  const { handlePrintExport, handlePngExport, isExporting } = useReportExport({
+  const {
+    handlePrintExport,
+    handlePngExport,
+    isExporting,
+    defaultExportType,
+    setDefaultExportType,
+  } = useReportExport({
     previewTitle,
     isDarkPreview: resolvedReportTheme === 'dark',
+    userName: report.user_name,
+    groupName: report.group_name,
   });
 
-  const isPendingApproval = report.report_approval_status === 'PENDING';
+  const isPendingApproval =
+    report.report_approval_status === 'PENDING' && !canApproveReports;
 
   return (
     <div className="grid h-fit gap-4 xl:grid-cols-3">
@@ -411,6 +438,9 @@ export default function EditableReportPreview({
                 onChangeManager={(name) => onChangeManagerAction?.(name)}
                 canUpdate={canUpdateReports}
                 canDelete={canDeleteReports}
+                isSubmitting={
+                  createMutation.isPending || updateMutation.isPending
+                }
               />
             )}
           </CollapsibleContent>
@@ -421,6 +451,28 @@ export default function EditableReportPreview({
           onOpenChange={setShowDeleteDialog}
           onConfirm={() => deleteMutation.mutate()}
         />
+
+        {canApproveReports && (
+          <RejectDialog
+            open={showRejectDialog}
+            title={report.title ?? ''}
+            reason={rejectReason}
+            onReasonChange={setRejectReason}
+            onOpenChange={(open) => {
+              setShowRejectDialog(open);
+              if (!open) setRejectReason('');
+            }}
+            onConfirm={() => {
+              rejectMutation.mutate(rejectReason, {
+                onSuccess: () => {
+                  setShowRejectDialog(false);
+                  setRejectReason('');
+                },
+              });
+            }}
+            isSubmitting={rejectMutation.isPending}
+          />
+        )}
 
         {report.user_id && canCheckUserAttendance && (
           <Collapsible
@@ -457,6 +509,17 @@ export default function EditableReportPreview({
             </CollapsibleContent>
           </Collapsible>
         )}
+
+        {feedbackUser && feedbackGroupName && (
+          <UserFeedbackSection
+            user={feedbackUser}
+            groupName={feedbackGroupName}
+            wsId={wsId}
+            groupId={groupId || report.group_id || ''}
+            canEditFeedback={canEditFeedback}
+            canDeleteFeedback={canDeleteFeedback}
+          />
+        )}
       </div>
 
       <div className="grid h-fit gap-4 xl:col-span-2">
@@ -492,6 +555,15 @@ export default function EditableReportPreview({
           handlePngExport={handlePngExport}
           reportTheme={reportTheme}
           setReportTheme={setReportTheme}
+          canApproveReports={canApproveReports}
+          isNew={isNew}
+          approvalStatus={report.report_approval_status}
+          onApprove={() => approveMutation.mutate()}
+          onReject={() => setShowRejectDialog(true)}
+          isApproving={approveMutation.isPending}
+          isRejecting={rejectMutation.isPending}
+          defaultExportType={defaultExportType}
+          setDefaultExportType={setDefaultExportType}
         />
 
         <ReportPreview

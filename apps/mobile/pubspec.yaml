@@ -1,0 +1,47 @@
+name: mobile
+description: Tuturuuu Mobile Application
+version: 0.0.1+1
+publish_to: none
+
+environment:
+  sdk: ^3.10.0
+  flutter: ^3.38.0
+
+dependencies:
+  bloc: ^9.2.0
+  cached_network_image: ^3.4.1
+  device_info_plus: ^12.3.0
+  equatable: ^2.0.8
+  flutter:
+    sdk: flutter
+  flutter_bloc: ^9.1.1
+  flutter_localizations:
+    sdk: flutter
+  flutter_secure_storage: ^10.0.0
+  go_router: ^17.1.0
+  http: ^1.4.0
+  intl: ^0.20.2
+  json_annotation: ^4.9.0
+  package_info_plus: ^9.0.0
+  shared_preferences: ^2.5.3
+  supabase_flutter: ^2.10.0
+
+dev_dependencies:
+  bloc_test: ^10.0.0
+  build_runner: ^2.4.14
+  flutter_launcher_icons: ^0.14.3
+  flutter_test:
+    sdk: flutter
+  json_serializable: ^6.9.4
+  mocktail: ^1.0.4
+  very_good_analysis: ^10.1.0
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/app_icon.png
+  remove_alpha_ios: true
+
+flutter:
+  generate: true
+  uses-material-design: true

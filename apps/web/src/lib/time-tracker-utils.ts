@@ -1,4 +1,7 @@
-import type { TimeTrackingSession } from '@tuturuuu/types/db';
+import type {
+  TimeTrackingPeriodStats,
+  TimeTrackingSession,
+} from '@tuturuuu/types/db';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import timezone from 'dayjs/plugin/timezone';
@@ -126,37 +129,9 @@ export const getDurationCategory = (session: {
 };
 
 /**
- * Calculate period statistics for a set of sessions.
+ * Re-export TimeTrackingPeriodStats as PeriodStats for backwards compatibility
  */
-export interface PeriodStats {
-  totalDuration: number;
-  breakdown: { name: string; duration: number; color: string }[];
-  timeOfDayBreakdown: {
-    morning: number;
-    afternoon: number;
-    evening: number;
-    night: number;
-  };
-  bestTimeOfDay: string;
-  longestSession: {
-    title: string;
-    duration_seconds: number | null;
-  } | null;
-  shortSessions: number;
-  mediumSessions: number;
-  longSessions: number;
-  sessionCount: number;
-  dailyBreakdown?: {
-    date: string;
-    totalDuration: number;
-    breakdown: {
-      categoryId: string;
-      name: string;
-      duration: number;
-      color: string;
-    }[];
-  }[];
-}
+export type PeriodStats = TimeTrackingPeriodStats;
 
 const getOverlapSeconds = (
   session: SessionLike,

@@ -56,7 +56,19 @@
       "Bash(bunx --bun biome check:*)",
       "Bash(bunx --bun biome:*)",
       "Bash(bunx expo install:*)",
-      "Bash(bunx --bun tsgo:*)"
+      "Bash(bunx --bun tsgo:*)",
+      "Bash(flutter build:*)",
+      "Bash(git status:*)",
+      "Bash(time zsh:*)",
+      "Bash(gh run list:*)",
+      "Bash(dart format:*)",
+      "Bash(dart analyze:*)",
+      "Bash(flutter pub:*)",
+      "Bash(dart run:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(flutter test:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(flutter gen-l10n:*)"
     ]
   }
 }

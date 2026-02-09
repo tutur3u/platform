@@ -23,10 +23,15 @@ import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
-import { UserPresenceAvatars } from '@tuturuuu/ui/tu-do/shared/user-presence-avatars';
+import { useOptionalWorkspacePresenceContext } from '@tuturuuu/ui/tu-do/providers/workspace-presence-provider';
+import {
+  PresenceAvatarList,
+  type PresenceViewerEntry,
+} from '@tuturuuu/ui/tu-do/shared/user-presence-avatars';
 import { cn } from '@tuturuuu/utils/format';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useWhiteboardCollaboration } from '@/hooks/useWhiteboardCollaboration';
@@ -65,6 +70,8 @@ export function CustomWhiteboard({
 }: CustomWhiteboardProps) {
   const supabase = createClient();
   const { resolvedTheme } = useTheme();
+  const t = useTranslations('ws-presence');
+  const wsPresence = useOptionalWorkspacePresenceContext();
 
   const [excalidrawAPI, setExcalidrawAPI] =
     useState<ExcalidrawImperativeAPI | null>(null);
@@ -82,6 +89,49 @@ export function CustomWhiteboard({
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pendingChangesRef = useRef(false);
 
+  // Track whiteboard location in workspace presence (stable function ref)
+  const wsUpdateLocation = wsPresence?.updateLocation;
+  useEffect(() => {
+    if (!wsUpdateLocation) return;
+    wsUpdateLocation({ type: 'whiteboard', boardId });
+  }, [wsUpdateLocation, boardId]);
+
+  // Build viewer entries for the shared PresenceAvatarList component
+  const whiteboardViewers = wsPresence?.getWhiteboardViewers(boardId) ?? [];
+  const whiteboardViewerEntries = useMemo<PresenceViewerEntry[]>(() => {
+    const byUser = new Map<
+      string,
+      {
+        user: (typeof whiteboardViewers)[0]['user'];
+        online_at: string;
+        away: boolean;
+        count: number;
+      }
+    >();
+    for (const viewer of whiteboardViewers) {
+      const userId = viewer.user.id;
+      if (!userId) continue;
+      const existing = byUser.get(userId);
+      if (existing) {
+        existing.count++;
+        if (!viewer.away) existing.away = false;
+      } else {
+        byUser.set(userId, {
+          user: viewer.user,
+          online_at: viewer.online_at,
+          away: !!viewer.away,
+          count: 1,
+        });
+      }
+    }
+    return Array.from(byUser.values()).map((v) => ({
+      user: v.user,
+      online_at: v.online_at,
+      away: v.away,
+      presenceCount: v.count,
+    }));
+  }, [whiteboardViewers]);
+
   // Helper to deep clone elements array
   const cloneElements = useCallback(
     (elements: readonly ExcalidrawElement[]): ExcalidrawElement[] => {
@@ -90,10 +140,9 @@ export function CustomWhiteboard({
     []
   );
 
-  // Set up collaboration
+  // Set up collaboration (cursor + element sync only — presence is handled by workspace provider)
   const {
     collaborators,
-    presenceState,
     isConnected,
     currentUserId,
     broadcastElementChanges,
@@ -102,6 +151,8 @@ export function CustomWhiteboard({
     boardId,
     wsId,
     enabled: true,
+    externalPresenceState: wsPresence ? wsPresence.presenceState : undefined,
+    externalCurrentUserId: wsPresence?.currentUserId,
     onRemoteElementsChange: useCallback(
       (remoteElements: ExcalidrawElement[]) => {
         if (!excalidrawAPI) return;
@@ -124,8 +175,6 @@ export function CustomWhiteboard({
       toast.error('Collaboration connection issue. Changes may not sync.');
     }, []),
   });
-
-  console.log(collaborators);
 
   // Update Excalidraw collaborators when they change
   useEffect(() => {
@@ -514,11 +563,11 @@ export function CustomWhiteboard({
           </Tooltip>
 
           {/* Collaborator Avatars */}
-          <UserPresenceAvatars
-            presenceState={presenceState}
+          <PresenceAvatarList
+            viewers={whiteboardViewerEntries}
             currentUserId={currentUserId}
             maxDisplay={5}
-            avatarClassName="h-7 w-7"
+            activeLabel={t('on_this_whiteboard')}
           />
         </div>
       </div>

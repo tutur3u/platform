@@ -1,6 +1,9 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import {
+  CheckCheck,
+  CheckCheckIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronsLeftIcon,
@@ -11,6 +14,8 @@ import {
   XCircleIcon,
   XIcon,
 } from '@tuturuuu/icons';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
@@ -27,9 +32,10 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useApprovals } from '../hooks/use-approvals';
 import { getStatusColorClasses, STATUS_LABELS } from '../utils';
 import { ApprovalDetailDialog } from './approval-detail-dialog';
@@ -38,21 +44,38 @@ interface ApprovalsViewProps {
   wsId: string;
   kind: 'reports' | 'posts';
   canApprove: boolean;
+  groupId?: string;
+  defaultStatus?: 'all' | 'pending' | 'approved' | 'rejected';
 }
 
-export function ApprovalsView({ wsId, kind, canApprove }: ApprovalsViewProps) {
+export function ApprovalsView({
+  wsId,
+  kind,
+  canApprove,
+  groupId,
+  defaultStatus = 'pending',
+}: ApprovalsViewProps) {
   const t = useTranslations('approvals');
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const supabase = createClient();
+
   // Memoize URL params
-  const { currentStatus, currentPage, currentLimit } = useMemo(() => {
+  const {
+    currentStatus,
+    currentPage,
+    currentLimit,
+    currentGroupId,
+    currentUserId,
+    currentCreatorId,
+  } = useMemo(() => {
     const rawStatus =
       (searchParams.get('status') as
         | 'all'
         | 'pending'
         | 'approved'
-        | 'rejected') || 'pending';
+        | 'rejected') || defaultStatus;
     const rawPage = Number.parseInt(searchParams.get('page') || '1', 10);
     const safePage = Number.isNaN(rawPage) || rawPage < 1 ? 1 : rawPage;
     const rawLimit = Number.parseInt(searchParams.get('limit') || '10', 10);
@@ -61,8 +84,11 @@ export function ApprovalsView({ wsId, kind, canApprove }: ApprovalsViewProps) {
       currentStatus: rawStatus,
       currentPage: safePage,
       currentLimit: safeLimit,
+      currentGroupId: searchParams.get('groupId') || undefined,
+      currentUserId: searchParams.get('userId') || undefined,
+      currentCreatorId: searchParams.get('creatorId') || undefined,
     };
-  }, [searchParams]);
+  }, [searchParams, defaultStatus]);
 
   const {
     items,
@@ -72,25 +98,108 @@ export function ApprovalsView({ wsId, kind, canApprove }: ApprovalsViewProps) {
     isError,
     error,
     approveItem,
+    approveAllItems,
     rejectItem,
     isApproving,
+    isApprovingAll,
+    approveAllProgress,
     isRejecting,
     formatDate,
     getStatusLabel,
     detailItem,
     setDetailItem,
     closeDetailDialog,
+    totalPendingCount,
+    sessionStats,
   } = useApprovals({
     wsId,
     kind,
     status: currentStatus,
     page: currentPage,
     limit: currentLimit,
+    groupId: currentGroupId ?? groupId,
+    userId: currentUserId,
+    creatorId: currentCreatorId,
+  });
+
+  // Fetch group options for filter
+  const groupsQuery = useQuery({
+    queryKey: ['ws', wsId, 'approvals', 'filter-groups'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('workspace_user_groups_with_amount')
+        .select('id, name')
+        .eq('ws_id', wsId)
+        .order('name');
+      if (error) throw error;
+      return (data ?? []) as Array<{ id: string; name: string | null }>;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Fetch user options for filter (reports only)
+  const usersQuery = useQuery({
+    queryKey: ['ws', wsId, 'approvals', 'filter-users', currentGroupId],
+    enabled: kind === 'reports',
+    queryFn: async () => {
+      let q = supabase
+        .from('workspace_users')
+        .select('id, full_name')
+        .eq('ws_id', wsId)
+        .order('full_name', { ascending: true, nullsFirst: false });
+      if (currentGroupId) {
+        const { data: groupUserIds } = await supabase
+          .from('workspace_user_groups_users')
+          .select('user_id')
+          .eq('group_id', currentGroupId);
+        const ids = (groupUserIds ?? []).map((r) => r.user_id);
+        if (ids.length > 0) q = q.in('id', ids);
+        else return [];
+      }
+      const { data, error } = await q.limit(200);
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        id: string;
+        full_name: string | null;
+      }>;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Fetch creator options for filter (reports only)
+  const creatorsQuery = useQuery({
+    queryKey: ['ws', wsId, 'approvals', 'filter-creators'],
+    enabled: kind === 'reports',
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('workspace_users')
+        .select('id, full_name')
+        .eq('ws_id', wsId)
+        .order('full_name', { ascending: true, nullsFirst: false })
+        .limit(200);
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        id: string;
+        full_name: string | null;
+      }>;
+    },
+    staleTime: 5 * 60 * 1000,
   });
 
   const hasActiveFilters = useMemo(() => {
-    return currentStatus && currentStatus !== 'pending';
-  }, [currentStatus]);
+    return (
+      (currentStatus && currentStatus !== defaultStatus) ||
+      !!currentGroupId ||
+      !!currentUserId ||
+      !!currentCreatorId
+    );
+  }, [
+    currentStatus,
+    defaultStatus,
+    currentGroupId,
+    currentUserId,
+    currentCreatorId,
+  ]);
 
   const { startIndex, endIndex } = useMemo(
     () => ({
@@ -100,17 +209,41 @@ export function ApprovalsView({ wsId, kind, canApprove }: ApprovalsViewProps) {
     [currentPage, currentLimit, totalCount]
   );
 
-  const updateFilters = (key: 'status', value: string | undefined) => {
+  const updatePage = useCallback(
+    (page: number) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('page', page.toString());
+      router.push(`?${params.toString()}`, { scroll: false });
+    },
+    [router, searchParams]
+  );
+
+  // Auto-adjust pagination when current page becomes empty after actions
+  useEffect(() => {
+    if (!loading && items.length === 0 && totalCount > 0 && currentPage > 1) {
+      const validPage = Math.min(
+        currentPage,
+        Math.ceil(totalCount / currentLimit)
+      );
+      updatePage(Math.max(1, validPage));
+    }
+  }, [
+    items.length,
+    totalCount,
+    currentPage,
+    currentLimit,
+    loading,
+    updatePage,
+  ]);
+
+  const updateFilters = (
+    key: 'status' | 'groupId' | 'userId' | 'creatorId',
+    value: string | undefined
+  ) => {
     const params = new URLSearchParams(searchParams.toString());
     if (value) params.set(key, value);
     else params.delete(key);
     params.set('page', '1');
-    router.push(`?${params.toString()}`, { scroll: false });
-  };
-
-  const updatePage = (page: number) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('page', page.toString());
     router.push(`?${params.toString()}`, { scroll: false });
   };
 
@@ -166,11 +299,11 @@ export function ApprovalsView({ wsId, kind, canApprove }: ApprovalsViewProps) {
                 {t('filters.status')}
               </label>
               <Select
-                value={currentStatus || 'pending'}
+                value={currentStatus || defaultStatus}
                 onValueChange={(value) =>
                   updateFilters(
                     'status',
-                    value === 'pending' ? undefined : value
+                    value === defaultStatus ? undefined : value
                   )
                 }
               >
@@ -191,6 +324,117 @@ export function ApprovalsView({ wsId, kind, canApprove }: ApprovalsViewProps) {
                 </SelectContent>
               </Select>
             </div>
+
+            {!groupId && (
+              <div className="space-y-2">
+                <label
+                  htmlFor="group-filter"
+                  className="font-medium text-sm leading-none"
+                >
+                  {t('filters.group')}
+                </label>
+                <Select
+                  value={currentGroupId ?? 'all'}
+                  onValueChange={(value) =>
+                    updateFilters(
+                      'groupId',
+                      value === 'all' ? undefined : value
+                    )
+                  }
+                >
+                  <SelectTrigger
+                    id="group-filter"
+                    className="border-border/60 hover:bg-accent/50"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">
+                      {t('filters.allGroups')}
+                    </SelectItem>
+                    {(groupsQuery.data ?? []).map((group) => (
+                      <SelectItem key={group.id} value={group.id}>
+                        {group.name || t('labels.unknown_group')}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {kind === 'reports' && (
+              <>
+                <div className="space-y-2">
+                  <label
+                    htmlFor="user-filter"
+                    className="font-medium text-sm leading-none"
+                  >
+                    {t('filters.user')}
+                  </label>
+                  <Select
+                    value={currentUserId ?? 'all'}
+                    onValueChange={(value) =>
+                      updateFilters(
+                        'userId',
+                        value === 'all' ? undefined : value
+                      )
+                    }
+                  >
+                    <SelectTrigger
+                      id="user-filter"
+                      className="border-border/60 hover:bg-accent/50"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">
+                        {t('filters.allUsers')}
+                      </SelectItem>
+                      {(usersQuery.data ?? []).map((user) => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.full_name || t('labels.unknown_user')}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label
+                    htmlFor="creator-filter"
+                    className="font-medium text-sm leading-none"
+                  >
+                    {t('filters.creator')}
+                  </label>
+                  <Select
+                    value={currentCreatorId ?? 'all'}
+                    onValueChange={(value) =>
+                      updateFilters(
+                        'creatorId',
+                        value === 'all' ? undefined : value
+                      )
+                    }
+                  >
+                    <SelectTrigger
+                      id="creator-filter"
+                      className="border-border/60 hover:bg-accent/50"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">
+                        {t('filters.allCreators')}
+                      </SelectItem>
+                      {(creatorsQuery.data ?? []).map((creator) => (
+                        <SelectItem key={creator.id} value={creator.id}>
+                          {creator.full_name || t('labels.unknown_user')}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
           </div>
 
           {hasActiveFilters && (
@@ -200,7 +444,7 @@ export function ApprovalsView({ wsId, kind, canApprove }: ApprovalsViewProps) {
                 size="sm"
                 onClick={() => {
                   const params = new URLSearchParams();
-                  params.set('status', 'pending');
+                  params.set('status', defaultStatus);
                   router.push(`?${params.toString()}`, { scroll: false });
                 }}
                 className="h-8 gap-1.5 text-xs"
@@ -228,27 +472,66 @@ export function ApprovalsView({ wsId, kind, canApprove }: ApprovalsViewProps) {
               })}
             </p>
           )}
+          {(sessionStats.approved > 0 || sessionStats.rejected > 0) && (
+            <p className="text-muted-foreground text-xs">
+              {t('actions.sessionSummary', {
+                approved: sessionStats.approved,
+                rejected: sessionStats.rejected,
+              })}
+            </p>
+          )}
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-muted-foreground text-sm">
-            {t('list.itemsPerPage')}:
-          </span>
-          <Select
-            value={currentLimit.toString()}
-            onValueChange={(value) => updateLimit(Number.parseInt(value, 10))}
-          >
-            <SelectTrigger className="w-20">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {[5, 10, 25, 50, 100].map((limit) => (
-                <SelectItem key={limit} value={limit.toString()}>
-                  {limit}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex items-center gap-4">
+          {canApprove &&
+            totalPendingCount > 0 &&
+            currentStatus === 'pending' && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => approveAllItems()}
+                disabled={isApprovingAll}
+                className="h-9 gap-2 bg-dynamic-green hover:bg-dynamic-green/90"
+              >
+                {isApprovingAll ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {approveAllProgress
+                      ? t('actions.approveAllProgress', {
+                          current: approveAllProgress.current,
+                          total: approveAllProgress.total,
+                        })
+                      : t('actions.approveAll', { count: totalPendingCount })}
+                  </>
+                ) : (
+                  <>
+                    <CheckCheckIcon className="h-4 w-4" />
+                    {t('actions.approveAll', { count: totalPendingCount })}
+                  </>
+                )}
+              </Button>
+            )}
+
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground text-sm">
+              {t('list.itemsPerPage')}:
+            </span>
+            <Select
+              value={currentLimit.toString()}
+              onValueChange={(value) => updateLimit(Number.parseInt(value, 10))}
+            >
+              <SelectTrigger className="w-20">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[5, 10, 25, 50, 100].map((limit) => (
+                  <SelectItem key={limit} value={limit.toString()}>
+                    {limit}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
@@ -265,17 +548,33 @@ export function ApprovalsView({ wsId, kind, canApprove }: ApprovalsViewProps) {
       ) : items.length === 0 ? (
         <Card className="border-border/60 bg-linear-to-br from-muted/30 to-muted/10">
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-dynamic-blue/10 ring-1 ring-dynamic-blue/20">
-              <ClockIcon className="h-8 w-8 text-dynamic-blue" />
-            </div>
-            <h3 className="mt-4 font-semibold text-foreground text-lg">
-              {t('list.noItemsTitle')}
-            </h3>
-            <p className="mt-2 text-center text-muted-foreground text-sm">
-              {hasActiveFilters
-                ? t('list.noItemsMessage')
-                : t('list.noItemsDefault')}
-            </p>
+            {currentStatus === 'pending' ||
+            currentStatus === defaultStatus ||
+            !currentStatus ? (
+              <>
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-dynamic-green/10 ring-1 ring-dynamic-green/20">
+                  <CheckCheck className="h-8 w-8 text-dynamic-green" />
+                </div>
+                <h3 className="mt-4 font-semibold text-foreground text-lg">
+                  {t('list.allCaughtUpTitle')}
+                </h3>
+                <p className="mt-2 text-center text-muted-foreground text-sm">
+                  {t('list.allCaughtUpMessage')}
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-dynamic-blue/10 ring-1 ring-dynamic-blue/20">
+                  <ClockIcon className="h-8 w-8 text-dynamic-blue" />
+                </div>
+                <h3 className="mt-4 font-semibold text-foreground text-lg">
+                  {t('list.noItemsTitle')}
+                </h3>
+                <p className="mt-2 text-center text-muted-foreground text-sm">
+                  {t('list.noItemsMessage')}
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -302,16 +601,46 @@ export function ApprovalsView({ wsId, kind, canApprove }: ApprovalsViewProps) {
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="font-semibold text-sm">{title}</div>
-                        <div className="text-muted-foreground text-xs">
-                          {item.kind === 'reports' && (
-                            <span>
-                              {item.user_name || t('labels.unknown_user')}
-                            </span>
+                        <div className="flex flex-wrap items-center gap-1 text-muted-foreground text-xs">
+                          {item.kind === 'reports' &&
+                            item.user_name &&
+                            (item.user_id ? (
+                              <Link
+                                href={`/${wsId}/users/database/${item.user_id}`}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Badge
+                                  variant="secondary"
+                                  className="cursor-pointer hover:bg-secondary/80"
+                                >
+                                  {item.user_name}
+                                </Badge>
+                              </Link>
+                            ) : (
+                              <Badge variant="secondary">
+                                {item.user_name}
+                              </Badge>
+                            ))}
+                          {item.kind === 'reports' && item.user_name && (
+                            <span className="mx-0.5">•</span>
                           )}
-                          {item.kind === 'reports' && <span> • </span>}
-                          <span>
-                            {item.group_name || t('labels.unknown_group')}
-                          </span>
+                          {item.group_id ? (
+                            <Link
+                              href={`/${wsId}/users/groups/${item.group_id}`}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Badge
+                                variant="outline"
+                                className="cursor-pointer hover:bg-muted"
+                              >
+                                {item.group_name || t('labels.unknown_group')}
+                              </Badge>
+                            </Link>
+                          ) : (
+                            <Badge variant="outline">
+                              {item.group_name || t('labels.unknown_group')}
+                            </Badge>
+                          )}
                         </div>
                       </div>
                       <span
@@ -437,6 +766,7 @@ export function ApprovalsView({ wsId, kind, canApprove }: ApprovalsViewProps) {
       )}
 
       <ApprovalDetailDialog
+        wsId={wsId}
         item={detailItem}
         open={!!detailItem}
         onOpenChange={(open) => {
@@ -448,6 +778,8 @@ export function ApprovalsView({ wsId, kind, canApprove }: ApprovalsViewProps) {
         onReject={rejectItem}
         isApproving={isApproving}
         isRejecting={isRejecting}
+        items={items}
+        onNavigateToItem={setDetailItem}
       />
     </div>
   );

@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -103,6 +104,22 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
     fetchUser();
   }, []);
 
+  // Read draft mode preference from user config (same query key as useUserBooleanConfig)
+  const { data: draftModeRaw } = useQuery({
+    queryKey: ['user-config', 'TASK_DRAFT_MODE_ENABLED'],
+    queryFn: async () => {
+      const res = await fetch(
+        '/api/v1/users/me/configs/TASK_DRAFT_MODE_ENABLED'
+      );
+      if (res.status === 404) return 'false';
+      if (!res.ok) return 'false';
+      const data = await res.json();
+      return (data.value as string) ?? 'false';
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  const draftModeEnabled = draftModeRaw === 'true';
+
   const handleClose = () => {
     triggerClose();
   };
@@ -185,6 +202,8 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
       parentTaskName={state.parentTaskName}
       pendingRelationship={state.pendingRelationship}
       currentUser={currentUser || undefined}
+      draftModeEnabled={draftModeEnabled}
+      draftId={state.draftId}
       onClose={handleClose}
       onUpdate={triggerUpdate}
       onNavigateToTask={handleNavigateToTask}

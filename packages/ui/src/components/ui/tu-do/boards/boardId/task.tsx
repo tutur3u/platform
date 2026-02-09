@@ -1697,10 +1697,11 @@ function TaskCardInner({
                 </div>
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex min-h-5 items-center gap-2 sm:min-h-6">
               {!isPersonalWorkspace && (
                 <TaskViewerAvatarsComponent
                   taskId={task.id}
+                  boardId={boardId}
                   isViewing={
                     dialogStateFromProvider.isOpen &&
                     dialogStateFromProvider.task?.id === task.id

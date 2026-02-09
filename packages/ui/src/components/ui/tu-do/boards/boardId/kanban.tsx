@@ -13,7 +13,7 @@ import {
 } from '@dnd-kit/core';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Workspace } from '@tuturuuu/types';
+import type { Workspace, WorkspaceProductTier } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
@@ -25,9 +25,9 @@ import {
   useMoveTaskToBoard,
   useReorderTask,
 } from '@tuturuuu/utils/task-helper';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
-import { TaskViewerProvider } from '../../providers/task-viewer-provider';
+import { useOptionalWorkspacePresenceContext } from '../../providers/workspace-presence-provider';
 import type { ListStatusFilter } from '../../shared/board-header';
 import { buildEstimationIndices } from '../../shared/estimation-mapping';
 import { BoardSelector } from '../board-selector';
@@ -49,6 +49,7 @@ import type { TaskFilters } from './task-filter';
 
 interface Props {
   workspace: Workspace;
+  workspaceTier?: WorkspaceProductTier | null;
   boardId: string | null;
   tasks: Task[];
   lists: TaskList[];
@@ -62,6 +63,7 @@ interface Props {
 
 export function KanbanBoard({
   workspace,
+  workspaceTier,
   boardId,
   tasks,
   lists,
@@ -340,64 +342,64 @@ export function KanbanBoard({
         }}
       />
 
-      <TaskViewerProvider boardId={boardId ?? ''} enabled={!workspace.personal}>
-        <div className="flex-1 overflow-x-auto overflow-y-hidden">
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCorners}
-            onDragStart={onDragStart}
-            onDragOver={onDragOver}
-            onDragEnd={onDragEnd}
-            measuring={{
-              droppable: {
-                strategy: MeasuringStrategy.Always,
-              },
+      <div className="flex-1 overflow-x-auto overflow-y-hidden">
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCorners}
+          onDragStart={onDragStart}
+          onDragOver={onDragOver}
+          onDragEnd={onDragEnd}
+          measuring={{
+            droppable: {
+              strategy: MeasuringStrategy.Always,
+            },
+          }}
+          autoScroll={false}
+        >
+          <KanbanColumns
+            columns={columns}
+            tasks={tasks}
+            boardId={boardId ?? ''}
+            workspaceId={workspace.id}
+            isPersonalWorkspace={workspace.personal}
+            cursorsEnabled={!!workspaceTier && workspaceTier !== 'FREE'}
+            disableSort={disableSort}
+            selectedTasks={selectedTasks}
+            isMultiSelectMode={isMultiSelectMode}
+            setIsMultiSelectMode={setIsMultiSelectMode}
+            onTaskSelect={handleTaskSelect}
+            onClearSelection={clearSelection}
+            onUpdate={() => {}} // Optimistic updates handled in DnD
+            createTask={createTask}
+            dragPreviewPosition={dragPreviewPosition}
+            taskHeightsRef={taskHeightsRef}
+            optimisticUpdateInProgress={optimisticUpdateInProgress}
+            filters={filters}
+            listStatusFilter={listStatusFilter}
+            bulkUpdateCustomDueDate={async (date) => {
+              await bulkOps.bulkUpdateCustomDueDate(date);
             }}
-            autoScroll={false}
-          >
-            <KanbanColumns
-              columns={columns}
-              tasks={tasks}
-              boardId={boardId ?? ''}
-              workspaceId={workspace.id}
-              isPersonalWorkspace={workspace.personal}
-              disableSort={disableSort}
-              selectedTasks={selectedTasks}
-              isMultiSelectMode={isMultiSelectMode}
-              setIsMultiSelectMode={setIsMultiSelectMode}
-              onTaskSelect={handleTaskSelect}
-              onClearSelection={clearSelection}
-              onUpdate={() => {}} // Optimistic updates handled in DnD
-              createTask={createTask}
-              dragPreviewPosition={dragPreviewPosition}
-              taskHeightsRef={taskHeightsRef}
-              optimisticUpdateInProgress={optimisticUpdateInProgress}
-              filters={filters}
-              listStatusFilter={listStatusFilter}
-              bulkUpdateCustomDueDate={async (date) => {
-                await bulkOps.bulkUpdateCustomDueDate(date);
-              }}
-              boardRef={boardRef}
-              columnsId={columnsId}
-            />
+            boardRef={boardRef}
+            columnsId={columnsId}
+          />
 
-            <DragOverlay dropAnimation={null}>
-              <DragPreview
-                activeTask={activeTask}
-                activeColumn={activeColumn}
-                tasks={tasks}
-                columns={columns}
-                boardId={boardId ?? ''}
-                isPersonalWorkspace={workspace.personal}
-                isMultiSelectMode={isMultiSelectMode}
-                selectedTasks={selectedTasks}
-                onUpdate={() => {}}
-                wsId={workspace.id}
-              />
-            </DragOverlay>
-          </DndContext>
-        </div>
-      </TaskViewerProvider>
+          <DragOverlay dropAnimation={null}>
+            <DragPreview
+              activeTask={activeTask}
+              activeColumn={activeColumn}
+              tasks={tasks}
+              columns={columns}
+              boardId={boardId ?? ''}
+              isPersonalWorkspace={workspace.personal}
+              isMultiSelectMode={isMultiSelectMode}
+              selectedTasks={selectedTasks}
+              onUpdate={() => {}}
+              wsId={workspace.id}
+            />
+          </DragOverlay>
+        </DndContext>
+      </div>
+      <BoardOverLimitToast boardId={boardId ?? ''} />
 
       <BoardSelector
         open={boardSelectorOpen}
@@ -432,4 +434,26 @@ export function KanbanBoard({
       />
     </div>
   );
+}
+
+/**
+ * Shows a one-time toast when the board exceeds the concurrent user limit.
+ * Must be rendered inside WorkspacePresenceProvider.
+ */
+function BoardOverLimitToast({ boardId }: { boardId: string }) {
+  const wsPresence = useOptionalWorkspacePresenceContext();
+  const toastShownRef = useRef(false);
+
+  const overLimit = wsPresence?.isBoardOverLimit(boardId) ?? false;
+
+  useEffect(() => {
+    if (overLimit && !toastShownRef.current) {
+      toastShownRef.current = true;
+      toast.info(
+        'Board at capacity. Realtime features paused for this session.'
+      );
+    }
+  }, [overLimit]);
+
+  return null;
 }

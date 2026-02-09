@@ -69,6 +69,7 @@ import {
 } from './task-edit-dialog/utils';
 import { TaskShareDialog } from './task-share-dialog';
 import type { TaskFilters } from './types';
+import { UnsavedChangesWarningDialog } from './unsaved-changes-warning-dialog';
 
 export type { PendingRelationship, PendingRelationshipType, SharedTaskContext };
 
@@ -104,6 +105,10 @@ export interface TaskEditDialogProps {
   };
   /** Pre-loaded data for shared task context - bypasses internal fetches when provided */
   sharedContext?: SharedTaskContext;
+  /** Whether draft mode is enabled from user settings */
+  draftModeEnabled?: boolean;
+  /** When editing an existing draft, this is the draft ID */
+  draftId?: string;
   onClose: () => void;
   onUpdate: () => void;
   onNavigateToTask?: (taskId: string) => Promise<void>;
@@ -131,6 +136,8 @@ export function TaskEditDialog({
   pendingRelationship,
   currentUser: propsCurrentUser,
   sharedContext,
+  draftModeEnabled = false,
+  draftId,
   onClose,
   onUpdate,
   onNavigateToTask,
@@ -322,7 +329,13 @@ export function TaskEditDialog({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [createMultiple, setCreateMultiple] = useState(false);
   const [showSyncWarning, setShowSyncWarning] = useState(false);
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [saveAsDraft, setSaveAsDraft] = useState(draftModeEnabled);
+  const [isTitleVisible, setIsTitleVisible] = useState(true);
+  const [scrollContainer, setScrollContainer] = useState<HTMLDivElement | null>(
+    null
+  );
 
   // Calendar events state
   const [localCalendarEvents, setLocalCalendarEvents] = useState<
@@ -466,9 +479,12 @@ export function TaskEditDialog({
     endDate: formState.endDate,
     selectedListId: formState.selectedListId,
     estimationPoints: formState.estimationPoints,
+    selectedLabels: formState.selectedLabels,
+    selectedAssignees: formState.selectedAssignees,
     isCreateMode,
     isLoading,
     collaborationMode,
+    draftId,
   });
 
   // Task mutations
@@ -828,8 +844,11 @@ export function TaskEditDialog({
   }, [user?.id, user?.display_name, user?.avatar_url]);
 
   const { handleSave, handleSaveRef } = useTaskSave({
+    wsId,
     boardId,
     taskId: task?.id,
+    saveAsDraft: isCreateMode && (!!draftId || saveAsDraft),
+    draftId,
     isCreateMode,
     collaborationMode,
     isPersonalWorkspace,
@@ -896,6 +915,15 @@ export function TaskEditDialog({
       setShowSyncWarning,
     });
 
+  // Attempt close — intercepts in create mode with unsaved changes
+  const handleAttemptClose = useCallback(() => {
+    if (isCreateMode && hasUnsavedChanges && formState.name.trim()) {
+      setShowUnsavedWarning(true);
+      return;
+    }
+    handleClose();
+  }, [isCreateMode, hasUnsavedChanges, formState.name, handleClose]);
+
   // Dialog open change - prevents close when menus are open
   const handleDialogOpenChange = useCallback(
     (open: boolean) => {
@@ -905,20 +933,73 @@ export function TaskEditDialog({
         !suggestionMenus.slashState.open &&
         !suggestionMenus.mentionState.open
       ) {
-        handleClose();
+        handleAttemptClose();
       }
     },
     [
       suggestionMenus.showCustomDatePicker,
       suggestionMenus.slashState.open,
       suggestionMenus.mentionState.open,
-      handleClose,
+      handleAttemptClose,
     ]
   );
+
+  // Unsaved changes warning handlers
+  const handleWarningDiscard = useCallback(() => {
+    setShowUnsavedWarning(false);
+    handleClose();
+  }, [handleClose]);
+
+  const handleWarningSaveAsDraft = useCallback(() => {
+    setShowUnsavedWarning(false);
+    setSaveAsDraft(true);
+    // Wait for React to re-render with updated saveAsDraft before triggering save
+    setTimeout(() => handleSaveRef.current(), 0);
+  }, [handleSaveRef]);
+
+  const handleWarningCreateTask = useCallback(() => {
+    setShowUnsavedWarning(false);
+    setSaveAsDraft(false);
+    // Wait for React to re-render with updated saveAsDraft before triggering save
+    setTimeout(() => handleSaveRef.current(), 0);
+  }, [handleSaveRef]);
 
   const handleEditorReady = useCallback((editor: Editor) => {
     setEditorInstance(editor);
   }, []);
+
+  // Navigate to a collaborator's cursor position in the editor.
+  // The CollaborationCaret extension renders `<span class="collaboration-carets__label">`
+  // with the user's display name. We match by name and scroll it into view.
+  const scrollToUserCursor = useCallback(
+    (_userId: string, displayName: string) => {
+      if (!editorInstance) return;
+
+      // Search inside the ProseMirror editor DOM for caret labels
+      const labels = editorInstance.view.dom.querySelectorAll(
+        '.collaboration-carets__label'
+      );
+      for (const label of labels) {
+        if (label.textContent?.trim() === displayName) {
+          // Scroll the parent caret element into view (the label is positioned absolute)
+          const caret = label.closest('.collaboration-carets__caret');
+          (caret ?? label).scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          });
+          // Briefly flash the label so the user spots it
+          const el = label as HTMLElement;
+          el.style.opacity = '1';
+          el.style.animation = 'none';
+          setTimeout(() => {
+            el.style.animation = '';
+          }, 2000);
+          return;
+        }
+      }
+    },
+    [editorInstance]
+  );
 
   // Keyboard shortcuts
   const hasUnsavedChangesRef = useRef<boolean>(false);
@@ -994,6 +1075,28 @@ export function TaskEditDialog({
     boardId,
     queryClient,
   ]);
+
+  // Sync saveAsDraft with user setting when dialog opens (always on when editing a draft)
+  useEffect(() => {
+    if (isOpen) {
+      setSaveAsDraft(!!draftId || draftModeEnabled);
+    }
+  }, [isOpen, draftModeEnabled, draftId]);
+
+  // Track whether the title input is scrolled out of view
+  useEffect(() => {
+    const el = titleInputRef.current;
+    if (!el || !scrollContainer || !isOpen) {
+      setIsTitleVisible(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsTitleVisible(!!entry?.isIntersecting),
+      { root: scrollContainer, threshold: 0 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [isOpen, scrollContainer]);
 
   // Reset state when dialog closes
   useEffect(() => {
@@ -1117,6 +1220,13 @@ export function TaskEditDialog({
                 parentTaskId={parentTaskId}
                 parentTaskName={parentTaskName}
                 pendingRelationship={pendingRelationship}
+                saveAsDraft={saveAsDraft}
+                setSaveAsDraft={setSaveAsDraft}
+                draftId={draftId}
+                isTitleVisible={isTitleVisible}
+                taskName={formState.name}
+                ticketPrefix={boardConfig?.ticket_prefix}
+                displayNumber={task?.display_number}
                 user={
                   user
                     ? {
@@ -1135,7 +1245,7 @@ export function TaskEditDialog({
                 canSave={canSave}
                 isLoading={isLoading}
                 setCreateMultiple={setCreateMultiple}
-                handleClose={handleClose}
+                handleClose={handleAttemptClose}
                 setShowDeleteConfirm={setShowDeleteConfirm}
                 clearDraftState={formState.clearDraftState}
                 handleSave={handleSave}
@@ -1151,10 +1261,16 @@ export function TaskEditDialog({
                     : undefined
                 }
                 disabled={disabled}
+                onScrollToUserCursor={
+                  collaborationMode ? scrollToUserCursor : undefined
+                }
               />
             )}
 
-            <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">
+            <div
+              ref={setScrollContainer}
+              className="relative flex min-h-0 flex-1 flex-col overflow-y-auto"
+            >
               <div className="flex flex-col">
                 <TaskNameInput
                   name={formState.name}
@@ -1243,10 +1359,11 @@ export function TaskEditDialog({
                     schedulingSaving={schedulingSaving}
                     scheduledEvents={localCalendarEvents}
                     disabled={disabled}
+                    isDraftMode={!!draftId || (isCreateMode && saveAsDraft)}
                   />
                 )}
 
-                {!disabled && (
+                {!disabled && !draftId && !(isCreateMode && saveAsDraft) && (
                   <TaskRelationshipsProperties
                     wsId={wsId}
                     taskId={task?.id}
@@ -1302,6 +1419,14 @@ export function TaskEditDialog({
                   flushEditorPendingRef={flushEditorPendingRef}
                   yjsDoc={doc}
                   yjsProvider={provider}
+                  collaborationUser={
+                    user
+                      ? {
+                          name: user.display_name || '',
+                          color: userColor || '',
+                        }
+                      : null
+                  }
                   onImageUpload={handleImageUpload}
                   onEditorReady={handleEditorReady}
                   disabled={disabled}
@@ -1401,6 +1526,17 @@ export function TaskEditDialog({
         onSuccess={onUpdate}
         onClose={onClose}
       />
+
+      {isCreateMode && (
+        <UnsavedChangesWarningDialog
+          open={showUnsavedWarning}
+          onOpenChange={setShowUnsavedWarning}
+          onDiscard={handleWarningDiscard}
+          onSaveAsDraft={handleWarningSaveAsDraft}
+          onCreateTask={handleWarningCreateTask}
+          canSave={canSave}
+        />
+      )}
 
       <SyncWarningDialog
         open={showSyncWarning}

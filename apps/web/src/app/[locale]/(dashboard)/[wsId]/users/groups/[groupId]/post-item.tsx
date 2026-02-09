@@ -1,4 +1,11 @@
-import { Clock, Eye, Pencil, Shield, Trash2 } from '@tuturuuu/icons';
+import {
+  AlertCircle,
+  Clock,
+  Eye,
+  Pencil,
+  Shield,
+  Trash2,
+} from '@tuturuuu/icons';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -96,10 +103,16 @@ export const PostItem = memo(function PostItem({
                 {format(new Date(post.created_at), 'HH:mm, dd/MM/yyyy')}
               </div>
             )}
-            {post.post_approval_status !== 'APPROVED' && (
+            {post.post_approval_status === 'PENDING' && (
               <div className="flex w-fit items-center gap-0.5 rounded bg-dynamic-orange px-2 py-1 text-background text-xs">
                 <Shield className="h-3 w-3" />
                 {t('ws-user-groups.post_needs_approval')}
+              </div>
+            )}
+            {post.post_approval_status === 'REJECTED' && (
+              <div className="flex w-fit items-center gap-0.5 rounded bg-dynamic-red px-2 py-1 text-background text-xs">
+                <AlertCircle className="h-3 w-3" />
+                {t('ws-user-groups.post_rejected')}
               </div>
             )}
           </div>
@@ -160,6 +173,16 @@ export const PostItem = memo(function PostItem({
           </div>
         )}
       </div>
+      {post.post_approval_status === 'REJECTED' && post.rejection_reason && (
+        <div className="rounded-md border border-dynamic-red/20 bg-dynamic-red/5 px-3 py-2 text-start">
+          <p className="font-medium text-dynamic-red text-xs">
+            {t('ws-user-groups.rejection_reason')}
+          </p>
+          <p className="mt-0.5 text-dynamic-red/80 text-xs">
+            {post.rejection_reason}
+          </p>
+        </div>
+      )}
       {configs.showContent && post.content && (
         <div className="whitespace-pre-line text-start text-sm opacity-70">
           {post.content}

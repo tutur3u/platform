@@ -1,13 +1,25 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Loader2 } from '@tuturuuu/icons';
+import {
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Loader2,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUserReport } from '@tuturuuu/types';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
 import { useWorkspaceConfigs } from '@tuturuuu/ui/hooks/use-workspace-config';
 import {
@@ -17,11 +29,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { useTranslations } from 'next-intl';
+import { toast } from '@tuturuuu/ui/sonner';
+import { useLocale, useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
 import { parseAsString, useQueryStates } from 'nuqs';
 import { useEffect, useMemo, useState } from 'react';
 import { availableConfigs } from '@/constants/configs/reports';
 import EditableReportPreview from '../../../reports/[reportId]/editable-report-preview';
+import {
+  type ReportStatusCounts,
+  ReportStatusIndicator,
+} from '../../../reports/components/report-status-indicator';
+import { BulkReportExporter } from './components/bulk-report-exporter';
 
 // Feature flag for experimental factor functionality
 const ENABLE_FACTOR_CALCULATION = false;
@@ -37,6 +56,7 @@ interface Props {
   groupId: string;
   groupNameFallback: string;
   canCheckUserAttendance: boolean;
+  canApproveReports: boolean;
   canCreateReports: boolean;
   canUpdateReports: boolean;
   canDeleteReports: boolean;
@@ -47,11 +67,20 @@ export default function GroupReportsClient({
   groupId,
   groupNameFallback,
   canCheckUserAttendance,
+  canApproveReports,
   canCreateReports,
   canUpdateReports,
   canDeleteReports,
 }: Props) {
   const t = useTranslations();
+  const locale = useLocale();
+  const { resolvedTheme } = useTheme();
+
+  const [bulkExportOpen, setBulkExportOpen] = useState(false);
+  const [bulkReportsToExport, setBulkReportsToExport] = useState<
+    WorkspaceUserReport[]
+  >([]);
+  const [isPreparingBulkExport, setIsPreparingBulkExport] = useState(false);
 
   const [scoreCalculationMethod] = useLocalStorage<'AVERAGE' | 'LATEST'>(
     'scoreCalculationMethod',
@@ -90,14 +119,94 @@ export default function GroupReportsClient({
     },
   });
 
+  // Query to fetch all group managers (teachers)
+  const groupManagersQuery = useQuery({
+    queryKey: ['ws', wsId, 'group', groupId, 'managers'],
+    queryFn: async (): Promise<
+      Array<{ id: string; full_name: string | null }>
+    > => {
+      const { data, error } = await supabase
+        .from('workspace_user_groups_users')
+        .select('user:workspace_users!inner(id, full_name, ws_id)')
+        .eq('group_id', groupId)
+        .eq('role', 'TEACHER')
+        .eq('user.ws_id', wsId);
+      if (error) throw error;
+      const rows = (data ?? []) as Array<{ user: any }>;
+      const managers: Array<{ id: string; full_name: string | null }> = [];
+      for (const row of rows) {
+        const u = row?.user;
+        if (Array.isArray(u)) {
+          const first = u[0];
+          if (first)
+            managers.push({ id: first.id, full_name: first.full_name ?? null });
+        } else if (u) {
+          managers.push({ id: u.id, full_name: u.full_name ?? null });
+        }
+      }
+      return managers;
+    },
+  });
+
+  const managerUserIds = useMemo(() => {
+    return new Set((groupManagersQuery.data ?? []).map((m) => m.id));
+  }, [groupManagersQuery.data]);
+
+  // Fetch aggregate report status per user within this group
+  const userStatusQuery = useQuery({
+    queryKey: ['ws', wsId, 'group', groupId, 'user-report-status-summary'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc(
+        'get_user_report_status_summary',
+        { _group_id: groupId, _ws_id: wsId }
+      );
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!groupId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+
+  const userStatusMap = useMemo(() => {
+    const map = new Map<string, ReportStatusCounts>();
+    for (const row of userStatusQuery.data ?? []) {
+      map.set(row.user_id, {
+        pending_count: row.pending_count,
+        approved_count: row.approved_count,
+        rejected_count: row.rejected_count,
+      });
+    }
+    return map;
+  }, [userStatusQuery.data]);
+
+  const filteredUsers = useMemo(() => {
+    if (!usersQuery.data) return [];
+    return usersQuery.data.filter((u) => !managerUserIds.has(u.id));
+  }, [usersQuery.data, managerUserIds]);
+
   const userOptions: ComboboxOption[] = useMemo(
     () =>
-      usersQuery.data?.map((u) => ({
+      filteredUsers.map((u) => ({
         value: u.id,
         label: u.full_name || 'No name',
+        icon: <ReportStatusIndicator counts={userStatusMap.get(u.id)} />,
       })) ?? [],
-    [usersQuery.data]
+    [filteredUsers, userStatusMap]
   );
+
+  const currentUserIndex = useMemo(() => {
+    if (!userId) return -1;
+    return filteredUsers.findIndex((u) => u.id === userId);
+  }, [userId, filteredUsers]);
+
+  const totalUsers = filteredUsers.length;
+
+  const goToUser = (index: number) => {
+    const user = filteredUsers[index];
+    if (user?.id) {
+      setQueryParams({ userId: user.id, reportId: null });
+    }
+  };
 
   const reportsQuery = useQuery({
     queryKey: ['ws', wsId, 'group', groupId, 'user', userId, 'reports'],
@@ -130,19 +239,25 @@ export default function GroupReportsClient({
       reportsQuery.data?.map((r) => ({
         value: r.id,
         label: r.title || 'No title',
+        status: (r as any).report_approval_status as
+          | 'PENDING'
+          | 'APPROVED'
+          | 'REJECTED'
+          | null
+          | undefined,
       })) ?? [],
     [reportsQuery.data]
   );
 
   // Auto-select first user when users load and none is selected
   useEffect(() => {
-    if (!userId && usersQuery.data && usersQuery.data.length > 0) {
-      const firstUser = usersQuery.data[0];
+    if (!userId && filteredUsers.length > 0) {
+      const firstUser = filteredUsers[0];
       if (firstUser?.id) {
         setQueryParams({ userId: firstUser.id, reportId: null });
       }
     }
-  }, [userId, usersQuery.data, setQueryParams]);
+  }, [userId, filteredUsers, setQueryParams]);
 
   // Auto-select first report when reports load and none is selected
   // If no reports exist, default to "new"
@@ -221,35 +336,6 @@ export default function GroupReportsClient({
         id: string;
         name: string | null;
       };
-    },
-  });
-
-  // Query to fetch all group managers (teachers)
-  const groupManagersQuery = useQuery({
-    queryKey: ['ws', wsId, 'group', groupId, 'managers'],
-    queryFn: async (): Promise<
-      Array<{ id: string; full_name: string | null }>
-    > => {
-      const { data, error } = await supabase
-        .from('workspace_user_groups_users')
-        .select('user:workspace_users!inner(id, full_name, ws_id)')
-        .eq('group_id', groupId)
-        .eq('role', 'TEACHER')
-        .eq('user.ws_id', wsId);
-      if (error) throw error;
-      const rows = (data ?? []) as Array<{ user: any }>;
-      const managers: Array<{ id: string; full_name: string | null }> = [];
-      for (const row of rows) {
-        const u = row?.user;
-        if (Array.isArray(u)) {
-          const first = u[0];
-          if (first)
-            managers.push({ id: first.id, full_name: first.full_name ?? null });
-        } else if (u) {
-          managers.push({ id: u.id, full_name: u.full_name ?? null });
-        }
-      }
-      return managers;
     },
   });
 
@@ -348,7 +434,8 @@ export default function GroupReportsClient({
             name,
             unit,
             factor,
-            group_id
+            group_id,
+            created_at
           )
         `)
         .eq('user_id', userId!)
@@ -358,13 +445,21 @@ export default function GroupReportsClient({
         throw error;
       }
 
-      const result = (data ?? []).map((item) => ({
-        id: item.healthcare_vitals.id,
-        name: item.healthcare_vitals.name,
-        unit: item.healthcare_vitals.unit,
-        factor: item.healthcare_vitals.factor,
-        value: item.value,
-      }));
+      // Sort by healthcare_vitals.created_at ASC to ensure
+      // scores[scores.length - 1] corresponds to the latest column
+      const result = (data ?? [])
+        .sort(
+          (a, b) =>
+            new Date(a.healthcare_vitals.created_at ?? 0).getTime() -
+            new Date(b.healthcare_vitals.created_at ?? 0).getTime()
+        )
+        .map((item) => ({
+          id: item.healthcare_vitals.id,
+          name: item.healthcare_vitals.name,
+          unit: item.healthcare_vitals.unit,
+          factor: item.healthcare_vitals.factor,
+          value: item.value,
+        }));
       return result;
     },
   });
@@ -438,31 +533,117 @@ export default function GroupReportsClient({
     [groupManagersQuery.data]
   );
 
+  const handleBulkExport = async (filter: 'ALL' | 'APPROVED') => {
+    const titleFilter = selectedReport?.title;
+
+    if (!titleFilter) {
+      toast.error(t('ws-reports.export_title_missing'));
+      return;
+    }
+
+    setIsPreparingBulkExport(true);
+    try {
+      let query = supabase
+        .from('external_user_monthly_reports')
+        .select(
+          '*, user:workspace_users!user_id!inner(full_name, ws_id), creator:workspace_users!creator_id(full_name), ...workspace_user_groups(group_name:name)'
+        )
+        .eq('group_id', groupId)
+        .eq('workspace_users.ws_id', wsId)
+        .eq('title', titleFilter);
+
+      if (filter === 'APPROVED') {
+        query = query.eq('report_approval_status', 'APPROVED');
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        toast.error(t('ws-reports.no_reports_found'));
+        return;
+      }
+
+      const mappedReports = data.map((raw: any) => ({
+        ...raw,
+        user_name: raw.user?.full_name,
+        creator_name: raw.creator?.full_name,
+        group_name: raw.group_name,
+      }));
+
+      setBulkReportsToExport(mappedReports);
+      setBulkExportOpen(true);
+    } catch (error) {
+      console.error('Failed to fetch reports for bulk export:', error);
+      toast.error(t('ws-reports.failed_fetch_reports'));
+    } finally {
+      setIsPreparingBulkExport(false);
+    }
+  };
+
   return (
     <div className="flex min-h-full w-full flex-col">
+      <BulkReportExporter
+        open={bulkExportOpen}
+        onOpenChange={setBulkExportOpen}
+        reports={bulkReportsToExport}
+        configs={configsData}
+        lang={locale}
+        theme={resolvedTheme === 'dark' ? 'dark' : 'light'}
+      />
       <div className="mb-4 flex flex-row items-center justify-between gap-2">
         <div className="flex flex-1 flex-col gap-2 md:flex-row md:items-center">
-          <Combobox
-            t={t}
-            key="user-combobox"
-            options={userOptions}
-            selected={userId ?? ''}
-            placeholder={t('user-data-table.user')}
-            disabled={usersQuery.isLoading}
-            onChange={(val) => {
-              const nextUserId =
-                typeof val === 'string'
-                  ? val
-                  : Array.isArray(val)
-                    ? val[0]
-                    : '';
-              setQueryParams({
-                userId: nextUserId || null,
-                reportId: null,
-              });
-            }}
-            className="w-full max-w-sm"
-          />
+          <div className="flex w-full items-center gap-1 sm:w-80 md:w-96">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 shrink-0"
+              disabled={usersQuery.isLoading || currentUserIndex <= 0}
+              onClick={() => goToUser(currentUserIndex - 1)}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Combobox
+              t={t}
+              key="user-combobox"
+              options={userOptions}
+              selected={userId ?? ''}
+              label={
+                currentUserIndex >= 0 && totalUsers > 0
+                  ? `${userOptions[currentUserIndex]?.label} (${currentUserIndex + 1}/${totalUsers})`
+                  : undefined
+              }
+              placeholder={t('user-data-table.user')}
+              disabled={usersQuery.isLoading}
+              onChange={(val) => {
+                const nextUserId =
+                  typeof val === 'string'
+                    ? val
+                    : Array.isArray(val)
+                      ? val[0]
+                      : '';
+                setQueryParams({
+                  userId: nextUserId || null,
+                  reportId: null,
+                });
+              }}
+              className="min-w-0 flex-1"
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 shrink-0"
+              disabled={
+                usersQuery.isLoading ||
+                currentUserIndex < 0 ||
+                currentUserIndex >= totalUsers - 1
+              }
+              onClick={() => goToUser(currentUserIndex + 1)}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
 
           {Boolean(userId) && (
             <div className="flex items-center gap-2">
@@ -485,7 +666,18 @@ export default function GroupReportsClient({
                     )}
                     {reportsOptions.map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
+                        <span className="flex items-center gap-2">
+                          {opt.status === 'APPROVED' && (
+                            <span className="inline-block h-2 w-2 shrink-0 rounded-full bg-dynamic-green" />
+                          )}
+                          {opt.status === 'REJECTED' && (
+                            <span className="inline-block h-2 w-2 shrink-0 rounded-full bg-dynamic-red" />
+                          )}
+                          {opt.status === 'PENDING' && (
+                            <span className="inline-block h-2 w-2 shrink-0 rounded-full bg-dynamic-yellow" />
+                          )}
+                          {opt.label}
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -494,8 +686,8 @@ export default function GroupReportsClient({
             </div>
           )}
         </div>
-        {userId && canCreateReports ? (
-          <div className="flex flex-row items-center gap-2">
+        <div className="flex flex-row items-center gap-2">
+          {userId && canCreateReports ? (
             <Button
               type="button"
               onClick={() => setQueryParams({ reportId: 'new' })}
@@ -503,8 +695,33 @@ export default function GroupReportsClient({
             >
               {t('common.new')}
             </Button>
-          </div>
-        ) : null}
+          ) : null}
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                disabled={isPreparingBulkExport}
+                className="gap-2"
+              >
+                {isPreparingBulkExport ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                {t('ws-reports.export')}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleBulkExport('ALL')}>
+                {t('ws-reports.export_all_images')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleBulkExport('APPROVED')}>
+                {t('ws-reports.export_approved_images')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {Boolean(groupId && userId) &&
@@ -518,33 +735,63 @@ export default function GroupReportsClient({
             </div>
           </div>
         ) : selectedReport && configsData.length > 0 ? (
-          <EditableReportPreview
-            key={reportId === 'new' ? `new-${userId}-${groupId}` : reportId}
-            wsId={wsId}
-            report={{
-              ...selectedReport,
-              // normalize potential nulls to undefined to match prop type
-              user_name: selectedReport?.user_name ?? undefined,
-              group_name:
-                selectedReport.group_name ??
-                groupQuery.data?.name ??
-                groupNameFallback,
-              // Frontend-only override of the displayed group manager name
-              creator_name: effectiveCreatorName ?? undefined,
-            }}
-            configs={configsData}
-            isNew={reportId === 'new'}
-            canUpdateReports={canUpdateReports}
-            canDeleteReports={canDeleteReports}
-            groupId={groupId}
-            healthcareVitals={healthcareVitalsQuery.data ?? []}
-            healthcareVitalsLoading={healthcareVitalsQuery.isLoading}
-            factorEnabled={ENABLE_FACTOR_CALCULATION}
-            managerOptions={managerOptions}
-            selectedManagerName={effectiveCreatorName ?? undefined}
-            onChangeManagerAction={(name) => setSelectedManagerName(name)}
-            canCheckUserAttendance={canCheckUserAttendance}
-          />
+          <>
+            {reportDetail?.report_approval_status === 'REJECTED' && (
+              <div className="mb-4 flex items-start gap-2 rounded-md border border-dynamic-red/20 bg-dynamic-red/5 p-3">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-dynamic-red" />
+                <div>
+                  <p className="font-medium text-dynamic-red text-sm">
+                    {t('ws-reports.rejected')}
+                  </p>
+                  {reportDetail.rejection_reason && (
+                    <p className="mt-0.5 text-dynamic-red/80 text-sm">
+                      {reportDetail.rejection_reason}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+            <EditableReportPreview
+              key={reportId === 'new' ? `new-${userId}-${groupId}` : reportId}
+              wsId={wsId}
+              report={{
+                ...selectedReport,
+                // normalize potential nulls to undefined to match prop type
+                user_name: selectedReport?.user_name ?? undefined,
+                group_name:
+                  selectedReport.group_name ??
+                  groupQuery.data?.name ??
+                  groupNameFallback,
+                // Frontend-only override of the displayed group manager name
+                creator_name: effectiveCreatorName ?? undefined,
+              }}
+              configs={configsData}
+              isNew={reportId === 'new'}
+              canApproveReports={canApproveReports}
+              canUpdateReports={canUpdateReports}
+              canDeleteReports={canDeleteReports}
+              groupId={groupId}
+              healthcareVitals={healthcareVitalsQuery.data ?? []}
+              healthcareVitalsLoading={healthcareVitalsQuery.isLoading}
+              factorEnabled={ENABLE_FACTOR_CALCULATION}
+              managerOptions={managerOptions}
+              selectedManagerName={effectiveCreatorName ?? undefined}
+              onChangeManagerAction={(name) => setSelectedManagerName(name)}
+              canCheckUserAttendance={canCheckUserAttendance}
+              feedbackUser={
+                userId
+                  ? ({
+                      id: userId,
+                      full_name: usersQuery.data?.find((u) => u.id === userId)
+                        ?.full_name,
+                    } as WorkspaceUser)
+                  : null
+              }
+              feedbackGroupName={groupQuery.data?.name ?? groupNameFallback}
+              canEditFeedback={canUpdateReports}
+              canDeleteFeedback={canDeleteReports}
+            />
+          </>
         ) : null)}
     </div>
   );

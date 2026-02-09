@@ -7,10 +7,10 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
 import type * as Y from 'yjs';
 import { RichTextEditor } from '../../../../text-editor/editor';
-import CursorOverlayWrapper from '../../cursor-overlay-wrapper';
 
 // Provider type from Yjs collaboration
 type HocuspocusProvider = Parameters<typeof RichTextEditor>[0]['yjsProvider'];
@@ -41,6 +41,8 @@ export interface TaskDescriptionEditorProps {
   // Yjs
   yjsDoc: Y.Doc | null;
   yjsProvider: HocuspocusProvider;
+  /** User info for collaboration cursor labels. */
+  collaborationUser?: { name: string; color: string } | null;
 
   // Callbacks
   onImageUpload: (file: File) => Promise<string>;
@@ -79,7 +81,6 @@ export function TaskDescriptionEditor({
   isYjsSyncing,
   wsId,
   boardId,
-  taskId,
   availableLists,
   queryClient,
   editorRef,
@@ -90,11 +91,13 @@ export function TaskDescriptionEditor({
   flushEditorPendingRef,
   yjsDoc,
   yjsProvider,
+  collaborationUser,
   onImageUpload,
   onEditorReady,
   mentionTranslations,
   disabled = false,
 }: TaskDescriptionEditorProps) {
+  const t = useTranslations('ws-task-boards.dialog');
   const allowCollaboration = isOpen && !isCreateMode && collaborationMode;
   const supabase = createClient();
 
@@ -183,8 +186,10 @@ export function TaskDescriptionEditor({
                 });
               }
 
-              toast.info('Task restored', {
-                description: `"${task.name || `#${taskId.slice(0, 8)}`}" was restored due to undo operation`,
+              toast.info(t('task_restored'), {
+                description: t('task_restored_description', {
+                  name: task.name || `#${taskId.slice(0, 8)}`,
+                }),
               });
             }
           }
@@ -218,8 +223,10 @@ export function TaskDescriptionEditor({
                 });
               }
 
-              toast.info('Task deleted', {
-                description: `"${task.name || `#${taskId.slice(0, 8)}`}" was deleted due to redo operation`,
+              toast.info(t('task_deleted'), {
+                description: t('task_deleted_description', {
+                  name: task.name || `#${taskId.slice(0, 8)}`,
+                }),
               });
             }
           }
@@ -237,7 +244,7 @@ export function TaskDescriptionEditor({
     return () => {
       editor.off('update', handleUpdate);
     };
-  }, [isCreateMode, queryClient, supabase]);
+  }, [isCreateMode, queryClient, supabase, t]);
 
   return (
     <div ref={editorRef} className="relative">
@@ -251,7 +258,7 @@ export function TaskDescriptionEditor({
         <RichTextEditor
           content={description}
           onChange={setDescription}
-          writePlaceholder="Add a detailed description, attach files, or use markdown..."
+          writePlaceholder={t('description_placeholder')}
           titlePlaceholder=""
           className="min-h-[calc(100vh-16rem)] border-0 bg-transparent px-4 focus-visible:outline-0 focus-visible:ring-0 md:px-8"
           workspaceId={wsId || undefined}
@@ -294,6 +301,7 @@ export function TaskDescriptionEditor({
           }}
           yjsDoc={allowCollaboration ? yjsDoc : null}
           yjsProvider={allowCollaboration ? yjsProvider : null}
+          collaborationUser={allowCollaboration ? collaborationUser : null}
           allowCollaboration={allowCollaboration}
           readOnly={isYjsSyncing || disabled}
           mentionTranslations={mentionTranslations}
@@ -304,16 +312,9 @@ export function TaskDescriptionEditor({
           <div className="pointer-events-none absolute top-4 right-4 flex items-center gap-2 rounded-lg border bg-background/95 px-3 py-2 shadow-lg backdrop-blur-sm md:right-8">
             <Loader2 className="h-4 w-4 animate-spin text-dynamic-yellow" />
             <p className="text-muted-foreground text-xs">
-              Syncing collaboration state...
+              {t('syncing_collaboration_state')}
             </p>
           </div>
-        )}
-
-        {allowCollaboration && taskId && (
-          <CursorOverlayWrapper
-            channelName={`editor-cursor-${taskId}`}
-            containerRef={richTextEditorRef}
-          />
         )}
       </div>
     </div>

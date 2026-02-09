@@ -7611,6 +7611,120 @@ export type Database = {
           },
         ];
       };
+      task_drafts: {
+        Row: {
+          assignee_ids: string[] | null;
+          board_id: string | null;
+          created_at: string | null;
+          creator_id: string;
+          description: string | null;
+          end_date: string | null;
+          estimation_points: number | null;
+          id: string;
+          label_ids: string[] | null;
+          list_id: string | null;
+          name: string;
+          priority: Database['public']['Enums']['task_priority'] | null;
+          project_ids: string[] | null;
+          start_date: string | null;
+          updated_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          assignee_ids?: string[] | null;
+          board_id?: string | null;
+          created_at?: string | null;
+          creator_id?: string;
+          description?: string | null;
+          end_date?: string | null;
+          estimation_points?: number | null;
+          id?: string;
+          label_ids?: string[] | null;
+          list_id?: string | null;
+          name: string;
+          priority?: Database['public']['Enums']['task_priority'] | null;
+          project_ids?: string[] | null;
+          start_date?: string | null;
+          updated_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          assignee_ids?: string[] | null;
+          board_id?: string | null;
+          created_at?: string | null;
+          creator_id?: string;
+          description?: string | null;
+          end_date?: string | null;
+          estimation_points?: number | null;
+          id?: string;
+          label_ids?: string[] | null;
+          list_id?: string | null;
+          name?: string;
+          priority?: Database['public']['Enums']['task_priority'] | null;
+          project_ids?: string[] | null;
+          start_date?: string | null;
+          updated_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_drafts_board_id_fkey';
+            columns: ['board_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_drafts_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_drafts_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_drafts_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_drafts_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_drafts_list_id_fkey';
+            columns: ['list_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_lists';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_drafts_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_drafts_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       task_history: {
         Row: {
           change_type: string;
@@ -18932,6 +19046,15 @@ export type Database = {
         }[];
       };
       get_finance_invoices_count: { Args: { ws_id: string }; Returns: number };
+      get_group_report_status_summary: {
+        Args: { _ws_id: string };
+        Returns: {
+          approved_count: number;
+          group_id: string;
+          pending_count: number;
+          rejected_count: number;
+        }[];
+      };
       get_grouped_sessions_paginated: {
         Args: {
           p_end_date?: string;
@@ -19723,6 +19846,15 @@ export type Database = {
           cumulative_users: number;
           new_users: number;
           period: string;
+        }[];
+      };
+      get_user_report_status_summary: {
+        Args: { _group_id: string; _ws_id: string };
+        Returns: {
+          approved_count: number;
+          pending_count: number;
+          rejected_count: number;
+          user_id: string;
         }[];
       };
       get_user_session_stats: {

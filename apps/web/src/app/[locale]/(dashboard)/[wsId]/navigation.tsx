@@ -27,6 +27,7 @@ import {
   ClockFading,
   CreditCard,
   Database,
+  FileEdit,
   FileText,
   Fish,
   FolderSync,
@@ -268,7 +269,11 @@ export async function WorkspaceNavigationLinks({
     {
       title: t('sidebar_tabs.tasks'),
       href: `/${personalOrWsId}/tasks`,
-      aliases: [`/${personalOrWsId}/tasks`, `/${personalOrWsId}/tasks/habits`],
+      aliases: [
+        `/${personalOrWsId}/tasks`,
+        `/${personalOrWsId}/tasks/habits`,
+        `/${personalOrWsId}/tasks/drafts`,
+      ],
       icon: <CheckCircle2 className="h-5 w-5" />,
       disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
       experimental: 'beta',
@@ -279,6 +284,7 @@ export async function WorkspaceNavigationLinks({
           icon: <UserStar className="h-4 w-4" />,
           matchExact: true,
         },
+        null,
         {
           title: t('sidebar_tabs.habits'),
           href: `/${personalOrWsId}/tasks/habits`,
@@ -289,6 +295,11 @@ export async function WorkspaceNavigationLinks({
           title: t('sidebar_tabs.notes'),
           href: `/${personalOrWsId}/tasks/notes`,
           icon: <NotepadText className="h-4 w-4" />,
+        },
+        {
+          title: t('sidebar_tabs.drafts'),
+          href: `/${personalOrWsId}/tasks/drafts`,
+          icon: <FileEdit className="h-4 w-4" />,
         },
         null,
         {

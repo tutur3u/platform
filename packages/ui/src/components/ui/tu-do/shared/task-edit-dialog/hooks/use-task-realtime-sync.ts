@@ -244,9 +244,11 @@ export function useTaskRealtimeSync({
       }
     };
 
-    // Subscribe to task changes (main task fields)
-    const taskChannel = supabase
-      .channel(`task-updates-${taskId}`)
+    // Use a single consolidated channel for all task-related listeners.
+    // Supabase supports multiple .on() calls on one channel, reducing
+    // connection overhead from 4 subscriptions to 1.
+    const channel = supabase
+      .channel(`task-sync-${taskId}`)
       .on(
         'postgres_changes',
         {
@@ -256,17 +258,14 @@ export function useTaskRealtimeSync({
           filter: `id=eq.${taskId}`,
         },
         async (payload) => {
-          console.log('📥 Received realtime update for task:', payload);
+          console.log('Received realtime update for task:', payload);
           const updatedTask = payload.new as Task;
 
           // Update local state with changes from other users
           // Only update if no pending name update (avoid conflicts with debounced saves)
           // Use refs to get current values without triggering effect re-runs
           if (!pendingNameRef.current && updatedTask.name !== nameRef.current) {
-            console.log(
-              '📝 Updating task name from realtime:',
-              updatedTask.name
-            );
+            console.log('Updating task name from realtime:', updatedTask.name);
             setName(updatedTask.name);
           }
 
@@ -281,7 +280,7 @@ export function useTaskRealtimeSync({
             const newDescStr = JSON.stringify(newDescContent);
 
             if (currentDescStr !== newDescStr) {
-              console.log('📝 Updating description from realtime');
+              console.log('Updating description from realtime');
               setDescription(newDescContent);
             }
           }
@@ -289,7 +288,7 @@ export function useTaskRealtimeSync({
           // Update priority if changed
           if (updatedTask.priority !== priorityRef.current) {
             console.log(
-              '🚩 Updating priority from realtime:',
+              'Updating priority from realtime:',
               updatedTask.priority
             );
             setPriority(updatedTask.priority ?? null);
@@ -302,10 +301,7 @@ export function useTaskRealtimeSync({
           const currentStartDate = startDateRef.current?.toISOString();
           const newStartDate = updatedStartDate?.toISOString();
           if (currentStartDate !== newStartDate) {
-            console.log(
-              '📅 Updating start date from realtime:',
-              updatedStartDate
-            );
+            console.log('Updating start date from realtime:', updatedStartDate);
             setStartDate(updatedStartDate);
           }
 
@@ -316,14 +312,14 @@ export function useTaskRealtimeSync({
           const currentEndDate = endDateRef.current?.toISOString();
           const newEndDate = updatedEndDate?.toISOString();
           if (currentEndDate !== newEndDate) {
-            console.log('📅 Updating end date from realtime:', updatedEndDate);
+            console.log('Updating end date from realtime:', updatedEndDate);
             setEndDate(updatedEndDate);
           }
 
           // Update estimation points if changed
           if (updatedTask.estimation_points !== estimationPointsRef.current) {
             console.log(
-              '⏱️ Updating estimation points from realtime:',
+              'Updating estimation points from realtime:',
               updatedTask.estimation_points
             );
             setEstimationPoints(updatedTask.estimation_points ?? null);
@@ -331,18 +327,11 @@ export function useTaskRealtimeSync({
 
           // Update list assignment if changed
           if (updatedTask.list_id !== selectedListIdRef.current) {
-            console.log('📋 Updating list from realtime:', updatedTask.list_id);
+            console.log('Updating list from realtime:', updatedTask.list_id);
             setSelectedListId(updatedTask.list_id);
           }
         }
       )
-      .subscribe((status) => {
-        console.log('📡 Realtime subscription status (tasks):', status);
-      });
-
-    // Subscribe to label changes
-    const labelChannel = supabase
-      .channel(`task-labels-${taskId}`)
       .on(
         'postgres_changes',
         {
@@ -352,19 +341,12 @@ export function useTaskRealtimeSync({
           filter: `task_id=eq.${taskId}`,
         },
         async () => {
-          console.log('📥 Received realtime update for task labels');
+          console.log('Received realtime update for task labels');
           const labels = await fetchTaskLabels();
-          console.log('🏷️ Updating labels from realtime:', labels);
+          console.log('Updating labels from realtime:', labels);
           setSelectedLabels(labels);
         }
       )
-      .subscribe((status) => {
-        console.log('📡 Realtime subscription status (labels):', status);
-      });
-
-    // Subscribe to assignee changes
-    const assigneeChannel = supabase
-      .channel(`task-assignees-${taskId}`)
       .on(
         'postgres_changes',
         {
@@ -374,19 +356,12 @@ export function useTaskRealtimeSync({
           filter: `task_id=eq.${taskId}`,
         },
         async () => {
-          console.log('📥 Received realtime update for task assignees');
+          console.log('Received realtime update for task assignees');
           const assignees = await fetchTaskAssignees();
-          console.log('👥 Updating assignees from realtime:', assignees);
+          console.log('Updating assignees from realtime:', assignees);
           setSelectedAssignees(assignees);
         }
       )
-      .subscribe((status) => {
-        console.log('📡 Realtime subscription status (assignees):', status);
-      });
-
-    // Subscribe to project changes
-    const projectChannel = supabase
-      .channel(`task-projects-${taskId}`)
       .on(
         'postgres_changes',
         {
@@ -396,23 +371,20 @@ export function useTaskRealtimeSync({
           filter: `task_id=eq.${taskId}`,
         },
         async () => {
-          console.log('📥 Received realtime update for task projects');
+          console.log('Received realtime update for task projects');
           const projects = await fetchTaskProjects();
-          console.log('📦 Updating projects from realtime:', projects);
+          console.log('Updating projects from realtime:', projects);
           setSelectedProjects(projects);
         }
       )
       .subscribe((status) => {
-        console.log('📡 Realtime subscription status (projects):', status);
+        console.log('Realtime subscription status (task-sync):', status);
       });
 
-    // Cleanup subscriptions on unmount or when task changes
+    // Cleanup subscription on unmount or when task changes
     return () => {
-      console.log('🧹 Cleaning up realtime subscriptions for task:', taskId);
-      supabase.removeChannel(taskChannel);
-      supabase.removeChannel(labelChannel);
-      supabase.removeChannel(assigneeChannel);
-      supabase.removeChannel(projectChannel);
+      console.log('Cleaning up realtime subscription for task:', taskId);
+      supabase.removeChannel(channel);
     };
     // Only depend on values that should trigger subscription recreation
     // State values are accessed via refs to prevent unnecessary re-subscriptions

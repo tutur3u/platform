@@ -2,19 +2,22 @@ import {
   ArrowDownFromLine,
   ArrowUpFromLine,
   Check,
+  FileEdit,
   Link2,
   ListTodo,
   Loader2,
   ShieldAlert,
 } from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { DialogDescription, DialogTitle } from '@tuturuuu/ui/dialog';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
+import { getTicketIdentifier } from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-import { UserPresenceAvatarsComponent } from '../../user-presence-avatars';
+import { TaskViewerAvatarsComponent } from '../../user-presence-avatars';
 import { TaskDialogActions } from '../task-dialog-actions';
 import type {
   PendingRelationship,
@@ -92,11 +95,17 @@ export function getTaskDialogHeaderInfo(
     parentTaskId?: string | null;
     parentTaskName?: string | null;
     pendingRelationship?: PendingRelationship | null;
+    draftId?: string | null;
   },
   t: any
 ): DialogHeaderInfo {
-  const { isCreateMode, parentTaskId, parentTaskName, pendingRelationship } =
-    options;
+  const {
+    isCreateMode,
+    parentTaskId,
+    parentTaskName,
+    pendingRelationship,
+    draftId,
+  } = options;
 
   const relationshipConfig = RELATIONSHIP_HEADER_CONFIG(t);
 
@@ -140,6 +149,14 @@ export function getTaskDialogHeaderInfo(
     };
   }
 
+  // Editing an existing draft
+  if (isCreateMode && draftId) {
+    return {
+      title: t('task-drafts.edit_draft'),
+      icon: <FileEdit className="h-4 w-4 text-dynamic-orange" />,
+    };
+  }
+
   // Default create mode
   if (isCreateMode) {
     return {
@@ -172,6 +189,17 @@ interface TaskDialogHeaderProps {
     avatar_url: string | null;
     email: string | null;
   } | null;
+  saveAsDraft: boolean;
+  setSaveAsDraft: (value: boolean) => void;
+  draftId?: string;
+  /** Whether the title input is currently visible in the scroll area */
+  isTitleVisible?: boolean;
+  /** Current task name from the form */
+  taskName?: string;
+  /** Board ticket prefix for building the identifier */
+  ticketPrefix?: string | null;
+  /** Task display number for building the identifier */
+  displayNumber?: number;
   createMultiple: boolean;
   hasDraft: boolean;
   wsId: string;
@@ -192,6 +220,8 @@ interface TaskDialogHeaderProps {
   onOpenShareDialog?: () => void;
   /** Whether the dialog is in read-only mode */
   disabled?: boolean;
+  /** Callback to scroll the editor to a collaborator's cursor position */
+  onScrollToUserCursor?: (userId: string, displayName: string) => void;
 }
 
 export function TaskDialogHeader({
@@ -206,6 +236,13 @@ export function TaskDialogHeader({
   pendingRelationship,
   headerInfo,
   user,
+  saveAsDraft,
+  setSaveAsDraft,
+  draftId,
+  isTitleVisible = true,
+  taskName,
+  ticketPrefix,
+  displayNumber,
   createMultiple,
   hasDraft,
   wsId,
@@ -222,6 +259,7 @@ export function TaskDialogHeader({
   isPersonalWorkspace = false,
   onOpenShareDialog,
   disabled = false,
+  onScrollToUserCursor,
 }: TaskDialogHeaderProps) {
   const t = useTranslations();
 
@@ -234,6 +272,7 @@ export function TaskDialogHeader({
         parentTaskId,
         parentTaskName,
         pendingRelationship,
+        draftId,
       },
       t
     );
@@ -251,12 +290,20 @@ export function TaskDialogHeader({
     iconColorClass = 'text-dynamic-orange',
   } = resolvedHeaderInfo;
 
+  // When the title input scrolls out of view, show ticket ID badge + task name in the header
+  const trimmedTaskName = taskName?.trim();
+  const showScrollTitle = !isTitleVisible && !!trimmedTaskName;
+  const ticketId =
+    !isCreateMode && displayNumber
+      ? getTicketIdentifier(ticketPrefix, displayNumber)
+      : null;
+
   return (
     <div className="flex items-center justify-between border-b px-4 py-2 md:px-8">
-      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 items-center gap-2">
         <div
           className={cn(
-            'flex h-7 w-7 items-center justify-center rounded-lg ring-1',
+            'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ring-1',
             iconBgClass,
             iconRingClass
           )}
@@ -264,10 +311,24 @@ export function TaskDialogHeader({
           {icon ?? <ListTodo className={cn('h-4 w-4', iconColorClass)} />}
         </div>
         <div className="flex min-w-0 flex-col gap-0.5">
-          <DialogTitle className="truncate font-semibold text-base text-foreground md:text-lg">
-            {title}
+          <DialogTitle className="flex items-center gap-1.5 truncate font-semibold text-base text-foreground md:text-lg">
+            {showScrollTitle ? (
+              <>
+                {ticketId && (
+                  <Badge
+                    variant="secondary"
+                    className="shrink-0 border border-border/60 px-1.5 py-0 font-mono text-[10px] text-muted-foreground md:text-xs"
+                  >
+                    {ticketId}
+                  </Badge>
+                )}
+                <span className="truncate">{trimmedTaskName}</span>
+              </>
+            ) : (
+              title
+            )}
           </DialogTitle>
-          {description && (
+          {!showScrollTitle && description && (
             <DialogDescription className="truncate text-muted-foreground text-xs md:text-sm">
               {description}
             </DialogDescription>
@@ -351,18 +412,31 @@ export function TaskDialogHeader({
 
         {/* Online Users */}
         {collaborationMode && isOpen && !isCreateMode && user && taskId && (
-          <UserPresenceAvatarsComponent
-            channelName={`task_presence_${taskId}`}
-            currentUser={{
-              id: user.id || '',
-              email: user.email || '',
-              display_name: user.display_name || undefined,
-              avatar_url: user.avatar_url || undefined,
-            }}
+          <TaskViewerAvatarsComponent
+            taskId={taskId}
+            boardId={boardId}
+            isViewing={isOpen}
+            compact={false}
+            onClickUser={onScrollToUserCursor}
           />
         )}
 
-        {isCreateMode && (
+        {isCreateMode && !draftId && (
+          <label className="hidden items-center gap-2 text-muted-foreground text-xs md:flex">
+            <Switch
+              checked={saveAsDraft}
+              onCheckedChange={(v) => setSaveAsDraft(Boolean(v))}
+            />
+            <span className="flex items-center gap-1">
+              {saveAsDraft && (
+                <FileEdit className="h-3 w-3 text-dynamic-orange" />
+              )}
+              {t('task-drafts.save_as_draft')}
+            </span>
+          </label>
+        )}
+
+        {isCreateMode && !draftId && (
           <label className="hidden items-center gap-2 text-muted-foreground text-xs md:flex">
             <Switch
               checked={createMultiple}
@@ -411,9 +485,15 @@ export function TaskDialogHeader({
                   </>
                 ) : (
                   <>
-                    <Check className="h-4 w-4" />
+                    {isCreateMode && saveAsDraft ? (
+                      <FileEdit className="h-4 w-4" />
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
                     {isCreateMode
-                      ? t('ws-task-boards.dialog.create_task')
+                      ? saveAsDraft || draftId
+                        ? t('common.save')
+                        : t('ws-task-boards.dialog.create_task')
                       : t('ws-task-boards.dialog.save_changes')}
                   </>
                 )}

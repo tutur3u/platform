@@ -33,6 +33,7 @@ Tuturuuu is a Turborepo monorepo containing multiple Next.js applications and sh
 - **tudo**: Task management with hierarchical structure
 - **tumeet**: Meeting management
 - **shortener**: URL shortener service
+- **mobile**: Flutter mobile app (iOS/Android) — BLoC/Cubit architecture, GoRouter, Supabase Flutter
 - **db**: Supabase database configuration and migrations
 - **discord**: Python Discord bot/utilities
 
@@ -194,7 +195,6 @@ bun trigger:deploy
 10. **NEVER** use emojis in UI code - use lucide-react icons via `@tuturuuu/icons`
 11. **NEVER** use `useEffect` for data fetching - THIS IS THE #1 VIOLATION - use TanStack Query's `useQuery`/`useMutation` instead
 12. **NEVER** use raw `fetch()` in client components without TanStack Query wrapper
-13. **NEVER** use absolute Windows drive paths with `apply_patch` - prefer repo-relative paths to avoid tool parsing errors
 
 ### Mandatory Actions
 
@@ -217,6 +217,7 @@ bun trigger:deploy
 17. **Always** run `bun check` at the end of your work - this unified command runs formatting, tests, type-checking, and i18n checks. All checks MUST pass.
 18. **Always** add new GitHub Actions workflows to `tuturuuu.ts` configuration - when creating or modifying workflows in `.github/workflows/`, add an entry to the `ci` object in `tuturuuu.ts` and ensure the workflow includes the `check-ci` job dependency
 19. **Always** conduct a **Session Retrospective** at the END of every co-working session - review `AGENTS.md`, `CLAUDE.md`, and `GEMINI.md`, document mistakes made and lessons learned, and update these files with new rules or clarifications to prevent repeating errors in future sessions. This is NON-NEGOTIABLE.
+20. **Never** add session logs, empty notes, or observations to these files unless they introduce new reusable knowledge not already covered — these files are shared with all agents and must stay concise and actionable. Redundancy degrades signal quality.
 
 ### Escalate When
 
@@ -723,6 +724,29 @@ Steps:
 4. Add README with purpose, usage, stability level
 5. Add minimal tests
 6. Run filtered build + tests
+
+### Mobile App (Flutter)
+
+Located at `apps/mobile/`, the Flutter app uses:
+
+- **State Management:** `flutter_bloc` (Cubits for feature state)
+- **Navigation:** `go_router` with auth-aware redirects (ShellRoute for bottom tabs)
+- **Auth:** `supabase_flutter` + `flutter_secure_storage` for token persistence
+- **Linting:** `very_good_analysis` (strict ruleset)
+- **Build Flavors:** development, staging, production (separate `main_*.dart` entry points)
+- **Localization:** ARB files in `lib/l10n/arb/` (English + Vietnamese), generated files tracked in git
+- **CI:** `mobile.yaml` uses `VeryGoodOpenSource/very_good_workflows` for format check, analysis, tests
+
+**Dart Formatting:** Run `dart format lib test` from `apps/mobile/` before pushing. The CI enforces `dart format --set-exit-if-changed`. Note: `bun format` / Biome does NOT cover Dart files.
+
+**API Integration:** The mobile app calls `/api/v1/auth/mobile/*` endpoints that return Supabase session tokens (not cookies).
+
+### Known Gotchas
+
+- **PostgREST URL Length:** `.in('column', ids)` with ~1000 UUIDs creates ~37KB URLs exceeding proxy limits (~8KB). Use `.eq(column, value)` updates instead.
+- **Admin Client Trigger Bypass:** Tables with `BEFORE UPDATE` triggers checking `auth.uid()` (e.g., `user_group_posts`) can be bypassed with `createAdminClient()` (`sbAdmin`). Always validate permissions with user-context client first.
+- **TypeScript useMemo Inference:** When `useMemo` returns either `[]` or `{ data: [], isEstimated }`, TypeScript infers `never[]`. Fix: explicitly type early returns as `{ data: [] as MyType[], isEstimated: false }`.
+- **Finance Module:** `get_category_breakdown` RPC accepts `_wallet_ids UUID[]` for wallet scoping. Exchange rates use USD as base currency. For estimated amounts, set `hasRedactedAmounts = true` and show `≈` prefix.
 
 ## Quick Reference
 

@@ -93,6 +93,7 @@ This section summarizes the key operating procedures for AI agents working in th
 - **Testing After Features:** Always add test cases after implementing new features and run them to verify functionality. Tests CAN and SHOULD be run by agents.
 - **Code Quality First:** Proactively refactor long files (>400 LOC) and components (>200 LOC); maintain high DX standards for ALL code, both old and new. Code quality is never optional.
 - **Session Retrospective (MANDATORY):** At the END of every co-working session, ALWAYS review `AGENTS.md`, `CLAUDE.md`, and `GEMINI.md`. Document mistakes made, lessons learned, and proposed improvements. Update these files with new rules or clarifications to prevent repeating errors in future sessions. This continuous improvement practice is NON-NEGOTIABLE.
+- **No Redundant Session Logs:** NEVER add session logs, empty notes, or observations to these files unless they introduce new reusable knowledge not already covered. These files are shared with all agents — redundancy degrades signal quality. Verify new content isn't already documented elsewhere before adding.
 
 ### Prohibited Actions
 
@@ -104,7 +105,6 @@ This section summarizes the key operating procedures for AI agents working in th
 - **🚫 USING `useEffect` FOR DATA FETCHING - THIS IS THE #1 MOST CRITICAL VIOLATION 🚫**
 - **Using raw `fetch()` without TanStack Query wrapper in client components.**
 - **Manual state management (useState + useEffect) for API calls - ABSOLUTELY FORBIDDEN.**
-- **Using absolute Windows drive paths with `apply_patch` - use repo-relative paths to avoid parsing errors.**
 
 ### Data Fetching Strategy (CRITICAL)
 
@@ -210,6 +210,24 @@ Tasks in kanban boards (`task.tsx`, `task-edit-dialog.tsx`, components in `packa
 - **Workspace ID Resolution (CRITICAL):** Database `ws_id` columns ALWAYS store UUIDs. Route parameters (`wsId`) may contain special identifiers like `"personal"` or `"internal"`. **NEVER** use raw `wsId` directly in database queries. **Preferred pattern:** Components should accept a `workspace` prop and use `workspace.id` directly (parent components handle resolution). For API routes, use `normalizeWorkspaceId(wsId)` helper which calls `getWorkspace()` for "personal" or `resolveWorkspaceId()` for others. This prevents "invalid uuid" errors and avoids redundant resolution calls.
 - **Centralized Settings (CRITICAL):** ALL application settings MUST be implemented within `apps/web/src/components/settings/settings-dialog.tsx`. This includes user profile, account, workspace, and product-specific settings (e.g., calendar). **NEVER** create separate settings pages or standalone modals. Add new settings as tabs within the centralized dialog, grouping them logically (User Settings, Preferences, Workspace, Product-specific). Pass `workspace` prop to child components instead of raw `wsId`.
 - **CI/Workflow Configuration (CRITICAL):** When adding or modifying GitHub Actions workflows in `.github/workflows/`, you **MUST** also update `tuturuuu.ts` at the repository root. Add an entry for the new workflow filename (e.g., `"my-workflow.yaml": true`). The workflow must include a `check-ci` job that calls `.github/workflows/ci-check.yml` and all main jobs must depend on it with `needs: [check-ci]` and `if: needs.check-ci.outputs.should_run == 'true'`. This enables centralized enable/disable control of all CI workflows.
+
+### Mobile App (Flutter)
+
+Located at `apps/mobile/`, the Flutter app uses BLoC/Cubit state management, `go_router` navigation, and `supabase_flutter` for auth. Key points:
+
+- **Build Flavors:** `main_development.dart`, `main_staging.dart`, `main_production.dart`
+- **Linting:** `very_good_analysis` (strict ruleset)
+- **Localization:** ARB files in `lib/l10n/arb/` (English + Vietnamese), generated files tracked in git
+- **CI:** `mobile.yaml` uses `VeryGoodOpenSource/very_good_workflows` — enforces `dart format --set-exit-if-changed`
+- **Dart Formatting:** Run `dart format lib test` from `apps/mobile/` before pushing. `bun format` / Biome does NOT cover Dart files.
+- **API:** Calls `/api/v1/auth/mobile/*` endpoints returning Supabase session tokens (not cookies)
+
+### Known Gotchas
+
+- **PostgREST URL Length:** `.in('column', ids)` with ~1000 UUIDs creates ~37KB URLs exceeding proxy limits (~8KB). Use `.eq(column, value)` updates instead.
+- **Admin Client Trigger Bypass:** Tables with `BEFORE UPDATE` triggers checking `auth.uid()` can be bypassed with `createAdminClient()` (`sbAdmin`). Always validate permissions with user-context client first.
+- **TypeScript useMemo Inference:** When `useMemo` returns either `[]` or `{ data: [], isEstimated }`, TypeScript infers `never[]`. Fix: explicitly type early returns as `{ data: [] as MyType[], isEstimated: false }`.
+- **Finance Module:** `get_category_breakdown` RPC accepts `_wallet_ids UUID[]` for wallet scoping. Exchange rates use USD as base currency. For estimated amounts, set `hasRedactedAmounts = true` and show `≈` prefix.
 
 ### Database Schema Notes
 
