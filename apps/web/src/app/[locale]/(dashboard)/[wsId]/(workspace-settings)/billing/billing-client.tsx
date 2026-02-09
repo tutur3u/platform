@@ -9,15 +9,23 @@ import {
   Package,
   Plus,
   Sparkles,
+  User,
   Users,
   X,
   Zap,
 } from '@tuturuuu/icons';
-import type { Product } from '@tuturuuu/payment/polar';
+import type { CustomerSeat, Product } from '@tuturuuu/payment/polar';
 import type { WorkspaceProductTier } from '@tuturuuu/types/db';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@tuturuuu/ui/accordion';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
+import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -25,15 +33,14 @@ import { centToDollar } from '@/utils/price-helper';
 import type { SeatStatus } from '@/utils/seat-limits';
 import { AdjustSeatsDialog } from './adjust-seats-dialog';
 import { PaymentMethodsCard } from './payment-methods-card';
-import { PlanList } from './plan-list';
+import { PlanListDialog } from './plan-list-dialog';
 import { SubscriptionConfirmationDialog } from './subscription-confirmation-dialog';
 
 export interface Plan {
   id: string;
   productId: string;
   name: string;
-  tier: WorkspaceProductTier | null;
-  price: number;
+  tier: WorkspaceProductTier;
   billingCycle: string | null;
   startDate: string;
   nextBillingDate: string;
@@ -41,19 +48,21 @@ export interface Plan {
   status: string;
   features?: string[];
   // Seat-based pricing fields
-  pricingModel?: 'fixed' | 'seat_based' | null;
-  seatCount?: number | null;
-  pricePerSeat?: number | null;
-  maxSeats?: number | null;
+  pricingModel: 'fixed' | 'seat_based' | 'custom' | 'free' | 'metered_unit';
+  seatCount: number | null;
+  seatList: CustomerSeat[];
+  price: number | null;
+  pricePerSeat: number | null;
+  maxSeats: number | null;
 }
 
 interface BillingClientProps {
-  currentPlan: Plan;
   wsId: string;
-  products: Product[];
-  product_id: string;
-  seatStatus?: SeatStatus;
+  isPersonalWorkspace: boolean;
   hasManageSubscriptionPermission: boolean;
+  currentPlan: Plan;
+  products: Product[];
+  seatStatus?: SeatStatus;
 }
 
 function getSimplePlanName(name: string): string {
@@ -65,11 +74,12 @@ function getSimplePlanName(name: string): string {
 }
 
 export function BillingClient({
+  wsId,
+  isPersonalWorkspace,
+  hasManageSubscriptionPermission,
   currentPlan,
   products,
-  wsId,
   seatStatus,
-  hasManageSubscriptionPermission,
 }: BillingClientProps) {
   const [showUpgradeOptions, setShowUpgradeOptions] = useState(false);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
@@ -199,7 +209,10 @@ export function BillingClient({
               {/* Pricing */}
               <div className="flex items-baseline gap-1">
                 <span className="font-black text-4xl tracking-tight">
-                  ${centToDollar(currentPlan.price)}
+                  $
+                  {isSeatBased
+                    ? centToDollar(currentPlan.pricePerSeat ?? 0)
+                    : centToDollar(currentPlan.price ?? 0)}
                 </span>
                 {currentPlan.billingCycle && (
                   <span className="text-lg text-muted-foreground">
@@ -268,6 +281,66 @@ export function BillingClient({
                         })}
                       </p>
                     )}
+
+                  {/* Seat Assignments Accordion */}
+                  {currentPlan.seatList.length > 0 && (
+                    <Accordion type="single" collapsible className="mt-4">
+                      <AccordionItem
+                        value="seat-assignments"
+                        className="border-0"
+                      >
+                        <AccordionTrigger className="py-2 hover:no-underline">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-sm">
+                              {t('seat-assignments')}
+                            </span>
+                            <Badge variant="secondary" className="text-xs">
+                              {currentPlan.seatList.length}
+                            </Badge>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="space-y-2 pt-2">
+                            {currentPlan.seatList.map((seat) => (
+                              <div
+                                key={seat.id}
+                                className="flex items-center justify-between gap-2 rounded-lg border bg-background p-3 transition-colors hover:bg-muted/50"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                                    <User className="h-4 w-4 text-primary" />
+                                  </div>
+                                  <div>
+                                    {seat.customerEmail && (
+                                      <p className="font-medium text-sm">
+                                        {seat.customerEmail}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-3">
+                                  {seat.claimedAt && (
+                                    <div className="text-right">
+                                      <p className="text-muted-foreground text-xs">
+                                        {t('assigned-on')}
+                                      </p>
+                                      <p className="text-xs">
+                                        {format(
+                                          new Date(seat.claimedAt),
+                                          'd MMM, yyyy'
+                                        )}
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  )}
                 </div>
               )}
 
@@ -378,7 +451,8 @@ export function BillingClient({
       />
 
       {/* Dialogs */}
-      <PlanList
+      <PlanListDialog
+        isPersonalWorkspace={isPersonalWorkspace}
         currentPlan={currentPlan}
         products={products}
         wsId={wsId}
@@ -409,9 +483,7 @@ export function BillingClient({
           currentSeats={seatStatus.seatCount}
           currentMembers={seatStatus.memberCount}
           maxSeats={currentPlan.maxSeats}
-          pricePerSeat={
-            seatStatus.pricePerSeat ?? currentPlan.pricePerSeat ?? 0
-          }
+          pricePerSeat={currentPlan.pricePerSeat ?? 0}
           billingCycle={currentPlan.billingCycle}
         />
       )}

@@ -601,6 +601,7 @@
       "name": "@tuturuuu/apis",
       "version": "0.0.10",
       "dependencies": {
+        "@tuturuuu/payment": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
         "dayjs": "^1.11.19",

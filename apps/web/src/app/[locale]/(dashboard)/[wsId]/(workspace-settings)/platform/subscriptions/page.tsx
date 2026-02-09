@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation } from '@tanstack/react-query';
-import { AlertTriangle, Loader2, Zap } from '@tuturuuu/icons';
+import { AlertTriangle, Loader2, UserPlus, Zap } from '@tuturuuu/icons';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -10,11 +10,12 @@ import { useState } from 'react';
 
 export default function PlatformSubscriptionsMigrationPage() {
   const [migrationResult, setMigrationResult] = useState<any>(null);
+  const [freeMigrationResult, setFreeMigrationResult] = useState<any>(null);
 
-  const migrateMutation = useMutation({
+  const cancelSubscriptionMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch('/api/platform/migrate-subscriptions', {
-        method: 'POST',
+      const res = await fetch('/api/platform/subscriptions', {
+        method: 'DELETE',
       });
 
       const data = await res.json();
@@ -44,6 +45,39 @@ export default function PlatformSubscriptionsMigrationPage() {
     },
   });
 
+  const createFreeSubscriptionMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch('/api/platform/subscriptions', {
+        method: 'POST',
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Migration failed');
+      }
+
+      return data;
+    },
+    onSuccess: (data) => {
+      setFreeMigrationResult(data);
+      if (data.errors === 0) {
+        toast.success('Free subscription migration completed successfully', {
+          description: `Created ${data.created} subscriptions, skipped ${data.skipped}`,
+        });
+      } else {
+        toast.warning('Free subscription migration completed with errors', {
+          description: `Created ${data.created}, skipped ${data.skipped}, errors ${data.errors}`,
+        });
+      }
+    },
+    onError: (error) => {
+      toast.error('Free subscription migration failed', {
+        description: error instanceof Error ? error.message : 'Unknown error',
+      });
+    },
+  });
+
   return (
     <div className="container mx-auto max-w-4xl space-y-6 p-6">
       <div>
@@ -57,8 +91,7 @@ export default function PlatformSubscriptionsMigrationPage() {
         <AlertTriangle className="h-4 w-4" />
         <AlertTitle>Admin-Only Feature</AlertTitle>
         <AlertDescription>
-          This action will migrate ALL active fixed-price subscriptions in the
-          system to seat-based pricing with immediate proration invoices. Use
+          This action will cancel ALL active subscriptions in the system. Use
           with extreme caution.
         </AlertDescription>
       </Alert>
@@ -67,25 +100,23 @@ export default function PlatformSubscriptionsMigrationPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Zap className="h-5 w-5" />
-            Migrate to Seat-Based Pricing
+            Revoke Old Subscriptions
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2 text-sm">
             <p className="font-medium">This migration will:</p>
             <ul className="list-inside list-disc space-y-1 text-muted-foreground">
+              <li>Scan all active subscriptions</li>
+              <li>Revoke old subscriptions in Polar immediately</li>
               <li>
-                Scan all active subscriptions currently using fixed pricing
+                Webhook system automatically recreates subscriptions for free
+                plan
               </li>
               <li>
-                Find matching seat-based products for the same tier and billing
-                cycle
+                User can then upgrade to fixed-price plan (personal workspace)
+                or seat-based plan (team workspace)
               </li>
-              <li>
-                Update subscriptions in Polar with immediate proration behavior
-              </li>
-              <li>Set initial seat count based on current workspace members</li>
-              <li>Generate invoices for any pricing differences</li>
             </ul>
           </div>
 
@@ -140,20 +171,114 @@ export default function PlatformSubscriptionsMigrationPage() {
           )}
 
           <Button
-            onClick={() => migrateMutation.mutate()}
-            disabled={migrateMutation.isPending}
+            onClick={() => cancelSubscriptionMutation.mutate()}
+            disabled={
+              cancelSubscriptionMutation.isPending ||
+              createFreeSubscriptionMutation.isPending
+            }
             variant="destructive"
             className="w-full"
           >
-            {migrateMutation.isPending ? (
+            {cancelSubscriptionMutation.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Migrating...
+                Cancelling...
               </>
             ) : (
               <>
                 <Zap className="mr-2 h-4 w-4" />
-                Execute Global Migration
+                Cancel Old Subscriptions
+              </>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <UserPlus className="h-5 w-5" />
+            Add Free Subscriptions
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2 text-sm">
+            <p className="font-medium">This migration will:</p>
+            <ul className="list-inside list-disc space-y-1 text-muted-foreground">
+              <li>Find all workspaces without active subscriptions</li>
+              <li>Subscribe workspaces to free product</li>
+              <li>Skip workspaces that already have active subscriptions</li>
+            </ul>
+          </div>
+
+          {freeMigrationResult && (
+            <div className="rounded-lg border bg-muted p-4">
+              <h3 className="mb-2 font-semibold">Migration Results</h3>
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                <div>
+                  <p className="text-muted-foreground">Created</p>
+                  <p className="font-bold text-dynamic-green text-lg">
+                    {freeMigrationResult.created}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Skipped</p>
+                  <p className="font-bold text-dynamic-yellow text-lg">
+                    {freeMigrationResult.skipped}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Errors</p>
+                  <p className="font-bold text-dynamic-red text-lg">
+                    {freeMigrationResult.errors}
+                  </p>
+                </div>
+              </div>
+              {freeMigrationResult.errorDetails &&
+                freeMigrationResult.errorDetails.length > 0 && (
+                  <div className="mt-4">
+                    <p className="mb-2 font-medium text-sm">Error Details:</p>
+                    <div className="max-h-40 space-y-1 overflow-y-auto text-xs">
+                      {freeMigrationResult.errorDetails.map(
+                        (err: any, idx: number) => (
+                          <div
+                            key={idx}
+                            className="rounded bg-destructive/10 p-2"
+                          >
+                            <span className="font-mono">ID: {err.id}</span> -{' '}
+                            {err.error}
+                          </div>
+                        )
+                      )}
+                    </div>
+                  </div>
+                )}
+              {freeMigrationResult.message && (
+                <p className="mt-4 text-muted-foreground text-sm">
+                  {freeMigrationResult.message}
+                </p>
+              )}
+            </div>
+          )}
+
+          <Button
+            onClick={() => createFreeSubscriptionMutation.mutate()}
+            disabled={
+              createFreeSubscriptionMutation.isPending ||
+              cancelSubscriptionMutation.isPending
+            }
+            variant="default"
+            className="w-full"
+          >
+            {createFreeSubscriptionMutation.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              <>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Add Free Subscriptions
               </>
             )}
           </Button>
