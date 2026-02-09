@@ -22,6 +22,7 @@ const SendOtpSchema = z.object({
   email: z.string().email(),
   locale: z.string().optional(),
   deviceId: z.string().optional(),
+  captchaToken: z.string().optional(),
 });
 
 export async function OPTIONS() {
@@ -37,8 +38,15 @@ export async function POST(request: NextRequest) {
       return jsonWithCors({ error: 'Invalid request body' }, { status: 400 });
     }
 
-    const { email, locale, deviceId } = parsed.data;
+    const { email, locale, deviceId, captchaToken } = parsed.data;
     const normalizedLocale = locale || 'en';
+
+    console.log('[mobile/send-otp] Request:', {
+      email,
+      locale: normalizedLocale,
+      hasDeviceId: !!deviceId,
+      hasCaptchaToken: !!captchaToken,
+    });
 
     const headersList = await headers();
     const ipAddress = extractIPFromHeaders(headersList);
@@ -80,6 +88,8 @@ export async function POST(request: NextRequest) {
 
     const sbAdmin = await createAdminClient();
     const supabase = await createClient();
+    const captchaOptions = captchaToken ? { captchaToken } : {};
+
     const metadata: Record<string, string> = {
       locale: normalizedLocale,
       origin: 'TUTURUUU',
@@ -96,15 +106,24 @@ export async function POST(request: NextRequest) {
       );
 
       if (updateError) {
+        console.error('[mobile/send-otp] updateUserById error:', updateError);
         return jsonWithCors({ error: updateError.message }, { status: 500 });
       }
 
       const { error } = await supabase.auth.signInWithOtp({
         email: validatedEmail,
-        options: { data: metadata },
+        options: { data: metadata, ...captchaOptions },
       });
 
       if (error) {
+        console.error(
+          '[mobile/send-otp] signInWithOtp error:',
+          JSON.stringify({
+            message: error.message,
+            status: error.status,
+            code: error.code,
+          })
+        );
         return jsonWithCors({ error: error.message }, { status: 400 });
       }
     } else {
@@ -113,10 +132,18 @@ export async function POST(request: NextRequest) {
       const { error } = await supabase.auth.signUp({
         email: validatedEmail,
         password: randomPassword,
-        options: { data: metadata },
+        options: { data: metadata, ...captchaOptions },
       });
 
       if (error) {
+        console.error(
+          '[mobile/send-otp] signUp error:',
+          JSON.stringify({
+            message: error.message,
+            status: error.status,
+            code: error.code,
+          })
+        );
         return jsonWithCors({ error: error.message }, { status: 400 });
       }
     }

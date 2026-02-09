@@ -53,6 +53,7 @@ export function useExcalidrawCursor({
   const lastBroadcastTimeRef = useRef(0);
   const throttleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const errorCountRef = useRef(0);
+  const destroyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pageVisibleRef = useRef(pageVisible);
   pageVisibleRef.current = pageVisible;
 
@@ -138,130 +139,158 @@ export function useExcalidrawCursor({
     return () => clearInterval(interval);
   }, [error, enabled, cursorTimeoutMs]);
 
-  // Set up the channel
+  // Set up the channel — uses deferred cleanup so StrictMode's
+  // mount → cleanup → remount reuses the existing channel.
   useEffect(() => {
     if (!enabled || !channelName || !user.id) return;
 
+    // ── StrictMode reuse path ───────────────────────────────────────
+    if (destroyTimerRef.current) {
+      clearTimeout(destroyTimerRef.current);
+      destroyTimerRef.current = null;
+
+      if (channelRef.current) {
+        if (DEV_MODE) {
+          console.log('♻️ Reusing cursor channel (StrictMode)');
+        }
+        isCleanedUpRef.current = false;
+        return () => {
+          isCleanedUpRef.current = true;
+          if (throttleTimeoutRef.current) {
+            clearTimeout(throttleTimeoutRef.current);
+            throttleTimeoutRef.current = null;
+          }
+          const channel = channelRef.current;
+          destroyTimerRef.current = setTimeout(() => {
+            destroyTimerRef.current = null;
+            if (channel && channelRef.current === channel) {
+              // Broadcast cursor removal (best effort)
+              if (user.id) {
+                try {
+                  channel.send({
+                    type: 'broadcast',
+                    event: 'cursor-move',
+                    payload: { x: -1000, y: -1000, user },
+                  });
+                } catch {
+                  // Ignore errors during cleanup
+                }
+              }
+              createClient().removeChannel(channel);
+              channelRef.current = null;
+            }
+          }, 100);
+        };
+      }
+    }
+
+    // ── Fresh creation path ─────────────────────────────────────────
     isCleanedUpRef.current = false;
     const supabase = createClient();
 
-    const setupChannel = async () => {
-      if (isCleanedUpRef.current) return;
+    // Clean up stale channel from a previous config if present
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
 
-      try {
-        // Clean up existing channel
-        if (channelRef.current) {
-          await supabase.removeChannel(channelRef.current);
-          channelRef.current = null;
+    const channel = supabase.channel(`${channelName}-cursors`, {
+      config: {
+        broadcast: {
+          self: false,
+        },
+      },
+    });
+
+    channelRef.current = channel;
+
+    channel
+      .on(
+        'broadcast',
+        { event: 'cursor-move' },
+        (payload: {
+          payload: {
+            x: number;
+            y: number;
+            tool?: string;
+            user: ExcalidrawCursorUser;
+          };
+        }) => {
+          try {
+            const { x, y, tool, user: broadcastUser } = payload.payload;
+
+            // Ignore own broadcasts (extra safety)
+            if (broadcastUser.id === user.id) return;
+
+            setRemoteCursors((prev) => {
+              const updated = new Map(prev);
+              updated.set(broadcastUser.id, {
+                x,
+                y,
+                tool,
+                user: broadcastUser,
+                lastUpdatedAt: Date.now(),
+              });
+              return updated;
+            });
+
+            errorCountRef.current = 0;
+          } catch (err) {
+            handleError(err);
+          }
+        }
+      )
+      .subscribe((status) => {
+        if (DEV_MODE) {
+          console.log('Cursor channel status:', status);
         }
 
-        const channel = supabase.channel(`${channelName}-cursors`, {
-          config: {
-            broadcast: {
-              self: false,
-            },
-          },
-        });
+        switch (status) {
+          case 'SUBSCRIBED':
+            setIsConnected(true);
+            errorCountRef.current = 0;
+            break;
+          case 'CHANNEL_ERROR':
+            setIsConnected(false);
+            handleError(new Error('Cursor channel error'));
+            break;
+          case 'TIMED_OUT':
+            setIsConnected(false);
+            handleError(new Error('Cursor channel timed out'));
+            break;
+          case 'CLOSED':
+            setIsConnected(false);
+            break;
+        }
+      });
 
-        channelRef.current = channel;
-
-        channel
-          .on(
-            'broadcast',
-            { event: 'cursor-move' },
-            (payload: {
-              payload: {
-                x: number;
-                y: number;
-                tool?: string;
-                user: ExcalidrawCursorUser;
-              };
-            }) => {
-              try {
-                const { x, y, tool, user: broadcastUser } = payload.payload;
-
-                // Ignore own broadcasts (extra safety)
-                if (broadcastUser.id === user.id) return;
-
-                setRemoteCursors((prev) => {
-                  const updated = new Map(prev);
-                  updated.set(broadcastUser.id, {
-                    x,
-                    y,
-                    tool,
-                    user: broadcastUser,
-                    lastUpdatedAt: Date.now(),
-                  });
-                  return updated;
-                });
-
-                errorCountRef.current = 0;
-              } catch (err) {
-                handleError(err);
-              }
-            }
-          )
-          .subscribe((status) => {
-            if (DEV_MODE) {
-              console.log('Cursor channel status:', status);
-            }
-
-            switch (status) {
-              case 'SUBSCRIBED':
-                setIsConnected(true);
-                errorCountRef.current = 0;
-                break;
-              case 'CHANNEL_ERROR':
-                setIsConnected(false);
-                handleError(new Error('Cursor channel error'));
-                break;
-              case 'TIMED_OUT':
-                setIsConnected(false);
-                handleError(new Error('Cursor channel timed out'));
-                break;
-              case 'CLOSED':
-                setIsConnected(false);
-                break;
-            }
-          });
-      } catch (err) {
-        handleError(err);
-      }
-    };
-
-    setupChannel();
-
+    // Deferred cleanup — gives StrictMode a chance to cancel and reuse
     return () => {
       isCleanedUpRef.current = true;
-
-      // Clear pending throttled broadcast
       if (throttleTimeoutRef.current) {
         clearTimeout(throttleTimeoutRef.current);
         throttleTimeoutRef.current = null;
       }
-
-      // Broadcast cursor removal (best effort)
-      if (channelRef.current && user.id) {
-        try {
-          channelRef.current.send({
-            type: 'broadcast',
-            event: 'cursor-move',
-            payload: {
-              x: -1000,
-              y: -1000,
-              user,
-            },
-          });
-        } catch {
-          // Ignore errors during cleanup
+      const ch = channelRef.current;
+      destroyTimerRef.current = setTimeout(() => {
+        destroyTimerRef.current = null;
+        if (ch && channelRef.current === ch) {
+          // Broadcast cursor removal (best effort)
+          if (user.id) {
+            try {
+              ch.send({
+                type: 'broadcast',
+                event: 'cursor-move',
+                payload: { x: -1000, y: -1000, user },
+              });
+            } catch {
+              // Ignore errors during cleanup
+            }
+          }
+          supabase.removeChannel(ch);
+          channelRef.current = null;
         }
-      }
-
-      // Remove channel
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
+      }, 100);
     };
   }, [channelName, user, enabled, handleError]);
 

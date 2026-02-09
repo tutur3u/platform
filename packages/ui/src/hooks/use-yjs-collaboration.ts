@@ -54,6 +54,9 @@ export function useYjsCollaboration(
 
   const [synced, setSynced] = useState(false);
   const [connected, setConnected] = useState(false);
+  const [providerState, setProviderState] = useState<SupabaseProvider | null>(
+    null
+  );
   const providerRef = useRef<SupabaseProvider | null>(null);
   const destroyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Ref that event listeners check — survives StrictMode cleanup/remount
@@ -144,6 +147,7 @@ export function useYjsCollaboration(
     });
 
     providerRef.current = provider;
+    setProviderState(provider);
 
     // Listen to provider events — use mountedRef so listeners stay valid
     // across StrictMode cleanup/remount without re-registration.
@@ -225,7 +229,7 @@ export function useYjsCollaboration(
   return {
     doc,
     awareness,
-    provider: providerRef.current,
+    provider: providerState,
     synced,
     connected,
   };

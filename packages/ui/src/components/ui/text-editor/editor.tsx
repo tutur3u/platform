@@ -472,6 +472,44 @@ export function RichTextEditor({
     },
   });
 
+  // Recreate editor when collaboration provider becomes available so the
+  // CollaborationCaret extension is included. The provider is null on first
+  // render because it's created asynchronously in useEffect; this dep
+  // ensures the editor re-initializes once the provider connects.
+  const prevProviderRef = useRef(yjsProvider);
+  useEffect(() => {
+    if (!editor) return;
+    if (prevProviderRef.current === yjsProvider) return;
+    prevProviderRef.current = yjsProvider;
+
+    // Provider transitioned from null → available: recreate with extensions
+    if (yjsProvider && allowCollaboration) {
+      editor.setOptions({
+        extensions: getEditorExtensions({
+          titlePlaceholder,
+          writePlaceholder,
+          doc: yjsDoc ?? undefined,
+          provider: yjsProvider ?? undefined,
+          collaborationUser: collaborationUser ?? undefined,
+          onImageUpload: onImageUploadRef.current,
+          onVideoUpload: onImageUploadRef.current,
+          mentionTranslations,
+          readOnly,
+        }),
+      });
+    }
+  }, [
+    editor,
+    yjsProvider,
+    yjsDoc,
+    allowCollaboration,
+    collaborationUser,
+    titlePlaceholder,
+    writePlaceholder,
+    mentionTranslations,
+    readOnly,
+  ]);
+
   // Update editor's editable state when props change
   useEffect(() => {
     if (editor) editor.setEditable(editable && !readOnly);
