@@ -152,8 +152,7 @@ function TaskCardInner({
 
   // Use extracted dialog state management hook
   const { state: dialogState, actions: dialogActions } = useTaskDialogState();
-  const { state: dialogStateFromProvider, createSubtask } =
-    useTaskDialogContext();
+  const { createSubtask } = useTaskDialogContext();
 
   // Use centralized task dialog
   const { openTask } = useTaskDialog();
@@ -1699,14 +1698,7 @@ function TaskCardInner({
             </div>
             <div className="flex min-h-5 items-center gap-2 sm:min-h-6">
               {!isPersonalWorkspace && (
-                <TaskViewerAvatarsComponent
-                  taskId={task.id}
-                  boardId={boardId}
-                  isViewing={
-                    dialogStateFromProvider.isOpen &&
-                    dialogStateFromProvider.task?.id === task.id
-                  }
-                />
+                <TaskViewerAvatarsComponent taskId={task.id} />
               )}
 
               {/* Checkbox: hidden for documents lists */}

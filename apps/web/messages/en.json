@@ -8490,10 +8490,14 @@
     "category": "Category",
     "closing_balance": "Closing",
     "created_at": "Created at",
+    "cross_currency_note": "Different currencies. Enter the actual received amount.",
     "daily_total_from_14_recent_days": "Daily total from 14 most recent days",
     "description": "Description",
     "description_placeholder": "e.g., Lunch, Groceries, Taxi...",
+    "destination_amount": "Destination Amount",
+    "destination_wallet": "Destination Wallet",
     "error_creating_transaction": "There was an error creating the transaction",
+    "exchange_rate": "Exchange Rate",
     "expense": "Expense",
     "financial_overview": "Financial Overview",
     "financial_overview_description": "Track your income, expenses, and overall financial health",
@@ -8505,7 +8509,9 @@
     "opening_balance": "Opening",
     "report_opt_in": "Show in reports",
     "report_opt_in_description": "If unchecked, this transaction will not be included in any financial reports.",
+    "same_wallet_error": "Source and destination wallets must be different",
     "select_category": "Select category",
+    "select_destination_wallet": "Select destination wallet",
     "select_tags": "Select tags",
     "select_wallet": "Select wallet",
     "show_confidential": "Show numbers",
@@ -8514,6 +8520,7 @@
     "tags": "Tags",
     "tags_description": "Add tags to organize and categorize this transaction",
     "taken_at": "Taken at",
+    "transfer_mode": "Transfer",
     "user": "Creator",
     "wallet": "Wallet"
   },
@@ -9386,7 +9393,9 @@
     "statistics-summary": "Statistics Summary",
     "total-expenses": "Total Expenses",
     "total-income": "Total Income",
-    "total-transactions": "Total Transactions"
+    "total-transactions": "Total Transactions",
+    "transfer": "Transfer",
+    "transfer-delete-warning": "Deleting this transfer will also delete the linked transaction in the other wallet."
   },
   "workspace-inventory-tabs": {
     "batches": "Batches",
