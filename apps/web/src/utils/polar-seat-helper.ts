@@ -189,7 +189,7 @@ export async function revokeSeatFromMember(
     );
   } catch (error) {
     // Best-effort: log error but don't throw
-    console.error(`Failed to revoke Polar seat for user ${userId}:`, error);
+    console.error(`Failed to revoke Polar seat:`, error);
   }
 }
 
