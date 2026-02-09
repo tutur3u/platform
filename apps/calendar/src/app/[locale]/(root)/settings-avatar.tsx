@@ -16,13 +16,13 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { Form } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/sonner';
 import { Label } from '@tuturuuu/ui/label';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
+import { toast } from '@tuturuuu/ui/sonner';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react'; 
+import { useState } from 'react';
 import * as z from 'zod';
 
 interface AvatarProps {

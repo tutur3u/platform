@@ -6154,6 +6154,7 @@
     "available": "Có sẵn",
     "available-accounts": "Tài khoản có sẵn để liên kết",
     "avatar": "Ảnh đại diện",
+    "avatar_compression_error": "Đã xảy ra lỗi khi nén hình đại diện của bạn",
     "avatar_remove_error": "Đã xảy ra lỗi khi xóa hình đại diện của bạn. \nVui lòng thử lại.",
     "avatar_removed": "Đã xóa ảnh đại diện",
     "avatar_removed_description": "Hình đại diện của bạn đã được xóa thành công.",
@@ -6346,8 +6347,7 @@
     "workspace-activity": "Hoạt động không gian làm việc",
     "workspace-activity-description": "Thông báo về thay đổi và cập nhật không gian làm việc",
     "workspace-settings-description": "Cài đặt không gian làm việc mặc định",
-    "workspaces-usage": "Không gian làm việc",
-    "avatar_compression_error": "Đã xảy ra lỗi khi nén hình đại diện của bạn"
+    "workspaces-usage": "Không gian làm việc"
   },
   "settings-appearance": {
     "12-hour": "12 giờ",
