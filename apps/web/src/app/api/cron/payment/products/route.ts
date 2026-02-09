@@ -1,4 +1,4 @@
-import { createPolarClient } from '@tuturuuu/payment/polar/client';
+import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceProductTier } from '@tuturuuu/types';
 import { DEV_MODE } from '@tuturuuu/utils/constants';

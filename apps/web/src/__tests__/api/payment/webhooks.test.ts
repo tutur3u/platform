@@ -5,7 +5,7 @@ vi.mock('@tuturuuu/payment/polar/next', () => ({
   Webhooks: vi.fn(),
 }));
 
-vi.mock('@tuturuuu/payment/polar/client', () => ({
+vi.mock('@tuturuuu/payment/polar/server', () => ({
   createPolarClient: vi.fn(),
 }));
 

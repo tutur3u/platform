@@ -1,4 +1,4 @@
-import { createPolarClient } from '@tuturuuu/payment/polar/client';
+import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import {
   createAdminClient,
   createClient,

@@ -1,5 +1,5 @@
 import type { Polar } from '@tuturuuu/payment/polar';
-import { createPolarClient } from '@tuturuuu/payment/polar/client';
+import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import {
   createAdminClient,

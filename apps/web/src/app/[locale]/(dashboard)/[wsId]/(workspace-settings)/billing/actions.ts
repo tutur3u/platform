@@ -4,7 +4,7 @@ import type {
   AddressInput,
   CustomerPaymentMethod,
 } from '@tuturuuu/payment/polar';
-import { createPolarClient } from '@tuturuuu/payment/polar/client';
+import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { createCustomerSession } from '@/utils/customer-helper';

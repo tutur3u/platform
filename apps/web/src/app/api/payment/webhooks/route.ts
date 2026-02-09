@@ -1,6 +1,6 @@
 import type { Order, Subscription } from '@tuturuuu/payment/polar';
-import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { Webhooks } from '@tuturuuu/payment/polar/next';
+import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceProductTier } from '@tuturuuu/types';
 import { assignSeatsToAllMembers } from '@/utils/polar-seat-helper';
