@@ -409,5 +409,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workspacePersonalBadge => 'Personal';
 
   @override
+  String get mfaTitle => 'Two-factor authentication';
+
+  @override
+  String get mfaSubtitle => 'Enter the code from your authenticator app';
+
+  @override
+  String get mfaVerify => 'Verify';
+
+  @override
+  String get mfaInvalidCode => 'Invalid verification code. Please try again.';
+
+  @override
+  String get mfaSignOut => 'Sign out';
+
+  @override
+  String get captchaError => 'Security check failed. Please try again.';
+
+  @override
   String get commonRetry => 'Retry';
 }

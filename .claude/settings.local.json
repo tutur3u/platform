@@ -68,7 +68,9 @@
       "Bash(flutter analyze:*)",
       "Bash(flutter test:*)",
       "Bash(git check-ignore:*)",
-      "Bash(flutter gen-l10n:*)"
+      "Bash(flutter gen-l10n:*)",
+      "WebFetch(domain:pub.dev)",
+      "WebFetch(domain:tiptap.dev)"
     ]
   }
 }

@@ -6,6 +6,7 @@ import {
   checkOTPSendLimit,
   extractIPFromHeaders,
 } from '@tuturuuu/utils/abuse-protection';
+import { DEV_MODE } from '@tuturuuu/utils/constants';
 import {
   checkEmailInfrastructureBlocked,
   checkIfUserExists,
@@ -87,8 +88,13 @@ export async function POST(request: NextRequest) {
     const userId = await checkIfUserExists({ email: validatedEmail });
 
     const sbAdmin = await createAdminClient();
-    const supabase = await createClient();
     const captchaOptions = captchaToken ? { captchaToken } : {};
+
+    // In development, when no captcha token is provided, use the admin client
+    // which bypasses GoTrue's captcha validation. In production, always use the
+    // regular client to enforce captcha.
+    const useAdminAuth = DEV_MODE && !captchaToken;
+    const supabase = useAdminAuth ? sbAdmin : await createClient();
 
     const metadata: Record<string, string> = {
       locale: normalizedLocale,
