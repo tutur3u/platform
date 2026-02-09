@@ -427,6 +427,240 @@ abstract class AppLocalizations {
   /// **'No events'**
   String get calendarEmpty;
 
+  /// No description provided for @calendarToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get calendarToday;
+
+  /// No description provided for @calendarDayView.
+  ///
+  /// In en, this message translates to:
+  /// **'Day'**
+  String get calendarDayView;
+
+  /// No description provided for @calendarWeekView.
+  ///
+  /// In en, this message translates to:
+  /// **'Week'**
+  String get calendarWeekView;
+
+  /// No description provided for @calendarMonthView.
+  ///
+  /// In en, this message translates to:
+  /// **'Month'**
+  String get calendarMonthView;
+
+  /// No description provided for @calendarAllDay.
+  ///
+  /// In en, this message translates to:
+  /// **'All day'**
+  String get calendarAllDay;
+
+  /// No description provided for @calendarNoEvents.
+  ///
+  /// In en, this message translates to:
+  /// **'No events for this day'**
+  String get calendarNoEvents;
+
+  /// No description provided for @calendarNewEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'New event'**
+  String get calendarNewEvent;
+
+  /// No description provided for @calendarEditEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit event'**
+  String get calendarEditEvent;
+
+  /// No description provided for @calendarDeleteEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete event'**
+  String get calendarDeleteEvent;
+
+  /// No description provided for @calendarDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this event?'**
+  String get calendarDeleteConfirm;
+
+  /// No description provided for @calendarEventTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get calendarEventTitle;
+
+  /// No description provided for @calendarEventTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add title'**
+  String get calendarEventTitleHint;
+
+  /// No description provided for @calendarEventDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get calendarEventDescription;
+
+  /// No description provided for @calendarEventDescriptionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add description'**
+  String get calendarEventDescriptionHint;
+
+  /// No description provided for @calendarEventStartDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Start date'**
+  String get calendarEventStartDate;
+
+  /// No description provided for @calendarEventEndDate.
+  ///
+  /// In en, this message translates to:
+  /// **'End date'**
+  String get calendarEventEndDate;
+
+  /// No description provided for @calendarEventStartTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Start time'**
+  String get calendarEventStartTime;
+
+  /// No description provided for @calendarEventEndTime.
+  ///
+  /// In en, this message translates to:
+  /// **'End time'**
+  String get calendarEventEndTime;
+
+  /// No description provided for @calendarEventAllDay.
+  ///
+  /// In en, this message translates to:
+  /// **'All day'**
+  String get calendarEventAllDay;
+
+  /// No description provided for @calendarEventColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Color'**
+  String get calendarEventColor;
+
+  /// No description provided for @calendarEventSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get calendarEventSave;
+
+  /// No description provided for @calendarEventCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create event'**
+  String get calendarEventCreate;
+
+  /// No description provided for @calendarEventUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Update event'**
+  String get calendarEventUpdate;
+
+  /// No description provided for @calendarEventDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Event deleted'**
+  String get calendarEventDeleted;
+
+  /// No description provided for @calendarEventCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Event created'**
+  String get calendarEventCreated;
+
+  /// No description provided for @calendarEventUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Event updated'**
+  String get calendarEventUpdated;
+
+  /// No description provided for @calendarEventCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get calendarEventCancel;
+
+  /// No description provided for @calendarEventDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get calendarEventDelete;
+
+  /// No description provided for @calendarThreeDayView.
+  ///
+  /// In en, this message translates to:
+  /// **'3 Days'**
+  String get calendarThreeDayView;
+
+  /// No description provided for @calendarAgendaView.
+  ///
+  /// In en, this message translates to:
+  /// **'Agenda'**
+  String get calendarAgendaView;
+
+  /// No description provided for @calendarAgendaEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No upcoming events'**
+  String get calendarAgendaEmpty;
+
+  /// No description provided for @calendarAllDayProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Day {current} of {total}'**
+  String calendarAllDayProgress(int current, int total);
+
+  /// No description provided for @calendarConnectionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Calendar Accounts'**
+  String get calendarConnectionsTitle;
+
+  /// No description provided for @calendarConnectionsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Google and Microsoft accounts to sync calendars.'**
+  String get calendarConnectionsSubtitle;
+
+  /// No description provided for @calendarConnectionsAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected accounts'**
+  String get calendarConnectionsAccounts;
+
+  /// No description provided for @calendarConnectionsAddAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Add account'**
+  String get calendarConnectionsAddAccount;
+
+  /// No description provided for @calendarConnectionsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No accounts connected'**
+  String get calendarConnectionsEmpty;
+
+  /// No description provided for @calendarConnectionsDisconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect'**
+  String get calendarConnectionsDisconnect;
+
+  /// No description provided for @calendarConnectionsDisconnectConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect {account}? Associated calendars will be disabled.'**
+  String calendarConnectionsDisconnectConfirm(String account);
+
   /// No description provided for @financeTitle.
   ///
   /// In en, this message translates to:
@@ -858,6 +1092,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Switch workspace'**
   String get settingsSwitchWorkspace;
+
+  /// No description provided for @settingsCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar'**
+  String get settingsCalendar;
+
+  /// No description provided for @settingsFirstDayOfWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'First day of week'**
+  String get settingsFirstDayOfWeek;
+
+  /// No description provided for @settingsFirstDayAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get settingsFirstDayAuto;
+
+  /// No description provided for @settingsFirstDaySunday.
+  ///
+  /// In en, this message translates to:
+  /// **'Sunday'**
+  String get settingsFirstDaySunday;
+
+  /// No description provided for @settingsFirstDayMonday.
+  ///
+  /// In en, this message translates to:
+  /// **'Monday'**
+  String get settingsFirstDayMonday;
+
+  /// No description provided for @settingsFirstDaySaturday.
+  ///
+  /// In en, this message translates to:
+  /// **'Saturday'**
+  String get settingsFirstDaySaturday;
 
   /// No description provided for @settingsSignOut.
   ///
