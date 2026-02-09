@@ -1,6 +1,8 @@
+import 'package:cloudflare_turnstile/cloudflare_turnstile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/config/env.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/auth/widgets/otp_input.dart';
@@ -22,6 +24,7 @@ class _LoginPageState extends State<LoginPage>
 
   bool _otpSent = false;
   int _retryAfter = 0;
+  String? _captchaToken;
 
   @override
   void initState() {
@@ -42,8 +45,11 @@ class _LoginPageState extends State<LoginPage>
     final email = _emailController.text.trim();
     if (email.isEmpty) return;
 
+    final captcha = _captchaToken;
+    setState(() => _captchaToken = null);
+
     final cubit = context.read<AuthCubit>();
-    final result = await cubit.sendOtp(email);
+    final result = await cubit.sendOtp(email, captchaToken: captcha);
 
     if (result.success && mounted) {
       setState(() {
@@ -68,7 +74,14 @@ class _LoginPageState extends State<LoginPage>
     final password = _passwordController.text;
     if (email.isEmpty || password.isEmpty) return;
 
-    await context.read<AuthCubit>().signInWithPassword(email, password);
+    final captcha = _captchaToken;
+    setState(() => _captchaToken = null);
+
+    await context.read<AuthCubit>().signInWithPassword(
+      email,
+      password,
+      captchaToken: captcha,
+    );
   }
 
   @override
@@ -176,9 +189,23 @@ class _LoginPageState extends State<LoginPage>
                     : Text(context.l10n.loginVerifyOtp),
               ),
             ] else ...[
+              if (Env.isTurnstileConfigured) ...[
+                const SizedBox(height: 16),
+                CloudflareTurnstile(
+                  siteKey: Env.turnstileSiteKey,
+                  baseUrl: Env.turnstileBaseUrl,
+                  onTokenReceived: (token) {
+                    setState(() => _captchaToken = token);
+                  },
+                ),
+              ],
               const SizedBox(height: 16),
               FilledButton(
-                onPressed: state.isLoading ? null : _handleSendOtp,
+                onPressed:
+                    state.isLoading ||
+                        (Env.isTurnstileConfigured && _captchaToken == null)
+                    ? null
+                    : _handleSendOtp,
                 child: state.isLoading
                     ? const SizedBox.square(
                         dimension: 20,
@@ -231,9 +258,23 @@ class _LoginPageState extends State<LoginPage>
                 child: Text(context.l10n.loginForgotPassword),
               ),
             ),
+            if (Env.isTurnstileConfigured) ...[
+              const SizedBox(height: 8),
+              CloudflareTurnstile(
+                siteKey: Env.turnstileSiteKey,
+                baseUrl: Env.turnstileBaseUrl,
+                onTokenReceived: (token) {
+                  setState(() => _captchaToken = token);
+                },
+              ),
+            ],
             const SizedBox(height: 8),
             FilledButton(
-              onPressed: state.isLoading ? null : _handlePasswordLogin,
+              onPressed:
+                  state.isLoading ||
+                      (Env.isTurnstileConfigured && _captchaToken == null)
+                  ? null
+                  : _handlePasswordLogin,
               child: state.isLoading
                   ? const SizedBox.square(
                       dimension: 20,
