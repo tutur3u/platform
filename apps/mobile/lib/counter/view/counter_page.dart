@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Scaffold, AppBar;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/counter/counter.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class CounterPage extends StatelessWidget {
   const CounterPage({super.key});
@@ -21,21 +22,33 @@ class CounterView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.counterAppBarTitle)),
-      body: const Center(child: CounterText()),
-      floatingActionButton: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        crossAxisAlignment: CrossAxisAlignment.end,
+    return shad.Scaffold(
+      headers: [
+        shad.AppBar(title: Text(l10n.counterAppBarTitle)),
+      ],
+      child: Stack(
         children: [
-          FloatingActionButton(
-            onPressed: () => context.read<CounterCubit>().increment(),
-            child: const Icon(Icons.add),
-          ),
-          const SizedBox(height: 8),
-          FloatingActionButton(
-            onPressed: () => context.read<CounterCubit>().decrement(),
-            child: const Icon(Icons.remove),
+          const Center(child: CounterText()),
+          Positioned(
+            bottom: 24,
+            right: 24,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                shad.PrimaryButton(
+                  onPressed: () => context.read<CounterCubit>().increment(),
+                  shape: shad.ButtonShape.circle,
+                  child: const Icon(Icons.add),
+                ),
+                const shad.Gap(8),
+                shad.PrimaryButton(
+                  onPressed: () => context.read<CounterCubit>().decrement(),
+                  shape: shad.ButtonShape.circle,
+                  child: const Icon(Icons.remove),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -48,8 +61,10 @@ class CounterText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = shad.Theme.of(context);
     final count = context.select<CounterCubit, int>((cubit) => cubit.state);
-    return Text('$count', style: theme.textTheme.displayLarge);
+    return Text('$count', style: theme.typography.h1);
   }
 }
+
+

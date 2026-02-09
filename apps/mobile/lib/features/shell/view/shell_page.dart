@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Scaffold, NavigationBar, NavigationBarTheme;
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Shell layout with bottom navigation bar.
 ///
@@ -14,47 +15,46 @@ class ShellPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final selectedIndex = _calculateSelectedIndex(context);
 
-    return Scaffold(
-      body: child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _calculateSelectedIndex(context),
-        onDestinationSelected: (index) => _onItemTapped(index, context),
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.home_outlined),
-            selectedIcon: const Icon(Icons.home),
-            label: l10n.navHome,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.check_box_outlined),
-            selectedIcon: const Icon(Icons.check_box),
-            label: l10n.navTasks,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.calendar_today_outlined),
-            selectedIcon: const Icon(Icons.calendar_today),
-            label: l10n.navCalendar,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon: const Icon(Icons.account_balance_wallet),
-            label: l10n.navFinance,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.timer_outlined),
-            selectedIcon: const Icon(Icons.timer),
-            label: l10n.navTimer,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.settings_outlined),
-            selectedIcon: const Icon(Icons.settings),
-            label: l10n.navSettings,
-          ),
-        ],
-      ),
+    return shad.Scaffold(
+      footers: [
+        shad.NavigationBar(
+          index: selectedIndex,
+          onSelected: (index) => _onItemTapped(index, context),
+          labelType: shad.NavigationLabelType.all,
+          children: [
+            shad.NavigationItem(
+              label: Text(l10n.navHome),
+              child: const Icon(Icons.home_outlined),
+            ),
+            shad.NavigationItem(
+              label: Text(l10n.navTasks),
+              child: const Icon(Icons.check_box_outlined),
+            ),
+            shad.NavigationItem(
+              label: Text(l10n.navCalendar),
+              child: const Icon(Icons.calendar_today_outlined),
+            ),
+            shad.NavigationItem(
+              label: Text(l10n.navFinance),
+              child: const Icon(Icons.account_balance_wallet_outlined),
+            ),
+            shad.NavigationItem(
+              label: Text(l10n.navTimer),
+              child: const Icon(Icons.timer_outlined),
+            ),
+            shad.NavigationItem(
+              label: Text(l10n.navSettings),
+              child: const Icon(Icons.settings_outlined),
+            ),
+          ],
+        ),
+      ],
+      child: child,
     );
   }
+
 
   static int _calculateSelectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
@@ -71,16 +71,22 @@ class ShellPage extends StatelessWidget {
     switch (index) {
       case 0:
         context.go(Routes.home);
+        return;
       case 1:
         context.go(Routes.tasks);
+        return;
       case 2:
         context.go(Routes.calendar);
+        return;
       case 3:
         context.go(Routes.finance);
+        return;
       case 4:
         context.go(Routes.timer);
+        return;
       case 5:
         context.go(Routes.settings);
+        return;
     }
   }
 }

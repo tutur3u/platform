@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Scaffold, AppBar, TextField;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
@@ -10,6 +10,7 @@ import 'package:mobile/features/finance/cubit/transaction_list_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TransactionListPage extends StatelessWidget {
   const TransactionListPage({super.key});
@@ -99,9 +100,11 @@ class _TransactionListViewState extends State<_TransactionListView> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.financeTransactions)),
-      body: BlocListener<WorkspaceCubit, WorkspaceState>(
+    return shad.Scaffold(
+      headers: [
+        shad.AppBar(title: Text(l10n.financeTransactions)),
+      ],
+      child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>
             prev.currentWorkspace?.id != curr.currentWorkspace?.id,
         listener: (context, _) => _onRefresh(),
@@ -109,21 +112,13 @@ class _TransactionListViewState extends State<_TransactionListView> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-              child: TextField(
+              child: shad.TextField(
                 controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: l10n.financeSearchTransactions,
-                  prefixIcon: const Icon(Icons.search, size: 20),
-                  isDense: true,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
-                ),
+                hintText: l10n.financeSearchTransactions,
                 onChanged: _onSearchChanged,
+                features: const [
+                  shad.InputFeature.leading(Icon(Icons.search, size: 20)),
+                ],
               ),
             ),
             Expanded(
@@ -131,7 +126,7 @@ class _TransactionListViewState extends State<_TransactionListView> {
                 builder: (context, state) {
                   if (state.status == TransactionListStatus.loading &&
                       state.transactions.isEmpty) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const Center(child: shad.CircularProgressIndicator());
                   }
 
                   if (state.status == TransactionListStatus.error &&
@@ -202,7 +197,7 @@ class _TransactionsList extends StatelessWidget {
           if (index >= items.length) {
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
-              child: Center(child: CircularProgressIndicator()),
+              child: Center(child: shad.CircularProgressIndicator()),
             );
           }
           final item = items[index];
@@ -287,10 +282,10 @@ class _DateHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
       child: Text(
         label,
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-          fontWeight: FontWeight.w600,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
+        style: shad.Theme.of(context).typography.small.copyWith(
+              fontWeight: FontWeight.w600,
+              color: shad.Theme.of(context).colorScheme.mutedForeground,
+            ),
       ),
     );
   }
@@ -307,8 +302,8 @@ class _TransactionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final theme = shad.Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final amount = tx.amount ?? 0;
     final isExpense = amount < 0;
     final currency = tx.walletCurrency ?? 'USD';
@@ -321,40 +316,56 @@ class _TransactionTile extends StatelessWidget {
       if (tx.walletName != null) tx.walletName!,
     ].join(' \u00b7 ');
 
-    return ListTile(
-      leading: CircleAvatar(
-        radius: 18,
-        backgroundColor: isExpense
-            ? colorScheme.errorContainer
-            : colorScheme.primaryContainer,
-        child: Icon(
-          isExpense ? Icons.arrow_downward : Icons.arrow_upward,
-          size: 18,
-          color: isExpense
-              ? colorScheme.onErrorContainer
-              : colorScheme.onPrimaryContainer,
-        ),
-      ),
-      title: Text(
-        title,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      subtitle: subtitle.isNotEmpty
-          ? Text(
-              subtitle,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
+    return shad.GhostButton(
+      onPressed: () {},
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: isExpense
+                    ? colorScheme.destructive.withValues(alpha: 0.12)
+                    : colorScheme.primary.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
               ),
-            )
-          : null,
-      trailing: Text(
-        formatCurrency(amount, currency),
-        style: textTheme.bodyMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-          color: isExpense ? colorScheme.error : colorScheme.primary,
+              child: Icon(
+                isExpense ? Icons.arrow_downward : Icons.arrow_upward,
+                size: 16,
+                color: isExpense ? colorScheme.destructive : colorScheme.primary,
+              ),
+            ),
+            const shad.Gap(16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.p,
+                  ),
+                  if (subtitle.isNotEmpty)
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.textMuted,
+                    ),
+                ],
+              ),
+            ),
+            Text(
+              formatCurrency(amount, currency),
+              style: theme.typography.p.copyWith(
+                fontWeight: FontWeight.w600,
+                color: isExpense ? colorScheme.destructive : colorScheme.primary,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -381,16 +392,14 @@ class _EmptyView extends StatelessWidget {
           Icon(
             hasSearch ? Icons.search_off : Icons.receipt_long_outlined,
             size: 48,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            color: shad.Theme.of(context).colorScheme.mutedForeground,
           ),
-          const SizedBox(height: 16),
+          const shad.Gap(16),
           Text(
             hasSearch
                 ? l10n.financeNoSearchResults
                 : l10n.financeNoTransactions,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+            style: shad.Theme.of(context).typography.textMuted,
           ),
         ],
       ),
@@ -414,15 +423,15 @@ class _ErrorView extends StatelessWidget {
           Icon(
             Icons.error_outline,
             size: 48,
-            color: Theme.of(context).colorScheme.error,
+            color: shad.Theme.of(context).colorScheme.destructive,
           ),
-          const SizedBox(height: 16),
+          const shad.Gap(16),
           Text(
             error ?? l10n.financeTransactions,
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 16),
-          FilledButton.tonal(
+          const shad.Gap(16),
+          shad.SecondaryButton(
             onPressed: () async {
               final cubit = context.read<TransactionListCubit>();
               await _loadFromWorkspace(context, cubit);
@@ -434,3 +443,4 @@ class _ErrorView extends StatelessWidget {
     );
   }
 }
+

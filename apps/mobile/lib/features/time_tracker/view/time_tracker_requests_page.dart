@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Scaffold, AppBar;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/data/models/time_tracking/request.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
@@ -9,6 +9,7 @@ import 'package:mobile/features/time_tracker/cubit/time_tracker_requests_state.d
 import 'package:mobile/features/time_tracker/widgets/request_detail_sheet.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TimeTrackerRequestsPage extends StatelessWidget {
   const TimeTrackerRequestsPage({super.key});
@@ -29,8 +30,15 @@ class TimeTrackerRequestsPage extends StatelessWidget {
   }
 }
 
-class _RequestsView extends StatelessWidget {
+class _RequestsView extends StatefulWidget {
   const _RequestsView();
+
+  @override
+  State<_RequestsView> createState() => _RequestsViewState();
+}
+
+class _RequestsViewState extends State<_RequestsView> {
+  int _index = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -38,14 +46,15 @@ class _RequestsView extends StatelessWidget {
     final wsId =
         context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '';
 
-    return DefaultTabController(
-      length: 4,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(l10n.timerRequestsTitle),
-          bottom: TabBar(
-            isScrollable: true,
-            onTap: (index) {
+    return shad.Scaffold(
+      headers: [
+        shad.AppBar(title: Text(l10n.timerRequestsTitle)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: shad.Tabs(
+            index: _index,
+            onChanged: (index) {
+              setState(() => _index = index);
               final cubit = context.read<TimeTrackerRequestsCubit>();
               final status = switch (index) {
                 1 => ApprovalStatus.pending,
@@ -55,74 +64,72 @@ class _RequestsView extends StatelessWidget {
               };
               unawaited(cubit.filterByStatus(status, wsId));
             },
-            tabs: [
-              Tab(text: l10n.timerHistory), // "All"
-              Tab(text: l10n.timerRequestPending),
-              Tab(text: l10n.timerRequestApproved),
-              Tab(text: l10n.timerRequestRejected),
+            children: [
+              shad.TabItem(child: Text(l10n.timerHistory)), // "All"
+              shad.TabItem(child: Text(l10n.timerRequestPending)),
+              shad.TabItem(child: Text(l10n.timerRequestApproved)),
+              shad.TabItem(child: Text(l10n.timerRequestRejected)),
             ],
           ),
         ),
-        body: BlocBuilder<TimeTrackerRequestsCubit, TimeTrackerRequestsState>(
-          builder: (context, state) {
-            if (state.status == TimeTrackerRequestsStatus.loading) {
-              return const Center(child: CircularProgressIndicator());
-            }
+      ],
+      child: BlocBuilder<TimeTrackerRequestsCubit, TimeTrackerRequestsState>(
+        builder: (context, state) {
+          if (state.status == TimeTrackerRequestsStatus.loading) {
+            return const Center(child: shad.CircularProgressIndicator());
+          }
 
-            if (state.status == TimeTrackerRequestsStatus.error) {
-              return Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: 48,
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(state.error ?? 'Error'),
-                    const SizedBox(height: 16),
-                    FilledButton.tonal(
-                      onPressed: () => unawaited(
-                        context.read<TimeTrackerRequestsCubit>().loadRequests(
-                          wsId,
-                        ),
-                      ),
-                      child: Text(l10n.commonRetry),
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            if (state.requests.isEmpty) {
-              return Center(
-                child: Text(
-                  l10n.timerNoSessions,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+          if (state.status == TimeTrackerRequestsStatus.error) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 48,
+                    color: shad.Theme.of(context).colorScheme.destructive,
                   ),
-                ),
-              );
-            }
-
-            return RefreshIndicator(
-              onRefresh: () async =>
-                  context.read<TimeTrackerRequestsCubit>().loadRequests(wsId),
-              child: ListView.builder(
-                itemCount: state.requests.length,
-                padding: const EdgeInsets.only(bottom: 32),
-                itemBuilder: (context, index) {
-                  final request = state.requests[index];
-                  return _RequestTile(
-                    request: request,
-                    onTap: () => _showRequestDetail(context, request),
-                  );
-                },
+                  const shad.Gap(16),
+                  Text(state.error ?? 'Error'),
+                  const shad.Gap(16),
+                  shad.SecondaryButton(
+                    onPressed: () => unawaited(
+                      context.read<TimeTrackerRequestsCubit>().loadRequests(
+                            wsId,
+                          ),
+                    ),
+                    child: Text(l10n.commonRetry),
+                  ),
+                ],
               ),
             );
-          },
-        ),
+          }
+
+          if (state.requests.isEmpty) {
+            return Center(
+              child: Text(
+                l10n.timerNoSessions,
+                style: shad.Theme.of(context).typography.textMuted,
+              ),
+            );
+          }
+
+          return RefreshIndicator(
+            onRefresh: () async =>
+                context.read<TimeTrackerRequestsCubit>().loadRequests(wsId),
+            child: ListView.builder(
+              itemCount: state.requests.length,
+              padding: const EdgeInsets.only(bottom: 32),
+              itemBuilder: (context, index) {
+                final request = state.requests[index];
+                return _RequestTile(
+                  request: request,
+                  onTap: () => _showRequestDetail(context, request),
+                );
+              },
+            ),
+          );
+        },
       ),
     );
   }
@@ -133,9 +140,9 @@ class _RequestsView extends StatelessWidget {
         context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '';
 
     unawaited(
-      showModalBottomSheet<void>(
+      shad.openDrawer<void>(
         context: context,
-        isScrollControlled: true,
+        position: shad.OverlayPosition.bottom,
         builder: (_) => RequestDetailSheet(
           request: request,
           isManager: true,
@@ -159,39 +166,59 @@ class _RequestTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final theme = shad.Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     final (statusLabel, statusColor) = switch (request.approvalStatus) {
-      ApprovalStatus.pending => ('Pending', colorScheme.tertiary),
+      ApprovalStatus.pending => ('Pending', colorScheme.primary),
       ApprovalStatus.approved => ('Approved', colorScheme.primary),
-      ApprovalStatus.rejected => ('Rejected', colorScheme.error),
-      ApprovalStatus.needsInfo => ('Needs info', colorScheme.secondary),
+      ApprovalStatus.rejected => ('Rejected', colorScheme.destructive),
+      ApprovalStatus.needsInfo => ('Needs info', colorScheme.mutedForeground),
     };
 
-    return ListTile(
-      onTap: onTap,
-      leading: CircleAvatar(
-        backgroundColor: statusColor.withValues(alpha: 0.15),
-        child: Icon(Icons.pending_actions, color: statusColor, size: 20),
-      ),
-      title: Text(
-        request.title ?? 'Request',
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      subtitle: Text(
-        statusLabel,
-        style: textTheme.bodySmall?.copyWith(color: statusColor),
-      ),
-      trailing: request.startTime != null
-          ? Text(
-              _formatDate(request.startTime!),
-              style: textTheme.labelSmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
+    return shad.GhostButton(
+      onPressed: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: statusColor.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
               ),
-            )
-          : null,
+              child: Icon(Icons.pending_actions, color: statusColor, size: 20),
+            ),
+            const shad.Gap(16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    request.title ?? 'Request',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.p,
+                  ),
+                  Text(
+                    statusLabel,
+                    style: theme.typography.textSmall.copyWith(color: statusColor),
+                  ),
+                ],
+              ),
+            ),
+            if (request.startTime != null)
+              Text(
+                _formatDate(request.startTime!),
+                style: theme.typography.textSmall.copyWith(
+                  color: colorScheme.mutedForeground,
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -200,3 +227,4 @@ class _RequestTile extends StatelessWidget {
     return '${local.month}/${local.day}';
   }
 }
+

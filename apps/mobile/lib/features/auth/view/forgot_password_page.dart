@@ -1,9 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'
+    hide AppBar, FilledButton, Scaffold, TextField;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -11,6 +13,7 @@ class ForgotPasswordPage extends StatefulWidget {
   @override
   State<ForgotPasswordPage> createState() => _ForgotPasswordPageState();
 }
+
 
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final _emailController = TextEditingController();
@@ -37,9 +40,19 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     final l10n = context.l10n;
 
     if (_emailSent) {
-      return Scaffold(
-        appBar: AppBar(),
-        body: Center(
+      return shad.Scaffold(
+        headers: [
+          shad.AppBar(
+            leading: [
+              shad.OutlineButton(
+                density: shad.ButtonDensity.icon,
+                onPressed: () => context.go('/login'),
+                child: const Icon(Icons.arrow_back),
+              ),
+            ],
+          ),
+        ],
+        child: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -48,22 +61,22 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 Icon(
                   Icons.mark_email_read_outlined,
                   size: 64,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: shad.Theme.of(context).colorScheme.primary,
                 ),
-                const SizedBox(height: 16),
+                const shad.Gap(16),
                 Text(
                   l10n.forgotPasswordSentTitle,
-                  style: Theme.of(context).textTheme.headlineSmall,
+                  style: shad.Theme.of(context).typography.h3,
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 8),
+                const shad.Gap(8),
                 Text(
                   l10n.forgotPasswordSentMessage,
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  style: shad.Theme.of(context).typography.p,
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 24),
-                FilledButton(
+                const shad.Gap(24),
+                shad.PrimaryButton(
                   onPressed: () => context.go('/login'),
                   child: Text(l10n.forgotPasswordBackToLogin),
                 ),
@@ -74,9 +87,13 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.forgotPasswordTitle)),
-      body: SafeArea(
+    return shad.Scaffold(
+      headers: [
+        shad.AppBar(
+          title: Text(l10n.forgotPasswordTitle),
+        ),
+      ],
+      child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: BlocBuilder<AuthCubit, AuthState>(
@@ -86,40 +103,38 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 32),
+                  const shad.Gap(32),
                   Text(
                     l10n.forgotPasswordDescription,
-                    style: Theme.of(context).textTheme.bodyLarge,
+                    style: shad.Theme.of(context).typography.p,
                   ),
-                  const SizedBox(height: 24),
-                  TextField(
-                    controller: _emailController,
-                    decoration: InputDecoration(
-                      labelText: l10n.emailLabel,
-                      border: const OutlineInputBorder(),
+                  const shad.Gap(24),
+                  shad.FormField(
+                    key: const shad.FormKey<String>(#forgotPasswordEmail),
+                    label: Text(l10n.emailLabel),
+                    child: shad.TextField(
+                      controller: _emailController,
+                      hintText: l10n.emailLabel,
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _handleSubmit(),
                     ),
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => _handleSubmit(),
                   ),
                   if (state.error != null) ...[
-                    const SizedBox(height: 16),
+                    const shad.Gap(16),
                     Text(
                       state.error!,
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
+                        color: shad.Theme.of(context).colorScheme.destructive,
                       ),
                       textAlign: TextAlign.center,
                     ),
                   ],
-                  const SizedBox(height: 24),
-                  FilledButton(
+                  const shad.Gap(24),
+                  shad.PrimaryButton(
                     onPressed: state.isLoading ? null : _handleSubmit,
                     child: state.isLoading
-                        ? const SizedBox.square(
-                            dimension: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
+                        ? const shad.CircularProgressIndicator(size: 20)
                         : Text(l10n.forgotPasswordSendReset),
                   ),
                 ],
@@ -130,4 +145,5 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       ),
     );
   }
+
 }

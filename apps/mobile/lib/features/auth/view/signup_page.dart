@@ -1,9 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'
+    hide AppBar, FilledButton, Scaffold, TextButton, TextField;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -11,6 +13,7 @@ class SignUpPage extends StatefulWidget {
   @override
   State<SignUpPage> createState() => _SignUpPageState();
 }
+
 
 class _SignUpPageState extends State<SignUpPage> {
   final _emailController = TextEditingController();
@@ -78,9 +81,19 @@ class _SignUpPageState extends State<SignUpPage> {
     final l10n = context.l10n;
 
     if (_signUpSuccess) {
-      return Scaffold(
-        appBar: AppBar(),
-        body: Center(
+      return shad.Scaffold(
+        headers: [
+          shad.AppBar(
+            leading: [
+              shad.OutlineButton(
+                density: shad.ButtonDensity.icon,
+                onPressed: () => context.go('/login'),
+                child: const Icon(Icons.arrow_back),
+              ),
+            ],
+          ),
+        ],
+        child: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -89,22 +102,22 @@ class _SignUpPageState extends State<SignUpPage> {
                 Icon(
                   Icons.mark_email_read_outlined,
                   size: 64,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: shad.Theme.of(context).colorScheme.primary,
                 ),
-                const SizedBox(height: 16),
+                const shad.Gap(16),
                 Text(
                   l10n.signUpSuccessTitle,
-                  style: Theme.of(context).textTheme.headlineSmall,
+                  style: shad.Theme.of(context).typography.h3,
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 8),
+                const shad.Gap(8),
                 Text(
                   l10n.signUpSuccessMessage,
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  style: shad.Theme.of(context).typography.p,
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 24),
-                FilledButton(
+                const shad.Gap(24),
+                shad.PrimaryButton(
                   onPressed: () => context.go('/login'),
                   child: Text(l10n.signUpBackToLogin),
                 ),
@@ -115,9 +128,13 @@ class _SignUpPageState extends State<SignUpPage> {
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.signUpTitle)),
-      body: SafeArea(
+    return shad.Scaffold(
+      headers: [
+        shad.AppBar(
+          title: Text(l10n.signUpTitle),
+        ),
+      ],
+      child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: BlocBuilder<AuthCubit, AuthState>(
@@ -126,57 +143,77 @@ class _SignUpPageState extends State<SignUpPage> {
             builder: (context, state) {
               return ListView(
                 children: [
-                  const SizedBox(height: 32),
-                  TextField(
-                    controller: _emailController,
-                    decoration: InputDecoration(
-                      labelText: l10n.emailLabel,
-                      border: const OutlineInputBorder(),
+                  const shad.Gap(32),
+                  shad.FormField(
+                    key: const shad.FormKey<String>(#signUpEmail),
+                    label: Text(l10n.emailLabel),
+                    child: shad.TextField(
+                      controller: _emailController,
+                      hintText: l10n.emailLabel,
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
                     ),
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.next,
                   ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _passwordController,
-                    decoration: InputDecoration(
-                      labelText: l10n.passwordLabel,
-                      border: const OutlineInputBorder(),
-                      errorText: _passwordError,
+                  const shad.Gap(16),
+                  shad.FormField(
+                    key: const shad.FormKey<String>(#signUpPassword),
+                    label: Text(l10n.passwordLabel),
+                    child: shad.TextField(
+                      controller: _passwordController,
+                      hintText: l10n.passwordLabel,
+                      obscureText: true,
+                      textInputAction: TextInputAction.next,
                     ),
-                    obscureText: true,
-                    textInputAction: TextInputAction.next,
                   ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _confirmPasswordController,
-                    decoration: InputDecoration(
-                      labelText: l10n.signUpConfirmPassword,
-                      border: const OutlineInputBorder(),
-                      errorText: _confirmPasswordError,
+                  if (_passwordError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4, left: 4),
+                      child: Text(
+                        _passwordError!,
+                        style: TextStyle(
+                          color: shad.Theme.of(context).colorScheme.destructive,
+                          fontSize: 12,
+                        ),
+                      ),
                     ),
-                    obscureText: true,
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => _handleSignUp(),
+                  const shad.Gap(16),
+                  shad.FormField(
+                    key: const shad.FormKey<String>(#signUpConfirmPassword),
+                    label: Text(l10n.signUpConfirmPassword),
+                    child: shad.TextField(
+                      controller: _confirmPasswordController,
+                      hintText: l10n.signUpConfirmPassword,
+                      obscureText: true,
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _handleSignUp(),
+                    ),
                   ),
+                  if (_confirmPasswordError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4, left: 4),
+                      child: Text(
+                        _confirmPasswordError!,
+                        style: TextStyle(
+                          color: shad.Theme.of(context).colorScheme.destructive,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
                   if (state.error != null) ...[
-                    const SizedBox(height: 16),
+                    const shad.Gap(16),
                     Text(
                       state.error!,
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
+                        color: shad.Theme.of(context).colorScheme.destructive,
                       ),
                       textAlign: TextAlign.center,
                     ),
                   ],
-                  const SizedBox(height: 24),
-                  FilledButton(
+                  const shad.Gap(24),
+                  shad.PrimaryButton(
                     onPressed: state.isLoading ? null : _handleSignUp,
                     child: state.isLoading
-                        ? const SizedBox.square(
-                            dimension: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
+                        ? const shad.CircularProgressIndicator(size: 20)
                         : Text(l10n.signUpButton),
                   ),
                 ],
@@ -187,4 +224,5 @@ class _SignUpPageState extends State<SignUpPage> {
       ),
     );
   }
+
 }

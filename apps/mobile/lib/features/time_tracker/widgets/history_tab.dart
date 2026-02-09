@@ -11,6 +11,7 @@ import 'package:mobile/features/time_tracker/widgets/edit_session_dialog.dart';
 import 'package:mobile/features/time_tracker/widgets/session_tile.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class HistoryTab extends StatelessWidget {
   const HistoryTab({super.key});
@@ -21,6 +22,7 @@ class HistoryTab extends StatelessWidget {
       builder: (context, state) {
         final l10n = context.l10n;
         final sessions = state.recentSessions;
+        final theme = shad.Theme.of(context);
 
         if (sessions.isEmpty) {
           return Center(
@@ -30,14 +32,12 @@ class HistoryTab extends StatelessWidget {
                 Icon(
                   Icons.history,
                   size: 48,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  color: theme.colorScheme.mutedForeground,
                 ),
-                const SizedBox(height: 16),
+                const shad.Gap(16),
                 Text(
                   l10n.timerNoSessions,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                  style: theme.typography.textMuted,
                 ),
               ],
             ),
@@ -66,8 +66,8 @@ class HistoryTab extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
                     child: Text(
                       entry.label,
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      style: theme.typography.small.copyWith(
+                        color: theme.colorScheme.mutedForeground,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -87,6 +87,7 @@ class HistoryTab extends StatelessWidget {
       },
     );
   }
+
 
   List<_DayGroup> _groupByDay(List<TimeTrackingSession> sessions) {
     final dateFmt = DateFormat.yMMMEd();

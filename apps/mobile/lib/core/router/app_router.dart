@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
@@ -30,6 +31,15 @@ GoRouter createAppRouter(AuthCubit authCubit, WorkspaceCubit workspaceCubit) {
     redirect: (context, state) {
       final authState = authCubit.state;
       final wsState = workspaceCubit.state;
+
+      if (kDebugMode) {
+        debugPrint(
+          'Router redirect check: loc=${state.matchedLocation} '
+          'auth=${authState.status} ws=${wsState.status} '
+          'hasWs=${wsState.hasWorkspace} '
+          'wsId=${wsState.currentWorkspace?.id}',
+        );
+      }
 
       final isAuthRoute =
           state.matchedLocation == Routes.login ||
@@ -147,8 +157,22 @@ GoRouter createAppRouter(AuthCubit authCubit, WorkspaceCubit workspaceCubit) {
 /// re-evaluate redirects.
 class _AppRefreshNotifier extends ChangeNotifier {
   _AppRefreshNotifier(AuthCubit authCubit, WorkspaceCubit workspaceCubit) {
-    _authSub = authCubit.stream.listen((_) => notifyListeners());
-    _wsSub = workspaceCubit.stream.listen((_) => notifyListeners());
+    _authSub = authCubit.stream.listen((state) {
+      if (kDebugMode) {
+        debugPrint('Router refresh: auth=${state.status}');
+      }
+      notifyListeners();
+    });
+    _wsSub = workspaceCubit.stream.listen((state) {
+      if (kDebugMode) {
+        debugPrint(
+          'Router refresh: ws=${state.status} '
+          'hasWs=${state.hasWorkspace} '
+          'wsId=${state.currentWorkspace?.id}',
+        );
+      }
+      notifyListeners();
+    });
   }
 
   late final StreamSubscription<AuthState> _authSub;

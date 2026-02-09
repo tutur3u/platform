@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Scaffold, AppBar, Card;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -12,32 +13,34 @@ class DashboardPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: BlocBuilder<WorkspaceCubit, WorkspaceState>(
-          buildWhen: (prev, curr) =>
-              prev.currentWorkspace != curr.currentWorkspace,
-          builder: (context, state) {
-            return GestureDetector(
-              onTap: () => showWorkspacePickerSheet(context),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Flexible(
-                    child: Text(
-                      state.currentWorkspace?.name ?? l10n.appTitle,
-                      overflow: TextOverflow.ellipsis,
+    return shad.Scaffold(
+      headers: [
+        shad.AppBar(
+          title: BlocBuilder<WorkspaceCubit, WorkspaceState>(
+            buildWhen: (prev, curr) =>
+                prev.currentWorkspace != curr.currentWorkspace,
+            builder: (context, state) {
+              return shad.GhostButton(
+                onPressed: () => showWorkspacePickerSheet(context),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        state.currentWorkspace?.name ?? l10n.appTitle,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 4),
-                  const Icon(Icons.arrow_drop_down),
-                ],
-              ),
-            );
-          },
+                    const shad.Gap(4),
+                    const Icon(Icons.arrow_drop_down, size: 20),
+                  ],
+                ),
+              );
+            },
+          ),
         ),
-      ),
-      body: SafeArea(
+      ],
+      child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -45,14 +48,14 @@ class DashboardPage extends StatelessWidget {
             children: [
               Text(
                 l10n.dashboardGreeting,
-                style: Theme.of(context).textTheme.headlineSmall,
+                style: shad.Theme.of(context).typography.h3,
               ),
-              const SizedBox(height: 24),
+              const shad.Gap(24),
               Text(
                 l10n.dashboardQuickActions,
-                style: Theme.of(context).textTheme.titleMedium,
+                style: shad.Theme.of(context).typography.textLarge,
               ),
-              const SizedBox(height: 12),
+              const shad.Gap(12),
               Expanded(
                 child: GridView.count(
                   crossAxisCount: 2,
@@ -103,21 +106,23 @@ class _QuickActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 32),
-              const SizedBox(height: 8),
-              Text(label, style: Theme.of(context).textTheme.titleSmall),
-            ],
+    return shad.CardButton(
+      onPressed: onTap,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 32),
+          const shad.Gap(8),
+          Text(
+            label,
+            style: shad.Theme.of(context).typography.small.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
           ),
-        ),
+        ],
       ),
     );
   }
 }
+
+

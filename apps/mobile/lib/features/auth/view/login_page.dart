@@ -1,10 +1,19 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'
+    hide
+        AppBar,
+        FilledButton,
+        Scaffold,
+        TabBar,
+        TabBarView,
+        TabController,
+        TextButton,
+        TextField;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
-import 'package:mobile/features/auth/widgets/otp_input.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,30 +22,23 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
+class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _otpController = TextEditingController();
 
+  int _index = 0;
   bool _otpSent = false;
   int _retryAfter = 0;
 
   @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
   void dispose() {
-    _tabController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _otpController.dispose();
     super.dispose();
   }
+
 
   Future<void> _handleSendOtp() async {
     final email = _emailController.text.trim();
@@ -75,39 +77,35 @@ class _LoginPageState extends State<LoginPage>
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
-    return Scaffold(
-      body: SafeArea(
+    return shad.Scaffold(
+      child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             children: [
-              const Spacer(),
+              const shad.Gap(64),
               Text(
                 l10n.loginTitle,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: shad.Theme.of(context).typography.h2,
               ),
-              const SizedBox(height: 8),
+              const shad.Gap(8),
               Text(
                 l10n.loginSubtitle,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+                style: shad.Theme.of(context).typography.textMuted,
               ),
-              const SizedBox(height: 32),
-              TabBar(
-                controller: _tabController,
-                tabs: [
-                  Tab(text: l10n.loginTabOtp),
-                  Tab(text: l10n.loginTabPassword),
+              const shad.Gap(32),
+              shad.Tabs(
+                index: _index,
+                onChanged: (index) => setState(() => _index = index),
+                children: [
+                  shad.TabItem(child: Text(l10n.loginTabOtp)),
+                  shad.TabItem(child: Text(l10n.loginTabPassword)),
                 ],
               ),
-              const SizedBox(height: 24),
+              const shad.Gap(24),
               Expanded(
-                flex: 3,
-                child: TabBarView(
-                  controller: _tabController,
+                child: IndexedStack(
+                  index: _index,
                   children: [
                     _buildOtpTab(),
                     _buildPasswordTab(),
@@ -124,18 +122,18 @@ class _LoginPageState extends State<LoginPage>
                     child: Text(
                       state.error!,
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
+                        color: shad.Theme.of(context).colorScheme.destructive,
                       ),
                       textAlign: TextAlign.center,
                     ),
                   );
                 },
               ),
-              TextButton(
+              shad.GhostButton(
                 onPressed: () => context.push('/signup'),
                 child: Text(l10n.loginSignUpPrompt),
               ),
-              const SizedBox(height: 16),
+              const shad.Gap(16),
             ],
           ),
         ),
@@ -149,41 +147,53 @@ class _LoginPageState extends State<LoginPage>
       builder: (context, state) {
         return Column(
           children: [
-            TextField(
-              controller: _emailController,
-              decoration: InputDecoration(
-                labelText: context.l10n.emailLabel,
-                border: const OutlineInputBorder(),
+            shad.FormField(
+              key: const shad.FormKey<String>(#loginEmail),
+              label: Text(context.l10n.emailLabel),
+              child: shad.TextField(
+                controller: _emailController,
+                hintText: context.l10n.emailLabel,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.done,
+                enabled: !_otpSent && !state.isLoading,
               ),
-              keyboardType: TextInputType.emailAddress,
-              textInputAction: TextInputAction.done,
-              enabled: !_otpSent && !state.isLoading,
             ),
             if (_otpSent) ...[
-              const SizedBox(height: 16),
-              OtpInput(
-                controller: _otpController,
-                onCompleted: (_) => _handleVerifyOtp(),
+              const shad.Gap(16),
+              shad.FormField(
+                key: const shad.FormKey<String>(#loginOtp),
+                label: const Text('OTP'),
+                child: shad.InputOTP(
+                  onChanged: (value) async {
+                    _otpController.text = value.otpToString();
+                    if (value.length == 6) {
+                      await _handleVerifyOtp();
+                    }
+                  },
+                  children: [
+                    shad.InputOTPChild.character(allowDigit: true),
+                    shad.InputOTPChild.character(allowDigit: true),
+                    shad.InputOTPChild.character(allowDigit: true),
+                    shad.InputOTPChild.separator,
+                    shad.InputOTPChild.character(allowDigit: true),
+                    shad.InputOTPChild.character(allowDigit: true),
+                    shad.InputOTPChild.character(allowDigit: true),
+                  ],
+                ),
               ),
-              const SizedBox(height: 16),
-              FilledButton(
+              const shad.Gap(16),
+              shad.PrimaryButton(
                 onPressed: state.isLoading ? null : _handleVerifyOtp,
                 child: state.isLoading
-                    ? const SizedBox.square(
-                        dimension: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
+                    ? const shad.CircularProgressIndicator(size: 20)
                     : Text(context.l10n.loginVerifyOtp),
               ),
             ] else ...[
-              const SizedBox(height: 16),
-              FilledButton(
+              const shad.Gap(16),
+              shad.PrimaryButton(
                 onPressed: state.isLoading ? null : _handleSendOtp,
                 child: state.isLoading
-                    ? const SizedBox.square(
-                        dimension: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
+                    ? const shad.CircularProgressIndicator(size: 20)
                     : Text(
                         _retryAfter > 0
                             ? context.l10n.loginRetryAfter(_retryAfter)
@@ -203,42 +213,44 @@ class _LoginPageState extends State<LoginPage>
       builder: (context, state) {
         return Column(
           children: [
-            TextField(
-              controller: _emailController,
-              decoration: InputDecoration(
-                labelText: context.l10n.emailLabel,
-                border: const OutlineInputBorder(),
+            shad.FormField(
+              key: const shad.FormKey<String>(#loginEmailPassword),
+              label: Text(context.l10n.emailLabel),
+              child: shad.TextField(
+                controller: _emailController,
+                hintText: context.l10n.emailLabel,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
               ),
-              keyboardType: TextInputType.emailAddress,
-              textInputAction: TextInputAction.next,
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _passwordController,
-              decoration: InputDecoration(
-                labelText: context.l10n.passwordLabel,
-                border: const OutlineInputBorder(),
+            const shad.Gap(16),
+            shad.FormField(
+              key: const shad.FormKey<String>(#loginPassword),
+              label: Text(context.l10n.passwordLabel),
+              child: shad.TextField(
+                controller: _passwordController,
+                hintText: context.l10n.passwordLabel,
+                obscureText: true,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _handlePasswordLogin(),
+                features: const [
+                  shad.InputFeature.passwordToggle(),
+                ],
               ),
-              obscureText: true,
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) => _handlePasswordLogin(),
             ),
-            const SizedBox(height: 8),
+            const shad.Gap(8),
             Align(
               alignment: Alignment.centerRight,
-              child: TextButton(
+              child: shad.GhostButton(
                 onPressed: () => context.push('/forgot-password'),
                 child: Text(context.l10n.loginForgotPassword),
               ),
             ),
-            const SizedBox(height: 8),
-            FilledButton(
+            const shad.Gap(8),
+            shad.PrimaryButton(
               onPressed: state.isLoading ? null : _handlePasswordLogin,
               child: state.isLoading
-                  ? const SizedBox.square(
-                      dimension: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
+                  ? const shad.CircularProgressIndicator(size: 20)
                   : Text(context.l10n.loginSignIn),
             ),
           ],
@@ -246,4 +258,5 @@ class _LoginPageState extends State<LoginPage>
       },
     );
   }
+
 }

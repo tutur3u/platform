@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Scaffold, AppBar;
 import 'package:mobile/l10n/l10n.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class CalendarPage extends StatelessWidget {
   const CalendarPage({super.key});
@@ -8,21 +9,23 @@ class CalendarPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.calendarTitle)),
-      body: Center(
+    return shad.Scaffold(
+      headers: [
+        shad.AppBar(title: Text(l10n.calendarTitle)),
+      ],
+      child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               Icons.calendar_today,
               size: 48,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              color: shad.Theme.of(context).colorScheme.mutedForeground,
             ),
-            const SizedBox(height: 16),
+            const shad.Gap(16),
             Text(
               l10n.calendarEmpty,
-              style: Theme.of(context).textTheme.bodyLarge,
+              style: shad.Theme.of(context).typography.p,
             ),
           ],
         ),
@@ -30,3 +33,4 @@ class CalendarPage extends StatelessWidget {
     );
   }
 }
+

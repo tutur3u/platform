@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'
+    hide TextField, TextButton, FilledButton, AlertDialog;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
@@ -13,15 +14,19 @@ import 'package:mobile/features/time_tracker/widgets/timer_controls.dart';
 import 'package:mobile/features/time_tracker/widgets/timer_display.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TimerTab extends StatelessWidget {
-  const TimerTab({super.key});
+  const TimerTab({this.onSeeAll, super.key});
+
+  final VoidCallback? onSeeAll;
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<TimeTrackerCubit, TimeTrackerState>(
       builder: (context, state) {
         final l10n = context.l10n;
+        final theme = shad.Theme.of(context);
         final cubit = context.read<TimeTrackerCubit>();
         final wsId =
             context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '';
@@ -30,7 +35,7 @@ class TimerTab extends StatelessWidget {
         return ListView(
           padding: const EdgeInsets.only(bottom: 32),
           children: [
-            const SizedBox(height: 32),
+            const shad.Gap(32),
             // Timer display
             Center(
               child: TimerDisplay(
@@ -40,7 +45,7 @@ class TimerTab extends StatelessWidget {
                 pomodoroPhase: state.pomodoroPhase,
               ),
             ),
-            const SizedBox(height: 24),
+            const shad.Gap(24),
             // Timer controls
             TimerControls(
               isRunning: state.isRunning,
@@ -51,21 +56,20 @@ class TimerTab extends StatelessWidget {
               onResume: () => unawaited(cubit.resumeSession()),
               onAddMissedEntry: () => _showMissedEntryDialog(context),
             ),
-            const SizedBox(height: 24),
+            const shad.Gap(24),
             // Session title input
             if (!state.isRunning && !state.isPaused)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: TextField(
-                  decoration: InputDecoration(
-                    labelText: l10n.timerSessionTitle,
-                    border: const OutlineInputBorder(),
-                    isDense: true,
+                child: shad.FormField(
+                  key: const shad.FormKey<String>(#sessionTitle),
+                  label: Text(l10n.timerSessionTitle),
+                  child: shad.TextField(
+                    onChanged: cubit.setTitle,
                   ),
-                  onChanged: cubit.setTitle,
                 ),
               ),
-            const SizedBox(height: 16),
+            const shad.Gap(16),
             // Category picker
             CategoryPicker(
               categories: state.categories,
@@ -73,10 +77,10 @@ class TimerTab extends StatelessWidget {
               onSelected: cubit.selectCategory,
               onAddCategory: () => _showAddCategoryDialog(context, wsId),
             ),
-            const SizedBox(height: 24),
+            const shad.Gap(24),
             // Quick stats
             StatsCards(stats: state.stats),
-            const SizedBox(height: 24),
+            const shad.Gap(24),
             // Recent sessions
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -85,14 +89,13 @@ class TimerTab extends StatelessWidget {
                 children: [
                   Text(
                     l10n.timerRecentSessions,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    style: theme.typography.small.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   if (state.recentSessions.isNotEmpty)
-                    TextButton(
-                      onPressed: () =>
-                          DefaultTabController.of(context).animateTo(1),
+                    shad.GhostButton(
+                      onPressed: onSeeAll,
                       child: Text(l10n.timerSeeAll),
                     ),
                 ],
@@ -103,9 +106,7 @@ class TimerTab extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
                   l10n.timerNoSessions,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                  style: theme.typography.textMuted,
                 ),
               )
             else
@@ -130,9 +131,9 @@ class TimerTab extends StatelessWidget {
     final userId = supabase.auth.currentUser?.id ?? '';
 
     unawaited(
-      showModalBottomSheet<void>(
+      shad.openDrawer<void>(
         context: context,
-        isScrollControlled: true,
+        position: shad.OverlayPosition.bottom,
         builder: (_) => MissedEntryDialog(
           categories: cubit.state.categories,
           onSave:
@@ -167,35 +168,36 @@ class TimerTab extends StatelessWidget {
     unawaited(
       showDialog<void>(
         context: context,
-        builder: (dialogCtx) => AlertDialog(
-          title: Text(context.l10n.timerAddCategory),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            decoration: InputDecoration(
-              labelText: context.l10n.timerCategoryName,
-              border: const OutlineInputBorder(),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogCtx).pop(),
-              child: Text(
-                MaterialLocalizations.of(dialogCtx).cancelButtonLabel,
+        builder: (dialogCtx) => Center(
+          child: shad.AlertDialog(
+            title: Text(context.l10n.timerAddCategory),
+            content: shad.FormField(
+              key: const shad.FormKey<String>(#newCategory),
+              label: Text(context.l10n.timerCategoryName),
+              child: shad.TextField(
+                controller: controller,
+                autofocus: true,
               ),
             ),
-            FilledButton(
-              onPressed: () {
-                if (controller.text.isNotEmpty) {
-                  unawaited(cubit.createCategory(wsId, controller.text));
-                  Navigator.of(dialogCtx).pop();
-                }
-              },
-              child: Text(context.l10n.timerSave),
-            ),
-          ],
+            actions: [
+              shad.OutlineButton(
+                onPressed: () => Navigator.of(dialogCtx).pop(),
+                child: const Text('Cancel'),
+              ),
+              shad.PrimaryButton(
+                onPressed: () {
+                  if (controller.text.isNotEmpty) {
+                    unawaited(cubit.createCategory(wsId, controller.text));
+                    Navigator.of(dialogCtx).pop();
+                  }
+                },
+                child: Text(context.l10n.timerSave),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
+
