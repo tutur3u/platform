@@ -49,7 +49,7 @@ const querySchema = z
   });
 
 const periodStatsSchema = z.object({
-  totalDuration: z.number().optional(),
+  totalDuration: z.number().nullable().optional(),
   breakdown: z
     .array(
       z.object({
@@ -58,6 +58,7 @@ const periodStatsSchema = z.object({
         color: z.string(),
       })
     )
+    .nullable()
     .optional(),
   timeOfDayBreakdown: z
     .object({
@@ -66,8 +67,9 @@ const periodStatsSchema = z.object({
       evening: z.number(),
       night: z.number(),
     })
+    .nullable()
     .optional(),
-  bestTimeOfDay: z.string().optional(),
+  bestTimeOfDay: z.string().nullable().optional(),
   longestSession: z
     .object({
       title: z.string(),
@@ -75,10 +77,27 @@ const periodStatsSchema = z.object({
     })
     .nullable()
     .optional(),
-  shortSessions: z.number().optional(),
-  mediumSessions: z.number().optional(),
-  longSessions: z.number().optional(),
-  sessionCount: z.number().optional(),
+  shortSessions: z.number().nullable().optional(),
+  mediumSessions: z.number().nullable().optional(),
+  longSessions: z.number().nullable().optional(),
+  sessionCount: z.number().nullable().optional(),
+  dailyBreakdown: z
+    .array(
+      z.object({
+        date: z.string(),
+        totalDuration: z.number(),
+        breakdown: z.array(
+          z.object({
+            categoryId: z.string(),
+            name: z.string(),
+            duration: z.number(),
+            color: z.string(),
+          })
+        ),
+      })
+    )
+    .nullable()
+    .optional(),
 });
 
 export async function GET(
@@ -197,42 +216,29 @@ export async function GET(
     if (error) throw error;
 
     const parsedStats = periodStatsSchema.safeParse(stats ?? {});
+
+    if (!parsedStats.success) {
+      console.error('Period stats validation failed:', parsedStats.error);
+    }
+
+    const data = parsedStats.success ? parsedStats.data : null;
+
     const normalizedStats = {
-      totalDuration: parsedStats.success
-        ? (parsedStats.data.totalDuration ?? 0)
-        : 0,
-      breakdown: parsedStats.success ? (parsedStats.data.breakdown ?? []) : [],
-      timeOfDayBreakdown: parsedStats.success
-        ? (parsedStats.data.timeOfDayBreakdown ?? {
-            morning: 0,
-            afternoon: 0,
-            evening: 0,
-            night: 0,
-          })
-        : {
-            morning: 0,
-            afternoon: 0,
-            evening: 0,
-            night: 0,
-          },
-      bestTimeOfDay: parsedStats.success
-        ? (parsedStats.data.bestTimeOfDay ?? 'none')
-        : 'none',
-      longestSession: parsedStats.success
-        ? (parsedStats.data.longestSession ?? null)
-        : null,
-      shortSessions: parsedStats.success
-        ? (parsedStats.data.shortSessions ?? 0)
-        : 0,
-      mediumSessions: parsedStats.success
-        ? (parsedStats.data.mediumSessions ?? 0)
-        : 0,
-      longSessions: parsedStats.success
-        ? (parsedStats.data.longSessions ?? 0)
-        : 0,
-      sessionCount: parsedStats.success
-        ? (parsedStats.data.sessionCount ?? 0)
-        : 0,
+      totalDuration: data?.totalDuration ?? 0,
+      breakdown: data?.breakdown ?? [],
+      timeOfDayBreakdown: data?.timeOfDayBreakdown ?? {
+        morning: 0,
+        afternoon: 0,
+        evening: 0,
+        night: 0,
+      },
+      bestTimeOfDay: data?.bestTimeOfDay ?? 'none',
+      longestSession: data?.longestSession ?? null,
+      shortSessions: data?.shortSessions ?? 0,
+      mediumSessions: data?.mediumSessions ?? 0,
+      longSessions: data?.longSessions ?? 0,
+      sessionCount: data?.sessionCount ?? 0,
+      dailyBreakdown: data?.dailyBreakdown ?? [],
     };
 
     return NextResponse.json(normalizedStats);

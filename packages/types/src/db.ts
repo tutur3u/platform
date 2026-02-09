@@ -410,6 +410,16 @@ export interface TimeTrackingPeriodStats {
   mediumSessions: number;
   longSessions: number;
   sessionCount: number;
+  dailyBreakdown?: {
+    date: string;
+    totalDuration: number;
+    breakdown: {
+      categoryId: string;
+      name: string;
+      duration: number;
+      color: string;
+    }[];
+  }[];
 }
 
 export type AuroraStatisticalForecast = Tables<'aurora_statistical_forecast'>;
