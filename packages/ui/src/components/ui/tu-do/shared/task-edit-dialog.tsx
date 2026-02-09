@@ -219,6 +219,20 @@ export function TaskEditDialog({
     return colors[Math.abs(hashCode(userId)) % colors.length] || colors[0];
   }, [user?.id]);
 
+  // Memoize the user object for Yjs collaboration to prevent unstable references
+  // from causing the SupabaseProvider to be destroyed and recreated every render
+  const yjsUser = useMemo(
+    () =>
+      user
+        ? {
+            id: user.id || '',
+            name: user.display_name || '',
+            color: userColor || '',
+          }
+        : null,
+    [user?.id, user?.display_name, userColor]
+  );
+
   // User task settings
   const { data: userTaskSettings } = useQuery({
     queryKey: ['user-task-settings'],
@@ -237,13 +251,7 @@ export function TaskEditDialog({
     tableName: 'tasks',
     columnName: 'description_yjs_state',
     id: task?.id || '',
-    user: user
-      ? {
-          id: user.id || '',
-          name: user.display_name || '',
-          color: userColor || '',
-        }
-      : null,
+    user: yjsUser,
     enabled: isOpen && !isCreateMode && collaborationMode && !!task?.id,
   });
 
@@ -447,7 +455,8 @@ export function TaskEditDialog({
       personalScheduleData.task.calendar_hours ?? null
     );
     formState.setAutoSchedule(!!personalScheduleData.task.auto_schedule);
-  }, [personalScheduleData?.task, isOpen, isCreateMode, formState]);
+    // biome-ignore lint/correctness/useExhaustiveDependencies: formState setters from useState are referentially stable
+  }, [personalScheduleData?.task, isOpen, isCreateMode, formState.setTotalDuration, formState.setIsSplittable, formState.setMinSplitDurationMinutes, formState.setMaxSplitDurationMinutes, formState.setCalendarHours, formState.setAutoSchedule]);
 
   const draftStorageKey = getDraftStorageKey(boardId);
 
@@ -641,7 +650,7 @@ export function TaskEditDialog({
       formState.setEndDate(newDate);
       if (!isCreateMode) updateEndDate(newDate);
     },
-    [isCreateMode, formState, updateEndDate]
+    [isCreateMode, formState.setEndDate, updateEndDate]
   );
 
   // Name update handlers
