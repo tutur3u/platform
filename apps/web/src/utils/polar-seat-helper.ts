@@ -112,7 +112,7 @@ export async function assignSeatToMember(
 
     return { required: true, success: true, seatId: seat.id };
   } catch (error) {
-    console.error(`Failed to assign Polar seat to user ${userId}:`, error);
+    console.error(`Failed to assign Polar seat:`, error);
     return {
       required: true,
       success: false,
