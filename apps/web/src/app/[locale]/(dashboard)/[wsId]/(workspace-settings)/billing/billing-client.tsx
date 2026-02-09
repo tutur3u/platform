@@ -491,9 +491,7 @@ export function BillingClient({
           currentSeats={seatStatus.seatCount}
           currentMembers={seatStatus.memberCount}
           maxSeats={currentPlan.maxSeats}
-          pricePerSeat={
-            seatStatus.pricePerSeat ?? currentPlan.pricePerSeat ?? 0
-          }
+          pricePerSeat={currentPlan.pricePerSeat ?? 0}
           billingCycle={currentPlan.billingCycle}
         />
       )}
