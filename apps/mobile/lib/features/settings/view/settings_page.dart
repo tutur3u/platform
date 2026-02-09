@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart'
-    hide Scaffold, AppBar, AlertDialog, Divider, TextButton, FilledButton;
+    hide AlertDialog, AppBar, Divider, FilledButton, Scaffold, TextButton;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
@@ -33,7 +33,7 @@ class SettingsPage extends StatelessWidget {
             context,
             icon: Icons.person_outline,
             title: l10n.settingsProfile,
-            onTap: () {},
+            onTap: () => context.push(Routes.profile),
           ),
           const shad.Divider(),
           BlocBuilder<LocaleCubit, LocaleState>(
@@ -140,17 +140,6 @@ class SettingsPage extends StatelessWidget {
     }
   }
 
-  String _themeDisplayName(shad.ThemeMode mode, AppLocalizations l10n) {
-    switch (mode) {
-      case shad.ThemeMode.light:
-        return l10n.settingsThemeLight;
-      case shad.ThemeMode.dark:
-        return l10n.settingsThemeDark;
-      case shad.ThemeMode.system:
-        return l10n.settingsThemeSystem;
-    }
-  }
-
   void _showLanguageDialog(BuildContext context) {
     final l10n = context.l10n;
     final cubit = context.read<LocaleCubit>();
@@ -159,31 +148,70 @@ class SettingsPage extends StatelessWidget {
       showDialog<void>(
         context: context,
         builder: (context) => Center(
-          child: shad.AlertDialog(
-            title: Text(l10n.settingsLanguage),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                shad.GhostButton(
-                  onPressed: () {
-                    unawaited(cubit.clearLocale());
-                    Navigator.pop(context);
-                  },
-                  child: Text(l10n.settingsLanguageSystem),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.8,
+            ),
+            child: shad.AlertDialog(
+              title: Text(l10n.settingsLanguage),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  shad.GhostButton(
+                    onPressed: () {
+                      unawaited(cubit.clearLocale());
+                      Navigator.pop(context);
+                    },
+                    child: Text(l10n.settingsLanguageSystem),
+                  ),
+                  shad.GhostButton(
+                    onPressed: () {
+                      unawaited(cubit.setLocale(const Locale('en')));
+                      Navigator.pop(context);
+                    },
+                    child: Text(l10n.settingsLanguageEnglish),
+                  ),
+                  shad.GhostButton(
+                    onPressed: () {
+                      unawaited(cubit.setLocale(const Locale('vi')));
+                      Navigator.pop(context);
+                    },
+                    child: Text(l10n.settingsLanguageVietnamese),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showSignOutDialog(BuildContext context) {
+    final l10n = context.l10n;
+
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (dialogContext) => Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.8,
+            ),
+            child: shad.AlertDialog(
+              title: Text(l10n.settingsSignOut),
+              content: Text(l10n.settingsSignOutConfirm),
+              actions: [
+                shad.OutlineButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Cancel'),
                 ),
-                shad.GhostButton(
+                shad.DestructiveButton(
                   onPressed: () {
-                    unawaited(cubit.setLocale(const Locale('en')));
-                    Navigator.pop(context);
+                    Navigator.pop(dialogContext);
+                    unawaited(context.read<AuthCubit>().signOut());
                   },
-                  child: Text(l10n.settingsLanguageEnglish),
-                ),
-                shad.GhostButton(
-                  onPressed: () {
-                    unawaited(cubit.setLocale(const Locale('vi')));
-                    Navigator.pop(context);
-                  },
-                  child: Text(l10n.settingsLanguageVietnamese),
+                  child: Text(l10n.settingsSignOut),
                 ),
               ],
             ),
@@ -201,33 +229,38 @@ class SettingsPage extends StatelessWidget {
       showDialog<void>(
         context: context,
         builder: (context) => Center(
-          child: shad.AlertDialog(
-            title: Text(l10n.settingsTheme),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                shad.GhostButton(
-                  onPressed: () {
-                    unawaited(cubit.setThemeMode(shad.ThemeMode.light));
-                    Navigator.pop(context);
-                  },
-                  child: Text(l10n.settingsThemeLight),
-                ),
-                shad.GhostButton(
-                  onPressed: () {
-                    unawaited(cubit.setThemeMode(shad.ThemeMode.dark));
-                    Navigator.pop(context);
-                  },
-                  child: Text(l10n.settingsThemeDark),
-                ),
-                shad.GhostButton(
-                  onPressed: () {
-                    unawaited(cubit.setThemeMode(shad.ThemeMode.system));
-                    Navigator.pop(context);
-                  },
-                  child: Text(l10n.settingsThemeSystem),
-                ),
-              ],
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.8,
+            ),
+            child: shad.AlertDialog(
+              title: Text(l10n.settingsTheme),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  shad.GhostButton(
+                    onPressed: () {
+                      unawaited(cubit.setThemeMode(shad.ThemeMode.light));
+                      Navigator.pop(context);
+                    },
+                    child: Text(l10n.settingsThemeLight),
+                  ),
+                  shad.GhostButton(
+                    onPressed: () {
+                      unawaited(cubit.setThemeMode(shad.ThemeMode.dark));
+                      Navigator.pop(context);
+                    },
+                    child: Text(l10n.settingsThemeDark),
+                  ),
+                  shad.GhostButton(
+                    onPressed: () {
+                      unawaited(cubit.setThemeMode(shad.ThemeMode.system));
+                      Navigator.pop(context);
+                    },
+                    child: Text(l10n.settingsThemeSystem),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -235,34 +268,14 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  void _showSignOutDialog(BuildContext context) {
-    final l10n = context.l10n;
-
-    unawaited(
-      showDialog<void>(
-        context: context,
-        builder: (dialogContext) => Center(
-          child: shad.AlertDialog(
-            title: Text(l10n.settingsSignOut),
-            content: Text(l10n.settingsSignOutConfirm),
-            actions: [
-              shad.OutlineButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: const Text('Cancel'),
-              ),
-              shad.DestructiveButton(
-                onPressed: () {
-                  Navigator.pop(dialogContext);
-                  unawaited(context.read<AuthCubit>().signOut());
-                },
-                child: Text(l10n.settingsSignOut),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  String _themeDisplayName(shad.ThemeMode mode, AppLocalizations l10n) {
+    switch (mode) {
+      case shad.ThemeMode.light:
+        return l10n.settingsThemeLight;
+      case shad.ThemeMode.dark:
+        return l10n.settingsThemeDark;
+      case shad.ThemeMode.system:
+        return l10n.settingsThemeSystem;
+    }
   }
 }
-
-

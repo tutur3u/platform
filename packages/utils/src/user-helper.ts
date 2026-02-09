@@ -1,3 +1,4 @@
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import {
   createAdminClient,
   createClient,
@@ -175,9 +176,9 @@ export async function getCurrentUser(noRedirect?: boolean) {
     | WorkspaceUser;
 }
 
-export async function getUserDefaultWorkspace() {
+export async function getUserDefaultWorkspace(client?: TypedSupabaseClient) {
   try {
-    const supabase = await createClient();
+    const supabase = client || (await createClient());
 
     const {
       data: { user },
@@ -229,11 +230,17 @@ export async function getUserDefaultWorkspace() {
   }
 }
 
-export async function updateUserDefaultWorkspace(workspaceId: string) {
-  const user = await getCurrentUser();
-  if (!user) return { error: 'User not found' };
+export async function updateUserDefaultWorkspace(
+  workspaceId: string,
+  client?: TypedSupabaseClient
+) {
+  const supabase = client || (await createClient());
 
-  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { error: 'User not found' };
 
   // Verify user has access to the workspace
   const { data: workspace, error: workspaceError } = await supabase

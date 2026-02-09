@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
@@ -13,6 +12,7 @@ import 'package:mobile/features/calendar/view/calendar_page.dart';
 import 'package:mobile/features/dashboard/view/dashboard_page.dart';
 import 'package:mobile/features/finance/view/finance_page.dart';
 import 'package:mobile/features/finance/view/transaction_list_page.dart';
+import 'package:mobile/features/profile/view/profile_page.dart';
 import 'package:mobile/features/settings/view/settings_page.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/tasks/view/task_list_page.dart';
@@ -117,6 +117,12 @@ GoRouter createAppRouter(AuthCubit authCubit, WorkspaceCubit workspaceCubit) {
       GoRoute(
         path: Routes.transactions,
         builder: (context, state) => const TransactionListPage(),
+      ),
+
+      // ── Settings sub-pages (full-page, outside shell) ──
+      GoRoute(
+        path: Routes.profile,
+        builder: (context, state) => const ProfilePage(),
       ),
 
       // ── Main shell with bottom navigation ────────

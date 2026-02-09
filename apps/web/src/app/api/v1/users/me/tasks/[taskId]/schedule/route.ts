@@ -1,7 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
 import type { TaskWithScheduling } from '@tuturuuu/types';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
+import { authorizeRequest } from '@/lib/api-auth';
 import { scheduleTask } from '@/lib/calendar/task-scheduler';
 
 interface ScheduleParams {
@@ -92,7 +92,7 @@ async function fetchUserSchedulingSettings(
 }
 
 export async function GET(
-  _: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<ScheduleParams> }
 ) {
   try {
@@ -101,18 +101,14 @@ export async function GET(
       return NextResponse.json({ error: 'Invalid task ID' }, { status: 400 });
     }
 
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Please sign in to view your task schedule' },
-        { status: 401 }
+    const { data: authData, error: authError } = await authorizeRequest(req);
+    if (authError || !authData)
+      return (
+        authError ||
+        NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       );
-    }
+
+    const { user, supabase } = authData;
 
     const personalWsId = await getPersonalWorkspaceId(supabase, user.id);
     if (!personalWsId) {
@@ -264,7 +260,7 @@ export async function GET(
 }
 
 export async function POST(
-  _: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<ScheduleParams> }
 ) {
   try {
@@ -273,18 +269,14 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid task ID' }, { status: 400 });
     }
 
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Please sign in to schedule tasks' },
-        { status: 401 }
+    const { data: authData, error: authError } = await authorizeRequest(req);
+    if (authError || !authData)
+      return (
+        authError ||
+        NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       );
-    }
+
+    const { user, supabase } = authData;
 
     const personalWsId = await getPersonalWorkspaceId(supabase, user.id);
     if (!personalWsId) {

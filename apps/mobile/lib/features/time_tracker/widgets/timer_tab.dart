@@ -169,31 +169,34 @@ class TimerTab extends StatelessWidget {
       showDialog<void>(
         context: context,
         builder: (dialogCtx) => Center(
-          child: shad.AlertDialog(
-            title: Text(context.l10n.timerAddCategory),
-            content: shad.FormField(
-              key: const shad.FormKey<String>(#newCategory),
-              label: Text(context.l10n.timerCategoryName),
-              child: shad.TextField(
-                controller: controller,
-                autofocus: true,
+          child: SizedBox(
+            width: MediaQuery.of(context).size.width * 0.8,
+            child: shad.AlertDialog(
+              title: Text(context.l10n.timerAddCategory),
+              content: shad.FormField(
+                key: const shad.FormKey<String>(#newCategory),
+                label: Text(context.l10n.timerCategoryName),
+                child: shad.TextField(
+                  controller: controller,
+                  autofocus: true,
+                ),
               ),
+              actions: [
+                shad.OutlineButton(
+                  onPressed: () => Navigator.of(dialogCtx).pop(),
+                  child: const Text('Cancel'),
+                ),
+                shad.PrimaryButton(
+                  onPressed: () {
+                    if (controller.text.isNotEmpty) {
+                      unawaited(cubit.createCategory(wsId, controller.text));
+                      Navigator.of(dialogCtx).pop();
+                    }
+                  },
+                  child: Text(context.l10n.timerSave),
+                ),
+              ],
             ),
-            actions: [
-              shad.OutlineButton(
-                onPressed: () => Navigator.of(dialogCtx).pop(),
-                child: const Text('Cancel'),
-              ),
-              shad.PrimaryButton(
-                onPressed: () {
-                  if (controller.text.isNotEmpty) {
-                    unawaited(cubit.createCategory(wsId, controller.text));
-                    Navigator.of(dialogCtx).pop();
-                  }
-                },
-                child: Text(context.l10n.timerSave),
-              ),
-            ],
           ),
         ),
       ),

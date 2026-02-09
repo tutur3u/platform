@@ -6,7 +6,7 @@ import {
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { type NextRequest, NextResponse } from 'next/server';
 
-type AuthorizedRequest = {
+export type AuthorizedRequest = {
   user: SupabaseUser;
   supabase: TypedSupabaseClient;
 };

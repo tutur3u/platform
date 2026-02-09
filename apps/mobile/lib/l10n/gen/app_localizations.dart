@@ -871,6 +871,180 @@ abstract class AppLocalizations {
   /// **'Are you sure you want to sign out?'**
   String get settingsSignOutConfirm;
 
+  /// No description provided for @profileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get profileTitle;
+
+  /// No description provided for @profileAvatar.
+  ///
+  /// In en, this message translates to:
+  /// **'Avatar'**
+  String get profileAvatar;
+
+  /// No description provided for @profileAvatarDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload your profile picture'**
+  String get profileAvatarDescription;
+
+  /// No description provided for @profileUploadAvatar.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload avatar'**
+  String get profileUploadAvatar;
+
+  /// No description provided for @profileChangeAvatar.
+  ///
+  /// In en, this message translates to:
+  /// **'Change avatar'**
+  String get profileChangeAvatar;
+
+  /// No description provided for @profileRemoveAvatar.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove avatar'**
+  String get profileRemoveAvatar;
+
+  /// No description provided for @profileRemoveConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove avatar?'**
+  String get profileRemoveConfirm;
+
+  /// No description provided for @profileAccountStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Account status'**
+  String get profileAccountStatus;
+
+  /// No description provided for @profileActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get profileActive;
+
+  /// No description provided for @profileVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified'**
+  String get profileVerified;
+
+  /// No description provided for @profileMemberSince.
+  ///
+  /// In en, this message translates to:
+  /// **'Member since'**
+  String get profileMemberSince;
+
+  /// No description provided for @profileDisplayName.
+  ///
+  /// In en, this message translates to:
+  /// **'Display name'**
+  String get profileDisplayName;
+
+  /// No description provided for @profileDisplayNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your display name'**
+  String get profileDisplayNameHint;
+
+  /// No description provided for @profileFullName.
+  ///
+  /// In en, this message translates to:
+  /// **'Full name'**
+  String get profileFullName;
+
+  /// No description provided for @profileFullNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your full name'**
+  String get profileFullNameHint;
+
+  /// No description provided for @profileEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get profileEmail;
+
+  /// No description provided for @profileEmailHint.
+  ///
+  /// In en, this message translates to:
+  /// **'example@tuturuuu.com'**
+  String get profileEmailHint;
+
+  /// No description provided for @profileCurrentEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Current email'**
+  String get profileCurrentEmail;
+
+  /// No description provided for @profileNewEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'New email'**
+  String get profileNewEmail;
+
+  /// No description provided for @profileEmailUpdateNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmation emails will be sent to both addresses'**
+  String get profileEmailUpdateNote;
+
+  /// No description provided for @profileUpdateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile updated'**
+  String get profileUpdateSuccess;
+
+  /// No description provided for @profileUpdateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update profile'**
+  String get profileUpdateError;
+
+  /// No description provided for @profileAvatarUpdateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Avatar updated'**
+  String get profileAvatarUpdateSuccess;
+
+  /// No description provided for @profileAvatarUpdateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update avatar'**
+  String get profileAvatarUpdateError;
+
+  /// No description provided for @profileAvatarRemoveSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Avatar removed'**
+  String get profileAvatarRemoveSuccess;
+
+  /// No description provided for @profileAvatarRemoveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to remove avatar'**
+  String get profileAvatarRemoveError;
+
+  /// No description provided for @profileLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading profile...'**
+  String get profileLoading;
+
+  /// No description provided for @profileSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get profileSave;
+
+  /// No description provided for @profileCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get profileCancel;
+
   /// No description provided for @workspacePickerTitle.
   ///
   /// In en, this message translates to:

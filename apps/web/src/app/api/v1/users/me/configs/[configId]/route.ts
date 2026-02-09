@@ -1,5 +1,5 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
+import { authorizeRequest } from '@/lib/api-auth';
 
 interface Params {
   params: Promise<{
@@ -7,17 +7,16 @@ interface Params {
   }>;
 }
 
-export async function GET(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function GET(req: NextRequest, { params }: Params) {
+  const { data: authData, error: authError } = await authorizeRequest(req);
+  if (authError || !authData)
+    return (
+      authError ||
+      NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+    );
+
+  const { user, supabase } = authData!;
   const { configId: id } = await params;
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
 
   const { data, error } = await supabase
     .from('user_configs')
@@ -41,17 +40,16 @@ export async function GET(_: Request, { params }: Params) {
   return NextResponse.json({ value: data.value });
 }
 
-export async function PUT(req: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function PUT(req: NextRequest, { params }: Params) {
+  const { data: authData, error: authError } = await authorizeRequest(req);
+  if (authError || !authData)
+    return (
+      authError ||
+      NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+    );
+
+  const { user, supabase } = authData!;
   const { configId: id } = await params;
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
 
   const { value } = await req.json();
 
@@ -78,17 +76,16 @@ export async function PUT(req: Request, { params }: Params) {
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function DELETE(req: NextRequest, { params }: Params) {
+  const { data: authData, error: authError } = await authorizeRequest(req);
+  if (authError || !authData)
+    return (
+      authError ||
+      NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+    );
+
+  const { user, supabase } = authData!;
   const { configId: id } = await params;
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
 
   const { error } = await supabase
     .from('user_configs')
