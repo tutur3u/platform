@@ -24,8 +24,8 @@ class CalendarSettingsState extends Equatable {
     final effective = userPreference != FirstDayOfWeek.auto_
         ? userPreference
         : workspacePreference != FirstDayOfWeek.auto_
-            ? workspacePreference
-            : _detectFromLocale(localeCode);
+        ? workspacePreference
+        : _detectFromLocale(localeCode);
     return _toIndex(effective);
   }
 

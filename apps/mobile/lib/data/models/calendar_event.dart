@@ -3,7 +3,7 @@ import 'package:equatable/equatable.dart';
 const _sentinel = Object();
 
 /// Milliseconds in exactly 24 hours.
-const _msPerDay = 24 * 60 * 60 * 1000;
+const int _msPerDay = 24 * 60 * 60 * 1000;
 
 class CalendarEvent extends Equatable {
   const CalendarEvent({

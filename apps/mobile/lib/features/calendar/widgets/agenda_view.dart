@@ -84,10 +84,12 @@ class _AgendaViewState extends State<AgendaView> {
       _scrollController.position.maxScrollExtent,
     );
 
-    _scrollController.animateTo(
-      offset,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
+    unawaited(
+      _scrollController.animateTo(
+        offset,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      ),
     );
   }
 
