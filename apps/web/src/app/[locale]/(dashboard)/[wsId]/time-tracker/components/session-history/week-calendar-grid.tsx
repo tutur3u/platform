@@ -9,19 +9,19 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
-import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
+import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef } from 'react';
 import { formatDuration } from '@/lib/time-format';
+import type { PeriodStats } from '@/lib/time-tracker-utils';
 import type { SessionWithRelations } from '../../types';
 import { WeekCalendarLegend } from './week-calendar-legend';
 import {
   buildTimeBlocks,
   calculateBlockStyle,
   computeVisibleHourRange,
-  getAccentBgClass,
   HOUR_HEIGHT,
   resolveOverlaps,
   type TimeBlock,
@@ -30,7 +30,6 @@ import {
 interface WeekCalendarGridProps {
   sessions: SessionWithRelations[];
   startOfPeriod: dayjs.Dayjs;
-  endOfPeriod: dayjs.Dayjs;
   categories: TimeTrackingCategory[] | null;
   userTimezone: string;
   onSessionClick?: (session: SessionWithRelations) => void;
@@ -96,6 +95,7 @@ export function WeekCalendarGrid({
     return (
       <MobileWeekView
         blocks={blocks}
+        weekStart={weekStart}
         dayLabels={dayLabels}
         todayIndex={todayIndex}
         categories={categories}
@@ -212,7 +212,9 @@ function DayColumnBlocks({
     <TooltipProvider delayDuration={200}>
       {blocks.map((block) => {
         const style = calculateBlockStyle(block, visibleStartHour);
-        const eventStyles = getEventStyles(block.categoryColor ?? 'GRAY');
+        const catStyles = computeAccessibleLabelStyles(
+          block.categoryColor || 'GRAY'
+        );
 
         const startTime = dayjs.utc(block.session.start_time).format('h:mm A');
         const endTime = block.session.end_time
@@ -228,12 +230,14 @@ function DayColumnBlocks({
                 type="button"
                 className={cn(
                   'cursor-pointer overflow-hidden rounded-sm border-l-2 px-1 text-left text-[10px] leading-tight transition-opacity hover:opacity-80',
-                  block.isRunning && 'animate-pulse',
-                  eventStyles.bg,
-                  eventStyles.border,
-                  eventStyles.text
+                  block.isRunning && 'animate-pulse'
                 )}
-                style={style}
+                style={{
+                  ...style,
+                  backgroundColor: catStyles?.bg,
+                  borderColor: catStyles?.border,
+                  color: catStyles?.text,
+                }}
                 onClick={() => onSessionClick?.(block.session)}
                 title={t('click_to_edit')}
               >
@@ -268,7 +272,8 @@ function DayColumnBlocks({
 }
 
 interface CompactWeekSummaryProps {
-  sessions: SessionWithRelations[];
+  sessions?: SessionWithRelations[];
+  periodStats?: PeriodStats;
   startOfPeriod: dayjs.Dayjs;
   categories: TimeTrackingCategory[] | null;
   userTimezone: string;
@@ -282,6 +287,7 @@ interface CompactWeekSummaryProps {
  */
 export function CompactWeekSummary({
   sessions,
+  periodStats,
   startOfPeriod,
   categories,
   userTimezone,
@@ -293,6 +299,7 @@ export function CompactWeekSummary({
   );
 
   const blocks = useMemo(() => {
+    if (!sessions) return [];
     const raw = buildTimeBlocks(sessions, weekStart, userTimezone);
     return resolveOverlaps(raw);
   }, [sessions, weekStart, userTimezone]);
@@ -318,6 +325,8 @@ export function CompactWeekSummary({
   return (
     <MobileWeekView
       blocks={blocks}
+      periodStats={periodStats}
+      weekStart={weekStart}
       dayLabels={dayLabels}
       todayIndex={todayIndex}
       categories={categories}
@@ -328,18 +337,61 @@ export function CompactWeekSummary({
 
 function MobileWeekView({
   blocks,
+  periodStats,
+  weekStart,
   dayLabels,
   todayIndex,
   categories,
   onSessionClick,
 }: {
   blocks: TimeBlock[];
+  periodStats?: PeriodStats;
+  weekStart: dayjs.Dayjs;
   dayLabels: { short: string; date: string }[];
   todayIndex: number;
   categories: TimeTrackingCategory[] | null;
   onSessionClick?: (session: SessionWithRelations) => void;
 }) {
   const dayData = useMemo(() => {
+    if (periodStats?.dailyBreakdown && periodStats.dailyBreakdown.length > 0) {
+      // Use accurate data from periodStats
+      return Array.from({ length: 7 }, (_, dayIdx) => {
+        const dateStr = weekStart.add(dayIdx, 'day').format('YYYY-MM-DD');
+        const dayStats = periodStats.dailyBreakdown?.find(
+          (d) => d.date === dateStr
+        );
+
+        if (!dayStats) {
+          return {
+            dayIdx,
+            totalHours: 0,
+            segments: [],
+            hasRunning: false,
+            firstSession: undefined,
+          };
+        }
+
+        const totalHours = dayStats.totalDuration / 3600;
+
+        return {
+          dayIdx,
+          totalHours,
+          segments: dayStats.breakdown.map((b) => ({
+            color: b.color,
+            hours: b.duration / 3600,
+            percent:
+              totalHours > 0 ? (b.duration / 3600 / totalHours) * 100 : 0,
+          })),
+          // Fallback to blocks for interactivity/running status if available
+          hasRunning: blocks
+            .filter((b) => b.dayIndex === dayIdx)
+            .some((b) => b.isRunning),
+          firstSession: blocks.find((b) => b.dayIndex === dayIdx)?.session,
+        };
+      });
+    }
+
+    // Fallback to blocks (paginated data)
     return Array.from({ length: 7 }, (_, dayIdx) => {
       const dayBlocks = blocks.filter((b) => b.dayIndex === dayIdx);
       const totalHours = dayBlocks.reduce((sum, b) => sum + b.durationHours, 0);
@@ -375,12 +427,12 @@ function MobileWeekView({
         firstSession: dayBlocks[0]?.session,
       };
     });
-  }, [blocks]);
+  }, [blocks, periodStats, weekStart]);
 
   return (
     <div className="space-y-3">
-      <WeekCalendarLegend categories={categories} />
       <div className="space-y-2 rounded-lg border p-3">
+        <WeekCalendarLegend categories={categories} />
         {dayData.map(
           ({ dayIdx, totalHours, segments, hasRunning, firstSession }) => (
             <button
@@ -405,19 +457,26 @@ function MobileWeekView({
               </span>
 
               <div className="flex h-4 flex-1 overflow-hidden rounded-full bg-muted">
-                {segments.map((seg, i) => (
-                  <div
-                    key={i}
-                    className={cn(
-                      'h-full opacity-70',
-                      hasRunning &&
-                        i === segments.length - 1 &&
-                        'animate-pulse',
-                      getAccentBgClass(seg.color)
-                    )}
-                    style={{ width: `${seg.percent}%` }}
-                  />
-                ))}
+                {segments.map((seg, i) => {
+                  const catStyles = computeAccessibleLabelStyles(
+                    seg.color || 'GRAY'
+                  );
+                  return (
+                    <div
+                      key={i}
+                      className={cn(
+                        'h-full',
+                        hasRunning &&
+                          i === segments.length - 1 &&
+                          'animate-pulse'
+                      )}
+                      style={{
+                        width: `${seg.percent}%`,
+                        backgroundColor: catStyles?.text,
+                      }}
+                    />
+                  );
+                })}
               </div>
 
               <span className="w-16 shrink-0 text-right text-muted-foreground text-xs">
