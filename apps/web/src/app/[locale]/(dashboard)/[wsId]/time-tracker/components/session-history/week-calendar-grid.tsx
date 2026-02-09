@@ -9,8 +9,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
-import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
+import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef } from 'react';
@@ -21,7 +21,6 @@ import {
   buildTimeBlocks,
   calculateBlockStyle,
   computeVisibleHourRange,
-  getAccentBgClass,
   HOUR_HEIGHT,
   resolveOverlaps,
   type TimeBlock,
@@ -212,7 +211,9 @@ function DayColumnBlocks({
     <TooltipProvider delayDuration={200}>
       {blocks.map((block) => {
         const style = calculateBlockStyle(block, visibleStartHour);
-        const eventStyles = getEventStyles(block.categoryColor ?? 'GRAY');
+        const catStyles = computeAccessibleLabelStyles(
+          block.categoryColor || 'GRAY'
+        );
 
         const startTime = dayjs.utc(block.session.start_time).format('h:mm A');
         const endTime = block.session.end_time
@@ -228,12 +229,14 @@ function DayColumnBlocks({
                 type="button"
                 className={cn(
                   'cursor-pointer overflow-hidden rounded-sm border-l-2 px-1 text-left text-[10px] leading-tight transition-opacity hover:opacity-80',
-                  block.isRunning && 'animate-pulse',
-                  eventStyles.bg,
-                  eventStyles.border,
-                  eventStyles.text
+                  block.isRunning && 'animate-pulse'
                 )}
-                style={style}
+                style={{
+                  ...style,
+                  backgroundColor: catStyles?.bg,
+                  borderColor: catStyles?.border,
+                  color: catStyles?.text,
+                }}
                 onClick={() => onSessionClick?.(block.session)}
                 title={t('click_to_edit')}
               >
@@ -379,8 +382,8 @@ function MobileWeekView({
 
   return (
     <div className="space-y-3">
-      <WeekCalendarLegend categories={categories} />
       <div className="space-y-2 rounded-lg border p-3">
+        <WeekCalendarLegend categories={categories} />
         {dayData.map(
           ({ dayIdx, totalHours, segments, hasRunning, firstSession }) => (
             <button
@@ -405,19 +408,26 @@ function MobileWeekView({
               </span>
 
               <div className="flex h-4 flex-1 overflow-hidden rounded-full bg-muted">
-                {segments.map((seg, i) => (
-                  <div
-                    key={i}
-                    className={cn(
-                      'h-full opacity-70',
-                      hasRunning &&
-                        i === segments.length - 1 &&
-                        'animate-pulse',
-                      getAccentBgClass(seg.color)
-                    )}
-                    style={{ width: `${seg.percent}%` }}
-                  />
-                ))}
+                {segments.map((seg, i) => {
+                  const catStyles = computeAccessibleLabelStyles(
+                    seg.color || 'GRAY'
+                  );
+                  return (
+                    <div
+                      key={i}
+                      className={cn(
+                        'h-full',
+                        hasRunning &&
+                          i === segments.length - 1 &&
+                          'animate-pulse'
+                      )}
+                      style={{
+                        width: `${seg.percent}%`,
+                        backgroundColor: catStyles?.text,
+                      }}
+                    />
+                  );
+                })}
               </div>
 
               <span className="w-16 shrink-0 text-right text-muted-foreground text-xs">

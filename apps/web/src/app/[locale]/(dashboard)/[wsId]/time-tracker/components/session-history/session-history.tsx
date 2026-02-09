@@ -396,7 +396,7 @@ export function SessionHistory({
               <Collapsible
                 open={overviewOpen}
                 onOpenChange={handleOverviewToggle}
-                className="mb-4 rounded-lg md:border md:p-4"
+                className="mb-4 rounded-lg border p-3"
               >
                 <CollapsibleTrigger asChild>
                   <button
@@ -420,7 +420,7 @@ export function SessionHistory({
 
                     {/* Desktop-only: full calendar grid (CompactWeekSummary covers mobile) */}
                     {viewMode === 'week' && (
-                      <div className="hidden md:block">
+                      <div className="">
                         <CompactWeekSummary
                           sessions={sessions}
                           startOfPeriod={startOfPeriod}
