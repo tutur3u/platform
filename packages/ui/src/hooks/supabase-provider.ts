@@ -38,7 +38,7 @@ export default class SupabaseProvider extends EventEmitter {
   private readonly saveDebounceMs: number = 1000; // Default debounce time
   private readonly broadcastDebounceMs: number = 0; // Default: immediate
   private broadcastDebounceTimeout: NodeJS.Timeout | undefined;
-  private destroyed: boolean = false;
+  public destroyed: boolean = false;
   private _dirty: boolean = false; // Set on local edits, cleared after resync
   private awarenessDebounceTimeout: NodeJS.Timeout | undefined;
 
@@ -315,6 +315,7 @@ export default class SupabaseProvider extends EventEmitter {
           if (status === 'CHANNEL_ERROR') {
             this.logger('CHANNEL_ERROR', err);
             this.emit('error', this);
+            this.emit('disconnect', this);
           }
 
           if (status === 'TIMED_OUT') {

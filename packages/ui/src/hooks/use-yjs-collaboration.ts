@@ -31,8 +31,11 @@ export interface YjsCollaborationResult {
 }
 
 /**
- * Hook for managing Yjs collaboration with Supabase Realtime
- * Uses y-supabase provider for automatic document syncing
+ * Hook for managing Yjs collaboration with Supabase Realtime.
+ *
+ * Uses deferred cleanup so that React StrictMode's double-invoke cycle
+ * (mount → cleanup → remount) reuses the existing SupabaseProvider instead
+ * of tearing down the Realtime channel and racing with the server.
  */
 export function useYjsCollaboration(
   config: YjsCollaborationConfig
@@ -52,6 +55,9 @@ export function useYjsCollaboration(
   const [synced, setSynced] = useState(false);
   const [connected, setConnected] = useState(false);
   const providerRef = useRef<SupabaseProvider | null>(null);
+  const destroyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Ref that event listeners check — survives StrictMode cleanup/remount
+  const mountedRef = useRef(false);
 
   // Create Yjs document and awareness (stable references)
   const doc = useMemo(() => (enabled ? new Y.Doc() : null), [enabled]);
@@ -61,24 +67,72 @@ export function useYjsCollaboration(
     [enabled, doc]
   );
 
+  // Stabilize callback and user refs — these should never cause provider
+  // destruction/recreation.
+  const hasUser = !!user;
+  const userRef = useRef(user);
+  userRef.current = user;
+  const onSyncRef = useRef(onSync);
+  onSyncRef.current = onSync;
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
+  const onSaveRef = useRef(onSave);
+  onSaveRef.current = onSave;
+
+  // Provider lifecycle: create/destroy based on channel config
   useEffect(() => {
-    if (!enabled || !doc || !awareness || !user) return;
+    if (!enabled || !doc || !awareness || !hasUser) return;
+
+    mountedRef.current = true;
+
+    // ── StrictMode reuse path ───────────────────────────────────────
+    // If a pending deferred destruction exists, cancel it and reuse
+    // the existing provider. This prevents the Supabase Realtime
+    // "leave then immediate re-join" race that causes a 10s timeout.
+    if (destroyTimerRef.current) {
+      clearTimeout(destroyTimerRef.current);
+      destroyTimerRef.current = null;
+
+      if (providerRef.current && !providerRef.current.destroyed) {
+        console.log('♻️ Reusing existing SupabaseProvider (StrictMode)');
+        return () => {
+          mountedRef.current = false;
+          // Defer destruction again — if no remount follows within
+          // 100ms, the timer will fire and destroy the provider
+          const provider = providerRef.current;
+          destroyTimerRef.current = setTimeout(() => {
+            destroyTimerRef.current = null;
+            if (provider && providerRef.current === provider) {
+              console.log('🧹 Destroying SupabaseProvider (deferred)');
+              provider.destroy();
+              providerRef.current = null;
+            }
+          }, 100);
+        };
+      }
+    }
+
+    // ── Fresh creation path ─────────────────────────────────────────
+    // Destroy stale provider from a previous config if present
+    if (providerRef.current && !providerRef.current.destroyed) {
+      providerRef.current.destroy();
+      providerRef.current = null;
+    }
 
     const supabase = createClient();
-    let mounted = true;
 
-    // Set local awareness state with user info
-    awareness.setLocalStateField('user', {
-      id: user.id,
-      name: user.name,
-      color: user.color,
-    });
+    // Set initial awareness state
+    const currentUser = userRef.current;
+    if (currentUser) {
+      awareness.setLocalStateField('user', {
+        id: currentUser.id,
+        name: currentUser.name,
+        color: currentUser.color,
+      });
+    }
 
     console.log('🔄 Initializing SupabaseProvider for document:', id);
 
-    // Create SupabaseProvider - it handles everything internally
-    // Yjs collaboration is only active inside the task edit dialog,
-    // so all tiers get immediate broadcasting for responsive text editing.
     const provider = new SupabaseProvider(doc, supabase, {
       id: id,
       channel: channel,
@@ -86,90 +140,87 @@ export function useYjsCollaboration(
       columnName: columnName,
       awareness,
       resyncInterval: 30000,
-      saveDebounceMs: 300, // Faster saves for better UX
+      saveDebounceMs: 300,
     });
 
     providerRef.current = provider;
 
-    // Listen to provider events
+    // Listen to provider events — use mountedRef so listeners stay valid
+    // across StrictMode cleanup/remount without re-registration.
     provider.on('status', ([{ status }]) => {
-      if (!mounted) return;
+      if (!mountedRef.current) return;
       console.log('📡 Provider status:', status);
       setConnected(status === 'connected');
     });
 
     provider.on('synced', ([syncState]) => {
-      if (!mounted) return;
+      if (!mountedRef.current) return;
       console.log('🔄 Provider synced:', syncState);
       setSynced(syncState);
-      onSync?.(syncState);
+      onSyncRef.current?.(syncState);
     });
 
     provider.on('sync', ([syncState]) => {
-      if (!mounted) return;
+      if (!mountedRef.current) return;
       console.log('🔄 Provider sync event:', syncState);
     });
 
     provider.on('save', (version) => {
-      if (!mounted) return;
+      if (!mountedRef.current) return;
       console.log('💾 Document saved to database, version:', version);
-      onSave?.(version);
+      onSaveRef.current?.(version);
     });
 
     provider.on('error', (providerInstance) => {
-      if (!mounted) return;
+      if (!mountedRef.current) return;
       console.error('❌ Provider error:', providerInstance);
-      onError?.(new Error('Provider error occurred'));
+      onErrorRef.current?.(new Error('Provider error occurred'));
     });
 
     provider.on('connect', () => {
-      if (!mounted) return;
+      if (!mountedRef.current) return;
       console.log('✅ Provider connected');
     });
 
     provider.on('disconnect', () => {
-      if (!mounted) return;
+      if (!mountedRef.current) return;
       console.log('🔌 Provider disconnected');
       setConnected(false);
       setSynced(false);
     });
 
-    // Handle DOM reconciliation errors that can occur after AFK reconnection
-    // This happens when ProseMirror/Tiptap DOM state conflicts with React
     provider.on('dom-error', (error: DOMException) => {
-      if (!mounted) return;
+      if (!mountedRef.current) return;
       console.warn(
         '⚠️ DOM reconciliation error handled gracefully:',
         error.message
       );
-      // The error has been caught and logged - the editor should continue working
-      // The user may need to click in the editor to re-sync cursor position
     });
 
-    // Cleanup
+    // Deferred cleanup — gives StrictMode a chance to cancel and reuse
     return () => {
-      mounted = false;
-      console.log('🧹 Cleaning up SupabaseProvider');
-
-      // Destroy provider - it handles all cleanup internally
-      if (providerRef.current) {
-        providerRef.current.destroy();
-        providerRef.current = null;
-      }
+      mountedRef.current = false;
+      const p = providerRef.current;
+      destroyTimerRef.current = setTimeout(() => {
+        destroyTimerRef.current = null;
+        if (p && providerRef.current === p) {
+          console.log('🧹 Destroying SupabaseProvider (deferred)');
+          p.destroy();
+          providerRef.current = null;
+        }
+      }, 100);
     };
-  }, [
-    id,
-    channel,
-    tableName,
-    columnName,
-    user,
-    doc,
-    awareness,
-    enabled,
-    onSync,
-    onError,
-    onSave,
-  ]);
+  }, [id, channel, tableName, columnName, hasUser, doc, awareness, enabled]);
+
+  // Awareness update: sync user identity without recreating the provider
+  useEffect(() => {
+    if (!awareness || !user) return;
+    awareness.setLocalStateField('user', {
+      id: user.id,
+      name: user.name,
+      color: user.color,
+    });
+  }, [awareness, user]);
 
   return {
     doc,
