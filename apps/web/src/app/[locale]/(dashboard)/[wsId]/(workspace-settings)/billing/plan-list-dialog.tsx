@@ -26,6 +26,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { centToDollar } from '@/utils/price-helper';
+import type { SeatStatus } from '@/utils/seat-limits';
 import type { Plan } from './billing-client';
 import { PlanChangeConfirmationDialog } from './plan-change-confirmation-dialog';
 import PurchaseLink from './purchase-link';
@@ -37,6 +38,7 @@ interface PlanListDialogProps {
   wsId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  seatStatus?: SeatStatus;
 }
 
 type BillingCycleTab = 'month' | 'year';
@@ -48,6 +50,7 @@ export function PlanListDialog({
   wsId,
   open,
   onOpenChange,
+  seatStatus,
 }: PlanListDialogProps) {
   const t = useTranslations('billing');
 
@@ -430,6 +433,36 @@ export function PlanListDialog({
                           </span>
                         </div>
                       )}
+
+                      {/* Estimated total for seat-based plans */}
+                      {isSeatBased &&
+                        plan.pricePerSeat &&
+                        seatStatus?.memberCount && (
+                          <div className="mt-2 rounded-md bg-muted/50 px-2.5 py-1.5">
+                            <p className="font-medium text-foreground text-xs">
+                              {t('estimated-total', {
+                                total: centToDollar(
+                                  plan.pricePerSeat *
+                                    Math.max(
+                                      seatStatus.memberCount,
+                                      plan.minSeats ?? 1
+                                    )
+                                ),
+                                cycle:
+                                  plan.billingCycle === 'month'
+                                    ? t('mo')
+                                    : t('per-year'),
+                                count: Math.max(
+                                  seatStatus.memberCount,
+                                  plan.minSeats ?? 1
+                                ),
+                              })}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {t('based-on-current-members')}
+                            </p>
+                          </div>
+                        )}
 
                       {/* Savings indicator for yearly plans */}
                       {plan.billingCycle === 'year' && (

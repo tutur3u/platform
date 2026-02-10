@@ -169,7 +169,7 @@ export function PaymentMethodsCard({
   // Render loading state
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-border/50 bg-card p-6">
+      <div className="mb-8 rounded-xl border border-border/50 bg-card p-6">
         <div className="mb-4 flex items-center gap-3">
           <div className="rounded-full bg-dynamic-blue/10 p-2.5">
             <CreditCard className="h-5 w-5 text-dynamic-blue" />
@@ -187,7 +187,7 @@ export function PaymentMethodsCard({
   // Render error state
   if (error) {
     return (
-      <div className="rounded-xl border border-border/50 bg-card p-6">
+      <div className="mb-8 rounded-xl border border-border/50 bg-card p-6">
         <div className="mb-4 flex items-center gap-3">
           <div className="rounded-full bg-dynamic-blue/10 p-2.5">
             <CreditCard className="h-5 w-5 text-dynamic-blue" />
