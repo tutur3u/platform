@@ -234,6 +234,7 @@ Located at `apps/mobile/`, the Flutter app uses BLoC/Cubit state management, `go
 - **Admin Client Trigger Bypass:** Tables with `BEFORE UPDATE` triggers checking `auth.uid()` can be bypassed with `createAdminClient()` (`sbAdmin`). Always validate permissions with user-context client first.
 - **TypeScript useMemo Inference:** When `useMemo` returns either `[]` or `{ data: [], isEstimated }`, TypeScript infers `never[]`. Fix: explicitly type early returns as `{ data: [] as MyType[], isEstimated: false }`.
 - **Finance Module:** `get_category_breakdown` RPC accepts `_wallet_ids UUID[]` for wallet scoping. Exchange rates use USD as base currency. For estimated amounts, set `hasRedactedAmounts = true` and show `≈` prefix.
+- **apply_patch Pathing (Windows):** Prefer workspace-relative paths (e.g. `apps/web/...`). Absolute Windows paths like `C:\...` can fail to resolve during patch apply.
 
 ### Database Schema Notes
 

@@ -14,18 +14,13 @@ export async function PATCH(req: NextRequest) {
       NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     );
 
-  const { user, supabase } = authData;
-  const authHeader =
-    req.headers.get('authorization') ?? req.headers.get('Authorization');
-  const isBearerToken = authHeader?.startsWith('Bearer ') ?? false;
+  const { supabase } = authData;
 
   try {
     const body = await req.json();
     const { email } = PatchEmailSchema.parse(body);
 
-    const { error } = isBearerToken
-      ? await supabase.auth.admin.updateUserById(user.id, { email })
-      : await supabase.auth.updateUser({ email });
+    const { error } = await supabase.auth.updateUser({ email });
 
     if (error) {
       console.error('Error updating email:', error);

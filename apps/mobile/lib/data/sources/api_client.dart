@@ -12,6 +12,7 @@ class ApiClient {
   ApiClient({http.Client? httpClient}) : _client = httpClient ?? http.Client();
 
   final http.Client _client;
+  static const int _expiryBufferMs = 60 * 1000;
 
   Future<void> _ensureValidSession() async {
     final session = supabase.auth.currentSession;
@@ -20,7 +21,8 @@ class ApiClient {
       final expiresAtMs = expiresAt > 1000000000000
           ? expiresAt
           : expiresAt * 1000;
-      if (DateTime.now().millisecondsSinceEpoch < expiresAtMs) {
+      if (DateTime.now().millisecondsSinceEpoch <
+          (expiresAtMs - _expiryBufferMs)) {
         return;
       }
     }

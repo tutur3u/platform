@@ -1660,6 +1660,11 @@ wrapped by `shad.ShadcnApp` in tests. Use the shared test helper to provide
 `shad.ShadcnLocalizations.delegate` and a basic `ThemeData`/`darkTheme` so
 `Theme.of(context)` is always available.
 
+### 15.9 apply_patch Pathing (Windows)
+
+When using `apply_patch`, prefer workspace-relative paths (e.g. `apps/web/...`).
+Absolute Windows paths like `C:\...` can fail to resolve during patch apply.
+
 ## 16. Glossary
 
 | Term                     | Definition                                                                                                                                   |

@@ -22,8 +22,7 @@ export async function PATCH(req: NextRequest) {
 
     const { error } = await supabase
       .from('user_private_details')
-      .update({ full_name })
-      .eq('user_id', user.id);
+      .upsert({ user_id: user.id, full_name }, { onConflict: 'user_id' });
 
     if (error) {
       console.error('Error updating full name:', error);
