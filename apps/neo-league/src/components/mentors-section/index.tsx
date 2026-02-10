@@ -33,7 +33,7 @@ export default function MentorsSection() {
                     {getInitials(mentor.name)}
                   </AvatarFallback>
                 </Avatar>
-                <div className="glass-card w-full rounded-xl px-6 py-8 text-center">
+                <div className="glass-card w-full rounded-xl px-6 py-8 text-center h-full">
                   <h4 className="mb-1 font-black">{mentor.name}</h4>
                   <p className="text-base text-foreground">{mentor.field}</p>
                 </div>
