@@ -359,10 +359,10 @@ export default function PlatformSubscriptionsMigrationPage() {
         </AlertDescription>
       </Alert>
 
-      {/* Step 1: Revoke Duplicate Subscriptions */}
+      {/* Revoke Duplicate Subscriptions */}
       <MigrationCard
         icon={<Zap className="h-5 w-5" />}
-        title="Step 1 — Revoke Duplicate Subscriptions"
+        title="Revoke Duplicate Subscriptions"
         description={[
           'Find workspaces with more than one active subscription',
           'Keep the latest subscription per workspace (sorted by creation date)',
@@ -385,7 +385,7 @@ export default function PlatformSubscriptionsMigrationPage() {
       {/* Step 2: Add Free Subscriptions */}
       <MigrationCard
         icon={<UserPlus className="h-5 w-5" />}
-        title="Step 2 — Add Free Subscriptions"
+        title="Add Free Subscriptions"
         description={[
           'Find all workspaces without active subscriptions',
           'Subscribe workspaces to free product via Polar',
