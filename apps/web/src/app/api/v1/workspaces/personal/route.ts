@@ -96,18 +96,18 @@ export async function POST() {
     await getOrCreatePolarCustomer({ polar, supabase, wsId: workspace.id });
 
     // Create free subscription for the workspace
-    const subscription = await createFreeSubscription(
+    const subResult = await createFreeSubscription(
       polar,
       sbAdmin,
       workspace.id
     );
-    if (subscription) {
+    if (subResult.status === 'created') {
       console.log(
-        `Created free subscription ${subscription.id} for workspace ${workspace.id}`
+        `Created free subscription ${subResult.subscription.id} for workspace ${workspace.id}`
       );
     } else {
       console.log(
-        `Skipped free subscription creation for workspace ${workspace.id} (may already have active subscription)`
+        `Skipped free subscription creation for workspace ${workspace.id} (${subResult.status})`
       );
     }
   } catch (error) {

@@ -62,10 +62,14 @@ async function ensurePersonalWorkspaceSubscription(
       supabase: sbAdmin,
       wsId: workspace.id,
     });
-    await createFreeSubscription(polar, sbAdmin, workspace.id);
+    const subResult = await createFreeSubscription(
+      polar,
+      sbAdmin,
+      workspace.id
+    );
 
     console.log(
-      `Onboarding: created free subscription for personal workspace ${workspace.id}`
+      `Onboarding: free subscription for personal workspace ${workspace.id}: ${subResult.status}`
     );
   } catch (error) {
     console.error(

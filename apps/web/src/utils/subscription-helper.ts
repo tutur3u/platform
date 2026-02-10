@@ -1,6 +1,14 @@
 import type { Polar } from '@tuturuuu/payment/polar';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 
+export type CreateFreeSubscriptionResult =
+  | {
+      status: 'created';
+      subscription: Awaited<ReturnType<Polar['subscriptions']['create']>>;
+    }
+  | { status: 'already_active' }
+  | { status: 'error'; message: string };
+
 // Helper function to check if a workspace has any active subscriptions
 export async function hasActiveSubscription(
   polar: Polar,
@@ -38,7 +46,8 @@ export async function hasActiveSubscription(
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error('Error checking active subscriptions:', errorMessage);
-    return { hasWorkspace: true, hasActive: false };
+    // Fail-closed: treat API errors as "active" to prevent duplicate subscriptions
+    return { hasWorkspace: true, hasActive: true };
   }
 }
 
@@ -47,7 +56,7 @@ export async function createFreeSubscription(
   polar: Polar,
   supabase: TypedSupabaseClient,
   wsId: string
-) {
+): Promise<CreateFreeSubscriptionResult> {
   // Check if the workspace already has an active subscription
   const { hasWorkspace, hasActive } = await hasActiveSubscription(
     polar,
@@ -59,14 +68,14 @@ export async function createFreeSubscription(
     console.error(
       `Workspace ${wsId} not found, cannot create free subscription`
     );
-    return null;
+    return { status: 'error', message: 'Workspace not found' };
   }
 
   if (hasActive) {
     console.log(
       `Workspace ${wsId} already has an active subscription, skipping free subscription creation`
     );
-    return null;
+    return { status: 'already_active' };
   }
 
   let externalCustomerId: string;
@@ -82,7 +91,7 @@ export async function createFreeSubscription(
     console.error(
       `Workspace not found for wsId ${wsId}, cannot create free subscription`
     );
-    return null;
+    return { status: 'error', message: 'Workspace not found' };
   }
 
   const isPersonal = workspace.personal;
@@ -106,7 +115,7 @@ export async function createFreeSubscription(
       `No FREE tier product found for ${isPersonal ? 'personal' : 'non-personal'} workspace, cannot create free subscription:`,
       productError
     );
-    return null;
+    return { status: 'error', message: 'No free tier product found' };
   }
 
   try {
@@ -122,14 +131,14 @@ export async function createFreeSubscription(
       `Created free subscription ${subscription.id} for workspace ${wsId}`
     );
 
-    return subscription;
+    return { status: 'created', subscription };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error(
       `Failed to create free subscription for workspace ${wsId}:`,
       errorMessage
     );
-    return null;
+    return { status: 'error', message: errorMessage };
   }
 }
 

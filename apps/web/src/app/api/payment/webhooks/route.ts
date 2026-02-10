@@ -476,19 +476,19 @@ export const POST = Webhooks({
           );
 
           // Create a free subscription for this workspace
-          const freeSubscription = await createFreeSubscription(
+          const freeSubResult = await createFreeSubscription(
             polar,
             sbAdmin,
             subscriptionData.ws_id
           );
 
-          if (freeSubscription) {
+          if (freeSubResult.status === 'created') {
             console.log(
-              `Webhook: Successfully created free subscription ${freeSubscription.id} for workspace ${subscriptionData.ws_id}`
+              `Webhook: Successfully created free subscription ${freeSubResult.subscription.id} for workspace ${subscriptionData.ws_id}`
             );
           } else {
             console.warn(
-              `Webhook: Could not create free subscription for workspace ${subscriptionData.ws_id}`
+              `Webhook: Could not create free subscription for workspace ${subscriptionData.ws_id} (${freeSubResult.status})`
             );
           }
         } else {

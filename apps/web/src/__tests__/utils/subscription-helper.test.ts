@@ -186,7 +186,7 @@ describe('subscription-helper', () => {
       expect(result).toEqual({ hasWorkspace: true, hasActive: false });
     });
 
-    it('should return false on error', async () => {
+    it('should return true (fail-closed) on error to prevent duplicate subscriptions', async () => {
       const mockPolar = {
         subscriptions: {
           list: vi.fn().mockRejectedValue(new Error('Polar API error')),
@@ -211,14 +211,14 @@ describe('subscription-helper', () => {
         'ws-123'
       );
 
-      expect(result).toEqual({ hasWorkspace: true, hasActive: false });
+      expect(result).toEqual({ hasWorkspace: true, hasActive: true });
       expect(mockConsoleError).toHaveBeenCalledWith(
         'Error checking active subscriptions:',
         'Polar API error'
       );
     });
 
-    it('should handle non-Error exceptions', async () => {
+    it('should handle non-Error exceptions with fail-closed behavior', async () => {
       const mockPolar = {
         subscriptions: {
           list: vi.fn().mockRejectedValue('String error'),
@@ -243,7 +243,7 @@ describe('subscription-helper', () => {
         'ws-123'
       );
 
-      expect(result).toEqual({ hasWorkspace: true, hasActive: false });
+      expect(result).toEqual({ hasWorkspace: true, hasActive: true });
       expect(mockConsoleError).toHaveBeenCalledWith(
         'Error checking active subscriptions:',
         'String error'
@@ -252,7 +252,7 @@ describe('subscription-helper', () => {
   });
 
   describe('createFreeSubscription', () => {
-    it('should return null if workspace already has active subscription', async () => {
+    it('should return already_active if workspace already has active subscription', async () => {
       const mockPolar = {
         subscriptions: {
           list: vi.fn().mockResolvedValue({
@@ -281,13 +281,13 @@ describe('subscription-helper', () => {
         'ws-123'
       );
 
-      expect(result).toBeNull();
+      expect(result).toEqual({ status: 'already_active' });
       expect(mockConsoleLog).toHaveBeenCalledWith(
         'Workspace ws-123 already has an active subscription, skipping free subscription creation'
       );
     });
 
-    it('should return null if workspace not found', async () => {
+    it('should return error if workspace not found', async () => {
       const mockPolar = {
         subscriptions: {
           list: vi.fn().mockResolvedValue({
@@ -314,14 +314,17 @@ describe('subscription-helper', () => {
         'ws-123'
       );
 
-      expect(result).toBeNull();
+      expect(result).toEqual({
+        status: 'error',
+        message: 'Workspace not found',
+      });
       // The error is logged by hasActiveSubscription when workspace doesn't exist
       expect(mockConsoleError).toHaveBeenCalledWith(
         'Workspace ws-123 not found, cannot check active subscriptions'
       );
     });
 
-    it('should return null if no free product found', async () => {
+    it('should return error if no free product found', async () => {
       const mockPolar = {
         subscriptions: {
           list: vi.fn().mockResolvedValue({
@@ -372,7 +375,10 @@ describe('subscription-helper', () => {
         'ws-123'
       );
 
-      expect(result).toBeNull();
+      expect(result).toEqual({
+        status: 'error',
+        message: 'No free tier product found',
+      });
       expect(mockConsoleError).toHaveBeenCalledWith(
         expect.stringContaining('No FREE tier product found'),
         { message: 'No free product' }
@@ -435,9 +441,12 @@ describe('subscription-helper', () => {
       );
 
       expect(result).toEqual({
-        id: 'sub-123',
-        productId: 'prod-free-123',
-        status: 'active',
+        status: 'created',
+        subscription: {
+          id: 'sub-123',
+          productId: 'prod-free-123',
+          status: 'active',
+        },
       });
       expect(mockPolar.subscriptions.create).toHaveBeenCalledWith({
         productId: 'prod-free-123',
@@ -505,9 +514,12 @@ describe('subscription-helper', () => {
       );
 
       expect(result).toEqual({
-        id: 'sub-456',
-        productId: 'prod-free-456',
-        status: 'active',
+        status: 'created',
+        subscription: {
+          id: 'sub-456',
+          productId: 'prod-free-456',
+          status: 'active',
+        },
       });
       expect(mockPolar.subscriptions.create).toHaveBeenCalledWith({
         productId: 'prod-free-456',
@@ -516,7 +528,7 @@ describe('subscription-helper', () => {
       });
     });
 
-    it('should return null if Polar API call fails', async () => {
+    it('should return error if Polar API call fails', async () => {
       const mockPolar = {
         subscriptions: {
           list: vi.fn().mockResolvedValue({
@@ -567,7 +579,7 @@ describe('subscription-helper', () => {
         'ws-123'
       );
 
-      expect(result).toBeNull();
+      expect(result).toEqual({ status: 'error', message: 'Polar API error' });
       expect(mockConsoleError).toHaveBeenCalledWith(
         'Failed to create free subscription for workspace ws-123:',
         'Polar API error'
@@ -625,7 +637,7 @@ describe('subscription-helper', () => {
         'ws-123'
       );
 
-      expect(result).toBeNull();
+      expect(result).toEqual({ status: 'error', message: 'String error' });
       expect(mockConsoleError).toHaveBeenCalledWith(
         'Failed to create free subscription for workspace ws-123:',
         'String error'

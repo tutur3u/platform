@@ -55,20 +55,26 @@ export async function POST() {
             wsId: workspace.id,
           });
 
-          const subscription = await createFreeSubscription(
+          const result = await createFreeSubscription(
             polar,
             sbAdmin,
             workspace.id
           );
 
-          if (!subscription) {
-            errors++;
-            errorDetails.push({
-              id: workspace.id,
-              error: 'Failed to create free subscription',
-            });
-          } else {
-            created++;
+          switch (result.status) {
+            case 'created':
+              created++;
+              break;
+            case 'already_active':
+              skipped++;
+              break;
+            case 'error':
+              errors++;
+              errorDetails.push({
+                id: workspace.id,
+                error: result.message,
+              });
+              break;
           }
         }
       } catch (err) {
