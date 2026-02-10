@@ -504,6 +504,9 @@ export function PlanListDialog({
                             subscriptionId={currentPlan.id}
                             wsId={wsId}
                             productId={plan.id}
+                            onCheckoutOpened={() => {
+                              onOpenChange(false);
+                            }}
                             onPlanChange={
                               currentPlan.tier === 'FREE'
                                 ? undefined
