@@ -175,6 +175,35 @@ export function useWorkspaceUserFields(wsId: string) {
 }
 
 /**
+ * Fetch featured groups for quick filtering on the database page
+ */
+export function useFeaturedGroups(wsId: string) {
+  return useQuery({
+    queryKey: ['workspace-featured-groups', wsId],
+    queryFn: async (): Promise<string[]> => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('workspace_configs')
+        .select('value')
+        .eq('ws_id', wsId)
+        .eq('id', 'DATABASE_FEATURED_GROUPS')
+        .maybeSingle();
+
+      if (error) throw error;
+
+      return data?.value
+        ? data.value
+            .split(',')
+            .map((v: string) => v.trim())
+            .filter(Boolean)
+        : [];
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 20 * 60 * 1000, // 20 minutes
+  });
+}
+
+/**
  * Fetch default excluded groups for the workspace
  */
 export function useDefaultExcludedGroups(wsId: string) {

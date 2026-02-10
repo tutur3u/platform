@@ -36,6 +36,7 @@ import {
   useWorkspaceUsers,
   type WorkspaceUsersResponse,
 } from './hooks';
+import { QuickGroupFilters } from './quick-group-filters';
 
 interface Props {
   wsId: string;
@@ -283,7 +284,8 @@ export function WorkspaceUsersTable({
         pageSize={pageSize}
         defaultQuery={q}
         filters={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <QuickGroupFilters wsId={wsId} />
             <Select
               value={status}
               onValueChange={(val) => {

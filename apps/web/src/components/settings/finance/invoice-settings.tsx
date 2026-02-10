@@ -35,7 +35,6 @@ export default function InvoiceSettings({ workspaceId }: Props) {
     'INVOICE_ALLOW_PROMOTIONS_FOR_STANDARD',
     'INVOICE_USE_ATTENDANCE_BASED_CALCULATION',
     'INVOICE_GROUP_PENDING_INVOICES_BY_USER',
-    'DEFAULT_GROUP_FOR_NEW_WORKSPACE_USERS',
     'INVOICE_BLOCKED_GROUP_IDS_FOR_CREATION',
     'INVOICE_BLOCKED_GROUP_IDS_FOR_PENDING',
     'DEFAULT_SUBSCRIPTION_CATEGORY_ID',
@@ -66,7 +65,6 @@ export default function InvoiceSettings({ workspaceId }: Props) {
     allow_promotions: true,
     use_attendance_based: true,
     group_pending_by_user: false,
-    default_group_id: null as string | null,
     default_subscription_category_id: null as string | null,
     blocked_creation_group_ids: [] as string[],
     blocked_pending_group_ids: [] as string[],
@@ -83,6 +81,9 @@ export default function InvoiceSettings({ workspaceId }: Props) {
         .map((v) => v.trim())
         .filter(Boolean);
 
+    // Filter out stale/deleted group IDs
+    const availableGroupIds = new Set(availableGroups.map((g) => g.id));
+
     const values = {
       allow_promotions:
         safeTrim(
@@ -96,15 +97,14 @@ export default function InvoiceSettings({ workspaceId }: Props) {
         safeTrim(
           configs?.INVOICE_GROUP_PENDING_INVOICES_BY_USER ?? 'false'
         ).toLowerCase() === 'true',
-      default_group_id: configs?.DEFAULT_GROUP_FOR_NEW_WORKSPACE_USERS || null,
       default_subscription_category_id:
         configs?.DEFAULT_SUBSCRIPTION_CATEGORY_ID || null,
       blocked_creation_group_ids: parseIds(
         configs?.INVOICE_BLOCKED_GROUP_IDS_FOR_CREATION
-      ),
+      ).filter((id) => availableGroupIds.has(id)),
       blocked_pending_group_ids: parseIds(
         configs?.INVOICE_BLOCKED_GROUP_IDS_FOR_PENDING
-      ),
+      ).filter((id) => availableGroupIds.has(id)),
     };
 
     setInitialValues(values);
@@ -112,7 +112,7 @@ export default function InvoiceSettings({ workspaceId }: Props) {
       setCurrentValues(values);
       setInitialized(true);
     }
-  }, [isLoading, configs, initialized]);
+  }, [isLoading, configs, initialized, availableGroups]);
 
   const updateMutation = useMutation({
     mutationFn: async (values: typeof currentValues) => {
@@ -139,11 +139,6 @@ export default function InvoiceSettings({ workspaceId }: Props) {
           key: 'INVOICE_GROUP_PENDING_INVOICES_BY_USER',
           value: values.group_pending_by_user.toString(),
           initial: initialValues.group_pending_by_user.toString(),
-        },
-        {
-          key: 'DEFAULT_GROUP_FOR_NEW_WORKSPACE_USERS',
-          value: safeTrim(values.default_group_id) || '',
-          initial: safeTrim(initialValues.default_group_id) || '',
         },
         {
           key: 'DEFAULT_SUBSCRIPTION_CATEGORY_ID',
@@ -292,39 +287,6 @@ export default function InvoiceSettings({ workspaceId }: Props) {
               }
             />
           </div>
-        </div>
-
-        <div className="flex flex-row items-center justify-between rounded-lg border p-4">
-          <div className="space-y-0.5">
-            <div className="font-medium text-base">
-              {t('default_group_label')}
-            </div>
-            <div className="text-muted-foreground text-sm">
-              {t('default_group_help')}
-            </div>
-          </div>
-          <Select
-            value={currentValues.default_group_id ?? 'none'}
-            onValueChange={(value) =>
-              setCurrentValues((prev) => ({
-                ...prev,
-                default_group_id: value === 'none' ? null : value,
-              }))
-            }
-          >
-            <SelectTrigger className="w-64">
-              <SelectValue placeholder={t('default_group_placeholder')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">{t('no_default_group')}</SelectItem>
-              {availableGroups.map((group) => (
-                <SelectItem key={group.id} value={group.id}>
-                  {group.name}
-                  {group.archived ? ` (${t('group_archived')})` : ''}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
 
         <div className="flex flex-row items-center justify-between rounded-lg border p-4">
