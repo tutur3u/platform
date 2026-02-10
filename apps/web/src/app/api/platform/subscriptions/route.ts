@@ -8,19 +8,40 @@ import { NextResponse } from 'next/server';
 import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
 import { createFreeSubscription } from '@/utils/subscription-helper';
 
-export async function POST() {
-  const supabase = await createClient();
-  const sbAdmin = await createAdminClient();
+const PAGE_SIZE = 1000;
 
-  // Verify user is authenticated
+async function fetchAllRows<T>(
+  queryFn: (
+    from: number,
+    to: number
+  ) => PromiseLike<{ data: T[] | null; error: unknown }>
+): Promise<{ data: T[]; error: unknown }> {
+  const allRows: T[] = [];
+  let offset = 0;
+
+  while (true) {
+    const { data, error } = await queryFn(offset, offset + PAGE_SIZE - 1);
+
+    if (error) return { data: allRows, error };
+    if (!data || data.length === 0) break;
+
+    allRows.push(...data);
+
+    if (data.length < PAGE_SIZE) break;
+    offset += PAGE_SIZE;
+  }
+
+  return { data: allRows, error: null };
+}
+
+async function verifyAdminAccess() {
+  const supabase = await createClient();
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!user) return { error: 'Unauthorized', status: 401 };
 
-  // Verify root workspace membership and permission
   const { data: hasPermission, error: permissionError } = await supabase.rpc(
     'has_workspace_permission',
     {
@@ -31,79 +52,110 @@ export async function POST() {
   );
 
   if (permissionError || !hasPermission) {
+    return { error: 'Unauthorized: Admin access required', status: 403 };
+  }
+
+  return { error: null, status: 200 };
+}
+
+function createNDJSONStream(
+  processFn: (send: (data: Record<string, unknown>) => void) => Promise<void>
+): Response {
+  const encoder = new TextEncoder();
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (data: Record<string, unknown>) => {
+        controller.enqueue(encoder.encode(`${JSON.stringify(data)}\n`));
+      };
+
+      try {
+        await processFn(send);
+      } catch (err) {
+        send({
+          type: 'error',
+          error: err instanceof Error ? err.message : 'Unknown error',
+        });
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'application/x-ndjson',
+      'Cache-Control': 'no-cache',
+    },
+  });
+}
+
+export async function POST() {
+  const auth = await verifyAdminAccess();
+  if (auth.error) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
+  const sbAdmin = await createAdminClient();
+  const polar = createPolarClient();
+
+  const { data: workspaces, error: wsError } = await fetchAllRows((from, to) =>
+    sbAdmin
+      .from('workspaces')
+      .select('id, workspace_subscriptions!left(id, status)')
+      .range(from, to)
+  );
+
+  if (wsError) {
     return NextResponse.json(
-      { error: 'Unauthorized: Admin access required' },
-      { status: 403 }
+      { error: 'Failed to fetch workspaces' },
+      { status: 500 }
     );
   }
 
-  let created = 0;
-  let skipped = 0;
-  let errors = 0;
-  const errorDetails: Array<{ id: string; error: string }> = [];
+  return createNDJSONStream(async (send) => {
+    const total = workspaces.length;
+    let created = 0;
+    let skipped = 0;
+    let errors = 0;
+    const errorDetails: Array<{ id: string; error: string }> = [];
+    const startTime = Date.now();
 
-  // Initialize Polar client
-  const polar = createPolarClient();
+    send({ type: 'start', total });
 
-  try {
-    // Find all workspaces
-    const { data: workspaces, error: wsError } = await sbAdmin
-      .from('workspaces')
-      .select('id, workspace_subscriptions!left(id, status)');
+    for (let i = 0; i < workspaces.length; i++) {
+      const workspace = workspaces[i]!;
 
-    if (wsError) {
-      console.error('Error fetching workspaces:', wsError);
-      return NextResponse.json(
-        { error: 'Failed to fetch workspaces' },
-        { status: 500 }
-      );
-    }
-
-    if (!workspaces || workspaces.length === 0) {
-      return NextResponse.json({
-        created: 0,
-        skipped: 0,
-        errors: 0,
-        message: 'No workspaces found',
-      });
-    }
-
-    // Process each workspace
-    for (const workspace of workspaces) {
       try {
         if (
           workspace.workspace_subscriptions.some(
             (sub) => sub.status === 'active'
           )
         ) {
-          // Skip workspaces with active subscriptions
           skipped++;
-          continue;
-        }
-        // Get or create Polar customer
-        await getOrCreatePolarCustomer({
-          polar,
-          supabase: sbAdmin,
-          wsId: workspace.id,
-        });
-
-        // Create free subscription using helper function
-        const subscription = await createFreeSubscription(
-          polar,
-          sbAdmin,
-          workspace.id
-        );
-
-        if (!subscription) {
-          errors++;
-          errorDetails.push({
-            id: workspace.id,
-            error: 'Failed to create free subscription',
+        } else {
+          await getOrCreatePolarCustomer({
+            polar,
+            supabase: sbAdmin,
+            wsId: workspace.id,
           });
-          continue;
-        }
 
-        created++;
+          const subscription = await createFreeSubscription(
+            polar,
+            sbAdmin,
+            workspace.id
+          );
+
+          if (!subscription) {
+            errors++;
+            errorDetails.push({
+              id: workspace.id,
+              error: 'Failed to create free subscription',
+            });
+          } else {
+            created++;
+          }
+        }
       } catch (err) {
         errors++;
         errorDetails.push({
@@ -111,119 +163,99 @@ export async function POST() {
           error: err instanceof Error ? err.message : 'Unknown error',
         });
       }
+
+      send({
+        type: 'progress',
+        current: i + 1,
+        total,
+        created,
+        skipped,
+        errors,
+      });
     }
 
-    return NextResponse.json({
+    send({
+      type: 'complete',
+      total,
       created,
       skipped,
       errors,
       errorDetails: errorDetails.length > 0 ? errorDetails : undefined,
-      message: `Migration completed: ${created} subscriptions created, ${skipped} skipped, ${errors} errors`,
+      duration: Date.now() - startTime,
+      message: `${total} workspaces found, ${created} created, ${skipped} skipped, ${errors} errors`,
     });
-  } catch (error) {
-    console.error('Migration error:', error);
+  });
+}
+
+export async function DELETE() {
+  const auth = await verifyAdminAccess();
+  if (auth.error) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
+  const sbAdmin = await createAdminClient();
+
+  const { data: subscriptions, error: subError } = await fetchAllRows(
+    (from, to) =>
+      sbAdmin
+        .from('workspace_subscriptions')
+        .select('*')
+        .eq('status', 'active')
+        .range(from, to)
+  );
+
+  if (subError) {
     return NextResponse.json(
       {
-        error:
-          error instanceof Error ? error.message : 'Unknown migration error',
+        error: `Failed to fetch subscriptions: ${subError instanceof Error ? subError.message : String(subError)}`,
       },
       { status: 500 }
     );
   }
-}
 
-export async function DELETE() {
-  try {
-    const supabase = await createClient();
-    const sbAdmin = await createAdminClient();
-
-    // Verify user is authenticated
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Verify root workspace membership and permission
-    const { data: hasPermission, error: permissionError } = await supabase.rpc(
-      'has_workspace_permission',
-      {
-        p_user_id: user.id,
-        p_ws_id: ROOT_WORKSPACE_ID,
-        p_permission: 'manage_workspace_roles',
-      }
-    );
-
-    if (permissionError || !hasPermission) {
-      return NextResponse.json(
-        { error: 'Unauthorized: Admin access required' },
-        { status: 403 }
-      );
-    }
-
-    // Fetch all active subscriptions
-    const { data: subscriptions, error: subError } = await sbAdmin
-      .from('workspace_subscriptions')
-      .select('*')
-      .eq('status', 'active');
-
-    if (subError) {
-      throw new Error(`Failed to fetch subscriptions: ${subError.message}`);
-    }
-
-    if (!subscriptions || subscriptions.length === 0) {
-      return NextResponse.json({
-        message: 'No active subscriptions found to migrate',
-        processed: 0,
-        skipped: 0,
-        errors: 0,
-      });
-    }
-
-    const polar = createPolarClient();
+  return createNDJSONStream(async (send) => {
+    const total = subscriptions.length;
     let processed = 0;
-    const skipped = 0;
     let errors = 0;
-    const errorDetails: any[] = [];
+    const errorDetails: Array<{ id: string; error: string }> = [];
+    const startTime = Date.now();
+    const polar = createPolarClient();
 
-    // Iterate and cancel old subscriptions
-    for (const sub of subscriptions) {
+    send({ type: 'start', total });
+
+    for (let i = 0; i < subscriptions.length; i++) {
+      const sub = subscriptions[i]!;
+
       try {
-        console.log(
-          `Cancelling subscription ${sub.id} (${sub.polar_subscription_id}).`
-        );
-
-        // Cancel the old subscription
         await polar.subscriptions.revoke({
           id: sub.polar_subscription_id,
         });
-
-        console.log(`Successfully cancelled subscription ${sub.id}.`);
-
         processed++;
       } catch (err) {
-        console.error(`Error cancelling sub ${sub.id}:`, err);
         errors++;
         errorDetails.push({
           id: sub.id,
           error: err instanceof Error ? err.message : String(err),
         });
       }
+
+      send({
+        type: 'progress',
+        current: i + 1,
+        total,
+        processed,
+        errors,
+      });
     }
 
-    return NextResponse.json({
-      success: true,
+    send({
+      type: 'complete',
+      total,
       processed,
-      skipped,
       errors,
-      errorDetails,
+      errorDetails: errorDetails.length > 0 ? errorDetails : undefined,
+      duration: Date.now() - startTime,
+      message: `${total} subscriptions found, ${processed} revoked, ${errors} errors`,
     });
-  } catch (error) {
-    console.error('Global migration error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error during migration' },
-      { status: 500 }
-    );
-  }
+  });
 }
