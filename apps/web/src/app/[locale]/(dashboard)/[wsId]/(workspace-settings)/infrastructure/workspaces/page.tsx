@@ -3,7 +3,7 @@ import { enforceRootWorkspaceAdmin } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import {
-  getAllWorkspaceOverview,
+  getWorkspaceOverview,
   getWorkspaceOverviewSummary,
 } from './data-fetching';
 import SummaryCards from './summary-cards';
@@ -21,6 +21,8 @@ interface Props {
   }>;
   searchParams: Promise<{
     q?: string;
+    page?: string;
+    pageSize?: string;
     tier?: string;
     status?: string;
     workspaceType?: string;
@@ -41,8 +43,10 @@ export default async function InfrastructureWorkspacesPage({
 
   const [summary, { data: workspaces, count }] = await Promise.all([
     getWorkspaceOverviewSummary(),
-    getAllWorkspaceOverview({
+    getWorkspaceOverview({
       search: sp.q,
+      page: sp.page,
+      pageSize: sp.pageSize,
       tier: sp.tier,
       status: sp.status,
       workspaceType: sp.workspaceType,
