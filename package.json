@@ -69,8 +69,5 @@
     "sharp",
     "supabase",
     "unrs-resolver"
-  ],
-  "dependencies": {
-    "lucide-react": "^0.563.0"
-  }
+  ]
 }
