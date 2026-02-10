@@ -2,22 +2,20 @@ import type { Polar } from '@tuturuuu/payment/polar';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 
 // Helper function to check if a workspace has any active subscriptions
-export async function hasActiveSubscription(
-  supabase: TypedSupabaseClient,
-  wsId: string
-) {
-  const { count, error } = await supabase
-    .from('workspace_subscriptions')
-    .select('*', { count: 'exact', head: true })
-    .eq('ws_id', wsId)
-    .eq('status', 'active');
+export async function hasActiveSubscription(polar: Polar, wsId: string) {
+  try {
+    const { result } = await polar.subscriptions.list({
+      metadata: { wsId },
+      sorting: 'status' as any,
+    });
 
-  if (error) {
-    console.error('Error checking active subscriptions:', error.message);
+    // Check if there's at least one active subscription
+    return result.items?.some((sub) => sub.status === 'active') ?? false;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('Error checking active subscriptions:', errorMessage);
     return true; // Assume true to avoid creating duplicate free subscriptions
   }
-
-  return (count ?? 0) > 0;
 }
 
 // Helper function to create a free subscription for a workspace in Polar
@@ -27,7 +25,7 @@ export async function createFreeSubscription(
   wsId: string
 ) {
   // Check if the workspace already has an active subscription
-  const hasActive = await hasActiveSubscription(supabase, wsId);
+  const hasActive = await hasActiveSubscription(polar, wsId);
   if (hasActive) {
     console.log(
       `Workspace ${wsId} already has an active subscription, skipping free subscription creation`

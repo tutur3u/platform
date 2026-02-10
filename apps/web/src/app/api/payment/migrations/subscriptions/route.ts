@@ -201,6 +201,7 @@ export async function DELETE() {
         .from('workspace_subscriptions')
         .select('*')
         .eq('status', 'active')
+        .order('created_at', { ascending: false })
         .range(from, to)
   );
 
@@ -213,18 +214,45 @@ export async function DELETE() {
     );
   }
 
+  // Group subscriptions by workspace, keeping order (latest first)
+  const byWorkspace = new Map<string, typeof subscriptions>();
+  for (const sub of subscriptions) {
+    const existing = byWorkspace.get(sub.ws_id);
+    if (existing) {
+      existing.push(sub);
+    } else {
+      byWorkspace.set(sub.ws_id, [sub]);
+    }
+  }
+
+  // Collect only old (non-latest) subscriptions from workspaces with duplicates
+  const subsToRevoke: typeof subscriptions = [];
+  let kept = 0;
+  let skipped = 0;
+
+  for (const [, wsSubs] of byWorkspace) {
+    if (wsSubs.length <= 1) {
+      // Only one active subscription — skip entirely
+      skipped++;
+      continue;
+    }
+    // First element is the latest (sorted desc) — keep it, revoke the rest
+    kept++;
+    subsToRevoke.push(...wsSubs.slice(1));
+  }
+
   return createNDJSONStream(async (send) => {
-    const total = subscriptions.length;
+    const total = subsToRevoke.length;
     let processed = 0;
     let errors = 0;
     const errorDetails: Array<{ id: string; error: string }> = [];
     const startTime = Date.now();
     const polar = createPolarClient();
 
-    send({ type: 'start', total });
+    send({ type: 'start', total, kept, skipped });
 
-    for (let i = 0; i < subscriptions.length; i++) {
-      const sub = subscriptions[i]!;
+    for (let i = 0; i < subsToRevoke.length; i++) {
+      const sub = subsToRevoke[i]!;
 
       try {
         await polar.subscriptions.revoke({
@@ -244,6 +272,8 @@ export async function DELETE() {
         current: i + 1,
         total,
         processed,
+        kept,
+        skipped,
         errors,
       });
     }
@@ -252,10 +282,12 @@ export async function DELETE() {
       type: 'complete',
       total,
       processed,
+      kept,
+      skipped,
       errors,
       errorDetails: errorDetails.length > 0 ? errorDetails : undefined,
       duration: Date.now() - startTime,
-      message: `${total} subscriptions found, ${processed} revoked, ${errors} errors`,
+      message: `${byWorkspace.size} workspaces scanned, ${kept} had duplicates (latest kept), ${processed} old subscriptions revoked, ${skipped} single-subscription workspaces skipped, ${errors} errors`,
     });
   });
 }

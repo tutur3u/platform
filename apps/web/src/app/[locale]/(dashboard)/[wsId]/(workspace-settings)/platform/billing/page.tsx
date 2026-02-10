@@ -285,6 +285,7 @@ export default function PlatformSubscriptionsMigrationPage() {
                 stats: {
                   created: (event.created as number) ?? 0,
                   processed: (event.processed as number) ?? 0,
+                  kept: (event.kept as number) ?? 0,
                   skipped: (event.skipped as number) ?? 0,
                   errors: (event.errors as number) ?? 0,
                 },
@@ -298,6 +299,7 @@ export default function PlatformSubscriptionsMigrationPage() {
                 stats: {
                   created: (event.created as number) ?? 0,
                   processed: (event.processed as number) ?? 0,
+                  kept: (event.kept as number) ?? 0,
                   skipped: (event.skipped as number) ?? 0,
                   errors: (event.errors as number) ?? 0,
                 },
@@ -357,24 +359,24 @@ export default function PlatformSubscriptionsMigrationPage() {
         </AlertDescription>
       </Alert>
 
-      {/* Step 1: Revoke Old Subscriptions */}
+      {/* Step 1: Revoke Duplicate Subscriptions */}
       <MigrationCard
         icon={<Zap className="h-5 w-5" />}
-        title="Step 1 — Revoke Old Subscriptions"
+        title="Step 1 — Revoke Duplicate Subscriptions"
         description={[
-          'Scan all active subscriptions',
-          'Revoke old subscriptions in Polar immediately',
-          'Webhook system automatically recreates free plan subscriptions',
-          'Users can then upgrade to fixed-price or seat-based plans',
+          'Find workspaces with more than one active subscription',
+          'Keep the latest subscription per workspace (sorted by creation date)',
+          'Revoke older duplicate subscriptions in Polar',
+          'Skip workspaces that only have a single active subscription',
         ]}
         state={revokeState}
         elapsed={revokeElapsed}
-        statLabels={['Processed', 'Skipped', 'Errors']}
-        statKeys={['processed', 'skipped', 'errors']}
+        statLabels={['Revoked', 'Kept', 'Skipped', 'Errors']}
+        statKeys={['processed', 'kept', 'skipped', 'errors']}
         disabled={anyRunning}
         variant="destructive"
-        confirmLabel="This will revoke ALL active subscriptions. Are you sure?"
-        actionLabel="Revoke Old Subscriptions"
+        confirmLabel="This will revoke old duplicate subscriptions (keeping the latest per workspace). Are you sure?"
+        actionLabel="Revoke Duplicate Subscriptions"
         pendingLabel="Revoking..."
         actionIcon={<Zap className="mr-2 h-4 w-4" />}
         onRun={() => runMigration('DELETE', setRevokeState)}
@@ -525,7 +527,11 @@ function MigrationCard({
             </div>
 
             {/* Stats grid */}
-            <div className="grid grid-cols-4 gap-2">
+            <div
+              className={`grid gap-2 ${
+                statKeys.length >= 4 ? 'grid-cols-5' : 'grid-cols-4'
+              }`}
+            >
               <StatItem label="Total" value={state.total.toLocaleString()} />
               {statLabels.map((label, i) => {
                 const key = statKeys[i]!;
@@ -535,9 +541,11 @@ function MigrationCard({
                     ? 'text-destructive'
                     : key === 'skipped' && value > 0
                       ? 'text-dynamic-yellow'
-                      : ['created', 'processed'].includes(key) && value > 0
-                        ? 'text-dynamic-green'
-                        : '';
+                      : key === 'kept' && value > 0
+                        ? 'text-dynamic-blue'
+                        : ['created', 'processed'].includes(key) && value > 0
+                          ? 'text-dynamic-green'
+                          : '';
                 return (
                   <StatItem
                     key={key}

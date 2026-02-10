@@ -453,12 +453,11 @@ export const POST = Webhooks({
           `Webhook: Subscription ${payload.data.id} is fully canceled, checking if workspace ${subscriptionData.ws_id} needs a free subscription`
         );
 
-        const sbAdmin = await createAdminClient();
         const polar = createPolarClient();
 
         // Check if workspace has any other active subscriptions
         const hasActive = await hasActiveSubscription(
-          sbAdmin,
+          polar,
           subscriptionData.ws_id
         );
 
@@ -466,6 +465,8 @@ export const POST = Webhooks({
           console.log(
             `Webhook: Workspace ${subscriptionData.ws_id} has no active subscriptions, creating free subscription`
           );
+
+          const sbAdmin = await createAdminClient();
 
           // Create a free subscription for this workspace
           const freeSubscription = await createFreeSubscription(
