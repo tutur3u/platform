@@ -93,11 +93,7 @@ export default function PhasesSection() {
 
         <div className="grid gap-8 md:grid-cols-3">
           {phases.map((phase, index) => (
-            <AnimatedSection
-              key={index}
-              delay={index * 0.1}
-              className="h-full"
-            >
+            <AnimatedSection key={index} delay={index * 0.1} className="h-full">
               <div className="group relative h-full">
                 <div className="glass-card card-hover flex h-full flex-col rounded-2xl p-8">
                   <div className="gradient-bg absolute -top-4 -right-4 flex h-16 w-16 items-center justify-center rounded-full font-black text-white text-xl shadow-lg">
