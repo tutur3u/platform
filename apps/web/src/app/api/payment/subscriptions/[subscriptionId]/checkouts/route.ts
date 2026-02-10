@@ -79,10 +79,7 @@ export async function POST(
   }
 
   if (!workspace) {
-    return NextResponse.json(
-      { error: 'Workspace not found' },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: 'Workspace not found' }, { status: 404 });
   }
 
   // Get subscription from database

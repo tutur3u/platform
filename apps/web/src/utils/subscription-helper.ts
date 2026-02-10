@@ -6,6 +6,7 @@ export async function hasActiveSubscription(polar: Polar, wsId: string) {
   try {
     const { result } = await polar.subscriptions.list({
       metadata: { wsId },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       sorting: 'status' as any,
     });
 
