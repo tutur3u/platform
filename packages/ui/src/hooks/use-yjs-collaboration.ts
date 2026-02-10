@@ -179,11 +179,23 @@ export function useYjsCollaboration(
       onSaveRef.current?.(version);
     });
 
-    provider.on('error', (providerInstance) => {
-      if (!mountedRef.current) return;
-      console.error('❌ Provider error:', providerInstance);
-      onErrorRef.current?.(new Error('Provider error occurred'));
-    });
+    provider.on(
+      'error',
+      (errorInfo: {
+        message: string;
+        channelError: unknown;
+        channel: string;
+        status: string;
+      }) => {
+        if (!mountedRef.current) return;
+        console.error('❌ Provider error:', {
+          message: errorInfo.message,
+          channel: errorInfo.channel,
+          status: errorInfo.status,
+        });
+        onErrorRef.current?.(new Error(errorInfo.message));
+      }
+    );
 
     provider.on('connect', () => {
       if (!mountedRef.current) return;
@@ -203,6 +215,29 @@ export function useYjsCollaboration(
         '⚠️ DOM reconciliation error handled gracefully:',
         error.message
       );
+    });
+
+    provider.on('reconnect-failed', () => {
+      if (!mountedRef.current) return;
+      // If page is visible (user is active but network dropped), restart
+      // the backoff cycle after a short delay to avoid hammering
+      if (
+        typeof document !== 'undefined' &&
+        document.visibilityState === 'visible'
+      ) {
+        console.warn(
+          '⚠️ All reconnect attempts exhausted while page visible — retrying in 5s'
+        );
+        setTimeout(() => {
+          if (
+            mountedRef.current &&
+            providerRef.current &&
+            !providerRef.current.destroyed
+          ) {
+            providerRef.current.resetAndReconnect();
+          }
+        }, 5000);
+      }
     });
 
     // Deferred cleanup — gives StrictMode a chance to cancel and reuse
