@@ -41,7 +41,7 @@ describe('subscription-helper', () => {
         'ws-123'
       );
 
-      expect(result).toBe(false);
+      expect(result).toEqual({ hasWorkspace: false, hasActive: false });
       expect(mockConsoleError).toHaveBeenCalledWith(
         'Workspace ws-123 not found, cannot check active subscriptions'
       );
@@ -80,7 +80,7 @@ describe('subscription-helper', () => {
         'ws-123'
       );
 
-      expect(result).toBe(true);
+      expect(result).toEqual({ hasWorkspace: true, hasActive: true });
       expect(mockPolar.subscriptions.list).toHaveBeenCalledWith({
         metadata: { wsId: 'ws-123' },
         sorting: 'status',
@@ -119,7 +119,7 @@ describe('subscription-helper', () => {
         'ws-123'
       );
 
-      expect(result).toBe(false);
+      expect(result).toEqual({ hasWorkspace: true, hasActive: false });
     });
 
     it('should return false when items is empty', async () => {
@@ -151,7 +151,7 @@ describe('subscription-helper', () => {
         'ws-123'
       );
 
-      expect(result).toBe(false);
+      expect(result).toEqual({ hasWorkspace: true, hasActive: false });
     });
 
     it('should return false when items is null/undefined', async () => {
@@ -183,10 +183,10 @@ describe('subscription-helper', () => {
         'ws-123'
       );
 
-      expect(result).toBe(false);
+      expect(result).toEqual({ hasWorkspace: true, hasActive: false });
     });
 
-    it('should return true on error to avoid duplicate free subscriptions', async () => {
+    it('should return false on error', async () => {
       const mockPolar = {
         subscriptions: {
           list: vi.fn().mockRejectedValue(new Error('Polar API error')),
@@ -211,7 +211,7 @@ describe('subscription-helper', () => {
         'ws-123'
       );
 
-      expect(result).toBe(true);
+      expect(result).toEqual({ hasWorkspace: true, hasActive: false });
       expect(mockConsoleError).toHaveBeenCalledWith(
         'Error checking active subscriptions:',
         'Polar API error'
@@ -243,7 +243,7 @@ describe('subscription-helper', () => {
         'ws-123'
       );
 
-      expect(result).toBe(true);
+      expect(result).toEqual({ hasWorkspace: true, hasActive: false });
       expect(mockConsoleError).toHaveBeenCalledWith(
         'Error checking active subscriptions:',
         'String error'

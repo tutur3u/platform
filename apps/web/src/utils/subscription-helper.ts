@@ -8,25 +8,19 @@ export async function hasActiveSubscription(
   wsId: string
 ) {
   // First check if workspace exists
-  const { data: workspace, error: workspaceError } = await supabase
+  const { data: workspace } = await supabase
     .from('workspaces')
     .select('*')
     .eq('id', wsId)
     .eq('deleted', false)
     .maybeSingle();
 
-  if (workspaceError) {
-    console.error(
-      `Error fetching workspace ${wsId}: ${workspaceError.message}`
-    );
-    return true; // Fail safe
-  }
-
   if (!workspace) {
     console.error(
       `Workspace ${wsId} not found, cannot check active subscriptions`
     );
-    return true; // Return true to prevent duplicate creation
+
+    return { hasWorkspace: false, hasActive: false };
   }
 
   try {
@@ -37,11 +31,14 @@ export async function hasActiveSubscription(
     });
 
     // Check if there's at least one active subscription
-    return result.items?.some((sub) => sub.status === 'active') ?? false;
+    return {
+      hasWorkspace: true,
+      hasActive: result.items?.some((sub) => sub.status === 'active') ?? false,
+    };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error('Error checking active subscriptions:', errorMessage);
-    return true; // Assume true to avoid creating duplicate free subscriptions
+    return { hasWorkspace: true, hasActive: false };
   }
 }
 
@@ -52,7 +49,19 @@ export async function createFreeSubscription(
   wsId: string
 ) {
   // Check if the workspace already has an active subscription
-  const hasActive = await hasActiveSubscription(polar, supabase, wsId);
+  const { hasWorkspace, hasActive } = await hasActiveSubscription(
+    polar,
+    supabase,
+    wsId
+  );
+
+  if (!hasWorkspace) {
+    console.error(
+      `Workspace ${wsId} not found, cannot create free subscription`
+    );
+    return null;
+  }
+
   if (hasActive) {
     console.log(
       `Workspace ${wsId} already has an active subscription, skipping free subscription creation`
@@ -66,6 +75,7 @@ export async function createFreeSubscription(
     .from('workspaces')
     .select('*')
     .eq('id', wsId)
+    .eq('deleted', false)
     .maybeSingle();
 
   if (!workspace) {
