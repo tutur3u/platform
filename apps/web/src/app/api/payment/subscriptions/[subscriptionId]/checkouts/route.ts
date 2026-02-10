@@ -64,6 +64,24 @@ export async function POST(
     );
   }
 
+  const { data: workspace, error: workspaceError } = await supabase
+    .from('workspaces')
+    .select('*')
+    .eq('id', wsId)
+    .maybeSingle();
+
+  if (workspaceError) {
+    console.error('Error fetching workspace:', workspaceError);
+    return NextResponse.json(
+      { error: 'An error occurred while fetching the workspace' },
+      { status: 500 }
+    );
+  }
+
+  if (!workspace) {
+    return NextResponse.json({ error: 'Workspace not found' }, { status: 404 });
+  }
+
   // Get subscription from database
   const { data: subscription, error: subscriptionError } = await supabase
     .from('workspace_subscriptions')
@@ -86,32 +104,36 @@ export async function POST(
     );
   }
 
-  const { count: memberCount, error: memberCountError } = await supabase
-    .from('workspace_members')
-    .select('*', { count: 'exact', head: true })
-    .eq('ws_id', wsId);
+  let seats: number | undefined;
 
-  if (memberCountError) {
-    return NextResponse.json(
-      { error: memberCountError.message },
-      { status: 500 }
-    );
-  }
+  if (!workspace.personal) {
+    const { count: memberCount, error: memberCountError } = await supabase
+      .from('workspace_members')
+      .select('*', { count: 'exact', head: true })
+      .eq('ws_id', wsId);
 
-  const seats = memberCount || 0;
+    if (memberCountError) {
+      return NextResponse.json(
+        { error: memberCountError.message },
+        { status: 500 }
+      );
+    }
 
-  if (seats && !Number.isInteger(seats)) {
-    return NextResponse.json(
-      { error: 'Seats must be an integer' },
-      { status: 400 }
-    );
-  }
+    seats = memberCount || 0;
 
-  if (seats < 1 || seats > 1000) {
-    return NextResponse.json(
-      { error: 'Seats must be between 1 and 1000' },
-      { status: 400 }
-    );
+    if (seats && !Number.isInteger(seats)) {
+      return NextResponse.json(
+        { error: 'Seats must be an integer' },
+        { status: 400 }
+      );
+    }
+
+    if (seats < 1 || seats > 1000) {
+      return NextResponse.json(
+        { error: 'Seats must be between 1 and 1000' },
+        { status: 400 }
+      );
+    }
   }
 
   // HERE is where you add the metadata

@@ -6,6 +6,7 @@ import {
   ChevronDown,
   Clock,
   Loader2,
+  Trash2,
   TriangleAlert,
   UserPlus,
   XCircle,
@@ -241,25 +242,32 @@ function useElapsedTime(isRunning: boolean) {
 export default function PlatformSubscriptionsMigrationPage() {
   const [revokeState, setRevokeState] = useState<MigrationState>(INITIAL_STATE);
   const [freeState, setFreeState] = useState<MigrationState>(INITIAL_STATE);
+  const [orphanState, setOrphanState] = useState<MigrationState>(INITIAL_STATE);
 
   const revokeRunning =
     revokeState.status === 'running' || revokeState.status === 'loading';
   const freeRunning =
     freeState.status === 'running' || freeState.status === 'loading';
-  const anyRunning = revokeRunning || freeRunning;
+  const orphanRunning =
+    orphanState.status === 'running' || orphanState.status === 'loading';
+  const anyRunning = revokeRunning || freeRunning || orphanRunning;
 
   const revokeElapsed = useElapsedTime(revokeRunning);
   const freeElapsed = useElapsedTime(freeRunning);
+  const orphanElapsed = useElapsedTime(orphanRunning);
 
   const runMigration = useCallback(
     async (
+      route: string,
       method: 'DELETE' | 'POST',
       setState: React.Dispatch<React.SetStateAction<MigrationState>>
     ) => {
       setState({ ...INITIAL_STATE, status: 'loading' });
 
       try {
-        const res = await fetch('/api/platform/subscriptions', { method });
+        const res = await fetch(route, {
+          method,
+        });
 
         if (!res.ok) {
           const data = await res.json();
@@ -283,6 +291,7 @@ export default function PlatformSubscriptionsMigrationPage() {
                 stats: {
                   created: (event.created as number) ?? 0,
                   processed: (event.processed as number) ?? 0,
+                  kept: (event.kept as number) ?? 0,
                   skipped: (event.skipped as number) ?? 0,
                   errors: (event.errors as number) ?? 0,
                 },
@@ -296,6 +305,7 @@ export default function PlatformSubscriptionsMigrationPage() {
                 stats: {
                   created: (event.created as number) ?? 0,
                   processed: (event.processed as number) ?? 0,
+                  kept: (event.kept as number) ?? 0,
                   skipped: (event.skipped as number) ?? 0,
                   errors: (event.errors as number) ?? 0,
                 },
@@ -340,7 +350,7 @@ export default function PlatformSubscriptionsMigrationPage() {
   return (
     <div className="container mx-auto max-w-4xl space-y-6 p-6">
       <div>
-        <h1 className="mb-2 font-bold text-3xl">Platform Subscriptions</h1>
+        <h1 className="mb-2 font-bold text-3xl">Platform Billing</h1>
         <p className="text-muted-foreground">
           Global migration tool for admin use only
         </p>
@@ -355,33 +365,39 @@ export default function PlatformSubscriptionsMigrationPage() {
         </AlertDescription>
       </Alert>
 
-      {/* Step 1: Revoke Old Subscriptions */}
+      {/* Revoke Duplicate Subscriptions */}
       <MigrationCard
         icon={<Zap className="h-5 w-5" />}
-        title="Step 1 — Revoke Old Subscriptions"
+        title="Revoke Duplicate Subscriptions"
         description={[
-          'Scan all active subscriptions',
-          'Revoke old subscriptions in Polar immediately',
-          'Webhook system automatically recreates free plan subscriptions',
-          'Users can then upgrade to fixed-price or seat-based plans',
+          'Find workspaces with more than one active subscription',
+          'Keep the latest subscription per workspace (sorted by creation date)',
+          'Revoke older duplicate subscriptions in Polar',
+          'Skip workspaces that only have a single active subscription',
         ]}
         state={revokeState}
         elapsed={revokeElapsed}
-        statLabels={['Processed', 'Skipped', 'Errors']}
-        statKeys={['processed', 'skipped', 'errors']}
+        statLabels={['Revoked', 'Kept', 'Skipped', 'Errors']}
+        statKeys={['processed', 'kept', 'skipped', 'errors']}
         disabled={anyRunning}
         variant="destructive"
-        confirmLabel="This will revoke ALL active subscriptions. Are you sure?"
-        actionLabel="Revoke Old Subscriptions"
+        confirmLabel="This will revoke old duplicate subscriptions (keeping the latest per workspace). Are you sure?"
+        actionLabel="Revoke Duplicate Subscriptions"
         pendingLabel="Revoking..."
         actionIcon={<Zap className="mr-2 h-4 w-4" />}
-        onRun={() => runMigration('DELETE', setRevokeState)}
+        onRun={() =>
+          runMigration(
+            '/api/payment/migrations/subscriptions/duplicates',
+            'DELETE',
+            setRevokeState
+          )
+        }
       />
 
       {/* Step 2: Add Free Subscriptions */}
       <MigrationCard
         icon={<UserPlus className="h-5 w-5" />}
-        title="Step 2 — Add Free Subscriptions"
+        title="Add Free Subscriptions"
         description={[
           'Find all workspaces without active subscriptions',
           'Subscribe workspaces to free product via Polar',
@@ -396,7 +412,42 @@ export default function PlatformSubscriptionsMigrationPage() {
         actionLabel="Add Free Subscriptions"
         pendingLabel="Creating..."
         actionIcon={<UserPlus className="mr-2 h-4 w-4" />}
-        onRun={() => runMigration('POST', setFreeState)}
+        onRun={() =>
+          runMigration(
+            '/api/payment/migrations/subscriptions',
+            'POST',
+            setFreeState
+          )
+        }
+      />
+
+      {/* Revoke Orphaned Subscriptions */}
+      <MigrationCard
+        icon={<Trash2 className="h-5 w-5" />}
+        title="Revoke Orphaned Subscriptions"
+        description={[
+          'Find active subscriptions for workspaces that no longer exist',
+          'Covers both hard-deleted (removed rows) and soft-deleted (deleted = true) workspaces',
+          'Revoke orphaned subscriptions in Polar',
+          'Skip subscriptions belonging to valid workspaces',
+        ]}
+        state={orphanState}
+        elapsed={orphanElapsed}
+        statLabels={['Revoked', 'Skipped', 'Errors']}
+        statKeys={['processed', 'skipped', 'errors']}
+        disabled={anyRunning}
+        variant="destructive"
+        confirmLabel="This will revoke all active subscriptions for workspaces that no longer exist (hard-deleted or soft-deleted). Are you sure?"
+        actionLabel="Revoke Orphaned Subscriptions"
+        pendingLabel="Revoking..."
+        actionIcon={<Trash2 className="mr-2 h-4 w-4" />}
+        onRun={() =>
+          runMigration(
+            '/api/payment/migrations/subscriptions/unexisted-workspaces',
+            'DELETE',
+            setOrphanState
+          )
+        }
       />
     </div>
   );
@@ -523,7 +574,11 @@ function MigrationCard({
             </div>
 
             {/* Stats grid */}
-            <div className="grid grid-cols-4 gap-2">
+            <div
+              className={`grid gap-2 ${
+                statKeys.length >= 4 ? 'grid-cols-5' : 'grid-cols-4'
+              }`}
+            >
               <StatItem label="Total" value={state.total.toLocaleString()} />
               {statLabels.map((label, i) => {
                 const key = statKeys[i]!;
@@ -533,9 +588,11 @@ function MigrationCard({
                     ? 'text-destructive'
                     : key === 'skipped' && value > 0
                       ? 'text-dynamic-yellow'
-                      : ['created', 'processed'].includes(key) && value > 0
-                        ? 'text-dynamic-green'
-                        : '';
+                      : key === 'kept' && value > 0
+                        ? 'text-dynamic-blue'
+                        : ['created', 'processed'].includes(key) && value > 0
+                          ? 'text-dynamic-green'
+                          : '';
                 return (
                   <StatItem
                     key={key}

@@ -1260,8 +1260,8 @@ export async function WorkspaceNavigationLinks({
           requireRootMember: true,
         },
         {
-          title: 'Platform Subscriptions',
-          href: `/${personalOrWsId}/platform/subscriptions`,
+          title: 'Platform Billing',
+          href: `/${personalOrWsId}/platform/billing`,
           icon: <CreditCard className="h-5 w-5" />,
           disabled:
             ENABLE_AI_ONLY || withoutPermission('manage_workspace_roles'),

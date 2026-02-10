@@ -13,6 +13,7 @@ interface PurchaseLinkProps {
   customerEmail?: string;
   theme?: 'light' | 'dark' | 'auto';
   className?: string;
+  onCheckoutOpened?: () => void;
   /** Called when user wants to change an existing subscription. If provided, opens in-app dialog instead of external portal */
   onPlanChange?: () => void;
 }
@@ -24,6 +25,7 @@ export default function PurchaseLink({
   theme = 'auto',
   className,
   children,
+  onCheckoutOpened,
   onPlanChange,
 }: PropsWithChildren<PurchaseLinkProps>) {
   const [checkoutInstance, setCheckoutInstance] =
@@ -58,6 +60,7 @@ export default function PurchaseLink({
         // Open checkout for new subscriptions
         const checkout = await PolarEmbedCheckout.create(result.data.url, {
           theme: theme === 'auto' ? 'light' : theme,
+          onLoaded: () => onCheckoutOpened?.(),
         });
 
         setCheckoutInstance(checkout);
@@ -83,7 +86,6 @@ export default function PurchaseLink({
   useEffect(() => {
     return () => {
       if (checkoutInstance) {
-        checkoutInstance.close();
         setCheckoutInstance(null);
       }
     };

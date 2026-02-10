@@ -453,14 +453,22 @@ export const POST = Webhooks({
           `Webhook: Subscription ${payload.data.id} is fully canceled, checking if workspace ${subscriptionData.ws_id} needs a free subscription`
         );
 
-        const sbAdmin = await createAdminClient();
         const polar = createPolarClient();
+        const sbAdmin = await createAdminClient();
 
         // Check if workspace has any other active subscriptions
-        const hasActive = await hasActiveSubscription(
+        const { hasWorkspace, hasActive } = await hasActiveSubscription(
+          polar,
           sbAdmin,
           subscriptionData.ws_id
         );
+
+        if (!hasWorkspace) {
+          console.warn(
+            `Webhook: Workspace ${subscriptionData.ws_id} not found when checking for active subscriptions`
+          );
+          return;
+        }
 
         if (!hasActive) {
           console.log(
