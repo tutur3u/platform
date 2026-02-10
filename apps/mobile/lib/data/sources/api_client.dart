@@ -135,6 +135,30 @@ class ApiClient {
     return _handleResponse(response);
   }
 
+  /// PUT JSON to [path] (relative to [ApiConfig.baseUrl]).
+  ///
+  /// Returns the decoded JSON body on success, or throws [ApiException].
+  Future<Map<String, dynamic>> putJson(
+    String path,
+    Map<String, dynamic> body, {
+    bool requiresAuth = true,
+  }) async {
+    final url = Uri.parse('${ApiConfig.baseUrl}$path');
+
+    final response = await _performRequest(
+      () async => _client.put(
+        url,
+        headers: await _getHeaders(
+          contentType: 'application/json',
+          requiresAuth: requiresAuth,
+        ),
+        body: jsonEncode(body),
+      ),
+    );
+
+    return _handleResponse(response);
+  }
+
   Future<http.Response> _performRequest(
     Future<http.Response> Function() request,
   ) async {
@@ -143,15 +167,9 @@ class ApiClient {
     } on ApiException {
       rethrow;
     } on TimeoutException {
-      throw const ApiException(
-        message: 'Request timed out',
-        statusCode: 0,
-      );
+      throw const ApiException(message: 'Request timed out', statusCode: 0);
     } catch (e) {
-      throw ApiException(
-        message: e.toString(),
-        statusCode: 0,
-      );
+      throw ApiException(message: e.toString(), statusCode: 0);
     }
   }
 

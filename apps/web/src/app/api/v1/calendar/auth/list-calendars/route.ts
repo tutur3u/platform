@@ -32,7 +32,7 @@ interface CalendarToken {
 }
 
 export async function GET(request: Request): Promise<NextResponse> {
-  const supabase = await createClient();
+  const supabase = await createClient(request);
   const {
     data: { user },
     error: userError,

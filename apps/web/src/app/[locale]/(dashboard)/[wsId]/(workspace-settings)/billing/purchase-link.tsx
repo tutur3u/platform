@@ -1,8 +1,10 @@
 'use client';
 
 import { useMutation } from '@tanstack/react-query';
+import { PolarEmbedCheckout } from '@tuturuuu/payment/polar/checkout/embed';
 import { Button } from '@tuturuuu/ui/button';
 import type { PropsWithChildren } from 'react';
+import { useEffect, useState } from 'react';
 
 interface PurchaseLinkProps {
   subscriptionId: string | null;
@@ -24,6 +26,9 @@ export default function PurchaseLink({
   children,
   onPlanChange,
 }: PropsWithChildren<PurchaseLinkProps>) {
+  const [checkoutInstance, setCheckoutInstance] =
+    useState<PolarEmbedCheckout | null>(null);
+
   const mutation = useMutation({
     mutationFn: async () => {
       // Create new checkout session for new subscriptions
@@ -48,10 +53,14 @@ export default function PurchaseLink({
       const data = await response.json();
       return { type: 'checkout' as const, data };
     },
-    onSuccess: (result) => {
+    onSuccess: async (result) => {
       if (result.type === 'checkout' && result.data.url) {
         // Open checkout for new subscriptions
-        window.open(result.data.url, '_blank', 'noopener,noreferrer');
+        const checkout = await PolarEmbedCheckout.create(result.data.url, {
+          theme: theme === 'auto' ? 'light' : theme,
+        });
+
+        setCheckoutInstance(checkout);
       }
     },
     onError: (error) => {
@@ -70,11 +79,19 @@ export default function PurchaseLink({
     mutation.mutate();
   };
 
+  // Clean up checkout instance on unmount
+  useEffect(() => {
+    return () => {
+      if (checkoutInstance) {
+        checkoutInstance.close();
+        setCheckoutInstance(null);
+      }
+    };
+  }, [checkoutInstance]);
+
   return (
     <Button
       onClick={handleClick}
-      data-polar-checkout
-      data-polar-checkout-theme={theme}
       className={className}
       disabled={mutation.isPending}
     >

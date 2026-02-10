@@ -54,8 +54,14 @@ export default function BillingSettings({ wsId }: BillingSettingsProps) {
     return <NoSubscriptionFound wsId={wsId} error="SUBSCRIPTION_NOT_FOUND" />;
   }
 
-  const { subscription, products, orders, seatStatus, hasManagePermission } =
-    data;
+  const {
+    isPersonalWorkspace,
+    hasManagePermission,
+    subscription,
+    products,
+    orders,
+    seatStatus,
+  } = data;
 
   const dateLocale = locale === 'vi' ? vi : enUS;
   const formatDate = (date: string) =>
@@ -81,20 +87,21 @@ export default function BillingSettings({ wsId }: BillingSettingsProps) {
       : [t('premium-features')],
     // Seat-based pricing fields
     pricingModel: subscription.pricingModel,
-    seatCount: subscription.seatCount,
     pricePerSeat: subscription.pricePerSeat,
+    seatCount: subscription.seatCount,
+    seatList: subscription.seatList,
     maxSeats: subscription.product.max_seats,
   };
 
   return (
     <div className="space-y-6">
       <BillingClient
+        wsId={wsId}
+        isPersonalWorkspace={isPersonalWorkspace}
+        hasManageSubscriptionPermission={hasManagePermission}
         currentPlan={currentPlan}
         products={products}
-        product_id={subscription?.product.id || ''}
-        wsId={wsId}
         seatStatus={seatStatus}
-        hasManageSubscriptionPermission={hasManagePermission}
       />
 
       <BillingHistory orders={orders} />

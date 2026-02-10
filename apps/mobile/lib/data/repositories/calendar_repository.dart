@@ -1,69 +1,74 @@
 import 'package:mobile/data/models/calendar_event.dart';
-import 'package:mobile/data/sources/supabase_client.dart';
+import 'package:mobile/data/sources/api_client.dart';
 
 /// Repository for calendar event operations.
+///
+/// Calls the web API endpoints (which handle E2EE encryption/decryption
+/// server-side) instead of querying Supabase directly. This ensures
+/// that encrypted fields (title, description, location) are returned
+/// as plaintext to the client.
 class CalendarRepository {
+  CalendarRepository({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
+
+  final ApiClient _api;
+
+  static String _basePath(String wsId) =>
+      '/api/v1/workspaces/$wsId/calendar/events';
+
   Future<List<CalendarEvent>> getEvents(
     String wsId, {
     DateTime? start,
     DateTime? end,
   }) async {
-    var query = supabase
-        .from('workspace_calendar_events')
-        .select()
-        .eq('ws_id', wsId);
+    final params = <String, String>{};
+    if (start != null) params['start_at'] = start.toUtc().toIso8601String();
+    if (end != null) params['end_at'] = end.toUtc().toIso8601String();
 
-    if (start != null) {
-      query = query.or(
-        'end_at.gte.${start.toUtc().toIso8601String()},end_at.is.null',
+    var query = '';
+    if (params.isNotEmpty) {
+      final pairs = params.entries.map(
+        (e) => '${e.key}=${Uri.encodeComponent(e.value)}',
       );
-    }
-    if (end != null) {
-      query = query.lte('start_at', end.toUtc().toIso8601String());
+      query = '?${pairs.join('&')}';
     }
 
-    final response = await query.order('start_at');
+    final response = await _api.getJson('${_basePath(wsId)}$query');
 
-    return (response as List<dynamic>)
+    final data = response['data'] as List<dynamic>? ?? [];
+    return data
         .map((e) => CalendarEvent.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 
-  Future<CalendarEvent?> getEventById(String eventId) async {
-    final response = await supabase
-        .from('workspace_calendar_events')
-        .select()
-        .eq('id', eventId)
-        .maybeSingle();
-
-    if (response == null) return null;
-    return CalendarEvent.fromJson(response);
+  Future<CalendarEvent?> getEventById(String wsId, String eventId) async {
+    try {
+      final response = await _api.getJson('${_basePath(wsId)}/$eventId');
+      return CalendarEvent.fromJson(response);
+    } on ApiException catch (e) {
+      if (e.statusCode == 404) return null;
+      rethrow;
+    }
   }
 
   Future<CalendarEvent> createEvent(
     String wsId,
     Map<String, dynamic> data,
   ) async {
-    final response = await supabase
-        .from('workspace_calendar_events')
-        .insert({...data, 'ws_id': wsId})
-        .select()
-        .single();
-
+    final response = await _api.postJson(_basePath(wsId), data);
     return CalendarEvent.fromJson(response);
   }
 
   Future<void> updateEvent(
+    String wsId,
     String eventId,
     Map<String, dynamic> data,
   ) async {
-    await supabase
-        .from('workspace_calendar_events')
-        .update(data)
-        .eq('id', eventId);
+    await _api.putJson('${_basePath(wsId)}/$eventId', data);
   }
 
-  Future<void> deleteEvent(String eventId) async {
-    await supabase.from('workspace_calendar_events').delete().eq('id', eventId);
+  Future<void> deleteEvent(String wsId, String eventId) async {
+    await _api.deleteJson('${_basePath(wsId)}/$eventId');
   }
+
+  void dispose() => _api.dispose();
 }

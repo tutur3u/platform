@@ -1590,9 +1590,31 @@ Three entry points: `main_development.dart`, `main_staging.dart`, `main_producti
 
 **Common CI Failure:** `dart format --set-exit-if-changed lib test` fails when Dart files are unformatted. Fix: run `dart format lib test` from `apps/mobile/` and commit.
 
-### 14.5 API Integration
+### 14.5 Verification (MANDATORY)
 
-The mobile app calls the same mobile auth endpoints as the former Expo app (`/api/v1/auth/mobile/*`). These endpoints return Supabase session tokens (not cookies) since native clients handle auth differently.
+**Always run `bun check:mobile` after making changes to `apps/mobile/`.** This command runs all CI checks locally:
+
+```bash
+bun check:mobile   # dart format --set-exit-if-changed lib test && flutter analyze && flutter test
+```
+
+This is the mobile equivalent of `bun check` for the web monorepo. All three checks (format, analyze, test) MUST pass before pushing. `bun format` / Biome does NOT cover Dart files — `bun check:mobile` is the only way to verify mobile code quality.
+
+**Choosing the right check command:**
+
+- **`bun check`** — for web-related work: Next.js apps, React components, TypeScript/JavaScript files, i18n, packages. Runs Biome, Vitest, type-check, i18n checks.
+- **`bun check:mobile`** — for Flutter/Dart work in `apps/mobile/`. Runs dart format, flutter analyze, flutter test.
+- If a task touches **both** web and mobile code (e.g., updating an API route + the mobile client), run **both** commands.
+
+### 14.6 API Integration & Cross-App Dependencies
+
+The mobile app connects to `apps/web` API routes (e.g., `/api/v1/calendar/*`, `/api/v1/auth/mobile/*`). These endpoints return JSON with Supabase session tokens (not cookies) since native clients handle auth differently.
+
+**Key policy for agents:** When working on mobile features that call web APIs, agents are free to propose updates or upgrades to the corresponding `apps/web` API routes. Requirements:
+
+- **Backward compatibility:** Existing API contracts must not break. Add new fields as optional; deprecate old fields gracefully rather than removing them.
+- **`createClient(request)` pattern:** All calendar/mobile API routes MUST pass the `request` object to `createClient(request)` so Bearer token auth (mobile) works alongside cookie auth (web). Omitting `request` causes 401 errors for mobile clients.
+- **Good design:** Follow existing patterns (Zod validation, proper error codes, consistent response shapes).
 
 ## 15. Known Gotchas & Patterns
 

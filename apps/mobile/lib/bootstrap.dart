@@ -3,6 +3,7 @@ import 'dart:developer';
 
 import 'package:bloc/bloc.dart';
 import 'package:flutter/widgets.dart';
+import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 
 class AppBlocObserver extends BlocObserver {
@@ -21,7 +22,9 @@ class AppBlocObserver extends BlocObserver {
   }
 }
 
-Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
+Future<void> bootstrap(
+  FutureOr<Widget> Function({String? initialRoute}) builder,
+) async {
   WidgetsFlutterBinding.ensureInitialized();
 
   FlutterError.onError = (details) {
@@ -37,5 +40,8 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
     log('Failed to initialize Supabase: $e', stackTrace: st);
   }
 
-  runApp(await builder());
+  // Pre-load the user's last tab route so the router starts there directly.
+  final initialRoute = await SettingsRepository().getLastTabRoute();
+
+  runApp(await builder(initialRoute: initialRoute));
 }

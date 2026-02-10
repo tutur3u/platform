@@ -414,8 +414,6 @@ export function TaskDialogHeader({
         {collaborationMode && isOpen && !isCreateMode && user && taskId && (
           <TaskViewerAvatarsComponent
             taskId={taskId}
-            boardId={boardId}
-            isViewing={isOpen}
             compact={false}
             onClickUser={onScrollToUserCursor}
           />

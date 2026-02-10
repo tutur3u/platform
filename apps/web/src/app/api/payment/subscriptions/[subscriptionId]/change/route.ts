@@ -1,4 +1,4 @@
-import { createPolarClient } from '@tuturuuu/payment/polar/client';
+import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { type NextRequest, NextResponse } from 'next/server';

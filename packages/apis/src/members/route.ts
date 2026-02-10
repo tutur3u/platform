@@ -1,4 +1,10 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import type { Polar } from '@tuturuuu/payment/polar';
+import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   PERSONAL_WORKSPACE_SLUG,
   resolveWorkspaceId,
@@ -84,6 +90,13 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   const supabase = await createClient();
   const resolvedWsId = await normalizeWorkspaceId(wsId);
 
+  // Revoke Polar seat BEFORE deleting member (best-effort)
+  if (userId) {
+    const polar = createPolarClient();
+    const sbAdmin = await createAdminClient();
+    await revokeSeatFromMember(polar, sbAdmin, resolvedWsId, userId);
+  }
+
   const inviteQuery = userId
     ? supabase
         .from('workspace_invites')
@@ -124,4 +137,71 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   }
 
   return NextResponse.json({ message: 'success' });
+}
+
+/**
+ * Revokes a Polar seat from a workspace member
+ * Best-effort: logs warning if seat not found but doesn't throw
+ */
+async function revokeSeatFromMember(
+  polar: Polar,
+  supabase: TypedSupabaseClient,
+  wsId: string,
+  userId: string
+): Promise<void> {
+  // Fetch active subscription
+  const { data: subscription } = await supabase
+    .from('workspace_subscriptions')
+    .select(
+      `
+      polar_subscription_id,
+      workspace_subscription_products (
+        pricing_model
+      )
+    `
+    )
+    .eq('ws_id', wsId)
+    .eq('status', 'active')
+    .single();
+
+  // No active subscription or not seat-based
+  if (
+    !subscription ||
+    !subscription.workspace_subscription_products ||
+    subscription.workspace_subscription_products.pricing_model !== 'seat_based'
+  ) {
+    return; // Skip for non-seat-based subscriptions
+  }
+
+  try {
+    // List all seats for this subscription
+    const seatsList = await polar.customerSeats.listSeats({
+      subscriptionId: subscription.polar_subscription_id!,
+    });
+
+    // Find the seat for this user (match by customerId from personal customer)
+    const userSeat = seatsList.seats.find((seat) => {
+      // Match by the personal customer's externalId
+      return seat.customerId === userId;
+    });
+
+    if (!userSeat) {
+      console.warn(
+        `No Polar seat found for user ${userId} in workspace ${wsId} - may have already been revoked`
+      );
+      return;
+    }
+
+    // Revoke the seat
+    await polar.customerSeats.revokeSeat({
+      seatId: userSeat.id,
+    });
+
+    console.log(
+      `Revoked Polar seat ${userSeat.id} from user ${userId} in workspace ${wsId}`
+    );
+  } catch (error) {
+    // Best-effort: log error but don't throw
+    console.error(`Failed to revoke Polar seat for user ${userId}:`, error);
+  }
 }

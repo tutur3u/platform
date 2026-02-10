@@ -13,7 +13,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useOptionalWorkspacePresenceContext } from '../providers/workspace-presence-provider';
 
 // ---------------------------------------------------------------------------
@@ -344,38 +344,22 @@ export function PresenceAvatarList({
 // ---------------------------------------------------------------------------
 
 /**
- * Wrapper that connects to workspace presence context and renders task viewer avatars.
+ * Read-only wrapper that connects to workspace presence context and renders
+ * task viewer avatars. Location tracking is handled centrally by
+ * BoardUserPresenceAvatarsComponent to avoid race conditions between multiple
+ * instances of this component.
  */
 export function TaskViewerAvatarsComponent({
   taskId,
-  boardId,
-  isViewing,
   compact = true,
   onClickUser,
 }: {
   taskId: string;
-  boardId?: string;
-  isViewing: boolean;
   compact?: boolean;
   onClickUser?: (userId: string, displayName: string) => void;
 }) {
   const t = useTranslations('ws-presence');
   const wsPresence = useOptionalWorkspacePresenceContext();
-  const wasViewingRef = useRef(false);
-
-  const wsUpdateLocation = wsPresence?.updateLocation;
-
-  useEffect(() => {
-    if (!wsUpdateLocation || !boardId) return;
-
-    if (isViewing) {
-      wasViewingRef.current = true;
-      wsUpdateLocation({ type: 'board', boardId, taskId });
-    } else if (wasViewingRef.current) {
-      wasViewingRef.current = false;
-      wsUpdateLocation({ type: 'board', boardId });
-    }
-  }, [wsUpdateLocation, taskId, boardId, isViewing]);
 
   const taskViewers = wsPresence?.getTaskViewers(taskId) ?? [];
   const currentUserId = wsPresence?.currentUserId;

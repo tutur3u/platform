@@ -20,7 +20,7 @@ const getGoogleAuthClient = (tokens: {
 export async function POST(request: Request) {
   console.log('🔵 [API] POST /api/v1/calendar/auth/sync-to-google called');
 
-  const supabase = await createClient();
+  const supabase = await createClient(request);
   const {
     data: { user },
     error: userError,

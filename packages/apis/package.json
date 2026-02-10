@@ -9,6 +9,7 @@
     "type-check": "tsgo --build"
   },
   "dependencies": {
+    "@tuturuuu/payment": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "dayjs": "^1.11.19",

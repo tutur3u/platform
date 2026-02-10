@@ -1,5 +1,14 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import {
+  assignSeatToMember,
+  revokeSeatFromMember,
+} from '@/utils/polar-seat-helper';
+import { enforceSeatLimit } from '@/utils/seat-limits';
 
 interface Params {
   params: Promise<{
@@ -9,6 +18,7 @@ interface Params {
 
 export async function POST(_: Request, { params }: Params) {
   const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
   const { wsId } = await params;
 
   // Get authenticated user
@@ -21,12 +31,63 @@ export async function POST(_: Request, { params }: Params) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  // Validate that user has a pending invite
+  const { data: pendingInvite } = await supabase
+    .from('workspace_invites')
+    .select('id')
+    .eq('ws_id', wsId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (!pendingInvite) {
+    return NextResponse.json(
+      { error: 'No pending invite found' },
+      { status: 404 }
+    );
+  }
+
+  // Check seat limit BEFORE adding member (existing gap - was missing)
+  const seatCheck = await enforceSeatLimit(sbAdmin, wsId);
+  if (!seatCheck.allowed) {
+    return NextResponse.json(
+      {
+        error: 'SEAT_LIMIT_REACHED',
+        message: seatCheck.message,
+        seatStatus: seatCheck.status,
+      },
+      { status: 403 }
+    );
+  }
+
+  // Assign Polar seat BEFORE adding member (if seat-based subscription)
+  const polar = createPolarClient();
+  const seatAssignment = await assignSeatToMember(
+    polar,
+    sbAdmin,
+    wsId,
+    user.id
+  );
+  if (seatAssignment.required && !seatAssignment.success) {
+    return NextResponse.json(
+      {
+        error: 'POLAR_SEAT_ASSIGNMENT_FAILED',
+        message: seatAssignment.error,
+      },
+      { status: 403 }
+    );
+  }
+
   // Insert user as workspace member
   const { error } = await supabase
     .from('workspace_members')
     .insert({ ws_id: wsId, user_id: user.id });
 
   if (error) {
+    // Rollback: revoke the Polar seat if it was assigned
+    if (seatAssignment.required && seatAssignment.success) {
+      await revokeSeatFromMember(polar, sbAdmin, wsId, user.id);
+    }
+
     console.error('Error accepting invite:', error);
     return NextResponse.json({ error: error.message }, { status: 401 });
   }

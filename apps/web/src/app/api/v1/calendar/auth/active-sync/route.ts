@@ -41,7 +41,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   };
 
   // Initial Supabase client and user check
-  const supabase = await createClient();
+  const supabase = await createClient(request);
   const {
     data: { user },
     error: userError,

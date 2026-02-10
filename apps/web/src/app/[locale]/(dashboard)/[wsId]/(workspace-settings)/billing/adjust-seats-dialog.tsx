@@ -205,7 +205,7 @@ export function AdjustSeatsDialog({
               </Button>
             </div>
             <p className="text-center text-muted-foreground text-xs">
-              {t('seat-range', { min: minSeats, max: maxSeats ?? '∞' })}
+              {t('seat-range', { min: minSeats, max: maxSeats ?? '1000' })}
             </p>
           </div>
 

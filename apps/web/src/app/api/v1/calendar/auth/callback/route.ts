@@ -83,7 +83,7 @@ export async function GET(request: Request) {
 
     console.log('🔍 [DEBUG] Creating Supabase client...');
     // Initialize Supabase client with cookies to access the current session
-    const supabase = await createClient();
+    const supabase = await createClient(request);
     console.log('✅ [DEBUG] Supabase client created');
 
     console.log('🔍 [DEBUG] Getting current user...');

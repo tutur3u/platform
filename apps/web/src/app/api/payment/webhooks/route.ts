@@ -1,8 +1,9 @@
 import type { Order, Subscription } from '@tuturuuu/payment/polar';
-import { createPolarClient } from '@tuturuuu/payment/polar/client';
 import { Webhooks } from '@tuturuuu/payment/polar/next';
+import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { Constants, type WorkspaceProductTier } from '@tuturuuu/types';
+import type { WorkspaceProductTier } from '@tuturuuu/types';
+import { assignSeatsToAllMembers } from '@/utils/polar-seat-helper';
 import {
   createFreeSubscription,
   hasActiveSubscription,
@@ -88,9 +89,7 @@ export async function syncSubscriptionToDatabase(subscription: Subscription) {
           ? new Date(subscription.modifiedAt).toISOString()
           : null,
     // Seat-based pricing fields
-    pricing_model: isSeatBased ? ('seat_based' as const) : ('fixed' as const),
     seat_count: seatCount,
-    price_per_seat: product?.price_per_seat ?? null,
   };
 
   // Update existing subscription
@@ -164,66 +163,81 @@ export const POST = Webhooks({
   onProductCreated: async (payload) => {
     console.log('Product created:', payload);
 
+    const product = payload.data;
+
+    // Validate metadata before entering try-catch to ensure proper error response
+    const metadataProductTier = product.metadata?.product_tier;
+
+    if (!metadataProductTier || typeof metadataProductTier !== 'string') {
+      console.error(
+        'Webhook Error: product_tier metadata is missing or invalid.'
+      );
+      throw new Response(
+        'Webhook Error: product_tier metadata is missing or invalid.',
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const tierValue = metadataProductTier.toUpperCase();
+    const validTiers: WorkspaceProductTier[] = [
+      'FREE',
+      'PLUS',
+      'PRO',
+      'ENTERPRISE',
+    ];
+    const tier = validTiers.includes(tierValue as WorkspaceProductTier)
+      ? (tierValue as WorkspaceProductTier)
+      : null;
+
+    if (!tier) {
+      console.error(
+        `Webhook Error: Invalid product_tier value: ${tierValue}. Expected one of: ${validTiers.join(', ')}`
+      );
+      throw new Response(
+        `Webhook Error: Invalid product_tier value: ${tierValue}`,
+        {
+          status: 400,
+        }
+      );
+    }
+
     try {
       const sbAdmin = await createAdminClient();
-      const product = payload.data;
 
-      // Extract product_tier from metadata
-      const validTiers = Constants.public.Enums.workspace_product_tier;
-      const metadataProductTier = product.metadata?.product_tier;
+      const firstPrice = product.prices.find((p) => 'amountType' in p);
 
-      // Only set tier if it matches valid enum values
-      const tier =
-        metadataProductTier &&
-        typeof metadataProductTier === 'string' &&
-        validTiers.includes(
-          metadataProductTier.toUpperCase() as WorkspaceProductTier
-        )
-          ? (metadataProductTier.toUpperCase() as WorkspaceProductTier)
-          : null;
+      const isSeatBased = firstPrice?.amountType === 'seat_based';
+      const isFixed = firstPrice?.amountType === 'fixed';
 
-      // Extract price from first price entry
-      const firstPrice =
-        product.prices.length > 0 ? (product.prices[0] as any) : null;
-
-      const price =
-        firstPrice && 'priceAmount' in firstPrice ? firstPrice.priceAmount : 0;
-
-      // Find seat-based price if it exists
-      const seatBasedPrice = product.prices.find(
-        (p: any) => 'amountType' in p && p.amountType === 'seat_based'
-      ) as any;
-
-      const isSeatBased = !!seatBasedPrice;
+      const price = isFixed ? firstPrice.priceAmount : null;
 
       const pricePerSeat = isSeatBased
-        ? (seatBasedPrice?.seatTiers?.tiers?.[0]?.pricePerSeat ?? null)
+        ? (firstPrice?.seatTiers?.tiers?.[0]?.pricePerSeat ?? null)
         : null;
 
-      const minSeats = isSeatBased
-        ? (seatBasedPrice?.seatTiers?.minimumSeats ?? null)
-        : null;
+      const minSeats = isSeatBased ? firstPrice?.seatTiers?.minimumSeats : null;
 
-      const maxSeats = isSeatBased
-        ? (seatBasedPrice?.seatTiers?.maximumSeats ?? null)
-        : null;
+      const maxSeats = isSeatBased ? firstPrice?.seatTiers?.maximumSeats : null;
+
+      const productData = {
+        id: product.id,
+        name: product.name,
+        description: product.description || '',
+        price: price,
+        recurring_interval: product.recurringInterval || 'month',
+        tier,
+        archived: product.isArchived ?? false,
+        pricing_model: firstPrice?.amountType,
+        price_per_seat: pricePerSeat,
+        min_seats: minSeats,
+        max_seats: maxSeats,
+      };
 
       const { error: dbError } = await sbAdmin
         .from('workspace_subscription_products')
-        .insert({
-          id: product.id,
-          name: product.name,
-          description: product.description || '',
-          price,
-          recurring_interval: product.recurringInterval,
-          tier,
-          archived: product.isArchived,
-          // Seat-based pricing fields
-          pricing_model: isSeatBased ? 'seat_based' : 'fixed',
-          price_per_seat: pricePerSeat,
-          min_seats: minSeats,
-          max_seats: maxSeats,
-        });
+        .insert(productData);
 
       if (dbError) {
         console.error('Webhook: Product insert error:', dbError.message);
@@ -246,52 +260,63 @@ export const POST = Webhooks({
   onProductUpdated: async (payload) => {
     console.log('Product updated:', payload);
 
+    const product = payload.data;
+
+    // Validate metadata before entering try-catch to ensure proper error response
+    const metadataProductTier = product.metadata?.product_tier;
+
+    if (!metadataProductTier || typeof metadataProductTier !== 'string') {
+      console.error(
+        'Webhook Error: product_tier metadata is missing or invalid.'
+      );
+      throw new Response(
+        'Webhook Error: product_tier metadata is missing or invalid.',
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const tierValue = metadataProductTier.toUpperCase();
+    const validTiers: WorkspaceProductTier[] = [
+      'FREE',
+      'PLUS',
+      'PRO',
+      'ENTERPRISE',
+    ];
+    const tier = validTiers.includes(tierValue as WorkspaceProductTier)
+      ? (tierValue as WorkspaceProductTier)
+      : null;
+
+    if (!tier) {
+      console.error(
+        `Webhook Error: Invalid product_tier value: ${tierValue}. Expected one of: ${validTiers.join(', ')}`
+      );
+      throw new Response(
+        `Webhook Error: Invalid product_tier value: ${tierValue}`,
+        {
+          status: 400,
+        }
+      );
+    }
+
     try {
       const sbAdmin = await createAdminClient();
-      const product = payload.data;
 
-      // Extract product_tier from metadata
-      const validTiers = Constants.public.Enums.workspace_product_tier;
-      const metadataProductTier = product.metadata?.product_tier;
+      const firstPrice = product.prices.find((p) => 'amountType' in p);
 
-      // Only set tier if it matches valid enum values
-      const tier =
-        metadataProductTier &&
-        typeof metadataProductTier === 'string' &&
-        validTiers.includes(
-          metadataProductTier.toUpperCase() as WorkspaceProductTier
-        )
-          ? (metadataProductTier.toUpperCase() as WorkspaceProductTier)
-          : null;
+      const isSeatBased = firstPrice?.amountType === 'seat_based';
+      const isFixed = firstPrice?.amountType === 'fixed';
 
-      // Extract price from first price entry
-      const firstPrice = product.prices[0] as any;
-
-      const price =
-        product.prices.length > 0
-          ? firstPrice && 'priceAmount' in firstPrice
-            ? firstPrice.priceAmount
-            : 0
-          : 0;
-
-      // Find seat-based price if it exists
-      const seatBasedPrice = product.prices.find(
-        (p: any) => 'amountType' in p && p.amountType === 'seat_based'
-      ) as any;
-
-      const isSeatBased = !!seatBasedPrice;
+      const price = isFixed ? firstPrice.priceAmount : null;
 
       const pricePerSeat = isSeatBased
-        ? (seatBasedPrice?.seatTiers?.tiers?.[0]?.pricePerSeat ?? null)
+        ? (firstPrice?.seatTiers?.tiers?.[0]?.pricePerSeat ?? null)
         : null;
 
-      const minSeats = isSeatBased
-        ? (seatBasedPrice?.seatTiers?.minimumSeats ?? null)
-        : null;
+      const minSeats = isSeatBased ? firstPrice?.seatTiers?.minimumSeats : null;
 
-      const maxSeats = isSeatBased
-        ? (seatBasedPrice?.seatTiers?.maximumSeats ?? null)
-        : null;
+      const maxSeats = isSeatBased ? firstPrice?.seatTiers?.maximumSeats : null;
 
       const { error: dbError } = await sbAdmin
         .from('workspace_subscription_products')
@@ -299,11 +324,11 @@ export const POST = Webhooks({
           name: product.name,
           description: product.description || '',
           price,
-          recurring_interval: product.recurringInterval,
+          recurring_interval: product.recurringInterval as string,
           tier,
           archived: product.isArchived,
           // Seat-based pricing fields
-          pricing_model: isSeatBased ? 'seat_based' : 'fixed',
+          pricing_model: firstPrice?.amountType,
           price_per_seat: pricePerSeat,
           min_seats: minSeats,
           max_seats: maxSeats,
@@ -331,13 +356,13 @@ export const POST = Webhooks({
   // Handle new subscription creation
   onSubscriptionCreated: async (payload) => {
     try {
-      const { subscriptionData } = await syncSubscriptionToDatabase(
-        payload.data
-      );
+      const { subscriptionData, isSeatBased } =
+        await syncSubscriptionToDatabase(payload.data);
       console.log('Webhook: Subscription created:', payload.data.id);
 
-      // Report initial usage for new subscriptions
-      if (payload.data.status === 'active') {
+      // Report initial usage for new subscriptions (only non-seat-based)
+      // Seat-based subscriptions use Polar Seats entity instead of events
+      if (payload.data.status === 'active' && !isSeatBased) {
         try {
           await reportInitialUsage(
             subscriptionData.ws_id,
@@ -346,6 +371,26 @@ export const POST = Webhooks({
         } catch (e) {
           // Log but don't fail - subscription is already saved
           console.error('Webhook: Failed to report initial usage', e);
+        }
+      }
+
+      // Assign Polar seats to all current members if seat-based subscription
+      if (payload.data.status === 'active' && isSeatBased) {
+        console.log(
+          `Webhook: Assigning seats to all members in workspace ${subscriptionData.ws_id}`
+        );
+        try {
+          const polar = createPolarClient();
+          const sbAdmin = await createAdminClient();
+          await assignSeatsToAllMembers(
+            polar,
+            sbAdmin,
+            subscriptionData.ws_id,
+            payload.data.id
+          );
+        } catch (e) {
+          // Log but don't fail - subscription is already saved
+          console.error('Webhook: Failed to assign seats to members', e);
         }
       }
 
@@ -362,22 +407,43 @@ export const POST = Webhooks({
   // Handle ALL subscription updates (status changes, plan changes, cancellations, etc.)
   onSubscriptionUpdated: async (payload) => {
     try {
-      const { subscriptionData } = await syncSubscriptionToDatabase(
-        payload.data
-      );
+      const { subscriptionData, isSeatBased } =
+        await syncSubscriptionToDatabase(payload.data);
       console.log(
         `Webhook: Subscription updated: ${payload.data.id}, status: ${payload.data.status}`
       );
 
-      // If subscription just became active, report usage
+      // If subscription just became active, handle usage reporting and seat assignment
       if (payload.data.status === 'active') {
-        try {
-          await reportInitialUsage(
-            subscriptionData.ws_id,
-            payload.data.customer.id
+        // Report usage for non-seat-based subscriptions only
+        if (!isSeatBased) {
+          try {
+            await reportInitialUsage(
+              subscriptionData.ws_id,
+              payload.data.customer.id
+            );
+          } catch (e) {
+            console.error('Webhook: Failed to report usage on activation', e);
+          }
+        }
+
+        // Assign seats for seat-based subscriptions (upgrade flow)
+        if (isSeatBased) {
+          console.log(
+            `Webhook: Subscription activated with seat-based pricing, assigning seats to all members in workspace ${subscriptionData.ws_id}`
           );
-        } catch (e) {
-          console.error('Webhook: Failed to report usage on activation', e);
+          try {
+            const polar = createPolarClient();
+            const sbAdmin = await createAdminClient();
+            await assignSeatsToAllMembers(
+              polar,
+              sbAdmin,
+              subscriptionData.ws_id,
+              payload.data.id
+            );
+          } catch (e) {
+            console.error('Webhook: Failed to assign seats on activation', e);
+          }
         }
       }
 

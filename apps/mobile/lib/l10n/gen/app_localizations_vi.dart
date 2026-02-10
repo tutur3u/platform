@@ -182,6 +182,127 @@ class AppLocalizationsVi extends AppLocalizations {
   String get calendarEmpty => 'Không có sự kiện';
 
   @override
+  String get calendarToday => 'Hôm nay';
+
+  @override
+  String get calendarDayView => 'Ngày';
+
+  @override
+  String get calendarWeekView => 'Tuần';
+
+  @override
+  String get calendarMonthView => 'Tháng';
+
+  @override
+  String get calendarAllDay => 'Cả ngày';
+
+  @override
+  String get calendarNoEvents => 'Không có sự kiện cho ngày này';
+
+  @override
+  String get calendarNewEvent => 'Sự kiện mới';
+
+  @override
+  String get calendarEditEvent => 'Sửa sự kiện';
+
+  @override
+  String get calendarDeleteEvent => 'Xóa sự kiện';
+
+  @override
+  String get calendarDeleteConfirm => 'Xóa sự kiện này?';
+
+  @override
+  String get calendarEventTitle => 'Tiêu đề';
+
+  @override
+  String get calendarEventTitleHint => 'Thêm tiêu đề';
+
+  @override
+  String get calendarEventDescription => 'Mô tả';
+
+  @override
+  String get calendarEventDescriptionHint => 'Thêm mô tả';
+
+  @override
+  String get calendarEventStartDate => 'Ngày bắt đầu';
+
+  @override
+  String get calendarEventEndDate => 'Ngày kết thúc';
+
+  @override
+  String get calendarEventStartTime => 'Giờ bắt đầu';
+
+  @override
+  String get calendarEventEndTime => 'Giờ kết thúc';
+
+  @override
+  String get calendarEventAllDay => 'Cả ngày';
+
+  @override
+  String get calendarEventColor => 'Màu sắc';
+
+  @override
+  String get calendarEventSave => 'Lưu';
+
+  @override
+  String get calendarEventCreate => 'Tạo sự kiện';
+
+  @override
+  String get calendarEventUpdate => 'Cập nhật sự kiện';
+
+  @override
+  String get calendarEventDeleted => 'Đã xóa sự kiện';
+
+  @override
+  String get calendarEventCreated => 'Đã tạo sự kiện';
+
+  @override
+  String get calendarEventUpdated => 'Đã cập nhật sự kiện';
+
+  @override
+  String get calendarEventCancel => 'Hủy';
+
+  @override
+  String get calendarEventDelete => 'Xóa';
+
+  @override
+  String get calendarThreeDayView => '3 Ngày';
+
+  @override
+  String get calendarAgendaView => 'Lịch trình';
+
+  @override
+  String get calendarAgendaEmpty => 'Không có sự kiện sắp tới';
+
+  @override
+  String calendarAllDayProgress(int current, int total) {
+    return 'Ngày $current / $total';
+  }
+
+  @override
+  String get calendarConnectionsTitle => 'Quản lý tài khoản lịch';
+
+  @override
+  String get calendarConnectionsSubtitle => 'Kết nối tài khoản Google và Microsoft để đồng bộ lịch.';
+
+  @override
+  String get calendarConnectionsAccounts => 'Tài khoản đã kết nối';
+
+  @override
+  String get calendarConnectionsAddAccount => 'Thêm tài khoản';
+
+  @override
+  String get calendarConnectionsEmpty => 'Chưa có tài khoản nào được kết nối';
+
+  @override
+  String get calendarConnectionsDisconnect => 'Ngắt kết nối';
+
+  @override
+  String calendarConnectionsDisconnectConfirm(String account) {
+    return 'Ngắt kết nối $account? Các lịch liên quan sẽ bị vô hiệu hóa.';
+  }
+
+  @override
   String get financeTitle => 'Tài chính';
 
   @override
@@ -398,6 +519,24 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settingsSwitchWorkspace => 'Chuyển không gian làm việc';
+
+  @override
+  String get settingsCalendar => 'Lịch';
+
+  @override
+  String get settingsFirstDayOfWeek => 'Ngày đầu tuần';
+
+  @override
+  String get settingsFirstDayAuto => 'Tự động';
+
+  @override
+  String get settingsFirstDaySunday => 'Chủ nhật';
+
+  @override
+  String get settingsFirstDayMonday => 'Thứ hai';
+
+  @override
+  String get settingsFirstDaySaturday => 'Thứ bảy';
 
   @override
   String get settingsSignOut => 'Đăng xuất';

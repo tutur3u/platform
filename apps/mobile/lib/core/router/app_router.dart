@@ -25,9 +25,17 @@ import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/view/workspace_select_page.dart';
 
 /// Creates the app-level [GoRouter] with auth- and workspace-aware redirects.
-GoRouter createAppRouter(AuthCubit authCubit, WorkspaceCubit workspaceCubit) {
+///
+/// [initialLocation] sets the first route the router navigates to (used to
+/// restore the user's last visited tab across app restarts).
+GoRouter createAppRouter(
+  AuthCubit authCubit,
+  WorkspaceCubit workspaceCubit, {
+  String? initialLocation,
+}) {
   return GoRouter(
     debugLogDiagnostics: true,
+    initialLocation: initialLocation ?? Routes.home,
     refreshListenable: _AppRefreshNotifier(authCubit, workspaceCubit),
     redirect: (context, state) {
       final authState = authCubit.state;

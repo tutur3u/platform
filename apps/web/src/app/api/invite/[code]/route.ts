@@ -1,8 +1,13 @@
+import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import {
+  assignSeatToMember,
+  revokeSeatFromMember,
+} from '@/utils/polar-seat-helper';
 import { enforceSeatLimit } from '@/utils/seat-limits';
 
 interface Params {
@@ -163,6 +168,24 @@ export async function POST(_: Request, { params }: Params) {
       );
     }
 
+    // Assign Polar seat BEFORE adding member (if seat-based subscription)
+    const polar = createPolarClient();
+    const seatAssignment = await assignSeatToMember(
+      polar,
+      sbAdmin,
+      wsId,
+      user.id
+    );
+    if (seatAssignment.required && !seatAssignment.success) {
+      return NextResponse.json(
+        {
+          errorCode: 'POLAR_SEAT_ASSIGNMENT_FAILED',
+          message: seatAssignment.error,
+        },
+        { status: 403 }
+      );
+    }
+
     // Add user to workspace first - this will fail if they're already a member (unique constraint)
     // ws_id is already validated above to exist
     const { error: memberError } = await sbAdmin
@@ -173,6 +196,11 @@ export async function POST(_: Request, { params }: Params) {
       });
 
     if (memberError) {
+      // Rollback: revoke the Polar seat if it was assigned
+      if (seatAssignment.required && seatAssignment.success) {
+        await revokeSeatFromMember(polar, sbAdmin, wsId, user.id);
+      }
+
       // Check if it's a duplicate key violation (user already a member)
       if (memberError.code === '23505') {
         return NextResponse.json(
@@ -200,6 +228,11 @@ export async function POST(_: Request, { params }: Params) {
       updatedLink.current_uses !== null &&
       updatedLink.current_uses > inviteLink.max_uses
     ) {
+      // Also revoke the Polar seat if it was assigned
+      if (seatAssignment.required && seatAssignment.success) {
+        await revokeSeatFromMember(polar, sbAdmin, wsId, user.id);
+      }
+
       // Rollback: remove the member we just added
       await sbAdmin
         .from('workspace_members')

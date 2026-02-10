@@ -147,41 +147,31 @@ class SettingsPage extends StatelessWidget {
     unawaited(
       showDialog<void>(
         context: context,
-        builder: (context) => Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.8,
+        builder: (context) => SimpleDialog(
+          title: Text(l10n.settingsLanguage),
+          children: [
+            SimpleDialogOption(
+              onPressed: () {
+                unawaited(cubit.clearLocale());
+                Navigator.pop(context);
+              },
+              child: Text(l10n.settingsLanguageSystem),
             ),
-            child: shad.AlertDialog(
-              title: Text(l10n.settingsLanguage),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  shad.GhostButton(
-                    onPressed: () {
-                      unawaited(cubit.clearLocale());
-                      Navigator.pop(context);
-                    },
-                    child: Text(l10n.settingsLanguageSystem),
-                  ),
-                  shad.GhostButton(
-                    onPressed: () {
-                      unawaited(cubit.setLocale(const Locale('en')));
-                      Navigator.pop(context);
-                    },
-                    child: Text(l10n.settingsLanguageEnglish),
-                  ),
-                  shad.GhostButton(
-                    onPressed: () {
-                      unawaited(cubit.setLocale(const Locale('vi')));
-                      Navigator.pop(context);
-                    },
-                    child: Text(l10n.settingsLanguageVietnamese),
-                  ),
-                ],
-              ),
+            SimpleDialogOption(
+              onPressed: () {
+                unawaited(cubit.setLocale(const Locale('en')));
+                Navigator.pop(context);
+              },
+              child: Text(l10n.settingsLanguageEnglish),
             ),
-          ),
+            SimpleDialogOption(
+              onPressed: () {
+                unawaited(cubit.setLocale(const Locale('vi')));
+                Navigator.pop(context);
+              },
+              child: Text(l10n.settingsLanguageVietnamese),
+            ),
+          ],
         ),
       ),
     );

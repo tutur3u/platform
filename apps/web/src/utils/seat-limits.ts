@@ -43,7 +43,9 @@ export async function getSeatStatus(
   // Get active subscription info
   const { data: subscription, error } = await supabase
     .from('workspace_subscriptions')
-    .select('pricing_model, seat_count, price_per_seat')
+    .select(
+      'seat_count, workspace_subscription_products(pricing_model, price_per_seat)'
+    )
     .eq('ws_id', wsId)
     .eq('status', 'active')
     .order('created_at', { ascending: false })
@@ -62,8 +64,10 @@ export async function getSeatStatus(
     };
   }
 
+  const product = subscription?.workspace_subscription_products;
+
   // If not seat-based, no limit applies
-  if (!subscription || subscription.pricing_model !== 'seat_based') {
+  if (!subscription || product?.pricing_model !== 'seat_based') {
     return {
       isSeatBased: false,
       seatCount: Infinity,
@@ -90,7 +94,7 @@ export async function getSeatStatus(
     memberCount: currentMembers,
     availableSeats,
     canAddMember: availableSeats > 0,
-    pricePerSeat: subscription.price_per_seat,
+    pricePerSeat: product?.price_per_seat,
   };
 }
 

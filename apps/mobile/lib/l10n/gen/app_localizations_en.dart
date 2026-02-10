@@ -182,6 +182,127 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendarEmpty => 'No events';
 
   @override
+  String get calendarToday => 'Today';
+
+  @override
+  String get calendarDayView => 'Day';
+
+  @override
+  String get calendarWeekView => 'Week';
+
+  @override
+  String get calendarMonthView => 'Month';
+
+  @override
+  String get calendarAllDay => 'All day';
+
+  @override
+  String get calendarNoEvents => 'No events for this day';
+
+  @override
+  String get calendarNewEvent => 'New event';
+
+  @override
+  String get calendarEditEvent => 'Edit event';
+
+  @override
+  String get calendarDeleteEvent => 'Delete event';
+
+  @override
+  String get calendarDeleteConfirm => 'Delete this event?';
+
+  @override
+  String get calendarEventTitle => 'Title';
+
+  @override
+  String get calendarEventTitleHint => 'Add title';
+
+  @override
+  String get calendarEventDescription => 'Description';
+
+  @override
+  String get calendarEventDescriptionHint => 'Add description';
+
+  @override
+  String get calendarEventStartDate => 'Start date';
+
+  @override
+  String get calendarEventEndDate => 'End date';
+
+  @override
+  String get calendarEventStartTime => 'Start time';
+
+  @override
+  String get calendarEventEndTime => 'End time';
+
+  @override
+  String get calendarEventAllDay => 'All day';
+
+  @override
+  String get calendarEventColor => 'Color';
+
+  @override
+  String get calendarEventSave => 'Save';
+
+  @override
+  String get calendarEventCreate => 'Create event';
+
+  @override
+  String get calendarEventUpdate => 'Update event';
+
+  @override
+  String get calendarEventDeleted => 'Event deleted';
+
+  @override
+  String get calendarEventCreated => 'Event created';
+
+  @override
+  String get calendarEventUpdated => 'Event updated';
+
+  @override
+  String get calendarEventCancel => 'Cancel';
+
+  @override
+  String get calendarEventDelete => 'Delete';
+
+  @override
+  String get calendarThreeDayView => '3 Days';
+
+  @override
+  String get calendarAgendaView => 'Agenda';
+
+  @override
+  String get calendarAgendaEmpty => 'No upcoming events';
+
+  @override
+  String calendarAllDayProgress(int current, int total) {
+    return 'Day $current of $total';
+  }
+
+  @override
+  String get calendarConnectionsTitle => 'Manage Calendar Accounts';
+
+  @override
+  String get calendarConnectionsSubtitle => 'Connect Google and Microsoft accounts to sync calendars.';
+
+  @override
+  String get calendarConnectionsAccounts => 'Connected accounts';
+
+  @override
+  String get calendarConnectionsAddAccount => 'Add account';
+
+  @override
+  String get calendarConnectionsEmpty => 'No accounts connected';
+
+  @override
+  String get calendarConnectionsDisconnect => 'Disconnect';
+
+  @override
+  String calendarConnectionsDisconnectConfirm(String account) {
+    return 'Disconnect $account? Associated calendars will be disabled.';
+  }
+
+  @override
   String get financeTitle => 'Finance';
 
   @override
@@ -398,6 +519,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsSwitchWorkspace => 'Switch workspace';
+
+  @override
+  String get settingsCalendar => 'Calendar';
+
+  @override
+  String get settingsFirstDayOfWeek => 'First day of week';
+
+  @override
+  String get settingsFirstDayAuto => 'Auto';
+
+  @override
+  String get settingsFirstDaySunday => 'Sunday';
+
+  @override
+  String get settingsFirstDayMonday => 'Monday';
+
+  @override
+  String get settingsFirstDaySaturday => 'Saturday';
 
   @override
   String get settingsSignOut => 'Sign out';

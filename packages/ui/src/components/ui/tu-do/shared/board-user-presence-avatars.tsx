@@ -13,6 +13,7 @@ import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { useTaskDialog } from '../hooks/useTaskDialog';
+import { useTaskDialogContext } from '../providers/task-dialog-provider';
 import { useOptionalWorkspacePresenceContext } from '../providers/workspace-presence-provider';
 import type { BoardFiltersMetadata, TaskFilters } from './task-filter.types';
 
@@ -105,16 +106,31 @@ export function BoardUserPresenceAvatarsComponent({
 }) {
   const wsPresence = useOptionalWorkspacePresenceContext();
   const { openTaskById } = useTaskDialog();
+  const { state: dialogState } = useTaskDialogContext();
 
   // Extract stable function refs to avoid re-running effects on every context change
   const wsUpdateLocation = wsPresence?.updateLocation;
   const wsUpdateMetadata = wsPresence?.updateMetadata;
 
-  // Set the board location once when boardId changes (without overwriting taskId)
+  // Derive dialog props — only track task presence when editing a real task
+  const dialogOpen = dialogState.isOpen;
+  const dialogTaskId =
+    dialogState.mode === 'edit' && dialogState.task?.id !== 'new'
+      ? dialogState.task?.id
+      : undefined;
+
+  // Single-writer effect: centralize all location updates here to prevent
+  // race conditions between multiple TaskViewerAvatarsComponent instances.
+  // When the dialog is open with a real task → track { board, boardId, taskId }
+  // Otherwise → track { board, boardId } (board-level only)
   useEffect(() => {
     if (!wsUpdateLocation || !boardId) return;
-    wsUpdateLocation({ type: 'board', boardId });
-  }, [wsUpdateLocation, boardId]);
+    if (dialogOpen && dialogTaskId) {
+      wsUpdateLocation({ type: 'board', boardId, taskId: dialogTaskId });
+    } else {
+      wsUpdateLocation({ type: 'board', boardId });
+    }
+  }, [wsUpdateLocation, boardId, dialogOpen, dialogTaskId]);
 
   // Update metadata (filters) separately so it doesn't overwrite task-level location
   useEffect(() => {

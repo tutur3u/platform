@@ -10,6 +10,7 @@ import {
   Shield,
   Sparkles,
   Users,
+  X,
   Zap,
 } from '@tuturuuu/icons';
 import type { Product } from '@tuturuuu/payment/polar';
@@ -29,7 +30,8 @@ import type { Plan } from './billing-client';
 import { PlanChangeConfirmationDialog } from './plan-change-confirmation-dialog';
 import PurchaseLink from './purchase-link';
 
-interface PlanListProps {
+interface PlanListDialogProps {
+  isPersonalWorkspace: boolean;
   currentPlan: Plan;
   products: Product[];
   wsId: string;
@@ -39,21 +41,14 @@ interface PlanListProps {
 
 type BillingCycleTab = 'month' | 'year';
 
-interface TargetPlanForDialog {
-  id: string;
-  name: string;
-  price: number;
-  billingCycle: string;
-  features: string[];
-}
-
-export function PlanList({
+export function PlanListDialog({
+  isPersonalWorkspace,
   currentPlan,
   products,
   wsId,
   open,
   onOpenChange,
-}: PlanListProps) {
+}: PlanListDialogProps) {
   const t = useTranslations('billing');
 
   // Default to yearly tab for better value proposition, unless current plan is monthly
@@ -63,8 +58,9 @@ export function PlanList({
 
   // State for plan change confirmation dialog
   const [showPlanChangeDialog, setShowPlanChangeDialog] = useState(false);
-  const [selectedTargetPlan, setSelectedTargetPlan] =
-    useState<TargetPlanForDialog | null>(null);
+  const [selectedTargetPlan, setSelectedTargetPlan] = useState<string | null>(
+    null
+  );
 
   // Helper to simplify plan names (remove "Tuturuuu Workspace" prefix and billing cycle suffix)
   const getSimplePlanName = (name: string): string => {
@@ -77,22 +73,30 @@ export function PlanList({
 
   const allPlans = products
     .map((product) => {
-      const firstPrice =
-        product.prices.length > 0 ? (product.prices[0] as any) : null;
-      const price =
-        firstPrice && 'priceAmount' in firstPrice ? firstPrice.priceAmount : 0;
+      const firstPrice = product.prices.find((p) => 'amountType' in p);
 
-      const isSeatBased =
-        firstPrice &&
-        'amountType' in firstPrice &&
-        firstPrice.amountType === 'seat_based';
+      const isSeatBased = firstPrice?.amountType === 'seat_based';
+      const isFixed = firstPrice?.amountType === 'fixed';
+      const isFreeModel = firstPrice?.amountType === 'free';
 
-      const minSeats = isSeatBased
-        ? (firstPrice?.seatTiers?.minimumSeats ?? null)
+      const price = isFixed ? firstPrice.priceAmount : null;
+
+      const pricePerSeat = isSeatBased
+        ? (firstPrice?.seatTiers?.tiers?.[0]?.pricePerSeat ?? null)
         : null;
-      const maxSeats = isSeatBased
-        ? (firstPrice?.seatTiers?.maximumSeats ?? null)
-        : null;
+
+      const minSeats = isSeatBased ? firstPrice?.seatTiers?.minimumSeats : null;
+
+      const maxSeats = isSeatBased ? firstPrice?.seatTiers?.maximumSeats : null;
+
+      if (
+        !isFreeModel &&
+        ((isPersonalWorkspace && isSeatBased) ||
+          (!isPersonalWorkspace && !isSeatBased))
+      ) {
+        // Exclude seat-based plans for personal workspaces
+        return null;
+      }
 
       return {
         id: product.id,
@@ -107,15 +111,27 @@ export function PlanList({
               )
               .filter(Boolean)
           : [],
-        isEnterprise: product.name.toLowerCase().includes('enterprise'),
-        isPro: product.name.toLowerCase().includes('pro'),
-        isPlus: product.name.toLowerCase().includes('plus'),
-        isFree: product.name.toLowerCase().includes('free'),
+        isEnterprise: product.metadata.product_tier === 'ENTERPRISE',
+        isPro: product.metadata.product_tier === 'PRO',
+        isPlus: product.metadata.product_tier === 'PLUS',
+        isFree: product.metadata.product_tier === 'FREE',
+        // Seat-based pricing fields
+        pricingModel: firstPrice?.amountType || 'free',
+        pricePerSeat,
         minSeats,
         maxSeats,
       };
     })
-    .sort((a, b) => a.price - b.price);
+    .filter((plan) => plan !== null)
+    .sort((a, b) => {
+      if (a!.isFree) return -1;
+      if (b!.isFree) return 1;
+
+      if (a.pricingModel === 'seat_based' && b.pricingModel === 'seat_based')
+        return (a.pricePerSeat ?? 0) - (b.pricePerSeat ?? 0);
+
+      return (a.price ?? 0) - (b.price ?? 0);
+    });
 
   // Filter plans by selected billing cycle (Free plan shown in both)
   const filteredPlans = allPlans.filter(
@@ -192,10 +208,21 @@ export function PlanList({
       };
     }
 
-    const currentPlanData = allPlans.find(
-      (p) => p.id === currentPlan.productId
-    );
-    const isDowngrade = currentPlanData && plan.price < currentPlanData.price;
+    if (currentPlan.tier !== 'FREE' && plan.isFree) {
+      return {
+        text: t('cannot-downgrade-to-free'),
+        icon: X,
+        variant: 'outline' as const,
+        disabled: true,
+      };
+    }
+
+    const isDowngrade =
+      currentPlan.tier !== 'FREE' &&
+      ((plan.pricingModel === 'fixed' &&
+        (plan.price ?? 0) < (currentPlan.price ?? 0)) ||
+        (plan.pricingModel === 'seat_based' &&
+          (plan.pricePerSeat ?? 0) < (currentPlan.pricePerSeat ?? 0)));
 
     if (isDowngrade) {
       return {
@@ -211,18 +238,13 @@ export function PlanList({
       icon: ArrowUpCircle,
       variant: 'default' as const,
       disabled: false,
+      isIncompatible: false,
     };
   };
 
   // Handle plan change for existing subscriptions
   const handlePlanChange = (plan: (typeof allPlans)[0]) => {
-    setSelectedTargetPlan({
-      id: plan.id,
-      name: plan.fullName,
-      price: plan.price,
-      billingCycle: plan.billingCycle || 'month',
-      features: plan.features,
-    });
+    setSelectedTargetPlan(plan.id);
     setShowPlanChangeDialog(true);
   };
 
@@ -235,7 +257,7 @@ export function PlanList({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto sm:max-w-4xl lg:max-w-5xl">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto sm:max-w-4xl lg:max-w-6xl">
         {/* Decorative Background */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-40">
           <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-blue/30 via-dynamic-purple/20 to-transparent blur-3xl" />
@@ -301,6 +323,8 @@ export function PlanList({
           <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
             {filteredPlans.map((plan) => {
               const isCurrentPlan = plan.id === currentPlan.productId;
+              const isSeatBased = plan.pricingModel === 'seat_based';
+              const isFixed = plan.pricingModel === 'fixed';
               const styles = getPlanStyles(plan, isCurrentPlan);
               const PlanIcon = styles.Icon;
 
@@ -364,7 +388,7 @@ export function PlanList({
                           />
                         </div>
                         <h3 className="font-bold text-lg tracking-tight">
-                          {plan.isFree ? t('free-tier') : plan.name}
+                          {plan.name}
                         </h3>
                       </div>
 
@@ -378,10 +402,16 @@ export function PlanList({
                               : styles.iconColor
                           )}
                         >
-                          ${centToDollar(plan.price)}
+                          $
+                          {isSeatBased && plan.pricePerSeat
+                            ? centToDollar(plan.pricePerSeat)
+                            : isFixed && plan.price
+                              ? centToDollar(plan.price)
+                              : 0}
                         </span>
                         {plan.billingCycle && (
                           <span className="text-muted-foreground text-sm">
+                            {isSeatBased ? t('per-seat') : ''}
                             {plan.billingCycle === 'month'
                               ? t('per-month')
                               : t('per-year')}
@@ -454,19 +484,21 @@ export function PlanList({
                         const ButtonIcon = buttonConfig.icon;
 
                         return buttonConfig.disabled ? (
-                          <Button
-                            variant={buttonConfig.variant}
-                            className={cn(
-                              'w-full',
-                              isCurrentPlan &&
-                                'border-primary/30 bg-primary/5 text-primary'
-                            )}
-                            disabled
-                            size="sm"
-                          >
-                            <ButtonIcon className="mr-2 h-4 w-4" />
-                            {buttonConfig.text}
-                          </Button>
+                          <div className="space-y-2">
+                            <Button
+                              variant={buttonConfig.variant}
+                              className={cn(
+                                'w-full',
+                                isCurrentPlan &&
+                                  'border-primary/30 bg-primary/5 text-primary'
+                              )}
+                              disabled
+                              size="sm"
+                            >
+                              <ButtonIcon className="mr-2 h-4 w-4" />
+                              {buttonConfig.text}
+                            </Button>
+                          </div>
                         ) : (
                           <PurchaseLink
                             subscriptionId={currentPlan.id}
@@ -502,15 +534,17 @@ export function PlanList({
           </div>
 
           {/* Important Note */}
-          <div className="mt-6 flex items-start gap-3 rounded-xl border border-border/50 bg-muted/30 p-4">
-            <Info className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
-            <div>
-              <p className="font-semibold text-sm">{t('plan-note-title')}</p>
-              <p className="mt-0.5 text-muted-foreground text-xs">
-                {t('plan-desc')}
-              </p>
+          {currentPlan.tier !== 'FREE' && (
+            <div className="mt-6 flex items-start gap-3 rounded-xl border border-border/50 bg-muted/30 p-4">
+              <Info className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
+              <div>
+                <p className="font-semibold text-sm">{t('plan-note-title')}</p>
+                <p className="mt-0.5 text-muted-foreground text-xs">
+                  {t('plan-desc')}
+                </p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </DialogContent>
 
@@ -519,10 +553,7 @@ export function PlanList({
         <PlanChangeConfirmationDialog
           open={showPlanChangeDialog}
           onOpenChange={setShowPlanChangeDialog}
-          currentPlanName={currentPlan.name}
-          currentPlanPrice={currentPlan.price}
-          currentPlanBillingCycle={currentPlan.billingCycle || 'month'}
-          targetPlan={selectedTargetPlan}
+          targetPlanId={selectedTargetPlan}
           subscriptionId={currentPlan.id}
           onSuccess={handlePlanChangeSuccess}
         />

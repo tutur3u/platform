@@ -11,6 +11,7 @@ import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/workspace_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/features/settings/cubit/locale_cubit.dart';
 import 'package:mobile/features/settings/cubit/locale_state.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
@@ -20,7 +21,10 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class App extends StatefulWidget {
-  const App({super.key});
+  const App({this.initialRoute, super.key});
+
+  /// Shell route to start on (loaded from SharedPreferences in bootstrap).
+  final String? initialRoute;
 
   @override
   State<App> createState() => _AppState();
@@ -34,6 +38,7 @@ class _AppState extends State<App> {
   late final WorkspaceCubit _workspaceCubit;
   late final LocaleCubit _localeCubit;
   late final ThemeCubit _themeCubit;
+  late final CalendarSettingsCubit _calendarSettingsCubit;
   late final GoRouter _router;
 
   @override
@@ -46,9 +51,15 @@ class _AppState extends State<App> {
     _workspaceCubit = WorkspaceCubit(workspaceRepository: _workspaceRepo);
     _localeCubit = LocaleCubit(settingsRepository: _settingsRepo);
     _themeCubit = ThemeCubit(settingsRepository: _settingsRepo);
-    _router = createAppRouter(_authCubit, _workspaceCubit);
-    unawaited(_localeCubit.loadLocale());
     unawaited(_themeCubit.loadThemeMode());
+    _calendarSettingsCubit = CalendarSettingsCubit();
+    _router = createAppRouter(
+      _authCubit,
+      _workspaceCubit,
+      initialLocation: widget.initialRoute,
+    );
+    unawaited(_localeCubit.loadLocale());
+    unawaited(_calendarSettingsCubit.loadUserPreference());
     // If auth resolved synchronously to authenticated, load workspaces now.
     // BlocListener only fires on state *changes*, so it won't trigger for
     // the initial state set in the AuthCubit constructor.
@@ -64,6 +75,7 @@ class _AppState extends State<App> {
     unawaited(_workspaceCubit.close());
     unawaited(_localeCubit.close());
     unawaited(_themeCubit.close());
+    unawaited(_calendarSettingsCubit.close());
     super.dispose();
   }
 
@@ -75,6 +87,7 @@ class _AppState extends State<App> {
         BlocProvider.value(value: _workspaceCubit),
         BlocProvider.value(value: _localeCubit),
         BlocProvider.value(value: _themeCubit),
+        BlocProvider.value(value: _calendarSettingsCubit),
       ],
       child: BlocListener<AuthCubit, AuthState>(
         listenWhen: (prev, curr) => prev.status != curr.status,

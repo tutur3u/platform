@@ -27,7 +27,7 @@ const updateConnectionSchema = z
 
 // GET - List calendar connections for a workspace
 export async function GET(request: Request) {
-  const supabase = await createClient();
+  const supabase = await createClient(request);
   const {
     data: { user },
     error: userError,
@@ -78,7 +78,7 @@ export async function GET(request: Request) {
 
 // POST - Create a new calendar connection
 export async function POST(request: Request) {
-  const supabase = await createClient();
+  const supabase = await createClient(request);
   const {
     data: { user },
     error: userError,
@@ -148,7 +148,7 @@ export async function POST(request: Request) {
 
 // PATCH - Update a calendar connection
 export async function PATCH(request: Request) {
-  const supabase = await createClient();
+  const supabase = await createClient(request);
   const {
     data: { user },
     error: userError,
@@ -216,7 +216,7 @@ export async function PATCH(request: Request) {
 
 // DELETE - Delete a calendar connection
 export async function DELETE(request: Request) {
-  const supabase = await createClient();
+  const supabase = await createClient(request);
   const {
     data: { user },
     error: userError,
