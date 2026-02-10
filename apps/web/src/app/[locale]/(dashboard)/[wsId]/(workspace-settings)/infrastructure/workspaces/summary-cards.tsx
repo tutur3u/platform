@@ -23,7 +23,6 @@ export default function SummaryCards({ summary }: Props) {
       <StatCard
         title={t('active_subscriptions')}
         value={(
-          summary.with_zero_subscriptions +
           summary.with_single_subscription +
           summary.with_multiple_subscriptions +
           summary.errored_workspaces
