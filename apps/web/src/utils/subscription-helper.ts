@@ -8,18 +8,25 @@ export async function hasActiveSubscription(
   wsId: string
 ) {
   // First check if workspace exists
-  const { data: workspace } = await supabase
+  const { data: workspace, error: workspaceError } = await supabase
     .from('workspaces')
     .select('*')
     .eq('id', wsId)
     .eq('deleted', false)
     .maybeSingle();
 
+  if (workspaceError) {
+    console.error(
+      `Error fetching workspace ${wsId}: ${workspaceError.message}`
+    );
+    return true; // Fail safe
+  }
+
   if (!workspace) {
     console.error(
       `Workspace ${wsId} not found, cannot check active subscriptions`
     );
-    return false;
+    return true; // Return true to prevent duplicate creation
   }
 
   try {

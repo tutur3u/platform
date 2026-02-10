@@ -26,9 +26,7 @@ async function fetchWorkspacesByIds(
       .in('id', chunk);
 
     if (error) {
-      throw new Error(
-        `Failed to fetch workspaces: ${error instanceof Error ? error.message : String(error)}`
-      );
+      throw new Error(`Failed to fetch workspaces: ${error.message}`);
     }
 
     if (data) {

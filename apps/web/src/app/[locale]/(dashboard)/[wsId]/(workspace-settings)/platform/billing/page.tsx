@@ -387,7 +387,7 @@ export default function PlatformSubscriptionsMigrationPage() {
         actionIcon={<Zap className="mr-2 h-4 w-4" />}
         onRun={() =>
           runMigration(
-            '/api/payment/migrations/subscriptions',
+            '/api/payment/migrations/subscriptions/duplicates',
             'DELETE',
             setRevokeState
           )

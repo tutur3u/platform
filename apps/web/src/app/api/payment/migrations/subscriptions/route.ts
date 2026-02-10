@@ -2,7 +2,10 @@ import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
-import { createFreeSubscription } from '@/utils/subscription-helper';
+import {
+  createFreeSubscription,
+  hasActiveSubscription,
+} from '@/utils/subscription-helper';
 import { createNDJSONStream, fetchAllRows, verifyAdminAccess } from '../helper';
 
 export async function POST() {
@@ -62,11 +65,22 @@ export async function POST() {
           );
 
           if (!subscription) {
-            errors++;
-            errorDetails.push({
-              id: workspace.id,
-              error: 'Failed to create free subscription',
-            });
+            // Check if subscription creation was skipped due to existing subscription
+            const hasActive = await hasActiveSubscription(
+              polar,
+              sbAdmin,
+              workspace.id
+            );
+
+            if (hasActive) {
+              skipped++;
+            } else {
+              errors++;
+              errorDetails.push({
+                id: workspace.id,
+                error: 'Failed to create free subscription',
+              });
+            }
           } else {
             created++;
           }

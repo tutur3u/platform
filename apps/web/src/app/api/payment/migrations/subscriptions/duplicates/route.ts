@@ -75,6 +75,15 @@ export async function DELETE() {
       const sub = subsToRevoke[i]!;
 
       try {
+        if (!sub.polar_subscription_id) {
+          errorDetails.push({
+            id: sub.id,
+            error: 'Missing polar_subscription_id',
+          });
+          errors++;
+          continue;
+        }
+
         await polar.subscriptions.revoke({
           id: sub.polar_subscription_id,
         });
