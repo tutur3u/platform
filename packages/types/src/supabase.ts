@@ -20041,6 +20041,51 @@ export type Database = {
           workspace_count: number;
         }[];
       };
+      get_workspace_overview: {
+        Args: {
+          p_page?: number;
+          p_page_size?: number;
+          p_search?: string;
+          p_sort_by?: string;
+          p_sort_order?: string;
+          p_status?: string;
+          p_tier?: string;
+          p_workspace_type?: string;
+        };
+        Returns: {
+          active_subscription_count: number;
+          avatar_url: string;
+          created_at: string;
+          creator_email: string;
+          creator_id: string;
+          creator_name: string;
+          handle: string;
+          highest_tier: string;
+          id: string;
+          member_count: number;
+          name: string;
+          personal: boolean;
+          role_count: number;
+          secret_count: number;
+          subscription_statuses: string[];
+          total_count: number;
+        }[];
+      };
+      get_workspace_overview_summary: {
+        Args: never;
+        Returns: {
+          avg_members: number;
+          empty_workspaces: number;
+          personal_workspaces: number;
+          team_workspaces: number;
+          tier_enterprise: number;
+          tier_free: number;
+          tier_plus: number;
+          tier_pro: number;
+          total_workspaces: number;
+          with_active_subscription: number;
+        }[];
+      };
       get_workspace_products_count: {
         Args: { ws_id: string };
         Returns: number;

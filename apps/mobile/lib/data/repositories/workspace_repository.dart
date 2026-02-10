@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:mobile/data/models/workspace.dart';
+import 'package:mobile/data/models/workspace_limits.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -8,6 +10,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 ///
 /// Ported from apps/native/lib/stores/workspace-store.ts.
 class WorkspaceRepository {
+  WorkspaceRepository({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
+
+  final ApiClient _api;
   static const _selectedKey = 'selected-workspace';
 
   /// Fetches workspaces the current user belongs to.
@@ -133,5 +138,32 @@ class WorkspaceRepository {
   Future<void> clearSelectedWorkspace() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_selectedKey);
+  }
+
+  /// Fetches workspace creation limits for the current user.
+  Future<WorkspaceLimits> getWorkspaceLimits() async {
+    final json = await _api.getJson('/api/v1/workspaces/limits');
+    return WorkspaceLimits.fromJson(json);
+  }
+
+  /// Creates a new workspace with the given [name].
+  ///
+  /// Returns the created [Workspace] or throws [ApiException].
+  Future<Workspace> createWorkspace(String name) async {
+    final json = await _api.postJson(
+      '/api/v1/workspaces',
+      {'name': name},
+    );
+
+    final wsId = json['id'] as String;
+    // Fetch the full workspace to get all fields
+    final ws = await getWorkspaceById(wsId);
+    if (ws == null) {
+      throw const ApiException(
+        message: 'Workspace created but could not be fetched',
+        statusCode: 0,
+      );
+    }
+    return ws;
   }
 }
