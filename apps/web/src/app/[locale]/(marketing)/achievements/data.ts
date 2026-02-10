@@ -352,6 +352,18 @@ export const achievements: Achievement[] = [
         avatar: '/members/gen7/nhat.png',
         isNctMember: true,
       },
+      {
+        name: 'Phung Hanh Ngan',
+        role: 'Designer',
+      },
+      {
+        name: 'Nguyen Phuong Binh',
+        role: 'Designer',
+      },
+      {
+        name: 'Mai Huynh Xuan Vy',
+        role: 'Designer',
+      },
     ],
     achievementDescription:
       'E-CLO competed with universities nationwide in a sustainable design challenge centered on material innovation and ethical product values. The project was awarded the Most Reality Award, receiving a 15 million VND prize.',
