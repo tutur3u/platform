@@ -18987,6 +18987,20 @@ export type Database = {
           feature_name: string;
         }[];
       };
+      get_featured_group_counts: {
+        Args: {
+          _excluded_groups?: string[];
+          _featured_group_ids: string[];
+          _link_status?: string;
+          _search_query?: string;
+          _status?: string;
+          _ws_id: string;
+        };
+        Returns: {
+          group_id: string;
+          user_count: number;
+        }[];
+      };
       get_finance_invoice_products_by_workspace: {
         Args: { p_limit?: number; p_offset?: number; p_ws_id: string };
         Returns: {

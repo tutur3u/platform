@@ -11,7 +11,11 @@ import {
   useQueryState,
 } from 'nuqs';
 import { useMemo } from 'react';
-import { useFeaturedGroups, useWorkspaceUserGroups } from './hooks';
+import {
+  useFeaturedGroupCounts,
+  useFeaturedGroups,
+  useWorkspaceUserGroups,
+} from './hooks';
 
 interface Props {
   wsId: string;
@@ -32,6 +36,28 @@ export function QuickGroupFilters({ wsId }: Props) {
     })
   );
 
+  const [excludedGroups] = useQueryState(
+    'excludedGroups',
+    parseAsArrayOf(parseAsString).withDefault([]).withOptions({
+      shallow: true,
+    })
+  );
+
+  const [q] = useQueryState(
+    'q',
+    parseAsString.withDefault('').withOptions({ shallow: true })
+  );
+
+  const [status] = useQueryState(
+    'status',
+    parseAsString.withDefault('active').withOptions({ shallow: true })
+  );
+
+  const [linkStatus] = useQueryState(
+    'linkStatus',
+    parseAsString.withDefault('all').withOptions({ shallow: true })
+  );
+
   const [, setPage] = useQueryState(
     'page',
     parseAsInteger.withDefault(1).withOptions({ shallow: true })
@@ -45,6 +71,17 @@ export function QuickGroupFilters({ wsId }: Props) {
       .map((id) => groupMap.get(id))
       .filter((g): g is UserGroup => !!g);
   }, [featuredGroupIds, allGroups]);
+
+  const { data: groupCounts } = useFeaturedGroupCounts(
+    wsId,
+    featuredGroupIds ?? [],
+    {
+      excludedGroups,
+      searchQuery: q,
+      status,
+      linkStatus,
+    }
+  );
 
   if (isLoadingFeatured || isLoadingGroups) return null;
   if (!featuredGroups.length) return null;
@@ -66,6 +103,7 @@ export function QuickGroupFilters({ wsId }: Props) {
       </span>
       {featuredGroups.map((group) => {
         const isActive = includedGroups.includes(group.id);
+        const count = groupCounts?.[group.id];
         return (
           <Button
             key={group.id}
@@ -75,12 +113,12 @@ export function QuickGroupFilters({ wsId }: Props) {
             onClick={() => toggleGroup(group.id)}
           >
             {group.name}
-            {group.amount != null && (
+            {count != null && (
               <Badge
-                variant={isActive ? 'default' : 'secondary'}
-                className="ml-1.5 h-4 min-w-4 px-1 text-[10px]"
+                variant="secondary"
+                className="ml-1 h-4 min-w-4 justify-center px-1 text-[10px] leading-none"
               >
-                {group.amount}
+                {count}
               </Badge>
             )}
           </Button>
