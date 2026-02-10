@@ -147,31 +147,58 @@ class SettingsPage extends StatelessWidget {
     unawaited(
       showDialog<void>(
         context: context,
-        builder: (context) => SimpleDialog(
-          title: Text(l10n.settingsLanguage),
-          children: [
-            SimpleDialogOption(
-              onPressed: () {
-                unawaited(cubit.clearLocale());
-                Navigator.pop(context);
-              },
-              child: Text(l10n.settingsLanguageSystem),
+        builder: (context) => Center(
+          child: SizedBox(
+            width: MediaQuery.of(context).size.width * 0.8,
+            child: shad.AlertDialog(
+              barrierColor: Colors.transparent,
+              title: Text(l10n.settingsLanguage),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  shad.GhostButton(
+                    onPressed: () {
+                      unawaited(cubit.clearLocale());
+                      Navigator.pop(context);
+                    },
+                    child: Row(
+                      children: [
+                        const Icon(Icons.settings_outlined),
+                        const shad.Gap(8),
+                        Text(l10n.settingsLanguageSystem),
+                      ],
+                    ),
+                  ),
+                  shad.GhostButton(
+                    onPressed: () {
+                      unawaited(cubit.setLocale(const Locale('en')));
+                      Navigator.pop(context);
+                    },
+                    child: Row(
+                      children: [
+                        const Icon(Icons.translate_outlined),
+                        const shad.Gap(8),
+                        Text(l10n.settingsLanguageEnglish),
+                      ],
+                    ),
+                  ),
+                  shad.GhostButton(
+                    onPressed: () {
+                      unawaited(cubit.setLocale(const Locale('vi')));
+                      Navigator.pop(context);
+                    },
+                    child: Row(
+                      children: [
+                        const Icon(Icons.translate_outlined),
+                        const shad.Gap(8),
+                        Text(l10n.settingsLanguageVietnamese),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-            SimpleDialogOption(
-              onPressed: () {
-                unawaited(cubit.setLocale(const Locale('en')));
-                Navigator.pop(context);
-              },
-              child: Text(l10n.settingsLanguageEnglish),
-            ),
-            SimpleDialogOption(
-              onPressed: () {
-                unawaited(cubit.setLocale(const Locale('vi')));
-                Navigator.pop(context);
-              },
-              child: Text(l10n.settingsLanguageVietnamese),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -184,11 +211,10 @@ class SettingsPage extends StatelessWidget {
       showDialog<void>(
         context: context,
         builder: (dialogContext) => Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.8,
-            ),
+          child: SizedBox(
+            width: MediaQuery.of(context).size.width * 0.8,
             child: shad.AlertDialog(
+              barrierColor: Colors.transparent,
               title: Text(l10n.settingsSignOut),
               content: Text(l10n.settingsSignOutConfirm),
               actions: [
@@ -219,11 +245,10 @@ class SettingsPage extends StatelessWidget {
       showDialog<void>(
         context: context,
         builder: (context) => Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.8,
-            ),
+          child: SizedBox(
+            width: MediaQuery.of(context).size.width * 0.8,
             child: shad.AlertDialog(
+              barrierColor: Colors.transparent,
               title: Text(l10n.settingsTheme),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -233,21 +258,39 @@ class SettingsPage extends StatelessWidget {
                       unawaited(cubit.setThemeMode(shad.ThemeMode.light));
                       Navigator.pop(context);
                     },
-                    child: Text(l10n.settingsThemeLight),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.light_mode_outlined),
+                        const shad.Gap(8),
+                        Text(l10n.settingsThemeLight),
+                      ],
+                    ),
                   ),
                   shad.GhostButton(
                     onPressed: () {
                       unawaited(cubit.setThemeMode(shad.ThemeMode.dark));
                       Navigator.pop(context);
                     },
-                    child: Text(l10n.settingsThemeDark),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.dark_mode_outlined),
+                        const shad.Gap(8),
+                        Text(l10n.settingsThemeDark),
+                      ],
+                    ),
                   ),
                   shad.GhostButton(
                     onPressed: () {
                       unawaited(cubit.setThemeMode(shad.ThemeMode.system));
                       Navigator.pop(context);
                     },
-                    child: Text(l10n.settingsThemeSystem),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.settings_outlined),
+                        const shad.Gap(8),
+                        Text(l10n.settingsThemeSystem),
+                      ],
+                    ),
                   ),
                 ],
               ),

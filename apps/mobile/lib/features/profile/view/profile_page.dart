@@ -220,6 +220,7 @@ class _AvatarSection extends StatelessWidget {
         child: SizedBox(
           width: MediaQuery.of(context).size.width * 0.8,
           child: shad.AlertDialog(
+            barrierColor: Colors.transparent,
             title: const Text('Select Image Source'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
@@ -296,6 +297,7 @@ class _AvatarSection extends StatelessWidget {
         child: SizedBox(
           width: MediaQuery.of(context).size.width * 0.8,
           child: shad.AlertDialog(
+            barrierColor: Colors.transparent,
             title: Text(l10n.profileAvatar),
             content: Column(
               mainAxisSize: MainAxisSize.min,
@@ -306,7 +308,13 @@ class _AvatarSection extends StatelessWidget {
                       Navigator.pop(dialogContext);
                       await cubit.removeAvatar();
                     },
-                    child: Text(l10n.profileRemoveAvatar),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.delete_outline),
+                        const shad.Gap(8),
+                        Text(l10n.profileRemoveAvatar),
+                      ],
+                    ),
                   ),
                   const shad.Gap(8),
                 ],
@@ -315,10 +323,16 @@ class _AvatarSection extends StatelessWidget {
                     Navigator.pop(dialogContext);
                     unawaited(_pickAndUploadAvatar(context));
                   },
-                  child: Text(
-                    avatarUrl != null
-                        ? l10n.profileChangeAvatar
-                        : l10n.profileUploadAvatar,
+                  child: Row(
+                    children: [
+                      const Icon(Icons.photo_library),
+                      const shad.Gap(8),
+                      Text(
+                        avatarUrl != null
+                            ? l10n.profileChangeAvatar
+                            : l10n.profileUploadAvatar,
+                      ),
+                    ],
                   ),
                 ),
               ],

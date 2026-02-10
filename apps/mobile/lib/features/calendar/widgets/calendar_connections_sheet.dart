@@ -7,6 +7,7 @@ import 'package:mobile/data/models/calendar_connection.dart';
 import 'package:mobile/features/calendar/cubit/calendar_connections_cubit.dart';
 import 'package:mobile/features/calendar/cubit/calendar_connections_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Shows the calendar connections management bottom sheet.
 ///
@@ -35,280 +36,6 @@ Future<void> showCalendarConnectionsSheet(
       child: _ConnectionsSheetBody(wsId: wsId),
     ),
   );
-}
-
-class _ConnectionsSheetBody extends StatelessWidget {
-  const _ConnectionsSheetBody({required this.wsId});
-
-  final String wsId;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return DraggableScrollableSheet(
-      initialChildSize: 0.7,
-      minChildSize: 0.4,
-      maxChildSize: 0.95,
-      expand: false,
-      builder: (context, scrollController) {
-        return Column(
-          children: [
-            // Drag handle.
-            Padding(
-              padding: const EdgeInsets.only(top: 8, bottom: 4),
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            // Header.
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.calendarConnectionsTitle,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    l10n.calendarConnectionsSubtitle,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(),
-            // Body.
-            Expanded(
-              child:
-                  BlocBuilder<
-                    CalendarConnectionsCubit,
-                    CalendarConnectionsState
-                  >(
-                    builder: (context, state) {
-                      if (state.status == CalendarConnectionsStatus.loading) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      if (state.status == CalendarConnectionsStatus.error) {
-                        return _ErrorBody(
-                          error: state.error,
-                          onRetry: () => context
-                              .read<CalendarConnectionsCubit>()
-                              .load(wsId),
-                        );
-                      }
-                      return _LoadedBody(
-                        wsId: wsId,
-                        state: state,
-                        scrollController: scrollController,
-                      );
-                    },
-                  ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _LoadedBody extends StatefulWidget {
-  const _LoadedBody({
-    required this.wsId,
-    required this.state,
-    required this.scrollController,
-  });
-
-  final String wsId;
-  final CalendarConnectionsState state;
-  final ScrollController scrollController;
-
-  @override
-  State<_LoadedBody> createState() => _LoadedBodyState();
-}
-
-class _LoadedBodyState extends State<_LoadedBody> {
-  final _expandedAccounts = <String>{};
-
-  @override
-  void initState() {
-    super.initState();
-    // Expand all accounts initially.
-    for (final a in widget.state.accounts) {
-      _expandedAccounts.add(a.id);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final state = widget.state;
-
-    return ListView(
-      controller: widget.scrollController,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      children: [
-        // Connected accounts.
-        if (state.accounts.isNotEmpty) ...[
-          _SectionHeader(label: l10n.calendarConnectionsAccounts),
-          for (final account in state.accounts)
-            _AccountTile(
-              account: account,
-              connections: state.connectionsByAccount[account.id] ?? [],
-              togglingIds: state.togglingIds,
-              isExpanded: _expandedAccounts.contains(account.id),
-              isDisconnecting: state.disconnectingId == account.id,
-              onToggleExpand: () => setState(() {
-                if (_expandedAccounts.contains(account.id)) {
-                  _expandedAccounts.remove(account.id);
-                } else {
-                  _expandedAccounts.add(account.id);
-                }
-              }),
-              onToggleConnection: (conn, {required enabled}) {
-                unawaited(
-                  context.read<CalendarConnectionsCubit>().toggleConnection(
-                    conn.id,
-                    enabled: enabled,
-                  ),
-                );
-              },
-              onDisconnect: () => _confirmDisconnect(context, account),
-            ),
-          const SizedBox(height: 16),
-        ],
-
-        // Add account section.
-        _SectionHeader(label: l10n.calendarConnectionsAddAccount),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: _AddAccountButton(
-                label: 'Google',
-                icon: Icons.g_mobiledata,
-                color: const Color(0xFF4285F4),
-                onTap: () => unawaited(
-                  context.read<CalendarConnectionsCubit>().connectGoogle(
-                    widget.wsId,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _AddAccountButton(
-                label: 'Outlook',
-                icon: Icons.window,
-                color: const Color(0xFF0078D4),
-                onTap: () => unawaited(
-                  context.read<CalendarConnectionsCubit>().connectMicrosoft(
-                    widget.wsId,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-
-        // Empty state.
-        if (state.accounts.isEmpty) ...[
-          const SizedBox(height: 32),
-          Center(
-            child: Column(
-              children: [
-                Icon(
-                  Icons.link_off,
-                  size: 48,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  l10n.calendarConnectionsEmpty,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-
-        const SizedBox(height: 24),
-      ],
-    );
-  }
-
-  void _confirmDisconnect(BuildContext context, CalendarAccount account) {
-    final l10n = context.l10n;
-    unawaited(
-      showDialog<void>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: Text(l10n.calendarConnectionsDisconnect),
-          content: Text(
-            l10n.calendarConnectionsDisconnectConfirm(
-              account.accountEmail ?? account.provider,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text(l10n.calendarEventCancel),
-            ),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.error,
-              ),
-              onPressed: () {
-                Navigator.pop(dialogContext);
-                unawaited(
-                  context.read<CalendarConnectionsCubit>().disconnectAccount(
-                    account.id,
-                    widget.wsId,
-                  ),
-                );
-              },
-              child: Text(l10n.calendarConnectionsDisconnect),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Subwidgets ───────────────────────────────────────────────────────
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 8, bottom: 4),
-      child: Text(
-        label.toUpperCase(),
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-          letterSpacing: 1.2,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
 }
 
 class _AccountTile extends StatelessWidget {
@@ -445,6 +172,118 @@ class _AccountTile extends StatelessWidget {
   }
 }
 
+class _AddAccountButton extends StatelessWidget {
+  const _AddAccountButton({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: onTap,
+      icon: Icon(icon, color: color),
+      label: Text(label),
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+}
+
+class _ConnectionsSheetBody extends StatelessWidget {
+  const _ConnectionsSheetBody({required this.wsId});
+
+  final String wsId;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.4,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (context, scrollController) {
+        return Column(
+          children: [
+            // Drag handle.
+            Padding(
+              padding: const EdgeInsets.only(top: 8, bottom: 4),
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            // Header.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.calendarConnectionsTitle,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    l10n.calendarConnectionsSubtitle,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(),
+            // Body.
+            Expanded(
+              child:
+                  BlocBuilder<
+                    CalendarConnectionsCubit,
+                    CalendarConnectionsState
+                  >(
+                    builder: (context, state) {
+                      if (state.status == CalendarConnectionsStatus.loading) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      if (state.status == CalendarConnectionsStatus.error) {
+                        return _ErrorBody(
+                          error: state.error,
+                          onRetry: () => context
+                              .read<CalendarConnectionsCubit>()
+                              .load(wsId),
+                        );
+                      }
+                      return _LoadedBody(
+                        wsId: wsId,
+                        state: state,
+                        scrollController: scrollController,
+                      );
+                    },
+                  ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
 class _ConnectionToggle extends StatelessWidget {
   const _ConnectionToggle({
     required this.connection,
@@ -499,33 +338,6 @@ class _ConnectionToggle extends StatelessWidget {
   }
 }
 
-class _AddAccountButton extends StatelessWidget {
-  const _AddAccountButton({
-    required this.label,
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return OutlinedButton.icon(
-      onPressed: onTap,
-      icon: Icon(icon, color: color),
-      label: Text(label),
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
-  }
-}
-
 class _ErrorBody extends StatelessWidget {
   const _ErrorBody({required this.onRetry, this.error});
 
@@ -551,6 +363,200 @@ class _ErrorBody extends StatelessWidget {
             child: Text(context.l10n.commonRetry),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _LoadedBody extends StatefulWidget {
+  const _LoadedBody({
+    required this.wsId,
+    required this.state,
+    required this.scrollController,
+  });
+
+  final String wsId;
+  final CalendarConnectionsState state;
+  final ScrollController scrollController;
+
+  @override
+  State<_LoadedBody> createState() => _LoadedBodyState();
+}
+
+class _LoadedBodyState extends State<_LoadedBody> {
+  final _expandedAccounts = <String>{};
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final state = widget.state;
+
+    return ListView(
+      controller: widget.scrollController,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      children: [
+        // Connected accounts.
+        if (state.accounts.isNotEmpty) ...[
+          _SectionHeader(label: l10n.calendarConnectionsAccounts),
+          for (final account in state.accounts)
+            _AccountTile(
+              account: account,
+              connections: state.connectionsByAccount[account.id] ?? [],
+              togglingIds: state.togglingIds,
+              isExpanded: _expandedAccounts.contains(account.id),
+              isDisconnecting: state.disconnectingId == account.id,
+              onToggleExpand: () => setState(() {
+                if (_expandedAccounts.contains(account.id)) {
+                  _expandedAccounts.remove(account.id);
+                } else {
+                  _expandedAccounts.add(account.id);
+                }
+              }),
+              onToggleConnection: (conn, {required enabled}) {
+                unawaited(
+                  context.read<CalendarConnectionsCubit>().toggleConnection(
+                    conn.id,
+                    enabled: enabled,
+                  ),
+                );
+              },
+              onDisconnect: () => _confirmDisconnect(context, account),
+            ),
+          const SizedBox(height: 16),
+        ],
+
+        // Add account section.
+        _SectionHeader(label: l10n.calendarConnectionsAddAccount),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: _AddAccountButton(
+                label: 'Google',
+                icon: Icons.g_mobiledata,
+                color: const Color(0xFF4285F4),
+                onTap: () => unawaited(
+                  context.read<CalendarConnectionsCubit>().connectGoogle(
+                    widget.wsId,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _AddAccountButton(
+                label: 'Outlook',
+                icon: Icons.window,
+                color: const Color(0xFF0078D4),
+                onTap: () => unawaited(
+                  context.read<CalendarConnectionsCubit>().connectMicrosoft(
+                    widget.wsId,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+
+        // Empty state.
+        if (state.accounts.isEmpty) ...[
+          const SizedBox(height: 32),
+          Center(
+            child: Column(
+              children: [
+                Icon(
+                  Icons.link_off,
+                  size: 48,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  l10n.calendarConnectionsEmpty,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Expand all accounts initially.
+    for (final a in widget.state.accounts) {
+      _expandedAccounts.add(a.id);
+    }
+  }
+
+  void _confirmDisconnect(BuildContext context, CalendarAccount account) {
+    final l10n = context.l10n;
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (dialogContext) => Center(
+          child: SizedBox(
+            width: MediaQuery.of(context).size.width * 0.8,
+            child: shad.AlertDialog(
+              barrierColor: Colors.transparent,
+              title: Text(l10n.calendarConnectionsDisconnect),
+              content: Text(
+                l10n.calendarConnectionsDisconnectConfirm(
+                  account.accountEmail ?? account.provider,
+                ),
+              ),
+              actions: [
+                shad.OutlineButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: Text(l10n.calendarEventCancel),
+                ),
+                shad.DestructiveButton(
+                  onPressed: () {
+                    Navigator.pop(dialogContext);
+                    unawaited(
+                      context
+                          .read<CalendarConnectionsCubit>()
+                          .disconnectAccount(
+                            account.id,
+                            widget.wsId,
+                          ),
+                    );
+                  },
+                  child: Text(l10n.calendarConnectionsDisconnect),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Subwidgets ───────────────────────────────────────────────────────
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, bottom: 4),
+      child: Text(
+        label.toUpperCase(),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          letterSpacing: 1.2,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

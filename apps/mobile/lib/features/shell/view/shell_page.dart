@@ -20,6 +20,7 @@ class ShellPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final selectedIndex = _calculateSelectedIndex(context);
+    final theme = shad.Theme.of(context);
 
     return shad.Scaffold(
       footers: [
@@ -29,27 +30,75 @@ class ShellPage extends StatelessWidget {
           labelType: shad.NavigationLabelType.all,
           children: [
             shad.NavigationItem(
-              label: Text(l10n.navHome),
+              label: Text(
+                l10n.navHome,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.p.copyWith(
+                  fontSize: 10,
+                  fontWeight: FontWeight.normal,
+                ),
+              ),
               child: const Icon(Icons.home_outlined),
             ),
             shad.NavigationItem(
-              label: Text(l10n.navTasks),
+              label: Text(
+                l10n.navTasks,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.p.copyWith(
+                  fontSize: 10,
+                  fontWeight: FontWeight.normal,
+                ),
+              ),
               child: const Icon(Icons.check_box_outlined),
             ),
             shad.NavigationItem(
-              label: Text(l10n.navCalendar),
+              label: Text(
+                l10n.navCalendar,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.p.copyWith(
+                  fontSize: 10,
+                  fontWeight: FontWeight.normal,
+                ),
+              ),
               child: const Icon(Icons.calendar_today_outlined),
             ),
             shad.NavigationItem(
-              label: Text(l10n.navFinance),
+              label: Text(
+                l10n.navFinance,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.p.copyWith(
+                  fontSize: 10,
+                  fontWeight: FontWeight.normal,
+                ),
+              ),
               child: const Icon(Icons.account_balance_wallet_outlined),
             ),
             shad.NavigationItem(
-              label: Text(l10n.navTimer),
+              label: Text(
+                l10n.navTimer,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.p.copyWith(
+                  fontSize: 10,
+                  fontWeight: FontWeight.normal,
+                ),
+              ),
               child: const Icon(Icons.timer_outlined),
             ),
             shad.NavigationItem(
-              label: Text(l10n.navSettings),
+              label: Text(
+                l10n.navSettings,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.p.copyWith(
+                  fontSize: 10,
+                  fontWeight: FontWeight.normal,
+                ),
+              ),
               child: const Icon(Icons.settings_outlined),
             ),
           ],

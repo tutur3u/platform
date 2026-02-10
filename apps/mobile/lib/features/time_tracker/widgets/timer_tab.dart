@@ -172,6 +172,7 @@ class TimerTab extends StatelessWidget {
           child: SizedBox(
             width: MediaQuery.of(context).size.width * 0.8,
             child: shad.AlertDialog(
+              barrierColor: Colors.transparent,
               title: Text(context.l10n.timerAddCategory),
               content: shad.FormField(
                 key: const shad.FormKey<String>(#newCategory),

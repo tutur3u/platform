@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class SessionTile extends StatelessWidget {
   const SessionTile({
@@ -83,22 +84,27 @@ class SessionTile extends StatelessWidget {
   Future<bool?> _confirmDelete(BuildContext context, AppLocalizations l10n) {
     return showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.timerDeleteSession),
-        content: Text(l10n.timerDeleteConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
+      builder: (dialogContext) => Center(
+        child: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.8,
+          child: shad.AlertDialog(
+            barrierColor: Colors.transparent,
+            title: Text(l10n.timerDeleteSession),
+            content: Text(l10n.timerDeleteConfirm),
+            actions: [
+              shad.OutlineButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: Text(
+                  MaterialLocalizations.of(dialogContext).cancelButtonLabel,
+                ),
+              ),
+              shad.DestructiveButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: Text(l10n.timerDeleteSession),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(
-              l10n.timerDeleteSession,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
