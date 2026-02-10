@@ -21,113 +21,125 @@ describe('subscription-helper', () => {
 
   describe('hasActiveSubscription', () => {
     it('should return true when workspace has active subscriptions', async () => {
-      const mockChain = {
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-      };
+      const mockPolar = {
+        subscriptions: {
+          list: vi.fn().mockResolvedValue({
+            result: {
+              items: [
+                { id: 'sub-1', status: 'active' },
+                { id: 'sub-2', status: 'canceled' },
+              ],
+            },
+          }),
+        },
+      } as unknown as Polar;
 
-      // The second .eq() call resolves with the result
-      mockChain.eq.mockReturnValueOnce(mockChain).mockResolvedValueOnce({
-        count: 2,
-        error: null,
-      });
-
-      const mockSupabase = {
-        from: vi.fn().mockReturnValue(mockChain),
-      } as unknown as TypedSupabaseClient;
-
-      const result = await hasActiveSubscription(mockSupabase, 'ws-123');
+      const result = await hasActiveSubscription(mockPolar, 'ws-123');
 
       expect(result).toBe(true);
-      expect(mockSupabase.from).toHaveBeenCalledWith('workspace_subscriptions');
-      expect(mockChain.select).toHaveBeenCalledWith('*', {
-        count: 'exact',
-        head: true,
+      expect(mockPolar.subscriptions.list).toHaveBeenCalledWith({
+        metadata: { wsId: 'ws-123' },
+        sorting: 'status',
       });
     });
 
     it('should return false when workspace has no active subscriptions', async () => {
-      const mockChain = {
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-      };
+      const mockPolar = {
+        subscriptions: {
+          list: vi.fn().mockResolvedValue({
+            result: {
+              items: [
+                { id: 'sub-1', status: 'canceled' },
+                { id: 'sub-2', status: 'revoked' },
+              ],
+            },
+          }),
+        },
+      } as unknown as Polar;
 
-      mockChain.eq.mockReturnValueOnce(mockChain).mockResolvedValueOnce({
-        count: 0,
-        error: null,
-      });
-
-      const mockSupabase = {
-        from: vi.fn().mockReturnValue(mockChain),
-      } as unknown as TypedSupabaseClient;
-
-      const result = await hasActiveSubscription(mockSupabase, 'ws-123');
+      const result = await hasActiveSubscription(mockPolar, 'ws-123');
 
       expect(result).toBe(false);
     });
 
-    it('should return false when count is null', async () => {
-      const mockChain = {
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-      };
+    it('should return false when items is empty', async () => {
+      const mockPolar = {
+        subscriptions: {
+          list: vi.fn().mockResolvedValue({
+            result: {
+              items: [],
+            },
+          }),
+        },
+      } as unknown as Polar;
 
-      mockChain.eq.mockReturnValueOnce(mockChain).mockResolvedValueOnce({
-        count: null,
-        error: null,
-      });
+      const result = await hasActiveSubscription(mockPolar, 'ws-123');
 
-      const mockSupabase = {
-        from: vi.fn().mockReturnValue(mockChain),
-      } as unknown as TypedSupabaseClient;
+      expect(result).toBe(false);
+    });
 
-      const result = await hasActiveSubscription(mockSupabase, 'ws-123');
+    it('should return false when items is null/undefined', async () => {
+      const mockPolar = {
+        subscriptions: {
+          list: vi.fn().mockResolvedValue({
+            result: {
+              items: null,
+            },
+          }),
+        },
+      } as unknown as Polar;
+
+      const result = await hasActiveSubscription(mockPolar, 'ws-123');
 
       expect(result).toBe(false);
     });
 
     it('should return true on error to avoid duplicate free subscriptions', async () => {
-      const mockChain = {
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-      };
+      const mockPolar = {
+        subscriptions: {
+          list: vi.fn().mockRejectedValue(new Error('Polar API error')),
+        },
+      } as unknown as Polar;
 
-      mockChain.eq.mockReturnValueOnce(mockChain).mockResolvedValueOnce({
-        count: null,
-        error: { message: 'Database error' },
-      });
-
-      const mockSupabase = {
-        from: vi.fn().mockReturnValue(mockChain),
-      } as unknown as TypedSupabaseClient;
-
-      const result = await hasActiveSubscription(mockSupabase, 'ws-123');
+      const result = await hasActiveSubscription(mockPolar, 'ws-123');
 
       expect(result).toBe(true);
       expect(mockConsoleError).toHaveBeenCalledWith(
         'Error checking active subscriptions:',
-        'Database error'
+        'Polar API error'
+      );
+    });
+
+    it('should handle non-Error exceptions', async () => {
+      const mockPolar = {
+        subscriptions: {
+          list: vi.fn().mockRejectedValue('String error'),
+        },
+      } as unknown as Polar;
+
+      const result = await hasActiveSubscription(mockPolar, 'ws-123');
+
+      expect(result).toBe(true);
+      expect(mockConsoleError).toHaveBeenCalledWith(
+        'Error checking active subscriptions:',
+        'String error'
       );
     });
   });
 
   describe('createFreeSubscription', () => {
     it('should return null if workspace already has active subscription', async () => {
-      const mockChain = {
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-      };
+      const mockPolar = {
+        subscriptions: {
+          list: vi.fn().mockResolvedValue({
+            result: {
+              items: [{ id: 'sub-1', status: 'active' }],
+            },
+          }),
+        },
+      } as unknown as Polar;
 
-      mockChain.eq.mockReturnValueOnce(mockChain).mockResolvedValueOnce({
-        count: 1,
-        error: null,
-      });
-
-      const mockSupabase = {
-        from: vi.fn().mockReturnValue(mockChain),
-      } as unknown as TypedSupabaseClient;
-
-      const mockPolar = {} as Polar;
+      const mockSupabase = {} as TypedSupabaseClient;
 
       const result = await createFreeSubscription(
         mockPolar,
@@ -142,17 +154,13 @@ describe('subscription-helper', () => {
     });
 
     it('should return null if workspace not found', async () => {
-      const mockSubscriptionChain = {
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-      };
-
-      mockSubscriptionChain.eq
-        .mockReturnValueOnce(mockSubscriptionChain)
-        .mockResolvedValueOnce({
-          count: 0,
-          error: null,
-        });
+      const mockPolar = {
+        subscriptions: {
+          list: vi.fn().mockResolvedValue({
+            result: { items: [] },
+          }),
+        },
+      } as unknown as Polar;
 
       const mockWorkspaceChain = {
         select: vi.fn().mockReturnThis(),
@@ -163,13 +171,8 @@ describe('subscription-helper', () => {
       };
 
       const mockSupabase = {
-        from: vi
-          .fn()
-          .mockReturnValueOnce(mockSubscriptionChain)
-          .mockReturnValueOnce(mockWorkspaceChain),
+        from: vi.fn().mockReturnValue(mockWorkspaceChain),
       } as unknown as TypedSupabaseClient;
-
-      const mockPolar = {} as Polar;
 
       const result = await createFreeSubscription(
         mockPolar,
@@ -184,17 +187,13 @@ describe('subscription-helper', () => {
     });
 
     it('should return null if no free product found', async () => {
-      const mockSubscriptionChain = {
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-      };
-
-      mockSubscriptionChain.eq
-        .mockReturnValueOnce(mockSubscriptionChain)
-        .mockResolvedValueOnce({
-          count: 0,
-          error: null,
-        });
+      const mockPolar = {
+        subscriptions: {
+          list: vi.fn().mockResolvedValue({
+            result: { items: [] },
+          }),
+        },
+      } as unknown as Polar;
 
       const mockWorkspaceChain = {
         select: vi.fn().mockReturnThis(),
@@ -217,12 +216,9 @@ describe('subscription-helper', () => {
       const mockSupabase = {
         from: vi
           .fn()
-          .mockReturnValueOnce(mockSubscriptionChain)
           .mockReturnValueOnce(mockWorkspaceChain)
           .mockReturnValueOnce(mockProductChain),
       } as unknown as TypedSupabaseClient;
-
-      const mockPolar = {} as Polar;
 
       const result = await createFreeSubscription(
         mockPolar,
@@ -238,17 +234,18 @@ describe('subscription-helper', () => {
     });
 
     it('should create free subscription for personal workspace', async () => {
-      const mockSubscriptionChain = {
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-      };
-
-      mockSubscriptionChain.eq
-        .mockReturnValueOnce(mockSubscriptionChain)
-        .mockResolvedValueOnce({
-          count: 0,
-          error: null,
-        });
+      const mockPolar = {
+        subscriptions: {
+          list: vi.fn().mockResolvedValue({
+            result: { items: [] },
+          }),
+          create: vi.fn().mockResolvedValue({
+            id: 'sub-123',
+            productId: 'prod-free-123',
+            status: 'active',
+          }),
+        },
+      } as unknown as Polar;
 
       const mockWorkspaceChain = {
         select: vi.fn().mockReturnThis(),
@@ -270,22 +267,9 @@ describe('subscription-helper', () => {
       const mockSupabase = {
         from: vi
           .fn()
-          .mockReturnValueOnce(mockSubscriptionChain)
           .mockReturnValueOnce(mockWorkspaceChain)
           .mockReturnValueOnce(mockProductChain),
       } as unknown as TypedSupabaseClient;
-
-      const mockSubscription = {
-        id: 'sub-123',
-        productId: 'prod-free-123',
-        status: 'active',
-      };
-
-      const mockPolar = {
-        subscriptions: {
-          create: vi.fn().mockResolvedValue(mockSubscription),
-        },
-      } as unknown as Polar;
 
       const result = await createFreeSubscription(
         mockPolar,
@@ -293,7 +277,11 @@ describe('subscription-helper', () => {
         'ws-123'
       );
 
-      expect(result).toEqual(mockSubscription);
+      expect(result).toEqual({
+        id: 'sub-123',
+        productId: 'prod-free-123',
+        status: 'active',
+      });
       expect(mockPolar.subscriptions.create).toHaveBeenCalledWith({
         productId: 'prod-free-123',
         externalCustomerId: 'user-123',
@@ -305,17 +293,18 @@ describe('subscription-helper', () => {
     });
 
     it('should create free subscription for non-personal workspace', async () => {
-      const mockSubscriptionChain = {
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-      };
-
-      mockSubscriptionChain.eq
-        .mockReturnValueOnce(mockSubscriptionChain)
-        .mockResolvedValueOnce({
-          count: 0,
-          error: null,
-        });
+      const mockPolar = {
+        subscriptions: {
+          list: vi.fn().mockResolvedValue({
+            result: { items: [] },
+          }),
+          create: vi.fn().mockResolvedValue({
+            id: 'sub-456',
+            productId: 'prod-free-456',
+            status: 'active',
+          }),
+        },
+      } as unknown as Polar;
 
       const mockWorkspaceChain = {
         select: vi.fn().mockReturnThis(),
@@ -337,22 +326,9 @@ describe('subscription-helper', () => {
       const mockSupabase = {
         from: vi
           .fn()
-          .mockReturnValueOnce(mockSubscriptionChain)
           .mockReturnValueOnce(mockWorkspaceChain)
           .mockReturnValueOnce(mockProductChain),
       } as unknown as TypedSupabaseClient;
-
-      const mockSubscription = {
-        id: 'sub-456',
-        productId: 'prod-free-456',
-        status: 'active',
-      };
-
-      const mockPolar = {
-        subscriptions: {
-          create: vi.fn().mockResolvedValue(mockSubscription),
-        },
-      } as unknown as Polar;
 
       const result = await createFreeSubscription(
         mockPolar,
@@ -360,7 +336,11 @@ describe('subscription-helper', () => {
         'ws-123'
       );
 
-      expect(result).toEqual(mockSubscription);
+      expect(result).toEqual({
+        id: 'sub-456',
+        productId: 'prod-free-456',
+        status: 'active',
+      });
       expect(mockPolar.subscriptions.create).toHaveBeenCalledWith({
         productId: 'prod-free-456',
         externalCustomerId: 'workspace_ws-123',
@@ -369,17 +349,14 @@ describe('subscription-helper', () => {
     });
 
     it('should return null if Polar API call fails', async () => {
-      const mockSubscriptionChain = {
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-      };
-
-      mockSubscriptionChain.eq
-        .mockReturnValueOnce(mockSubscriptionChain)
-        .mockResolvedValueOnce({
-          count: 0,
-          error: null,
-        });
+      const mockPolar = {
+        subscriptions: {
+          list: vi.fn().mockResolvedValue({
+            result: { items: [] },
+          }),
+          create: vi.fn().mockRejectedValue(new Error('Polar API error')),
+        },
+      } as unknown as Polar;
 
       const mockWorkspaceChain = {
         select: vi.fn().mockReturnThis(),
@@ -401,16 +378,9 @@ describe('subscription-helper', () => {
       const mockSupabase = {
         from: vi
           .fn()
-          .mockReturnValueOnce(mockSubscriptionChain)
           .mockReturnValueOnce(mockWorkspaceChain)
           .mockReturnValueOnce(mockProductChain),
       } as unknown as TypedSupabaseClient;
-
-      const mockPolar = {
-        subscriptions: {
-          create: vi.fn().mockRejectedValue(new Error('Polar API error')),
-        },
-      } as unknown as Polar;
 
       const result = await createFreeSubscription(
         mockPolar,
@@ -426,17 +396,14 @@ describe('subscription-helper', () => {
     });
 
     it('should handle non-Error exceptions from Polar API', async () => {
-      const mockSubscriptionChain = {
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-      };
-
-      mockSubscriptionChain.eq
-        .mockReturnValueOnce(mockSubscriptionChain)
-        .mockResolvedValueOnce({
-          count: 0,
-          error: null,
-        });
+      const mockPolar = {
+        subscriptions: {
+          list: vi.fn().mockResolvedValue({
+            result: { items: [] },
+          }),
+          create: vi.fn().mockRejectedValue('String error'),
+        },
+      } as unknown as Polar;
 
       const mockWorkspaceChain = {
         select: vi.fn().mockReturnThis(),
@@ -458,16 +425,9 @@ describe('subscription-helper', () => {
       const mockSupabase = {
         from: vi
           .fn()
-          .mockReturnValueOnce(mockSubscriptionChain)
           .mockReturnValueOnce(mockWorkspaceChain)
           .mockReturnValueOnce(mockProductChain),
       } as unknown as TypedSupabaseClient;
-
-      const mockPolar = {
-        subscriptions: {
-          create: vi.fn().mockRejectedValue('String error'),
-        },
-      } as unknown as Polar;
 
       const result = await createFreeSubscription(
         mockPolar,
