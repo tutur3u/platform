@@ -1,7 +1,7 @@
 'use client';
 
-import { Loader2, UserIcon } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Loader2, Settings, UserIcon } from '@tuturuuu/icons';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
@@ -16,17 +16,13 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { Form } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Label } from '@tuturuuu/ui/label';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { cn } from '@tuturuuu/utils/format';
+import { toast } from '@tuturuuu/ui/sonner';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as z from 'zod';
-import { ImageCropper } from '@/components/image-cropper';
 
 interface AvatarProps {
   user: WorkspaceUser;
@@ -46,330 +42,312 @@ const AVATAR_SIZE = 500;
 
 export default function UserAvatar({ user }: AvatarProps) {
   const t = useTranslations();
-  const router = useRouter();
-  const supabase = createClient();
+  const queryClient = useQueryClient();
 
   const [open, setOpen] = useState(false);
-  const [cropperOpen, setCropperOpen] = useState(false);
-  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isConverting, setIsConverting] = useState(false);
-
-  const [saving, setSaving] = useState(false);
   const [previewSrc, setPreviewSrc] = useState<string | null>(
     user?.avatar_url || null
   );
+
+  const blobUrlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+      }
+    };
+  }, []);
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
   });
 
-  const compressAndResizeImage = (blob: Blob): Promise<Blob> => {
+  const uploadAvatarMutation = useMutation({
+    mutationFn: async ({
+      compressedFile,
+      filename,
+    }: {
+      compressedFile: File;
+      filename: string;
+    }) => {
+      // Step 1: Get upload URL
+      const urlRes = await fetch('/api/v1/users/me/avatar/upload-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ filename }),
+      });
+
+      if (!urlRes.ok) throw new Error('Failed to get upload URL');
+
+      const { uploadUrl, publicUrl } = await urlRes.json();
+
+      // Step 2: Upload file to storage
+      const uploadRes = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': compressedFile.type,
+        },
+        body: compressedFile,
+      });
+
+      if (!uploadRes.ok) throw new Error('Failed to upload file');
+
+      // Step 3: Update user profile with new avatar URL
+      const updateRes = await fetch('/api/v1/users/me/profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ avatar_url: publicUrl }),
+      });
+
+      if (!updateRes.ok) throw new Error('Failed to update profile');
+
+      return { publicUrl };
+    },
+    onSuccess: () => {
+      toast.success(t('settings-account.avatar_updated'));
+      // Invalidate user queries to refetch data
+      queryClient.invalidateQueries({ queryKey: ['user', 'me'] });
+      setOpen(false);
+      form.reset();
+    },
+    onError: (error) => {
+      console.error('Error uploading avatar:', error);
+      toast.error(t('settings-account.avatar_update_error'));
+      form.reset();
+    },
+  });
+
+  const removeAvatarMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch('/api/v1/users/me/avatar', {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) throw new Error('Failed to remove avatar');
+    },
+    onMutate: async () => {
+      // Optimistically remove avatar preview
+      setPreviewSrc(null);
+    },
+    onSuccess: () => {
+      toast.success(t('settings-account.avatar_removed'));
+      // Invalidate user queries to refetch data
+      queryClient.invalidateQueries({ queryKey: ['user', 'me'] });
+      form.reset();
+    },
+    onError: (error) => {
+      console.error('Error removing avatar:', error);
+      // Rollback optimistic update
+      setPreviewSrc(user?.avatar_url || null);
+      toast.error(t('settings-account.avatar_remove_error'));
+    },
+  });
+
+  const compressImage = (file: File): Promise<Blob> => {
     return new Promise((resolve, reject) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          canvas.width = AVATAR_SIZE;
+          canvas.height = AVATAR_SIZE;
 
-      if (!ctx) {
-        reject(new Error('Canvas context is null'));
-        return;
-      }
-
-      const img = new Image();
-      img.onload = () => {
-        // Set canvas size to the desired avatar size
-        canvas.width = AVATAR_SIZE;
-        canvas.height = AVATAR_SIZE;
-
-        // Draw the cropped image (already square from cropper) to the canvas
-        ctx.drawImage(img, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
-
-        canvas.toBlob(
-          (compressedBlob) => {
-            if (compressedBlob) {
-              resolve(compressedBlob);
-            } else {
-              reject(new Error('Blob creation failed'));
-            }
-          },
-          'image/jpeg',
-          0.8 // 80% quality for good balance of quality and file size
-        );
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
+            canvas.toBlob(
+              (blob) => {
+                if (blob) {
+                  resolve(blob);
+                } else {
+                  reject(new Error('Blob creation failed'));
+                }
+              },
+              file.type,
+              0.7 // 70% quality
+            );
+          } else {
+            reject(new Error('Canvas context is null'));
+          }
+        };
       };
-
-      img.onerror = () => reject(new Error('Failed to load image'));
-      img.src = URL.createObjectURL(blob);
+      reader.onerror = (error) => reject(error);
     });
   };
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     if (!data.file) return;
 
-    setSaving(true);
-
     try {
-      // The file from the form is already the cropped and compressed blob
-      const finalFile = data.file;
+      const compressedBlob = await compressImage(data.file);
+      const compressedFile = new File([compressedBlob], data.file.name, {
+        type: data.file.type,
+      });
 
-      if (finalFile.size > MAX_FILE_SIZE) {
-        throw new Error('File is too large (max 2MB)');
+      if (compressedFile.size > MAX_FILE_SIZE) {
+        throw new Error('Compressed file is still too large');
       }
 
-      const filePath = `${generateRandomUUID()}`;
+      const filename = data.file.name;
 
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, finalFile);
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({ avatar_url: urlData.publicUrl })
-        .eq('id', user.id);
-
-      if (updateError) throw updateError;
-
-      toast({
-        title: t('settings-account.avatar_updated'),
-        description: t('settings-account.avatar_updated_description'),
-      });
-      router.refresh();
-      setOpen(false);
+      uploadAvatarMutation.mutate({ compressedFile, filename });
     } catch (error) {
-      console.error('Error:', error);
-      toast({
-        title: t('settings-account.update_failed'),
-        description: t('settings-account.avatar_update_error'),
-        variant: 'destructive',
-      });
-    } finally {
-      form.reset();
-      setSaving(false);
+      console.error('Error compressing file:', error);
+      toast.error(t('settings-account.avatar_compression_error'));
     }
   }
 
-  const removeAvatar = async () => {
-    setSaving(true);
-    setPreviewSrc(null);
-
+  const removeAvatar = () => {
     if (!user.avatar_url) {
-      setSaving(false);
       return;
     }
 
-    const { error: updateError } = await supabase
-      .from('users')
-      .update({ avatar_url: null })
-      .eq('id', user.id);
-
-    if (updateError) {
-      toast({
-        title: t('settings-account.remove_failed'),
-        description: t('settings-account.avatar_remove_error'),
-        variant: 'destructive',
-      });
-    } else {
-      toast({
-        title: t('settings-account.avatar_removed'),
-        description: t('settings-account.avatar_removed_description'),
-      });
-      router.refresh();
-    }
-
-    setSaving(false);
+    removeAvatarMutation.mutate();
   };
 
   const handleFileSelect = async (file: File) => {
     try {
-      setIsConverting(true);
+      const compressedBlob = await compressImage(file);
 
-      // Create URL for the processed image to show in the cropper
-      const imageUrl = URL.createObjectURL(file);
-      setSelectedImageUrl(imageUrl);
-      setSelectedFile(file); // Keep original file for reference
-      setCropperOpen(true);
-    } catch (error) {
-      console.error('Error processing file:', error);
-      toast({
-        title: t('settings-account.crop_failed'),
-        description:
-          error instanceof Error
-            ? error.message
-            : t('settings-account.crop_failed_description'),
-        variant: 'destructive',
-      });
-    } finally {
-      setIsConverting(false);
-    }
-  };
-
-  const handleCropComplete = async (croppedImageBlob: Blob) => {
-    try {
-      // Compress and resize the cropped image to the final avatar size
-      const finalBlob = await compressAndResizeImage(croppedImageBlob);
-
-      // Create preview URL
-      const previewUrl = URL.createObjectURL(finalBlob);
-      setPreviewSrc(previewUrl);
-
-      // Create file for form submission
-      const finalFile = new File([finalBlob], 'avatar.jpg', {
-        type: 'image/jpeg',
-      });
-
-      form.setValue('file', finalFile);
-      setCropperOpen(false);
-
-      // Clean up the selected image URL
-      if (selectedImageUrl) {
-        URL.revokeObjectURL(selectedImageUrl);
-        setSelectedImageUrl(null);
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
       }
-      setSelectedFile(null);
-    } catch (error) {
-      console.error('Error processing cropped image:', error);
-      toast({
-        title: t('settings-account.crop_failed'),
-        description: t('settings-account.crop_failed_description'),
-        variant: 'destructive',
-      });
-    }
-  };
 
-  const handleCropCancel = () => {
-    setCropperOpen(false);
-    if (selectedImageUrl) {
-      URL.revokeObjectURL(selectedImageUrl);
-      setSelectedImageUrl(null);
+      const fileURL = URL.createObjectURL(compressedBlob);
+      blobUrlRef.current = fileURL;
+      setPreviewSrc(fileURL);
+      form.setValue(
+        'file',
+        new File([compressedBlob], file.name, { type: file.type })
+      );
+    } catch (error) {
+      console.error('Error compressing image:', error);
+      toast.error(t('settings-account.avatar_compression_error'));
     }
-    setSelectedFile(null);
   };
 
   return (
-    <>
-      {/* Image Cropper Dialog */}
-      {selectedImageUrl && (
-        <ImageCropper
-          image={selectedImageUrl}
-          originalFile={selectedFile}
-          open={cropperOpen}
-          onOpenChange={setCropperOpen}
-          onCropComplete={handleCropComplete}
-          onCancel={handleCropCancel}
-          title={t('settings-account.crop_avatar')}
-          aspectRatio={1} // Square crop for avatars
-        />
-      )}
+    <Form {...form}>
+      <Dialog
+        open={open}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            form.reset();
+            setPreviewSrc(user?.avatar_url || null);
 
-      <Form {...form}>
-        <Dialog
-          open={open}
-          onOpenChange={(isOpen) => {
-            if (!isOpen) {
-              form.reset();
-              setPreviewSrc(user?.avatar_url || null);
+            if (blobUrlRef.current) {
+              URL.revokeObjectURL(blobUrlRef.current);
+              blobUrlRef.current = null;
             }
-            setOpen(isOpen);
-          }}
-        >
-          <DialogTrigger asChild>
-            <div className="flex items-center justify-center">
-              <div className="relative flex w-fit flex-col items-center justify-center gap-4">
-                <Avatar className="h-32 w-32 cursor-pointer overflow-hidden rounded-md border border-foreground font-semibold text-3xl">
-                  <AvatarImage
-                    src={previewSrc || undefined}
-                    alt="Avatar"
-                    className="object-cover"
-                  />
-                  <AvatarFallback className="rounded-none font-semibold">
-                    {getInitials(user?.display_name || user?.email) || (
-                      <UserIcon className="h-12 w-12" />
-                    )}
-                  </AvatarFallback>
-                </Avatar>
-              </div>
+          }
+          setOpen(isOpen);
+        }}
+      >
+        <DialogTrigger asChild>
+          <div className="flex items-center justify-center">
+            <div className="relative flex w-fit flex-col items-center justify-center gap-4">
+              <Avatar className="h-32 w-32 cursor-pointer overflow-visible border border-foreground font-semibold text-3xl">
+                <AvatarImage
+                  src={previewSrc || undefined}
+                  alt="Avatar"
+                  className="rounded-full object-cover"
+                />
+                <AvatarFallback className="font-semibold">
+                  {getInitials(user?.display_name || user?.email) || (
+                    <UserIcon className="h-12 w-12" />
+                  )}
+                </AvatarFallback>
+              </Avatar>
+              <Button
+                size="icon"
+                className="absolute right-0 bottom-0 rounded-full backdrop-blur-lg"
+              >
+                <Settings className="h-5 w-5" />
+              </Button>
             </div>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{t('settings-account.avatar')}</DialogTitle>
-              <DialogDescription>
-                {t('settings-account.avatar-description')}
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-              <div className="flex flex-col items-center gap-4">
-                <Avatar className="h-32 w-32 overflow-hidden rounded-md font-semibold text-3xl">
-                  <AvatarImage
-                    src={previewSrc || undefined}
-                    alt="Avatar"
-                    className="object-cover"
-                  />
-                  <AvatarFallback className="rounded-none font-semibold">
-                    {getInitials(user?.display_name || user?.email) || (
-                      <UserIcon className="h-12 w-12" />
-                    )}
-                  </AvatarFallback>
-                </Avatar>
-              </div>
-              <DialogFooter className="flex-wrap max-sm:gap-2">
-                <div>
-                  <Label
-                    htmlFor="file-upload"
-                    className={cn(
-                      'inline-block rounded-md border p-3 px-4 text-center max-sm:w-full',
-                      isConverting
-                        ? 'cursor-not-allowed opacity-50'
-                        : 'cursor-pointer'
-                    )}
-                  >
-                    {isConverting
-                      ? 'Converting...'
-                      : previewSrc
-                        ? t('settings-account.new_avatar')
-                        : t('settings-account.upload_avatar')}
-                  </Label>
-                  <input
-                    id="file-upload"
-                    type="file"
-                    accept="image/png,image/jpeg,image/jpg,image/webp"
-                    disabled={isConverting}
-                    onChange={(e) => {
-                      if (e.target.files?.[0] && !isConverting) {
-                        handleFileSelect(e.target.files[0]);
-                      }
-                    }}
-                    className="hidden"
-                  />
-                </div>
-                {previewSrc && (
-                  <Button variant="destructive" onClick={removeAvatar}>
-                    {saving ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      t('settings-account.remove_avatar')
-                    )}
-                  </Button>
-                )}
-                <Button
-                  type="submit"
-                  disabled={saving || !form.getValues('file')}
+          </div>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('settings-account.avatar')}</DialogTitle>
+            <DialogDescription>
+              {t('settings-account.avatar-description')}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+            <div className="flex flex-col items-center gap-4">
+              <Avatar className="h-32 w-32 overflow-visible font-semibold text-3xl">
+                <AvatarImage
+                  src={previewSrc || undefined}
+                  alt="Avatar"
+                  className="rounded-full object-cover"
+                />
+                <AvatarFallback className="font-semibold">
+                  {getInitials(user?.display_name || user?.email) || (
+                    <UserIcon className="h-12 w-12" />
+                  )}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+            <DialogFooter className="flex-wrap max-sm:gap-2">
+              <div>
+                <Label
+                  htmlFor="file-upload"
+                  className="inline-block cursor-pointer rounded-md border p-3 px-4 text-center max-sm:w-full"
                 >
-                  {saving ? (
+                  {previewSrc
+                    ? t('settings-account.new_avatar')
+                    : t('settings-account.upload_avatar')}
+                </Label>
+                <input
+                  id="file-upload"
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,image/webp"
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) {
+                      handleFileSelect(e.target.files[0]);
+                    }
+                  }}
+                  className="hidden"
+                />
+              </div>
+              {previewSrc && (
+                <Button
+                  variant="destructive"
+                  onClick={removeAvatar}
+                  disabled={removeAvatarMutation.isPending}
+                >
+                  {removeAvatarMutation.isPending ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
                   ) : (
-                    t('settings-account.save_avatar')
+                    t('settings-account.remove_avatar')
                   )}
                 </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </Form>
-    </>
+              )}
+              <Button
+                type="submit"
+                disabled={
+                  uploadAvatarMutation.isPending || !form.getValues('file')
+                }
+              >
+                {uploadAvatarMutation.isPending ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  t('settings-account.save_avatar')
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </Form>
   );
 }

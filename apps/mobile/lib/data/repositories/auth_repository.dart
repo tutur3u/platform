@@ -32,6 +32,7 @@ class AuthRepository {
           if (deviceId != null) 'deviceId': deviceId,
           if (captchaToken != null) 'captchaToken': captchaToken,
         },
+        requiresAuth: false,
       );
 
       if (response['error'] != null) {
@@ -62,6 +63,7 @@ class AuthRepository {
           'locale': getLocale(),
           if (deviceId != null) 'deviceId': deviceId,
         },
+        requiresAuth: false,
       );
 
       if (response['error'] != null) {
@@ -104,6 +106,7 @@ class AuthRepository {
           if (deviceId != null) 'deviceId': deviceId,
           if (captchaToken != null) 'captchaToken': captchaToken,
         },
+        requiresAuth: false,
       );
 
       if (response['error'] != null) {

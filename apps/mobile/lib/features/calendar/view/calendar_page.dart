@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/data/models/calendar_event.dart';
@@ -19,6 +19,7 @@ import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class CalendarPage extends StatelessWidget {
   const CalendarPage({super.key});
@@ -51,143 +52,160 @@ class _CalendarView extends StatelessWidget {
       locale.languageCode,
     );
 
-    return Scaffold(
-      appBar: AppBar(
-        title: BlocBuilder<CalendarCubit, CalendarState>(
-          buildWhen: (prev, curr) =>
-              prev.effectiveFocusedMonth != curr.effectiveFocusedMonth,
-          builder: (context, state) {
-            final month = state.effectiveFocusedMonth;
-            return Text(DateFormat.yMMMM().format(month));
-          },
-        ),
-        actions: [
-          // Calendar connections.
-          IconButton(
-            icon: const Icon(Icons.sync_alt),
-            tooltip: l10n.calendarConnectionsTitle,
-            onPressed: () {
-              final wsId = context
-                  .read<WorkspaceCubit>()
-                  .state
-                  .currentWorkspace
-                  ?.id;
-              if (wsId != null) {
-                unawaited(
-                  showCalendarConnectionsSheet(context, wsId: wsId),
-                );
-              }
-            },
-          ),
-          // Today button.
-          IconButton(
-            icon: const Icon(Icons.today),
-            tooltip: l10n.calendarToday,
-            onPressed: () {
-              final cubit = context.read<CalendarCubit>()..goToToday();
-              final wsId = context
-                  .read<WorkspaceCubit>()
-                  .state
-                  .currentWorkspace
-                  ?.id;
-              if (wsId != null) {
-                unawaited(cubit.ensureRangeLoaded(wsId, DateTime.now()));
-              }
-            },
-          ),
-          // View mode.
-          BlocBuilder<CalendarCubit, CalendarState>(
-            buildWhen: (prev, curr) => prev.viewMode != curr.viewMode,
+    return shad.Scaffold(
+      headers: [
+        shad.AppBar(
+          title: BlocBuilder<CalendarCubit, CalendarState>(
+            buildWhen: (prev, curr) =>
+                prev.effectiveFocusedMonth != curr.effectiveFocusedMonth,
             builder: (context, state) {
-              return PopupMenuButton<CalendarViewMode>(
-                icon: const Icon(Icons.view_agenda_outlined),
-                onSelected: (mode) {
-                  context.read<CalendarCubit>().setViewMode(mode);
-                },
-                itemBuilder: (_) => [
-                  for (final mode in CalendarViewMode.values)
-                    PopupMenuItem(
-                      value: mode,
-                      child: Row(
-                        children: [
-                          if (state.viewMode == mode)
-                            const Icon(Icons.check, size: 18)
-                          else
-                            const SizedBox(width: 18),
-                          const SizedBox(width: 8),
-                          Text(_viewModeLabel(l10n, mode)),
-                        ],
-                      ),
-                    ),
-                ],
-              );
+              final month = state.effectiveFocusedMonth;
+              return Text(DateFormat.yMMMM().format(month));
             },
+          ),
+          trailing: [
+            // Calendar connections.
+            Tooltip(
+              message: l10n.calendarConnectionsTitle,
+              child: shad.IconButton.ghost(
+                icon: const Icon(Icons.sync_alt),
+                onPressed: () {
+                  final wsId = context
+                      .read<WorkspaceCubit>()
+                      .state
+                      .currentWorkspace
+                      ?.id;
+                  if (wsId != null) {
+                    unawaited(
+                      showCalendarConnectionsSheet(context, wsId: wsId),
+                    );
+                  }
+                },
+              ),
+            ),
+            // Today button.
+            Tooltip(
+              message: l10n.calendarToday,
+              child: shad.IconButton.ghost(
+                icon: const Icon(Icons.today),
+                onPressed: () {
+                  final cubit = context.read<CalendarCubit>()..goToToday();
+                  final wsId = context
+                      .read<WorkspaceCubit>()
+                      .state
+                      .currentWorkspace
+                      ?.id;
+                  if (wsId != null) {
+                    unawaited(cubit.ensureRangeLoaded(wsId, DateTime.now()));
+                  }
+                },
+              ),
+            ),
+            // View mode.
+            BlocBuilder<CalendarCubit, CalendarState>(
+              buildWhen: (prev, curr) => prev.viewMode != curr.viewMode,
+              builder: (context, state) {
+                return PopupMenuButton<CalendarViewMode>(
+                  icon: const Icon(Icons.view_agenda_outlined),
+                  onSelected: (mode) {
+                    context.read<CalendarCubit>().setViewMode(mode);
+                  },
+                  itemBuilder: (_) => [
+                    for (final mode in CalendarViewMode.values)
+                      PopupMenuItem(
+                        value: mode,
+                        child: Row(
+                          children: [
+                            if (state.viewMode == mode)
+                              const Icon(Icons.check, size: 18)
+                            else
+                              const SizedBox(width: 18),
+                            const SizedBox(width: 8),
+                            Text(_viewModeLabel(l10n, mode)),
+                          ],
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ],
+      child: Stack(
+        children: [
+          BlocListener<WorkspaceCubit, WorkspaceState>(
+            listenWhen: (prev, curr) =>
+                prev.currentWorkspace?.id != curr.currentWorkspace?.id,
+            listener: (context, state) {
+              final wsId = state.currentWorkspace?.id;
+              if (wsId != null) {
+                unawaited(context.read<CalendarCubit>().loadEvents(wsId));
+              }
+            },
+            child: BlocBuilder<CalendarCubit, CalendarState>(
+              builder: (context, state) {
+                if (state.status == CalendarStatus.loading &&
+                    state.events.isEmpty) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (state.status == CalendarStatus.error &&
+                    state.events.isEmpty) {
+                  return _ErrorView(error: state.error);
+                }
+
+                return RefreshIndicator(
+                  onRefresh: () async => _reload(context),
+                  child: Column(
+                    children: [
+                      // Month strip (day, 3-day, and agenda views).
+                      if (state.viewMode == CalendarViewMode.day ||
+                          state.viewMode == CalendarViewMode.threeDays ||
+                          state.viewMode == CalendarViewMode.agenda)
+                        MonthStrip(
+                          selectedDate: state.effectiveSelectedDate,
+                          focusedMonth: state.effectiveFocusedMonth,
+                          events: state.events,
+                          firstDayOfWeek: firstDayOfWeek,
+                          onDateSelected: (date) {
+                            final cubit = context.read<CalendarCubit>()
+                              ..selectDate(date);
+                            final wsId = context
+                                .read<WorkspaceCubit>()
+                                .state
+                                .currentWorkspace
+                                ?.id;
+                            if (wsId != null) {
+                              unawaited(cubit.ensureRangeLoaded(wsId, date));
+                            }
+                          },
+                          onMonthChanged: (month) {
+                            context.read<CalendarCubit>().setFocusedMonth(
+                              month,
+                            );
+                          },
+                        ),
+                      // View body.
+                      Expanded(
+                        child: _buildViewBody(context, state, firstDayOfWeek),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: FloatingActionButton(
+              heroTag: 'calendar_fab',
+              onPressed: () => _createEvent(context),
+              child: const Icon(Icons.add),
+            ),
           ),
         ],
-      ),
-      body: BlocListener<WorkspaceCubit, WorkspaceState>(
-        listenWhen: (prev, curr) =>
-            prev.currentWorkspace?.id != curr.currentWorkspace?.id,
-        listener: (context, state) {
-          final wsId = state.currentWorkspace?.id;
-          if (wsId != null) {
-            unawaited(context.read<CalendarCubit>().loadEvents(wsId));
-          }
-        },
-        child: BlocBuilder<CalendarCubit, CalendarState>(
-          builder: (context, state) {
-            if (state.status == CalendarStatus.loading &&
-                state.events.isEmpty) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
-            if (state.status == CalendarStatus.error && state.events.isEmpty) {
-              return _ErrorView(error: state.error);
-            }
-
-            return RefreshIndicator(
-              onRefresh: () async => _reload(context),
-              child: Column(
-                children: [
-                  // Month strip (day, 3-day, and agenda views).
-                  if (state.viewMode == CalendarViewMode.day ||
-                      state.viewMode == CalendarViewMode.threeDays ||
-                      state.viewMode == CalendarViewMode.agenda)
-                    MonthStrip(
-                      selectedDate: state.effectiveSelectedDate,
-                      focusedMonth: state.effectiveFocusedMonth,
-                      events: state.events,
-                      firstDayOfWeek: firstDayOfWeek,
-                      onDateSelected: (date) {
-                        final cubit = context.read<CalendarCubit>()
-                          ..selectDate(date);
-                        final wsId = context
-                            .read<WorkspaceCubit>()
-                            .state
-                            .currentWorkspace
-                            ?.id;
-                        if (wsId != null) {
-                          unawaited(cubit.ensureRangeLoaded(wsId, date));
-                        }
-                      },
-                      onMonthChanged: (month) {
-                        context.read<CalendarCubit>().setFocusedMonth(month);
-                      },
-                    ),
-                  // View body.
-                  Expanded(
-                    child: _buildViewBody(context, state, firstDayOfWeek),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'calendar_fab',
-        onPressed: () => _createEvent(context),
-        child: const Icon(Icons.add),
       ),
     );
   }

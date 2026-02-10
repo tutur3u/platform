@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
@@ -15,6 +15,7 @@ import 'package:mobile/features/time_tracker/widgets/timer_tab.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TimeTrackerPage extends StatelessWidget {
   const TimeTrackerPage({super.key});
@@ -38,8 +39,15 @@ class TimeTrackerPage extends StatelessWidget {
   }
 }
 
-class _TimeTrackerView extends StatelessWidget {
+class _TimeTrackerView extends StatefulWidget {
   const _TimeTrackerView();
+
+  @override
+  State<_TimeTrackerView> createState() => _TimeTrackerViewState();
+}
+
+class _TimeTrackerViewState extends State<_TimeTrackerView> {
+  int _index = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -64,77 +72,92 @@ class _TimeTrackerView extends StatelessWidget {
         buildWhen: (prev, curr) => prev.status != curr.status,
         builder: (context, state) {
           if (state.status == TimeTrackerStatus.loading) {
-            return Scaffold(
-              appBar: AppBar(title: Text(l10n.timerTitle)),
-              body: const Center(child: CircularProgressIndicator()),
+            return shad.Scaffold(
+              headers: [
+                shad.AppBar(title: Text(l10n.timerTitle)),
+              ],
+              child: const Center(child: shad.CircularProgressIndicator()),
             );
           }
 
           if (state.status == TimeTrackerStatus.error) {
-            return Scaffold(
-              appBar: AppBar(title: Text(l10n.timerTitle)),
-              body: _ErrorView(error: state.error),
+            return shad.Scaffold(
+              headers: [
+                shad.AppBar(title: Text(l10n.timerTitle)),
+              ],
+              child: _ErrorView(error: state.error),
             );
           }
 
-          return DefaultTabController(
-            length: 3,
-            child: Scaffold(
-              appBar: AppBar(
+          return shad.Scaffold(
+            headers: [
+              shad.AppBar(
                 title: Text(l10n.timerTitle),
-                actions: [
-                  PopupMenuButton<String>(
+                trailing: [
+                  shad.IconButton.ghost(
+                    onPressed: () {
+                      shad.showDropdown<void>(
+                        context: context,
+                        builder: (context) {
+                          return shad.DropdownMenu(
+                            children: [
+                              shad.MenuButton(
+                                leading: const Icon(
+                                  Icons.timer_outlined,
+                                  size: 16,
+                                ),
+                                onPressed: _showPomodoroSettings,
+                                child: Text(l10n.timerPomodoro),
+                              ),
+                              if (!isPersonal) ...[
+                                shad.MenuButton(
+                                  leading: const Icon(
+                                    Icons.pending_actions,
+                                    size: 16,
+                                  ),
+                                  onPressed: (context) =>
+                                      context.push(Routes.timerRequests),
+                                  child: Text(l10n.timerRequestsTitle),
+                                ),
+                                shad.MenuButton(
+                                  leading: const Icon(
+                                    Icons.admin_panel_settings,
+                                    size: 16,
+                                  ),
+                                  onPressed: (context) =>
+                                      context.push(Routes.timerManagement),
+                                  child: Text(l10n.timerManagementTitle),
+                                ),
+                              ],
+                            ],
+                          );
+                        },
+                      );
+                    },
                     icon: const Icon(Icons.more_vert),
-                    onSelected: (value) =>
-                        _handleMenuAction(context, value, isPersonal),
-                    itemBuilder: (context) => [
-                      PopupMenuItem(
-                        value: 'pomodoro',
-                        child: ListTile(
-                          leading: const Icon(Icons.timer_outlined),
-                          title: Text(l10n.timerPomodoro),
-                          dense: true,
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                      ),
-                      if (!isPersonal)
-                        PopupMenuItem(
-                          value: 'requests',
-                          child: ListTile(
-                            leading: const Icon(Icons.pending_actions),
-                            title: Text(l10n.timerRequestsTitle),
-                            dense: true,
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                        ),
-                      if (!isPersonal)
-                        PopupMenuItem(
-                          value: 'management',
-                          child: ListTile(
-                            leading: const Icon(Icons.admin_panel_settings),
-                            title: Text(l10n.timerManagementTitle),
-                            dense: true,
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                        ),
-                    ],
                   ),
                 ],
-                bottom: TabBar(
-                  tabs: [
-                    Tab(text: l10n.navTimer),
-                    Tab(text: l10n.timerHistory),
-                    Tab(text: l10n.timerStatsTitle),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: shad.Tabs(
+                  index: _index,
+                  onChanged: (index) => setState(() => _index = index),
+                  children: [
+                    shad.TabItem(child: Text(l10n.navTimer)),
+                    shad.TabItem(child: Text(l10n.timerHistory)),
+                    shad.TabItem(child: Text(l10n.timerStatsTitle)),
                   ],
                 ),
               ),
-              body: const TabBarView(
-                children: [
-                  TimerTab(),
-                  HistoryTab(),
-                  StatsTab(),
-                ],
-              ),
+            ],
+            child: IndexedStack(
+              index: _index,
+              children: [
+                TimerTab(onSeeAll: () => setState(() => _index = 1)),
+                const HistoryTab(),
+                const StatsTab(),
+              ],
             ),
           );
         },
@@ -142,27 +165,12 @@ class _TimeTrackerView extends StatelessWidget {
     );
   }
 
-  void _handleMenuAction(
-    BuildContext context,
-    String action,
-    bool isPersonal,
-  ) {
-    switch (action) {
-      case 'pomodoro':
-        _showPomodoroSettings(context);
-      case 'requests':
-        unawaited(context.push(Routes.timerRequests));
-      case 'management':
-        unawaited(context.push(Routes.timerManagement));
-    }
-  }
-
   void _showPomodoroSettings(BuildContext context) {
     final cubit = context.read<TimeTrackerCubit>();
     unawaited(
-      showModalBottomSheet<void>(
+      shad.openDrawer<void>(
         context: context,
-        isScrollControlled: true,
+        position: shad.OverlayPosition.bottom,
         builder: (_) => PomodoroSettingsDialog(
           settings: cubit.state.pomodoroSettings,
           onSave: (settings) =>
@@ -189,15 +197,15 @@ class _ErrorView extends StatelessWidget {
           Icon(
             Icons.error_outline,
             size: 48,
-            color: Theme.of(context).colorScheme.error,
+            color: shad.Theme.of(context).colorScheme.destructive,
           ),
-          const SizedBox(height: 16),
+          const shad.Gap(16),
           Text(
             error ?? l10n.timerTitle,
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 16),
-          FilledButton.tonal(
+          const shad.Gap(16),
+          shad.SecondaryButton(
             onPressed: () {
               final wsId =
                   context.read<WorkspaceCubit>().state.currentWorkspace?.id ??

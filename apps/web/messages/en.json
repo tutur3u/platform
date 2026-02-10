@@ -6159,6 +6159,7 @@
     "available": "Available",
     "available-accounts": "Available Accounts to Link",
     "avatar": "Avatar",
+    "avatar_compression_error": "There was an error compressing your avatar",
     "avatar_remove_error": "There was an error removing your avatar. Please try again.",
     "avatar_removed": "Avatar removed",
     "avatar_removed_description": "Your avatar has been successfully removed.",

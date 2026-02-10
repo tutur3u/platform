@@ -1,0 +1,2 @@
+"NSPhotoLibraryUsageDescription" = "This app needs access to your photo library to pick an avatar.";
+"NSCameraUsageDescription" = "This app needs access to your camera to take a profile picture.";

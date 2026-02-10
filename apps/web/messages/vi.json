@@ -6159,6 +6159,7 @@
     "available": "Có sẵn",
     "available-accounts": "Tài khoản có sẵn để liên kết",
     "avatar": "Ảnh đại diện",
+    "avatar_compression_error": "Đã xảy ra lỗi khi nén hình đại diện của bạn",
     "avatar_remove_error": "Đã xảy ra lỗi khi xóa hình đại diện của bạn. \nVui lòng thử lại.",
     "avatar_removed": "Đã xóa ảnh đại diện",
     "avatar_removed_description": "Hình đại diện của bạn đã được xóa thành công.",

@@ -1,25 +1,22 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   getUserDefaultWorkspace,
   updateUserDefaultWorkspace,
 } from '@tuturuuu/utils/user-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { authorizeRequest } from '@/lib/api-auth';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'User not authenticated' },
-        { status: 401 }
+    const { data, error } = await authorizeRequest(req);
+    if (error || !data)
+      return (
+        error || NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       );
-    }
 
-    const defaultWorkspace = await getUserDefaultWorkspace();
+    const { supabase } = data;
+
+    const defaultWorkspace = await getUserDefaultWorkspace(supabase);
 
     return NextResponse.json(defaultWorkspace);
   } catch (error) {
@@ -33,20 +30,27 @@ export async function GET() {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { workspaceId } = body;
+    const { data: authData, error: authError } = await authorizeRequest(req);
+    if (authError || !authData)
+      return (
+        authError ||
+        NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      );
 
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user, supabase } = authData;
+    const bodySchema = z.object({
+      workspaceId: z.uuid(),
+    });
+    const parsedBody = bodySchema.safeParse(await req.json());
 
-    if (!user) {
+    if (!parsedBody.success) {
       return NextResponse.json(
-        { error: 'User not authenticated' },
-        { status: 401 }
+        { error: 'Invalid request data', errors: parsedBody.error.issues },
+        { status: 400 }
       );
     }
+
+    const { workspaceId } = parsedBody.data;
 
     // Handle clearing the default workspace
     if (!workspaceId || workspaceId === '') {
@@ -63,7 +67,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     // Handle setting a default workspace
-    const result = await updateUserDefaultWorkspace(workspaceId);
+    const result = await updateUserDefaultWorkspace(workspaceId, supabase);
 
     if (result.error) {
       return NextResponse.json({ error: result.error }, { status: 400 });

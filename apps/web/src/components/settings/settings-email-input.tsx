@@ -53,7 +53,7 @@ export default function EmailInput({ oldEmail, newEmail, disabled }: Props) {
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     setSaving(true);
 
-    const res = await fetch('/api/auth/email', {
+    const res = await fetch('/api/v1/users/me/email', {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',

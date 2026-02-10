@@ -113,6 +113,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workspaceSelectEmpty => 'No workspaces found';
 
   @override
+  String get workspaceSelectError => 'Failed to switch workspace';
+
+  @override
   String get navHome => 'Home';
 
   @override
@@ -540,6 +543,93 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsSignOutConfirm => 'Are you sure you want to sign out?';
+
+  @override
+  String get profileTitle => 'Profile';
+
+  @override
+  String get profileAvatar => 'Avatar';
+
+  @override
+  String get profileAvatarDescription => 'Upload your profile picture';
+
+  @override
+  String get profileUploadAvatar => 'Upload avatar';
+
+  @override
+  String get profileChangeAvatar => 'Change avatar';
+
+  @override
+  String get profileRemoveAvatar => 'Remove avatar';
+
+  @override
+  String get profileRemoveConfirm => 'Remove avatar?';
+
+  @override
+  String get profileAccountStatus => 'Account status';
+
+  @override
+  String get profileActive => 'Active';
+
+  @override
+  String get profileVerified => 'Verified';
+
+  @override
+  String get profileMemberSince => 'Member since';
+
+  @override
+  String get profileDisplayName => 'Display name';
+
+  @override
+  String get profileDisplayNameHint => 'Your display name';
+
+  @override
+  String get profileFullName => 'Full name';
+
+  @override
+  String get profileFullNameHint => 'Your full name';
+
+  @override
+  String get profileEmail => 'Email';
+
+  @override
+  String get profileEmailHint => 'example@tuturuuu.com';
+
+  @override
+  String get profileCurrentEmail => 'Current email';
+
+  @override
+  String get profileNewEmail => 'New email';
+
+  @override
+  String get profileEmailUpdateNote => 'Confirmation emails will be sent to both addresses';
+
+  @override
+  String get profileUpdateSuccess => 'Profile updated';
+
+  @override
+  String get profileUpdateError => 'Failed to update profile';
+
+  @override
+  String get profileAvatarUpdateSuccess => 'Avatar updated';
+
+  @override
+  String get profileAvatarUpdateError => 'Failed to update avatar';
+
+  @override
+  String get profileAvatarRemoveSuccess => 'Avatar removed';
+
+  @override
+  String get profileAvatarRemoveError => 'Failed to remove avatar';
+
+  @override
+  String get profileLoading => 'Loading profile...';
+
+  @override
+  String get profileSave => 'Save';
+
+  @override
+  String get profileCancel => 'Cancel';
 
   @override
   String get workspacePickerTitle => 'Switch workspace';

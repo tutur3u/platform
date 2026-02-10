@@ -12,41 +12,64 @@ class ApiClient {
   ApiClient({http.Client? httpClient}) : _client = httpClient ?? http.Client();
 
   final http.Client _client;
+  static const int _expiryBufferMs = 60 * 1000;
 
-  /// Common headers for all requests.
-  ///
-  /// Includes the Supabase access token for authenticated endpoints.
-  Map<String, String> get _headers {
-    final headers = <String, String>{
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    };
-    final accessToken = supabase.auth.currentSession?.accessToken;
-    if (accessToken != null) {
-      headers['Authorization'] = 'Bearer $accessToken';
+  Future<void> _ensureValidSession() async {
+    final session = supabase.auth.currentSession;
+    final expiresAt = session?.expiresAt;
+    if (session != null && expiresAt != null) {
+      final expiresAtMs = expiresAt > 1000000000000
+          ? expiresAt
+          : expiresAt * 1000;
+      if (DateTime.now().millisecondsSinceEpoch <
+          (expiresAtMs - _expiryBufferMs)) {
+        return;
+      }
     }
-    return headers;
+
+    try {
+      await supabase.auth.refreshSession();
+    } catch (e) {
+      throw ApiException(
+        message: 'Failed to refresh session: $e',
+        statusCode: 0,
+      );
+    }
+  }
+
+  Future<Map<String, String>> _getHeaders({
+    String? contentType,
+    bool requiresAuth = true,
+  }) async {
+    String? token;
+
+    if (requiresAuth) {
+      await _ensureValidSession();
+      token = supabase.auth.currentSession?.accessToken;
+    }
+
+    return {
+      if (contentType != null) 'Content-Type': contentType,
+      'Accept': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
   }
 
   /// GET JSON from [path] (relative to [ApiConfig.baseUrl]).
-  ///
-  /// Returns the decoded JSON body on success, or throws [ApiException].
-  Future<Map<String, dynamic>> getJson(String path) async {
+  Future<Map<String, dynamic>> getJson(
+    String path, {
+    bool requiresAuth = true,
+  }) async {
     final url = Uri.parse('${ApiConfig.baseUrl}$path');
 
-    try {
-      final response = await _client
-          .get(url, headers: _headers)
-          .timeout(const Duration(seconds: 30));
+    final response = await _performRequest(
+      () async => _client.get(
+        url,
+        headers: await _getHeaders(requiresAuth: requiresAuth),
+      ),
+    );
 
-      return _parseResponse(response);
-    } on ApiException {
-      rethrow;
-    } on TimeoutException {
-      throw const ApiException(message: 'Request timed out', statusCode: 0);
-    } catch (e) {
-      throw ApiException(message: e.toString(), statusCode: 0);
-    }
+    return _handleResponse(response);
   }
 
   /// POST JSON to [path] (relative to [ApiConfig.baseUrl]).
@@ -54,47 +77,23 @@ class ApiClient {
   /// Returns the decoded JSON body on success, or throws [ApiException].
   Future<Map<String, dynamic>> postJson(
     String path,
-    Map<String, dynamic> body,
-  ) async {
+    Map<String, dynamic> body, {
+    bool requiresAuth = true,
+  }) async {
     final url = Uri.parse('${ApiConfig.baseUrl}$path');
 
-    try {
-      final response = await _client
-          .post(url, headers: _headers, body: jsonEncode(body))
-          .timeout(const Duration(seconds: 30));
+    final response = await _performRequest(
+      () async => _client.post(
+        url,
+        headers: await _getHeaders(
+          contentType: 'application/json',
+          requiresAuth: requiresAuth,
+        ),
+        body: jsonEncode(body),
+      ),
+    );
 
-      return _parseResponse(response);
-    } on ApiException {
-      rethrow;
-    } on TimeoutException {
-      throw const ApiException(message: 'Request timed out', statusCode: 0);
-    } catch (e) {
-      throw ApiException(message: e.toString(), statusCode: 0);
-    }
-  }
-
-  /// PUT JSON to [path] (relative to [ApiConfig.baseUrl]).
-  ///
-  /// Returns the decoded JSON body on success, or throws [ApiException].
-  Future<Map<String, dynamic>> putJson(
-    String path,
-    Map<String, dynamic> body,
-  ) async {
-    final url = Uri.parse('${ApiConfig.baseUrl}$path');
-
-    try {
-      final response = await _client
-          .put(url, headers: _headers, body: jsonEncode(body))
-          .timeout(const Duration(seconds: 30));
-
-      return _parseResponse(response);
-    } on ApiException {
-      rethrow;
-    } on TimeoutException {
-      throw const ApiException(message: 'Request timed out', statusCode: 0);
-    } catch (e) {
-      throw ApiException(message: e.toString(), statusCode: 0);
-    }
+    return _handleResponse(response);
   }
 
   /// PATCH JSON to [path] (relative to [ApiConfig.baseUrl]).
@@ -102,37 +101,73 @@ class ApiClient {
   /// Returns the decoded JSON body on success, or throws [ApiException].
   Future<Map<String, dynamic>> patchJson(
     String path,
-    Map<String, dynamic> body,
-  ) async {
+    Map<String, dynamic> body, {
+    bool requiresAuth = true,
+  }) async {
     final url = Uri.parse('${ApiConfig.baseUrl}$path');
 
-    try {
-      final response = await _client
-          .patch(url, headers: _headers, body: jsonEncode(body))
-          .timeout(const Duration(seconds: 30));
+    final response = await _performRequest(
+      () async => _client.patch(
+        url,
+        headers: await _getHeaders(
+          contentType: 'application/json',
+          requiresAuth: requiresAuth,
+        ),
+        body: jsonEncode(body),
+      ),
+    );
 
-      return _parseResponse(response);
-    } on ApiException {
-      rethrow;
-    } on TimeoutException {
-      throw const ApiException(message: 'Request timed out', statusCode: 0);
-    } catch (e) {
-      throw ApiException(message: e.toString(), statusCode: 0);
-    }
+    return _handleResponse(response);
   }
 
   /// DELETE [path] (relative to [ApiConfig.baseUrl]).
   ///
   /// Returns the decoded JSON body on success, or throws [ApiException].
-  Future<Map<String, dynamic>> deleteJson(String path) async {
+  Future<Map<String, dynamic>> deleteJson(
+    String path, {
+    bool requiresAuth = true,
+  }) async {
     final url = Uri.parse('${ApiConfig.baseUrl}$path');
 
-    try {
-      final response = await _client
-          .delete(url, headers: _headers)
-          .timeout(const Duration(seconds: 30));
+    final response = await _performRequest(
+      () async => _client.delete(
+        url,
+        headers: await _getHeaders(requiresAuth: requiresAuth),
+      ),
+    );
 
-      return _parseResponse(response);
+    return _handleResponse(response);
+  }
+
+  /// PUT JSON to [path] (relative to [ApiConfig.baseUrl]).
+  ///
+  /// Returns the decoded JSON body on success, or throws [ApiException].
+  Future<Map<String, dynamic>> putJson(
+    String path,
+    Map<String, dynamic> body, {
+    bool requiresAuth = true,
+  }) async {
+    final url = Uri.parse('${ApiConfig.baseUrl}$path');
+
+    final response = await _performRequest(
+      () async => _client.put(
+        url,
+        headers: await _getHeaders(
+          contentType: 'application/json',
+          requiresAuth: requiresAuth,
+        ),
+        body: jsonEncode(body),
+      ),
+    );
+
+    return _handleResponse(response);
+  }
+
+  Future<http.Response> _performRequest(
+    Future<http.Response> Function() request,
+  ) async {
+    try {
+      return await request().timeout(const Duration(seconds: 30));
     } on ApiException {
       rethrow;
     } on TimeoutException {
@@ -142,8 +177,7 @@ class ApiClient {
     }
   }
 
-  /// Parses the [response] body as JSON and throws [ApiException] on non-2xx.
-  Map<String, dynamic> _parseResponse(http.Response response) {
+  Map<String, dynamic> _handleResponse(http.Response response) {
     Map<String, dynamic>? parsed;
     if (response.body.isNotEmpty) {
       try {
@@ -162,6 +196,28 @@ class ApiClient {
     }
 
     return parsed ?? {};
+  }
+
+  /// Parse JSON string into Map.
+  Map<String, dynamic> parseJson(String jsonString) {
+    try {
+      final decoded = jsonDecode(jsonString);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+
+      throw const FormatException('Expected a JSON object');
+    } on FormatException catch (e) {
+      final message =
+          'Failed to parse JSON: ${e.message}. '
+          'Input length: ${jsonString.length}';
+      throw FormatException(message);
+    } on Exception catch (e) {
+      final message =
+          'Failed to parse JSON: $e. '
+          'Input length: ${jsonString.length}';
+      throw FormatException(message);
+    }
   }
 
   void dispose() => _client.close();

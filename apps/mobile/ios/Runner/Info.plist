@@ -5,6 +5,7 @@
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>en</string>
+		<string>vi</string>
 		<string>es</string>
 	</array>
 	<key>CFBundleDevelopmentRegion</key>
@@ -52,5 +53,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string></string>
+	<key>NSCameraUsageDescription</key>
+	<string></string>
 </dict>
 </plist>

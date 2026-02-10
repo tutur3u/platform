@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'
+    hide NavigationBar, NavigationBarTheme, ThemeData, ThemeMode;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/app_router.dart';
@@ -13,8 +14,11 @@ import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/features/settings/cubit/locale_cubit.dart';
 import 'package:mobile/features/settings/cubit/locale_state.dart';
+import 'package:mobile/features/settings/cubit/theme_cubit.dart';
+import 'package:mobile/features/settings/cubit/theme_state.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class App extends StatefulWidget {
   const App({this.initialRoute, super.key});
@@ -33,6 +37,7 @@ class _AppState extends State<App> {
   late final AuthCubit _authCubit;
   late final WorkspaceCubit _workspaceCubit;
   late final LocaleCubit _localeCubit;
+  late final ThemeCubit _themeCubit;
   late final CalendarSettingsCubit _calendarSettingsCubit;
   late final GoRouter _router;
 
@@ -45,6 +50,8 @@ class _AppState extends State<App> {
     _authCubit = AuthCubit(authRepository: _authRepo);
     _workspaceCubit = WorkspaceCubit(workspaceRepository: _workspaceRepo);
     _localeCubit = LocaleCubit(settingsRepository: _settingsRepo);
+    _themeCubit = ThemeCubit(settingsRepository: _settingsRepo);
+    unawaited(_themeCubit.loadThemeMode());
     _calendarSettingsCubit = CalendarSettingsCubit();
     _router = createAppRouter(
       _authCubit,
@@ -53,7 +60,6 @@ class _AppState extends State<App> {
     );
     unawaited(_localeCubit.loadLocale());
     unawaited(_calendarSettingsCubit.loadUserPreference());
-
     // If auth resolved synchronously to authenticated, load workspaces now.
     // BlocListener only fires on state *changes*, so it won't trigger for
     // the initial state set in the AuthCubit constructor.
@@ -68,6 +74,7 @@ class _AppState extends State<App> {
     unawaited(_authCubit.close());
     unawaited(_workspaceCubit.close());
     unawaited(_localeCubit.close());
+    unawaited(_themeCubit.close());
     unawaited(_calendarSettingsCubit.close());
     super.dispose();
   }
@@ -79,6 +86,7 @@ class _AppState extends State<App> {
         BlocProvider.value(value: _authCubit),
         BlocProvider.value(value: _workspaceCubit),
         BlocProvider.value(value: _localeCubit),
+        BlocProvider.value(value: _themeCubit),
         BlocProvider.value(value: _calendarSettingsCubit),
       ],
       child: BlocListener<AuthCubit, AuthState>(
@@ -92,17 +100,49 @@ class _AppState extends State<App> {
         },
         child: BlocBuilder<LocaleCubit, LocaleState>(
           builder: (context, localeState) {
-            return MaterialApp.router(
-              theme: AppTheme.light,
-              darkTheme: AppTheme.dark,
-              locale: localeState.locale,
-              localizationsDelegates: AppLocalizations.localizationsDelegates,
-              supportedLocales: AppLocalizations.supportedLocales,
-              routerConfig: _router,
+            return BlocBuilder<ThemeCubit, ThemeState>(
+              builder: (context, themeState) {
+                return shad.ShadcnApp.router(
+                  theme: const shad.ThemeData(
+                    colorScheme: shad.ColorSchemes.lightZinc,
+                  ),
+                  darkTheme: const shad.ThemeData.dark(
+                    colorScheme: shad.ColorSchemes.darkZinc,
+                  ),
+                  themeMode: themeState.themeMode,
+                  locale: localeState.locale,
+                  localizationsDelegates: const [
+                    ...AppLocalizations.localizationsDelegates,
+                    shad.ShadcnLocalizations.delegate,
+                  ],
+                  supportedLocales: AppLocalizations.supportedLocales,
+                  routerConfig: _router,
+                  builder: (context, child) {
+                    return _ShadcnMaterialBridge(child: child!);
+                  },
+                );
+              },
             );
           },
         ),
       ),
+    );
+  }
+}
+
+class _ShadcnMaterialBridge extends StatelessWidget {
+  const _ShadcnMaterialBridge({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    return Theme(
+      data: theme.brightness == Brightness.light
+          ? AppTheme.light
+          : AppTheme.dark,
+      child: child,
     );
   }
 }

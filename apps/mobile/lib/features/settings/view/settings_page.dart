@@ -1,16 +1,19 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'
+    hide AlertDialog, AppBar, Divider, FilledButton, Scaffold, TextButton;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
-import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/features/settings/cubit/locale_cubit.dart';
 import 'package:mobile/features/settings/cubit/locale_state.dart';
+import 'package:mobile/features/settings/cubit/theme_cubit.dart';
+import 'package:mobile/features/settings/cubit/theme_state.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -19,80 +22,108 @@ class SettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.settingsTitle)),
-      body: ListView(
+    return shad.Scaffold(
+      headers: [
+        shad.AppBar(title: Text(l10n.settingsTitle)),
+      ],
+      child: ListView(
+        padding: const EdgeInsets.all(16),
         children: [
-          ListTile(
-            leading: const Icon(Icons.person_outline),
-            title: Text(l10n.settingsProfile),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {},
+          _buildSettingsItem(
+            context,
+            icon: Icons.person_outline,
+            title: l10n.settingsProfile,
+            onTap: () => context.push(Routes.profile),
           ),
-          const Divider(),
+          const shad.Divider(),
           BlocBuilder<LocaleCubit, LocaleState>(
             builder: (context, localeState) {
-              return ListTile(
-                leading: const Icon(Icons.language),
-                title: Text(l10n.settingsLanguage),
-                subtitle: Text(
-                  _localeDisplayName(localeState.locale, l10n),
-                ),
-                trailing: const Icon(Icons.chevron_right),
+              return _buildSettingsItem(
+                context,
+                icon: Icons.language,
+                title: l10n.settingsLanguage,
+                subtitle: _localeDisplayName(localeState.locale, l10n),
                 onTap: () => _showLanguageDialog(context),
               );
             },
           ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.palette_outlined),
-            title: Text(l10n.settingsTheme),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => _showThemeDialog(context),
-          ),
-          const Divider(),
-          BlocBuilder<CalendarSettingsCubit, CalendarSettingsState>(
-            builder: (context, calendarState) {
-              return ListTile(
-                leading: const Icon(Icons.calendar_today_outlined),
-                title: Text(l10n.settingsFirstDayOfWeek),
-                subtitle: Text(
-                  _firstDayDisplayName(calendarState.userPreference, l10n),
-                ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => _showFirstDayDialog(context),
+          const shad.Divider(),
+          BlocBuilder<ThemeCubit, ThemeState>(
+            builder: (context, themeState) {
+              return _buildSettingsItem(
+                context,
+                icon: Icons.palette_outlined,
+                title: l10n.settingsTheme,
+                subtitle: _themeDisplayName(themeState.themeMode, l10n),
+                onTap: () => _showThemeDialog(context),
               );
             },
           ),
-          const Divider(),
+          const shad.Divider(),
           BlocBuilder<WorkspaceCubit, WorkspaceState>(
             buildWhen: (prev, curr) =>
                 prev.currentWorkspace != curr.currentWorkspace,
             builder: (context, state) {
-              return ListTile(
-                leading: const Icon(Icons.swap_horiz),
-                title: Text(l10n.settingsSwitchWorkspace),
-                subtitle: state.currentWorkspace?.name != null
-                    ? Text(state.currentWorkspace!.name!)
-                    : null,
-                trailing: const Icon(Icons.chevron_right),
+              return _buildSettingsItem(
+                context,
+                icon: Icons.swap_horiz,
+                title: l10n.settingsSwitchWorkspace,
+                subtitle: state.currentWorkspace?.name,
                 onTap: () => context.go(Routes.workspaceSelect),
               );
             },
           ),
-          const Divider(),
-          ListTile(
-            leading: Icon(
-              Icons.logout,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            title: Text(
-              l10n.settingsSignOut,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
+          const shad.Divider(),
+          _buildSettingsItem(
+            context,
+            icon: Icons.logout,
+            title: l10n.settingsSignOut,
+            isDestructive: true,
             onTap: () => _showSignOutDialog(context),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSettingsItem(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    String? subtitle,
+    bool isDestructive = false,
+  }) {
+    final theme = shad.Theme.of(context);
+    final color = isDestructive ? theme.colorScheme.destructive : null;
+
+    return shad.GhostButton(
+      onPressed: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Icon(icon, color: color),
+            const shad.Gap(16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: theme.typography.p.copyWith(color: color),
+                  ),
+                  if (subtitle != null)
+                    Text(
+                      subtitle,
+                      style: theme.typography.textMuted,
+                    ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, size: 20),
+          ],
+        ),
       ),
     );
   }
@@ -146,61 +177,35 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  String _firstDayDisplayName(
-    FirstDayOfWeek value,
-    AppLocalizations l10n,
-  ) {
-    switch (value) {
-      case FirstDayOfWeek.auto_:
-        return l10n.settingsFirstDayAuto;
-      case FirstDayOfWeek.sunday:
-        return l10n.settingsFirstDaySunday;
-      case FirstDayOfWeek.monday:
-        return l10n.settingsFirstDayMonday;
-      case FirstDayOfWeek.saturday:
-        return l10n.settingsFirstDaySaturday;
-    }
-  }
-
-  void _showFirstDayDialog(BuildContext context) {
+  void _showSignOutDialog(BuildContext context) {
     final l10n = context.l10n;
-    final cubit = context.read<CalendarSettingsCubit>();
 
     unawaited(
       showDialog<void>(
         context: context,
-        builder: (context) => SimpleDialog(
-          title: Text(l10n.settingsFirstDayOfWeek),
-          children: [
-            SimpleDialogOption(
-              onPressed: () {
-                unawaited(cubit.setFirstDayOfWeek(FirstDayOfWeek.auto_));
-                Navigator.pop(context);
-              },
-              child: Text(l10n.settingsFirstDayAuto),
+        builder: (dialogContext) => Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.8,
             ),
-            SimpleDialogOption(
-              onPressed: () {
-                unawaited(cubit.setFirstDayOfWeek(FirstDayOfWeek.sunday));
-                Navigator.pop(context);
-              },
-              child: Text(l10n.settingsFirstDaySunday),
+            child: shad.AlertDialog(
+              title: Text(l10n.settingsSignOut),
+              content: Text(l10n.settingsSignOutConfirm),
+              actions: [
+                shad.OutlineButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: Text(l10n.profileCancel),
+                ),
+                shad.DestructiveButton(
+                  onPressed: () {
+                    Navigator.pop(dialogContext);
+                    unawaited(context.read<AuthCubit>().signOut());
+                  },
+                  child: Text(l10n.settingsSignOut),
+                ),
+              ],
             ),
-            SimpleDialogOption(
-              onPressed: () {
-                unawaited(cubit.setFirstDayOfWeek(FirstDayOfWeek.monday));
-                Navigator.pop(context);
-              },
-              child: Text(l10n.settingsFirstDayMonday),
-            ),
-            SimpleDialogOption(
-              onPressed: () {
-                unawaited(cubit.setFirstDayOfWeek(FirstDayOfWeek.saturday));
-                Navigator.pop(context);
-              },
-              child: Text(l10n.settingsFirstDaySaturday),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -208,55 +213,59 @@ class SettingsPage extends StatelessWidget {
 
   void _showThemeDialog(BuildContext context) {
     final l10n = context.l10n;
+    final cubit = context.read<ThemeCubit>();
 
     unawaited(
       showDialog<void>(
         context: context,
-        builder: (context) => SimpleDialog(
-          title: Text(l10n.settingsTheme),
-          children: [
-            SimpleDialogOption(
-              onPressed: () => Navigator.pop(context),
-              child: Text(l10n.settingsThemeLight),
+        builder: (context) => Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.8,
             ),
-            SimpleDialogOption(
-              onPressed: () => Navigator.pop(context),
-              child: Text(l10n.settingsThemeDark),
+            child: shad.AlertDialog(
+              title: Text(l10n.settingsTheme),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  shad.GhostButton(
+                    onPressed: () {
+                      unawaited(cubit.setThemeMode(shad.ThemeMode.light));
+                      Navigator.pop(context);
+                    },
+                    child: Text(l10n.settingsThemeLight),
+                  ),
+                  shad.GhostButton(
+                    onPressed: () {
+                      unawaited(cubit.setThemeMode(shad.ThemeMode.dark));
+                      Navigator.pop(context);
+                    },
+                    child: Text(l10n.settingsThemeDark),
+                  ),
+                  shad.GhostButton(
+                    onPressed: () {
+                      unawaited(cubit.setThemeMode(shad.ThemeMode.system));
+                      Navigator.pop(context);
+                    },
+                    child: Text(l10n.settingsThemeSystem),
+                  ),
+                ],
+              ),
             ),
-            SimpleDialogOption(
-              onPressed: () => Navigator.pop(context),
-              child: Text(l10n.settingsThemeSystem),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  void _showSignOutDialog(BuildContext context) {
-    final l10n = context.l10n;
-
-    unawaited(
-      showDialog<void>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: Text(l10n.settingsSignOut),
-          content: Text(l10n.settingsSignOutConfirm),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-                unawaited(context.read<AuthCubit>().signOut());
-              },
-              child: Text(l10n.settingsSignOut),
-            ),
-          ],
-        ),
-      ),
-    );
+  String _themeDisplayName(shad.ThemeMode mode, AppLocalizations l10n) {
+    switch (mode) {
+      case shad.ThemeMode.light:
+        return l10n.settingsThemeLight;
+      case shad.ThemeMode.dark:
+        return l10n.settingsThemeDark;
+      case shad.ThemeMode.system:
+        return l10n.settingsThemeSystem;
+    }
   }
 }

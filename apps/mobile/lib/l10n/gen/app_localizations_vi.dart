@@ -113,6 +113,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get workspaceSelectEmpty => 'Không tìm thấy không gian làm việc';
 
   @override
+  String get workspaceSelectError => 'Không thể chuyển không gian làm việc';
+
+  @override
   String get navHome => 'Trang chủ';
 
   @override
@@ -540,6 +543,93 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settingsSignOutConfirm => 'Bạn có chắc muốn đăng xuất không?';
+
+  @override
+  String get profileTitle => 'Hồ sơ';
+
+  @override
+  String get profileAvatar => 'Ảnh đại diện';
+
+  @override
+  String get profileAvatarDescription => 'Tải lên ảnh đại diện của bạn';
+
+  @override
+  String get profileUploadAvatar => 'Tải lên ảnh đại diện';
+
+  @override
+  String get profileChangeAvatar => 'Thay đổi ảnh đại diện';
+
+  @override
+  String get profileRemoveAvatar => 'Xóa ảnh đại diện';
+
+  @override
+  String get profileRemoveConfirm => 'Xóa ảnh đại diện?';
+
+  @override
+  String get profileAccountStatus => 'Trạng thái tài khoản';
+
+  @override
+  String get profileActive => 'Hoạt động';
+
+  @override
+  String get profileVerified => 'Đã xác thực';
+
+  @override
+  String get profileMemberSince => 'Thành viên từ';
+
+  @override
+  String get profileDisplayName => 'Tên hiển thị';
+
+  @override
+  String get profileDisplayNameHint => 'Tên hiển thị của bạn';
+
+  @override
+  String get profileFullName => 'Tên đầy đủ';
+
+  @override
+  String get profileFullNameHint => 'Tên đầy đủ của bạn';
+
+  @override
+  String get profileEmail => 'Email';
+
+  @override
+  String get profileEmailHint => 'example@tuturuuu.com';
+
+  @override
+  String get profileCurrentEmail => 'Email hiện tại';
+
+  @override
+  String get profileNewEmail => 'Email mới';
+
+  @override
+  String get profileEmailUpdateNote => 'Email xác nhận sẽ được gửi đến cả hai địa chỉ';
+
+  @override
+  String get profileUpdateSuccess => 'Cập nhật hồ sơ thành công';
+
+  @override
+  String get profileUpdateError => 'Không thể cập nhật hồ sơ';
+
+  @override
+  String get profileAvatarUpdateSuccess => 'Cập nhật ảnh đại diện thành công';
+
+  @override
+  String get profileAvatarUpdateError => 'Không thể cập nhật ảnh đại diện';
+
+  @override
+  String get profileAvatarRemoveSuccess => 'Đã xóa ảnh đại diện';
+
+  @override
+  String get profileAvatarRemoveError => 'Không thể xóa ảnh đại diện';
+
+  @override
+  String get profileLoading => 'Đang tải hồ sơ...';
+
+  @override
+  String get profileSave => 'Lưu';
+
+  @override
+  String get profileCancel => 'Hủy';
 
   @override
   String get workspacePickerTitle => 'Chuyển không gian làm việc';

@@ -196,6 +196,10 @@ bun trigger:deploy
 11. **NEVER** use `useEffect` for data fetching - THIS IS THE #1 VIOLATION - use TanStack Query's `useQuery`/`useMutation` instead
 12. **NEVER** use raw `fetch()` in client components without TanStack Query wrapper
 
+### Dart/Flutter Usage Lookup
+
+When searching for Dart symbol usages, prefer workspace-scoped searches (e.g., `apps/mobile/**`) instead of tools that can scan the global Pub cache. Pub cache hits are outside the repo and can mislead refactors.
+
 ### Mandatory Actions
 
 1. **Touch ONLY** files required for the change (Least Privilege)
@@ -743,10 +747,10 @@ Located at `apps/mobile/`, the Flutter app uses:
 
 ### Known Gotchas
 
-- **PostgREST URL Length:** `.in('column', ids)` with ~1000 UUIDs creates ~37KB URLs exceeding proxy limits (~8KB). Use `.eq(column, value)` updates instead.
-- **Admin Client Trigger Bypass:** Tables with `BEFORE UPDATE` triggers checking `auth.uid()` (e.g., `user_group_posts`) can be bypassed with `createAdminClient()` (`sbAdmin`). Always validate permissions with user-context client first.
-- **TypeScript useMemo Inference:** When `useMemo` returns either `[]` or `{ data: [], isEstimated }`, TypeScript infers `never[]`. Fix: explicitly type early returns as `{ data: [] as MyType[], isEstimated: false }`.
-- **Finance Module:** `get_category_breakdown` RPC accepts `_wallet_ids UUID[]` for wallet scoping. Exchange rates use USD as base currency. For estimated amounts, set `hasRedactedAmounts = true` and show `≈` prefix.
+- **Flutter Editable Fields:** When extracting shared editable text widgets, preserve per-field validation and success messaging. Email fields should keep the `@` check and any email-specific success note (use `TextInputType.emailAddress` or an explicit parameter).
+- **Flutter Analyzer Hygiene:** Prefer `on Exception catch (e)` (or a specific type) over bare `catch`, avoid catching `Error` subclasses like `TypeError`, guard `BuildContext` usage after `await` with `if (!context.mounted) return;`, and never `return` from a `finally` block.
+- **Flutter Widget Tests (shadcn):** Any widget test rendering `shadcn_flutter` components must wrap the widget with `shad.ShadcnApp` (and include `shad.ShadcnLocalizations.delegate`) so `shad.Theme.of(context)` is available.
+- **apply_patch Pathing (Windows):** Prefer workspace-relative paths (e.g. `apps/web/...`). Absolute Windows paths like `C:\...` can fail to resolve during patch apply.
 
 ## Quick Reference
 

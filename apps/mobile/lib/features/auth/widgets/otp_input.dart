@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
-/// A 6-digit OTP input field.
 class OtpInput extends StatelessWidget {
   const OtpInput({
     required this.controller,
@@ -10,28 +9,27 @@ class OtpInput extends StatelessWidget {
   });
 
   final TextEditingController controller;
-  final ValueChanged<String>? onCompleted;
+  final void Function(String)? onCompleted;
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      decoration: const InputDecoration(
-        labelText: 'OTP',
-        hintText: '000000',
-        border: OutlineInputBorder(),
-        counterText: '',
-      ),
-      keyboardType: TextInputType.number,
-      textAlign: TextAlign.center,
-      maxLength: 6,
-      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-        letterSpacing: 8,
-      ),
+    return shad.InputOTP(
       onChanged: (value) {
-        if (value.length == 6) onCompleted?.call(value);
+        final otp = value.otpToString();
+        controller.text = otp;
+        if (value.length == 6) {
+          onCompleted?.call(otp);
+        }
       },
+      children: [
+        shad.InputOTPChild.character(allowDigit: true),
+        shad.InputOTPChild.character(allowDigit: true),
+        shad.InputOTPChild.character(allowDigit: true),
+        shad.InputOTPChild.separator,
+        shad.InputOTPChild.character(allowDigit: true),
+        shad.InputOTPChild.character(allowDigit: true),
+        shad.InputOTPChild.character(allowDigit: true),
+      ],
     );
   }
 }

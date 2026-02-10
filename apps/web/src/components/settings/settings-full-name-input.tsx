@@ -56,7 +56,7 @@ export default function FullNameInput({ defaultValue = '', disabled }: Props) {
     setSaving(true);
 
     try {
-      const res = await fetch('/api/users/me/private', {
+      const res = await fetch('/api/v1/users/me/full-name', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

@@ -1,24 +1,35 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'
+    hide AppBar, Chip, CircleAvatar, FilledButton, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
-import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
+import 'package:mobile/features/workspace/widgets/workspace_avatar.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
-class WorkspaceSelectPage extends StatelessWidget {
+class WorkspaceSelectPage extends StatefulWidget {
   const WorkspaceSelectPage({super.key});
+
+  @override
+  State<WorkspaceSelectPage> createState() => _WorkspaceSelectPageState();
+}
+
+class _WorkspaceSelectPageState extends State<WorkspaceSelectPage> {
+  bool _isSelecting = false;
+  String? _selectingWorkspaceId;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.workspaceSelectTitle)),
-      body: BlocBuilder<WorkspaceCubit, WorkspaceState>(
+    return shad.Scaffold(
+      headers: [
+        shad.AppBar(title: Text(l10n.workspaceSelectTitle)),
+      ],
+      child: BlocBuilder<WorkspaceCubit, WorkspaceState>(
         builder: (context, state) {
           if (state.status == WorkspaceStatus.loading) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: shad.CircularProgressIndicator());
           }
 
           if (state.status == WorkspaceStatus.error) {
@@ -29,15 +40,15 @@ class WorkspaceSelectPage extends StatelessWidget {
                   Icon(
                     Icons.error_outline,
                     size: 48,
-                    color: Theme.of(context).colorScheme.error,
+                    color: shad.Theme.of(context).colorScheme.destructive,
                   ),
-                  const SizedBox(height: 16),
+                  const shad.Gap(16),
                   Text(
                     state.error ?? l10n.workspaceSelectEmpty,
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 16),
-                  FilledButton.tonal(
+                  const shad.Gap(16),
+                  shad.PrimaryButton(
                     onPressed: () =>
                         context.read<WorkspaceCubit>().loadWorkspaces(),
                     child: Text(l10n.commonRetry),
@@ -53,55 +64,92 @@ class WorkspaceSelectPage extends StatelessWidget {
             );
           }
 
-          return ListView.builder(
+          return ListView.separated(
+            padding: const EdgeInsets.all(16),
             itemCount: state.workspaces.length,
+            separatorBuilder: (context, index) => const shad.Gap(8),
             itemBuilder: (context, index) {
               final workspace = state.workspaces[index];
               final isSelected = workspace.id == state.currentWorkspace?.id;
+              final isLoading =
+                  _isSelecting && _selectingWorkspaceId == workspace.id;
 
-              return ListTile(
-                leading: CircleAvatar(
-                  child: workspace.personal
-                      ? const Icon(Icons.person)
-                      : Text(
-                          workspace.name != null && workspace.name!.isNotEmpty
-                              ? workspace.name![0].toUpperCase()
-                              : 'W',
+              return shad.GhostButton(
+                onPressed: _isSelecting
+                    ? null
+                    : () async {
+                        setState(() {
+                          _isSelecting = true;
+                          _selectingWorkspaceId = workspace.id;
+                        });
+
+                        try {
+                          await context.read<WorkspaceCubit>().selectWorkspace(
+                            workspace,
+                          );
+                          if (!context.mounted) {
+                            return;
+                          }
+                        } on Exception catch (_) {
+                          if (!context.mounted) {
+                            return;
+                          }
+                          shad.showToast(
+                            context: context,
+                            builder: (context, overlay) =>
+                                shad.Alert.destructive(
+                                  title: Text(l10n.workspaceSelectError),
+                                ),
+                          );
+                        } finally {
+                          if (context.mounted) {
+                            setState(() {
+                              _isSelecting = false;
+                              _selectingWorkspaceId = null;
+                            });
+                          }
+                        }
+                      },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    children: [
+                      WorkspaceAvatar(workspace: workspace),
+                      const shad.Gap(16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    workspace.name ?? workspace.id,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: shad.Theme.of(context).typography.p,
+                                  ),
+                                ),
+                                if (workspace.personal) ...[
+                                  const shad.Gap(8),
+                                  shad.OutlineBadge(
+                                    child: Text(l10n.workspacePersonalBadge),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ],
                         ),
-                ),
-                title: Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        workspace.name ?? workspace.id,
-                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    if (workspace.personal) ...[
-                      const SizedBox(width: 8),
-                      Chip(
-                        label: Text(
-                          l10n.workspacePersonalBadge,
-                          style: Theme.of(context).textTheme.labelSmall,
+                      if (isLoading)
+                        const shad.CircularProgressIndicator(size: 16)
+                      else if (isSelected)
+                        Icon(
+                          Icons.check_circle,
+                          color: shad.Theme.of(context).colorScheme.primary,
                         ),
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        visualDensity: VisualDensity.compact,
-                      ),
                     ],
-                  ],
+                  ),
                 ),
-                trailing: isSelected
-                    ? Icon(
-                        Icons.check_circle,
-                        color: Theme.of(context).colorScheme.primary,
-                      )
-                    : null,
-                onTap: () async {
-                  await context.read<WorkspaceCubit>().selectWorkspace(
-                    workspace,
-                  );
-                  if (context.mounted) context.go(Routes.home);
-                },
               );
             },
           );

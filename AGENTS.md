@@ -1579,6 +1579,7 @@ Three entry points: `main_development.dart`, `main_staging.dart`, `main_producti
 
 - ARB files in `lib/l10n/arb/` (English + Vietnamese)
 - Generated files in `lib/l10n/gen/` are tracked in git (not `.gitignored`)
+- When adding or updating ARB keys, regenerate or update `lib/l10n/gen/*` so tracked outputs stay in sync
 - `analysis_options.yaml` excludes `lib/l10n/gen/*` from analysis
 
 ### 14.4 CI Workflows
@@ -1636,6 +1637,33 @@ When a `useMemo` returns either `[]` or `{ data: [], isEstimated }`, TypeScript 
 - Exchange rates: `useExchangeRates()` hook, `convertCurrency()` utility, USD as base currency
 - For estimated/converted amounts: set `hasRedactedAmounts = true` and show `≈` prefix
 - When RPC calls can't do currency conversion, prefer client-side aggregation when mixed currencies detected
+
+### 15.5 Dart Usage Lookup Scope
+
+When checking symbol usage in the Flutter app, prefer `grep_search` with an `apps/mobile/**` include pattern over `list_code_usages`. The usage tool can surface matches from the global Pub cache, which is not part of the workspace and can mislead refactors.
+
+### 15.6 Flutter Editable Field Refactors
+
+When consolidating duplicated Flutter form fields into a shared editable widget, preserve per-field validation and success messaging. For email fields, keep the stricter validation (e.g., `@` check) and any email-specific success note by keying off `TextInputType.emailAddress` or an explicit parameter.
+
+### 15.7 Flutter Analyzer Hygiene
+
+- Use `on Exception catch (e)` (or a specific exception type) instead of untyped `catch` to satisfy `avoid_catches_without_on_clauses`.
+- Avoid catching `Error` subclasses like `TypeError`; let them surface or convert upstream to `Exception`-based flows.
+- After `await`, check `context.mounted` before using `BuildContext` to satisfy `use_build_context_synchronously`.
+- Avoid `return` in `finally` blocks; gate cleanup with `if (context.mounted)` or `if (mounted)` instead.
+
+### 15.8 Flutter Widget Test Theme Context
+
+Widgets that use `shadcn_flutter` (`shad.Scaffold`, `shad.Theme.of`) must be
+wrapped by `shad.ShadcnApp` in tests. Use the shared test helper to provide
+`shad.ShadcnLocalizations.delegate` and a basic `ThemeData`/`darkTheme` so
+`Theme.of(context)` is always available.
+
+### 15.9 apply_patch Pathing (Windows)
+
+When using `apply_patch`, prefer workspace-relative paths (e.g. `apps/web/...`).
+Absolute Windows paths like `C:\...` can fail to resolve during patch apply.
 
 ## 16. Glossary
 
