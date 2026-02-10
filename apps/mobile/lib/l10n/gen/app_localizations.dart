@@ -1333,6 +1333,72 @@ abstract class AppLocalizations {
   /// **'Personal'**
   String get workspacePersonalBadge;
 
+  /// No description provided for @workspacePersonalSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal'**
+  String get workspacePersonalSection;
+
+  /// No description provided for @workspaceTeamSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Team workspaces'**
+  String get workspaceTeamSection;
+
+  /// No description provided for @workspaceCreateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create workspace'**
+  String get workspaceCreateTitle;
+
+  /// No description provided for @workspaceCreateNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get workspaceCreateNew;
+
+  /// No description provided for @workspaceCreateNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace name'**
+  String get workspaceCreateNameHint;
+
+  /// No description provided for @workspaceCreateNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace name is required'**
+  String get workspaceCreateNameRequired;
+
+  /// No description provided for @workspaceCreateSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Create workspace'**
+  String get workspaceCreateSubmit;
+
+  /// No description provided for @workspaceCreateCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get workspaceCreateCancel;
+
+  /// No description provided for @workspaceCreatePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your first workspace to get started'**
+  String get workspaceCreatePrompt;
+
+  /// No description provided for @workspaceCreateLimitReached.
+  ///
+  /// In en, this message translates to:
+  /// **'You have reached the workspace limit'**
+  String get workspaceCreateLimitReached;
+
+  /// No description provided for @workspaceCreateLimitInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'{current} of {limit} workspaces used'**
+  String workspaceCreateLimitInfo(int current, int limit);
+
   /// No description provided for @mfaTitle.
   ///
   /// In en, this message translates to:

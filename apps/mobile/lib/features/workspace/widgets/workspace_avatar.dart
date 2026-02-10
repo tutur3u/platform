@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
-/// A widget that displays a workspace avatar with initials.
+/// Displays a workspace avatar with initials and a consistent color.
 ///
-/// For personal workspaces, shows 'P' with primary background color.
-/// For regular workspaces, shows the first letter of the name or
-/// 'W' as fallback.
+/// Personal workspaces use the primary theme color with 'P' initial.
+/// Team workspaces get a unique color derived from the workspace ID
+/// so each workspace has a recognizable, stable visual identity.
 class WorkspaceAvatar extends StatelessWidget {
   const WorkspaceAvatar({
     required this.workspace,
@@ -25,11 +25,18 @@ class WorkspaceAvatar extends StatelessWidget {
 
     final backgroundColor = workspace.personal
         ? shad.Theme.of(context).colorScheme.primary
-        : null;
+        : _colorFromId(workspace.id);
 
     return shad.Avatar(
       initials: initials,
       backgroundColor: backgroundColor,
     );
+  }
+
+  /// Generates a stable HSL color from a workspace ID hash.
+  static Color _colorFromId(String id) {
+    final hash = id.hashCode.abs();
+    final hue = (hash % 360).toDouble();
+    return HSLColor.fromAHSL(1, hue, 0.45, 0.55).toColor();
   }
 }

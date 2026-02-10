@@ -638,6 +638,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workspacePersonalBadge => 'Personal';
 
   @override
+  String get workspacePersonalSection => 'Personal';
+
+  @override
+  String get workspaceTeamSection => 'Team workspaces';
+
+  @override
+  String get workspaceCreateTitle => 'Create workspace';
+
+  @override
+  String get workspaceCreateNew => 'New';
+
+  @override
+  String get workspaceCreateNameHint => 'Workspace name';
+
+  @override
+  String get workspaceCreateNameRequired => 'Workspace name is required';
+
+  @override
+  String get workspaceCreateSubmit => 'Create workspace';
+
+  @override
+  String get workspaceCreateCancel => 'Cancel';
+
+  @override
+  String get workspaceCreatePrompt => 'Create your first workspace to get started';
+
+  @override
+  String get workspaceCreateLimitReached => 'You have reached the workspace limit';
+
+  @override
+  String workspaceCreateLimitInfo(int current, int limit) {
+    return '$current of $limit workspaces used';
+  }
+
+  @override
   String get mfaTitle => 'Two-factor authentication';
 
   @override
