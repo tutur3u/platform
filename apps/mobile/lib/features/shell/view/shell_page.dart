@@ -2,9 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart'
     hide NavigationBar, NavigationBarTheme, Scaffold;
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
+import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
+import 'package:mobile/features/apps/cubit/app_tab_state.dart';
+import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -24,84 +28,56 @@ class ShellPage extends StatelessWidget {
 
     return shad.Scaffold(
       footers: [
-        shad.NavigationBar(
-          index: selectedIndex,
-          onSelected: (index) => _onItemTapped(index, context),
-          labelType: shad.NavigationLabelType.all,
-          children: [
-            shad.NavigationItem(
-              label: Text(
-                l10n.navHome,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.p.copyWith(
-                  fontSize: 10,
-                  fontWeight: FontWeight.normal,
+        BlocBuilder<AppTabCubit, AppTabState>(
+          builder: (context, state) {
+            final appsLabel = state.hasSelection
+                ? AppRegistry.moduleById(state.selectedId)?.label(l10n) ??
+                      l10n.navApps
+                : l10n.navApps;
+            return shad.NavigationBar(
+              index: selectedIndex,
+              onSelected: (index) => _onItemTapped(index, context),
+              labelType: shad.NavigationLabelType.all,
+              children: [
+                shad.NavigationItem(
+                  label: Text(
+                    l10n.navHome,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.p.copyWith(
+                      fontSize: 10,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+                  child: const Icon(Icons.home_outlined),
                 ),
-              ),
-              child: const Icon(Icons.home_outlined),
-            ),
-            shad.NavigationItem(
-              label: Text(
-                l10n.navTasks,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.p.copyWith(
-                  fontSize: 10,
-                  fontWeight: FontWeight.normal,
+                shad.NavigationItem(
+                  label: Text(
+                    appsLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.p.copyWith(
+                      fontSize: 10,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+                  child: const Icon(Icons.apps_outlined),
                 ),
-              ),
-              child: const Icon(Icons.check_box_outlined),
-            ),
-            shad.NavigationItem(
-              label: Text(
-                l10n.navCalendar,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.p.copyWith(
-                  fontSize: 10,
-                  fontWeight: FontWeight.normal,
+                shad.NavigationItem(
+                  label: Text(
+                    l10n.settingsProfile,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.p.copyWith(
+                      fontSize: 10,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+                  child: const Icon(Icons.person_outline),
                 ),
-              ),
-              child: const Icon(Icons.calendar_today_outlined),
-            ),
-            shad.NavigationItem(
-              label: Text(
-                l10n.navFinance,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.p.copyWith(
-                  fontSize: 10,
-                  fontWeight: FontWeight.normal,
-                ),
-              ),
-              child: const Icon(Icons.account_balance_wallet_outlined),
-            ),
-            shad.NavigationItem(
-              label: Text(
-                l10n.navTimer,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.p.copyWith(
-                  fontSize: 10,
-                  fontWeight: FontWeight.normal,
-                ),
-              ),
-              child: const Icon(Icons.timer_outlined),
-            ),
-            shad.NavigationItem(
-              label: Text(
-                l10n.navSettings,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.p.copyWith(
-                  fontSize: 10,
-                  fontWeight: FontWeight.normal,
-                ),
-              ),
-              child: const Icon(Icons.settings_outlined),
-            ),
-          ],
+              ],
+            );
+          },
         ),
       ],
       child: child,
@@ -111,21 +87,17 @@ class ShellPage extends StatelessWidget {
   static int _calculateSelectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
 
-    if (location.startsWith(Routes.tasks)) return 1;
-    if (location.startsWith(Routes.calendar)) return 2;
-    if (location.startsWith(Routes.finance)) return 3;
-    if (location.startsWith(Routes.timer)) return 4;
-    if (location.startsWith(Routes.settings)) return 5;
+    if (location.startsWith(Routes.apps)) return 1;
+    if (location.startsWith(Routes.profileRoot)) return 2;
+    if (location.startsWith(Routes.settings)) return 2;
+    if (AppRegistry.moduleFromLocation(location) != null) return 1;
     return 0; // home
   }
 
   void _onItemTapped(int index, BuildContext context) {
     final route = switch (index) {
-      1 => Routes.tasks,
-      2 => Routes.calendar,
-      3 => Routes.finance,
-      4 => Routes.timer,
-      5 => Routes.settings,
+      1 => Routes.apps,
+      2 => Routes.profileRoot,
       _ => Routes.home,
     };
     context.go(route);

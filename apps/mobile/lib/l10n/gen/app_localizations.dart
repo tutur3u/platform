@@ -337,6 +337,36 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get navSettings;
 
+  /// No description provided for @navApps.
+  ///
+  /// In en, this message translates to:
+  /// **'Apps'**
+  String get navApps;
+
+  /// No description provided for @appsHubSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search apps'**
+  String get appsHubSearchHint;
+
+  /// No description provided for @appsHubQuickAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick access'**
+  String get appsHubQuickAccess;
+
+  /// No description provided for @appsHubAllApps.
+  ///
+  /// In en, this message translates to:
+  /// **'All apps'**
+  String get appsHubAllApps;
+
+  /// No description provided for @appsHubEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No apps found'**
+  String get appsHubEmpty;
+
   /// No description provided for @dashboardGreeting.
   ///
   /// In en, this message translates to:

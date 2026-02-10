@@ -55,6 +55,11 @@
     "navFinance": "Tài chính",
     "navTimer": "Bấm giờ",
     "navSettings": "Cài đặt",
+    "navApps": "Ứng dụng",
+    "appsHubSearchHint": "Tìm kiếm ứng dụng",
+    "appsHubQuickAccess": "Truy cập nhanh",
+    "appsHubAllApps": "Tất cả ứng dụng",
+    "appsHubEmpty": "Không tìm thấy ứng dụng",
 
     "dashboardGreeting": "Chào mừng trở lại!",
     "dashboardQuickActions": "Thao tác nhanh",

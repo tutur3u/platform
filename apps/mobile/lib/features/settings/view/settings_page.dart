@@ -33,7 +33,7 @@ class SettingsPage extends StatelessWidget {
             context,
             icon: Icons.person_outline,
             title: l10n.settingsProfile,
-            onTap: () => context.push(Routes.profile),
+            onTap: () => context.push(Routes.profileRoot),
           ),
           const shad.Divider(),
           BlocBuilder<LocaleCubit, LocaleState>(

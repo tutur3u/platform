@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
 import 'package:mobile/features/profile/cubit/profile_cubit.dart';
 import 'package:mobile/features/profile/cubit/profile_state.dart';
@@ -45,11 +46,10 @@ class _ProfileView extends StatelessWidget {
       headers: [
         shad.AppBar(
           title: Text(l10n.profileTitle),
-          leading: [
-            shad.GhostButton(
-              onPressed: () => context.pop(),
-              density: shad.ButtonDensity.icon,
-              child: const Icon(Icons.arrow_back),
+          trailing: [
+            shad.IconButton.ghost(
+              icon: const Icon(Icons.settings_outlined),
+              onPressed: () => context.push(Routes.settings),
             ),
           ],
         ),

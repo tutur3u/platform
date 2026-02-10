@@ -55,6 +55,11 @@
     "navFinance": "Finance",
     "navTimer": "Timer",
     "navSettings": "Settings",
+    "navApps": "Apps",
+    "appsHubSearchHint": "Search apps",
+    "appsHubQuickAccess": "Quick access",
+    "appsHubAllApps": "All apps",
+    "appsHubEmpty": "No apps found",
 
     "dashboardGreeting": "Welcome back!",
     "dashboardQuickActions": "Quick actions",

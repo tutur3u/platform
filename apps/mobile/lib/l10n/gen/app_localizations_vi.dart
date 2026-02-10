@@ -134,6 +134,21 @@ class AppLocalizationsVi extends AppLocalizations {
   String get navSettings => 'Cài đặt';
 
   @override
+  String get navApps => 'Ứng dụng';
+
+  @override
+  String get appsHubSearchHint => 'Tìm kiếm ứng dụng';
+
+  @override
+  String get appsHubQuickAccess => 'Truy cập nhanh';
+
+  @override
+  String get appsHubAllApps => 'Tất cả ứng dụng';
+
+  @override
+  String get appsHubEmpty => 'Không tìm thấy ứng dụng';
+
+  @override
   String get dashboardGreeting => 'Chào mừng trở lại!';
 
   @override

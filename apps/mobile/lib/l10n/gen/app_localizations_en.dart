@@ -134,6 +134,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navSettings => 'Settings';
 
   @override
+  String get navApps => 'Apps';
+
+  @override
+  String get appsHubSearchHint => 'Search apps';
+
+  @override
+  String get appsHubQuickAccess => 'Quick access';
+
+  @override
+  String get appsHubAllApps => 'All apps';
+
+  @override
+  String get appsHubEmpty => 'No apps found';
+
+  @override
   String get dashboardGreeting => 'Welcome back!';
 
   @override
