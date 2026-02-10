@@ -26,6 +26,7 @@ import {
 import { BoardEstimationConfigDialog } from '../boards/boardId/task-dialogs/BoardEstimationConfigDialog';
 import { TaskNewLabelDialog } from '../boards/boardId/task-dialogs/TaskNewLabelDialog';
 import { TaskNewProjectDialog } from '../boards/boardId/task-dialogs/TaskNewProjectDialog';
+import { useOptionalWorkspacePresenceContext } from '../providers/workspace-presence-provider';
 import { createInitialSuggestionState } from './mention-system/types';
 import { SyncWarningDialog } from './sync-warning-dialog';
 import { MobileFloatingSaveButton } from './task-edit-dialog/components/mobile-floating-save-button';
@@ -153,6 +154,10 @@ export function TaskEditDialog({
   const queryClient = useQueryClient();
   const t = useTranslations('common');
 
+  // Access workspace tier for tier-aware collaboration settings (null outside the provider)
+  const presenceCtx = useOptionalWorkspacePresenceContext();
+  const workspaceTier = presenceCtx?.tier ?? null;
+
   // Disable editing if we are viewing via a shared link
   // User requested: always disable editing for shared tasks, regardless of permission
   const disabled = !!shareCode;
@@ -247,7 +252,7 @@ export function TaskEditDialog({
     staleTime: 5 * 60 * 1000,
   });
 
-  // Yjs collaboration
+  // Yjs collaboration — paid tiers get immediate broadcasts; free tier coalesces rapid edits
   const { doc, provider, synced, connected } = useYjsCollaboration({
     channel: `task-editor-${task?.id || 'new'}`,
     tableName: 'tasks',
@@ -255,6 +260,7 @@ export function TaskEditDialog({
     id: task?.id || '',
     user: yjsUser,
     enabled: isOpen && !isCreateMode && collaborationMode && !!task?.id,
+    broadcastDebounceMs: workspaceTier && workspaceTier !== 'FREE' ? 0 : 200,
   });
 
   const isYjsSyncing = useMemo(() => {

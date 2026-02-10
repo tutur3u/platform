@@ -17,6 +17,8 @@ export interface YjsCollaborationConfig {
   id: string;
   user: CollaborationUser | null;
   enabled?: boolean;
+  /** Debounce time for broadcasting document updates (0 = immediate). */
+  broadcastDebounceMs?: number;
   onSync?: (synced: boolean) => void;
   onError?: (error: Error) => void;
   onSave?: (version: number) => void;
@@ -47,6 +49,7 @@ export function useYjsCollaboration(
     id,
     user,
     enabled = true,
+    broadcastDebounceMs,
     onSync,
     onError,
     onSave,
@@ -144,6 +147,7 @@ export function useYjsCollaboration(
       awareness,
       resyncInterval: 30000,
       saveDebounceMs: 300,
+      ...(broadcastDebounceMs !== undefined && { broadcastDebounceMs }),
     });
 
     providerRef.current = provider;
@@ -214,7 +218,17 @@ export function useYjsCollaboration(
         }
       }, 100);
     };
-  }, [id, channel, tableName, columnName, hasUser, doc, awareness, enabled]);
+  }, [
+    id,
+    channel,
+    tableName,
+    columnName,
+    hasUser,
+    doc,
+    awareness,
+    enabled,
+    broadcastDebounceMs,
+  ]);
 
   // Awareness update: sync user identity without recreating the provider
   useEffect(() => {
