@@ -9,6 +9,7 @@ interface GetWorkspaceOverviewParams {
   tier?: string;
   status?: string;
   workspaceType?: string;
+  subCount?: string;
   sortBy?: string;
   sortOrder?: string;
   pageSize?: string;
@@ -26,6 +27,7 @@ export async function getWorkspaceOverview(
     p_tier: params.tier || undefined,
     p_status: params.status || undefined,
     p_workspace_type: params.workspaceType || undefined,
+    p_sub_count: params.subCount || undefined,
     p_sort_by: params.sortBy || 'created_at',
     p_sort_order: params.sortOrder || 'desc',
     p_page_size: parseInt(params.pageSize || '10', 10),
@@ -55,6 +57,9 @@ export async function getWorkspaceOverviewSummary(): Promise<WorkspaceOverviewSu
     tier_enterprise: 0,
     avg_members: 0,
     empty_workspaces: 0,
+    with_zero_subscriptions: 0,
+    with_single_subscription: 0,
+    with_multiple_subscriptions: 0,
   };
 
   const supabaseAdmin = await createAdminClient();
@@ -83,5 +88,8 @@ export async function getWorkspaceOverviewSummary(): Promise<WorkspaceOverviewSu
     tier_enterprise: Number(row.tier_enterprise) || 0,
     avg_members: Number(row.avg_members) || 0,
     empty_workspaces: Number(row.empty_workspaces) || 0,
+    with_zero_subscriptions: Number(row.with_zero_subscriptions) || 0,
+    with_single_subscription: Number(row.with_single_subscription) || 0,
+    with_multiple_subscriptions: Number(row.with_multiple_subscriptions) || 0,
   };
 }

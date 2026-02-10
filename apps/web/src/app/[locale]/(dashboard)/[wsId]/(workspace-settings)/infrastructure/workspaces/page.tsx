@@ -26,6 +26,7 @@ interface Props {
     tier?: string;
     status?: string;
     workspaceType?: string;
+    subCount?: string;
   }>;
 }
 
@@ -50,6 +51,7 @@ export default async function InfrastructureWorkspacesPage({
       tier: sp.tier,
       status: sp.status,
       workspaceType: sp.workspaceType,
+      subCount: sp.subCount,
     }),
   ]);
 

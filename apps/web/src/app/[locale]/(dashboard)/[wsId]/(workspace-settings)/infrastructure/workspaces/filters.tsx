@@ -21,8 +21,9 @@ export default function Filters() {
   const tier = searchParams.get('tier') || '';
   const status = searchParams.get('status') || '';
   const workspaceType = searchParams.get('workspaceType') || '';
+  const subCount = searchParams.get('subCount') || '';
 
-  const hasActiveFilters = tier || status || workspaceType;
+  const hasActiveFilters = tier || status || workspaceType || subCount;
 
   const updateFilter = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -88,6 +89,21 @@ export default function Filters() {
           <SelectItem value="all">{t('all_types')}</SelectItem>
           <SelectItem value="personal">{t('personal')}</SelectItem>
           <SelectItem value="team">{t('team')}</SelectItem>
+        </SelectContent>
+      </Select>
+
+      <Select
+        value={subCount || 'all'}
+        onValueChange={(value) => updateFilter('subCount', value)}
+      >
+        <SelectTrigger className="w-[160px]">
+          <SelectValue placeholder={t('filter_sub_count')} />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">{t('all_sub_counts')}</SelectItem>
+          <SelectItem value="none">{t('sub_count_none')}</SelectItem>
+          <SelectItem value="single">{t('sub_count_single')}</SelectItem>
+          <SelectItem value="multiple">{t('sub_count_multiple')}</SelectItem>
         </SelectContent>
       </Select>
 
