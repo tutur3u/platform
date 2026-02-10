@@ -27,6 +27,7 @@ export default function SummaryCards({ summary }: Props) {
           zero: summary.with_zero_subscriptions,
           single: summary.with_single_subscription,
           multiple: summary.with_multiple_subscriptions,
+          errored: summary.errored_workspaces,
         })}
         icon={<Crown className="h-5 w-5 text-dynamic-yellow" />}
       />

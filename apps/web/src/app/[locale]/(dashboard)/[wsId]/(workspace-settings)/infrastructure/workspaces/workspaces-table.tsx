@@ -24,8 +24,14 @@ export function WorkspacesTable({ data, count }: Props) {
         count={count}
         defaultVisibility={{
           id: false,
+          handle: false,
+          creator_name: false,
           creator_id: false,
+          subscription_statuses: false,
+          role_count: false,
           secret_count: false,
+          personal: false,
+          created_at: false,
         }}
         filters={<Filters />}
         onRowClick={setSelected}

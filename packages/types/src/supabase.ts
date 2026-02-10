@@ -15492,6 +15492,48 @@ export type Database = {
           },
         ];
       };
+      workspace_subscription_errors: {
+        Row: {
+          created_at: string;
+          error_message: string;
+          error_source: string;
+          id: string;
+          resolved_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          error_message: string;
+          error_source?: string;
+          id?: string;
+          resolved_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          error_message?: string;
+          error_source?: string;
+          id?: string;
+          resolved_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_subscription_errors_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_subscription_errors_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_subscription_products: {
         Row: {
           archived: boolean;
@@ -20075,6 +20117,7 @@ export type Database = {
           creator_id: string;
           creator_name: string;
           handle: string;
+          has_subscription_error: boolean;
           highest_tier: string;
           id: string;
           member_count: number;
@@ -20091,6 +20134,7 @@ export type Database = {
         Returns: {
           avg_members: number;
           empty_workspaces: number;
+          errored_workspaces: number;
           personal_workspaces: number;
           team_workspaces: number;
           tier_enterprise: number;

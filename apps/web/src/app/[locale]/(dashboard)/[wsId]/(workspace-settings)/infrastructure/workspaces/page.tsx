@@ -72,11 +72,8 @@ export default async function InfrastructureWorkspacesPage({
       </div>
 
       <Separator className="my-4" />
-
       <SummaryCards summary={summary} />
-
       <Separator className="my-4" />
-
       <WorkspacesTable data={workspaces} count={count} />
     </>
   );

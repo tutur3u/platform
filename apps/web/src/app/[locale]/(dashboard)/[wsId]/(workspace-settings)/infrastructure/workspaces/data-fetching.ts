@@ -60,6 +60,7 @@ export async function getWorkspaceOverviewSummary(): Promise<WorkspaceOverviewSu
     with_zero_subscriptions: 0,
     with_single_subscription: 0,
     with_multiple_subscriptions: 0,
+    errored_workspaces: 0,
   };
 
   const supabaseAdmin = await createAdminClient();
@@ -91,5 +92,6 @@ export async function getWorkspaceOverviewSummary(): Promise<WorkspaceOverviewSu
     with_zero_subscriptions: Number(row.with_zero_subscriptions) || 0,
     with_single_subscription: Number(row.with_single_subscription) || 0,
     with_multiple_subscriptions: Number(row.with_multiple_subscriptions) || 0,
+    errored_workspaces: Number(row.errored_workspaces) || 0,
   };
 }

@@ -6,6 +6,7 @@ import {
   ChevronDown,
   Clock,
   Loader2,
+  RefreshCw,
   Trash2,
   TriangleAlert,
   UserPlus,
@@ -243,6 +244,8 @@ export default function PlatformSubscriptionsMigrationPage() {
   const [revokeState, setRevokeState] = useState<MigrationState>(INITIAL_STATE);
   const [freeState, setFreeState] = useState<MigrationState>(INITIAL_STATE);
   const [orphanState, setOrphanState] = useState<MigrationState>(INITIAL_STATE);
+  const [crossCheckState, setCrossCheckState] =
+    useState<MigrationState>(INITIAL_STATE);
 
   const revokeRunning =
     revokeState.status === 'running' || revokeState.status === 'loading';
@@ -250,11 +253,16 @@ export default function PlatformSubscriptionsMigrationPage() {
     freeState.status === 'running' || freeState.status === 'loading';
   const orphanRunning =
     orphanState.status === 'running' || orphanState.status === 'loading';
-  const anyRunning = revokeRunning || freeRunning || orphanRunning;
+  const crossCheckRunning =
+    crossCheckState.status === 'running' ||
+    crossCheckState.status === 'loading';
+  const anyRunning =
+    revokeRunning || freeRunning || orphanRunning || crossCheckRunning;
 
   const revokeElapsed = useElapsedTime(revokeRunning);
   const freeElapsed = useElapsedTime(freeRunning);
   const orphanElapsed = useElapsedTime(orphanRunning);
+  const crossCheckElapsed = useElapsedTime(crossCheckRunning);
 
   const runMigration = useCallback(
     async (
@@ -275,6 +283,27 @@ export default function PlatformSubscriptionsMigrationPage() {
         }
 
         await readMigrationStream(res, (event) => {
+          // Extract all numeric stat keys from event (excluding meta fields)
+          const extractStats = (e: Record<string, unknown>) => {
+            const metaKeys = new Set([
+              'type',
+              'current',
+              'total',
+              'errorDetails',
+              'message',
+              'duration',
+              'error',
+              'phase',
+            ]);
+            const stats: Record<string, number> = {};
+            for (const [k, v] of Object.entries(e)) {
+              if (!metaKeys.has(k) && typeof v === 'number') {
+                stats[k] = v;
+              }
+            }
+            return stats;
+          };
+
           switch (event.type) {
             case 'start':
               setState((prev) => ({
@@ -288,13 +317,7 @@ export default function PlatformSubscriptionsMigrationPage() {
                 ...prev,
                 current: event.current as number,
                 total: event.total as number,
-                stats: {
-                  created: (event.created as number) ?? 0,
-                  processed: (event.processed as number) ?? 0,
-                  kept: (event.kept as number) ?? 0,
-                  skipped: (event.skipped as number) ?? 0,
-                  errors: (event.errors as number) ?? 0,
-                },
+                stats: extractStats(event),
               }));
               break;
             case 'complete':
@@ -302,13 +325,7 @@ export default function PlatformSubscriptionsMigrationPage() {
                 ...prev,
                 status: (event.errors as number) > 0 ? 'warning' : 'success',
                 current: event.total as number,
-                stats: {
-                  created: (event.created as number) ?? 0,
-                  processed: (event.processed as number) ?? 0,
-                  kept: (event.kept as number) ?? 0,
-                  skipped: (event.skipped as number) ?? 0,
-                  errors: (event.errors as number) ?? 0,
-                },
+                stats: extractStats(event),
                 errorDetails: event.errorDetails as
                   | Array<{ id: string; error: string }>
                   | undefined,
@@ -446,6 +463,34 @@ export default function PlatformSubscriptionsMigrationPage() {
             '/api/payment/migrations/subscriptions/unexisted-workspaces',
             'DELETE',
             setOrphanState
+          )
+        }
+      />
+
+      {/* Cross-Check Subscriptions */}
+      <MigrationCard
+        icon={<RefreshCw className="h-5 w-5" />}
+        title="Cross-Check Subscriptions"
+        description={[
+          'Phase 1 (DB→Polar): Verify each active DB subscription against Polar API',
+          'Phase 2 (Polar→DB): Find active Polar subscriptions missing from DB and sync them',
+          'Phase 3: Create free subscriptions for workspaces that lost their last active sub',
+          'Logs errors for workspaces where Polar rejects subscription creation',
+        ]}
+        state={crossCheckState}
+        elapsed={crossCheckElapsed}
+        statLabels={['Synced', 'Skipped', 'Polar→DB', 'Free Created', 'Errors']}
+        statKeys={['synced', 'skipped', 'polarSynced', 'freeCreated', 'errors']}
+        disabled={anyRunning}
+        variant="default"
+        actionLabel="Cross-Check Subscriptions"
+        pendingLabel="Cross-checking..."
+        actionIcon={<RefreshCw className="mr-2 h-4 w-4" />}
+        onRun={() =>
+          runMigration(
+            '/api/payment/migrations/subscriptions/cross-check',
+            'POST',
+            setCrossCheckState
           )
         }
       />
@@ -588,9 +633,11 @@ function MigrationCard({
                     ? 'text-destructive'
                     : key === 'skipped' && value > 0
                       ? 'text-dynamic-yellow'
-                      : key === 'kept' && value > 0
+                      : ['kept', 'polarSynced', 'freeCreated'].includes(key) &&
+                          value > 0
                         ? 'text-dynamic-blue'
-                        : ['created', 'processed'].includes(key) && value > 0
+                        : ['created', 'processed', 'synced'].includes(key) &&
+                            value > 0
                           ? 'text-dynamic-green'
                           : '';
                 return (

@@ -190,6 +190,7 @@ export interface WorkspaceOverviewRow {
   active_subscription_count: number;
   highest_tier: string | null;
   subscription_statuses: string[];
+  has_subscription_error: boolean;
   total_count: number;
 }
 
@@ -207,6 +208,7 @@ export interface WorkspaceOverviewSummary {
   with_zero_subscriptions: number;
   with_single_subscription: number;
   with_multiple_subscriptions: number;
+  errored_workspaces: number;
 }
 
 // User registration data (existing)

@@ -104,6 +104,7 @@ export default function Filters() {
           <SelectItem value="none">{t('sub_count_none')}</SelectItem>
           <SelectItem value="single">{t('sub_count_single')}</SelectItem>
           <SelectItem value="multiple">{t('sub_count_multiple')}</SelectItem>
+          <SelectItem value="errored">{t('sub_count_errored')}</SelectItem>
         </SelectContent>
       </Select>
 
