@@ -53,7 +53,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
   const { configId: id } = await params;
 
   const bodySchema = z.object({
-    value: z.unknown(),
+    value: z.string().optional(),
   });
   const parsedBody = bodySchema.safeParse(await req.json());
 
@@ -67,12 +67,14 @@ export async function PUT(req: NextRequest, { params }: Params) {
   const { value } = parsedBody.data;
 
   const { error } = await supabase.from('user_configs').upsert(
-    {
-      id,
-      user_id: user.id,
-      value: value ?? '',
-      updated_at: new Date().toISOString(),
-    },
+    [
+      {
+        id,
+        user_id: user.id,
+        value: value ?? '',
+        updated_at: new Date().toISOString(),
+      },
+    ],
     {
       onConflict: 'user_id,id',
     }
