@@ -324,6 +324,7 @@ describe('customer-helper', () => {
         email: 'alice@example.com',
         name: 'Alice Johnson',
         externalId: 'user-789',
+        type: 'individual',
       });
       expect(mockConsoleLog).toHaveBeenCalledWith(
         'No existing Polar customer found for workspace ws-789, creating new one'
@@ -391,6 +392,7 @@ describe('customer-helper', () => {
         email: 'bob@example.com+ws-999',
         name: 'Corporate Workspace',
         externalId: 'workspace_ws-999',
+        type: 'team',
       });
     });
 
@@ -461,7 +463,7 @@ describe('customer-helper', () => {
       ).rejects.toThrow('Unable to retrieve workspace owner email');
     });
 
-    it('should throw error if Polar customer creation fails', async () => {
+    it('should return null if Polar customer creation fails', async () => {
       const mockWorkspace = {
         id: 'ws-fail',
         personal: true,
@@ -497,13 +499,19 @@ describe('customer-helper', () => {
         },
       } as unknown as Polar;
 
-      await expect(
-        getOrCreatePolarCustomer({
-          polar: mockPolar,
-          supabase: mockSupabase,
-          wsId: 'ws-fail',
-        })
-      ).rejects.toThrow('Failed to create new customer in Polar');
+      const result = await getOrCreatePolarCustomer({
+        polar: mockPolar,
+        supabase: mockSupabase,
+        wsId: 'ws-fail',
+      });
+
+      expect(result).toBeNull();
+      expect(mockPolar.customers.create).toHaveBeenCalledWith({
+        email: 'fail@example.com',
+        name: 'Fail User',
+        externalId: 'user-fail',
+        type: 'individual',
+      });
     });
 
     it('should handle workspace with missing users join data', async () => {
