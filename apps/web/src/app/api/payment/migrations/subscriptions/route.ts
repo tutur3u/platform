@@ -68,21 +68,68 @@ export async function POST() {
             case 'already_active':
               skipped++;
               break;
-            case 'error':
+            case 'error': {
               errors++;
               errorDetails.push({
                 id: workspace.id,
                 error: result.message,
               });
+
+              // Log to workspace_subscription_errors table
+              const { error: insertError } = await sbAdmin
+                .from('workspace_subscription_errors')
+                .upsert(
+                  {
+                    ws_id: workspace.id,
+                    error_message: result.message,
+                    error_source: 'free_subscription_migration',
+                  },
+                  {
+                    onConflict: 'ws_id',
+                    ignoreDuplicates: false,
+                  }
+                );
+
+              if (insertError) {
+                console.error(
+                  `Free sub migration: Failed to log error for workspace ${workspace.id}:`,
+                  insertError.message
+                );
+              }
               break;
+            }
           }
         }
       } catch (err) {
         errors++;
+        const errorMessage =
+          err instanceof Error ? err.message : 'Unknown error';
         errorDetails.push({
           id: workspace.id,
-          error: err instanceof Error ? err.message : 'Unknown error',
+          error: errorMessage,
         });
+
+        // Log to workspace_subscription_errors table
+        const { error: insertError } = await sbAdmin
+          .from('workspace_subscription_errors')
+          .upsert(
+            {
+              ws_id: workspace.id,
+              error_message: errorMessage,
+              error_source: 'free_subscription_migration',
+            },
+            {
+              onConflict: 'ws_id',
+              ignoreDuplicates: false,
+            }
+          );
+
+        if (insertError) {
+          console.error(
+            `Free sub migration: Failed to log error for workspace ${workspace.id}:`,
+            insertError.message
+          );
+        }
       }
 
       send({

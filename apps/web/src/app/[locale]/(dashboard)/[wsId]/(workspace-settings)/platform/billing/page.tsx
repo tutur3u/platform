@@ -244,8 +244,13 @@ export default function PlatformSubscriptionsMigrationPage() {
   const [revokeState, setRevokeState] = useState<MigrationState>(INITIAL_STATE);
   const [freeState, setFreeState] = useState<MigrationState>(INITIAL_STATE);
   const [orphanState, setOrphanState] = useState<MigrationState>(INITIAL_STATE);
-  const [crossCheckState, setCrossCheckState] =
+  const [crossCheckP1State, setCrossCheckP1State] =
     useState<MigrationState>(INITIAL_STATE);
+  const [crossCheckP2State, setCrossCheckP2State] =
+    useState<MigrationState>(INITIAL_STATE);
+  const [crossCheckP3State, setCrossCheckP3State] =
+    useState<MigrationState>(INITIAL_STATE);
+  const [phase1AffectedWsIds, setPhase1AffectedWsIds] = useState<string[]>([]);
 
   const revokeRunning =
     revokeState.status === 'running' || revokeState.status === 'loading';
@@ -253,28 +258,51 @@ export default function PlatformSubscriptionsMigrationPage() {
     freeState.status === 'running' || freeState.status === 'loading';
   const orphanRunning =
     orphanState.status === 'running' || orphanState.status === 'loading';
-  const crossCheckRunning =
-    crossCheckState.status === 'running' ||
-    crossCheckState.status === 'loading';
+  const crossCheckP1Running =
+    crossCheckP1State.status === 'running' ||
+    crossCheckP1State.status === 'loading';
+  const crossCheckP2Running =
+    crossCheckP2State.status === 'running' ||
+    crossCheckP2State.status === 'loading';
+  const crossCheckP3Running =
+    crossCheckP3State.status === 'running' ||
+    crossCheckP3State.status === 'loading';
   const anyRunning =
-    revokeRunning || freeRunning || orphanRunning || crossCheckRunning;
+    revokeRunning ||
+    freeRunning ||
+    orphanRunning ||
+    crossCheckP1Running ||
+    crossCheckP2Running ||
+    crossCheckP3Running;
 
   const revokeElapsed = useElapsedTime(revokeRunning);
   const freeElapsed = useElapsedTime(freeRunning);
   const orphanElapsed = useElapsedTime(orphanRunning);
-  const crossCheckElapsed = useElapsedTime(crossCheckRunning);
+  const crossCheckP1Elapsed = useElapsedTime(crossCheckP1Running);
+  const crossCheckP2Elapsed = useElapsedTime(crossCheckP2Running);
+  const crossCheckP3Elapsed = useElapsedTime(crossCheckP3Running);
 
   const runMigration = useCallback(
     async (
       route: string,
       method: 'DELETE' | 'POST',
-      setState: React.Dispatch<React.SetStateAction<MigrationState>>
+      setState: React.Dispatch<React.SetStateAction<MigrationState>>,
+      options?: {
+        body?: unknown;
+        onComplete?: (event: Record<string, unknown>) => void;
+      }
     ) => {
       setState({ ...INITIAL_STATE, status: 'loading' });
 
       try {
         const res = await fetch(route, {
           method,
+          ...(options?.body
+            ? {
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(options.body),
+              }
+            : {}),
         });
 
         if (!res.ok) {
@@ -294,6 +322,7 @@ export default function PlatformSubscriptionsMigrationPage() {
               'duration',
               'error',
               'phase',
+              'affectedWsIds',
             ]);
             const stats: Record<string, number> = {};
             for (const [k, v] of Object.entries(e)) {
@@ -332,6 +361,7 @@ export default function PlatformSubscriptionsMigrationPage() {
                 message: event.message as string,
                 duration: event.duration as number,
               }));
+              options?.onComplete?.(event);
               break;
             case 'error':
               setState((prev) => ({
@@ -467,30 +497,90 @@ export default function PlatformSubscriptionsMigrationPage() {
         }
       />
 
-      {/* Cross-Check Subscriptions */}
+      {/* Cross-Check Phase 1: DB → Polar */}
       <MigrationCard
         icon={<RefreshCw className="h-5 w-5" />}
-        title="Cross-Check Subscriptions"
+        title="Cross-Check Phase 1: DB → Polar"
         description={[
-          'Phase 1 (DB→Polar): Verify each active DB subscription against Polar API',
-          'Phase 2 (Polar→DB): Find active Polar subscriptions missing from DB and sync them',
-          'Phase 3: Create free subscriptions for workspaces that lost their last active sub',
-          'Logs errors for workspaces where Polar rejects subscription creation',
+          'Verify each active DB subscription against the Polar API',
+          'Update DB status if Polar reports the subscription is no longer active',
+          'Collect affected workspace IDs for Phase 3',
         ]}
-        state={crossCheckState}
-        elapsed={crossCheckElapsed}
-        statLabels={['Synced', 'Skipped', 'Polar→DB', 'Free Created', 'Errors']}
-        statKeys={['synced', 'skipped', 'polarSynced', 'freeCreated', 'errors']}
+        state={crossCheckP1State}
+        elapsed={crossCheckP1Elapsed}
+        statLabels={['Synced', 'Skipped', 'Errors']}
+        statKeys={['synced', 'skipped', 'errors']}
         disabled={anyRunning}
         variant="default"
-        actionLabel="Cross-Check Subscriptions"
-        pendingLabel="Cross-checking..."
+        actionLabel="Run Phase 1: DB → Polar"
+        pendingLabel="Checking..."
         actionIcon={<RefreshCw className="mr-2 h-4 w-4" />}
         onRun={() =>
           runMigration(
-            '/api/payment/migrations/subscriptions/cross-check',
+            '/api/payment/migrations/subscriptions/cross-check/phase-1',
             'POST',
-            setCrossCheckState
+            setCrossCheckP1State,
+            {
+              onComplete: (event) => {
+                const wsIds = (event.affectedWsIds as string[]) ?? [];
+                setPhase1AffectedWsIds(wsIds);
+              },
+            }
+          )
+        }
+      />
+
+      {/* Cross-Check Phase 2: Polar → DB */}
+      <MigrationCard
+        icon={<RefreshCw className="h-5 w-5" />}
+        title="Cross-Check Phase 2: Polar → DB"
+        description={[
+          'List all active Polar subscriptions',
+          'Find subscriptions missing from the database',
+          'Sync missing subscriptions to the database',
+        ]}
+        state={crossCheckP2State}
+        elapsed={crossCheckP2Elapsed}
+        statLabels={['Synced', 'Skipped', 'Errors']}
+        statKeys={['polarSynced', 'skipped', 'errors']}
+        disabled={anyRunning}
+        variant="default"
+        actionLabel="Run Phase 2: Polar → DB"
+        pendingLabel="Syncing..."
+        actionIcon={<RefreshCw className="mr-2 h-4 w-4" />}
+        onRun={() =>
+          runMigration(
+            '/api/payment/migrations/subscriptions/cross-check/phase-2',
+            'POST',
+            setCrossCheckP2State
+          )
+        }
+      />
+
+      {/* Cross-Check Phase 3: Free Subscription Fallback */}
+      <MigrationCard
+        icon={<UserPlus className="h-5 w-5" />}
+        title="Cross-Check Phase 3: Free Fallback"
+        description={[
+          `Create free subscriptions for workspaces that lost their active subscription in Phase 1 (${phase1AffectedWsIds.length} workspace(s) pending)`,
+          'Requires Phase 1 to complete first',
+          'Logs errors for workspaces where Polar rejects subscription creation',
+        ]}
+        state={crossCheckP3State}
+        elapsed={crossCheckP3Elapsed}
+        statLabels={['Created', 'Skipped', 'Errors']}
+        statKeys={['freeCreated', 'skipped', 'errors']}
+        disabled={anyRunning || phase1AffectedWsIds.length === 0}
+        variant="default"
+        actionLabel={`Run Phase 3: Free Fallback (${phase1AffectedWsIds.length})`}
+        pendingLabel="Creating..."
+        actionIcon={<UserPlus className="mr-2 h-4 w-4" />}
+        onRun={() =>
+          runMigration(
+            '/api/payment/migrations/subscriptions/cross-check/phase-3',
+            'POST',
+            setCrossCheckP3State,
+            { body: { wsIds: phase1AffectedWsIds } }
           )
         }
       />
