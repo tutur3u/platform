@@ -309,6 +309,7 @@ export function useTaskSave({
       updateTaskMutation,
       updateSharedTaskMutation,
       shareCode,
+      queryClient,
       toast,
       onUpdate,
       onClose,
@@ -894,6 +895,7 @@ async function handleUpdateTask({
   updateTaskMutation,
   updateSharedTaskMutation,
   shareCode,
+  queryClient,
   toast,
   onUpdate,
   onClose,
@@ -915,6 +917,7 @@ async function handleUpdateTask({
   updateTaskMutation: ReturnType<typeof useUpdateTask>;
   updateSharedTaskMutation: ReturnType<typeof useUpdateSharedTask>;
   shareCode?: string;
+  queryClient: QueryClient;
   toast: ReturnType<typeof useToast>['toast'];
   onUpdate: () => void;
   onClose: () => void;
@@ -966,6 +969,7 @@ async function handleUpdateTask({
           onSettled: () => {
             setIsLoading(false);
             setIsSaving(false);
+            queryClient.invalidateQueries({ queryKey: ['task-history'] });
           },
         }
       );
@@ -994,6 +998,7 @@ async function handleUpdateTask({
         onSettled: () => {
           setIsLoading(false);
           setIsSaving(false);
+          queryClient.invalidateQueries({ queryKey: ['task-history'] });
         },
       }
     );

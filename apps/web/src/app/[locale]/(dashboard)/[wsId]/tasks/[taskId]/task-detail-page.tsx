@@ -45,11 +45,10 @@ export default function TaskDetailPage({
     }
   }, [wsId, boardId, router]);
 
-  // Register update callback to redirect after task update
+  // Task was saved — stay on the dedicated task URL (don't navigate away)
   const handleUpdate = useCallback(() => {
     console.log('🔄 Task updated on detail page');
-    navigateToBoard();
-  }, [navigateToBoard]);
+  }, []);
 
   // Handle dialog close (user clicked X or pressed Escape)
   const handleClose = useCallback(() => {
@@ -62,8 +61,12 @@ export default function TaskDetailPage({
     if (wasOpenOnMount.current) return;
 
     console.log('✅ Registering task detail page callbacks');
-    onUpdate(handleUpdate);
+    const unsubUpdate = onUpdate(handleUpdate);
     onClose(handleClose);
+
+    return () => {
+      unsubUpdate();
+    };
   }, [onUpdate, onClose, handleUpdate, handleClose]);
 
   // Open task dialog on mount

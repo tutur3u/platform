@@ -15503,10 +15503,8 @@ export type Database = {
           name: string | null;
           price: number | null;
           price_per_seat: number | null;
-          pricing_model:
-            | Database['public']['Enums']['workspace_pricing_model']
-            | null;
-          recurring_interval: string;
+          pricing_model: Database['public']['Enums']['workspace_pricing_model'];
+          recurring_interval: string | null;
           tier: Database['public']['Enums']['workspace_product_tier'];
         };
         Insert: {
@@ -15519,10 +15517,8 @@ export type Database = {
           name?: string | null;
           price?: number | null;
           price_per_seat?: number | null;
-          pricing_model?:
-            | Database['public']['Enums']['workspace_pricing_model']
-            | null;
-          recurring_interval: string;
+          pricing_model?: Database['public']['Enums']['workspace_pricing_model'];
+          recurring_interval?: string | null;
           tier: Database['public']['Enums']['workspace_product_tier'];
         };
         Update: {
@@ -15535,10 +15531,8 @@ export type Database = {
           name?: string | null;
           price?: number | null;
           price_per_seat?: number | null;
-          pricing_model?:
-            | Database['public']['Enums']['workspace_pricing_model']
-            | null;
-          recurring_interval?: string;
+          pricing_model?: Database['public']['Enums']['workspace_pricing_model'];
+          recurring_interval?: string | null;
           tier?: Database['public']['Enums']['workspace_product_tier'];
         };
         Relationships: [];
@@ -20224,10 +20218,6 @@ export type Database = {
             Returns: number;
           };
       hard_delete_soft_deleted_items: { Args: never; Returns: undefined };
-      has_board_template_edit_permission: {
-        Args: { p_template_id: string };
-        Returns: boolean;
-      };
       has_task_permission: {
         Args: { p_permission: string; p_task_id: string };
         Returns: boolean;

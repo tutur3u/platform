@@ -73,9 +73,11 @@ export function useTaskMutations({
   // Note: The kanban board uses realtime subscriptions directly and doesn't
   // register a refresh callback via the task dialog system, so calling onUpdate
   // here won't conflict with realtime sync on the board page.
+  // Also invalidate task-history so the activity section updates immediately.
   const triggerRefresh = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['task-history'] });
     onUpdate();
-  }, [onUpdate]);
+  }, [queryClient, onUpdate]);
 
   const updateEstimation = useCallback(
     async (points: number | null) => {

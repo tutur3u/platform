@@ -100,6 +100,7 @@ export function useTaskRealtimeSync({
     selectedListIdRef.current = selectedListId;
   }, [selectedListId]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: pendingNameRef is intentionally read via ref — including .current causes subscription churn on every debounced name change
   useEffect(() => {
     // Only subscribe in edit mode when dialog is open and we have a task ID
     if (isCreateMode || !isOpen || !taskId || disabled) return;
@@ -389,12 +390,14 @@ export function useTaskRealtimeSync({
     // Only depend on values that should trigger subscription recreation
     // State values are accessed via refs to prevent unnecessary re-subscriptions
     // Setters are stable (from useState) and don't need to be in deps
+    // pendingNameRef is a ref — read inside the callback, NOT in the dep array.
+    // Including .current would tear down/recreate the subscription on every
+    // debounced name change, causing missed realtime events.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     isCreateMode,
     isOpen,
     taskId,
-    pendingNameRef.current,
     collaborationMode,
     setEndDate,
     setEstimationPoints,

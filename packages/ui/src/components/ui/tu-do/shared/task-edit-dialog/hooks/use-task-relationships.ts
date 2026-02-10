@@ -114,6 +114,7 @@ export function useTaskRelationships({
           );
         }
         await invalidateTaskCaches(queryClient, boardId);
+        queryClient.invalidateQueries({ queryKey: ['task-history'] });
         onUpdate();
       } catch (e: any) {
         toast({
@@ -194,6 +195,7 @@ export function useTaskRelationships({
             });
           }
         );
+        queryClient.invalidateQueries({ queryKey: ['task-history'] });
         onUpdate();
       } catch (e: any) {
         toast({
@@ -272,6 +274,7 @@ export function useTaskRelationships({
             });
           }
         );
+        queryClient.invalidateQueries({ queryKey: ['task-history'] });
         onUpdate();
       } catch (e: any) {
         toast({
