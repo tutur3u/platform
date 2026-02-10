@@ -8,13 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useState } from 'react';
 
-export default function PlatformSubscriptionsMigrationPage() {
+export default function PlatformBillingMigrationPage() {
   const [migrationResult, setMigrationResult] = useState<any>(null);
   const [freeMigrationResult, setFreeMigrationResult] = useState<any>(null);
 
   const cancelSubscriptionMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch('/api/platform/subscriptions', {
+      const res = await fetch('/api/payment/migrations/subscriptions', {
         method: 'DELETE',
       });
 
@@ -47,7 +47,7 @@ export default function PlatformSubscriptionsMigrationPage() {
 
   const createFreeSubscriptionMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch('/api/platform/subscriptions', {
+      const res = await fetch('/api/payment/migrations/subscriptions', {
         method: 'POST',
       });
 
@@ -81,7 +81,7 @@ export default function PlatformSubscriptionsMigrationPage() {
   return (
     <div className="container mx-auto max-w-4xl space-y-6 p-6">
       <div>
-        <h1 className="mb-2 font-bold text-3xl">Platform Subscriptions</h1>
+        <h1 className="mb-2 font-bold text-3xl">Platform Billing</h1>
         <p className="text-muted-foreground">
           Global migration tool for admin use only
         </p>

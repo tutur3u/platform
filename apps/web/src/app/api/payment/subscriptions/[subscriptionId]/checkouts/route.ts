@@ -1,8 +1,8 @@
+import { PORT } from '@/constants/common';
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { type NextRequest, NextResponse } from 'next/server';
-import { PORT } from '@/constants/common';
 
 export async function POST(
   request: NextRequest,

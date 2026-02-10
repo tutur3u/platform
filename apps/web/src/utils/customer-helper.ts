@@ -68,12 +68,11 @@ export async function getOrCreatePolarCustomer({
       externalId,
     });
 
-    if (customer) {
-      console.log(
-        `Found existing Polar customer for workspace ${wsId} (personal: ${isPersonalWorkspace})`
-      );
-      return customer;
-    }
+    console.log(
+      `Found existing Polar customer for workspace ${wsId} (personal: ${isPersonalWorkspace})`
+    );
+
+    return customer;
   } catch (_error) {
     // Customer not found, will create new one
     console.log(
@@ -98,11 +97,8 @@ export async function getOrCreatePolarCustomer({
       : generateEmailSubaddressing(ownerEmail, wsId),
     name: isPersonalWorkspace ? workspace.users.display_name : workspace.name,
     externalId,
+    type: isPersonalWorkspace ? 'individual' : 'team',
   });
-
-  if (!newCustomer) {
-    throw new Error('Failed to create new customer in Polar');
-  }
 
   console.log('Created new Polar customer:', newCustomer);
 
