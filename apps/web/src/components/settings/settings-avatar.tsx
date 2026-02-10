@@ -21,7 +21,7 @@ import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { toast } from '@tuturuuu/ui/sonner';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as z from 'zod';
 
 interface AvatarProps {
@@ -48,6 +48,16 @@ export default function UserAvatar({ user }: AvatarProps) {
   const [previewSrc, setPreviewSrc] = useState<string | null>(
     user?.avatar_url || null
   );
+
+  const blobUrlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+      }
+    };
+  }, []);
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
@@ -206,7 +216,13 @@ export default function UserAvatar({ user }: AvatarProps) {
   const handleFileSelect = async (file: File) => {
     try {
       const compressedBlob = await compressImage(file);
+
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+      }
+
       const fileURL = URL.createObjectURL(compressedBlob);
+      blobUrlRef.current = fileURL;
       setPreviewSrc(fileURL);
       form.setValue(
         'file',
@@ -226,6 +242,11 @@ export default function UserAvatar({ user }: AvatarProps) {
           if (!isOpen) {
             form.reset();
             setPreviewSrc(user?.avatar_url || null);
+
+            if (blobUrlRef.current) {
+              URL.revokeObjectURL(blobUrlRef.current);
+              blobUrlRef.current = null;
+            }
           }
           setOpen(isOpen);
         }}

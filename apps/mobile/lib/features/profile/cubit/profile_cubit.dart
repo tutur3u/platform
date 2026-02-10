@@ -13,8 +13,10 @@ class ProfileCubit extends Cubit<ProfileState> {
   final ProfileRepository _repository;
 
   /// Loads the user's profile.
-  Future<void> loadProfile() async {
-    emit(state.copyWith(status: ProfileStatus.loading));
+  Future<void> loadProfile({bool emitLoading = true}) async {
+    if (emitLoading) {
+      emit(state.copyWith(status: ProfileStatus.loading));
+    }
 
     final result = await _repository.getProfile();
 
@@ -65,7 +67,7 @@ class ProfileCubit extends Cubit<ProfileState> {
 
     if (result.success) {
       // Reload profile to get updated data
-      await loadProfile();
+      await loadProfile(emitLoading: false);
       emit(state.copyWith(isLoading: false));
       return true;
     }
@@ -79,7 +81,9 @@ class ProfileCubit extends Cubit<ProfileState> {
     emit(state.copyWith(isLoading: true));
 
     // Get upload URL
-    final urlResult = await _repository.getAvatarUploadUrl(file.uri.pathSegments.last);
+    final urlResult = await _repository.getAvatarUploadUrl(
+      file.uri.pathSegments.last,
+    );
 
     if (urlResult.response == null) {
       emit(state.copyWith(isLoading: false, error: urlResult.error));
@@ -104,7 +108,7 @@ class ProfileCubit extends Cubit<ProfileState> {
 
     if (updateResult.success) {
       // Reload profile to get updated data
-      await loadProfile();
+      await loadProfile(emitLoading: false);
       emit(state.copyWith(isLoading: false));
       return true;
     } else {
@@ -121,7 +125,7 @@ class ProfileCubit extends Cubit<ProfileState> {
 
     if (result.success) {
       // Reload profile to get updated data
-      await loadProfile();
+      await loadProfile(emitLoading: false);
       emit(state.copyWith(isLoading: false));
       return true;
     } else {

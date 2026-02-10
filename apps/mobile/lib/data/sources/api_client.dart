@@ -17,8 +17,9 @@ class ApiClient {
     final session = supabase.auth.currentSession;
     final expiresAt = session?.expiresAt;
     if (session != null && expiresAt != null) {
-      final expiresAtMs =
-          expiresAt > 1000000000000 ? expiresAt : expiresAt * 1000;
+      final expiresAtMs = expiresAt > 1000000000000
+          ? expiresAt
+          : expiresAt * 1000;
       if (DateTime.now().millisecondsSinceEpoch < expiresAtMs) {
         return;
       }
@@ -38,11 +39,12 @@ class ApiClient {
     String? contentType,
     bool requiresAuth = true,
   }) async {
+    String? token;
+
     if (requiresAuth) {
       await _ensureValidSession();
+      token = supabase.auth.currentSession?.accessToken;
     }
-    final session = supabase.auth.currentSession;
-    final token = session?.accessToken;
 
     return {
       if (contentType != null) 'Content-Type': contentType,
@@ -204,13 +206,15 @@ class ApiClient {
 
       throw const FormatException('Expected a JSON object');
     } on FormatException catch (e) {
-      throw FormatException(
-        'Failed to parse JSON: ${e.message}. Input length: ${jsonString.length}',
-      );
+      final message =
+          'Failed to parse JSON: ${e.message}. '
+          'Input length: ${jsonString.length}';
+      throw FormatException(message);
     } on Exception catch (e) {
-      throw FormatException(
-        'Failed to parse JSON: $e. Input length: ${jsonString.length}',
-      );
+      final message =
+          'Failed to parse JSON: $e. '
+          'Input length: ${jsonString.length}';
+      throw FormatException(message);
     }
   }
 

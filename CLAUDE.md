@@ -749,6 +749,7 @@ Located at `apps/mobile/`, the Flutter app uses:
 
 - **Flutter Editable Fields:** When extracting shared editable text widgets, preserve per-field validation and success messaging. Email fields should keep the `@` check and any email-specific success note (use `TextInputType.emailAddress` or an explicit parameter).
 - **Flutter Analyzer Hygiene:** Prefer `on Exception catch (e)` (or a specific type) over bare `catch`, avoid catching `Error` subclasses like `TypeError`, guard `BuildContext` usage after `await` with `if (!context.mounted) return;`, and never `return` from a `finally` block.
+- **Flutter Widget Tests (shadcn):** Any widget test rendering `shadcn_flutter` components must wrap the widget with `shad.ShadcnApp` (and include `shad.ShadcnLocalizations.delegate`) so `shad.Theme.of(context)` is available.
 
 ## Quick Reference
 

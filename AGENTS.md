@@ -1653,6 +1653,13 @@ When consolidating duplicated Flutter form fields into a shared editable widget,
 - After `await`, check `context.mounted` before using `BuildContext` to satisfy `use_build_context_synchronously`.
 - Avoid `return` in `finally` blocks; gate cleanup with `if (context.mounted)` or `if (mounted)` instead.
 
+### 15.8 Flutter Widget Test Theme Context
+
+Widgets that use `shadcn_flutter` (`shad.Scaffold`, `shad.Theme.of`) must be
+wrapped by `shad.ShadcnApp` in tests. Use the shared test helper to provide
+`shad.ShadcnLocalizations.delegate` and a basic `ThemeData`/`darkTheme` so
+`Theme.of(context)` is always available.
+
 ## 16. Glossary
 
 | Term                     | Definition                                                                                                                                   |

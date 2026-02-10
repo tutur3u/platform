@@ -181,7 +181,9 @@ class _CalendarView extends StatelessWidget {
                             }
                           },
                           onMonthChanged: (month) {
-                            context.read<CalendarCubit>().setFocusedMonth(month);
+                            context.read<CalendarCubit>().setFocusedMonth(
+                              month,
+                            );
                           },
                         ),
                       // View body.

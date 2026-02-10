@@ -1,6 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart'
     hide NavigationBar, NavigationBarTheme, Scaffold;
-import 'dart:async';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
