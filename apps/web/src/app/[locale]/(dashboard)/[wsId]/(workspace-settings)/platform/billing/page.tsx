@@ -538,11 +538,12 @@ export default function PlatformSubscriptionsMigrationPage() {
           'List all active Polar subscriptions',
           'Find subscriptions missing from the database',
           'Sync missing subscriptions to the database',
+          'Automatically detect and revoke duplicate subscriptions',
         ]}
         state={crossCheckP2State}
         elapsed={crossCheckP2Elapsed}
-        statLabels={['Synced', 'Skipped', 'Errors']}
-        statKeys={['polarSynced', 'skipped', 'errors']}
+        statLabels={['Synced', 'Skipped', 'Deduped', 'Errors']}
+        statKeys={['polarSynced', 'skipped', 'duplicatesRevoked', 'errors']}
         disabled={anyRunning}
         variant="default"
         actionLabel="Run Phase 2: Polar → DB"
@@ -726,8 +727,12 @@ function MigrationCard({
                       : ['kept', 'polarSynced', 'freeCreated'].includes(key) &&
                           value > 0
                         ? 'text-dynamic-blue'
-                        : ['created', 'processed', 'synced'].includes(key) &&
-                            value > 0
+                        : [
+                              'created',
+                              'processed',
+                              'synced',
+                              'duplicatesRevoked',
+                            ].includes(key) && value > 0
                           ? 'text-dynamic-green'
                           : '';
                 return (

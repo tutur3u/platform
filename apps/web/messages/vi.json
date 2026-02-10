@@ -989,7 +989,7 @@
     "downgrade-to": "Hạ xuống gói {plan}",
     "ends-on": "Kết thúc vào",
     "error-loading-data": "Lỗi khi tải dữ liệu",
-    "estimated-total": "Ước tính: ${total}/{cycle} cho {count} thành viên",
+    "estimated-total": "Ước tính: ${total}{cycle} cho {count} thành viên",
     "expires": "Hết hạn",
     "failed-to-delete-payment-method": "Không thể xóa phương thức thanh toán",
     "failed-to-open-customer-portal": "Không thể mở cổng thông tin khách hàng",

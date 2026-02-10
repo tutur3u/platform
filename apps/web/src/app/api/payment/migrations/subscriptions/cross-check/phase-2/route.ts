@@ -55,6 +55,7 @@ export async function POST() {
     let polarSynced = 0;
     let skipped = 0;
     let errors = 0;
+    let duplicatesRevoked = 0;
     const errorDetails: Array<{ id: string; error: string }> = [];
     const startTime = Date.now();
     let processed = 0;
@@ -106,6 +107,7 @@ export async function POST() {
             total: processed,
             polarSynced,
             skipped,
+            duplicatesRevoked,
             errors,
           });
         }
@@ -125,15 +127,99 @@ export async function POST() {
       }
     }
 
+    // --- Auto-dedup pass: revoke older duplicates per workspace ---
+    if (polarSynced > 0) {
+      try {
+        const { data: freshSubs, error: freshError } = await fetchAllRows(
+          (from, to) =>
+            sbAdmin
+              .from('workspace_subscriptions')
+              .select('id, ws_id, polar_subscription_id, created_at')
+              .eq('status', 'active')
+              .order('created_at', { ascending: false })
+              .range(from, to)
+        );
+
+        if (freshError) {
+          errorDetails.push({
+            id: 'dedup-fetch',
+            error: `Dedup fetch failed: ${freshError instanceof Error ? freshError.message : String(freshError)}`,
+          });
+          errors++;
+        } else {
+          // Group by workspace, keeping order (latest first)
+          const byWorkspace = new Map<string, typeof freshSubs>();
+          for (const sub of freshSubs) {
+            const existing = byWorkspace.get(sub.ws_id);
+            if (existing) {
+              existing.push(sub);
+            } else {
+              byWorkspace.set(sub.ws_id, [sub]);
+            }
+          }
+
+          // Collect older duplicates (all but latest per workspace)
+          const dupsToRevoke: typeof freshSubs = [];
+          for (const [, wsSubs] of byWorkspace) {
+            if (wsSubs.length > 1) {
+              dupsToRevoke.push(...wsSubs.slice(1));
+            }
+          }
+
+          for (const dup of dupsToRevoke) {
+            try {
+              if (!dup.polar_subscription_id) {
+                errorDetails.push({
+                  id: dup.id,
+                  error: 'Dedup: missing polar_subscription_id',
+                });
+                errors++;
+                continue;
+              }
+
+              await delay(POLAR_API_DELAY_MS);
+              await polar.subscriptions.revoke({
+                id: dup.polar_subscription_id,
+              });
+              duplicatesRevoked++;
+            } catch (err) {
+              errors++;
+              errorDetails.push({
+                id: dup.id,
+                error: `Dedup revoke failed: ${err instanceof Error ? err.message : String(err)}`,
+              });
+            }
+
+            send({
+              type: 'progress',
+              current: processed,
+              total: processed,
+              polarSynced,
+              skipped,
+              duplicatesRevoked,
+              errors,
+            });
+          }
+        }
+      } catch (err) {
+        errors++;
+        errorDetails.push({
+          id: 'dedup-unexpected',
+          error: `Dedup failed: ${err instanceof Error ? err.message : String(err)}`,
+        });
+      }
+    }
+
     send({
       type: 'complete',
       total: processed,
       polarSynced,
       skipped,
+      duplicatesRevoked,
       errors,
       errorDetails: errorDetails.length > 0 ? errorDetails : undefined,
       duration: Date.now() - startTime,
-      message: `${processed} Polar subs checked: ${polarSynced} synced to DB, ${skipped} already present. ${errors} errors.`,
+      message: `${processed} Polar subs checked: ${polarSynced} synced to DB, ${skipped} already present, ${duplicatesRevoked} duplicates revoked. ${errors} errors.`,
     });
   });
 }

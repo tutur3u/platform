@@ -989,7 +989,7 @@
     "downgrade-to": "Downgrade to {plan}",
     "ends-on": "Ends On",
     "error-loading-data": "Error loading data",
-    "estimated-total": "Est. total: ${total}/{cycle} for {count} members",
+    "estimated-total": "Est. total: ${total}{cycle} for {count} members",
     "expires": "Expires",
     "failed-to-delete-payment-method": "Failed to delete payment method",
     "failed-to-open-customer-portal": "Failed to open customer portal",
