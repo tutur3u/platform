@@ -61,7 +61,7 @@ export const pendingInvoiceColumns = (
                 {getInitials(name)}
               </AvatarFallback>
             </Avatar>
-            <span className="line-clamp-1">{name}</span>
+            <span className="whitespace-nowrap">{name}</span>
           </div>
         );
       },

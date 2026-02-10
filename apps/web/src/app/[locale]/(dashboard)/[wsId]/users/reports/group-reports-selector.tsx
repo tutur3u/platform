@@ -104,7 +104,7 @@ export default function GroupReportsSelector({
       }
 
       let q = supabase
-        .from('workspace_user_groups_with_guest')
+        .from('workspace_user_groups')
         .select('id, name, workspace_user_groups_users!inner(user_id)')
         .eq('ws_id', wsId)
         .eq('workspace_user_groups_users.user_id', workspaceUserId);

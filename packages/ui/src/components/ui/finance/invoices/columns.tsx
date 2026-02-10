@@ -111,7 +111,7 @@ export const invoiceColumns = ({
                 {getInitials(displayName)}
               </AvatarFallback>
             </Avatar>
-            <span className="line-clamp-1">{displayName}</span>
+            <span className="whitespace-nowrap">{displayName}</span>
           </div>
         );
       },
@@ -146,7 +146,7 @@ export const invoiceColumns = ({
                 {getInitials(displayName)}
               </AvatarFallback>
             </Avatar>
-            <span className="line-clamp-1">{displayName}</span>
+            <span className="whitespace-nowrap">{displayName}</span>
           </div>
         );
       },

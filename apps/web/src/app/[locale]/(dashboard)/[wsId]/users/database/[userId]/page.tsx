@@ -5,6 +5,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUserReport } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { InvoiceUserHistoryAccordion } from '@tuturuuu/ui/finance/invoices/components/invoice-user-history-accordion';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -199,20 +200,33 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
                 <Separator />
                 {groups?.length ? (
                   <div className="grid h-full gap-2 2xl:grid-cols-2">
-                    {groups.map((group) => (
-                      <Link
-                        key={group.id}
-                        href={`/${wsId}/users/groups/${group.id}`}
-                      >
-                        <Button
-                          className="flex w-full items-center gap-2"
-                          variant="secondary"
+                    {groups.map((group) => {
+                      const isManager =
+                        group.workspace_user_groups_users?.[0]?.role ===
+                        'TEACHER';
+                      return (
+                        <Link
+                          key={group.id}
+                          href={`/${wsId}/users/groups/${group.id}`}
                         >
-                          <Users className="inline-block h-6 w-6" />
-                          {group.name}
-                        </Button>
-                      </Link>
-                    ))}
+                          <Button
+                            className="flex w-full items-center gap-2"
+                            variant="secondary"
+                          >
+                            <Users className="inline-block h-6 w-6" />
+                            {group.name}
+                            {isManager && (
+                              <Badge
+                                variant="outline"
+                                className="border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green"
+                              >
+                                {t('manager')}
+                              </Badge>
+                            )}
+                          </Button>
+                        </Link>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="flex w-full flex-1 items-center justify-center text-center opacity-60">
@@ -400,7 +414,7 @@ async function getGroupData({
 
   const queryBuilder = supabase
     .from('workspace_user_groups')
-    .select('*, workspace_user_groups_users!inner(user_id)', {
+    .select('*, workspace_user_groups_users!inner(user_id, role)', {
       count: 'exact',
     })
     .eq('ws_id', wsId)

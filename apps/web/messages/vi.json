@@ -8737,6 +8737,7 @@
     "loading": "Đang tải...",
     "loading_more": "Đang tải thêm",
     "male": "Nam",
+    "manager": "Quản lý",
     "missing_creator_id": "Thiếu ID của người tạo. \nBạn không được ủy quyền",
     "missing_updater_id": "Thiếu ID của người cập nhật. Bạn không được ủy quyền",
     "name": "Tên",

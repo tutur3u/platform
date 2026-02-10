@@ -8737,6 +8737,7 @@
     "loading": "Loading...",
     "loading_more": "Loading More",
     "male": "Male",
+    "manager": "Manager",
     "missing_creator_id": "Missing a creator ID. You are not authorized",
     "missing_updater_id": "Missing an updater ID. You are not authorized",
     "name": "Name",
