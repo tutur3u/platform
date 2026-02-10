@@ -103,7 +103,7 @@
     "react-colorful": "^5.6.1",
     "react-day-picker": "^9.13.1",
     "react-dom": "^19.2.4",
-    "react-dropzone": "^14.4.0",
+    "react-dropzone": "^15.0.0",
     "react-hook-form": "^7.71.1",
     "react-markdown": "^10.1.0",
     "react-papaparse": "^4.4.0",
