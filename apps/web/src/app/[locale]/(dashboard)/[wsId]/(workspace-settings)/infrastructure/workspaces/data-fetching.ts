@@ -9,75 +9,40 @@ interface GetWorkspaceOverviewParams {
   tier?: string;
   status?: string;
   workspaceType?: string;
+  subCount?: string;
   sortBy?: string;
   sortOrder?: string;
+  pageSize?: string;
+  page?: string;
 }
 
-const BATCH_SIZE = 1000;
-
-/**
- * Fetches ALL workspaces matching the given filters by batching through
- * pages of BATCH_SIZE rows. This ensures the admin dashboard has the
- * complete dataset regardless of total workspace count.
- */
-export async function getAllWorkspaceOverview(
+export async function getWorkspaceOverview(
   params: GetWorkspaceOverviewParams
 ): Promise<{ data: WorkspaceOverviewRow[]; count: number }> {
   const supabaseAdmin = await createAdminClient();
   if (!supabaseAdmin) return { data: [], count: 0 };
 
-  const rpcParams = {
+  const { data, error } = await supabaseAdmin.rpc('get_workspace_overview', {
     p_search: params.search || undefined,
     p_tier: params.tier || undefined,
     p_status: params.status || undefined,
     p_workspace_type: params.workspaceType || undefined,
+    p_sub_count: params.subCount || undefined,
     p_sort_by: params.sortBy || 'created_at',
     p_sort_order: params.sortOrder || 'desc',
-  };
-
-  // First batch — also gives us total_count for calculating remaining pages
-  const { data: firstBatch, error } = await supabaseAdmin.rpc(
-    'get_workspace_overview',
-    { ...rpcParams, p_page_size: BATCH_SIZE, p_page: 1 }
-  );
+    p_page_size: parseInt(params.pageSize || '10', 10),
+    p_page: parseInt(params.page || '1', 10),
+  });
 
   if (error) {
     console.error('get_workspace_overview RPC error:', error);
     return { data: [], count: 0 };
   }
 
-  const firstRows = (firstBatch as WorkspaceOverviewRow[]) || [];
-  const totalCount = firstRows[0]?.total_count ?? 0;
+  const rows = (data as WorkspaceOverviewRow[]) || [];
+  const count = rows[0]?.total_count ?? 0;
 
-  // If everything fits in one batch, return immediately
-  if (totalCount <= BATCH_SIZE) {
-    return { data: firstRows, count: totalCount };
-  }
-
-  // Fetch remaining pages in parallel
-  const totalPages = Math.ceil(totalCount / BATCH_SIZE);
-  const remainingPromises = Array.from({ length: totalPages - 1 }, (_, i) =>
-    supabaseAdmin
-      .rpc('get_workspace_overview', {
-        ...rpcParams,
-        p_page_size: BATCH_SIZE,
-        p_page: i + 2,
-      })
-      .then(({ data, error }) => {
-        if (error) {
-          console.error(`Batch page ${i + 2} error:`, error);
-          return [] as WorkspaceOverviewRow[];
-        }
-        return (data as WorkspaceOverviewRow[]) || [];
-      })
-  );
-
-  const remainingBatches = await Promise.all(remainingPromises);
-
-  return {
-    data: [...firstRows, ...remainingBatches.flat()],
-    count: totalCount,
-  };
+  return { data: rows, count };
 }
 
 export async function getWorkspaceOverviewSummary(): Promise<WorkspaceOverviewSummary> {
@@ -92,6 +57,9 @@ export async function getWorkspaceOverviewSummary(): Promise<WorkspaceOverviewSu
     tier_enterprise: 0,
     avg_members: 0,
     empty_workspaces: 0,
+    with_zero_subscriptions: 0,
+    with_single_subscription: 0,
+    with_multiple_subscriptions: 0,
   };
 
   const supabaseAdmin = await createAdminClient();
@@ -120,5 +88,8 @@ export async function getWorkspaceOverviewSummary(): Promise<WorkspaceOverviewSu
     tier_enterprise: Number(row.tier_enterprise) || 0,
     avg_members: Number(row.avg_members) || 0,
     empty_workspaces: Number(row.empty_workspaces) || 0,
+    with_zero_subscriptions: Number(row.with_zero_subscriptions) || 0,
+    with_single_subscription: Number(row.with_single_subscription) || 0,
+    with_multiple_subscriptions: Number(row.with_multiple_subscriptions) || 0,
   };
 }

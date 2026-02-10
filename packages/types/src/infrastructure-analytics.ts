@@ -204,6 +204,9 @@ export interface WorkspaceOverviewSummary {
   tier_enterprise: number;
   avg_members: number;
   empty_workspaces: number;
+  with_zero_subscriptions: number;
+  with_single_subscription: number;
+  with_multiple_subscriptions: number;
 }
 
 // User registration data (existing)

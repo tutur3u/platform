@@ -9,13 +9,6 @@ interface Props {
 export default function SummaryCards({ summary }: Props) {
   const t = useTranslations('ws-overview');
 
-  const subPct =
-    summary.total_workspaces > 0
-      ? Math.round(
-          (summary.with_active_subscription / summary.total_workspaces) * 100
-        )
-      : 0;
-
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <StatCard
@@ -30,7 +23,11 @@ export default function SummaryCards({ summary }: Props) {
       <StatCard
         title={t('active_subscriptions')}
         value={summary.with_active_subscription.toLocaleString()}
-        subtext={t('active_sub_pct', { pct: subPct })}
+        subtext={t('sub_count_breakdown', {
+          zero: summary.with_zero_subscriptions,
+          single: summary.with_single_subscription,
+          multiple: summary.with_multiple_subscriptions,
+        })}
         icon={<Crown className="h-5 w-5 text-dynamic-yellow" />}
       />
       <StatCard

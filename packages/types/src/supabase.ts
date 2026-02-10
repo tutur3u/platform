@@ -20049,6 +20049,7 @@ export type Database = {
           p_sort_by?: string;
           p_sort_order?: string;
           p_status?: string;
+          p_sub_count?: string;
           p_tier?: string;
           p_workspace_type?: string;
         };
@@ -20084,6 +20085,9 @@ export type Database = {
           tier_pro: number;
           total_workspaces: number;
           with_active_subscription: number;
+          with_multiple_subscriptions: number;
+          with_single_subscription: number;
+          with_zero_subscriptions: number;
         }[];
       };
       get_workspace_products_count: {
