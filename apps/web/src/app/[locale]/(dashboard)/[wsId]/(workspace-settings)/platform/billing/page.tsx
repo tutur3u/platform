@@ -6,6 +6,7 @@ import {
   ChevronDown,
   Clock,
   Loader2,
+  Trash2,
   TriangleAlert,
   UserPlus,
   XCircle,
@@ -241,25 +242,30 @@ function useElapsedTime(isRunning: boolean) {
 export default function PlatformSubscriptionsMigrationPage() {
   const [revokeState, setRevokeState] = useState<MigrationState>(INITIAL_STATE);
   const [freeState, setFreeState] = useState<MigrationState>(INITIAL_STATE);
+  const [orphanState, setOrphanState] = useState<MigrationState>(INITIAL_STATE);
 
   const revokeRunning =
     revokeState.status === 'running' || revokeState.status === 'loading';
   const freeRunning =
     freeState.status === 'running' || freeState.status === 'loading';
-  const anyRunning = revokeRunning || freeRunning;
+  const orphanRunning =
+    orphanState.status === 'running' || orphanState.status === 'loading';
+  const anyRunning = revokeRunning || freeRunning || orphanRunning;
 
   const revokeElapsed = useElapsedTime(revokeRunning);
   const freeElapsed = useElapsedTime(freeRunning);
+  const orphanElapsed = useElapsedTime(orphanRunning);
 
   const runMigration = useCallback(
     async (
+      route: string,
       method: 'DELETE' | 'POST',
       setState: React.Dispatch<React.SetStateAction<MigrationState>>
     ) => {
       setState({ ...INITIAL_STATE, status: 'loading' });
 
       try {
-        const res = await fetch('/api/payment/migrations/subscriptions', {
+        const res = await fetch(route, {
           method,
         });
 
@@ -379,7 +385,13 @@ export default function PlatformSubscriptionsMigrationPage() {
         actionLabel="Revoke Duplicate Subscriptions"
         pendingLabel="Revoking..."
         actionIcon={<Zap className="mr-2 h-4 w-4" />}
-        onRun={() => runMigration('DELETE', setRevokeState)}
+        onRun={() =>
+          runMigration(
+            '/api/payment/migrations/subscriptions',
+            'DELETE',
+            setRevokeState
+          )
+        }
       />
 
       {/* Step 2: Add Free Subscriptions */}
@@ -400,7 +412,42 @@ export default function PlatformSubscriptionsMigrationPage() {
         actionLabel="Add Free Subscriptions"
         pendingLabel="Creating..."
         actionIcon={<UserPlus className="mr-2 h-4 w-4" />}
-        onRun={() => runMigration('POST', setFreeState)}
+        onRun={() =>
+          runMigration(
+            '/api/payment/migrations/subscriptions',
+            'POST',
+            setFreeState
+          )
+        }
+      />
+
+      {/* Revoke Orphaned Subscriptions */}
+      <MigrationCard
+        icon={<Trash2 className="h-5 w-5" />}
+        title="Revoke Orphaned Subscriptions"
+        description={[
+          'Find active subscriptions for workspaces that no longer exist',
+          'Covers both hard-deleted (removed rows) and soft-deleted (deleted = true) workspaces',
+          'Revoke orphaned subscriptions in Polar',
+          'Skip subscriptions belonging to valid workspaces',
+        ]}
+        state={orphanState}
+        elapsed={orphanElapsed}
+        statLabels={['Revoked', 'Skipped', 'Errors']}
+        statKeys={['processed', 'skipped', 'errors']}
+        disabled={anyRunning}
+        variant="destructive"
+        confirmLabel="This will revoke all active subscriptions for workspaces that no longer exist (hard-deleted or soft-deleted). Are you sure?"
+        actionLabel="Revoke Orphaned Subscriptions"
+        pendingLabel="Revoking..."
+        actionIcon={<Trash2 className="mr-2 h-4 w-4" />}
+        onRun={() =>
+          runMigration(
+            '/api/payment/migrations/subscriptions/unexisted-workspaces',
+            'DELETE',
+            setOrphanState
+          )
+        }
       />
     </div>
   );

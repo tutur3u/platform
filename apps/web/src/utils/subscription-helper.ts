@@ -10,8 +10,9 @@ export async function hasActiveSubscription(
   // First check if workspace exists
   const { data: workspace } = await supabase
     .from('workspaces')
-    .select('id')
+    .select('*')
     .eq('id', wsId)
+    .eq('deleted', false)
     .maybeSingle();
 
   if (!workspace) {
