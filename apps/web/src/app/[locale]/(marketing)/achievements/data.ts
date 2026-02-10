@@ -344,7 +344,7 @@ export const achievements: Achievement[] = [
   {
     name: ' Sustainable Design Competition by Sustainable Textile Solution (STS)',
     achievement: '4R Design award',
-    image: '/hall-of-fames/fashion_enterprise_program.jpg',
+    image: '/hall-of-fames/fashion-enterprise-program.jpg',
     teamMembers: [
       {
         name: 'Vo Tran Minh Nhat',
