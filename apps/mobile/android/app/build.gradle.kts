@@ -102,4 +102,5 @@ flutter {
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib:2.2.10")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 }
