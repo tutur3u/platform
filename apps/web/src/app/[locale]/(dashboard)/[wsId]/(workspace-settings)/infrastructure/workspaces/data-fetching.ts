@@ -11,36 +11,73 @@ interface GetWorkspaceOverviewParams {
   workspaceType?: string;
   sortBy?: string;
   sortOrder?: string;
-  pageSize?: string;
-  page?: string;
 }
 
-export async function getWorkspaceOverview(
+const BATCH_SIZE = 1000;
+
+/**
+ * Fetches ALL workspaces matching the given filters by batching through
+ * pages of BATCH_SIZE rows. This ensures the admin dashboard has the
+ * complete dataset regardless of total workspace count.
+ */
+export async function getAllWorkspaceOverview(
   params: GetWorkspaceOverviewParams
 ): Promise<{ data: WorkspaceOverviewRow[]; count: number }> {
   const supabaseAdmin = await createAdminClient();
   if (!supabaseAdmin) return { data: [], count: 0 };
 
-  const { data, error } = await supabaseAdmin.rpc('get_workspace_overview', {
+  const rpcParams = {
     p_search: params.search || undefined,
     p_tier: params.tier || undefined,
     p_status: params.status || undefined,
     p_workspace_type: params.workspaceType || undefined,
     p_sort_by: params.sortBy || 'created_at',
     p_sort_order: params.sortOrder || 'desc',
-    p_page_size: parseInt(params.pageSize || '10', 10),
-    p_page: parseInt(params.page || '1', 10),
-  });
+  };
+
+  // First batch — also gives us total_count for calculating remaining pages
+  const { data: firstBatch, error } = await supabaseAdmin.rpc(
+    'get_workspace_overview',
+    { ...rpcParams, p_page_size: BATCH_SIZE, p_page: 1 }
+  );
 
   if (error) {
     console.error('get_workspace_overview RPC error:', error);
     return { data: [], count: 0 };
   }
 
-  const rows = (data as WorkspaceOverviewRow[]) || [];
-  const count = rows[0]?.total_count ?? 0;
+  const firstRows = (firstBatch as WorkspaceOverviewRow[]) || [];
+  const totalCount = firstRows[0]?.total_count ?? 0;
 
-  return { data: rows, count };
+  // If everything fits in one batch, return immediately
+  if (totalCount <= BATCH_SIZE) {
+    return { data: firstRows, count: totalCount };
+  }
+
+  // Fetch remaining pages in parallel
+  const totalPages = Math.ceil(totalCount / BATCH_SIZE);
+  const remainingPromises = Array.from({ length: totalPages - 1 }, (_, i) =>
+    supabaseAdmin
+      .rpc('get_workspace_overview', {
+        ...rpcParams,
+        p_page_size: BATCH_SIZE,
+        p_page: i + 2,
+      })
+      .then(({ data, error }) => {
+        if (error) {
+          console.error(`Batch page ${i + 2} error:`, error);
+          return [] as WorkspaceOverviewRow[];
+        }
+        return (data as WorkspaceOverviewRow[]) || [];
+      })
+  );
+
+  const remainingBatches = await Promise.all(remainingPromises);
+
+  return {
+    data: [...firstRows, ...remainingBatches.flat()],
+    count: totalCount,
+  };
 }
 
 export async function getWorkspaceOverviewSummary(): Promise<WorkspaceOverviewSummary> {
