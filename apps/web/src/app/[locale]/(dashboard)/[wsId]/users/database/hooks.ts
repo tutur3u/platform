@@ -240,25 +240,19 @@ export function useFeaturedGroupCounts(
     queryFn: async (): Promise<Record<string, number>> => {
       const supabase = createClient();
 
-      const { data, error } = await supabase.rpc(
-        'get_featured_group_counts' as never,
-        {
-          _ws_id: wsId,
-          _featured_group_ids: featuredGroupIds,
-          _excluded_groups: excludedGroups,
-          _search_query: searchQuery || null,
-          _status: status,
-          _link_status: linkStatus,
-        } as never
-      );
+      const { data, error } = await supabase.rpc('get_featured_group_counts', {
+        _ws_id: wsId,
+        _featured_group_ids: featuredGroupIds,
+        _excluded_groups: excludedGroups,
+        _search_query: searchQuery || undefined,
+        _status: status,
+        _link_status: linkStatus,
+      });
 
       if (error) throw error;
 
       const counts: Record<string, number> = {};
-      for (const row of (data ?? []) as Array<{
-        group_id: string;
-        user_count: number;
-      }>) {
+      for (const row of data ?? []) {
         counts[row.group_id] = Number(row.user_count);
       }
       return counts;
