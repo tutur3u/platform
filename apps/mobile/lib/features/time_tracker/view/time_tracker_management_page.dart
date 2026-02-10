@@ -17,53 +17,128 @@ class TimeTrackerManagementPage extends StatefulWidget {
       _TimeTrackerManagementPageState();
 }
 
+class _ManagementSessionTile extends StatelessWidget {
+  const _ManagementSessionTile({required this.session});
+
+  final TimeTrackingSession session;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final dateFmt = DateFormat.yMMMd();
+
+    final dur = session.duration;
+    final durationText = _formatDuration(dur);
+
+    return shad.GhostButton(
+      // TODO(tuturuuu): Implement session details page.
+      onPressed: () {},
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.person,
+                color: theme.colorScheme.primary,
+                size: 20,
+              ),
+            ),
+            const shad.Gap(16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    session.title ?? 'Session',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.p,
+                  ),
+                  if (session.startTime != null)
+                    Text(
+                      dateFmt.format(session.startTime!.toLocal()),
+                      style: theme.typography.textSmall,
+                    ),
+                ],
+              ),
+            ),
+            Text(
+              durationText,
+              style: theme.typography.p.copyWith(fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatDuration(Duration d) {
+    final h = d.inHours;
+    final m = d.inMinutes % 60;
+    if (h > 0) return '${h}h ${m}m';
+    return '${m}m';
+  }
+}
+
+class _OverviewCard extends StatelessWidget {
+  const _OverviewCard({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return Expanded(
+      child: shad.Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(icon, size: 24, color: theme.colorScheme.primary),
+              const shad.Gap(12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    value,
+                    style: theme.typography.p.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    label,
+                    style: theme.typography.textSmall,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _TimeTrackerManagementPageState extends State<TimeTrackerManagementPage> {
   final _repo = TimeTrackerRepository();
   final _searchCtrl = TextEditingController();
   List<TimeTrackingSession> _sessions = [];
   bool _loading = true;
   String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    unawaited(_load());
-  }
-
-  @override
-  void dispose() {
-    _searchCtrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _load() async {
-    final wsId =
-        context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '';
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-
-    try {
-      final sessions = await _repo.getManagementSessions(
-        wsId,
-        search: _searchCtrl.text.isEmpty ? null : _searchCtrl.text,
-      );
-      if (mounted) {
-        setState(() {
-          _sessions = sessions;
-          _loading = false;
-        });
-      }
-    } on Exception catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = e.toString();
-          _loading = false;
-        });
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -158,123 +233,48 @@ class _TimeTrackerManagementPageState extends State<TimeTrackerManagementPage> {
     );
   }
 
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_load());
+  }
+
+  Future<void> _load() async {
+    final wsId =
+        context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '';
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final sessions = await _repo.getManagementSessions(
+        wsId,
+        search: _searchCtrl.text.isEmpty ? null : _searchCtrl.text,
+      );
+      if (mounted) {
+        setState(() {
+          _sessions = sessions;
+          _loading = false;
+        });
+      }
+    } on Exception catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _loading = false;
+        });
+      }
+    }
+  }
+
   int _uniqueUsers() {
     return _sessions.map((s) => s.userId).toSet().length;
-  }
-}
-
-class _OverviewCard extends StatelessWidget {
-  const _OverviewCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-  });
-
-  final String label;
-  final String value;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-
-    return Expanded(
-      child: shad.Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Icon(icon, size: 24, color: theme.colorScheme.primary),
-              const shad.Gap(12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    value,
-                    style: theme.typography.p.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  Text(
-                    label,
-                    style: theme.typography.textSmall,
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ManagementSessionTile extends StatelessWidget {
-  const _ManagementSessionTile({required this.session});
-
-  final TimeTrackingSession session;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final dateFmt = DateFormat.yMMMd();
-
-    final dur = session.duration;
-    final durationText = _formatDuration(dur);
-
-    return shad.GhostButton(
-      // TODO(tuturuuu): Implement session details page.
-      onPressed: () {},
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.person,
-                color: theme.colorScheme.primary,
-                size: 20,
-              ),
-            ),
-            const shad.Gap(16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    session.title ?? 'Session',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.p,
-                  ),
-                  if (session.startTime != null)
-                    Text(
-                      dateFmt.format(session.startTime!.toLocal()),
-                      style: theme.typography.textSmall,
-                    ),
-                ],
-              ),
-            ),
-            Text(
-              durationText,
-              style: theme.typography.p.copyWith(fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _formatDuration(Duration d) {
-    final h = d.inHours;
-    final m = d.inMinutes % 60;
-    if (h > 0) return '${h}h ${m}m';
-    return '${m}m';
   }
 }

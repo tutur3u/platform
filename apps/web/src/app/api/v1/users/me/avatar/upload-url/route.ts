@@ -24,7 +24,16 @@ export async function POST(req: NextRequest) {
     const { filename } = PostAvatarUploadSchema.parse(body);
 
     // Generate unique file path
-    const fileExt = filename.split('.').pop();
+    const fileExt = filename.split('.').pop()?.toLowerCase();
+    const allowedExtensions = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp']);
+
+    if (!fileExt || !allowedExtensions.has(fileExt)) {
+      return NextResponse.json(
+        { message: 'Invalid file extension' },
+        { status: 400 }
+      );
+    }
+
     const filePath = `${user.id}/${Date.now()}.${fileExt}`;
 
     // Create signed upload URL (valid for 60 seconds)

@@ -24,8 +24,13 @@ class ThemeCubit extends Cubit<ThemeState> {
 
   /// Sets and persists the user's theme choice.
   Future<void> setThemeMode(ThemeMode mode) async {
-    await _settingsRepository.setThemeMode(mode.name);
-    emit(state.copyWith(themeMode: mode));
+    try {
+      await _settingsRepository.setThemeMode(mode.name);
+      emit(state.copyWith(themeMode: mode));
+    } on Exception catch (e) {
+      debugPrint('Error setting theme mode: $e');
+      emit(state.copyWith(themeMode: ThemeMode.system));
+    }
   }
 
   ThemeMode _parseThemeMode(String mode) {

@@ -93,7 +93,7 @@ class TimerTab extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  if (state.recentSessions.isNotEmpty)
+                  if (state.recentSessions.isNotEmpty && onSeeAll != null)
                     shad.GhostButton(
                       onPressed: onSeeAll,
                       child: Text(l10n.timerSeeAll),

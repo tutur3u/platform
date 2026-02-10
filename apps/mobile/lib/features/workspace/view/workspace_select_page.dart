@@ -3,6 +3,7 @@ import 'package:flutter/material.dart'
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
+import 'package:mobile/features/workspace/widgets/workspace_avatar.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -113,17 +114,7 @@ class _WorkspaceSelectPageState extends State<WorkspaceSelectPage> {
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Row(
                     children: [
-                      shad.Avatar(
-                        initials: workspace.personal
-                            ? 'P'
-                            : (workspace.name != null &&
-                                      workspace.name!.isNotEmpty
-                                  ? workspace.name![0].toUpperCase()
-                                  : 'W'),
-                        backgroundColor: workspace.personal
-                            ? shad.Theme.of(context).colorScheme.primary
-                            : null,
-                      ),
+                      WorkspaceAvatar(workspace: workspace),
                       const shad.Gap(16),
                       Expanded(
                         child: Column(

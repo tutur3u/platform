@@ -115,7 +115,7 @@ class _RequestsViewState extends State<_RequestsView> {
           }
 
           return RefreshIndicator(
-            onRefresh: () async =>
+            onRefresh: () =>
                 context.read<TimeTrackerRequestsCubit>().loadRequests(wsId),
             child: ListView.builder(
               itemCount: state.requests.length,
@@ -171,7 +171,7 @@ class _RequestTile extends StatelessWidget {
 
     final (statusLabel, statusColor) = switch (request.approvalStatus) {
       ApprovalStatus.pending => ('Pending', colorScheme.primary),
-      ApprovalStatus.approved => ('Approved', colorScheme.primary),
+      ApprovalStatus.approved => ('Approved', colorScheme.foreground),
       ApprovalStatus.rejected => ('Rejected', colorScheme.destructive),
       ApprovalStatus.needsInfo => ('Needs info', colorScheme.mutedForeground),
     };

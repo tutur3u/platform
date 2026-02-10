@@ -24,6 +24,35 @@ class ProfileRepository {
   final bool _ownsApiClient;
   final bool _ownsHttpClient;
 
+  void dispose() {
+    if (_ownsApiClient) {
+      _apiClient.dispose();
+    }
+    if (_ownsHttpClient) {
+      _httpClient.close();
+    }
+  }
+
+  /// Gets signed upload URL for avatar.
+  Future<({AvatarUploadUrlResponse? response, String? error})>
+  getAvatarUploadUrl(String filename) async {
+    try {
+      final response = await _apiClient.postJson(
+        ProfileEndpoints.avatarUploadUrl,
+        {'filename': filename},
+      );
+
+      return (
+        response: AvatarUploadUrlResponse.fromJson(response),
+        error: null,
+      );
+    } on ApiException catch (e) {
+      return (response: null, error: e.message);
+    } on Exception catch (e) {
+      return (response: null, error: e.toString());
+    }
+  }
+
   /// Fetches the current user's profile.
   Future<({UserProfile? profile, String? error})> getProfile() async {
     try {
@@ -36,6 +65,36 @@ class ProfileRepository {
     }
   }
 
+  /// Removes avatar.
+  Future<({bool success, String? error})> removeAvatar() async {
+    try {
+      await _apiClient.deleteJson(ProfileEndpoints.avatar);
+      return (success: true, error: null);
+    } on ApiException catch (e) {
+      return (success: false, error: e.message);
+    } on Exception catch (e) {
+      return (success: false, error: e.toString());
+    }
+  }
+
+  /// Updates avatar URL.
+  Future<({bool success, String? error})> updateAvatarUrl(
+    String? avatarUrl,
+  ) async {
+    try {
+      await _apiClient.patchJson(
+        ProfileEndpoints.profile,
+        {'avatar_url': avatarUrl},
+      );
+
+      return (success: true, error: null);
+    } on ApiException catch (e) {
+      return (success: false, error: e.message);
+    } on Exception catch (e) {
+      return (success: false, error: e.toString());
+    }
+  }
+
   /// Updates display name.
   Future<({bool success, String? error})> updateDisplayName(
     String displayName,
@@ -44,6 +103,22 @@ class ProfileRepository {
       await _apiClient.patchJson(
         ProfileEndpoints.profile,
         {'display_name': displayName},
+      );
+
+      return (success: true, error: null);
+    } on ApiException catch (e) {
+      return (success: false, error: e.message);
+    } on Exception catch (e) {
+      return (success: false, error: e.toString());
+    }
+  }
+
+  /// Updates email.
+  Future<({bool success, String? error})> updateEmail(String email) async {
+    try {
+      await _apiClient.patchJson(
+        ProfileEndpoints.email,
+        {'email': email},
       );
 
       return (success: true, error: null);
@@ -72,40 +147,6 @@ class ProfileRepository {
     }
   }
 
-  /// Updates email.
-  Future<({bool success, String? error})> updateEmail(String email) async {
-    try {
-      await _apiClient.patchJson(
-        ProfileEndpoints.email,
-        {'email': email},
-      );
-
-      return (success: true, error: null);
-    } on ApiException catch (e) {
-      return (success: false, error: e.message);
-    } on Exception catch (e) {
-      return (success: false, error: e.toString());
-    }
-  }
-
-  /// Gets signed upload URL for avatar.
-  Future<({AvatarUploadUrlResponse? response, String? error})>
-  getAvatarUploadUrl(String filename) async {
-    try {
-      final response = await _apiClient.postJson(
-        ProfileEndpoints.avatarUploadUrl,
-        {'filename': filename},
-      );
-
-      return (
-        response: AvatarUploadUrlResponse.fromJson(response),
-        error: null,
-      );
-    } on ApiException catch (e) {
-      return (response: null, error: e.message);
-    }
-  }
-
   /// Uploads avatar file to signed URL.
   Future<({bool success, String? error})> uploadAvatarFile(
     String uploadUrl,
@@ -115,13 +156,15 @@ class ProfileRepository {
       final bytes = await file.readAsBytes();
       final contentType =
           lookupMimeType(file.path) ?? 'application/octet-stream';
-      final response = await _httpClient.put(
-        Uri.parse(uploadUrl),
-        body: bytes,
-        headers: {
-          'Content-Type': contentType,
-        },
-      );
+      final response = await _httpClient
+          .put(
+            Uri.parse(uploadUrl),
+            body: bytes,
+            headers: {
+              'Content-Type': contentType,
+            },
+          )
+          .timeout(const Duration(seconds: 60));
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return (success: true, error: null);
@@ -130,43 +173,6 @@ class ProfileRepository {
       }
     } on Exception catch (e) {
       return (success: false, error: e.toString());
-    }
-  }
-
-  /// Updates avatar URL.
-  Future<({bool success, String? error})> updateAvatarUrl(
-    String? avatarUrl,
-  ) async {
-    try {
-      await _apiClient.patchJson(
-        ProfileEndpoints.profile,
-        {'avatar_url': avatarUrl},
-      );
-
-      return (success: true, error: null);
-    } on ApiException catch (e) {
-      return (success: false, error: e.message);
-    }
-  }
-
-  /// Removes avatar.
-  Future<({bool success, String? error})> removeAvatar() async {
-    try {
-      await _apiClient.deleteJson(ProfileEndpoints.avatar);
-      return (success: true, error: null);
-    } on ApiException catch (e) {
-      return (success: false, error: e.message);
-    } on Exception catch (e) {
-      return (success: false, error: e.toString());
-    }
-  }
-
-  void dispose() {
-    if (_ownsApiClient) {
-      _apiClient.dispose();
-    }
-    if (_ownsHttpClient) {
-      _httpClient.close();
     }
   }
 }

@@ -39,7 +39,7 @@ export async function PATCH(req: NextRequest) {
 
     const { user, supabase } = authData;
     const bodySchema = z.object({
-      workspaceId: z.string().min(1),
+      workspaceId: z.uuid(),
     });
     const parsedBody = bodySchema.safeParse(await req.json());
 

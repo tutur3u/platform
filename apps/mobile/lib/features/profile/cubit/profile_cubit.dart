@@ -79,7 +79,7 @@ class ProfileCubit extends Cubit<ProfileState> {
     emit(state.copyWith(isLoading: true));
 
     // Get upload URL
-    final urlResult = await _repository.getAvatarUploadUrl(file.path);
+    final urlResult = await _repository.getAvatarUploadUrl(file.uri.pathSegments.last);
 
     if (urlResult.response == null) {
       emit(state.copyWith(isLoading: false, error: urlResult.error));

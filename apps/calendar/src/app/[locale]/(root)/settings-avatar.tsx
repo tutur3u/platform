@@ -100,10 +100,6 @@ export default function UserAvatar({ user }: AvatarProps) {
 
       return { publicUrl };
     },
-    onMutate: async () => {
-      // Optimistic update: set preview to loading state if needed
-      // The preview is already set from handleFileSelect
-    },
     onSuccess: () => {
       toast.success(t('settings-account.avatar_updated'));
       // Invalidate user queries to refetch data

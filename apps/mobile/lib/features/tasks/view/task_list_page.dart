@@ -11,6 +11,24 @@ import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
+// ------------------------------------------------------------------
+// Helper to reload tasks from the current context
+// ------------------------------------------------------------------
+
+void _reload(BuildContext context) {
+  final userId = context.read<AuthCubit>().state.user?.id;
+  final ws = context.read<WorkspaceCubit>().state.currentWorkspace;
+  if (userId != null && ws != null) {
+    unawaited(
+      context.read<TaskListCubit>().loadTasks(
+        userId: userId,
+        wsId: ws.id,
+        isPersonal: ws.personal,
+      ),
+    );
+  }
+}
+
 class TaskListPage extends StatelessWidget {
   const TaskListPage({super.key});
 
@@ -38,6 +56,134 @@ class TaskListPage extends StatelessWidget {
         ),
       );
     }
+  }
+}
+
+// ------------------------------------------------------------------
+// "All caught up" empty state
+// ------------------------------------------------------------------
+
+class _AllCaughtUpView extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = shad.Theme.of(context);
+
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.check_circle_outline,
+            size: 64,
+            color: theme.colorScheme.primary,
+          ),
+          const shad.Gap(16),
+          Text(
+            l10n.tasksAllCaughtUp,
+            style: theme.typography.h3,
+          ),
+          const shad.Gap(4),
+          Text(
+            l10n.tasksAllCaughtUpSubtitle,
+            style: theme.typography.textMuted,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ------------------------------------------------------------------
+// Error state
+// ------------------------------------------------------------------
+
+class _ErrorView extends StatelessWidget {
+  const _ErrorView({this.error});
+
+  final String? error;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 48,
+            color: shad.Theme.of(context).colorScheme.destructive,
+          ),
+          const shad.Gap(16),
+          Text(error ?? l10n.tasksEmpty, textAlign: TextAlign.center),
+          const shad.Gap(16),
+          shad.SecondaryButton(
+            onPressed: () => _reload(context),
+            child: Text(l10n.commonRetry),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PriorityChip extends StatelessWidget {
+  const _PriorityChip({required this.priority, required this.l10n});
+
+  final String priority;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = shad.Theme.of(context).colorScheme;
+    final color = _PriorityIndicator._colorForPriority(priority, colorScheme);
+
+    final label = switch (priority) {
+      'critical' => l10n.tasksPriorityCritical,
+      'high' => l10n.tasksPriorityHigh,
+      'low' => l10n.tasksPriorityLow,
+      _ => l10n.tasksPriorityNormal,
+    };
+
+    return shad.OutlineBadge(
+      child: Text(
+        label,
+        style: shad.Theme.of(context).typography.textSmall.copyWith(
+          color: color,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+}
+
+// ------------------------------------------------------------------
+// Priority visual components
+// ------------------------------------------------------------------
+
+class _PriorityIndicator extends StatelessWidget {
+  const _PriorityIndicator({this.priority});
+
+  final String? priority;
+
+  @override
+  Widget build(BuildContext context) {
+    return Icon(
+      Icons.circle,
+      size: 12,
+      color: _colorForPriority(priority, shad.Theme.of(context).colorScheme),
+    );
+  }
+
+  static Color _colorForPriority(String? priority, shad.ColorScheme cs) {
+    return switch (priority) {
+      'critical' => cs.destructive,
+      'high' => Colors.orange,
+      'low' => cs.muted,
+      _ => cs.primary,
+    };
   }
 }
 
@@ -91,72 +237,44 @@ class _TaskListView extends StatelessWidget {
   }
 }
 
-// ------------------------------------------------------------------
-// Error state
-// ------------------------------------------------------------------
+class _TaskSection extends StatelessWidget {
+  const _TaskSection({
+    required this.title,
+    required this.titleColor,
+    required this.tasks,
+  });
 
-class _ErrorView extends StatelessWidget {
-  const _ErrorView({this.error});
-
-  final String? error;
+  final String title;
+  final Color titleColor;
+  final List<UserTask> tasks;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
-
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.error_outline,
-            size: 48,
-            color: shad.Theme.of(context).colorScheme.destructive,
-          ),
-          const shad.Gap(16),
-          Text(error ?? l10n.tasksEmpty, textAlign: TextAlign.center),
-          const shad.Gap(16),
-          shad.SecondaryButton(
-            onPressed: () => _reload(context),
-            child: Text(l10n.commonRetry),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ------------------------------------------------------------------
-// "All caught up" empty state
-// ------------------------------------------------------------------
-
-class _AllCaughtUpView extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final theme = shad.Theme.of(context);
 
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.check_circle_outline,
-            size: 64,
-            color: theme.colorScheme.primary,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Row(
+            children: [
+              Text(
+                title,
+                style: theme.typography.small.copyWith(
+                  color: titleColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const shad.Gap(8),
+              shad.OutlineBadge(
+                child: Text('${tasks.length}'),
+              ),
+            ],
           ),
-          const shad.Gap(16),
-          Text(
-            l10n.tasksAllCaughtUp,
-            style: theme.typography.h3,
-          ),
-          const shad.Gap(4),
-          Text(
-            l10n.tasksAllCaughtUpSubtitle,
-            style: theme.typography.textMuted,
-          ),
-        ],
-      ),
+        ),
+        ...tasks.map(_TaskTile.new),
+      ],
     );
   }
 }
@@ -200,48 +318,6 @@ class _TaskSections extends StatelessWidget {
             ),
         ],
       ),
-    );
-  }
-}
-
-class _TaskSection extends StatelessWidget {
-  const _TaskSection({
-    required this.title,
-    required this.titleColor,
-    required this.tasks,
-  });
-
-  final String title;
-  final Color titleColor;
-  final List<UserTask> tasks;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Row(
-            children: [
-              Text(
-                title,
-                style: theme.typography.small.copyWith(
-                  color: titleColor,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const shad.Gap(8),
-              shad.OutlineBadge(
-                child: Text('${tasks.length}'),
-              ),
-            ],
-          ),
-        ),
-        ...tasks.map(_TaskTile.new),
-      ],
     );
   }
 }
@@ -320,81 +396,5 @@ class _TaskTile extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     return '${date.month}/${date.day}';
-  }
-}
-
-// ------------------------------------------------------------------
-// Priority visual components
-// ------------------------------------------------------------------
-
-class _PriorityIndicator extends StatelessWidget {
-  const _PriorityIndicator({this.priority});
-
-  final String? priority;
-
-  @override
-  Widget build(BuildContext context) {
-    return Icon(
-      Icons.circle,
-      size: 12,
-      color: _colorForPriority(priority, shad.Theme.of(context).colorScheme),
-    );
-  }
-
-  static Color _colorForPriority(String? priority, shad.ColorScheme cs) {
-    return switch (priority) {
-      'critical' => cs.destructive,
-      'high' => Colors.orange,
-      'low' => cs.muted,
-      _ => cs.primary,
-    };
-  }
-}
-
-class _PriorityChip extends StatelessWidget {
-  const _PriorityChip({required this.priority, required this.l10n});
-
-  final String priority;
-  final AppLocalizations l10n;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = shad.Theme.of(context).colorScheme;
-    final color = _PriorityIndicator._colorForPriority(priority, colorScheme);
-
-    final label = switch (priority) {
-      'critical' => l10n.tasksPriorityCritical,
-      'high' => l10n.tasksPriorityHigh,
-      'low' => l10n.tasksPriorityLow,
-      _ => l10n.tasksPriorityNormal,
-    };
-
-    return shad.OutlineBadge(
-      child: Text(
-        label,
-        style: shad.Theme.of(context).typography.textSmall.copyWith(
-          color: color,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-}
-
-// ------------------------------------------------------------------
-// Helper to reload tasks from the current context
-// ------------------------------------------------------------------
-
-void _reload(BuildContext context) {
-  final userId = context.read<AuthCubit>().state.user?.id;
-  final ws = context.read<WorkspaceCubit>().state.currentWorkspace;
-  if (userId != null && ws != null) {
-    unawaited(
-      context.read<TaskListCubit>().loadTasks(
-        userId: userId,
-        wsId: ws.id,
-        isPersonal: ws.personal,
-      ),
-    );
   }
 }

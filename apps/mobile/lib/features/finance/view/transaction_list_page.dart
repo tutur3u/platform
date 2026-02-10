@@ -12,6 +12,52 @@ import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
+List<_DateGroup> _groupByDate(List<Transaction> transactions) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final yesterday = today.subtract(const Duration(days: 1));
+  final dateFormat = DateFormat.yMMMd();
+
+  final groups = <String, List<Transaction>>{};
+  final labels = <String, String>{};
+
+  for (final tx in transactions) {
+    final date = tx.takenAt ?? tx.createdAt ?? now;
+    final day = DateTime(date.year, date.month, date.day);
+    final key = '${day.year}-${day.month}-${day.day}';
+
+    groups.putIfAbsent(key, () => []).add(tx);
+
+    if (!labels.containsKey(key)) {
+      if (day == today) {
+        labels[key] = 'Today';
+      } else if (day == yesterday) {
+        labels[key] = 'Yesterday';
+      } else {
+        labels[key] = dateFormat.format(day);
+      }
+    }
+  }
+
+  return groups.entries
+      .map(
+        (e) => _DateGroup(label: labels[e.key]!, transactions: e.value),
+      )
+      .toList();
+}
+
+Future<void> _loadFromWorkspace(
+  BuildContext context,
+  TransactionListCubit cubit,
+) async {
+  final ws = context.read<WorkspaceCubit>().state.currentWorkspace;
+  if (ws == null) return;
+  final repo = FinanceRepository();
+  final wallets = await repo.getWallets(ws.id);
+  final walletIds = wallets.map((w) => w.id).toList();
+  unawaited(cubit.load(walletIds));
+}
+
 class TransactionListPage extends StatelessWidget {
   const TransactionListPage({super.key});
 
@@ -30,16 +76,124 @@ class TransactionListPage extends StatelessWidget {
   }
 }
 
-Future<void> _loadFromWorkspace(
-  BuildContext context,
-  TransactionListCubit cubit,
-) async {
-  final ws = context.read<WorkspaceCubit>().state.currentWorkspace;
-  if (ws == null) return;
-  final repo = FinanceRepository();
-  final wallets = await repo.getWallets(ws.id);
-  final walletIds = wallets.map((w) => w.id).toList();
-  unawaited(cubit.load(walletIds));
+// ------------------------------------------------------------------
+// Grouping helpers
+// ------------------------------------------------------------------
+
+class _DateGroup {
+  _DateGroup({required this.label, required this.transactions});
+  final String label;
+  final List<Transaction> transactions;
+}
+
+// ------------------------------------------------------------------
+// Date section header
+// ------------------------------------------------------------------
+
+class _DateHeader extends StatelessWidget {
+  const _DateHeader({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      child: Text(
+        label,
+        style: shad.Theme.of(context).typography.small.copyWith(
+          fontWeight: FontWeight.w600,
+          color: shad.Theme.of(context).colorScheme.mutedForeground,
+        ),
+      ),
+    );
+  }
+}
+
+// ------------------------------------------------------------------
+// Empty / error views
+// ------------------------------------------------------------------
+
+class _EmptyView extends StatelessWidget {
+  const _EmptyView({required this.hasSearch});
+
+  final bool hasSearch;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            hasSearch ? Icons.search_off : Icons.receipt_long_outlined,
+            size: 48,
+            color: shad.Theme.of(context).colorScheme.mutedForeground,
+          ),
+          const shad.Gap(16),
+          Text(
+            hasSearch
+                ? l10n.financeNoSearchResults
+                : l10n.financeNoTransactions,
+            style: shad.Theme.of(context).typography.textMuted,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ErrorView extends StatelessWidget {
+  const _ErrorView({this.error});
+
+  final String? error;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 48,
+            color: shad.Theme.of(context).colorScheme.destructive,
+          ),
+          const shad.Gap(16),
+          Text(
+            error ?? l10n.financeTransactions,
+            textAlign: TextAlign.center,
+          ),
+          const shad.Gap(16),
+          shad.SecondaryButton(
+            onPressed: () async {
+              final cubit = context.read<TransactionListCubit>();
+              await _loadFromWorkspace(context, cubit);
+            },
+            child: Text(l10n.commonRetry),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ------------------------------------------------------------------
+// Flat list item (either header or transaction)
+// ------------------------------------------------------------------
+
+class _ListItem {
+  _ListItem.header(this.label) : transaction = null;
+  _ListItem.transaction(this.transaction) : label = null;
+
+  final String? label;
+  final Transaction? transaction;
+
+  bool get isHeader => label != null;
 }
 
 class _TransactionListView extends StatefulWidget {
@@ -55,48 +209,6 @@ class _TransactionListViewState extends State<_TransactionListView> {
   Timer? _debounce;
 
   @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_onScroll);
-  }
-
-  @override
-  void dispose() {
-    _scrollController
-      ..removeListener(_onScroll)
-      ..dispose();
-    _searchController.dispose();
-    _debounce?.cancel();
-    super.dispose();
-  }
-
-  void _onScroll() {
-    if (!_scrollController.hasClients) return;
-    final maxScroll = _scrollController.position.maxScrollExtent;
-    final currentScroll = _scrollController.offset;
-    // Trigger load when 200px from bottom.
-    if (currentScroll >= maxScroll - 200) {
-      unawaited(
-        context.read<TransactionListCubit>().loadMore(),
-      );
-    }
-  }
-
-  void _onSearchChanged(String query) {
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 300), () {
-      unawaited(
-        context.read<TransactionListCubit>().setSearch(query),
-      );
-    });
-  }
-
-  Future<void> _onRefresh() async {
-    final cubit = context.read<TransactionListCubit>();
-    await _loadFromWorkspace(context, cubit);
-  }
-
-  @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
@@ -107,7 +219,7 @@ class _TransactionListViewState extends State<_TransactionListView> {
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>
             prev.currentWorkspace?.id != curr.currentWorkspace?.id,
-        listener: (context, _) => _onRefresh(),
+        listener: (context, _) => unawaited(_onRefresh()),
         child: Column(
           children: [
             Padding(
@@ -154,6 +266,48 @@ class _TransactionListViewState extends State<_TransactionListView> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
+    _searchController.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  Future<void> _onRefresh() async {
+    final cubit = context.read<TransactionListCubit>();
+    await _loadFromWorkspace(context, cubit);
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.offset;
+    // Trigger load when 200px from bottom.
+    if (currentScroll >= maxScroll - 200) {
+      unawaited(
+        context.read<TransactionListCubit>().loadMore(),
+      );
+    }
+  }
+
+  void _onSearchChanged(String query) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      unawaited(
+        context.read<TransactionListCubit>().setSearch(query),
+      );
+    });
   }
 }
 
@@ -206,88 +360,6 @@ class _TransactionsList extends StatelessWidget {
           if (item.isHeader) return _DateHeader(label: item.label!);
           return _TransactionTile(tx: item.transaction!);
         },
-      ),
-    );
-  }
-}
-
-// ------------------------------------------------------------------
-// Grouping helpers
-// ------------------------------------------------------------------
-
-class _DateGroup {
-  _DateGroup({required this.label, required this.transactions});
-  final String label;
-  final List<Transaction> transactions;
-}
-
-List<_DateGroup> _groupByDate(List<Transaction> transactions) {
-  final now = DateTime.now();
-  final today = DateTime(now.year, now.month, now.day);
-  final yesterday = today.subtract(const Duration(days: 1));
-  final dateFormat = DateFormat.yMMMd();
-
-  final groups = <String, List<Transaction>>{};
-  final labels = <String, String>{};
-
-  for (final tx in transactions) {
-    final date = tx.takenAt ?? tx.createdAt ?? now;
-    final day = DateTime(date.year, date.month, date.day);
-    final key = '${day.year}-${day.month}-${day.day}';
-
-    groups.putIfAbsent(key, () => []).add(tx);
-
-    if (!labels.containsKey(key)) {
-      if (day == today) {
-        labels[key] = 'Today';
-      } else if (day == yesterday) {
-        labels[key] = 'Yesterday';
-      } else {
-        labels[key] = dateFormat.format(day);
-      }
-    }
-  }
-
-  return groups.entries
-      .map(
-        (e) => _DateGroup(label: labels[e.key]!, transactions: e.value),
-      )
-      .toList();
-}
-
-// ------------------------------------------------------------------
-// Flat list item (either header or transaction)
-// ------------------------------------------------------------------
-
-class _ListItem {
-  _ListItem.header(this.label) : transaction = null;
-  _ListItem.transaction(this.transaction) : label = null;
-
-  final String? label;
-  final Transaction? transaction;
-
-  bool get isHeader => label != null;
-}
-
-// ------------------------------------------------------------------
-// Date section header
-// ------------------------------------------------------------------
-
-class _DateHeader extends StatelessWidget {
-  const _DateHeader({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-      child: Text(
-        label,
-        style: shad.Theme.of(context).typography.small.copyWith(
-          fontWeight: FontWeight.w600,
-          color: shad.Theme.of(context).colorScheme.mutedForeground,
-        ),
       ),
     );
   }
@@ -374,78 +446,6 @@ class _TransactionTile extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-// ------------------------------------------------------------------
-// Empty / error views
-// ------------------------------------------------------------------
-
-class _EmptyView extends StatelessWidget {
-  const _EmptyView({required this.hasSearch});
-
-  final bool hasSearch;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            hasSearch ? Icons.search_off : Icons.receipt_long_outlined,
-            size: 48,
-            color: shad.Theme.of(context).colorScheme.mutedForeground,
-          ),
-          const shad.Gap(16),
-          Text(
-            hasSearch
-                ? l10n.financeNoSearchResults
-                : l10n.financeNoTransactions,
-            style: shad.Theme.of(context).typography.textMuted,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ErrorView extends StatelessWidget {
-  const _ErrorView({this.error});
-
-  final String? error;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.error_outline,
-            size: 48,
-            color: shad.Theme.of(context).colorScheme.destructive,
-          ),
-          const shad.Gap(16),
-          Text(
-            error ?? l10n.financeTransactions,
-            textAlign: TextAlign.center,
-          ),
-          const shad.Gap(16),
-          shad.SecondaryButton(
-            onPressed: () async {
-              final cubit = context.read<TransactionListCubit>();
-              await _loadFromWorkspace(context, cubit);
-            },
-            child: Text(l10n.commonRetry),
-          ),
-        ],
       ),
     );
   }

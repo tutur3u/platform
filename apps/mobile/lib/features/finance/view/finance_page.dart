@@ -14,6 +14,17 @@ import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
+// ------------------------------------------------------------------
+// Helper to reload finance data from the current context
+// ------------------------------------------------------------------
+
+void _reload(BuildContext context) {
+  final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+  if (wsId != null) {
+    unawaited(context.read<FinanceCubit>().loadFinanceData(wsId));
+  }
+}
+
 class FinancePage extends StatelessWidget {
   const FinancePage({super.key});
 
@@ -29,6 +40,44 @@ class FinancePage extends StatelessWidget {
         return cubit;
       },
       child: const _FinanceView(),
+    );
+  }
+}
+
+// ------------------------------------------------------------------
+// Error state
+// ------------------------------------------------------------------
+
+class _ErrorView extends StatelessWidget {
+  const _ErrorView({this.error});
+
+  final String? error;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 48,
+            color: shad.Theme.of(context).colorScheme.destructive,
+          ),
+          const shad.Gap(16),
+          Text(
+            error ?? l10n.financeTitle,
+            textAlign: TextAlign.center,
+          ),
+          const shad.Gap(16),
+          shad.SecondaryButton(
+            onPressed: () => _reload(context),
+            child: Text(l10n.commonRetry),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -79,157 +128,6 @@ class _FinanceView extends StatelessWidget {
               ),
             );
           },
-        ),
-      ),
-    );
-  }
-}
-
-// ------------------------------------------------------------------
-// Error state
-// ------------------------------------------------------------------
-
-class _ErrorView extends StatelessWidget {
-  const _ErrorView({this.error});
-
-  final String? error;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.error_outline,
-            size: 48,
-            color: shad.Theme.of(context).colorScheme.destructive,
-          ),
-          const shad.Gap(16),
-          Text(
-            error ?? l10n.financeTitle,
-            textAlign: TextAlign.center,
-          ),
-          const shad.Gap(16),
-          shad.SecondaryButton(
-            onPressed: () => _reload(context),
-            child: Text(l10n.commonRetry),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ------------------------------------------------------------------
-// Wallets section — horizontal scrollable cards
-// ------------------------------------------------------------------
-
-class _WalletsSection extends StatelessWidget {
-  const _WalletsSection({required this.wallets});
-
-  final List<Wallet> wallets;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final theme = shad.Theme.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Text(
-            l10n.financeWallets,
-            style: theme.typography.small.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        if (wallets.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              l10n.financeNoWallets,
-              style: theme.typography.textMuted,
-            ),
-          )
-        else
-          SizedBox(
-            height: 120,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: wallets.length,
-              separatorBuilder: (_, _) => const shad.Gap(12),
-              itemBuilder: (context, index) =>
-                  _WalletCard(wallet: wallets[index]),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _WalletCard extends StatelessWidget {
-  const _WalletCard({required this.wallet});
-
-  final Wallet wallet;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final currency = wallet.currency ?? 'USD';
-    final balance = wallet.balance ?? 0;
-
-    return SizedBox(
-      width: 180,
-      child: shad.Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.account_balance_wallet_outlined,
-                    size: 18,
-                    color: colorScheme.primary,
-                  ),
-                  const shad.Gap(8),
-                  Expanded(
-                    child: Text(
-                      wallet.name ?? '',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.textSmall,
-                    ),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              Text(
-                formatCurrency(balance, currency),
-                style: theme.typography.p.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const shad.Gap(2),
-              Text(
-                currency,
-                style: theme.typography.textSmall.copyWith(
-                  color: colorScheme.mutedForeground,
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -385,13 +283,115 @@ class _TransactionTile extends StatelessWidget {
   }
 }
 
+class _WalletCard extends StatelessWidget {
+  const _WalletCard({required this.wallet});
+
+  final Wallet wallet;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final currency = wallet.currency ?? 'USD';
+    final balance = wallet.balance ?? 0;
+
+    return SizedBox(
+      width: 180,
+      child: shad.Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.account_balance_wallet_outlined,
+                    size: 18,
+                    color: colorScheme.primary,
+                  ),
+                  const shad.Gap(8),
+                  Expanded(
+                    child: Text(
+                      wallet.name ?? '',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.textSmall,
+                    ),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              Text(
+                formatCurrency(balance, currency),
+                style: theme.typography.p.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const shad.Gap(2),
+              Text(
+                currency,
+                style: theme.typography.textSmall.copyWith(
+                  color: colorScheme.mutedForeground,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // ------------------------------------------------------------------
-// Helper to reload finance data from the current context
+// Wallets section — horizontal scrollable cards
 // ------------------------------------------------------------------
 
-void _reload(BuildContext context) {
-  final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-  if (wsId != null) {
-    unawaited(context.read<FinanceCubit>().loadFinanceData(wsId));
+class _WalletsSection extends StatelessWidget {
+  const _WalletsSection({required this.wallets});
+
+  final List<Wallet> wallets;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final theme = shad.Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Text(
+            l10n.financeWallets,
+            style: theme.typography.small.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        if (wallets.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              l10n.financeNoWallets,
+              style: theme.typography.textMuted,
+            ),
+          )
+        else
+          SizedBox(
+            height: 120,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: wallets.length,
+              separatorBuilder: (_, _) => const shad.Gap(12),
+              itemBuilder: (context, index) =>
+                  _WalletCard(wallet: wallets[index]),
+            ),
+          ),
+      ],
+    );
   }
 }

@@ -409,6 +409,8 @@ class _AccountStatusCard extends StatelessWidget {
   }
 }
 
+typedef ValueValidator<T> = String? Function(T value);
+
 class _EditableTextField extends StatefulWidget {
   const _EditableTextField({
     required this.label,
@@ -417,6 +419,7 @@ class _EditableTextField extends StatefulWidget {
     this.defaultValue,
     this.emptyMessage,
     this.keyboardType,
+    this.validator,
   });
 
   final String label;
@@ -425,6 +428,7 @@ class _EditableTextField extends StatefulWidget {
   final Future<bool> Function(String) onSave;
   final String? emptyMessage;
   final TextInputType? keyboardType;
+  final ValueValidator<String>? validator;
 
   @override
   State<_EditableTextField> createState() => _EditableTextFieldState();
@@ -456,15 +460,13 @@ class _EditableTextFieldState extends State<_EditableTextField> {
   Future<void> _save(BuildContext context) async {
     final value = _controller.text.trim();
     if (widget.emptyMessage != null) {
-      final isInvalidEmail =
-          widget.keyboardType == TextInputType.emailAddress &&
-          !value.contains('@');
-      if (value.isEmpty || isInvalidEmail) {
+      final validationError = widget.validator?.call(value);
+      if (value.isEmpty || validationError != null) {
         shad.showToast(
           context: context,
           builder: (context, overlay) => shad.Alert.destructive(
             title: Text(context.l10n.profileUpdateError),
-            content: Text(widget.emptyMessage!),
+            content: Text(validationError ?? widget.emptyMessage!),
           ),
         );
         return;
@@ -595,6 +597,12 @@ class _EmailField extends StatelessWidget {
           defaultValue: email,
           emptyMessage: 'Please enter a valid email address',
           keyboardType: TextInputType.emailAddress,
+          validator: (value) {
+            if (!value.contains('@')) {
+              return 'Please enter a valid email address';
+            }
+            return null;
+          },
           onSave: (value) => context.read<ProfileCubit>().updateEmail(value),
         ),
         if (newEmail != null) ...[

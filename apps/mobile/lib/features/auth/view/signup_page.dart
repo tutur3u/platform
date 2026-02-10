@@ -20,50 +20,9 @@ class _SignUpPageState extends State<SignUpPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
+  final _formKey = const shad.FormKey<String>(#signUpForm);
+  final _formController = shad.FormController();
   bool _signUpSuccess = false;
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    super.dispose();
-  }
-
-  String? _validatePassword(String password) {
-    if (password.length < 8) return context.l10n.signUpPasswordMinLength;
-    if (!password.contains(RegExp('[A-Z]'))) {
-      return context.l10n.signUpPasswordUppercase;
-    }
-    if (!password.contains(RegExp('[a-z]'))) {
-      return context.l10n.signUpPasswordLowercase;
-    }
-    if (!password.contains(RegExp('[0-9]'))) {
-      return context.l10n.signUpPasswordNumber;
-    }
-    return null;
-  }
-
-  Future<void> _handleSignUp() async {
-    // Validate all FormFields by accessing the Form state
-    final formState = _formKey.currentState;
-    if (formState == null) return;
-
-    // Trigger validation - this will cause FormField validators to run
-    // and display any validation errors
-    if (!formState.validate()) return;
-
-    final email = _emailController.text.trim();
-    final password = _passwordController.text;
-
-    if (email.isEmpty) return;
-
-    final success = await context.read<AuthCubit>().signUp(email, password);
-    if (success && mounted) {
-      setState(() => _signUpSuccess = true);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -132,6 +91,7 @@ class _SignUpPageState extends State<SignUpPage> {
             builder: (context, state) {
               return shad.Form(
                 key: _formKey,
+                controller: _formController,
                 child: ListView(
                   children: [
                     const shad.Gap(32),
@@ -149,10 +109,11 @@ class _SignUpPageState extends State<SignUpPage> {
                     shad.FormField(
                       key: const shad.FormKey<String>(#signUpPassword),
                       label: Text(l10n.passwordLabel),
-                      validator:
-                          ((value) =>
-                                  _validatePassword(_passwordController.text))
-                              as shad.Validator<String>?,
+                      validator: shad.ValidatorBuilder<String>(
+                        (value) => _asValidationResult(
+                          _validatePassword(value ?? ''),
+                        ),
+                      ),
                       child: shad.TextField(
                         controller: _passwordController,
                         hintText: l10n.passwordLabel,
@@ -164,15 +125,21 @@ class _SignUpPageState extends State<SignUpPage> {
                     shad.FormField(
                       key: const shad.FormKey<String>(#signUpConfirmPassword),
                       label: Text(l10n.signUpConfirmPassword),
-                      validator:
-                          ((value) {
-                                if (_confirmPasswordController.text !=
-                                    _passwordController.text) {
-                                  return context.l10n.signUpPasswordMismatch;
-                                }
-                                return null;
-                              })
-                              as shad.Validator<String>?,
+                      validator: shad.ValidatorBuilder<String>(
+                        (value) {
+                          final confirmValue = value ?? '';
+                          if (confirmValue != _passwordController.text) {
+                            return shad.InvalidResult(
+                              context.l10n.signUpPasswordMismatch,
+                              state: shad.FormValidationMode.submitted,
+                            );
+                          }
+                          return null;
+                        },
+                        dependencies: [
+                          const shad.FormKey<String>(#signUpPassword),
+                        ],
+                      ),
                       child: shad.TextField(
                         controller: _confirmPasswordController,
                         hintText: l10n.signUpConfirmPassword,
@@ -205,6 +172,55 @@ class _SignUpPageState extends State<SignUpPage> {
           ),
         ),
       ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _formController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleSignUp() async {
+    _formController.revalidate(
+      context,
+      shad.FormValidationMode.submitted,
+    );
+    if (_formController.errors.isNotEmpty) return;
+
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty) return;
+
+    final success = await context.read<AuthCubit>().signUp(email, password);
+    if (success && mounted) {
+      setState(() => _signUpSuccess = true);
+    }
+  }
+
+  String? _validatePassword(String password) {
+    if (password.length < 8) return context.l10n.signUpPasswordMinLength;
+    if (!password.contains(RegExp('[A-Z]'))) {
+      return context.l10n.signUpPasswordUppercase;
+    }
+    if (!password.contains(RegExp('[a-z]'))) {
+      return context.l10n.signUpPasswordLowercase;
+    }
+    if (!password.contains(RegExp('[0-9]'))) {
+      return context.l10n.signUpPasswordNumber;
+    }
+    return null;
+  }
+
+  shad.ValidationResult? _asValidationResult(String? message) {
+    if (message == null) return null;
+    return shad.InvalidResult(
+      message,
+      state: shad.FormValidationMode.submitted,
     );
   }
 }

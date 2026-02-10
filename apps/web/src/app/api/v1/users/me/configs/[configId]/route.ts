@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { authorizeRequest } from '@/lib/api-auth';
 
 interface Params {
@@ -51,7 +52,19 @@ export async function PUT(req: NextRequest, { params }: Params) {
   const { user, supabase } = authData;
   const { configId: id } = await params;
 
-  const { value } = await req.json();
+  const bodySchema = z.object({
+    value: z.unknown(),
+  });
+  const parsedBody = bodySchema.safeParse(await req.json());
+
+  if (!parsedBody.success) {
+    return NextResponse.json(
+      { message: 'Invalid request data', errors: parsedBody.error.issues },
+      { status: 400 }
+    );
+  }
+
+  const { value } = parsedBody.data;
 
   const { error } = await supabase.from('user_configs').upsert(
     {
