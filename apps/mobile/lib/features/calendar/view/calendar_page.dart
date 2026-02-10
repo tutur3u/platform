@@ -2,9 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
+import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mobile/features/calendar/widgets/agenda_view.dart';
 import 'package:mobile/features/calendar/widgets/calendar_connections_sheet.dart';
@@ -55,6 +58,16 @@ class _CalendarView extends StatelessWidget {
     return shad.Scaffold(
       headers: [
         shad.AppBar(
+          leading: [
+            shad.OutlineButton(
+              density: shad.ButtonDensity.icon,
+              onPressed: () {
+                unawaited(context.read<AppTabCubit>().clearSelection());
+                context.go(Routes.apps);
+              },
+              child: const Icon(Icons.arrow_back),
+            ),
+          ],
           title: BlocBuilder<CalendarCubit, CalendarState>(
             buildWhen: (prev, curr) =>
                 prev.effectiveFocusedMonth != curr.effectiveFocusedMonth,

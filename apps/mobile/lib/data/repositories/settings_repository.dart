@@ -65,6 +65,12 @@ class SettingsRepository {
     await prefs.setString(_lastAppRouteKey, route);
   }
 
+  /// Clears the last selected app route.
+  Future<void> clearLastAppRoute() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_lastAppRouteKey);
+  }
+
   /// Returns the persisted locale code (e.g. 'en', 'vi'), or `null` for system
   /// default.
   Future<String?> getLocale() async {

@@ -36,7 +36,7 @@ class ShellPage extends StatelessWidget {
                 : l10n.navApps;
             return shad.NavigationBar(
               index: selectedIndex,
-              onSelected: (index) => _onItemTapped(index, context),
+              onSelected: (index) => _onItemTapped(index, context, state),
               labelType: shad.NavigationLabelType.all,
               children: [
                 shad.NavigationItem(
@@ -94,9 +94,16 @@ class ShellPage extends StatelessWidget {
     return 0; // home
   }
 
-  void _onItemTapped(int index, BuildContext context) {
+  void _onItemTapped(
+    int index,
+    BuildContext context,
+    AppTabState state,
+  ) {
+    final appRoute = state.hasSelection
+        ? AppRegistry.moduleById(state.selectedId)?.route
+        : null;
     final route = switch (index) {
-      1 => Routes.apps,
+      1 => appRoute ?? Routes.apps,
       2 => Routes.profileRoot,
       _ => Routes.home,
     };
