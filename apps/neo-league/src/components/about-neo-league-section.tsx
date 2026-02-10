@@ -7,7 +7,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '@ncthub/ui/carousel';
-import { Cpu, Globe, Users, Wrench } from 'lucide-react';
+import { Cpu, Globe, Users, Wrench } from '@ncthub/ui/icons';
 import Image from 'next/image';
 import AnimatedSection from '@/components/animated-section';
 

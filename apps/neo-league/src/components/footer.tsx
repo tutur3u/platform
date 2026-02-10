@@ -36,7 +36,7 @@ export default function Footer() {
               className="h-10 w-auto object-contain"
             />
             <Image
-              src="/rmit_nct.png"
+              src="/rmit_nct_new_1.png"
               alt="RMIT NCT"
               width={200}
               height={100}

@@ -61,7 +61,7 @@ export default function PhasesSection() {
         'Top 5 finalists perform a live pitch and product demonstration at RMIT Saigon South Campus.',
       icon: (
         <svg
-          className="h-8 w-8"
+          className="h-8 w-8 p"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -93,9 +93,9 @@ export default function PhasesSection() {
 
         <div className="grid gap-8 md:grid-cols-3">
           {phases.map((phase, index) => (
-            <AnimatedSection key={index} delay={index * 0.1}>
-              <div className="group relative">
-                <div className="glass-card card-hover h-full rounded-2xl p-8">
+            <AnimatedSection key={index} delay={index * 0.1} className="h-full">
+              <div className="group relative h-full">
+                <div className="glass-card card-hover flex h-full flex-col rounded-2xl p-8">
                   <div className="gradient-bg absolute -top-4 -right-4 flex h-16 w-16 items-center justify-center rounded-full font-black text-white text-xl shadow-lg">
                     {phase.round}
                   </div>

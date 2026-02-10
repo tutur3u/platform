@@ -1,9 +1,19 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 
 export default function HeroSection() {
+  const handleScrollClick = () => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    window.scrollBy({ top: window.innerHeight, behavior: 'smooth' });
+  };
+
   return (
-    <section className="relative flex min-h-screen items-center justify-center">
+    <section className="relative flex min-h-screen items-center justify-center pb-9">
       {/* Animated Blobs */}
       <div
         className="blob absolute -top-20 -right-20 h-64 w-64 animate-float"
@@ -74,7 +84,12 @@ export default function HeroSection() {
       </div>
 
       {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+      <button
+        type="button"
+        onClick={handleScrollClick}
+        aria-label="Scroll down"
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce"
+      >
         <svg
           className="h-6 w-6 text-primary"
           fill="none"
@@ -89,7 +104,7 @@ export default function HeroSection() {
             d="M19 14l-7 7m0 0l-7-7m7 7V3"
           />
         </svg>
-      </div>
+      </button>
     </section>
   );
 }

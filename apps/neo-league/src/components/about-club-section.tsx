@@ -74,7 +74,7 @@ export default function AboutClubSection() {
               </div>
 
               {/* Overlapping Sub-Images */}
-              <div className="mt-4 grid grid-cols-2 gap-4">
+              <div className="mt-4 grid grid-cols-2 gap-4 pt-10">
                 <div className="relative aspect-3/2 -translate-y-8 overflow-hidden rounded-xl shadow-xl">
                   <Image
                     src="/demo.jpg"

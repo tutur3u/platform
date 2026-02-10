@@ -56,12 +56,12 @@ export default function OrganizersTeamSection() {
 
           <Tabs defaultValue={teams[0]?.name} className="w-full">
             {/* Tab Triggers */}
-            <TabsList className="mx-auto mb-8 flex h-auto w-full flex-wrap justify-center gap-2 bg-transparent p-0">
+            <TabsList className="mx-auto mb-8 flex h-auto w-full flex-wrap justify-center gap-2 bg-transparent p-0 text-dark">
               {teams.map((team) => (
                 <TabsTrigger
                   key={team.name}
                   value={team.name}
-                  className="data-[state=active]:gradient-bg rounded-full border border-foreground/10 bg-foreground/5 px-5 py-2.5 font-bold text-sm transition-all data-[state=active]:border-transparent data-[state=active]:text-white"
+                  className="data-[state=active]:gradient-bg rounded-full border border-foreground/10 bg-foreground/5 px-5 py-2.5 font-bold text-sm transition-all data-[state=active]:border-transparent data-[state=active]:text-black"
                 >
                   {team.name}
                 </TabsTrigger>
