@@ -9,6 +9,7 @@ import {
 import {
   createNDJSONStream,
   fetchAllRows,
+  upsertSubscriptionError,
   verifyAdminAccess,
 } from '../../helper';
 
@@ -189,27 +190,12 @@ export async function POST() {
           if (result.status === 'created') {
             freeCreated++;
           } else if (result.status === 'error') {
-            // Log to workspace_subscription_errors table
-            const { error: insertError } = await sbAdmin
-              .from('workspace_subscription_errors')
-              .upsert(
-                {
-                  ws_id: wsId,
-                  error_message: result.message,
-                  error_source: 'cross_check',
-                },
-                {
-                  onConflict: 'ws_id',
-                  ignoreDuplicates: false,
-                }
-              );
-
-            if (insertError) {
-              console.error(
-                `Cross-check: Failed to log error for workspace ${wsId}:`,
-                insertError.message
-              );
-            }
+            await upsertSubscriptionError(
+              sbAdmin,
+              wsId,
+              result.message,
+              'cross_check'
+            );
 
             errors++;
             errorDetails.push({

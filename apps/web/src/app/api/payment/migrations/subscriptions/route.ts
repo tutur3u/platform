@@ -3,7 +3,12 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
 import { createFreeSubscription } from '@/utils/subscription-helper';
-import { createNDJSONStream, fetchAllRows, verifyAdminAccess } from '../helper';
+import {
+  createNDJSONStream,
+  fetchAllRows,
+  upsertSubscriptionError,
+  verifyAdminAccess,
+} from '../helper';
 
 export async function POST() {
   const auth = await verifyAdminAccess();
@@ -75,27 +80,12 @@ export async function POST() {
                 error: result.message,
               });
 
-              // Log to workspace_subscription_errors table
-              const { error: insertError } = await sbAdmin
-                .from('workspace_subscription_errors')
-                .upsert(
-                  {
-                    ws_id: workspace.id,
-                    error_message: result.message,
-                    error_source: 'free_subscription_migration',
-                  },
-                  {
-                    onConflict: 'ws_id',
-                    ignoreDuplicates: false,
-                  }
-                );
-
-              if (insertError) {
-                console.error(
-                  `Free sub migration: Failed to log error for workspace ${workspace.id}:`,
-                  insertError.message
-                );
-              }
+              await upsertSubscriptionError(
+                sbAdmin,
+                workspace.id,
+                result.message,
+                'free_subscription_migration'
+              );
               break;
             }
           }
@@ -109,27 +99,12 @@ export async function POST() {
           error: errorMessage,
         });
 
-        // Log to workspace_subscription_errors table
-        const { error: insertError } = await sbAdmin
-          .from('workspace_subscription_errors')
-          .upsert(
-            {
-              ws_id: workspace.id,
-              error_message: errorMessage,
-              error_source: 'free_subscription_migration',
-            },
-            {
-              onConflict: 'ws_id',
-              ignoreDuplicates: false,
-            }
-          );
-
-        if (insertError) {
-          console.error(
-            `Free sub migration: Failed to log error for workspace ${workspace.id}:`,
-            insertError.message
-          );
-        }
+        await upsertSubscriptionError(
+          sbAdmin,
+          workspace.id,
+          errorMessage,
+          'free_subscription_migration'
+        );
       }
 
       send({

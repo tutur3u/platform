@@ -6,7 +6,11 @@ import {
   createFreeSubscription,
   hasActiveSubscription,
 } from '@/utils/subscription-helper';
-import { createNDJSONStream, verifyAdminAccess } from '../../../helper';
+import {
+  createNDJSONStream,
+  upsertSubscriptionError,
+  verifyAdminAccess,
+} from '../../../helper';
 
 const POLAR_API_DELAY_MS = 100;
 
@@ -73,26 +77,12 @@ export async function POST(request: Request) {
           if (result.status === 'created') {
             freeCreated++;
           } else if (result.status === 'error') {
-            const { error: insertError } = await sbAdmin
-              .from('workspace_subscription_errors')
-              .upsert(
-                {
-                  ws_id: wsId,
-                  error_message: result.message,
-                  error_source: 'cross_check',
-                },
-                {
-                  onConflict: 'ws_id',
-                  ignoreDuplicates: false,
-                }
-              );
-
-            if (insertError) {
-              console.error(
-                `Cross-check Phase 3: Failed to log error for workspace ${wsId}:`,
-                insertError.message
-              );
-            }
+            await upsertSubscriptionError(
+              sbAdmin,
+              wsId,
+              result.message,
+              'cross_check'
+            );
 
             errors++;
             errorDetails.push({

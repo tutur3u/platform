@@ -3,6 +3,7 @@ import { Webhooks } from '@tuturuuu/payment/polar/next';
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceProductTier } from '@tuturuuu/types';
+import { upsertSubscriptionError } from '@/app/api/payment/migrations/helper';
 import { assignSeatsToAllMembers } from '@/utils/polar-seat-helper';
 import {
   createFreeSubscription,
@@ -555,27 +556,12 @@ export const POST = Webhooks({
             `Webhook: Could not create free subscription for workspace ${subscriptionData.ws_id}: ${freeSubResult.message}`
           );
 
-          // Log to workspace_subscription_errors table
-          const { error: insertError } = await sbAdmin
-            .from('workspace_subscription_errors')
-            .upsert(
-              {
-                ws_id: subscriptionData.ws_id,
-                error_message: freeSubResult.message,
-                error_source: 'webhook',
-              },
-              {
-                onConflict: 'ws_id',
-                ignoreDuplicates: false,
-              }
-            );
-
-          if (insertError) {
-            console.error(
-              `Webhook: Failed to log subscription error for workspace ${subscriptionData.ws_id}:`,
-              insertError.message
-            );
-          }
+          await upsertSubscriptionError(
+            sbAdmin,
+            subscriptionData.ws_id,
+            freeSubResult.message,
+            'webhook'
+          );
         }
       }
 

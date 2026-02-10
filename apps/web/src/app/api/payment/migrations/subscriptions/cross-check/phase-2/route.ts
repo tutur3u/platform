@@ -56,6 +56,7 @@ export async function POST() {
     let skipped = 0;
     let errors = 0;
     let duplicatesRevoked = 0;
+    let orphansRevoked = 0;
     const errorDetails: Array<{ id: string; error: string }> = [];
     const startTime = Date.now();
     let processed = 0;
@@ -87,15 +88,51 @@ export async function POST() {
         for (const polarSub of polarSubs) {
           processed++;
           if (!dbPolarIds.has(polarSub.id)) {
-            try {
-              await syncSubscriptionToDatabase(polarSub);
-              polarSynced++;
-            } catch (err) {
-              errors++;
-              errorDetails.push({
-                id: polarSub.id,
-                error: `Polar→DB sync failed: ${err instanceof Error ? err.message : String(err)}`,
-              });
+            // Validate workspace existence before syncing
+            const wsId = (polarSub.metadata as Record<string, unknown>)?.wsId as
+              | string
+              | undefined;
+
+            let isOrphan = false;
+
+            if (!wsId) {
+              isOrphan = true;
+            } else {
+              const { data: ws } = await sbAdmin
+                .from('workspaces')
+                .select('id, deleted')
+                .eq('id', wsId)
+                .maybeSingle();
+
+              if (!ws || ws.deleted === true) {
+                isOrphan = true;
+              }
+            }
+
+            if (isOrphan) {
+              // Workspace missing or deleted — revoke in Polar instead of syncing
+              try {
+                await delay(POLAR_API_DELAY_MS);
+                await polar.subscriptions.revoke({ id: polarSub.id });
+                orphansRevoked++;
+              } catch (err) {
+                errors++;
+                errorDetails.push({
+                  id: polarSub.id,
+                  error: `Orphan revoke failed: ${err instanceof Error ? err.message : String(err)}`,
+                });
+              }
+            } else {
+              try {
+                await syncSubscriptionToDatabase(polarSub);
+                polarSynced++;
+              } catch (err) {
+                errors++;
+                errorDetails.push({
+                  id: polarSub.id,
+                  error: `Polar→DB sync failed: ${err instanceof Error ? err.message : String(err)}`,
+                });
+              }
             }
           } else {
             skipped++;
@@ -107,6 +144,7 @@ export async function POST() {
             total: processed,
             polarSynced,
             skipped,
+            orphansRevoked,
             duplicatesRevoked,
             errors,
           });
@@ -196,6 +234,7 @@ export async function POST() {
               total: processed,
               polarSynced,
               skipped,
+              orphansRevoked,
               duplicatesRevoked,
               errors,
             });
@@ -215,11 +254,12 @@ export async function POST() {
       total: processed,
       polarSynced,
       skipped,
+      orphansRevoked,
       duplicatesRevoked,
       errors,
       errorDetails: errorDetails.length > 0 ? errorDetails : undefined,
       duration: Date.now() - startTime,
-      message: `${processed} Polar subs checked: ${polarSynced} synced to DB, ${skipped} already present, ${duplicatesRevoked} duplicates revoked. ${errors} errors.`,
+      message: `${processed} Polar subs checked: ${polarSynced} synced to DB, ${skipped} already present, ${orphansRevoked} orphans revoked, ${duplicatesRevoked} duplicates revoked. ${errors} errors.`,
     });
   });
 }

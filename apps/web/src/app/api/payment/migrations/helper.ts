@@ -1,3 +1,4 @@
+import type { SupabaseClient } from '@tuturuuu/supabase';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 
@@ -81,4 +82,27 @@ export function createNDJSONStream(
       'Cache-Control': 'no-cache',
     },
   });
+}
+
+export async function upsertSubscriptionError(
+  sbAdmin: SupabaseClient,
+  wsId: string,
+  errorMessage: string,
+  errorSource: string
+): Promise<{ error: string | null }> {
+  const { error } = await sbAdmin.rpc('upsert_workspace_subscription_error', {
+    _ws_id: wsId,
+    _error_message: errorMessage,
+    _error_source: errorSource,
+  });
+
+  if (error) {
+    console.error(
+      `Failed to log subscription error for workspace ${wsId}:`,
+      error.message
+    );
+    return { error: error.message };
+  }
+
+  return { error: null };
 }

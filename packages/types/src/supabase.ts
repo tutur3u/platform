@@ -20922,6 +20922,14 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      upsert_workspace_subscription_error: {
+        Args: {
+          _error_message: string;
+          _error_source?: string;
+          _ws_id: string;
+        };
+        Returns: undefined;
+      };
       user_has_wallet_access_via_role: {
         Args: { p_user_id: string; p_wallet_id: string; p_ws_id: string };
         Returns: {

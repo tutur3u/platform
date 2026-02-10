@@ -537,13 +537,20 @@ export default function PlatformSubscriptionsMigrationPage() {
         description={[
           'List all active Polar subscriptions',
           'Find subscriptions missing from the database',
-          'Sync missing subscriptions to the database',
+          'Auto-revoke subscriptions referencing non-existent workspaces',
+          'Sync valid missing subscriptions to the database',
           'Automatically detect and revoke duplicate subscriptions',
         ]}
         state={crossCheckP2State}
         elapsed={crossCheckP2Elapsed}
-        statLabels={['Synced', 'Skipped', 'Deduped', 'Errors']}
-        statKeys={['polarSynced', 'skipped', 'duplicatesRevoked', 'errors']}
+        statLabels={['Synced', 'Skipped', 'Orphans', 'Deduped', 'Errors']}
+        statKeys={[
+          'polarSynced',
+          'skipped',
+          'orphansRevoked',
+          'duplicatesRevoked',
+          'errors',
+        ]}
         disabled={anyRunning}
         variant="default"
         actionLabel="Run Phase 2: Polar → DB"
@@ -712,7 +719,11 @@ function MigrationCard({
             {/* Stats grid */}
             <div
               className={`grid gap-2 ${
-                statKeys.length >= 4 ? 'grid-cols-5' : 'grid-cols-4'
+                statKeys.length >= 5
+                  ? 'grid-cols-6'
+                  : statKeys.length >= 4
+                    ? 'grid-cols-5'
+                    : 'grid-cols-4'
               }`}
             >
               <StatItem label="Total" value={state.total.toLocaleString()} />
@@ -732,6 +743,7 @@ function MigrationCard({
                               'processed',
                               'synced',
                               'duplicatesRevoked',
+                              'orphansRevoked',
                             ].includes(key) && value > 0
                           ? 'text-dynamic-green'
                           : '';
