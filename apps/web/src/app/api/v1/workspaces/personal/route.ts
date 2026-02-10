@@ -27,7 +27,27 @@ export async function POST() {
     .maybeSingle();
 
   if (existingPersonal) {
-    // Return existing workspace ID instead of error - this supports idempotent onboarding
+    // Ensure Polar customer and free subscription exist even for
+    // trigger-created workspaces (both calls are idempotent)
+    try {
+      const polar = createPolarClient();
+      const sbAdmin = await createAdminClient();
+
+      await getOrCreatePolarCustomer({
+        polar,
+        supabase,
+        wsId: existingPersonal.id,
+      });
+
+      await createFreeSubscription(polar, sbAdmin, existingPersonal.id);
+    } catch (error) {
+      // Best-effort: workspace already exists, subscription setup is non-blocking
+      console.error(
+        'Error ensuring Polar subscription for existing personal workspace:',
+        error
+      );
+    }
+
     return NextResponse.json({ id: existingPersonal.id, existing: true });
   }
 

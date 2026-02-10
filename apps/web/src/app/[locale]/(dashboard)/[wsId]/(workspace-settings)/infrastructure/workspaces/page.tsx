@@ -1,11 +1,13 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { Workspace } from '@tuturuuu/types';
-import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { Separator } from '@tuturuuu/ui/separator';
 import { enforceRootWorkspaceAdmin } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { workspaceColumns } from './columns';
+import {
+  getWorkspaceOverview,
+  getWorkspaceOverviewSummary,
+} from './data-fetching';
+import SummaryCards from './summary-cards';
+import { WorkspacesTable } from './workspaces-table';
 
 export const metadata: Metadata = {
   title: 'Workspaces',
@@ -21,6 +23,9 @@ interface Props {
     q?: string;
     page?: string;
     pageSize?: string;
+    tier?: string;
+    status?: string;
+    workspaceType?: string;
   }>;
 }
 
@@ -33,19 +38,27 @@ export default async function InfrastructureWorkspacesPage({
     redirectTo: `/${wsId}/settings`,
   });
 
-  const t = await getTranslations();
-  const { data: workspaces, count } = await getWorkspaces(await searchParams);
+  const t = await getTranslations('ws-overview');
+  const sp = await searchParams;
+
+  const [summary, { data: workspaces, count }] = await Promise.all([
+    getWorkspaceOverviewSummary(),
+    getWorkspaceOverview({
+      search: sp.q,
+      page: sp.page,
+      pageSize: sp.pageSize,
+      tier: sp.tier,
+      status: sp.status,
+      workspaceType: sp.workspaceType,
+    }),
+  ]);
 
   return (
     <>
       <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-foreground/5 p-4 md:flex-row md:items-start">
         <div>
-          <h1 className="font-bold text-2xl">
-            {t('infrastructure-tabs.workspaces')}
-          </h1>
-          <p className="text-foreground/80">
-            View and manage all workspaces across the platform.
-          </p>
+          <h1 className="font-bold text-2xl">{t('title')}</h1>
+          <p className="text-foreground/80">{t('description')}</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="rounded-lg border border-border bg-background px-3 py-1.5">
@@ -58,52 +71,11 @@ export default async function InfrastructureWorkspacesPage({
 
       <Separator className="my-4" />
 
-      <CustomDataTable
-        columnGenerator={workspaceColumns}
-        namespace="workspace-data-table"
-        data={workspaces}
-        count={count}
-        defaultVisibility={{
-          id: false,
-        }}
-      />
+      <SummaryCards summary={summary} />
+
+      <Separator className="my-4" />
+
+      <WorkspacesTable data={workspaces} count={count} />
     </>
   );
-}
-
-async function getWorkspaces({
-  q,
-  page = '1',
-  pageSize = '10',
-}: {
-  q?: string;
-  page?: string;
-  pageSize?: string;
-}) {
-  const supabaseAdmin = await createAdminClient();
-  if (!supabaseAdmin) return { data: [], count: 0 };
-
-  const queryBuilder = supabaseAdmin
-    .from('workspaces')
-    .select('*', {
-      count: 'exact',
-    })
-    .order('created_at', { ascending: false });
-
-  if (q) {
-    queryBuilder.or(`name.ilike.%${q}%,handle.ilike.%${q}%`);
-  }
-
-  if (page && pageSize) {
-    const parsedPage = parseInt(page, 10);
-    const parsedSize = parseInt(pageSize, 10);
-    const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize;
-    queryBuilder.range(start, end).limit(parsedSize);
-  }
-
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
-
-  return { data: (data as Workspace[]) || [], count: count || 0 };
 }

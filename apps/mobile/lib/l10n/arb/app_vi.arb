@@ -247,6 +247,23 @@
 
     "workspacePickerTitle": "Chuyển không gian làm việc",
     "workspacePersonalBadge": "Cá nhân",
+    "workspacePersonalSection": "Cá nhân",
+    "workspaceTeamSection": "Nhóm làm việc",
+    "workspaceCreateTitle": "Tạo không gian làm việc",
+    "workspaceCreateNew": "Tạo mới",
+    "workspaceCreateNameHint": "Tên không gian làm việc",
+    "workspaceCreateNameRequired": "Vui lòng nhập tên không gian làm việc",
+    "workspaceCreateSubmit": "Tạo không gian làm việc",
+    "workspaceCreateCancel": "Hủy",
+    "workspaceCreatePrompt": "Tạo không gian làm việc đầu tiên để bắt đầu",
+    "workspaceCreateLimitReached": "Bạn đã đạt giới hạn không gian làm việc",
+    "workspaceCreateLimitInfo": "{current} / {limit} không gian làm việc đã dùng",
+    "@workspaceCreateLimitInfo": {
+        "placeholders": {
+            "current": { "type": "int" },
+            "limit": { "type": "int" }
+        }
+    },
 
     "mfaTitle": "Xác thực hai yếu tố",
     "mfaSubtitle": "Nhập mã từ ứng dụng xác thực của bạn",
