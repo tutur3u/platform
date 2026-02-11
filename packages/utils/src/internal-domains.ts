@@ -12,16 +12,16 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
     url: 'https://nova.ai.vn',
   },
   {
-    name: 'nova',
-    url: 'https://nova.ai.vn',
-  },
-  {
     name: 'mira',
     url: 'https://mira.tuturuuu.com',
   },
   {
     name: 'rewise',
     url: 'https://rewise.me',
+  },
+  {
+    name: 'tudo',
+    url: 'https://tasks.tuturuuu.com',
   },
 ] as const;
 
