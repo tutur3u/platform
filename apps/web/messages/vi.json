@@ -5128,6 +5128,8 @@
   },
   "notifications": {
     "accept": "Chấp nhận",
+    "archive": "Lưu trữ",
+    "archive-all": "Lưu trữ tất cả",
     "browser": {
       "enable": "Bật thông báo",
       "permission-denied": "Thông báo trình duyệt đã bị chặn. Vui lòng bật trong cài đặt trình duyệt.",
@@ -5149,8 +5151,10 @@
     "empty_tasks_title": "Không có thông báo nhiệm vụ",
     "empty_unread_description": "Bạn đã đọc tất cả thông báo. Tuyệt vời!",
     "empty_unread_title": "Không có thông báo chưa đọc",
+    "empty-archive": "Chưa có thông báo đã lưu trữ.",
     "go": "Đi",
     "go_to_page": "Đi đến trang",
+    "inbox": "Hộp thư",
     "inquiries-need-attention": "yêu cầu cần xử lý",
     "invited-to": "Bạn đã được mời tham gia",
     "line_diff": "Dòng",
@@ -5158,6 +5162,7 @@
     "lines_added": "thêm",
     "lines_hidden": "{count} dòng không thay đổi bị ẩn",
     "lines_removed": "xóa",
+    "loading-more": "Đang tải thêm...",
     "mark-all-read": "Đánh dấu tất cả đã đọc",
     "mark-as-read": "Đánh dấu đã đọc",
     "mark-as-unread": "Đánh dấu chưa đọc",
@@ -5975,11 +5980,13 @@
       "notifications_ws_description": "Quản lý tùy chọn thông báo bao gồm thông báo lịch",
       "sidebar": "Thanh bên",
       "sidebar_behavior": "Hành vi thanh bên",
-      "sidebar_behavior_description": "Chọn cách thanh bên hoạt động mặc định",
+      "sidebar_behavior_description": "Chọn cách thanh bên hoạt động mặc định. Cài đặt này đồng bộ trên tất cả trình duyệt của bạn.",
       "sidebar_collapsed": "Thu gọn",
       "sidebar_description": "Quản lý hiển thị và hành vi của thanh bên",
       "sidebar_expanded": "Mở rộng",
       "sidebar_hover": "Di chuột",
+      "sidebar_local_override": "Ghi đè cục bộ",
+      "sidebar_local_override_description": "Sử dụng cài đặt thanh bên riêng cho trình duyệt này, thay vì tùy chọn chung của tài khoản.",
       "title": "Tùy chọn"
     },
     "reports": {

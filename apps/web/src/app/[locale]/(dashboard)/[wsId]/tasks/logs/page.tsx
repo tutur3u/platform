@@ -1,9 +1,9 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import LogsClient from '@tuturuuu/ui/tu-do/logs/logs-client';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import LogsClient from './logs-client';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('tasks-logs');

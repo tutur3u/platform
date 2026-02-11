@@ -1,11 +1,11 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import TaskLabelsClient from '@tuturuuu/ui/tu-do/labels/client';
+import type { TaskLabel } from '@tuturuuu/ui/tu-do/labels/types';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import TaskLabelsClient from './client';
-import type { TaskLabel } from './types';
 
 export const metadata: Metadata = {
   title: 'Labels',

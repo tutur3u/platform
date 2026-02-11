@@ -1,5 +1,7 @@
+import { LanguageDropdownWrapper } from '@tuturuuu/ui/custom/language-dropdown-wrapper';
+import { setCookie } from 'cookies-next';
+import { LOCALE_COOKIE_NAME } from '@/constants/common';
 import { supportedLocales } from '@/i18n/routing';
-import { LanguageDropdownItem } from './language-dropdown-item';
 
 interface Props {
   label: string;
@@ -7,20 +9,18 @@ interface Props {
   currentLocale: string | undefined;
 }
 
+const handleLocaleChange = (newLocale: string) => {
+  setCookie(LOCALE_COOKIE_NAME, newLocale);
+};
+
 export function LanguageWrapper({ label, locale, currentLocale }: Props) {
-  const isLocaleSupported = currentLocale
-    ? supportedLocales.includes(currentLocale as any)
-    : true; // user is using system locale
-
-  const isCurrentLocale = isLocaleSupported
-    ? locale === currentLocale
-    : locale === 'en';
-
   return (
-    <LanguageDropdownItem
+    <LanguageDropdownWrapper
       label={label}
       locale={locale}
-      selected={isCurrentLocale}
+      currentLocale={currentLocale}
+      supportedLocales={supportedLocales}
+      onLocaleChange={handleLocaleChange}
     />
   );
 }

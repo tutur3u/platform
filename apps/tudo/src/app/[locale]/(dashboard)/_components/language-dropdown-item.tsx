@@ -1,9 +1,7 @@
 'use client';
 
-import { Check, Hexagon } from '@tuturuuu/icons';
-import { DropdownMenuItem } from '@tuturuuu/ui/dropdown-menu';
+import { LanguageDropdownItem as SharedLanguageDropdownItem } from '@tuturuuu/ui/custom/language-dropdown-item';
 import { setCookie } from 'cookies-next';
-import { useRouter } from 'next/navigation';
 import { LOCALE_COOKIE_NAME } from '@/constants/common';
 
 interface Props {
@@ -13,25 +11,16 @@ interface Props {
 }
 
 export function LanguageDropdownItem({ label, locale, selected }: Props) {
-  const router = useRouter();
-
-  const useLocale = () => {
-    setCookie(LOCALE_COOKIE_NAME, locale);
-    router.refresh();
+  const handleLocaleChange = (newLocale: string) => {
+    setCookie(LOCALE_COOKIE_NAME, newLocale);
   };
 
   return (
-    <DropdownMenuItem
-      className="cursor-pointer"
-      onClick={useLocale}
-      disabled={selected}
-    >
-      {selected ? (
-        <Check className="h-4 w-4 text-dynamic-indigo" />
-      ) : (
-        <Hexagon className="h-4 w-4 text-dynamic-indigo" />
-      )}
-      {label}
-    </DropdownMenuItem>
+    <SharedLanguageDropdownItem
+      label={label}
+      locale={locale}
+      selected={selected}
+      onLocaleChange={handleLocaleChange}
+    />
   );
 }

@@ -220,7 +220,7 @@ When searching for Dart symbol usages, prefer workspace-scoped searches (e.g., `
 13. **Always** apply best practices to both old and new code - code quality is never optional
 14. **Always** break down components following single responsibility principle and extract complex logic to utilities/hooks
 15. **Always** use TanStack Query for ALL client-side data fetching - raw fetch/useEffect patterns are forbidden
-16. **Always** implement new settings within `apps/web/src/components/settings/settings-dialog.tsx` - never create separate settings pages
+16. **Always** implement new settings within the app's centralized `SettingsDialog` using `SettingsDialogShell` from `@tuturuuu/ui/custom/settings-dialog-shell` - never create separate settings pages
 17. **Always** run the appropriate check command at the end of your work: `bun check` for web/TS/JS changes (formatting, tests, type-checking, i18n), `bun check:mobile` for Flutter/Dart changes. Run both if a task touches both web and mobile code. All checks MUST pass.
 18. **Always** add new GitHub Actions workflows to `tuturuuu.ts` configuration - when creating or modifying workflows in `.github/workflows/`, add an entry to the `ci` object in `tuturuuu.ts` and ensure the workflow includes the `check-ci` job dependency
 19. **Always** conduct a **Session Retrospective** at the END of every co-working session - review `AGENTS.md`, `CLAUDE.md`, and `GEMINI.md`, document mistakes made and lessons learned, and update these files with new rules or clarifications to prevent repeating errors in future sessions. This is NON-NEGOTIABLE.
@@ -590,34 +590,39 @@ import { CheckCircle, Lock, Clipboard } from "@tuturuuu/icons";
 import { toast } from "@tuturuuu/ui/sonner";
 ```
 
-#### Centralized Settings Architecture
+#### Centralized Settings Architecture (Multi-App Shell Pattern)
 
-**Location**: `apps/web/src/components/settings/settings-dialog.tsx`
+Settings dialogs use a **Shell + Content** pattern shared across apps:
 
-ALL application settings MUST be implemented within the centralized settings dialog. This single component handles:
+- **Shared Shell**: `@tuturuuu/ui/custom/settings-dialog-shell` — layout, sidebar nav, search, breadcrumbs, mobile drawer
+- **Shared Components**: `@tuturuuu/ui/custom/settings/*` — portable settings (appearance, sidebar, tasks)
+- **Per-App Dialog**: Each app has its own `SettingsDialog` that wraps the shell with app-specific ordering
 
-- **User Profile Settings** - Avatar, display name, email
-- **User Account Settings** - Security, sessions, devices
-- **Preferences** - Appearance, theme, notifications
-- **Workspace Settings** - General info, members, billing
-- **Product-Specific Settings** - Calendar hours, colors, integrations, smart features
+| App | Primary Group | Default Tab |
+| --- | --- | --- |
+| **web** | User Settings | `profile` |
+| **tudo** | Tasks | `tasks_general` |
+
+Each app uses `primaryGroupLabels` to control which nav groups expand by default, highlighting its domain. Future apps (calendar, finance) follow the same pattern.
 
 **Rules:**
 
-- ❌ **NEVER** create separate settings pages outside this dialog
-- ❌ **NEVER** create standalone modals for settings that belong here
-- ✅ **ALWAYS** add new settings as tabs within `settings-dialog.tsx`
-- ✅ **ALWAYS** group settings logically (user, preferences, workspace, product-specific)
+- ❌ **NEVER** create separate settings pages outside the settings dialog
+- ❌ **NEVER** duplicate settings layout — use `SettingsDialogShell`
+- ✅ **ALWAYS** add new settings as tabs within the app's `SettingsDialog`
+- ✅ **ALWAYS** use `primaryGroupLabels` to highlight the app's domain settings
 - ✅ **ALWAYS** pass `workspace` prop to child components (not raw `wsId`)
+- ✅ **ALWAYS** extract portable settings to `packages/ui` when they have no `@/` imports
 
 **Adding New Settings:**
 
-1. Create settings component in `apps/web/src/components/settings/`
-2. Add navigation item to `navItems` array with `name`, `label`, `icon`, `description`
-3. Add conditional rendering block for the new tab
-4. Use TanStack Query for data fetching; pass `workspace.id` for DB queries
+1. If portable (no `@/` imports): create in `packages/ui/src/components/ui/custom/settings/`
+2. If app-specific: create in `apps/<app>/src/components/settings/`
+3. Add navigation item to `navItems` array with `name`, `label`, `icon`, `description`
+4. Add conditional rendering block for the new tab
+5. Use TanStack Query for data fetching; pass `workspace.id` for DB queries
 
-**Rationale**: Centralizing settings improves discoverability, ensures consistent UX, and prevents fragmentation across the codebase.
+**Rationale**: Centralizing settings improves discoverability, ensures consistent UX, and prevents fragmentation. The shell pattern enables multi-app sharing without duplication.
 
 #### Error Handling
 
@@ -806,7 +811,7 @@ Before requesting review:
 14. ✅ Edge runtime export added where required
 15. ✅ All external inputs validated with Zod
 16. ✅ All user-facing strings have both English and Vietnamese translations
-17. ✅ **New settings implemented within centralized `settings-dialog.tsx` (not separate pages)**
+17. ✅ **New settings implemented within app's centralized `SettingsDialog` using `SettingsDialogShell` (not separate pages)**
 
 ## Reference
 

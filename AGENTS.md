@@ -907,88 +907,100 @@ Guardrail Enforcement:
 
 Cross-Reference: See 5.2 (TypeScript) for type safety, 5.12 (Data Fetching & React Query) for state management patterns, 4.7 (Testing) for verification strategies.
 
-### 5.20 Centralized Settings Architecture
+### 5.20 Centralized Settings Architecture (Multi-App Shell Pattern)
 
-All application settings MUST be implemented within the centralized settings dialog located at `apps/web/src/components/settings/settings-dialog.tsx`. This component serves as the single source of truth for:
+Settings dialogs follow a **Shell + Content** pattern that enables each app to share layout infrastructure while customizing which settings are prominent.
 
-1. **User Profile Settings** - Avatar, display name, email
-2. **User Account Settings** - Security, sessions, devices
-3. **Preferences** - Appearance, theme, notifications
-4. **Workspace Settings** - General info, members, billing
-5. **Product-Specific Settings** - Calendar hours, colors, integrations, smart features
+**Shared Shell:** `packages/ui/src/components/ui/custom/settings-dialog-shell.tsx` (`@tuturuuu/ui/custom/settings-dialog-shell`)
+
+The `SettingsDialogShell` provides the shared layout (sidebar navigation, search/filter, breadcrumbs, mobile drawer, content area). Each app wraps its own content inside the shell and controls which groups expand by default via `primaryGroupLabels`.
+
+**Shared Settings Components:** `packages/ui/src/components/ui/custom/settings/` (`@tuturuuu/ui/custom/settings/*`)
+
+Portable settings components that work across apps:
+- `appearance-settings.tsx` — Theme + language (base version)
+- `sidebar-settings.tsx` — Sidebar behavior (accepts `useSidebar` hook as prop for DI)
+- `task-settings.tsx` — Task management preferences
+
+**Per-App Settings Dialogs:**
+
+Each app has its own `SettingsDialog` that composes the shell with app-specific ordering:
+
+| App | Settings Dialog | Primary Group | Default Tab |
+| --- | --- | --- | --- |
+| **web** | `apps/web/src/components/settings/settings-dialog.tsx` | User Settings (first group) | `profile` |
+| **tudo** | `apps/tudo/src/components/settings/settings-dialog.tsx` | Tasks (first, expanded) | `tasks_general` |
+| **calendar** | (future) | Calendar (first, expanded) | `calendar_hours` |
+| **finance** | (future) | Finance (first, expanded) | `finance_general` |
 
 **Architecture Pattern:**
 
-The settings dialog uses a sidebar navigation pattern with grouped sections:
-
 ```typescript
+import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
+
+// Each app defines its own navItems ordering and primaryGroupLabels
+const tasksLabel = t('settings.tasks.title');
+
 const navItems = [
-  {
-    label: "User Settings",
-    items: [
-      { name: "profile", label: "Profile", icon: User },
-      { name: "security", label: "Security", icon: Shield },
-      { name: "sessions", label: "Sessions & Devices", icon: Laptop },
-    ],
-  },
-  {
-    label: "Preferences",
-    items: [
-      { name: "appearance", label: "Appearance & Theme", icon: Paintbrush },
-      { name: "notifications", label: "Notifications", icon: Bell },
-    ],
-  },
-  // ... workspace and product-specific sections
+  { label: tasksLabel, items: [/* task settings tabs */] },     // Primary group first
+  { label: t('settings.user.title'), items: [/* profile */] },  // Collapsed by default
+  { label: t('settings.preferences.title'), items: [/* ... */] }, // Collapsed by default
 ];
+
+<SettingsDialogShell
+  navItems={navItems}
+  activeTab={activeTab}
+  onActiveTabChange={setActiveTab}
+  primaryGroupLabels={[tasksLabel]}  // Controls which groups expand by default
+  expandAllAccordions={expandAllAccordions}
+>
+  {/* App-specific content rendering */}
+</SettingsDialogShell>
 ```
 
 **Adding New Settings:**
 
-1. **Create Settings Component**: Build the settings UI in `apps/web/src/components/settings/` following existing patterns
-2. **Add Navigation Item**: Add entry to `navItems` array with appropriate `name`, `label`, `icon`, and `description`
-3. **Register Tab Content**: Add conditional rendering block for the new tab in the dialog's content area
-4. **Pass Required Props**: Ensure workspace data and other dependencies are passed via props (use `workspace.id`, not raw `wsId`)
+1. **If portable (no `@/` imports):** Create in `packages/ui/src/components/ui/custom/settings/`. Use dependency injection for app-specific hooks (e.g., `useSidebar` as prop).
+2. **If app-specific:** Create in `apps/<app>/src/components/settings/`. Import shared components where possible.
+3. **Add Navigation Item:** Add entry to `navItems` array with `name`, `label`, `icon`, `description`
+4. **Register Tab Content:** Add conditional rendering block for the new tab
+5. **Pass Required Props:** Use `workspace.id` not raw `wsId` (see 5.16)
 
 **Rules:**
 
-- ❌ **NEVER** create separate settings pages outside this dialog
+- ❌ **NEVER** create separate settings pages outside the settings dialog
 - ❌ **NEVER** create standalone modals for settings that belong in this centralized location
-- ✅ **ALWAYS** add new settings categories as tabs within the settings dialog
-- ✅ **ALWAYS** group related settings logically (user, preferences, workspace, product-specific)
+- ❌ **NEVER** duplicate settings layout code — use `SettingsDialogShell`
+- ✅ **ALWAYS** add new settings as tabs within the app's `SettingsDialog`
+- ✅ **ALWAYS** group related settings logically
+- ✅ **ALWAYS** use `primaryGroupLabels` to highlight the app's domain settings
 - ✅ **ALWAYS** use TanStack Query for data fetching within settings components (see 5.12)
-- ✅ **ALWAYS** pass `workspace` prop to child components instead of raw `wsId` (see 5.16)
+- ✅ **ALWAYS** extract portable settings components to `packages/ui` when they have no `@/` imports
 
-**Conditional Sections:**
+**Dependency Injection for Portability:**
 
-Product-specific settings (like Calendar) should only appear when relevant:
+When a shared component needs app-specific context (e.g., sidebar context), accept the hook as a prop:
 
 ```typescript
-// Calendar settings only show when wsId is available
-...(wsId
-  ? [
-      {
-        label: 'Calendar',
-        items: [
-          { name: 'calendar_hours', label: 'Hours & Timezone', ... },
-          { name: 'calendar_colors', label: 'Category Colors', ... },
-        ],
-      },
-    ]
-  : []),
+// In packages/ui — portable, no @/ imports
+export default function SharedSidebarSettings({ useSidebar }: { useSidebar: () => SidebarState }) {
+  const sidebar = useSidebar();
+  // ...
+}
+
+// In app — thin wrapper providing the context
+import SharedSidebarSettings from '@tuturuuu/ui/custom/settings/sidebar-settings';
+import { useSidebar } from '@/context/sidebar-context';
+export default function SidebarSettings() {
+  return <SharedSidebarSettings useSidebar={useSidebar} />;
+}
 ```
-
-**Rationale:**
-
-- Single location for all settings improves discoverability
-- Consistent UX across user, workspace, and product settings
-- Easier maintenance and testing
-- Prevents settings fragmentation across the codebase
-- Ensures proper workspace ID resolution pattern is followed
 
 **Quality Gate:**
 
-- PRs adding new settings outside `settings-dialog.tsx` should be flagged
-- Review checklist: "Are new settings integrated into the centralized settings dialog?"
+- PRs adding new settings outside the settings dialog should be flagged
+- Review checklist: "Are new settings integrated into the app's centralized settings dialog?"
+- Review checklist: "Can this settings component be shared via packages/ui?"
 
 ### 5.21 Third-Party UI Library Integration & Theme Synchronization
 
@@ -1268,7 +1280,7 @@ Tick ALL before requesting review:
 10. **Code quality maintained; files >400 LOC and components >200 LOC refactored** ✅
 11. **Components follow single responsibility principle; complex logic extracted** ✅
 12. **ALL client-side data fetching uses TanStack Query (ZERO `useEffect` for data fetching; no raw fetch)** ✅
-13. **New settings implemented within centralized `settings-dialog.tsx` (not separate pages)** ✅
+13. **New settings implemented within app's centralized `SettingsDialog` using `SettingsDialogShell` (not separate pages)** ✅
 14. No secrets, tokens, or API keys committed ✅
 15. Added edge runtime export where required ✅
 16. All new external inputs validated (Zod / guard logic) ✅
@@ -1408,7 +1420,7 @@ Agent Responsibilities:
 | Add API route                 | Create `app/api/.../route.ts`                                     | Validate input early                                        |
 | Add AI endpoint               | See 4.4                                                           | Use schema + auth + feature flag                            |
 | Add docs page                 | Create `.mdx` in `apps/docs/` + add to `mint.json`                | **CRITICAL: Add to navigation or won't be visible**         |
-| Add new settings              | Add tab in `apps/web/src/components/settings/settings-dialog.tsx` | **CRITICAL: Never create separate settings pages**          |
+| Add new settings              | Add tab in app's `SettingsDialog` using `SettingsDialogShell`     | **CRITICAL: Never create separate settings pages (see 5.20)** |
 | Integrate 3rd-party UI lib    | See 5.21 workflow                                                 | Route-scoped CSS + theme override + sync docs               |
 | Update app theme colors       | Edit `packages/ui/src/globals.css`                                | **MUST** update all `*-theme-override.css` files            |
 | Edge runtime                  | `export const runtime = 'edge'`                                   | Only if required                                            |
@@ -1433,7 +1445,7 @@ Top Failure Causes → Fix Fast:
 7. **Missing Vietnamese translations** → add entries to both `en.json` AND `vi.json`.
 8. Release workflow skipped → ensure PR title `chore(@tuturuuu/<pkg>): ...`.
 9. **Third-party UI colors mismatched** → update theme override file + sync documentation (see 5.21).
-10. **Settings created outside centralized dialog** → move to `settings-dialog.tsx` (see 5.20).
+10. **Settings created outside centralized dialog** → move to app's `SettingsDialog` using `SettingsDialogShell` (see 5.20).
 
 Escalate if: multi-app breaking refactor, destructive schema change, data backfill >30 LOC, new external service, auth/token contract change.
 

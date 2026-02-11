@@ -10,12 +10,14 @@ import {
   PanelLeft,
   PanelLeftClose,
   PanelLeftOpen,
+  Settings,
   SquareMousePointer,
   User,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Dialog } from '@tuturuuu/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,9 +34,10 @@ import {
 import { ReportProblemDialog } from '@tuturuuu/ui/report-problem-dialog';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useContext, useState } from 'react';
+import { SettingsDialog } from '@/components/settings/settings-dialog';
 import { TTR_URL } from '@/constants/common';
 import { SidebarContext } from '@/context/sidebar-context';
 import { LanguageWrapper } from './(dashboard)/_components/language-wrapper';
@@ -52,9 +55,12 @@ export default function UserNavClient({
 }) {
   const t = useTranslations();
   const router = useRouter();
+  const params = useParams();
+  const wsId = params?.wsId as string | undefined;
 
   const sidebar = useContext(SidebarContext);
   const [reportOpen, setReportOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -69,6 +75,12 @@ export default function UserNavClient({
         onOpenChange={setReportOpen}
         showTrigger={false}
       />
+
+      {user && (
+        <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+          <SettingsDialog wsId={wsId} user={user} />
+        </Dialog>
+      )}
 
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
@@ -229,6 +241,13 @@ export default function UserNavClient({
             >
               <AlertTriangle className="h-4 w-4 text-dynamic-yellow" />
               <span>{t('common.report-problem')}</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => setSettingsOpen(true)}
+            >
+              <Settings className="h-4 w-4" />
+              <span>{t('common.settings')}</span>
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />

@@ -1,5 +1,5 @@
+import { LanguageDropdownWrapper } from '@tuturuuu/ui/custom/language-dropdown-wrapper';
 import { supportedLocales } from '@/i18n/routing';
-import { LanguageDropdownItem } from './language-dropdown-item';
 
 interface Props {
   label: string;
@@ -8,19 +8,12 @@ interface Props {
 }
 
 export function LanguageWrapper({ label, locale, currentLocale }: Props) {
-  const isLocaleSupported = currentLocale
-    ? supportedLocales.includes(currentLocale as any)
-    : true; // user is using system locale
-
-  const isCurrentLocale = isLocaleSupported
-    ? locale === currentLocale
-    : locale === 'en';
-
   return (
-    <LanguageDropdownItem
+    <LanguageDropdownWrapper
       label={label}
       locale={locale}
-      selected={isCurrentLocale}
+      currentLocale={currentLocale}
+      supportedLocales={supportedLocales}
     />
   );
 }

@@ -6,8 +6,6 @@ import {
   Building,
   CalendarDays,
   CheckSquare,
-  ChevronDown,
-  ChevronRight,
   ClipboardList,
   Clock,
   Coffee,
@@ -21,9 +19,7 @@ import {
   Laptop,
   LayoutGrid,
   Paintbrush,
-  Palette,
   PanelLeft,
-  Search,
   Shield,
   Star,
   Ticket,
@@ -34,60 +30,9 @@ import {
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@tuturuuu/ui/breadcrumb';
-import { Button } from '@tuturuuu/ui/button';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@tuturuuu/ui/collapsible';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@tuturuuu/ui/command';
+import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
-import {
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from '@tuturuuu/ui/dialog';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from '@tuturuuu/ui/drawer';
-import { useIsMobile } from '@tuturuuu/ui/hooks/use-mobile';
 import { Separator } from '@tuturuuu/ui/separator';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarInput,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-} from '@tuturuuu/ui/sidebar';
-import { cn } from '@tuturuuu/utils/format';
-import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
-import { removeAccents } from '@tuturuuu/utils/text-helper';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useUserBooleanConfig } from '@/hooks/use-user-config';
@@ -144,11 +89,7 @@ export function SettingsDialog({
   workspace: workspaceProp,
 }: SettingsDialogProps) {
   const t = useTranslations();
-  const { isMac, modKey } = usePlatform();
-  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState(defaultTab);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   // User preference for expanding all settings accordions
   const { value: expandAllAccordions } = useUserBooleanConfig(
@@ -457,7 +398,7 @@ export function SettingsDialog({
               {
                 name: 'calendar_colors',
                 label: t('settings.calendar.colors'),
-                icon: Palette,
+                icon: LayoutGrid,
                 description: t('settings.calendar.colors_description'),
                 keywords: ['Calendar', 'Colors', 'Categories'],
               },
@@ -596,506 +537,284 @@ export function SettingsDialog({
       : []),
   ];
 
-  // Determine the active group name for breadcrumbs
-  const activeGroup = navItems.find((g) =>
-    g.items.some((i) => i.name === activeTab)
-  );
-
-  const activeItem =
-    navItems.flatMap((g) => g.items).find((i) => i.name === activeTab) ||
-    navItems[0]?.items[0];
-
-  const filteredNavItems = navItems
-    .map((group) => {
-      const normalizedQuery = removeAccents(searchQuery.toLowerCase());
-      const filteredItems = group.items.filter(
-        (item) =>
-          removeAccents(item.label.toLowerCase()).includes(normalizedQuery) ||
-          (item.description &&
-            removeAccents(item.description.toLowerCase()).includes(
-              normalizedQuery
-            )) ||
-          item.keywords?.some((keyword) =>
-            removeAccents(keyword.toLowerCase()).includes(normalizedQuery)
-          )
-      );
-      return { ...group, items: filteredItems };
-    })
-    .filter((group) => group.items.length > 0);
-
   return (
-    <DialogContent className="flex h-[90vh] flex-col overflow-hidden p-0 md:max-h-200 md:max-w-225 lg:max-h-250 lg:max-w-250 xl:max-w-300">
-      <DialogTitle className="sr-only">{t('common.settings')}</DialogTitle>
-      <DialogDescription className="sr-only">
-        {t('common.settings')}
-      </DialogDescription>
-      <SidebarProvider className="flex h-full min-h-0 items-start">
-        <Sidebar
-          collapsible="none"
-          className="hidden h-full w-64 flex-col border-r bg-muted/30 md:flex"
-        >
-          <SidebarHeader className="z-10 p-4 pb-0">
-            <div className="relative mb-2">
-              <Search className="absolute top-2.5 left-2 h-4 w-4 text-muted-foreground" />
-              <SidebarInput
-                placeholder={t('search.search')}
-                className="bg-background pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <div className="flex items-center justify-between px-1">
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                Detected OS: {isMac ? 'macOS' : 'Windows/Linux'} ({modKey})
-              </span>
-            </div>
-          </SidebarHeader>
-          <SidebarContent className="overflow-y-auto p-4">
-            {filteredNavItems.map((group) => (
-              <Collapsible
-                key={`${group.label}-${searchQuery ? 'search' : 'browse'}-${expandAllAccordions ? 'expanded' : 'collapsed'}`}
-                defaultOpen={
-                  expandAllAccordions ||
-                  !!searchQuery ||
-                  group.label === navItems[0]?.label
-                }
-                open={expandAllAccordions ? true : undefined}
-                className="group/collapsible"
+    <SettingsDialogShell
+      navItems={navItems}
+      activeTab={activeTab}
+      onActiveTabChange={setActiveTab}
+      expandAllAccordions={expandAllAccordions}
+    >
+      <CalendarSettingsWrapper
+        wsId={wsId}
+        initialSettings={
+          workspace
+            ? {
+                timezone: {
+                  timezone: workspace.timezone || 'auto',
+                  showSecondaryTimezone: false,
+                },
+              }
+            : undefined
+        }
+      >
+        {activeTab === 'profile' && user && (
+          <div className="space-y-8">
+            <div className="grid gap-6">
+              <SettingItemTab
+                title={t('settings-account.avatar')}
+                description={t('settings-account.avatar-description')}
               >
-                <SidebarGroup className="p-0">
-                  <SidebarGroupLabel
-                    asChild
-                    className="group/label w-full cursor-pointer text-sidebar-foreground text-sm hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  >
-                    <CollapsibleTrigger>
-                      {group.label}
-                      <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
-                    </CollapsibleTrigger>
-                  </SidebarGroupLabel>
-                  <CollapsibleContent>
-                    <SidebarGroupContent>
-                      <SidebarMenu>
-                        {group.items.map((item) => (
-                          <SidebarMenuItem key={item.name}>
-                            <SidebarMenuButton
-                              isActive={activeTab === item.name}
-                              onClick={() => setActiveTab(item.name)}
-                              className={cn(
-                                'h-9 w-full justify-start px-2 transition-colors',
-                                activeTab === item.name
-                                  ? 'bg-accent font-medium text-accent-foreground'
-                                  : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground'
-                              )}
-                            >
-                              <item.icon className="mr-2 h-4 w-4" />
-                              <span>{item.label}</span>
-                            </SidebarMenuButton>
-                          </SidebarMenuItem>
-                        ))}
-                      </SidebarMenu>
-                    </SidebarGroupContent>
-                  </CollapsibleContent>
-                </SidebarGroup>
-              </Collapsible>
-            ))}
-          </SidebarContent>
-        </Sidebar>
-        <main className="flex h-full flex-1 flex-col overflow-hidden bg-background">
-          <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 pr-12 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:px-6 md:pr-6">
-            <div className="flex flex-1 items-center gap-2 md:flex-initial">
-              {/* Mobile navigation button */}
-              {isMobile && (
-                <Drawer open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-                  <DrawerTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={mobileNavOpen}
-                      className="w-full flex-1 justify-between gap-2"
-                    >
-                      {activeItem && (
-                        <>
-                          <activeItem.icon className="h-4 w-4 shrink-0" />
-                          <span className="flex-1 truncate text-left">
-                            {activeItem.label}
-                          </span>
-                        </>
-                      )}
-                      <ChevronDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </DrawerTrigger>
-                  <DrawerContent>
-                    <DrawerHeader className="sr-only">
-                      <DrawerTitle>{t('common.settings')}</DrawerTitle>
-                      <DrawerDescription>
-                        {t('search.search')}
-                      </DrawerDescription>
-                    </DrawerHeader>
-                    <Command className="rounded-none border-0">
-                      <CommandInput placeholder={t('search.search')} />
-                      <CommandList className="max-h-[50vh]">
-                        <CommandEmpty>
-                          {t('common.no_results_found')}
-                        </CommandEmpty>
-                        {navItems.map((group) => (
-                          <CommandGroup key={group.label} heading={group.label}>
-                            {group.items.map((item) => (
-                              <CommandItem
-                                key={item.name}
-                                value={`${group.label} ${item.label} ${item.keywords?.join(' ') || ''}`}
-                                onSelect={() => {
-                                  setActiveTab(item.name);
-                                  setMobileNavOpen(false);
-                                }}
-                                className={cn(
-                                  'flex items-center gap-2',
-                                  activeTab === item.name && 'bg-accent'
-                                )}
-                              >
-                                <item.icon className="h-4 w-4" />
-                                <div className="flex flex-col">
-                                  <span>{item.label}</span>
-                                  {item.description && (
-                                    <span className="line-clamp-1 text-muted-foreground text-xs">
-                                      {item.description}
-                                    </span>
-                                  )}
-                                </div>
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        ))}
-                      </CommandList>
-                    </Command>
-                  </DrawerContent>
-                </Drawer>
-              )}
-
-              {/* Desktop breadcrumb navigation */}
-              <Breadcrumb className="hidden md:flex">
-                <BreadcrumbList>
-                  <BreadcrumbItem>
-                    <BreadcrumbLink href="#" className="pointer-events-none">
-                      {t('common.settings')}
-                    </BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator />
-                  {activeGroup && (
-                    <>
-                      <BreadcrumbItem>
-                        <BreadcrumbPage className="text-muted-foreground">
-                          {activeGroup.label}
-                        </BreadcrumbPage>
-                      </BreadcrumbItem>
-                      <BreadcrumbSeparator />
-                    </>
-                  )}
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>{activeItem?.label}</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
-            </div>
-          </header>
-          <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-6">
-            <div className="mx-auto w-full max-w-3xl space-y-6">
-              <div className="space-y-1">
-                <h2 className="font-semibold text-lg tracking-tight">
-                  {activeItem?.label}
-                </h2>
-                <p className="text-muted-foreground text-sm">
-                  {activeItem?.description ||
-                    t('settings.manage_settings', {
-                      label: activeItem?.label?.toLowerCase() ?? '',
-                    })}
-                </p>
-              </div>
+                <UserAvatar user={user} />
+              </SettingItemTab>
+              <AccountStatusSection user={user} />
               <Separator />
-
-              <CalendarSettingsWrapper
-                wsId={wsId}
-                initialSettings={
-                  workspace
-                    ? {
-                        timezone: {
-                          timezone: workspace.timezone || 'auto',
-                          showSecondaryTimezone: false,
-                        },
-                      }
-                    : undefined
-                }
+              <SettingItemTab
+                title={t('settings-account.display-name')}
+                description={t('settings-account.display-name-description')}
               >
-                {activeTab === 'profile' && user && (
-                  <div className="space-y-8">
-                    <div className="grid gap-6">
-                      <SettingItemTab
-                        title={t('settings-account.avatar')}
-                        description={t('settings-account.avatar-description')}
-                      >
-                        <UserAvatar user={user} />
-                      </SettingItemTab>
-                      <AccountStatusSection user={user} />
-                      <Separator />
-                      <SettingItemTab
-                        title={t('settings-account.display-name')}
-                        description={t(
-                          'settings-account.display-name-description'
-                        )}
-                      >
-                        <DisplayNameInput defaultValue={user?.display_name} />
-                      </SettingItemTab>
-                      <SettingItemTab
-                        title={t('settings-account.full-name')}
-                        description={t(
-                          'settings-account.full-name-description'
-                        )}
-                      >
-                        <FullNameInput defaultValue={user?.full_name} />
-                      </SettingItemTab>
-                      <SettingItemTab
-                        title="Email"
-                        description={t('settings-account.email-description')}
-                      >
-                        <EmailInput
-                          oldEmail={user.email}
-                          newEmail={user.new_email}
-                        />
-                      </SettingItemTab>
-                    </div>
-                  </div>
-                )}
-
-                {activeTab === 'security' && user && (
-                  <div className="h-full">
-                    <SecuritySettings user={user} />
-                  </div>
-                )}
-
-                {activeTab === 'sessions' && (
-                  <div className="h-full">
-                    <SessionSettings />
-                  </div>
-                )}
-
-                {activeTab === 'accounts' && (
-                  <div className="h-full">
-                    <AccountManagementSettings />
-                  </div>
-                )}
-
-                {activeTab === 'appearance' && (
-                  <div className="h-full">
-                    <AppearanceSettings />
-                  </div>
-                )}
-
-                {activeTab === 'sidebar' && (
-                  <div className="h-full">
-                    <SidebarSettings />
-                  </div>
-                )}
-
-                {activeTab === 'notifications' && (
-                  <div className="h-full">
-                    <NotificationSettings />
-                  </div>
-                )}
-
-                {activeTab === 'tasks_general' && (
-                  <div className="h-full">
-                    <TaskSettings workspace={workspace} />
-                  </div>
-                )}
-
-                {activeTab === 'workspaces' && user && (
-                  <div className="h-full">
-                    <MyWorkspacesSettings user={user} workspace={workspace} />
-                  </div>
-                )}
-
-                {activeTab === 'workspace_general' && (
-                  <div className="space-y-8">
-                    {isLoadingWorkspace ? (
-                      <div className="flex items-center justify-center py-12">
-                        <div className="text-center">
-                          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                          <p className="mt-4 text-muted-foreground text-sm">
-                            {t('settings.loading_workspace')}
-                          </p>
-                        </div>
-                      </div>
-                    ) : workspaceError ? (
-                      <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
-                        <p className="font-medium text-destructive">
-                          {t('settings.failed_to_load_workspace')}
-                        </p>
-                        <p className="mt-1 text-muted-foreground text-sm">
-                          {workspaceError.message ||
-                            t('settings.error_loading_workspace')}
-                        </p>
-                      </div>
-                    ) : workspace ? (
-                      <>
-                        <BasicInfo
-                          workspace={workspace}
-                          allowEdit={true}
-                          isPersonal={workspace.personal}
-                        />
-                        <WorkspaceAvatarSettings
-                          workspace={workspace}
-                          allowEdit={true}
-                        />
-                      </>
-                    ) : (
-                      <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">
-                          {t('settings.workspace_not_found')}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {activeTab === 'workspace_members' && (
-                  <div className="h-full">
-                    {isLoadingWorkspace ? (
-                      <div className="flex items-center justify-center py-12">
-                        <div className="text-center">
-                          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                          <p className="mt-4 text-muted-foreground text-sm">
-                            {t('settings.loading_workspace')}
-                          </p>
-                        </div>
-                      </div>
-                    ) : workspaceError ? (
-                      <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
-                        <p className="font-medium text-destructive">
-                          {t('settings.failed_to_load_workspace')}
-                        </p>
-                        <p className="mt-1 text-muted-foreground text-sm">
-                          {workspaceError.message ||
-                            t('settings.error_loading_workspace')}
-                        </p>
-                      </div>
-                    ) : workspace ? (
-                      <MembersSettings workspace={workspace} />
-                    ) : (
-                      <div className="rounded-lg border p-4">
-                        <p className="text-muted-foreground text-sm">
-                          {t('settings.workspace_not_found')}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {activeTab === 'workspace_billing' && wsId && (
-                  <div className="h-full">
-                    <BillingSettings wsId={wsId} />
-                  </div>
-                )}
-
-                {activeTab === 'user_status' && wsId && (
-                  <div className="h-full">
-                    <UserStatusSettings wsId={wsId} />
-                  </div>
-                )}
-
-                {activeTab === 'database_filters' && wsId && (
-                  <div className="h-full">
-                    <UsersManagementSettings wsId={wsId} />
-                  </div>
-                )}
-
-                {activeTab === 'featured_groups' && wsId && (
-                  <div className="h-full">
-                    <FeaturedGroupsSettings wsId={wsId} />
-                  </div>
-                )}
-
-                {activeTab === 'approvals' && wsId && (
-                  <div className="h-full">
-                    <ApprovalsSettings wsId={wsId} />
-                  </div>
-                )}
-
-                {activeTab === 'report_default_title' && workspace?.id && (
-                  <ReportDefaultTitleSettings workspaceId={workspace.id} />
-                )}
-
-                {activeTab === 'finance_navigation' && workspace?.id && (
-                  <FinanceNavigationSettings workspaceId={workspace.id} />
-                )}
-
-                {activeTab === 'invoice_visibility' && workspace?.id && (
-                  <InvoiceVisibilitySettings
-                    workspaceId={workspace.id}
-                    isPersonalWorkspace={workspace.personal}
-                  />
-                )}
-
-                {activeTab === 'default_wallet' && workspace?.id && (
-                  <DefaultWalletSettings workspaceId={workspace.id} />
-                )}
-
-                {activeTab === 'default_category' && workspace?.id && (
-                  <DefaultCategorySettings workspaceId={workspace.id} />
-                )}
-
-                {activeTab === 'default_currency' && workspace?.id && (
-                  <DefaultCurrencySettings workspaceId={workspace.id} />
-                )}
-
-                {activeTab === 'invoice_settings' && workspace?.id && (
-                  <InvoiceSettings workspaceId={workspace.id} />
-                )}
-
-                {activeTab === 'debt_loan_categories' && workspace?.id && (
-                  <DebtLoanSettings workspaceId={workspace.id} />
-                )}
-
-                {activeTab === 'experimental_finance' && workspace?.id && (
-                  <ExperimentalFinanceSettings workspaceId={workspace.id} />
-                )}
-
-                {activeTab === 'referrals' && wsId && (
-                  <ReferralSettings wsId={wsId} />
-                )}
-
-                {activeTab.startsWith('calendar_') && wsId && (
-                  <CalendarSettingsContent
-                    section={activeTab}
-                    wsId={wsId}
-                    workspace={workspace}
-                    calendarToken={calendarToken}
-                    calendarConnections={calendarConnections || []}
-                  />
-                )}
-
-                {activeTab === 'break_types' && wsId && (
-                  <WorkspaceBreakTypesSettings wsId={wsId} />
-                )}
-
-                {activeTab === 'time_tracker_categories' && wsId && (
-                  <TimeTrackerCategoriesSettings wsId={wsId} />
-                )}
-
-                {activeTab === 'time_tracker_goals' && wsId && (
-                  <TimeTrackerGoalsSettings wsId={wsId} />
-                )}
-
-                {activeTab === 'time_tracker_general' && wsId && (
-                  <TimeTrackerGeneralSettings wsId={wsId} />
-                )}
-
-                {activeTab === 'attendance_display' && wsId && (
-                  <AttendanceDisplaySettings wsId={wsId} />
-                )}
-              </CalendarSettingsWrapper>
+                <DisplayNameInput defaultValue={user?.display_name} />
+              </SettingItemTab>
+              <SettingItemTab
+                title={t('settings-account.full-name')}
+                description={t('settings-account.full-name-description')}
+              >
+                <FullNameInput defaultValue={user?.full_name} />
+              </SettingItemTab>
+              <SettingItemTab
+                title="Email"
+                description={t('settings-account.email-description')}
+              >
+                <EmailInput oldEmail={user.email} newEmail={user.new_email} />
+              </SettingItemTab>
             </div>
           </div>
-        </main>
-      </SidebarProvider>
-    </DialogContent>
+        )}
+
+        {activeTab === 'security' && user && (
+          <div className="h-full">
+            <SecuritySettings user={user} />
+          </div>
+        )}
+
+        {activeTab === 'sessions' && (
+          <div className="h-full">
+            <SessionSettings />
+          </div>
+        )}
+
+        {activeTab === 'accounts' && (
+          <div className="h-full">
+            <AccountManagementSettings />
+          </div>
+        )}
+
+        {activeTab === 'appearance' && (
+          <div className="h-full">
+            <AppearanceSettings />
+          </div>
+        )}
+
+        {activeTab === 'sidebar' && (
+          <div className="h-full">
+            <SidebarSettings />
+          </div>
+        )}
+
+        {activeTab === 'notifications' && (
+          <div className="h-full">
+            <NotificationSettings />
+          </div>
+        )}
+
+        {activeTab === 'tasks_general' && (
+          <div className="h-full">
+            <TaskSettings workspace={workspace} />
+          </div>
+        )}
+
+        {activeTab === 'workspaces' && user && (
+          <div className="h-full">
+            <MyWorkspacesSettings user={user} workspace={workspace} />
+          </div>
+        )}
+
+        {activeTab === 'workspace_general' && (
+          <div className="space-y-8">
+            {isLoadingWorkspace ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                  <p className="mt-4 text-muted-foreground text-sm">
+                    {t('settings.loading_workspace')}
+                  </p>
+                </div>
+              </div>
+            ) : workspaceError ? (
+              <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
+                <p className="font-medium text-destructive">
+                  {t('settings.failed_to_load_workspace')}
+                </p>
+                <p className="mt-1 text-muted-foreground text-sm">
+                  {workspaceError.message ||
+                    t('settings.error_loading_workspace')}
+                </p>
+              </div>
+            ) : workspace ? (
+              <>
+                <BasicInfo
+                  workspace={workspace}
+                  allowEdit={true}
+                  isPersonal={workspace.personal}
+                />
+                <WorkspaceAvatarSettings
+                  workspace={workspace}
+                  allowEdit={true}
+                />
+              </>
+            ) : (
+              <div className="rounded-lg border p-4">
+                <p className="text-muted-foreground text-sm">
+                  {t('settings.workspace_not_found')}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'workspace_members' && (
+          <div className="h-full">
+            {isLoadingWorkspace ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                  <p className="mt-4 text-muted-foreground text-sm">
+                    {t('settings.loading_workspace')}
+                  </p>
+                </div>
+              </div>
+            ) : workspaceError ? (
+              <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
+                <p className="font-medium text-destructive">
+                  {t('settings.failed_to_load_workspace')}
+                </p>
+                <p className="mt-1 text-muted-foreground text-sm">
+                  {workspaceError.message ||
+                    t('settings.error_loading_workspace')}
+                </p>
+              </div>
+            ) : workspace ? (
+              <MembersSettings workspace={workspace} />
+            ) : (
+              <div className="rounded-lg border p-4">
+                <p className="text-muted-foreground text-sm">
+                  {t('settings.workspace_not_found')}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'workspace_billing' && wsId && (
+          <div className="h-full">
+            <BillingSettings wsId={wsId} />
+          </div>
+        )}
+
+        {activeTab === 'user_status' && wsId && (
+          <div className="h-full">
+            <UserStatusSettings wsId={wsId} />
+          </div>
+        )}
+
+        {activeTab === 'database_filters' && wsId && (
+          <div className="h-full">
+            <UsersManagementSettings wsId={wsId} />
+          </div>
+        )}
+
+        {activeTab === 'featured_groups' && wsId && (
+          <div className="h-full">
+            <FeaturedGroupsSettings wsId={wsId} />
+          </div>
+        )}
+
+        {activeTab === 'approvals' && wsId && (
+          <div className="h-full">
+            <ApprovalsSettings wsId={wsId} />
+          </div>
+        )}
+
+        {activeTab === 'report_default_title' && workspace?.id && (
+          <ReportDefaultTitleSettings workspaceId={workspace.id} />
+        )}
+
+        {activeTab === 'finance_navigation' && workspace?.id && (
+          <FinanceNavigationSettings workspaceId={workspace.id} />
+        )}
+
+        {activeTab === 'invoice_visibility' && workspace?.id && (
+          <InvoiceVisibilitySettings
+            workspaceId={workspace.id}
+            isPersonalWorkspace={workspace.personal}
+          />
+        )}
+
+        {activeTab === 'default_wallet' && workspace?.id && (
+          <DefaultWalletSettings workspaceId={workspace.id} />
+        )}
+
+        {activeTab === 'default_category' && workspace?.id && (
+          <DefaultCategorySettings workspaceId={workspace.id} />
+        )}
+
+        {activeTab === 'default_currency' && workspace?.id && (
+          <DefaultCurrencySettings workspaceId={workspace.id} />
+        )}
+
+        {activeTab === 'invoice_settings' && workspace?.id && (
+          <InvoiceSettings workspaceId={workspace.id} />
+        )}
+
+        {activeTab === 'debt_loan_categories' && workspace?.id && (
+          <DebtLoanSettings workspaceId={workspace.id} />
+        )}
+
+        {activeTab === 'experimental_finance' && workspace?.id && (
+          <ExperimentalFinanceSettings workspaceId={workspace.id} />
+        )}
+
+        {activeTab === 'referrals' && wsId && <ReferralSettings wsId={wsId} />}
+
+        {activeTab.startsWith('calendar_') && wsId && (
+          <CalendarSettingsContent
+            section={activeTab}
+            wsId={wsId}
+            workspace={workspace}
+            calendarToken={calendarToken}
+            calendarConnections={calendarConnections || []}
+          />
+        )}
+
+        {activeTab === 'break_types' && wsId && (
+          <WorkspaceBreakTypesSettings wsId={wsId} />
+        )}
+
+        {activeTab === 'time_tracker_categories' && wsId && (
+          <TimeTrackerCategoriesSettings wsId={wsId} />
+        )}
+
+        {activeTab === 'time_tracker_goals' && wsId && (
+          <TimeTrackerGoalsSettings wsId={wsId} />
+        )}
+
+        {activeTab === 'time_tracker_general' && wsId && (
+          <TimeTrackerGeneralSettings wsId={wsId} />
+        )}
+
+        {activeTab === 'attendance_display' && wsId && (
+          <AttendanceDisplaySettings wsId={wsId} />
+        )}
+      </CalendarSettingsWrapper>
+    </SettingsDialogShell>
   );
 }

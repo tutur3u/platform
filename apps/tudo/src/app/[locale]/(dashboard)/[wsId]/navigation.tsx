@@ -1,19 +1,21 @@
-import { FileEdit, SquareKanban, UserStar } from '@tuturuuu/icons';
+import {
+  Bookmark,
+  Box,
+  FileEdit,
+  hexagons3,
+  Icon,
+  Logs,
+  NotepadText,
+  Repeat,
+  Sparkle,
+  SquareKanban,
+  Tags,
+  UserStar,
+} from '@tuturuuu/icons';
+import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { getTranslations } from 'next-intl/server';
-import type { ReactNode } from 'react';
 
-export interface NavLink {
-  title: string;
-  icon?: ReactNode;
-  href?: string;
-  newTab?: boolean;
-  matchExact?: boolean;
-  disabled?: boolean;
-  isBack?: boolean;
-  onClick?: () => void;
-  children?: (NavLink | null)[];
-  aliases?: string[];
-}
+export type { NavLink } from '@tuturuuu/ui/custom/navigation';
 
 export async function getNavigationLinks({
   personalOrWsId,
@@ -29,15 +31,67 @@ export async function getNavigationLinks({
       icon: <UserStar className="h-4 w-4" />,
       matchExact: true,
     },
+    null,
     {
-      title: t('sidebar_tabs.boards'),
-      href: `/${personalOrWsId}/tasks/boards`,
-      icon: <SquareKanban className="h-4 w-4" />,
+      title: t('sidebar_tabs.habits'),
+      href: `/${personalOrWsId}/tasks/habits`,
+      icon: <Repeat className="h-4 w-4" />,
+      requireRootMember: true,
+    },
+    {
+      title: t('sidebar_tabs.notes'),
+      href: `/${personalOrWsId}/tasks/notes`,
+      icon: <NotepadText className="h-4 w-4" />,
     },
     {
       title: t('sidebar_tabs.drafts'),
       href: `/${personalOrWsId}/tasks/drafts`,
       icon: <FileEdit className="h-4 w-4" />,
+    },
+    null,
+    {
+      title: t('sidebar_tabs.boards'),
+      href: `/${personalOrWsId}/tasks/boards`,
+      icon: <SquareKanban className="h-4 w-4" />,
+    },
+    null,
+    {
+      title: t('sidebar_tabs.initiatives'),
+      href: `/${personalOrWsId}/tasks/initiatives`,
+      icon: <Sparkle className="h-4 w-4" />,
+      matchExact: true,
+    },
+    {
+      title: t('sidebar_tabs.projects'),
+      href: `/${personalOrWsId}/tasks/projects`,
+      icon: <Box className="h-4 w-4" />,
+    },
+    null,
+    // {
+    //   title: t('sidebar_tabs.cycles'),
+    //   href: `/${personalOrWsId}/tasks/cycles`,
+    //   icon: <RotateCcw className="h-4 w-4" />,
+    // },
+    {
+      title: t('sidebar_tabs.labels'),
+      href: `/${personalOrWsId}/tasks/labels`,
+      icon: <Tags className="h-4 w-4" />,
+    },
+    {
+      title: t('sidebar_tabs.templates'),
+      href: `/${personalOrWsId}/tasks/templates`,
+      icon: <Bookmark className="h-4 w-4" />,
+    },
+    {
+      title: t('sidebar_tabs.estimates'),
+      icon: <Icon iconNode={hexagons3} className="h-4 w-4" />,
+      href: `/${personalOrWsId}/tasks/estimates`,
+    },
+    null,
+    {
+      title: t('sidebar_tabs.logs'),
+      href: `/${personalOrWsId}/tasks/logs`,
+      icon: <Logs className="h-4 w-4" />,
     },
   ];
 

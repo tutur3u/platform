@@ -1,7 +1,7 @@
+import { MyTasksDataLoader } from '@tuturuuu/ui/tu-do/my-tasks/my-tasks-data-loader';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { redirect } from 'next/navigation';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { MyTasksDataLoader } from './my-tasks/my-tasks-data-loader';
 
 interface Props {
   params: Promise<{

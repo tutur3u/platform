@@ -6,20 +6,19 @@ export default async function NotificationPopover() {
   const t = await getTranslations('notifications');
   const user = await getCurrentSupabaseUser();
 
-  const noNotifications = t('no-notifications');
-  const viewAllText = t('view-all');
-  const markAsReadText = t('mark-as-read');
-  const markAsUnreadText = t('mark-as-unread');
-  const notificationsText = t('notifications');
-
   return (
     <NotificationPopoverClient
       userId={user?.id}
-      noNotificationsText={noNotifications}
-      notificationsText={notificationsText}
-      viewAllText={viewAllText}
-      markAsReadText={markAsReadText}
-      markAsUnreadText={markAsUnreadText}
+      noNotificationsText={t('no-notifications')}
+      notificationsText={t('notifications')}
+      viewAllText={t('view-all')}
+      markAsReadText={t('mark-as-read')}
+      markAsUnreadText={t('mark-as-unread')}
+      inboxText={t('inbox')}
+      archiveText={t('archive')}
+      archiveAllText={t('archive-all')}
+      emptyArchiveText={t('empty-archive')}
+      loadingMoreText={t('loading-more')}
     />
   );
 }

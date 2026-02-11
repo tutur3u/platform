@@ -4,6 +4,9 @@
   "workspaces": {
     "": {
       "name": "tutur3u",
+      "dependencies": {
+        "cookies-next": "^6.1.1",
+      },
       "devDependencies": {
         "@biomejs/biome": "^2.3.14",
         "@lingual/i18n-check": "^0.8.19",

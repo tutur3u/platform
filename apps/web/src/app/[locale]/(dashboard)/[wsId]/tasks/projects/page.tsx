@@ -1,17 +1,17 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { TaskProjectsClient } from '@tuturuuu/ui/tu-do/projects/task-projects-client';
+import type {
+  ProjectHealth,
+  ProjectPriority,
+  ProjectStatus,
+  TaskProject,
+} from '@tuturuuu/ui/tu-do/projects/types';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { TaskProjectsClient } from './task-projects-client';
-import type {
-  ProjectHealth,
-  ProjectPriority,
-  ProjectStatus,
-  TaskProject,
-} from './types';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('task-projects');

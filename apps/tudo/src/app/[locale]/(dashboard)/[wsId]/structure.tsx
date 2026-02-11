@@ -1,17 +1,16 @@
 'use client';
 
-import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
-import { useSidebar } from '@/context/sidebar-context';
 import { ArrowLeft } from '@tuturuuu/icons';
 import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
+import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { setCookie } from 'cookies-next';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import {
   type ReactNode,
   Suspense,
@@ -19,9 +18,10 @@ import {
   useEffect,
   useState,
 } from 'react';
+import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
+import { useSidebar } from '@/context/sidebar-context';
 import { FeedbackButton } from './feedback-button';
 import { Nav } from './nav';
-import type { NavLink } from './navigation';
 import { WorkspaceSelect } from './workspace-select';
 
 interface StructureProps {

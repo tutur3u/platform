@@ -212,11 +212,106 @@
     },
     "./tu-do/boards/*": "./src/components/ui/tu-do/boards/*.tsx",
     "./tu-do/drafts/*": "./src/components/ui/tu-do/drafts/*.tsx",
+    "./tu-do/my-tasks/*": "./src/components/ui/tu-do/my-tasks/*.tsx",
+    "./tu-do/habits/*": "./src/components/ui/tu-do/habits/*.tsx",
+    "./tu-do/notes/*": "./src/components/ui/tu-do/notes/*.tsx",
+    "./tu-do/labels/types": {
+      "types": "./src/components/ui/tu-do/labels/types.ts",
+      "import": "./src/components/ui/tu-do/labels/types.ts"
+    },
+    "./tu-do/labels/*": "./src/components/ui/tu-do/labels/*.tsx",
+    "./tu-do/labels/components/*": "./src/components/ui/tu-do/labels/components/*.tsx",
+    "./tu-do/labels/hooks/*": "./src/components/ui/tu-do/labels/hooks/*.ts",
+    "./tu-do/estimates/*": "./src/components/ui/tu-do/estimates/*.tsx",
+    "./tu-do/initiatives/*": "./src/components/ui/tu-do/initiatives/*.tsx",
+    "./tu-do/cycles/*": "./src/components/ui/tu-do/cycles/*.tsx",
+    "./tu-do/logs/*": "./src/components/ui/tu-do/logs/*.tsx",
+    "./tu-do/templates/types": {
+      "types": "./src/components/ui/tu-do/templates/types.ts",
+      "import": "./src/components/ui/tu-do/templates/types.ts"
+    },
+    "./tu-do/templates/*": "./src/components/ui/tu-do/templates/*.tsx",
+    "./tu-do/templates/marketplace/*": "./src/components/ui/tu-do/templates/marketplace/*.tsx",
+    "./tu-do/templates/templateId/*": "./src/components/ui/tu-do/templates/templateId/*.tsx",
+    "./tu-do/projects/types": {
+      "types": "./src/components/ui/tu-do/projects/types.ts",
+      "import": "./src/components/ui/tu-do/projects/types.ts"
+    },
+    "./tu-do/projects/*": "./src/components/ui/tu-do/projects/*.tsx",
+    "./tu-do/projects/components/*": "./src/components/ui/tu-do/projects/components/*.tsx",
+    "./tu-do/projects/dialogs/*": "./src/components/ui/tu-do/projects/dialogs/*.tsx",
+    "./tu-do/projects/hooks/*": "./src/components/ui/tu-do/projects/hooks/*.ts",
+    "./tu-do/projects/projectId/*": "./src/components/ui/tu-do/projects/projectId/*.tsx",
+    "./tu-do/projects/projectId/components/*": "./src/components/ui/tu-do/projects/projectId/components/*.tsx",
+    "./tu-do/projects/projectId/components/overview/*": "./src/components/ui/tu-do/projects/projectId/components/overview/*.tsx",
+    "./tu-do/projects/projectId/dialogs/*": "./src/components/ui/tu-do/projects/projectId/dialogs/*.tsx",
+    "./tu-do/projects/projectId/hooks/*": "./src/components/ui/tu-do/projects/projectId/hooks/*.ts",
+    "./tu-do/shared/task-detail-page": {
+      "types": "./src/components/ui/tu-do/shared/task-detail-page.tsx",
+      "import": "./src/components/ui/tu-do/shared/task-detail-page.tsx"
+    },
+    "./tu-do/shared/text-diff-viewer": {
+      "types": "./src/components/ui/tu-do/shared/text-diff-viewer.tsx",
+      "import": "./src/components/ui/tu-do/shared/text-diff-viewer.tsx"
+    },
+    "./lib/template-background": {
+      "types": "./src/lib/template-background.ts",
+      "import": "./src/lib/template-background.ts"
+    },
     "./legacy/calendar/settings/types": {
       "types": "./src/components/ui/legacy/calendar/settings/types.ts",
       "import": "./src/components/ui/legacy/calendar/settings/types.ts"
     },
     "./legacy/calendar/settings/*": "./src/components/ui/legacy/calendar/settings/*.tsx",
+    "./custom/sidebar-context": {
+      "types": "./src/components/ui/custom/sidebar-context.tsx",
+      "import": "./src/components/ui/custom/sidebar-context.tsx"
+    },
+    "./custom/nav": {
+      "types": "./src/components/ui/custom/nav.tsx",
+      "import": "./src/components/ui/custom/nav.tsx"
+    },
+    "./custom/nav-link": {
+      "types": "./src/components/ui/custom/nav-link.tsx",
+      "import": "./src/components/ui/custom/nav-link.tsx"
+    },
+    "./custom/theme-dropdown-items": {
+      "types": "./src/components/ui/custom/theme-dropdown-items.tsx",
+      "import": "./src/components/ui/custom/theme-dropdown-items.tsx"
+    },
+    "./custom/language-dropdown-item": {
+      "types": "./src/components/ui/custom/language-dropdown-item.tsx",
+      "import": "./src/components/ui/custom/language-dropdown-item.tsx"
+    },
+    "./custom/language-dropdown-wrapper": {
+      "types": "./src/components/ui/custom/language-dropdown-wrapper.tsx",
+      "import": "./src/components/ui/custom/language-dropdown-wrapper.tsx"
+    },
+    "./custom/system-language-dropdown-item": {
+      "types": "./src/components/ui/custom/system-language-dropdown-item.tsx",
+      "import": "./src/components/ui/custom/system-language-dropdown-item.tsx"
+    },
+    "./custom/system-language-wrapper": {
+      "types": "./src/components/ui/custom/system-language-wrapper.tsx",
+      "import": "./src/components/ui/custom/system-language-wrapper.tsx"
+    },
+    "./custom/workspace-select": {
+      "types": "./src/components/ui/custom/workspace-select.tsx",
+      "import": "./src/components/ui/custom/workspace-select.tsx"
+    },
+    "./custom/notification-popover-client": {
+      "types": "./src/components/ui/custom/notification-popover-client.tsx",
+      "import": "./src/components/ui/custom/notification-popover-client.tsx"
+    },
+    "./custom/settings-dialog-shell": {
+      "types": "./src/components/ui/custom/settings-dialog-shell.tsx",
+      "import": "./src/components/ui/custom/settings-dialog-shell.tsx"
+    },
+    "./custom/settings/*": "./src/components/ui/custom/settings/*.tsx",
+    "./lib/workspace-actions": {
+      "types": "./src/lib/workspace-actions.ts",
+      "import": "./src/lib/workspace-actions.ts"
+    },
     "./custom/icon-picker": {
       "types": "./src/components/ui/custom/icon-picker/index.ts",
       "import": "./src/components/ui/custom/icon-picker/index.ts"

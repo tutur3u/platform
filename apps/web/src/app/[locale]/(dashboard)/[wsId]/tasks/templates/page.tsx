@@ -2,14 +2,14 @@ import { Store } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import TemplatesClient from '@tuturuuu/ui/tu-do/templates/client';
+import type { BoardTemplate } from '@tuturuuu/ui/tu-do/templates/types';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import TemplatesClient from './client';
-import type { BoardTemplate } from './types';
 
 export const metadata: Metadata = {
   title: 'Board Templates',

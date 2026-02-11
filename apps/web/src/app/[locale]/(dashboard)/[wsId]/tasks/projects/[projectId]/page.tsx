@@ -1,12 +1,12 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Task } from '@tuturuuu/types/primitives/Task';
+import { TaskProjectDetail } from '@tuturuuu/ui/tu-do/projects/projectId/task-project-detail';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { TaskProjectDetail } from './task-project-detail';
 
 export const metadata: Metadata = {
   title: 'Task Project',

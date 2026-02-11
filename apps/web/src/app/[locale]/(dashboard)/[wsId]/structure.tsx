@@ -4,6 +4,7 @@ import { ArrowLeft } from '@tuturuuu/icons';
 import type { Workspace, WorkspaceProductTier } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
+import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
@@ -21,7 +22,6 @@ import {
   useState,
 } from 'react';
 import { ActiveTimerIndicator } from '@/components/active-timer-indicator';
-import type { NavLink } from '@/components/navigation';
 import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import { useSidebar } from '@/context/sidebar-context';
 import { useActiveTimerSession } from '@/hooks/use-active-timer-session';

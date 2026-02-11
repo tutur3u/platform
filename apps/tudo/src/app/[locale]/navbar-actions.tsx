@@ -1,10 +1,11 @@
-import { LOCALE_COOKIE_NAME } from '@/constants/common';
-import { defaultLocale, supportedLocales } from '@/i18n/routing';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { GetStartedButton } from '@tuturuuu/ui/custom/get-started-button';
 import { LanguageWrapper } from '@tuturuuu/ui/custom/language-wrapper';
 import { ThemeToggle } from '@tuturuuu/ui/custom/theme-toggle';
 import { getTranslations } from 'next-intl/server';
+import { LOCALE_COOKIE_NAME } from '@/constants/common';
+import { defaultLocale, supportedLocales } from '@/i18n/routing';
+import NotificationPopover from './notification-popover';
 import { UserNavWrapper } from './user-nav-wrapper';
 
 export default async function NavbarActions({
@@ -25,9 +26,12 @@ export default async function NavbarActions({
         {/* Main actions row */}
         <div className="flex w-full items-center gap-1">
           {sbUser ? (
-            <div className="flex-1">
-              <UserNavWrapper hideMetadata={hideMetadata} />
-            </div>
+            <>
+              <div className="flex-1">
+                <UserNavWrapper hideMetadata={hideMetadata} />
+              </div>
+              <NotificationPopover />
+            </>
           ) : (
             <>
               <GetStartedButton

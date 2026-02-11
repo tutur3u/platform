@@ -1,5 +1,6 @@
 'use client';
 
+import type { WorkspaceProductTier } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
   DEV_MODE,
@@ -18,14 +19,19 @@ export interface NavLink {
   href?: string;
   newTab?: boolean;
   matchExact?: boolean;
+  excludePaths?: string[];
   label?: string;
   external?: boolean;
   disabled?: boolean;
   tempDisabled?: boolean;
   isBack?: boolean;
   onClick?: () => void;
-  children?: NavLink[];
+  children?: (NavLink | null)[];
   aliases?: string[];
+  requiredWorkspaceTier?: {
+    requiredTier: WorkspaceProductTier | WorkspaceProductTier[];
+    alwaysShow?: boolean;
+  };
   requireRootMember?: boolean;
   requireRootWorkspace?: boolean;
   disableOnProduction?: boolean;
@@ -100,9 +106,14 @@ export function Navigation({ currentWsId, currentUser, navLinks }: Props) {
               href
                 ? matchExact
                   ? pathname === href
-                  : (pathname?.startsWith(href) ?? false)
+                  : ((pathname?.startsWith(href) &&
+                      link?.excludePaths?.every(
+                        (path) => !path.includes(pathname)
+                      )) ??
+                    false)
                 : false
             )
+
             .filter(Boolean).length > 0;
 
         const isDevOnly = link.disableOnProduction;
