@@ -36,7 +36,7 @@ export default function AvatarCard({
     >
       <div
         className={cn(
-          'relative h-64 w-full overflow-hidden rounded-t-xl bg-linear-to-r from-brand-dark-blue to-brand-light-blue',
+          'relative h-64 w-full overflow-hidden rounded-t-xl bg-linear-to-r from-background/20 to-background',
           backgroundClassName
         )}
       >
@@ -51,7 +51,7 @@ export default function AvatarCard({
             {getInitials(name)}
           </AvatarFallback>
         </Avatar>
-        <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/80 via-black/5 to-transparent"></div>
+        <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/50 via-black/5 to-transparent"></div>
       </div>
       <div
         className={cn(
