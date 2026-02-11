@@ -134,6 +134,21 @@ class AppLocalizationsVi extends AppLocalizations {
   String get navSettings => 'Cài đặt';
 
   @override
+  String get navApps => 'Ứng dụng';
+
+  @override
+  String get appsHubSearchHint => 'Tìm kiếm ứng dụng';
+
+  @override
+  String get appsHubQuickAccess => 'Truy cập nhanh';
+
+  @override
+  String get appsHubAllApps => 'Tất cả ứng dụng';
+
+  @override
+  String get appsHubEmpty => 'Không tìm thấy ứng dụng';
+
+  @override
   String get dashboardGreeting => 'Chào mừng trở lại!';
 
   @override
@@ -474,6 +489,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerRequestInfo => 'Yêu cầu thông tin';
 
   @override
+  String get timerReasonOptional => 'Lý do (không bắt buộc)';
+
+  @override
   String get timerManagementTitle => 'Quản lý';
 
   @override
@@ -689,6 +707,18 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get captchaError => 'Kiểm tra bảo mật thất bại. Vui lòng thử lại.';
+
+  @override
+  String get commonSomethingWentWrong => 'Đã xảy ra lỗi';
+
+  @override
+  String get selectImageSource => 'Chọn nguồn ảnh';
+
+  @override
+  String get camera => 'Camera';
+
+  @override
+  String get gallery => 'Thư viện';
 
   @override
   String get commonRetry => 'Thử lại';

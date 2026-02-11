@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
+import 'package:mobile/features/apps/widgets/apps_back_button.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
 import 'package:mobile/features/time_tracker/widgets/history_tab.dart';
@@ -74,7 +75,10 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
           if (state.status == TimeTrackerStatus.loading) {
             return shad.Scaffold(
               headers: [
-                shad.AppBar(title: Text(l10n.timerTitle)),
+                shad.AppBar(
+                  leading: const [AppsBackButton()],
+                  title: Text(l10n.timerTitle),
+                ),
               ],
               child: const Center(child: shad.CircularProgressIndicator()),
             );
@@ -83,7 +87,10 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
           if (state.status == TimeTrackerStatus.error) {
             return shad.Scaffold(
               headers: [
-                shad.AppBar(title: Text(l10n.timerTitle)),
+                shad.AppBar(
+                  leading: const [AppsBackButton()],
+                  title: Text(l10n.timerTitle),
+                ),
               ],
               child: _ErrorView(error: state.error),
             );
@@ -92,6 +99,7 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
           return shad.Scaffold(
             headers: [
               shad.AppBar(
+                leading: const [AppsBackButton()],
                 title: Text(l10n.timerTitle),
                 trailing: [
                   shad.IconButton.ghost(

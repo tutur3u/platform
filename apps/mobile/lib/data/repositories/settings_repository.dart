@@ -9,6 +9,7 @@ class SettingsRepository {
   static const _taskViewModeKey = 'task-view-mode';
   static const _localeKey = 'locale';
   static const _lastTabRouteKey = 'last-tab-route';
+  static const _lastAppRouteKey = 'last-app-route';
 
   Future<String> getThemeMode() async {
     final prefs = await SharedPreferences.getInstance();
@@ -50,6 +51,24 @@ class SettingsRepository {
   Future<void> setLastTabRoute(String route) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_lastTabRouteKey, route);
+  }
+
+  /// Returns the last selected app route, or `null` if none saved.
+  Future<String?> getLastAppRoute() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_lastAppRouteKey);
+  }
+
+  /// Persists the user's last selected app route.
+  Future<void> setLastAppRoute(String route) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_lastAppRouteKey, route);
+  }
+
+  /// Clears the last selected app route.
+  Future<void> clearLastAppRoute() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_lastAppRouteKey);
   }
 
   /// Returns the persisted locale code (e.g. 'en', 'vi'), or `null` for system

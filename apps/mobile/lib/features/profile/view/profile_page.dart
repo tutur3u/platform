@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
 import 'package:mobile/features/profile/cubit/profile_cubit.dart';
 import 'package:mobile/features/profile/cubit/profile_state.dart';
@@ -45,11 +46,10 @@ class _ProfileView extends StatelessWidget {
       headers: [
         shad.AppBar(
           title: Text(l10n.profileTitle),
-          leading: [
-            shad.GhostButton(
-              onPressed: () => context.pop(),
-              density: shad.ButtonDensity.icon,
-              child: const Icon(Icons.arrow_back),
+          trailing: [
+            shad.IconButton.ghost(
+              icon: const Icon(Icons.settings_outlined),
+              onPressed: () => context.push(Routes.settings),
             ),
           ],
         ),
@@ -220,27 +220,28 @@ class _AvatarSection extends StatelessWidget {
         child: SizedBox(
           width: MediaQuery.of(context).size.width * 0.8,
           child: shad.AlertDialog(
-            title: const Text('Select Image Source'),
+            barrierColor: Colors.transparent,
+            title: Text(l10n.selectImageSource),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 shad.GhostButton(
                   onPressed: () => Navigator.pop(context, ImageSource.camera),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      Icon(Icons.camera_alt),
-                      shad.Gap(8),
-                      Text('Camera'),
+                      const Icon(Icons.camera_alt),
+                      const shad.Gap(8),
+                      Text(l10n.camera),
                     ],
                   ),
                 ),
                 shad.GhostButton(
                   onPressed: () => Navigator.pop(context, ImageSource.gallery),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      Icon(Icons.photo_library),
-                      shad.Gap(8),
-                      Text('Gallery'),
+                      const Icon(Icons.photo_library),
+                      const shad.Gap(8),
+                      Text(l10n.gallery),
                     ],
                   ),
                 ),
@@ -296,6 +297,7 @@ class _AvatarSection extends StatelessWidget {
         child: SizedBox(
           width: MediaQuery.of(context).size.width * 0.8,
           child: shad.AlertDialog(
+            barrierColor: Colors.transparent,
             title: Text(l10n.profileAvatar),
             content: Column(
               mainAxisSize: MainAxisSize.min,
@@ -306,7 +308,13 @@ class _AvatarSection extends StatelessWidget {
                       Navigator.pop(dialogContext);
                       await cubit.removeAvatar();
                     },
-                    child: Text(l10n.profileRemoveAvatar),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.delete_outline),
+                        const shad.Gap(8),
+                        Text(l10n.profileRemoveAvatar),
+                      ],
+                    ),
                   ),
                   const shad.Gap(8),
                 ],
@@ -315,10 +323,16 @@ class _AvatarSection extends StatelessWidget {
                     Navigator.pop(dialogContext);
                     unawaited(_pickAndUploadAvatar(context));
                   },
-                  child: Text(
-                    avatarUrl != null
-                        ? l10n.profileChangeAvatar
-                        : l10n.profileUploadAvatar,
+                  child: Row(
+                    children: [
+                      const Icon(Icons.photo_library),
+                      const shad.Gap(8),
+                      Text(
+                        avatarUrl != null
+                            ? l10n.profileChangeAvatar
+                            : l10n.profileUploadAvatar,
+                      ),
+                    ],
                   ),
                 ),
               ],

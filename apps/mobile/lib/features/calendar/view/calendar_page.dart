@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
+import 'package:mobile/features/apps/widgets/apps_back_button.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mobile/features/calendar/widgets/agenda_view.dart';
 import 'package:mobile/features/calendar/widgets/calendar_connections_sheet.dart';
@@ -55,6 +56,7 @@ class _CalendarView extends StatelessWidget {
     return shad.Scaffold(
       headers: [
         shad.AppBar(
+          leading: const [AppsBackButton()],
           title: BlocBuilder<CalendarCubit, CalendarState>(
             buildWhen: (prev, curr) =>
                 prev.effectiveFocusedMonth != curr.effectiveFocusedMonth,

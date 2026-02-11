@@ -8,6 +8,7 @@ import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
+import 'package:mobile/features/apps/widgets/apps_back_button.dart';
 import 'package:mobile/features/finance/cubit/finance_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -91,7 +92,10 @@ class _FinanceView extends StatelessWidget {
 
     return shad.Scaffold(
       headers: [
-        shad.AppBar(title: Text(l10n.financeTitle)),
+        shad.AppBar(
+          leading: const [AppsBackButton()],
+          title: Text(l10n.financeTitle),
+        ),
       ],
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>
