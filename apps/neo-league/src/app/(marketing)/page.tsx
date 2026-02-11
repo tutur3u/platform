@@ -3,7 +3,6 @@
 import AboutClubSection from '@/components/about-club-section';
 import AboutNeoLeagueSection from '@/components/about-neo-league-section';
 import AnimatedSection from '@/components/animated-section';
-import ContactSection from '@/components/contact-section';
 import DatesSection from '@/components/dates-section';
 import HeroSection from '@/components/hero-section';
 import MentorsSection from '@/components/mentors-section';
@@ -30,9 +29,6 @@ export default function Home() {
       <MentorsSection />
       <OrganizersTeamSection />
       <OrganizersSection />
-      <AnimatedSection>
-        <ContactSection />
-      </AnimatedSection>
     </div>
   );
 }
