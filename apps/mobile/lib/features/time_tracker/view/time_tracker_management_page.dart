@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide AppBar, Card, Scaffold, TextField;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
@@ -147,7 +148,16 @@ class _TimeTrackerManagementPageState extends State<TimeTrackerManagementPage> {
 
     return shad.Scaffold(
       headers: [
-        shad.AppBar(title: Text(l10n.timerManagementTitle)),
+        shad.AppBar(
+          leading: [
+            shad.OutlineButton(
+              density: shad.ButtonDensity.icon,
+              onPressed: () => context.pop(),
+              child: const Icon(Icons.arrow_back),
+            ),
+          ],
+          title: Text(l10n.timerManagementTitle),
+        ),
       ],
       child: Column(
         children: [

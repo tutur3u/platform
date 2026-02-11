@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/data/models/time_tracking/request.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_requests_cubit.dart';
@@ -48,7 +49,16 @@ class _RequestsViewState extends State<_RequestsView> {
 
     return shad.Scaffold(
       headers: [
-        shad.AppBar(title: Text(l10n.timerRequestsTitle)),
+        shad.AppBar(
+          leading: [
+            shad.OutlineButton(
+              density: shad.ButtonDensity.icon,
+              onPressed: () => context.pop(),
+              child: const Icon(Icons.arrow_back),
+            ),
+          ],
+          title: Text(l10n.timerRequestsTitle),
+        ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: shad.Tabs(

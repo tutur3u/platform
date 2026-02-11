@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide AppBar, Scaffold, TextField;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
@@ -214,7 +215,16 @@ class _TransactionListViewState extends State<_TransactionListView> {
 
     return shad.Scaffold(
       headers: [
-        shad.AppBar(title: Text(l10n.financeTransactions)),
+        shad.AppBar(
+          leading: [
+            shad.OutlineButton(
+              density: shad.ButtonDensity.icon,
+              onPressed: () => context.pop(),
+              child: const Icon(Icons.arrow_back),
+            ),
+          ],
+          title: Text(l10n.financeTransactions),
+        ),
       ],
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>
