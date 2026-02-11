@@ -200,7 +200,6 @@ export const verifyRouteToken = async ({
   searchParams,
   token,
   router,
-  devMode,
 }: {
   searchParams: URLSearchParams;
   token: string | null;
@@ -215,48 +214,40 @@ export const verifyRouteToken = async ({
 
   if (!token) {
     const nextUrl = searchParams.get('nextUrl');
-    if (nextUrl) {
-      router.push(nextUrl);
-      router.refresh();
-    } else {
-      router.push('/');
-      router.refresh();
-    }
-  } else {
-    let userId = user?.id;
+    router.push(nextUrl || '/');
+    router.refresh();
+    return;
+  }
 
-    if (devMode || !userId) {
-      const res = await fetch('/api/auth/verify-app-token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token }),
-      });
+  // Always verify the token when present — it represents fresh auth from web
+  // and should override any existing (potentially stale aal1) session
+  let userId = user?.id;
 
-      if (!res.ok) {
-        const data = await res.json();
-        console.error('Error verifying token:', data.error);
-        router.push('/');
-        router.refresh();
-      }
+  const res = await fetch('/api/auth/verify-app-token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ token }),
+  });
 
-      const data = await res.json();
-      userId = data.userId;
-    }
+  if (!res.ok) {
+    const data = await res.json();
+    console.error('Error verifying token:', data.error);
+    router.push('/');
+    router.refresh();
+    return;
+  }
 
-    if (userId) {
-      // Token is valid, redirect to next url
-      await supabase.auth.refreshSession();
+  const data = await res.json();
+  userId = data.userId;
 
-      const nextUrl = searchParams.get('nextUrl');
-      if (nextUrl) {
-        router.push(nextUrl);
-        router.refresh();
-      } else {
-        router.push('/');
-        router.refresh();
-      }
-    }
+  if (userId) {
+    // Token is valid — refresh session and redirect to target page
+    await supabase.auth.refreshSession();
+
+    const nextUrl = searchParams.get('nextUrl');
+    router.push(nextUrl || '/');
+    router.refresh();
   }
 };

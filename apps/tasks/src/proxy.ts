@@ -20,12 +20,15 @@ const WEB_APP_URL =
     ? 'https://tuturuuu.com'
     : `http://localhost:${CENTRAL_PORT}`;
 
-// Create the centralized auth middleware with MFA
+// Create the centralized auth middleware
+// MFA is disabled because satellite apps delegate auth to the web app.
+// Sessions here are created via cross-app tokens that already require aal2 on web.
 const authProxy = createCentralizedAuthProxy({
   webAppUrl: WEB_APP_URL,
   publicPaths: PUBLIC_PATHS,
   skipApiRoutes: true,
   excludeRootPath: true,
+  mfa: { enabled: false },
 });
 
 export async function proxy(req: NextRequest): Promise<NextResponse> {

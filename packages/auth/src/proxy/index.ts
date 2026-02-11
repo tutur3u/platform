@@ -69,10 +69,13 @@ async function handleMFACheck(
         return NextResponse.redirect(loginUrl);
       } else {
         // All other apps redirect to central web app for MFA verification
-        // Preserve existing returnUrl if it exists, otherwise use current URL
+        // Route through /verify-token so cross-app tokens are properly consumed
         const existingReturnUrl = req.nextUrl.searchParams.get('returnUrl');
         const returnUrl =
-          existingReturnUrl || encodeURIComponent(req.nextUrl.href);
+          existingReturnUrl ||
+          encodeURIComponent(
+            `${req.nextUrl.origin}/verify-token?nextUrl=${encodeURIComponent(req.nextUrl.pathname + req.nextUrl.search)}`
+          );
 
         const loginUrl = new URL('/login', webAppUrl);
         loginUrl.searchParams.set('returnUrl', returnUrl);
