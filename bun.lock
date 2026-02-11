@@ -972,6 +972,7 @@
         "browser-image-compression": "^2.0.2",
         "class-variance-authority": "^0.7.1",
         "cmdk": "^1.1.1",
+        "cookies-next": "^6.1.1",
         "date-fns": "^4.1.0",
         "date-fns-tz": "^3.2.0",
         "dayjs": "^1.11.19",

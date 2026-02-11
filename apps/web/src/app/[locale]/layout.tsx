@@ -16,8 +16,8 @@ import { ReactScan } from '@tuturuuu/utils/common/scan';
 import { cn } from '@tuturuuu/utils/format';
 import { VercelAnalytics, VercelInsights } from '@tuturuuu/vercel';
 import type { Metadata } from 'next';
-import { setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { setRequestLocale } from 'next-intl/server';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import { type ReactNode, Suspense } from 'react';
 

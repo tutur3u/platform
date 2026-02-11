@@ -1,12 +1,12 @@
 import { Calculator } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
+import TaskEstimatesClient from '@tuturuuu/ui/tu-do/estimates/client';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import TaskEstimatesClient from './client';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('task-estimates');

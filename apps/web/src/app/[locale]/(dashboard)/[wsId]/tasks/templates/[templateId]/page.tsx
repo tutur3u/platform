@@ -1,10 +1,10 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import TemplateDetailClient from '@tuturuuu/ui/tu-do/templates/templateId/client';
+import type { BoardTemplateWithContent } from '@tuturuuu/ui/tu-do/templates/types';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import type { BoardTemplateWithContent } from '../types';
-import TemplateDetailClient from './client';
 
 interface Props {
   params: Promise<{

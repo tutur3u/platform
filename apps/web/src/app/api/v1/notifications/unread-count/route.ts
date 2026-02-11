@@ -3,12 +3,18 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const querySchema = z.object({
-  wsId: z.uuid(),
+  wsId: z
+    .string()
+    .uuid()
+    .nullable()
+    .optional()
+    .transform((val) => val || undefined),
 });
 
 /**
  * GET /api/v1/notifications/unread-count
- * Gets the unread notification count for the authenticated user in a workspace
+ * Gets the unread notification count for the authenticated user.
+ * If wsId is provided, scopes to that workspace. Otherwise returns total unread count.
  */
 export async function GET(req: Request) {
   try {
@@ -39,28 +45,34 @@ export async function GET(req: Request) {
 
     const { wsId } = queryParams.data;
 
-    // Verify user has access to workspace
-    const { data: membership } = await supabase
-      .from('workspace_members')
-      .select('id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
+    // If workspace is specified, verify membership
+    if (wsId) {
+      const { data: membership } = await supabase
+        .from('workspace_members')
+        .select('id')
+        .eq('ws_id', wsId)
+        .eq('user_id', user.id)
+        .single();
 
-    if (!membership) {
-      return NextResponse.json(
-        { error: 'Access denied to workspace' },
-        { status: 403 }
-      );
+      if (!membership) {
+        return NextResponse.json(
+          { error: 'Access denied to workspace' },
+          { status: 403 }
+        );
+      }
     }
 
-    // Get unread count
-    const { count, error } = await supabase
+    // Get unread count - RLS handles access control
+    let query = supabase
       .from('notifications')
       .select('*', { count: 'exact', head: true })
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
       .is('read_at', null);
+
+    if (wsId) {
+      query = query.eq('ws_id', wsId);
+    }
+
+    const { count, error } = await query;
 
     if (error) {
       console.error('Error fetching unread count:', error);

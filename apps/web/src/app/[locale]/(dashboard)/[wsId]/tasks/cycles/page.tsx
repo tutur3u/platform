@@ -1,10 +1,10 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { TaskCyclesClient } from '@tuturuuu/ui/tu-do/cycles/task-cycles-client';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { TaskCyclesClient } from './task-cycles-client';
 
 export const metadata: Metadata = {
   title: 'Task Cycles',

@@ -29,6 +29,11 @@ const querySchema = z.object({
     .nullable()
     .optional()
     .transform((val) => val === 'true'),
+  readOnly: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((val) => val === 'true'),
   type: z
     .enum([
       'task_assigned',
@@ -75,6 +80,7 @@ export async function GET(req: Request) {
       limit: searchParams.get('limit'),
       offset: searchParams.get('offset'),
       unreadOnly: searchParams.get('unreadOnly'),
+      readOnly: searchParams.get('readOnly'),
       type: searchParams.get('type'),
       priority: searchParams.get('priority'),
     });
@@ -99,7 +105,7 @@ export async function GET(req: Request) {
       );
     }
 
-    const { wsId, scope, limit, offset, unreadOnly, type, priority } =
+    const { wsId, scope, limit, offset, unreadOnly, readOnly, type, priority } =
       queryParams.data;
 
     // Build query - DO NOT add order yet, apply it after all filters
@@ -124,9 +130,11 @@ export async function GET(req: Request) {
       query = query.eq('scope', scope);
     }
 
-    // Filter unread only
+    // Filter by read status
     if (unreadOnly) {
       query = query.is('read_at', null);
+    } else if (readOnly) {
+      query = query.not('read_at', 'is', null);
     }
 
     // Filter by type

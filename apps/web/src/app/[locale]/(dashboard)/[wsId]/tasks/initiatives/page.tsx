@@ -1,10 +1,10 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { TaskInitiativesClient } from '@tuturuuu/ui/tu-do/initiatives/task-initiatives-client';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { TaskInitiativesClient } from './task-initiatives-client';
 
 export const metadata: Metadata = {
   title: 'Task Initiatives',

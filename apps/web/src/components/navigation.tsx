@@ -1,39 +1,15 @@
 'use client';
 
-import type { WorkspaceProductTier } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { DEV_MODE, PROD_MODE } from '@/constants/common';
 
-export interface NavLink {
-  title: string;
-  trailing?: string;
-  icon?: ReactNode;
-  href?: string;
-  newTab?: boolean;
-  matchExact?: boolean;
-  excludePaths?: string[];
-  label?: string;
-  external?: boolean;
-  disabled?: boolean;
-  tempDisabled?: boolean;
-  isBack?: boolean;
-  onClick?: () => void;
-  children?: (NavLink | null)[];
-  aliases?: string[];
-  requiredWorkspaceTier?: {
-    requiredTier: WorkspaceProductTier | WorkspaceProductTier[];
-    alwaysShow?: boolean;
-  };
-  requireRootMember?: boolean;
-  requireRootWorkspace?: boolean;
-  disableOnProduction?: boolean;
-  experimental?: 'alpha' | 'beta' | 'new';
-}
+export type { NavLink } from '@tuturuuu/ui/custom/navigation';
 
 interface Props {
   currentWsId?: string;

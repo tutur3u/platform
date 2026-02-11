@@ -14,10 +14,10 @@ import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { VercelAnalytics, VercelInsights } from '@tuturuuu/vercel';
 import type { Metadata } from 'next';
-import { setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
-import { Suspense } from 'react';
+import { setRequestLocale } from 'next-intl/server';
 import type { ReactNode } from 'react';
+import { Suspense } from 'react';
 
 export { viewport } from '@tuturuuu/utils/common/nextjs';
 

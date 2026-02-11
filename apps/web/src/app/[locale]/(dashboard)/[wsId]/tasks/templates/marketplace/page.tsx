@@ -2,14 +2,14 @@ import { ArrowLeft, Globe } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import MarketplaceClient from '@tuturuuu/ui/tu-do/templates/marketplace/client';
+import type { BoardTemplate } from '@tuturuuu/ui/tu-do/templates/types';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import type { BoardTemplate } from '../types';
-import MarketplaceClient from './client';
 
 export const metadata: Metadata = {
   title: 'Template Marketplace',
@@ -73,7 +73,6 @@ export default async function MarketplacePage({ params }: Props) {
 async function getPublicTemplates(): Promise<{ templates: BoardTemplate[] }> {
   const supabase = await createClient();
 
-  // Get current user (to check ownership if needed, but for public it doesn't matter much unless we want to flag 'yours')
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -107,7 +106,6 @@ async function getPublicTemplates(): Promise<{ templates: BoardTemplate[] }> {
     return { templates: [] };
   }
 
-  // Transform templates and generate signed URLs for backgrounds
   const transformedTemplates: BoardTemplate[] = await Promise.all(
     templates.map(async (template) => {
       const content = template.content as {
@@ -115,13 +113,12 @@ async function getPublicTemplates(): Promise<{ templates: BoardTemplate[] }> {
         labels?: unknown[];
       };
 
-      // Generate signed URL if there's a background path
       let backgroundUrl: string | null = null;
       if (template.background_path) {
         try {
           const { data: signedUrlData } = await supabase.storage
             .from('workspaces')
-            .createSignedUrl(template.background_path, 3600); // 1 hour expiry
+            .createSignedUrl(template.background_path, 3600);
 
           backgroundUrl = signedUrlData?.signedUrl || null;
         } catch (error) {
@@ -137,7 +134,7 @@ async function getPublicTemplates(): Promise<{ templates: BoardTemplate[] }> {
         name: template.name,
         description: template.description,
         visibility: template.visibility as 'private' | 'workspace' | 'public',
-        backgroundUrl, // Signed URL for display
+        backgroundUrl,
         createdAt: template.created_at,
         updatedAt: template.updated_at,
         isOwner: template.created_by === user?.id,

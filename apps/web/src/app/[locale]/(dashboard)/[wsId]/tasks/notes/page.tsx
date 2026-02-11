@@ -1,7 +1,7 @@
+import NotesContent from '@tuturuuu/ui/tu-do/notes/notes-content';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { redirect } from 'next/navigation';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import NotesContent from './notes-content';
 
 interface Props {
   params: Promise<{
