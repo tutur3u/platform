@@ -24,7 +24,7 @@ export default function OrganizersSection() {
                   <Image
                     width={200}
                     height={100}
-                    src="/rmit_sset.png"
+                    src="/rmit-sset.png"
                     alt="RMIT School of Science, Engineering & Technology"
                     className="w-auto object-contain"
                   />
@@ -48,7 +48,7 @@ export default function OrganizersSection() {
                   <Image
                     width={200}
                     height={100}
-                    src="/rmit_nct.png"
+                    src="/rmit-nct.png"
                     alt="NEO Culture Technology Club"
                     className="w-auto object-contain"
                   />
@@ -72,7 +72,7 @@ export default function OrganizersSection() {
                   <Image
                     width={200}
                     height={100}
-                    src="/rmit_student_club_program.png"
+                    src="/rmit-student-club-program.png"
                     alt="RMIT Student Club Program"
                     className="w-auto object-contain"
                   />

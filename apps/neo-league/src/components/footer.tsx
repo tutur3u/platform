@@ -29,21 +29,21 @@ export default function Footer() {
           {/* Partner Logos */}
           <div className="flex items-center gap-6">
             <Image
-              src="/rmit_sset.png"
+              src="/rmit-sset.png"
               alt="RMIT SSET"
               width={200}
               height={100}
               className="h-10 w-auto object-contain"
             />
             <Image
-              src="/rmit_nct_new_1.png"
+              src="/rmit-nct-logo.png"
               alt="RMIT NCT"
               width={200}
               height={100}
               className="h-10 w-auto object-contain"
             />
             <Image
-              src="/rmit_student_club_program.png"
+              src="/rmit-student-club-program.png"
               alt="RMIT Student Club Program"
               width={200}
               height={100}
@@ -79,7 +79,7 @@ export default function Footer() {
                 <Instagram className="h-8 w-8" />
               </Link>
               <Link
-                href="https://linkedin.com/company/rmitnct"
+                href="https://linkedin.com/company/rmit-nct"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary transition-colors hover:text-primary/70"

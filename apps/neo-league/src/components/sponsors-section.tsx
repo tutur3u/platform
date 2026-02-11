@@ -17,7 +17,7 @@ export default function SponsorsSection() {
       <div className="mx-auto max-w-7xl">
         {/* Section Header */}
         <div className="mb-16 text-center">
-          <h2 className="mb-4 font-black text-3xl  md:text-4xl">
+          <h2 className="mb-4 font-black text-3xl md:text-4xl">
             OUR <span className="text-secondary">SPONSORS</span>
           </h2>
           <p className="mx-auto max-w-2xl font-bold text-foreground text-lg">
@@ -36,7 +36,7 @@ export default function SponsorsSection() {
                 <AnimatedSection key={index} delay={index * 0.1}>
                   <div className="glass-card card-hover h-30 max-w-md flex-1 rounded-2xl p-6">
                     <Image
-                      src="/sponsor_example.png"
+                      src="/sponsor-example.png"
                       alt={`Gold Sponsor ${index}`}
                       width={100}
                       height={100}
@@ -58,7 +58,7 @@ export default function SponsorsSection() {
                 <AnimatedSection key={index} delay={index * 0.08}>
                   <div className="glass-card card-hover h-25 flex-1 rounded-2xl p-5">
                     <Image
-                      src="/sponsor_example.png"
+                      src="/sponsor-example.png"
                       alt={`Silver Sponsor ${index}`}
                       width={100}
                       height={100}
@@ -89,7 +89,7 @@ export default function SponsorsSection() {
                           className="glass-card card-hover h-25 rounded-xl p-4"
                         >
                           <Image
-                            src="/sponsor_example.png"
+                            src="/sponsor-example.png"
                             alt={`${category} ${index}`}
                             width={100}
                             height={100}

@@ -116,7 +116,7 @@ export default function AboutNeoLeagueSection() {
             {/* Vision Section */}
             <div className="relative">
               <Image
-                src="/monkey_mascot_2.png"
+                src="/monkey-mascot-2.png"
                 alt="Monkey Mascot 2"
                 width={150}
                 height={150}

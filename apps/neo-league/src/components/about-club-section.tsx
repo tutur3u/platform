@@ -5,9 +5,7 @@ export default function AboutClubSection() {
   return (
     <section className="relative px-6 py-20 md:px-8 md:py-28">
       <div className="relative mx-auto max-w-7xl">
-        {/* ═══════════════════════════════════════════════════════════════════
-            WHO WE ARE SECTION
-        ═══════════════════════════════════════════════════════════════════ */}
+        {/* WHO WE ARE SECTION */}
         <div className="mb-28 grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
           {/* Left Column - Content */}
           <AnimationSection>
@@ -15,7 +13,7 @@ export default function AboutClubSection() {
             <div className="mb-6 flex items-center gap-3">
               <div className="relative h-14 w-14 overflow-hidden rounded-xl border-2 border-white/50 bg-white/30 p-2 shadow-lg backdrop-blur-sm">
                 <Image
-                  src="/rmit_nct.png"
+                  src="/rmit-nct.png"
                   alt="NCT Logo"
                   fill
                   className="object-contain p-1"
@@ -98,9 +96,7 @@ export default function AboutClubSection() {
           </AnimationSection>
         </div>
 
-        {/* ═══════════════════════════════════════════════════════════════════
-            WHAT WE DO SECTION
-        ═══════════════════════════════════════════════════════════════════ */}
+        {/* WHAT WE DO SECTION */}
         <div className="mb-28">
           <div className="mb-12 grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
             {/* Left Column - Images */}
@@ -187,9 +183,7 @@ export default function AboutClubSection() {
           </div>
         </div>
 
-        {/* ═══════════════════════════════════════════════════════════════════
-            OUR PREVIOUS ACTIVITIES SECTION
-        ═══════════════════════════════════════════════════════════════════ */}
+        {/* OUR PREVIOUS ACTIVITIES SECTION */}
         <div className="space-y-10">
           {/* Header */}
           <div className="text-center">

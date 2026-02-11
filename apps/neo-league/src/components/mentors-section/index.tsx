@@ -11,7 +11,7 @@ export default function MentorsSection() {
     <section id="mentors" className="px-6 py-20 md:px-8 md:py-24">
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
-          <h2 className="mb-4 font-black text-3xl  md:text-4xl">
+          <h2 className="mb-4 font-black text-3xl md:text-4xl">
             MENTORS & <span className="text-secondary">JUDGES</span>
           </h2>
           <p className="mx-auto max-w-2xl text-foreground/70 text-lg">
@@ -33,7 +33,7 @@ export default function MentorsSection() {
                     {getInitials(mentor.name)}
                   </AvatarFallback>
                 </Avatar>
-                <div className="glass-card w-full rounded-xl px-6 py-8 text-center h-full">
+                <div className="glass-card h-full w-full rounded-xl px-6 py-8 text-center">
                   <h4 className="mb-1 font-black">{mentor.name}</h4>
                   <p className="text-base text-foreground">{mentor.field}</p>
                 </div>
