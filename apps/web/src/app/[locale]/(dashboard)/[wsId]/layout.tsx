@@ -1,9 +1,5 @@
-import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { WorkspacePresenceProvider } from '@tuturuuu/ui/tu-do/providers/workspace-presence-provider';
 import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
@@ -13,13 +9,12 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { type ReactNode, Suspense } from 'react';
+import { WorkspacePreparing } from '@/components/workspace-preparing';
 import {
   SIDEBAR_BEHAVIOR_COOKIE_NAME,
   SIDEBAR_COLLAPSED_COOKIE_NAME,
 } from '@/constants/common';
 import { SidebarProvider } from '@/context/sidebar-context';
-import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
-import { createFreeSubscription } from '@/utils/subscription-helper';
 import NavbarActions from '../../navbar-actions';
 import { UserNav } from '../../user-nav';
 import InvitationCard from './invitation-card';
@@ -41,31 +36,12 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   const workspace = await getWorkspace(id, { useAdmin: true });
 
+  const isPolarConfigured =
+    !!process.env.POLAR_WEBHOOK_SECRET && !!process.env.POLAR_ACCESS_TOKEN;
+
   // Auto-assign free subscription if workspace has no active subscription
-  if (workspace.tier === null) {
-    try {
-      const polar = createPolarClient();
-      const sbAdmin = await createAdminClient();
-      await getOrCreatePolarCustomer({
-        polar,
-        supabase: sbAdmin,
-        wsId: workspace.id,
-      });
-      const subResult = await createFreeSubscription(
-        polar,
-        sbAdmin,
-        workspace.id
-      );
-      if (subResult.status === 'created') {
-        workspace.tier = 'FREE';
-      }
-    } catch (error) {
-      console.error(
-        `[Layout] Failed to auto-assign free subscription for workspace ${workspace.id}:`,
-        error
-      );
-      // Fail-open: let user through with null tier
-    }
+  if (isPolarConfigured && workspace.tier === null) {
+    return <WorkspacePreparing wsId={workspace.id} />;
   }
 
   const wsId = workspace.id;

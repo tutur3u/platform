@@ -1793,6 +1793,7 @@
     "create_project": "Create Project",
     "create_workspace": "Create Workspace",
     "create_workspace_description": "Add a new workspace to easily manage everything that matters to you, and collaborate with your team as you go.",
+    "create_workspace_upgrade_notice": "Workspaces are created with a free tier by default. You can upgrade your plan in the workspace billing page after creation.",
     "created": "Created",
     "creating": "Creating",
     "crm": "CRM",
@@ -2303,6 +2304,8 @@
     "workspace_creation_failed": "Failed to create workspace. Please try again.",
     "workspace_limit_reached": "Workspace Limit Reached",
     "workspace_name": "Workspace Name",
+    "workspace_preparing": "Preparing Workspace",
+    "workspace_preparing_description": "We are setting up your workspace with a free plan. This should only take a moment.",
     "workspaces": "Workspaces",
     "write_something": "Write something",
     "year_old": "year old",
@@ -5427,7 +5430,8 @@
       "subtitle": "A shared space for your team to collaborate",
       "tip-description": "Choose a name that reflects your team or company. You can always change this later.",
       "tip-title": "Tip",
-      "title": "Create Your Team Workspace"
+      "title": "Create Your Team Workspace",
+      "upgrade-notice": "Workspaces are created with a free tier by default. You can upgrade your plan in the workspace billing page after creation."
     },
     "use-case": {
       "back": "Back",

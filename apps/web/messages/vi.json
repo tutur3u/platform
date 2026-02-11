@@ -1793,6 +1793,7 @@
     "create_project": "Tạo dự án",
     "create_workspace": "Tạo không gian làm việc",
     "create_workspace_description": "Thêm một không gian làm việc mới để dễ dàng quản lý mọi thứ thiết yếu, và hợp tác với đội của bạn một cách hiệu quả.",
+    "create_workspace_upgrade_notice": "Các không gian làm việc được tạo với gói miễn phí theo mặc định. Bạn có thể nâng cấp gói của mình trong trang thanh toán của không gian làm việc sau khi tạo.",
     "created": "Đã tạo",
     "creating": "Đang tạo",
     "crm": "CRM",
@@ -2303,6 +2304,8 @@
     "workspace_creation_failed": "Không thể tạo không gian làm việc. Vui lòng thử lại.",
     "workspace_limit_reached": "Đã đạt giới hạn không gian làm việc",
     "workspace_name": "Tên không gian làm việc",
+    "workspace_preparing": "Đang chuẩn bị không gian làm việc",
+    "workspace_preparing_description": "Chúng tôi đang thiết lập không gian làm việc của bạn với gói miễn phí. Quá trình này sẽ chỉ mất một chút thời gian.",
     "workspaces": "Không gian làm việc",
     "write_something": "Hãy viết gì đó...",
     "year_old": "tuổi",
@@ -5427,7 +5430,8 @@
       "subtitle": "Không gian chung để nhóm của bạn cộng tác",
       "tip-description": "Chọn tên phản ánh nhóm hoặc công ty của bạn. Bạn luôn có thể thay đổi sau.",
       "tip-title": "Mẹo",
-      "title": "Tạo không gian làm việc nhóm"
+      "title": "Tạo không gian làm việc nhóm",
+      "upgrade-notice": "Các không gian làm việc được tạo với gói miễn phí theo mặc định. Bạn có thể nâng cấp gói của mình trong trang thanh toán của không gian làm việc sau khi tạo."
     },
     "use-case": {
       "back": "Quay lại",

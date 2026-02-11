@@ -1,6 +1,12 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { checkWorkspaceCreationLimit } from '@tuturuuu/utils/workspace-limits';
 import { NextResponse } from 'next/server';
+import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
+import { createFreeSubscription } from '@/utils/subscription-helper';
 
 export async function GET() {
   try {
@@ -100,6 +106,32 @@ export async function POST(req: Request) {
       { message: 'Error creating workspace' },
       { status: 500 }
     );
+
+  // Create Polar customer and free subscription for the new workspace
+  try {
+    const polar = createPolarClient();
+    const sbAdmin = await createAdminClient();
+
+    // Get or create Polar customer
+    await getOrCreatePolarCustomer({ polar, supabase, wsId: data.id });
+
+    // Create free subscription for the workspace
+    const subResult = await createFreeSubscription(polar, sbAdmin, data.id);
+
+    if (subResult.status === 'created') {
+      console.log(
+        `Created free subscription ${subResult.subscription.id} for workspace ${data.id}`
+      );
+    } else {
+      console.log(
+        `Skipped free subscription creation for workspace ${data.id} (${subResult.status})`
+      );
+    }
+  } catch (error) {
+    // Log the error but don't fail workspace creation
+    console.error('Error creating Polar subscription:', error);
+    // Workspace creation succeeded, subscription creation is best-effort
+  }
 
   return NextResponse.json({ message: 'success', id: data.id });
 }

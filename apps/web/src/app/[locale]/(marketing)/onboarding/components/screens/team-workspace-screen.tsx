@@ -97,19 +97,29 @@ export function TeamWorkspaceScreen({
               />
             </motion.div>
 
-            {/* Tips */}
+            {/* Tips & Upgrade Notice */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.4 }}
-              className="flex gap-3 rounded-xl bg-dynamic-blue/5 p-4"
+              className="space-y-4"
             >
-              <Lightbulb className="h-5 w-5 shrink-0 text-dynamic-blue" />
-              <div className="text-sm">
-                <p className="mb-1 font-medium text-foreground">
-                  {t('tip-title')}
+              <div className="flex gap-3 rounded-xl bg-dynamic-blue/5 p-4">
+                <Lightbulb className="h-5 w-5 shrink-0 text-dynamic-blue" />
+                <div className="text-sm">
+                  <p className="mb-1 font-medium text-foreground">
+                    {t('tip-title')}
+                  </p>
+                  <p className="text-muted-foreground">
+                    {t('tip-description')}
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-dynamic-blue/20 bg-dynamic-blue/5 p-4">
+                <p className="font-semibold text-dynamic-blue text-sm">
+                  {t('upgrade-notice')}
                 </p>
-                <p className="text-muted-foreground">{t('tip-description')}</p>
               </div>
             </motion.div>
 
