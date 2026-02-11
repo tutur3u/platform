@@ -19,14 +19,17 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TimeTrackerPage extends StatelessWidget {
-  const TimeTrackerPage({super.key});
+  const TimeTrackerPage({super.key, this.repository});
+
+  final ITimeTrackerRepository? repository;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) {
+        final repo = repository ?? TimeTrackerRepository();
         final cubit = TimeTrackerCubit(
-          repository: TimeTrackerRepository(),
+          repository: repo,
         );
         final ws = context.read<WorkspaceCubit>().state.currentWorkspace;
         final userId = supabase.auth.currentUser?.id;

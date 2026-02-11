@@ -17,7 +17,7 @@ export async function PATCH(
 ) {
   try {
     const { wsId, id: requestId, commentId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     // Get current user
     const {
@@ -119,7 +119,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _: NextRequest,
+  request: NextRequest,
   {
     params,
   }: {
@@ -128,7 +128,7 @@ export async function DELETE(
 ) {
   try {
     const { wsId, id: requestId, commentId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     // Get current user
     const {

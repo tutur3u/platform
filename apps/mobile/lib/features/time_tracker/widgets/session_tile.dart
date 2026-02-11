@@ -1,25 +1,27 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide AlertDialog;
 import 'package:intl/intl.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
+import 'package:mobile/features/time_tracker/utils/category_color.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class SessionTile extends StatelessWidget {
   const SessionTile({
     required this.session,
+    this.categoryColor,
     this.onEdit,
     this.onDelete,
     super.key,
   });
 
   final TimeTrackingSession session;
+  final String? categoryColor;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final theme = shad.Theme.of(context);
     final l10n = context.l10n;
 
     final dur = session.duration;
@@ -30,16 +32,22 @@ class SessionTile extends StatelessWidget {
     return Dismissible(
       key: Key(session.id),
       background: Container(
-        color: colorScheme.primary,
+        color: theme.colorScheme.primary,
         alignment: Alignment.centerLeft,
         padding: const EdgeInsets.only(left: 20),
-        child: Icon(Icons.edit, color: colorScheme.onPrimary),
+        child: Icon(
+          shad.LucideIcons.pencil,
+          color: theme.colorScheme.primaryForeground,
+        ),
       ),
       secondaryBackground: Container(
-        color: colorScheme.error,
+        color: theme.colorScheme.destructive,
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        child: Icon(Icons.delete, color: colorScheme.onError),
+        child: Icon(
+          shad.LucideIcons.trash2,
+          color: theme.colorScheme.primaryForeground,
+        ),
       ),
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.startToEnd) {
@@ -54,27 +62,45 @@ class SessionTile extends StatelessWidget {
           onDelete?.call();
         }
       },
-      child: ListTile(
-        leading: _CategoryDot(color: session.categoryName),
-        title: Text(
-          session.title ?? 'Work session',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-        ),
-        subtitle: timeRange.isNotEmpty
-            ? Text(
-                timeRange,
-                style: textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+      child: InkWell(
+        onTap: onEdit,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              _CategoryDot(color: session.categoryColor ?? categoryColor),
+              const shad.Gap(12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      session.title ?? 'Work session',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.base.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (timeRange.isNotEmpty)
+                      Text(
+                        timeRange,
+                        style: theme.typography.small.copyWith(
+                          color: theme.colorScheme.mutedForeground,
+                        ),
+                      ),
+                  ],
                 ),
-              )
-            : null,
-        trailing: Text(
-          durationText,
-          style: textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-            fontFeatures: [const FontFeature.tabularFigures()],
+              ),
+              const shad.Gap(12),
+              Text(
+                durationText,
+                style: theme.typography.base.copyWith(
+                  fontWeight: FontWeight.w600,
+                  fontFeatures: [const FontFeature.tabularFigures()],
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -82,29 +108,22 @@ class SessionTile extends StatelessWidget {
   }
 
   Future<bool?> _confirmDelete(BuildContext context, AppLocalizations l10n) {
-    return showDialog<bool>(
+    return shad.showDialog<bool>(
       context: context,
-      builder: (dialogContext) => Center(
-        child: SizedBox(
-          width: MediaQuery.of(context).size.width * 0.8,
-          child: shad.AlertDialog(
-            barrierColor: Colors.transparent,
-            title: Text(l10n.timerDeleteSession),
-            content: Text(l10n.timerDeleteConfirm),
-            actions: [
-              shad.OutlineButton(
-                onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: Text(
-                  MaterialLocalizations.of(dialogContext).cancelButtonLabel,
-                ),
-              ),
-              shad.DestructiveButton(
-                onPressed: () => Navigator.of(dialogContext).pop(true),
-                child: Text(l10n.timerDeleteSession),
-              ),
-            ],
+      builder: (dialogContext) => shad.AlertDialog(
+        barrierColor: Colors.transparent,
+        title: Text(l10n.timerDeleteSession),
+        content: Text(l10n.timerDeleteConfirm),
+        actions: [
+          shad.OutlineButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.commonCancel),
           ),
-        ),
+          shad.DestructiveButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.timerDeleteSession),
+          ),
+        ],
       ),
     );
   }
@@ -140,25 +159,12 @@ class _CategoryDot extends StatelessWidget {
       height: 12,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: color != null
-            ? _parseColor(color!)
-            : Theme.of(context).colorScheme.outline,
+        color: resolveTimeTrackingCategoryColor(
+          context,
+          color,
+          fallback: shad.Theme.of(context).colorScheme.muted,
+        ),
       ),
     );
-  }
-
-  Color _parseColor(String hex) {
-    final cleaned = hex.replaceAll('#', '');
-    try {
-      if (cleaned.length == 6) {
-        return Color(int.parse('FF$cleaned', radix: 16));
-      }
-      if (cleaned.length == 8) {
-        return Color(int.parse(cleaned, radix: 16));
-      }
-    } on FormatException {
-      // Not valid hex — fall back
-    }
-    return Colors.blueGrey;
   }
 }

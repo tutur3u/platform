@@ -16,6 +16,15 @@ const ALLOWED_MIME_TYPES = [
   'image/gif',
 ];
 
+// Map file extensions to MIME types for validation fallback
+const EXTENSION_TO_MIME_TYPE: Record<string, string> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+  gif: 'image/gif',
+};
+
 const updateRequestSchema = z.discriminatedUnion('action', [
   z.object({
     action: z.literal('approve'),
@@ -51,7 +60,7 @@ export async function PATCH(
       );
     }
 
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     // Get authenticated user
     const {
@@ -152,8 +161,9 @@ export async function PUT(
 ) {
   try {
     const { wsId, id } = await context.params;
-    const supabase = await createClient();
-    const storageClient = await createDynamicClient();
+    const supabase = await createClient(request);
+    // Use createDynamicClient with request to support Bearer token auth for mobile apps
+    const storageClient = await createDynamicClient(request);
 
     // Get authenticated user
     const {
@@ -271,10 +281,21 @@ export async function PUT(
               );
             }
 
-            // Validate MIME type
+            // Validate MIME type (check browser-reported type first, then fallback to extension)
+            const fileExtension =
+              imageFile.name.split('.').pop()?.toLowerCase() || '';
+            const expectedMimeType = EXTENSION_TO_MIME_TYPE[fileExtension];
+
             if (!ALLOWED_MIME_TYPES.includes(imageFile.type)) {
-              throw new Error(
-                `Invalid file type for ${imageFile.name}. Only JPEG, PNG, WEBP, and GIF are allowed.`
+              // If browser-reported type is not allowed, check if extension suggests it's valid
+              if (!expectedMimeType) {
+                throw new Error(
+                  `Invalid file type for ${imageFile.name}. Only JPEG, PNG, WEBP, and GIF are allowed.`
+                );
+              }
+              // Extension is valid, use the expected MIME type based on extension
+              console.warn(
+                `Browser reported unexpected MIME type "${imageFile.type}" for ${imageFile.name}, using "${expectedMimeType}" based on extension`
               );
             }
 
@@ -282,10 +303,17 @@ export async function PUT(
             const fileName = `${id}/${uuidv4()}_${sanitizedName}`;
             const buffer = await imageFile.arrayBuffer();
 
+            // Use validated MIME type (browser-reported or extension-based fallback)
+            const validatedMimeType = ALLOWED_MIME_TYPES.includes(
+              imageFile.type
+            )
+              ? imageFile.type
+              : expectedMimeType || 'image/jpeg';
+
             const { data, error } = await storageClient.storage
               .from('time_tracking_requests')
               .upload(fileName, buffer, {
-                contentType: imageFile.type,
+                contentType: validatedMimeType,
               });
 
             if (error) {

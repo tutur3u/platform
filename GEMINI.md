@@ -238,6 +238,7 @@ Located at `apps/mobile/`, the Flutter app uses BLoC/Cubit state management, `go
 - **Admin Client Trigger Bypass:** Tables with `BEFORE UPDATE` triggers checking `auth.uid()` can be bypassed with `createAdminClient()` (`sbAdmin`). Always validate permissions with user-context client first.
 - **TypeScript useMemo Inference:** When `useMemo` returns either `[]` or `{ data: [], isEstimated }`, TypeScript infers `never[]`. Fix: explicitly type early returns as `{ data: [] as MyType[], isEstimated: false }`.
 - **Finance Module:** `get_category_breakdown` RPC accepts `_wallet_ids UUID[]` for wallet scoping. Exchange rates use USD as base currency. For estimated amounts, set `hasRedactedAmounts = true` and show `≈` prefix.
+- **Flutter Async Actions:** For mutation-driven UI actions (approve/reject/update), use `Future<void> Function()` callbacks (not `VoidCallback`), await them before closing dialogs/sheets, and surface failures in the UI (e.g., `SnackBar`). If a Cubit catches repository errors, rethrow after emitting error state so callers can handle failures locally.
 - **apply_patch Pathing (Windows):** Prefer workspace-relative paths (e.g. `apps/web/...`). Absolute Windows paths like `C:\...` can fail to resolve during patch apply.
 
 ### Database Schema Notes

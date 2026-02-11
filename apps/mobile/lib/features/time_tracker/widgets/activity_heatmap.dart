@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/data/models/time_tracking/stats.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class ActivityHeatmap extends StatelessWidget {
   const ActivityHeatmap({required this.dailyActivity, super.key});
@@ -10,8 +11,7 @@ class ActivityHeatmap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final theme = shad.Theme.of(context);
 
     final activityMap = <String, int>{};
     for (final day in dailyActivity) {
@@ -45,7 +45,7 @@ class ActivityHeatmap extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: Text(
             l10n.timerActivityHeatmap,
-            style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+            style: theme.typography.small.copyWith(fontWeight: FontWeight.w600),
           ),
         ),
         SizedBox(
@@ -60,16 +60,16 @@ class ActivityHeatmap extends StatelessWidget {
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _dayLabel('', textTheme),
-                    _dayLabel('M', textTheme),
-                    _dayLabel('', textTheme),
-                    _dayLabel('W', textTheme),
-                    _dayLabel('', textTheme),
-                    _dayLabel('F', textTheme),
-                    _dayLabel('', textTheme),
+                    _dayLabel('', context),
+                    _dayLabel('M', context),
+                    _dayLabel('', context),
+                    _dayLabel('W', context),
+                    _dayLabel('', context),
+                    _dayLabel('F', context),
+                    _dayLabel('', context),
                   ],
                 ),
-                const SizedBox(width: 4),
+                const shad.Gap(4),
                 ...weeks.map(
                   (week) => Column(
                     mainAxisSize: MainAxisSize.min,
@@ -83,10 +83,10 @@ class ActivityHeatmap extends StatelessWidget {
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(2),
                             color: day.duration > 0
-                                ? colorScheme.primary.withValues(
+                                ? theme.colorScheme.primary.withValues(
                                     alpha: 0.2 + intensity * 0.8,
                                   )
-                                : colorScheme.surfaceContainerHighest,
+                                : theme.colorScheme.muted,
                           ),
                         ),
                       );
@@ -106,13 +106,14 @@ class ActivityHeatmap extends StatelessWidget {
       '-${date.day.toString().padLeft(2, '0')}';
 }
 
-Widget _dayLabel(String text, TextTheme textTheme) {
+Widget _dayLabel(String text, BuildContext context) {
+  final theme = shad.Theme.of(context);
   return SizedBox(
     height: 14,
     child: text.isNotEmpty
         ? Text(
             text,
-            style: textTheme.labelSmall?.copyWith(fontSize: 9),
+            style: theme.typography.small.copyWith(fontSize: 9),
           )
         : null,
   );

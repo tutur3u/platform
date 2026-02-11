@@ -79,6 +79,13 @@ class _SignUpPageState extends State<SignUpPage> {
     return shad.Scaffold(
       headers: [
         shad.AppBar(
+          leading: [
+            shad.OutlineButton(
+              density: shad.ButtonDensity.icon,
+              onPressed: () => context.pop(),
+              child: const Icon(Icons.arrow_back),
+            ),
+          ],
           title: Text(l10n.signUpTitle),
         ),
       ],

@@ -10,11 +10,11 @@ import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
 
 class TimeTrackerCubit extends Cubit<TimeTrackerState> {
-  TimeTrackerCubit({required TimeTrackerRepository repository})
+  TimeTrackerCubit({required ITimeTrackerRepository repository})
     : _repo = repository,
       super(const TimeTrackerState());
 
-  final TimeTrackerRepository _repo;
+  final ITimeTrackerRepository _repo;
   Timer? _ticker;
 
   Future<void> loadData(String wsId, String userId) async {
@@ -37,7 +37,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
 
       TimeTrackingBreak? activeBreak;
       if (runningSession != null) {
-        activeBreak = await _repo.getActiveBreak(runningSession.id);
+        activeBreak = await _repo.getActiveBreak(wsId, runningSession.id);
       }
 
       final isPaused =
@@ -79,7 +79,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     try {
       // Stop any existing running session first
       if (state.runningSession != null) {
-        await _repo.stopSession(state.runningSession!.id);
+        await _repo.stopSession(wsId, state.runningSession!.id);
       }
 
       final session = await _repo.startSession(
@@ -110,7 +110,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     try {
       _stopTick();
 
-      await _repo.stopSession(state.runningSession!.id);
+      await _repo.stopSession(wsId, state.runningSession!.id);
 
       // Refresh data
       final results = await Future.wait([
@@ -140,8 +140,14 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     try {
       _stopTick();
 
-      final session = await _repo.pauseSession(state.runningSession!.id);
-      final activeBreak = await _repo.getActiveBreak(session.id);
+      final wsId = state.runningSession!.wsId;
+      if (wsId == null) {
+        emit(state.copyWith(error: 'Workspace ID not found'));
+        return;
+      }
+
+      final session = await _repo.pauseSession(wsId, state.runningSession!.id);
+      final activeBreak = await _repo.getActiveBreak(wsId, session.id);
 
       emit(
         state.copyWith(
@@ -159,7 +165,16 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     if (state.runningSession == null) return;
 
     try {
-      final newSession = await _repo.resumeSession(state.runningSession!);
+      final wsId = state.runningSession!.wsId;
+      if (wsId == null) {
+        emit(state.copyWith(error: 'Workspace ID not found'));
+        return;
+      }
+
+      final newSession = await _repo.resumeSession(
+        wsId,
+        state.runningSession!.id,
+      );
 
       emit(
         state.copyWith(
@@ -199,6 +214,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
   }) async {
     try {
       await _repo.editSession(
+        wsId,
         sessionId,
         title: title,
         description: description,
@@ -220,7 +236,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     String userId,
   ) async {
     try {
-      await _repo.deleteSession(sessionId);
+      await _repo.deleteSession(wsId, sessionId);
 
       final results = await Future.wait([
         _repo.getSessions(wsId, limit: 5),

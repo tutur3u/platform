@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TimerControls extends StatelessWidget {
   const TimerControls({
@@ -24,7 +25,6 @@ class TimerControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final colorScheme = Theme.of(context).colorScheme;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -35,8 +35,7 @@ class TimerControls extends StatelessWidget {
             if (!isRunning && !isPaused)
               // Stopped state: Start button
               _CircleButton(
-                icon: Icons.play_arrow,
-                color: colorScheme.primary,
+                icon: shad.LucideIcons.play,
                 onPressed: onStart,
                 size: 72,
                 iconSize: 36,
@@ -44,46 +43,51 @@ class TimerControls extends StatelessWidget {
             else if (isRunning) ...[
               // Running state: Pause + Stop
               _CircleButton(
-                icon: Icons.pause,
-                color: colorScheme.tertiary,
+                icon: shad.LucideIcons.pause,
                 onPressed: onPause,
                 size: 56,
                 iconSize: 28,
+                secondary: true,
               ),
-              const SizedBox(width: 24),
+              const shad.Gap(24),
               _CircleButton(
-                icon: Icons.stop,
-                color: colorScheme.error,
+                icon: shad.LucideIcons.square,
                 onPressed: onStop,
                 size: 72,
                 iconSize: 36,
+                destructive: true,
               ),
             ] else ...[
               // Paused state: Resume + Stop
               _CircleButton(
-                icon: Icons.play_arrow,
-                color: colorScheme.primary,
+                icon: shad.LucideIcons.play,
                 onPressed: onResume,
                 size: 56,
                 iconSize: 28,
               ),
-              const SizedBox(width: 24),
+              const shad.Gap(24),
               _CircleButton(
-                icon: Icons.stop,
-                color: colorScheme.error,
+                icon: shad.LucideIcons.square,
                 onPressed: onStop,
                 size: 72,
                 iconSize: 36,
+                destructive: true,
               ),
             ],
           ],
         ),
         if (!isRunning && !isPaused) ...[
-          const SizedBox(height: 16),
-          TextButton.icon(
+          const shad.Gap(16),
+          shad.GhostButton(
             onPressed: onAddMissedEntry,
-            icon: const Icon(Icons.add, size: 18),
-            label: Text(l10n.timerAddMissedEntry),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(shad.LucideIcons.plus, size: 18),
+                const shad.Gap(8),
+                Text(l10n.timerAddMissedEntry),
+              ],
+            ),
           ),
         ],
       ],
@@ -94,30 +98,50 @@ class TimerControls extends StatelessWidget {
 class _CircleButton extends StatelessWidget {
   const _CircleButton({
     required this.icon,
-    required this.color,
     required this.onPressed,
     required this.size,
     required this.iconSize,
+    this.destructive = false,
+    this.secondary = false,
   });
 
   final IconData icon;
-  final Color color;
   final VoidCallback onPressed;
   final double size;
   final double iconSize;
+  final bool destructive;
+  final bool secondary;
 
   @override
   Widget build(BuildContext context) {
+    if (destructive) {
+      return SizedBox(
+        width: size,
+        height: size,
+        child: shad.DestructiveButton(
+          onPressed: onPressed,
+          shape: shad.ButtonShape.circle,
+          child: Icon(icon, size: iconSize),
+        ),
+      );
+    }
+    if (secondary) {
+      return SizedBox(
+        width: size,
+        height: size,
+        child: shad.SecondaryButton(
+          onPressed: onPressed,
+          shape: shad.ButtonShape.circle,
+          child: Icon(icon, size: iconSize),
+        ),
+      );
+    }
     return SizedBox(
       width: size,
       height: size,
-      child: FilledButton(
+      child: shad.PrimaryButton(
         onPressed: onPressed,
-        style: FilledButton.styleFrom(
-          backgroundColor: color,
-          shape: const CircleBorder(),
-          padding: EdgeInsets.zero,
-        ),
+        shape: shad.ButtonShape.circle,
         child: Icon(icon, size: iconSize),
       ),
     );

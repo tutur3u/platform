@@ -1,217 +1,367 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'
+    hide AlertDialog, FilledButton, OutlinedButton, TextField;
 import 'package:mobile/data/models/time_tracking/request.dart';
+import 'package:mobile/data/models/time_tracking/request_comment.dart';
+import 'package:mobile/data/repositories/time_tracker_repository.dart';
+import 'package:mobile/features/time_tracker/widgets/comments_section.dart';
+import 'package:mobile/features/time_tracker/widgets/edit_request_dialog.dart';
+import 'package:mobile/features/time_tracker/widgets/request_activity_section.dart';
+import 'package:mobile/features/time_tracker/widgets/request_detail_actions.dart';
+import 'package:mobile/features/time_tracker/widgets/request_detail_shared.dart';
+import 'package:mobile/features/time_tracker/widgets/request_image_gallery.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
-class RequestDetailSheet extends StatelessWidget {
+class RequestDetailSheet extends StatefulWidget {
   const RequestDetailSheet({
     required this.request,
     required this.onApprove,
     required this.onReject,
     required this.onRequestInfo,
+    required this.wsId,
+    required this.repository,
     this.isManager = false,
+    this.canEdit = false,
+    this.currentUserId,
+    this.onEdit,
     super.key,
   });
 
   final TimeTrackingRequest request;
-  final VoidCallback onApprove;
+  final Future<void> Function() onApprove;
   final ValueChanged<String?> onReject;
   final ValueChanged<String?> onRequestInfo;
+  final String wsId;
+  final ITimeTrackerRepository repository;
   final bool isManager;
+  final bool canEdit;
+  final String? currentUserId;
+  final Future<TimeTrackingRequest?> Function(
+    String title,
+    DateTime startTime,
+    DateTime endTime, {
+    String? description,
+    List<String>? removedImages,
+    List<String>? newImagePaths,
+  })?
+  onEdit;
+  @override
+  State<RequestDetailSheet> createState() => _RequestDetailSheetState();
+}
+
+class _RequestDetailSheetState extends State<RequestDetailSheet> {
+  final TextEditingController _commentController = TextEditingController();
+  List<TimeTrackingRequestComment> _comments = const [];
+  bool _isLoadingComments = true;
+  bool _isAddingComment = false;
+  String? _currentUserId;
+  late TimeTrackingRequest _request;
+
+  bool _commentsExpanded = false;
+  bool _activityExpanded = false;
+  int _activityCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _request = widget.request;
+    _currentUserId = widget.currentUserId;
+    unawaited(_loadComments());
+  }
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadComments() async {
+    try {
+      final comments = await _repo.getRequestComments(
+        widget.wsId,
+        widget.request.id,
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _comments = comments;
+        _isLoadingComments = false;
+      });
+    } on Exception {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _comments = const [];
+        _isLoadingComments = false;
+      });
+    }
+  }
+
+  Future<void> _addComment() async {
+    final content = _commentController.text.trim();
+    if (content.isEmpty) {
+      return;
+    }
+
+    setState(() => _isAddingComment = true);
+    try {
+      await _repo.addRequestComment(widget.wsId, widget.request.id, content);
+      _commentController.clear();
+      await _loadComments();
+      if (!mounted) {
+        return;
+      }
+      setState(() => _isAddingComment = false);
+    } on Exception {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _isAddingComment = false);
+    }
+  }
+
+  Future<void> _updateComment(
+    TimeTrackingRequestComment comment,
+    String content,
+  ) async {
+    try {
+      await _repo.updateRequestComment(
+        widget.wsId,
+        widget.request.id,
+        comment.id,
+        content,
+      );
+      await _loadComments();
+    } on Exception catch (e) {
+      debugPrint('Failed to update request comment: $e');
+    }
+  }
+
+  Future<void> _deleteComment(TimeTrackingRequestComment comment) async {
+    try {
+      await _repo.deleteRequestComment(
+        widget.wsId,
+        widget.request.id,
+        comment.id,
+      );
+      await _loadComments();
+    } on Exception catch (e) {
+      debugPrint('Failed to delete request comment: $e');
+    }
+  }
+
+  ITimeTrackerRepository get _repo => widget.repository;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    final duration = request.duration;
-    final durationText = _formatDuration(duration);
+    final theme = shad.Theme.of(context);
+    final showManagerActions =
+        widget.isManager && _request.approvalStatus == ApprovalStatus.pending;
 
     return DraggableScrollableSheet(
-      initialChildSize: 0.6,
-      minChildSize: 0.4,
-      maxChildSize: 0.85,
-      builder: (context, scrollController) => Container(
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-        ),
-        child: ListView(
-          controller: scrollController,
-          padding: const EdgeInsets.all(24),
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    request.title ?? 'Request',
-                    style: textTheme.titleLarge,
-                  ),
-                ),
-                _StatusBadge(status: request.approvalStatus),
-              ],
-            ),
-            if (request.description != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                request.description!,
-                style: textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-            const SizedBox(height: 16),
-            _InfoRow(
-              label: l10n.timerDuration,
-              value: durationText,
-            ),
-            if (request.startTime != null)
-              _InfoRow(
-                label: l10n.timerStartTime,
-                value: _formatDateTime(request.startTime!),
-              ),
-            if (request.endTime != null)
-              _InfoRow(
-                label: l10n.timerEndTime,
-                value: _formatDateTime(request.endTime!),
-              ),
-            if (request.rejectionReason != null) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: colorScheme.errorContainer.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  request.rejectionReason!,
-                  style: textTheme.bodySmall?.copyWith(
-                    color: colorScheme.error,
-                  ),
-                ),
-              ),
-            ],
-            if (request.needsInfoReason != null) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: colorScheme.tertiaryContainer.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  request.needsInfoReason!,
-                  style: textTheme.bodySmall?.copyWith(
-                    color: colorScheme.tertiary,
-                  ),
-                ),
-              ),
-            ],
-            if (isManager &&
-                request.approvalStatus == ApprovalStatus.pending) ...[
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: () {
-                        onApprove();
-                        Navigator.of(context).pop();
-                      },
-                      child: Text(l10n.timerApprove),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => _showReasonDialog(
-                        context,
-                        l10n.timerReject,
-                        onReject,
+      initialChildSize: 0.62,
+      minChildSize: 0.62,
+      maxChildSize: 0.92,
+      snap: true,
+      snapSizes: const [0.62, 0.92],
+      expand: false,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.background,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _request.title ?? l10n.timerRequestsTitle,
+                              style: theme.typography.h3,
+                            ),
+                          ),
+                          RequestStatusBadge(status: _request.approvalStatus),
+                        ],
                       ),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: colorScheme.error,
+                      if (widget.canEdit && widget.onEdit != null) ...[
+                        const shad.Gap(12),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: shad.OutlineButton(
+                            onPressed: () => _showEditDialog(context),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.edit,
+                                  size: 16,
+                                  color: theme.colorScheme.primary,
+                                ),
+                                const shad.Gap(8),
+                                Text(
+                                  l10n.timerRequestEdit,
+                                  style: theme.typography.small.copyWith(
+                                    color: theme.colorScheme.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (_request.description != null) ...[
+                        const shad.Gap(12),
+                        Text(
+                          _request.description!,
+                          style: theme.typography.small.copyWith(
+                            color: theme.colorScheme.mutedForeground,
+                          ),
+                        ),
+                      ],
+                      const shad.Gap(16),
+                      RequestInfoRow(
+                        label: l10n.timerDuration,
+                        value: _formatDuration(_request.duration),
                       ),
-                      child: Text(l10n.timerReject),
-                    ),
+                      if (_request.startTime != null)
+                        RequestInfoRow(
+                          label: l10n.timerStartTime,
+                          value: _formatDateTime(_request.startTime!),
+                        ),
+                      if (_request.endTime != null)
+                        RequestInfoRow(
+                          label: l10n.timerEndTime,
+                          value: _formatDateTime(_request.endTime!),
+                        ),
+                      if (_request.images.isNotEmpty) ...[
+                        const shad.Gap(16),
+                        RequestImageGallery(imagePaths: _request.images),
+                      ],
+                      if (_request.rejectionReason != null) ...[
+                        const shad.Gap(12),
+                        RequestReasonBox(
+                          text: _request.rejectionReason!,
+                          color: theme.colorScheme.destructive,
+                        ),
+                      ],
+                      if (_request.needsInfoReason != null) ...[
+                        const shad.Gap(12),
+                        RequestReasonBox(
+                          text: _request.needsInfoReason!,
+                          color: theme.colorScheme.secondary,
+                        ),
+                      ],
+                      const shad.Gap(24),
+                      _ExpandableSection(
+                        title: l10n.timerRequestComments,
+                        count: _comments.length,
+                        isExpanded: _commentsExpanded,
+                        onToggle: () => setState(
+                          () => _commentsExpanded = !_commentsExpanded,
+                        ),
+                        child: _isLoadingComments
+                            ? const Center(
+                                child: shad.CircularProgressIndicator(),
+                              )
+                            : CommentsSection(
+                                comments: _comments,
+                                commentController: _commentController,
+                                isAddingComment: _isAddingComment,
+                                currentUserId: _currentUserId,
+                                onAddComment: _addComment,
+                                onEditComment: _updateComment,
+                                onDeleteComment: _deleteComment,
+                                canAddComments: true,
+                              ),
+                      ),
+                      const shad.Gap(16),
+                      _ExpandableSection(
+                        title: l10n.timerRequestActivity,
+                        count: _activityCount > 0 ? _activityCount : null,
+                        isExpanded: _activityExpanded,
+                        onToggle: () => setState(
+                          () => _activityExpanded = !_activityExpanded,
+                        ),
+                        child: RequestActivitySection(
+                          wsId: widget.wsId,
+                          requestId: _request.id,
+                          repository: _repo,
+                          onTotalChanged: (count) {
+                            if (mounted && _activityCount != count) {
+                              setState(() => _activityCount = count);
+                            }
+                          },
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              OutlinedButton(
-                onPressed: () => _showReasonDialog(
-                  context,
-                  l10n.timerRequestInfo,
-                  onRequestInfo,
                 ),
-                child: Text(l10n.timerRequestInfo),
               ),
+              if (showManagerActions)
+                RequestManagerActionsBar(
+                  onApprove: widget.onApprove,
+                  onReject: widget.onReject,
+                  onRequestInfo: widget.onRequestInfo,
+                ),
             ],
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
-  void _showReasonDialog(
-    BuildContext context,
-    String title,
-    ValueChanged<String?> onSubmit,
-  ) {
-    final controller = TextEditingController();
+  void _showEditDialog(BuildContext context) {
+    if (widget.onEdit == null) {
+      return;
+    }
+
     unawaited(
-      showDialog<void>(
+      shad.showDialog<void>(
         context: context,
-        builder: (dialogCtx) => Center(
-          child: SizedBox(
-            width: MediaQuery.of(context).size.width * 0.8,
-            child: shad.AlertDialog(
-              barrierColor: Colors.transparent,
-              title: Text(title),
-              content: TextField(
-                controller: controller,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: context.l10n.timerReasonOptional,
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              actions: [
-                shad.OutlineButton(
-                  onPressed: () => Navigator.of(dialogCtx).pop(),
-                  child: Text(
-                    MaterialLocalizations.of(dialogCtx).cancelButtonLabel,
-                  ),
-                ),
-                shad.PrimaryButton(
-                  onPressed: () {
-                    final reason = controller.text.isEmpty
-                        ? null
-                        : controller.text;
-                    onSubmit(reason);
-                    Navigator.of(dialogCtx).pop();
-                    if (!context.mounted) return;
-                    Navigator.of(context).pop();
-                  },
-                  child: Text(title),
-                ),
-              ],
-            ),
-          ),
+        builder: (_) => EditRequestDialog(
+          request: _request,
+          onSave:
+              (
+                title,
+                startTime,
+                endTime, {
+                description,
+                removedImages,
+                newImagePaths,
+              }) async {
+                final updatedRequest = await widget.onEdit!(
+                  title,
+                  startTime,
+                  endTime,
+                  description: description,
+                  removedImages: removedImages,
+                  newImagePaths: newImagePaths,
+                );
+                if (!mounted) {
+                  return updatedRequest;
+                }
+                if (updatedRequest != null) {
+                  setState(() {
+                    _request = updatedRequest;
+                  });
+                }
+                // Note: EditRequestDialog._handleSave will pop the dialog
+                return updatedRequest;
+              },
         ),
       ),
     );
@@ -232,66 +382,67 @@ class RequestDetailSheet extends StatelessWidget {
   }
 }
 
-class _StatusBadge extends StatelessWidget {
-  const _StatusBadge({required this.status});
+class _ExpandableSection extends StatelessWidget {
+  const _ExpandableSection({
+    required this.title,
+    required this.isExpanded,
+    required this.onToggle,
+    required this.child,
+    this.count,
+  });
 
-  final ApprovalStatus status;
+  final String title;
+  final bool isExpanded;
+  final VoidCallback onToggle;
+  final Widget child;
+  final int? count;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = shad.Theme.of(context);
 
-    final (label, color) = switch (status) {
-      ApprovalStatus.pending => ('Pending', colorScheme.tertiary),
-      ApprovalStatus.approved => ('Approved', colorScheme.primary),
-      ApprovalStatus.rejected => ('Rejected', colorScheme.error),
-      ApprovalStatus.needsInfo => ('Needs info', colorScheme.secondary),
-    };
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: color,
-          fontWeight: FontWeight.w600,
+    return Column(
+      children: [
+        InkWell(
+          onTap: onToggle,
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              border: Border.all(color: theme.colorScheme.border),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Text(title, style: theme.typography.semiBold),
+                if (count != null) ...[
+                  const shad.Gap(8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.muted,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text('$count', style: theme.typography.small),
+                  ),
+                ],
+                const Spacer(),
+                Icon(
+                  isExpanded ? Icons.expand_less : Icons.expand_more,
+                  color: theme.colorScheme.mutedForeground,
+                ),
+              ],
+            ),
+          ),
         ),
-      ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+        if (isExpanded) ...[
+          const shad.Gap(16),
+          child,
         ],
-      ),
+      ],
     );
   }
 }
