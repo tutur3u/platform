@@ -1,7 +1,7 @@
 import { cn } from '@ncthub/utils/format';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ReactNode, Suspense } from 'react';
+import { type ReactNode, Suspense } from 'react';
 
 export interface NavbarProps {
   /**
@@ -40,6 +40,11 @@ export interface NavbarProps {
   homeUrl?: string;
 
   /**
+   * Custom logo link component (overrides homeUrl and default link behavior)
+   */
+  customLogoLink?: ReactNode;
+
+  /**
    * Whether to hide the navbar on desktop screens
    */
   onlyOnMobile?: boolean;
@@ -68,6 +73,7 @@ export function Navbar({
   actions,
   separator,
   homeUrl = '/',
+  customLogoLink,
   onlyOnMobile = false,
   className,
   contentClassName,
@@ -77,7 +83,7 @@ export function Navbar({
     <nav
       id="navbar"
       className={cn(
-        'fixed inset-x-0 top-0 z-50',
+        'fixed inset-x-0 top-0 z-50 shrink-0',
         onlyOnMobile && 'md:hidden',
         className
       )}
@@ -85,29 +91,34 @@ export function Navbar({
       <div
         id="navbar-content"
         className={cn(
-          'bg-transparent px-4 py-2 font-semibold md:px-8 lg:px-16 xl:px-32',
+          'bg-transparent px-4 py-3 font-semibold transition-all duration-300 md:px-8 lg:px-16 xl:px-32',
           contentClassName
         )}
       >
         <div className="relative flex items-center justify-between gap-2 md:gap-4">
-          <div className="flex w-full items-center gap-2">
-            <Link
-              href={homeUrl}
-              className={cn('flex flex-none items-center gap-2', logoClassName)}
-            >
-              {typeof logo === 'string' ? (
-                <Image
-                  src={logo}
-                  className="h-8 w-8"
-                  width={32}
-                  height={32}
-                  alt="logo"
-                />
-              ) : (
-                logo
-              )}
-              {title}
-            </Link>
+          <div className="flex w-full items-center gap-2 md:gap-4">
+            {customLogoLink || (
+              <Link
+                href={homeUrl}
+                className={cn(
+                  'flex flex-none items-center gap-2 transition-opacity hover:opacity-80',
+                  logoClassName
+                )}
+              >
+                {typeof logo === 'string' ? (
+                  <Image
+                    src={logo}
+                    className="h-8 w-8 transition-transform hover:scale-105"
+                    width={32}
+                    height={32}
+                    alt="logo"
+                  />
+                ) : (
+                  logo
+                )}
+                {title}
+              </Link>
+            )}
 
             {afterTitle && (
               <Suspense
