@@ -168,7 +168,7 @@ GoRouter createAppRouter(
           for (final module in AppRegistry.allModules)
             GoRoute(
               path: module.route,
-              builder: (context, state) => module.pageBuilder(context),
+              builder: (context, _) => module.pageBuilder(context),
             ),
           GoRoute(
             path: Routes.settings,

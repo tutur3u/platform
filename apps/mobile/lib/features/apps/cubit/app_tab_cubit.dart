@@ -15,7 +15,7 @@ class AppTabCubit extends Cubit<AppTabState> {
   final SettingsRepository _settings;
 
   Future<void> clearSelection() async {
-    if (!state.hasSelection && state.selectedId == null) return;
+    if (state.selectedId == null) return;
     emit(
       state.copyWith(
         selectedId: () => null,
@@ -35,7 +35,13 @@ class AppTabCubit extends Cubit<AppTabState> {
   }
 
   Future<void> loadLastApp() async {
-    final route = await _settings.getLastAppRoute();
+    String? route;
+    try {
+      route = await _settings.getLastAppRoute();
+    } on Exception catch (e, st) {
+      log('Failed to load last app route', error: e, stackTrace: st);
+      return;
+    }
     if (route == null) return;
     final module = AppRegistry.moduleFromLocation(route);
     if (module != null) {
@@ -72,6 +78,14 @@ class AppTabCubit extends Cubit<AppTabState> {
       await _settings.setLastTabRoute(Routes.apps);
     } on Exception catch (e, st) {
       log('Failed to persist app selection', error: e, stackTrace: st);
+    }
+  }
+
+  Future<void> setLastTabRoute(String route) async {
+    try {
+      await _settings.setLastTabRoute(route);
+    } on Exception catch (e, st) {
+      log('Failed to persist last tab route', error: e, stackTrace: st);
     }
   }
 

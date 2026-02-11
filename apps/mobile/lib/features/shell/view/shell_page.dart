@@ -5,7 +5,6 @@ import 'package:flutter/material.dart'
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/cubit/app_tab_state.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
@@ -25,7 +24,7 @@ class ShellPage extends StatefulWidget {
 }
 
 class _ShellPageState extends State<ShellPage> {
-  DateTime? _lastTapTime;
+  final Stopwatch _tapStopwatch = Stopwatch();
   int? _lastTabIndex;
   Timer? _longPressTimer;
   final GlobalKey _appsTabKey = GlobalKey();
@@ -118,6 +117,7 @@ class _ShellPageState extends State<ShellPage> {
   }
 
   void _handleAppsLongPress() {
+    if (!context.mounted) return;
     unawaited(context.read<AppTabCubit>().openWithSearch());
     context.go(Routes.apps);
   }
@@ -127,18 +127,18 @@ class _ShellPageState extends State<ShellPage> {
     BuildContext context,
     AppTabState state,
   ) async {
-    final now = DateTime.now();
     final isDoubleTap =
         _lastTabIndex == index &&
-        _lastTapTime != null &&
-        now.difference(_lastTapTime!) < const Duration(milliseconds: 300);
-
-    _lastTapTime = now;
-    _lastTabIndex = index;
+        _tapStopwatch.isRunning &&
+        _tapStopwatch.elapsed < const Duration(milliseconds: 300);
 
     if (index == 1 && isDoubleTap) {
       await context.read<AppTabCubit>().clearSelection();
       if (context.mounted) context.go(Routes.apps);
+      _lastTabIndex = index;
+      _tapStopwatch
+        ..reset()
+        ..start();
       return;
     }
 
@@ -151,7 +151,11 @@ class _ShellPageState extends State<ShellPage> {
       _ => Routes.home,
     };
     if (context.mounted) context.go(route);
-    await SettingsRepository().setLastTabRoute(route);
+    await context.read<AppTabCubit>().setLastTabRoute(route);
+    _lastTabIndex = index;
+    _tapStopwatch
+      ..reset()
+      ..start();
   }
 
   void _startLongPressTimer(PointerDownEvent event) {

@@ -332,7 +332,7 @@ class _ConnectionToggle extends StatelessWidget {
     );
   }
 
-  Color _parseHexColor(String hex, Color fallback) {
+  static Color _parseHexColor(String hex, Color fallback) {
     final cleaned = hex.replaceFirst('#', '').trim();
     if (cleaned.length == 8) {
       final value = int.tryParse(cleaned, radix: 16);
@@ -398,30 +398,6 @@ class _LoadedBody extends StatefulWidget {
 
 class _LoadedBodyState extends State<_LoadedBody> {
   final _expandedAccounts = <String>{};
-
-  @override
-  void initState() {
-    super.initState();
-    // Expand all accounts initially.
-    for (final a in widget.state.accounts) {
-      _expandedAccounts.add(a.id);
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant _LoadedBody oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final previousIds = oldWidget.state.accounts
-        .map((account) => account.id)
-        .toSet();
-    final newIds = widget.state.accounts.map((account) => account.id).toSet();
-    final addedIds = newIds.difference(previousIds);
-    if (addedIds.isNotEmpty) {
-      setState(() {
-        _expandedAccounts.addAll(addedIds);
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -521,6 +497,30 @@ class _LoadedBodyState extends State<_LoadedBody> {
         const SizedBox(height: 24),
       ],
     );
+  }
+
+  @override
+  void didUpdateWidget(covariant _LoadedBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final previousIds = oldWidget.state.accounts
+        .map((account) => account.id)
+        .toSet();
+    final newIds = widget.state.accounts.map((account) => account.id).toSet();
+    final addedIds = newIds.difference(previousIds);
+    if (addedIds.isNotEmpty) {
+      setState(() {
+        _expandedAccounts.addAll(addedIds);
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Expand all accounts initially.
+    for (final a in widget.state.accounts) {
+      _expandedAccounts.add(a.id);
+    }
   }
 
   void _confirmDisconnect(BuildContext context, CalendarAccount account) {

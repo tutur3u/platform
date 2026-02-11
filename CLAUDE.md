@@ -202,9 +202,6 @@ bun trigger:deploy
 
 When searching for Dart symbol usages, prefer workspace-scoped searches (e.g., `apps/mobile/**`) instead of tools that can scan the global Pub cache. Pub cache hits are outside the repo and can mislead refactors.
 
-### Dialog Context Safety
-
-When a dialog callback needs to reference the parent `BuildContext` after closing the dialog, guard with `if (!context.mounted) return;` before using the outer context to avoid stale context access.
 
 ### Mandatory Actions
 
