@@ -60,17 +60,17 @@ android {
         create("production") {
             dimension = "default"
             applicationIdSuffix = ""
-            manifestPlaceholders["appName"] = "Mobile"
+            manifestPlaceholders["appName"] = "Tuturuuu"
         }
         create("staging") {
             dimension = "default"
             applicationIdSuffix = ".stg"
-            manifestPlaceholders["appName"] = "[STG] Mobile"
+            manifestPlaceholders["appName"] = "[STG] Tuturuuu"
         }
         create("development") {
             dimension = "default"
             applicationIdSuffix = ".dev"
-            manifestPlaceholders["appName"] = "[DEV] Mobile"
+            manifestPlaceholders["appName"] = "[DEV] Tuturuuu"
             // Use debug signing for dev flavor release builds.
             signingConfig = signingConfigs.getByName("debug")
         }
