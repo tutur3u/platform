@@ -129,9 +129,9 @@ export async function createClient<T = Database>(
  * creates a client using that token (mobile / API flow). This keeps
  * RLS intact because the user's JWT is forwarded to Supabase.
  */
-export async function createDynamicClient(
+export async function createDynamicClient<T = Database>(
   request?: Pick<Request, 'headers'>
-): Promise<SupabaseClient<any>> {
+): Promise<SupabaseClient<T>> {
   // Check for Bearer token in request headers (mobile / API callers).
   if (request) {
     const authHeader =
@@ -143,7 +143,7 @@ export async function createDynamicClient(
 
     if (accessToken) {
       const { url, key } = checkEnvVariables({ useSecretKey: false });
-      return createBrowserClient(url, key, {
+      return createBrowserClient<T>(url, key, {
         global: {
           headers: {
             Authorization: `Bearer ${accessToken}`,
