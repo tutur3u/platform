@@ -35,13 +35,6 @@ import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import {
   PERSONAL_WORKSPACE_SLUG,
@@ -59,7 +52,6 @@ import { fetchWorkspaces } from './actions';
 
 const FormSchema = z.object({
   name: z.string().min(1).max(100),
-  plan: z.string(),
 });
 
 function WorkspaceIcon({
@@ -128,7 +120,6 @@ export function WorkspaceSelect({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       name: '',
-      plan: 'FREE',
     },
   });
 
@@ -449,8 +440,13 @@ export function WorkspaceSelect({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('common.create_workspace')}</DialogTitle>
-            <DialogDescription>
-              {t('common.create_workspace_description')}
+            <DialogDescription asChild>
+              <div className="space-y-2">
+                <p>{t('common.create_workspace_description')}</p>
+                <p className="font-semibold text-dynamic-blue">
+                  {t('common.create_workspace_upgrade_notice')}
+                </p>
+              </div>
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
@@ -464,57 +460,6 @@ export function WorkspaceSelect({
                     <FormLabel>{t('common.workspace_name')}</FormLabel>
                     <FormControl>
                       <Input placeholder="Acme Inc." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="plan"
-                disabled={loading}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('common.subscription_plan')}</FormLabel>
-                    <FormControl>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a plan" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="FREE">
-                            <span className="font-medium">
-                              {t('common.free')}
-                            </span>{' '}
-                            -{' '}
-                            <span className="text-muted-foreground">
-                              {t('common.0_usd_per_month')}
-                            </span>
-                          </SelectItem>
-                          <SelectItem value="PRO" disabled>
-                            <span className="font-medium">
-                              {t('common.pro')}
-                            </span>{' '}
-                            -{' '}
-                            <span className="text-muted-foreground">
-                              {t('common.coming_soon')}
-                            </span>
-                          </SelectItem>
-                          <SelectItem value="ENTERPRISE" disabled>
-                            <span className="font-medium">
-                              {t('common.enterprise')}
-                            </span>{' '}
-                            -{' '}
-                            <span className="text-muted-foreground">
-                              {t('common.coming_soon')}
-                            </span>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

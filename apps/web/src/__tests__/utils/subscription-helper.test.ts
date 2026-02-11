@@ -41,7 +41,11 @@ describe('subscription-helper', () => {
         'ws-123'
       );
 
-      expect(result).toEqual({ hasWorkspace: false, hasActive: false });
+      expect(result).toEqual({
+        hasWorkspace: false,
+        hasActive: false,
+        subscription: null,
+      });
       expect(mockConsoleError).toHaveBeenCalledWith(
         'Workspace ws-123 not found, cannot check active subscriptions'
       );
@@ -80,10 +84,13 @@ describe('subscription-helper', () => {
         'ws-123'
       );
 
-      expect(result).toEqual({ hasWorkspace: true, hasActive: true });
+      expect(result).toEqual({
+        hasWorkspace: true,
+        hasActive: true,
+        subscription: { id: 'sub-1', status: 'active' },
+      });
       expect(mockPolar.subscriptions.list).toHaveBeenCalledWith({
         metadata: { wsId: 'ws-123' },
-        sorting: 'status',
       });
     });
 
@@ -119,7 +126,11 @@ describe('subscription-helper', () => {
         'ws-123'
       );
 
-      expect(result).toEqual({ hasWorkspace: true, hasActive: false });
+      expect(result).toEqual({
+        hasWorkspace: true,
+        hasActive: false,
+        subscription: null,
+      });
     });
 
     it('should return false when items is empty', async () => {
@@ -151,7 +162,11 @@ describe('subscription-helper', () => {
         'ws-123'
       );
 
-      expect(result).toEqual({ hasWorkspace: true, hasActive: false });
+      expect(result).toEqual({
+        hasWorkspace: true,
+        hasActive: false,
+        subscription: null,
+      });
     });
 
     it('should return false when items is null/undefined', async () => {
@@ -183,7 +198,11 @@ describe('subscription-helper', () => {
         'ws-123'
       );
 
-      expect(result).toEqual({ hasWorkspace: true, hasActive: false });
+      expect(result).toEqual({
+        hasWorkspace: true,
+        hasActive: false,
+        subscription: null,
+      });
     });
 
     it('should return true (fail-closed) on error to prevent duplicate subscriptions', async () => {
@@ -211,7 +230,11 @@ describe('subscription-helper', () => {
         'ws-123'
       );
 
-      expect(result).toEqual({ hasWorkspace: true, hasActive: true });
+      expect(result).toEqual({
+        hasWorkspace: true,
+        hasActive: true,
+        subscription: null,
+      });
       expect(mockConsoleError).toHaveBeenCalledWith(
         'Error checking active subscriptions:',
         'Polar API error'
@@ -243,7 +266,11 @@ describe('subscription-helper', () => {
         'ws-123'
       );
 
-      expect(result).toEqual({ hasWorkspace: true, hasActive: true });
+      expect(result).toEqual({
+        hasWorkspace: true,
+        hasActive: true,
+        subscription: null,
+      });
       expect(mockConsoleError).toHaveBeenCalledWith(
         'Error checking active subscriptions:',
         'String error'
@@ -281,7 +308,10 @@ describe('subscription-helper', () => {
         'ws-123'
       );
 
-      expect(result).toEqual({ status: 'already_active' });
+      expect(result).toEqual({
+        status: 'already_active',
+        subscription: { id: 'sub-1', status: 'active' },
+      });
       expect(mockConsoleLog).toHaveBeenCalledWith(
         'Workspace ws-123 already has an active subscription, skipping free subscription creation'
       );

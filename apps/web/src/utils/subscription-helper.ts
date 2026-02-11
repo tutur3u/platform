@@ -1,12 +1,12 @@
-import type { Polar } from '@tuturuuu/payment/polar';
+import type { Polar, Subscription } from '@tuturuuu/payment/polar';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 
 export type CreateFreeSubscriptionResult =
   | {
       status: 'created';
-      subscription: Awaited<ReturnType<Polar['subscriptions']['create']>>;
+      subscription: Subscription;
     }
-  | { status: 'already_active' }
+  | { status: 'already_active'; subscription: Subscription }
   | { status: 'error'; message: string };
 
 // Helper function to check if a workspace has any active subscriptions
@@ -28,26 +28,29 @@ export async function hasActiveSubscription(
       `Workspace ${wsId} not found, cannot check active subscriptions`
     );
 
-    return { hasWorkspace: false, hasActive: false };
+    return { hasWorkspace: false, hasActive: false, subscription: null };
   }
 
   try {
     const { result } = await polar.subscriptions.list({
       metadata: { wsId },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      sorting: 'status' as any,
     });
+
+    const activeSubscription = result.items?.find(
+      (sub) => sub.status === 'active'
+    );
 
     // Check if there's at least one active subscription
     return {
       hasWorkspace: true,
-      hasActive: result.items?.some((sub) => sub.status === 'active') ?? false,
+      hasActive: !!activeSubscription,
+      subscription: activeSubscription ?? null,
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error('Error checking active subscriptions:', errorMessage);
     // Fail-closed: treat API errors as "active" to prevent duplicate subscriptions
-    return { hasWorkspace: true, hasActive: true };
+    return { hasWorkspace: true, hasActive: true, subscription: null };
   }
 }
 
@@ -58,7 +61,7 @@ export async function createFreeSubscription(
   wsId: string
 ): Promise<CreateFreeSubscriptionResult> {
   // Check if the workspace already has an active subscription
-  const { hasWorkspace, hasActive } = await hasActiveSubscription(
+  const { hasWorkspace, hasActive, subscription } = await hasActiveSubscription(
     polar,
     supabase,
     wsId
@@ -71,11 +74,11 @@ export async function createFreeSubscription(
     return { status: 'error', message: 'Workspace not found' };
   }
 
-  if (hasActive) {
+  if (hasActive && subscription) {
     console.log(
       `Workspace ${wsId} already has an active subscription, skipping free subscription creation`
     );
-    return { status: 'already_active' };
+    return { status: 'already_active', subscription };
   }
 
   let externalCustomerId: string;
