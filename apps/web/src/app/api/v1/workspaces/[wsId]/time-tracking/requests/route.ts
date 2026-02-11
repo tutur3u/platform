@@ -1,15 +1,15 @@
 import {
-    getWorkspaceConfig,
-    normalizeWorkspaceId,
-} from '@/lib/workspace-helper';
-import {
-    createClient,
-    createDynamicClient,
+  createClient,
+  createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
 import { sanitizeFilename } from '@tuturuuu/utils/storage-path';
 import { type NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
+import {
+  getWorkspaceConfig,
+  normalizeWorkspaceId,
+} from '@/lib/workspace-helper';
 
 const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
 const ALLOWED_MIME_TYPES = [
