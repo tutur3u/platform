@@ -36,7 +36,7 @@ class AppTabCubit extends Cubit<AppTabState> {
 
   Future<void> clearSelection() async {
     if (!state.hasSelection && state.selectedId == null) return;
-    emit(state.copyWith(selectedId: null, hasSelection: false));
+    emit(state.copyWith(hasSelection: false));
     await _settings.clearLastAppRoute();
     await _settings.setLastTabRoute(Routes.apps);
   }

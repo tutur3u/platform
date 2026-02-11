@@ -15,10 +15,18 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 /// Shell layout with bottom navigation bar.
 ///
 /// Wraps all tab-level routes via GoRouter's [ShellRoute].
-class ShellPage extends StatelessWidget {
+class ShellPage extends StatefulWidget {
   const ShellPage({required this.child, super.key});
 
   final Widget child;
+
+  @override
+  State<ShellPage> createState() => _ShellPageState();
+}
+
+class _ShellPageState extends State<ShellPage> {
+  DateTime? _lastTapTime;
+  int? _lastTabIndex;
 
   @override
   Widget build(BuildContext context) {
@@ -30,10 +38,12 @@ class ShellPage extends StatelessWidget {
       footers: [
         BlocBuilder<AppTabCubit, AppTabState>(
           builder: (context, state) {
-            final appsLabel = state.hasSelection
-                ? AppRegistry.moduleById(state.selectedId)?.label(l10n) ??
-                      l10n.navApps
-                : l10n.navApps;
+            final selectedModule = state.hasSelection
+                ? AppRegistry.moduleById(state.selectedId)
+                : null;
+            final appsLabel = selectedModule?.label(l10n) ?? l10n.navApps;
+            final appsIcon = selectedModule?.icon ?? Icons.apps_outlined;
+
             return shad.NavigationBar(
               index: selectedIndex,
               onSelected: (index) => _onItemTapped(index, context, state),
@@ -61,7 +71,7 @@ class ShellPage extends StatelessWidget {
                       fontWeight: FontWeight.normal,
                     ),
                   ),
-                  child: const Icon(Icons.apps_outlined),
+                  child: Icon(appsIcon),
                 ),
                 shad.NavigationItem(
                   label: Text(
@@ -80,7 +90,7 @@ class ShellPage extends StatelessWidget {
           },
         ),
       ],
-      child: child,
+      child: widget.child,
     );
   }
 
@@ -94,11 +104,26 @@ class ShellPage extends StatelessWidget {
     return 0; // home
   }
 
-  void _onItemTapped(
+  Future<void> _onItemTapped(
     int index,
     BuildContext context,
     AppTabState state,
-  ) {
+  ) async {
+    final now = DateTime.now();
+    final isDoubleTap =
+        _lastTabIndex == index &&
+        _lastTapTime != null &&
+        now.difference(_lastTapTime!) < const Duration(milliseconds: 300);
+
+    _lastTapTime = now;
+    _lastTabIndex = index;
+
+    if (index == 1 && isDoubleTap) {
+      await context.read<AppTabCubit>().clearSelection();
+      if (context.mounted) context.go(Routes.apps);
+      return;
+    }
+
     final appRoute = state.hasSelection
         ? AppRegistry.moduleById(state.selectedId)?.route
         : null;
@@ -107,7 +132,7 @@ class ShellPage extends StatelessWidget {
       2 => Routes.profileRoot,
       _ => Routes.home,
     };
-    context.go(route);
-    unawaited(SettingsRepository().setLastTabRoute(route));
+    if (context.mounted) context.go(route);
+    await SettingsRepository().setLastTabRoute(route);
   }
 }
