@@ -5,9 +5,9 @@ import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
 import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import Negotiator from 'negotiator';
-import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   CENTRAL_PORT,
   LOCALE_COOKIE_NAME,
@@ -25,6 +25,7 @@ const authProxy = createCentralizedAuthProxy({
   webAppUrl: WEB_APP_URL,
   publicPaths: PUBLIC_PATHS,
   skipApiRoutes: true,
+  excludeRootPath: true,
 });
 
 export async function proxy(req: NextRequest): Promise<NextResponse> {
