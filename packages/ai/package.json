@@ -39,7 +39,7 @@
     "@ai-sdk/replicate": "^2.0.18",
     "@ai-sdk/revai": "^2.0.18",
     "@ai-sdk/togetherai": "^2.0.31",
-    "@ai-sdk/xai": "^3.0.50",
+    "@ai-sdk/xai": "^3.0.51",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "ai": "^6.0.79",
@@ -55,7 +55,7 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^25.2.3",
-    "@types/react": "^19.2.13",
+    "@types/react": "^19.2.14",
     "typescript": "^5.9.3"
   },
   "exports": {
