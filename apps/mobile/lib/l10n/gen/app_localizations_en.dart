@@ -549,6 +549,53 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerRequestActivityUpdated => 'updated this request';
 
   @override
+  String get timerRequestActivityFeedbackLabel => 'Feedback';
+
+  @override
+  String get timerRequestActivityTitleLabel => 'Title';
+
+  @override
+  String get timerRequestActivityUnknownUser => 'Unknown user';
+
+  @override
+  String get timerRequestActivityItemsPerPage => 'Items per page';
+
+  @override
+  String timerRequestActivityPageInfo(int current, int total) {
+    return 'Page $current of $total';
+  }
+
+  @override
+  String get timerRequestActivityActionCreated => 'created';
+
+  @override
+  String get timerRequestActivityActionStatusChanged => 'changed status';
+
+  @override
+  String get timerRequestActivityActionContentUpdated => 'updated content';
+
+  @override
+  String get timerRequestActivityActionCommentAdded => 'added comment';
+
+  @override
+  String get timerRequestActivityActionCommentUpdated => 'updated comment';
+
+  @override
+  String get timerRequestActivityActionCommentDeleted => 'deleted comment';
+
+  @override
+  String get timerRequestActivityFieldStartTime => 'Start time';
+
+  @override
+  String get timerRequestActivityFieldEndTime => 'End time';
+
+  @override
+  String get timerRequestActivityFieldTitle => 'Title';
+
+  @override
+  String get timerRequestActivityFieldDescription => 'Description';
+
+  @override
   String get timerRequestAddImage => 'Add image';
 
   @override

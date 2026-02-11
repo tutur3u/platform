@@ -549,6 +549,53 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerRequestActivityUpdated => 'đã cập nhật yêu cầu này';
 
   @override
+  String get timerRequestActivityFeedbackLabel => 'Phản hồi';
+
+  @override
+  String get timerRequestActivityTitleLabel => 'Tiêu đề';
+
+  @override
+  String get timerRequestActivityUnknownUser => 'Người dùng không xác định';
+
+  @override
+  String get timerRequestActivityItemsPerPage => 'Mục mỗi trang';
+
+  @override
+  String timerRequestActivityPageInfo(int current, int total) {
+    return 'Trang $current / $total';
+  }
+
+  @override
+  String get timerRequestActivityActionCreated => 'đã tạo';
+
+  @override
+  String get timerRequestActivityActionStatusChanged => 'đã thay đổi trạng thái';
+
+  @override
+  String get timerRequestActivityActionContentUpdated => 'đã cập nhật nội dung';
+
+  @override
+  String get timerRequestActivityActionCommentAdded => 'đã thêm bình luận';
+
+  @override
+  String get timerRequestActivityActionCommentUpdated => 'đã cập nhật bình luận';
+
+  @override
+  String get timerRequestActivityActionCommentDeleted => 'đã xóa bình luận';
+
+  @override
+  String get timerRequestActivityFieldStartTime => 'Thời gian bắt đầu';
+
+  @override
+  String get timerRequestActivityFieldEndTime => 'Thời gian kết thúc';
+
+  @override
+  String get timerRequestActivityFieldTitle => 'Tiêu đề';
+
+  @override
+  String get timerRequestActivityFieldDescription => 'Mô tả';
+
+  @override
   String get timerRequestAddImage => 'Thêm ảnh';
 
   @override

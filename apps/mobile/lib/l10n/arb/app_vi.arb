@@ -208,6 +208,27 @@
     "timerRequestActivityCommentUpdated": "đã cập nhật bình luận",
     "timerRequestActivityCommentDeleted": "đã xóa bình luận",
     "timerRequestActivityUpdated": "đã cập nhật yêu cầu này",
+    "timerRequestActivityFeedbackLabel": "Phản hồi",
+    "timerRequestActivityTitleLabel": "Tiêu đề",
+    "timerRequestActivityUnknownUser": "Người dùng không xác định",
+    "timerRequestActivityItemsPerPage": "Mục mỗi trang",
+    "timerRequestActivityPageInfo": "Trang {current} / {total}",
+    "@timerRequestActivityPageInfo": {
+        "placeholders": {
+            "current": { "type": "int" },
+            "total": { "type": "int" }
+        }
+    },
+    "timerRequestActivityActionCreated": "đã tạo",
+    "timerRequestActivityActionStatusChanged": "đã thay đổi trạng thái",
+    "timerRequestActivityActionContentUpdated": "đã cập nhật nội dung",
+    "timerRequestActivityActionCommentAdded": "đã thêm bình luận",
+    "timerRequestActivityActionCommentUpdated": "đã cập nhật bình luận",
+    "timerRequestActivityActionCommentDeleted": "đã xóa bình luận",
+    "timerRequestActivityFieldStartTime": "Thời gian bắt đầu",
+    "timerRequestActivityFieldEndTime": "Thời gian kết thúc",
+    "timerRequestActivityFieldTitle": "Tiêu đề",
+    "timerRequestActivityFieldDescription": "Mô tả",
     "timerRequestAddImage": "Thêm ảnh",
     "timerRequestProofImagesCount": "Ảnh: {current}/{max}",
     "@timerRequestProofImagesCount": {

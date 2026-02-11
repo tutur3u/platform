@@ -1159,6 +1159,96 @@ abstract class AppLocalizations {
   /// **'updated this request'**
   String get timerRequestActivityUpdated;
 
+  /// No description provided for @timerRequestActivityFeedbackLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback'**
+  String get timerRequestActivityFeedbackLabel;
+
+  /// No description provided for @timerRequestActivityTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get timerRequestActivityTitleLabel;
+
+  /// No description provided for @timerRequestActivityUnknownUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown user'**
+  String get timerRequestActivityUnknownUser;
+
+  /// No description provided for @timerRequestActivityItemsPerPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Items per page'**
+  String get timerRequestActivityItemsPerPage;
+
+  /// No description provided for @timerRequestActivityPageInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {current} of {total}'**
+  String timerRequestActivityPageInfo(int current, int total);
+
+  /// No description provided for @timerRequestActivityActionCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'created'**
+  String get timerRequestActivityActionCreated;
+
+  /// No description provided for @timerRequestActivityActionStatusChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'changed status'**
+  String get timerRequestActivityActionStatusChanged;
+
+  /// No description provided for @timerRequestActivityActionContentUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'updated content'**
+  String get timerRequestActivityActionContentUpdated;
+
+  /// No description provided for @timerRequestActivityActionCommentAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'added comment'**
+  String get timerRequestActivityActionCommentAdded;
+
+  /// No description provided for @timerRequestActivityActionCommentUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'updated comment'**
+  String get timerRequestActivityActionCommentUpdated;
+
+  /// No description provided for @timerRequestActivityActionCommentDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'deleted comment'**
+  String get timerRequestActivityActionCommentDeleted;
+
+  /// No description provided for @timerRequestActivityFieldStartTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Start time'**
+  String get timerRequestActivityFieldStartTime;
+
+  /// No description provided for @timerRequestActivityFieldEndTime.
+  ///
+  /// In en, this message translates to:
+  /// **'End time'**
+  String get timerRequestActivityFieldEndTime;
+
+  /// No description provided for @timerRequestActivityFieldTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get timerRequestActivityFieldTitle;
+
+  /// No description provided for @timerRequestActivityFieldDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get timerRequestActivityFieldDescription;
+
   /// No description provided for @timerRequestAddImage.
   ///
   /// In en, this message translates to:

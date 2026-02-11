@@ -208,6 +208,27 @@
     "timerRequestActivityCommentUpdated": "updated a comment",
     "timerRequestActivityCommentDeleted": "deleted a comment",
     "timerRequestActivityUpdated": "updated this request",
+    "timerRequestActivityFeedbackLabel": "Feedback",
+    "timerRequestActivityTitleLabel": "Title",
+    "timerRequestActivityUnknownUser": "Unknown user",
+    "timerRequestActivityItemsPerPage": "Items per page",
+    "timerRequestActivityPageInfo": "Page {current} of {total}",
+    "@timerRequestActivityPageInfo": {
+        "placeholders": {
+            "current": { "type": "int" },
+            "total": { "type": "int" }
+        }
+    },
+    "timerRequestActivityActionCreated": "created",
+    "timerRequestActivityActionStatusChanged": "changed status",
+    "timerRequestActivityActionContentUpdated": "updated content",
+    "timerRequestActivityActionCommentAdded": "added comment",
+    "timerRequestActivityActionCommentUpdated": "updated comment",
+    "timerRequestActivityActionCommentDeleted": "deleted comment",
+    "timerRequestActivityFieldStartTime": "Start time",
+    "timerRequestActivityFieldEndTime": "End time",
+    "timerRequestActivityFieldTitle": "Title",
+    "timerRequestActivityFieldDescription": "Description",
     "timerRequestAddImage": "Add image",
     "timerRequestProofImagesCount": "Images: {current}/{max}",
     "@timerRequestProofImagesCount": {

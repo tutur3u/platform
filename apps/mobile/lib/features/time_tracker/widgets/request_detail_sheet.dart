@@ -59,6 +59,10 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
   String? _currentUserId;
   late TimeTrackingRequest _request;
 
+  bool _commentsExpanded = false;
+  bool _activityExpanded = false;
+  int _activityCount = 0;
+
   @override
   void initState() {
     super.initState();
@@ -179,9 +183,7 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
                               style: theme.typography.h3,
                             ),
                           ),
-                          RequestStatusBadge(
-                            status: _request.approvalStatus,
-                          ),
+                          RequestStatusBadge(status: _request.approvalStatus),
                         ],
                       ),
                       if (widget.canEdit && widget.onEdit != null) ...[
@@ -244,32 +246,45 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
                         ),
                       ],
                       const shad.Gap(24),
-                      const shad.Divider(),
-                      const shad.Gap(16),
-                      Text(
-                        l10n.timerRequestComments,
-                        style: theme.typography.h4,
-                      ),
-                      const shad.Gap(12),
-                      if (_isLoadingComments)
-                        const Center(child: shad.CircularProgressIndicator())
-                      else
-                        CommentsSection(
-                          comments: _comments,
-                          commentController: _commentController,
-                          isAddingComment: _isAddingComment,
-                          currentUserId: _currentUserId,
-                          onAddComment: _addComment,
-                          onEditComment: _updateComment,
-                          onDeleteComment: _deleteComment,
-                          canAddComments: true,
+                      _ExpandableSection(
+                        title: l10n.timerRequestComments,
+                        count: _comments.length,
+                        isExpanded: _commentsExpanded,
+                        onToggle: () => setState(
+                          () => _commentsExpanded = !_commentsExpanded,
                         ),
-                      const shad.Gap(24),
-                      const shad.Divider(),
+                        child: _isLoadingComments
+                            ? const Center(
+                                child: shad.CircularProgressIndicator(),
+                              )
+                            : CommentsSection(
+                                comments: _comments,
+                                commentController: _commentController,
+                                isAddingComment: _isAddingComment,
+                                currentUserId: _currentUserId,
+                                onAddComment: _addComment,
+                                onEditComment: _updateComment,
+                                onDeleteComment: _deleteComment,
+                                canAddComments: true,
+                              ),
+                      ),
                       const shad.Gap(16),
-                      RequestActivitySection(
-                        wsId: widget.wsId,
-                        requestId: _request.id,
+                      _ExpandableSection(
+                        title: l10n.timerRequestActivity,
+                        count: _activityCount > 0 ? _activityCount : null,
+                        isExpanded: _activityExpanded,
+                        onToggle: () => setState(
+                          () => _activityExpanded = !_activityExpanded,
+                        ),
+                        child: RequestActivitySection(
+                          wsId: widget.wsId,
+                          requestId: _request.id,
+                          onTotalChanged: (count) {
+                            if (mounted && _activityCount != count) {
+                              setState(() => _activityCount = count);
+                            }
+                          },
+                        ),
                       ),
                     ],
                   ),
@@ -343,5 +358,70 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
     return '${local.month}/${local.day} '
         '${local.hour.toString().padLeft(2, '0')}:'
         '${local.minute.toString().padLeft(2, '0')}';
+  }
+}
+
+class _ExpandableSection extends StatelessWidget {
+  const _ExpandableSection({
+    required this.title,
+    required this.isExpanded,
+    required this.onToggle,
+    required this.child,
+    this.count,
+  });
+
+  final String title;
+  final bool isExpanded;
+  final VoidCallback onToggle;
+  final Widget child;
+  final int? count;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return Column(
+      children: [
+        InkWell(
+          onTap: onToggle,
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              border: Border.all(color: theme.colorScheme.border),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Text(title, style: theme.typography.semiBold),
+                if (count != null) ...[
+                  const shad.Gap(8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.muted,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text('$count', style: theme.typography.small),
+                  ),
+                ],
+                const Spacer(),
+                Icon(
+                  isExpanded ? Icons.expand_less : Icons.expand_more,
+                  color: theme.colorScheme.mutedForeground,
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (isExpanded) ...[
+          const shad.Gap(16),
+          child,
+        ],
+      ],
+    );
   }
 }
