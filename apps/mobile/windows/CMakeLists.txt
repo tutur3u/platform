@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
 project(mobile LANGUAGES CXX)
 
-set(BINARY_NAME "mobile")
+set(BINARY_NAME "tuturuuu")
 
 cmake_policy(SET CMP0063 NEW)
 
