@@ -1,0 +1,539 @@
+'use client';
+
+import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
+import { useSidebar } from '@/context/sidebar-context';
+import { ArrowLeft } from '@tuturuuu/icons';
+import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
+import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { cn } from '@tuturuuu/utils/format';
+import { setCookie } from 'cookies-next';
+import { useTranslations } from 'next-intl';
+import Image from 'next/image';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import {
+  type ReactNode,
+  Suspense,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
+import { FeedbackButton } from './feedback-button';
+import { Nav } from './nav';
+import type { NavLink } from './navigation';
+import { WorkspaceSelect } from './workspace-select';
+
+interface StructureProps {
+  wsId: string;
+  defaultCollapsed: boolean;
+  links: (NavLink | null)[];
+  actions: ReactNode;
+  userPopover: ReactNode;
+  children: ReactNode;
+}
+
+export function Structure({
+  wsId,
+  defaultCollapsed = false,
+  links,
+  actions,
+  userPopover,
+  children,
+}: StructureProps) {
+  const t = useTranslations();
+  const pathname = usePathname();
+
+  const { behavior, handleBehaviorChange } = useSidebar();
+  const [initialized, setInitialized] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+
+  useEffect(() => {
+    setInitialized(true);
+  }, []);
+
+  // Utility function for path matching that respects segment boundaries
+  const matchesPath = useCallback(
+    (pathname: string, target?: string, hasChildren?: boolean) => {
+      if (!target) return false;
+
+      // For items WITH children, use startsWith to match subroutes
+      if (hasChildren) {
+        return pathname === target || pathname.startsWith(`${target}/`);
+      }
+
+      // For items WITHOUT children, use exact matching only
+      return pathname === target;
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (behavior === 'collapsed' || behavior === 'hover') {
+      setIsCollapsed(true);
+    } else {
+      setIsCollapsed(false);
+    }
+  }, [behavior]);
+
+  // Recursive function to check if any nested child matches the pathname
+  const hasActiveChild = useCallback(
+    (navLinks: (NavLink | null)[]): boolean => {
+      return navLinks.some((child) => {
+        const childMatches =
+          (child?.href &&
+            matchesPath(
+              pathname,
+              child.href,
+              child.children && child.children.length > 0
+            )) ||
+          child?.aliases?.some((alias) =>
+            matchesPath(
+              pathname,
+              alias,
+              child.children && child.children.length > 0
+            )
+          );
+
+        if (childMatches) {
+          return true;
+        }
+
+        if (child?.children) {
+          return hasActiveChild(child.children);
+        }
+
+        return false;
+      });
+    },
+    [pathname, matchesPath]
+  );
+
+  // Universal helper function to find active navigation structure
+  const findActiveNavigation = useCallback(
+    (
+      navLinks: (NavLink | null)[],
+      currentPath: string
+    ): {
+      currentLinks: (NavLink | null)[];
+      history: (NavLink | null)[][];
+      titleHistory: string[];
+      direction: 'forward' | 'backward';
+    } | null => {
+      for (const link of navLinks) {
+        if (!link) continue;
+
+        // Depth-first: attempt to resolve deeper levels first
+        if (link.children && link.children.length > 0) {
+          const deeper = findActiveNavigation(link.children, currentPath);
+          if (deeper) {
+            return {
+              currentLinks: deeper.currentLinks,
+              history: [navLinks, ...deeper.history],
+              titleHistory: [link.title, ...deeper.titleHistory],
+              direction: 'forward' as const,
+            };
+          }
+
+          // If any descendant leaf matches, open this submenu level
+          if (hasActiveChild(link.children)) {
+            return {
+              currentLinks: link.children,
+              history: [navLinks],
+              titleHistory: [link.title],
+              direction: 'forward' as const,
+            };
+          }
+        }
+
+        // Check if this link should be active based on pathname or aliases
+        const linkMatches =
+          (link.href &&
+            matchesPath(
+              currentPath,
+              link.href,
+              link.children && link.children.length > 0
+            )) ||
+          link.aliases?.some((alias) =>
+            matchesPath(
+              currentPath,
+              alias,
+              link.children && link.children.length > 0
+            )
+          );
+
+        if (linkMatches && link.children && link.children.length > 0) {
+          return {
+            currentLinks: link.children,
+            history: [navLinks],
+            titleHistory: [link.title],
+            direction: 'forward' as const,
+          };
+        }
+      }
+      return null;
+    },
+    [matchesPath, hasActiveChild]
+  );
+
+  const [navState, setNavState] = useState<{
+    currentLinks: (NavLink | null)[];
+    history: (NavLink | null)[][];
+    titleHistory: string[];
+    direction: 'forward' | 'backward';
+  }>(() => {
+    const activeNavigation = findActiveNavigation(links, pathname);
+
+    if (activeNavigation) {
+      return activeNavigation;
+    }
+
+    // Flatten links with a single child
+    const flattenedLinks = links.flatMap((link) =>
+      link?.children && link.children.length === 1
+        ? [link.children[0] as NavLink]
+        : [link]
+    );
+    return {
+      currentLinks: flattenedLinks,
+      history: [] as (NavLink | null)[][],
+      titleHistory: [],
+      direction: 'forward' as const,
+    };
+  });
+
+  useEffect(() => {
+    setNavState((prevState) => {
+      const activeNavigation = findActiveNavigation(links, pathname);
+      if (activeNavigation) {
+        return activeNavigation;
+      }
+
+      if (prevState.history.length > 0) {
+        const flattenedLinks = links.flatMap((link) =>
+          link?.children && link.children.length === 1
+            ? [link.children[0] as NavLink]
+            : [link]
+        );
+        return {
+          currentLinks: flattenedLinks,
+          history: [] as (NavLink | null)[][],
+          titleHistory: [],
+          direction: 'backward',
+        };
+      }
+
+      return prevState;
+    });
+  }, [pathname, links, findActiveNavigation]);
+
+  const handleToggle = () => {
+    const newCollapsed = !isCollapsed;
+    setIsCollapsed(newCollapsed);
+    setCookie(SIDEBAR_COLLAPSED_COOKIE_NAME, newCollapsed);
+
+    if (behavior === 'expanded' && newCollapsed) {
+      handleBehaviorChange('collapsed');
+    } else if (behavior === 'collapsed' && !newCollapsed) {
+      handleBehaviorChange('expanded');
+    }
+  };
+
+  const handleNavChange = (
+    newLinks: (NavLink | null)[],
+    parentTitle: string
+  ) => {
+    setNavState((prevState) => ({
+      currentLinks: newLinks,
+      history: [...prevState.history, prevState.currentLinks],
+      titleHistory: [...prevState.titleHistory, parentTitle],
+      direction: 'forward',
+    }));
+  };
+
+  const handleNavBack = () => {
+    setNavState((prevState) => {
+      const newHistory = prevState.history.slice(0, -1);
+      const previousLevel =
+        prevState.history[prevState.history.length - 1] ?? links;
+      return {
+        currentLinks: previousLevel,
+        history: newHistory,
+        titleHistory: prevState.titleHistory.slice(0, -1),
+        direction: 'backward',
+      };
+    });
+  };
+
+  const isHoverMode = behavior === 'hover';
+
+  // Helper function to check if any dialogs are currently open
+  const hasOpenDialogs = useCallback(() => {
+    const hasDialogs =
+      document.querySelector('[data-state="open"][role="dialog"]') !== null;
+    const hasAlertDialogs =
+      document.querySelector('[data-state="open"][role="alertdialog"]') !==
+      null;
+    return hasDialogs || hasAlertDialogs;
+  }, []);
+
+  const onMouseEnter = isHoverMode
+    ? () => {
+        if (!hasOpenDialogs()) {
+          setIsCollapsed(false);
+        }
+      }
+    : undefined;
+
+  const onMouseLeave = isHoverMode
+    ? () => {
+        if (!hasOpenDialogs()) {
+          setIsCollapsed(true);
+        }
+      }
+    : undefined;
+
+  /**
+   * Remove consecutive nulls to avoid repeated separators in navigation.
+   * Also removes leading and trailing nulls.
+   */
+  const removeConsecutiveNulls = (
+    arr: (NavLink | null)[]
+  ): (NavLink | null)[] => {
+    const withoutConsecutive = arr.reduce<(NavLink | null)[]>(
+      (acc, item, index) => {
+        if (item === null && index > 0 && arr[index - 1] === null) {
+          return acc;
+        }
+        acc.push(item);
+        return acc;
+      },
+      []
+    );
+
+    while (withoutConsecutive.length > 0 && withoutConsecutive[0] === null) {
+      withoutConsecutive.shift();
+    }
+
+    while (
+      withoutConsecutive.length > 0 &&
+      withoutConsecutive[withoutConsecutive.length - 1] === null
+    ) {
+      withoutConsecutive.pop();
+    }
+
+    return withoutConsecutive;
+  };
+
+  const getFilteredLinks = (
+    linksToFilter: (NavLink | null)[] | undefined
+  ): (NavLink | null)[] => {
+    const filtered = (linksToFilter || []).flatMap((link) => {
+      if (!link) return [null];
+      if (link.disabled) return [];
+
+      if (link.children && link.children.length > 1) {
+        const filteredChildren = getFilteredLinks(link.children);
+        const hasContent = filteredChildren.some((child) => child !== null);
+        if (!hasContent) {
+          return [];
+        }
+        return [
+          {
+            ...link,
+            children: filteredChildren,
+          },
+        ];
+      }
+      if (link.children && link.children.length === 1) {
+        return getFilteredLinks([link.children[0] as NavLink]);
+      }
+
+      return [link];
+    });
+
+    return removeConsecutiveNulls(filtered);
+  };
+
+  const backButton: NavLink = {
+    title: t('common.back'),
+    icon: <ArrowLeft className="h-4 w-4" />,
+    onClick: handleNavBack,
+    isBack: true,
+  };
+
+  const currentTitle = navState.titleHistory[navState.titleHistory.length - 1];
+  const filteredCurrentLinks = getFilteredLinks(navState.currentLinks);
+
+  const matchedLinks = (
+    navState.history.length > 0
+      ? [backButton, ...filteredCurrentLinks]
+      : filteredCurrentLinks
+  )
+    .filter((l): l is NavLink => Boolean(l))
+    .filter(
+      (link) =>
+        (link.href &&
+          matchesPath(
+            pathname,
+            link.href,
+            link.children && link.children.length > 0
+          )) ||
+        link.aliases?.some((alias) =>
+          matchesPath(
+            pathname,
+            alias,
+            link.children && link.children.length > 0
+          )
+        )
+    )
+    .sort((a, b) => (b.href?.length || 0) - (a.href?.length || 0));
+
+  const currentLink = matchedLinks?.[0];
+
+  const sidebarHeader = (
+    <>
+      {isCollapsed || wsId === ROOT_WORKSPACE_ID || (
+        <Link href="/" className="flex flex-none items-center gap-2">
+          <div className="flex-none">
+            <Image
+              src="/media/logos/transparent.png"
+              className="h-6 w-6"
+              width={32}
+              height={32}
+              alt="logo"
+            />
+          </div>
+          <LogoTitle />
+        </Link>
+      )}
+
+      <Suspense
+        fallback={
+          <div className="h-10 w-full animate-pulse rounded-lg bg-foreground/5" />
+        }
+      >
+        <WorkspaceSelect t={t} wsId={wsId} hideLeading={isCollapsed} />
+      </Suspense>
+    </>
+  );
+
+  const sidebarContent = (
+    <div className="relative h-full overflow-hidden">
+      <div
+        key={navState.history.length}
+        className={cn(
+          'absolute flex h-full min-h-0 w-full flex-col transition-transform duration-300 ease-in-out',
+          navState.direction === 'forward'
+            ? 'slide-in-from-right animate-in'
+            : 'slide-in-from-left animate-in'
+        )}
+      >
+        {navState.history.length === 0 ? (
+          <div className="scrollbar-none min-h-0 flex-1 overflow-y-auto">
+            <Nav
+              key="root"
+              wsId={wsId}
+              isCollapsed={isCollapsed}
+              links={filteredCurrentLinks}
+              onSubMenuClick={handleNavChange}
+              onClick={() => {
+                if (window.innerWidth < 768) {
+                  setIsCollapsed(true);
+                }
+              }}
+            />
+          </div>
+        ) : (
+          <>
+            <Nav
+              key="back"
+              wsId={wsId}
+              isCollapsed={isCollapsed}
+              links={[backButton]}
+              onSubMenuClick={handleNavChange}
+              onClick={() => {
+                /* For the back button, we don't want to close the sidebar */
+              }}
+            />
+            {!isCollapsed && currentTitle && (
+              <div className="p-2 pt-0">
+                <h2 className="line-clamp-1 px-2 font-semibold text-muted-foreground text-sm uppercase tracking-wide">
+                  {currentTitle}
+                </h2>
+              </div>
+            )}
+            {!isCollapsed && <div className="mx-4 my-1 border-b" />}
+            {filteredCurrentLinks.length > 0 && (
+              <div className="scrollbar-none flex-1 overflow-y-auto">
+                <Nav
+                  key="nav"
+                  wsId={wsId}
+                  isCollapsed={isCollapsed}
+                  links={filteredCurrentLinks}
+                  onSubMenuClick={handleNavChange}
+                  onClick={() => {
+                    if (window.innerWidth < 768) {
+                      setIsCollapsed(true);
+                    }
+                  }}
+                />
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+
+  const header = null;
+
+  const mobileHeader = (
+    <>
+      <div className="flex flex-none items-center gap-2">
+        <Link href="/" className="flex flex-none items-center gap-2">
+          <Image
+            src="/media/logos/transparent.png"
+            className="h-8 w-8"
+            width={32}
+            height={32}
+            alt="logo"
+          />
+        </Link>
+      </div>
+      <div className="mx-2 h-4 w-px flex-none rotate-30 bg-foreground/20" />
+      <div className="flex items-center gap-2 break-all font-semibold text-lg">
+        {currentLink?.icon && (
+          <div className="flex-none">{currentLink.icon}</div>
+        )}
+        <span className="line-clamp-1">{currentLink?.title}</span>
+      </div>
+    </>
+  );
+
+  if (!initialized) return null;
+
+  return (
+    <BaseStructure
+      isCollapsed={isCollapsed}
+      setIsCollapsed={handleToggle}
+      header={header}
+      mobileHeader={mobileHeader}
+      sidebarHeader={sidebarHeader}
+      sidebarContent={sidebarContent}
+      actions={actions}
+      userPopover={userPopover}
+      feedbackButton={
+        <div className="flex w-full flex-col items-center justify-center gap-1">
+          <FeedbackButton isCollapsed={isCollapsed} />
+        </div>
+      }
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      hideSizeToggle={behavior === 'hover'}
+      overlayOnExpand={behavior === 'hover'}
+    >
+      {children}
+    </BaseStructure>
+  );
+}

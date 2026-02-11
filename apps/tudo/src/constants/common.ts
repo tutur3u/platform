@@ -23,6 +23,8 @@ export const TTR_URL =
 
 export const LOCALE_COOKIE_NAME = 'NEXT_LOCALE';
 export const THEME_COOKIE_NAME = 'NEXT_THEME';
+export const SIDEBAR_COLLAPSED_COOKIE_NAME = 'sidebar-collapsed';
+export const SIDEBAR_BEHAVIOR_COOKIE_NAME = 'sidebar-behavior';
 
 // The following option only works in development mode.
 // Defaults to true when not specified.
