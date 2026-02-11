@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile/data/models/time_tracking/request.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class RequestDetailSheet extends StatelessWidget {
   const RequestDetailSheet({
@@ -175,33 +176,42 @@ class RequestDetailSheet extends StatelessWidget {
     unawaited(
       showDialog<void>(
         context: context,
-        builder: (dialogCtx) => AlertDialog(
-          title: Text(title),
-          content: TextField(
-            controller: controller,
-            maxLines: 3,
-            decoration: const InputDecoration(
-              hintText: 'Reason (optional)',
-              border: OutlineInputBorder(),
+        builder: (dialogCtx) => Center(
+          child: SizedBox(
+            width: MediaQuery.of(context).size.width * 0.8,
+            child: shad.AlertDialog(
+              barrierColor: Colors.transparent,
+              title: Text(title),
+              content: TextField(
+                controller: controller,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: context.l10n.timerReasonOptional,
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+              actions: [
+                shad.OutlineButton(
+                  onPressed: () => Navigator.of(dialogCtx).pop(),
+                  child: Text(
+                    MaterialLocalizations.of(dialogCtx).cancelButtonLabel,
+                  ),
+                ),
+                shad.PrimaryButton(
+                  onPressed: () {
+                    final reason = controller.text.isEmpty
+                        ? null
+                        : controller.text;
+                    onSubmit(reason);
+                    Navigator.of(dialogCtx).pop();
+                    if (!context.mounted) return;
+                    Navigator.of(context).pop();
+                  },
+                  child: Text(title),
+                ),
+              ],
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogCtx).pop(),
-              child: Text(
-                MaterialLocalizations.of(dialogCtx).cancelButtonLabel,
-              ),
-            ),
-            FilledButton(
-              onPressed: () {
-                final reason = controller.text.isEmpty ? null : controller.text;
-                onSubmit(reason);
-                Navigator.of(dialogCtx).pop();
-                Navigator.of(context).pop();
-              },
-              child: Text(title),
-            ),
-          ],
         ),
       ),
     );

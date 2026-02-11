@@ -45,7 +45,7 @@ Mandatory guardrails:
 9. Testing After Features: ALWAYS add test cases after implementing new features and run them using `bun --filter @tuturuuu/<package> test` or `bun run test`. Testing is encouraged and expected from agents.
 10. User-Only Biome: NEVER run `bun lint`, `bun lint:fix`, `bun format`, or `bun format:fix`. Surface needed changes; ask user to run.
 11. Bilingual Translations: ALWAYS provide translations for both English (`en.json`) AND Vietnamese (`vi.json`) when adding user-facing strings. Never add translations only for English.
-12. Verification: Run `bun check` at the end of your work. This unified command runs formatting, tests, type-checking, and i18n checks (`bun format-and-lint && bun test && bun type-check && bun i18n:check && bun i18n:sort:check`). All checks MUST pass. This is a mandatory requirement.
+12. Verification: For web/TS changes, the user MUST run `bun check` at the end of the work (it runs formatting, tests, type-checking, and i18n checks: `bun format-and-lint && bun test && bun type-check && bun i18n:check && bun i18n:sort:check`). Agents MUST request it, but MUST NOT run it themselves because it includes user-only Biome steps. For mobile-only changes, agents MUST run `bun check:mobile` and request `bun check` only if web/TS files were also touched.
 13. CI/Workflow Configuration: When adding or modifying GitHub Actions workflows in `.github/workflows/`, ALWAYS update `tuturuuu.ts` at the repository root. Add an entry for the new workflow filename (e.g., `"my-workflow.yaml": true`). The workflow must include a `check-ci` job that calls `.github/workflows/ci-check.yml` and all main jobs must depend on it with `needs: [check-ci]` and `if: needs.check-ci.outputs.should_run == 'true'`.
 14. Session Retrospective (MANDATORY): At the END of every co-working session, ALWAYS review `AGENTS.md`, `CLAUDE.md`, and `GEMINI.md` files. Document any mistakes made, lessons learned, and proposed improvements. Update these files with new rules or clarifications to prevent repeating the same mistakes in future sessions. This continuous improvement practice is NON-NEGOTIABLE for all sessions.
 
@@ -1599,6 +1599,8 @@ bun check:mobile   # dart format --set-exit-if-changed lib test && flutter analy
 ```
 
 This is the mobile equivalent of `bun check` for the web monorepo. All three checks (format, analyze, test) MUST pass before pushing. `bun format` / Biome does NOT cover Dart files — `bun check:mobile` is the only way to verify mobile code quality.
+
+Note: If `bun check:mobile` reports a Dart format failure because it formatted files, rerun it to confirm a clean pass.
 
 **Choosing the right check command:**
 

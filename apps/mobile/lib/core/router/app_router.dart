@@ -3,22 +3,21 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
+import 'package:mobile/features/apps/registry/app_registry.dart';
+import 'package:mobile/features/apps/view/apps_hub_page.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/auth/view/forgot_password_page.dart';
 import 'package:mobile/features/auth/view/login_page.dart';
 import 'package:mobile/features/auth/view/mfa_verify_page.dart';
 import 'package:mobile/features/auth/view/signup_page.dart';
-import 'package:mobile/features/calendar/view/calendar_page.dart';
 import 'package:mobile/features/dashboard/view/dashboard_page.dart';
-import 'package:mobile/features/finance/view/finance_page.dart';
 import 'package:mobile/features/finance/view/transaction_list_page.dart';
 import 'package:mobile/features/profile/view/profile_page.dart';
 import 'package:mobile/features/settings/view/settings_page.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
-import 'package:mobile/features/tasks/view/task_list_page.dart';
 import 'package:mobile/features/time_tracker/view/time_tracker_management_page.dart';
-import 'package:mobile/features/time_tracker/view/time_tracker_page.dart';
 import 'package:mobile/features/time_tracker/view/time_tracker_requests_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -30,7 +29,8 @@ import 'package:mobile/features/workspace/view/workspace_select_page.dart';
 /// restore the user's last visited tab across app restarts).
 GoRouter createAppRouter(
   AuthCubit authCubit,
-  WorkspaceCubit workspaceCubit, {
+  WorkspaceCubit workspaceCubit,
+  AppTabCubit appTabCubit, {
   String? initialLocation,
 }) {
   return GoRouter(
@@ -106,6 +106,10 @@ GoRouter createAppRouter(
         return Routes.home;
       }
 
+      if (AppRegistry.moduleFromLocation(state.matchedLocation) != null) {
+        appTabCubit.syncFromLocation(state.matchedLocation);
+      }
+
       return null;
     },
     routes: [
@@ -149,12 +153,6 @@ GoRouter createAppRouter(
         builder: (context, state) => const TransactionListPage(),
       ),
 
-      // ── Settings sub-pages (full-page, outside shell) ──
-      GoRoute(
-        path: Routes.profile,
-        builder: (context, state) => const ProfilePage(),
-      ),
-
       // ── Main shell with bottom navigation ────────
       ShellRoute(
         builder: (context, state, child) => ShellPage(child: child),
@@ -164,24 +162,21 @@ GoRouter createAppRouter(
             builder: (context, state) => const DashboardPage(),
           ),
           GoRoute(
-            path: Routes.tasks,
-            builder: (context, state) => const TaskListPage(),
+            path: Routes.apps,
+            builder: (context, state) => const AppsHubPage(),
           ),
-          GoRoute(
-            path: Routes.calendar,
-            builder: (context, state) => const CalendarPage(),
-          ),
-          GoRoute(
-            path: Routes.finance,
-            builder: (context, state) => const FinancePage(),
-          ),
-          GoRoute(
-            path: Routes.timer,
-            builder: (context, state) => const TimeTrackerPage(),
-          ),
+          for (final module in AppRegistry.allModules)
+            GoRoute(
+              path: module.route,
+              builder: (context, _) => module.pageBuilder(context),
+            ),
           GoRoute(
             path: Routes.settings,
             builder: (context, state) => const SettingsPage(),
+          ),
+          GoRoute(
+            path: Routes.profileRoot,
+            builder: (context, state) => const ProfilePage(),
           ),
         ],
       ),

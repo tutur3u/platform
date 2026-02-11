@@ -9,6 +9,7 @@ import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/workspace_repository.dart';
+import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
@@ -39,6 +40,7 @@ class _AppState extends State<App> {
   late final LocaleCubit _localeCubit;
   late final ThemeCubit _themeCubit;
   late final CalendarSettingsCubit _calendarSettingsCubit;
+  late final AppTabCubit _appTabCubit;
   late final GoRouter _router;
 
   @override
@@ -53,9 +55,12 @@ class _AppState extends State<App> {
     _themeCubit = ThemeCubit(settingsRepository: _settingsRepo);
     unawaited(_themeCubit.loadThemeMode());
     _calendarSettingsCubit = CalendarSettingsCubit();
+    _appTabCubit = AppTabCubit(settingsRepository: _settingsRepo);
+    unawaited(_appTabCubit.loadLastApp());
     _router = createAppRouter(
       _authCubit,
       _workspaceCubit,
+      _appTabCubit,
       initialLocation: widget.initialRoute,
     );
     unawaited(_localeCubit.loadLocale());
@@ -76,6 +81,7 @@ class _AppState extends State<App> {
     unawaited(_localeCubit.close());
     unawaited(_themeCubit.close());
     unawaited(_calendarSettingsCubit.close());
+    unawaited(_appTabCubit.close());
     super.dispose();
   }
 
@@ -88,6 +94,7 @@ class _AppState extends State<App> {
         BlocProvider.value(value: _localeCubit),
         BlocProvider.value(value: _themeCubit),
         BlocProvider.value(value: _calendarSettingsCubit),
+        BlocProvider.value(value: _appTabCubit),
       ],
       child: BlocListener<AuthCubit, AuthState>(
         listenWhen: (prev, curr) => prev.status != curr.status,

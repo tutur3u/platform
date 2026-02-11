@@ -55,6 +55,11 @@
     "navFinance": "Finance",
     "navTimer": "Timer",
     "navSettings": "Settings",
+    "navApps": "Apps",
+    "appsHubSearchHint": "Search apps",
+    "appsHubQuickAccess": "Quick access",
+    "appsHubAllApps": "All apps",
+    "appsHubEmpty": "No apps found",
 
     "dashboardGreeting": "Welcome back!",
     "dashboardQuickActions": "Quick actions",
@@ -183,6 +188,7 @@
     "timerApprove": "Approve",
     "timerReject": "Reject",
     "timerRequestInfo": "Request info",
+    "timerReasonOptional": "Reason (optional)",
     "timerManagementTitle": "Management",
     "timerTotalSessions": "Total sessions",
     "timerActiveUsers": "Active users",
@@ -272,6 +278,11 @@
     "mfaSignOut": "Sign out",
 
     "captchaError": "Security check failed. Please try again.",
+
+    "commonSomethingWentWrong": "Something went wrong",
+    "selectImageSource": "Select image source",
+    "camera": "Camera",
+    "gallery": "Gallery",
 
     "commonRetry": "Retry"
 }

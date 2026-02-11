@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/features/calendar/utils/event_colors.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Shows a read-only bottom sheet with event details plus edit/delete actions.
 ///
@@ -137,6 +138,39 @@ class _EventDetailContent extends StatelessWidget {
     );
   }
 
+  void _confirmDelete(BuildContext context) {
+    final l10n = context.l10n;
+
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (ctx) => Center(
+          child: SizedBox(
+            width: MediaQuery.of(context).size.width * 0.8,
+            child: shad.AlertDialog(
+              barrierColor: Colors.transparent,
+              title: Text(l10n.calendarDeleteEvent),
+              content: Text(l10n.calendarDeleteConfirm),
+              actions: [
+                shad.OutlineButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: Text(l10n.calendarEventCancel),
+                ),
+                shad.DestructiveButton(
+                  onPressed: () {
+                    Navigator.of(ctx).pop(); // Close dialog.
+                    Navigator.of(context).pop('delete'); // Close sheet.
+                  },
+                  child: Text(l10n.calendarEventDelete),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   String _formatDateRange(DateFormat dateFormat, DateFormat timeFormat) {
     final start = event.startAt;
     final end = event.endAt;
@@ -167,35 +201,5 @@ class _EventDetailContent extends StatelessWidget {
         '${timeFormat.format(start)} – '
         '${dateFormat.format(end)} '
         '${timeFormat.format(end)}';
-  }
-
-  void _confirmDelete(BuildContext context) {
-    final l10n = context.l10n;
-
-    unawaited(
-      showDialog<void>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text(l10n.calendarDeleteEvent),
-          content: Text(l10n.calendarDeleteConfirm),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: Text(l10n.calendarEventCancel),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(ctx).pop(); // Close dialog.
-                Navigator.of(context).pop('delete'); // Close sheet.
-              },
-              child: Text(
-                l10n.calendarEventDelete,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

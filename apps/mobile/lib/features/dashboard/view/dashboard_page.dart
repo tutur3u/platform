@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart' hide AppBar, Card, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
@@ -62,26 +64,13 @@ class DashboardPage extends StatelessWidget {
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
                   children: [
-                    _QuickActionCard(
-                      icon: Icons.check_box_outlined,
-                      label: l10n.navTasks,
-                      onTap: () {},
-                    ),
-                    _QuickActionCard(
-                      icon: Icons.calendar_today_outlined,
-                      label: l10n.navCalendar,
-                      onTap: () {},
-                    ),
-                    _QuickActionCard(
-                      icon: Icons.account_balance_wallet_outlined,
-                      label: l10n.navFinance,
-                      onTap: () {},
-                    ),
-                    _QuickActionCard(
-                      icon: Icons.timer_outlined,
-                      label: l10n.navTimer,
-                      onTap: () {},
-                    ),
+                    for (final module in AppRegistry.pinnedModules(context))
+                      _QuickActionCard(
+                        key: ValueKey(module.id),
+                        icon: module.icon,
+                        label: module.label(l10n),
+                        onTap: () => context.go(module.route),
+                      ),
                   ],
                 ),
               ),
@@ -98,6 +87,7 @@ class _QuickActionCard extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
+    super.key,
   });
 
   final IconData icon;

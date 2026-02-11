@@ -11,6 +11,8 @@ abstract final class Routes {
 
   // Dashboard (shell)
   static const home = '/';
+  static const apps = '/apps';
+  static const profileRoot = '/profile';
   static const tasks = '/tasks';
   static const calendar = '/calendar';
   static const finance = '/finance';
@@ -29,5 +31,4 @@ abstract final class Routes {
   static const timerHistory = '/timer/history';
   static const timerRequests = '/timer/requests';
   static const timerManagement = '/timer/management';
-  static const profile = '/settings/profile';
 }
