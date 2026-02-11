@@ -1,0 +1,62 @@
+/* Give a remote user a caret */
+.collaboration-carets__caret {
+  border-left: 1px solid #0d0d0d;
+  border-right: 1px solid #0d0d0d;
+  margin-left: -1px;
+  margin-right: -1px;
+  pointer-events: auto;
+  position: relative;
+  word-break: normal;
+}
+
+.collaboration-carets__label {
+  border-radius: 6px 6px 6px 0;
+  color: #ffffff;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 600;
+  left: -1px;
+  line-height: 1.2;
+  padding: 0.25rem 0.5rem;
+  position: absolute;
+  top: -1.8em;
+  user-select: none;
+  white-space: nowrap;
+  opacity: 1;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation:
+    fadeOutLabel 0.3s ease-in-out 3s forwards,
+    slideInBadge 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: auto;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.15),
+    0 1px 3px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(8px);
+  transform-origin: bottom left;
+  cursor: default;
+}
+
+.collaboration-carets__label::before {
+  content: "";
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  background: inherit;
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+
+.collaboration-carets__caret:hover .collaboration-carets__label {
+  opacity: 1;
+  animation: none;
+}
+
+@keyframes fadeOutLabel {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
