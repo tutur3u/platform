@@ -51,7 +51,7 @@ export async function PATCH(
       );
     }
 
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     // Get authenticated user
     const {
@@ -152,7 +152,7 @@ export async function PUT(
 ) {
   try {
     const { wsId, id } = await context.params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
     const storageClient = await createDynamicClient();
 
     // Get authenticated user

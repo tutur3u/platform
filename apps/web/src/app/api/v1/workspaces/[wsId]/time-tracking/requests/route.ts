@@ -32,7 +32,7 @@ export async function POST(
   try {
     const { wsId } = await params;
     const normalizedWsId = await normalizeWorkspaceId(wsId);
-    const supabase = await createClient();
+    const supabase = await createClient(request);
     const storageClient = await createDynamicClient();
 
     // Get authenticated user
@@ -241,7 +241,7 @@ export async function GET(
 ) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     // Get authenticated user
     const {
