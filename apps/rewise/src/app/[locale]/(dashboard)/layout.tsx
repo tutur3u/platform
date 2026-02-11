@@ -1,11 +1,11 @@
+import type { NavLink } from '@/components/navigation';
 import { MessageSquare } from '@tuturuuu/icons';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { cookies as c } from 'next/headers';
 import { getTranslations } from 'next-intl/server';
-import type React from 'react';
+import { cookies as c } from 'next/headers';
 import { Suspense } from 'react';
-import type { NavLink } from '@/components/navigation';
+import type React from 'react';
 import NavbarActions from '../navbar-actions';
 import { UserNav } from '../user-nav';
 import { getChats } from './helper';
@@ -59,7 +59,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         actions={
           <Suspense
             fallback={
-              <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
+              <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
             }
           >
             <NavbarActions />

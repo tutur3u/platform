@@ -1,18 +1,23 @@
+import { Providers } from '@/components/providers';
+import { siteConfig } from '@/constants/configs';
+import { type Locale, routing, supportedLocales } from '@/i18n/routing';
+import '@/style/prosemirror.css';
+import { SerwistProvider } from '@tuturuuu/offline/provider';
 import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
 import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
-import { siteConfig } from '@/constants/configs';
-import { type Locale, routing, supportedLocales } from '@/i18n/routing';
 import '@tuturuuu/ui/globals.css';
 import { Toaster } from '@tuturuuu/ui/sonner';
+import { FadeSettingInitializer } from '@tuturuuu/ui/tu-do/shared/fade-setting-initializer';
 import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { VercelAnalytics, VercelInsights } from '@tuturuuu/vercel';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import { setRequestLocale } from 'next-intl/server';
+import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 import type { ReactNode } from 'react';
-import { Providers } from './providers';
 
 export { viewport } from '@tuturuuu/utils/common/nextjs';
 
@@ -27,8 +32,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return generateCommonMetadata({
     config: {
       description: {
-        en: 'Take control of your workflow, supercharged by AI.',
-        vi: 'Quản lý công việc của bạn, siêu tốc độ cùng AI.',
+        en: 'Visual kanban boards with drag-and-drop, real-time collaboration, and AI workflows.',
+        vi: 'Bảng kanban trực quan với kéo-thả, cộng tác thời gian thực và quy trình AI.',
       },
       name: siteConfig.name,
       url: siteConfig.url,
@@ -39,7 +44,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export function generateStaticParams() {
-  return supportedLocales.map((locale) => ({ locale }));
+  return supportedLocales.map((locale) => ({
+    locale,
+    wsId: ROOT_WORKSPACE_ID,
+  }));
 }
 
 export default async function RootLayout({ children, params }: Props) {
@@ -60,13 +68,20 @@ export default async function RootLayout({ children, params }: Props) {
           font.className
         )}
       >
-        <VercelAnalytics />
-        <VercelInsights />
-        <Providers>{children}</Providers>
-        <TailwindIndicator />
-        <ProductionIndicator />
-        <StaffToolbar />
-        <Toaster />
+        <SerwistProvider>
+          <VercelAnalytics />
+          <VercelInsights />
+          <Suspense>
+            <Providers>
+              <FadeSettingInitializer />
+              {children}
+            </Providers>
+          </Suspense>
+          <TailwindIndicator />
+          <ProductionIndicator />
+          <StaffToolbar />
+          <Toaster />
+        </SerwistProvider>
       </body>
     </html>
   );

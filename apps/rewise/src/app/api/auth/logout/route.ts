@@ -9,5 +9,5 @@ export async function POST() {
   });
 
   if (error) return NextResponse.json({ error }, { status: 500 });
-  return NextResponse.redirect('/login');
+  return NextResponse.redirect('/');
 }

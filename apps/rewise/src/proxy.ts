@@ -1,8 +1,8 @@
 import { match } from '@formatjs/intl-localematcher';
 import { createCentralizedAuthProxy } from '@tuturuuu/auth/proxy';
 import Negotiator from 'negotiator';
-import type { NextRequest, NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
+import type { NextRequest, NextResponse } from 'next/server';
 import {
   CENTRAL_PORT,
   LOCALE_COOKIE_NAME,
@@ -20,6 +20,7 @@ const authProxy = createCentralizedAuthProxy({
   webAppUrl: WEB_APP_URL,
   publicPaths: PUBLIC_PATHS,
   skipApiRoutes: true,
+  excludeRootPath: true,
 });
 
 export async function proxy(req: NextRequest): Promise<NextResponse> {
