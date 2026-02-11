@@ -36,7 +36,7 @@ dependencies:
 
 dev_dependencies:
   bloc_test: ^10.0.0
-  build_runner: ^2.4.14
+  build_runner: ^2.11.1
   flutter_launcher_icons: ^0.14.3
   flutter_test:
     sdk: flutter
