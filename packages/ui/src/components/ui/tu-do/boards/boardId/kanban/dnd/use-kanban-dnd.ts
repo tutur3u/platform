@@ -12,6 +12,7 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { hasDraggableData } from '@tuturuuu/utils/task-helpers';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useBoardBroadcast } from '../../../../shared/board-broadcast-context';
 import { MAX_SAFE_INTEGER_SORT } from '../kanban-constants';
 import { useAutoScroll } from './auto-scroll';
 import { calculateSortKeyWithRetry as createCalculateSortKeyWithRetry } from './kanban-sort-helpers';
@@ -43,6 +44,7 @@ export function useKanbanDnd({
   taskHeightsRef,
   scrollContainerRef,
 }: UseKanbanDndProps) {
+  const broadcast = useBoardBroadcast();
   const [activeColumn, setActiveColumn] = useState<TaskList | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [hoverTargetListId, setHoverTargetListId] = useState<string | null>(
@@ -223,24 +225,9 @@ export function useKanbanDnd({
     }
   }
 
-  // rAF throttling for onDragOver to reduce cache churn
-  const dragOverRaf = useRef<number | null>(null);
-  const lastOverArgs = useRef<DragOverEvent | null>(null);
-
   function onDragOver(event: DragOverEvent) {
-    lastOverArgs.current = event;
-    if (dragOverRaf.current != null) return; // already queued
-    dragOverRaf.current = requestAnimationFrame(() => {
-      dragOverRaf.current = null;
-      if (lastOverArgs.current) processDragOver(lastOverArgs.current);
-    });
+    processDragOver(event);
   }
-
-  useEffect(() => {
-    return () => {
-      if (dragOverRaf.current) cancelAnimationFrame(dragOverRaf.current);
-    };
-  }, []);
 
   async function onDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -814,11 +801,26 @@ export function useKanbanDnd({
                 }
               }
 
-              reorderTaskMutation.mutate({
-                taskId: task.id,
-                newListId: targetListId,
-                newSortKey: batchSortKey,
-              });
+              reorderTaskMutation.mutate(
+                {
+                  taskId: task.id,
+                  newListId: targetListId,
+                  newSortKey: batchSortKey,
+                },
+                {
+                  onSuccess: (updatedTask: Task) => {
+                    broadcast?.('task:upsert', {
+                      task: {
+                        id: updatedTask.id,
+                        list_id: updatedTask.list_id,
+                        sort_key: updatedTask.sort_key,
+                        completed_at: updatedTask.completed_at,
+                        closed_at: updatedTask.closed_at,
+                      },
+                    });
+                  },
+                }
+              );
             }
           } catch (error) {
             console.error(
@@ -837,11 +839,26 @@ export function useKanbanDnd({
 
           clearSelection();
         } else {
-          reorderTaskMutation.mutate({
-            taskId: activeTask.id,
-            newListId: targetListId,
-            newSortKey,
-          });
+          reorderTaskMutation.mutate(
+            {
+              taskId: activeTask.id,
+              newListId: targetListId,
+              newSortKey,
+            },
+            {
+              onSuccess: (updatedTask: Task) => {
+                broadcast?.('task:upsert', {
+                  task: {
+                    id: updatedTask.id,
+                    list_id: updatedTask.list_id,
+                    sort_key: updatedTask.sort_key,
+                    completed_at: updatedTask.completed_at,
+                    closed_at: updatedTask.closed_at,
+                  },
+                });
+              },
+            }
+          );
         }
 
         requestAnimationFrame(() => {

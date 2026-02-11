@@ -7,6 +7,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { moveTask, useUpdateTask } from '@tuturuuu/utils/task-helper';
 import { addDays } from 'date-fns';
 import { useCallback } from 'react';
+import { useBoardBroadcast } from '../components/ui/tu-do/shared/board-broadcast-context';
 
 interface UseTaskActionsProps {
   task?: Task; // Made optional to handle loading states
@@ -47,6 +48,7 @@ export function useTaskActions({
 }: UseTaskActionsProps) {
   const queryClient = useQueryClient();
   const updateTaskMutation = useUpdateTask(boardId);
+  const broadcast = useBoardBroadcast();
 
   const handleArchiveToggle = useCallback(async () => {
     if (!task || !onUpdate) return;
@@ -82,14 +84,23 @@ export function useTaskActions({
         );
 
         // moveTask handles setting archived status based on target list
-        await moveTask(supabase, task.id, targetCompletionList.id);
+        const movedTask = await moveTask(
+          supabase,
+          task.id,
+          targetCompletionList.id
+        );
+        broadcast?.('task:upsert', {
+          task: {
+            id: task.id,
+            list_id: targetCompletionList.id,
+            completed_at: movedTask?.completed_at,
+            closed_at: movedTask?.closed_at,
+          },
+        });
 
         toast.success('Task completed', {
           description: `Task marked as done and moved to ${targetCompletionList.name}`,
         });
-
-        // NOTE: No invalidation needed - optimistic update already handles the UI
-        // and realtime subscription handles cross-user sync
       } catch (error) {
         // Rollback on error
         if (previousTasks) {
@@ -150,6 +161,7 @@ export function useTaskActions({
     queryClient,
     boardId,
     task,
+    broadcast,
   ]);
 
   const handleMoveToCompletion = useCallback(async () => {
@@ -196,7 +208,19 @@ export function useTaskActions({
       let successCount = 0;
       for (const taskId of tasksToMove) {
         try {
-          await moveTask(supabase, taskId, targetCompletionList.id);
+          const movedTask = await moveTask(
+            supabase,
+            taskId,
+            targetCompletionList.id
+          );
+          broadcast?.('task:upsert', {
+            task: {
+              id: taskId,
+              list_id: targetCompletionList.id,
+              completed_at: movedTask?.completed_at,
+              closed_at: movedTask?.closed_at,
+            },
+          });
           successCount++;
         } catch (error) {
           console.error(`Failed to move task ${taskId}:`, error);
@@ -214,9 +238,6 @@ export function useTaskActions({
               : `Task marked as ${targetCompletionList.status === 'done' ? 'done' : 'closed'} and moved to ${targetCompletionList.name}`,
         }
       );
-
-      // NOTE: No invalidation needed - optimistic update already handles the UI
-      // and realtime subscription handles cross-user sync
     } catch (error) {
       // Rollback on error
       if (previousTasks) {
@@ -241,6 +262,7 @@ export function useTaskActions({
     queryClient,
     boardId,
     task,
+    broadcast,
   ]);
 
   const handleMoveToClose = useCallback(async () => {
@@ -283,7 +305,19 @@ export function useTaskActions({
       let successCount = 0;
       for (const taskId of tasksToMove) {
         try {
-          await moveTask(supabase, taskId, targetClosedList.id);
+          const movedTask = await moveTask(
+            supabase,
+            taskId,
+            targetClosedList.id
+          );
+          broadcast?.('task:upsert', {
+            task: {
+              id: taskId,
+              list_id: targetClosedList.id,
+              completed_at: movedTask?.completed_at,
+              closed_at: movedTask?.closed_at,
+            },
+          });
           successCount++;
         } catch (error) {
           console.error(`Failed to move task ${taskId}:`, error);
@@ -298,9 +332,6 @@ export function useTaskActions({
             ? `${taskCount} tasks marked as closed`
             : 'Task marked as closed',
       });
-
-      // NOTE: No invalidation needed - optimistic update already handles the UI
-      // and realtime subscription handles cross-user sync
     } catch (error) {
       // Rollback on error
       if (previousTasks) {
@@ -325,6 +356,7 @@ export function useTaskActions({
     queryClient,
     boardId,
     task,
+    broadcast,
   ]);
 
   const handleDelete = useCallback(async () => {
@@ -390,6 +422,7 @@ export function useTaskActions({
         if (error) {
           console.error(`Failed to delete task ${taskId}:`, error);
         } else {
+          broadcast?.('task:delete', { taskId });
           successCount++;
         }
       }
@@ -431,6 +464,7 @@ export function useTaskActions({
     queryClient,
     boardId,
     task,
+    broadcast,
   ]);
 
   const handleRemoveAllAssignees = useCallback(async () => {
@@ -462,6 +496,7 @@ export function useTaskActions({
         .eq('task_id', task.id);
 
       if (error) throw error;
+      broadcast?.('task:relations-changed', { taskId: task.id });
 
       toast.success('Success', {
         description: 'All assignees removed from task',
@@ -484,6 +519,7 @@ export function useTaskActions({
     setIsLoading,
     setMenuOpen,
     task,
+    broadcast,
   ]);
 
   const handleRemoveAssignee = useCallback(
@@ -523,6 +559,7 @@ export function useTaskActions({
           .eq('user_id', assigneeId);
 
         if (error) throw error;
+        broadcast?.('task:relations-changed', { taskId: task.id });
 
         const assignee = task.assignees?.find((a) => a.id === assigneeId);
         toast.success('Success', {
@@ -539,7 +576,7 @@ export function useTaskActions({
         setMenuOpen(false);
       }
     },
-    [task, boardId, queryClient, setIsLoading, setMenuOpen]
+    [task, boardId, queryClient, setIsLoading, setMenuOpen, broadcast]
   );
 
   const handleMoveToList = useCallback(
@@ -620,7 +657,15 @@ export function useTaskActions({
         let successCount = 0;
         for (const taskId of tasksToMove) {
           try {
-            await moveTask(supabase, taskId, targetListId);
+            const movedTask = await moveTask(supabase, taskId, targetListId);
+            broadcast?.('task:upsert', {
+              task: {
+                id: taskId,
+                list_id: targetListId,
+                completed_at: movedTask?.completed_at,
+                closed_at: movedTask?.closed_at,
+              },
+            });
             successCount++;
           } catch (error) {
             console.error(`Failed to move task ${taskId}:`, error);
@@ -635,9 +680,6 @@ export function useTaskActions({
               ? `${taskCount} tasks moved to ${targetList?.name || 'selected list'}`
               : `Task moved to ${targetList?.name || 'selected list'}`,
         });
-
-        // NOTE: No invalidation needed - optimistic update already handles the UI
-        // and realtime subscription handles cross-user sync
       } catch (error) {
         // Rollback on error
         if (previousTasks) {
@@ -663,6 +705,7 @@ export function useTaskActions({
       queryClient,
       boardId,
       task,
+      broadcast,
     ]
   );
 
@@ -726,12 +769,19 @@ export function useTaskActions({
             }
           }
           if (successCount === 0) throw new Error('Failed to update any tasks');
-          console.log(`✅ Updated ${successCount} tasks with due date`);
+          for (const tid of tasksToUpdate) {
+            broadcast?.('task:upsert', {
+              task: { id: tid, end_date: newDate },
+            });
+          }
         } else {
           // Use mutation for single task
           await updateTaskMutation.mutateAsync({
             taskId: task.id,
             updates: { end_date: newDate },
+          });
+          broadcast?.('task:upsert', {
+            task: { id: task.id, end_date: newDate },
           });
         }
 
@@ -744,9 +794,6 @@ export function useTaskActions({
                 ? 'Due date set successfully'
                 : 'Due date removed',
         });
-
-        // NOTE: No invalidation needed - optimistic update already handles the UI
-        // and realtime subscription handles cross-user sync
       } catch (error) {
         console.error('Failed to update due date:', error);
         // Rollback on error
@@ -769,6 +816,7 @@ export function useTaskActions({
       queryClient,
       boardId,
       task,
+      broadcast,
     ]
   );
 
@@ -850,11 +898,19 @@ export function useTaskActions({
           });
 
           if (successCount === 0) throw new Error('Failed to update any tasks');
+          for (const tid of tasksToUpdate) {
+            broadcast?.('task:upsert', {
+              task: { id: tid, priority: newPriority },
+            });
+          }
         } else {
           // Use mutation for single task
           await updateTaskMutation.mutateAsync({
             taskId: task.id,
             updates: { priority: newPriority },
+          });
+          broadcast?.('task:upsert', {
+            task: { id: task.id, priority: newPriority },
           });
         }
 
@@ -867,11 +923,6 @@ export function useTaskActions({
                 ? 'Priority changed'
                 : 'Priority cleared',
         });
-
-        // NOTE: No invalidation needed - optimistic update already handles the UI
-        // and realtime subscription handles cross-user sync
-
-        console.log('✅ Priority update completed successfully');
 
         // Don't auto-clear selection - let user manually clear with "Clear" button
       } catch (error) {
@@ -897,6 +948,7 @@ export function useTaskActions({
       queryClient,
       boardId,
       task,
+      broadcast,
     ]
   );
 
@@ -971,14 +1023,19 @@ export function useTaskActions({
             }
           }
           if (successCount === 0) throw new Error('Failed to update any tasks');
-          console.log(
-            `✅ Updated ${successCount} tasks with estimation points`
-          );
+          for (const tid of tasksToUpdate) {
+            broadcast?.('task:upsert', {
+              task: { id: tid, estimation_points: points },
+            });
+          }
         } else {
           // Use mutation for single task
           await updateTaskMutation.mutateAsync({
             taskId: tasksToUpdate[0]!,
             updates: { estimation_points: points },
+          });
+          broadcast?.('task:upsert', {
+            task: { id: tasksToUpdate[0]!, estimation_points: points },
           });
         }
 
@@ -989,9 +1046,6 @@ export function useTaskActions({
               ? `${taskCount} tasks updated`
               : 'Estimation points updated successfully',
         });
-
-        // NOTE: No invalidation needed - optimistic update already handles the UI
-        // and realtime subscription handles cross-user sync
       } catch (e: any) {
         console.error('Failed to update estimation', e);
         // Rollback on error
@@ -1015,6 +1069,7 @@ export function useTaskActions({
       queryClient,
       boardId,
       task,
+      broadcast,
     ]
   );
 
@@ -1289,8 +1344,10 @@ export function useTaskActions({
           throw new Error('Failed to update any tasks');
         }
 
-        // NOTE: No invalidation needed - optimistic update already handles the UI
-        // and realtime subscription handles cross-user sync
+        // Broadcast relation changes for all affected tasks
+        for (const tid of active ? tasksToRemoveFrom : tasksNeedingAssignee) {
+          broadcast?.('task:relations-changed', { taskId: tid });
+        }
 
         toast.success(active ? 'Assignee removed' : 'Assignee added', {
           description:
@@ -1319,6 +1376,7 @@ export function useTaskActions({
       setIsLoading,
       isMultiSelectMode,
       selectedTasks,
+      broadcast,
     ]
   );
 

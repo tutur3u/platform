@@ -1,8 +1,9 @@
 'use client';
 
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types';
+import { useWhiteboardCollaboration } from '@/hooks/useWhiteboardCollaboration';
+import { mergeElements } from '@/utils/excalidraw-helper';
 import '@excalidraw/excalidraw/index.css';
-import './excalidraw-overrides.css';
 import type {
   AppState,
   BinaryFiles,
@@ -34,8 +35,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useWhiteboardCollaboration } from '@/hooks/useWhiteboardCollaboration';
-import { mergeElements } from '@/utils/excalidraw-helper';
+import './excalidraw-overrides.css';
 
 const Excalidraw = dynamic(
   async () => (await import('@excalidraw/excalidraw')).Excalidraw,
@@ -140,6 +140,8 @@ export function CustomWhiteboard({
     []
   );
 
+  const cursorsEnabled = wsPresence?.cursorsEnabled ?? false;
+
   // Set up collaboration (cursor + element sync only — presence is handled by workspace provider)
   const {
     collaborators,
@@ -150,7 +152,7 @@ export function CustomWhiteboard({
   } = useWhiteboardCollaboration({
     boardId,
     wsId,
-    enabled: true,
+    enabled: cursorsEnabled,
     externalPresenceState: wsPresence ? wsPresence.presenceState : undefined,
     externalCurrentUserId: wsPresence?.currentUserId,
     onRemoteElementsChange: useCallback(
@@ -536,39 +538,43 @@ export function CustomWhiteboard({
           {/* Sync Status */}
           {SyncStatusIndicator}
 
-          {/* Connection Status */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div
-                className={cn(
-                  'flex items-center gap-1.5 rounded-md px-2 py-1 text-xs',
-                  isConnected
-                    ? 'bg-dynamic-green/10 text-dynamic-green'
-                    : 'bg-dynamic-red/10 text-dynamic-red'
-                )}
-              >
-                {isConnected ? (
-                  <WifiIcon className="h-3.5 w-3.5" />
-                ) : (
-                  <WifiOffIcon className="h-3.5 w-3.5" />
-                )}
-                <span>{isConnected ? 'Live' : 'Offline'}</span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              {isConnected
-                ? 'Connected - Changes sync in real-time'
-                : 'Disconnected - Changes will sync when reconnected'}
-            </TooltipContent>
-          </Tooltip>
+          {/* Connection Status (only when collaboration is enabled) */}
+          {cursorsEnabled && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div
+                  className={cn(
+                    'flex items-center gap-1.5 rounded-md px-2 py-1 text-xs',
+                    isConnected
+                      ? 'bg-dynamic-green/10 text-dynamic-green'
+                      : 'bg-dynamic-red/10 text-dynamic-red'
+                  )}
+                >
+                  {isConnected ? (
+                    <WifiIcon className="h-3.5 w-3.5" />
+                  ) : (
+                    <WifiOffIcon className="h-3.5 w-3.5" />
+                  )}
+                  <span>{isConnected ? 'Live' : 'Offline'}</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                {isConnected
+                  ? 'Connected - Changes sync in real-time'
+                  : 'Disconnected - Changes will sync when reconnected'}
+              </TooltipContent>
+            </Tooltip>
+          )}
 
-          {/* Collaborator Avatars */}
-          <PresenceAvatarList
-            viewers={whiteboardViewerEntries}
-            currentUserId={currentUserId}
-            maxDisplay={5}
-            activeLabel={t('on_this_whiteboard')}
-          />
+          {/* Collaborator Avatars (only when collaboration is enabled) */}
+          {cursorsEnabled && (
+            <PresenceAvatarList
+              viewers={whiteboardViewerEntries}
+              currentUserId={currentUserId}
+              maxDisplay={5}
+              activeLabel={t('on_this_whiteboard')}
+            />
+          )}
         </div>
       </div>
       <div className="flex-1">
@@ -581,7 +587,7 @@ export function CustomWhiteboard({
             onPointerUpdate={handlePointerUpdate}
             generateIdForFile={handleGenerateIdForFile}
             theme={resolvedTheme === 'dark' ? 'dark' : 'light'}
-            isCollaborating={true}
+            isCollaborating={cursorsEnabled}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">

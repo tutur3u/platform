@@ -503,19 +503,37 @@ Selective Data Mapping:
 
 Realtime Integration (Optional):
 
+- For collaborative features, prefer **Supabase Broadcast** (client-to-client messaging) over `postgres_changes`. Broadcast has no WAL/RLS dependency and is more reliable at scale.
 - Subscribe to Supabase channel only for high-value live data (e.g., collaborative edits). In handler, update cache via `setQueryData` instead of invalidating if diff known.
+- Use `self: false` in channel config so the sending client doesn't process its own broadcasts (optimistic updates handle local state).
 - Throttle bursts (debounce merging) to avoid rapid re-renders.
 
 **Kanban Task Realtime Sync (CRITICAL):**
 
-Tasks inside kanban boards (`task.tsx`, `task-edit-dialog.tsx`, and related components in `packages/ui/src/components/ui/tu-do/`) use Supabase realtime subscriptions to keep task fields synchronized across all connected clients. **NEVER invalidate TanStack Query caches for task data in these components.**
+Tasks inside kanban boards (`task.tsx`, `task-edit-dialog.tsx`, and related components in `packages/ui/src/components/ui/tu-do/`) use **Supabase Broadcast** (client-to-client messaging) to keep task fields synchronized across all connected clients. **NEVER invalidate TanStack Query caches for task data in these components.**
+
+**Why Broadcast over `postgres_changes`:** Broadcast has no WAL dependency, no RLS evaluation by the Realtime server, and lower latency. `postgres_changes` silently drops events when tables lack `REPLICA IDENTITY FULL` or when RLS policies are complex — Broadcast avoids these issues entirely.
+
+**Architecture:** The `useBoardRealtime` hook creates a channel with `self: false` and registers broadcast listeners. Every mutation site calls the `broadcast` function (from `BoardBroadcastContext`) after a successful DB write. The sending client's channel never receives its own messages (optimistic updates already applied). Receiving clients update the TanStack Query cache via `setQueryData`.
+
+**Broadcast Event Types:**
+| Event | Payload | Receiver Action |
+|---|---|---|
+| `task:upsert` | `{ task: Partial<Task> & { id } }` | Merge into cache (insert if missing) |
+| `task:delete` | `{ taskId }` | Remove from cache |
+| `list:upsert` | `{ list: Partial<TaskList> & { id } }` | Merge into cache |
+| `list:delete` | `{ listId }` | Remove list + its tasks from cache |
+| `task:relations-changed` | `{ taskId }` | Fetch latest relations from DB, merge |
 
 - ❌ **NEVER** call `queryClient.invalidateQueries()` for task-related queries in kanban components
 - ❌ **NEVER** use `refetch()` on task queries after mutations in kanban context
-- ✅ **DO** rely on realtime subscriptions to propagate changes automatically
-- ✅ **DO** use optimistic updates via `setQueryData` for immediate UI feedback, letting realtime sync handle cross-client consistency
+- ❌ **NEVER** use `postgres_changes` for new board realtime features — use Broadcast instead
+- ✅ **DO** use optimistic updates via `setQueryData` for immediate UI feedback
+- ✅ **DO** call `broadcast?.('task:upsert', { task: { id, ...changedFields } })` after successful scalar mutations
+- ✅ **DO** call `broadcast?.('task:relations-changed', { taskId })` after toggling labels/assignees/projects
+- ✅ **DO** access the broadcast function via `useBoardBroadcast()` from `board-broadcast-context.tsx`
 
-**Rationale:** Query invalidation triggers refetches that race with realtime updates, causing UI flicker, stale data overwrites, and inconsistent state across clients. The realtime subscription is the single source of truth for task state propagation.
+**Rationale:** Query invalidation triggers refetches that race with realtime updates, causing UI flicker, stale data overwrites, and inconsistent state across clients. Broadcast is the single source of truth for cross-client task state propagation.
 
 Performance & Render Hygiene:
 

@@ -21,7 +21,6 @@ interface TaskAssigneesMenuProps {
   taskAssignees: Member[];
   availableMembers: Member[];
   isLoading: boolean;
-  assigneeSaving: string | null;
   onToggleAssignee: (assigneeId: string) => void;
   onMenuItemSelect: (e: Event, action: () => void) => void;
   translations?: {
@@ -39,7 +38,6 @@ export function TaskAssigneesMenu({
   taskAssignees,
   availableMembers,
   isLoading,
-  assigneeSaving,
   onToggleAssignee,
   onMenuItemSelect,
   translations,
@@ -141,7 +139,6 @@ export function TaskAssigneesMenu({
                         onToggleAssignee(member.id)
                       )
                     }
-                    disabled={assigneeSaving === member.id}
                     title={
                       isRemovedMember ? t.memberNoLongerInWorkspace : undefined
                     }
@@ -153,9 +150,7 @@ export function TaskAssigneesMenu({
                     )}
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-2">
-                      {assigneeSaving === member.id ? (
-                        <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
-                      ) : isRemovedMember ? (
+                      {isRemovedMember ? (
                         <UserX className="h-4 w-4 shrink-0 text-dynamic-red" />
                       ) : (
                         <Avatar className="h-4 w-4 shrink-0">

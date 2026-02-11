@@ -1,12 +1,14 @@
 'use client';
 
 import {
-  closestCorners,
+  type CollisionDetection,
+  closestCenter,
   DndContext,
   DragOverlay,
   KeyboardSensor,
   MeasuringStrategy,
   PointerSensor,
+  pointerWithin,
   TouchSensor,
   useSensor,
   useSensors,
@@ -20,14 +22,11 @@ import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferen
 import { toast } from '@tuturuuu/ui/sonner';
 import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { coordinateGetter } from '@tuturuuu/utils/keyboard-preset';
-import {
-  useBoardConfig,
-  useMoveTaskToBoard,
-  useReorderTask,
-} from '@tuturuuu/utils/task-helper';
+import { useBoardConfig, useReorderTask } from '@tuturuuu/utils/task-helper';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
 import { useOptionalWorkspacePresenceContext } from '../../providers/workspace-presence-provider';
+import { useBoardBroadcast } from '../../shared/board-broadcast-context';
 import type { ListStatusFilter } from '../../shared/board-header';
 import { buildEstimationIndices } from '../../shared/estimation-mapping';
 import { BoardSelector } from '../board-selector';
@@ -46,6 +45,14 @@ import { KanbanSkeleton } from './kanban/rendering/kanban-skeleton';
 import { useKeyboardShortcuts } from './kanban/selection/use-keyboard-shortcuts';
 import { useMultiSelect } from './kanban/selection/use-multi-select';
 import type { TaskFilters } from './task-filter';
+
+// Prefer pointerWithin for precise targeting; fall back to closestCenter
+// when the pointer isn't inside any droppable (e.g. between columns).
+const kanbanCollisionDetection: CollisionDetection = (args) => {
+  const pointerCollisions = pointerWithin(args);
+  if (pointerCollisions.length > 0) return pointerCollisions;
+  return closestCenter(args);
+};
 
 interface Props {
   workspace: Workspace;
@@ -92,7 +99,7 @@ export function KanbanBoard({
 
   const queryClient = useQueryClient();
   const supabase = createClient();
-  const moveTaskToBoardMutation = useMoveTaskToBoard(boardId ?? '');
+
   const reorderTaskMutation = useReorderTask(boardId ?? '');
   const { createTask } = useTaskDialog();
   const { weekStartsOn } = useCalendarPreferences();
@@ -159,6 +166,7 @@ export function KanbanBoard({
   });
 
   // Bulk Operations
+  const broadcast = useBoardBroadcast();
   const bulkOps = useBulkOperations({
     queryClient,
     supabase,
@@ -171,33 +179,21 @@ export function KanbanBoard({
     setBulkWorking,
     clearSelection,
     setBulkDeleteOpen,
+    broadcast,
   });
 
-  // Cross-board move handler
-  const handleCrossBoardMove = useCallback(() => {
-    if (selectedTasks.size > 0) {
-      setBoardSelectorOpen(true);
-    }
-  }, [selectedTasks]);
-
-  // Handle the actual cross-board move
+  // Unified move handler — dispatches to the correct bulk operation
   const handleBoardMove = useCallback(
     async (targetBoardId: string, targetListId: string) => {
       if (selectedTasks.size === 0) return;
 
-      const tasksToMove = Array.from(selectedTasks);
-
       try {
-        for (const taskId of tasksToMove) {
-          try {
-            await moveTaskToBoardMutation.mutateAsync({
-              taskId,
-              newListId: targetListId,
-              targetBoardId,
-            });
-          } catch (error) {
-            console.error(`Failed to move task ${taskId}:`, error);
-          }
+        if (targetBoardId === (boardId ?? '')) {
+          // Same board: find the target list name for the toast
+          const targetList = columns.find((c) => c.id === targetListId);
+          await bulkOps.bulkMoveToList(targetListId, targetList?.name ?? '');
+        } else {
+          await bulkOps.bulkMoveToBoard(targetBoardId, targetListId);
         }
 
         clearSelection();
@@ -206,7 +202,7 @@ export function KanbanBoard({
         console.error('Failed to move tasks:', error);
       }
     },
-    [selectedTasks, moveTaskToBoardMutation, clearSelection]
+    [selectedTasks, boardId, columns, bulkOps, clearSelection]
   );
 
   // Keyboard Shortcuts
@@ -219,7 +215,11 @@ export function KanbanBoard({
     setIsMultiSelectMode,
     createTask,
     clearSelection,
-    handleCrossBoardMove,
+    handleCrossBoardMove: () => {
+      if (selectedTasks.size > 0) {
+        setBoardSelectorOpen(true);
+      }
+    },
   });
 
   // DnD Hook
@@ -345,13 +345,13 @@ export function KanbanBoard({
       <div className="flex-1 overflow-x-auto overflow-y-hidden">
         <DndContext
           sensors={sensors}
-          collisionDetection={closestCorners}
+          collisionDetection={kanbanCollisionDetection}
           onDragStart={onDragStart}
           onDragOver={onDragOver}
           onDragEnd={onDragEnd}
           measuring={{
             droppable: {
-              strategy: MeasuringStrategy.Always,
+              strategy: MeasuringStrategy.WhileDragging,
             },
           }}
           autoScroll={false}
@@ -408,7 +408,7 @@ export function KanbanBoard({
         currentBoardId={boardId ?? ''}
         taskCount={selectedTasks.size}
         onMove={handleBoardMove}
-        isMoving={moveTaskToBoardMutation.isPending || bulkWorking}
+        isMoving={bulkWorking}
       />
 
       <BulkDeleteDialog

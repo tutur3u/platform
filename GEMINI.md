@@ -184,10 +184,14 @@ const { data, isLoading } = useQuery({
 
 **Kanban Task Realtime Sync (CRITICAL):**
 
-Tasks in kanban boards (`task.tsx`, `task-edit-dialog.tsx`, components in `packages/ui/src/components/ui/tu-do/`) use Supabase realtime subscriptions to sync across clients. **NEVER invalidate TanStack Query caches for task data in these components** - it conflicts with realtime sync and causes UI flicker/stale data.
+Tasks in kanban boards (`task.tsx`, `task-edit-dialog.tsx`, components in `packages/ui/src/components/ui/tu-do/`) use **Supabase Broadcast** (client-to-client messaging) to sync across clients. Broadcast is preferred over `postgres_changes` for scalability and security — no WAL dependency, no RLS evaluation issues, lower latency.
+
+**Pattern:** After each successful DB mutation, call `broadcast?.('task:upsert', { task: { id, ...fields } })` for scalar changes or `broadcast?.('task:relations-changed', { taskId })` for label/assignee/project toggles. Access the broadcast function via `useBoardBroadcast()` from `board-broadcast-context.tsx`.
 
 - ❌ **NEVER** call `invalidateQueries()` or `refetch()` for task queries in kanban components
-- ✅ **DO** rely on realtime subscriptions; use optimistic `setQueryData` for immediate feedback
+- ❌ **NEVER** use `postgres_changes` for new board realtime features — use Broadcast instead
+- ✅ **DO** use optimistic `setQueryData` for immediate feedback, then broadcast for cross-client sync
+- ✅ **DO** use `useBoardBroadcast()` context to access the broadcast function from any mutation site
 
 **ENFORCEMENT RULES:**
 

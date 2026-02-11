@@ -958,6 +958,7 @@ export function BoardHeader({
                   <Pencil className="h-4 w-4" />
                   {t('common.edit')}
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => {
                     setDuplicateBoardOpen(true);
@@ -978,6 +979,7 @@ export function BoardHeader({
                   <Bookmark className="h-4 w-4" />
                   {t('ws-task-boards.actions.save_as_template')}
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => {
                     setLayoutSettingsOpen(true);
@@ -999,6 +1001,9 @@ export function BoardHeader({
                   <Settings className="h-4 w-4" />
                   {t('ws-task-boards.actions.board_settings')}
                 </DropdownMenuItem>
+                {(onRecycleBinOpen || board.archived_at) && (
+                  <DropdownMenuSeparator />
+                )}
                 {onRecycleBinOpen && (
                   <DropdownMenuItem
                     onClick={() => {

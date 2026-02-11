@@ -317,10 +317,15 @@ Raw `fetch()`, `useEffect` with manual state, or custom hooks without React Quer
 
 **Kanban Task Realtime Sync (CRITICAL):**
 
-Tasks in kanban boards (`task.tsx`, `task-edit-dialog.tsx`, components in `packages/ui/src/components/ui/tu-do/`) use Supabase realtime subscriptions to sync across clients. **NEVER invalidate TanStack Query caches for task data in these components** - it conflicts with realtime sync and causes UI flicker/stale data.
+Tasks in kanban boards (`task.tsx`, `task-edit-dialog.tsx`, components in `packages/ui/src/components/ui/tu-do/`) use **Supabase Broadcast** (client-to-client messaging) to sync across clients. Broadcast is preferred over `postgres_changes` for scalability and security — it has no WAL dependency, no RLS evaluation by the Realtime server, and lower latency.
+
+**Architecture:** Every mutation site (after writing to DB) sends a broadcast event via `BoardBroadcastContext`. Other clients receive the event and update the TanStack Query cache directly. The sending client already has optimistic updates and uses `self: false` to prevent redundant processing.
 
 - ❌ **NEVER** call `invalidateQueries()` or `refetch()` for task queries in kanban components
-- ✅ **DO** rely on realtime subscriptions; use optimistic `setQueryData` for immediate feedback
+- ❌ **NEVER** use `postgres_changes` for new board realtime features — use Broadcast instead
+- ✅ **DO** use optimistic `setQueryData` for immediate UI feedback in the mutating client
+- ✅ **DO** call `broadcast?.('task:upsert', { task: { id, ...fields } })` after successful DB mutations
+- ✅ **DO** call `broadcast?.('task:relations-changed', { taskId })` after toggling labels/assignees/projects
 
 **Banned Patterns (Will Cause Code Rejection):**
 

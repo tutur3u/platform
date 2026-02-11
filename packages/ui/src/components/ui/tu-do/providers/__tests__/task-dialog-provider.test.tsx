@@ -105,14 +105,16 @@ describe('TaskDialogProvider', () => {
     expect(result.current.state.isOpen).toBe(false);
   });
 
-  it('should set collaborationMode to true for edit mode', () => {
+  it('should set collaborationMode to false for edit mode without presence context', () => {
     const { result } = renderHook(() => useTaskDialogContext(), { wrapper });
 
     act(() => {
       result.current.openTask(mockTask, 'board-1', [mockList]);
     });
 
-    expect(result.current.state.collaborationMode).toBe(true);
+    // Without WorkspacePresenceProvider, cursorsEnabled defaults to false
+    // so collaborationMode is false even for edit mode
+    expect(result.current.state.collaborationMode).toBe(false);
     expect(result.current.state.mode).toBe('edit');
   });
 

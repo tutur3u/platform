@@ -17,6 +17,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import type { WorkspaceLabel } from '@tuturuuu/utils/task-helper';
 import { moveTaskToBoard } from '@tuturuuu/utils/task-helper';
 import { useEffect } from 'react';
+import type { BoardBroadcastFn } from '../../../../shared/board-broadcast-context';
 import { calculateDaysUntilEndOfWeek } from '../../../../utils/weekDateUtils';
 
 interface WorkspaceProject {
@@ -45,6 +46,7 @@ interface BulkOperationsConfig {
   setBulkWorking: (working: boolean) => void;
   clearSelection: () => void;
   setBulkDeleteOpen: (open: boolean) => void;
+  broadcast?: BoardBroadcastFn | null;
 }
 
 /**
@@ -53,7 +55,8 @@ interface BulkOperationsConfig {
 function useBulkUpdatePriority(
   queryClient: QueryClient,
   supabase: SupabaseClient,
-  boardId: string
+  boardId: string,
+  broadcast?: BoardBroadcastFn | null
 ) {
   return useMutation({
     mutationFn: async ({
@@ -117,6 +120,11 @@ function useBulkUpdatePriority(
       console.log(
         `✅ Updated ${data.count} tasks with priority: ${data.priority}`
       );
+      for (const tid of data.taskIds) {
+        broadcast?.('task:upsert', {
+          task: { id: tid, priority: data.priority },
+        });
+      }
       if (data.failures && data.failures.length > 0) {
         toast.warning('Partial update completed', {
           description: `${data.count} task${data.count === 1 ? '' : 's'} updated, ${data.failures.length} failed to update`,
@@ -136,7 +144,8 @@ function useBulkUpdatePriority(
 function useBulkUpdateEstimation(
   queryClient: QueryClient,
   supabase: SupabaseClient,
-  boardId: string
+  boardId: string,
+  broadcast?: BoardBroadcastFn | null
 ) {
   return useMutation({
     mutationFn: async ({
@@ -197,6 +206,11 @@ function useBulkUpdateEstimation(
       console.log(
         `✅ Updated ${data.count} tasks with estimation: ${data.points}`
       );
+      for (const tid of data.taskIds) {
+        broadcast?.('task:upsert', {
+          task: { id: tid, estimation_points: data.points },
+        });
+      }
       if (data.failures && data.failures.length > 0) {
         toast.warning('Partial update completed', {
           description: `${data.count} task${data.count === 1 ? '' : 's'} updated, ${data.failures.length} failed to update`,
@@ -217,7 +231,8 @@ function useBulkUpdateDueDate(
   queryClient: QueryClient,
   supabase: SupabaseClient,
   boardId: string,
-  weekStartsOn: 0 | 1 | 6 = 0
+  weekStartsOn: 0 | 1 | 6 = 0,
+  broadcast?: BoardBroadcastFn | null
 ) {
   return useMutation({
     mutationFn: async ({
@@ -314,6 +329,11 @@ function useBulkUpdateDueDate(
       console.log(
         `✅ Updated ${data.count} tasks with due date: ${data.end_date}`
       );
+      for (const tid of data.taskIds) {
+        broadcast?.('task:upsert', {
+          task: { id: tid, end_date: data.end_date },
+        });
+      }
       if (data.failures && data.failures.length > 0) {
         toast.warning('Partial update completed', {
           description: `${data.count} task${data.count === 1 ? '' : 's'} updated, ${data.failures.length} failed to update`,
@@ -333,7 +353,8 @@ function useBulkUpdateDueDate(
 function useBulkUpdateCustomDueDate(
   queryClient: QueryClient,
   supabase: SupabaseClient,
-  boardId: string
+  boardId: string,
+  broadcast?: BoardBroadcastFn | null
 ) {
   return useMutation({
     mutationFn: async ({
@@ -400,6 +421,11 @@ function useBulkUpdateCustomDueDate(
       console.log(
         `✅ Updated ${data.count} tasks with custom due date: ${data.end_date}`
       );
+      for (const tid of data.taskIds) {
+        broadcast?.('task:upsert', {
+          task: { id: tid, end_date: data.end_date },
+        });
+      }
       if (data.failures && data.failures.length > 0) {
         toast.warning('Partial update completed', {
           description: `${data.count} task${data.count === 1 ? '' : 's'} updated, ${data.failures.length} failed to update`,
@@ -419,7 +445,8 @@ function useBulkUpdateCustomDueDate(
 function useBulkMoveToBoard(
   queryClient: QueryClient,
   supabase: SupabaseClient,
-  boardId: string
+  boardId: string,
+  broadcast?: BoardBroadcastFn | null
 ) {
   return useMutation({
     mutationFn: async ({
@@ -543,6 +570,10 @@ function useBulkMoveToBoard(
       console.log(
         `✅ Moved ${data.count} tasks to board ${data.targetBoardId}`
       );
+      // Broadcast task deletion from source board
+      for (const tid of data.taskIds) {
+        broadcast?.('task:delete', { taskId: tid });
+      }
       if (data.failures && data.failures.length > 0) {
         toast.warning('Partial move completed', {
           description: `${data.count} task${data.count === 1 ? '' : 's'} moved, ${data.failures.length} failed to move`,
@@ -578,7 +609,8 @@ function useBulkMoveToBoard(
 function useBulkMoveToList(
   queryClient: QueryClient,
   supabase: SupabaseClient,
-  boardId: string
+  boardId: string,
+  broadcast?: BoardBroadcastFn | null
 ) {
   return useMutation({
     mutationFn: async ({
@@ -598,14 +630,24 @@ function useBulkMoveToList(
       // Update one by one to ensure triggers fire for each task
       let successCount = 0;
       const failures: Array<{ taskId: string; error: string }> = [];
+      const taskTimestamps = new Map<
+        string,
+        { completed_at: string | null; closed_at: string | null }
+      >();
       for (const taskId of taskIds) {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('tasks')
           .update({ list_id: listId })
-          .eq('id', taskId);
+          .eq('id', taskId)
+          .select('id, completed_at, closed_at')
+          .single();
         if (error) {
           failures.push({ taskId, error: error.message });
         } else {
+          taskTimestamps.set(taskId, {
+            completed_at: data.completed_at,
+            closed_at: data.closed_at,
+          });
           successCount++;
         }
       }
@@ -619,6 +661,7 @@ function useBulkMoveToList(
         listName,
         taskIds,
         failures,
+        taskTimestamps,
       };
     },
     onMutate: async ({ listId, taskIds }) => {
@@ -647,6 +690,34 @@ function useBulkMoveToList(
     },
     onSuccess: (data) => {
       console.log(`✅ Moved ${data.count} tasks to ${data.listName}`);
+      // Update sender's own cache with DB-computed timestamps
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
+          return old.map((t) => {
+            const timestamps = data.taskTimestamps.get(t.id);
+            return timestamps
+              ? {
+                  ...t,
+                  completed_at: timestamps.completed_at,
+                  closed_at: timestamps.closed_at,
+                }
+              : t;
+          });
+        }
+      );
+      for (const tid of data.taskIds) {
+        const timestamps = data.taskTimestamps.get(tid);
+        broadcast?.('task:upsert', {
+          task: {
+            id: tid,
+            list_id: data.listId,
+            completed_at: timestamps?.completed_at,
+            closed_at: timestamps?.closed_at,
+          },
+        });
+      }
       if (data.failures && data.failures.length > 0) {
         toast.warning('Partial move completed', {
           description: `${data.count} task${data.count === 1 ? '' : 's'} moved, ${data.failures.length} failed to move`,
@@ -667,7 +738,8 @@ function useBulkMoveToStatus(
   queryClient: QueryClient,
   supabase: SupabaseClient,
   boardId: string,
-  columns: TaskList[]
+  columns: TaskList[],
+  broadcast?: BoardBroadcastFn | null
 ) {
   return useMutation({
     mutationFn: async ({
@@ -687,14 +759,24 @@ function useBulkMoveToStatus(
       // Update one by one to ensure triggers fire for each task
       let successCount = 0;
       const failures: Array<{ taskId: string; error: string }> = [];
+      const taskTimestamps = new Map<
+        string,
+        { completed_at: string | null; closed_at: string | null }
+      >();
       for (const taskId of taskIds) {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('tasks')
           .update({ list_id: targetList.id })
-          .eq('id', taskId);
+          .eq('id', taskId)
+          .select('id, completed_at, closed_at')
+          .single();
         if (error) {
           failures.push({ taskId, error: error.message });
         } else {
+          taskTimestamps.set(taskId, {
+            completed_at: data.completed_at,
+            closed_at: data.closed_at,
+          });
           successCount++;
         }
       }
@@ -710,6 +792,7 @@ function useBulkMoveToStatus(
         targetListId: targetList.id,
         taskIds,
         failures,
+        taskTimestamps,
       };
     },
     onMutate: async ({ status, taskIds }) => {
@@ -741,6 +824,34 @@ function useBulkMoveToStatus(
     },
     onSuccess: (data) => {
       console.log(`✅ Moved ${data.count} tasks to ${data.status} list`);
+      // Update sender's own cache with DB-computed timestamps
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
+          return old.map((t) => {
+            const timestamps = data.taskTimestamps.get(t.id);
+            return timestamps
+              ? {
+                  ...t,
+                  completed_at: timestamps.completed_at,
+                  closed_at: timestamps.closed_at,
+                }
+              : t;
+          });
+        }
+      );
+      for (const tid of data.taskIds) {
+        const timestamps = data.taskTimestamps.get(tid);
+        broadcast?.('task:upsert', {
+          task: {
+            id: tid,
+            list_id: data.targetListId,
+            completed_at: timestamps?.completed_at,
+            closed_at: timestamps?.closed_at,
+          },
+        });
+      }
       if (data.failures && data.failures.length > 0) {
         toast.warning('Partial move completed', {
           description: `${data.count} task${data.count === 1 ? '' : 's'} moved, ${data.failures.length} failed to move`,
@@ -761,7 +872,8 @@ function useBulkAddLabel(
   queryClient: QueryClient,
   supabase: SupabaseClient,
   boardId: string,
-  workspaceLabels: WorkspaceLabel[]
+  workspaceLabels: WorkspaceLabel[],
+  broadcast?: BoardBroadcastFn | null
 ) {
   return useMutation({
     mutationFn: async ({
@@ -844,6 +956,9 @@ function useBulkAddLabel(
       toast.error('Failed to add label to selected tasks');
     },
     onSuccess: (data) => {
+      for (const tid of data.taskIds) {
+        broadcast?.('task:relations-changed', { taskId: tid });
+      }
       const labelMeta = workspaceLabels.find((l) => l.id === data.labelId);
       const labelName = labelMeta?.name || 'Label';
       if (data.failures && data.failures.length > 0) {
@@ -866,7 +981,8 @@ function useBulkRemoveLabel(
   queryClient: QueryClient,
   supabase: SupabaseClient,
   boardId: string,
-  workspaceLabels: WorkspaceLabel[]
+  workspaceLabels: WorkspaceLabel[],
+  broadcast?: BoardBroadcastFn | null
 ) {
   return useMutation({
     mutationFn: async ({
@@ -933,6 +1049,9 @@ function useBulkRemoveLabel(
       toast.error('Failed to remove label from selected tasks');
     },
     onSuccess: (data) => {
+      for (const tid of data.taskIds) {
+        broadcast?.('task:relations-changed', { taskId: tid });
+      }
       const labelMeta = workspaceLabels.find((l) => l.id === data.labelId);
       const labelName = labelMeta?.name || 'Label';
       if (data.failures && data.failures.length > 0) {
@@ -955,7 +1074,8 @@ function useBulkAddProject(
   queryClient: QueryClient,
   supabase: SupabaseClient,
   boardId: string,
-  workspaceProjects: WorkspaceProject[]
+  workspaceProjects: WorkspaceProject[],
+  broadcast?: BoardBroadcastFn | null
 ) {
   return useMutation({
     mutationFn: async ({
@@ -1037,6 +1157,9 @@ function useBulkAddProject(
       toast.error('Failed to add project to selected tasks');
     },
     onSuccess: (data) => {
+      for (const tid of data.taskIds) {
+        broadcast?.('task:relations-changed', { taskId: tid });
+      }
       const projectMeta = workspaceProjects.find(
         (p) => p.id === data.projectId
       );
@@ -1061,7 +1184,8 @@ function useBulkRemoveProject(
   queryClient: QueryClient,
   supabase: SupabaseClient,
   boardId: string,
-  workspaceProjects: WorkspaceProject[]
+  workspaceProjects: WorkspaceProject[],
+  broadcast?: BoardBroadcastFn | null
 ) {
   return useMutation({
     mutationFn: async ({
@@ -1130,6 +1254,9 @@ function useBulkRemoveProject(
       toast.error('Failed to remove project from selected tasks');
     },
     onSuccess: (data) => {
+      for (const tid of data.taskIds) {
+        broadcast?.('task:relations-changed', { taskId: tid });
+      }
       const projectMeta = workspaceProjects.find(
         (p) => p.id === data.projectId
       );
@@ -1154,7 +1281,8 @@ function useBulkAddAssignee(
   queryClient: QueryClient,
   supabase: SupabaseClient,
   boardId: string,
-  workspaceMembers: WorkspaceMember[] = []
+  workspaceMembers: WorkspaceMember[] = [],
+  broadcast?: BoardBroadcastFn | null
 ) {
   return useMutation({
     mutationFn: async ({
@@ -1244,6 +1372,9 @@ function useBulkAddAssignee(
       toast.error('Failed to add assignee to selected tasks');
     },
     onSuccess: (data) => {
+      for (const tid of data.taskIds) {
+        broadcast?.('task:relations-changed', { taskId: tid });
+      }
       if (data.failures && data.failures.length > 0) {
         toast.warning('Partial assignee addition completed', {
           description: `Added assignee to ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
@@ -1263,7 +1394,8 @@ function useBulkAddAssignee(
 function useBulkRemoveAssignee(
   queryClient: QueryClient,
   supabase: SupabaseClient,
-  boardId: string
+  boardId: string,
+  broadcast?: BoardBroadcastFn | null
 ) {
   return useMutation({
     mutationFn: async ({
@@ -1332,6 +1464,9 @@ function useBulkRemoveAssignee(
       toast.error('Failed to remove assignee from selected tasks');
     },
     onSuccess: (data) => {
+      for (const tid of data.taskIds) {
+        broadcast?.('task:relations-changed', { taskId: tid });
+      }
       if (data.failures && data.failures.length > 0) {
         toast.warning('Partial assignee removal completed', {
           description: `Removed assignee from ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
@@ -1351,7 +1486,8 @@ function useBulkRemoveAssignee(
 function useBulkClearLabels(
   queryClient: QueryClient,
   supabase: SupabaseClient,
-  boardId: string
+  boardId: string,
+  broadcast?: BoardBroadcastFn | null
 ) {
   return useMutation({
     mutationFn: async ({ taskIds }: { taskIds: string[] }) => {
@@ -1406,6 +1542,9 @@ function useBulkClearLabels(
       toast.error('Failed to clear labels from selected tasks');
     },
     onSuccess: (data) => {
+      for (const tid of data.taskIds) {
+        broadcast?.('task:relations-changed', { taskId: tid });
+      }
       if (data.failures && data.failures.length > 0) {
         toast.warning('Partial label clear completed', {
           description: `Cleared labels from ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
@@ -1425,7 +1564,8 @@ function useBulkClearLabels(
 function useBulkClearProjects(
   queryClient: QueryClient,
   supabase: SupabaseClient,
-  boardId: string
+  boardId: string,
+  broadcast?: BoardBroadcastFn | null
 ) {
   return useMutation({
     mutationFn: async ({ taskIds }: { taskIds: string[] }) => {
@@ -1480,6 +1620,9 @@ function useBulkClearProjects(
       toast.error('Failed to clear projects from selected tasks');
     },
     onSuccess: (data) => {
+      for (const tid of data.taskIds) {
+        broadcast?.('task:relations-changed', { taskId: tid });
+      }
       if (data.failures && data.failures.length > 0) {
         toast.warning('Partial project clear completed', {
           description: `Cleared projects from ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
@@ -1499,7 +1642,8 @@ function useBulkClearProjects(
 function useBulkClearAssignees(
   queryClient: QueryClient,
   supabase: SupabaseClient,
-  boardId: string
+  boardId: string,
+  broadcast?: BoardBroadcastFn | null
 ) {
   return useMutation({
     mutationFn: async ({ taskIds }: { taskIds: string[] }) => {
@@ -1554,6 +1698,9 @@ function useBulkClearAssignees(
       toast.error('Failed to clear assignees from selected tasks');
     },
     onSuccess: (data) => {
+      for (const tid of data.taskIds) {
+        broadcast?.('task:relations-changed', { taskId: tid });
+      }
       if (data.failures && data.failures.length > 0) {
         toast.warning('Partial assignee clear completed', {
           description: `Cleared assignees from ${data.count} task${data.count === 1 ? '' : 's'}, ${data.failures.length} failed`,
@@ -1575,7 +1722,8 @@ function useBulkDeleteTasks(
   supabase: SupabaseClient,
   boardId: string,
   clearSelection: () => void,
-  setBulkDeleteOpen: (open: boolean) => void
+  setBulkDeleteOpen: (open: boolean) => void,
+  broadcast?: BoardBroadcastFn | null
 ) {
   return useMutation({
     mutationFn: async ({ taskIds }: { taskIds: string[] }) => {
@@ -1625,6 +1773,9 @@ function useBulkDeleteTasks(
     },
     onSuccess: (data) => {
       console.log(`✅ Deleted ${data.count} tasks`);
+      for (const tid of data.taskIds) {
+        broadcast?.('task:delete', { taskId: tid });
+      }
       clearSelection();
       setBulkDeleteOpen(false);
       if (data.failures && data.failures.length > 0) {
@@ -1655,98 +1806,120 @@ export function useBulkOperations(config: BulkOperationsConfig) {
     setBulkWorking,
     clearSelection,
     setBulkDeleteOpen,
+    broadcast,
   } = config;
 
   // Create all mutations (pass taskIds at call time, not hook creation time)
   const priorityMutation = useBulkUpdatePriority(
     queryClient,
     supabase,
-    boardId
+    boardId,
+    broadcast
   );
   const estimationMutation = useBulkUpdateEstimation(
     queryClient,
     supabase,
-    boardId
+    boardId,
+    broadcast
   );
   const dueDateMutation = useBulkUpdateDueDate(
     queryClient,
     supabase,
     boardId,
-    weekStartsOn
+    weekStartsOn,
+    broadcast
   );
   const customDueDateMutation = useBulkUpdateCustomDueDate(
     queryClient,
     supabase,
-    boardId
+    boardId,
+    broadcast
   );
-  const moveToListMutation = useBulkMoveToList(queryClient, supabase, boardId);
+  const moveToListMutation = useBulkMoveToList(
+    queryClient,
+    supabase,
+    boardId,
+    broadcast
+  );
   const statusMutation = useBulkMoveToStatus(
     queryClient,
     supabase,
     boardId,
-    columns
+    columns,
+    broadcast
   );
   const addLabelMutation = useBulkAddLabel(
     queryClient,
     supabase,
     boardId,
-    workspaceLabels
+    workspaceLabels,
+    broadcast
   );
   const removeLabelMutation = useBulkRemoveLabel(
     queryClient,
     supabase,
     boardId,
-    workspaceLabels
+    workspaceLabels,
+    broadcast
   );
   const addProjectMutation = useBulkAddProject(
     queryClient,
     supabase,
     boardId,
-    workspaceProjects
+    workspaceProjects,
+    broadcast
   );
   const removeProjectMutation = useBulkRemoveProject(
     queryClient,
     supabase,
     boardId,
-    workspaceProjects
+    workspaceProjects,
+    broadcast
   );
   const addAssigneeMutation = useBulkAddAssignee(
     queryClient,
     supabase,
     boardId,
-    workspaceMembers
+    workspaceMembers,
+    broadcast
   );
   const removeAssigneeMutation = useBulkRemoveAssignee(
     queryClient,
     supabase,
-    boardId
+    boardId,
+    broadcast
   );
   const clearLabelsMutation = useBulkClearLabels(
     queryClient,
     supabase,
-    boardId
+    boardId,
+    broadcast
   );
   const clearProjectsMutation = useBulkClearProjects(
     queryClient,
     supabase,
-    boardId
+    boardId,
+    broadcast
   );
   const clearAssigneesMutation = useBulkClearAssignees(
     queryClient,
     supabase,
-    boardId
+    boardId,
+    broadcast
   );
   const deleteMutation = useBulkDeleteTasks(
     queryClient,
     supabase,
     boardId,
     clearSelection,
-    setBulkDeleteOpen
+    setBulkDeleteOpen,
+    broadcast
   );
   const moveToBoardMutation = useBulkMoveToBoard(
     queryClient,
     supabase,
-    boardId
+    boardId,
+    broadcast
   );
 
   // Track loading state

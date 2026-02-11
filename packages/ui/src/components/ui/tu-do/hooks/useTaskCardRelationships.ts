@@ -10,6 +10,7 @@ import {
   useTaskRelationships,
 } from '@tuturuuu/utils/task-helper';
 import { useCallback, useState } from 'react';
+import { useBoardBroadcast } from '../shared/board-broadcast-context';
 
 export interface UseTaskCardRelationshipsProps {
   taskId: string;
@@ -52,6 +53,7 @@ export function useTaskCardRelationships({
   taskId,
   boardId,
 }: UseTaskCardRelationshipsProps): UseTaskCardRelationshipsReturn {
+  const broadcast = useBoardBroadcast();
   const [savingTaskId, setSavingTaskId] = useState<string | null>(null);
 
   // Fetch relationships
@@ -81,11 +83,14 @@ export function useTaskCardRelationships({
           type: 'parent_child' as TaskRelationshipType,
         },
         {
+          onSuccess: () => {
+            broadcast?.('task:deps-changed', { taskIds: [task.id, taskId] });
+          },
           onSettled: () => setSavingTaskId(null),
         }
       );
     },
-    [taskId, createRelationship]
+    [taskId, createRelationship, broadcast]
   );
 
   const removeParentTask = useCallback(() => {
@@ -98,10 +103,15 @@ export function useTaskCardRelationships({
         type: 'parent_child',
       },
       {
+        onSuccess: () => {
+          broadcast?.('task:deps-changed', {
+            taskIds: [parentTask.id, taskId],
+          });
+        },
         onSettled: () => setSavingTaskId(null),
       }
     );
-  }, [taskId, parentTask, deleteRelationship]);
+  }, [taskId, parentTask, deleteRelationship, broadcast]);
 
   // Blocking task actions (this task blocks another)
   const addBlockingTask = useCallback(
@@ -114,11 +124,14 @@ export function useTaskCardRelationships({
           type: 'blocks' as TaskRelationshipType,
         },
         {
+          onSuccess: () => {
+            broadcast?.('task:deps-changed', { taskIds: [taskId, task.id] });
+          },
           onSettled: () => setSavingTaskId(null),
         }
       );
     },
-    [taskId, createRelationship]
+    [taskId, createRelationship, broadcast]
   );
 
   const removeBlockingTask = useCallback(
@@ -131,11 +144,16 @@ export function useTaskCardRelationships({
           type: 'blocks',
         },
         {
+          onSuccess: () => {
+            broadcast?.('task:deps-changed', {
+              taskIds: [taskId, targetTaskId],
+            });
+          },
           onSettled: () => setSavingTaskId(null),
         }
       );
     },
-    [taskId, deleteRelationship]
+    [taskId, deleteRelationship, broadcast]
   );
 
   // Blocked by task actions (another task blocks this)
@@ -149,11 +167,14 @@ export function useTaskCardRelationships({
           type: 'blocks' as TaskRelationshipType,
         },
         {
+          onSuccess: () => {
+            broadcast?.('task:deps-changed', { taskIds: [task.id, taskId] });
+          },
           onSettled: () => setSavingTaskId(null),
         }
       );
     },
-    [taskId, createRelationship]
+    [taskId, createRelationship, broadcast]
   );
 
   const removeBlockedByTask = useCallback(
@@ -166,11 +187,16 @@ export function useTaskCardRelationships({
           type: 'blocks',
         },
         {
+          onSuccess: () => {
+            broadcast?.('task:deps-changed', {
+              taskIds: [sourceTaskId, taskId],
+            });
+          },
           onSettled: () => setSavingTaskId(null),
         }
       );
     },
-    [taskId, deleteRelationship]
+    [taskId, deleteRelationship, broadcast]
   );
 
   // Related task actions
@@ -184,16 +210,22 @@ export function useTaskCardRelationships({
           type: 'related' as TaskRelationshipType,
         },
         {
+          onSuccess: () => {
+            broadcast?.('task:deps-changed', { taskIds: [taskId, task.id] });
+          },
           onSettled: () => setSavingTaskId(null),
         }
       );
     },
-    [taskId, createRelationship]
+    [taskId, createRelationship, broadcast]
   );
 
   const removeRelatedTask = useCallback(
     (targetTaskId: string) => {
       setSavingTaskId(targetTaskId);
+      const broadcastDeps = () => {
+        broadcast?.('task:deps-changed', { taskIds: [taskId, targetTaskId] });
+      };
       // Try the first direction (taskId -> targetTaskId)
       deleteRelationship.mutate(
         {
@@ -211,15 +243,19 @@ export function useTaskCardRelationships({
                 type: 'related',
               },
               {
+                onSuccess: broadcastDeps,
                 onSettled: () => setSavingTaskId(null),
               }
             );
           },
-          onSuccess: () => setSavingTaskId(null),
+          onSuccess: () => {
+            broadcastDeps();
+            setSavingTaskId(null);
+          },
         }
       );
     },
-    [taskId, deleteRelationship]
+    [taskId, deleteRelationship, broadcast]
   );
 
   return {

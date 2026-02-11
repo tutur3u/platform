@@ -1,3 +1,5 @@
+export { reorderTask, useReorderTask } from './task/reorder';
+
 import {
   type QueryClient,
   useMutation,
@@ -15,6 +17,9 @@ import type {
   TaskBoardStatus,
   TaskBoardStatusTemplate,
 } from '@tuturuuu/types/primitives/TaskBoard';
+
+export { transformAssignees, transformTaskRecord } from './task/transformers';
+
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type {
   CreateTaskRelationshipInput,
@@ -369,7 +374,6 @@ export async function updateTask(
 // Utility function to transform and deduplicate assignees
 // Returns user objects with user_id included for consistency with workspace members
 // Transformers moved to ./task/transformers.ts
-export { transformAssignees, transformTaskRecord } from './task/transformers';
 
 // Utility function to invalidate all task-related caches consistently
 export async function invalidateTaskCaches(
@@ -1926,7 +1930,7 @@ export async function moveAllTasksFromList(
 
   if (!tasksToMove || tasksToMove.length === 0) {
     console.log('ℹ️ No tasks to move from source list');
-    return { success: true, movedCount: 0 };
+    return { success: true, movedCount: 0, movedTaskIds: [] as string[] };
   }
 
   console.log('📋 Found tasks to move:', tasksToMove.length);
@@ -1966,10 +1970,17 @@ export async function moveAllTasksFromList(
     throw new Error(`Failed to move ${failed} out of ${results.length} tasks`);
   }
 
-  return { success: true, movedCount: successful };
+  const movedTaskIds = results
+    .filter((r) => r.status === 'fulfilled')
+    .map((r) => r.value.taskId as string);
+
+  return { success: true, movedCount: successful, movedTaskIds };
 }
 
-export function useMoveAllTasksFromList(currentBoardId: string) {
+export function useMoveAllTasksFromList(
+  currentBoardId: string,
+  broadcast?: ((event: string, payload: Record<string, unknown>) => void) | null
+) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -2098,15 +2109,23 @@ export function useMoveAllTasksFromList(currentBoardId: string) {
       console.log('✅ Bulk list move mutation succeeded');
       console.log('📊 Moved task count:', data.movedCount);
 
-      // Invalidate affected queries to ensure consistency
-      queryClient.invalidateQueries({ queryKey: ['tasks', currentBoardId] });
+      const movedTaskIds = data.movedTaskIds ?? [];
+
       if (
         variables.targetBoardId &&
         variables.targetBoardId !== currentBoardId
       ) {
-        queryClient.invalidateQueries({
-          queryKey: ['tasks', variables.targetBoardId],
-        });
+        // Cross-board: broadcast task:delete so other clients remove them
+        for (const taskId of movedTaskIds) {
+          broadcast?.('task:delete', { taskId });
+        }
+      } else {
+        // Same-board: broadcast task:upsert with new list_id
+        for (const taskId of movedTaskIds) {
+          broadcast?.('task:upsert', {
+            task: { id: taskId, list_id: variables.targetListId },
+          });
+        }
       }
 
       // Invalidate task lists in case task counts changed
@@ -2541,9 +2560,6 @@ export async function normalizeListSortKeys(
 
   console.log('✅ Sort keys normalized successfully');
 }
-
-// Reorder task logic moved to ./task/reorder.ts
-export { reorderTask, useReorderTask } from './task/reorder';
 
 // =============================================================================
 // TASK RELATIONSHIPS

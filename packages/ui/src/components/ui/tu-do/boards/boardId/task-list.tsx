@@ -85,7 +85,6 @@ function TaskListContent({
     <>
       {/* Preview at beginning of list - when dropping on column header */}
       {dragPreviewPosition &&
-        dragPreviewPosition.task.list_id !== column.id &&
         dragPreviewPosition.position === 'before' &&
         dragPreviewPosition.overTaskId === null && (
           <div
@@ -100,9 +99,8 @@ function TaskListContent({
 
       {tasks.map((task, idx) => (
         <React.Fragment key={task.id}>
-          {/* Preview before this specific task - but NOT for the task being dragged or when dragging within the same list */}
+          {/* Preview before this specific task - but NOT for the task being dragged */}
           {dragPreviewPosition &&
-            dragPreviewPosition.task.list_id !== column.id &&
             dragPreviewPosition.position === 'before' &&
             dragPreviewPosition.overTaskId === task.id &&
             dragPreviewPosition.task.id !== task.id && (
@@ -136,7 +134,6 @@ function TaskListContent({
 
           {/* Preview at end of list - when dropping on column surface */}
           {dragPreviewPosition &&
-            dragPreviewPosition.task.list_id !== column.id &&
             dragPreviewPosition.position === 'empty' &&
             idx === tasks.length - 1 && (
               <div

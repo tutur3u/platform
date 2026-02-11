@@ -19,7 +19,6 @@ interface TaskLabelsMenuProps {
   taskLabels: WorkspaceTaskLabel[];
   availableLabels: WorkspaceTaskLabel[];
   isLoading: boolean;
-  labelsSaving: string | null;
   onToggleLabel: (labelId: string) => void;
   onCreateNewLabel: () => void;
   onMenuItemSelect: (e: Event, action: () => void) => void;
@@ -38,7 +37,6 @@ export function TaskLabelsMenu({
   taskLabels,
   availableLabels,
   isLoading,
-  labelsSaving,
   onToggleLabel,
   onCreateNewLabel,
   onMenuItemSelect,
@@ -109,24 +107,19 @@ export function TaskLabelsMenu({
                         onToggleLabel(label.id)
                       )
                     }
-                    disabled={labelsSaving === label.id}
                     className={cn(
                       'flex cursor-pointer items-center justify-between gap-2',
                       active && 'bg-dynamic-cyan/10 text-dynamic-cyan'
                     )}
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-2">
-                      {labelsSaving === label.id ? (
-                        <Loader2 className="h-3 w-3 shrink-0 animate-spin" />
-                      ) : (
-                        <span
-                          className="h-3 w-3 shrink-0 rounded-full"
-                          style={{
-                            backgroundColor: label.color,
-                            opacity: 0.9,
-                          }}
-                        />
-                      )}
+                      <span
+                        className="h-3 w-3 shrink-0 rounded-full"
+                        style={{
+                          backgroundColor: label.color,
+                          opacity: 0.9,
+                        }}
+                      />
                       <span className="truncate text-sm">{label.name}</span>
                     </div>
                     {active && <Check className="h-4 w-4 shrink-0" />}

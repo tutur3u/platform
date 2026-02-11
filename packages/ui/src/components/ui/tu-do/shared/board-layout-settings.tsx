@@ -74,6 +74,10 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useMemo, useState } from 'react';
+import {
+  getActiveBroadcast,
+  useBoardBroadcast,
+} from './board-broadcast-context';
 import { CreateListDialog } from './create-list-dialog';
 
 interface BoardLayoutSettingsProps {
@@ -588,6 +592,10 @@ export function BoardLayoutSettings({
   );
   const [creatingList, setCreatingList] = useState(false);
 
+  // Broadcast for realtime sync with other clients
+  const contextBroadcast = useBoardBroadcast();
+  const broadcast = contextBroadcast ?? getActiveBroadcast();
+
   // Group lists by status
   const groupedLists = lists.reduce(
     (acc, list) => {
@@ -623,14 +631,34 @@ export function BoardLayoutSettings({
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onMutate: async ({ listId, updates }) => {
+      await queryClient.cancelQueries({ queryKey: ['task_lists', boardId] });
+      const previous = queryClient.getQueryData<WorkspaceTaskList[]>([
+        'task_lists',
+        boardId,
+      ]);
+      queryClient.setQueryData(
+        ['task_lists', boardId],
+        (old: WorkspaceTaskList[] | undefined) => {
+          if (!old) return old;
+          return old.map((l) => (l.id === listId ? { ...l, ...updates } : l));
+        }
+      );
+      return { previous };
+    },
+    onSuccess: (_, { listId, updates }) => {
       toast.success(t.listUpdatedSuccessfully);
-      queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
+      broadcast?.('list:upsert', { list: { id: listId, ...updates } });
       setEditingList(null);
       onUpdate();
     },
-    onError: (error: any) => {
-      toast.error(error.message || t.failedToUpdateList);
+    onError: (error: unknown, _, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['task_lists', boardId], context.previous);
+      }
+      toast.error(
+        error instanceof Error ? error.message : t.failedToUpdateList
+      );
     },
   });
 
@@ -649,13 +677,33 @@ export function BoardLayoutSettings({
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onMutate: async ({ listId, color }) => {
+      await queryClient.cancelQueries({ queryKey: ['task_lists', boardId] });
+      const previous = queryClient.getQueryData<WorkspaceTaskList[]>([
+        'task_lists',
+        boardId,
+      ]);
+      queryClient.setQueryData(
+        ['task_lists', boardId],
+        (old: WorkspaceTaskList[] | undefined) => {
+          if (!old) return old;
+          return old.map((l) => (l.id === listId ? { ...l, color } : l));
+        }
+      );
+      return { previous };
+    },
+    onSuccess: (_, { listId, color }) => {
       toast.success(t.colorUpdated);
-      queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
+      broadcast?.('list:upsert', { list: { id: listId, color } });
       onUpdate();
     },
-    onError: (error: any) => {
-      toast.error(error.message || t.failedToUpdateColor);
+    onError: (error: unknown, _, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['task_lists', boardId], context.previous);
+      }
+      toast.error(
+        error instanceof Error ? error.message : t.failedToUpdateColor
+      );
     },
   });
 

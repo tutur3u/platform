@@ -4,6 +4,7 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { invalidateTaskCaches } from '@tuturuuu/utils/task-helper';
 import { useCallback, useState } from 'react';
+import { useBoardBroadcast } from '../../board-broadcast-context';
 import type { WorkspaceTaskLabel } from '../types';
 
 export interface UseTaskRelationshipsProps {
@@ -77,6 +78,7 @@ export function useTaskRelationships({
 }: UseTaskRelationshipsProps): UseTaskRelationshipsReturn {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const broadcast = useBoardBroadcast();
   const [creatingLabel, setCreatingLabel] = useState(false);
   const [creatingProject, setCreatingProject] = useState(false);
 
@@ -115,6 +117,7 @@ export function useTaskRelationships({
         }
         await invalidateTaskCaches(queryClient, boardId);
         queryClient.invalidateQueries({ queryKey: ['task-history'] });
+        broadcast?.('task:relations-changed', { taskId });
         onUpdate();
       } catch (e: any) {
         toast({
@@ -133,6 +136,7 @@ export function useTaskRelationships({
       toast,
       setSelectedLabels,
       onUpdate,
+      broadcast,
     ]
   );
 
@@ -196,6 +200,7 @@ export function useTaskRelationships({
           }
         );
         queryClient.invalidateQueries({ queryKey: ['task-history'] });
+        broadcast?.('task:relations-changed', { taskId });
         onUpdate();
       } catch (e: any) {
         toast({
@@ -214,6 +219,7 @@ export function useTaskRelationships({
       onUpdate,
       toast,
       setSelectedAssignees,
+      broadcast,
     ]
   );
 
@@ -275,6 +281,7 @@ export function useTaskRelationships({
           }
         );
         queryClient.invalidateQueries({ queryKey: ['task-history'] });
+        broadcast?.('task:relations-changed', { taskId });
         onUpdate();
       } catch (e: any) {
         toast({
@@ -293,6 +300,7 @@ export function useTaskRelationships({
       onUpdate,
       toast,
       setSelectedProjects,
+      broadcast,
     ]
   );
 
@@ -380,6 +388,7 @@ export function useTaskRelationships({
                 });
               }
             );
+            broadcast?.('task:relations-changed', { taskId });
             onUpdate();
             toast({
               title: 'Label created & linked',
@@ -416,6 +425,7 @@ export function useTaskRelationships({
     setNewLabelName,
     setNewLabelColor,
     setShowNewLabelDialog,
+    broadcast,
   ]);
 
   const handleCreateProject = useCallback(async () => {
@@ -494,6 +504,7 @@ export function useTaskRelationships({
                 });
               }
             );
+            broadcast?.('task:relations-changed', { taskId });
             onUpdate();
             toast({
               title: 'Project created & linked',
@@ -526,6 +537,7 @@ export function useTaskRelationships({
     setSelectedProjects,
     setNewProjectName,
     setShowNewProjectDialog,
+    broadcast,
   ]);
 
   return {

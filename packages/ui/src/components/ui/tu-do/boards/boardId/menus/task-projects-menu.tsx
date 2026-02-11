@@ -19,7 +19,6 @@ interface TaskProjectsMenuProps {
   taskProjects: TaskProject[];
   availableProjects: TaskProject[];
   isLoading: boolean;
-  projectsSaving: string | null;
   onToggleProject: (projectId: string) => void;
   onCreateNewProject: () => void;
   onMenuItemSelect: (e: Event, action: () => void) => void;
@@ -38,7 +37,6 @@ export function TaskProjectsMenu({
   taskProjects,
   availableProjects,
   isLoading,
-  projectsSaving,
   onToggleProject,
   onCreateNewProject,
   onMenuItemSelect,
@@ -110,18 +108,13 @@ export function TaskProjectsMenu({
                         onToggleProject(project.id)
                       )
                     }
-                    disabled={projectsSaving === project.id}
                     className={cn(
                       'flex cursor-pointer items-center justify-between gap-2',
                       active && 'bg-dynamic-sky/10 text-dynamic-sky'
                     )}
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-2">
-                      {projectsSaving === project.id ? (
-                        <Loader2 className="h-3 w-3 shrink-0 animate-spin" />
-                      ) : (
-                        <Box className="h-3 w-3 shrink-0 text-dynamic-sky" />
-                      )}
+                      <Box className="h-3 w-3 shrink-0 text-dynamic-sky" />
                       <span className="truncate text-sm">{project.name}</span>
                     </div>
                     {active && <Check className="h-4 w-4 shrink-0" />}

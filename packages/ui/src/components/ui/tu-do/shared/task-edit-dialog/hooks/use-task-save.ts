@@ -11,6 +11,11 @@ import {
 } from '@tuturuuu/utils/task-helper';
 import type React from 'react';
 import { useCallback, useRef } from 'react';
+import type { BoardBroadcastFn } from '../../board-broadcast-context';
+import {
+  getActiveBroadcast,
+  useBoardBroadcast,
+} from '../../board-broadcast-context';
 import type { PendingRelationship } from '../types/pending-relationship';
 import { clearDraft } from '../utils';
 import { useUpdateSharedTask } from './use-update-shared-task';
@@ -172,6 +177,8 @@ export function useTaskSave({
   const { toast } = useToast();
   const updateTaskMutation = useUpdateTask(boardId);
   const updateSharedTaskMutation = useUpdateSharedTask();
+  const contextBroadcast = useBoardBroadcast();
+  const broadcast = contextBroadcast ?? getActiveBroadcast();
   const handleSaveRef = useRef<() => void>(() => {});
 
   const handleSave = useCallback(async () => {
@@ -275,6 +282,7 @@ export function useTaskSave({
         userTaskSettings,
         createMultiple,
         boardId,
+        broadcast,
         queryClient,
         toast,
         onUpdate,
@@ -369,6 +377,7 @@ export function useTaskSave({
     setIsSaving,
     shareCode,
     sharedPermission,
+    broadcast,
   ]);
 
   // Keep ref updated
@@ -558,6 +567,7 @@ async function handleCreateTask({
   userTaskSettings,
   createMultiple,
   boardId,
+  broadcast,
   queryClient,
   toast,
   onUpdate,
@@ -601,6 +611,7 @@ async function handleCreateTask({
   userTaskSettings?: { task_auto_assign_to_self: boolean };
   createMultiple: boolean;
   boardId: string;
+  broadcast: BoardBroadcastFn | null;
   queryClient: QueryClient;
   toast: ReturnType<typeof useToast>['toast'];
   onUpdate: () => void;
@@ -778,6 +789,16 @@ async function handleCreateTask({
       return [...old, newTask];
     });
     await queryClient.invalidateQueries({ queryKey: ['time-tracking-data'] });
+
+    // Broadcast the new task to other clients
+    broadcast?.('task:upsert', { task: newTask });
+    const hasRelations =
+      selectedLabels.length > 0 ||
+      finalAssignees.length > 0 ||
+      selectedProjects.length > 0;
+    if (hasRelations) {
+      broadcast?.('task:relations-changed', { taskId: newTask.id });
+    }
 
     toast({
       title: parentTaskId ? 'Sub-task created' : 'Task created',
