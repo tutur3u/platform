@@ -19,6 +19,7 @@ describe('seat-limits utils', () => {
           return {
             select: vi.fn().mockReturnThis(),
             eq: vi.fn().mockReturnThis(),
+            in: vi.fn().mockReturnThis(),
             order: vi.fn().mockReturnThis(),
             limit: vi.fn().mockReturnThis(),
             maybeSingle: vi.fn().mockResolvedValue({ data: subscription }),

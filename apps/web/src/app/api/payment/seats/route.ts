@@ -4,6 +4,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { SEAT_ACTIVE_STATUSES } from '@/utils/subscription-constants';
 
 /**
  * GET /api/payment/seats?wsId=xxx
@@ -53,7 +54,7 @@ export async function GET(req: Request) {
         '*, workspace_subscription_products(pricing_model, price_per_seat)'
       )
       .eq('ws_id', wsId)
-      .eq('status', 'active')
+      .in('status', SEAT_ACTIVE_STATUSES)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -130,14 +131,15 @@ export async function POST(req: Request) {
     }
 
     // Get current seat-based subscription with product limits
+    // pricing_model lives on workspace_subscription_products, not workspace_subscriptions
     const { data: subscription } = await sbAdmin
       .from('workspace_subscriptions')
       .select(
-        '*, workspace_subscription_products(max_seats, min_seats, price_per_seat)'
+        '*, workspace_subscription_products!inner(pricing_model, max_seats, min_seats, price_per_seat)'
       )
       .eq('ws_id', wsId)
-      .eq('status', 'active')
-      .eq('pricing_model', 'seat_based')
+      .in('status', SEAT_ACTIVE_STATUSES)
+      .eq('workspace_subscription_products.pricing_model', 'seat_based')
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();

@@ -1,5 +1,6 @@
 import type { Polar } from '@tuturuuu/payment/polar';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+import { SEAT_ACTIVE_STATUSES } from './subscription-constants';
 
 /**
  * Ensures a personal Polar customer exists for a user
@@ -84,7 +85,7 @@ export async function assignSeatToMember(
       'polar_subscription_id, workspace_subscription_products!inner(pricing_model)'
     )
     .eq('ws_id', wsId)
-    .eq('status', 'active')
+    .in('status', SEAT_ACTIVE_STATUSES)
     .single();
 
   // No active subscription or not seat-based
@@ -138,7 +139,7 @@ export async function revokeSeatFromMember(
       'polar_subscription_id, workspace_subscription_products!inner(pricing_model)'
     )
     .eq('ws_id', wsId)
-    .eq('status', 'active')
+    .in('status', SEAT_ACTIVE_STATUSES)
     .single();
 
   // No active subscription or not seat-based

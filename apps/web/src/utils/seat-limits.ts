@@ -1,4 +1,5 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+import { SEAT_ACTIVE_STATUSES } from './subscription-constants';
 
 /**
  * Seat status information for a workspace subscription
@@ -47,7 +48,7 @@ export async function getSeatStatus(
       'seat_count, workspace_subscription_products(pricing_model, price_per_seat)'
     )
     .eq('ws_id', wsId)
-    .eq('status', 'active')
+    .in('status', SEAT_ACTIVE_STATUSES)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
