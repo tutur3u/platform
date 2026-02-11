@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/time_tracking/break_record.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/data/models/time_tracking/pomodoro_settings.dart';
@@ -10,8 +14,24 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 const _pomodoroKey = 'pomodoro_settings';
 
-/// Repository for time tracking operations.
+/// Repository for time tracking operations using API endpoints.
 class TimeTrackerRepository {
+  /// Get the API base URL from ApiConfig
+  String get _baseUrl => ApiConfig.baseUrl;
+
+  /// Get authorization headers with current session token
+  Future<Map<String, String>> _getHeaders() async {
+    final session = supabase.auth.currentSession;
+    if (session == null) {
+      throw Exception('No active session');
+    }
+
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ${session.accessToken}',
+    };
+  }
+
   // ── Sessions ────────────────────────────────────────────────────
 
   Future<List<TimeTrackingSession>> getSessions(
@@ -19,32 +39,42 @@ class TimeTrackerRepository {
     int limit = 50,
     int offset = 0,
   }) async {
-    final response = await supabase
-        .from('time_tracking_sessions')
-        .select()
-        .eq('ws_id', wsId)
-        .eq('is_running', false)
-        .eq('pending_approval', false)
-        .order('start_time', ascending: false)
-        .range(offset, offset + limit - 1);
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse(
+        '$_baseUrl/api/v1/workspaces/$wsId/time-tracking/sessions?type=recent&limit=$limit',
+      ),
+      headers: headers,
+    );
 
-    return (response as List<dynamic>)
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load sessions: ${response.body}');
+    }
+
+    final data = json.decode(response.body) as Map<String, dynamic>;
+    final sessions = data['sessions'] as List<dynamic>;
+    return sessions
         .map((e) => TimeTrackingSession.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 
   Future<TimeTrackingSession?> getRunningSession(String wsId) async {
-    final response = await supabase
-        .from('time_tracking_sessions')
-        .select()
-        .eq('ws_id', wsId)
-        .eq('is_running', true)
-        .order('start_time', ascending: false)
-        .limit(1);
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse(
+        '$_baseUrl/api/v1/workspaces/$wsId/time-tracking/sessions?type=running',
+      ),
+      headers: headers,
+    );
 
-    final rows = response as List<dynamic>;
-    if (rows.isEmpty) return null;
-    return TimeTrackingSession.fromJson(rows.first as Map<String, dynamic>);
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load running session: ${response.body}');
+    }
+
+    final data = json.decode(response.body) as Map<String, dynamic>;
+    final session = data['session'];
+    if (session == null) return null;
+    return TimeTrackingSession.fromJson(session as Map<String, dynamic>);
   }
 
   Future<TimeTrackingSession> startSession(
@@ -55,89 +85,103 @@ class TimeTrackerRepository {
     String? parentSessionId,
     bool wasResumed = false,
   }) async {
-    final response = await supabase
-        .from('time_tracking_sessions')
-        .insert({
-          'ws_id': wsId,
-          'title': title ?? 'Work session',
-          'start_time': DateTime.now().toUtc().toIso8601String(),
-          'is_running': true,
-          if (categoryId != null) 'category_id': categoryId,
-          if (userId != null) 'user_id': userId,
-          if (parentSessionId != null) 'parent_session_id': parentSessionId,
-          if (wasResumed) 'was_resumed': true,
-        })
-        .select()
-        .single();
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$_baseUrl/api/v1/workspaces/$wsId/time-tracking/sessions'),
+      headers: headers,
+      body: json.encode({
+        'title': title ?? 'Work session',
+        if (categoryId != null) 'categoryId': categoryId,
+        if (userId != null) 'userId': userId,
+        if (parentSessionId != null) 'parentSessionId': parentSessionId,
+        if (wasResumed) 'wasResumed': true,
+      }),
+    );
 
-    return TimeTrackingSession.fromJson(response);
+    if (response.statusCode != 201) {
+      throw Exception('Failed to start session: ${response.body}');
+    }
+
+    final data = json.decode(response.body) as Map<String, dynamic>;
+    return TimeTrackingSession.fromJson(
+      data['session'] as Map<String, dynamic>,
+    );
   }
 
-  Future<TimeTrackingSession> stopSession(String sessionId) async {
-    // Read current session to calculate duration
-    final current = await supabase
-        .from('time_tracking_sessions')
-        .select()
-        .eq('id', sessionId)
-        .single();
+  Future<TimeTrackingSession> stopSession(String wsId, String sessionId) async {
+    final headers = await _getHeaders();
+    final response = await http.patch(
+      Uri.parse(
+        '$_baseUrl/api/v1/workspaces/$wsId/time-tracking/sessions/$sessionId',
+      ),
+      headers: headers,
+      body: json.encode({'action': 'stop'}),
+    );
 
-    final startTime = DateTime.parse(current['start_time'] as String);
-    final endTime = DateTime.now().toUtc();
-    final durationSeconds = endTime.difference(startTime).inSeconds;
+    if (response.statusCode != 200) {
+      throw Exception('Failed to stop session: ${response.body}');
+    }
 
-    final response = await supabase
-        .from('time_tracking_sessions')
-        .update({
-          'end_time': endTime.toIso8601String(),
-          'is_running': false,
-          'duration_seconds': durationSeconds,
-        })
-        .eq('id', sessionId)
-        .select()
-        .single();
-
-    return TimeTrackingSession.fromJson(response);
+    final data = json.decode(response.body) as Map<String, dynamic>;
+    return TimeTrackingSession.fromJson(
+      data['session'] as Map<String, dynamic>,
+    );
   }
 
-  Future<TimeTrackingSession> pauseSession(String sessionId) async {
-    // Stop the session
-    final session = await stopSession(sessionId);
+  Future<TimeTrackingSession> pauseSession(
+    String wsId,
+    String sessionId, {
+    String? breakTypeId,
+    String? breakTypeName,
+  }) async {
+    final headers = await _getHeaders();
+    final response = await http.patch(
+      Uri.parse(
+        '$_baseUrl/api/v1/workspaces/$wsId/time-tracking/sessions/$sessionId',
+      ),
+      headers: headers,
+      body: json.encode({
+        'action': 'pause',
+        if (breakTypeId != null) 'breakTypeId': breakTypeId,
+        if (breakTypeName != null) 'breakTypeName': breakTypeName,
+      }),
+    );
 
-    // Create a break record
-    await supabase.from('time_tracking_breaks').insert({
-      'session_id': sessionId,
-      'break_start': DateTime.now().toUtc().toIso8601String(),
-    });
+    if (response.statusCode != 200) {
+      throw Exception('Failed to pause session: ${response.body}');
+    }
 
-    return session;
+    final data = json.decode(response.body) as Map<String, dynamic>;
+    return TimeTrackingSession.fromJson(
+      data['session'] as Map<String, dynamic>,
+    );
   }
 
   Future<TimeTrackingSession> resumeSession(
-    TimeTrackingSession pausedSession,
+    String wsId,
+    String sessionId,
   ) async {
-    // Close the active break
-    final activeBreak = await getActiveBreak(pausedSession.id);
-    if (activeBreak != null) {
-      await supabase
-          .from('time_tracking_breaks')
-          .update({
-            'break_end': DateTime.now().toUtc().toIso8601String(),
-          })
-          .eq('id', activeBreak.id);
+    final headers = await _getHeaders();
+    final response = await http.patch(
+      Uri.parse(
+        '$_baseUrl/api/v1/workspaces/$wsId/time-tracking/sessions/$sessionId',
+      ),
+      headers: headers,
+      body: json.encode({'action': 'resume'}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to resume session: ${response.body}');
     }
 
-    // Create a new chained session
-    return startSession(
-      pausedSession.wsId!,
-      title: pausedSession.title,
-      categoryId: pausedSession.categoryId,
-      userId: pausedSession.userId,
-      parentSessionId: pausedSession.id,
-      wasResumed: true,
+    final data = json.decode(response.body) as Map<String, dynamic>;
+    return TimeTrackingSession.fromJson(
+      data['session'] as Map<String, dynamic>,
     );
   }
 
   Future<TimeTrackingSession> editSession(
+    String wsId,
     String sessionId, {
     String? title,
     String? description,
@@ -146,50 +190,46 @@ class TimeTrackerRepository {
     DateTime? startTime,
     DateTime? endTime,
   }) async {
-    final updates = <String, dynamic>{};
-    if (title != null) updates['title'] = title;
-    if (description != null) updates['description'] = description;
-    if (categoryId != null) updates['category_id'] = categoryId;
-    if (taskId != null) updates['task_id'] = taskId;
-    if (startTime != null) {
-      updates['start_time'] = startTime.toUtc().toIso8601String();
-    }
-    if (endTime != null) {
-      updates['end_time'] = endTime.toUtc().toIso8601String();
-    }
+    final headers = await _getHeaders();
+    final body = <String, dynamic>{'action': 'edit'};
 
-    if (startTime != null || endTime != null) {
-      // Recalculate duration if times changed
-      final current = await supabase
-          .from('time_tracking_sessions')
-          .select()
-          .eq('id', sessionId)
-          .single();
+    if (title != null) body['title'] = title;
+    if (description != null) body['description'] = description;
+    if (categoryId != null) body['categoryId'] = categoryId;
+    if (taskId != null) body['taskId'] = taskId;
+    if (startTime != null) body['startTime'] = startTime.toIso8601String();
+    if (endTime != null) body['endTime'] = endTime.toIso8601String();
 
-      final start =
-          startTime ?? DateTime.parse(current['start_time'] as String);
-      final end =
-          endTime ??
-          (current['end_time'] != null
-              ? DateTime.parse(current['end_time'] as String)
-              : null);
-      if (end != null) {
-        updates['duration_seconds'] = end.difference(start).inSeconds;
-      }
+    final response = await http.patch(
+      Uri.parse(
+        '$_baseUrl/api/v1/workspaces/$wsId/time-tracking/sessions/$sessionId',
+      ),
+      headers: headers,
+      body: json.encode(body),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to edit session: ${response.body}');
     }
 
-    final response = await supabase
-        .from('time_tracking_sessions')
-        .update(updates)
-        .eq('id', sessionId)
-        .select()
-        .single();
-
-    return TimeTrackingSession.fromJson(response);
+    final data = json.decode(response.body) as Map<String, dynamic>;
+    return TimeTrackingSession.fromJson(
+      data['session'] as Map<String, dynamic>,
+    );
   }
 
-  Future<void> deleteSession(String sessionId) async {
-    await supabase.from('time_tracking_sessions').delete().eq('id', sessionId);
+  Future<void> deleteSession(String wsId, String sessionId) async {
+    final headers = await _getHeaders();
+    final response = await http.delete(
+      Uri.parse(
+        '$_baseUrl/api/v1/workspaces/$wsId/time-tracking/sessions/$sessionId',
+      ),
+      headers: headers,
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to delete session: ${response.body}');
+    }
   }
 
   Future<TimeTrackingSession> createMissedEntry(
@@ -200,36 +240,47 @@ class TimeTrackerRepository {
     String? categoryId,
     String? description,
   }) async {
-    final durationSeconds = endTime.difference(startTime).inSeconds;
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse('$_baseUrl/api/v1/workspaces/$wsId/time-tracking/sessions'),
+      headers: headers,
+      body: json.encode({
+        'title': title,
+        'startTime': startTime.toIso8601String(),
+        'endTime': endTime.toIso8601String(),
+        if (categoryId != null) 'categoryId': categoryId,
+        if (description != null) 'description': description,
+      }),
+    );
 
-    final response = await supabase
-        .from('time_tracking_sessions')
-        .insert({
-          'ws_id': wsId,
-          'title': title,
-          'start_time': startTime.toUtc().toIso8601String(),
-          'end_time': endTime.toUtc().toIso8601String(),
-          'is_running': false,
-          'duration_seconds': durationSeconds,
-          if (categoryId != null) 'category_id': categoryId,
-          if (description != null) 'description': description,
-        })
-        .select()
-        .single();
+    if (response.statusCode != 201) {
+      throw Exception('Failed to create missed entry: ${response.body}');
+    }
 
-    return TimeTrackingSession.fromJson(response);
+    final data = json.decode(response.body) as Map<String, dynamic>;
+    return TimeTrackingSession.fromJson(
+      data['session'] as Map<String, dynamic>,
+    );
   }
 
   // ── Categories ──────────────────────────────────────────────────
 
   Future<List<TimeTrackingCategory>> getCategories(String wsId) async {
-    final response = await supabase
-        .from('time_tracking_categories')
-        .select()
-        .eq('ws_id', wsId)
-        .order('name');
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse(
+        '$_baseUrl/api/v1/workspaces/$wsId/time-tracking/categories',
+      ),
+      headers: headers,
+    );
 
-    return (response as List<dynamic>)
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load categories: ${response.body}');
+    }
+
+    final data = json.decode(response.body) as Map<String, dynamic>;
+    final categories = data['categories'] as List<dynamic>;
+    return categories
         .map(
           (e) => TimeTrackingCategory.fromJson(e as Map<String, dynamic>),
         )
@@ -242,33 +293,51 @@ class TimeTrackerRepository {
     String? color,
     String? description,
   }) async {
-    final response = await supabase
-        .from('time_tracking_categories')
-        .insert({
-          'ws_id': wsId,
-          'name': name,
-          if (color != null) 'color': color,
-          if (description != null) 'description': description,
-        })
-        .select()
-        .single();
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse(
+        '$_baseUrl/api/v1/workspaces/$wsId/time-tracking/categories',
+      ),
+      headers: headers,
+      body: json.encode({
+        'name': name,
+        if (color != null) 'color': color,
+        if (description != null) 'description': description,
+      }),
+    );
 
-    return TimeTrackingCategory.fromJson(response);
+    if (response.statusCode != 201) {
+      throw Exception('Failed to create category: ${response.body}');
+    }
+
+    final data = json.decode(response.body) as Map<String, dynamic>;
+    return TimeTrackingCategory.fromJson(
+      data['category'] as Map<String, dynamic>,
+    );
   }
 
   // ── Breaks ──────────────────────────────────────────────────────
 
-  Future<TimeTrackingBreak?> getActiveBreak(String sessionId) async {
-    final response = await supabase
-        .from('time_tracking_breaks')
-        .select()
-        .eq('session_id', sessionId)
-        .isFilter('break_end', null)
-        .limit(1);
+  Future<TimeTrackingBreak?> getActiveBreak(
+    String wsId,
+    String sessionId,
+  ) async {
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse(
+        '$_baseUrl/api/v1/workspaces/$wsId/time-tracking/sessions/$sessionId/breaks/active',
+      ),
+      headers: headers,
+    );
 
-    final rows = response as List<dynamic>;
-    if (rows.isEmpty) return null;
-    return TimeTrackingBreak.fromJson(rows.first as Map<String, dynamic>);
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load active break: ${response.body}');
+    }
+
+    final data = json.decode(response.body) as Map<String, dynamic>;
+    final breakData = data['break'];
+    if (breakData == null) return null;
+    return TimeTrackingBreak.fromJson(breakData as Map<String, dynamic>);
   }
 
   // ── Stats ───────────────────────────────────────────────────────
@@ -279,55 +348,30 @@ class TimeTrackerRepository {
     bool isPersonal = false,
     String? timezone,
   }) async {
-    try {
-      final response = await supabase.rpc<Map<String, dynamic>?>(
-        'get_time_tracker_stats',
-        params: {
-          '_ws_id': wsId,
-          '_user_id': userId,
-          if (timezone != null) '_timezone': timezone,
-        },
-      );
+    final headers = await _getHeaders();
+    final queryParams = {
+      'userId': userId,
+      'isPersonal': isPersonal.toString(),
+      if (timezone != null) 'timezone': timezone,
+      'summaryOnly': 'true',
+    };
 
-      if (response == null) return const TimeTrackerStats();
-      return TimeTrackerStats.fromJson(response);
-    } on Exception {
-      // If the RPC doesn't exist or fails, compute basic stats client-side
-      return _computeBasicStats(wsId);
-    }
-  }
+    final uri = Uri.parse(
+      '$_baseUrl/api/v1/workspaces/$wsId/time-tracker/stats',
+    ).replace(queryParameters: queryParams);
 
-  Future<TimeTrackerStats> _computeBasicStats(String wsId) async {
-    final now = DateTime.now();
-    final todayStart = DateTime(now.year, now.month, now.day);
-    final weekStart = todayStart.subtract(Duration(days: now.weekday - 1));
-    final monthStart = DateTime(now.year, now.month);
+    final response = await http.get(uri, headers: headers);
 
-    final sessions = await supabase
-        .from('time_tracking_sessions')
-        .select('duration_seconds, start_time')
-        .eq('ws_id', wsId)
-        .eq('is_running', false)
-        .gte('start_time', monthStart.toUtc().toIso8601String())
-        .order('start_time', ascending: false);
-
-    var todayTime = 0;
-    var weekTime = 0;
-    var monthTime = 0;
-
-    for (final row in sessions as List<dynamic>) {
-      final map = row as Map<String, dynamic>;
-      final dur = (map['duration_seconds'] as num?)?.toInt() ?? 0;
-      final start = DateTime.parse(map['start_time'] as String).toLocal();
-      monthTime += dur;
-      if (start.isAfter(weekStart)) weekTime += dur;
-      if (start.isAfter(todayStart)) todayTime += dur;
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load stats: ${response.body}');
     }
 
+    final data = json.decode(response.body) as Map<String, dynamic>;
     return TimeTrackerStats(
-      todayTime: todayTime,
-      weekTime: weekTime,
-      monthTime: monthTime,
+      todayTime: data['todayTime'] as int? ?? 0,
+      weekTime: data['weekTime'] as int? ?? 0,
+      monthTime: data['monthTime'] as int? ?? 0,
+      streak: data['streak'] as int? ?? 0,
     );
   }
 
@@ -339,20 +383,29 @@ class TimeTrackerRepository {
     int limit = 50,
     int offset = 0,
   }) async {
-    var query = supabase
-        .from('time_tracking_requests')
-        .select()
-        .eq('ws_id', wsId);
+    final headers = await _getHeaders();
+    final queryParams = <String, String>{
+      'limit': limit.toString(),
+      'page': ((offset ~/ limit) + 1).toString(),
+    };
 
     if (status != null) {
-      query = query.eq('approval_status', status);
+      queryParams['status'] = status;
     }
 
-    final response = await query
-        .order('created_at', ascending: false)
-        .range(offset, offset + limit - 1);
+    final uri = Uri.parse(
+      '$_baseUrl/api/v1/workspaces/$wsId/time-tracking/requests',
+    ).replace(queryParameters: queryParams);
 
-    return (response as List<dynamic>)
+    final response = await http.get(uri, headers: headers);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load requests: ${response.body}');
+    }
+
+    final data = json.decode(response.body) as Map<String, dynamic>;
+    final requests = data['requests'] as List<dynamic>;
+    return requests
         .map(
           (e) => TimeTrackingRequest.fromJson(e as Map<String, dynamic>),
         )
@@ -367,72 +420,101 @@ class TimeTrackerRepository {
     DateTime? startTime,
     DateTime? endTime,
   }) async {
-    final response = await supabase
-        .from('time_tracking_requests')
-        .insert({
-          'ws_id': wsId,
-          'title': title,
-          'approval_status': 'pending',
-          if (description != null) 'description': description,
-          if (categoryId != null) 'category_id': categoryId,
-          if (startTime != null)
-            'start_time': startTime.toUtc().toIso8601String(),
-          if (endTime != null) 'end_time': endTime.toUtc().toIso8601String(),
-        })
-        .select()
-        .single();
+    final headers = await _getHeaders();
 
-    return TimeTrackingRequest.fromJson(response);
+    // For requests, we need to use multipart/form-data
+    // as the API expects FormData for image uploads
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$_baseUrl/api/v1/workspaces/$wsId/time-tracking/requests'),
+    );
+
+    request.headers.addAll({
+      'Authorization': headers['Authorization']!,
+    });
+
+    request.fields['title'] = title;
+    if (description != null) request.fields['description'] = description;
+    if (categoryId != null) request.fields['categoryId'] = categoryId;
+    if (startTime != null) {
+      request.fields['startTime'] = startTime.toIso8601String();
+    }
+    if (endTime != null) {
+      request.fields['endTime'] = endTime.toIso8601String();
+    }
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode != 201) {
+      throw Exception('Failed to create request: ${response.body}');
+    }
+
+    final data = json.decode(response.body) as Map<String, dynamic>;
+    return TimeTrackingRequest.fromJson(
+      data['request'] as Map<String, dynamic>,
+    );
   }
 
   Future<TimeTrackingRequest> updateRequestStatus(
+    String wsId,
     String requestId, {
     required ApprovalStatus status,
     String? reason,
   }) async {
-    final updates = <String, dynamic>{
-      'approval_status': approvalStatusToString(status),
-    };
-
-    final now = DateTime.now().toUtc().toIso8601String();
-    final userId = supabase.auth.currentUser?.id;
+    final headers = await _getHeaders();
+    final body = <String, dynamic>{};
 
     switch (status) {
       case ApprovalStatus.approved:
-        updates['approved_by'] = userId;
-        updates['approved_at'] = now;
+        body['action'] = 'approve';
       case ApprovalStatus.rejected:
-        updates['rejected_by'] = userId;
-        updates['rejected_at'] = now;
-        if (reason != null) updates['rejection_reason'] = reason;
+        body['action'] = 'reject';
+        if (reason != null) body['rejection_reason'] = reason;
       case ApprovalStatus.needsInfo:
-        if (reason != null) updates['needs_info_reason'] = reason;
+        body['action'] = 'needs_info';
+        if (reason != null) body['needs_info_reason'] = reason;
       case ApprovalStatus.pending:
-        break;
+        body['action'] = 'resubmit';
     }
 
-    final response = await supabase
-        .from('time_tracking_requests')
-        .update(updates)
-        .eq('id', requestId)
-        .select()
-        .single();
+    final response = await http.patch(
+      Uri.parse(
+        '$_baseUrl/api/v1/workspaces/$wsId/time-tracking/requests/$requestId',
+      ),
+      headers: headers,
+      body: json.encode(body),
+    );
 
-    return TimeTrackingRequest.fromJson(response);
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update request status: ${response.body}');
+    }
+
+    final data = json.decode(response.body) as Map<String, dynamic>;
+    return TimeTrackingRequest.fromJson(data);
   }
 
   // ── Request Comments ────────────────────────────────────────────
 
   Future<List<TimeTrackingRequestComment>> getRequestComments(
+    String wsId,
     String requestId,
   ) async {
-    final response = await supabase
-        .from('time_tracking_request_comments')
-        .select()
-        .eq('request_id', requestId)
-        .order('created_at');
+    final headers = await _getHeaders();
+    final response = await http.get(
+      Uri.parse(
+        '$_baseUrl/api/v1/workspaces/$wsId/time-tracking/requests/$requestId/comments',
+      ),
+      headers: headers,
+    );
 
-    return (response as List<dynamic>)
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load request comments: ${response.body}');
+    }
+
+    final data = json.decode(response.body) as Map<String, dynamic>;
+    final comments = data['comments'] as List<dynamic>;
+    return comments
         .map(
           (e) => TimeTrackingRequestComment.fromJson(e as Map<String, dynamic>),
         )
@@ -440,19 +522,25 @@ class TimeTrackerRepository {
   }
 
   Future<TimeTrackingRequestComment> addRequestComment(
+    String wsId,
     String requestId,
     String content,
   ) async {
-    final response = await supabase
-        .from('time_tracking_request_comments')
-        .insert({
-          'request_id': requestId,
-          'content': content,
-        })
-        .select()
-        .single();
+    final headers = await _getHeaders();
+    final response = await http.post(
+      Uri.parse(
+        '$_baseUrl/api/v1/workspaces/$wsId/time-tracking/requests/$requestId/comments',
+      ),
+      headers: headers,
+      body: json.encode({'content': content}),
+    );
 
-    return TimeTrackingRequestComment.fromJson(response);
+    if (response.statusCode != 201) {
+      throw Exception('Failed to add request comment: ${response.body}');
+    }
+
+    final data = json.decode(response.body) as Map<String, dynamic>;
+    return TimeTrackingRequestComment.fromJson(data);
   }
 
   // ── Management ──────────────────────────────────────────────────
@@ -465,27 +553,35 @@ class TimeTrackerRepository {
     int limit = 50,
     int offset = 0,
   }) async {
-    var query = supabase
-        .from('time_tracking_sessions')
-        .select()
-        .eq('ws_id', wsId)
-        .eq('is_running', false);
+    final headers = await _getHeaders();
+    final queryParams = <String, String>{
+      'type': 'history',
+      'limit': limit.toString(),
+    };
 
+    if (search != null && search.isNotEmpty) {
+      queryParams['searchQuery'] = search;
+    }
     if (dateFrom != null) {
-      query = query.gte('start_time', dateFrom.toUtc().toIso8601String());
+      queryParams['dateFrom'] = dateFrom.toIso8601String();
     }
     if (dateTo != null) {
-      query = query.lte('start_time', dateTo.toUtc().toIso8601String());
-    }
-    if (search != null && search.isNotEmpty) {
-      query = query.ilike('title', '%$search%');
+      queryParams['dateTo'] = dateTo.toIso8601String();
     }
 
-    final response = await query
-        .order('start_time', ascending: false)
-        .range(offset, offset + limit - 1);
+    final uri = Uri.parse(
+      '$_baseUrl/api/v1/workspaces/$wsId/time-tracking/sessions',
+    ).replace(queryParameters: queryParams);
 
-    return (response as List<dynamic>)
+    final response = await http.get(uri, headers: headers);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load management sessions: ${response.body}');
+    }
+
+    final data = json.decode(response.body) as Map<String, dynamic>;
+    final sessions = data['sessions'] as List<dynamic>;
+    return sessions
         .map((e) => TimeTrackingSession.fromJson(e as Map<String, dynamic>))
         .toList();
   }

@@ -53,6 +53,7 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
   Future<void> approveRequest(String requestId, String wsId) async {
     try {
       await _repo.updateRequestStatus(
+        wsId,
         requestId,
         status: ApprovalStatus.approved,
       );
@@ -69,6 +70,7 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
   }) async {
     try {
       await _repo.updateRequestStatus(
+        wsId,
         requestId,
         status: ApprovalStatus.rejected,
         reason: reason,
@@ -86,6 +88,7 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
   }) async {
     try {
       await _repo.updateRequestStatus(
+        wsId,
         requestId,
         status: ApprovalStatus.needsInfo,
         reason: reason,
