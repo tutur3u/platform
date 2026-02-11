@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TimerDisplay extends StatelessWidget {
   const TimerDisplay({
@@ -17,13 +18,13 @@ class TimerDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = shad.Theme.of(context);
 
     final color = isPaused
-        ? colorScheme.error
+        ? theme.colorScheme.destructive
         : isRunning
-        ? colorScheme.primary
-        : colorScheme.onSurface;
+        ? theme.colorScheme.primary
+        : theme.colorScheme.foreground;
 
     final hours = elapsed.inHours.toString().padLeft(2, '0');
     final minutes = (elapsed.inMinutes % 60).toString().padLeft(2, '0');
@@ -35,20 +36,21 @@ class TimerDisplay extends StatelessWidget {
         if (pomodoroPhase != PomodoroPhase.idle)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
-            child: Chip(
-              label: Text(_phaseLabel(context)),
-              backgroundColor: _phaseColor(colorScheme).withValues(alpha: 0.15),
-              side: BorderSide.none,
-              labelStyle: TextStyle(
-                color: _phaseColor(colorScheme),
-                fontWeight: FontWeight.w600,
+            child: shad.OutlineBadge(
+              child: Text(
+                _phaseLabel(context),
+                style: theme.typography.small.copyWith(
+                  color: _phaseColor(theme.colorScheme),
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
         Text(
           '$hours:$minutes:$seconds',
-          style: Theme.of(context).textTheme.displayLarge?.copyWith(
+          style: theme.typography.h1.copyWith(
             fontWeight: FontWeight.w300,
+            fontSize: 64,
             color: color,
             fontFeatures: [const FontFeature.tabularFigures()],
           ),
@@ -66,12 +68,12 @@ class TimerDisplay extends StatelessWidget {
     };
   }
 
-  Color _phaseColor(ColorScheme colorScheme) {
+  Color _phaseColor(shad.ColorScheme colorScheme) {
     return switch (pomodoroPhase) {
       PomodoroPhase.focus => colorScheme.primary,
-      PomodoroPhase.shortBreak => colorScheme.tertiary,
+      PomodoroPhase.shortBreak => colorScheme.secondary,
       PomodoroPhase.longBreak => colorScheme.secondary,
-      PomodoroPhase.idle => colorScheme.onSurface,
+      PomodoroPhase.idle => colorScheme.foreground,
     };
   }
 }

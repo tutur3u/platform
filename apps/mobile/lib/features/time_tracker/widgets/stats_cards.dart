@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/data/models/time_tracking/stats.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class StatsCards extends StatelessWidget {
   const StatsCards({required this.stats, super.key});
@@ -19,21 +20,21 @@ class StatsCards extends StatelessWidget {
             label: l10n.timerToday,
             value: _formatSeconds(stats?.todayTime ?? 0),
           ),
-          const SizedBox(width: 8),
+          const shad.Gap(8),
           _StatCard(
             label: l10n.timerThisWeek,
             value: _formatSeconds(stats?.weekTime ?? 0),
           ),
-          const SizedBox(width: 8),
+          const shad.Gap(8),
           _StatCard(
             label: l10n.timerThisMonth,
             value: _formatSeconds(stats?.monthTime ?? 0),
           ),
-          const SizedBox(width: 8),
+          const shad.Gap(8),
           _StatCard(
             label: l10n.timerStreak,
             value: l10n.timerDays(stats?.streak ?? 0),
-            icon: Icons.local_fire_department,
+            icon: shad.LucideIcons.flame,
           ),
         ],
       ),
@@ -61,11 +62,10 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final theme = shad.Theme.of(context);
 
     return Expanded(
-      child: Card(
+      child: shad.Card(
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Column(
@@ -74,20 +74,24 @@ class _StatCard extends StatelessWidget {
               if (icon != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 4),
-                  child: Icon(icon, size: 18, color: colorScheme.tertiary),
+                  child: Icon(
+                    icon,
+                    size: 18,
+                    color: theme.colorScheme.secondary,
+                  ),
                 ),
               Text(
                 value,
-                style: textTheme.titleSmall?.copyWith(
+                style: theme.typography.small.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 2),
+              const shad.Gap(2),
               Text(
                 label,
-                style: textTheme.labelSmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+                style: theme.typography.small.copyWith(
+                  color: theme.colorScheme.mutedForeground,
                 ),
                 textAlign: TextAlign.center,
                 maxLines: 1,

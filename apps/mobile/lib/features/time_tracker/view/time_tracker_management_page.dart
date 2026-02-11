@@ -45,7 +45,7 @@ class _ManagementSessionTile extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                Icons.person,
+                shad.LucideIcons.user,
                 color: theme.colorScheme.primary,
                 size: 20,
               ),
@@ -159,7 +159,9 @@ class _TimeTrackerManagementPageState extends State<TimeTrackerManagementPage> {
               hintText: 'Search sessions...',
               onSubmitted: (_) => unawaited(_load()),
               features: [
-                const shad.InputFeature.leading(Icon(Icons.search, size: 20)),
+                const shad.InputFeature.leading(
+                  Icon(shad.LucideIcons.search, size: 20),
+                ),
                 if (_searchCtrl.text.isNotEmpty)
                   shad.InputFeature.trailing(
                     shad.IconButton.ghost(
@@ -167,7 +169,7 @@ class _TimeTrackerManagementPageState extends State<TimeTrackerManagementPage> {
                         _searchCtrl.clear();
                         unawaited(_load());
                       },
-                      icon: const Icon(Icons.clear, size: 16),
+                      icon: const Icon(shad.LucideIcons.x, size: 16),
                     ),
                   ),
               ],
@@ -181,13 +183,13 @@ class _TimeTrackerManagementPageState extends State<TimeTrackerManagementPage> {
                 _OverviewCard(
                   label: l10n.timerTotalSessions,
                   value: '${_sessions.length}',
-                  icon: Icons.timer,
+                  icon: shad.LucideIcons.timer,
                 ),
                 const shad.Gap(8),
                 _OverviewCard(
                   label: l10n.timerActiveUsers,
                   value: '${_uniqueUsers()}',
-                  icon: Icons.people,
+                  icon: shad.LucideIcons.users,
                 ),
               ],
             ),

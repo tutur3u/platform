@@ -85,7 +85,7 @@ class _RequestsViewState extends State<_RequestsView> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    Icons.error_outline,
+                    shad.LucideIcons.circleAlert,
                     size: 48,
                     color: shad.Theme.of(context).colorScheme.destructive,
                   ),
