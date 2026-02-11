@@ -1,4 +1,4 @@
-import { MeetTogetherPage } from '@tuturuuu/ui/legacy/tumeet/page';
+import { MeetTogetherPage } from '@tuturuuu/ui/legacy/meet/page';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {

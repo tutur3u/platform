@@ -72,7 +72,8 @@
       "WebFetch(domain:pub.dev)",
       "WebFetch(domain:tiptap.dev)",
       "Bash(node scripts/check-mobile.js:*)",
-      "Bash(bunx supabase status:*)"
+      "Bash(bunx supabase status:*)",
+      "Bash(git mv:*)"
     ]
   }
 }

@@ -45,7 +45,7 @@ const ONBOARDING_BYPASS_PATHS = [
   '/ai/chats',
   '/qr-generator',
   '/documents',
-  '/tumeet',
+  '/meet',
   '/meet-together',
   '/women-in-tech',
   '/vietnamese-womens-day',

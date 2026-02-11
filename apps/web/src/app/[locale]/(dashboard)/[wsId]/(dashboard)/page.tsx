@@ -14,10 +14,10 @@ import UpcomingCalendarEvents from './calendar/upcoming-events';
 import RecentChangelog from './changelog/recent-changelog';
 import CompanyHub from './company-hub';
 import DashboardCardSkeleton from './dashboard-card-skeleton';
+import RecentTumeetPlans from './meet/recent-plans';
 import PermissionSetupBanner from './permission-setup-banner';
 import TasksAssignedToMe from './tasks/tasks-assigned-to-me';
 import TimeTrackingMetrics from './time-tracker/time-tracking-metrics';
-import RecentTumeetPlans from './tumeet/recent-plans';
 import UserGroupQuickActions from './user-groups/quick-actions';
 import VoiceAssistantCard from './voice-assistant-card';
 

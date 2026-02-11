@@ -64,7 +64,7 @@ __pycache__
 .venv
 
 # Supabase local files
-apps/db/supabase/.temp/project-names.json
+apps/database/supabase/.temp/project-names.json
 .mcp.json
 
 # Private research context

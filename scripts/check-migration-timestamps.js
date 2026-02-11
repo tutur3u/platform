@@ -25,7 +25,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 // Migration directory
-const MIGRATIONS_DIR = 'apps/db/supabase/migrations';
+const MIGRATIONS_DIR = 'apps/database/supabase/migrations';
 
 // GMT+7 offset in milliseconds (7 hours)
 const GMT_PLUS_7_OFFSET_MS = 7 * 60 * 60 * 1000;

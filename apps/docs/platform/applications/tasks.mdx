@@ -1,0 +1,765 @@
+---
+title: "Tasks - Task Management"
+description: "Hierarchical task management with bucket dump and cross-board coordination"
+---
+
+# Tasks - Smart Task Management
+
+Tasks is Tuturuuu's intelligent task management system featuring a 6-level hierarchy, bucket dump for rapid capture, and cross-board project coordination.
+
+## Overview
+
+Tasks provides:
+- **Hierarchical organization** - 6 levels from workspaces to individual tasks
+- **Bucket dump** - Capture notes and convert to tasks/projects
+- **Cross-board projects** - Coordinate tasks across multiple boards
+- **Task cycles** - Sprint/iteration management
+- **Smart estimation** - Fibonacci, exponential, linear, and t-shirt sizing
+- **Custom statuses** - Per-board status workflows
+- **Labels & priorities** - Flexible categorization
+
+## Task Hierarchy
+
+```
+Workspaces (Top Level)
+└── Task Initiatives (Strategic grouping)
+    └── Task Projects (Cross-board coordination)
+        └── Workspace Boards (Kanban boards)
+            └── Task Lists (Columns)
+                └── Workspace Tasks (Individual items)
+```
+
+### 1. Workspaces
+
+Container for all workspace resources.
+
+```typescript
+// Get workspace
+const { data: workspace } = await supabase
+  .from('workspaces')
+  .select('*')
+  .eq('id', wsId)
+  .single();
+```
+
+### 2. Task Initiatives
+
+Strategic initiatives grouping related projects.
+
+```sql
+CREATE TABLE task_initiatives (
+  id text PRIMARY KEY,
+  ws_id text REFERENCES workspaces(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  description text,
+  start_date date,
+  end_date date,
+  created_at timestamptz DEFAULT now()
+);
+```
+
+**Usage:**
+```typescript
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/next/server';
+
+export async function createInitiative(data: {
+  wsId: string;
+  name: string;
+  description?: string;
+  startDate?: Date;
+  endDate?: Date;
+}) {
+  const supabase = createClient();
+
+  const { data: initiative, error } = await supabase
+    .from('task_initiatives')
+    .insert({
+      ws_id: data.wsId,
+      name: data.name,
+      description: data.description,
+      start_date: data.startDate?.toISOString().split('T')[0],
+      end_date: data.endDate?.toISOString().split('T')[0],
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return initiative;
+}
+```
+
+### 3. Task Projects
+
+Cross-functional projects coordinating tasks across boards.
+
+```sql
+CREATE TABLE task_projects (
+  id text PRIMARY KEY,
+  ws_id text REFERENCES workspaces(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  description text,
+  created_at timestamptz DEFAULT now()
+);
+
+-- Link projects to initiatives
+CREATE TABLE task_project_initiatives (
+  project_id text REFERENCES task_projects(id) ON DELETE CASCADE,
+  initiative_id text REFERENCES task_initiatives(id) ON DELETE CASCADE,
+  PRIMARY KEY (project_id, initiative_id)
+);
+
+-- Link tasks to projects (cross-board)
+CREATE TABLE task_project_tasks (
+  project_id text REFERENCES task_projects(id) ON DELETE CASCADE,
+  task_id text REFERENCES workspace_tasks(id) ON DELETE CASCADE,
+  PRIMARY KEY (project_id, task_id)
+);
+```
+
+**Usage:**
+```typescript
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/next/server';
+
+export async function createProject(data: {
+  wsId: string;
+  name: string;
+  description?: string;
+  initiativeIds?: string[];
+}) {
+  const supabase = createClient();
+
+  // Create project
+  const { data: project, error } = await supabase
+    .from('task_projects')
+    .insert({
+      ws_id: data.wsId,
+      name: data.name,
+      description: data.description,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  // Link to initiatives
+  if (data.initiativeIds && data.initiativeIds.length > 0) {
+    await supabase.from('task_project_initiatives').insert(
+      data.initiativeIds.map((initiativeId) => ({
+        project_id: project.id,
+        initiative_id: initiativeId,
+      }))
+    );
+  }
+
+  return project;
+}
+
+export async function addTaskToProject(projectId: string, taskId: string) {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from('task_project_tasks')
+    .insert({
+      project_id: projectId,
+      task_id: taskId,
+    });
+
+  if (error) throw error;
+}
+```
+
+### 4. Workspace Boards
+
+Kanban-style task boards.
+
+```sql
+CREATE TABLE workspace_boards (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  ws_id text REFERENCES workspaces(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  description text,
+  created_at timestamptz DEFAULT now()
+);
+```
+
+**Usage:**
+```typescript
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/next/server';
+
+export async function createBoard(wsId: string, name: string) {
+  const supabase = createClient();
+
+  const { data: board, error } = await supabase
+    .from('workspace_boards')
+    .insert({
+      ws_id: wsId,
+      name,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  // Create default lists
+  const defaultLists = ['To Do', 'In Progress', 'Done'];
+
+  await supabase.from('task_lists').insert(
+    defaultLists.map((listName, index) => ({
+      board_id: board.id,
+      name: listName,
+      position: index,
+    }))
+  );
+
+  return board;
+}
+```
+
+### 5. Task Lists
+
+Columns within boards (e.g., "To Do", "In Progress", "Done").
+
+```sql
+CREATE TABLE task_lists (
+  id text PRIMARY KEY,
+  board_id uuid REFERENCES workspace_boards(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  position integer NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
+```
+
+**Usage:**
+```typescript
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/next/server';
+
+export async function reorderLists(
+  boardId: string,
+  listIds: string[]
+) {
+  const supabase = createClient();
+
+  // Update positions based on array order
+  const updates = listIds.map((listId, index) => ({
+    id: listId,
+    position: index,
+  }));
+
+  for (const update of updates) {
+    await supabase
+      .from('task_lists')
+      .update({ position: update.position })
+      .eq('id', update.id);
+  }
+}
+```
+
+### 6. Workspace Tasks
+
+Individual work items.
+
+```sql
+CREATE TABLE workspace_tasks (
+  id text PRIMARY KEY,
+  ws_id text REFERENCES workspaces(id) ON DELETE CASCADE,
+  list_id text REFERENCES task_lists(id) ON DELETE SET NULL,
+  name text NOT NULL,
+  description text,
+  priority integer CHECK (priority BETWEEN 0 AND 5),
+  completed boolean DEFAULT false,
+  start_date date,
+  due_date date,
+  created_by uuid REFERENCES workspace_users(id),
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+```
+
+## Bucket Dump Feature
+
+Rapidly capture thoughts as notes, then convert to tasks or projects.
+
+### Notes Table
+
+```sql
+CREATE TABLE notes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  ws_id text REFERENCES workspaces(id) ON DELETE CASCADE,
+  title text NOT NULL,
+  content text,
+  created_by uuid REFERENCES workspace_users(id),
+  created_at timestamptz DEFAULT now()
+);
+```
+
+### Convert Note to Task
+
+```typescript
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/next/server';
+
+export async function convertNoteToTask(data: {
+  noteId: string;
+  listId: string;
+  priority?: number;
+}) {
+  const supabase = createClient();
+
+  // Get note
+  const { data: note } = await supabase
+    .from('notes')
+    .select('*')
+    .eq('id', data.noteId)
+    .single();
+
+  if (!note) throw new Error('Note not found');
+
+  // Create task from note
+  const { data: task, error } = await supabase
+    .from('workspace_tasks')
+    .insert({
+      ws_id: note.ws_id,
+      list_id: data.listId,
+      name: note.title,
+      description: note.content,
+      priority: data.priority,
+      created_by: note.created_by,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  // Optionally delete note
+  await supabase.from('notes').delete().eq('id', data.noteId);
+
+  return task;
+}
+```
+
+### Convert Note to Project
+
+```typescript
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/next/server';
+
+export async function convertNoteToProject(data: {
+  noteId: string;
+  initiativeId?: string;
+}) {
+  const supabase = createClient();
+
+  const { data: note } = await supabase
+    .from('notes')
+    .select('*')
+    .eq('id', data.noteId)
+    .single();
+
+  if (!note) throw new Error('Note not found');
+
+  // Create project from note
+  const { data: project, error } = await supabase
+    .from('task_projects')
+    .insert({
+      ws_id: note.ws_id,
+      name: note.title,
+      description: note.content,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  // Link to initiative if provided
+  if (data.initiativeId) {
+    await supabase.from('task_project_initiatives').insert({
+      project_id: project.id,
+      initiative_id: data.initiativeId,
+    });
+  }
+
+  // Delete note
+  await supabase.from('notes').delete().eq('id', data.noteId);
+
+  return project;
+}
+```
+
+## Task Cycles (Sprints)
+
+```sql
+CREATE TABLE task_cycles (
+  id text PRIMARY KEY,
+  ws_id text REFERENCES workspaces(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  start_date date NOT NULL,
+  end_date date NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
+
+-- Link tasks to cycles
+ALTER TABLE workspace_tasks
+ADD COLUMN cycle_id text REFERENCES task_cycles(id) ON DELETE SET NULL;
+```
+
+**Usage:**
+```typescript
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/next/server';
+
+export async function createCycle(data: {
+  wsId: string;
+  name: string;
+  startDate: Date;
+  endDate: Date;
+}) {
+  const supabase = createClient();
+
+  const { data: cycle, error } = await supabase
+    .from('task_cycles')
+    .insert({
+      ws_id: data.wsId,
+      name: data.name,
+      start_date: data.startDate.toISOString().split('T')[0],
+      end_date: data.endDate.toISOString().split('T')[0],
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return cycle;
+}
+
+export async function getActiveCycle(wsId: string) {
+  const supabase = createClient();
+  const today = new Date().toISOString().split('T')[0];
+
+  const { data: cycle } = await supabase
+    .from('task_cycles')
+    .select('*')
+    .eq('ws_id', wsId)
+    .lte('start_date', today)
+    .gte('end_date', today)
+    .single();
+
+  return cycle;
+}
+```
+
+## Task Estimation
+
+```sql
+CREATE TABLE task_estimates (
+  task_id text PRIMARY KEY REFERENCES workspace_tasks(id) ON DELETE CASCADE,
+  type text NOT NULL, -- fibonacci, exponential, linear, tshirt
+  value numeric NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
+```
+
+**Estimation Types:**
+- **Fibonacci**: 1, 2, 3, 5, 8, 13, 21
+- **Exponential**: 1, 2, 4, 8, 16, 32
+- **Linear**: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+- **T-Shirt**: XS (1), S (2), M (3), L (5), XL (8), XXL (13)
+
+```typescript
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/next/server';
+
+export async function estimateTask(
+  taskId: string,
+  estimationType: 'fibonacci' | 'exponential' | 'linear' | 'tshirt',
+  value: number
+) {
+  const supabase = createClient();
+
+  const { error } = await supabase.from('task_estimates').upsert({
+    task_id: taskId,
+    type: estimationType,
+    value,
+  });
+
+  if (error) throw error;
+}
+```
+
+## Task Labels
+
+```sql
+CREATE TABLE task_labels (
+  id text PRIMARY KEY,
+  ws_id text REFERENCES workspaces(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  color text,
+  created_at timestamptz DEFAULT now()
+);
+
+-- Link tasks to labels (many-to-many)
+CREATE TABLE task_label_assignments (
+  task_id text REFERENCES workspace_tasks(id) ON DELETE CASCADE,
+  label_id text REFERENCES task_labels(id) ON DELETE CASCADE,
+  PRIMARY KEY (task_id, label_id)
+);
+```
+
+**Usage:**
+```typescript
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/next/server';
+
+export async function createLabel(wsId: string, name: string, color: string) {
+  const supabase = createClient();
+
+  const { data: label, error } = await supabase
+    .from('task_labels')
+    .insert({ ws_id: wsId, name, color })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return label;
+}
+
+export async function assignLabel(taskId: string, labelId: string) {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from('task_label_assignments')
+    .insert({ task_id: taskId, label_id: labelId });
+
+  if (error) throw error;
+}
+```
+
+## Custom Task Statuses
+
+```sql
+CREATE TABLE task_statuses (
+  id text PRIMARY KEY,
+  board_id uuid REFERENCES workspace_boards(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  color text,
+  position integer NOT NULL,
+  is_completed boolean DEFAULT false,
+  created_at timestamptz DEFAULT now()
+);
+
+-- Link tasks to statuses
+ALTER TABLE workspace_tasks
+ADD COLUMN status_id text REFERENCES task_statuses(id) ON DELETE SET NULL;
+```
+
+**Usage:**
+```typescript
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/next/server';
+
+export async function createBoardWithStatuses(
+  wsId: string,
+  boardName: string
+) {
+  const supabase = createClient();
+
+  // Create board
+  const { data: board } = await supabase
+    .from('workspace_boards')
+    .insert({ ws_id: wsId, name: boardName })
+    .select()
+    .single();
+
+  if (!board) throw new Error('Failed to create board');
+
+  // Create default statuses
+  const statuses = [
+    { name: 'Backlog', color: '#gray', position: 0, is_completed: false },
+    { name: 'To Do', color: '#blue', position: 1, is_completed: false },
+    { name: 'In Progress', color: '#yellow', position: 2, is_completed: false },
+    { name: 'Review', color: '#purple', position: 3, is_completed: false },
+    { name: 'Done', color: '#green', position: 4, is_completed: true },
+  ];
+
+  await supabase.from('task_statuses').insert(
+    statuses.map((status) => ({
+      board_id: board.id,
+      ...status,
+    }))
+  );
+
+  return board;
+}
+```
+
+## Task Dependencies
+
+Track task relationships and blockers.
+
+```sql
+CREATE TABLE task_dependencies (
+  task_id text REFERENCES workspace_tasks(id) ON DELETE CASCADE,
+  depends_on_task_id text REFERENCES workspace_tasks(id) ON DELETE CASCADE,
+  PRIMARY KEY (task_id, depends_on_task_id),
+  CHECK (task_id != depends_on_task_id)
+);
+```
+
+**Usage:**
+```typescript
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/next/server';
+
+export async function addDependency(taskId: string, dependsOnTaskId: string) {
+  const supabase = createClient();
+
+  const { error } = await supabase.from('task_dependencies').insert({
+    task_id: taskId,
+    depends_on_task_id: dependsOnTaskId,
+  });
+
+  if (error) throw error;
+}
+
+export async function getBlockedTasks(wsId: string) {
+  const supabase = createClient();
+
+  const { data: tasks } = await supabase
+    .from('workspace_tasks')
+    .select(
+      `
+      *,
+      task_dependencies!task_id (
+        depends_on:workspace_tasks!depends_on_task_id (
+          id,
+          name,
+          completed
+        )
+      )
+    `
+    )
+    .eq('ws_id', wsId)
+    .eq('completed', false);
+
+  // Filter tasks with incomplete dependencies
+  return tasks?.filter((task) =>
+    task.task_dependencies.some((dep: any) => !dep.depends_on.completed)
+  );
+}
+```
+
+## User Interface Components
+
+### Board View
+
+```tsx
+'use client';
+
+import { trpc } from '@/trpc/client';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+
+export function BoardView({ wsId, boardId }: { wsId: string; boardId: string }) {
+  const { data: lists } = trpc.boards.lists.useQuery({ boardId });
+  const moveTask = trpc.tasks.move.useMutation();
+
+  function handleDragEnd(result: any) {
+    if (!result.destination) return;
+
+    moveTask.mutate({
+      taskId: result.draggableId,
+      listId: result.destination.droppableId,
+      position: result.destination.index,
+    });
+  }
+
+  return (
+    <DragDropContext onDragEnd={handleDragEnd}>
+      <div className="flex gap-4">
+        {lists?.map((list) => (
+          <Droppable key={list.id} droppableId={list.id}>
+            {(provided) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                className="min-w-[300px] bg-dynamic-gray/5 p-4 rounded-lg"
+              >
+                <h3>{list.name}</h3>
+                {/* Task cards */}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        ))}
+      </div>
+    </DragDropContext>
+  );
+}
+```
+
+## Best Practices
+
+### ✅ DO
+
+1. **Use hierarchy appropriately**
+   ```typescript
+   // Strategic: Initiative
+   // Tactical: Project
+   // Operational: Board → List → Task
+   ```
+
+2. **Leverage bucket dump**
+   ```typescript
+   // Capture quickly, organize later
+   await createNote({ title, content });
+   ```
+
+3. **Set task estimates**
+   ```typescript
+   await estimateTask(taskId, 'fibonacci', 8);
+   ```
+
+4. **Use labels for categorization**
+   ```typescript
+   await assignLabel(taskId, 'bug');
+   await assignLabel(taskId, 'high-priority');
+   ```
+
+5. **Track dependencies**
+   ```typescript
+   await addDependency(taskId, blockerTaskId);
+   ```
+
+### ❌ DON'T
+
+1. **Don't create deep hierarchies**
+   ```typescript
+   // ❌ Bad: Too many nested levels
+   ```
+
+2. **Don't skip workspace isolation**
+   ```typescript
+   // ❌ Bad
+   .eq('id', taskId)
+
+   // ✅ Good
+   .eq('id', taskId).eq('ws_id', wsId)
+   ```
+
+## Related Documentation
+
+- [Database Schema](/reference/database/schema-overview)
+- [Data Fetching](/platform/architecture/data-fetching)
+- [Authorization](/platform/architecture/authorization)

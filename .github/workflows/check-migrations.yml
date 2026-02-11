@@ -3,7 +3,7 @@ name: Check Database Migrations
 on:
   pull_request:
     paths:
-      - "apps/db/supabase/migrations/**.sql"
+      - "apps/database/supabase/migrations/**.sql"
 
 jobs:
   check-ci:
@@ -24,7 +24,7 @@ jobs:
       - name: Get new migration files
         id: new_migrations
         run: |
-          NEW_FILES=$(git diff --name-only --diff-filter=A ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} -- 'apps/db/supabase/migrations/**.sql')
+          NEW_FILES=$(git diff --name-only --diff-filter=A ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} -- 'apps/database/supabase/migrations/**.sql')
           echo "new_files<<EOF" >> $GITHUB_OUTPUT
           echo "$NEW_FILES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
@@ -49,7 +49,7 @@ jobs:
           done
 
           # Check 2: New migrations must be chronologically after existing ones.
-          LAST_BASE_MIGRATION_PATH=$(git ls-tree -r --name-only ${{ github.event.pull_request.base.sha }} apps/db/supabase/migrations | grep '\.sql$' | sort -r | head -n 1)
+          LAST_BASE_MIGRATION_PATH=$(git ls-tree -r --name-only ${{ github.event.pull_request.base.sha }} apps/database/supabase/migrations | grep '\.sql$' | sort -r | head -n 1)
 
           if [ -z "$LAST_BASE_MIGRATION_PATH" ]; then
             echo "No existing migrations in base branch. Skipping chronological check."

@@ -54,8 +54,8 @@
         "typescript": "^5.9.3",
       },
     },
-    "apps/db": {
-      "name": "@tuturuuu/db",
+    "apps/database": {
+      "name": "@tuturuuu/database",
       "version": "1.0.0",
       "devDependencies": {
         "supabase": "^2.76.7",
@@ -122,6 +122,45 @@
         "@tailwindcss/postcss": "^4.1.18",
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/negotiator": "^0.6.4",
+        "@types/node": "^25.2.3",
+        "@types/react": "^19.2.13",
+        "@types/react-dom": "^19.2.3",
+        "babel-plugin-react-compiler": "^1.0.0",
+        "postcss": "^8.5.6",
+        "typescript": "^5.9.3",
+      },
+    },
+    "apps/meet": {
+      "name": "@tuturuuu/meet",
+      "version": "0.1.0",
+      "dependencies": {
+        "@formatjs/intl-localematcher": "^0.8.1",
+        "@hookform/resolvers": "^5.2.2",
+        "@tanstack/react-query": "^5.90.20",
+        "@tuturuuu/ai": "workspace:*",
+        "@tuturuuu/apis": "workspace:*",
+        "@tuturuuu/auth": "workspace:*",
+        "@tuturuuu/supabase": "workspace:*",
+        "@tuturuuu/types": "workspace:*",
+        "@tuturuuu/ui": "workspace:*",
+        "@tuturuuu/utils": "workspace:*",
+        "@tuturuuu/vercel": "workspace:*",
+        "@types/negotiator": "^0.6.4",
+        "dayjs": "^1.11.19",
+        "nanoid": "^5.1.6",
+        "negotiator": "^1.0.0",
+        "next": "^16.1.6",
+        "next-intl": "^4.8.2",
+        "next-themes": "^0.4.6",
+        "qrcode.react": "^4.2.0",
+        "react": "^19.2.4",
+        "react-dom": "^19.2.4",
+        "react-hook-form": "^7.71.1",
+        "zod": "^4.3.6",
+      },
+      "devDependencies": {
+        "@tailwindcss/postcss": "^4.1.18",
+        "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^25.2.3",
         "@types/react": "^19.2.13",
         "@types/react-dom": "^19.2.3",
@@ -318,8 +357,8 @@
         "typescript": "^5.9.3",
       },
     },
-    "apps/tudo": {
-      "name": "@tuturuuu/tudo",
+    "apps/tasks": {
+      "name": "@tuturuuu/tasks",
       "version": "0.1.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.1",
@@ -355,45 +394,6 @@
         "@tanstack/react-query-devtools": "^5.91.3",
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/negotiator": "^0.6.4",
-        "@types/node": "^25.2.3",
-        "@types/react": "^19.2.13",
-        "@types/react-dom": "^19.2.3",
-        "babel-plugin-react-compiler": "^1.0.0",
-        "postcss": "^8.5.6",
-        "typescript": "^5.9.3",
-      },
-    },
-    "apps/tumeet": {
-      "name": "@tuturuuu/tumeet",
-      "version": "0.1.0",
-      "dependencies": {
-        "@formatjs/intl-localematcher": "^0.8.1",
-        "@hookform/resolvers": "^5.2.2",
-        "@tanstack/react-query": "^5.90.20",
-        "@tuturuuu/ai": "workspace:*",
-        "@tuturuuu/apis": "workspace:*",
-        "@tuturuuu/auth": "workspace:*",
-        "@tuturuuu/supabase": "workspace:*",
-        "@tuturuuu/types": "workspace:*",
-        "@tuturuuu/ui": "workspace:*",
-        "@tuturuuu/utils": "workspace:*",
-        "@tuturuuu/vercel": "workspace:*",
-        "@types/negotiator": "^0.6.4",
-        "dayjs": "^1.11.19",
-        "nanoid": "^5.1.6",
-        "negotiator": "^1.0.0",
-        "next": "^16.1.6",
-        "next-intl": "^4.8.2",
-        "next-themes": "^0.4.6",
-        "qrcode.react": "^4.2.0",
-        "react": "^19.2.4",
-        "react-dom": "^19.2.4",
-        "react-hook-form": "^7.71.1",
-        "zod": "^4.3.6",
-      },
-      "devDependencies": {
-        "@tailwindcss/postcss": "^4.1.18",
-        "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^25.2.3",
         "@types/react": "^19.2.13",
         "@types/react-dom": "^19.2.3",
@@ -2329,7 +2329,7 @@
 
     "@tuturuuu/calendar": ["@tuturuuu/calendar@workspace:apps/calendar"],
 
-    "@tuturuuu/db": ["@tuturuuu/db@workspace:apps/db"],
+    "@tuturuuu/database": ["@tuturuuu/database@workspace:apps/database"],
 
     "@tuturuuu/email-service": ["@tuturuuu/email-service@workspace:packages/email-service"],
 
@@ -2347,6 +2347,8 @@
 
     "@tuturuuu/masonry": ["@tuturuuu/masonry@workspace:packages/masonry"],
 
+    "@tuturuuu/meet": ["@tuturuuu/meet@workspace:apps/meet"],
+
     "@tuturuuu/microsoft": ["@tuturuuu/microsoft@workspace:packages/microsoft"],
 
     "@tuturuuu/nova": ["@tuturuuu/nova@workspace:apps/nova"],
@@ -2363,13 +2365,11 @@
 
     "@tuturuuu/supabase": ["@tuturuuu/supabase@workspace:packages/supabase"],
 
+    "@tuturuuu/tasks": ["@tuturuuu/tasks@workspace:apps/tasks"],
+
     "@tuturuuu/transactional": ["@tuturuuu/transactional@workspace:packages/transactional"],
 
     "@tuturuuu/trigger": ["@tuturuuu/trigger@workspace:packages/trigger"],
-
-    "@tuturuuu/tudo": ["@tuturuuu/tudo@workspace:apps/tudo"],
-
-    "@tuturuuu/tumeet": ["@tuturuuu/tumeet@workspace:apps/tumeet"],
 
     "@tuturuuu/types": ["@tuturuuu/types@workspace:packages/types"],
 

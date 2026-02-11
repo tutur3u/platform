@@ -933,18 +933,18 @@ export async function WorkspaceNavigationLinks({
           icon: <BriefcaseBusiness className="h-5 w-5" />,
           children: [
             {
-              title: t('sidebar_tabs.tumeet'),
-              href: `/${personalOrWsId}/tumeet`,
+              title: t('sidebar_tabs.meet'),
+              href: `/${personalOrWsId}/meet`,
               icon: <SquaresIntersect className="h-5 w-5" />,
               children: [
                 {
                   title: t('sidebar_tabs.plans'),
-                  href: `/${personalOrWsId}/tumeet/plans`,
+                  href: `/${personalOrWsId}/meet/plans`,
                   icon: <VectorSquare className="h-5 w-5" />,
                 },
                 {
                   title: t('sidebar_tabs.meetings'),
-                  href: `/${personalOrWsId}/tumeet/meetings`,
+                  href: `/${personalOrWsId}/meet/meetings`,
                   icon: <SquareUserRound className="h-5 w-5" />,
                   requireRootWorkspace: true,
                   requireRootMember: true,

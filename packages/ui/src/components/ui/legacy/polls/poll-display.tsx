@@ -4,7 +4,7 @@ import {
   deletePoll,
   deletePollOption,
   submitVote,
-} from '@tuturuuu/apis/tumeet/actions';
+} from '@tuturuuu/apis/meet/actions';
 import { Trash2 } from '@tuturuuu/icons';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { GetPollsForPlanResult } from '@tuturuuu/types/primitives/Poll';
@@ -32,7 +32,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import MultipleChoiceVote from '../tumeet/multiple-choice-vote';
+import MultipleChoiceVote from '../meet/multiple-choice-vote';
 import { DefaultWherePollContent } from './where-tu-meet';
 
 interface PlanDetailsPollContentProps {

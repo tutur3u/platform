@@ -32,7 +32,7 @@ The Tuturuuu platform uses Supabase migrations to manage database schema changes
                   │
 ┌─────────────────▼───────────────────────────────────┐
 │  4. Commit migration                                 │
-│     ├─ git add apps/db/supabase/migrations/          │
+│     ├─ git add apps/database/supabase/migrations/          │
 │     ├─ git commit                                    │
 │     └─ Push to repository                           │
 └─────────────────┬───────────────────────────────────┘
@@ -65,7 +65,7 @@ The Tuturuuu platform uses Supabase migrations to manage database schema changes
 
 3. **Review generated file:**
    ```bash
-   # apps/db/supabase/migrations/20250101120000_add_new_table.sql
+   # apps/database/supabase/migrations/20250101120000_add_new_table.sql
    ```
 
 ### Method 2: Manual SQL Migration
@@ -79,7 +79,7 @@ The Tuturuuu platform uses Supabase migrations to manage database schema changes
 
 2. **Edit migration file:**
    ```sql
-   -- apps/db/supabase/migrations/20250101120000_add_custom_function.sql
+   -- apps/database/supabase/migrations/20250101120000_add_custom_function.sql
 
    -- Create custom function
    CREATE OR REPLACE FUNCTION get_user_task_count(user_uuid uuid)
@@ -377,7 +377,7 @@ bun sb:reset
 bun sb:status
 
 # Check migration list
-ls apps/db/supabase/migrations/
+ls apps/database/supabase/migrations/
 
 # Test specific queries
 psql -h localhost -U postgres -d postgres -c "SELECT * FROM workspace_tasks LIMIT 5;"
@@ -458,7 +458,7 @@ bun sb:push
 
 ```sql
 -- Create reverse migration
--- apps/db/supabase/migrations/20250101150000_rollback_add_priority.sql
+-- apps/database/supabase/migrations/20250101150000_rollback_add_priority.sql
 
 ALTER TABLE workspace_tasks DROP COLUMN priority;
 ```
@@ -466,7 +466,7 @@ ALTER TABLE workspace_tasks DROP COLUMN priority;
 ### Complex Rollback
 
 ```sql
--- apps/db/supabase/migrations/20250101150000_rollback_task_status_enum.sql
+-- apps/database/supabase/migrations/20250101150000_rollback_task_status_enum.sql
 
 -- 1. Add back old column
 ALTER TABLE workspace_tasks ADD COLUMN old_status text;
@@ -518,7 +518,7 @@ bun sb:start
 bun sb:reset
 
 # Check migration syntax
-cat apps/db/supabase/migrations/[migration-file].sql
+cat apps/database/supabase/migrations/[migration-file].sql
 
 # Fix errors and retry
 bun sb:typegen

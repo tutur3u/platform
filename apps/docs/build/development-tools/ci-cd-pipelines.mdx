@@ -204,7 +204,7 @@ jobs:
 
       - name: Deploy migrations to production
         run: |
-          cd apps/db
+          cd apps/database
           supabase link --project-ref ${{ env.PRODUCTION_PROJECT_ID }}
           supabase db push
 ```
@@ -507,7 +507,7 @@ name: Check Database Migrations
 on:
   pull_request:
     paths:
-      - 'apps/db/supabase/migrations/**.sql'
+      - 'apps/database/supabase/migrations/**.sql'
 
 jobs:
   check-migrations:
@@ -521,7 +521,7 @@ jobs:
       - name: Get new migration files
         id: new_migrations
         run: |
-          NEW_FILES=$(git diff --name-only --diff-filter=A ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} -- 'apps/db/supabase/migrations/**.sql')
+          NEW_FILES=$(git diff --name-only --diff-filter=A ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} -- 'apps/database/supabase/migrations/**.sql')
           echo "new_files<<EOF" >> $GITHUB_OUTPUT
           echo "$NEW_FILES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT

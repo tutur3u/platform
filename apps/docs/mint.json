@@ -113,7 +113,7 @@
         },
         {
           "group": "Applications",
-          "pages": ["platform/applications/nova", "platform/applications/tudo"]
+          "pages": ["platform/applications/nova", "platform/applications/tasks"]
         }
       ]
     },

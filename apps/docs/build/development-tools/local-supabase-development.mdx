@@ -123,7 +123,7 @@ For more control, you can create empty migration files and populate them manuall
 bun sb:new
 ```
 
-This creates a new empty migration file in `apps/db/supabase/migrations` that you can edit to include your desired schema changes.
+This creates a new empty migration file in `apps/database/supabase/migrations` that you can edit to include your desired schema changes.
 
 ### Applying Migrations
 
@@ -220,7 +220,7 @@ This ensures that your code correctly interacts with the database schema, reduci
 
 ## Migration Files
 
-All migration files are stored in `apps/db/supabase/migrations`. These files:
+All migration files are stored in `apps/database/supabase/migrations`. These files:
 
 - Contain SQL commands that create and modify the database schema
 - Are executed in order based on the timestamp prefix in their filenames
@@ -411,7 +411,7 @@ For better performance in your RLS policies:
 
 To test your RLS policies during local development:
 
-1. Create a SQL file in `apps/db/supabase/tests` with your test cases
+1. Create a SQL file in `apps/database/supabase/tests` with your test cases
 2. Use the `bun sb:test` command to run the tests
 
 Example test file:
@@ -574,7 +574,7 @@ Database seeding is the process of populating your database with initial data. I
 
 ### Seed Files Location
 
-In Tuturuuu, seed files are stored in `apps/db/supabase/seed.sql`. This file is automatically executed when you run `bun sb:reset` or start a fresh Supabase instance.
+In Tuturuuu, seed files are stored in `apps/database/supabase/seed.sql`. This file is automatically executed when you run `bun sb:reset` or start a fresh Supabase instance.
 
 ### Real Examples from Tuturuuu's Seed File
 
@@ -714,7 +714,7 @@ values
 
 Here's how to create and modify seed data:
 
-1. Edit the `apps/db/supabase/seed.sql` file
+1. Edit the `apps/database/supabase/seed.sql` file
 2. Add SQL statements to insert your data
 3. Run `bun sb:reset` to apply the seed data
 
@@ -739,13 +739,13 @@ SET value = EXCLUDED.value;
 
 Sometimes you might want to create a custom seed file for specific testing scenarios:
 
-1. Create a new SQL file in the `apps/db/supabase` directory
+1. Create a new SQL file in the `apps/database/supabase` directory
 2. Add your custom seed data
 3. Run it with the Supabase CLI:
 
 ```bash
 bun supabase db reset --db-url=postgresql://postgres:postgres@localhost:54322/postgres
-psql postgresql://postgres:postgres@localhost:54322/postgres -f apps/db/supabase/my_custom_seed.sql
+psql postgresql://postgres:postgres@localhost:54322/postgres -f apps/database/supabase/my_custom_seed.sql
 ```
 
 ### Exporting Current Data as Seed
@@ -754,7 +754,7 @@ You can also export your current database data to use as seed data:
 
 ```bash
 # Export only data (not schema) to seed.sql
-bun supabase db dump --db-url=postgresql://postgres:postgres@localhost:54322/postgres --data-only > apps/db/supabase/new_seed.sql
+bun supabase db dump --db-url=postgresql://postgres:postgres@localhost:54322/postgres --data-only > apps/database/supabase/new_seed.sql
 ```
 
 This is helpful when you've set up data manually and want to preserve it for future development environments.
@@ -765,7 +765,7 @@ For Tuturuuu development, we recommend:
 
 1. Start with a fresh database: `bun sb:reset`
 2. Make changes through the UI or your app
-3. When you're satisfied, export the data: `bun supabase db dump --data-only > apps/db/supabase/new_seed.sql`
+3. When you're satisfied, export the data: `bun supabase db dump --data-only > apps/database/supabase/new_seed.sql`
 4. Edit the generated SQL to keep only what you need
 5. Update the main `seed.sql` file with your changes
 6. Test by running `bun sb:reset` again

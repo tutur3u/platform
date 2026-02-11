@@ -250,7 +250,7 @@ Checks for migration-specific changes:
 - name: Check for migration changes
   run: |
     BASE_COMMIT=$(git rev-parse --verify HEAD~ 2>/dev/null || echo "$GITHUB_SHA")
-    changed=$(git diff --name-only "$BASE_COMMIT" HEAD | grep 'apps/db/supabase/migrations/\|packages/types/src/supabase.ts' | wc -l)
+    changed=$(git diff --name-only "$BASE_COMMIT" HEAD | grep 'apps/database/supabase/migrations/\|packages/types/src/supabase.ts' | wc -l)
 
     if [ "$changed" -eq 0 ]; then
       echo "No migrations or type changes detected. Skipping type generation check."

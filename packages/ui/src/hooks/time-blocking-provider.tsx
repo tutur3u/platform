@@ -4,7 +4,7 @@ import {
   createTimeblocks,
   deleteTimeblock,
   getTimeblocks,
-} from '@tuturuuu/apis/tumeet/actions';
+} from '@tuturuuu/apis/meet/actions';
 import type {
   GuestUser,
   MeetTogetherPlan,

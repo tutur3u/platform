@@ -27,7 +27,7 @@
   },
   "exports": {
     "./*": "./src/*.ts",
-    "./tumeet/actions": "./src/tumeet/actions/index.ts"
+    "./meet/actions": "./src/meet/actions/index.ts"
   },
   "packageManager": "bun@1.3.9"
 }

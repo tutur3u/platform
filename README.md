@@ -29,7 +29,7 @@ We believe we are entering the **Third Era of technology: the Age of Partners** 
 | **web** | 7803 | Main platform with workspace management, AI integration, finance, inventory, and task management |
 | **calendar** | 3001 | Smart calendar with Google Calendar sync and AI-powered scheduling |
 | **finance** | 7808 | Finance management, wallet tracking, and budgeting |
-| **tudo** | 7809 | Hierarchical task management (Workspaces > Initiatives > Projects > Boards > Tasks) |
+| **tasks** | 7809 | Hierarchical task management (Workspaces > Initiatives > Projects > Boards > Tasks) |
 
 ### AI & Learning
 
@@ -42,7 +42,7 @@ We believe we are entering the **Third Era of technology: the Age of Partners** 
 
 | App | Port | Description |
 |-----|------|-------------|
-| **tumeet** | 7807 | Meeting management with AI transcription and summaries |
+| **meet** | 7807 | Meeting management with AI transcription and summaries |
 | **shortener** | 3002 | URL shortener service with analytics |
 
 ### Infrastructure & Utilities

@@ -516,7 +516,7 @@ export const EVENT_PRODUCERS = {
   'workspace.created': ['apps/web'],
   'payment.processed': ['apps/web', 'apps/finance'],
   'ai.chat.message': ['apps/rewise'],
-  'task.created': ['apps/tudo']
+  'task.created': ['apps/tasks']
 } as const;
 
 export const EVENT_CONSUMERS = {
@@ -637,7 +637,7 @@ export async function registerUser(data: UserRegistrationData) {
 ### Workspace Isolation via RLS
 
 ```sql
--- apps/db/supabase/migrations/
+-- apps/database/supabase/migrations/
 -- Row-Level Security ensures data encapsulation at database level
 CREATE POLICY "Users can only see their workspaces"
 ON workspaces

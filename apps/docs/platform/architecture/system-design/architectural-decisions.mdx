@@ -25,9 +25,9 @@ The microservices approach aligns with **Conway's Law**, allowing us to structur
 **In Tuturuuu:**
 - Web team owns `apps/web` (main platform)
 - AI team owns `apps/rewise` (chatbot) and `apps/nova` (prompt engineering)
-- Productivity team owns `apps/calendar`, `apps/tudo` (tasks), `apps/tumeet` (meetings)
+- Productivity team owns `apps/calendar`, `apps/tasks` (tasks), `apps/meet` (meetings)
 - Finance team owns `apps/finance`
-- Infrastructure team owns `apps/db` and shared `packages/*`
+- Infrastructure team owns `apps/database` and shared `packages/*`
 
 #### Independent Scalability
 
@@ -53,7 +53,7 @@ A critical bug or memory leak in a non-essential module of a monolith can bring 
 In a microservices architecture, a failure is **contained within the boundary of that service**. A crash in the `ReportingService` will not affect critical user-facing services like `AuthenticationService` or `OrderService`, leading to a much more resilient and available system.
 
 **In Tuturuuu:**
-- If `apps/finance` crashes, users can still access `apps/web`, `apps/calendar`, and `apps/tudo`
+- If `apps/finance` crashes, users can still access `apps/web`, `apps/calendar`, and `apps/tasks`
 - Supabase Auth isolation means authentication remains available even if application services fail
 - Event-driven background jobs (Trigger.dev) fail independently from user-facing requests
 

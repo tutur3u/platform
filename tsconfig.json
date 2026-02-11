@@ -20,8 +20,8 @@
     { "path": "./apps/nova" },
     { "path": "./apps/rewise" },
     { "path": "./apps/shortener" },
-    { "path": "./apps/tudo" },
-    { "path": "./apps/tumeet" },
+    { "path": "./apps/tasks" },
+    { "path": "./apps/meet" },
     { "path": "./apps/web" }
   ]
 }

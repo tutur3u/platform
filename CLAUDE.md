@@ -30,11 +30,11 @@ Tuturuuu is a Turborepo monorepo containing multiple Next.js applications and sh
 - **nova**: Prompt engineering platform (learn, practice, compete)
 - **calendar**: Calendar scheduling and management
 - **finance**: Finance management features
-- **tudo**: Task management with hierarchical structure
-- **tumeet**: Meeting management
+- **tasks**: Task management with hierarchical structure
+- **meet**: Meeting management
 - **shortener**: URL shortener service
 - **mobile**: Flutter mobile app (iOS/Android) — BLoC/Cubit architecture, GoRouter, Supabase Flutter
-- **db**: Supabase database configuration and migrations
+- **database**: Supabase database configuration and migrations
 - **discord**: Python Discord bot/utilities
 
 ### Packages (`packages/`)
@@ -66,8 +66,8 @@ bun dev:calendar     # Calendar + web
 bun dev:rewise       # Rewise + web
 bun dev:nova         # Nova + web
 bun dev:finance      # Finance + web
-bun dev:tudo         # Tudo + web
-bun dev:tumeet       # Tumeet + web
+bun dev:tasks        # Tasks + web
+bun dev:meet         # Meet + web
 bun dev:shortener    # Shortener + web
 
 # Start with Supabase (stops, starts fresh, then runs dev)
@@ -249,7 +249,7 @@ The main web app (`apps/web`) uses Next.js App Router with internationalization:
 
 ### Database Schema
 
-Supabase migrations are located in `apps/db/supabase/migrations/`. The database includes:
+Supabase migrations are located in `apps/database/supabase/migrations/`. The database includes:
 
 - User and workspace management with row-level security (RLS)
 - Granular permission system with roles
@@ -601,7 +601,7 @@ Settings dialogs use a **Shell + Content** pattern shared across apps:
 | App | Primary Group | Default Tab |
 | --- | --- | --- |
 | **web** | User Settings | `profile` |
-| **tudo** | Tasks | `tasks_general` |
+| **tasks** | Tasks | `tasks_general` |
 
 Each app uses `primaryGroupLabels` to control which nav groups expand by default, highlighting its domain. Future apps (calendar, finance) follow the same pattern.
 

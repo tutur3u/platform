@@ -1,4 +1,4 @@
-import MeetTogetherPlanDetailsPage from '@tuturuuu/ui/legacy/tumeet/planId/page';
+import MeetTogetherPlanDetailsPage from '@tuturuuu/ui/legacy/meet/planId/page';
 import type { Metadata } from 'next';
 import { BASE_URL } from '@/constants/common';
 

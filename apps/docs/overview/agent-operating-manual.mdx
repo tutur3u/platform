@@ -20,7 +20,7 @@ This page distills the canonical rules defined in [AGENTS.md](https://github.com
 | --- | --- | --- | --- |
 | **Code (TS/JS)** | Build Next.js App Router routes, React server/client components, shared packages | Add/adjust tests & types, update related docs | Ship breaking public API changes without a `BREAKING` note |
 | **Code (Python)** | Modify apps under `apps/*` (python) with env isolation | Maintain pinned requirements / lockfiles | Blend unrelated refactors into feature work |
-| **Database (Supabase)** | Author migrations in `apps/db/supabase/migrations`, run typegen | Commit regenerated `@tuturuuu/types` output | Hand-edit generated type files |
+| **Database (Supabase)** | Author migrations in `apps/database/supabase/migrations`, run typegen | Commit regenerated `@tuturuuu/types` output | Hand-edit generated type files |
 | **AI Endpoints** | Add handlers under `app/api/...` using Vercel AI SDK | Enforce auth + feature flags, validate payloads | Expose provider keys or skip validation |
 | **Tooling** | Adjust configs (`biome.json`, `turbo.json`, etc.) | Document the rationale | Remove caching or security settings silently |
 | **Docs** | Update `.md`/`.mdx` for accuracy | Cross-link neighbouring guides | Invent behaviour that is not implemented |

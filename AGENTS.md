@@ -26,7 +26,7 @@ Approved capability surface (default-allowed unless explicitly restricted):
 | ------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | Code (TS/JS)        | Create/modify Next.js App Router routes, React Server/Client Components, shared package code | Add/update minimal tests & types, update relevant docs, use TanStack Query for ALL client-side data fetching | Introduce breaking public API changes without `BREAKING` note; **NEVER use `useEffect` for data fetching**; use raw fetch without React Query |
 | Code (Python)       | Modify scripts/services in `apps/*` (python) respecting virtual env & dependency isolation   | Keep requirements pinned / update lock if exists                                                             | Mix unrelated refactors with feature PR                                                                                                       |
-| Database (Supabase) | Create migration SQL in `apps/db/supabase/migrations`, run typegen                           | Bump generated types in `@tuturuuu/types`                                                                    | Directly edit generated type files manually                                                                                                   |
+| Database (Supabase) | Create migration SQL in `apps/database/supabase/migrations`, run typegen                           | Bump generated types in `@tuturuuu/types`                                                                    | Directly edit generated type files manually                                                                                                   |
 | AI Endpoints        | Add routes under `app/api/...` using Vercel AI SDK & schemas in `packages/ai`                | Enforce auth & feature flag checks                                                                           | Expose raw provider keys or skip validation                                                                                                   |
 | Tooling             | Update configs (`biome.json`, `turbo.json`)                                                  | Document rationale in PR description                                                                         | Remove caching or security settings silently                                                                                                  |
 | Docs                | Update `.md` / `.mdx` for accuracy                                                           | Cross-link related guides                                                                                    | Invent undocumented behavior                                                                                                                  |
@@ -80,8 +80,8 @@ platform/
 │   ├── finance/      # App (Next.js)
 │   ├── playground/   # App (Next.js)
 │   ├── shortener/    # App (Next.js)
-│   ├── tumeet/       # App (Next.js)
-│   ├── tudo/         # App (Next.js)
+│   ├── meet/         # App (Next.js)
+│   ├── tasks/        # App (Next.js)
 │   ├── mobile/       # Flutter mobile app (iOS/Android)
 │   ├── db/           # Supabase migrations, scripts, typegen
 │   └── discord/      # Python Discord bot/utilities
@@ -120,7 +120,7 @@ Python subdirectory (`apps/discord/`):
 - Keep isolated dependencies (requirements file if added later).
 - Provide a `README.md` with run instructions; agents updating logic should not break existing entrypoints.
 
-Database directory (`apps/db/`):
+Database directory (`apps/database/`):
 
 - `supabase/migrations` holds versioned SQL migrations (timestamp-based or sequential). Do not reorder.
 - Scripts orchestrate Supabase CLI lifecycle (see root `package.json` sb:\* scripts).
@@ -929,7 +929,7 @@ Each app has its own `SettingsDialog` that composes the shell with app-specific 
 | App | Settings Dialog | Primary Group | Default Tab |
 | --- | --- | --- | --- |
 | **web** | `apps/web/src/components/settings/settings-dialog.tsx` | User Settings (first group) | `profile` |
-| **tudo** | `apps/tudo/src/components/settings/settings-dialog.tsx` | Tasks (first, expanded) | `tasks_general` |
+| **tasks** | `apps/tasks/src/components/settings/settings-dialog.tsx` | Tasks (first, expanded) | `tasks_general` |
 | **calendar** | (future) | Calendar (first, expanded) | `calendar_hours` |
 | **finance** | (future) | Finance (first, expanded) | `finance_general` |
 
@@ -1714,7 +1714,7 @@ rethrow after emitting state so callers can handle failures locally.
 | Edge Runtime             | Next.js execution mode optimized for low-latency global compute; set `export const runtime = 'edge'`.                                        |
 | Typegen                  | Automatic generation of Supabase types via `bun sb:typegen`; never hand-edit output.                                                         |
 | Workspace Filter         | Turborepo/Bun filter syntax `bun --filter <pkg>... <task>` including dependents with `...`.                                                  |
-| Migration                | Versioned SQL file under `apps/db/supabase/migrations` representing additive schema evolution.                                               |
+| Migration                | Versioned SQL file under `apps/database/supabase/migrations` representing additive schema evolution.                                               |
 | Feature Flag             | Workspace-level toggle stored in `workspace_secrets` controlling conditional feature access.                                                 |
 | Admin Client             | Supabase service-role wrapper from `@tuturuuu/supabase` used for privileged operations server-side.                                          |
 | Structured AI Generation | Using Vercel AI SDK `generateObject` / `streamObject` with Zod schema for deterministic shape.                                               |

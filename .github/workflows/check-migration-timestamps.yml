@@ -3,7 +3,7 @@ name: Check Migration Timestamps
 on:
   pull_request:
     paths:
-      - "apps/db/supabase/migrations/**.sql"
+      - "apps/database/supabase/migrations/**.sql"
 
 jobs:
   check-ci:

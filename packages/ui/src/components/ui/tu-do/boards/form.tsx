@@ -137,7 +137,7 @@ export function TaskBoardForm({
         // Pass the created board data (with id) to onFinish
         onFinish?.({ ...formData, id: newBoard.id });
         setOpen(false);
-        // Ensure the boards list refreshes immediately (works for apps/tudo + ui views)
+        // Ensure the boards list refreshes immediately (works for apps/tasks + ui views)
         queryClient.invalidateQueries({ queryKey: ['boards', wsId] });
         router.refresh();
         form.reset();

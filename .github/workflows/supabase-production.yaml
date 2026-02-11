@@ -91,6 +91,6 @@ jobs:
 
       - name: Deploy migrations to production
         run: |
-          cd apps/db
+          cd apps/database
           supabase link --project-ref ${{ env.PRODUCTION_PROJECT_ID }}
           supabase db push
