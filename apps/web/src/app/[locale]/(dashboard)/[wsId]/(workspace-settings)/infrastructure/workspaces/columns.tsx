@@ -12,9 +12,9 @@ function getTierBadge(tier: string | null) {
   if (!tier) return null;
   const config: Record<string, string> = {
     ENTERPRISE:
-      'bg-dynamic-purple/10 text-dynamic-purple border-dynamic-purple/30',
-    PRO: 'bg-dynamic-blue/10 text-dynamic-blue border-dynamic-blue/30',
-    PLUS: 'bg-dynamic-cyan/10 text-dynamic-cyan border-dynamic-cyan/30',
+      'bg-dynamic-yellow/10 text-dynamic-yellow border-dynamic-yellow/30',
+    PRO: 'bg-dynamic-purple/10 text-dynamic-purple border-dynamic-purple/30',
+    PLUS: 'bg-dynamic-blue/10 text-dynamic-blue border-dynamic-blue/30',
     FREE: 'bg-secondary text-secondary-foreground border-border',
   };
   return (
