@@ -10,11 +10,11 @@ import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
 
 class TimeTrackerCubit extends Cubit<TimeTrackerState> {
-  TimeTrackerCubit({required TimeTrackerRepository repository})
+  TimeTrackerCubit({required ITimeTrackerRepository repository})
     : _repo = repository,
       super(const TimeTrackerState());
 
-  final TimeTrackerRepository _repo;
+  final ITimeTrackerRepository _repo;
   Timer? _ticker;
 
   Future<void> loadData(String wsId, String userId) async {

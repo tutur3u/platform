@@ -610,6 +610,24 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerManagementTitle => 'Quản lý';
 
   @override
+  String get timerSearchSessions => 'Tìm kiếm phiên...';
+
+  @override
+  String get timerDescription => 'Mô tả';
+
+  @override
+  String get timerWorkSession => 'Phiên làm việc';
+
+  @override
+  String get timerAutoStartBreaks => 'Tự động bắt đầu nghỉ';
+
+  @override
+  String get timerAutoStartFocus => 'Tự động bắt đầu tập trung';
+
+  @override
+  String get commonCancel => 'Hủy';
+
+  @override
   String get timerTotalSessions => 'Tổng số phiên';
 
   @override

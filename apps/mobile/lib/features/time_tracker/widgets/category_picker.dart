@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
+import 'package:mobile/features/time_tracker/utils/category_color.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -49,7 +50,11 @@ class CategoryPicker extends StatelessWidget {
                         height: 12,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: _parseColor(category.color!),
+                          color: resolveTimeTrackingCategoryColor(
+                            context,
+                            category.color,
+                            fallback: Colors.grey,
+                          ),
                         ),
                       ),
                       const shad.Gap(8),
@@ -78,20 +83,5 @@ class CategoryPicker extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Color _parseColor(String hex) {
-    final cleaned = hex.replaceAll('#', '');
-    try {
-      if (cleaned.length == 6) {
-        return Color(int.parse('FF$cleaned', radix: 16));
-      }
-      if (cleaned.length == 8) {
-        return Color(int.parse(cleaned, radix: 16));
-      }
-    } on FormatException {
-      // Color value is not valid hex (e.g. "FFYELLOW") — fall back
-    }
-    return Colors.grey;
   }
 }

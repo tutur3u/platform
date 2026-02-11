@@ -11,7 +11,9 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TimeTrackerManagementPage extends StatefulWidget {
-  const TimeTrackerManagementPage({super.key});
+  const TimeTrackerManagementPage({super.key, this.repository});
+
+  final ITimeTrackerRepository? repository;
 
   @override
   State<TimeTrackerManagementPage> createState() =>
@@ -135,7 +137,7 @@ class _OverviewCard extends StatelessWidget {
 }
 
 class _TimeTrackerManagementPageState extends State<TimeTrackerManagementPage> {
-  final _repo = TimeTrackerRepository();
+  late final ITimeTrackerRepository _repo;
   final _searchCtrl = TextEditingController();
   List<TimeTrackingSession> _sessions = [];
   bool _loading = true;
@@ -166,7 +168,7 @@ class _TimeTrackerManagementPageState extends State<TimeTrackerManagementPage> {
             padding: const EdgeInsets.all(16),
             child: shad.TextField(
               controller: _searchCtrl,
-              hintText: 'Search sessions...',
+              hintText: l10n.timerSearchSessions,
               onSubmitted: (_) => unawaited(_load()),
               features: [
                 const shad.InputFeature.leading(
@@ -254,6 +256,7 @@ class _TimeTrackerManagementPageState extends State<TimeTrackerManagementPage> {
   @override
   void initState() {
     super.initState();
+    _repo = widget.repository ?? TimeTrackerRepository();
     unawaited(_load());
   }
 

@@ -96,7 +96,7 @@ class _MissedEntryDialogState extends State<MissedEntryDialog> {
           const shad.Gap(16),
           shad.FormField(
             key: const shad.FormKey<String>(#missedEntryDesc),
-            label: const Text('Description'),
+            label: Text(l10n.timerDescription),
             child: shad.TextField(
               controller: _descCtrl,
               maxLines: 3,
@@ -177,7 +177,7 @@ class _MissedEntryDialogState extends State<MissedEntryDialog> {
                 ? () {
                     widget.onSave(
                       title: _titleCtrl.text.isEmpty
-                          ? 'Work session'
+                          ? l10n.timerWorkSession
                           : _titleCtrl.text,
                       categoryId: _categoryId,
                       startTime: _startTime,

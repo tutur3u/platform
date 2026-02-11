@@ -23,6 +23,9 @@ class HistoryTab extends StatelessWidget {
         final l10n = context.l10n;
         final sessions = state.recentSessions;
         final theme = shad.Theme.of(context);
+        final categoryColorById = {
+          for (final category in state.categories) category.id: category.color,
+        };
 
         if (sessions.isEmpty) {
           return Center(
@@ -75,6 +78,7 @@ class HistoryTab extends StatelessWidget {
                   ...entry.sessions.map(
                     (session) => SessionTile(
                       session: session,
+                      categoryColor: categoryColorById[session.categoryId],
                       onEdit: () => _showEditDialog(context, session),
                       onDelete: () => _deleteSession(context, session.id),
                     ),

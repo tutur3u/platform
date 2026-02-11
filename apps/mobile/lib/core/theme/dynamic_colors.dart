@@ -140,7 +140,7 @@ class DynamicColors {
     lightRed: Color(0xFFEF4444), // hsl(0 75% 55%)
     lightIndigo: Color(0xFF5C6BC0), // hsl(250 70% 55%)
     lightCyan: Color(0xFF26A69A), // hsl(180 70% 45%)
-    lightTeal: Color(0xFF26A69A), // hsl(170 70% 45%)
+    lightTeal: Color(0xFF009688), // hsl(170 70% 45%)
     lightRose: Color(0xFFEC407A), // hsl(345 70% 55%)
     lightGray: Color(0xFF808080), // hsl(0 0% 50%)
     // Calendar backgrounds
@@ -186,7 +186,7 @@ class DynamicColors {
     lightRed: Color(0xFFFECACA), // hsl(0 75% 80%)
     lightIndigo: Color(0xFFC7D2FE), // hsl(250 70% 80%)
     lightCyan: Color(0xFF99F6E4), // hsl(180 65% 75%)
-    lightTeal: Color(0xFF99F6E4), // hsl(170 65% 75%)
+    lightTeal: Color(0xFF80CBC4), // hsl(170 65% 75%)
     lightRose: Color(0xFFFECDD3), // hsl(345 75% 80%)
     lightGray: Color(0xFFCCCCCC), // hsl(0 0% 80%)
     // Calendar backgrounds - darker for dark theme

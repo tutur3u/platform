@@ -1273,6 +1273,42 @@ abstract class AppLocalizations {
   /// **'Management'**
   String get timerManagementTitle;
 
+  /// No description provided for @timerSearchSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Search sessions...'**
+  String get timerSearchSessions;
+
+  /// No description provided for @timerDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get timerDescription;
+
+  /// No description provided for @timerWorkSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Work session'**
+  String get timerWorkSession;
+
+  /// No description provided for @timerAutoStartBreaks.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-start breaks'**
+  String get timerAutoStartBreaks;
+
+  /// No description provided for @timerAutoStartFocus.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-start focus'**
+  String get timerAutoStartFocus;
+
+  /// No description provided for @commonCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get commonCancel;
+
   /// No description provided for @timerTotalSessions.
   ///
   /// In en, this message translates to:

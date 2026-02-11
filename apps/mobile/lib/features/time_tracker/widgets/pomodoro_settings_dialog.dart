@@ -103,7 +103,7 @@ class _PomodoroSettingsDialogState extends State<PomodoroSettingsDialog> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Auto-start breaks'),
+              Text(l10n.timerAutoStartBreaks),
               shad.Switch(
                 value: _settings.autoStartBreaks,
                 onChanged: (v) => setState(
@@ -116,7 +116,7 @@ class _PomodoroSettingsDialogState extends State<PomodoroSettingsDialog> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Auto-start focus'),
+              Text(l10n.timerAutoStartFocus),
               shad.Switch(
                 value: _settings.autoStartFocus,
                 onChanged: (v) => setState(

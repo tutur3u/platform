@@ -4,11 +4,11 @@ import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_requests_state.dart';
 
 class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
-  TimeTrackerRequestsCubit({required TimeTrackerRepository repository})
+  TimeTrackerRequestsCubit({required ITimeTrackerRepository repository})
     : _repo = repository,
       super(const TimeTrackerRequestsState());
 
-  final TimeTrackerRepository _repo;
+  final ITimeTrackerRepository _repo;
   int _latestLoadToken = 0;
 
   Future<void> loadRequests(String wsId) async {
@@ -71,6 +71,7 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
       await loadRequests(wsId);
     } on Exception catch (e) {
       emit(state.copyWith(error: e.toString()));
+      rethrow;
     }
   }
 

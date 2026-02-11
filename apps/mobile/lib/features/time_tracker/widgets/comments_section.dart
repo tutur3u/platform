@@ -269,6 +269,10 @@ class _CommentTileState extends State<_CommentTile> {
       ),
     );
 
+    if (!context.mounted) {
+      return;
+    }
+
     if (confirm != true) {
       return;
     }

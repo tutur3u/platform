@@ -12,6 +12,7 @@ class RequestActivitySection extends StatefulWidget {
   const RequestActivitySection({
     required this.wsId,
     required this.requestId,
+    required this.repository,
     this.onTotalChanged,
     super.key,
   });
@@ -19,6 +20,7 @@ class RequestActivitySection extends StatefulWidget {
   final String wsId;
   final String requestId;
   final ValueChanged<int>? onTotalChanged;
+  final ITimeTrackerRepository repository;
 
   @override
   State<RequestActivitySection> createState() => _RequestActivitySectionState();
@@ -26,6 +28,7 @@ class RequestActivitySection extends StatefulWidget {
 
 class _RequestActivitySectionState extends State<RequestActivitySection> {
   static const int _itemsPerPage = 5;
+  late final ITimeTrackerRepository _repo;
 
   int _currentPage = 1;
   bool _isLoading = true;
@@ -42,6 +45,7 @@ class _RequestActivitySectionState extends State<RequestActivitySection> {
   @override
   void initState() {
     super.initState();
+    _repo = widget.repository;
     unawaited(_loadActivity());
   }
 
@@ -55,7 +59,7 @@ class _RequestActivitySectionState extends State<RequestActivitySection> {
     });
 
     try {
-      final response = await TimeTrackerRepository().getRequestActivities(
+      final response = await _repo.getRequestActivities(
         widget.wsId,
         widget.requestId,
         page: _currentPage,
@@ -73,7 +77,7 @@ class _RequestActivitySectionState extends State<RequestActivitySection> {
           widget.onTotalChanged?.call(response.total);
         }
       });
-    } on Object catch (e) {
+    } on Exception catch (e) {
       if (!mounted) {
         return;
       }

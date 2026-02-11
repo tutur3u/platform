@@ -610,6 +610,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerManagementTitle => 'Management';
 
   @override
+  String get timerSearchSessions => 'Search sessions...';
+
+  @override
+  String get timerDescription => 'Description';
+
+  @override
+  String get timerWorkSession => 'Work session';
+
+  @override
+  String get timerAutoStartBreaks => 'Auto-start breaks';
+
+  @override
+  String get timerAutoStartFocus => 'Auto-start focus';
+
+  @override
+  String get commonCancel => 'Cancel';
+
+  @override
   String get timerTotalSessions => 'Total sessions';
 
   @override

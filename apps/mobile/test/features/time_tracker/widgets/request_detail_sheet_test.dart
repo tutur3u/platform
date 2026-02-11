@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/time_tracking/request.dart';
+import 'package:mobile/data/models/time_tracking/request_comment.dart';
+import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/features/time_tracker/widgets/request_detail_sheet.dart';
+import 'package:mocktail/mocktail.dart';
 
 import '../../../helpers/helpers.dart';
 
+class _MockTimeTrackerRepository extends Mock
+    implements ITimeTrackerRepository {}
+
 void main() {
   group('RequestDetailSheet', () {
+    late _MockTimeTrackerRepository repository;
+
     final request = TimeTrackingRequest(
       id: 'req_1',
       title: 'Review my request',
@@ -14,6 +22,13 @@ void main() {
       startTime: DateTime(2026, 2, 10, 9),
       endTime: DateTime(2026, 2, 10, 10, 30),
     );
+
+    setUp(() {
+      repository = _MockTimeTrackerRepository();
+      when(
+        () => repository.getRequestComments(any(), any()),
+      ).thenAnswer((_) async => const <TimeTrackingRequestComment>[]);
+    });
 
     testWidgets('renders in draggable sheet with manager actions', (
       tester,
@@ -23,8 +38,9 @@ void main() {
           body: RequestDetailSheet(
             request: request,
             wsId: 'test_ws_id',
+            repository: repository,
             isManager: true,
-            onApprove: () {},
+            onApprove: () async {},
             onReject: (_) {},
             onRequestInfo: (_) {},
           ),
@@ -49,7 +65,8 @@ void main() {
           body: RequestDetailSheet(
             request: request,
             wsId: 'test_ws_id',
-            onApprove: () {},
+            repository: repository,
+            onApprove: () async {},
             onReject: (_) {},
             onRequestInfo: (_) {},
           ),

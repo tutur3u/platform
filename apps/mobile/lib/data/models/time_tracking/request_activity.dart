@@ -62,7 +62,7 @@ class TimeTrackingRequestActivity extends Equatable {
       changedFields: (json['changed_fields'] as Map<String, dynamic>?)?.map(
         (key, value) => MapEntry(
           key,
-          (value as Map<String, dynamic>).cast<String, dynamic>(),
+          value as Map<String, dynamic>,
         ),
       ),
       commentId: json['comment_id'] as String?,

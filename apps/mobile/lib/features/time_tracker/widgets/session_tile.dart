@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart' hide AlertDialog;
 import 'package:intl/intl.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
+import 'package:mobile/features/time_tracker/utils/category_color.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class SessionTile extends StatelessWidget {
   const SessionTile({
     required this.session,
+    this.categoryColor,
     this.onEdit,
     this.onDelete,
     super.key,
   });
 
   final TimeTrackingSession session;
+  final String? categoryColor;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
 
@@ -65,7 +68,7 @@ class SessionTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
-              _CategoryDot(color: session.categoryName),
+              _CategoryDot(color: session.categoryColor ?? categoryColor),
               const shad.Gap(12),
               Expanded(
                 child: Column(
@@ -114,7 +117,7 @@ class SessionTile extends StatelessWidget {
         actions: [
           shad.OutlineButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.commonCancel),
           ),
           shad.DestructiveButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
@@ -156,25 +159,12 @@ class _CategoryDot extends StatelessWidget {
       height: 12,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: color != null
-            ? _parseColor(color!)
-            : shad.Theme.of(context).colorScheme.muted,
+        color: resolveTimeTrackingCategoryColor(
+          context,
+          color,
+          fallback: shad.Theme.of(context).colorScheme.muted,
+        ),
       ),
     );
-  }
-
-  Color _parseColor(String hex) {
-    final cleaned = hex.replaceAll('#', '');
-    try {
-      if (cleaned.length == 6) {
-        return Color(int.parse('FF$cleaned', radix: 16));
-      }
-      if (cleaned.length == 8) {
-        return Color(int.parse(cleaned, radix: 16));
-      }
-    } on FormatException {
-      // Not valid hex — fall back
-    }
-    return Colors.blueGrey;
   }
 }

@@ -9,7 +9,7 @@ import 'package:mobile/features/time_tracker/cubit/time_tracker_requests_state.d
 import 'package:mocktail/mocktail.dart';
 
 class _MockTimeTrackerRepository extends Mock
-    implements TimeTrackerRepository {}
+    implements ITimeTrackerRepository {}
 
 void main() {
   group('TimeTrackerRequestsCubit', () {

@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/data/models/time_tracking/request.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
+import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_requests_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_requests_state.dart';
@@ -14,20 +15,31 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TimeTrackerRequestsPage extends StatelessWidget {
-  const TimeTrackerRequestsPage({super.key});
+  const TimeTrackerRequestsPage({super.key, this.repository});
+
+  final ITimeTrackerRepository? repository;
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) {
-        final cubit = TimeTrackerRequestsCubit(
-          repository: TimeTrackerRepository(),
-        );
-        final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-        if (wsId != null) unawaited(cubit.loadRequests(wsId));
-        return cubit;
-      },
-      child: const _RequestsView(),
+    return RepositoryProvider<ITimeTrackerRepository>(
+      create: (_) => repository ?? TimeTrackerRepository(),
+      child: BlocProvider(
+        create: (context) {
+          final cubit = TimeTrackerRequestsCubit(
+            repository: context.read<ITimeTrackerRepository>(),
+          );
+          final wsId = context
+              .read<WorkspaceCubit>()
+              .state
+              .currentWorkspace
+              ?.id;
+          if (wsId != null) {
+            unawaited(cubit.loadRequests(wsId));
+          }
+          return cubit;
+        },
+        child: const _RequestsView(),
+      ),
     );
   }
 }
@@ -41,6 +53,23 @@ class _RequestsView extends StatefulWidget {
 
 class _RequestsViewState extends State<_RequestsView> {
   _RequestStatusFilter _selectedFilter = _RequestStatusFilter.pending;
+  final WorkspacePermissionsRepository _workspacePermissionsRepository =
+      WorkspacePermissionsRepository();
+  String? _permissionsWorkspaceId;
+  bool _canManageRequests = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    if (wsId == _permissionsWorkspaceId) {
+      return;
+    }
+
+    _permissionsWorkspaceId = wsId;
+    unawaited(_loadManageRequestsPermission());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -188,8 +217,33 @@ class _RequestsViewState extends State<_RequestsView> {
     );
   }
 
+  Future<void> _loadManageRequestsPermission() async {
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    final currentUserId = context.read<AuthCubit>().state.user?.id;
+
+    if (wsId == null || wsId.isEmpty || currentUserId == null) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _canManageRequests = false);
+      return;
+    }
+
+    final workspacePermissions = await _workspacePermissionsRepository
+        .getPermissions(wsId: wsId, userId: currentUserId);
+    final canManageRequests = workspacePermissions.containsPermission(
+      manageTimeTrackingRequestsPermission,
+    );
+
+    if (!mounted) {
+      return;
+    }
+    setState(() => _canManageRequests = canManageRequests);
+  }
+
   void _showRequestDetail(BuildContext context, TimeTrackingRequest request) {
     final cubit = context.read<TimeTrackerRequestsCubit>();
+    final repository = context.read<ITimeTrackerRepository>();
     final wsId =
         context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '';
     final currentUserId = context.read<AuthCubit>().state.user?.id;
@@ -201,9 +255,10 @@ class _RequestsViewState extends State<_RequestsView> {
         builder: (_) => RequestDetailSheet(
           request: request,
           wsId: wsId,
+          repository: repository,
           currentUserId: currentUserId,
-          isManager: true,
-          onApprove: () => unawaited(cubit.approveRequest(request.id, wsId)),
+          isManager: _canManageRequests,
+          onApprove: () => cubit.approveRequest(request.id, wsId),
           onReject: (reason) =>
               unawaited(cubit.rejectRequest(request.id, wsId, reason: reason)),
           onRequestInfo: (reason) => unawaited(

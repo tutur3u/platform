@@ -99,7 +99,7 @@ class _EditSessionDialogState extends State<EditSessionDialog> {
           const shad.Gap(16),
           shad.FormField(
             key: const shad.FormKey<String>(#editSessionDesc),
-            label: const Text('Description'),
+            label: Text(l10n.timerDescription),
             child: shad.TextField(
               controller: _descCtrl,
               maxLines: 3,

@@ -90,31 +90,81 @@ class _RequestImageGalleryState extends State<RequestImageGallery> {
   }
 }
 
+class ResolvedRequestImageUrls {
+  const ResolvedRequestImageUrls({
+    required this.urls,
+    required this.originalIndices,
+  });
+
+  final List<String> urls;
+  final List<int> originalIndices;
+}
+
 Future<List<String>> resolveRequestImageUrls(List<String> imagePaths) async {
-  final resolvedUrls = <String>[];
-  for (final rawPath in imagePaths) {
+  final resolved = await resolveRequestImageUrlsWithIndices(imagePaths);
+  return resolved.urls;
+}
+
+Future<ResolvedRequestImageUrls> resolveRequestImageUrlsWithIndices(
+  List<String> imagePaths,
+) async {
+  final normalizedPaths = <({int index, String path})>[];
+  final localPaths = <String>[];
+  for (var i = 0; i < imagePaths.length; i++) {
+    final rawPath = imagePaths[i];
     final path = rawPath.trim();
     if (path.isEmpty) {
       continue;
     }
 
+    normalizedPaths.add((index: i, path: path));
+
     if (path.startsWith('http://') || path.startsWith('https://')) {
-      resolvedUrls.add(path);
       continue;
     }
 
+    localPaths.add(path);
+  }
+
+  final signedUrlByPath = <String, String>{};
+  if (localPaths.isNotEmpty) {
     try {
-      final signedUrl = await supabase.storage
+      final signedResponses = await supabase.storage
           .from(_requestImageBucket)
-          .createSignedUrl(path, _signedUrlExpirySeconds);
-      if (signedUrl.isNotEmpty) {
-        resolvedUrls.add(signedUrl);
+          .createSignedUrls(localPaths, _signedUrlExpirySeconds);
+      for (final response in signedResponses) {
+        final path = response.path;
+        final signedUrl = response.signedUrl;
+        if (path.isNotEmpty && signedUrl.isNotEmpty) {
+          signedUrlByPath[path] = signedUrl;
+        }
       }
     } on Exception {
       // Ignore invalid image paths.
     }
   }
-  return resolvedUrls;
+
+  final resolvedUrls = <String>[];
+  final originalIndices = <int>[];
+  for (final entry in normalizedPaths) {
+    final path = entry.path;
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      resolvedUrls.add(path);
+      originalIndices.add(entry.index);
+      continue;
+    }
+
+    final signedUrl = signedUrlByPath[path];
+    if (signedUrl != null && signedUrl.isNotEmpty) {
+      resolvedUrls.add(signedUrl);
+      originalIndices.add(entry.index);
+    }
+  }
+
+  return ResolvedRequestImageUrls(
+    urls: resolvedUrls,
+    originalIndices: originalIndices,
+  );
 }
 
 class _RequestImageThumbnail extends StatelessWidget {

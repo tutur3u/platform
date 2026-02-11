@@ -21,6 +21,7 @@ class RequestDetailSheet extends StatefulWidget {
     required this.onReject,
     required this.onRequestInfo,
     required this.wsId,
+    required this.repository,
     this.isManager = false,
     this.canEdit = false,
     this.currentUserId,
@@ -29,10 +30,11 @@ class RequestDetailSheet extends StatefulWidget {
   });
 
   final TimeTrackingRequest request;
-  final VoidCallback onApprove;
+  final Future<void> Function() onApprove;
   final ValueChanged<String?> onReject;
   final ValueChanged<String?> onRequestInfo;
   final String wsId;
+  final ITimeTrackerRepository repository;
   final bool isManager;
   final bool canEdit;
   final String? currentUserId;
@@ -45,13 +47,11 @@ class RequestDetailSheet extends StatefulWidget {
     List<String>? newImagePaths,
   })?
   onEdit;
-
   @override
   State<RequestDetailSheet> createState() => _RequestDetailSheetState();
 }
 
 class _RequestDetailSheetState extends State<RequestDetailSheet> {
-  final TimeTrackerRepository _repo = TimeTrackerRepository();
   final TextEditingController _commentController = TextEditingController();
   List<TimeTrackingRequestComment> _comments = const [];
   bool _isLoadingComments = true;
@@ -90,7 +90,7 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
         _comments = comments;
         _isLoadingComments = false;
       });
-    } on Object {
+    } on Exception {
       if (!mounted) {
         return;
       }
@@ -116,7 +116,7 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
         return;
       }
       setState(() => _isAddingComment = false);
-    } on Object {
+    } on Exception {
       if (!mounted) {
         return;
       }
@@ -128,23 +128,33 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
     TimeTrackingRequestComment comment,
     String content,
   ) async {
-    await _repo.updateRequestComment(
-      widget.wsId,
-      widget.request.id,
-      comment.id,
-      content,
-    );
-    await _loadComments();
+    try {
+      await _repo.updateRequestComment(
+        widget.wsId,
+        widget.request.id,
+        comment.id,
+        content,
+      );
+      await _loadComments();
+    } on Exception catch (e) {
+      debugPrint('Failed to update request comment: $e');
+    }
   }
 
   Future<void> _deleteComment(TimeTrackingRequestComment comment) async {
-    await _repo.deleteRequestComment(
-      widget.wsId,
-      widget.request.id,
-      comment.id,
-    );
-    await _loadComments();
+    try {
+      await _repo.deleteRequestComment(
+        widget.wsId,
+        widget.request.id,
+        comment.id,
+      );
+      await _loadComments();
+    } on Exception catch (e) {
+      debugPrint('Failed to delete request comment: $e');
+    }
   }
+
+  ITimeTrackerRepository get _repo => widget.repository;
 
   @override
   Widget build(BuildContext context) {
@@ -289,6 +299,7 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
                         child: RequestActivitySection(
                           wsId: widget.wsId,
                           requestId: _request.id,
+                          repository: _repo,
                           onTotalChanged: (count) {
                             if (mounted && _activityCount != count) {
                               setState(() => _activityCount = count);
@@ -340,7 +351,7 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
                   removedImages: removedImages,
                   newImagePaths: newImagePaths,
                 );
-                if (!context.mounted) {
+                if (!mounted) {
                   return updatedRequest;
                 }
                 if (updatedRequest != null) {

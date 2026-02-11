@@ -84,7 +84,7 @@ class _RequestImageEditorState extends State<RequestImageEditor> {
   late final List<String> _initialImages;
   late List<String> _existingImages;
   final List<XFile> _newImages = [];
-  late Future<List<String>> _existingUrlsFuture;
+  late Future<ResolvedRequestImageUrls> _existingUrlsFuture;
 
   @override
   Widget build(BuildContext context) {
@@ -121,10 +121,13 @@ class _RequestImageEditorState extends State<RequestImageEditor> {
           child: Row(
             children: [
               if (_existingImages.isNotEmpty)
-                FutureBuilder<List<String>>(
+                FutureBuilder<ResolvedRequestImageUrls>(
                   future: _existingUrlsFuture,
                   builder: (context, snapshot) {
-                    final urls = snapshot.data ?? const <String>[];
+                    final resolved = snapshot.data;
+                    final urls = resolved?.urls ?? const <String>[];
+                    final originalIndices =
+                        resolved?.originalIndices ?? const <int>[];
                     if (urls.isEmpty) {
                       return const SizedBox.shrink();
                     }
@@ -142,7 +145,13 @@ class _RequestImageEditorState extends State<RequestImageEditor> {
                                   entry.value,
                                   fit: BoxFit.cover,
                                 ),
-                                onRemove: () => _removeExistingAt(entry.key),
+                                onRemove: () {
+                                  final originalIndex =
+                                      entry.key < originalIndices.length
+                                      ? originalIndices[entry.key]
+                                      : entry.key;
+                                  _removeExistingAt(originalIndex);
+                                },
                               ),
                             ),
                           )
@@ -175,7 +184,7 @@ class _RequestImageEditorState extends State<RequestImageEditor> {
     super.initState();
     _initialImages = List<String>.from(widget.initialImages);
     _existingImages = List<String>.from(widget.initialImages);
-    _existingUrlsFuture = resolveRequestImageUrls(_existingImages);
+    _existingUrlsFuture = resolveRequestImageUrlsWithIndices(_existingImages);
     _emitState();
   }
 
@@ -252,9 +261,13 @@ class _RequestImageEditorState extends State<RequestImageEditor> {
   }
 
   void _removeExistingAt(int index) {
+    if (index < 0 || index >= _existingImages.length) {
+      return;
+    }
+
     setState(() {
       _existingImages.removeAt(index);
-      _existingUrlsFuture = resolveRequestImageUrls(_existingImages);
+      _existingUrlsFuture = resolveRequestImageUrlsWithIndices(_existingImages);
       _emitState();
     });
   }

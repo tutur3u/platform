@@ -1667,6 +1667,15 @@ wrapped by `shad.ShadcnApp` in tests. Use the shared test helper to provide
 When using `apply_patch`, prefer workspace-relative paths (e.g. `apps/web/...`).
 Absolute Windows paths like `C:\...` can fail to resolve during patch apply.
 
+### 15.10 Flutter Async Action Callbacks
+
+When a widget action depends on a server mutation (approve/reject/update, etc.),
+do not use `VoidCallback` that immediately closes UI. Prefer
+`Future<void> Function()` callbacks, await them in the button handler, and only
+close the sheet/dialog on success. Catch `Exception` in the UI layer to show
+user feedback (e.g., `SnackBar`). If a Cubit catches repository errors,
+rethrow after emitting state so callers can handle failures locally.
+ 
 ## 16. Glossary
 
 | Term                     | Definition                                                                                                                                   |
