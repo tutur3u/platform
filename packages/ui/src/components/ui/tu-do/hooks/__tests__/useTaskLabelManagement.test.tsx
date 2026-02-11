@@ -125,7 +125,6 @@ describe('useTaskLabelManagement', () => {
         { wrapper }
       );
 
-      expect(result.current.labelsSaving).toBeNull();
       expect(result.current.newLabelName).toBe('');
       expect(result.current.newLabelColor).toBe('#3b82f6');
       expect(result.current.creatingLabel).toBe(false);
@@ -196,28 +195,6 @@ describe('useTaskLabelManagement', () => {
       // Verify Supabase insert was called
       expect(mockFrom).toHaveBeenCalledWith('task_labels');
       expect(mockInsert).toHaveBeenCalled();
-    });
-
-    it('should set labelsSaving state during operation', async () => {
-      queryClient.setQueryData(['tasks', 'board-1'], [mockTask]);
-
-      const { result } = renderHook(
-        () =>
-          useTaskLabelManagement({
-            task: mockTask,
-            boardId: 'board-1',
-            workspaceLabels: mockWorkspaceLabels,
-            workspaceId: 'ws-1',
-          }),
-        { wrapper }
-      );
-
-      act(() => {
-        result.current.toggleTaskLabel('label-1').then(() => {});
-      });
-
-      // Check that saving state was set during operation
-      await waitFor(() => expect(result.current.labelsSaving).toBeNull());
     });
 
     it('should rollback on error and show toast', async () => {

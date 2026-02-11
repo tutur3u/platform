@@ -23,7 +23,7 @@ export async function POST(
 
     const { wsId, id: requestId } = await params;
     const resolvedWorkspaceId = resolveWorkspaceId(wsId);
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     // Get current user
     const {
@@ -103,7 +103,7 @@ export async function POST(
 }
 
 export async function GET(
-  _: NextRequest,
+  request: NextRequest,
   {
     params,
   }: {
@@ -113,7 +113,7 @@ export async function GET(
   try {
     const { wsId, id: requestId } = await params;
     const resolvedWorkspaceId = resolveWorkspaceId(wsId);
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     // Get current user
     const {

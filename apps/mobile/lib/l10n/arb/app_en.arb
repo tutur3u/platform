@@ -188,8 +188,67 @@
     "timerApprove": "Approve",
     "timerReject": "Reject",
     "timerRequestInfo": "Request info",
+    "timerRequestEdit": "Edit",
+    "timerRequestEditRequest": "Edit request",
+    "timerRequestDescription": "Description",
+    "timerRequestDescriptionOptional": "Description (optional)",
+    "timerRequestComments": "Comments",
+    "timerRequestNoComments": "No comments yet",
+    "timerRequestAddComment": "Add a comment...",
+    "timerRequestPostComment": "Post",
+    "timerRequestCancelEditComment": "Cancel",
+    "timerRequestDeleteComment": "Delete comment",
+    "timerRequestDeleteCommentConfirm": "Delete this comment?",
+    "timerRequestActivity": "Activity",
+    "timerRequestNoActivity": "No activity yet",
+    "timerRequestActivityCreated": "created this request",
+    "timerRequestActivityContentUpdated": "updated request content",
+    "timerRequestActivityStatusChanged": "changed the request status",
+    "timerRequestActivityCommentAdded": "added a comment",
+    "timerRequestActivityCommentUpdated": "updated a comment",
+    "timerRequestActivityCommentDeleted": "deleted a comment",
+    "timerRequestActivityUpdated": "updated this request",
+    "timerRequestActivityFeedbackLabel": "Feedback",
+    "timerRequestActivityTitleLabel": "Title",
+    "timerRequestActivityUnknownUser": "Unknown user",
+    "timerRequestActivityItemsPerPage": "Items per page",
+    "timerRequestActivityPageInfo": "Page {current} of {total}",
+    "@timerRequestActivityPageInfo": {
+        "placeholders": {
+            "current": { "type": "int" },
+            "total": { "type": "int" }
+        }
+    },
+    "timerRequestActivityActionCreated": "created",
+    "timerRequestActivityActionStatusChanged": "changed status",
+    "timerRequestActivityActionContentUpdated": "updated content",
+    "timerRequestActivityActionCommentAdded": "added comment",
+    "timerRequestActivityActionCommentUpdated": "updated comment",
+    "timerRequestActivityActionCommentDeleted": "deleted comment",
+    "timerRequestActivityFieldStartTime": "Start time",
+    "timerRequestActivityFieldEndTime": "End time",
+    "timerRequestActivityFieldTitle": "Title",
+    "timerRequestActivityFieldDescription": "Description",
+    "timerRequestAddImage": "Add image",
+    "timerRequestProofImagesCount": "Images: {current}/{max}",
+    "@timerRequestProofImagesCount": {
+        "placeholders": {
+            "current": {
+                "type": "int"
+            },
+            "max": {
+                "type": "int"
+            }
+        }
+    },
     "timerReasonOptional": "Reason (optional)",
     "timerManagementTitle": "Management",
+    "timerSearchSessions": "Search sessions...",
+    "timerDescription": "Description",
+    "timerWorkSession": "Work session",
+    "timerAutoStartBreaks": "Auto-start breaks",
+    "timerAutoStartFocus": "Auto-start focus",
+    "commonCancel": "Cancel",
     "timerTotalSessions": "Total sessions",
     "timerActiveUsers": "Active users",
     "timerDays": "{count} days",
@@ -284,5 +343,7 @@
     "camera": "Camera",
     "gallery": "Gallery",
 
-    "commonRetry": "Retry"
+    "commonRetry": "Retry",
+    "commonPrevious": "Previous",
+    "commonNext": "Next"
 }

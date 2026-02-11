@@ -317,10 +317,15 @@ Raw `fetch()`, `useEffect` with manual state, or custom hooks without React Quer
 
 **Kanban Task Realtime Sync (CRITICAL):**
 
-Tasks in kanban boards (`task.tsx`, `task-edit-dialog.tsx`, components in `packages/ui/src/components/ui/tu-do/`) use Supabase realtime subscriptions to sync across clients. **NEVER invalidate TanStack Query caches for task data in these components** - it conflicts with realtime sync and causes UI flicker/stale data.
+Tasks in kanban boards (`task.tsx`, `task-edit-dialog.tsx`, components in `packages/ui/src/components/ui/tu-do/`) use **Supabase Broadcast** (client-to-client messaging) to sync across clients. Broadcast is preferred over `postgres_changes` for scalability and security — it has no WAL dependency, no RLS evaluation by the Realtime server, and lower latency.
+
+**Architecture:** Every mutation site (after writing to DB) sends a broadcast event via `BoardBroadcastContext`. Other clients receive the event and update the TanStack Query cache directly. The sending client already has optimistic updates and uses `self: false` to prevent redundant processing.
 
 - ❌ **NEVER** call `invalidateQueries()` or `refetch()` for task queries in kanban components
-- ✅ **DO** rely on realtime subscriptions; use optimistic `setQueryData` for immediate feedback
+- ❌ **NEVER** use `postgres_changes` for new board realtime features — use Broadcast instead
+- ✅ **DO** use optimistic `setQueryData` for immediate UI feedback in the mutating client
+- ✅ **DO** call `broadcast?.('task:upsert', { task: { id, ...fields } })` after successful DB mutations
+- ✅ **DO** call `broadcast?.('task:relations-changed', { taskId })` after toggling labels/assignees/projects
 
 **Banned Patterns (Will Cause Code Rejection):**
 
@@ -754,6 +759,7 @@ If `bun check:mobile` reports a Dart format failure because it formatted files, 
 
 - **Flutter Editable Fields:** When extracting shared editable text widgets, preserve per-field validation and success messaging. Email fields should keep the `@` check and any email-specific success note (use `TextInputType.emailAddress` or an explicit parameter).
 - **Flutter Analyzer Hygiene:** Prefer `on Exception catch (e)` (or a specific type) over bare `catch`, avoid catching `Error` subclasses like `TypeError`, guard `BuildContext` usage after `await` with `if (!context.mounted) return;`, and never `return` from a `finally` block.
+- **Flutter Async Actions:** For mutation-driven UI actions (approve/reject/update), use `Future<void> Function()` callbacks (not `VoidCallback`), await them before closing dialogs/sheets, and surface failures in the UI (e.g., `SnackBar`). If a Cubit catches repository errors, rethrow after emitting error state so the UI can handle failures.
 - **Flutter Widget Tests (shadcn):** Any widget test rendering `shadcn_flutter` components must wrap the widget with `shad.ShadcnApp` (and include `shad.ShadcnLocalizations.delegate`) so `shad.Theme.of(context)` is available.
 - **apply_patch Pathing (Windows):** Prefer workspace-relative paths (e.g. `apps/web/...`). Absolute Windows paths like `C:\...` can fail to resolve during patch apply.
 

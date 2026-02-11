@@ -16,7 +16,11 @@ import {
   getTasks,
   useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
-import { useMemo } from 'react';
+import { useEffect } from 'react';
+import {
+  BoardBroadcastProvider,
+  setActiveBroadcast,
+} from './board-broadcast-context';
 import { BoardViews } from './board-views';
 
 interface Props {
@@ -59,6 +63,7 @@ export function BoardClient({
     initialData: initialTasks,
     refetchOnMount: false, // Disable initial refetch on mount
     staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: 'always', // Reconcile task data when tab regains focus
   });
 
   const { data: lists = initialLists } = useQuery({
@@ -70,23 +75,22 @@ export function BoardClient({
     initialData: initialLists,
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnMount: false, // Disable initial refetch on mount
+    refetchOnWindowFocus: 'always', // Reconcile list data when tab regains focus
   });
 
   // Fetch workspace labels once at the board level
   const { data: workspaceLabels = [] } = useWorkspaceLabels(board?.ws_id);
 
-  const taskIds = useMemo(() => tasks.map((task) => task.id), [tasks]);
-  const listIds = useMemo(() => lists.map((list) => list.id), [lists]);
-
-  useBoardRealtime(boardId, taskIds, listIds, {
+  const { broadcast } = useBoardRealtime(boardId, {
     enabled: !workspace.personal,
-    onTaskChange: (task, eventType) => {
-      console.log(`🔄 Task ${eventType}:`, task);
-    },
-    onListChange: (list, eventType) => {
-      console.log(`🔄 Task list ${eventType}:`, list);
-    },
   });
+
+  // Register broadcast at module level so components outside the
+  // BoardBroadcastProvider tree (e.g. task dialog) can access it.
+  useEffect(() => {
+    setActiveBroadcast(broadcast);
+    return () => setActiveBroadcast(null);
+  }, [broadcast]);
 
   // Ensure board is not null and has required properties before rendering
   if (!board || !board.id) {
@@ -100,14 +104,16 @@ export function BoardClient({
   }
 
   return (
-    <BoardViews
-      workspace={workspace}
-      workspaceTier={workspaceTier}
-      board={board}
-      tasks={tasks}
-      lists={lists}
-      workspaceLabels={workspaceLabels}
-      currentUserId={currentUserId}
-    />
+    <BoardBroadcastProvider value={broadcast}>
+      <BoardViews
+        workspace={workspace}
+        workspaceTier={workspaceTier}
+        board={board}
+        tasks={tasks}
+        lists={lists}
+        workspaceLabels={workspaceLabels}
+        currentUserId={currentUserId}
+      />
+    </BoardBroadcastProvider>
   );
 }

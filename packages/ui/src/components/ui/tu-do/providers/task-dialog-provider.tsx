@@ -17,8 +17,7 @@ import type {
   PendingRelationship,
   PendingRelationshipType,
 } from '../shared/task-edit-dialog/types/pending-relationship';
-
-// Re-export for backward compatibility
+import { useOptionalWorkspacePresenceContext } from './workspace-presence-provider';
 export type { PendingRelationship, PendingRelationshipType };
 
 // Type definitions for Supabase join row responses
@@ -172,6 +171,11 @@ export function TaskDialogProvider({
     isOpen: false,
   });
 
+  // Read cursorsEnabled from workspace presence context
+  // (always true in DEV_MODE via the provider)
+  const wsPresence = useOptionalWorkspacePresenceContext();
+  const cursorsEnabled = wsPresence?.cursorsEnabled ?? false;
+
   // Store all update callbacks in a ref set for multiple registrations
   const updateCallbacksRef = useRef<Set<() => void>>(new Set());
   // Store the close callback in a ref for dynamic registration
@@ -190,11 +194,11 @@ export function TaskDialogProvider({
         boardId,
         mode: 'edit',
         availableLists,
-        collaborationMode: !isPersonalWorkspace,
+        collaborationMode: !isPersonalWorkspace && cursorsEnabled,
         fakeTaskUrl,
       });
     },
-    [isPersonalWorkspace]
+    [isPersonalWorkspace, cursorsEnabled]
   );
 
   const openTaskById = useCallback(
@@ -265,13 +269,13 @@ export function TaskDialogProvider({
           boardId: task.list?.board_id,
           mode: 'edit',
           availableLists: (lists as TaskList[]) || undefined,
-          collaborationMode: !isPersonalWorkspace,
+          collaborationMode: !isPersonalWorkspace && cursorsEnabled,
         });
       } catch (error) {
         console.error('Failed to open task:', error);
       }
     },
-    [isPersonalWorkspace]
+    [isPersonalWorkspace, cursorsEnabled]
   );
 
   const createTask = useCallback(

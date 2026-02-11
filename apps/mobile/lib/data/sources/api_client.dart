@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 
@@ -14,10 +15,10 @@ class ApiClient {
   final http.Client _client;
   static const int _expiryBufferMs = 60 * 1000;
 
-  Future<void> _ensureValidSession() async {
+  Future<void> _ensureValidSession({bool forceRefresh = false}) async {
     final session = supabase.auth.currentSession;
     final expiresAt = session?.expiresAt;
-    if (session != null && expiresAt != null) {
+    if (!forceRefresh && session != null && expiresAt != null) {
       final expiresAtMs = expiresAt > 1000000000000
           ? expiresAt
           : expiresAt * 1000;
@@ -28,7 +29,15 @@ class ApiClient {
     }
 
     try {
-      await supabase.auth.refreshSession();
+      final refreshed = await supabase.auth.refreshSession();
+      if (refreshed.session?.accessToken == null) {
+        throw const ApiException(
+          message: 'Failed to refresh session',
+          statusCode: 0,
+        );
+      }
+    } on ApiException {
+      rethrow;
     } catch (e) {
       throw ApiException(
         message: 'Failed to refresh session: $e',
@@ -67,6 +76,7 @@ class ApiClient {
         url,
         headers: await _getHeaders(requiresAuth: requiresAuth),
       ),
+      requiresAuth: requiresAuth,
     );
 
     return _handleResponse(response);
@@ -91,6 +101,7 @@ class ApiClient {
         ),
         body: jsonEncode(body),
       ),
+      requiresAuth: requiresAuth,
     );
 
     return _handleResponse(response);
@@ -115,6 +126,7 @@ class ApiClient {
         ),
         body: jsonEncode(body),
       ),
+      requiresAuth: requiresAuth,
     );
 
     return _handleResponse(response);
@@ -134,6 +146,7 @@ class ApiClient {
         url,
         headers: await _getHeaders(requiresAuth: requiresAuth),
       ),
+      requiresAuth: requiresAuth,
     );
 
     return _handleResponse(response);
@@ -158,16 +171,81 @@ class ApiClient {
         ),
         body: jsonEncode(body),
       ),
+      requiresAuth: requiresAuth,
     );
 
     return _handleResponse(response);
   }
 
+  Future<Map<String, dynamic>> sendMultipart(
+    String method,
+    String path, {
+    Map<String, String>? fields,
+    List<ApiMultipartFile> files = const [],
+    bool requiresAuth = true,
+  }) async {
+    final url = Uri.parse('${ApiConfig.baseUrl}$path');
+
+    final streamedResponse = await _performStreamedRequest(
+      () async {
+        final request = http.MultipartRequest(method, url)
+          ..headers.addAll(await _getHeaders(requiresAuth: requiresAuth));
+
+        if (fields != null) {
+          request.fields.addAll(fields);
+        }
+
+        for (final file in files) {
+          request.files.add(
+            await http.MultipartFile.fromPath(
+              file.field,
+              file.filePath,
+              filename: file.filename,
+              contentType: file.contentType,
+            ),
+          );
+        }
+
+        return request.send();
+      },
+      requiresAuth: requiresAuth,
+    );
+
+    final response = await http.Response.fromStream(streamedResponse);
+    return _handleResponse(response);
+  }
+
   Future<http.Response> _performRequest(
-    Future<http.Response> Function() request,
-  ) async {
+    Future<http.Response> Function() request, {
+    bool requiresAuth = true,
+  }) async {
     try {
-      return await request().timeout(const Duration(seconds: 30));
+      final response = await request().timeout(const Duration(seconds: 30));
+      if (requiresAuth && response.statusCode == 401) {
+        await _ensureValidSession(forceRefresh: true);
+        return await request().timeout(const Duration(seconds: 30));
+      }
+      return response;
+    } on ApiException {
+      rethrow;
+    } on TimeoutException {
+      throw const ApiException(message: 'Request timed out', statusCode: 0);
+    } catch (e) {
+      throw ApiException(message: e.toString(), statusCode: 0);
+    }
+  }
+
+  Future<http.StreamedResponse> _performStreamedRequest(
+    Future<http.StreamedResponse> Function() request, {
+    bool requiresAuth = true,
+  }) async {
+    try {
+      final response = await request().timeout(const Duration(seconds: 30));
+      if (requiresAuth && response.statusCode == 401) {
+        await _ensureValidSession(forceRefresh: true);
+        return await request().timeout(const Duration(seconds: 30));
+      }
+      return response;
     } on ApiException {
       rethrow;
     } on TimeoutException {
@@ -237,4 +315,18 @@ class ApiException implements Exception {
 
   @override
   String toString() => 'ApiException($statusCode): $message';
+}
+
+class ApiMultipartFile {
+  const ApiMultipartFile({
+    required this.field,
+    required this.filePath,
+    this.filename,
+    this.contentType,
+  });
+
+  final String field;
+  final String filePath;
+  final String? filename;
+  final MediaType? contentType;
 }

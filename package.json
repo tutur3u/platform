@@ -82,7 +82,7 @@
     "migration:timestamps:check": "node scripts/check-migration-timestamps.js",
     "format": "biome format",
     "format:fix": "biome format --write",
-    "ff": "biome format --write",
+    "ff": "biome format --write && biome lint --write && biome check --write",
     "lint": "biome lint",
     "lint:fix": "biome lint --write",
     "format-and-lint": "biome check",

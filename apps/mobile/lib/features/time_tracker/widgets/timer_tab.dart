@@ -28,6 +28,9 @@ class TimerTab extends StatelessWidget {
         final l10n = context.l10n;
         final theme = shad.Theme.of(context);
         final cubit = context.read<TimeTrackerCubit>();
+        final categoryColorById = {
+          for (final category in state.categories) category.id: category.color,
+        };
         final wsId =
             context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '';
         final userId = supabase.auth.currentUser?.id ?? '';
@@ -113,6 +116,7 @@ class TimerTab extends StatelessWidget {
               ...state.recentSessions.map(
                 (session) => SessionTile(
                   session: session,
+                  categoryColor: categoryColorById[session.categoryId],
                   onDelete: () => unawaited(
                     cubit.deleteSession(session.id, wsId, userId),
                   ),

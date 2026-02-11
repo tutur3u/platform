@@ -188,8 +188,67 @@
     "timerApprove": "Duyệt",
     "timerReject": "Từ chối",
     "timerRequestInfo": "Yêu cầu thông tin",
+    "timerRequestEdit": "Chỉnh sửa",
+    "timerRequestEditRequest": "Chỉnh sửa yêu cầu",
+    "timerRequestDescription": "Mô tả",
+    "timerRequestDescriptionOptional": "Mô tả (không bắt buộc)",
+    "timerRequestComments": "Bình luận",
+    "timerRequestNoComments": "Chưa có bình luận",
+    "timerRequestAddComment": "Thêm bình luận...",
+    "timerRequestPostComment": "Đăng",
+    "timerRequestCancelEditComment": "Hủy",
+    "timerRequestDeleteComment": "Xóa bình luận",
+    "timerRequestDeleteCommentConfirm": "Xóa bình luận này?",
+    "timerRequestActivity": "Hoạt động",
+    "timerRequestNoActivity": "Chưa có hoạt động",
+    "timerRequestActivityCreated": "đã tạo yêu cầu này",
+    "timerRequestActivityContentUpdated": "đã cập nhật nội dung yêu cầu",
+    "timerRequestActivityStatusChanged": "đã thay đổi trạng thái yêu cầu",
+    "timerRequestActivityCommentAdded": "đã thêm bình luận",
+    "timerRequestActivityCommentUpdated": "đã cập nhật bình luận",
+    "timerRequestActivityCommentDeleted": "đã xóa bình luận",
+    "timerRequestActivityUpdated": "đã cập nhật yêu cầu này",
+    "timerRequestActivityFeedbackLabel": "Phản hồi",
+    "timerRequestActivityTitleLabel": "Tiêu đề",
+    "timerRequestActivityUnknownUser": "Người dùng không xác định",
+    "timerRequestActivityItemsPerPage": "Mục mỗi trang",
+    "timerRequestActivityPageInfo": "Trang {current} / {total}",
+    "@timerRequestActivityPageInfo": {
+        "placeholders": {
+            "current": { "type": "int" },
+            "total": { "type": "int" }
+        }
+    },
+    "timerRequestActivityActionCreated": "đã tạo",
+    "timerRequestActivityActionStatusChanged": "đã thay đổi trạng thái",
+    "timerRequestActivityActionContentUpdated": "đã cập nhật nội dung",
+    "timerRequestActivityActionCommentAdded": "đã thêm bình luận",
+    "timerRequestActivityActionCommentUpdated": "đã cập nhật bình luận",
+    "timerRequestActivityActionCommentDeleted": "đã xóa bình luận",
+    "timerRequestActivityFieldStartTime": "Thời gian bắt đầu",
+    "timerRequestActivityFieldEndTime": "Thời gian kết thúc",
+    "timerRequestActivityFieldTitle": "Tiêu đề",
+    "timerRequestActivityFieldDescription": "Mô tả",
+    "timerRequestAddImage": "Thêm ảnh",
+    "timerRequestProofImagesCount": "Ảnh: {current}/{max}",
+    "@timerRequestProofImagesCount": {
+        "placeholders": {
+            "current": {
+                "type": "int"
+            },
+            "max": {
+                "type": "int"
+            }
+        }
+    },
     "timerReasonOptional": "Lý do (không bắt buộc)",
     "timerManagementTitle": "Quản lý",
+    "timerSearchSessions": "Tìm kiếm phiên...",
+    "timerDescription": "Mô tả",
+    "timerWorkSession": "Phiên làm việc",
+    "timerAutoStartBreaks": "Tự động bắt đầu nghỉ",
+    "timerAutoStartFocus": "Tự động bắt đầu tập trung",
+    "commonCancel": "Hủy",
     "timerTotalSessions": "Tổng số phiên",
     "timerActiveUsers": "Người dùng hoạt động",
     "timerDays": "{count} ngày",
@@ -284,5 +343,7 @@
     "camera": "Camera",
     "gallery": "Thư viện",
 
-    "commonRetry": "Thử lại"
+    "commonRetry": "Thử lại",
+    "commonPrevious": "Trước",
+    "commonNext": "Tiếp"
 }

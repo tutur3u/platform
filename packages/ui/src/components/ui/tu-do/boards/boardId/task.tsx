@@ -74,6 +74,7 @@ import { useTaskLabelManagement } from '../../hooks/useTaskLabelManagement';
 import { useTaskProjectManagement } from '../../hooks/useTaskProjectManagement';
 import { useTaskDialogContext } from '../../providers/task-dialog-provider';
 import { AssigneeSelect } from '../../shared/assignee-select';
+import { useBoardBroadcast } from '../../shared/board-broadcast-context';
 import { TaskEstimationDisplay } from '../../shared/task-estimation-display';
 import { TaskLabelsDisplay } from '../../shared/task-labels-display';
 import { TaskViewerAvatarsComponent } from '../../shared/user-presence-avatars';
@@ -140,6 +141,7 @@ function TaskCardInner({
   const { wsId: rawWsId } = useParams();
   const wsId = Array.isArray(rawWsId) ? rawWsId[0] : rawWsId;
   const queryClient = useQueryClient();
+  const broadcast = useBoardBroadcast();
   const t = useTranslations('common');
   const locale = useLocale();
   const dateLocale = locale === 'vi' ? vi : enUS;
@@ -179,13 +181,11 @@ function TaskCardInner({
 
   // Local state for UI interactions
   const [estimationSaving, setEstimationSaving] = useState(false);
-  const [assigneeSaving, setAssigneeSaving] = useState<string | null>(null);
 
   // Use extracted label management hook
   const {
     toggleTaskLabel,
     createNewLabel,
-    labelsSaving,
     newLabelName,
     setNewLabelName,
     newLabelColor,
@@ -226,7 +226,6 @@ function TaskCardInner({
   // Use extracted project management hook
   const {
     toggleTaskProject,
-    projectsSaving,
     newProjectName,
     setNewProjectName,
     creatingProject,
@@ -411,14 +410,7 @@ function TaskCardInner({
   });
 
   const onToggleAssignee = useCallback(
-    async (assigneeId: string) => {
-      try {
-        setAssigneeSaving(assigneeId);
-        await handleToggleAssignee(assigneeId);
-      } finally {
-        setAssigneeSaving(null);
-      }
-    },
+    (assigneeId: string) => handleToggleAssignee(assigneeId),
     [handleToggleAssignee]
   );
 
@@ -566,6 +558,18 @@ function TaskCardInner({
           return [...old, ...newTasks];
         }
       );
+
+      // Broadcast duplicated tasks to other clients
+      for (const dup of duplicatedTasks) {
+        broadcast?.('task:upsert', { task: dup });
+        if (
+          (dup.assignees && dup.assignees.length > 0) ||
+          (dup.labels && dup.labels.length > 0) ||
+          (dup.projects && dup.projects.length > 0)
+        ) {
+          broadcast?.('task:relations-changed', { taskId: dup.id });
+        }
+      }
 
       const taskCount = duplicatedTasks.length;
       toast.success(t('tasks_duplicated_successfully', { count: taskCount }));
@@ -1275,7 +1279,6 @@ function TaskCardInner({
                     taskLabels={displayLabels}
                     availableLabels={workspaceLabels}
                     isLoading={labelsLoading}
-                    labelsSaving={labelsSaving}
                     onToggleLabel={toggleTaskLabel}
                     onCreateNewLabel={() => {
                       dialogActions.openNewLabelDialog();
@@ -1298,7 +1301,6 @@ function TaskCardInner({
                     taskProjects={displayProjects}
                     availableProjects={workspaceProjects}
                     isLoading={projectsLoading}
-                    projectsSaving={projectsSaving}
                     onToggleProject={toggleTaskProject}
                     onCreateNewProject={() => {
                       dialogActions.openNewProjectDialog();
@@ -1411,7 +1413,6 @@ function TaskCardInner({
                       taskAssignees={displayAssignees}
                       availableMembers={workspaceMembers}
                       isLoading={membersLoading}
-                      assigneeSaving={assigneeSaving}
                       onToggleAssignee={onToggleAssignee}
                       onMenuItemSelect={handleMenuItemSelect}
                       translations={{
@@ -1754,7 +1755,10 @@ function TaskCardInner({
             ? dialogActions.openNewLabelDialog()
             : dialogActions.closeNewLabelDialog()
         }
-        onConfirm={createNewLabel}
+        onConfirm={async () => {
+          const result = await createNewLabel();
+          if (result) dialogActions.closeNewLabelDialog();
+        }}
         translations={{
           create_new_label: t('create_new_label'),
           create_new_label_description: t('create_new_label_description'),
@@ -1777,7 +1781,10 @@ function TaskCardInner({
             ? dialogActions.openNewProjectDialog()
             : dialogActions.closeNewProjectDialog()
         }
-        onConfirm={createNewProject}
+        onConfirm={async () => {
+          const result = await createNewProject();
+          if (result) dialogActions.closeNewProjectDialog();
+        }}
         translations={{
           create_new_project: t('create_new_project'),
           create_new_project_description: t('create_new_project_description'),

@@ -22,6 +22,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { createTask } from '@tuturuuu/utils/task-helper';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useBoardBroadcast } from '../../shared/board-broadcast-context';
 import { TaskEstimationPicker } from '../../shared/task-estimation-picker';
 import { TaskLabelSelector } from '../../shared/task-label-selector';
 
@@ -57,6 +58,7 @@ export function TaskForm({
   draftModeEnabled,
   onSaveAsDraft,
 }: Props) {
+  const broadcast = useBoardBroadcast();
   const [isAdding, setIsAdding] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -223,6 +225,12 @@ export function TaskForm({
             console.error(`Failed to add label ${label.id}:`, error);
           }
         }
+      }
+
+      // Broadcast new task to other clients
+      broadcast?.('task:upsert', { task: newTask });
+      if (finalAssignees.length > 0 || selectedLabels.length > 0) {
+        broadcast?.('task:relations-changed', { taskId: newTask.id });
       }
 
       handleReset();

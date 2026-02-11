@@ -65,6 +65,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useBulkOperations } from '../boards/boardId/kanban/bulk/bulk-operations';
 import { useTaskDialog } from '../hooks/useTaskDialog';
 import { computeAccessibleLabelStyles } from '../utils/label-colors';
+import { useBoardBroadcast } from './board-broadcast-context';
 
 interface Props {
   boardId: string;
@@ -145,6 +146,7 @@ export function ListView({
   }, []);
 
   // Bulk operations hook
+  const broadcast = useBoardBroadcast();
   const { bulkUpdateDueDate, bulkUpdatePriority } = useBulkOperations({
     queryClient,
     supabase,
@@ -155,6 +157,7 @@ export function ListView({
     setBulkWorking,
     clearSelection,
     setBulkDeleteOpen: setShowBulkDeleteDialog,
+    broadcast,
   });
 
   // Bulk delete function

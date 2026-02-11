@@ -20,7 +20,7 @@ export async function GET(
 ) {
   const { wsId, id: requestId } = await params;
 
-  const supabase = await createClient();
+  const supabase = await createClient(req);
 
   const {
     data: { user },

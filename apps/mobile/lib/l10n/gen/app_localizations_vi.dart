@@ -489,10 +489,143 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerRequestInfo => 'Yêu cầu thông tin';
 
   @override
+  String get timerRequestEdit => 'Chỉnh sửa';
+
+  @override
+  String get timerRequestEditRequest => 'Chỉnh sửa yêu cầu';
+
+  @override
+  String get timerRequestDescription => 'Mô tả';
+
+  @override
+  String get timerRequestDescriptionOptional => 'Mô tả (không bắt buộc)';
+
+  @override
+  String get timerRequestComments => 'Bình luận';
+
+  @override
+  String get timerRequestNoComments => 'Chưa có bình luận';
+
+  @override
+  String get timerRequestAddComment => 'Thêm bình luận...';
+
+  @override
+  String get timerRequestPostComment => 'Đăng';
+
+  @override
+  String get timerRequestCancelEditComment => 'Hủy';
+
+  @override
+  String get timerRequestDeleteComment => 'Xóa bình luận';
+
+  @override
+  String get timerRequestDeleteCommentConfirm => 'Xóa bình luận này?';
+
+  @override
+  String get timerRequestActivity => 'Hoạt động';
+
+  @override
+  String get timerRequestNoActivity => 'Chưa có hoạt động';
+
+  @override
+  String get timerRequestActivityCreated => 'đã tạo yêu cầu này';
+
+  @override
+  String get timerRequestActivityContentUpdated => 'đã cập nhật nội dung yêu cầu';
+
+  @override
+  String get timerRequestActivityStatusChanged => 'đã thay đổi trạng thái yêu cầu';
+
+  @override
+  String get timerRequestActivityCommentAdded => 'đã thêm bình luận';
+
+  @override
+  String get timerRequestActivityCommentUpdated => 'đã cập nhật bình luận';
+
+  @override
+  String get timerRequestActivityCommentDeleted => 'đã xóa bình luận';
+
+  @override
+  String get timerRequestActivityUpdated => 'đã cập nhật yêu cầu này';
+
+  @override
+  String get timerRequestActivityFeedbackLabel => 'Phản hồi';
+
+  @override
+  String get timerRequestActivityTitleLabel => 'Tiêu đề';
+
+  @override
+  String get timerRequestActivityUnknownUser => 'Người dùng không xác định';
+
+  @override
+  String get timerRequestActivityItemsPerPage => 'Mục mỗi trang';
+
+  @override
+  String timerRequestActivityPageInfo(int current, int total) {
+    return 'Trang $current / $total';
+  }
+
+  @override
+  String get timerRequestActivityActionCreated => 'đã tạo';
+
+  @override
+  String get timerRequestActivityActionStatusChanged => 'đã thay đổi trạng thái';
+
+  @override
+  String get timerRequestActivityActionContentUpdated => 'đã cập nhật nội dung';
+
+  @override
+  String get timerRequestActivityActionCommentAdded => 'đã thêm bình luận';
+
+  @override
+  String get timerRequestActivityActionCommentUpdated => 'đã cập nhật bình luận';
+
+  @override
+  String get timerRequestActivityActionCommentDeleted => 'đã xóa bình luận';
+
+  @override
+  String get timerRequestActivityFieldStartTime => 'Thời gian bắt đầu';
+
+  @override
+  String get timerRequestActivityFieldEndTime => 'Thời gian kết thúc';
+
+  @override
+  String get timerRequestActivityFieldTitle => 'Tiêu đề';
+
+  @override
+  String get timerRequestActivityFieldDescription => 'Mô tả';
+
+  @override
+  String get timerRequestAddImage => 'Thêm ảnh';
+
+  @override
+  String timerRequestProofImagesCount(int current, int max) {
+    return 'Ảnh: $current/$max';
+  }
+
+  @override
   String get timerReasonOptional => 'Lý do (không bắt buộc)';
 
   @override
   String get timerManagementTitle => 'Quản lý';
+
+  @override
+  String get timerSearchSessions => 'Tìm kiếm phiên...';
+
+  @override
+  String get timerDescription => 'Mô tả';
+
+  @override
+  String get timerWorkSession => 'Phiên làm việc';
+
+  @override
+  String get timerAutoStartBreaks => 'Tự động bắt đầu nghỉ';
+
+  @override
+  String get timerAutoStartFocus => 'Tự động bắt đầu tập trung';
+
+  @override
+  String get commonCancel => 'Hủy';
 
   @override
   String get timerTotalSessions => 'Tổng số phiên';
@@ -722,4 +855,10 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get commonRetry => 'Thử lại';
+
+  @override
+  String get commonPrevious => 'Trước';
+
+  @override
+  String get commonNext => 'Tiếp';
 }

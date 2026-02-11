@@ -11,7 +11,7 @@ import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import type React from 'react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
 import { ListActions } from './list-actions';
 import { statusIcons } from './status-section';
@@ -81,6 +81,7 @@ export function BoardColumn({
 }: BoardColumnProps) {
   const t = useTranslations('common');
   const { createTask } = useTaskDialog();
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   // Helper to translate standard list names
   const translateListName = (name: string): string => {
@@ -187,7 +188,11 @@ export function BoardColumn({
         {DragHandle}
         <div className="flex flex-1 items-center gap-2">
           <span className="text-sm">{statusIcon}</span>
-          <h3 className="font-semibold text-foreground/90 text-sm">
+          <h3
+            className="cursor-pointer font-semibold text-foreground/90 text-sm hover:underline"
+            onClick={() => setIsEditOpen(true)}
+            title={t('edit_list')}
+          >
             {translateListName(column.name)}
           </h3>
           <Badge
@@ -210,6 +215,8 @@ export function BoardColumn({
             wsId={wsId}
             onUpdate={handleUpdate}
             onSelectAll={handleSelectAll}
+            isEditOpen={isEditOpen}
+            onEditOpenChange={setIsEditOpen}
           />
         </div>
       </div>

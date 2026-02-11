@@ -13,6 +13,10 @@ import {
   useTaskRelationships,
 } from '@tuturuuu/utils/task-helper';
 import { useCallback, useState } from 'react';
+import {
+  getActiveBroadcast,
+  useBoardBroadcast,
+} from '../../board-broadcast-context';
 
 export interface UseTaskDependenciesProps {
   taskId?: string;
@@ -73,6 +77,8 @@ export function useTaskDependencies({
   onUpdate,
 }: UseTaskDependenciesProps): UseTaskDependenciesReturn {
   const queryClient = useQueryClient();
+  const contextBroadcast = useBoardBroadcast();
+  const broadcast = contextBroadcast ?? getActiveBroadcast();
 
   const [savingRelationship, setSavingRelationship] = useState<string | null>(
     null
@@ -102,7 +108,10 @@ export function useTaskDependencies({
     wsId
   );
 
-  // Helper to invalidate caches
+  // Helper to invalidate relationship caches and broadcast changes.
+  // NOTE: We intentionally do NOT invalidate ['tasks', boardId] here —
+  // the kanban board relies on realtime sync via setQueryData, and
+  // invalidating the full task list causes all tasks to disappear briefly.
   const invalidateCaches = useCallback(
     async (otherTaskId?: string) => {
       await Promise.all([
@@ -114,11 +123,17 @@ export function useTaskDependencies({
           queryClient.invalidateQueries({
             queryKey: ['task-relationships', otherTaskId],
           }),
-        queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
       ]);
+
+      // Broadcast dependency changes to other clients
+      const ids = [taskId, otherTaskId].filter(Boolean) as string[];
+      if (ids.length > 0) {
+        broadcast?.('task:deps-changed', { taskIds: ids });
+      }
+
       onUpdate?.();
     },
-    [taskId, boardId, queryClient, onUpdate]
+    [taskId, queryClient, onUpdate, broadcast]
   );
 
   // =========================================================================

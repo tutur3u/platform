@@ -29,6 +29,7 @@ interface BoardSelectorProps {
   onOpenChange: (open: boolean) => void;
   wsId: string;
   currentBoardId: string;
+  currentListId?: string;
   taskCount: number;
   onMove: (boardId: string, listId: string) => void;
   isMoving?: boolean;
@@ -39,12 +40,15 @@ export function BoardSelector({
   onOpenChange,
   wsId,
   currentBoardId,
+  currentListId,
   taskCount,
   onMove,
   isMoving = false,
 }: BoardSelectorProps) {
   const t = useTranslations();
-  const [selectedBoardId, setSelectedBoardId] = useState<string>('');
+  const tc = useTranslations('common');
+  const [selectedBoardId, setSelectedBoardId] =
+    useState<string>(currentBoardId);
   const [selectedListId, setSelectedListId] = useState<string>('');
   const [newBoardDialogOpen, setNewBoardDialogOpen] = useState(false);
   const [newBoardName, setNewBoardName] = useState<string>('');
@@ -71,18 +75,21 @@ export function BoardSelector({
   });
 
   const boards = useMemo(() => {
-    return (boardsData?.boards || []).filter(
-      (board) => board.id !== currentBoardId
-    );
-  }, [boardsData?.boards, currentBoardId]);
+    return boardsData?.boards || [];
+  }, [boardsData?.boards]);
 
   const selectedBoard = useMemo(() => {
     return boards.find((board) => board.id === selectedBoardId);
   }, [boards, selectedBoardId]);
 
   const availableLists = useMemo(() => {
-    return selectedBoard?.task_lists || [];
-  }, [selectedBoard]);
+    const lists = selectedBoard?.task_lists || [];
+    // When moving from a specific list, exclude it from the target options
+    if (currentListId && selectedBoardId === currentBoardId) {
+      return lists.filter((list) => list.id !== currentListId);
+    }
+    return lists;
+  }, [selectedBoard, currentListId, selectedBoardId, currentBoardId]);
 
   const selectedList = useMemo(() => {
     return availableLists.find((list) => list.id === selectedListId);
@@ -106,9 +113,9 @@ export function BoardSelector({
   const canMove = selectedBoardId && selectedListId && !isMoving;
 
   const resetSelections = useCallback(() => {
-    setSelectedBoardId('');
+    setSelectedBoardId(currentBoardId);
     setSelectedListId('');
-  }, []);
+  }, [currentBoardId]);
 
   // Reset selections when dialog closes
   const handleOpenChange = useCallback(
@@ -124,12 +131,12 @@ export function BoardSelector({
   if (isLoading) {
     return (
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-125">
           <DialogHeader>
             <DialogTitle>
-              Move {taskCount} task{taskCount !== 1 ? 's' : ''} to another board
+              {tc('move_tasks_title', { count: taskCount })}
             </DialogTitle>
-            <DialogDescription>Loading boards...</DialogDescription>
+            <DialogDescription>{tc('loading_boards')}</DialogDescription>
           </DialogHeader>
           <div className="flex h-32 items-center justify-center">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-dynamic-blue/20 border-t-dynamic-blue"></div>
@@ -141,21 +148,20 @@ export function BoardSelector({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-125">
         <DialogHeader>
           <DialogTitle>
-            Move {taskCount} task{taskCount !== 1 ? 's' : ''} to another board
+            {tc('move_tasks_title', { count: taskCount })}
           </DialogTitle>
           <DialogDescription>
-            Select a destination board and list to move your task
-            {taskCount !== 1 ? 's' : ''} to.
+            {tc('move_tasks_description', { count: taskCount })}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           {/* Board Selection */}
           <div className="space-y-2">
-            <Label htmlFor={boardSelectId}>Destination Board</Label>
+            <Label htmlFor={boardSelectId}>{tc('destination_board')}</Label>
             <Combobox
               t={t}
               mode="single"
@@ -163,7 +169,7 @@ export function BoardSelector({
                 value: board.id,
                 label: board.name,
               }))}
-              placeholder="Select or create a board"
+              placeholder={tc('select_or_create_board')}
               selected={selectedBoardId}
               onChange={(value) => handleBoardSelect(value as string)}
               onCreate={(name) => {
@@ -176,7 +182,7 @@ export function BoardSelector({
 
           {/* List Selection */}
           <div className="space-y-2">
-            <Label htmlFor={listSelectId}>Destination List</Label>
+            <Label htmlFor={listSelectId}>{tc('destination_list')}</Label>
             <Combobox
               t={t}
               mode="single"
@@ -186,8 +192,8 @@ export function BoardSelector({
               }))}
               placeholder={
                 !selectedBoardId
-                  ? 'Select a board first'
-                  : 'Select or create a list'
+                  ? tc('select_board_first')
+                  : tc('select_or_create_list')
               }
               selected={selectedListId}
               onChange={(value) => handleListSelect(value as string)}
@@ -207,9 +213,9 @@ export function BoardSelector({
           {/* Preview */}
           {selectedBoard && selectedList && (
             <div className="rounded-lg border bg-muted/50 p-3">
-              <div className="font-medium text-sm">Move Preview</div>
+              <div className="font-medium text-sm">{tc('move_preview')}</div>
               <div className="mt-1 text-muted-foreground text-sm">
-                Moving {taskCount} task{taskCount !== 1 ? 's' : ''} to{' '}
+                {tc('moving_tasks_to', { count: taskCount })}{' '}
                 <span className="font-medium text-foreground">
                   {selectedList.name}
                 </span>{' '}
@@ -228,20 +234,16 @@ export function BoardSelector({
             onClick={() => handleOpenChange(false)}
             disabled={isMoving}
           >
-            Cancel
+            {tc('cancel')}
           </Button>
-          <Button
-            onClick={handleMove}
-            disabled={!canMove}
-            className="min-w-[100px]"
-          >
+          <Button onClick={handleMove} disabled={!canMove} className="min-w-25">
             {isMoving ? (
               <div className="flex items-center gap-2">
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground/20 border-t-primary-foreground"></div>
-                Moving...
+                {tc('moving')}
               </div>
             ) : (
-              `Move ${taskCount} task${taskCount !== 1 ? 's' : ''}`
+              tc('move_tasks_count', { count: taskCount })
             )}
           </Button>
         </DialogFooter>

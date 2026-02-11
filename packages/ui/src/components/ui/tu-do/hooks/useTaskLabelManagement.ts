@@ -3,6 +3,7 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useState } from 'react';
+import { useBoardBroadcast } from '../shared/board-broadcast-context';
 import { NEW_LABEL_COLOR } from '../utils/taskConstants';
 
 interface WorkspaceTaskLabel {
@@ -33,7 +34,7 @@ export function useTaskLabelManagement({
   taskId,
 }: UseTaskLabelManagementProps) {
   const queryClient = useQueryClient();
-  const [labelsSaving, setLabelsSaving] = useState<string | null>(null);
+  const broadcast = useBoardBroadcast();
   const [newLabelName, setNewLabelName] = useState('');
   const [newLabelColor, setNewLabelColor] = useState(NEW_LABEL_COLOR);
   const [creatingLabel, setCreatingLabel] = useState(false);
@@ -57,8 +58,6 @@ export function useTaskLabelManagement({
     const tasksToUpdate = shouldBulkUpdate
       ? Array.from(selectedTasks)
       : [currentTask.id];
-
-    setLabelsSaving(labelId);
 
     // Cancel any outgoing refetches
     await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
@@ -214,6 +213,11 @@ export function useTaskLabelManagement({
         throw new Error('Failed to update any tasks');
       }
 
+      // Broadcast relation changes for all affected tasks
+      for (const tid of active ? tasksToRemoveFrom : tasksNeedingLabel) {
+        broadcast?.('task:relations-changed', { taskId: tid });
+      }
+
       toast.success(active ? 'Label removed' : 'Label added', {
         description:
           successCount > 1 ? `${successCount} tasks updated` : undefined,
@@ -229,8 +233,6 @@ export function useTaskLabelManagement({
       toast.error('Error', {
         description: 'Failed to update label. Please try again.',
       });
-    } finally {
-      setLabelsSaving(null);
     }
   }
 
@@ -351,6 +353,8 @@ export function useTaskLabelManagement({
 
       // Only show success toast and reset form if link succeeded
       if (linkSucceeded) {
+        broadcast?.('task:relations-changed', { taskId: task.id });
+
         // Reset form and close dialog
         setNewLabelName('');
         setNewLabelColor(NEW_LABEL_COLOR);
@@ -372,7 +376,6 @@ export function useTaskLabelManagement({
   }
 
   return {
-    labelsSaving,
     newLabelName,
     setNewLabelName,
     newLabelColor,

@@ -184,10 +184,14 @@ const { data, isLoading } = useQuery({
 
 **Kanban Task Realtime Sync (CRITICAL):**
 
-Tasks in kanban boards (`task.tsx`, `task-edit-dialog.tsx`, components in `packages/ui/src/components/ui/tu-do/`) use Supabase realtime subscriptions to sync across clients. **NEVER invalidate TanStack Query caches for task data in these components** - it conflicts with realtime sync and causes UI flicker/stale data.
+Tasks in kanban boards (`task.tsx`, `task-edit-dialog.tsx`, components in `packages/ui/src/components/ui/tu-do/`) use **Supabase Broadcast** (client-to-client messaging) to sync across clients. Broadcast is preferred over `postgres_changes` for scalability and security — no WAL dependency, no RLS evaluation issues, lower latency.
+
+**Pattern:** After each successful DB mutation, call `broadcast?.('task:upsert', { task: { id, ...fields } })` for scalar changes or `broadcast?.('task:relations-changed', { taskId })` for label/assignee/project toggles. Access the broadcast function via `useBoardBroadcast()` from `board-broadcast-context.tsx`.
 
 - ❌ **NEVER** call `invalidateQueries()` or `refetch()` for task queries in kanban components
-- ✅ **DO** rely on realtime subscriptions; use optimistic `setQueryData` for immediate feedback
+- ❌ **NEVER** use `postgres_changes` for new board realtime features — use Broadcast instead
+- ✅ **DO** use optimistic `setQueryData` for immediate feedback, then broadcast for cross-client sync
+- ✅ **DO** use `useBoardBroadcast()` context to access the broadcast function from any mutation site
 
 **ENFORCEMENT RULES:**
 
@@ -234,6 +238,7 @@ Located at `apps/mobile/`, the Flutter app uses BLoC/Cubit state management, `go
 - **Admin Client Trigger Bypass:** Tables with `BEFORE UPDATE` triggers checking `auth.uid()` can be bypassed with `createAdminClient()` (`sbAdmin`). Always validate permissions with user-context client first.
 - **TypeScript useMemo Inference:** When `useMemo` returns either `[]` or `{ data: [], isEstimated }`, TypeScript infers `never[]`. Fix: explicitly type early returns as `{ data: [] as MyType[], isEstimated: false }`.
 - **Finance Module:** `get_category_breakdown` RPC accepts `_wallet_ids UUID[]` for wallet scoping. Exchange rates use USD as base currency. For estimated amounts, set `hasRedactedAmounts = true` and show `≈` prefix.
+- **Flutter Async Actions:** For mutation-driven UI actions (approve/reject/update), use `Future<void> Function()` callbacks (not `VoidCallback`), await them before closing dialogs/sheets, and surface failures in the UI (e.g., `SnackBar`). If a Cubit catches repository errors, rethrow after emitting error state so callers can handle failures locally.
 - **apply_patch Pathing (Windows):** Prefer workspace-relative paths (e.g. `apps/web/...`). Absolute Windows paths like `C:\...` can fail to resolve during patch apply.
 
 ### Database Schema Notes

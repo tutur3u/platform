@@ -37,6 +37,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
+import { useBoardBroadcast } from '../../shared/board-broadcast-context';
 import { TaskCard } from './task';
 
 interface Props {
@@ -102,6 +103,7 @@ export function EnhancedTaskList({
   const queryClient = useQueryClient();
   const supabase = createClient();
   const { createTask } = useTaskDialog();
+  const broadcast = useBoardBroadcast();
 
   // Helper to translate standard list names
   const translateListName = (name: string): string => {
@@ -158,7 +160,6 @@ export function EnhancedTaskList({
     },
     onSuccess: (newName) => {
       // Use setQueryData for immediate UI update without flicker
-      // Realtime subscription handles cross-user sync
       queryClient.setQueryData(
         ['task_lists', boardId],
         (old: TaskList[] | undefined) => {
@@ -168,6 +169,7 @@ export function EnhancedTaskList({
           );
         }
       );
+      broadcast?.('list:upsert', { list: { id: list.id, name: newName } });
       toast.success('List name updated');
       onUpdate();
     },
@@ -190,7 +192,6 @@ export function EnhancedTaskList({
     },
     onSuccess: (newColor) => {
       // Use setQueryData for immediate UI update without flicker
-      // Realtime subscription handles cross-user sync
       queryClient.setQueryData(
         ['task_lists', boardId],
         (old: TaskList[] | undefined) => {
@@ -200,6 +201,9 @@ export function EnhancedTaskList({
           );
         }
       );
+      broadcast?.('list:upsert', {
+        list: { id: list.id, color: newColor },
+      });
       toast.success('List color updated');
       onUpdate();
     },
@@ -232,7 +236,6 @@ export function EnhancedTaskList({
     },
     onSuccess: () => {
       // Use setQueryData for immediate UI update without flicker
-      // Realtime subscription handles cross-user sync
       queryClient.setQueryData(
         ['task_lists', boardId],
         (old: TaskList[] | undefined) => {
@@ -247,6 +250,8 @@ export function EnhancedTaskList({
           return old.filter((t) => t.list_id !== list.id);
         }
       );
+      // Broadcast list deletion (receiver removes list + its tasks)
+      broadcast?.('list:delete', { listId: list.id });
       toast.success(
         tasks.length > 0
           ? `List and ${tasks.length} task${tasks.length > 1 ? 's' : ''} deleted`

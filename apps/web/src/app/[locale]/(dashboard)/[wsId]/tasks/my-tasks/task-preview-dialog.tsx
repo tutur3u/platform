@@ -1062,7 +1062,7 @@ export function TaskPreviewDialog({
                                       handleCancelEditTitle();
                                     }
                                   }}
-                                  className="min-h-[60px] w-full resize-none break-all font-medium text-sm"
+                                  className="min-h-15 w-full resize-none break-all font-medium text-sm"
                                   autoFocus
                                   disabled={isCreating}
                                 />
@@ -1194,7 +1194,6 @@ export function TaskPreviewDialog({
                                       }))}
                                     availableLabels={workspaceLabels}
                                     isLoading={false}
-                                    labelsSaving={null}
                                     onToggleLabel={(labelId) => {
                                       handlePreviewTaskLabelToggle(
                                         originalIndex,
@@ -1233,7 +1232,6 @@ export function TaskPreviewDialog({
                                     })
                                   )}
                                   isLoading={false}
-                                  projectsSaving={null}
                                   onToggleProject={(projectId) =>
                                     handlePreviewTaskProjectToggle(
                                       originalIndex,
@@ -1300,7 +1298,7 @@ export function TaskPreviewDialog({
                                       handleCancelEditDescription();
                                     }
                                   }}
-                                  className="min-h-[80px] w-full resize-none break-all text-sm"
+                                  className="min-h-20 w-full resize-none break-all text-sm"
                                   placeholder="Add a description..."
                                   autoFocus
                                   disabled={isCreating}

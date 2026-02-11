@@ -20,6 +20,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { forwardRef, useImperativeHandle, useState } from 'react';
+import { useBoardBroadcast } from './board-broadcast-context';
 
 interface Member {
   id: string;
@@ -60,6 +61,7 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
     const wsId = params.wsId as string;
     const boardId = params.boardId as string;
     const queryClient = useQueryClient();
+    const broadcast = useBoardBroadcast();
 
     // Deduplicate assignees by ID using O(n) Map approach
     const uniqueAssignees = Array.from(
@@ -200,9 +202,12 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
         console.error('Failed to update task assignees:', err);
         toast.error(t('failed_to_update_assignees', { error: errorMessage }));
       },
+      onSuccess: () => {
+        broadcast?.('task:relations-changed', { taskId });
+      },
       // Note: Removed onSettled invalidation to prevent flicker
       // Optimistic updates handle immediate UI feedback
-      // Realtime subscription handles cross-user sync
+      // Broadcast handles cross-user sync
     });
 
     const handleSelect = (memberId: string) => {

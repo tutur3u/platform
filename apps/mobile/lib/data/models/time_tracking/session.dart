@@ -7,6 +7,7 @@ class TimeTrackingSession extends Equatable {
     this.description,
     this.categoryId,
     this.categoryName,
+    this.categoryColor,
     this.startTime,
     this.endTime,
     this.wsId,
@@ -26,7 +27,12 @@ class TimeTrackingSession extends Equatable {
         title: json['title'] as String?,
         description: json['description'] as String?,
         categoryId: json['category_id'] as String?,
-        categoryName: json['category_name'] as String?,
+        categoryName:
+            json['category_name'] as String? ??
+            (json['category'] as Map<String, dynamic>?)?['name'] as String?,
+        categoryColor:
+            json['category_color'] as String? ??
+            (json['category'] as Map<String, dynamic>?)?['color'] as String?,
         startTime: json['start_time'] != null
             ? DateTime.parse(json['start_time'] as String)
             : null,
@@ -51,6 +57,7 @@ class TimeTrackingSession extends Equatable {
   final String? description;
   final String? categoryId;
   final String? categoryName;
+  final String? categoryColor;
   final DateTime? startTime;
   final DateTime? endTime;
   final String? wsId;
@@ -77,6 +84,8 @@ class TimeTrackingSession extends Equatable {
     'title': title,
     'description': description,
     'category_id': categoryId,
+    'category_name': categoryName,
+    'category_color': categoryColor,
     'start_time': startTime?.toIso8601String(),
     'end_time': endTime?.toIso8601String(),
     'ws_id': wsId,
@@ -97,6 +106,7 @@ class TimeTrackingSession extends Equatable {
     description,
     categoryId,
     categoryName,
+    categoryColor,
     startTime,
     endTime,
     wsId,

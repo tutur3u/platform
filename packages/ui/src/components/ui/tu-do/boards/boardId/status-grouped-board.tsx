@@ -1,15 +1,16 @@
 'use client';
 
 import {
-  closestCorners,
+  type CollisionDetection,
+  closestCenter,
   DndContext,
   type DragEndEvent,
   type DragOverEvent,
   DragOverlay,
   type DragStartEvent,
   KeyboardSensor,
-  MouseSensor,
   PointerSensor,
+  pointerWithin,
   TouchSensor,
   useSensor,
   useSensors,
@@ -27,9 +28,17 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useMoveTask } from '@tuturuuu/utils/task-helper';
 import { useState } from 'react';
+import { useBoardBroadcast } from '../../shared/board-broadcast-context';
 import { EnhancedTaskList } from './enhanced-task-list';
 import { StatusSection } from './status-section';
 import { TaskCard } from './task';
+
+// Prefer pointerWithin for precise targeting; fall back to closestCenter
+const statusBoardCollisionDetection: CollisionDetection = (args) => {
+  const pointerCollisions = pointerWithin(args);
+  if (pointerCollisions.length > 0) return pointerCollisions;
+  return closestCenter(args);
+};
 
 interface Props {
   lists: TaskList[];
@@ -53,14 +62,9 @@ export function StatusGroupedBoard({
   const queryClient = useQueryClient();
   const supabase = createClient();
 
-  // Enhanced sensors for better drag experience
+  // PointerSensor handles both mouse + pointer events; MouseSensor is redundant
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(MouseSensor, {
       activationConstraint: {
         distance: 8,
       },
@@ -97,6 +101,8 @@ export function StatusGroupedBoard({
     },
     {} as Record<string, Task[]>
   );
+
+  const broadcast = useBoardBroadcast();
 
   // Move task mutation using the helper function with auto-completion logic
   const moveTaskMutation = useMoveTask(boardId);
@@ -257,6 +263,14 @@ export function StatusGroupedBoard({
             onSuccess: (data) => {
               console.log('✅ Task moved successfully:', data);
               toast.success('Task moved successfully');
+              broadcast?.('task:upsert', {
+                task: {
+                  id: data.id,
+                  list_id: data.list_id,
+                  completed_at: data.completed_at,
+                  closed_at: data.closed_at,
+                },
+              });
             },
             onError: (error) => {
               console.error('❌ Failed to move task:', error);
@@ -468,7 +482,7 @@ export function StatusGroupedBoard({
     <div className="h-full w-full p-2">
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCorners}
+        collisionDetection={statusBoardCollisionDetection}
         onDragStart={onDragStart}
         onDragOver={onDragOver}
         onDragEnd={onDragEnd}

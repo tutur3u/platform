@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide AppBar, Card, Scaffold, TextField;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
@@ -10,7 +11,9 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TimeTrackerManagementPage extends StatefulWidget {
-  const TimeTrackerManagementPage({super.key});
+  const TimeTrackerManagementPage({super.key, this.repository});
+
+  final ITimeTrackerRepository? repository;
 
   @override
   State<TimeTrackerManagementPage> createState() =>
@@ -45,7 +48,7 @@ class _ManagementSessionTile extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                Icons.person,
+                shad.LucideIcons.user,
                 color: theme.colorScheme.primary,
                 size: 20,
               ),
@@ -134,7 +137,7 @@ class _OverviewCard extends StatelessWidget {
 }
 
 class _TimeTrackerManagementPageState extends State<TimeTrackerManagementPage> {
-  final _repo = TimeTrackerRepository();
+  late final ITimeTrackerRepository _repo;
   final _searchCtrl = TextEditingController();
   List<TimeTrackingSession> _sessions = [];
   bool _loading = true;
@@ -147,7 +150,16 @@ class _TimeTrackerManagementPageState extends State<TimeTrackerManagementPage> {
 
     return shad.Scaffold(
       headers: [
-        shad.AppBar(title: Text(l10n.timerManagementTitle)),
+        shad.AppBar(
+          leading: [
+            shad.OutlineButton(
+              density: shad.ButtonDensity.icon,
+              onPressed: () => context.pop(),
+              child: const Icon(Icons.arrow_back),
+            ),
+          ],
+          title: Text(l10n.timerManagementTitle),
+        ),
       ],
       child: Column(
         children: [
@@ -156,10 +168,12 @@ class _TimeTrackerManagementPageState extends State<TimeTrackerManagementPage> {
             padding: const EdgeInsets.all(16),
             child: shad.TextField(
               controller: _searchCtrl,
-              hintText: 'Search sessions...',
+              hintText: l10n.timerSearchSessions,
               onSubmitted: (_) => unawaited(_load()),
               features: [
-                const shad.InputFeature.leading(Icon(Icons.search, size: 20)),
+                const shad.InputFeature.leading(
+                  Icon(shad.LucideIcons.search, size: 20),
+                ),
                 if (_searchCtrl.text.isNotEmpty)
                   shad.InputFeature.trailing(
                     shad.IconButton.ghost(
@@ -167,7 +181,7 @@ class _TimeTrackerManagementPageState extends State<TimeTrackerManagementPage> {
                         _searchCtrl.clear();
                         unawaited(_load());
                       },
-                      icon: const Icon(Icons.clear, size: 16),
+                      icon: const Icon(shad.LucideIcons.x, size: 16),
                     ),
                   ),
               ],
@@ -181,13 +195,13 @@ class _TimeTrackerManagementPageState extends State<TimeTrackerManagementPage> {
                 _OverviewCard(
                   label: l10n.timerTotalSessions,
                   value: '${_sessions.length}',
-                  icon: Icons.timer,
+                  icon: shad.LucideIcons.timer,
                 ),
                 const shad.Gap(8),
                 _OverviewCard(
                   label: l10n.timerActiveUsers,
                   value: '${_uniqueUsers()}',
-                  icon: Icons.people,
+                  icon: shad.LucideIcons.users,
                 ),
               ],
             ),
@@ -242,6 +256,7 @@ class _TimeTrackerManagementPageState extends State<TimeTrackerManagementPage> {
   @override
   void initState() {
     super.initState();
+    _repo = widget.repository ?? TimeTrackerRepository();
     unawaited(_load());
   }
 

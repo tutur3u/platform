@@ -3,6 +3,7 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useState } from 'react';
+import { useBoardBroadcast } from '../shared/board-broadcast-context';
 
 interface TaskProject {
   id: string;
@@ -31,7 +32,7 @@ export function useTaskProjectManagement({
   taskId,
 }: UseTaskProjectManagementProps) {
   const queryClient = useQueryClient();
-  const [projectsSaving, setProjectsSaving] = useState<string | null>(null);
+  const broadcast = useBoardBroadcast();
   const [newProjectName, setNewProjectName] = useState('');
   const [creatingProject, setCreatingProject] = useState(false);
 
@@ -54,8 +55,6 @@ export function useTaskProjectManagement({
     const tasksToUpdate = shouldBulkUpdate
       ? Array.from(selectedTasks)
       : [currentTask.id];
-
-    setProjectsSaving(projectId);
 
     // Cancel any outgoing refetches
     await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
@@ -197,6 +196,11 @@ export function useTaskProjectManagement({
         }
       }
 
+      // Broadcast relation changes for all affected tasks
+      for (const tid of active ? tasksToRemoveFrom : tasksNeedingProject) {
+        broadcast?.('task:relations-changed', { taskId: tid });
+      }
+
       toast.success(active ? 'Project removed' : 'Project added', {
         description:
           successCount > 1 ? `${successCount} tasks updated` : undefined,
@@ -212,8 +216,6 @@ export function useTaskProjectManagement({
       toast.error('Error', {
         description: 'Failed to update project. Please try again.',
       });
-    } finally {
-      setProjectsSaving(null);
     }
   }
 
@@ -315,6 +317,8 @@ export function useTaskProjectManagement({
 
       // Only show success toast and reset form if link succeeded
       if (linkSucceeded) {
+        broadcast?.('task:relations-changed', { taskId: task.id });
+
         // Reset form and close dialog
         setNewProjectName('');
 
@@ -335,7 +339,6 @@ export function useTaskProjectManagement({
   }
 
   return {
-    projectsSaving,
     newProjectName,
     setNewProjectName,
     creatingProject,

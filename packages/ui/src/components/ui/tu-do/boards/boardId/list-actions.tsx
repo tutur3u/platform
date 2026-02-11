@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Archive,
   ArrowRightLeft,
@@ -8,6 +9,7 @@ import {
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -24,8 +26,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
+import { toast } from '@tuturuuu/ui/sonner';
 import {
   deleteTaskList,
   useMoveAllTasksFromList,
@@ -33,6 +35,7 @@ import {
 } from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { useBoardBroadcast } from '../../shared/board-broadcast-context';
 import { BoardSelector } from '../board-selector';
 
 interface Props {
@@ -44,6 +47,8 @@ interface Props {
   wsId?: string;
   onUpdate: () => void;
   onSelectAll?: () => void;
+  isEditOpen: boolean;
+  onEditOpenChange: (open: boolean) => void;
 }
 
 export function ListActions({
@@ -55,17 +60,23 @@ export function ListActions({
   wsId = '',
   onUpdate,
   onSelectAll,
+  isEditOpen,
+  onEditOpenChange,
 }: Props) {
   const t = useTranslations('common');
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false);
   const [isMoveAllDialogOpen, setIsMoveAllDialogOpen] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
   const [newName, setNewName] = useState(listName);
 
+  const queryClient = useQueryClient();
+  const broadcast = useBoardBroadcast();
   const moveTaskMutation = useMoveTask(boardId);
-  const moveAllTasksFromListMutation = useMoveAllTasksFromList(boardId);
+  const moveAllTasksFromListMutation = useMoveAllTasksFromList(
+    boardId,
+    broadcast
+  );
 
   async function handleDelete() {
     const supabase = createClient();
@@ -76,18 +87,40 @@ export function ListActions({
 
   async function handleUpdate() {
     if (!newName.trim() || newName === listName) {
-      setIsEditDialogOpen(false);
+      onEditOpenChange(false);
       return;
     }
 
-    const supabase = createClient();
-    await supabase
-      .from('task_lists')
-      .update({ name: newName })
-      .eq('id', listId);
+    const trimmedName = newName.trim();
 
-    setIsEditDialogOpen(false);
-    onUpdate();
+    // Optimistic cache update
+    queryClient.setQueryData(
+      ['task_lists', boardId],
+      (old: TaskList[] | undefined) => {
+        if (!old) return old;
+        return old.map((l) =>
+          l.id === listId ? { ...l, name: trimmedName } : l
+        );
+      }
+    );
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('task_lists')
+        .update({ name: trimmedName })
+        .eq('id', listId);
+      if (error) throw error;
+
+      broadcast?.('list:upsert', { list: { id: listId, name: trimmedName } });
+      toast.success(t('name_updated'));
+      onEditOpenChange(false);
+      onUpdate();
+    } catch (e: unknown) {
+      // Rollback on error
+      queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
+      toast.error(e instanceof Error ? e.message : t('save_failed'));
+    }
   }
 
   async function handleArchiveAllTasks() {
@@ -142,25 +175,34 @@ export function ListActions({
 
       // Move all tasks to the closed list
       for (const task of tasks) {
-        moveTaskMutation.mutate({
-          taskId: task.id,
-          newListId: closedListId,
-        });
+        moveTaskMutation.mutate(
+          {
+            taskId: task.id,
+            newListId: closedListId,
+          },
+          {
+            onSuccess: (updatedTask) => {
+              broadcast?.('task:upsert', {
+                task: {
+                  id: updatedTask.id,
+                  list_id: updatedTask.list_id,
+                  completed_at: updatedTask.completed_at,
+                  closed_at: updatedTask.closed_at,
+                },
+              });
+            },
+          }
+        );
       }
 
-      toast({
-        title: 'Tasks Archived',
-        description: `Successfully moved ${tasks.length} task${tasks.length !== 1 ? 's' : ''} to archive.`,
-      });
+      toast.success(
+        `Successfully moved ${tasks.length} task${tasks.length !== 1 ? 's' : ''} to archive.`
+      );
 
       onUpdate();
     } catch (error) {
       console.error('Failed to archive tasks:', error);
-      toast({
-        title: t('error'),
-        description: t('failed_to_archive_tasks'),
-        variant: 'destructive',
-      });
+      toast.error(t('failed_to_archive_tasks'));
     } finally {
       setIsArchiving(false);
       setIsArchiveDialogOpen(false);
@@ -170,11 +212,7 @@ export function ListActions({
   // Handler for bulk moving all tasks from this list
   function handleMoveAllTasks() {
     if (tasks.length === 0) {
-      toast({
-        title: t('no_tasks_to_move'),
-        description: t('this_list_is_empty'),
-        variant: 'default',
-      });
+      toast.info(t('this_list_is_empty'));
       return;
     }
     setIsMoveAllDialogOpen(true);
@@ -210,7 +248,7 @@ export function ListActions({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
+          <DropdownMenuItem onClick={() => onEditOpenChange(true)}>
             <div className="h-4 w-4">
               <Pencil className="h-4 w-4" />
             </div>
@@ -287,7 +325,7 @@ export function ListActions({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+      <Dialog open={isEditOpen} onOpenChange={onEditOpenChange}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('edit_list')}</DialogTitle>
@@ -296,10 +334,16 @@ export function ListActions({
           <Input
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleUpdate();
+              }
+            }}
             placeholder={t('list_name')}
           />
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setIsEditDialogOpen(false)}>
+            <Button variant="ghost" onClick={() => onEditOpenChange(false)}>
               {t('cancel')}
             </Button>
             <Button onClick={handleUpdate}>{t('save_changes')}</Button>
@@ -341,6 +385,7 @@ export function ListActions({
           onOpenChange={setIsMoveAllDialogOpen}
           wsId={wsId}
           currentBoardId={boardId}
+          currentListId={listId}
           taskCount={tasks.length}
           onMove={handleBulkMove}
           isMoving={moveAllTasksFromListMutation.isPending}

@@ -440,7 +440,6 @@ export function TaskMentionChip({
   const {
     toggleTaskLabel: baseToggleTaskLabel,
     createNewLabel: baseCreateNewLabel,
-    labelsSaving,
     newLabelName,
     setNewLabelName,
     newLabelColor,
@@ -460,7 +459,6 @@ export function TaskMentionChip({
   // Use project management hook - only when we have task
   const {
     toggleTaskProject: baseToggleTaskProject,
-    projectsSaving,
     newProjectName,
     setNewProjectName,
     creatingProject,
@@ -698,28 +696,12 @@ export function TaskMentionChip({
     [baseHandleCustomDateChange, syncTaskCache]
   );
 
-  const [assigneeSaving, setAssigneeSaving] = useState<string | null>(null);
-
-  const handleToggleAssignee = useCallback(
-    async (assigneeId: string) => {
+  const onToggleAssignee = useCallback(
+    (assigneeId: string) => {
       if (!task) return;
-      // Base function handles optimistic updates to both caches
       return baseHandleToggleAssignee(assigneeId);
     },
     [baseHandleToggleAssignee, task]
-  );
-
-  const onToggleAssignee = useCallback(
-    async (assigneeId: string) => {
-      if (!handleToggleAssignee) return;
-      try {
-        setAssigneeSaving(assigneeId);
-        await handleToggleAssignee(assigneeId);
-      } finally {
-        setAssigneeSaving(null);
-      }
-    },
-    [handleToggleAssignee]
   );
 
   // Wrap label toggle - base function handles all cache updates
@@ -1047,7 +1029,6 @@ export function TaskMentionChip({
         taskLabels={task.labels || []}
         availableLabels={workspaceLabels}
         isLoading={labelsLoading}
-        labelsSaving={labelsSaving}
         onToggleLabel={toggleTaskLabel}
         onCreateNewLabel={() => {
           setShowNewLabelDialog(true);
@@ -1061,7 +1042,6 @@ export function TaskMentionChip({
         taskProjects={task.projects || []}
         availableProjects={workspaceProjects}
         isLoading={projectsLoading}
-        projectsSaving={projectsSaving}
         onToggleProject={toggleTaskProject}
         onCreateNewProject={() => {
           setShowNewProjectDialog(true);
@@ -1161,7 +1141,6 @@ export function TaskMentionChip({
           taskAssignees={task.assignees || []}
           availableMembers={workspaceMembers}
           isLoading={membersLoading}
-          assigneeSaving={assigneeSaving}
           onToggleAssignee={onToggleAssignee}
           onMenuItemSelect={handleMenuItemSelect}
         />
@@ -1339,7 +1318,10 @@ export function TaskMentionChip({
             onNameChange={setNewLabelName}
             onColorChange={setNewLabelColor}
             onOpenChange={setShowNewLabelDialog}
-            onConfirm={createNewLabel}
+            onConfirm={async () => {
+              const result = await createNewLabel();
+              if (result) setShowNewLabelDialog(false);
+            }}
             translations={
               translations
                 ? {
@@ -1363,7 +1345,10 @@ export function TaskMentionChip({
             creatingProject={creatingProject}
             onNameChange={setNewProjectName}
             onOpenChange={setShowNewProjectDialog}
-            onConfirm={createNewProject}
+            onConfirm={async () => {
+              const result = await createNewProject();
+              if (result) setShowNewProjectDialog(false);
+            }}
             translations={
               translations
                 ? {

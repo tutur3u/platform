@@ -1,5 +1,9 @@
+import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { WorkspacePresenceProvider } from '@tuturuuu/ui/tu-do/providers/workspace-presence-provider';
 import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
@@ -14,6 +18,8 @@ import {
   SIDEBAR_COLLAPSED_COOKIE_NAME,
 } from '@/constants/common';
 import { SidebarProvider } from '@/context/sidebar-context';
+import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
+import { createFreeSubscription } from '@/utils/subscription-helper';
 import NavbarActions from '../../navbar-actions';
 import { UserNav } from '../../user-nav';
 import InvitationCard from './invitation-card';
@@ -34,6 +40,34 @@ export default async function Layout({ children, params }: LayoutProps) {
   const { wsId: id } = await params;
 
   const workspace = await getWorkspace(id, { useAdmin: true });
+
+  // Auto-assign free subscription if workspace has no active subscription
+  if (workspace.tier === null) {
+    try {
+      const polar = createPolarClient();
+      const sbAdmin = await createAdminClient();
+      await getOrCreatePolarCustomer({
+        polar,
+        supabase: sbAdmin,
+        wsId: workspace.id,
+      });
+      const subResult = await createFreeSubscription(
+        polar,
+        sbAdmin,
+        workspace.id
+      );
+      if (subResult.status === 'created') {
+        workspace.tier = 'FREE';
+      }
+    } catch (error) {
+      console.error(
+        `[Layout] Failed to auto-assign free subscription for workspace ${workspace.id}:`,
+        error
+      );
+      // Fail-open: let user through with null tier
+    }
+  }
+
   const wsId = workspace.id;
   const workspaceSlug = toWorkspaceSlug(wsId, {
     personal: !!workspace.personal,

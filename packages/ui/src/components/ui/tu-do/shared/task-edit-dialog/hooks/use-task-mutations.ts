@@ -5,6 +5,10 @@ import type { CalendarHoursType } from '@tuturuuu/types/primitives/Task';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { invalidateTaskCaches } from '@tuturuuu/utils/task-helper';
 import { useCallback, useState } from 'react';
+import {
+  getActiveBroadcast,
+  useBoardBroadcast,
+} from '../../board-broadcast-context';
 
 export interface SchedulingSettings {
   totalDuration: number | null;
@@ -66,6 +70,8 @@ export function useTaskMutations({
 }: UseTaskMutationsProps): UseTaskMutationsReturn {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const contextBroadcast = useBoardBroadcast();
+  const broadcast = contextBroadcast ?? getActiveBroadcast();
   const [estimationSaving, setEstimationSaving] = useState(false);
   const [schedulingSaving, setSchedulingSaving] = useState(false);
 
@@ -105,8 +111,9 @@ export function useTaskMutations({
           .update({ estimation_points: points })
           .eq('id', taskId);
         if (error) throw error;
-        // Notify parent components (e.g., server component refresh)
-        // Skip in collaboration mode where realtime sync handles updates
+        broadcast?.('task:upsert', {
+          task: { id: taskId, estimation_points: points },
+        });
         triggerRefresh();
       } catch (e: any) {
         console.error('Failed updating estimation', e);
@@ -130,6 +137,7 @@ export function useTaskMutations({
       toast,
       setEstimationPoints,
       triggerRefresh,
+      broadcast,
     ]
   );
 
@@ -158,8 +166,9 @@ export function useTaskMutations({
           .update({ priority: newPriority })
           .eq('id', taskId);
         if (error) throw error;
-        // Notify parent components (e.g., server component refresh)
-        // Skip in collaboration mode where realtime sync handles updates
+        broadcast?.('task:upsert', {
+          task: { id: taskId, priority: newPriority },
+        });
         triggerRefresh();
       } catch (e: any) {
         console.error('Failed updating priority', e);
@@ -181,6 +190,7 @@ export function useTaskMutations({
       toast,
       setPriority,
       triggerRefresh,
+      broadcast,
     ]
   );
 
@@ -210,8 +220,9 @@ export function useTaskMutations({
           .update({ start_date: dateString })
           .eq('id', taskId);
         if (error) throw error;
-        // Notify parent components (e.g., server component refresh)
-        // Skip in collaboration mode where realtime sync handles updates
+        broadcast?.('task:upsert', {
+          task: { id: taskId, start_date: dateString },
+        });
         triggerRefresh();
       } catch (e: any) {
         console.error('Failed updating start date', e);
@@ -232,6 +243,7 @@ export function useTaskMutations({
       toast,
       setStartDate,
       triggerRefresh,
+      broadcast,
     ]
   );
 
@@ -261,8 +273,9 @@ export function useTaskMutations({
           .update({ end_date: dateString })
           .eq('id', taskId);
         if (error) throw error;
-        // Notify parent components (e.g., server component refresh)
-        // Skip in collaboration mode where realtime sync handles updates
+        broadcast?.('task:upsert', {
+          task: { id: taskId, end_date: dateString },
+        });
         triggerRefresh();
       } catch (e: any) {
         console.error('Failed updating end date', e);
@@ -283,6 +296,7 @@ export function useTaskMutations({
       toast,
       setEndDate,
       triggerRefresh,
+      broadcast,
     ]
   );
 
@@ -306,18 +320,41 @@ export function useTaskMutations({
       );
 
       try {
-        const { error } = await supabase
+        const { data: updatedTask, error } = await supabase
           .from('tasks')
           .update({ list_id: newListId })
-          .eq('id', taskId);
+          .eq('id', taskId)
+          .select('id, completed_at, closed_at')
+          .single();
         if (error) throw error;
-        // Don't invalidate cache - realtime sync handles updates
+        // Update sender's own cache with DB-computed timestamps
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (oldTasks: any[] | undefined) => {
+            if (!oldTasks) return oldTasks;
+            return oldTasks.map((task: any) =>
+              task.id === taskId
+                ? {
+                    ...task,
+                    completed_at: updatedTask.completed_at,
+                    closed_at: updatedTask.closed_at,
+                  }
+                : task
+            );
+          }
+        );
+        broadcast?.('task:upsert', {
+          task: {
+            id: taskId,
+            list_id: newListId,
+            completed_at: updatedTask.completed_at,
+            closed_at: updatedTask.closed_at,
+          },
+        });
         toast({
           title: 'List updated',
           description: 'Task moved to new list',
         });
-        // Notify parent components (e.g., server component refresh)
-        // Skip in collaboration mode where realtime sync handles updates
         triggerRefresh();
       } catch (e: any) {
         console.error('Failed updating list', e);
@@ -339,6 +376,7 @@ export function useTaskMutations({
       toast,
       triggerRefresh,
       setSelectedListId,
+      broadcast,
     ]
   );
 
@@ -369,8 +407,9 @@ export function useTaskMutations({
           .update({ name: trimmedName })
           .eq('id', taskId);
         if (error) throw error;
-        // Notify parent components (e.g., server component refresh)
-        // Skip in collaboration mode where realtime sync handles updates
+        broadcast?.('task:upsert', {
+          task: { id: taskId, name: trimmedName },
+        });
         triggerRefresh();
       } catch (e: any) {
         console.error('Failed updating task name', e);
@@ -391,6 +430,7 @@ export function useTaskMutations({
       boardId,
       toast,
       triggerRefresh,
+      broadcast,
     ]
   );
 

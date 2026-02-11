@@ -1,7 +1,9 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'
+    hide AlertDialog, FilledButton, TextButton, TextField;
 import 'package:intl/intl.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class MissedEntryDialog extends StatefulWidget {
   const MissedEntryDialog({
@@ -51,122 +53,145 @@ class _MissedEntryDialogState extends State<MissedEntryDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = shad.Theme.of(context);
     final dateFmt = DateFormat.yMMMd();
     final timeFmt = DateFormat.Hm();
 
     final duration = _endTime.difference(_startTime);
     final durationText = _formatDuration(duration);
 
-    return DraggableScrollableSheet(
-      initialChildSize: 0.7,
-      minChildSize: 0.5,
-      maxChildSize: 0.9,
-      builder: (context, scrollController) => Container(
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-        ),
-        child: ListView(
-          controller: scrollController,
-          padding: const EdgeInsets.all(24),
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(2),
-                ),
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.background,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.mutedForeground.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: 16),
-            Text(
-              l10n.timerAddMissedEntry,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 24),
-            TextField(
+          ),
+          const shad.Gap(16),
+          Text(
+            l10n.timerAddMissedEntry,
+            style: theme.typography.h3,
+          ),
+          const shad.Gap(24),
+          shad.FormField(
+            key: const shad.FormKey<String>(#missedEntryTitle),
+            label: Text(l10n.timerSessionTitle),
+            child: shad.TextField(
               controller: _titleCtrl,
-              decoration: InputDecoration(
-                labelText: l10n.timerSessionTitle,
-                border: const OutlineInputBorder(),
-              ),
             ),
-            const SizedBox(height: 16),
-            TextField(
+          ),
+          const shad.Gap(16),
+          shad.FormField(
+            key: const shad.FormKey<String>(#missedEntryDesc),
+            label: Text(l10n.timerDescription),
+            child: shad.TextField(
               controller: _descCtrl,
               maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Description',
-                border: OutlineInputBorder(),
-              ),
             ),
-            const SizedBox(height: 16),
-            if (widget.categories.isNotEmpty)
-              DropdownButtonFormField<String>(
-                initialValue: _categoryId,
-                decoration: InputDecoration(
-                  labelText: l10n.timerCategory,
-                  border: const OutlineInputBorder(),
-                ),
-                items: [
-                  DropdownMenuItem(child: Text(l10n.timerNoCategory)),
-                  ...widget.categories.map(
-                    (c) => DropdownMenuItem(
-                      value: c.id,
-                      child: Text(c.name ?? ''),
+          ),
+          const shad.Gap(16),
+          if (widget.categories.isNotEmpty)
+            shad.FormField(
+              key: const shad.FormKey<String?>(#missedEntryCategory),
+              label: Text(l10n.timerCategory),
+              child: shad.OutlineButton(
+                onPressed: () {
+                  shad.showDropdown<String?>(
+                    context: context,
+                    builder: (context) => shad.DropdownMenu(
+                      children: [
+                        shad.MenuButton(
+                          onPressed: (context) {
+                            setState(() => _categoryId = null);
+                            Navigator.of(context).pop();
+                          },
+                          child: Text(l10n.timerNoCategory),
+                        ),
+                        ...widget.categories.map(
+                          (c) => shad.MenuButton(
+                            onPressed: (context) {
+                              setState(() => _categoryId = c.id);
+                              Navigator.of(context).pop();
+                            },
+                            child: Text(c.name ?? ''),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-                onChanged: (v) => setState(() => _categoryId = v),
-              ),
-            const SizedBox(height: 16),
-            _DateTimePicker(
-              label: l10n.timerStartTime,
-              value: _startTime,
-              dateFmt: dateFmt,
-              timeFmt: timeFmt,
-              onChanged: (dt) => setState(() => _startTime = dt),
-            ),
-            const SizedBox(height: 12),
-            _DateTimePicker(
-              label: l10n.timerEndTime,
-              value: _endTime,
-              dateFmt: dateFmt,
-              timeFmt: timeFmt,
-              onChanged: (dt) => setState(() => _endTime = dt),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              '${l10n.timerDuration}: $durationText',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
+                  );
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      widget.categories
+                              .where((c) => c.id == _categoryId)
+                              .firstOrNull
+                              ?.name ??
+                          l10n.timerNoCategory,
+                    ),
+                    const Icon(shad.LucideIcons.chevronDown, size: 16),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: _isValid
-                  ? () {
-                      widget.onSave(
-                        title: _titleCtrl.text.isEmpty
-                            ? 'Work session'
-                            : _titleCtrl.text,
-                        categoryId: _categoryId,
-                        startTime: _startTime,
-                        endTime: _endTime,
-                        description: _descCtrl.text.isEmpty
-                            ? null
-                            : _descCtrl.text,
-                      );
-                      Navigator.of(context).pop();
-                    }
-                  : null,
-              child: Text(l10n.timerSave),
+          const shad.Gap(16),
+          _DateTimePicker(
+            label: l10n.timerStartTime,
+            value: _startTime,
+            dateFmt: dateFmt,
+            timeFmt: timeFmt,
+            onChanged: (dt) => setState(() => _startTime = dt),
+          ),
+          const shad.Gap(12),
+          _DateTimePicker(
+            label: l10n.timerEndTime,
+            value: _endTime,
+            dateFmt: dateFmt,
+            timeFmt: timeFmt,
+            onChanged: (dt) => setState(() => _endTime = dt),
+          ),
+          const shad.Gap(12),
+          Text(
+            '${l10n.timerDuration}: $durationText',
+            style: theme.typography.small.copyWith(
+              color: theme.colorScheme.mutedForeground,
             ),
-          ],
-        ),
+          ),
+          const shad.Gap(24),
+          shad.PrimaryButton(
+            onPressed: _isValid
+                ? () {
+                    widget.onSave(
+                      title: _titleCtrl.text.isEmpty
+                          ? l10n.timerWorkSession
+                          : _titleCtrl.text,
+                      categoryId: _categoryId,
+                      startTime: _startTime,
+                      endTime: _endTime,
+                      description: _descCtrl.text.isEmpty
+                          ? null
+                          : _descCtrl.text,
+                    );
+                    Navigator.of(context).pop();
+                  }
+                : null,
+            child: Text(l10n.timerSave),
+          ),
+        ],
       ),
     );
   }
@@ -200,11 +225,15 @@ class _DateTimePicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
     return Row(
       children: [
-        Text(label, style: Theme.of(context).textTheme.bodyMedium),
+        Text(
+          label,
+          style: theme.typography.small,
+        ),
         const Spacer(),
-        TextButton(
+        shad.GhostButton(
           onPressed: () async {
             final date = await showDatePicker(
               context: context,
@@ -226,7 +255,7 @@ class _DateTimePicker extends StatelessWidget {
           },
           child: Text(dateFmt.format(value.toLocal())),
         ),
-        TextButton(
+        shad.GhostButton(
           onPressed: () async {
             final time = await showTimePicker(
               context: context,
