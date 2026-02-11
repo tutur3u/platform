@@ -489,6 +489,74 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerRequestInfo => 'Request info';
 
   @override
+  String get timerRequestEdit => 'Edit';
+
+  @override
+  String get timerRequestEditRequest => 'Edit request';
+
+  @override
+  String get timerRequestDescription => 'Description';
+
+  @override
+  String get timerRequestDescriptionOptional => 'Description (optional)';
+
+  @override
+  String get timerRequestComments => 'Comments';
+
+  @override
+  String get timerRequestNoComments => 'No comments yet';
+
+  @override
+  String get timerRequestAddComment => 'Add a comment...';
+
+  @override
+  String get timerRequestPostComment => 'Post';
+
+  @override
+  String get timerRequestCancelEditComment => 'Cancel';
+
+  @override
+  String get timerRequestDeleteComment => 'Delete comment';
+
+  @override
+  String get timerRequestDeleteCommentConfirm => 'Delete this comment?';
+
+  @override
+  String get timerRequestActivity => 'Activity';
+
+  @override
+  String get timerRequestNoActivity => 'No activity yet';
+
+  @override
+  String get timerRequestActivityCreated => 'created this request';
+
+  @override
+  String get timerRequestActivityContentUpdated => 'updated request content';
+
+  @override
+  String get timerRequestActivityStatusChanged => 'changed the request status';
+
+  @override
+  String get timerRequestActivityCommentAdded => 'added a comment';
+
+  @override
+  String get timerRequestActivityCommentUpdated => 'updated a comment';
+
+  @override
+  String get timerRequestActivityCommentDeleted => 'deleted a comment';
+
+  @override
+  String get timerRequestActivityUpdated => 'updated this request';
+
+  @override
+  String get timerRequestAddImage => 'Add image';
+
+  @override
+  String timerRequestProofImagesCount(int current, int max) {
+    return 'Images: $current/$max';
+  }
+
+  @override
   String get timerReasonOptional => 'Reason (optional)';
 
   @override
@@ -722,4 +790,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get commonRetry => 'Retry';
+
+  @override
+  String get commonPrevious => 'Previous';
+
+  @override
+  String get commonNext => 'Next';
 }

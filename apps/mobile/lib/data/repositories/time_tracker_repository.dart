@@ -1,11 +1,14 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+import 'package:mime/mime.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/time_tracking/break_record.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/data/models/time_tracking/pomodoro_settings.dart';
 import 'package:mobile/data/models/time_tracking/request.dart';
+import 'package:mobile/data/models/time_tracking/request_activity.dart';
 import 'package:mobile/data/models/time_tracking/request_comment.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/data/models/time_tracking/stats.dart';
@@ -30,6 +33,15 @@ class TimeTrackerRepository {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer ${session.accessToken}',
     };
+  }
+
+  /// Get MIME type from file path for image uploads
+  MediaType? _getImageMimeType(String filePath) {
+    final mimeType = lookupMimeType(filePath);
+    if (mimeType == null) return null;
+    final parts = mimeType.split('/');
+    if (parts.length != 2) return null;
+    return MediaType(parts[0], parts[1]);
   }
 
   // ── Sessions ────────────────────────────────────────────────────
@@ -541,6 +553,136 @@ class TimeTrackerRepository {
 
     final data = json.decode(response.body) as Map<String, dynamic>;
     return TimeTrackingRequestComment.fromJson(data);
+  }
+
+  Future<TimeTrackingRequest> updateRequest(
+    String wsId,
+    String requestId,
+    String title,
+    DateTime startTime,
+    DateTime endTime, {
+    String? description,
+    List<String>? removedImages,
+    List<String>? newImagePaths,
+  }) async {
+    final headers = await _getHeaders();
+
+    // Use multipart request for potential future image uploads
+    final request = http.MultipartRequest(
+      'PUT',
+      Uri.parse(
+        '$_baseUrl/api/v1/workspaces/$wsId/time-tracking/requests/$requestId',
+      ),
+    );
+
+    request.headers.addAll({
+      'Authorization': headers['Authorization']!,
+    });
+
+    request.fields['title'] = title;
+    if (description != null) request.fields['description'] = description;
+    request.fields['startTime'] = startTime.toIso8601String();
+    request.fields['endTime'] = endTime.toIso8601String();
+    if (removedImages != null && removedImages.isNotEmpty) {
+      request.fields['removedImages'] = json.encode(removedImages);
+    }
+
+    if (newImagePaths != null && newImagePaths.isNotEmpty) {
+      for (var i = 0; i < newImagePaths.length; i++) {
+        final imagePath = newImagePaths[i];
+        if (imagePath.isEmpty) {
+          continue;
+        }
+        // Detect MIME type from file extension for proper content-type header
+        final contentType = _getImageMimeType(imagePath);
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'image_$i',
+            imagePath,
+            contentType: contentType,
+          ),
+        );
+      }
+    }
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update request: ${response.body}');
+    }
+
+    final data = json.decode(response.body) as Map<String, dynamic>;
+    return TimeTrackingRequest.fromJson(
+      data['request'] as Map<String, dynamic>,
+    );
+  }
+
+  Future<TimeTrackingRequestComment> updateRequestComment(
+    String wsId,
+    String requestId,
+    String commentId,
+    String content,
+  ) async {
+    final headers = await _getHeaders();
+    final response = await http.patch(
+      Uri.parse(
+        '$_baseUrl/api/v1/workspaces/$wsId/time-tracking/requests/$requestId/comments/$commentId',
+      ),
+      headers: headers,
+      body: json.encode({'content': content}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update request comment: ${response.body}');
+    }
+
+    final data = json.decode(response.body) as Map<String, dynamic>;
+    return TimeTrackingRequestComment.fromJson(data);
+  }
+
+  Future<void> deleteRequestComment(
+    String wsId,
+    String requestId,
+    String commentId,
+  ) async {
+    final headers = await _getHeaders();
+    final response = await http.delete(
+      Uri.parse(
+        '$_baseUrl/api/v1/workspaces/$wsId/time-tracking/requests/$requestId/comments/$commentId',
+      ),
+      headers: headers,
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to delete request comment: ${response.body}');
+    }
+  }
+
+  Future<TimeTrackingRequestActivityResponse> getRequestActivities(
+    String wsId,
+    String requestId, {
+    int page = 1,
+    int limit = 5,
+  }) async {
+    final headers = await _getHeaders();
+    final uri =
+        Uri.parse(
+          '$_baseUrl/api/v1/workspaces/$wsId/time-tracking/requests/$requestId/activity',
+        ).replace(
+          queryParameters: {
+            'page': '$page',
+            'limit': '$limit',
+          },
+        );
+
+    final response = await http.get(uri, headers: headers);
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load request activity: ${response.body}');
+    }
+
+    final data = json.decode(response.body) as Map<String, dynamic>;
+    return TimeTrackingRequestActivityResponse.fromJson(data);
   }
 
   // ── Management ──────────────────────────────────────────────────

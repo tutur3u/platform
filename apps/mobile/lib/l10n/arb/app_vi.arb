@@ -188,6 +188,38 @@
     "timerApprove": "Duyệt",
     "timerReject": "Từ chối",
     "timerRequestInfo": "Yêu cầu thông tin",
+    "timerRequestEdit": "Chỉnh sửa",
+    "timerRequestEditRequest": "Chỉnh sửa yêu cầu",
+    "timerRequestDescription": "Mô tả",
+    "timerRequestDescriptionOptional": "Mô tả (không bắt buộc)",
+    "timerRequestComments": "Bình luận",
+    "timerRequestNoComments": "Chưa có bình luận",
+    "timerRequestAddComment": "Thêm bình luận...",
+    "timerRequestPostComment": "Đăng",
+    "timerRequestCancelEditComment": "Hủy",
+    "timerRequestDeleteComment": "Xóa bình luận",
+    "timerRequestDeleteCommentConfirm": "Xóa bình luận này?",
+    "timerRequestActivity": "Hoạt động",
+    "timerRequestNoActivity": "Chưa có hoạt động",
+    "timerRequestActivityCreated": "đã tạo yêu cầu này",
+    "timerRequestActivityContentUpdated": "đã cập nhật nội dung yêu cầu",
+    "timerRequestActivityStatusChanged": "đã thay đổi trạng thái yêu cầu",
+    "timerRequestActivityCommentAdded": "đã thêm bình luận",
+    "timerRequestActivityCommentUpdated": "đã cập nhật bình luận",
+    "timerRequestActivityCommentDeleted": "đã xóa bình luận",
+    "timerRequestActivityUpdated": "đã cập nhật yêu cầu này",
+    "timerRequestAddImage": "Thêm ảnh",
+    "timerRequestProofImagesCount": "Ảnh: {current}/{max}",
+    "@timerRequestProofImagesCount": {
+        "placeholders": {
+            "current": {
+                "type": "int"
+            },
+            "max": {
+                "type": "int"
+            }
+        }
+    },
     "timerReasonOptional": "Lý do (không bắt buộc)",
     "timerManagementTitle": "Quản lý",
     "timerTotalSessions": "Tổng số phiên",
@@ -284,5 +316,7 @@
     "camera": "Camera",
     "gallery": "Thư viện",
 
-    "commonRetry": "Thử lại"
+    "commonRetry": "Thử lại",
+    "commonPrevious": "Trước",
+    "commonNext": "Tiếp"
 }

@@ -1,6 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { z } from 'zod';
 
 const updateCommentSchema = z.object({
@@ -17,7 +17,7 @@ export async function PATCH(
 ) {
   try {
     const { wsId, id: requestId, commentId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     // Get current user
     const {
@@ -119,7 +119,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _: NextRequest,
+  request: NextRequest,
   {
     params,
   }: {
@@ -128,7 +128,7 @@ export async function DELETE(
 ) {
   try {
     const { wsId, id: requestId, commentId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     // Get current user
     const {

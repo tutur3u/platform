@@ -188,6 +188,38 @@
     "timerApprove": "Approve",
     "timerReject": "Reject",
     "timerRequestInfo": "Request info",
+    "timerRequestEdit": "Edit",
+    "timerRequestEditRequest": "Edit request",
+    "timerRequestDescription": "Description",
+    "timerRequestDescriptionOptional": "Description (optional)",
+    "timerRequestComments": "Comments",
+    "timerRequestNoComments": "No comments yet",
+    "timerRequestAddComment": "Add a comment...",
+    "timerRequestPostComment": "Post",
+    "timerRequestCancelEditComment": "Cancel",
+    "timerRequestDeleteComment": "Delete comment",
+    "timerRequestDeleteCommentConfirm": "Delete this comment?",
+    "timerRequestActivity": "Activity",
+    "timerRequestNoActivity": "No activity yet",
+    "timerRequestActivityCreated": "created this request",
+    "timerRequestActivityContentUpdated": "updated request content",
+    "timerRequestActivityStatusChanged": "changed the request status",
+    "timerRequestActivityCommentAdded": "added a comment",
+    "timerRequestActivityCommentUpdated": "updated a comment",
+    "timerRequestActivityCommentDeleted": "deleted a comment",
+    "timerRequestActivityUpdated": "updated this request",
+    "timerRequestAddImage": "Add image",
+    "timerRequestProofImagesCount": "Images: {current}/{max}",
+    "@timerRequestProofImagesCount": {
+        "placeholders": {
+            "current": {
+                "type": "int"
+            },
+            "max": {
+                "type": "int"
+            }
+        }
+    },
     "timerReasonOptional": "Reason (optional)",
     "timerManagementTitle": "Management",
     "timerTotalSessions": "Total sessions",
@@ -284,5 +316,7 @@
     "camera": "Camera",
     "gallery": "Gallery",
 
-    "commonRetry": "Retry"
+    "commonRetry": "Retry",
+    "commonPrevious": "Previous",
+    "commonNext": "Next"
 }

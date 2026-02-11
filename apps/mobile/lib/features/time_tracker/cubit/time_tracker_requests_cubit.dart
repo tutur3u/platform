@@ -9,8 +9,11 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
       super(const TimeTrackerRequestsState());
 
   final TimeTrackerRepository _repo;
+  int _latestLoadToken = 0;
 
   Future<void> loadRequests(String wsId) async {
+    final loadToken = ++_latestLoadToken;
+
     emit(
       state.copyWith(
         status: TimeTrackerRequestsStatus.loading,
@@ -25,6 +28,10 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
 
       final requests = await _repo.getRequests(wsId, status: statusFilter);
 
+      if (loadToken != _latestLoadToken) {
+        return;
+      }
+
       emit(
         state.copyWith(
           status: TimeTrackerRequestsStatus.loaded,
@@ -32,6 +39,10 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
         ),
       );
     } on Exception catch (e) {
+      if (loadToken != _latestLoadToken) {
+        return;
+      }
+
       emit(
         state.copyWith(
           status: TimeTrackerRequestsStatus.error,
@@ -96,6 +107,47 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
       await loadRequests(wsId);
     } on Exception catch (e) {
       emit(state.copyWith(error: e.toString()));
+    }
+  }
+
+  Future<TimeTrackingRequest?> updateRequest(
+    String wsId,
+    String requestId,
+    String title,
+    DateTime startTime,
+    DateTime endTime, {
+    String? description,
+    List<String>? removedImages,
+    List<String>? newImagePaths,
+  }) async {
+    try {
+      final updatedRequest = await _repo.updateRequest(
+        wsId,
+        requestId,
+        title,
+        startTime,
+        endTime,
+        description: description,
+        removedImages: removedImages,
+        newImagePaths: newImagePaths,
+      );
+
+      // Update only the specific request in the list instead of full reload
+      final updatedRequests = state.requests.map((r) {
+        return r.id == requestId ? updatedRequest : r;
+      }).toList();
+
+      emit(
+        state.copyWith(
+          requests: updatedRequests,
+          status: TimeTrackerRequestsStatus.loaded,
+        ),
+      );
+
+      return updatedRequest;
+    } on Exception catch (e) {
+      emit(state.copyWith(error: e.toString()));
+      return null;
     }
   }
 }

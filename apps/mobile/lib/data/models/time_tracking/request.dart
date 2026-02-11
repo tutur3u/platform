@@ -3,7 +3,9 @@ import 'package:equatable/equatable.dart';
 enum ApprovalStatus { pending, approved, rejected, needsInfo }
 
 ApprovalStatus approvalStatusFromString(String? value) {
-  return switch (value) {
+  final normalized = value?.toLowerCase();
+
+  return switch (normalized) {
     'approved' => ApprovalStatus.approved,
     'rejected' => ApprovalStatus.rejected,
     'needs_info' => ApprovalStatus.needsInfo,

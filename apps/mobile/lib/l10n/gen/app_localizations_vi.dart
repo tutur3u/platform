@@ -489,6 +489,74 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerRequestInfo => 'Yêu cầu thông tin';
 
   @override
+  String get timerRequestEdit => 'Chỉnh sửa';
+
+  @override
+  String get timerRequestEditRequest => 'Chỉnh sửa yêu cầu';
+
+  @override
+  String get timerRequestDescription => 'Mô tả';
+
+  @override
+  String get timerRequestDescriptionOptional => 'Mô tả (không bắt buộc)';
+
+  @override
+  String get timerRequestComments => 'Bình luận';
+
+  @override
+  String get timerRequestNoComments => 'Chưa có bình luận';
+
+  @override
+  String get timerRequestAddComment => 'Thêm bình luận...';
+
+  @override
+  String get timerRequestPostComment => 'Đăng';
+
+  @override
+  String get timerRequestCancelEditComment => 'Hủy';
+
+  @override
+  String get timerRequestDeleteComment => 'Xóa bình luận';
+
+  @override
+  String get timerRequestDeleteCommentConfirm => 'Xóa bình luận này?';
+
+  @override
+  String get timerRequestActivity => 'Hoạt động';
+
+  @override
+  String get timerRequestNoActivity => 'Chưa có hoạt động';
+
+  @override
+  String get timerRequestActivityCreated => 'đã tạo yêu cầu này';
+
+  @override
+  String get timerRequestActivityContentUpdated => 'đã cập nhật nội dung yêu cầu';
+
+  @override
+  String get timerRequestActivityStatusChanged => 'đã thay đổi trạng thái yêu cầu';
+
+  @override
+  String get timerRequestActivityCommentAdded => 'đã thêm bình luận';
+
+  @override
+  String get timerRequestActivityCommentUpdated => 'đã cập nhật bình luận';
+
+  @override
+  String get timerRequestActivityCommentDeleted => 'đã xóa bình luận';
+
+  @override
+  String get timerRequestActivityUpdated => 'đã cập nhật yêu cầu này';
+
+  @override
+  String get timerRequestAddImage => 'Thêm ảnh';
+
+  @override
+  String timerRequestProofImagesCount(int current, int max) {
+    return 'Ảnh: $current/$max';
+  }
+
+  @override
   String get timerReasonOptional => 'Lý do (không bắt buộc)';
 
   @override
@@ -722,4 +790,10 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get commonRetry => 'Thử lại';
+
+  @override
+  String get commonPrevious => 'Trước';
+
+  @override
+  String get commonNext => 'Tiếp';
 }

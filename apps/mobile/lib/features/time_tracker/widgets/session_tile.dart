@@ -108,6 +108,7 @@ class SessionTile extends StatelessWidget {
     return shad.showDialog<bool>(
       context: context,
       builder: (dialogContext) => shad.AlertDialog(
+        barrierColor: Colors.transparent,
         title: Text(l10n.timerDeleteSession),
         content: Text(l10n.timerDeleteConfirm),
         actions: [
