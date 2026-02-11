@@ -23,11 +23,11 @@ export default function AboutClubSection() {
             </div>
 
             {/* Header */}
-            <div className="mb-6">
-              <p className="mb-2 font-semibold text-primary-foreground text-sm uppercase tracking-[0.25em]">
+            <div>
+              <p className="font-semibold text-primary-foreground text-sm uppercase tracking-[0.25em]">
                 Who We Are
               </p>
-              <h2 className="font-black text-4xl leading-normal tracking-normal md:text-5xl">
+              <h2 className="font-black text-4xl leading-17 tracking-normal md:text-5xl">
                 <span className="text-primary underline decoration-6 decoration-brand-light-yellow underline-offset-8">
                   NEO CULTURE
                 </span>
@@ -37,7 +37,7 @@ export default function AboutClubSection() {
             </div>
 
             {/* Accent Line */}
-            <div className="mb-6 flex items-center gap-3">
+            <div className="mb-6 flex items-center gap-7">
               <div className="h-1 w-16 rounded-full bg-linear-to-r from-brand-light-yellow to-brand-light-red" />
               <div className="h-1 w-8 rounded-full bg-brand-light-blue" />
             </div>
@@ -72,8 +72,8 @@ export default function AboutClubSection() {
               </div>
 
               {/* Overlapping Sub-Images */}
-              <div className="mt-4 grid grid-cols-2 gap-4 pt-10">
-                <div className="relative aspect-3/2 -translate-y-8 overflow-hidden rounded-xl shadow-xl">
+              <div className="grid grid-cols-2 gap-6 pt-10">
+                <div className="relative aspect-3/2 overflow-hidden rounded-xl shadow-xl">
                   <Image
                     src="/demo.jpg"
                     alt="Team collaboration"
@@ -82,7 +82,7 @@ export default function AboutClubSection() {
                   />
                   <div className="absolute inset-0 bg-linear-to-br from-brand-light-yellow/20 to-transparent" />
                 </div>
-                <div className="relative aspect-3/2 translate-y-2 overflow-hidden rounded-xl shadow-xl">
+                <div className="relative aspect-3/2 overflow-hidden rounded-xl shadow-xl">
                   <Image
                     src="/demo.jpg"
                     alt="Innovation workshop"
@@ -101,7 +101,7 @@ export default function AboutClubSection() {
           <div className="mb-12 grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
             {/* Left Column - Images */}
             <AnimationSection
-              className="order-2 grid grid-cols-2 gap-4 md:order-1"
+              className="order-2 grid grid-cols-2 gap-10 md:order-1"
               delay={0.1}
             >
               <div className="relative aspect-3/4 overflow-hidden rounded-2xl shadow-xl">
@@ -118,7 +118,7 @@ export default function AboutClubSection() {
                   </span>
                 </div>
               </div>
-              <div className="relative mt-8 aspect-3/4 overflow-hidden rounded-2xl shadow-xl">
+              <div className="relative aspect-3/4 overflow-hidden rounded-2xl shadow-xl">
                 <Image
                   src="/demo.jpg"
                   alt="Talk show event"
