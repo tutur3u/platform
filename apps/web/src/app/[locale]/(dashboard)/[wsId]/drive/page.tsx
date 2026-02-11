@@ -4,6 +4,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import {
   EMPTY_FOLDER_PLACEHOLDER_NAME,
+  type StorageDatabase,
   type StorageObject,
 } from '@tuturuuu/types/primitives/StorageObject';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -212,7 +213,7 @@ async function getData(
   wsId: string,
   { q, page = '1', pageSize = '10', path = '' }: Awaited<Props['searchParams']>
 ) {
-  const supabase = await createDynamicClient<any>();
+  const supabase = await createDynamicClient();
 
   const { data, error } = await supabase.storage
     .from('workspaces')
@@ -252,7 +253,7 @@ async function getTotalSize(wsId: string) {
 }
 
 async function getFileCount(wsId: string) {
-  const supabase = await createDynamicClient<any>();
+  const supabase = await createDynamicClient<StorageDatabase>();
 
   const { count, error } = await supabase
     .schema('storage')
@@ -270,7 +271,7 @@ async function getFileCount(wsId: string) {
 }
 
 async function getLargestFile(wsId: string) {
-  const supabase = await createDynamicClient<any>();
+  const supabase = await createDynamicClient<StorageDatabase>();
 
   const { data, error } = await supabase
     .schema('storage')
@@ -291,7 +292,7 @@ async function getLargestFile(wsId: string) {
 }
 
 async function getSmallestFile(wsId: string) {
-  const supabase = await createDynamicClient<any>();
+  const supabase = await createDynamicClient<StorageDatabase>();
 
   const { data, error } = await supabase
     .schema('storage')

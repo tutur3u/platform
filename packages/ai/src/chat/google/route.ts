@@ -29,16 +29,14 @@ async function getAllChatFiles(
   Array<{ fileName: string; content: string | ArrayBuffer; mediaType: string }>
 > {
   try {
-    const sbDynamic = await createDynamicClient<any>();
+    const sbDynamic = await createDynamicClient();
 
-    // Get all files in the chat directory
-    const { data: files, error: listError } = await sbDynamic
-      .schema('storage')
-      .from('objects')
-      .select('*')
-      .eq('bucket_id', 'workspaces')
-      .like('name', `${wsId}/chats/ai/resources/${chatId}/%`)
-      .order('created_at', { ascending: true });
+    const storagePath = `${wsId}/chats/ai/resources/${chatId}`;
+    const { data: files, error: listError } = await sbDynamic.storage
+      .from('workspaces')
+      .list(storagePath, {
+        sortBy: { column: 'created_at', order: 'asc' },
+      });
 
     console.log(`Listed files for chat ${chatId}. ${wsId}:`, files);
 
@@ -62,13 +60,16 @@ async function getAllChatFiles(
 
     // Process each file
     for (const file of files) {
-      const fileName = file.name.split('/').pop() || 'unknown';
-      const mediaType = file.metadata?.mediaType || 'application/octet-stream';
+      const fileName = file.name || 'unknown';
+      const mediaType =
+        file.metadata?.mediaType ||
+        file.metadata?.mimetype ||
+        'application/octet-stream';
       let content: string | ArrayBuffer;
 
       const { data: fileData, error: downloadError } = await supabase.storage
         .from('workspaces')
-        .download(file.name);
+        .download(`${storagePath}/${file.name}`);
 
       if (downloadError) {
         console.error(`Error downloading file ${fileName}:`, downloadError);
@@ -298,16 +299,14 @@ export function createPOST(
         return new Response(threadError.message, { status: 500 });
       }
 
-      const sbDynamic = await createDynamicClient<any>();
+      const sbDynamic = await createDynamicClient();
 
       if (thread && thread.length === 1 && thread[0]?.role === 'USER') {
         // Move files from temp to thread
-        const { data: files, error: listError } = await sbDynamic
-          .schema('storage')
-          .from('objects')
-          .select('*')
-          .eq('bucket_id', 'workspaces')
-          .like('name', `${wsId}/chats/ai/resources/temp/${user.id}/%`);
+        const tempStoragePath = `${wsId}/chats/ai/resources/temp/${user.id}`;
+        const { data: files, error: listError } = await sbDynamic.storage
+          .from('workspaces')
+          .list(tempStoragePath);
 
         if (listError) {
           console.error('Error getting files:', listError);
@@ -318,12 +317,12 @@ export function createPOST(
 
           // Copy files to thread
           for (const file of files) {
-            const fileName = file.name.split('/').pop();
+            const fileName = file.name;
 
             const { error: copyError } = await sbAdmin.storage
               .from('workspaces')
               .move(
-                file.name,
+                `${tempStoragePath}/${fileName}`,
                 `${wsId}/chats/ai/resources/${chatId}/${fileName}`
               );
 
