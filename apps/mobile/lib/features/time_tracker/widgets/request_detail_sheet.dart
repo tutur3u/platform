@@ -187,17 +187,27 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
                         ],
                       ),
                       if (widget.canEdit && widget.onEdit != null) ...[
-                        const shad.Gap(8),
+                        const shad.Gap(12),
                         Align(
                           alignment: Alignment.centerLeft,
-                          child: shad.TextButton(
+                          child: shad.OutlineButton(
                             onPressed: () => _showEditDialog(context),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.edit, size: 16),
-                                const shad.Gap(4),
-                                Text(l10n.timerRequestEdit),
+                                Icon(
+                                  Icons.edit,
+                                  size: 16,
+                                  color: theme.colorScheme.primary,
+                                ),
+                                const shad.Gap(8),
+                                Text(
+                                  l10n.timerRequestEdit,
+                                  style: theme.typography.small.copyWith(
+                                    color: theme.colorScheme.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
