@@ -42,6 +42,10 @@ export const DEV_INTERNAL_APP_DOMAINS = [
     name: 'nova',
     url: 'http://localhost:7805',
   },
+  {
+    name: 'tudo',
+    url: 'http://localhost:7809',
+  },
 ] as const;
 
 export const APP_DOMAIN_MAP = [
