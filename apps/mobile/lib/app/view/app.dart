@@ -60,6 +60,7 @@ class _AppState extends State<App> {
     _router = createAppRouter(
       _authCubit,
       _workspaceCubit,
+      _appTabCubit,
       initialLocation: widget.initialRoute,
     );
     unawaited(_localeCubit.loadLocale());

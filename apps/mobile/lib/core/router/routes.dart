@@ -31,5 +31,4 @@ abstract final class Routes {
   static const timerHistory = '/timer/history';
   static const timerRequests = '/timer/requests';
   static const timerManagement = '/timer/management';
-  static const profile = '/settings/profile';
 }

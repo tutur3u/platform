@@ -150,6 +150,8 @@ bun format-and-lint:fix
 
 **CRITICAL for Agents**: NEVER run `bun lint`, `bun lint:fix`, `bun format`, or `bun format:fix`. Identify issues and request user to run these commands.
 
+**Verification**: `bun check` includes Biome steps and is user-only. Agents must request it for web/TS changes. For mobile-only changes, agents must run `bun check:mobile`.
+
 ### Type Checking (Agent-Safe)
 
 ```bash
@@ -199,6 +201,10 @@ bun trigger:deploy
 ### Dart/Flutter Usage Lookup
 
 When searching for Dart symbol usages, prefer workspace-scoped searches (e.g., `apps/mobile/**`) instead of tools that can scan the global Pub cache. Pub cache hits are outside the repo and can mislead refactors.
+
+### Dialog Context Safety
+
+When a dialog callback needs to reference the parent `BuildContext` after closing the dialog, guard with `if (!context.mounted) return;` before using the outer context to avoid stale context access.
 
 ### Mandatory Actions
 
@@ -742,6 +748,8 @@ Located at `apps/mobile/`, the Flutter app uses:
 - **CI:** `mobile.yaml` uses `VeryGoodOpenSource/very_good_workflows` for format check, analysis, tests
 
 **Verification (MANDATORY):** Always run `bun check:mobile` after making changes to `apps/mobile/`. This runs `dart format --set-exit-if-changed lib test && flutter analyze && flutter test` — the mobile equivalent of `bun check`. All three checks MUST pass. Note: `bun format` / Biome does NOT cover Dart files.
+
+If `bun check:mobile` reports a Dart format failure because it formatted files, rerun it to confirm a clean pass.
 
 **API Integration & Cross-App Dependencies:** The mobile app connects to `apps/web` API routes (e.g., `/api/v1/calendar/*`, `/api/v1/auth/mobile/*`) returning Supabase session tokens (not cookies). Agents may propose updates to these web API routes when working on mobile features, provided: (1) backward compatibility is maintained, (2) `createClient(request)` is used in all routes so Bearer token auth works for mobile, (3) good design patterns are followed (Zod validation, proper error codes, consistent response shapes).
 

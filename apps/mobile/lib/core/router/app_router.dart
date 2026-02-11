@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
@@ -30,7 +29,8 @@ import 'package:mobile/features/workspace/view/workspace_select_page.dart';
 /// restore the user's last visited tab across app restarts).
 GoRouter createAppRouter(
   AuthCubit authCubit,
-  WorkspaceCubit workspaceCubit, {
+  WorkspaceCubit workspaceCubit,
+  AppTabCubit appTabCubit, {
   String? initialLocation,
 }) {
   return GoRouter(
@@ -107,7 +107,7 @@ GoRouter createAppRouter(
       }
 
       if (AppRegistry.moduleFromLocation(state.matchedLocation) != null) {
-        context.read<AppTabCubit>().syncFromLocation(state.matchedLocation);
+        appTabCubit.syncFromLocation(state.matchedLocation);
       }
 
       return null;
@@ -151,12 +151,6 @@ GoRouter createAppRouter(
       GoRoute(
         path: Routes.transactions,
         builder: (context, state) => const TransactionListPage(),
-      ),
-
-      // ── Settings sub-pages (full-page, outside shell) ──
-      GoRoute(
-        path: Routes.profile,
-        builder: (context, state) => const ProfilePage(),
       ),
 
       // ── Main shell with bottom navigation ────────

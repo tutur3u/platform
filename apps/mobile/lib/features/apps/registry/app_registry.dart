@@ -8,6 +8,8 @@ import 'package:mobile/features/time_tracker/view/time_tracker_page.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 class AppRegistry {
+  const AppRegistry._();
+
   static const List<AppModule> allModules = [
     AppModule(
       id: 'tasks',
@@ -64,8 +66,21 @@ class AppRegistry {
   }
 
   static AppModule? moduleFromLocation(String location) {
+    String normalize(String value) {
+      var normalized = value;
+      while (normalized.length > 1 && normalized.endsWith('/')) {
+        normalized = normalized.substring(0, normalized.length - 1);
+      }
+      return normalized;
+    }
+
+    final normalizedLocation = normalize(location);
     for (final module in allModules) {
-      if (location.startsWith(module.route)) return module;
+      final normalizedRoute = normalize(module.route);
+      if (normalizedLocation == normalizedRoute ||
+          normalizedLocation.startsWith('$normalizedRoute/')) {
+        return module;
+      }
     }
     return null;
   }

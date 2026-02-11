@@ -221,27 +221,27 @@ class _AvatarSection extends StatelessWidget {
           width: MediaQuery.of(context).size.width * 0.8,
           child: shad.AlertDialog(
             barrierColor: Colors.transparent,
-            title: const Text('Select Image Source'),
+            title: Text(l10n.selectImageSource),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 shad.GhostButton(
                   onPressed: () => Navigator.pop(context, ImageSource.camera),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      Icon(Icons.camera_alt),
-                      shad.Gap(8),
-                      Text('Camera'),
+                      const Icon(Icons.camera_alt),
+                      const shad.Gap(8),
+                      Text(l10n.camera),
                     ],
                   ),
                 ),
                 shad.GhostButton(
                   onPressed: () => Navigator.pop(context, ImageSource.gallery),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      Icon(Icons.photo_library),
-                      shad.Gap(8),
-                      Text('Gallery'),
+                      const Icon(Icons.photo_library),
+                      const shad.Gap(8),
+                      Text(l10n.gallery),
                     ],
                   ),
                 ),

@@ -1039,6 +1039,12 @@ abstract class AppLocalizations {
   /// **'Request info'**
   String get timerRequestInfo;
 
+  /// No description provided for @timerReasonOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason (optional)'**
+  String get timerReasonOptional;
+
   /// No description provided for @timerManagementTitle.
   ///
   /// In en, this message translates to:
@@ -1464,6 +1470,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Security check failed. Please try again.'**
   String get captchaError;
+
+  /// No description provided for @commonSomethingWentWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong'**
+  String get commonSomethingWentWrong;
+
+  /// No description provided for @selectImageSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Select image source'**
+  String get selectImageSource;
+
+  /// No description provided for @camera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get camera;
+
+  /// No description provided for @gallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Gallery'**
+  String get gallery;
 
   /// No description provided for @commonRetry.
   ///

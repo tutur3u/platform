@@ -9,6 +9,9 @@ import 'package:mobile/features/calendar/cubit/calendar_connections_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
+const _kGoogleColor = Color(0xFF4285F4);
+const _kMicrosoftColor = Color(0xFF0078D4);
+
 /// Shows the calendar connections management bottom sheet.
 ///
 /// Matches the web's "Manage Calendar Accounts" dialog:
@@ -65,8 +68,8 @@ class _AccountTile extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final providerColor = account.provider == 'google'
-        ? const Color(0xFF4285F4)
-        : const Color(0xFF0078D4);
+        ? _kGoogleColor
+        : _kMicrosoftColor;
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
@@ -299,7 +302,7 @@ class _ConnectionToggle extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final calColor = connection.color != null
-        ? _parseHexColor(connection.color!)
+        ? _parseHexColor(connection.color!, colorScheme.primary)
         : colorScheme.primary;
 
     return ListTile(
@@ -329,12 +332,21 @@ class _ConnectionToggle extends StatelessWidget {
     );
   }
 
-  Color _parseHexColor(String hex) {
-    final cleaned = hex.replaceFirst('#', '');
-    if (cleaned.length == 6) {
-      return Color(int.parse('FF$cleaned', radix: 16));
+  Color _parseHexColor(String hex, Color fallback) {
+    final cleaned = hex.replaceFirst('#', '').trim();
+    if (cleaned.length == 8) {
+      final value = int.tryParse(cleaned, radix: 16);
+      if (value != null) {
+        return Color(value);
+      }
     }
-    return Colors.blue;
+    if (cleaned.length == 6) {
+      final value = int.tryParse('FF$cleaned', radix: 16);
+      if (value != null) {
+        return Color(value);
+      }
+    }
+    return fallback;
   }
 }
 
@@ -346,6 +358,7 @@ class _ErrorBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -356,7 +369,7 @@ class _ErrorBody extends StatelessWidget {
             color: Theme.of(context).colorScheme.error,
           ),
           const SizedBox(height: 12),
-          Text(error ?? 'Something went wrong'),
+          Text(error ?? l10n.commonSomethingWentWrong),
           const SizedBox(height: 12),
           FilledButton.tonal(
             onPressed: onRetry,
@@ -385,6 +398,30 @@ class _LoadedBody extends StatefulWidget {
 
 class _LoadedBodyState extends State<_LoadedBody> {
   final _expandedAccounts = <String>{};
+
+  @override
+  void initState() {
+    super.initState();
+    // Expand all accounts initially.
+    for (final a in widget.state.accounts) {
+      _expandedAccounts.add(a.id);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _LoadedBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final previousIds = oldWidget.state.accounts
+        .map((account) => account.id)
+        .toSet();
+    final newIds = widget.state.accounts.map((account) => account.id).toSet();
+    final addedIds = newIds.difference(previousIds);
+    if (addedIds.isNotEmpty) {
+      setState(() {
+        _expandedAccounts.addAll(addedIds);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -434,7 +471,7 @@ class _LoadedBodyState extends State<_LoadedBody> {
               child: _AddAccountButton(
                 label: 'Google',
                 icon: Icons.g_mobiledata,
-                color: const Color(0xFF4285F4),
+                color: _kGoogleColor,
                 onTap: () => unawaited(
                   context.read<CalendarConnectionsCubit>().connectGoogle(
                     widget.wsId,
@@ -447,7 +484,7 @@ class _LoadedBodyState extends State<_LoadedBody> {
               child: _AddAccountButton(
                 label: 'Outlook',
                 icon: Icons.window,
-                color: const Color(0xFF0078D4),
+                color: _kMicrosoftColor,
                 onTap: () => unawaited(
                   context.read<CalendarConnectionsCubit>().connectMicrosoft(
                     widget.wsId,
@@ -484,15 +521,6 @@ class _LoadedBodyState extends State<_LoadedBody> {
         const SizedBox(height: 24),
       ],
     );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    // Expand all accounts initially.
-    for (final a in widget.state.accounts) {
-      _expandedAccounts.add(a.id);
-    }
   }
 
   void _confirmDisconnect(BuildContext context, CalendarAccount account) {

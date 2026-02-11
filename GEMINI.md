@@ -61,7 +61,7 @@ The frontend is built with React, Next.js, and Tailwind CSS, with a component li
 - `bun test`: Run tests.
 - `bun type-check`: Run type checking for the entire monorepo. **REQUIRED command - do NOT use `npx tsgo` or alternatives.**
 - `bun check`: **Unified verification command** - runs formatting, tests, type-checking, and i18n checks. **REQUIRED at the end of your work.**
-- `bun check:mobile`: **Mobile verification command** - runs `dart format --set-exit-if-changed`, `flutter analyze`, `flutter test`. **REQUIRED when changing `apps/mobile/`.**
+- `bun check:mobile`: **Mobile verification command** - runs `dart format --set-exit-if-changed`, `flutter analyze`, `flutter test`. **REQUIRED when changing `apps/mobile/`.** If it reports a Dart format failure because it formatted files, rerun it to confirm a clean pass.
 - `bun sb:start`: Start the local Supabase development environment.
 - `bun sb:stop`: Stop the local Supabase development environment.
 - `bun format-and-lint:fix`: Format and lint all files.
@@ -79,6 +79,7 @@ The frontend is built with React, Next.js, and Tailwind CSS, with a component li
 - **Flutter Localization:** When updating `apps/mobile/lib/l10n/arb/*.arb`, regenerate or update `apps/mobile/lib/l10n/gen/*` so tracked outputs stay in sync.
 - **Flutter Editable Fields:** When refactoring duplicated editable fields into shared widgets, preserve per-field validation and success messaging. Email fields should keep the `@` check and any email-specific success note (use `TextInputType.emailAddress` or an explicit parameter).
 - **Flutter Analyzer Hygiene:** Use `on Exception catch (e)` (or specific exception types) instead of bare `catch`, avoid catching `Error` subclasses like `TypeError`, guard `BuildContext` usage after `await` with `if (!context.mounted) return;`, and do not `return` inside `finally` blocks.
+- **Dialog Context Safety:** If a dialog callback needs to reference the parent `BuildContext` after closing the dialog, guard with `if (!context.mounted) return;` before using the outer context to prevent stale context access.
 - **Flutter Widget Tests (shadcn):** Wrap widgets that use `shadcn_flutter` in `shad.ShadcnApp` with `shad.ShadcnLocalizations.delegate` so `shad.Theme.of(context)` resolves in tests.
 - **Type Inference:** Always prefer importing database types from `packages/types/src/db.ts` (only after user runs migrations via `bun sb:push` and typegen via `bun sb:typegen`). Never attempt to run these commands yourself.
 - **Code Quality & Refactoring:** Files >400 LOC and components >200 LOC should be refactored into smaller, focused units. Apply best practices to ALL code, regardless of age. Follow single responsibility principle, extract utilities/hooks for complex logic, and leave code better than you found it. Code quality and developer experience are top priorities, not optional.
@@ -94,7 +95,7 @@ This section summarizes the key operating procedures for AI agents working in th
 - **Determinism:** Generated artifacts (like types) must come from scripts, not manual edits.
 - **Security:** Never output or commit secrets. Reference environment variables by name only.
 - **User Intent:** Do not run long-running commands (`bun dev`) or build commands (`bun build`, `bun run build`, `bun run buildx`) unless the user **explicitly asks**. The user is responsible for running commands like `bun sb:push`, `bun lint`, and `bun format`.
-- **Verification:** Run the appropriate check command at the end of your work: `bun check` for web/TS/JS changes (formatting, tests, type-checking, i18n), `bun check:mobile` for Flutter/Dart changes in `apps/mobile/`. Run both if a task touches both web and mobile code. All checks MUST pass.
+- **Verification:** `bun check` includes Biome steps and is user-only; agents must request it for web/TS/JS changes. Agents must run `bun check:mobile` for Flutter/Dart changes in `apps/mobile/`. Run both (request `bun check`, run `bun check:mobile`) if a task touches both web and mobile code. All checks MUST pass.
 - **Testing After Features:** Always add test cases after implementing new features and run them to verify functionality. Tests CAN and SHOULD be run by agents.
 - **Code Quality First:** Proactively refactor long files (>400 LOC) and components (>200 LOC); maintain high DX standards for ALL code, both old and new. Code quality is never optional.
 - **Session Retrospective (MANDATORY):** At the END of every co-working session, ALWAYS review `AGENTS.md`, `CLAUDE.md`, and `GEMINI.md`. Document mistakes made, lessons learned, and proposed improvements. Update these files with new rules or clarifications to prevent repeating errors in future sessions. This continuous improvement practice is NON-NEGOTIABLE.
@@ -225,7 +226,7 @@ Located at `apps/mobile/`, the Flutter app uses BLoC/Cubit state management, `go
 - **Linting:** `very_good_analysis` (strict ruleset)
 - **Localization:** ARB files in `lib/l10n/arb/` (English + Vietnamese), generated files tracked in git
 - **CI:** `mobile.yaml` uses `VeryGoodOpenSource/very_good_workflows` — enforces `dart format --set-exit-if-changed`
-- **Verification (MANDATORY):** Always run `bun check:mobile` after changes to `apps/mobile/`. This runs `dart format --set-exit-if-changed lib test && flutter analyze && flutter test` — the mobile equivalent of `bun check`. All three checks MUST pass. `bun format` / Biome does NOT cover Dart files.
+- **Verification (MANDATORY):** Always run `bun check:mobile` after changes to `apps/mobile/`. This runs `dart format --set-exit-if-changed lib test && flutter analyze && flutter test` — the mobile equivalent of `bun check`. All three checks MUST pass. `bun format` / Biome does NOT cover Dart files. If it reports a Dart format failure because it formatted files, rerun it to confirm a clean pass.
 - **API & Cross-App Dependencies:** The mobile app connects to `apps/web` API routes (e.g., `/api/v1/calendar/*`, `/api/v1/auth/mobile/*`) returning Supabase session tokens (not cookies). Agents may propose updates to web API routes when working on mobile features, provided: backward compatibility is maintained, `createClient(request)` is used so Bearer token auth works for mobile, and good design patterns are followed.
 
 ### Known Gotchas

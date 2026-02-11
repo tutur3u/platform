@@ -28,29 +28,19 @@ class _ShellPageState extends State<ShellPage> {
   DateTime? _lastTapTime;
   int? _lastTabIndex;
   Timer? _longPressTimer;
+  final GlobalKey _appsTabKey = GlobalKey();
 
-  void _handleAppsLongPress() {
-    unawaited(context.read<AppTabCubit>().openWithSearch());
-    context.go(Routes.apps);
-  }
-
-  void _startLongPressTimer(PointerDownEvent _) {
-    _stopLongPressTimer();
-    _longPressTimer = Timer(
-      const Duration(milliseconds: 500),
-      _handleAppsLongPress,
-    );
-  }
-
-  void _stopLongPressTimer([PointerEvent? _]) {
-    _longPressTimer?.cancel();
-    _longPressTimer = null;
-  }
-
-  @override
-  void dispose() {
-    _stopLongPressTimer();
-    super.dispose();
+  bool _isAppsTabHit(Offset position) {
+    final context = _appsTabKey.currentContext;
+    if (context == null) return false;
+    final renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox == null || !renderBox.hasSize) return false;
+    final overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox?;
+    if (overlay == null) return false;
+    final topLeft = renderBox.localToGlobal(Offset.zero, ancestor: overlay);
+    final bounds = topLeft & renderBox.size;
+    return bounds.contains(position);
   }
 
   @override
@@ -58,6 +48,10 @@ class _ShellPageState extends State<ShellPage> {
     final l10n = context.l10n;
     final selectedIndex = _calculateSelectedIndex(context);
     final theme = shad.Theme.of(context);
+    final labelStyle = theme.typography.p.copyWith(
+      fontSize: 12,
+      fontWeight: FontWeight.normal,
+    );
 
     return shad.Scaffold(
       footers: [
@@ -71,14 +65,7 @@ class _ShellPageState extends State<ShellPage> {
 
             return Listener(
               behavior: HitTestBehavior.translucent,
-              onPointerDown: (event) {
-                // Approximate the hit area for the Apps tab (middle tab)
-                final screenWidth = MediaQuery.sizeOf(context).width;
-                final tapX = event.position.dx;
-                if (tapX > screenWidth / 3 && tapX < 2 * screenWidth / 3) {
-                  _startLongPressTimer(event);
-                }
-              },
+              onPointerDown: _startLongPressTimer,
               onPointerUp: _stopLongPressTimer,
               onPointerCancel: _stopLongPressTimer,
               child: shad.NavigationBar(
@@ -91,22 +78,17 @@ class _ShellPageState extends State<ShellPage> {
                       l10n.navHome,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.typography.p.copyWith(
-                        fontSize: 12,
-                        fontWeight: FontWeight.normal,
-                      ),
+                      style: labelStyle,
                     ),
                     child: const Icon(Icons.home_outlined),
                   ),
                   shad.NavigationItem(
+                    key: _appsTabKey,
                     label: Text(
                       appsLabel,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.typography.p.copyWith(
-                        fontSize: 12,
-                        fontWeight: FontWeight.normal,
-                      ),
+                      style: labelStyle,
                     ),
                     child: Icon(appsIcon),
                   ),
@@ -115,10 +97,7 @@ class _ShellPageState extends State<ShellPage> {
                       l10n.settingsProfile,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.typography.p.copyWith(
-                        fontSize: 12,
-                        fontWeight: FontWeight.normal,
-                      ),
+                      style: labelStyle,
                     ),
                     child: const Icon(Icons.person_outline),
                   ),
@@ -132,14 +111,15 @@ class _ShellPageState extends State<ShellPage> {
     );
   }
 
-  static int _calculateSelectedIndex(BuildContext context) {
-    final location = GoRouterState.of(context).matchedLocation;
+  @override
+  void dispose() {
+    _stopLongPressTimer();
+    super.dispose();
+  }
 
-    if (location.startsWith(Routes.apps)) return 1;
-    if (location.startsWith(Routes.profileRoot)) return 2;
-    if (location.startsWith(Routes.settings)) return 2;
-    if (AppRegistry.moduleFromLocation(location) != null) return 1;
-    return 0; // home
+  void _handleAppsLongPress() {
+    unawaited(context.read<AppTabCubit>().openWithSearch());
+    context.go(Routes.apps);
   }
 
   Future<void> _onItemTapped(
@@ -172,5 +152,29 @@ class _ShellPageState extends State<ShellPage> {
     };
     if (context.mounted) context.go(route);
     await SettingsRepository().setLastTabRoute(route);
+  }
+
+  void _startLongPressTimer(PointerDownEvent event) {
+    if (!_isAppsTabHit(event.position)) return;
+    _stopLongPressTimer();
+    _longPressTimer = Timer(
+      const Duration(milliseconds: 500),
+      _handleAppsLongPress,
+    );
+  }
+
+  void _stopLongPressTimer([PointerEvent? _]) {
+    _longPressTimer?.cancel();
+    _longPressTimer = null;
+  }
+
+  static int _calculateSelectedIndex(BuildContext context) {
+    final location = GoRouterState.of(context).matchedLocation;
+
+    if (location.startsWith(Routes.apps)) return 1;
+    if (location.startsWith(Routes.profileRoot)) return 2;
+    if (location.startsWith(Routes.settings)) return 2;
+    if (AppRegistry.moduleFromLocation(location) != null) return 1;
+    return 0; // home
   }
 }

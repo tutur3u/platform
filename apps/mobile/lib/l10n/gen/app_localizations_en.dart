@@ -489,6 +489,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerRequestInfo => 'Request info';
 
   @override
+  String get timerReasonOptional => 'Reason (optional)';
+
+  @override
   String get timerManagementTitle => 'Management';
 
   @override
@@ -704,6 +707,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get captchaError => 'Security check failed. Please try again.';
+
+  @override
+  String get commonSomethingWentWrong => 'Something went wrong';
+
+  @override
+  String get selectImageSource => 'Select image source';
+
+  @override
+  String get camera => 'Camera';
+
+  @override
+  String get gallery => 'Gallery';
 
   @override
   String get commonRetry => 'Retry';

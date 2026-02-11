@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
-import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
+import 'package:mobile/features/apps/widgets/apps_back_button.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
 import 'package:mobile/features/time_tracker/widgets/history_tab.dart';
@@ -76,18 +76,7 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
             return shad.Scaffold(
               headers: [
                 shad.AppBar(
-                  leading: [
-                    shad.OutlineButton(
-                      density: shad.ButtonDensity.icon,
-                      onPressed: () {
-                        unawaited(
-                          context.read<AppTabCubit>().clearSelection(),
-                        );
-                        context.go(Routes.apps);
-                      },
-                      child: const Icon(Icons.arrow_back),
-                    ),
-                  ],
+                  leading: const [AppsBackButton()],
                   title: Text(l10n.timerTitle),
                 ),
               ],
@@ -99,18 +88,7 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
             return shad.Scaffold(
               headers: [
                 shad.AppBar(
-                  leading: [
-                    shad.OutlineButton(
-                      density: shad.ButtonDensity.icon,
-                      onPressed: () {
-                        unawaited(
-                          context.read<AppTabCubit>().clearSelection(),
-                        );
-                        context.go(Routes.apps);
-                      },
-                      child: const Icon(Icons.arrow_back),
-                    ),
-                  ],
+                  leading: const [AppsBackButton()],
                   title: Text(l10n.timerTitle),
                 ),
               ],
@@ -121,18 +99,7 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
           return shad.Scaffold(
             headers: [
               shad.AppBar(
-                leading: [
-                  shad.OutlineButton(
-                    density: shad.ButtonDensity.icon,
-                    onPressed: () {
-                      unawaited(
-                        context.read<AppTabCubit>().clearSelection(),
-                      );
-                      context.go(Routes.apps);
-                    },
-                    child: const Icon(Icons.arrow_back),
-                  ),
-                ],
+                leading: const [AppsBackButton()],
                 title: Text(l10n.timerTitle),
                 trailing: [
                   shad.IconButton.ghost(

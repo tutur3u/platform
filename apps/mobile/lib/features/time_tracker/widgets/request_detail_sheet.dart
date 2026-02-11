@@ -185,9 +185,9 @@ class RequestDetailSheet extends StatelessWidget {
               content: TextField(
                 controller: controller,
                 maxLines: 3,
-                decoration: const InputDecoration(
-                  hintText: 'Reason (optional)',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  hintText: context.l10n.timerReasonOptional,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               actions: [
@@ -204,6 +204,7 @@ class RequestDetailSheet extends StatelessWidget {
                         : controller.text;
                     onSubmit(reason);
                     Navigator.of(dialogCtx).pop();
+                    if (!context.mounted) return;
                     Navigator.of(context).pop();
                   },
                   child: Text(title),

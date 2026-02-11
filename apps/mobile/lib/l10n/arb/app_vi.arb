@@ -188,6 +188,7 @@
     "timerApprove": "Duyệt",
     "timerReject": "Từ chối",
     "timerRequestInfo": "Yêu cầu thông tin",
+    "timerReasonOptional": "Lý do (không bắt buộc)",
     "timerManagementTitle": "Quản lý",
     "timerTotalSessions": "Tổng số phiên",
     "timerActiveUsers": "Người dùng hoạt động",
@@ -277,6 +278,11 @@
     "mfaSignOut": "Đăng xuất",
 
     "captchaError": "Kiểm tra bảo mật thất bại. Vui lòng thử lại.",
+
+    "commonSomethingWentWrong": "Đã xảy ra lỗi",
+    "selectImageSource": "Chọn nguồn ảnh",
+    "camera": "Camera",
+    "gallery": "Thư viện",
 
     "commonRetry": "Thử lại"
 }
