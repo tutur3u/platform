@@ -18,17 +18,31 @@ class AppsHubPage extends StatefulWidget {
 
 class _AppsHubPageState extends State<AppsHubPage> {
   late final TextEditingController _searchController;
+  late final FocusNode _searchFocusNode;
   String _query = '';
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+    _searchFocusNode = FocusNode();
+
+    // Handle auto-focus if requested
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final cubit = context.read<AppTabCubit>();
+        if (cubit.state.shouldAutoFocus) {
+          _searchFocusNode.requestFocus();
+          cubit.consumeAutoFocus();
+        }
+      }
+    });
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -64,6 +78,7 @@ class _AppsHubPageState extends State<AppsHubPage> {
             children: [
               shad.TextField(
                 controller: _searchController,
+                focusNode: _searchFocusNode,
                 hintText: l10n.appsHubSearchHint,
                 onChanged: (value) => setState(() => _query = value),
               ),

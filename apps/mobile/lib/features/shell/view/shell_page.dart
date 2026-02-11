@@ -27,6 +27,31 @@ class ShellPage extends StatefulWidget {
 class _ShellPageState extends State<ShellPage> {
   DateTime? _lastTapTime;
   int? _lastTabIndex;
+  Timer? _longPressTimer;
+
+  void _handleAppsLongPress() {
+    unawaited(context.read<AppTabCubit>().openWithSearch());
+    context.go(Routes.apps);
+  }
+
+  void _startLongPressTimer(PointerDownEvent _) {
+    _stopLongPressTimer();
+    _longPressTimer = Timer(
+      const Duration(milliseconds: 500),
+      _handleAppsLongPress,
+    );
+  }
+
+  void _stopLongPressTimer([PointerEvent? _]) {
+    _longPressTimer?.cancel();
+    _longPressTimer = null;
+  }
+
+  @override
+  void dispose() {
+    _stopLongPressTimer();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,48 +69,61 @@ class _ShellPageState extends State<ShellPage> {
             final appsLabel = selectedModule?.label(l10n) ?? l10n.navApps;
             final appsIcon = selectedModule?.icon ?? Icons.apps_outlined;
 
-            return shad.NavigationBar(
-              index: selectedIndex,
-              onSelected: (index) => _onItemTapped(index, context, state),
-              labelType: shad.NavigationLabelType.all,
-              children: [
-                shad.NavigationItem(
-                  label: Text(
-                    l10n.navHome,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.p.copyWith(
-                      fontSize: 10,
-                      fontWeight: FontWeight.normal,
+            return Listener(
+              behavior: HitTestBehavior.translucent,
+              onPointerDown: (event) {
+                // Approximate the hit area for the Apps tab (middle tab)
+                final screenWidth = MediaQuery.sizeOf(context).width;
+                final tapX = event.position.dx;
+                if (tapX > screenWidth / 3 && tapX < 2 * screenWidth / 3) {
+                  _startLongPressTimer(event);
+                }
+              },
+              onPointerUp: _stopLongPressTimer,
+              onPointerCancel: _stopLongPressTimer,
+              child: shad.NavigationBar(
+                index: selectedIndex,
+                onSelected: (index) => _onItemTapped(index, context, state),
+                labelType: shad.NavigationLabelType.all,
+                children: [
+                  shad.NavigationItem(
+                    label: Text(
+                      l10n.navHome,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.p.copyWith(
+                        fontSize: 12,
+                        fontWeight: FontWeight.normal,
+                      ),
                     ),
+                    child: const Icon(Icons.home_outlined),
                   ),
-                  child: const Icon(Icons.home_outlined),
-                ),
-                shad.NavigationItem(
-                  label: Text(
-                    appsLabel,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.p.copyWith(
-                      fontSize: 10,
-                      fontWeight: FontWeight.normal,
+                  shad.NavigationItem(
+                    label: Text(
+                      appsLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.p.copyWith(
+                        fontSize: 12,
+                        fontWeight: FontWeight.normal,
+                      ),
                     ),
+                    child: Icon(appsIcon),
                   ),
-                  child: Icon(appsIcon),
-                ),
-                shad.NavigationItem(
-                  label: Text(
-                    l10n.settingsProfile,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.p.copyWith(
-                      fontSize: 10,
-                      fontWeight: FontWeight.normal,
+                  shad.NavigationItem(
+                    label: Text(
+                      l10n.settingsProfile,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.p.copyWith(
+                        fontSize: 12,
+                        fontWeight: FontWeight.normal,
+                      ),
                     ),
+                    child: const Icon(Icons.person_outline),
                   ),
-                  child: const Icon(Icons.person_outline),
-                ),
-              ],
+                ],
+              ),
             );
           },
         ),

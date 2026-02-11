@@ -17,27 +17,49 @@ class AppTabCubit extends Cubit<AppTabState> {
     if (route == null) return;
     final module = AppRegistry.moduleFromLocation(route);
     if (module != null) {
-      emit(state.copyWith(selectedId: module.id, hasSelection: true));
+      emit(state.copyWith(selectedId: () => module.id, hasSelection: true));
     }
   }
 
   void syncFromLocation(String location) {
     final module = AppRegistry.moduleFromLocation(location);
     if (module == null || module.id == state.selectedId) return;
-    emit(state.copyWith(selectedId: module.id, hasSelection: true));
+    emit(state.copyWith(selectedId: () => module.id, hasSelection: true));
   }
 
   Future<void> select(AppModule module) async {
     if (state.selectedId == module.id && state.hasSelection) return;
-    emit(state.copyWith(selectedId: module.id, hasSelection: true));
+    emit(state.copyWith(selectedId: () => module.id, hasSelection: true));
     await _settings.setLastAppRoute(module.route);
     await _settings.setLastTabRoute(Routes.apps);
   }
 
   Future<void> clearSelection() async {
     if (!state.hasSelection && state.selectedId == null) return;
-    emit(state.copyWith(hasSelection: false));
+    emit(
+      state.copyWith(
+        selectedId: () => null,
+        hasSelection: false,
+        shouldAutoFocus: false,
+      ),
+    );
     await _settings.clearLastAppRoute();
     await _settings.setLastTabRoute(Routes.apps);
+  }
+
+  Future<void> openWithSearch() async {
+    emit(
+      state.copyWith(
+        selectedId: () => null,
+        hasSelection: false,
+        shouldAutoFocus: true,
+      ),
+    );
+    await _settings.clearLastAppRoute();
+    await _settings.setLastTabRoute(Routes.apps);
+  }
+
+  void consumeAutoFocus() {
+    emit(state.copyWith(shouldAutoFocus: false));
   }
 }
