@@ -28,7 +28,8 @@ export default function MentorsSection() {
                 avatar={mentor.avatar}
                 name={mentor.name}
                 subtitle={mentor.field}
-                avatarClassName="ease-in-out ease-in-out ease-in-out transition-transform duration-300 hover:scale-110"
+                avatarClassName="ease-in-out ease-in-out ease-in-out transition-transform duration-500 hover:scale-105"
+                subtitleClassName="text-sm opacity-80"
               />
             </AnimatedSection>
           ))}

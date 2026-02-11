@@ -34,7 +34,7 @@ export default function OrganizersTeamSection() {
                     avatar={leader.avatar || ''}
                     name={leader.name}
                     subtitle={leader.role || ''}
-                    avatarClassName="ease-in-out transition-transform duration-300 hover:scale-110"
+                    avatarClassName="ease-in-out transition-transform duration-500 hover:scale-105"
                     fallbackClassName="text-3xl"
                     containerClassName="w-72"
                     cardClassName="rounded-2xl px-8 py-12"

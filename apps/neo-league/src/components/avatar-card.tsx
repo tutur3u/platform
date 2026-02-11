@@ -30,10 +30,16 @@ export default function AvatarCard({
   return (
     <div
       className={cn(
-        'card-hover flex flex-col items-center',
+        'group card-hover relative flex flex-col items-center',
         containerClassName
       )}
     >
+      {/* Top right corner border */}
+      <div className="transform-all absolute top-0 right-0 z-10 h-12 w-12 rounded-tr-xl border-brand-light-yellow border-t-4 border-r-4 opacity-60 duration-300 group-hover:opacity-100" />
+
+      {/* Bottom left corner border */}
+      <div className="absolute bottom-0 left-0 z-10 h-12 w-12 rounded-bl-xl border-brand-light-blue border-b-4 border-l-4 opacity-60 duration-300 group-hover:opacity-100" />
+
       <div
         className={cn(
           'relative h-64 w-full overflow-hidden rounded-t-xl bg-linear-to-r from-background/20 to-background',
