@@ -25,6 +25,7 @@ import {
   PanelLeft,
   Search,
   Shield,
+  Star,
   Ticket,
   User,
   Users,
@@ -122,6 +123,7 @@ import { TimeTrackerCategoriesSettings } from './time-tracker/time-tracker-categ
 import { TimeTrackerGeneralSettings } from './time-tracker/time-tracker-general-settings';
 import { TimeTrackerGoalsSettings } from './time-tracker/time-tracker-goals-settings';
 import { WorkspaceBreakTypesSettings } from './time-tracker/workspace-break-types-settings';
+import FeaturedGroupsSettings from './users/featured-groups-settings';
 import UsersManagementSettings from './users/users-management-settings';
 import BillingSettings from './workspace/billing-settings';
 import MembersSettings from './workspace/members-settings';
@@ -359,6 +361,15 @@ export function SettingsDialog({
                   'Groups',
                   'Excluded',
                 ],
+              },
+              {
+                name: 'featured_groups',
+                label: t('settings.user_management.featured_groups'),
+                icon: Star,
+                description: t(
+                  'settings.user_management.featured_groups_description'
+                ),
+                keywords: ['Featured', 'Groups', 'Quick', 'Filter', 'Pinned'],
               },
               {
                 name: 'approvals',
@@ -993,6 +1004,12 @@ export function SettingsDialog({
                 {activeTab === 'database_filters' && wsId && (
                   <div className="h-full">
                     <UsersManagementSettings wsId={wsId} />
+                  </div>
+                )}
+
+                {activeTab === 'featured_groups' && wsId && (
+                  <div className="h-full">
+                    <FeaturedGroupsSettings wsId={wsId} />
                   </div>
                 )}
 

@@ -66,26 +66,27 @@ export async function getSeatStatus(
 
   const product = subscription?.workspace_subscription_products;
 
+  // Always count current workspace members (needed for upgrade estimates)
+  const { count: memberCount } = await supabase
+    .from('workspace_members')
+    .select('*', { count: 'exact', head: true })
+    .eq('ws_id', wsId);
+
+  const currentMembers = memberCount ?? 0;
+
   // If not seat-based, no limit applies
   if (!subscription || product?.pricing_model !== 'seat_based') {
     return {
       isSeatBased: false,
       seatCount: Infinity,
-      memberCount: 0,
+      memberCount: currentMembers,
       availableSeats: Infinity,
       canAddMember: true,
       pricePerSeat: null,
     };
   }
 
-  // Count current workspace members
-  const { count: memberCount } = await supabase
-    .from('workspace_members')
-    .select('*', { count: 'exact', head: true })
-    .eq('ws_id', wsId);
-
   const seatCount = subscription.seat_count ?? 1;
-  const currentMembers = memberCount ?? 0;
   const availableSeats = Math.max(0, seatCount - currentMembers);
 
   return {

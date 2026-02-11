@@ -3,6 +3,7 @@ import { Webhooks } from '@tuturuuu/payment/polar/next';
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceProductTier } from '@tuturuuu/types';
+import { upsertSubscriptionError } from '@/app/api/payment/migrations/helper';
 import { assignSeatsToAllMembers } from '@/utils/polar-seat-helper';
 import {
   createFreeSubscription,
@@ -453,14 +454,22 @@ export const POST = Webhooks({
           `Webhook: Subscription ${payload.data.id} is fully canceled, checking if workspace ${subscriptionData.ws_id} needs a free subscription`
         );
 
-        const sbAdmin = await createAdminClient();
         const polar = createPolarClient();
+        const sbAdmin = await createAdminClient();
 
         // Check if workspace has any other active subscriptions
-        const hasActive = await hasActiveSubscription(
+        const { hasWorkspace, hasActive } = await hasActiveSubscription(
+          polar,
           sbAdmin,
           subscriptionData.ws_id
         );
+
+        if (!hasWorkspace) {
+          console.warn(
+            `Webhook: Workspace ${subscriptionData.ws_id} not found when checking for active subscriptions`
+          );
+          return;
+        }
 
         if (!hasActive) {
           console.log(
@@ -468,19 +477,19 @@ export const POST = Webhooks({
           );
 
           // Create a free subscription for this workspace
-          const freeSubscription = await createFreeSubscription(
+          const freeSubResult = await createFreeSubscription(
             polar,
             sbAdmin,
             subscriptionData.ws_id
           );
 
-          if (freeSubscription) {
+          if (freeSubResult.status === 'created') {
             console.log(
-              `Webhook: Successfully created free subscription ${freeSubscription.id} for workspace ${subscriptionData.ws_id}`
+              `Webhook: Successfully created free subscription ${freeSubResult.subscription.id} for workspace ${subscriptionData.ws_id}`
             );
           } else {
             console.warn(
-              `Webhook: Could not create free subscription for workspace ${subscriptionData.ws_id}`
+              `Webhook: Could not create free subscription for workspace ${subscriptionData.ws_id} (${freeSubResult.status})`
             );
           }
         } else {
@@ -496,6 +505,72 @@ export const POST = Webhooks({
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
       console.error('Webhook: Subscription updated error:', errorMessage);
+      throw new Response('Internal Server Error', { status: 500 });
+    }
+  },
+
+  // Handle subscription revocation (admin-initiated or Polar-side)
+  onSubscriptionRevoked: async (payload) => {
+    try {
+      const { subscriptionData } = await syncSubscriptionToDatabase(
+        payload.data
+      );
+      console.log(
+        `Webhook: Subscription revoked: ${payload.data.id}, status: ${payload.data.status}`
+      );
+
+      // Check if workspace needs a free subscription (same logic as canceled)
+      const polar = createPolarClient();
+      const sbAdmin = await createAdminClient();
+
+      const { hasWorkspace, hasActive } = await hasActiveSubscription(
+        polar,
+        sbAdmin,
+        subscriptionData.ws_id
+      );
+
+      if (!hasWorkspace) {
+        console.warn(
+          `Webhook: Workspace ${subscriptionData.ws_id} not found when handling revocation`
+        );
+        return;
+      }
+
+      if (!hasActive) {
+        console.log(
+          `Webhook: Workspace ${subscriptionData.ws_id} has no active subscriptions after revocation, creating free subscription`
+        );
+
+        const freeSubResult = await createFreeSubscription(
+          polar,
+          sbAdmin,
+          subscriptionData.ws_id
+        );
+
+        if (freeSubResult.status === 'created') {
+          console.log(
+            `Webhook: Successfully created free subscription ${freeSubResult.subscription.id} for workspace ${subscriptionData.ws_id}`
+          );
+        } else if (freeSubResult.status === 'error') {
+          console.warn(
+            `Webhook: Could not create free subscription for workspace ${subscriptionData.ws_id}: ${freeSubResult.message}`
+          );
+
+          await upsertSubscriptionError(
+            sbAdmin,
+            subscriptionData.ws_id,
+            freeSubResult.message,
+            'webhook'
+          );
+        }
+      }
+
+      console.log(
+        `Webhook: Subscription revoked for workspace ${subscriptionData.ws_id}, status: ${payload.data.status}`
+      );
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+      console.error('Webhook: Subscription revoked error:', errorMessage);
       throw new Response('Internal Server Error', { status: 500 });
     }
   },

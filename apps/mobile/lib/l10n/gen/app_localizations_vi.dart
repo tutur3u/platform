@@ -653,6 +653,41 @@ class AppLocalizationsVi extends AppLocalizations {
   String get workspacePersonalBadge => 'Cá nhân';
 
   @override
+  String get workspacePersonalSection => 'Cá nhân';
+
+  @override
+  String get workspaceTeamSection => 'Nhóm làm việc';
+
+  @override
+  String get workspaceCreateTitle => 'Tạo không gian làm việc';
+
+  @override
+  String get workspaceCreateNew => 'Tạo mới';
+
+  @override
+  String get workspaceCreateNameHint => 'Tên không gian làm việc';
+
+  @override
+  String get workspaceCreateNameRequired => 'Vui lòng nhập tên không gian làm việc';
+
+  @override
+  String get workspaceCreateSubmit => 'Tạo không gian làm việc';
+
+  @override
+  String get workspaceCreateCancel => 'Hủy';
+
+  @override
+  String get workspaceCreatePrompt => 'Tạo không gian làm việc đầu tiên để bắt đầu';
+
+  @override
+  String get workspaceCreateLimitReached => 'Bạn đã đạt giới hạn không gian làm việc';
+
+  @override
+  String workspaceCreateLimitInfo(int current, int limit) {
+    return '$current / $limit không gian làm việc đã dùng';
+  }
+
+  @override
   String get mfaTitle => 'Xác thực hai yếu tố';
 
   @override

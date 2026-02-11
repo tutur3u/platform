@@ -71,7 +71,8 @@
       "Bash(flutter gen-l10n:*)",
       "WebFetch(domain:pub.dev)",
       "WebFetch(domain:tiptap.dev)",
-      "Bash(node scripts/check-mobile.js:*)"
+      "Bash(node scripts/check-mobile.js:*)",
+      "Bash(bunx supabase status:*)"
     ]
   }
 }

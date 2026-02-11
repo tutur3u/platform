@@ -81,12 +81,15 @@ export async function ensureSubscription(wsId: string) {
     await getOrCreatePolarCustomer({ polar, supabase, wsId });
 
     // Create free tier subscription
-    const subscription = await createFreeSubscription(polar, supabase, wsId);
+    const result = await createFreeSubscription(polar, supabase, wsId);
 
-    if (!subscription) {
+    if (result.status !== 'created') {
       return {
         subscription: null,
-        error: 'SUBSCRIPTION_CREATE_FAILED',
+        error:
+          result.status === 'already_active'
+            ? 'SUBSCRIPTION_ALREADY_ACTIVE'
+            : 'SUBSCRIPTION_CREATE_FAILED',
       };
     }
 

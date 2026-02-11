@@ -15492,6 +15492,48 @@ export type Database = {
           },
         ];
       };
+      workspace_subscription_errors: {
+        Row: {
+          created_at: string;
+          error_message: string;
+          error_source: string;
+          id: string;
+          resolved_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          error_message: string;
+          error_source?: string;
+          id?: string;
+          resolved_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          error_message?: string;
+          error_source?: string;
+          id?: string;
+          resolved_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_subscription_errors_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_subscription_errors_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_subscription_products: {
         Row: {
           archived: boolean;
@@ -18987,6 +19029,20 @@ export type Database = {
           feature_name: string;
         }[];
       };
+      get_featured_group_counts: {
+        Args: {
+          _excluded_groups?: string[];
+          _featured_group_ids: string[];
+          _link_status?: string;
+          _search_query?: string;
+          _status?: string;
+          _ws_id: string;
+        };
+        Returns: {
+          group_id: string;
+          user_count: number;
+        }[];
+      };
       get_finance_invoice_products_by_workspace: {
         Args: { p_limit?: number; p_offset?: number; p_ws_id: string };
         Returns: {
@@ -20041,6 +20097,57 @@ export type Database = {
           workspace_count: number;
         }[];
       };
+      get_workspace_overview: {
+        Args: {
+          p_page?: number;
+          p_page_size?: number;
+          p_search?: string;
+          p_sort_by?: string;
+          p_sort_order?: string;
+          p_status?: string;
+          p_sub_count?: string;
+          p_tier?: string;
+          p_workspace_type?: string;
+        };
+        Returns: {
+          active_subscription_count: number;
+          avatar_url: string;
+          created_at: string;
+          creator_email: string;
+          creator_id: string;
+          creator_name: string;
+          handle: string;
+          has_subscription_error: boolean;
+          highest_tier: string;
+          id: string;
+          member_count: number;
+          name: string;
+          personal: boolean;
+          role_count: number;
+          secret_count: number;
+          subscription_statuses: string[];
+          total_count: number;
+        }[];
+      };
+      get_workspace_overview_summary: {
+        Args: never;
+        Returns: {
+          avg_members: number;
+          empty_workspaces: number;
+          errored_workspaces: number;
+          personal_workspaces: number;
+          team_workspaces: number;
+          tier_enterprise: number;
+          tier_free: number;
+          tier_plus: number;
+          tier_pro: number;
+          total_workspaces: number;
+          with_active_subscription: number;
+          with_multiple_subscriptions: number;
+          with_single_subscription: number;
+          with_zero_subscriptions: number;
+        }[];
+      };
       get_workspace_products_count: {
         Args: { ws_id: string };
         Returns: number;
@@ -20814,6 +20921,14 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      upsert_workspace_subscription_error: {
+        Args: {
+          _error_message: string;
+          _error_source?: string;
+          _ws_id: string;
+        };
+        Returns: undefined;
       };
       user_has_wallet_access_via_role: {
         Args: { p_user_id: string; p_wallet_id: string; p_ws_id: string };

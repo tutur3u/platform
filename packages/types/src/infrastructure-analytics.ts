@@ -173,6 +173,44 @@ export interface InfrastructureAnalytics {
   retention: RetentionRate[];
 }
 
+// Workspace overview dashboard types (infrastructure/workspaces page)
+export interface WorkspaceOverviewRow {
+  id: string;
+  name: string | null;
+  handle: string | null;
+  avatar_url: string | null;
+  personal: boolean;
+  creator_id: string | null;
+  creator_name: string | null;
+  creator_email: string | null;
+  created_at: string;
+  member_count: number;
+  role_count: number;
+  secret_count: number;
+  active_subscription_count: number;
+  highest_tier: string | null;
+  subscription_statuses: string[];
+  has_subscription_error: boolean;
+  total_count: number;
+}
+
+export interface WorkspaceOverviewSummary {
+  total_workspaces: number;
+  personal_workspaces: number;
+  team_workspaces: number;
+  with_active_subscription: number;
+  tier_free: number;
+  tier_plus: number;
+  tier_pro: number;
+  tier_enterprise: number;
+  avg_members: number;
+  empty_workspaces: number;
+  with_zero_subscriptions: number;
+  with_single_subscription: number;
+  with_multiple_subscriptions: number;
+  errored_workspaces: number;
+}
+
 // User registration data (existing)
 export interface UserRegistrationData {
   date: string;

@@ -175,6 +175,96 @@ export function useWorkspaceUserFields(wsId: string) {
 }
 
 /**
+ * Fetch featured groups for quick filtering on the database page
+ */
+export function useFeaturedGroups(wsId: string) {
+  return useQuery({
+    queryKey: ['workspace-featured-groups', wsId],
+    queryFn: async (): Promise<string[]> => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('workspace_configs')
+        .select('value')
+        .eq('ws_id', wsId)
+        .eq('id', 'DATABASE_FEATURED_GROUPS')
+        .maybeSingle();
+
+      if (error) throw error;
+
+      return data?.value
+        ? data.value
+            .split(',')
+            .map((v: string) => v.trim())
+            .filter(Boolean)
+        : [];
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 20 * 60 * 1000, // 20 minutes
+  });
+}
+
+/**
+ * Fetch default excluded groups for the workspace
+ */
+export interface FeaturedGroupCountsParams {
+  excludedGroups?: string[];
+  searchQuery?: string;
+  status?: string;
+  linkStatus?: string;
+}
+
+/**
+ * Fetch accurate filtered counts for each featured group chip.
+ * Returns a Record<groupId, count> reflecting how many users in each group
+ * match the current filters (search, excluded groups, status, link status).
+ */
+export function useFeaturedGroupCounts(
+  wsId: string,
+  featuredGroupIds: string[],
+  params: FeaturedGroupCountsParams = {}
+) {
+  const {
+    excludedGroups = [],
+    searchQuery = '',
+    status = 'active',
+    linkStatus = 'all',
+  } = params;
+
+  return useQuery({
+    queryKey: [
+      'featured-group-counts',
+      wsId,
+      featuredGroupIds,
+      { excludedGroups, searchQuery, status, linkStatus },
+    ],
+    queryFn: async (): Promise<Record<string, number>> => {
+      const supabase = createClient();
+
+      const { data, error } = await supabase.rpc('get_featured_group_counts', {
+        _ws_id: wsId,
+        _featured_group_ids: featuredGroupIds,
+        _excluded_groups: excludedGroups,
+        _search_query: searchQuery || undefined,
+        _status: status,
+        _link_status: linkStatus,
+      });
+
+      if (error) throw error;
+
+      const counts: Record<string, number> = {};
+      for (const row of data ?? []) {
+        counts[row.group_id] = Number(row.user_count);
+      }
+      return counts;
+    },
+    enabled: featuredGroupIds.length > 0,
+    placeholderData: keepPreviousData,
+    staleTime: 30 * 1000, // 30 seconds — matches useWorkspaceUsers
+    gcTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+/**
  * Fetch default excluded groups for the workspace
  */
 export function useDefaultExcludedGroups(wsId: string) {

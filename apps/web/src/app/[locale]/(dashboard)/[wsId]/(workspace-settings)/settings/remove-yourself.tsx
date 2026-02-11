@@ -13,8 +13,8 @@ import {
   AlertDialogTitle,
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
+import { toast } from '@tuturuuu/ui/sonner';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -71,7 +71,7 @@ export default function RemoveYourself({ workspace }: Props) {
 
     setIsLeaving(true);
 
-    await removeMemberFromWorkspace(workspace.id, currentUserId, {
+    await removeMemberFromWorkspace(workspace.id, currentUserId, t, {
       onSuccess: () => {
         router.push('/');
         router.refresh();
@@ -184,6 +184,12 @@ export default function RemoveYourself({ workspace }: Props) {
 const removeMemberFromWorkspace = async (
   wsId: string,
   userId: string,
+  t: (
+    key:
+      | 'leave_workspace_deleted'
+      | 'leave_workspace_failed'
+      | 'leave_workspace_success'
+  ) => string,
   options?: {
     onSuccess?: () => void;
     onError?: () => void;
@@ -196,29 +202,24 @@ const removeMemberFromWorkspace = async (
     });
 
     if (!res.ok) {
-      if (options?.onError) options.onError();
-      toast({
-        title: 'Failed to leave workspace',
-        content: 'Please try again later.',
-        color: 'red',
-      });
+      options?.onError?.();
+      toast.error(t('leave_workspace_failed'));
       return;
     }
 
-    if (options?.onSuccess) options.onSuccess();
-    toast({
-      title: 'Left workspace successfully',
-      content: 'You have been removed from the workspace.',
-      color: 'green',
-    });
+    const data = await res.json();
+    const workspaceDeleted = data?.workspace_deleted === true;
+
+    options?.onSuccess?.();
+    toast.success(
+      workspaceDeleted
+        ? t('leave_workspace_deleted')
+        : t('leave_workspace_success')
+    );
   } catch (_) {
-    if (options?.onError) options.onError();
-    toast({
-      title: 'Failed to leave workspace',
-      content: 'Please try again later.',
-      color: 'red',
-    });
+    options?.onError?.();
+    toast.error(t('leave_workspace_failed'));
   } finally {
-    if (options?.onCompleted) options.onCompleted();
+    options?.onCompleted?.();
   }
 };

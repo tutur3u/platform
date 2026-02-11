@@ -458,6 +458,7 @@ export function BillingClient({
         wsId={wsId}
         open={showUpgradeOptions}
         onOpenChange={setShowUpgradeOptions}
+        seatStatus={seatStatus}
       />
 
       <SubscriptionConfirmationDialog

@@ -12,6 +12,7 @@ import 'package:mobile/features/settings/cubit/theme_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_state.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
+import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -69,7 +70,7 @@ class SettingsPage extends StatelessWidget {
                 icon: Icons.swap_horiz,
                 title: l10n.settingsSwitchWorkspace,
                 subtitle: state.currentWorkspace?.name,
-                onTap: () => context.go(Routes.workspaceSelect),
+                onTap: () => showWorkspacePickerSheet(context),
               );
             },
           ),

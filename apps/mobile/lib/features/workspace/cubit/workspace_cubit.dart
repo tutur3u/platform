@@ -5,9 +5,7 @@ import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/workspace_repository.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 
-/// Manages workspace selection and listing.
-///
-/// Ported from apps/native/lib/stores/workspace-store.ts (Zustand → Cubit).
+/// Manages workspace selection, listing, and creation.
 class WorkspaceCubit extends Cubit<WorkspaceState> {
   WorkspaceCubit({required WorkspaceRepository workspaceRepository})
     : _repo = workspaceRepository,
@@ -53,6 +51,9 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
           currentWorkspace: current,
         ),
       );
+
+      // Load limits in background (non-blocking)
+      unawaited(_loadLimits());
     } on Exception catch (e) {
       emit(
         state.copyWith(
@@ -70,6 +71,44 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
 
     // Fire-and-forget server-side sync
     unawaited(_repo.updateDefaultWorkspace(workspace.id));
+  }
+
+  /// Creates a new workspace and adds it to the list.
+  ///
+  /// Returns the created workspace, or throws on failure.
+  Future<Workspace> createWorkspace(String name) async {
+    emit(state.copyWith(isCreating: true));
+
+    try {
+      final workspace = await _repo.createWorkspace(name);
+
+      emit(
+        state.copyWith(
+          isCreating: false,
+          workspaces: [...state.workspaces, workspace],
+        ),
+      );
+
+      // Refresh limits after creation
+      unawaited(_loadLimits());
+
+      return workspace;
+    } on Exception {
+      emit(state.copyWith(isCreating: false));
+      rethrow;
+    }
+  }
+
+  /// Refreshes workspace creation limits.
+  Future<void> refreshLimits() => _loadLimits();
+
+  Future<void> _loadLimits() async {
+    try {
+      final limits = await _repo.getWorkspaceLimits();
+      emit(state.copyWith(limits: limits));
+    } on Exception catch (_) {
+      // Non-critical — UI shows create button without limit info
+    }
   }
 
   /// Clears workspace selection (on logout).

@@ -7,6 +7,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import {
   PERSONAL_WORKSPACE_SLUG,
+  ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
@@ -136,7 +137,99 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     );
   }
 
-  return NextResponse.json({ message: 'success' });
+  // After successful removal, check if workspace is now orphaned
+  const workspaceDeleted = userId
+    ? await cleanupOrphanedWorkspace(resolvedWsId)
+    : false;
+
+  return NextResponse.json({
+    message: 'success',
+    workspace_deleted: workspaceDeleted,
+  });
+}
+
+/**
+ * Checks if a workspace has zero remaining members after a removal.
+ * If orphaned (and not personal/system), cancels any active Polar subscription
+ * and deletes the workspace. Returns true if the workspace was deleted.
+ */
+async function cleanupOrphanedWorkspace(wsId: string): Promise<boolean> {
+  if (wsId === ROOT_WORKSPACE_ID) return false;
+
+  try {
+    const sbAdmin = await createAdminClient();
+
+    // Skip personal workspaces — they should never be auto-deleted
+    const { data: workspaceData } = await sbAdmin
+      .from('workspaces')
+      .select('personal')
+      .eq('id', wsId)
+      .single();
+
+    if (!workspaceData || workspaceData.personal) return false;
+
+    // Count remaining members (admin client needed since user just left)
+    const { count, error: countError } = await sbAdmin
+      .from('workspace_members')
+      .select('*', { count: 'exact', head: true })
+      .eq('ws_id', wsId);
+
+    if (countError) {
+      console.error('Error counting workspace members:', countError);
+      return false;
+    }
+
+    if ((count ?? 0) > 0) return false;
+
+    // Workspace is orphaned — cancel active subscription (best-effort)
+    try {
+      const { data: subscription } = await sbAdmin
+        .from('workspace_subscriptions')
+        .select('polar_subscription_id')
+        .eq('ws_id', wsId)
+        .neq('status', 'canceled')
+        .maybeSingle();
+
+      if (subscription?.polar_subscription_id) {
+        const polar = createPolarClient();
+        await polar.subscriptions.revoke({
+          id: subscription.polar_subscription_id,
+        });
+        console.log(
+          `Revoked Polar subscription ${subscription.polar_subscription_id} for orphaned workspace ${wsId}`
+        );
+      }
+    } catch (subError) {
+      console.error(
+        `Failed to revoke subscription for orphaned workspace ${wsId}:`,
+        subError
+      );
+      // Continue — Polar webhook reconciliation will catch this
+    }
+
+    // Delete the workspace (cascades to all related tables)
+    const { error: deleteError } = await sbAdmin
+      .from('workspaces')
+      .delete()
+      .eq('id', wsId);
+
+    if (deleteError) {
+      console.error(
+        `Failed to delete orphaned workspace ${wsId}:`,
+        deleteError
+      );
+      return false;
+    }
+
+    console.log(`Deleted orphaned workspace ${wsId}`);
+    return true;
+  } catch (error) {
+    console.error(
+      `Error during orphaned workspace cleanup for ${wsId}:`,
+      error
+    );
+    return false;
+  }
 }
 
 /**

@@ -114,11 +114,7 @@ export default async function RootLayout({ children, params }: Props) {
   setRequestLocale(locale);
 
   return (
-    <html
-      lang={locale}
-      className="w-screen overflow-x-hidden"
-      suppressHydrationWarning
-    >
+    <html lang={locale} suppressHydrationWarning>
       <body
         className={cn(
           'w-screen overflow-x-hidden overflow-y-scroll bg-background antialiased',

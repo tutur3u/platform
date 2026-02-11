@@ -14,6 +14,11 @@ PODS:
   - flutter_secure_storage_darwin (10.0.0):
     - Flutter
     - FlutterMacOS
+  - image_cropper (0.0.4):
+    - Flutter
+    - TOCropViewController (~> 2.8.0)
+  - image_picker_ios (0.0.1):
+    - Flutter
   - InternalCollectionsUtilities (1.1.1)
   - package_info_plus (0.4.5):
     - Flutter
@@ -39,6 +44,7 @@ PODS:
     - InternalCollectionsUtilities (= 1.1.1)
   - swift-collections/OrderedCollections (1.1.1):
     - InternalCollectionsUtilities (= 1.1.1)
+  - TOCropViewController (2.8.0)
   - url_launcher_ios (0.0.1):
     - Flutter
 
@@ -48,6 +54,8 @@ DEPENDENCIES:
   - Flutter (from `Flutter`)
   - flutter_inappwebview_ios (from `.symlinks/plugins/flutter_inappwebview_ios/ios`)
   - flutter_secure_storage_darwin (from `.symlinks/plugins/flutter_secure_storage_darwin/darwin`)
+  - image_cropper (from `.symlinks/plugins/image_cropper/ios`)
+  - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - sqflite_darwin (from `.symlinks/plugins/sqflite_darwin/darwin`)
@@ -57,6 +65,7 @@ SPEC REPOS:
   trunk:
     - InternalCollectionsUtilities
     - swift-collections
+    - TOCropViewController
 
 EXTERNAL SOURCES:
   app_links:
@@ -69,6 +78,10 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/flutter_inappwebview_ios/ios"
   flutter_secure_storage_darwin:
     :path: ".symlinks/plugins/flutter_secure_storage_darwin/darwin"
+  image_cropper:
+    :path: ".symlinks/plugins/image_cropper/ios"
+  image_picker_ios:
+    :path: ".symlinks/plugins/image_picker_ios/ios"
   package_info_plus:
     :path: ".symlinks/plugins/package_info_plus/ios"
   shared_preferences_foundation:
@@ -84,11 +97,14 @@ SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_inappwebview_ios: 9cde7869829d54b4110df350f3eedd192c5a4aea
   flutter_secure_storage_darwin: acdb3f316ed05a3e68f856e0353b133eec373a23
+  image_cropper: 64567491beea6cd1bc4b11948e2babb590de5826
+  image_picker_ios: e0ece4aa2a75771a7de3fa735d26d90817041326
   InternalCollectionsUtilities: af3f471602c4a67cbcb0bee0a80f6f55a33ae453
   package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
   shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
   sqflite_darwin: 20b2a3a3b70e43edae938624ce550a3cbf66a3d0
   swift-collections: ba248ecaf44ef500b27d5cf94d304218c89892ff
+  TOCropViewController: 797deaf39c90e6e9ddd848d88817f6b9a8a09888
   url_launcher_ios: 7a95fa5b60cc718a708b8f2966718e93db0cef1b
 
 PODFILE CHECKSUM: 3c63482e143d1b91d2d2560aee9fb04ecc74ac7e

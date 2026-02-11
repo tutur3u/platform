@@ -41,6 +41,7 @@ export default class SupabaseProvider extends EventEmitter {
   public destroyed: boolean = false;
   private _dirty: boolean = false; // Set on local edits, cleared after resync
   private awarenessDebounceTimeout: NodeJS.Timeout | undefined;
+  private _handleVisibilityChange: (() => void) | null = null;
 
   isOnline(online?: boolean): boolean {
     if (!online && online !== false) return this.connected;
@@ -314,7 +315,12 @@ export default class SupabaseProvider extends EventEmitter {
 
           if (status === 'CHANNEL_ERROR') {
             this.logger('CHANNEL_ERROR', err);
-            this.emit('error', this);
+            this.emit('error', {
+              message: err?.message ?? 'Channel error',
+              channelError: err,
+              channel: this.config.channel,
+              status,
+            });
             this.emit('disconnect', this);
           }
 
@@ -446,6 +452,30 @@ export default class SupabaseProvider extends EventEmitter {
     });
 
     this.connect();
+
+    // Reconnect when user returns from AFK (hidden → visible)
+    if (typeof document !== 'undefined') {
+      this._handleVisibilityChange = () => {
+        if (this.destroyed) return;
+
+        if (document.visibilityState === 'visible' && !this.connected) {
+          this.logger('page became visible while disconnected — reconnecting');
+          this.resetAndReconnect();
+        }
+
+        // Pause reconnect timer when page goes hidden to conserve attempts
+        if (document.visibilityState === 'hidden' && this.reconnectTimeout) {
+          this.logger('page hidden during reconnect backoff — pausing timer');
+          clearTimeout(this.reconnectTimeout);
+          this.reconnectTimeout = undefined;
+        }
+      };
+      document.addEventListener(
+        'visibilitychange',
+        this._handleVisibilityChange
+      );
+    }
+
     this.awareness.on('update', this.onAwarenessUpdate.bind(this));
 
     // Listen to document updates and broadcast them to peers
@@ -504,6 +534,26 @@ export default class SupabaseProvider extends EventEmitter {
       // Try to reconnect
       this.connect();
     }, actualDelay);
+  }
+
+  /**
+   * Reset backoff state and force a fresh connection cycle.
+   * Used when the user returns from AFK (visibilitychange) or when
+   * reconnect-failed fires while the page is still active.
+   */
+  public resetAndReconnect() {
+    if (this.destroyed || this.connected) return;
+
+    this.logger('resetAndReconnect: resetting backoff and reconnecting');
+    this.reconnectAttempts = 0;
+
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = undefined;
+    }
+
+    this.disconnect();
+    this.connect();
   }
 
   public onDisconnect() {
@@ -575,6 +625,15 @@ export default class SupabaseProvider extends EventEmitter {
 
     // Save any pending changes before destroying
     this.flushSave();
+
+    // Remove visibility change listener
+    if (this._handleVisibilityChange && typeof document !== 'undefined') {
+      document.removeEventListener(
+        'visibilitychange',
+        this._handleVisibilityChange
+      );
+      this._handleVisibilityChange = null;
+    }
 
     if (typeof window !== 'undefined') {
       window.removeEventListener(

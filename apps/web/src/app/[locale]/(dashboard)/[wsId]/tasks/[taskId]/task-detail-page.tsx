@@ -4,6 +4,7 @@ import { Loader2 } from '@tuturuuu/icons';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { useTaskDialog } from '@tuturuuu/ui/tu-do/hooks/useTaskDialog';
 import { useTaskDialogContext } from '@tuturuuu/ui/tu-do/providers/task-dialog-provider';
+import { useOptionalWorkspacePresenceContext } from '@tuturuuu/ui/tu-do/providers/workspace-presence-provider';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -22,6 +23,7 @@ export default function TaskDetailPage({
 }: TaskDetailPageProps) {
   const { openTask, onUpdate, onClose } = useTaskDialog();
   const { state: dialogState } = useTaskDialogContext();
+  const wsPresence = useOptionalWorkspacePresenceContext();
   const router = useRouter();
   const hasRedirectedRef = useRef(false);
   const [isNavigating, setIsNavigating] = useState(false);
@@ -75,6 +77,21 @@ export default function TaskDetailPage({
 
     openTask(task, boardId);
   }, [task, boardId, openTask]);
+
+  // Track presence for avatar display — on the kanban board page,
+  // BoardUserPresenceAvatarsComponent handles this, but on the dedicated
+  // task detail page we need to call updateLocation ourselves so the
+  // lazy presence channel is initialized and other users can see us.
+  const wsUpdateLocation = wsPresence?.updateLocation;
+  useEffect(() => {
+    if (!wsUpdateLocation || !task.id || !boardId) return;
+    wsUpdateLocation({ type: 'board', boardId, taskId: task.id });
+
+    return () => {
+      // Clear task-level presence when leaving the page
+      wsUpdateLocation({ type: 'other' });
+    };
+  }, [wsUpdateLocation, boardId, task.id]);
 
   // Show loading state during navigation to prevent blank screen
   if (isNavigating) {

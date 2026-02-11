@@ -252,6 +252,23 @@
 
     "workspacePickerTitle": "Switch workspace",
     "workspacePersonalBadge": "Personal",
+    "workspacePersonalSection": "Personal",
+    "workspaceTeamSection": "Team workspaces",
+    "workspaceCreateTitle": "Create workspace",
+    "workspaceCreateNew": "New",
+    "workspaceCreateNameHint": "Workspace name",
+    "workspaceCreateNameRequired": "Workspace name is required",
+    "workspaceCreateSubmit": "Create workspace",
+    "workspaceCreateCancel": "Cancel",
+    "workspaceCreatePrompt": "Create your first workspace to get started",
+    "workspaceCreateLimitReached": "You have reached the workspace limit",
+    "workspaceCreateLimitInfo": "{current} of {limit} workspaces used",
+    "@workspaceCreateLimitInfo": {
+        "placeholders": {
+            "current": { "type": "int" },
+            "limit": { "type": "int" }
+        }
+    },
 
     "mfaTitle": "Two-factor authentication",
     "mfaSubtitle": "Enter the code from your authenticator app",

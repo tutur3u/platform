@@ -26,6 +26,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { centToDollar } from '@/utils/price-helper';
+import type { SeatStatus } from '@/utils/seat-limits';
 import type { Plan } from './billing-client';
 import { PlanChangeConfirmationDialog } from './plan-change-confirmation-dialog';
 import PurchaseLink from './purchase-link';
@@ -37,6 +38,7 @@ interface PlanListDialogProps {
   wsId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  seatStatus?: SeatStatus;
 }
 
 type BillingCycleTab = 'month' | 'year';
@@ -48,6 +50,7 @@ export function PlanListDialog({
   wsId,
   open,
   onOpenChange,
+  seatStatus,
 }: PlanListDialogProps) {
   const t = useTranslations('billing');
 
@@ -152,6 +155,7 @@ export function PlanListDialog({
           'before:from-dynamic-purple/50 before:via-dynamic-pink/40 before:to-dynamic-orange/30',
         iconBg: 'bg-dynamic-purple/10',
         iconColor: 'text-dynamic-purple',
+        estimateBorder: 'border-dynamic-purple/20',
         badgeClass:
           'bg-dynamic-purple/10 text-dynamic-purple border-dynamic-purple/20',
         Icon: Crown,
@@ -171,6 +175,7 @@ export function PlanListDialog({
           'before:from-dynamic-blue/50 before:via-dynamic-cyan/40 before:to-dynamic-green/30',
         iconBg: 'bg-dynamic-blue/10',
         iconColor: 'text-dynamic-blue',
+        estimateBorder: 'border-dynamic-blue/20',
         badgeClass:
           'bg-dynamic-blue/10 text-dynamic-blue border-dynamic-blue/20',
         Icon: Zap,
@@ -188,6 +193,7 @@ export function PlanListDialog({
         'before:from-muted before:via-muted/50 before:to-muted/30',
       iconBg: 'bg-muted',
       iconColor: 'text-muted-foreground',
+      estimateBorder: 'border-border',
       badgeClass: 'bg-muted text-muted-foreground border-border',
       Icon: Shield,
       popular: false,
@@ -420,16 +426,58 @@ export function PlanListDialog({
                       </div>
 
                       {/* Seat Limits */}
-                      {(plan.minSeats || plan.maxSeats) && (
+                      {((plan.minSeats && plan.minSeats > 1) ||
+                        plan.maxSeats) && (
                         <div className="mt-1 flex items-center gap-1.5 font-medium text-muted-foreground text-xs">
                           <Users className="h-3.5 w-3.5" />
                           <span>
-                            {plan.maxSeats
-                              ? `${plan.minSeats || 1}-${plan.maxSeats} ${t('seats')}`
-                              : `Min ${plan.minSeats || 1} ${t('seats')}`}
+                            {plan.minSeats && plan.minSeats > 1 && plan.maxSeats
+                              ? `${plan.minSeats}-${plan.maxSeats} ${t('seats')}`
+                              : plan.maxSeats
+                                ? `Max ${plan.maxSeats} ${t('seats')}`
+                                : `Min ${plan.minSeats} ${t('seats')}`}
                           </span>
                         </div>
                       )}
+
+                      {/* Estimated total for seat-based plans */}
+                      {isSeatBased &&
+                        plan.pricePerSeat &&
+                        seatStatus?.memberCount && (
+                          <div
+                            className={cn(
+                              'mt-2 rounded-lg border px-3 py-2',
+                              styles.iconBg,
+                              styles.estimateBorder
+                            )}
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <Users className="h-3 w-3 text-muted-foreground" />
+                              <p className="font-semibold text-foreground text-xs">
+                                {t('estimated-total', {
+                                  total: centToDollar(
+                                    plan.pricePerSeat *
+                                      Math.max(
+                                        seatStatus.memberCount,
+                                        plan.minSeats ?? 1
+                                      )
+                                  ),
+                                  cycle:
+                                    plan.billingCycle === 'month'
+                                      ? t('per-month')
+                                      : t('per-year'),
+                                  count: Math.max(
+                                    seatStatus.memberCount,
+                                    plan.minSeats ?? 1
+                                  ),
+                                })}
+                              </p>
+                            </div>
+                            <p className="mt-0.5 pl-[18px] text-[10px] text-muted-foreground">
+                              {t('based-on-current-members')}
+                            </p>
+                          </div>
+                        )}
 
                       {/* Savings indicator for yearly plans */}
                       {plan.billingCycle === 'year' && (
@@ -504,6 +552,9 @@ export function PlanListDialog({
                             subscriptionId={currentPlan.id}
                             wsId={wsId}
                             productId={plan.id}
+                            onCheckoutOpened={() => {
+                              onOpenChange(false);
+                            }}
                             onPlanChange={
                               currentPlan.tier === 'FREE'
                                 ? undefined

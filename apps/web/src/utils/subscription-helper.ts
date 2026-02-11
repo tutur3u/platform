@@ -1,23 +1,54 @@
 import type { Polar } from '@tuturuuu/payment/polar';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 
+export type CreateFreeSubscriptionResult =
+  | {
+      status: 'created';
+      subscription: Awaited<ReturnType<Polar['subscriptions']['create']>>;
+    }
+  | { status: 'already_active' }
+  | { status: 'error'; message: string };
+
 // Helper function to check if a workspace has any active subscriptions
 export async function hasActiveSubscription(
+  polar: Polar,
   supabase: TypedSupabaseClient,
   wsId: string
 ) {
-  const { count, error } = await supabase
-    .from('workspace_subscriptions')
-    .select('*', { count: 'exact', head: true })
-    .eq('ws_id', wsId)
-    .eq('status', 'active');
+  // First check if workspace exists
+  const { data: workspace } = await supabase
+    .from('workspaces')
+    .select('*')
+    .eq('id', wsId)
+    .eq('deleted', false)
+    .maybeSingle();
 
-  if (error) {
-    console.error('Error checking active subscriptions:', error.message);
-    return true; // Assume true to avoid creating duplicate free subscriptions
+  if (!workspace) {
+    console.error(
+      `Workspace ${wsId} not found, cannot check active subscriptions`
+    );
+
+    return { hasWorkspace: false, hasActive: false };
   }
 
-  return (count ?? 0) > 0;
+  try {
+    const { result } = await polar.subscriptions.list({
+      metadata: { wsId },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      sorting: 'status' as any,
+    });
+
+    // Check if there's at least one active subscription
+    return {
+      hasWorkspace: true,
+      hasActive: result.items?.some((sub) => sub.status === 'active') ?? false,
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('Error checking active subscriptions:', errorMessage);
+    // Fail-closed: treat API errors as "active" to prevent duplicate subscriptions
+    return { hasWorkspace: true, hasActive: true };
+  }
 }
 
 // Helper function to create a free subscription for a workspace in Polar
@@ -25,14 +56,26 @@ export async function createFreeSubscription(
   polar: Polar,
   supabase: TypedSupabaseClient,
   wsId: string
-) {
+): Promise<CreateFreeSubscriptionResult> {
   // Check if the workspace already has an active subscription
-  const hasActive = await hasActiveSubscription(supabase, wsId);
+  const { hasWorkspace, hasActive } = await hasActiveSubscription(
+    polar,
+    supabase,
+    wsId
+  );
+
+  if (!hasWorkspace) {
+    console.error(
+      `Workspace ${wsId} not found, cannot create free subscription`
+    );
+    return { status: 'error', message: 'Workspace not found' };
+  }
+
   if (hasActive) {
     console.log(
       `Workspace ${wsId} already has an active subscription, skipping free subscription creation`
     );
-    return null;
+    return { status: 'already_active' };
   }
 
   let externalCustomerId: string;
@@ -41,13 +84,14 @@ export async function createFreeSubscription(
     .from('workspaces')
     .select('*')
     .eq('id', wsId)
+    .eq('deleted', false)
     .maybeSingle();
 
   if (!workspace) {
     console.error(
       `Workspace not found for wsId ${wsId}, cannot create free subscription`
     );
-    return null;
+    return { status: 'error', message: 'Workspace not found' };
   }
 
   const isPersonal = workspace.personal;
@@ -71,7 +115,7 @@ export async function createFreeSubscription(
       `No FREE tier product found for ${isPersonal ? 'personal' : 'non-personal'} workspace, cannot create free subscription:`,
       productError
     );
-    return null;
+    return { status: 'error', message: 'No free tier product found' };
   }
 
   try {
@@ -87,14 +131,14 @@ export async function createFreeSubscription(
       `Created free subscription ${subscription.id} for workspace ${wsId}`
     );
 
-    return subscription;
+    return { status: 'created', subscription };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error(
       `Failed to create free subscription for workspace ${wsId}:`,
       errorMessage
     );
-    return null;
+    return { status: 'error', message: errorMessage };
   }
 }
 

@@ -3,6 +3,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { PolarEmbedCheckout } from '@tuturuuu/payment/polar/checkout/embed';
 import { Button } from '@tuturuuu/ui/button';
+import { useTheme } from 'next-themes';
 import type { PropsWithChildren } from 'react';
 import { useEffect, useState } from 'react';
 
@@ -11,8 +12,8 @@ interface PurchaseLinkProps {
   productId: string | null;
   wsId: string;
   customerEmail?: string;
-  theme?: 'light' | 'dark' | 'auto';
   className?: string;
+  onCheckoutOpened?: () => void;
   /** Called when user wants to change an existing subscription. If provided, opens in-app dialog instead of external portal */
   onPlanChange?: () => void;
 }
@@ -21,11 +22,12 @@ export default function PurchaseLink({
   subscriptionId,
   productId,
   wsId,
-  theme = 'auto',
   className,
   children,
+  onCheckoutOpened,
   onPlanChange,
 }: PropsWithChildren<PurchaseLinkProps>) {
+  const { resolvedTheme } = useTheme();
   const [checkoutInstance, setCheckoutInstance] =
     useState<PolarEmbedCheckout | null>(null);
 
@@ -57,7 +59,8 @@ export default function PurchaseLink({
       if (result.type === 'checkout' && result.data.url) {
         // Open checkout for new subscriptions
         const checkout = await PolarEmbedCheckout.create(result.data.url, {
-          theme: theme === 'auto' ? 'light' : theme,
+          theme: resolvedTheme === 'dark' ? 'dark' : 'light',
+          onLoaded: () => onCheckoutOpened?.(),
         });
 
         setCheckoutInstance(checkout);
@@ -83,7 +86,6 @@ export default function PurchaseLink({
   useEffect(() => {
     return () => {
       if (checkoutInstance) {
-        checkoutInstance.close();
         setCheckoutInstance(null);
       }
     };

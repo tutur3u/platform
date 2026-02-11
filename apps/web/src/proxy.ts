@@ -58,6 +58,46 @@ const WEB_APP_URL =
     : `http://localhost:${PORT}`;
 
 /**
+ * Check if a user's personal workspace is missing an active subscription.
+ * Returns true if the personal workspace exists but has no active subscription.
+ * Fail-open: returns false on any error to avoid blocking users.
+ */
+async function personalWorkspaceMissingSubscription(
+  userId: string
+): Promise<boolean> {
+  try {
+    const supabase = await createClient();
+
+    // Find user's personal workspace
+    const { data: workspace, error: wsError } = await supabase
+      .from('workspaces')
+      .select('id')
+      .eq('creator_id', userId)
+      .eq('personal', true)
+      .maybeSingle();
+
+    if (wsError || !workspace) {
+      return false;
+    }
+
+    // Check for an active subscription on that workspace
+    const { count, error: subError } = await supabase
+      .from('workspace_subscriptions')
+      .select('*', { count: 'exact', head: true })
+      .eq('ws_id', workspace.id)
+      .eq('status', 'active');
+
+    if (subError) {
+      return false;
+    }
+
+    return (count ?? 0) === 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Check if user needs to complete onboarding
  * Returns true if user should be redirected to onboarding
  */
@@ -253,6 +293,29 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
           }
 
           return NextResponse.redirect(redirectUrl);
+        }
+
+        // User completed onboarding — check if their personal workspace
+        // is missing a free subscription. If so, redirect to /onboarding
+        // where it will be created server-side before bouncing back.
+        const alreadyAttempted =
+          req.cookies.get('subscription_fix_attempted')?.value === '1';
+
+        if (!alreadyAttempted) {
+          const isMissing = await personalWorkspaceMissingSubscription(user.id);
+
+          if (isMissing) {
+            const fixUrl = new URL('/onboarding', req.nextUrl);
+            const response = NextResponse.redirect(fixUrl);
+            response.cookies.set('subscription_fix_attempted', '1', {
+              httpOnly: true,
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'lax',
+              maxAge: 60 * 60 * 24, // 24 hours
+              path: '/',
+            });
+            return response;
+          }
         }
       }
     } catch (error) {

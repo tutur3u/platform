@@ -20,6 +20,7 @@ import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { useWorkspaceUserGroups } from '@/hooks/use-workspace-user-groups';
+import DefaultGroupSettings from './default-group-settings';
 
 interface Props {
   wsId: string;
@@ -60,10 +61,14 @@ export default function UsersManagementSettings({ wsId }: Props) {
           .map((v) => v.trim())
           .filter(Boolean);
 
+      // Filter out stale/deleted group IDs
+      const availableIds = new Set((groupsData || []).map((g) => g.id));
       return {
-        default_excluded_groups: parseIds(defaultExcludedConfig),
+        default_excluded_groups: parseIds(defaultExcludedConfig).filter((id) =>
+          availableIds.has(id)
+        ),
       };
-    }, [isLoading, defaultExcludedConfig]),
+    }, [isLoading, defaultExcludedConfig, groupsData]),
     resetOptions: {
       keepDirtyValues: true,
     },
@@ -187,6 +192,8 @@ export default function UsersManagementSettings({ wsId }: Props) {
           </Button>
         </form>
       </Form>
+
+      <DefaultGroupSettings wsId={wsId} />
     </div>
   );
 }
