@@ -41,13 +41,13 @@ export default function Navbar() {
   const mobileActions = (
     <Sheet>
       <Button asChild className="btn-primary justify-center text-base">
-              <Link href="#register">Register Now</Link>
-            </Button>
+        <Link href="#register">Register Now</Link>
+      </Button>
       <SheetTrigger className="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-background/80 text-foreground shadow-sm transition hover:bg-foreground/5 active:scale-95 md:hidden">
         <MenuIcon className="h-5 w-5" />
         <span className="sr-only">Open navigation</span>
       </SheetTrigger>
-      
+
       <SheetContent
         side="right"
         className="flex h-full flex-col border-l bg-background/95 p-0 md:hidden"
@@ -74,8 +74,7 @@ export default function Navbar() {
               <Link href="#contact">Contact Us</Link>
             </Button>
           </SheetClose>
-          <SheetClose asChild>
-          </SheetClose>
+          <SheetClose asChild></SheetClose>
         </div>
       </SheetContent>
     </Sheet>
