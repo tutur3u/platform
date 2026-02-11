@@ -9,6 +9,9 @@ on:
   push:
     branches:
       - production
+    paths:
+      - 'apps/web/**'
+      - 'packages/**'
   workflow_dispatch:
 
 jobs:

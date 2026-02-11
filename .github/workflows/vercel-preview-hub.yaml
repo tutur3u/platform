@@ -6,6 +6,9 @@ on:
   push:
     branches-ignore:
       - production
+    paths:
+      - 'apps/web/**'
+      - 'packages/**'
   workflow_dispatch:
 
 jobs:
