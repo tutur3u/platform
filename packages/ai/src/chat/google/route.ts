@@ -29,7 +29,7 @@ async function getAllChatFiles(
   Array<{ fileName: string; content: string | ArrayBuffer; mediaType: string }>
 > {
   try {
-    const sbDynamic = await createDynamicClient();
+    const sbDynamic = await createDynamicClient<any>();
 
     // Get all files in the chat directory
     const { data: files, error: listError } = await sbDynamic
@@ -298,7 +298,7 @@ export function createPOST(
         return new Response(threadError.message, { status: 500 });
       }
 
-      const sbDynamic = await createDynamicClient();
+      const sbDynamic = await createDynamicClient<any>();
 
       if (thread && thread.length === 1 && thread[0]?.role === 'USER') {
         // Move files from temp to thread

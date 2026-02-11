@@ -1,6 +1,6 @@
 import {
-    createAdminClient,
-    createClient,
+  createAdminClient,
+  createClient,
 } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 

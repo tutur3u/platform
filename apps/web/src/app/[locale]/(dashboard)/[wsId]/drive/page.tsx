@@ -212,7 +212,7 @@ async function getData(
   wsId: string,
   { q, page = '1', pageSize = '10', path = '' }: Awaited<Props['searchParams']>
 ) {
-  const supabase = await createDynamicClient();
+  const supabase = await createDynamicClient<any>();
 
   const { data, error } = await supabase.storage
     .from('workspaces')
@@ -252,7 +252,7 @@ async function getTotalSize(wsId: string) {
 }
 
 async function getFileCount(wsId: string) {
-  const supabase = await createDynamicClient();
+  const supabase = await createDynamicClient<any>();
 
   const { count, error } = await supabase
     .schema('storage')
@@ -270,7 +270,7 @@ async function getFileCount(wsId: string) {
 }
 
 async function getLargestFile(wsId: string) {
-  const supabase = await createDynamicClient();
+  const supabase = await createDynamicClient<any>();
 
   const { data, error } = await supabase
     .schema('storage')
@@ -291,7 +291,7 @@ async function getLargestFile(wsId: string) {
 }
 
 async function getSmallestFile(wsId: string) {
-  const supabase = await createDynamicClient();
+  const supabase = await createDynamicClient<any>();
 
   const { data, error } = await supabase
     .schema('storage')
