@@ -27,8 +27,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return generateCommonMetadata({
     config: {
       description: {
-        en: 'Take control of your workflow, supercharged by AI.',
-        vi: 'Quản lý công việc của bạn, siêu tốc độ cùng AI.',
+        en: 'Visual kanban boards with drag-and-drop, real-time collaboration, and AI workflows.',
+        vi: 'Bảng kanban trực quan với kéo-thả, cộng tác thời gian thực và quy trình AI.',
       },
       name: siteConfig.name,
       url: siteConfig.url,

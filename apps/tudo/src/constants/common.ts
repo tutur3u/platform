@@ -8,12 +8,12 @@ export const CENTRAL_PORT = process.env.CENTRAL_PORT || 7803;
 
 export const BASE_URL =
   process.env.BASE_URL || PROD_MODE
-    ? 'https://tumeet.me'
+    ? 'https://tasks.tuturuuu.com'
     : `http://localhost:${PORT}`;
 
 export const API_URL =
   process.env.API_URL || PROD_MODE
-    ? 'https://tumeet.me/api'
+    ? 'https://tasks.tuturuuu.com/api'
     : `http://localhost:${PORT}/api`;
 
 export const TTR_URL =
