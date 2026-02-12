@@ -7,6 +7,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { usePopoverManager } from '@tuturuuu/ui/hooks/use-popover-manager';
+import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import {
   HoverCard,
   HoverCardContent,
@@ -29,6 +30,12 @@ import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import timezone from 'dayjs/plugin/timezone';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  formatLunarDay,
+  getLunarDate,
+  getLunarHolidayName,
+  isSpecialLunarDate,
+} from '../../../../lib/lunar-calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '../../popover';
 import { getColorHighlight } from './color-highlights';
 import { useCalendarSettings } from './settings/settings-context';
@@ -41,6 +48,7 @@ interface MonthCalendarProps {
   workspace?: Workspace;
   visibleDates?: Date[];
   viewedMonth?: Date;
+  locale?: string;
 }
 
 interface MultiDayEventSegment {
@@ -98,9 +106,14 @@ export const MonthCalendar = ({
   date,
   visibleDates,
   viewedMonth,
+  locale = 'en',
 }: MonthCalendarProps) => {
   const { getCurrentEvents, addEmptyEvent, openModal } = useCalendar();
   const { settings } = useCalendarSettings();
+  const { value: showLunar } = useUserBooleanConfig(
+    'SHOW_LUNAR_CALENDAR',
+    locale.startsWith('vi')
+  );
   const { timeFormat } = useCalendarPreferences();
   const timePattern = getTimeFormatPattern(timeFormat);
   const [currDate, setCurrDate] = useState(date);
@@ -607,7 +620,7 @@ export const MonthCalendar = ({
                   <div
                     key={day.toString()}
                     className={cn(
-                      'group relative min-h-[140px] p-1.5 transition-colors',
+                      'group relative min-h-35 p-1.5 transition-colors',
                       !isCurrentMonth && 'bg-muted/50',
                       highlightClass,
                       isHovered && 'bg-muted/30',
@@ -617,17 +630,42 @@ export const MonthCalendar = ({
                     onMouseLeave={() => setHoveredDay(null)}
                   >
                     <div className="flex items-center justify-between">
-                      <span
-                        className={cn(
-                          'flex h-7 w-7 items-center justify-center text-sm',
-                          isTodayDate &&
-                            'rounded-full bg-primary font-medium text-primary-foreground',
-                          !isCurrentMonth && 'text-muted-foreground',
-                          isHidden && 'text-muted-foreground/50'
-                        )}
-                      >
-                        {format(day, 'd')}
-                      </span>
+                      <div className="flex items-center gap-1">
+                        <span
+                          className={cn(
+                            'flex h-7 w-7 items-center justify-center text-sm',
+                            isTodayDate &&
+                              'rounded-full bg-primary font-medium text-primary-foreground',
+                            !isCurrentMonth && 'text-muted-foreground',
+                            isHidden && 'text-muted-foreground/50'
+                          )}
+                        >
+                          {format(day, 'd')}
+                        </span>
+                        {showLunar &&
+                          (() => {
+                            const lunar = getLunarDate(day);
+                            const isSpecial = isSpecialLunarDate(lunar);
+                            const holidayName = getLunarHolidayName(
+                              lunar,
+                              locale
+                            );
+                            return (
+                              <span
+                                className={cn(
+                                  'text-[10px] leading-none',
+                                  isSpecial
+                                    ? 'font-semibold text-dynamic-orange'
+                                    : 'text-muted-foreground',
+                                  !isCurrentMonth && 'opacity-50'
+                                )}
+                                title={holidayName ?? undefined}
+                              >
+                                {formatLunarDay(lunar)}
+                              </span>
+                            );
+                          })()}
+                      </div>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button

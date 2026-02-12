@@ -49,6 +49,7 @@ import {
 } from '../form';
 import { Input } from '../input';
 import { Popover, PopoverContent, PopoverTrigger } from '../popover';
+import { TUTURUUU_LOGO_URL } from './tuturuuu-logo';
 
 const FormSchema = z.object({
   name: z.string().min(1).max(100),
@@ -82,7 +83,7 @@ function WorkspaceIcon({
       <AvatarFallback
         className={cn('text-xs', avatarUrl ? 'rounded-xs' : 'rounded-sm')}
       >
-        <AvatarImage src="/media/logos/transparent.png" />
+        <AvatarImage src={TUTURUUU_LOGO_URL} />
         {name ? getInitials(name) : '?'}
       </AvatarFallback>
     </Avatar>
@@ -204,7 +205,7 @@ export function WorkspaceSelect({
         {
           label: rootWorkspace.name || t('common.root'),
           value: ROOT_WORKSPACE_ID,
-          avatarUrl: rootWorkspace.avatar_url || '/media/logos/transparent.png',
+          avatarUrl: rootWorkspace.avatar_url || TUTURUUU_LOGO_URL,
           tier: (rootWorkspace as any)?.tier as
             | 'FREE'
             | 'PLUS'
@@ -319,7 +320,7 @@ export function WorkspaceSelect({
                 avatarUrl={
                   workspace?.avatar_url ||
                   (workspace?.id === ROOT_WORKSPACE_ID
-                    ? '/media/logos/transparent.png'
+                    ? TUTURUUU_LOGO_URL
                     : undefined)
                 }
               />

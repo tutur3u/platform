@@ -1,5 +1,5 @@
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
-import Image from 'next/image';
+import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { Suspense } from 'react';
 import { TokenVerifierCore } from './token-verifier-core';
 
@@ -8,12 +8,7 @@ export function TokenVerifier() {
     <div className="fixed inset-0 flex h-screen w-screen flex-col items-center justify-center gap-2">
       <div className="flex items-center justify-center">
         <h1 className="relative flex w-fit items-center gap-2">
-          <Image
-            src="/media/logos/transparent.png"
-            width={128}
-            height={128}
-            alt="Tuturuuu Logo"
-          />
+          <TuturuuLogo width={128} height={128} />
         </h1>
       </div>
       <Suspense

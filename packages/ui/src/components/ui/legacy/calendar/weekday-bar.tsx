@@ -63,6 +63,7 @@ export const WeekdayBar = ({
                   weekday={dayjsDate
                     .locale(locale)
                     .format(locale === 'vi' ? 'dd' : 'ddd')}
+                  locale={locale}
                 />
               </div>
             );

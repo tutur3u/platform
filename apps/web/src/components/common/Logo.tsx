@@ -1,4 +1,4 @@
-import Image from 'next/image';
+import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import Link from 'next/link';
 
 interface LogoProps {
@@ -24,8 +24,7 @@ export default function Logo({
     >
       {showLogo && (
         <div className="flex-none">
-          <Image
-            src="/media/logos/transparent.png"
+          <TuturuuLogo
             alt="logo"
             width={320}
             height={320}

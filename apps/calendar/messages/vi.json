@@ -1337,6 +1337,10 @@
     "add_more_calendars": "Thêm lịch khác",
     "added_calendar": "Đã thêm {name}",
     "agenda": "Lịch trình",
+    "agenda_all_day": "Cả ngày",
+    "agenda_empty_subtitle": "Không có sự kiện nào trong {days} ngày tới. Tận hưởng thời gian rảnh!",
+    "agenda_empty_title": "Lịch trống",
+    "agenda_event_count": "{count, plural, one {# sự kiện} other {# sự kiện}}",
     "all_calendars_connected": "Tất cả lịch Google của bạn đã được kết nối.",
     "auth_url_invalid": "URL xác thực không hợp lệ",
     "calendar_created": "Đã tạo lịch",
@@ -1476,6 +1480,7 @@
     "syncing_to_google": "Đang đồng bộ lên Google...",
     "this-month": "Tháng này",
     "this-week": "Tuần này",
+    "this-year": "Năm nay",
     "timezone_required": {
       "description": "Để bản xem trước lịch và Lịch thông minh hoạt động chính xác cho mọi người, vui lòng chọn múi giờ cố định và ngày bắt đầu tuần cho không gian làm việc này.",
       "first_day": {
@@ -1496,6 +1501,7 @@
     "today": "Hôm nay",
     "toggle_calendars_desc": "Bật/tắt lịch hiển thị",
     "toggle_failed": "Không thể cập nhật trạng thái hiển thị lịch.",
+    "tomorrow": "Ngày mai",
     "tuturuuu_calendars": "Lịch Tuturuuu",
     "unknown_account": "Tài khoản không xác định",
     "unknown_error": "Đã xảy ra lỗi không xác định",
@@ -1506,7 +1512,9 @@
     "workspace_first_day": "Ngày bắt đầu tuần",
     "workspace_first_day_desc": "Đặt ngày bắt đầu tuần cho việc hiển thị lịch trong không gian làm việc. Thành viên có thể ghi đè cài đặt này trong cài đặt cá nhân.",
     "workspace_timezone": "Múi giờ làm việc",
-    "workspace_timezone_desc": "Đặt múi giờ mặc định cho không gian làm việc này. Thành viên có thể ghi đè cài đặt này trong cài đặt cá nhân."
+    "workspace_timezone_desc": "Đặt múi giờ mặc định cho không gian làm việc này. Thành viên có thể ghi đè cài đặt này trong cài đặt cá nhân.",
+    "year": "Năm",
+    "yesterday": "Hôm qua"
   },
   "calendar_lab": {
     "baseline_captured": "Đã ghi nhận mốc so sánh. Điều chỉnh trọng số và chạy lại để so sánh.",
@@ -5925,6 +5933,8 @@
       "hours_description": "Cấu hình giờ làm việc, giờ họp và múi giờ của bạn",
       "integrations": "Tích hợp",
       "integrations_description": "Kết nối Google Calendar và các dịch vụ khác",
+      "show_lunar_calendar": "Hiển thị Âm lịch",
+      "show_lunar_calendar_description": "Hiển thị ngày âm lịch trên lịch. Tự động bật cho người dùng Việt Nam.",
       "smart": "Tính năng thông minh",
       "smart_description": "Cấu hình lập lịch và quản lý tác vụ hỗ trợ bởi AI",
       "title": "Lịch"

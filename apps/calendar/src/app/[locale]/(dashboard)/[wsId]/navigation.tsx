@@ -1,4 +1,4 @@
-import { CalendarDays, FlaskConical } from '@tuturuuu/icons';
+import { CalendarDays } from '@tuturuuu/icons';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { getTranslations } from 'next-intl/server';
 
@@ -18,13 +18,13 @@ export async function getNavigationLinks({
       icon: <CalendarDays className="h-4 w-4" />,
       matchExact: true,
     },
-    null,
-    {
-      title: t('sidebar_tabs.lab'),
-      href: `/${personalOrWsId}/lab`,
-      icon: <FlaskConical className="h-4 w-4" />,
-      requireRootMember: true,
-    },
+    // null,
+    // {
+    //   title: t('sidebar_tabs.lab'),
+    //   href: `/${personalOrWsId}/lab`,
+    //   icon: <FlaskConical className="h-4 w-4" />,
+    //   requireRootMember: true,
+    // },
   ];
 
   return navLinks;
