@@ -57,6 +57,8 @@ interface TaskDialogState {
   mode?: 'edit' | 'create';
   availableLists?: TaskList[];
   collaborationMode?: boolean;
+  /** Whether realtime features (Yjs sync, presence avatars) are enabled - true for all tiers */
+  realtimeEnabled?: boolean;
   originalPathname?: string;
   filters?: TaskFilters;
   fakeTaskUrl?: boolean;
@@ -171,10 +173,11 @@ export function TaskDialogProvider({
     isOpen: false,
   });
 
-  // Read cursorsEnabled from workspace presence context
+  // Read cursorsEnabled and realtimeEnabled from workspace presence context
   // (always true in DEV_MODE via the provider)
   const wsPresence = useOptionalWorkspacePresenceContext();
   const cursorsEnabled = wsPresence?.cursorsEnabled ?? false;
+  const realtimeEnabled = wsPresence?.realtimeEnabled ?? false;
 
   // Store all update callbacks in a ref set for multiple registrations
   const updateCallbacksRef = useRef<Set<() => void>>(new Set());
@@ -195,10 +198,11 @@ export function TaskDialogProvider({
         mode: 'edit',
         availableLists,
         collaborationMode: !isPersonalWorkspace && cursorsEnabled,
+        realtimeEnabled: !isPersonalWorkspace && realtimeEnabled,
         fakeTaskUrl,
       });
     },
-    [isPersonalWorkspace, cursorsEnabled]
+    [isPersonalWorkspace, cursorsEnabled, realtimeEnabled]
   );
 
   const openTaskById = useCallback(
@@ -270,12 +274,13 @@ export function TaskDialogProvider({
           mode: 'edit',
           availableLists: (lists as TaskList[]) || undefined,
           collaborationMode: !isPersonalWorkspace && cursorsEnabled,
+          realtimeEnabled: !isPersonalWorkspace && realtimeEnabled,
         });
       } catch (error) {
         console.error('Failed to open task:', error);
       }
     },
-    [isPersonalWorkspace, cursorsEnabled]
+    [isPersonalWorkspace, cursorsEnabled, realtimeEnabled]
   );
 
   const createTask = useCallback(

@@ -197,6 +197,7 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
       filters={state.filters}
       mode={state.mode}
       collaborationMode={state.collaborationMode}
+      realtimeEnabled={state.realtimeEnabled}
       isPersonalWorkspace={isPersonalWorkspace}
       parentTaskId={state.parentTaskId}
       parentTaskName={state.parentTaskName}

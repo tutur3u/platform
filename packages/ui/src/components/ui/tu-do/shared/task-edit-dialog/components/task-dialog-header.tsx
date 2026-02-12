@@ -173,6 +173,8 @@ export function getTaskDialogHeaderInfo(
 interface TaskDialogHeaderProps {
   isCreateMode: boolean;
   collaborationMode?: boolean;
+  /** Whether realtime features (Yjs sync, presence avatars) are enabled - true for all tiers */
+  realtimeEnabled?: boolean;
   isOpen: boolean;
   synced: boolean;
   connected: boolean;
@@ -227,6 +229,7 @@ interface TaskDialogHeaderProps {
 export function TaskDialogHeader({
   isCreateMode,
   collaborationMode,
+  realtimeEnabled,
   isOpen,
   synced,
   connected,
@@ -410,8 +413,8 @@ export function TaskDialogHeader({
           </Tooltip>
         )}
 
-        {/* Online Users */}
-        {collaborationMode && isOpen && !isCreateMode && user && taskId && (
+        {/* Online Users - shown for all tiers when realtimeEnabled */}
+        {realtimeEnabled && isOpen && !isCreateMode && user && taskId && (
           <TaskViewerAvatarsComponent
             taskId={taskId}
             compact={false}

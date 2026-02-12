@@ -18,7 +18,8 @@ export interface UseTaskYjsSyncProps {
   boardId: string;
   isOpen: boolean;
   isCreateMode: boolean;
-  collaborationMode: boolean;
+  /** Whether realtime features (Yjs sync) are enabled - true for all tiers */
+  realtimeEnabled: boolean;
   description: JSONContent | null;
   editorInstance: Editor | null;
   doc: Y.Doc | null;
@@ -37,7 +38,7 @@ export function useTaskYjsSync({
   boardId,
   isOpen,
   isCreateMode,
-  collaborationMode,
+  realtimeEnabled,
   description,
   editorInstance,
   doc,
@@ -85,7 +86,7 @@ export function useTaskYjsSync({
   // Event-based sync: Update description field from Yjs for real-time UI updates
   useEffect(() => {
     if (
-      !collaborationMode ||
+      !realtimeEnabled ||
       isCreateMode ||
       !isOpen ||
       !taskId ||
@@ -132,7 +133,7 @@ export function useTaskYjsSync({
       debouncedSync.cancel();
     };
   }, [
-    collaborationMode,
+    realtimeEnabled,
     isCreateMode,
     isOpen,
     taskId,

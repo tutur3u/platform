@@ -21,6 +21,8 @@ const REALTIME_LIMITS: Record<
 interface WorkspacePresenceContextValue extends UseWorkspacePresenceResult {
   tier: WorkspaceProductTier;
   cursorsEnabled: boolean;
+  /** Whether realtime features (Yjs sync, presence avatars) are enabled - true for all tiers */
+  realtimeEnabled: boolean;
 }
 
 const WorkspacePresenceContext =
@@ -42,6 +44,8 @@ export function WorkspacePresenceProvider({
   const tier = tierProp || 'FREE';
   const maxPresencePerBoard = REALTIME_LIMITS[tier]?.maxPresencePerBoard ?? 10;
   const cursorsEnabled = DEV_MODE || tier !== 'FREE';
+  // realtimeEnabled: Yjs sync and presence avatars available for ALL tiers (when provider is enabled)
+  const realtimeEnabled = enabled;
 
   const presenceResult = useWorkspacePresence({
     wsId,
@@ -54,8 +58,9 @@ export function WorkspacePresenceProvider({
       ...presenceResult,
       tier,
       cursorsEnabled,
+      realtimeEnabled,
     }),
-    [presenceResult, tier, cursorsEnabled]
+    [presenceResult, tier, cursorsEnabled, realtimeEnabled]
   );
 
   return (

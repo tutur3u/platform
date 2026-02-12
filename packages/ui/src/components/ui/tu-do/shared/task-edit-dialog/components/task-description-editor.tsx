@@ -20,7 +20,10 @@ export interface TaskDescriptionEditorProps {
   setDescription: (desc: JSONContent | null) => void;
   isOpen: boolean;
   isCreateMode: boolean;
+  /** Whether cursor collaboration is enabled (paid tiers only) */
   collaborationMode: boolean;
+  /** Whether realtime features (Yjs sync) are enabled - true for all tiers */
+  realtimeEnabled?: boolean;
   isYjsSyncing: boolean;
   wsId: string;
   boardId: string;
@@ -78,6 +81,7 @@ export function TaskDescriptionEditor({
   isOpen,
   isCreateMode,
   collaborationMode,
+  realtimeEnabled = false,
   isYjsSyncing,
   wsId,
   boardId,
@@ -98,7 +102,9 @@ export function TaskDescriptionEditor({
   disabled = false,
 }: TaskDescriptionEditorProps) {
   const t = useTranslations('ws-task-boards.dialog');
-  const allowCollaboration = isOpen && !isCreateMode && collaborationMode;
+  // Yjs sync is enabled for all tiers (realtimeEnabled), but cursor labels only for paid tiers (collaborationMode)
+  const allowYjsSync = isOpen && !isCreateMode && realtimeEnabled;
+  const showCollaborationCursors = isOpen && !isCreateMode && collaborationMode;
   const supabase = createClient();
 
   // Track mention changes to detect undo/redo operations and sync with database
@@ -299,10 +305,12 @@ export function TaskDescriptionEditor({
               titleInputRef.current.setSelectionRange(length, length);
             }
           }}
-          yjsDoc={allowCollaboration ? yjsDoc : null}
-          yjsProvider={allowCollaboration ? yjsProvider : null}
-          collaborationUser={allowCollaboration ? collaborationUser : null}
-          allowCollaboration={allowCollaboration}
+          yjsDoc={allowYjsSync ? yjsDoc : null}
+          yjsProvider={allowYjsSync ? yjsProvider : null}
+          collaborationUser={
+            showCollaborationCursors ? collaborationUser : null
+          }
+          allowCollaboration={allowYjsSync}
           readOnly={isYjsSyncing || disabled}
           mentionTranslations={mentionTranslations}
         />

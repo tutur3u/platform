@@ -94,6 +94,8 @@ export interface TaskEditDialogProps {
   filters?: TaskFilters;
   mode?: 'edit' | 'create';
   collaborationMode?: boolean;
+  /** Whether realtime features (Yjs sync, presence avatars) are enabled - true for all tiers */
+  realtimeEnabled?: boolean;
   isPersonalWorkspace?: boolean;
   parentTaskId?: string;
   parentTaskName?: string;
@@ -131,6 +133,7 @@ export function TaskEditDialog({
   filters,
   mode = 'edit',
   collaborationMode = false,
+  realtimeEnabled = false,
   isPersonalWorkspace = false,
   parentTaskId,
   parentTaskName,
@@ -253,21 +256,20 @@ export function TaskEditDialog({
   });
 
   // Yjs collaboration — paid tiers get immediate broadcasts; free tier coalesces rapid edits
+  // Note: realtimeEnabled controls Yjs sync (all tiers), collaborationMode controls cursors (paid tiers)
   const { doc, provider, synced, connected } = useYjsCollaboration({
     channel: `task-editor-${task?.id || 'new'}`,
     tableName: 'tasks',
     columnName: 'description_yjs_state',
     id: task?.id || '',
     user: yjsUser,
-    enabled: isOpen && !isCreateMode && collaborationMode && !!task?.id,
+    enabled: isOpen && !isCreateMode && realtimeEnabled && !!task?.id,
     broadcastDebounceMs: workspaceTier && workspaceTier !== 'FREE' ? 0 : 200,
   });
 
   const isYjsSyncing = useMemo(() => {
-    return (
-      isOpen && !isCreateMode && collaborationMode && !!task?.id && !synced
-    );
-  }, [isOpen, isCreateMode, collaborationMode, task?.id, synced]);
+    return isOpen && !isCreateMode && realtimeEnabled && !!task?.id && !synced;
+  }, [isOpen, isCreateMode, realtimeEnabled, task?.id, synced]);
 
   // Update user when props change
   useEffect(() => {
@@ -654,7 +656,7 @@ export function TaskEditDialog({
     boardId,
     isOpen,
     isCreateMode,
-    collaborationMode,
+    realtimeEnabled,
     description: formState.description,
     editorInstance,
     doc,
@@ -1244,6 +1246,7 @@ export function TaskEditDialog({
               <TaskDialogHeader
                 isCreateMode={isCreateMode}
                 collaborationMode={collaborationMode}
+                realtimeEnabled={realtimeEnabled}
                 isOpen={isOpen}
                 synced={synced}
                 connected={connected}
@@ -1436,6 +1439,7 @@ export function TaskEditDialog({
                   isOpen={isOpen}
                   isCreateMode={isCreateMode}
                   collaborationMode={collaborationMode}
+                  realtimeEnabled={realtimeEnabled}
                   isYjsSyncing={isYjsSyncing}
                   wsId={wsId}
                   boardId={boardId}
