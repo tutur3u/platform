@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@ncthub/ui/button';
-import { MenuIcon } from '@ncthub/ui/icons';
+import { MenuIcon, X } from '@ncthub/ui/icons';
 import { Navbar as SharedNavbar } from '@ncthub/ui/navbar';
 import {
   Sheet,
@@ -11,7 +11,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@ncthub/ui/sheet';
-import { XIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import NavbarSeparator from './navbar-separator';
@@ -59,7 +58,7 @@ export default function Navbar() {
           <SheetHeader className="flex-row items-center justify-between border-b px-6 py-6">
             <SheetTitle className="font-bold text-lg">Menu</SheetTitle>
             <SheetClose className="rounded-md p-2 text-foreground/80 transition hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-              <XIcon className="h-4 w-4" />
+              <X className="h-4 w-4" />
               <span className="sr-only">Close navigation</span>
             </SheetClose>
           </SheetHeader>
