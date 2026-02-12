@@ -4,7 +4,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getSeatStatus } from '@/utils/seat-limits';
+import { getEffectiveAvailableSeats } from '@/utils/seat-limits';
 
 interface Params {
   params: Promise<{
@@ -88,40 +88,19 @@ export async function POST(req: Request, { params }: Params) {
 
   // Pre-flight seat check: reject entire batch if insufficient seats
   const sbAdmin = await createAdminClient();
-  const seatStatus = await getSeatStatus(sbAdmin, wsId);
+  const { status: seatStatus, effectiveAvailable } =
+    await getEffectiveAvailableSeats(sbAdmin, wsId);
 
-  if (seatStatus.isSeatBased) {
-    // Count pending invites to calculate effective availability
-    const [{ count: wsInviteCount }, { count: emailInviteCount }] =
-      await Promise.all([
-        sbAdmin
-          .from('workspace_invites')
-          .select('*', { count: 'exact', head: true })
-          .eq('ws_id', wsId),
-        sbAdmin
-          .from('workspace_email_invites')
-          .select('*', { count: 'exact', head: true })
-          .eq('ws_id', wsId),
-      ]);
-
-    const totalPending = (wsInviteCount ?? 0) + (emailInviteCount ?? 0);
-    const effectiveUsed = seatStatus.memberCount + totalPending;
-    const effectiveAvailable = Math.max(
-      0,
-      seatStatus.seatCount - effectiveUsed
+  if (seatStatus.isSeatBased && effectiveAvailable < uniqueEmails.length) {
+    return NextResponse.json(
+      {
+        message: `Not enough seats to invite ${uniqueEmails.length} user(s). Available: ${effectiveAvailable}, Total seats: ${seatStatus.seatCount}.`,
+        code: 'SEAT_LIMIT_REACHED',
+        availableSeats: effectiveAvailable,
+        requestedCount: uniqueEmails.length,
+      },
+      { status: 403 }
     );
-
-    if (effectiveAvailable < uniqueEmails.length) {
-      return NextResponse.json(
-        {
-          message: `Not enough seats to invite ${uniqueEmails.length} user(s). Available: ${effectiveAvailable}, Total seats: ${seatStatus.seatCount}.`,
-          code: 'SEAT_LIMIT_REACHED',
-          availableSeats: effectiveAvailable,
-          requestedCount: uniqueEmails.length,
-        },
-        { status: 403 }
-      );
-    }
   }
 
   // Insert all invites (ignore duplicates)
@@ -141,12 +120,17 @@ export async function POST(req: Request, { params }: Params) {
 
     if (error) {
       const isDuplicate = error.message.includes('duplicate key value');
+      const isSeatLimit =
+        error.message.includes('workspace_has_available_seats') ||
+        error.message.includes('seat');
       results.push({
         email: invite.email,
         success: false,
         error: isDuplicate
           ? 'Already invited or member'
-          : 'Failed to send invite',
+          : isSeatLimit
+            ? 'Seat limit reached'
+            : 'Failed to send invite',
       });
     } else {
       results.push({ email: invite.email, success: true });

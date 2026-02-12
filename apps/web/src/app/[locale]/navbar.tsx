@@ -1,4 +1,5 @@
 import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
+import { TUTURUUU_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { Navbar as SharedNavbar } from '@tuturuuu/ui/navbar';
 import { Suspense } from 'react';
 import NavbarActions from './navbar-actions';
@@ -23,7 +24,7 @@ export default async function Navbar({
   const renderNavbarActions = () => (
     <Suspense
       fallback={
-        <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
+        <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
       }
     >
       <NavbarActions hideMetadata={hideMetadata} />
@@ -32,14 +33,11 @@ export default async function Navbar({
 
   return (
     <SharedNavbar
-      logo="/media/logos/transparent.png"
+      logo={TUTURUUU_LOGO_URL}
       title={<LogoTitle />}
       customLogoLink={
         <Suspense>
-          <NavbarLogoLink
-            logo="/media/logos/transparent.png"
-            title={<LogoTitle />}
-          />
+          <NavbarLogoLink logo={TUTURUUU_LOGO_URL} title={<LogoTitle />} />
         </Suspense>
       }
       navigationMenu={<MainNavigationMenu />}

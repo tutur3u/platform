@@ -4,10 +4,10 @@ import { ArrowLeft } from '@tuturuuu/icons';
 import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
+import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { setCookie } from 'cookies-next';
-import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -396,8 +396,7 @@ export function Structure({
       {isCollapsed || wsId === ROOT_WORKSPACE_ID || (
         <Link href="/" className="flex flex-none items-center gap-2">
           <div className="flex-none">
-            <Image
-              src="/media/logos/transparent.png"
+            <TuturuuLogo
               className="h-6 w-6"
               width={32}
               height={32}
@@ -492,13 +491,7 @@ export function Structure({
     <>
       <div className="flex flex-none items-center gap-2">
         <Link href="/" className="flex flex-none items-center gap-2">
-          <Image
-            src="/media/logos/transparent.png"
-            className="h-8 w-8"
-            width={32}
-            height={32}
-            alt="logo"
-          />
+          <TuturuuLogo className="h-8 w-8" width={32} height={32} alt="logo" />
         </Link>
       </div>
       <div className="mx-2 h-4 w-px flex-none rotate-30 bg-foreground/20" />

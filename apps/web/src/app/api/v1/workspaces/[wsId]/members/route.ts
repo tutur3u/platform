@@ -175,6 +175,23 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
+  // Pre-check: verify the user has a pending invite before making Polar API calls.
+  // The supabase.insert below is RLS-enforced and would fail anyway, but checking
+  // early avoids an unnecessary Polar seat assignment + rollback round-trip.
+  const { data: hasInvite } = await sbAdmin
+    .from('workspace_invites')
+    .select('id')
+    .eq('ws_id', wsId)
+    .eq('user_id', data.user_id)
+    .maybeSingle();
+
+  if (!hasInvite) {
+    return NextResponse.json(
+      { message: 'User does not have a pending invite for this workspace' },
+      { status: 403 }
+    );
+  }
+
   // Assign Polar seat BEFORE adding member (if seat-based subscription)
   const polar = createPolarClient();
   const seatAssignment = await assignSeatToMember(

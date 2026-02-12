@@ -1,6 +1,6 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import { Separator } from '../separator';
+import { TuturuuLogo } from './tuturuuu-logo';
 
 export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
   const TUTURUUU_URL = devMode
@@ -27,8 +27,7 @@ export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
             className="flex items-center gap-4 transition"
             aria-label="Tuturuuu"
           >
-            <Image
-              src="/media/logos/transparent.png"
+            <TuturuuLogo
               width={64}
               height={64}
               alt="logo"

@@ -2,7 +2,13 @@
 
 import { useCallback, useState } from 'react';
 
-export type CalendarView = 'day' | '4-days' | 'week' | 'month' | 'agenda';
+export type CalendarView =
+  | 'day'
+  | '4-days'
+  | 'week'
+  | 'month'
+  | 'year'
+  | 'agenda';
 
 export function useViewTransition() {
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -25,6 +31,7 @@ export function useViewTransition() {
         '4-days',
         'week',
         'month',
+        'year',
         'agenda',
       ];
       const oldIndex = viewOrder.indexOf(oldView);

@@ -1,11 +1,18 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { CheckSquare, Paintbrush, PanelLeft, User } from '@tuturuuu/icons';
+import {
+  CalendarDays,
+  CheckSquare,
+  Paintbrush,
+  PanelLeft,
+  User,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { AppearanceSettings } from '@tuturuuu/ui/custom/settings/appearance-settings';
+import { LunarCalendarSettings } from '@tuturuuu/ui/custom/settings/lunar-calendar-settings';
 import SharedSidebarSettings from '@tuturuuu/ui/custom/settings/sidebar-settings';
 import { TaskSettings } from '@tuturuuu/ui/custom/settings/task-settings';
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
@@ -84,6 +91,18 @@ export function SettingsDialog({
       ],
     },
     {
+      label: t('settings.calendar.title'),
+      items: [
+        {
+          name: 'calendar_general',
+          label: t('settings.calendar.general'),
+          icon: CalendarDays,
+          description: t('settings.calendar.general_description'),
+          keywords: ['Calendar', 'General', 'Lunar'],
+        },
+      ],
+    },
+    {
       label: t('settings.user.title'),
       items: [
         {
@@ -124,6 +143,12 @@ export function SettingsDialog({
       primaryGroupLabels={[tasksLabel]}
       expandAllAccordions={expandAllAccordions}
     >
+      {activeTab === 'calendar_general' && (
+        <div className="h-full">
+          <LunarCalendarSettings />
+        </div>
+      )}
+
       {activeTab === 'tasks_general' && (
         <div className="h-full">
           <TaskSettings workspace={workspace} />

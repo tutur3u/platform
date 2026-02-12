@@ -2,6 +2,7 @@
 
 import { XIcon } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
+import { TUTURUUU_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -15,7 +16,7 @@ const DOMAINS = {
   TUTURUUU: {
     name: 'Tuturuuu',
     href: DEV_MODE ? `http://localhost:${PORT}` : 'https://tuturuuu.com',
-    logo: '/media/logos/transparent.png',
+    logo: TUTURUUU_LOGO_URL,
   },
   NOVA: {
     name: 'Nova',

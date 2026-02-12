@@ -77,14 +77,15 @@ export default function PlanLogin({
       });
 
       if (result.data) {
-        // Save credentials to localStorage if checkbox is checked
+        // Save guest name to localStorage if checkbox is checked
+        // Note: password is intentionally NOT stored to avoid clear-text
+        // storage of sensitive information (CodeQL js/clear-text-storage-of-sensitive-data)
         if (values.saveCredentials) {
           try {
             localStorage.setItem(
               `${GUEST_CREDENTIALS_KEY_PREFIX}${plan.id}`,
               JSON.stringify({
                 name: values.guestName,
-                password: values.guestPassword,
               })
             );
           } catch (error) {
@@ -124,13 +125,13 @@ export default function PlanLogin({
       if (savedCredentialsJSON) {
         const savedCredentials = JSON.parse(savedCredentialsJSON);
         form.setValue('guestName', savedCredentials.name || '');
-        form.setValue('guestPassword', savedCredentials.password || '');
 
-        // Auto login if we have saved credentials
+        // Auto-login with empty password (works for guests without passwords;
+        // fails gracefully for password-protected guests, showing pre-filled form)
         if (savedCredentials.name) {
           onSubmit({
             guestName: savedCredentials.name,
-            guestPassword: savedCredentials.password || '',
+            guestPassword: '',
             saveCredentials: true,
           });
         }

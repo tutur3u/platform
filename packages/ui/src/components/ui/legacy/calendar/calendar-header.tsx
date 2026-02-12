@@ -1,6 +1,13 @@
-import { CalendarIcon, ChevronLeft, ChevronRight } from '@tuturuuu/icons';
+import {
+  CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+  Moon,
+  MoonStar,
+} from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
+import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import {
   Select,
   SelectContent,
@@ -8,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import dayjs from 'dayjs';
 import type { CalendarView } from '../../../../hooks/use-view-transition';
 
@@ -34,16 +42,25 @@ export function CalendarHeader({
   extras?: React.ReactNode;
 }) {
   const views = availableViews.filter((view) => view?.disabled !== true);
+  const { value: showLunar, toggle: toggleLunar } = useUserBooleanConfig(
+    'SHOW_LUNAR_CALENDAR',
+    locale.startsWith('vi')
+  );
 
-  const title = dayjs(date)
-    .locale(locale)
-    .format(locale === 'vi' ? 'MMMM, YYYY' : 'MMMM YYYY')
-    .replace(/^\w/, (c) => c.toUpperCase());
+  const title =
+    view === 'year'
+      ? String(date.getFullYear())
+      : dayjs(date)
+          .locale(locale)
+          .format(locale === 'vi' ? 'MMMM, YYYY' : 'MMMM YYYY')
+          .replace(/^\w/, (c) => c.toUpperCase());
 
   const handleNext = () =>
     setDate((date) => {
       const newDate = new Date(date);
-      if (view === 'month') {
+      if (view === 'year') {
+        newDate.setFullYear(newDate.getFullYear() + 1);
+      } else if (view === 'month') {
         newDate.setMonth(newDate.getMonth() + 1);
       } else {
         newDate.setDate(newDate.getDate() + offset);
@@ -54,7 +71,9 @@ export function CalendarHeader({
   const handlePrev = () =>
     setDate((date) => {
       const newDate = new Date(date);
-      if (view === 'month') {
+      if (view === 'year') {
+        newDate.setFullYear(newDate.getFullYear() - 1);
+      } else if (view === 'month') {
         newDate.setMonth(newDate.getMonth() - 1);
       } else {
         newDate.setDate(newDate.getDate() - offset);
@@ -64,11 +83,35 @@ export function CalendarHeader({
 
   const { isLoading, isSyncing } = useCalendarSync();
   const selectToday = () => setDate(new Date());
-  const isToday = () => dayjs(date).isSame(dayjs(), 'day');
+  const isTodaySelected = () => dayjs(date).isSame(dayjs(), 'day');
   const isCurrentMonth = () =>
     view === 'month' &&
     date.getMonth() === new Date().getMonth() &&
     date.getFullYear() === new Date().getFullYear();
+  const isCurrentYear = () =>
+    view === 'year' && date.getFullYear() === new Date().getFullYear();
+
+  const isCurrentPeriod =
+    isTodaySelected() || isCurrentMonth() || isCurrentYear();
+
+  const getTodayLabel = (): string => {
+    switch (view) {
+      case 'day':
+        return t('today');
+      case 'week':
+      case '4-days':
+      case 'agenda':
+        return t('this-week');
+      case 'month':
+        return t('this-month');
+      case 'year':
+        return t('this-year');
+      default:
+        return t('current');
+    }
+  };
+
+  const LunarIcon = showLunar ? MoonStar : Moon;
 
   return (
     <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -78,7 +121,6 @@ export function CalendarHeader({
       </div>
       <div className="flex flex-col gap-2 md:flex-row md:items-center">
         <div className="flex items-center gap-2">
-          {/* Loading circle */}
           {(isLoading || isSyncing) && (
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           )}
@@ -95,18 +137,10 @@ export function CalendarHeader({
             <Button
               variant="outline"
               size="sm"
-              onClick={isToday() || isCurrentMonth() ? undefined : selectToday}
-              disabled={isToday() || isCurrentMonth()}
+              onClick={isCurrentPeriod ? undefined : selectToday}
+              disabled={isCurrentPeriod}
             >
-              {view === 'day'
-                ? t('today')
-                : view === 'week'
-                  ? t('this-week')
-                  : view === 'month'
-                    ? t('this-month')
-                    : view === 'agenda'
-                      ? t('this-week')
-                      : t('current')}
+              {getTodayLabel()}
             </Button>
             <Button
               variant="outline"
@@ -137,6 +171,22 @@ export function CalendarHeader({
               </Select>
             </div>
           )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={showLunar ? 'default' : 'outline'}
+                size="icon"
+                className="h-8 w-8"
+                onClick={toggleLunar}
+                aria-label={locale === 'vi' ? 'Âm lịch' : 'Lunar calendar'}
+              >
+                <LunarIcon className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {locale === 'vi' ? 'Âm lịch' : 'Lunar calendar'}
+            </TooltipContent>
+          </Tooltip>
         </div>
         {extras}
       </div>

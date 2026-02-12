@@ -784,7 +784,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       {/* All-day event columns with relative positioning for spanning events */}
       <div
         ref={containerRef}
-        className={cn('relative flex-1 border-b')}
+        className={cn('relative flex-1 overflow-hidden border-b')}
         style={{
           minWidth: `${visibleDates.length * MIN_COLUMN_WIDTH}px`,
           height: `${barHeight}rem`,

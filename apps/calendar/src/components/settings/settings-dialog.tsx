@@ -6,6 +6,7 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { AppearanceSettings } from '@tuturuuu/ui/custom/settings/appearance-settings';
+import { LunarCalendarSettings } from '@tuturuuu/ui/custom/settings/lunar-calendar-settings';
 import SharedSidebarSettings from '@tuturuuu/ui/custom/settings/sidebar-settings';
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
@@ -78,7 +79,7 @@ export function SettingsDialog({
           label: t('settings.calendar.general'),
           icon: CalendarDays,
           description: t('settings.calendar.general_description'),
-          keywords: ['Calendar', 'General'],
+          keywords: ['Calendar', 'General', 'Lunar'],
         },
       ],
     },
@@ -125,7 +126,7 @@ export function SettingsDialog({
     >
       {activeTab === 'calendar_general' && (
         <div className="h-full">
-          <div>Calendar settings coming soon</div>
+          <LunarCalendarSettings />
         </div>
       )}
 

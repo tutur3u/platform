@@ -15,6 +15,14 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'tuturuuu.com',
+      },
+    ],
+  },
   async rewrites() {
     return {
       beforeFiles: [],

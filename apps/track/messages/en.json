@@ -5930,6 +5930,8 @@
       "hours_description": "Configure your work hours, meeting hours, and timezone",
       "integrations": "Integrations",
       "integrations_description": "Connect your Google Calendar and other services",
+      "show_lunar_calendar": "Show Lunar Calendar",
+      "show_lunar_calendar_description": "Display Vietnamese lunar dates on the calendar. Auto-enabled for Vietnamese locale.",
       "smart": "Smart Features",
       "smart_description": "Configure AI-powered scheduling and task management",
       "title": "Calendar"

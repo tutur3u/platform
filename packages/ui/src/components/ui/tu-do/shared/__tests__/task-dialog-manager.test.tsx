@@ -1,17 +1,17 @@
 import '@testing-library/jest-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, waitFor } from '@testing-library/react';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import React from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   TaskDialogProvider,
   useTaskDialogContext,
 } from '../../providers/task-dialog-provider';
 import { TaskDialogManager } from '../task-dialog-manager';
 
-// Mock Next.js navigation
+// Mock Next.js navigation (no longer needs useRouter/usePathname for URL manipulation)
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
     push: vi.fn(),
@@ -90,6 +90,26 @@ function Wrapper({ children }: { children: React.ReactNode }) {
     </QueryClientProvider>
   );
 }
+
+// Spy on window.history methods for URL manipulation tests
+let pushStateSpy: ReturnType<typeof vi.spyOn>;
+let replaceStateSpy: ReturnType<typeof vi.spyOn>;
+
+beforeEach(() => {
+  pushStateSpy = vi.spyOn(window.history, 'pushState');
+  replaceStateSpy = vi.spyOn(window.history, 'replaceState');
+  // Set a known initial pathname for tests
+  Object.defineProperty(window, 'location', {
+    value: { ...window.location, pathname: '/workspace-1/tasks' },
+    writable: true,
+  });
+});
+
+afterEach(() => {
+  pushStateSpy.mockRestore();
+  replaceStateSpy.mockRestore();
+  vi.restoreAllMocks();
+});
 
 describe('TaskDialogManager', () => {
   it('should render nothing when dialog is not open', () => {
@@ -221,6 +241,113 @@ describe('TaskDialogManager', () => {
     // Click close button
     const closeButton = getByTestId('close-button');
     fireEvent.click(closeButton);
+
+    await waitFor(() => {
+      expect(getByTestId('dialog-open-state')).toHaveTextContent('false');
+    });
+  });
+
+  it('should use pushState for fakeTaskUrl instead of router.push', async () => {
+    const TestComponent = () => {
+      const { openTask } = useTaskDialogContext();
+
+      React.useEffect(() => {
+        openTask(mockTask, 'board-1', [mockList], true);
+      }, [openTask]);
+
+      return <TaskDialogManager wsId="workspace-1" />;
+    };
+
+    render(
+      <Wrapper>
+        <TestComponent />
+      </Wrapper>
+    );
+
+    await waitFor(() => {
+      expect(pushStateSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ __fakeTaskUrl: true }),
+        '',
+        '/workspace-1/tasks/task-1'
+      );
+    });
+  });
+
+  it('should use replaceState to revert URL when dialog closes', async () => {
+    const TestComponent = () => {
+      const { openTask, state } = useTaskDialogContext();
+
+      React.useEffect(() => {
+        openTask(mockTask, 'board-1', [mockList], true);
+      }, [openTask]);
+
+      return (
+        <div>
+          <TaskDialogManager wsId="workspace-1" />
+          <div data-testid="dialog-open-state">{String(state.isOpen)}</div>
+        </div>
+      );
+    };
+
+    const { getByTestId } = render(
+      <Wrapper>
+        <TestComponent />
+      </Wrapper>
+    );
+
+    // Wait for dialog to open and pushState to be called
+    await waitFor(() => {
+      expect(getByTestId('dialog-open-state')).toHaveTextContent('true');
+      expect(pushStateSpy).toHaveBeenCalled();
+    });
+
+    // Close dialog
+    const closeButton = getByTestId('close-button');
+    fireEvent.click(closeButton);
+
+    await waitFor(() => {
+      expect(getByTestId('dialog-open-state')).toHaveTextContent('false');
+      // Should replaceState back to original pathname
+      expect(replaceStateSpy).toHaveBeenCalledWith(
+        null,
+        '',
+        '/workspace-1/tasks'
+      );
+    });
+  });
+
+  it('should close dialog on popstate (browser back) when fakeTaskUrl is active', async () => {
+    const TestComponent = () => {
+      const { openTask, state } = useTaskDialogContext();
+
+      React.useEffect(() => {
+        openTask(mockTask, 'board-1', [mockList], true);
+      }, [openTask]);
+
+      return (
+        <div>
+          <TaskDialogManager wsId="workspace-1" />
+          <div data-testid="dialog-open-state">{String(state.isOpen)}</div>
+        </div>
+      );
+    };
+
+    const { getByTestId } = render(
+      <Wrapper>
+        <TestComponent />
+      </Wrapper>
+    );
+
+    // Wait for dialog to open
+    await waitFor(() => {
+      expect(getByTestId('dialog-open-state')).toHaveTextContent('true');
+      expect(pushStateSpy).toHaveBeenCalled();
+    });
+
+    // Simulate browser back button
+    act(() => {
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
 
     await waitFor(() => {
       expect(getByTestId('dialog-open-state')).toHaveTextContent('false');

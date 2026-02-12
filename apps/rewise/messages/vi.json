@@ -5936,6 +5936,8 @@
       "hours_description": "Cấu hình giờ làm việc, giờ họp và múi giờ của bạn",
       "integrations": "Tích hợp",
       "integrations_description": "Kết nối Google Calendar và các dịch vụ khác",
+      "show_lunar_calendar": "Hiển thị Âm lịch",
+      "show_lunar_calendar_description": "Hiển thị ngày âm lịch trên lịch. Tự động bật cho người dùng Việt Nam.",
       "smart": "Tính năng thông minh",
       "smart_description": "Cấu hình lập lịch và quản lý tác vụ hỗ trợ bởi AI",
       "title": "Lịch"
