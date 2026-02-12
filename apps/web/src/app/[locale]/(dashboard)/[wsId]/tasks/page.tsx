@@ -1,7 +1,10 @@
-import { MyTasksDataLoader } from '@tuturuuu/ui/tu-do/my-tasks/my-tasks-data-loader';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { redirect } from 'next/navigation';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
+import MyTasksPage from '@tuturuuu/ui/tu-do/my-tasks/my-tasks-page';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'My Tasks',
+  description: 'View and manage your assigned tasks.',
+};
 
 interface Props {
   params: Promise<{
@@ -9,19 +12,6 @@ interface Props {
   }>;
 }
 
-export default async function MyTasksPage({ params }: Props) {
-  const user = await getCurrentUser();
-  if (!user) redirect(`/login`);
-
-  return (
-    <WorkspaceWrapper params={params}>
-      {({ wsId, isPersonal }) => (
-        <MyTasksDataLoader
-          wsId={wsId}
-          userId={user.id}
-          isPersonal={isPersonal}
-        />
-      )}
-    </WorkspaceWrapper>
-  );
+export default async function Page({ params }: Props) {
+  return <MyTasksPage params={params} />;
 }

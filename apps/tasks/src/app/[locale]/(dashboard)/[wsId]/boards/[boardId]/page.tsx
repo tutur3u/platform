@@ -1,5 +1,4 @@
-import TaskBoardPage from '@tuturuuu/ui/tu-do/boards/boardId/task-board-page';
-import { Suspense } from 'react';
+import TaskBoardServerPage from '@tuturuuu/ui/tu-do/boards/boardId/task-board-server-page';
 
 interface Props {
   params: Promise<{
@@ -8,11 +7,6 @@ interface Props {
   }>;
 }
 
-export default async function WorkspaceTaskBoardPage({ params }: Props) {
-  const resolvedParams = await params;
-  return (
-    <Suspense>
-      <TaskBoardPage params={resolvedParams} />
-    </Suspense>
-  );
+export default async function Page({ params }: Props) {
+  return <TaskBoardServerPage params={params} />;
 }

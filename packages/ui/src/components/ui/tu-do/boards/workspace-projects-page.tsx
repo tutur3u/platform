@@ -7,12 +7,31 @@ import { Plus } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { EnhancedBoardsView } from './enhanced-boards-view';
 import { TaskBoardForm } from './form';
 import { QuickCreateBoardDialog } from './quick-create-board-dialog';
+
+/**
+ * Configuration options for WorkspaceProjectsPage
+ * Allows customization of UI elements based on the consuming app
+ */
+interface PageConfig {
+  /**
+   * Whether to show the FeatureSummary component with enhanced UI
+   * @default false - shows simple header
+   */
+  showFeatureSummary?: boolean;
+  /**
+   * Whether to show a separator between header and content
+   * @default false
+   */
+  showSeparator?: boolean;
+}
 
 interface Props {
   params: Promise<{
@@ -23,6 +42,10 @@ interface Props {
     page?: string;
     pageSize?: string;
   }>;
+  /**
+   * Optional configuration for UI customization
+   */
+  config?: PageConfig;
 }
 
 async function getData(
@@ -106,7 +129,10 @@ async function getData(
 export default async function WorkspaceProjectsPage({
   params,
   searchParams,
+  config = {},
 }: Props) {
+  const { showFeatureSummary = false, showSeparator = false } = config;
+
   const { wsId: id } = await params;
   const sp = await searchParams;
   const workspace = await getWorkspace(id);
@@ -130,24 +156,44 @@ export default async function WorkspaceProjectsPage({
 
   const t = await getTranslations();
 
+  // Common action button for both header variants
+  const createButton = (
+    <TaskBoardForm wsId={wsId}>
+      <Button className="flex items-center gap-2">
+        <Plus className="h-4 w-4" />
+        {t('ws-task-boards.create')}
+      </Button>
+    </TaskBoardForm>
+  );
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-2">
-          <h1 className="font-bold text-2xl tracking-tight">
-            {t('ws-task-boards.plural')}
-          </h1>
-          <p className="text-muted-foreground">
-            {t('ws-task-boards.description')}
-          </p>
+      {showFeatureSummary ? (
+        // Enhanced header with FeatureSummary (used by apps/web)
+        <FeatureSummary
+          pluralTitle={t('ws-task-boards.plural')}
+          singularTitle={t('ws-task-boards.singular')}
+          description={t('ws-task-boards.description')}
+          createTitle={t('ws-task-boards.create')}
+          createDescription={t('ws-task-boards.create_description')}
+          action={createButton}
+        />
+      ) : (
+        // Simple header (used by apps/tasks and other satellite apps)
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-2">
+            <h1 className="font-bold text-2xl tracking-tight">
+              {t('ws-task-boards.plural')}
+            </h1>
+            <p className="text-muted-foreground">
+              {t('ws-task-boards.description')}
+            </p>
+          </div>
+          {createButton}
         </div>
-        <TaskBoardForm wsId={wsId}>
-          <Button className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            {t('ws-task-boards.create')}
-          </Button>
-        </TaskBoardForm>
-      </div>
+      )}
+
+      {showSeparator && <Separator />}
 
       <HydrationBoundary state={dehydrate(queryClient)}>
         <QuickCreateBoardDialog
@@ -159,3 +205,6 @@ export default async function WorkspaceProjectsPage({
     </div>
   );
 }
+
+// Re-export the config type for consumers
+export type { PageConfig as WorkspaceProjectsPageConfig };

@@ -1,7 +1,4 @@
-import NotesContent from '@tuturuuu/ui/tu-do/notes/notes-content';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { redirect } from 'next/navigation';
+import NotesPage from '@tuturuuu/ui/tu-do/notes/notes-page';
 
 interface Props {
   params: Promise<{
@@ -9,14 +6,6 @@ interface Props {
   }>;
 }
 
-export default async function NotesPage({ params }: Props) {
-  const { wsId: id } = await params;
-
-  const user = await getCurrentUser();
-  if (!user) redirect('/login');
-
-  const workspace = await getWorkspace(id);
-  if (!workspace) redirect('/');
-
-  return <NotesContent wsId={workspace.id} />;
+export default async function Page({ params }: Props) {
+  return <NotesPage params={params} />;
 }

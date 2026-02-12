@@ -309,6 +309,10 @@
       "import": "./src/components/ui/custom/settings-dialog-shell.tsx"
     },
     "./custom/settings/*": "./src/components/ui/custom/settings/*.tsx",
+    "./custom/workspace-wrapper": {
+      "types": "./src/components/ui/custom/workspace-wrapper.tsx",
+      "import": "./src/components/ui/custom/workspace-wrapper.tsx"
+    },
     "./lib/workspace-actions": {
       "types": "./src/lib/workspace-actions.ts",
       "import": "./src/lib/workspace-actions.ts"

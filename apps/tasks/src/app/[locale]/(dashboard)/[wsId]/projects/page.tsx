@@ -1,15 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { TaskProjectsClient } from '@tuturuuu/ui/tu-do/projects/task-projects-client';
-import type {
-  ProjectHealth,
-  ProjectPriority,
-  ProjectStatus,
-  TaskProject,
-} from '@tuturuuu/ui/tu-do/projects/types';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { notFound, redirect } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
+import TaskProjectsPage from '@tuturuuu/ui/tu-do/projects/task-projects-page';
 
 interface Props {
   params: Promise<{
@@ -17,88 +6,6 @@ interface Props {
   }>;
 }
 
-export default async function TaskProjectsPage({ params }: Props) {
-  const { wsId: id } = await params;
-
-  const user = await getCurrentUser();
-  if (!user) redirect('/login');
-
-  const workspace = await getWorkspace(id);
-  if (!workspace) redirect('/');
-
-  const wsId = workspace.id;
-
-  const { withoutPermission } = await getPermissions({ wsId });
-  if (withoutPermission('manage_projects')) notFound();
-
-  const supabase = await createClient();
-  const t = await getTranslations('task-projects');
-
-  const { data: projects, error: projectsError } = await supabase
-    .from('task_projects')
-    .select(`
-      *,
-      creator:users!task_projects_creator_id_fkey(
-        id, display_name, avatar_url
-      ),
-      lead:users!task_projects_lead_id_fkey(
-        id, display_name, avatar_url
-      ),
-      task_project_tasks(
-        task:tasks!inner(
-          id, name, completed, completed_at, closed_at, deleted_at, priority,
-          task_lists(name)
-        )
-      )
-    `)
-    .eq('ws_id', wsId)
-    .order('created_at', { ascending: false });
-
-  if (projectsError) {
-    console.error('Error fetching task projects:', projectsError);
-    notFound();
-  }
-
-  const formattedProjects: TaskProject[] = (projects ?? []).map((project) => {
-    const activeTasks =
-      project.task_project_tasks?.filter(
-        (link) => link.task && link.task.deleted_at === null
-      ) ?? [];
-
-    return {
-      ...project,
-      status: project.status as ProjectStatus | null,
-      priority: project.priority as ProjectPriority | null,
-      health_status: project.health_status as ProjectHealth | null,
-      created_at: project.created_at ?? new Date().toISOString(),
-      tasksCount: activeTasks.length,
-      completedTasksCount: activeTasks.filter(
-        (link) =>
-          link.task?.completed_at !== null || link.task?.closed_at !== null
-      ).length,
-      linkedTasks: activeTasks.flatMap(({ task }) =>
-        task
-          ? [
-              {
-                id: task.id,
-                name: task.name,
-                completed_at: task.completed_at,
-                priority: task.priority as ProjectPriority | null,
-                listName: task.task_lists?.name ?? null,
-              },
-            ]
-          : []
-      ),
-    };
-  });
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="font-bold text-2xl">{t('page_heading')}</h1>
-        <p className="text-muted-foreground">{t('page_subheading')}</p>
-      </div>
-      <TaskProjectsClient wsId={wsId} initialProjects={formattedProjects} />
-    </div>
-  );
+export default async function Page({ params }: Props) {
+  return <TaskProjectsPage params={params} />;
 }

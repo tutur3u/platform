@@ -1,8 +1,4 @@
-import { MyTasksDataLoader } from '@tuturuuu/ui/tu-do/my-tasks/my-tasks-data-loader';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { redirect } from 'next/navigation';
-import { Suspense } from 'react';
+import MyTasksPage from '@tuturuuu/ui/tu-do/my-tasks/my-tasks-page';
 
 interface Props {
   params: Promise<{
@@ -10,22 +6,6 @@ interface Props {
   }>;
 }
 
-export default async function MyTasksPage({ params }: Props) {
-  const { wsId: id } = await params;
-
-  const user = await getCurrentUser();
-  if (!user) redirect('/login');
-
-  const workspace = await getWorkspace(id);
-  if (!workspace) redirect('/');
-
-  return (
-    <Suspense>
-      <MyTasksDataLoader
-        wsId={workspace.id}
-        userId={user.id}
-        isPersonal={workspace.personal}
-      />
-    </Suspense>
-  );
+export default async function Page({ params }: Props) {
+  return <MyTasksPage params={params} />;
 }

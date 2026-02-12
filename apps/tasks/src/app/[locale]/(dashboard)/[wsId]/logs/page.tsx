@@ -1,8 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import LogsClient from '@tuturuuu/ui/tu-do/logs/logs-client';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { redirect } from 'next/navigation';
+import TaskLogsPage from '@tuturuuu/ui/tu-do/logs/task-logs-page';
 
 interface Props {
   params: Promise<{
@@ -10,40 +6,6 @@ interface Props {
   }>;
 }
 
-export default async function TaskLogsPage({ params }: Props) {
-  const { wsId: id } = await params;
-
-  const user = await getCurrentUser();
-  if (!user) redirect('/login');
-
-  const workspace = await getWorkspace(id);
-  if (!workspace) redirect('/');
-
-  const wsId = workspace.id;
-
-  const { withoutPermission } = await getPermissions({ wsId });
-  if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
-
-  const supabase = await createClient();
-
-  const { data: boards } = await supabase
-    .from('workspace_boards')
-    .select('id, name, estimation_type')
-    .eq('ws_id', wsId)
-    .is('deleted_at', null)
-    .order('name', { ascending: true });
-
-  const boardList = (boards || []).map((b) => ({ id: b.id, name: b.name }));
-  const estimationTypes: Record<string, string | null> = {};
-  (boards || []).forEach((b) => {
-    estimationTypes[b.id] = b.estimation_type;
-  });
-
-  return (
-    <LogsClient
-      wsId={wsId}
-      boards={boardList}
-      estimationTypes={estimationTypes}
-    />
-  );
+export default async function Page({ params }: Props) {
+  return <TaskLogsPage params={params} />;
 }

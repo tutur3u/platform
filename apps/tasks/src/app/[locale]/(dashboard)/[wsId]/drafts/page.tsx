@@ -1,6 +1,4 @@
-import { DraftsPage } from '@tuturuuu/ui/tu-do/drafts/drafts-page';
-import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
-import { Suspense } from 'react';
+import TaskDraftsPage from '@tuturuuu/ui/tu-do/drafts/task-drafts-page';
 
 interface Props {
   params: Promise<{
@@ -8,14 +6,6 @@ interface Props {
   }>;
 }
 
-export default async function TaskDraftsPage({ params }: Props) {
-  const { wsId } = await params;
-
-  return (
-    <Suspense>
-      <TaskDialogWrapper isPersonalWorkspace={false} wsId={wsId}>
-        <DraftsPage wsId={wsId} />
-      </TaskDialogWrapper>
-    </Suspense>
-  );
+export default async function Page({ params }: Props) {
+  return <TaskDraftsPage params={params} />;
 }

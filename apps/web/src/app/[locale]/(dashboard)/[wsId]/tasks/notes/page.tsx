@@ -1,7 +1,10 @@
-import NotesContent from '@tuturuuu/ui/tu-do/notes/notes-content';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { redirect } from 'next/navigation';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
+import NotesPage from '@tuturuuu/ui/tu-do/notes/notes-page';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Notes',
+  description: 'Capture quick notes and ideas in your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{
@@ -9,13 +12,6 @@ interface Props {
   }>;
 }
 
-export default async function NotesPage({ params }: Props) {
-  const user = await getCurrentUser();
-  if (!user) redirect(`/login`);
-
-  return (
-    <WorkspaceWrapper params={params}>
-      {({ wsId }) => <NotesContent wsId={wsId} />}
-    </WorkspaceWrapper>
-  );
+export default async function Page({ params }: Props) {
+  return <NotesPage params={params} />;
 }
