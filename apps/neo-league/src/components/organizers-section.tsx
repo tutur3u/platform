@@ -5,8 +5,14 @@ export default function OrganizersSection() {
     <section id="organizers" className="px-6 py-20 md:px-8 md:py-24">
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
-          <h2 className="mb-4 font-black text-3xl shadow-text md:text-4xl">
-            COMPETITION <span className="text-secondary">ORGANIZERS</span>
+          <h2 className="mb-4 text-3xl md:text-4xl tracking-wide">
+            <span className="font-medium text-[#134e4a] italic">
+              COMPETITION{" "}
+            </span>
+            <span className="relative inline-block font-black text-[#134e4a]">
+              ORGANIZERS
+              <span className="absolute left-0 -bottom-1 h-[4px] w-full bg-yellow-400"></span>
+            </span>
           </h2>
         </div>
 

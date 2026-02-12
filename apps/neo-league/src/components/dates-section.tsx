@@ -34,8 +34,14 @@ export default function DatesSection() {
     <section id="dates" className="px-6 py-20 md:px-8 md:py-24">
       <div className="mx-auto max-w-4xl">
         <div className="mb-16 text-center">
-          <h2 className="mb-4 font-black text-3xl shadow-text md:text-4xl">
-            IMPORTANT <span className="text-secondary">DATES</span>
+          <h2 className="mb-4 text-3xl md:text-4xl tracking-wide">
+            <span className="font-medium text-[#134e4a] italic">
+              IMPORTANT{" "}
+            </span>
+            <span className="relative inline-block font-black text-[#134e4a]">
+              DATES
+              <span className="absolute left-0 -bottom-1 h-[4px] w-full bg-yellow-400"></span>
+            </span>
           </h2>
         </div>
 
