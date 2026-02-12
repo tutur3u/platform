@@ -1,4 +1,9 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { TaskUserOverride, UserBoardListOverride } from '@tuturuuu/types';
+import {
+  isPersonallyHidden,
+  resolveEffectiveValues,
+} from '@tuturuuu/utils/task-overrides';
 import MyTasksContent from './my-tasks-content';
 
 interface TaskAssignee {
@@ -32,6 +37,7 @@ export async function MyTasksDataLoader({
   const supabase = await createClient();
 
   // Fetch all accessible tasks using the RPC function
+  // Exclude personally completed/unassigned tasks at the DB level
   const { data: rpcTasks, error: tasksError } = await supabase.rpc(
     'get_user_accessible_tasks',
     {
@@ -39,6 +45,8 @@ export async function MyTasksDataLoader({
       p_ws_id: isPersonal ? undefined : wsId,
       p_include_deleted: false,
       p_list_statuses: ['not_started', 'active', 'done'],
+      p_exclude_personally_completed: true,
+      p_exclude_personally_unassigned: true,
     }
   );
 
@@ -78,23 +86,35 @@ export async function MyTasksDataLoader({
       auto_schedule: boolean | null;
     }
   >();
+
+  // Fetch per-user task overrides (personal priority, due date, completion, etc.)
+  const overridesByTaskId = new Map<string, TaskUserOverride>();
+
   if (taskIds.length > 0) {
-    const { data: schedulingRows } = await (supabase as any)
-      .from('task_user_scheduling_settings')
-      .select(
+    const [schedulingResult, overridesResult] = await Promise.all([
+      (supabase as any)
+        .from('task_user_scheduling_settings')
+        .select(
+          `
+          task_id,
+          total_duration,
+          is_splittable,
+          min_split_duration_minutes,
+          max_split_duration_minutes,
+          calendar_hours,
+          auto_schedule
         `
-        task_id,
-        total_duration,
-        is_splittable,
-        min_split_duration_minutes,
-        max_split_duration_minutes,
-        calendar_hours,
-        auto_schedule
-      `
-      )
-      .eq('user_id', userId)
-      .in('task_id', taskIds);
-    (schedulingRows as any[] | null)?.forEach((r) => {
+        )
+        .eq('user_id', userId)
+        .in('task_id', taskIds),
+      (supabase as any)
+        .from('task_user_overrides')
+        .select('*')
+        .eq('user_id', userId)
+        .in('task_id', taskIds),
+    ]);
+
+    (schedulingResult.data as any[] | null)?.forEach((r: any) => {
       if (!r?.task_id) return;
       schedulingByTaskId.set(r.task_id, {
         total_duration: r.total_duration ?? null,
@@ -105,7 +125,21 @@ export async function MyTasksDataLoader({
         auto_schedule: r.auto_schedule ?? null,
       });
     });
+
+    (overridesResult.data as TaskUserOverride[] | null)?.forEach((r) => {
+      if (!r?.task_id) return;
+      overridesByTaskId.set(r.task_id, r);
+    });
   }
+
+  // Fetch board/list personal status overrides
+  const { data: boardListOverridesRaw } = await (supabase as any)
+    .from('user_board_list_overrides')
+    .select('*')
+    .eq('user_id', userId);
+
+  const boardListOverrides: UserBoardListOverride[] =
+    (boardListOverridesRaw as UserBoardListOverride[] | null) ?? [];
 
   let assigneesData: TaskAssignee[] | null = [];
   let labelsData: TaskLabel[] | null = [];
@@ -207,17 +241,34 @@ export async function MyTasksDataLoader({
     )
     .in('id', listIds);
 
-  // Map the data to match the expected structure
-  const tasksWithRelations = allTasks?.map((task) => ({
-    ...task,
-    ...(schedulingByTaskId.get(task.id) ?? {}),
-    list: listsData?.find((l) => l.id === task.list_id) || null,
-    assignees: assigneesByTaskId.get(task.id) || [],
-    labels: labelsByTaskId.get(task.id) || [],
-    projects: projectsByTaskId.get(task.id) || [],
-  }));
+  // Map the data to match the expected structure, merging overrides
+  const tasksWithRelations = allTasks
+    ?.map((task) => {
+      const override = overridesByTaskId.get(task.id) ?? null;
+      const baseTask = {
+        ...task,
+        ...(schedulingByTaskId.get(task.id) ?? {}),
+        list: listsData?.find((l) => l.id === task.list_id) || null,
+        assignees: assigneesByTaskId.get(task.id) || [],
+        labels: labelsByTaskId.get(task.id) || [],
+        projects: projectsByTaskId.get(task.id) || [],
+        overrides: override,
+      };
 
-  // Filter tasks by categories
+      // Apply effective values when self_managed
+      return resolveEffectiveValues(baseTask, override);
+    })
+    // Filter out tasks hidden by board/list overrides
+    .filter(
+      (task) =>
+        !isPersonallyHidden(
+          task,
+          overridesByTaskId.get(task.id) ?? null,
+          boardListOverrides
+        )
+    );
+
+  // Filter tasks by categories (using effective values from overrides)
   const now = new Date().toISOString();
   const today = new Date();
   const todayStart = new Date(today.setHours(0, 0, 0, 0)).toISOString();
@@ -227,8 +278,6 @@ export async function MyTasksDataLoader({
   const nextWeekEnd = new Date(
     nextWeek.setHours(23, 59, 59, 999)
   ).toISOString();
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
   const overdueTasks = tasksWithRelations
     ?.filter(
@@ -272,13 +321,18 @@ export async function MyTasksDataLoader({
     )
     .sort((a, b) => {
       if (a.priority !== b.priority) {
-        const priorityOrder = { critical: 4, high: 3, normal: 2, low: 1 };
+        const priorityOrder: Record<string, number> = {
+          critical: 4,
+          high: 3,
+          normal: 2,
+          low: 1,
+        };
         return (
           (priorityOrder[b.priority || 'normal'] || 0) -
           (priorityOrder[a.priority || 'normal'] || 0)
         );
       }
-      return a.created_at! > b.created_at! ? -1 : 1;
+      return (a.created_at ?? '') > (b.created_at ?? '') ? -1 : 1;
     });
 
   const upcomingTasks = [

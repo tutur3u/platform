@@ -83,12 +83,7 @@ export function useTaskDialogClose({
       try {
         await flushNameUpdate();
 
-        if (
-          collaborationMode &&
-          !isCreateMode &&
-          taskId &&
-          flushEditorPendingRef.current
-        ) {
+        if (!isCreateMode && taskId && flushEditorPendingRef.current) {
           await saveYjsDescriptionToDatabase({
             taskId,
             getContent: flushEditorPendingRef.current,
@@ -131,12 +126,7 @@ export function useTaskDialogClose({
       try {
         await flushNameUpdate();
 
-        if (
-          collaborationMode &&
-          !isCreateMode &&
-          taskId &&
-          flushEditorPendingRef.current
-        ) {
+        if (!isCreateMode && taskId && flushEditorPendingRef.current) {
           await saveYjsDescriptionToDatabase({
             taskId,
             getContent: flushEditorPendingRef.current,
@@ -159,7 +149,6 @@ export function useTaskDialogClose({
     setShowSyncWarning,
     onClose,
     flushNameUpdate,
-    collaborationMode,
     isCreateMode,
     taskId,
     boardId,

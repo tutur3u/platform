@@ -10,6 +10,7 @@ import {
   LayoutGrid,
   Loader2,
   UserRound,
+  UserRoundCog,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -80,6 +81,19 @@ interface Task {
       created_at: string;
     } | null;
   }> | null;
+  overrides?: {
+    task_id: string;
+    user_id: string;
+    self_managed: boolean;
+    completed_at: string | null;
+    personally_unassigned: boolean;
+    priority_override: string | null;
+    due_date_override: string | null;
+    estimation_override: number | null;
+    notes: string | null;
+    created_at: string;
+    updated_at: string;
+  } | null;
 }
 
 interface ExpandableTaskListProps {
@@ -132,6 +146,39 @@ export default function ExpandableTaskList({
     if (e && 'preventDefault' in e) {
       e.preventDefault();
       e.stopPropagation();
+    }
+
+    // Self-managed: use personal completion via overrides API
+    if (task.overrides?.self_managed) {
+      setCompletingTasks((prev) => new Set(prev).add(task.id));
+      setLocalTasks((prev) => prev.filter((t) => t.id !== task.id));
+
+      try {
+        const response = await fetch(
+          `/api/v1/users/me/tasks/${task.id}/overrides`,
+          {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              completed_at: new Date().toISOString(),
+            }),
+          }
+        );
+        if (!response.ok) throw new Error('Failed to update override');
+        toast.success(t('task_completed'));
+        handleUpdate();
+      } catch (error) {
+        console.error('Error updating task override:', error);
+        toast.error(t('failed_to_update_task'));
+        setLocalTasks(tasks);
+      } finally {
+        setCompletingTasks((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(task.id);
+          return newSet;
+        });
+      }
+      return;
     }
 
     if (!task.list?.board?.id) {
@@ -368,16 +415,26 @@ export default function ExpandableTaskList({
                 {/* Top row: Task name + Priority */}
                 <div className="flex items-start gap-3">
                   <div className="min-w-0 flex-1">
-                    <h4
-                      className={cn(
-                        'line-clamp-2 font-semibold text-sm leading-tight transition-colors group-hover:text-primary',
-                        isCompleted
-                          ? 'text-muted-foreground line-through'
-                          : 'text-foreground'
+                    <div className="flex items-center gap-1.5">
+                      <h4
+                        className={cn(
+                          'line-clamp-2 font-semibold text-sm leading-tight transition-colors group-hover:text-primary',
+                          isCompleted
+                            ? 'text-muted-foreground line-through'
+                            : 'text-foreground'
+                        )}
+                      >
+                        {task.name}
+                      </h4>
+                      {task.overrides?.self_managed && (
+                        <Badge
+                          variant="secondary"
+                          className="h-4 shrink-0 gap-0.5 border-dynamic-purple/30 bg-dynamic-purple/15 px-1 text-[9px] text-dynamic-purple"
+                        >
+                          <UserRoundCog className="h-2.5 w-2.5" />
+                        </Badge>
                       )}
-                    >
-                      {task.name}
-                    </h4>
+                    </div>
                   </div>
 
                   {/* Priority + Overdue badges */}
