@@ -9,6 +9,14 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'tuturuuu.com',
+      },
+    ],
+  },
 };
 
 export default withNextIntl(nextConfig);
