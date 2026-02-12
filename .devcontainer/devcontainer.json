@@ -35,6 +35,7 @@
           "source.fixAll.biome": "explicit",
           "source.fixAll": "explicit"
         },
+        "files.eol": "\n",
         "files.exclude": {
           "**/.git": true,
           "**/.svn": true,
