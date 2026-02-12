@@ -1,7 +1,6 @@
 {
   "name": "Tuturuuu Platform",
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
-
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {},
     "ghcr.io/devcontainers/features/node:1": {
@@ -14,7 +13,6 @@
       "version": "1.3.9"
     }
   },
-
   "customizations": {
     "vscode": {
       "extensions": [
@@ -141,12 +139,10 @@
       }
     }
   },
-
   "forwardPorts": [
     7803, 7804, 7805, 7806, 7807, 7808, 7809, 7810, 3000, 3001, 3002, 3003,
     8001, 8002, 8003, 8004
   ],
-
   "portsAttributes": {
     "7803": {
       "label": "Platform"
@@ -197,10 +193,6 @@
       "label": "Supabase Inbucket"
     }
   },
-
   "mounts": ["source=platform-bun-cache,target=/home/vscode/.bun,type=volume"],
-
-  "postCreateCommand": "bash .devcontainer/post-create.sh",
-
   "remoteUser": "vscode"
 }
