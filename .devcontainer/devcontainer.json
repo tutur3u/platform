@@ -1,0 +1,143 @@
+{
+  "name": "Tuturuuu Platform",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "24"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.13"
+    },
+    "ghcr.io/devcontainers/features/rust:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers-extra/features/bun:1": {
+      "version": "1.3.9"
+    },
+    "ghcr.io/nordcominc/devcontainer-features/android-sdk:1": {
+      "version": "latest"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "biomejs.biome",
+        "vitest.explorer",
+        "bradlc.vscode-tailwindcss",
+        "pflannery.vscode-versionlens",
+        "usernamehw.errorlens",
+        "YoavBls.pretty-ts-errors",
+        "typescriptteam.native-preview",
+        "aaron-bond.better-comments",
+        "PKief.material-icon-theme",
+        "lokalise.i18n-ally",
+        "dart-code.dart-code",
+        "dart-code.flutter",
+        "felixangelov.bloc",
+        "ms-azuretools.vscode-docker",
+        "rust-lang.rust-analyzer"
+      ],
+      "settings": {
+        "editor.defaultFormatter": "biomejs.biome",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "quickfix.biome": "explicit",
+          "source.organizeImports.biome": "explicit"
+        },
+        "[javascript]": {
+          "editor.defaultFormatter": "biomejs.biome"
+        },
+        "[typescript]": {
+          "editor.defaultFormatter": "biomejs.biome"
+        },
+        "[json]": {
+          "editor.defaultFormatter": "biomejs.biome"
+        },
+        "[jsonc]": {
+          "editor.defaultFormatter": "biomejs.biome"
+        },
+        "tailwindCSS.experimental.configFile": "packages/ui/src/globals.css",
+        "i18n-ally.localesPaths": [
+          "apps/web/messages",
+          "apps/calendar/messages",
+          "apps/finance/messages",
+          "apps/tasks/messages"
+        ],
+        "i18n-ally.keystyle": "nested",
+        "i18n-ally.enabledFrameworks": ["next-intl"],
+        "typescript.tsdk": "node_modules/typescript/lib"
+      }
+    }
+  },
+
+  "forwardPorts": [
+    7803, 7804, 7805, 7806, 7807, 7808, 7809, 7810, 3000, 3001, 3002, 3003,
+    8001, 8002, 8003, 8004
+  ],
+
+  "portsAttributes": {
+    "7803": {
+      "label": "Web App"
+    },
+    "7804": {
+      "label": "Rewise"
+    },
+    "7805": {
+      "label": "Nova"
+    },
+    "7806": {
+      "label": "Calendar"
+    },
+    "7807": {
+      "label": "Meet"
+    },
+    "7808": {
+      "label": "Finance"
+    },
+    "7809": {
+      "label": "Tasks"
+    },
+    "7810": {
+      "label": "Track"
+    },
+    "3000": {
+      "label": "External"
+    },
+    "3001": {
+      "label": "Rust Backend"
+    },
+    "3002": {
+      "label": "Shortener"
+    },
+    "3003": {
+      "label": "Playground"
+    },
+    "8001": {
+      "label": "Supabase API"
+    },
+    "8002": {
+      "label": "Supabase DB"
+    },
+    "8003": {
+      "label": "Supabase Studio"
+    },
+    "8004": {
+      "label": "Supabase Inbucket"
+    }
+  },
+
+  "mounts": ["source=platform-bun-cache,target=/home/vscode/.bun,type=volume"],
+
+  "containerEnv": {
+    "FLUTTER_ROOT": "/home/vscode/flutter",
+    "PATH": "${containerEnv:PATH}:/home/vscode/flutter/bin:/home/vscode/flutter/bin/cache/dart-sdk/bin"
+  },
+
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+
+  "remoteUser": "vscode"
+}
