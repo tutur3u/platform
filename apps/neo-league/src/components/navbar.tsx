@@ -11,6 +11,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@ncthub/ui/sheet';
+import { XIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import NavbarSeparator from './navbar-separator';
