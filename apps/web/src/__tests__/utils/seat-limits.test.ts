@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   canCreateInvitation,
   enforceSeatLimit,
+  getEffectiveAvailableSeats,
   getSeatStatus,
 } from '../../utils/seat-limits';
 
@@ -60,7 +61,10 @@ describe('seat-limits utils', () => {
     });
 
     it('should return non-seat-based status for fixed pricing model', async () => {
-      const subscription = { pricing_model: 'fixed' };
+      const subscription = {
+        seat_count: null,
+        workspace_subscription_products: { pricing_model: 'fixed' },
+      };
       const supabase = createMockSupabase(subscription, 10);
       const status = await getSeatStatus(supabase as any, wsId);
 
@@ -155,6 +159,51 @@ describe('seat-limits utils', () => {
 
       expect(result.allowed).toBe(false);
       expect(result.message).toContain('Seat limit reached');
+    });
+  });
+
+  describe('getEffectiveAvailableSeats', () => {
+    it('should return Infinity for non-seat-based plans', async () => {
+      const subscription = {
+        workspace_subscription_products: { pricing_model: 'fixed' },
+      };
+      const supabase = createMockSupabase(subscription, 50);
+      const result = await getEffectiveAvailableSeats(supabase as any, wsId);
+
+      expect(result.effectiveAvailable).toBe(Infinity);
+      expect(result.totalPending).toBe(0);
+      expect(result.status.isSeatBased).toBe(false);
+    });
+
+    it('should subtract pending invites from available seats', async () => {
+      const subscription = {
+        workspace_subscription_products: { pricing_model: 'seat_based' },
+        seat_count: 10,
+      };
+      // 3 members + 2 workspace invites + 1 email invite = 6 used → 4 available
+      const supabase = createMockSupabase(subscription, 3, {
+        workspace: 2,
+        email: 1,
+      });
+      const result = await getEffectiveAvailableSeats(supabase as any, wsId);
+
+      expect(result.effectiveAvailable).toBe(4);
+      expect(result.totalPending).toBe(3);
+    });
+
+    it('should cap effective available at 0', async () => {
+      const subscription = {
+        workspace_subscription_products: { pricing_model: 'seat_based' },
+        seat_count: 5,
+      };
+      // 4 members + 2 workspace invites = 6 used → 0 available (not -1)
+      const supabase = createMockSupabase(subscription, 4, {
+        workspace: 2,
+        email: 0,
+      });
+      const result = await getEffectiveAvailableSeats(supabase as any, wsId);
+
+      expect(result.effectiveAvailable).toBe(0);
     });
   });
 

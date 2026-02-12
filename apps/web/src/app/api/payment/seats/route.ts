@@ -3,6 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { WorkspaceSubscriptionProduct } from '@tuturuuu/types/db';
 import { NextResponse } from 'next/server';
 import { SEAT_ACTIVE_STATUSES } from '@/utils/subscription-constants';
 
@@ -67,18 +68,21 @@ export async function GET(req: Request) {
     const product = subscription?.workspace_subscription_products;
 
     const isSeatBased = product?.pricing_model === 'seat_based';
-    const seatCount = isSeatBased ? (subscription?.seat_count ?? 1) : Infinity;
     const currentMembers = memberCount ?? 0;
+
+    // Use -1 to represent unlimited seats in the JSON response,
+    // since JSON.stringify(Infinity) produces null.
+    const seatCount = isSeatBased ? (subscription?.seat_count ?? 1) : -1;
     const availableSeats = isSeatBased
       ? Math.max(0, seatCount - currentMembers)
-      : Infinity;
+      : -1;
 
     return NextResponse.json({
       isSeatBased,
       seatCount,
       memberCount: currentMembers,
       availableSeats,
-      canAddMember: availableSeats > 0,
+      canAddMember: !isSeatBased || availableSeats > 0,
       pricePerSeat: product?.price_per_seat ?? null,
     });
   } catch (error) {
@@ -160,7 +164,10 @@ export async function POST(req: Request) {
     const currentMembers = memberCount ?? 0;
 
     // Validate new seat count against constraints
-    const product = subscription.workspace_subscription_products as any;
+    const product = subscription.workspace_subscription_products as Pick<
+      WorkspaceSubscriptionProduct,
+      'pricing_model' | 'min_seats' | 'max_seats' | 'price_per_seat'
+    > | null;
     const minSeats = Math.max(1, currentMembers, product?.min_seats ?? 0);
     const maxSeats = product?.max_seats ?? Infinity;
 
@@ -211,8 +218,21 @@ export async function POST(req: Request) {
 
     if (updateError) {
       console.error('Database update error:', updateError);
-      // Note: Polar was already updated, so seats are actually purchased
-      // The webhook should sync this eventually
+      // Polar was already updated — return a warning so the client knows
+      // the billing provider has the new count but the local record is stale.
+      // The webhook should eventually sync the local record.
+      return NextResponse.json(
+        {
+          success: true,
+          warning:
+            'Billing updated but local record sync failed. It will be reconciled shortly.',
+          previousSeats,
+          newSeats: newSeatCount,
+          seatChange: newSeatCount - previousSeats,
+          pricePerSeat: product?.price_per_seat,
+        },
+        { status: 200 }
+      );
     }
 
     return NextResponse.json({
@@ -220,8 +240,7 @@ export async function POST(req: Request) {
       previousSeats,
       newSeats: newSeatCount,
       seatChange: newSeatCount - previousSeats,
-      pricePerSeat:
-        subscription.workspace_subscription_products?.price_per_seat,
+      pricePerSeat: product?.price_per_seat,
     });
   } catch (error) {
     console.error('Error updating seats:', error);

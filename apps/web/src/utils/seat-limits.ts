@@ -128,23 +128,34 @@ export async function enforceSeatLimit(
 }
 
 /**
- * Check if a workspace has room for new invitations
- * Takes into account both current members and pending invitations
+ * Effective seat availability including pending invitations
+ */
+export interface EffectiveSeatAvailability {
+  /** Seat status for the workspace */
+  status: SeatStatus;
+  /** Number of pending invitations (workspace + email) */
+  totalPending: number;
+  /** Seats available after accounting for members + pending invites */
+  effectiveAvailable: number;
+}
+
+/**
+ * Get effective available seats accounting for pending invitations.
+ * Shared by canCreateInvitation (single invite) and batch-invite routes.
  * @param supabase - Supabase client instance
  * @param wsId - Workspace ID
- * @returns Result indicating if invitations are allowed
+ * @returns Effective seat availability or null if not seat-based
  */
-export async function canCreateInvitation(
+export async function getEffectiveAvailableSeats(
   supabase: TypedSupabaseClient,
   wsId: string
-): Promise<SeatLimitResult> {
+): Promise<EffectiveSeatAvailability> {
   const status = await getSeatStatus(supabase, wsId);
 
   if (!status.isSeatBased) {
-    return { allowed: true, status };
+    return { status, totalPending: 0, effectiveAvailable: Infinity };
   }
 
-  // Count pending invitations
   const [{ count: workspaceInvitesCount }, { count: emailInvitesCount }] =
     await Promise.all([
       supabase
@@ -160,6 +171,27 @@ export async function canCreateInvitation(
   const totalPending = (workspaceInvitesCount ?? 0) + (emailInvitesCount ?? 0);
   const effectiveUsed = status.memberCount + totalPending;
   const effectiveAvailable = Math.max(0, status.seatCount - effectiveUsed);
+
+  return { status, totalPending, effectiveAvailable };
+}
+
+/**
+ * Check if a workspace has room for new invitations
+ * Takes into account both current members and pending invitations
+ * @param supabase - Supabase client instance
+ * @param wsId - Workspace ID
+ * @returns Result indicating if invitations are allowed
+ */
+export async function canCreateInvitation(
+  supabase: TypedSupabaseClient,
+  wsId: string
+): Promise<SeatLimitResult> {
+  const { status, totalPending, effectiveAvailable } =
+    await getEffectiveAvailableSeats(supabase, wsId);
+
+  if (!status.isSeatBased) {
+    return { allowed: true, status };
+  }
 
   if (effectiveAvailable === 0) {
     return {
