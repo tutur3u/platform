@@ -55,35 +55,48 @@ export default function AboutClubSection() {
           {/* Right Column */}
           <AnimationSection delay={0.2}>
             <div className="relative">
-              <div className="relative aspect-4/3 overflow-hidden rounded-2xl shadow-2xl">
+              <div className="group relative aspect-4/3 overflow-hidden rounded-2xl shadow-2xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl">
                 <Image
                   src="/about-us/club-day.jpeg"
                   alt="NCT Club Activities"
                   fill
-                  className="object-cover transition-transform duration-700 hover:scale-105"
+                  className="object-cover transition-transform duration-700 group-hover:scale-110"
                 />
-                <div className="absolute inset-0 bg-linear-to-t from-primary/20 to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-t from-primary/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                <div className="absolute right-0 bottom-0 left-0 translate-y-full p-4 transition-transform duration-300 group-hover:translate-y-0">
+                  <span className="font-bold text-sm text-white">Club Day</span>
+                </div>
               </div>
 
               {/* Overlapping Sub-Images */}
               <div className="mt-4 grid grid-cols-2 gap-4 pt-10">
-                <div className="relative aspect-3/2 -translate-y-8 overflow-hidden rounded-xl shadow-xl">
+                <div className="group relative aspect-3/2 -translate-y-8 overflow-hidden rounded-xl shadow-xl transition-all duration-500 hover:-translate-y-10 hover:shadow-2xl">
                   <Image
                     src="/about-us/netcompany-tour.jpg"
-                    alt="NCT Club Activities"
+                    alt="Company Tour"
                     fill
-                    className="object-cover transition-transform duration-500 hover:scale-110"
+                    className="object-cover transition-transform duration-700 group-hover:scale-110"
                   />
-                  <div className="absolute inset-0 bg-linear-to-br from-brand-light-yellow/20 to-transparent" />
+                  <div className="absolute inset-0 bg-linear-to-t from-primary/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <div className="absolute right-0 bottom-0 left-0 translate-y-full p-3 transition-transform duration-300 group-hover:translate-y-0">
+                    <span className="font-bold text-sm text-white">
+                      Company Tour
+                    </span>
+                  </div>
                 </div>
-                <div className="relative aspect-3/2 translate-y-2 overflow-hidden rounded-xl shadow-xl">
+                <div className="group relative aspect-3/2 translate-y-2 overflow-hidden rounded-xl shadow-xl transition-all duration-500 hover:translate-y-0 hover:shadow-2xl">
                   <Image
                     src="/about-us/sport-day.jpg"
-                    alt="NCT Club Activities"
+                    alt="Neo Sport"
                     fill
-                    className="object-cover transition-transform duration-500 hover:scale-110"
+                    className="object-cover transition-transform duration-700 group-hover:scale-110"
                   />
-                  <div className="absolute inset-0 bg-linear-to-bl from-brand-light-blue/20 to-transparent" />
+                  <div className="absolute inset-0 bg-linear-to-t from-primary/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <div className="absolute right-0 bottom-0 left-0 translate-y-full p-3 transition-transform duration-300 group-hover:translate-y-0">
+                    <span className="font-bold text-sm text-white">
+                      RMIT Sport Day
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -98,30 +111,30 @@ export default function AboutClubSection() {
               className="order-2 grid grid-cols-2 gap-4 md:order-1"
               delay={0.1}
             >
-              <div className="relative aspect-3/4 overflow-hidden rounded-2xl shadow-xl">
+              <div className="group relative aspect-3/4 overflow-hidden rounded-2xl shadow-xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl">
                 <Image
                   src="/about-us/workshop2.jpg"
                   alt="Workshop session"
                   fill
-                  className="object-cover transition-transform duration-500 hover:scale-105"
+                  className="object-cover transition-transform duration-700 group-hover:scale-110"
                 />
-                <div className="absolute inset-0 bg-linear-to-t from-primary/30 to-transparent" />
-                <div className="absolute right-4 bottom-4 left-4">
-                  <span className="inline-block rounded-full bg-white/90 px-3 py-1 font-semibold text-primary text-xs backdrop-blur-sm">
+                <div className="absolute inset-0 bg-linear-to-t from-primary/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                <div className="absolute right-0 bottom-0 left-0 translate-y-full p-4 transition-transform duration-300 group-hover:translate-y-0">
+                  <span className="font-bold text-sm text-white">
                     Workshops
                   </span>
                 </div>
               </div>
-              <div className="relative mt-8 aspect-3/4 overflow-hidden rounded-2xl shadow-xl">
+              <div className="group relative mt-8 aspect-3/4 overflow-hidden rounded-2xl shadow-xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl">
                 <Image
                   src="/about-us/netcompany-talkshow.jpg"
                   alt="Talk show event"
                   fill
-                  className="object-cover transition-transform duration-500 hover:scale-105"
+                  className="object-cover transition-transform duration-700 group-hover:scale-110"
                 />
-                <div className="absolute inset-0 bg-linear-to-t from-primary/30 to-transparent" />
-                <div className="absolute right-4 bottom-4 left-4">
-                  <span className="inline-block rounded-full bg-white/90 px-3 py-1 font-semibold text-primary text-xs backdrop-blur-sm">
+                <div className="absolute inset-0 bg-linear-to-t from-primary/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                <div className="absolute right-0 bottom-0 left-0 translate-y-full p-4 transition-transform duration-300 group-hover:translate-y-0">
+                  <span className="font-bold text-sm text-white">
                     Talk Shows
                   </span>
                 </div>
