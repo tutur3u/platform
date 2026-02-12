@@ -4,6 +4,10 @@ import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTaskDialogContext } from '../providers/task-dialog-provider';
+import {
+  useOptionalWorkspacePresenceContext,
+  WorkspacePresenceProvider,
+} from '../providers/workspace-presence-provider';
 import { TaskEditDialog } from './task-edit-dialog';
 
 /**
@@ -211,11 +215,43 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
   const handleAddBlockedByTask = () => handleAddRelationship('blocked-by');
   const handleAddRelatedTask = () => handleAddRelationship('related');
 
+  // Track presence location when the dialog is open in edit mode.
+  // On kanban boards, BoardUserPresenceAvatarsComponent also calls updateLocation
+  // with the same args — this is idempotent (same location = no-op).
+  // For non-board contexts (My Tasks, dashboard), this is the only caller.
+  const wsPresence = useOptionalWorkspacePresenceContext();
+  const wsUpdateLocation = wsPresence?.updateLocation;
+
+  useEffect(() => {
+    if (!wsUpdateLocation || !state.isOpen || state.mode === 'create') return;
+    const taskId = state.task?.id;
+    const boardId = state.boardId;
+    if (!taskId || !boardId) return;
+
+    wsUpdateLocation({ type: 'board', boardId, taskId });
+
+    return () => {
+      wsUpdateLocation({ type: 'other' });
+    };
+  }, [
+    wsUpdateLocation,
+    state.isOpen,
+    state.mode,
+    state.task?.id,
+    state.boardId,
+  ]);
+
+  // Determine if the task needs its own presence provider (cross-workspace tasks)
+  const needsOwnProvider =
+    state.realtimeEnabled &&
+    state.taskWsId &&
+    (!wsPresence?.realtimeEnabled || state.taskWsId !== wsId);
+
   if (!state.isOpen || !state.task) {
     return null;
   }
 
-  return (
+  const dialog = (
     <TaskEditDialog
       wsId={wsId}
       task={state.task}
@@ -243,4 +279,18 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
       onAddRelatedTask={handleAddRelatedTask}
     />
   );
+
+  if (needsOwnProvider && state.taskWsId) {
+    return (
+      <WorkspacePresenceProvider
+        wsId={state.taskWsId}
+        tier={null}
+        enabled={!state.taskWorkspacePersonal}
+      >
+        {dialog}
+      </WorkspacePresenceProvider>
+    );
+  }
+
+  return dialog;
 }

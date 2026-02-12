@@ -340,7 +340,7 @@ export function TaskDialogHeader({
       </div>
       <div className="flex items-center gap-1 md:gap-2">
         {/* Collaboration Sync Status */}
-        {collaborationMode && isOpen && !isCreateMode && (
+        {collaborationMode && realtimeEnabled && isOpen && !isCreateMode && (
           <Tooltip>
             <TooltipTrigger asChild>
               <div

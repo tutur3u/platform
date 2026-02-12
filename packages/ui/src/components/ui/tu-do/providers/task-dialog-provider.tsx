@@ -68,6 +68,8 @@ interface TaskDialogState {
   draftId?: string; // When editing an existing draft
   /** The task's actual workspace ID for correct URL routing (may differ from current wsId) */
   taskWsId?: string;
+  /** Whether the task's workspace is personal (affects realtime/presence decisions) */
+  taskWorkspacePersonal?: boolean;
 }
 
 interface TaskDialogContextValue {
@@ -181,11 +183,11 @@ export function TaskDialogProvider({
     isOpen: false,
   });
 
-  // Read cursorsEnabled and realtimeEnabled from workspace presence context
-  // (always true in DEV_MODE via the provider)
+  // Read cursorsEnabled from workspace presence context (true in DEV_MODE or PRO+ tiers)
+  // Note: realtimeEnabled is NOT read from context — it's derived from the task's own
+  // workspace (personal vs team) to avoid cross-workspace context pollution.
   const wsPresence = useOptionalWorkspacePresenceContext();
   const cursorsEnabled = wsPresence?.cursorsEnabled ?? false;
-  const realtimeEnabled = wsPresence?.realtimeEnabled ?? false;
 
   // Store all update callbacks in a ref set for multiple registrations
   const updateCallbacksRef = useRef<Set<() => void>>(new Set());
@@ -208,20 +210,25 @@ export function TaskDialogProvider({
       const isTaskWorkspacePersonal =
         options?.taskWorkspacePersonal ?? isPersonalWorkspace;
 
+      // Realtime is enabled for all non-personal workspaces regardless of
+      // the parent presence context (which may belong to a different workspace)
+      const shouldEnableRealtime = !isTaskWorkspacePersonal;
+
       setState({
         isOpen: true,
         task,
         boardId,
         mode: 'edit',
         availableLists,
-        // Determine realtime features based on task's workspace, not current navigation context
-        collaborationMode: !isTaskWorkspacePersonal && cursorsEnabled,
-        realtimeEnabled: !isTaskWorkspacePersonal && realtimeEnabled,
+        // Cursors require tier check (from context) but realtime is independent
+        collaborationMode: shouldEnableRealtime && cursorsEnabled,
+        realtimeEnabled: shouldEnableRealtime,
         fakeTaskUrl,
         taskWsId: options?.taskWsId,
+        taskWorkspacePersonal: isTaskWorkspacePersonal,
       });
     },
-    [isPersonalWorkspace, cursorsEnabled, realtimeEnabled]
+    [isPersonalWorkspace, cursorsEnabled]
   );
 
   const openTaskById = useCallback(
@@ -301,6 +308,10 @@ export function TaskDialogProvider({
         const isTaskWorkspacePersonal =
           taskWorkspacePersonal ?? isPersonalWorkspace;
 
+        // Realtime is enabled for all non-personal workspaces regardless of
+        // the parent presence context (which may belong to a different workspace)
+        const shouldEnableRealtime = !isTaskWorkspacePersonal;
+
         // Open the task in edit mode
         setState({
           isOpen: true,
@@ -308,15 +319,16 @@ export function TaskDialogProvider({
           boardId: task.list?.board_id,
           mode: 'edit',
           availableLists: (lists as TaskList[]) || undefined,
-          collaborationMode: !isTaskWorkspacePersonal && cursorsEnabled,
-          realtimeEnabled: !isTaskWorkspacePersonal && realtimeEnabled,
+          collaborationMode: shouldEnableRealtime && cursorsEnabled,
+          realtimeEnabled: shouldEnableRealtime,
           taskWsId,
+          taskWorkspacePersonal: isTaskWorkspacePersonal,
         });
       } catch (error) {
         console.error('Failed to open task:', error);
       }
     },
-    [isPersonalWorkspace, cursorsEnabled, realtimeEnabled]
+    [isPersonalWorkspace, cursorsEnabled]
   );
 
   const createTask = useCallback(
