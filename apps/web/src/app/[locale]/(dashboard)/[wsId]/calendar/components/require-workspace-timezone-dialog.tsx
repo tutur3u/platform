@@ -196,6 +196,7 @@ export function RequireWorkspaceTimezoneDialog({
   const isE2EEAvailable =
     e2eeStatus?.status === 'enabled' || e2eeStatus?.status === 'no-key';
   const hasE2EE = e2eeStatus?.status === 'enabled';
+  const needsE2EESetup = e2eeStatus?.status === 'no-key';
 
   const needsTimezoneGate =
     !currentTimezone ||
@@ -206,6 +207,16 @@ export function RequireWorkspaceTimezoneDialog({
   const needsE2EEGate = isE2EEAvailable && !hasE2EE;
 
   const needsGate = needsTimezoneGate || needsE2EEGate;
+
+  // Auto-enable E2EE when dialog is shown and E2EE is available but not yet enabled
+  // This happens automatically since E2EE is mandatory for calendar to work
+  const isEnablingE2EE = enableE2EE.isPending;
+  const isFetchingE2EE = e2eeQuery.isFetching;
+  useEffect(() => {
+    if (needsE2EESetup && !isEnablingE2EE && !isFetchingE2EE && !hasE2EE) {
+      enableE2EE.mutate();
+    }
+  }, [needsE2EESetup, isEnablingE2EE, isFetchingE2EE, hasE2EE, enableE2EE]);
 
   // Keep local selects in sync with server values once fetched.
   useEffect(() => {
@@ -361,24 +372,12 @@ export function RequireWorkspaceTimezoneDialog({
                     </span>
                   </div>
                 ) : (
-                  <Button
-                    variant="outline"
-                    onClick={() => enableE2EE.mutate()}
-                    disabled={enableE2EE.isPending}
-                    className="w-full border-dynamic-green/50 hover:bg-dynamic-green/10"
-                  >
-                    {enableE2EE.isPending ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {t('e2ee.enabling')}
-                      </>
-                    ) : (
-                      <>
-                        <ShieldCheck className="mr-2 h-4 w-4" />
-                        {t('e2ee.enable_for_workspace')}
-                      </>
-                    )}
-                  </Button>
+                  <div className="flex items-center gap-2 rounded-lg border border-dynamic-blue/50 bg-dynamic-blue/10 p-3">
+                    <Loader2 className="h-4 w-4 animate-spin text-dynamic-blue" />
+                    <span className="font-medium text-dynamic-blue text-sm">
+                      {t('e2ee.enabling')}
+                    </span>
+                  </div>
                 )}
               </div>
             </>

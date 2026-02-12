@@ -2,7 +2,11 @@
 
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Clock, Loader2, ShieldCheck } from '@tuturuuu/icons';
-import { Button } from '@tuturuuu/ui/button';
+import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useEffect, useMemo, useState } from 'react';
+import { detectLocaleFirstDay } from '../../../../lib/calendar-settings-resolver';
+import { Button } from '../../button';
 import {
   Dialog,
   DialogContent,
@@ -10,21 +14,17 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@tuturuuu/ui/dialog';
-import { Label } from '@tuturuuu/ui/label';
+} from '../../dialog';
+import { Label } from '../../label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@tuturuuu/ui/select';
-import { Separator } from '@tuturuuu/ui/separator';
-import { toast } from '@tuturuuu/ui/sonner';
-import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
-import { detectLocaleFirstDay } from '@/lib/calendar-settings-resolver';
+} from '../../select';
+import { Separator } from '../../separator';
+import { toast } from '../../sonner';
 
 function detectBrowserTimezone(): string {
   try {
@@ -42,8 +42,8 @@ function getSupportedTimezones(): string[] {
   }
 }
 
-// Import E2EEStatus type from shared hooks
-import type { E2EEStatus } from '@tuturuuu/ui/calendar-app/hooks';
+// Import E2EEStatus type from hooks
+import type { E2EEStatus } from '../hooks/use-e2ee';
 
 export interface RequireWorkspaceTimezoneDialogProps {
   wsId: string;

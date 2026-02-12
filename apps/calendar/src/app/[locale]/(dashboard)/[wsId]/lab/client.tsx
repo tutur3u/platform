@@ -23,6 +23,7 @@ import type {
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { useCalendarSettings } from '@tuturuuu/ui/calendar-app/hooks';
 import {
   Card,
   CardContent,
@@ -47,7 +48,6 @@ import dayjs from 'dayjs';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { generatePreview } from '@/lib/calendar/unified-scheduler/preview-engine';
-import { useCalendarSettings } from '../calendar/hooks';
 import { HeatmapOverlay } from './components/heatmap-overlay';
 import { generateRealisticScenario } from './generator';
 import { PRESET_SCENARIOS } from './scenarios';

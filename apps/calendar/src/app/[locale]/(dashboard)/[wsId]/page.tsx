@@ -1,10 +1,10 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import TasksSidebar from '@tuturuuu/ui/calendar-app/components/tasks-sidebar';
 import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import TasksSidebar from './calendar/components/tasks-sidebar';
 import CalendarClientPage from './client';
 
 export const metadata: Metadata = {

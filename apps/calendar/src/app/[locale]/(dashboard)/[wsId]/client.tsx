@@ -6,12 +6,12 @@ import type {
   Workspace,
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types';
+import { CalendarHeaderActions } from '@tuturuuu/ui/calendar-app/components/calendar-header-actions';
+import { useCalendarSettings, useE2EE } from '@tuturuuu/ui/calendar-app/hooks';
 import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { CalendarHeaderActions } from './calendar/components/calendar-header-actions';
 import { RequireWorkspaceTimezoneDialog } from './calendar/components/require-workspace-timezone-dialog';
-import { useCalendarSettings, useE2EE } from './calendar/hooks';
 
 interface CalendarClientPageProps {
   experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;

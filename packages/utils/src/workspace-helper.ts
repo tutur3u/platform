@@ -485,8 +485,27 @@ export async function getPermissions({
     };
   }
 
-  const resolvedWorkspaceId = resolveWorkspaceId(wsId);
   const sbAdmin = await createAdminClient();
+
+  // Handle "personal" workspace slug by looking up the user's personal workspace
+  let resolvedWorkspaceId: string;
+  if (wsId.toUpperCase() === PERSONAL_WORKSPACE_SLUG.toUpperCase()) {
+    const { data: personalWorkspace } = await sbAdmin
+      .from('workspaces')
+      .select('id')
+      .eq('personal', true)
+      .eq('creator_id', user.id)
+      .single();
+
+    if (!personalWorkspace) {
+      console.error('Personal workspace not found for user', user.id);
+      notFound();
+    }
+
+    resolvedWorkspaceId = personalWorkspace.id;
+  } else {
+    resolvedWorkspaceId = resolveWorkspaceId(wsId);
+  }
 
   const permissionsQuery = sbAdmin
     .from('workspace_role_members')
