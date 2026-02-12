@@ -20,7 +20,6 @@ const navItems = [
   { href: '#contact', label: 'Contact Us' },
 ];
 
-
 export default function Navbar() {
   const DesktopActions = () => (
     <div className="hidden items-center gap-2 md:flex">
@@ -68,7 +67,9 @@ export default function Navbar() {
               <SheetClose key={item.href} asChild>
                 <Button
                   variant="ghost"
-                  className={"justify-start font-bold text-base hover:bg-foreground/5"}
+                  className={
+                    'justify-start font-bold text-base hover:bg-foreground/5'
+                  }
                   asChild
                 >
                   <Link href={item.href}>{item.label}</Link>
