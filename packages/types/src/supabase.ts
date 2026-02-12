@@ -8815,6 +8815,90 @@ export type Database = {
           },
         ];
       };
+      task_user_overrides: {
+        Row: {
+          completed_at: string | null;
+          created_at: string;
+          due_date_override: string | null;
+          estimation_override: number | null;
+          notes: string | null;
+          personally_unassigned: boolean;
+          priority_override:
+            | Database['public']['Enums']['task_priority']
+            | null;
+          self_managed: boolean;
+          task_id: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          completed_at?: string | null;
+          created_at?: string;
+          due_date_override?: string | null;
+          estimation_override?: number | null;
+          notes?: string | null;
+          personally_unassigned?: boolean;
+          priority_override?:
+            | Database['public']['Enums']['task_priority']
+            | null;
+          self_managed?: boolean;
+          task_id: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          completed_at?: string | null;
+          created_at?: string;
+          due_date_override?: string | null;
+          estimation_override?: number | null;
+          notes?: string | null;
+          personally_unassigned?: boolean;
+          priority_override?:
+            | Database['public']['Enums']['task_priority']
+            | null;
+          self_managed?: boolean;
+          task_id?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_user_overrides_task_id_fkey';
+            columns: ['task_id'];
+            isOneToOne: false;
+            referencedRelation: 'tasks';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_user_overrides_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_user_overrides_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_user_overrides_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_user_overrides_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       task_user_scheduling_settings: {
         Row: {
           auto_schedule: boolean;
@@ -10447,6 +10531,85 @@ export type Database = {
           },
           {
             foreignKeyName: 'tuna_user_achievements_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      user_board_list_overrides: {
+        Row: {
+          board_id: string | null;
+          created_at: string;
+          id: string;
+          list_id: string | null;
+          notes: string | null;
+          personal_status: Database['public']['Enums']['user_scope_override_status'];
+          scope_type: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          board_id?: string | null;
+          created_at?: string;
+          id?: string;
+          list_id?: string | null;
+          notes?: string | null;
+          personal_status?: Database['public']['Enums']['user_scope_override_status'];
+          scope_type: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          board_id?: string | null;
+          created_at?: string;
+          id?: string;
+          list_id?: string | null;
+          notes?: string | null;
+          personal_status?: Database['public']['Enums']['user_scope_override_status'];
+          scope_type?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_board_list_overrides_board_id_fkey';
+            columns: ['board_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_board_list_overrides_list_id_fkey';
+            columns: ['list_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_lists';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_board_list_overrides_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'user_board_list_overrides_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'user_board_list_overrides_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_board_list_overrides_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'users';
@@ -19837,6 +20000,8 @@ export type Database = {
       };
       get_user_accessible_tasks: {
         Args: {
+          p_exclude_personally_completed?: boolean;
+          p_exclude_personally_unassigned?: boolean;
           p_include_deleted?: boolean;
           p_list_statuses?: Database['public']['Enums']['task_board_status'][];
           p_user_id: string;
@@ -22752,6 +22917,11 @@ export type Database = {
         | 'event'
         | 'person';
       tuna_mood: 'happy' | 'neutral' | 'tired' | 'sad' | 'excited' | 'focused';
+      user_scope_override_status:
+        | 'not_started'
+        | 'in_progress'
+        | 'done'
+        | 'closed';
       wallet_interest_provider: 'momo' | 'zalopay';
       workforce_benefit_type:
         | 'health_insurance'
@@ -24839,6 +25009,12 @@ export const Constants = {
         'person',
       ],
       tuna_mood: ['happy', 'neutral', 'tired', 'sad', 'excited', 'focused'],
+      user_scope_override_status: [
+        'not_started',
+        'in_progress',
+        'done',
+        'closed',
+      ],
       wallet_interest_provider: ['momo', 'zalopay'],
       workforce_benefit_type: [
         'health_insurance',

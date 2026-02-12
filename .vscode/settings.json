@@ -35,7 +35,7 @@
     "**/__pycache__": true,
     "**/.venv": true,
     "**/*_cache": true,
-    "**/build": true,
+    // "**/build": true,
     "**/*.tsbuildinfo": true,
     "conductor": true,
     "skills": true,

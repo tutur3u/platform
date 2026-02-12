@@ -44,11 +44,6 @@ ALTER TABLE public.support_inquiries
 ADD CONSTRAINT chk_support_inquiries_images_limit
 CHECK (array_length(images, 1) <= 5);
 
--- Delete objects first to avoid foreign key constraint violation
-delete from storage.objects where bucket_id = 'support_inquiries';
-
-delete from storage.buckets where id = 'support_inquiries';
-
 -- Migration for creating the 'support_inquiries' bucket
 
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
