@@ -81,7 +81,9 @@ export default function AboutNeoLeagueSection() {
               </div>
 
               <h2 className="mb-8 text-center text-4xl md:text-5xl lg:text-6xl font-montserrat ">
-                <span className="font-medium text-[#134e4a] italic">ABOUT </span>
+                <span className="font-medium text-[#134e4a] italic">
+                  ABOUT{' '}
+                </span>
                 <span className="relative inline-block font-black text-[#134e4a]">
                   NEO LEAGUE
                   <span className="absolute left-0 -bottom-2 h-[4px] w-full bg-yellow-400"></span>
@@ -130,7 +132,6 @@ export default function AboutNeoLeagueSection() {
                   <span className="absolute left-0 -bottom-1 h-[4px] w-full bg-yellow-400"></span>
                 </span>
               </h3>
-
 
               <div className="mx-auto max-w-6xl">
                 <p className="text-center text-foreground/90 text-xl leading-relaxed">
