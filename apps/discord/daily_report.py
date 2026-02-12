@@ -20,7 +20,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from enum import Enum
+from enum import Enum, StrEnum
 from typing import Any, TypedDict, cast
 from zoneinfo import ZoneInfo
 
@@ -35,7 +35,7 @@ WEEKEND_DAYS = (5, 6)  # Saturday=5, Sunday=6 (Monday=0)
 MONDAY = 0
 
 
-class ReportFormat(str, Enum):
+class ReportFormat(StrEnum):
     """Report format types."""
 
     SUMMARY = "summary"
@@ -54,7 +54,7 @@ class DayOfWeek(int, Enum):
     SUNDAY = 6
 
 
-class ReportMode(str, Enum):
+class ReportMode(StrEnum):
     """Report generation modes."""
 
     NO_DATA = "no-data"
