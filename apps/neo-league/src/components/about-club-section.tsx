@@ -57,7 +57,7 @@ export default function AboutClubSection() {
             <div className="relative">
               <div className="relative aspect-4/3 overflow-hidden rounded-2xl shadow-2xl">
                 <Image
-                  src="/about-us/netcompany-tour.jpg"
+                  src="/about-us/club-day.jpeg"
                   alt="NCT Club Activities"
                   fill
                   className="object-cover transition-transform duration-700 hover:scale-105"
@@ -69,7 +69,7 @@ export default function AboutClubSection() {
               <div className="mt-4 grid grid-cols-2 gap-4 pt-10">
                 <div className="relative aspect-3/2 -translate-y-8 overflow-hidden rounded-xl shadow-xl">
                   <Image
-                    src="/about-us/nab-tour.jpeg"
+                    src="/about-us/netcompany-tour.jpg"
                     alt="NCT Club Activities"
                     fill
                     className="object-cover transition-transform duration-500 hover:scale-110"
@@ -78,7 +78,7 @@ export default function AboutClubSection() {
                 </div>
                 <div className="relative aspect-3/2 translate-y-2 overflow-hidden rounded-xl shadow-xl">
                   <Image
-                    src="/about-us/workshop.jpg"
+                    src="/about-us/sport-day.jpg"
                     alt="NCT Club Activities"
                     fill
                     className="object-cover transition-transform duration-500 hover:scale-110"
@@ -192,9 +192,9 @@ export default function AboutClubSection() {
             >
               Beyond technology, we believe in building lasting relationships.
               From hands-on workshops and inspiring events to our Neo Connect
-              series, NCT FC football team, badminton tournaments, and exciting
-              "Neo Escape" adventures — our community is more than just
-              learning.
+              series, team bonding activities, Neo Sport competitions, and
+              heartwarming Secret Santa celebrations — our community is more
+              than just learning.
             </p>
           </div>
 
