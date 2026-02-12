@@ -5,11 +5,9 @@ export default function AboutClubSection() {
   return (
     <section className="relative px-6 py-20 md:px-8 md:py-28">
       <div className="relative mx-auto max-w-7xl">
-        {/* WHO WE ARE SECTION */}
         <div className="mb-28 grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-          {/* Left Column - Content */}
+          {/* Left Column */}
           <AnimationSection>
-            {/* Logo Badge */}
             <div className="mb-6 flex items-center gap-3">
               <div className="relative h-14 w-14 overflow-hidden rounded-xl border-2 border-white/50 bg-white/30 p-2 shadow-lg backdrop-blur-sm">
                 <Image
@@ -22,7 +20,6 @@ export default function AboutClubSection() {
               <div className="h-px flex-1 bg-linear-to-r from-primary/30 to-transparent" />
             </div>
 
-            {/* Header */}
             <div className="mb-6">
               <p className="mb-2 font-semibold text-primary-foreground text-sm uppercase tracking-[0.25em]">
                 Who We Are
@@ -36,13 +33,11 @@ export default function AboutClubSection() {
               </h2>
             </div>
 
-            {/* Accent Line */}
             <div className="mb-6 flex items-center gap-3">
               <div className="h-1 w-16 rounded-full bg-linear-to-r from-brand-light-yellow to-brand-light-red" />
               <div className="h-1 w-8 rounded-full bg-brand-light-blue" />
             </div>
 
-            {/* Description */}
             <p className="mb-6 w-full font-bold text-foreground text-lg leading-relaxed md:max-w-lg">
               RMIT Neo Culture Technology Club is a vibrant and dynamic
               student-led organization dedicated to fostering a passion for
@@ -57,13 +52,12 @@ export default function AboutClubSection() {
             </p>
           </AnimationSection>
 
-          {/* Right Column - Images */}
+          {/* Right Column */}
           <AnimationSection delay={0.2}>
             <div className="relative">
-              {/* Main Feature Image */}
               <div className="relative aspect-4/3 overflow-hidden rounded-2xl shadow-2xl">
                 <Image
-                  src="/netcompany-tour.jpg"
+                  src="/about-us/netcompany-tour.jpg"
                   alt="NCT Club Activities"
                   fill
                   className="object-cover transition-transform duration-700 hover:scale-105"
@@ -75,8 +69,8 @@ export default function AboutClubSection() {
               <div className="mt-4 grid grid-cols-2 gap-4 pt-10">
                 <div className="relative aspect-3/2 -translate-y-8 overflow-hidden rounded-xl shadow-xl">
                   <Image
-                    src="/demo.jpg"
-                    alt="Team collaboration"
+                    src="/about-us/nab-tour.jpeg"
+                    alt="NCT Club Activities"
                     fill
                     className="object-cover transition-transform duration-500 hover:scale-110"
                   />
@@ -84,8 +78,8 @@ export default function AboutClubSection() {
                 </div>
                 <div className="relative aspect-3/2 translate-y-2 overflow-hidden rounded-xl shadow-xl">
                   <Image
-                    src="/demo.jpg"
-                    alt="Innovation workshop"
+                    src="/about-us/workshop.jpg"
+                    alt="NCT Club Activities"
                     fill
                     className="object-cover transition-transform duration-500 hover:scale-110"
                   />
@@ -99,14 +93,14 @@ export default function AboutClubSection() {
         {/* WHAT WE DO SECTION */}
         <div className="mb-28">
           <div className="mb-12 grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-            {/* Left Column - Images */}
+            {/* Left Column */}
             <AnimationSection
               className="order-2 grid grid-cols-2 gap-4 md:order-1"
               delay={0.1}
             >
               <div className="relative aspect-3/4 overflow-hidden rounded-2xl shadow-xl">
                 <Image
-                  src="/demo.jpg"
+                  src="/about-us/workshop2.jpg"
                   alt="Workshop session"
                   fill
                   className="object-cover transition-transform duration-500 hover:scale-105"
@@ -120,7 +114,7 @@ export default function AboutClubSection() {
               </div>
               <div className="relative mt-8 aspect-3/4 overflow-hidden rounded-2xl shadow-xl">
                 <Image
-                  src="/demo.jpg"
+                  src="/about-us/netcompany-talkshow.jpg"
                   alt="Talk show event"
                   fill
                   className="object-cover transition-transform duration-500 hover:scale-105"
@@ -136,7 +130,6 @@ export default function AboutClubSection() {
 
             {/* Right Column - Content */}
             <AnimationSection className="order-1 md:order-2" delay={0.2}>
-              {/* Header */}
               <div className="mb-6">
                 <p className="mb-2 font-semibold text-primary-foreground text-sm uppercase tracking-[0.25em]">
                   What We Do
@@ -223,7 +216,7 @@ export default function AboutClubSection() {
             {/* Image 1 */}
             <div className="group relative aspect-3/4 overflow-hidden rounded-2xl shadow-lg transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl">
               <Image
-                src="/demo.jpg"
+                src="/about-us/workshop3.jpg"
                 alt="Workshop event"
                 fill
                 className="object-cover transition-transform duration-700 group-hover:scale-110"
@@ -231,7 +224,7 @@ export default function AboutClubSection() {
               <div className="absolute inset-0 bg-linear-to-t from-primary/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
               <div className="absolute right-0 bottom-0 left-0 translate-y-full p-4 transition-transform duration-300 group-hover:translate-y-0">
                 <span className="font-bold text-sm text-white">
-                  Tech Workshops
+                  Soft Skill Workshops
                 </span>
               </div>
             </div>
@@ -239,7 +232,7 @@ export default function AboutClubSection() {
             {/* Image 2 - Offset */}
             <div className="group relative mt-8 aspect-3/4 overflow-hidden rounded-2xl shadow-lg transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl md:mt-12">
               <Image
-                src="/demo.jpg"
+                src="/about-us/bonding2.png"
                 alt="Team bonding"
                 fill
                 className="object-cover transition-transform duration-700 group-hover:scale-110"
@@ -255,7 +248,7 @@ export default function AboutClubSection() {
             {/* Image 3 */}
             <div className="group relative aspect-3/4 overflow-hidden rounded-2xl shadow-lg transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl">
               <Image
-                src="/demo.jpg"
+                src="/about-us/bonding3.jpeg"
                 alt="Sports activities"
                 fill
                 className="object-cover transition-transform duration-700 group-hover:scale-110"
@@ -271,15 +264,15 @@ export default function AboutClubSection() {
             {/* Image 4 - Offset */}
             <div className="group relative mt-8 aspect-3/4 overflow-hidden rounded-2xl shadow-lg transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl md:mt-12">
               <Image
-                src="/demo.jpg"
-                alt="Neo Connect event"
+                src="/about-us/secret-santa.jpg"
+                alt="Secrete Santa event"
                 fill
                 className="object-cover transition-transform duration-700 group-hover:scale-110"
               />
               <div className="absolute inset-0 bg-linear-to-t from-primary/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
               <div className="absolute right-0 bottom-0 left-0 translate-y-full p-4 transition-transform duration-300 group-hover:translate-y-0">
                 <span className="font-bold text-sm text-white">
-                  Neo Connect
+                  Connect Event
                 </span>
               </div>
             </div>
