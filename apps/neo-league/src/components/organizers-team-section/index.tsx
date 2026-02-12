@@ -12,8 +12,14 @@ export default function OrganizersTeamSection() {
       <div className="mx-auto max-w-6xl">
         {/* Section Header */}
         <div className="mb-16 text-center">
-          <h2 className="mb-4 font-black text-3xl shadow-text md:text-4xl">
-            ORGANIZING <span className="text-secondary">TEAM</span>
+          <h2 className="mb-4 text-3xl md:text-4xl tracking-wide">
+            <span className="font-medium text-[#134e4a] italic">
+              ORGANIZING{" "}
+            </span>
+            <span className="relative inline-block font-black text-[#134e4a]">
+              TEAM
+              <span className="absolute left-0 -bottom-1 h-[4px] w-full bg-yellow-400"></span>
+            </span>
           </h2>
           <p className="mx-auto max-w-2xl text-foreground/70 text-lg">
             Meet the dedicated student organizers bringing NEO League 2026 to
