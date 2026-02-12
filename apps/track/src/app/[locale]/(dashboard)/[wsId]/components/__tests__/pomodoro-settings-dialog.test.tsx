@@ -69,7 +69,7 @@ describe('PomodoroSettingsDialog', () => {
 
   it('calls onSettingsChange when inputs change', () => {
     const onSettingsChange = vi.fn();
-    render(
+    const { container } = render(
       <PomodoroSettingsDialog
         open={true}
         onOpenChange={vi.fn()}
@@ -80,7 +80,8 @@ describe('PomodoroSettingsDialog', () => {
     );
 
     // Find the focus time input (first input of type number)
-    const inputs = screen.getAllByRole('spinbutton'); // spinbutton is role for input type=number
+    // Note: getAllByRole('spinbutton') doesn't work reliably in jsdom, use querySelector
+    const inputs = container.querySelectorAll('input[type="number"]');
     fireEvent.change(inputs[0]!, { target: { value: '30' } });
 
     expect(onSettingsChange).toHaveBeenCalledWith(
