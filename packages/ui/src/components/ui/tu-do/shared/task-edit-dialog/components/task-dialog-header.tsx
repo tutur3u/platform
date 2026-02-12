@@ -468,41 +468,42 @@ export function TaskDialogHeader({
           disabled={disabled}
         />
 
-        {/* Hide save button in edit mode when collaboration is enabled (realtime sync) */}
-        {!disabled && (isCreateMode || !collaborationMode) && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="secondary"
-                onClick={handleSave}
-                disabled={!canSave}
-                size="xs"
-                className="hidden md:inline-flex"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    {t('ws-task-boards.dialog.saving')}
-                  </>
-                ) : (
-                  <>
-                    {isCreateMode && saveAsDraft ? (
-                      <FileEdit className="h-4 w-4" />
-                    ) : (
-                      <Check className="h-4 w-4" />
-                    )}
-                    {isCreateMode
-                      ? saveAsDraft || draftId
-                        ? t('common.save')
-                        : t('ws-task-boards.dialog.create_task')
-                      : t('ws-task-boards.dialog.save_changes')}
-                  </>
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">Cmd/Ctrl + Enter</TooltipContent>
-          </Tooltip>
-        )}
+        {/* Hide save button in edit mode when realtime is enabled (either cursors or Yjs sync) */}
+        {!disabled &&
+          (isCreateMode || (!collaborationMode && !realtimeEnabled)) && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="secondary"
+                  onClick={handleSave}
+                  disabled={!canSave}
+                  size="xs"
+                  className="hidden md:inline-flex"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {t('ws-task-boards.dialog.saving')}
+                    </>
+                  ) : (
+                    <>
+                      {isCreateMode && saveAsDraft ? (
+                        <FileEdit className="h-4 w-4" />
+                      ) : (
+                        <Check className="h-4 w-4" />
+                      )}
+                      {isCreateMode
+                        ? saveAsDraft || draftId
+                          ? t('common.save')
+                          : t('ws-task-boards.dialog.create_task')
+                        : t('ws-task-boards.dialog.save_changes')}
+                    </>
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Cmd/Ctrl + Enter</TooltipContent>
+            </Tooltip>
+          )}
       </div>
     </div>
   );

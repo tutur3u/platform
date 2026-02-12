@@ -242,7 +242,12 @@ export default function ExpandableTaskList({
     };
 
     const boardId = task.list?.board?.id || '';
-    openTask(transformedTask as any, boardId, undefined);
+    // Pass task's actual workspace ID and personal flag for proper routing and realtime features
+    openTask(transformedTask as any, boardId, undefined, true, {
+      taskWsId: task.list?.board?.ws_id,
+      taskWorkspacePersonal:
+        task.list?.board?.workspaces?.personal ?? undefined,
+    });
   };
 
   const getPriorityConfig = (priority: string | null) => {

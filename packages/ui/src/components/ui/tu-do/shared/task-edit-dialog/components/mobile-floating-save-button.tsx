@@ -4,6 +4,8 @@ import { Button } from '@tuturuuu/ui/button';
 interface MobileFloatingSaveButtonProps {
   isCreateMode: boolean;
   collaborationMode?: boolean;
+  /** Whether realtime features (Yjs sync, presence avatars) are enabled - true for all tiers */
+  realtimeEnabled?: boolean;
   isLoading: boolean;
   canSave: boolean;
   handleSave: () => void;
@@ -13,13 +15,14 @@ interface MobileFloatingSaveButtonProps {
 export function MobileFloatingSaveButton({
   isCreateMode,
   collaborationMode,
+  realtimeEnabled,
   isLoading,
   canSave,
   handleSave,
   disabled = false,
 }: MobileFloatingSaveButtonProps) {
-  // Hidden in edit mode when collaboration is enabled or in read-only mode
-  if ((!isCreateMode && collaborationMode) || disabled) {
+  // Hidden in edit mode when realtime is enabled (either cursors or Yjs sync) or in read-only mode
+  if ((!isCreateMode && (collaborationMode || realtimeEnabled)) || disabled) {
     return null;
   }
 

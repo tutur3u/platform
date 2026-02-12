@@ -40,7 +40,9 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
         originalPathnameRef.current = pathname;
       }
 
-      const taskUrl = `/${wsId}/tasks/${state.task.id}`;
+      // Use task's actual workspace ID if available, otherwise fall back to current wsId
+      const effectiveWsId = state.taskWsId || wsId;
+      const taskUrl = `/${effectiveWsId}/tasks/${state.task.id}`;
       // Only push if the URL is different
       if (pathname !== taskUrl) {
         router.push(taskUrl, { scroll: false });
@@ -57,7 +59,15 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
       originalPathnameRef.current = null;
       hasChangedUrlRef.current = false;
     }
-  }, [state.isOpen, state.fakeTaskUrl, state.task?.id, wsId, router, pathname]);
+  }, [
+    state.isOpen,
+    state.fakeTaskUrl,
+    state.task?.id,
+    state.taskWsId,
+    wsId,
+    router,
+    pathname,
+  ]);
 
   // Fetch current user immediately on mount (persists across dialog open/close)
   const [currentUser, setCurrentUser] = useState<{

@@ -41,7 +41,14 @@ export function useTaskDialog(): {
     task: Task,
     boardId: string,
     availableLists?: TaskList[],
-    fakeTaskUrl?: boolean
+    fakeTaskUrl?: boolean,
+    options?: {
+      preserveUrl?: boolean;
+      /** The task's actual workspace ID for correct URL routing */
+      taskWsId?: string;
+      /** Whether the task's workspace is personal (affects realtime features) */
+      taskWorkspacePersonal?: boolean;
+    }
   ) => void;
   openTaskById: (taskId: string) => Promise<void>;
   createTask: (

@@ -66,6 +66,8 @@ interface TaskDialogState {
   parentTaskName?: string; // Name of parent task for subtasks (legacy)
   pendingRelationship?: PendingRelationship; // Generic relationship for new tasks
   draftId?: string; // When editing an existing draft
+  /** The task's actual workspace ID for correct URL routing (may differ from current wsId) */
+  taskWsId?: string;
 }
 
 interface TaskDialogContextValue {
@@ -81,7 +83,13 @@ interface TaskDialogContextValue {
     boardId: string,
     availableLists?: TaskList[],
     fakeTaskUrl?: boolean,
-    options?: { preserveUrl?: boolean }
+    options?: {
+      preserveUrl?: boolean;
+      /** The task's actual workspace ID for correct URL routing */
+      taskWsId?: string;
+      /** Whether the task's workspace is personal (affects realtime features) */
+      taskWorkspacePersonal?: boolean;
+    }
   ) => void;
 
   // Open task by ID (fetches task data first)
@@ -189,17 +197,28 @@ export function TaskDialogProvider({
       task: Task,
       boardId: string,
       availableLists?: TaskList[],
-      fakeTaskUrl?: boolean
+      fakeTaskUrl?: boolean,
+      options?: {
+        preserveUrl?: boolean;
+        taskWsId?: string;
+        taskWorkspacePersonal?: boolean;
+      }
     ) => {
+      // Use task's workspace personal flag if provided, otherwise fall back to current workspace
+      const isTaskWorkspacePersonal =
+        options?.taskWorkspacePersonal ?? isPersonalWorkspace;
+
       setState({
         isOpen: true,
         task,
         boardId,
         mode: 'edit',
         availableLists,
-        collaborationMode: !isPersonalWorkspace && cursorsEnabled,
-        realtimeEnabled: !isPersonalWorkspace && realtimeEnabled,
+        // Determine realtime features based on task's workspace, not current navigation context
+        collaborationMode: !isTaskWorkspacePersonal && cursorsEnabled,
+        realtimeEnabled: !isTaskWorkspacePersonal && realtimeEnabled,
         fakeTaskUrl,
+        taskWsId: options?.taskWsId,
       });
     },
     [isPersonalWorkspace, cursorsEnabled, realtimeEnabled]
@@ -210,13 +229,22 @@ export function TaskDialogProvider({
       try {
         const supabase = createClient();
 
-        // Fetch task with all related data
+        // Fetch task with all related data including board's workspace info
         const { data: task, error } = await supabase
           .from('tasks')
           .select(
             `
           *,
-          list:task_lists!inner(id, name, board_id),
+          list:task_lists!inner(
+            id,
+            name,
+            board_id,
+            board:workspace_boards(
+              id,
+              ws_id,
+              workspace:workspaces(personal)
+            )
+          ),
           assignees:task_assignees(
             user_id,
             users(id, display_name, avatar_url)
@@ -266,6 +294,13 @@ export function TaskDialogProvider({
             .filter(Boolean),
         };
 
+        // Extract task's workspace info for proper realtime and routing
+        const taskWsId = (task.list?.board as any)?.ws_id as string | undefined;
+        const taskWorkspacePersonal =
+          ((task.list?.board as any)?.workspace?.personal as boolean) ?? false;
+        const isTaskWorkspacePersonal =
+          taskWorkspacePersonal ?? isPersonalWorkspace;
+
         // Open the task in edit mode
         setState({
           isOpen: true,
@@ -273,8 +308,9 @@ export function TaskDialogProvider({
           boardId: task.list?.board_id,
           mode: 'edit',
           availableLists: (lists as TaskList[]) || undefined,
-          collaborationMode: !isPersonalWorkspace && cursorsEnabled,
-          realtimeEnabled: !isPersonalWorkspace && realtimeEnabled,
+          collaborationMode: !isTaskWorkspacePersonal && cursorsEnabled,
+          realtimeEnabled: !isTaskWorkspacePersonal && realtimeEnabled,
+          taskWsId,
         });
       } catch (error) {
         console.error('Failed to open task:', error);

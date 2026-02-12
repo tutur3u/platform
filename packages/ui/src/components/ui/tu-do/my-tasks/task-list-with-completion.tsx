@@ -179,11 +179,17 @@ export default function TaskListWithCompletion({
 
     // Type assertion is safe here because we're transforming the nested structure
     // to match the flat structure expected by openTask (Task type from primitives)
+    // Pass task's actual workspace ID and personal flag for proper routing and realtime features
     openTask(
       transformedTask as unknown as PrimitiveTask,
       boardId,
       undefined,
-      true
+      true,
+      {
+        taskWsId: task.list.board.ws_id,
+        taskWorkspacePersonal:
+          (task.list.board as any).workspaces?.personal ?? undefined,
+      }
     );
   };
 
