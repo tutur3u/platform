@@ -24,7 +24,6 @@ export function WorkspaceSelect({
       customRedirectSuffix={customRedirectSuffix}
       disableCreateNewWorkspace={disableCreateNewWorkspace}
       fetchWorkspaces={fetchWorkspaces}
-      showTierBadges={false}
     />
   );
 }
