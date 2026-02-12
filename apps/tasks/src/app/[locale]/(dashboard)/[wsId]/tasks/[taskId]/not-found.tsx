@@ -13,7 +13,7 @@ export default function TaskNotFound() {
         </p>
       </div>
       <Button asChild>
-        <Link href="../boards">Back to Boards</Link>
+        <Link href="../../boards">Back to Boards</Link>
       </Button>
     </div>
   );

@@ -204,7 +204,6 @@ export const verifyRouteToken = async ({
   searchParams: URLSearchParams;
   token: string | null;
   router: ReturnType<typeof useRouter>;
-  devMode: boolean;
 }) => {
   const supabase = createClient();
 
@@ -243,8 +242,19 @@ export const verifyRouteToken = async ({
   userId = data.userId;
 
   if (userId) {
-    // Token is valid — refresh session and redirect to target page
-    await supabase.auth.refreshSession();
+    // If the server returned session tokens, store them via the browser
+    // client's own cookie handler. This avoids cookie collision because
+    // the server response has NO Set-Cookie headers — the browser client
+    // writes to its own domain-scoped cookies independently.
+    if (data.session?.access_token && data.session?.refresh_token) {
+      await supabase.auth.setSession({
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+      });
+    } else {
+      // Fallback: try to refresh whatever session exists
+      await supabase.auth.refreshSession();
+    }
 
     const nextUrl = searchParams.get('nextUrl');
     router.push(nextUrl || '/');

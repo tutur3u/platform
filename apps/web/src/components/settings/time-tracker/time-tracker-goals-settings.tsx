@@ -1,6 +1,11 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useWorkspaceCategories } from '@tuturuuu/hooks/hooks/use-workspace-categories';
+import {
+  formatMinutes,
+  getCategoryColor,
+} from '@tuturuuu/hooks/utils/time-tracker-category-colors';
 import {
   Calendar,
   Clock,
@@ -52,8 +57,6 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
-import { useWorkspaceCategories } from '@/hooks/use-workspace-categories';
-import { formatMinutes, getCategoryColor } from './time-tracker-utils';
 
 interface TimeTrackerGoalsSettingsProps {
   wsId: string;

@@ -1,14 +1,20 @@
 import {
   createAdminClient,
   createClient,
+  createDetachedClient,
 } from '@tuturuuu/supabase/next/server';
 import type { AppName } from '@tuturuuu/utils/internal-domains';
 import { type NextRequest, NextResponse } from 'next/server';
 
 /**
- * Creates a POST handler for cross-app token verification
- * When a valid token is verified, this creates a fresh session for the user
- * in the target app, rather than copying session tokens between services.
+ * Creates a POST handler for cross-app token verification.
+ *
+ * When a valid token is verified, this creates a fresh session using a
+ * "detached" Supabase client (no cookie reads/writes). The session tokens
+ * are returned in the response body so the CLIENT stores them via its own
+ * cookie handler. This prevents the server response from overwriting
+ * another app's auth cookies — the root cause of cross-app session
+ * clobbering on shared domains (e.g. localhost in development).
  *
  * @param appName The name of the target app (e.g., 'nova', 'rewise', 'platform')
  */
@@ -69,114 +75,95 @@ export function createPOST(appName: AppName) {
       const userId = firstRow.user_id as string;
       console.log('[cross-app] Token valid for user:', userId);
 
-      // Create a fresh session for the user using admin API
-      // This generates new tokens instead of copying existing ones
+      // Create a fresh session for the user using admin API + detached client.
+      // The detached client has no-op cookie handlers, so verifyOtp() creates
+      // the session on Supabase's server without setting any Set-Cookie headers
+      // in this response. The session tokens are returned in the JSON body
+      // for the CLIENT to store via its own cookie handler.
       try {
         const sbAdmin = await createAdminClient();
 
-        // Generate a magic link for the user - this creates a fresh session
+        // Look up user email for magic link generation
+        const { data: userData, error: userError } =
+          await sbAdmin.auth.admin.getUserById(userId);
+
+        if (userError || !userData?.user?.email) {
+          console.error(
+            '[cross-app] Could not get user for session creation:',
+            userError
+          );
+          return NextResponse.json({
+            userId,
+            valid: true,
+            sessionCreated: false,
+          });
+        }
+
+        // Generate a magic link for the user
         const { data: linkData, error: linkError } =
           await sbAdmin.auth.admin.generateLink({
             type: 'magiclink',
-            email: '', // We'll get email from user lookup
-            options: {
-              // Short-lived link, only for immediate use
-              redirectTo: request.nextUrl.origin,
-            },
+            email: userData.user.email,
           });
 
-        // If we can't generate a link directly, get user email first
-        if (linkError) {
-          // Get user details to find their email
-          const { data: userData, error: userError } =
-            await sbAdmin.auth.admin.getUserById(userId);
-
-          if (userError || !userData?.user?.email) {
-            console.error(
-              '[cross-app] Could not get user for session creation:',
-              userError
-            );
-            // Fall back to just returning the userId - client will handle session
-            return NextResponse.json({
-              userId,
-              valid: true,
-              sessionCreated: false,
-            });
-          }
-
-          // Generate magic link with user's email
-          const { data: newLinkData, error: newLinkError } =
-            await sbAdmin.auth.admin.generateLink({
-              type: 'magiclink',
-              email: userData.user.email,
-            });
-
-          if (newLinkError || !newLinkData) {
-            console.error(
-              '[cross-app] Could not generate session link:',
-              newLinkError
-            );
-            return NextResponse.json({
-              userId,
-              valid: true,
-              sessionCreated: false,
-            });
-          }
-
-          // Extract the token from the magic link
-          const magicLinkUrl = new URL(newLinkData.properties.action_link);
-          const tokenHash = magicLinkUrl.searchParams.get('token');
-
-          if (tokenHash) {
-            // Use the token to create a session
-            const { error: verifyError } = await supabase.auth.verifyOtp({
-              token_hash: tokenHash,
-              type: 'magiclink',
-            });
-
-            if (verifyError) {
-              console.error(
-                '[cross-app] Could not verify magic link:',
-                verifyError
-              );
-              return NextResponse.json({
-                userId,
-                valid: true,
-                sessionCreated: false,
-              });
-            }
-
-            console.log('[cross-app] Fresh session created for user:', userId);
-            return NextResponse.json({
-              userId,
-              valid: true,
-              sessionCreated: true,
-            });
-          }
-        } else if (linkData) {
-          // Magic link generated successfully with provided email
-          const magicLinkUrl = new URL(linkData.properties.action_link);
-          const tokenHash = magicLinkUrl.searchParams.get('token');
-
-          if (tokenHash) {
-            const { error: verifyError } = await supabase.auth.verifyOtp({
-              token_hash: tokenHash,
-              type: 'magiclink',
-            });
-
-            if (!verifyError) {
-              console.log(
-                '[cross-app] Fresh session created for user:',
-                userId
-              );
-              return NextResponse.json({
-                userId,
-                valid: true,
-                sessionCreated: true,
-              });
-            }
-          }
+        if (linkError || !linkData) {
+          console.error(
+            '[cross-app] Could not generate session link:',
+            linkError
+          );
+          return NextResponse.json({
+            userId,
+            valid: true,
+            sessionCreated: false,
+          });
         }
+
+        // Extract the token hash from the magic link
+        const magicLinkUrl = new URL(linkData.properties.action_link);
+        const tokenHash = magicLinkUrl.searchParams.get('token');
+
+        if (!tokenHash) {
+          console.error('[cross-app] No token hash in magic link');
+          return NextResponse.json({
+            userId,
+            valid: true,
+            sessionCreated: false,
+          });
+        }
+
+        // Verify OTP using a DETACHED client (no cookie side-effects)
+        const detached = createDetachedClient();
+        const { data: otpData, error: verifyError } =
+          await detached.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: 'magiclink',
+          });
+
+        if (verifyError || !otpData.session) {
+          console.error(
+            '[cross-app] Could not verify magic link:',
+            verifyError
+          );
+          return NextResponse.json({
+            userId,
+            valid: true,
+            sessionCreated: false,
+          });
+        }
+
+        console.log('[cross-app] Fresh session created for user:', userId);
+
+        // Return session tokens in the response body.
+        // The CLIENT will call setSession() to store them in its own cookies.
+        return NextResponse.json({
+          userId,
+          valid: true,
+          sessionCreated: true,
+          session: {
+            access_token: otpData.session.access_token,
+            refresh_token: otpData.session.refresh_token,
+          },
+        });
       } catch (sessionError) {
         console.error(
           '[cross-app] Error creating fresh session:',

@@ -30,6 +30,7 @@ export const ci = {
   'vercel-preview-shortener.yaml': true,
   'vercel-preview-tasks.yaml': true,
   'vercel-preview-meet.yaml': true,
+  'vercel-preview-track.yaml': true,
   'vercel-production-calendar.yaml': true,
   'vercel-production-finance.yaml': true,
   'vercel-production-nova.yaml': true,
@@ -38,6 +39,7 @@ export const ci = {
   'vercel-production-shortener.yaml': true,
   'vercel-production-tasks.yaml': true,
   'vercel-production-meet.yaml': true,
+  'vercel-production-track.yaml': true,
   'mobile-build-ios.yaml': true,
   'mobile-build-android.yaml': true,
 };

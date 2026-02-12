@@ -21,7 +21,8 @@ export const pendingInvoiceColumns = (
   t: any,
   namespace: string | undefined,
   useAttendanceBased = true,
-  currency: string = 'USD'
+  currency: string = 'USD',
+  financePrefix: string = '/finance'
 ): ColumnDef<PendingInvoice>[] => {
   return [
     {
@@ -268,7 +269,7 @@ export const pendingInvoiceColumns = (
           searchParams.set('group_ids', groupIds.join(','));
         }
 
-        const createInvoiceUrl = `/${wsId}/finance/invoices/new?${searchParams.toString()}`;
+        const createInvoiceUrl = `/${wsId}${financePrefix}/invoices/new?${searchParams.toString()}`;
 
         return (
           <div className="flex items-center gap-2">

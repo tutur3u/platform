@@ -22,7 +22,7 @@ Introducing the founding packs that spark the "Many":
 ### 2.3. The Ecosystem (Backed by Tuturuuu)
 The "Infinite" stage is fueled by the Tuturuuu Engine:
 -   **Technical Cavalry:** Access to Tuturuuu's core engineering teams.
--   **Power Access:** Full access to paid products (Tudo, TuPlan).
+-   **Power Access:** Full access to paid products (Tuturuuu Tasks, Tuturuuu Calendar).
 -   **Partner Universe:** Direct link to `https://tuturuuu.com/partners` (VCs, Mentors).
 
 ## 3. Functional Requirements

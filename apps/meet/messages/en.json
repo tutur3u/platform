@@ -148,15 +148,15 @@
       },
       "tudo": {
         "description": "Smart task management",
-        "name": "TuDo"
+        "name": "Tuturuuu Tasks"
       },
       "tumeet": {
         "description": "Intelligent meetings",
-        "name": "TuMeet"
+        "name": "Tuturuuu Meet"
       },
       "tuplan": {
         "description": "AI-powered auto-scheduling",
-        "name": "TuPlan"
+        "name": "Tuturuuu Calendar"
       }
     },
     "features": {
@@ -280,7 +280,7 @@
     },
     "timeline": {
       "building": {
-        "achievement1": "TuDo task management",
+        "achievement1": "Tuturuuu Tasks task management",
         "achievement2": "Calendar sync",
         "achievement3": "Finance tracking",
         "achievement4": "Nova platform",
@@ -1357,8 +1357,8 @@
             "nova": "Nova (Learning)",
             "other": "Other",
             "rewise": "Rewise (AI Chat)",
-            "tudo": "TuDo (Tasks)",
-            "tumeet": "TuMeet (Meetings)",
+            "tudo": "Tuturuuu Tasks",
+            "tumeet": "Tuturuuu Meet",
             "web": "Web Platform"
           },
           "placeholder": "Select product"
@@ -1616,7 +1616,7 @@
     "next_up_on_calendar": "Next up on Calendar",
     "no_data_description": "Start tracking your time to unlock detailed insights about your work patterns, productivity trends, and goal progress.",
     "no_data_title": "Ready to boost your productivity?",
-    "no_recent_plans_desc": "Your latest TuMeet plans will appear here",
+    "no_recent_plans_desc": "Your latest Tuturuuu Meet plans will appear here",
     "no_recent_plans_title": "No recent plans",
     "no_recently": "No new tasks created recently",
     "no_recently_created_tasks_description": "Tasks created in the last 7 days will appear here",
@@ -1718,7 +1718,7 @@
     "time_tracking": "Time Tracking",
     "today": "Today",
     "today_focus": "Today's Focus",
-    "tu_meet_plans": "TuMeet Plans",
+    "tu_meet_plans": "Tuturuuu Meet Plans",
     "uncategorized": "Uncategorized",
     "untitled_plan": "Untitled Plan",
     "untitled_session": "Untitled Session",
@@ -2538,7 +2538,7 @@
             "management": "Project management"
           },
           "subtitle": "Smart Tasks",
-          "title": "TuDo"
+          "title": "Tuturuuu Tasks"
         },
         "tufinance": {
           "description": "Track expenses, manage budgets, and gain AI-powered insights into your financial health.",
@@ -2548,7 +2548,7 @@
             "tracking": "Expense tracking"
           },
           "subtitle": "Finance Management",
-          "title": "TuFinance"
+          "title": "Tuturuuu Finance"
         },
         "tumeet": {
           "description": "End-to-end meeting solution with collaborative planning, location intelligence, and AI-generated summaries.",
@@ -2558,7 +2558,7 @@
             "transcription": "AI transcription"
           },
           "subtitle": "Smart Meetings",
-          "title": "TuMeet"
+          "title": "Tuturuuu Meet"
         },
         "tuplan": {
           "description": "AI-powered auto-scheduling that allocates time based on deadlines, priorities, and your personal work rhythms.",
@@ -2568,7 +2568,7 @@
             "sync": "Google Calendar sync"
           },
           "subtitle": "Smart Calendar",
-          "title": "TuPlan"
+          "title": "Tuturuuu Calendar"
         }
       },
       "nova": {
@@ -2598,7 +2598,7 @@
         "feature2": "Hierarchical tasks",
         "feature3": "Project management",
         "subtitle": "Smart Tasks",
-        "title": "TuDo"
+        "title": "Tuturuuu Tasks"
       },
       "tufinance": {
         "description": "Track expenses, manage budgets, and gain AI-powered insights into your financial health.",
@@ -2606,7 +2606,7 @@
         "feature2": "Budget planning",
         "feature3": "Financial analytics",
         "subtitle": "Finance Management",
-        "title": "TuFinance"
+        "title": "Tuturuuu Finance"
       },
       "tumeet": {
         "description": "End-to-end meeting solution with collaborative planning, location intelligence, and AI-generated summaries.",
@@ -2614,7 +2614,7 @@
         "feature2": "AI transcription",
         "feature3": "Action tracking",
         "subtitle": "Smart Meetings",
-        "title": "TuMeet"
+        "title": "Tuturuuu Meet"
       },
       "tuplan": {
         "description": "AI-powered auto-scheduling that allocates time based on deadlines, priorities, and your personal work rhythms.",
@@ -2622,7 +2622,7 @@
         "feature2": "Auto-scheduling",
         "feature3": "Time blocking",
         "subtitle": "Smart Calendar",
-        "title": "TuPlan"
+        "title": "Tuturuuu Calendar"
       }
     },
     "hero": {
@@ -2654,7 +2654,7 @@
         "description": "Full access to all core features during our early bird phase. We believe in earning your trust first.",
         "features": {
           "feature1": "Unlimited workspaces",
-          "feature2": "All productivity apps (TuPlan, TuDo, TuMeet, etc.)",
+          "feature2": "All productivity apps (Tuturuuu Calendar, Tuturuuu Tasks, Tuturuuu Meet, etc.)",
           "feature3": "AI-powered insights",
           "feature4": "Calendar sync & auto-scheduling",
           "feature5": "Task management & collaboration",

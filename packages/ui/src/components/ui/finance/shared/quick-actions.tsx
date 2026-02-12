@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useRouter } from 'next/navigation';
+import { useFinanceHref } from '../finance-route-context';
 
 interface QuickActionsProps {
   wsId: string;
@@ -25,6 +26,7 @@ interface QuickActionsProps {
 
 export function QuickActions({ wsId }: QuickActionsProps) {
   const router = useRouter();
+  const financeHref = useFinanceHref();
 
   return (
     <DropdownMenu>
@@ -41,33 +43,35 @@ export function QuickActions({ wsId }: QuickActionsProps) {
         <DropdownMenuLabel>Quick Actions</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          onClick={() => router.push(`/${wsId}/finance/transactions/new`)}
+          onClick={() =>
+            router.push(`/${wsId}${financeHref('/transactions/new')}`)
+          }
         >
           <DollarSign className="mr-2 h-4 w-4" />
           <span>New Transaction</span>
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={() => router.push(`/${wsId}/finance/wallets/new`)}
+          onClick={() => router.push(`/${wsId}${financeHref('/wallets/new')}`)}
         >
           <Wallet className="mr-2 h-4 w-4" />
           <span>New Wallet</span>
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={() => router.push(`/${wsId}/finance/budgets`)}
+          onClick={() => router.push(`/${wsId}${financeHref('/budgets')}`)}
         >
           <Target className="mr-2 h-4 w-4" />
           <span>New Budget</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          onClick={() => router.push(`/${wsId}/finance/invoices/new`)}
+          onClick={() => router.push(`/${wsId}${financeHref('/invoices/new')}`)}
         >
           <FileText className="mr-2 h-4 w-4" />
           <span>New Invoice</span>
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() =>
-            router.push(`/${wsId}/finance/transactions/categories`)
+            router.push(`/${wsId}${financeHref('/transactions/categories')}`)
           }
         >
           <CreditCard className="mr-2 h-4 w-4" />

@@ -1,8 +1,17 @@
+// Re-export shared constants from satellite package
+// Re-export shared constants from satellite package
+export {
+  LOCALE_COOKIE_NAME,
+  SHOW_TAILWIND_INDICATOR,
+  THEME_COOKIE_NAME,
+} from '@tuturuuu/satellite/constants';
+
 import { supportedLocales } from '@/i18n/routing';
 
 export const DEV_MODE = process.env.NODE_ENV === 'development';
 export const PROD_MODE = process.env.NODE_ENV === 'production';
 
+// App-specific constants
 export const PORT = process.env.PORT || 7807;
 export const CENTRAL_PORT = process.env.CENTRAL_PORT || 7803;
 
@@ -20,14 +29,6 @@ export const TTR_URL =
   process.env.TTR_URL || PROD_MODE
     ? 'https://tuturuuu.com'
     : `http://localhost:${CENTRAL_PORT}`;
-
-export const LOCALE_COOKIE_NAME = 'NEXT_LOCALE';
-export const THEME_COOKIE_NAME = 'NEXT_THEME';
-
-// The following option only works in development mode.
-// Defaults to true when not specified.
-export const SHOW_TAILWIND_INDICATOR =
-  process.env.SHOW_TAILWIND_INDICATOR === 'true';
 
 export const PUBLIC_PATHS = ['/verify-token'].reduce((acc: string[], path) => {
   // Add the original path

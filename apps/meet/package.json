@@ -30,6 +30,7 @@
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/apis": "workspace:*",
     "@tuturuuu/auth": "workspace:*",
+    "@tuturuuu/satellite": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",

@@ -11,6 +11,7 @@ import { formatCurrency } from '@tuturuuu/utils/format';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useFinanceHref } from '../finance-route-context';
 import { InvoiceBlockedState } from './components/invoice-blocked-state';
 import { InvoiceCheckoutSummary } from './components/invoice-checkout-summary';
 import { InvoiceContentEditor } from './components/invoice-content-editor';
@@ -58,6 +59,7 @@ export function StandardInvoice({
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
+  const financeHref = useFinanceHref();
 
   // Read from URL params
   const selectedUserId = searchParams.get('user_id') || '';
@@ -330,7 +332,9 @@ export function StandardInvoice({
         const queryString = queryParams.toString();
         const query = queryString ? `?${queryString}` : '';
 
-        router.push(`/${wsId}/finance/invoices/${result.invoice_id}${query}`);
+        router.push(
+          `/${wsId}${financeHref(`/invoices/${result.invoice_id}`)}${query}`
+        );
       } else {
         // Reset form after successful creation
         setSelectedProducts([]);

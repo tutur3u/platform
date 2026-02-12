@@ -1,3 +1,3 @@
 'use client';
 
-export { ThemeDropdownItems } from '@tuturuuu/ui/custom/theme-dropdown-items';
+export { ThemeDropdownItems } from '@tuturuuu/satellite/theme-dropdown-items';

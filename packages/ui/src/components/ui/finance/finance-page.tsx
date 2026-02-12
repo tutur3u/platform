@@ -25,6 +25,7 @@ interface Props {
   searchParams: FinanceDashboardSearchParams;
   currency?: string;
   isPersonalWorkspace?: boolean;
+  financePrefix?: string;
 }
 
 export default async function FinancePage({
@@ -32,6 +33,7 @@ export default async function FinancePage({
   searchParams,
   currency = 'USD',
   isPersonalWorkspace = false,
+  financePrefix = '/finance',
 }: Props) {
   const sp = searchParams;
 
@@ -52,7 +54,7 @@ export default async function FinancePage({
   // Map recent transactions to match the data structure expected by CustomDataTable
   const transactionsData = recentTransactions.map((d) => ({
     ...d,
-    href: `/${wsId}/finance/transactions/${d.id}`,
+    href: `/${wsId}${financePrefix}/transactions/${d.id}`,
     ws_id: wsId,
   })) as Transaction[];
 

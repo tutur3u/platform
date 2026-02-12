@@ -1,6 +1,8 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useWorkspaceCategories } from '@tuturuuu/hooks/hooks/use-workspace-categories';
+import { getCategoryColor } from '@tuturuuu/hooks/utils/time-tracker-category-colors';
 import {
   Copy,
   Edit,
@@ -50,9 +52,7 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
-import { useWorkspaceCategories } from '@/hooks/use-workspace-categories';
 import { CopyFromWorkspaceDialog } from './copy-from-workspace-dialog';
-import { getCategoryColor } from './time-tracker-utils';
 
 interface TimeTrackerCategoriesSettingsProps {
   wsId: string;

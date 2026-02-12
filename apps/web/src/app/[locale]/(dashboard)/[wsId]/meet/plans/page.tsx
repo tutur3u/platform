@@ -4,7 +4,8 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Plans',
-  description: 'Manage Plans in the Tumeet area of your Tuturuuu workspace.',
+  description:
+    'Manage Plans in the Tuturuuu Meet area of your Tuturuuu workspace.',
 };
 
 interface TumeetPageProps {

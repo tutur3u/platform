@@ -19,6 +19,7 @@ import {
   useQueryState,
 } from 'nuqs';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import { useFinanceHref } from '../../finance-route-context';
 
 const PAGE_SIZE_STORAGE_KEY = 'transaction-categories-pageSize';
 
@@ -37,6 +38,7 @@ export function CategoriesDataTable({
 }: CategoriesDataTableProps) {
   const t = useTranslations();
   const queryClient = useQueryClient();
+  const financeHref = useFinanceHref();
 
   // Read persisted pageSize from localStorage
   const [storedPageSize, setStoredPageSize] = useState<number | null>(null);
@@ -142,7 +144,7 @@ export function CategoriesDataTable({
   const categories = data?.data
     ? data.data.map((cat) => ({
         ...cat,
-        href: `/${wsId}/finance/transactions/categories/${cat.id}`,
+        href: `/${wsId}${financeHref(`/transactions/categories/${cat.id}`)}`,
         ws_id: wsId,
       }))
     : isLoading

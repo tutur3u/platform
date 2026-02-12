@@ -1,0 +1,55 @@
+{
+  "name": "@tuturuuu/satellite",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./providers": "./src/providers/providers.tsx",
+    "./client-providers": "./src/providers/client-providers.tsx",
+    "./user-nav": "./src/components/user-nav.tsx",
+    "./user-nav-wrapper": "./src/components/user-nav-wrapper.tsx",
+    "./user-nav-client": "./src/components/user-nav-client.tsx",
+    "./navbar-actions": "./src/components/navbar-actions.tsx",
+    "./notification-popover": "./src/components/notification-popover.tsx",
+    "./language-wrapper": "./src/components/language-wrapper.tsx",
+    "./system-language-wrapper": "./src/components/system-language-wrapper.tsx",
+    "./system-language-dropdown-item": "./src/components/system-language-dropdown-item.tsx",
+    "./theme-dropdown-items": "./src/components/theme-dropdown-items.tsx",
+    "./auth-layout": "./src/layouts/auth-layout.tsx",
+    "./verify-token-page": "./src/pages/verify-token-page.tsx",
+    "./i18n": "./src/i18n/routing.ts",
+    "./constants": "./src/constants/common.ts",
+    "./sidebar-context": "./src/context/sidebar-context.tsx",
+    "./workspace-layout-helpers": "./src/utils/workspace-layout-helpers.ts"
+  },
+  "license": "MIT",
+  "scripts": {
+    "type-check": "tsgo --build"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.90.21",
+    "@tuturuuu/auth": "workspace:*",
+    "@tuturuuu/icons": "workspace:*",
+    "@tuturuuu/supabase": "workspace:*",
+    "@tuturuuu/types": "workspace:*",
+    "@tuturuuu/ui": "workspace:*",
+    "@tuturuuu/utils": "workspace:*",
+    "cookies-next": "^6.1.1",
+    "next": "^16.1.6",
+    "next-intl": "^4.8.2",
+    "next-themes": "^0.4.6",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@tanstack/react-query-devtools": "^5.91.3",
+    "@tuturuuu/typescript-config": "workspace:*",
+    "@types/node": "^25.2.3",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.9.3"
+  },
+  "packageManager": "bun@1.3.9"
+}

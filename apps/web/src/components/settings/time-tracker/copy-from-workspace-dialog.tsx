@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useWorkspaceCategories } from '@tuturuuu/hooks/hooks/use-workspace-categories';
 import { AlertCircle, CheckCircle, Copy, Loader2 } from '@tuturuuu/icons';
 import type { TimeTrackingCategory } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
@@ -23,7 +24,6 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
-import { useWorkspaceCategories } from '@/hooks/use-workspace-categories';
 
 interface Workspace {
   id: string;

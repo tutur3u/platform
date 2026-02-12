@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { Suspense } from 'react';
 import { TokenVerifierCore } from './token-verifier-core';
 
-export function TokenVerifier({ devMode }: { devMode: boolean }) {
+export function TokenVerifier() {
   return (
     <div className="fixed inset-0 flex h-screen w-screen flex-col items-center justify-center gap-2">
       <div className="flex items-center justify-center">
@@ -23,7 +23,7 @@ export function TokenVerifier({ devMode }: { devMode: boolean }) {
           </div>
         }
       >
-        <TokenVerifierCore devMode={devMode} />
+        <TokenVerifierCore />
       </Suspense>
     </div>
   );

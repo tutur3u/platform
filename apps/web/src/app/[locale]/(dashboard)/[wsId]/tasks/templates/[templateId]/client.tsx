@@ -88,7 +88,7 @@ const priorityConfig = {
   },
 } as const;
 
-// Status color mapping (matches Tudo status-section.tsx)
+// Status color mapping (matches Tuturuuu Tasks status-section.tsx)
 const statusColors = {
   not_started: 'bg-dynamic-gray/10 border-dynamic-gray/30',
   active: 'bg-dynamic-blue/10 border-dynamic-blue/30',

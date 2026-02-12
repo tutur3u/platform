@@ -9,9 +9,11 @@ const enabled = true;
 
 export default async function TransactionCategoriesStatistics({
   wsId,
+  financePrefix = '/finance',
 }: {
   wsId: string;
   searchParams?: FinanceDashboardSearchParams;
+  financePrefix?: string;
 }) {
   const supabase = await createClient();
   const t = await getTranslations();
@@ -36,7 +38,7 @@ export default async function TransactionCategoriesStatistics({
     <StatisticCard
       title={t('workspace-finance-tabs.categories')}
       value={categoriesCount}
-      href={`/${wsId}/finance/transactions/categories`}
+      href={`/${wsId}${financePrefix}/transactions/categories`}
       icon={<FolderTree className="h-5 w-5" />}
     />
   );

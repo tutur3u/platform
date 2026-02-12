@@ -9,9 +9,11 @@ const enabled = true;
 
 export default async function WalletsStatistics({
   wsId,
+  financePrefix = '/finance',
 }: {
   wsId: string;
   searchParams?: FinanceDashboardSearchParams;
+  financePrefix?: string;
 }) {
   const supabase = await createClient();
   const t = await getTranslations();
@@ -36,7 +38,7 @@ export default async function WalletsStatistics({
     <StatisticCard
       title={t('workspace-finance-tabs.wallets')}
       value={walletsCount}
-      href={`/${wsId}/finance/wallets`}
+      href={`/${wsId}${financePrefix}/wallets`}
       icon={<Wallet2 className="h-5 w-5" />}
     />
   );

@@ -5,7 +5,7 @@ import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
+import { TTR_URL } from '@/constants/common';
 
 export function AuthButton({
   user,
@@ -16,14 +16,10 @@ export function AuthButton({
   onClick?: () => void;
   className?: string;
 }) {
-  const supabase = createClient();
-
-  const signOut = async () => {
-    await supabase.auth.signOut({
-      scope: 'local',
-    });
-
-    return redirect('/login');
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut({ scope: 'local' });
+    window.location.assign(`${TTR_URL}/logout?from=Nova`);
   };
 
   return user ? (
@@ -32,15 +28,16 @@ export function AuthButton({
         <div className="text-xs">Logged in as</div>
         <div className="line-clamp-1 font-semibold text-sm">{user.email}</div>
       </div>
-      <form action={signOut}>
-        <Button
-          onClick={onClick}
-          variant="destructive"
-          className={cn('w-full', className)}
-        >
-          Logout
-        </Button>
-      </form>
+      <Button
+        onClick={() => {
+          onClick?.();
+          handleLogout();
+        }}
+        variant="destructive"
+        className={cn('w-full', className)}
+      >
+        Logout
+      </Button>
     </div>
   ) : (
     <Link href="/login" onClick={onClick} className="w-full">

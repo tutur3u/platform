@@ -1,15 +1,12 @@
 'use client';
 
 import { Button } from '@tuturuuu/ui/button';
-import { useRouter } from 'next/navigation';
+import { TTR_URL } from '@/constants/common';
 
 export default function LogButton() {
-  const router = useRouter();
-
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/login');
-    router.refresh();
+    window.location.assign(`${TTR_URL}/logout?from=Nova`);
   };
 
   return (

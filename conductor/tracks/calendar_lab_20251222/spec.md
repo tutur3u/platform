@@ -1,7 +1,7 @@
 # Specification: Smart Scheduling Algorithm Lab
 
 ## 1. Overview
-Create a dedicated "Algorithm Lab" environment within the web application to visualize, test, and debug the smart scheduling calendar algorithm (`TuPlan`). This tool will allow engineers to simulate complex scheduling scenarios, visualize decision-making logic, and tune parameters in real-time using a high-quality, user-friendly interface that mirrors the production calendar experience.
+Create a dedicated "Algorithm Lab" environment within the web application to visualize, test, and debug the smart scheduling calendar algorithm (`Tuturuuu Calendar`). This tool will allow engineers to simulate complex scheduling scenarios, visualize decision-making logic, and tune parameters in real-time using a high-quality, user-friendly interface that mirrors the production calendar experience.
 
 ## 2. User Stories
 *   **As an Engineer**, I want to access a protected "Lab" page so I can test the scheduling algorithm without affecting real user data.

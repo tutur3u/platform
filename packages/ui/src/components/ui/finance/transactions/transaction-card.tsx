@@ -41,6 +41,7 @@ import moment from 'moment';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { useFinanceHref } from '../finance-route-context';
 
 interface TransactionCardProps {
   transaction: Transaction & {
@@ -73,6 +74,7 @@ export function TransactionCard({
   isDaily = false,
 }: TransactionCardProps) {
   const t = useTranslations('workspace-finance-transactions');
+  const financeHref = useFinanceHref();
   const [isHovered, setIsHovered] = useState(false);
   const effectiveCurrency = transaction.wallet_currency || currency;
   const isExpense = (transaction.amount || 0) < 0;
@@ -336,7 +338,7 @@ export function TransactionCard({
                   {isTransfer && transaction.transfer ? (
                     <div className="flex items-center rounded-full border border-dynamic-blue/20 bg-dynamic-blue/5 py-0.5 pr-1 pl-1">
                       <Link
-                        href={`/${wsId}/finance/wallets/${transaction.wallet_id}`}
+                        href={`/${wsId}${financeHref(`/wallets/${transaction.wallet_id}`)}`}
                         onClick={(e) => e.stopPropagation()}
                       >
                         <span className="flex items-center gap-1 rounded-full px-1.5 py-0.5 font-medium text-[11px] text-muted-foreground transition-colors hover:bg-dynamic-blue/10 hover:text-foreground sm:text-xs">
@@ -351,7 +353,7 @@ export function TransactionCard({
                       </Link>
                       <ArrowRight className="mx-0.5 h-3 w-3 shrink-0 text-dynamic-blue" />
                       <Link
-                        href={`/${wsId}/finance/wallets/${transaction.transfer.linked_wallet_id}`}
+                        href={`/${wsId}${financeHref(`/wallets/${transaction.transfer.linked_wallet_id}`)}`}
                         onClick={(e) => e.stopPropagation()}
                       >
                         <span className="flex items-center gap-1 rounded-full px-1.5 py-0.5 font-medium text-[11px] text-dynamic-blue transition-colors hover:bg-dynamic-blue/10 sm:text-xs">
@@ -367,7 +369,7 @@ export function TransactionCard({
                     </div>
                   ) : (
                     <Link
-                      href={`/${wsId}/finance/wallets/${transaction.wallet_id}`}
+                      href={`/${wsId}${financeHref(`/wallets/${transaction.wallet_id}`)}`}
                       onClick={(e) => e.stopPropagation()}
                     >
                       <Badge

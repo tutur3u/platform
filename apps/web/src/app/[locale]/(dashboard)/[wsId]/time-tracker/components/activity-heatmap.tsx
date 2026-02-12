@@ -30,6 +30,7 @@ import utc from 'dayjs/plugin/utc';
 import 'dayjs/locale/vi';
 import { Heatmap } from '@mantine/charts';
 import { ScrollArea } from '@mantine/core';
+import { formatDuration } from '@tuturuuu/hooks/utils/time-format';
 import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
 import { useIsMobile } from '@tuturuuu/ui/hooks/use-mobile';
 import { useLocale, useTranslations } from 'next-intl';
@@ -39,7 +40,6 @@ import {
   type HeatmapSettings,
   type HeatmapViewMode,
 } from '@/components/settings/time-tracker/heatmap-display-settings';
-import { formatDuration } from '@/lib/time-format';
 import classes from '@/style/mantine-heatmap.module.css';
 
 dayjs.extend(utc);

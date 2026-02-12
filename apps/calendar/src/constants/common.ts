@@ -1,44 +1,31 @@
-import { supportedLocales } from '@/i18n/routing';
+// Re-export shared constants from satellite package
+// Re-export shared constants from satellite package
+export {
+  DEV_MODE,
+  LOCALE_COOKIE_NAME,
+  PROD_MODE,
+  PUBLIC_PATHS,
+  SHOW_TAILWIND_INDICATOR,
+  SIDEBAR_BEHAVIOR_COOKIE_NAME,
+  SIDEBAR_COLLAPSED_COOKIE_NAME,
+  THEME_COOKIE_NAME,
+} from '@tuturuuu/satellite/constants';
 
-export const DEV_MODE = process.env.NODE_ENV === 'development';
-export const PROD_MODE = process.env.NODE_ENV === 'production';
-
-export const PORT = process.env.PORT || 3001;
+// App-specific constants
+export const PORT = process.env.PORT || 7806;
 export const CENTRAL_PORT = process.env.CENTRAL_PORT || 7803;
 
 export const BASE_URL =
-  process.env.BASE_URL || PROD_MODE
+  process.env.BASE_URL || process.env.NODE_ENV === 'production'
     ? 'https://calendar.tuturuuu.com'
-    : 'http://localhost:3001';
+    : `http://localhost:${PORT}`;
 
 export const API_URL =
-  process.env.API_URL || PROD_MODE
+  process.env.API_URL || process.env.NODE_ENV === 'production'
     ? 'https://calendar.tuturuuu.com/api'
-    : 'http://localhost:3001/api';
+    : `http://localhost:${PORT}/api`;
 
-export const LOCALE_COOKIE_NAME = 'NEXT_LOCALE';
-export const THEME_COOKIE_NAME = 'NEXT_THEME';
-
-export const ENABLE_KEYBOARD_SHORTCUTS = false;
-
-// The following option only works in development mode.
-// Defaults to true when not specified.
-export const SHOW_TAILWIND_INDICATOR =
-  process.env.SHOW_TAILWIND_INDICATOR === 'true';
-
-export const HIDE_TAILWIND_INDICATOR =
-  process.env.HIDE_TAILWIND_INDICATOR === 'true';
-
-export const IS_PRODUCTION_DB =
-  process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('.supabase.');
-
-export const PUBLIC_PATHS = ['/verify-token'].reduce((acc: string[], path) => {
-  // Add the original path
-  acc.push(path);
-
-  // Add localized paths
-  const localizedPaths = supportedLocales.map((locale) => `/${locale}${path}`);
-  acc.push(...localizedPaths);
-
-  return acc;
-}, []);
+export const TTR_URL =
+  process.env.TTR_URL || process.env.NODE_ENV === 'production'
+    ? 'https://tuturuuu.com'
+    : `http://localhost:${CENTRAL_PORT}`;

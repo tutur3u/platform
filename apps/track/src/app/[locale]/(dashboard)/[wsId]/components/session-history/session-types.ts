@@ -1,0 +1,59 @@
+import type { SessionHistoryFilters } from '@tuturuuu/hooks/hooks/use-session-history-query';
+import type {
+  TimeTrackingCategory,
+  Workspace,
+  WorkspaceTask,
+} from '@tuturuuu/types';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import type { SessionWithRelations } from '../../types';
+
+export type ViewMode = 'day' | 'week' | 'month';
+
+export interface StackedSession {
+  id: string;
+  title: string;
+  description?: string;
+  category: TimeTrackingCategory | null;
+  task: WorkspaceTask | null;
+  sessions: SessionWithRelations[]; // All sessions in this stack
+  totalDuration: number; // Sum of all durations (full session durations)
+  periodDuration: number; // Duration that falls within the viewed period/day (for split sessions)
+  firstStartTime: string; // Earliest start time
+  lastEndTime: string | null; // Latest end time
+  displayDate?: string; // The date this stack is displayed under (for split sessions)
+}
+
+export interface SessionHistoryProps {
+  wsId: string;
+  userId: string;
+  categories: TimeTrackingCategory[] | null;
+  tasks: TaskWithDetails[] | null;
+  workspace: Workspace;
+  isPersonal?: boolean;
+  currentUser?: WorkspaceUser | null;
+  canManageTimeTrackingRequests?: boolean;
+  canBypassTimeTrackingRequestApproval?: boolean;
+}
+
+export type TaskWithDetails = {
+  id: string; // Required field for task selection
+} & Partial<WorkspaceTask> & {
+    board_name?: string;
+    list_name?: string;
+    ticket_prefix?: string | null;
+  };
+
+export type FilterState = SessionHistoryFilters;
+
+export interface ActionStates {
+  [key: string]: boolean;
+}
+
+export interface EditFormState {
+  title: string;
+  description: string;
+  categoryId: string;
+  taskId: string;
+  startTime: string;
+  endTime: string;
+}

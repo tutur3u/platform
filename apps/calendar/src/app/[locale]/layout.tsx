@@ -1,19 +1,24 @@
-import { DEV_MODE } from '@/constants/common';
+import { SerwistProvider } from '@tuturuuu/offline/provider';
+import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
+import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
+import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
+import { Providers } from '@/components/providers';
 import { siteConfig } from '@/constants/configs';
 import { type Locale, routing, supportedLocales } from '@/i18n/routing';
 import '@tuturuuu/ui/globals.css';
 import { Toaster } from '@tuturuuu/ui/sonner';
+import { FadeSettingInitializer } from '@tuturuuu/ui/tu-do/shared/fade-setting-initializer';
+import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { VercelAnalytics, VercelInsights } from '@tuturuuu/vercel';
-import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
 import type { ReactNode } from 'react';
-import { Providers } from './providers';
+import { Suspense } from 'react';
 
-const font = Inter({ subsets: ['latin', 'vietnamese'], display: 'block' });
+export { viewport } from '@tuturuuu/utils/common/nextjs';
 
 interface Props {
   children: ReactNode;
@@ -23,108 +28,59 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { locale } = await params;
-
-  const enDescription =
-    'Tuturuuu Calendar is a free, open-source calendar application that helps you manage your time effectively. With a user-friendly interface and powerful features, it allows you to create, edit, and delete events with ease.';
-
-  const viDescription =
-    'Tuturuuu Calendar là một ứng dụng lịch miễn phí, mã nguồn mở giúp bạn quản lý thời gian hiệu quả. Với giao diện thân thiện và các tính năng mạnh mẽ, nó cho phép bạn tạo, chỉnh sửa và xóa sự kiện một cách dễ dàng.';
-
-  const description = locale === 'vi' ? viDescription : enDescription;
-
-  return {
-    title: {
-      default: `${DEV_MODE && '[DEV] '} ${siteConfig.name}`,
-      template: `%s - ${siteConfig.name}`,
-    },
-    metadataBase: new URL(siteConfig.url),
-    description,
-    keywords: [
-      'Next.js',
-      'React',
-      'Tailwind CSS',
-      'Server Components',
-      'Radix UI',
-    ],
-    authors: [
-      {
-        name: 'vohoangphuc',
-        url: 'https://www.vohoangphuc.com',
+  return generateCommonMetadata({
+    config: {
+      description: {
+        en: 'AI-powered calendar with smart scheduling, time tracking, and workspace collaboration.',
+        vi: 'Lịch thông minh với AI hỗ trợ lên lịch, theo dõi thời gian và cộng tác workspace.',
       },
-    ],
-    creator: 'vohoangphuc',
-    openGraph: {
-      type: 'website',
-      locale,
+      name: siteConfig.name,
       url: siteConfig.url,
-      title: siteConfig.name,
-      description,
-      siteName: siteConfig.name,
-      images: [
-        {
-          url: siteConfig.ogImage,
-          width: 1200,
-          height: 630,
-          alt: siteConfig.name,
-        },
-      ],
+      ogImage: siteConfig.ogImage,
     },
-    twitter: {
-      card: 'summary_large_image',
-      title: siteConfig.name,
-      description,
-      images: [siteConfig.ogImage],
-      creator: '@tuturuuu',
-    },
-    icons: {
-      icon: '/favicon.ico',
-      shortcut: '/favicon-16x16.png',
-      apple: '/apple-touch-icon.png',
-    },
-  };
+    params,
+  });
 }
 
-export const viewport: Viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 5,
-  themeColor: [
-    { media: '(prefers-color-scheme: dark)', color: 'black' },
-    { media: '(prefers-color-scheme: light)', color: 'white' },
-  ],
-  colorScheme: 'dark light',
-};
-
 export function generateStaticParams() {
-  return supportedLocales.map((locale) => ({ locale }));
+  return supportedLocales.map((locale) => ({
+    locale,
+    wsId: ROOT_WORKSPACE_ID,
+  }));
 }
 
 export default async function RootLayout({ children, params }: Props) {
+  const { locale } = await params;
+
   // Ensure that the incoming `locale` is valid
-  if (!routing.locales.includes((await params).locale as Locale)) {
-    console.error('Invalid locale:', (await params).locale);
+  if (!routing.locales.includes(locale as Locale)) {
     notFound();
   }
 
-  const { locale } = await params;
-  setRequestLocale(locale);
+  setRequestLocale(locale as Locale);
 
   return (
     <html lang={locale} suppressHydrationWarning>
       <body
         className={cn(
-          'overflow-y-scroll bg-root-background antialiased',
+          'overflow-y-auto bg-root-background antialiased',
           font.className
         )}
       >
-        <VercelAnalytics />
-        <VercelInsights />
-        <Providers>
-          {/* TODO: Fix Bun types issue with children prop */}
-          <NextIntlClientProvider>{children as any}</NextIntlClientProvider>
-        </Providers>
-        <Toaster />
+        <SerwistProvider>
+          <VercelAnalytics />
+          <VercelInsights />
+          <Suspense>
+            <Providers>
+              <FadeSettingInitializer />
+              {children}
+            </Providers>
+          </Suspense>
+          <TailwindIndicator />
+          <ProductionIndicator />
+          <StaffToolbar />
+          <Toaster />
+        </SerwistProvider>
       </body>
     </html>
   );

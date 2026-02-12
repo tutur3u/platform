@@ -23,9 +23,9 @@ The user wants to build Tuturuuu, an intelligent, open-source operating system f
 Tuturuuu is a vertically integrated, all-in-one platform built on an open-source core.
 
 ### Core Applications
-*   **Tudo (Flagship):** A centralized task manager with real-time collaboration (live cursors, Google Docs-style editing) and deep integration into calendar and documentation.
-*   **TuPlan (Smart Calendar):** AI-driven auto-scheduling engine that slots tasks based on priority, streaks, energy levels, and buffer preferences. Supports "Locked Events" for immutable scheduling and two-way sync with Google Calendar.
-*   **TuMeet:** comprehensive meeting management integrating scheduling, agendas, transcriptions, and follow-ups.
+*   **Tuturuuu Tasks (Flagship):** A centralized task manager with real-time collaboration (live cursors, Google Docs-style editing) and deep integration into calendar and documentation.
+*   **Tuturuuu Calendar (Smart Calendar):** AI-driven auto-scheduling engine that slots tasks based on priority, streaks, energy levels, and buffer preferences. Supports "Locked Events" for immutable scheduling and two-way sync with Google Calendar.
+*   **Tuturuuu Meet:** comprehensive meeting management integrating scheduling, agendas, transcriptions, and follow-ups.
 *   **TuChat & TuMail:** Integrated communication channels that keep conversations contextual and alongside the work.
 *   **TuDrive:** A unified, intelligent storage system for all digital assets.
 *   **Finance:** Integrated wallet tracking, budgeting, and financial planning.
@@ -51,7 +51,7 @@ Tuturuuu is a vertically integrated, all-in-one platform built on an open-source
 *   **Growth & Engagement:**
     *   **North Star:** Daily Active Workspaces (DAW) - Number of teams actively collaborating daily.
     *   **Stickiness:** DAU/MAU ratio (Target: >20%).
-    *   **Cross-App Adoption:** % of users using 3+ modules (e.g., Tudo + TuPlan + TuMeet).
+    *   **Cross-App Adoption:** % of users using 3+ modules (e.g., Tuturuuu Tasks + Tuturuuu Calendar + Tuturuuu Meet).
 *   **Value & Efficiency:**
     *   **Time-to-Value:** Average time for a new startup to complete onboarding and create their first "aligned" project.
     *   **Automation Rate:** Number of manual tasks (scheduling, summarizing) automated per user per week.

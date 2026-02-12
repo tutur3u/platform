@@ -56,6 +56,7 @@ import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import { useFinanceHref } from '../finance-route-context';
 
 interface TagManagerProps {
   wsId: string;
@@ -98,6 +99,7 @@ export function TagManager({ wsId }: TagManagerProps) {
   const queryClient = useQueryClient();
   const supabase = createClient();
   const router = useRouter();
+  const financeHref = useFinanceHref();
 
   const { data: tags, isLoading } = useQuery({
     queryKey: ['transaction_tags', wsId],
@@ -226,7 +228,7 @@ export function TagManager({ wsId }: TagManagerProps) {
   });
 
   const handleTagClick = (tagId: string) => {
-    router.push(`/${wsId}/finance/transactions?tagIds=${tagId}`);
+    router.push(`/${wsId}${financeHref('/transactions')}?tagIds=${tagId}`);
   };
 
   const handleOpenCreate = () => {

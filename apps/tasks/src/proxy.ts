@@ -131,7 +131,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   }
 
   // Handle authenticated users accessing the root path or root with locale
-  // Redirect to their default workspace's tasks/boards page
+  // Redirect to their default workspace's boards page
   const isRootPath = req.nextUrl.pathname === '/';
   const isLocaleRootPath =
     pathSegments.length === 1 &&
@@ -162,12 +162,12 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
             : defaultWorkspace.id === ROOT_WORKSPACE_ID
               ? 'internal'
               : defaultWorkspace.id;
-          const redirectUrl = new URL(`/${target}/tasks/boards`, req.nextUrl);
+          const redirectUrl = new URL(`/${target}/boards`, req.nextUrl);
           return NextResponse.redirect(redirectUrl);
         }
 
         // Fallback to personal workspace if no default workspace found
-        const redirectUrl = new URL('/personal/tasks/boards', req.nextUrl);
+        const redirectUrl = new URL('/personal/boards', req.nextUrl);
         return NextResponse.redirect(redirectUrl);
       }
     } catch (error) {

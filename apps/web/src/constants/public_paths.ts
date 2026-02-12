@@ -4,6 +4,7 @@ export const APP_PUBLIC_PATHS = [
   '/invite',
   '/home',
   '/login',
+  '/logout',
   '/pricing',
   '/about',
   '/contact',

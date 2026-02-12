@@ -5,14 +5,14 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 import { verifyRouteToken } from '.';
 
-export function TokenVerifierCore({ devMode }: { devMode: boolean }) {
+export function TokenVerifierCore() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
   const router = useRouter();
 
   useEffect(() => {
-    verifyRouteToken({ searchParams, token, router, devMode });
-  }, [token, router, searchParams, devMode]);
+    verifyRouteToken({ searchParams, token, router });
+  }, [token, router, searchParams]);
 
   return (
     <div className="mt-4 flex h-fit w-full items-center justify-center">

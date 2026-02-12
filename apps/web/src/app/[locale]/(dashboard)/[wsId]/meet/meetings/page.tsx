@@ -9,7 +9,8 @@ import { MeetingsContent } from './meetings-content';
 
 export const metadata: Metadata = {
   title: 'Meetings',
-  description: 'Manage Meetings in the Tumeet area of your Tuturuuu workspace.',
+  description:
+    'Manage Meetings in the Tuturuuu Meet area of your Tuturuuu workspace.',
 };
 
 interface MeetingsPageProps {

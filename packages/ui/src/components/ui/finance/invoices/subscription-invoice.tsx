@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useFinanceHref } from '../finance-route-context';
 import { InvoiceBlockedState } from './components/invoice-blocked-state';
 import { InvoiceCheckoutSummary } from './components/invoice-checkout-summary';
 import { InvoiceContentEditor } from './components/invoice-content-editor';
@@ -74,6 +75,7 @@ export function SubscriptionInvoice({
   const locale = useLocale();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const financeHref = useFinanceHref();
 
   // URL state using nuqs
   const [selectedUserId, setSelectedUserId] = useQueryState('user_id', {
@@ -549,7 +551,7 @@ export function SubscriptionInvoice({
         if (printAfterCreate) queryParams.set('print', 'true');
         if (downloadImageAfterCreate) queryParams.set('image', 'true');
         router.push(
-          `/${wsId}/finance/invoices/${result.invoice_id}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
+          `/${wsId}${financeHref(`/invoices/${result.invoice_id}`)}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
         );
       } else {
         setSubscriptionSelectedProducts([]);

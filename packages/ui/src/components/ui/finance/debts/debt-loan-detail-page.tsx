@@ -50,6 +50,7 @@ import { Progress } from '../../progress';
 import { Separator } from '../../separator';
 import { Skeleton } from '../../skeleton';
 import { toast } from '../../sonner';
+import { useFinanceHref } from '../finance-route-context';
 import { DebtLoanForm } from './debt-loan-form';
 
 interface Props {
@@ -61,6 +62,7 @@ export function DebtLoanDetailPage({ wsId, debtId }: Props) {
   const t = useTranslations('ws-debt-loan');
   const router = useRouter();
   const queryClient = useQueryClient();
+  const financeHref = useFinanceHref();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
@@ -105,7 +107,7 @@ export function DebtLoanDetailPage({ wsId, debtId }: Props) {
     },
     onSuccess: () => {
       toast.success(t('delete_success'));
-      router.push(`/${wsId}/finance/debts`);
+      router.push(`/${wsId}${financeHref('/debts')}`);
     },
     onError: () => {
       toast.error(t('delete_error'));
@@ -180,7 +182,7 @@ export function DebtLoanDetailPage({ wsId, debtId }: Props) {
           {t('not_found_description')}
         </p>
         <Button asChild>
-          <Link href={`/${wsId}/finance/debts`}>
+          <Link href={`/${wsId}${financeHref('/debts')}`}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             {t('back_to_list')}
           </Link>
@@ -200,7 +202,7 @@ export function DebtLoanDetailPage({ wsId, debtId }: Props) {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-4">
           <Button variant="ghost" size="icon" asChild>
-            <Link href={`/${wsId}/finance/debts`}>
+            <Link href={`/${wsId}${financeHref('/debts')}`}>
               <ArrowLeft className="h-5 w-5" />
             </Link>
           </Button>

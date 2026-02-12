@@ -17,6 +17,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { useFinanceHref } from '../../finance-route-context';
 
 interface WalletDeleteButtonProps {
   wsId: string;
@@ -31,6 +32,7 @@ export function WalletDeleteButton({
 }: WalletDeleteButtonProps) {
   const t = useTranslations();
   const router = useRouter();
+  const financeHref = useFinanceHref();
   const [isDeleting, setIsDeleting] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -44,7 +46,7 @@ export function WalletDeleteButton({
       if (res.ok) {
         toast.success(t('ws-wallets.wallet_deleted'));
         setIsOpen(false);
-        router.push(`/${wsId}/finance/wallets`);
+        router.push(`/${wsId}${financeHref('/wallets')}`);
         router.refresh();
       } else {
         const errorData = await res.json();

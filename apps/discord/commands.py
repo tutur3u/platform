@@ -72,7 +72,7 @@ class CommandHandler:
             },
             {
                 "name": "tumeet",
-                "description": "Create a new TuMeet plan",
+                "description": "Create a new Tuturuuu Meet plan",
                 "options": [
                     {
                         "name": "name",
@@ -453,7 +453,7 @@ class CommandHandler:
         share_url = f"https://tumeet.me/{plan_id}"
         user_name = user_info.get("display_name") or user_info.get("handle") or "User"
         message = (
-            f"✅ **TuMeet plan created by {user_name}!**\n\n"
+            f"✅ **Tuturuuu Meet plan created by {user_name}!**\n\n"
             f"**Name:** {plan_name}\n"
             f"**Date:** {date_str} 07:00-22:00 (GMT+7)\n"
             f"**Public:** Yes (default)\n"

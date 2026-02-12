@@ -13,6 +13,7 @@ import {
 } from 'nuqs';
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useWorkspaceConfig } from '../../../../hooks/use-workspace-config';
+import { useFinanceRoutePrefix } from '../finance-route-context';
 import ExportDialogContent from './export-dialog-content';
 import { usePendingInvoices } from './hooks';
 import { pendingInvoiceColumns } from './pending-columns';
@@ -31,6 +32,7 @@ export function PendingInvoicesTable({
 }: Props) {
   const t = useTranslations();
   const queryClient = useQueryClient();
+  const financePrefix = useFinanceRoutePrefix();
 
   const [q, setQ] = useQueryState(
     'q',
@@ -99,9 +101,10 @@ export function PendingInvoicesTable({
         t,
         'pending-invoice-data-table',
         useAttendanceBased,
-        currency
+        currency,
+        financePrefix
       ),
-    [t, useAttendanceBased, currency]
+    [t, useAttendanceBased, currency, financePrefix]
   );
 
   const [allUsers, setAllUsers] = useState<

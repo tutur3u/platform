@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl';
 import { Badge } from '../../badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../../card';
 import { Progress } from '../../progress';
+import { useFinanceHref } from '../finance-route-context';
 
 interface Props {
   debtLoan: DebtLoanWithBalance;
@@ -17,6 +18,7 @@ interface Props {
 
 export function DebtLoanCard({ debtLoan, wsId, currency }: Props) {
   const t = useTranslations('ws-debt-loan');
+  const financeHref = useFinanceHref();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -45,7 +47,7 @@ export function DebtLoanCard({ debtLoan, wsId, currency }: Props) {
     new Date(debtLoan.due_date) < new Date();
 
   return (
-    <Link href={`/${wsId}/finance/debts/${debtLoan.id}`}>
+    <Link href={`/${wsId}${financeHref(`/debts/${debtLoan.id}`)}`}>
       <Card
         className={cn(
           'cursor-pointer transition-all hover:border-foreground/20 hover:shadow-md',

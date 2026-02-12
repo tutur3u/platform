@@ -2,10 +2,10 @@ import { DEV_MODE } from './common';
 
 export const siteConfig = {
   name: 'Tuturuuu Calendar',
-  url: DEV_MODE ? 'http://localhost:3001' : 'https://calendar.tuturuuu.com',
+  url: DEV_MODE ? 'http://localhost:7806' : 'https://calendar.tuturuuu.com',
   ogImage: DEV_MODE
-    ? 'http://localhost:3001/api/og'
-    : 'https://calendar.tuturuuu.com/api/og',
+    ? 'http://localhost:7806/media/logos/og-image.png'
+    : 'https://calendar.tuturuuu.com/media/logos/og-image.png',
   links: {
     twitter: 'https://twitter.com/tutur3u',
     github: 'https://github.com/tutur3u/platform',
@@ -39,15 +39,12 @@ export interface AppConfig {
 
 export const appConfig: AppConfig = {
   openai: {
-    // baseURL: process.env.OPENAI_BASE_URL,
     apiKey: process.env.OPENAI_API_KEY || '',
   },
   google: {
-    // baseURL: process.env.GOOGLE_GENERATIVE_AI_BASE_URL,
     apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || '',
   },
   anthropic: {
-    // baseURL: process.env.ANTHROPIC_BASE_URL,
     apiKey: process.env.ANTHROPIC_API_KEY || '',
   },
   vertex: {

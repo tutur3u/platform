@@ -1,7 +1,7 @@
 import { DEV_MODE } from './common';
 
 export const siteConfig = {
-  name: 'Tudo',
+  name: 'Tuturuuu Tasks',
   url: DEV_MODE ? 'http://localhost:7809' : 'https://tasks.tuturuuu.com',
   ogImage: DEV_MODE
     ? 'http://localhost:7809/media/logos/og-image.png'

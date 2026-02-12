@@ -148,15 +148,15 @@
       },
       "tudo": {
         "description": "Quản lý công việc thông minh",
-        "name": "TuDo"
+        "name": "Tuturuuu Tasks"
       },
       "tumeet": {
         "description": "Cuộc họp thông minh",
-        "name": "TuMeet"
+        "name": "Tuturuuu Meet"
       },
       "tuplan": {
         "description": "Tự động lập lịch bằng AI",
-        "name": "TuPlan"
+        "name": "Tuturuuu Calendar"
       }
     },
     "features": {
@@ -280,7 +280,7 @@
     },
     "timeline": {
       "building": {
-        "achievement1": "Quản lý công việc TuDo",
+        "achievement1": "Quản lý công việc Tuturuuu Tasks",
         "achievement2": "Đồng bộ lịch",
         "achievement3": "Theo dõi tài chính",
         "achievement4": "Nền tảng Nova",
@@ -2356,8 +2356,8 @@
             "nova": "Nova (Học Tập)",
             "other": "Khác",
             "rewise": "Rewise (AI Chat)",
-            "tudo": "TuDo (Công Việc)",
-            "tumeet": "TuMeet (Cuộc Họp)",
+            "tudo": "Tuturuuu Tasks",
+            "tumeet": "Tuturuuu Meet",
             "web": "Nền Tảng Web"
           },
           "placeholder": "Chọn sản phẩm"
@@ -2664,7 +2664,7 @@
     "next_up_on_calendar": "Tiếp theo trên Lịch",
     "no_data_description": "Bắt đầu theo dõi thời gian của bạn để mở khóa những hiểu biết chi tiết về mô hình công việc, xu hướng năng suất và tiến độ mục tiêu của bạn.",
     "no_data_title": "Sẵn sàng để tăng năng suất của bạn?",
-    "no_recent_plans_desc": "Các kế hoạch TuMeet gần nhất của bạn sẽ xuất hiện tại đây",
+    "no_recent_plans_desc": "Các kế hoạch Tuturuuu Meet gần nhất của bạn sẽ xuất hiện tại đây",
     "no_recent_plans_title": "Không có kế hoạch gần đây",
     "no_recently": "Không có tác vụ được tạo gần đây",
     "no_recently_created_tasks_description": "Các tác vụ được tạo ra trong 7 ngày gần đây sẽ xuất hiện tại đây",
@@ -2811,7 +2811,7 @@
     "today": "Hôm Nay",
     "today_focus": "Trọng tâm hôm nay",
     "tomorrow": "Ngày mai",
-    "tu_meet_plans": "Kế hoạch TuMeet",
+    "tu_meet_plans": "Kế hoạch Tuturuuu Meet",
     "uncategorized": "Chưa được phân loại",
     "untitled_event": "Sự kiện chưa có tên",
     "untitled_plan": "Kế hoạch không có tên",
@@ -4258,7 +4258,7 @@
             "management": "Quản lý dự án"
           },
           "subtitle": "Quản Lý Công Việc Thông Minh",
-          "title": "TuDo"
+          "title": "Tuturuuu Tasks"
         },
         "tufinance": {
           "description": "Theo dõi chi tiêu, quản lý ngân sách và nhận thông tin chuyên sâu do AI cung cấp về sức khỏe tài chính của bạn.",
@@ -4268,7 +4268,7 @@
             "tracking": "Theo dõi chi tiêu"
           },
           "subtitle": "Quản Lý Tài Chính",
-          "title": "TuFinance"
+          "title": "Tuturuuu Finance"
         },
         "tumeet": {
           "description": "Giải pháp cuộc họp toàn diện với lập kế hoạch cộng tác, thông tin vị trí và tóm tắt do AI tạo ra.",
@@ -4278,7 +4278,7 @@
             "transcription": "Phiên âm AI"
           },
           "subtitle": "Cuộc Họp Thông Minh",
-          "title": "TuMeet"
+          "title": "Tuturuuu Meet"
         },
         "tuplan": {
           "description": "Tự động lập lịch bằng AI dựa trên thời hạn, ưu tiên và nhịp điệu làm việc cá nhân của bạn.",
@@ -4288,7 +4288,7 @@
             "sync": "Đồng bộ Google Calendar"
           },
           "subtitle": "Lịch Thông Minh",
-          "title": "TuPlan"
+          "title": "Tuturuuu Calendar"
         }
       },
       "nova": {
@@ -4315,7 +4315,7 @@
         "feature2": "Công việc phân cấp",
         "feature3": "Quản lý dự án",
         "subtitle": "Quản Lý Công Việc Thông Minh",
-        "title": "TuDo"
+        "title": "Tuturuuu Tasks"
       },
       "tufinance": {
         "description": "Theo dõi chi tiêu, quản lý ngân sách và nhận thông tin phân tích về tình hình tài chính nhờ sức mạnh AI.",
@@ -4323,7 +4323,7 @@
         "feature2": "Lập kế hoạch ngân sách",
         "feature3": "Phân tích tài chính",
         "subtitle": "Quản Lý Tài Chính",
-        "title": "TuFinance"
+        "title": "Tuturuuu Finance"
       },
       "tumeet": {
         "description": "Giải pháp cuộc họp toàn diện với lập kế hoạch cộng tác, định vị thông minh và tóm tắt tự động bằng AI.",
@@ -4331,7 +4331,7 @@
         "feature2": "Phiên âm AI",
         "feature3": "Theo dõi hành động",
         "subtitle": "Cuộc Họp Thông Minh",
-        "title": "TuMeet"
+        "title": "Tuturuuu Meet"
       },
       "tuplan": {
         "description": "Tự động sắp xếp lịch trình dựa trên AI, phân bổ thời gian theo deadline, độ ưu tiên và nhịp làm việc riêng của bạn.",
@@ -4339,7 +4339,7 @@
         "feature2": "Tự động sắp xếp lịch",
         "feature3": "Phân chia khung thời gian",
         "subtitle": "Lịch Trình Thông Minh",
-        "title": "TuPlan"
+        "title": "Tuturuuu Calendar"
       }
     },
     "hero": {
@@ -6555,7 +6555,7 @@
     "to": "To",
     "total_emails": "Tổng số email",
     "track": "Theo dõi",
-    "tumeet": "Tumeet",
+    "tumeet": "Tuturuuu Meet",
     "tumeet_plans": "Kế hoạch gặp nhau",
     "tuna": "Tuna",
     "usage": "Lưu lượng",

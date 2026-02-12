@@ -92,6 +92,7 @@ interface Props {
   canDeleteInvoices?: boolean;
   deleteInvoiceAction?: DeleteInvoiceAction;
   currency?: string;
+  financePrefix?: string;
 }
 
 export default async function InvoicesPage({
@@ -101,6 +102,7 @@ export default async function InvoicesPage({
   canDeleteInvoices = false,
   deleteInvoiceAction,
   currency = 'USD',
+  financePrefix = '/finance',
 }: Props) {
   const t = await getTranslations();
   const { wsId: id } = await params;
@@ -130,7 +132,7 @@ export default async function InvoicesPage({
         action={
           <div className="flex gap-2">
             {canCreateInvoices && (
-              <Link href={`/${wsId}/finance/invoices/new`}>
+              <Link href={`/${wsId}${financePrefix}/invoices/new`}>
                 <Button>
                   <Plus />
                   {t('ws-invoices.create')}

@@ -11,9 +11,11 @@ const enabled = true;
 export default async function TransactionsStatistics({
   wsId,
   searchParams: { view, startDate, endDate } = {},
+  financePrefix = '/finance',
 }: {
   wsId: string;
   searchParams?: FinanceDashboardSearchParams;
+  financePrefix?: string;
 }) {
   const supabase = await createClient();
   const t = await getTranslations();
@@ -58,7 +60,7 @@ export default async function TransactionsStatistics({
     <StatisticCard
       title={t('workspace-finance-tabs.transactions')}
       value={transactionsCount}
-      href={`/${wsId}/finance/transactions`}
+      href={`/${wsId}${financePrefix}/transactions`}
       icon={<ArrowRightLeft className="h-5 w-5" />}
     />
   );

@@ -22,6 +22,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { useFinanceHref } from '../../finance-route-context';
 import { TransactionEditDialog } from '../transaction-edit-dialog';
 import { Bill } from './bill';
 import { DetailObjects } from './objects';
@@ -42,6 +43,7 @@ export function TransactionDetailsClientPage({
   objects,
 }: Props) {
   const t = useTranslations();
+  const financeHref = useFinanceHref();
   const [isEditOpen, setIsEditOpen] = useState(false);
 
   const isExpense = (transaction.amount || 0) < 0;
@@ -144,7 +146,7 @@ export function TransactionDetailsClientPage({
                 icon={<Wallet className="h-5 w-5 text-primary" />}
                 label={t('transaction-data-table.wallet')}
                 value={transaction?.wallet_name}
-                href={`/${wsId}/finance/wallets/${transaction?.wallet_id}`}
+                href={`/${wsId}${financeHref(`/wallets/${transaction?.wallet_id}`)}`}
               />
 
               <Separator />

@@ -37,6 +37,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useState } from 'react';
 import * as z from 'zod';
+import { useFinanceHref } from '../../finance-route-context';
 
 interface Props {
   wsId: string;
@@ -87,6 +88,7 @@ function generateRandomColor(): string {
 export function TransactionCategoryForm({ wsId, data, onFinish }: Props) {
   const t = useTranslations();
   const queryClient = useQueryClient();
+  const financeHref = useFinanceHref();
 
   const [loading, setLoading] = useState(false);
 
@@ -371,7 +373,7 @@ export function TransactionCategoryForm({ wsId, data, onFinish }: Props) {
               disabled={loading}
             >
               <Link
-                href={`/${wsId}/finance/transactions?categoryIds=${data.id}`}
+                href={`/${wsId}${financeHref('/transactions')}?categoryIds=${data.id}`}
               >
                 <ExternalLink className="mr-2 h-4 w-4" />
                 {t('transaction-category-data-table.view_transactions')}

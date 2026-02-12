@@ -20,6 +20,7 @@ interface Props {
   };
   page?: string;
   pageSize?: string;
+  financePrefix?: string;
 }
 
 export default async function WalletsPage({
@@ -27,6 +28,7 @@ export default async function WalletsPage({
   searchParams,
   page,
   pageSize,
+  financePrefix = '/finance',
 }: Props) {
   const [t, { containsPermission }, currency, workspace] = await Promise.all([
     getTranslations(),
@@ -48,7 +50,7 @@ export default async function WalletsPage({
 
   const data = rawData.map((d) => ({
     ...d,
-    href: `/${wsId}/finance/wallets/${d.id}`,
+    href: `/${wsId}${financePrefix}/wallets/${d.id}`,
     ws_id: wsId,
   }));
 

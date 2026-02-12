@@ -23,6 +23,14 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
     name: 'tudo',
     url: 'https://tasks.tuturuuu.com',
   },
+  {
+    name: 'finance',
+    url: 'https://finance.tuturuuu.com',
+  },
+  {
+    name: 'track',
+    url: 'https://track.tuturuuu.com',
+  },
 ] as const;
 
 export const DEV_INTERNAL_APP_DOMAINS = [
@@ -45,6 +53,14 @@ export const DEV_INTERNAL_APP_DOMAINS = [
   {
     name: 'tudo',
     url: 'http://localhost:7809',
+  },
+  {
+    name: 'finance',
+    url: 'http://localhost:7808',
+  },
+  {
+    name: 'track',
+    url: 'http://localhost:7810',
   },
 ] as const;
 

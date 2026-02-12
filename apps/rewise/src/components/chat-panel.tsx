@@ -187,7 +187,7 @@ export function ChatPanel({
               ? t('upload_files')
               : dialogType === 'api'
                 ? t('api_input')
-                : t('chat_visibility.chat_visibility')}
+                : t('chat_visibility')}
           </DialogTitle>
           <DialogDescription>
             {dialogType === 'files' ? (
@@ -209,7 +209,7 @@ export function ChatPanel({
                 </span>
               </span>
             ) : (
-              t('chat_visibility.chat_visibility_description')
+              t('chat_visibility_description')
             )}
           </DialogDescription>
         </DialogHeader>

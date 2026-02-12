@@ -31,7 +31,7 @@ Refactor calendar components to support algorithm-specific visual debugging.
 ## Phase 4: Algorithm Control & Interactivity [checkpoint: cca95e1]
 Integrate the scheduling algorithm with playback controls and real-time parameter tuning.
 
-- [x] Task: Integrate the `TuPlan` algorithm into a step-by-step playback controller 5173907
+- [x] Task: Integrate the `Tuturuuu Calendar` algorithm into a step-by-step playback controller 5173907
 - [x] Task: Implement Play/Pause/Next/Prev controls for the scheduling execution 5173907
 - [x] Task: Build a "Parameter Tuning" side panel for real-time algorithm weight adjustment af86db0
 - [x] Task: Implement "Scenario Diff" to compare schedule outputs between two sets of parameters 11331d8

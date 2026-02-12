@@ -7,6 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
+import { useFinanceHref } from '../finance-route-context';
 
 interface BudgetAlertsProps {
   wsId: string;
@@ -15,6 +16,7 @@ interface BudgetAlertsProps {
 
 export function BudgetAlerts({ wsId, className }: BudgetAlertsProps) {
   const supabase = createClient();
+  const financeHref = useFinanceHref();
 
   const { data: budgetStatus } = useQuery({
     queryKey: ['budget_status', wsId],
@@ -72,7 +74,7 @@ export function BudgetAlerts({ wsId, className }: BudgetAlertsProps) {
               </span>{' '}
               budget ({budget.percentage_used.toFixed(1)}% used).
             </p>
-            <Link href={`/${wsId}/finance/budgets`}>
+            <Link href={`/${wsId}${financeHref('/budgets')}`}>
               <Button size="sm" variant="outline" className="w-fit">
                 View Budget Details
               </Button>
@@ -93,7 +95,7 @@ export function BudgetAlerts({ wsId, className }: BudgetAlertsProps) {
               </span>{' '}
               of your budget. Consider reviewing your spending.
             </p>
-            <Link href={`/${wsId}/finance/budgets`}>
+            <Link href={`/${wsId}${financeHref('/budgets')}`}>
               <Button
                 size="sm"
                 variant="outline"

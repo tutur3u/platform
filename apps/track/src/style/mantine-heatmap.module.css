@@ -1,0 +1,104 @@
+.heatmapColors {
+  /* Define color levels for light mode - emerald/green scale */
+  --heatmap-level-0: #f3f4f6; /* No activity - gray */
+  --heatmap-level-1: #d1fae5; /* Very light emerald */
+  --heatmap-level-2: #6ee7b7; /* Light emerald */
+  --heatmap-level-3: #34d399; /* Medium emerald */
+  --heatmap-level-4: #059669; /* Dark emerald */
+}
+
+.heatmapContainer {
+  width: 100%;
+  min-height: 200px;
+  position: relative;
+}
+
+:global(.dark) .heatmapColors {
+  /* Define color levels for dark mode - darker emerald scale */
+  --heatmap-level-0: #1f2937; /* No activity - dark gray */
+  --heatmap-level-1: #064e3b; /* Very dark emerald */
+  --heatmap-level-2: #065f46; /* Dark emerald */
+  --heatmap-level-3: #047857; /* Medium emerald */
+  --heatmap-level-4: #10b981; /* Bright emerald */
+}
+
+:global(.dark) .heatmapContainer {
+  width: 100%;
+  min-height: 200px;
+  position: relative;
+}
+
+/* Style month and weekday labels - SCOPED to this container only */
+.heatmapContainer :global(.mantine-Heatmap-monthLabel) {
+  fill: #6b7280;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.heatmapContainer :global(.mantine-Heatmap-weekdayLabel) {
+  fill: #6b7280;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+:global(.dark) .heatmapContainer :global(.mantine-Heatmap-monthLabel),
+:global(.dark) .heatmapContainer :global(.mantine-Heatmap-weekdayLabel) {
+  fill: #9ca3af;
+}
+
+/* Ensure proper spacing and layout */
+.heatmapContainer :global(.mantine-Heatmap-root) {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Make rects interactive for tooltips */
+.heatmapContainer :global(.mantine-Heatmap-rect) {
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.heatmapContainer :global(.mantine-Heatmap-rect:hover) {
+  opacity: 0.8;
+  stroke: rgba(0, 0, 0, 0.2);
+  stroke-width: 1px;
+}
+
+:global(.dark) .heatmapContainer :global(.mantine-Heatmap-rect:hover) {
+  stroke: rgba(255, 255, 255, 0.2);
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 640px) {
+  .heatmapContainer :global(.mantine-Heatmap-monthLabel) {
+    font-size: 9px;
+  }
+
+  .heatmapContainer :global(.mantine-Heatmap-weekdayLabel) {
+    font-size: 8px;
+  }
+
+  /* Enhanced scrolling for mobile - horizontal scroll */
+  .heatmapContainer {
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    scroll-padding: 1rem;
+  }
+
+  .heatmapContainer :global(.mantine-Heatmap-root) {
+    -webkit-overflow-scrolling: touch;
+    scroll-padding: 1rem;
+  }
+}
+
+/* Tablet optimizations */
+@media (min-width: 640px) and (max-width: 1024px) {
+  .heatmapContainer :global(.mantine-Heatmap-root) {
+    -webkit-overflow-scrolling: touch;
+    scroll-padding: 1rem;
+  }
+}

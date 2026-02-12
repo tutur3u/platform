@@ -14,6 +14,7 @@ import { formatCurrency } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
+import { useFinanceHref } from '../../finance-route-context';
 import { useInfiniteUserInvoices } from '../hooks';
 
 interface Props {
@@ -28,6 +29,7 @@ export function InvoiceUserHistoryAccordion({
   currency = 'VND',
 }: Props) {
   const t = useTranslations();
+  const financeHref = useFinanceHref();
 
   const {
     data: userInvoicesData,
@@ -117,7 +119,7 @@ export function InvoiceUserHistoryAccordion({
                               })}
                           </p>
                           <Link
-                            href={`/${wsId}/finance/invoices/${invoice.id}`}
+                            href={`/${wsId}${financeHref(`/invoices/${invoice.id}`)}`}
                             className="mt-0.5 shrink-0"
                             target="_blank"
                             rel="noopener noreferrer"

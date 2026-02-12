@@ -1,5 +1,6 @@
 'use client';
 
+import { useActiveTimerSession } from '@tuturuuu/hooks/hooks/use-active-timer-session';
 import { ArrowLeft } from '@tuturuuu/icons';
 import type { Workspace, WorkspaceProductTier } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -24,7 +25,6 @@ import {
 import { ActiveTimerIndicator } from '@/components/active-timer-indicator';
 import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import { useSidebar } from '@/context/sidebar-context';
-import { useActiveTimerSession } from '@/hooks/use-active-timer-session';
 import { meetsAnyTierRequirement } from '@/lib/feature-tiers';
 import { DiscordLink } from './discord-link';
 import { FeedbackButton } from './feedback-button';

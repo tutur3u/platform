@@ -166,6 +166,24 @@ export async function createDynamicClient<T = Database>(
   });
 }
 
+/**
+ * Create a Supabase client that does NOT read or write cookies.
+ * Useful for server-side operations (e.g. verifyOtp in cross-app auth)
+ * where you need session tokens returned in the response body
+ * rather than set as cookies.
+ */
+export function createDetachedClient<T = Database>(): SupabaseClient<T> {
+  const { url, key } = checkEnvVariables({ useSecretKey: false });
+  return createServerClient<T>(url, key, {
+    cookies: {
+      getAll() {
+        return [] as SupabaseCookie[];
+      },
+      setAll(_: SupabaseCookie[]) {},
+    },
+  });
+}
+
 export async function createDynamicAdminClient(): Promise<SupabaseClient<any>> {
   const { url, key } = checkEnvVariables({ useSecretKey: true });
   return createServerClient(url, key, {

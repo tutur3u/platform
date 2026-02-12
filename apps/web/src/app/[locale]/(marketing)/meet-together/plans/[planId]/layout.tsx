@@ -24,7 +24,7 @@ export const generateMetadata = async ({
   const plan = await getPlan(planId);
   const planName = plan.name || untitled;
 
-  const title = `${planName} - Tumeet`;
+  const title = `${planName} - Tuturuuu Meet`;
   const description = locale === 'vi' ? viDescription : enDescription;
 
   return {

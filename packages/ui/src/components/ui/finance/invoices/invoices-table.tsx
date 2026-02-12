@@ -13,6 +13,7 @@ import {
   useQueryState,
 } from 'nuqs';
 import { Suspense, useCallback } from 'react';
+import { useFinanceHref } from '../finance-route-context';
 import { invoiceColumns } from './columns';
 import ExportDialogContent from './export-dialog-content';
 import {
@@ -49,6 +50,7 @@ export function InvoicesTable({
 }: Props) {
   const t = useTranslations();
   const queryClient = useQueryClient();
+  const financeHref = useFinanceHref();
 
   // Use nuqs for URL state management (shallow: true for client-side only)
   const [q, setQ] = useQueryState(
@@ -138,7 +140,7 @@ export function InvoicesTable({
   const invoices = data?.data
     ? data.data.map((invoice) => ({
         ...invoice,
-        href: `/${wsId}/finance/invoices/${invoice.id}`,
+        href: `/${wsId}${financeHref(`/invoices/${invoice.id}`)}`,
         ws_id: wsId,
       }))
     : isLoading

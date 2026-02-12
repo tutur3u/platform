@@ -10,6 +10,7 @@ import {
 import type { DebtLoanSummary } from '@tuturuuu/types/primitives/DebtLoan';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
+import { useFinanceHref } from '../finance-route-context';
 import StatisticCard from '../statistics/card';
 
 interface Props {
@@ -26,6 +27,7 @@ export function DebtLoanSummaryCards({
   wsId,
 }: Props) {
   const t = useTranslations('ws-debt-loan');
+  const financeHref = useFinanceHref();
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -35,7 +37,7 @@ export function DebtLoanSummaryCards({
         currency={currency}
         locale={locale}
         icon={<TrendingDown className="h-5 w-5 text-red-500" />}
-        href={wsId ? `/${wsId}/finance/debts?type=debt` : undefined}
+        href={wsId ? `/${wsId}${financeHref('/debts')}?type=debt` : undefined}
       />
 
       <StatisticCard
@@ -44,7 +46,7 @@ export function DebtLoanSummaryCards({
         currency={currency}
         locale={locale}
         icon={<TrendingUp className="h-5 w-5 text-green-500" />}
-        href={wsId ? `/${wsId}/finance/debts?type=loan` : undefined}
+        href={wsId ? `/${wsId}${financeHref('/debts')}?type=loan` : undefined}
       />
 
       <StatisticCard
