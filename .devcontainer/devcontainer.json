@@ -194,6 +194,9 @@
       "label": "Supabase Inbucket"
     }
   },
-  "mounts": ["source=platform-bun-cache,target=/home/vscode/.bun,type=volume"],
-  "remoteUser": "vscode"
+  "mounts": [
+    "source=platform-bun-cache,target=/root/.bun,type=volume",
+    "source=platform-node_modules,target=${containerWorkspaceFolder}/node_modules,type=volume"
+  ],
+  "remoteUser": "root"
 }
