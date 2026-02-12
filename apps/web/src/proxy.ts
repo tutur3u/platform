@@ -20,6 +20,7 @@ const ONBOARDING_BYPASS_PATHS = [
   '/auth',
   '/api',
   '/logout',
+  '/account/delete',
   '/verify',
   '/reset-password',
   '/mfa',
