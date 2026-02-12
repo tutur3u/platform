@@ -9,7 +9,7 @@ export default function MentorsSection() {
         <div className="mb-16 text-center">
           <h2 className="mb-4 text-3xl md:text-4xl tracking-wide">
             <span className="font-medium text-[#134e4a] italic">
-              MENTORS &{" "}
+              MENTORS &{' '}
             </span>
             <span className="relative inline-block font-black text-[#134e4a]">
               JUDGES

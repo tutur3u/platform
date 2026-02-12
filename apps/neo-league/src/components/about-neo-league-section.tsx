@@ -126,8 +126,6 @@ export default function AboutNeoLeagueSection() {
               </span>
             </h3>
 
-
-
             <div className="mx-auto max-w-6xl">
               <p className="text-center text-foreground/90 text-xl leading-relaxed">
                 NEO League Season 2 empowers STEM students to become innovators.
