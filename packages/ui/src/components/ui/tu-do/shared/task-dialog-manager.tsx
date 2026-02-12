@@ -2,7 +2,6 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTaskDialogContext } from '../providers/task-dialog-provider';
 import { TaskEditDialog } from './task-edit-dialog';
@@ -16,8 +15,6 @@ import { TaskEditDialog } from './task-edit-dialog';
  * that benefits from immediate availability over bundle size optimization.
  */
 export function TaskDialogManager({ wsId }: { wsId: string }) {
-  const router = useRouter();
-  const pathname = usePathname();
   const {
     state,
     isPersonalWorkspace,
@@ -32,20 +29,33 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
   const originalPathnameRef = useRef<string | null>(null);
   const hasChangedUrlRef = useRef(false);
 
-  // Handle URL manipulation when fakeTaskUrl is enabled
+  // Handle URL manipulation when fakeTaskUrl is enabled.
+  // Uses window.history.pushState (not router.push) to update the URL bar
+  // without triggering Next.js navigation, which would load the task detail page
+  // behind the dialog and cause a jarring double-dialog flash.
   useEffect(() => {
     if (state.isOpen && state.fakeTaskUrl && state.task?.id) {
-      // Store original pathname if not already stored
+      const currentPath = window.location.pathname;
       if (!originalPathnameRef.current) {
-        originalPathnameRef.current = pathname;
+        originalPathnameRef.current = currentPath;
       }
 
-      // Use task's actual workspace ID if available, otherwise fall back to current wsId
       const effectiveWsId = state.taskWsId || wsId;
-      const taskUrl = `/${effectiveWsId}/tasks/${state.task.id}`;
-      // Only push if the URL is different
-      if (pathname !== taskUrl) {
-        router.push(taskUrl, { scroll: false });
+      // Extract locale prefix from URL (e.g. "/vi" from "/vi/ws-123/...")
+      const wsSegment = `/${effectiveWsId}`;
+      const wsIndex = currentPath.indexOf(wsSegment);
+      const localePrefix = wsIndex > 0 ? currentPath.substring(0, wsIndex) : '';
+      const taskUrl = `${localePrefix}/${effectiveWsId}/tasks/${state.task.id}`;
+
+      if (currentPath !== taskUrl) {
+        window.history.pushState(
+          {
+            __fakeTaskUrl: true,
+            originalPathname: originalPathnameRef.current,
+          },
+          '',
+          taskUrl
+        );
         hasChangedUrlRef.current = true;
       }
     } else if (
@@ -53,21 +63,29 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
       hasChangedUrlRef.current &&
       originalPathnameRef.current
     ) {
-      // Revert to original URL when dialog closes
-      router.push(originalPathnameRef.current, { scroll: false });
-      // Reset refs
+      // replaceState so browser back goes to real previous page, not the fake URL
+      window.history.replaceState(null, '', originalPathnameRef.current);
       originalPathnameRef.current = null;
       hasChangedUrlRef.current = false;
     }
-  }, [
-    state.isOpen,
-    state.fakeTaskUrl,
-    state.task?.id,
-    state.taskWsId,
-    wsId,
-    router,
-    pathname,
-  ]);
+  }, [state.isOpen, state.fakeTaskUrl, state.task?.id, state.taskWsId, wsId]);
+
+  // Handle browser back button when a fake task URL is active
+  useEffect(() => {
+    if (!state.isOpen || !state.fakeTaskUrl) return;
+
+    const handlePopState = () => {
+      if (hasChangedUrlRef.current) {
+        // Browser already reverted URL — just reset refs and close dialog
+        hasChangedUrlRef.current = false;
+        originalPathnameRef.current = null;
+        triggerClose();
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [state.isOpen, state.fakeTaskUrl, triggerClose]);
 
   // Fetch current user immediately on mount (persists across dialog open/close)
   const [currentUser, setCurrentUser] = useState<{
