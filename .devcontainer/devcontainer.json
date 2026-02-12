@@ -10,15 +10,8 @@
     "ghcr.io/devcontainers/features/python:1": {
       "version": "3.13"
     },
-    "ghcr.io/devcontainers/features/rust:1": {
-      "version": "latest"
-    },
-    "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/devcontainers-extra/features/bun:1": {
       "version": "1.3.9"
-    },
-    "ghcr.io/nordcominc/devcontainer-features/android-sdk:1": {
-      "version": "latest"
     }
   },
 
@@ -34,24 +27,69 @@
         "typescriptteam.native-preview",
         "aaron-bond.better-comments",
         "PKief.material-icon-theme",
-        "lokalise.i18n-ally",
-        "dart-code.dart-code",
-        "dart-code.flutter",
-        "felixangelov.bloc",
-        "ms-azuretools.vscode-docker",
-        "rust-lang.rust-analyzer"
+        "lokalise.i18n-ally"
       ],
       "settings": {
-        "editor.defaultFormatter": "biomejs.biome",
-        "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
-          "quickfix.biome": "explicit",
-          "source.organizeImports.biome": "explicit"
+          "source.organizeImports.biome": "explicit",
+          "source.organizeImports": "explicit",
+          "source.sortMembers": "explicit",
+          "source.fixAll.biome": "explicit",
+          "source.fixAll": "explicit"
         },
-        "[javascript]": {
+        "files.exclude": {
+          "**/.git": true,
+          "**/.svn": true,
+          "**/.hg": true,
+          "**/.DS_Store": true,
+          "**/Thumbs.db": true,
+          "**/flutter/ephemeral": true,
+          "**/Flutter/ephemeral": true,
+          "**/.symlinks": true,
+          "**/.plugin_symlinks": true,
+          ".agent": true,
+          ".agents": true,
+          ".claude": true,
+          ".codex": true,
+          ".continue": true,
+          ".cursor": true,
+          ".gemini": true,
+          "**/.idea": true,
+          ".idx": true,
+          ".junie": true,
+          ".opencode": true,
+          ".trae": true,
+          ".zed": true,
+          ".windsurf": true,
+          "**/.dart_tool": true,
+          "**/.next": true,
+          "**/__pycache__": true,
+          "**/.venv": true,
+          "**/*_cache": true,
+          "**/build": true,
+          "**/*.tsbuildinfo": true,
+          "conductor": true,
+          "skills": true,
+          "CODE_OF_CONDUCT.md": true,
+          "CONTRIBUTING.md": true,
+          "AGENTS.md": true,
+          "CLAUDE.md": true,
+          "GEMINI.md": true,
+          "WARP.md": true,
+          "SECURITY.md": true,
+          "LICENSE": true,
+          "**/node_modules": true,
+          "**/coverage": true,
+          "**/.turbo": true
+        },
+        "editor.formatOnPaste": false,
+        "editor.formatOnSave": true,
+        "editor.formatOnSaveMode": "file",
+        "editor.defaultFormatter": "biomejs.biome",
+        "[xml]": {
           "editor.defaultFormatter": "biomejs.biome"
         },
-        "[typescript]": {
+        "[css]": {
           "editor.defaultFormatter": "biomejs.biome"
         },
         "[json]": {
@@ -60,16 +98,46 @@
         "[jsonc]": {
           "editor.defaultFormatter": "biomejs.biome"
         },
+        "[javascript]": {
+          "editor.defaultFormatter": "biomejs.biome"
+        },
+        "[typescript]": {
+          "editor.defaultFormatter": "biomejs.biome"
+        },
+        "[javascriptreact]": {
+          "editor.defaultFormatter": "biomejs.biome"
+        },
+        "[typescriptreact]": {
+          "editor.defaultFormatter": "biomejs.biome"
+        },
+        "typescript.tsdk": "node_modules/typescript/lib",
+        "workbench.editor.customLabels.patterns": {
+          "**/app/**/page.tsx": "${dirname} - Page",
+          "**/app/**/layout.tsx": "${dirname} - Layout",
+          "**/app/**/route.ts": "${dirname} - API Route",
+          "**/components/**/index.tsx": "${dirname} - Component"
+        },
         "tailwindCSS.experimental.configFile": "packages/ui/src/globals.css",
-        "i18n-ally.localesPaths": [
-          "apps/web/messages",
-          "apps/calendar/messages",
-          "apps/finance/messages",
-          "apps/tasks/messages"
-        ],
-        "i18n-ally.keystyle": "nested",
         "i18n-ally.enabledFrameworks": ["next-intl"],
-        "typescript.tsdk": "node_modules/typescript/lib"
+        "i18n-ally.localesPaths": [
+          "apps/calendar/messages",
+          "apps/web/messages",
+          "apps/rewise/messages",
+          "apps/nova/messages"
+        ],
+        "i18n-ally.autoDetection": true,
+        "i18n-ally.keystyle": "nested",
+        "codeQL.githubDatabase.update": "never",
+        "codeQL.githubDatabase.download": "never",
+        "IDX.aI.enableInlineCompletion": true,
+        "IDX.aI.enableCodebaseIndexing": true,
+        "i18n-ally.sourceLanguage": "en",
+        "typescript.experimental.useTsgo": true,
+        "cSpell.words": ["Tuturuuu", "tuturuuu"],
+        "python-envs.defaultEnvManager": "ms-python.python:venv",
+        "python-envs.defaultPackageManager": "ms-python.python:pip",
+        "python-envs.pythonProjects": [],
+        "vitest.disableWorkspaceWarning": true
       }
     }
   },
@@ -81,7 +149,7 @@
 
   "portsAttributes": {
     "7803": {
-      "label": "Web App"
+      "label": "Platform"
     },
     "7804": {
       "label": "Rewise"
@@ -131,11 +199,6 @@
   },
 
   "mounts": ["source=platform-bun-cache,target=/home/vscode/.bun,type=volume"],
-
-  "containerEnv": {
-    "FLUTTER_ROOT": "/home/vscode/flutter",
-    "PATH": "${containerEnv:PATH}:/home/vscode/flutter/bin:/home/vscode/flutter/bin/cache/dart-sdk/bin"
-  },
 
   "postCreateCommand": "bash .devcontainer/post-create.sh",
 
