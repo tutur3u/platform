@@ -108,7 +108,11 @@ async function main() {
 
     if (emptyRes.ok) {
       // Step 2: Delete the empty bucket
-      const deleteRes = await deleteBucket(projectRef, serviceRoleKey, bucketId);
+      const deleteRes = await deleteBucket(
+        projectRef,
+        serviceRoleKey,
+        bucketId
+      );
 
       if (deleteRes.ok) {
         console.log('✅ deleted');
