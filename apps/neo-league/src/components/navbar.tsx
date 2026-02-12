@@ -15,8 +15,19 @@ import Image from 'next/image';
 import Link from 'next/link';
 import NavbarSeparator from './navbar-separator';
 
+const navbarItem = {
+  seeHandbook: {
+    href: '#handbook',
+    label: 'See Handbook',
+  },
+  contactUs: {
+    href: '#contact',
+    label: 'Contact Us',
+  },
+};
+
 export default function Navbar() {
-  function DesktopActions() {
+  const DesktopActions = () => {
     return (
       <div className="hidden items-center gap-2 md:flex">
         <Button
@@ -24,23 +35,28 @@ export default function Navbar() {
           className="hover:bg-transparent hover:text-foreground/50"
           asChild
         >
-          <Link href="#handbook">See Handbook</Link>
+          <Link href={navbarItem.seeHandbook.href}>
+            {navbarItem.seeHandbook.label}
+          </Link>
         </Button>
         <Button
           variant="ghost"
           className="hover:bg-transparent hover:text-foreground/50"
           asChild
         >
-          <Link href="#contact">Contact Us</Link>
+          <Link href={navbarItem.contactUs.href}>
+            {navbarItem.contactUs.label}
+          </Link>
         </Button>
+
         <Button asChild className="btn-primary">
           <Link href="#register">Register Now</Link>
         </Button>
       </div>
     );
-  }
+  };
 
-  function MobileActions() {
+  const MobileActions = () => {
     return (
       <div className="flex items-center gap-2 md:hidden">
         <Button asChild className="btn-primary">
@@ -66,7 +82,9 @@ export default function Navbar() {
                   className="justify-start text-base hover:bg-foreground/5"
                   asChild
                 >
-                  <Link href="#handbook">See Handbook</Link>
+                  <Link href={navbarItem.seeHandbook.href}>
+                    {navbarItem.seeHandbook.label}
+                  </Link>
                 </Button>
               </SheetClose>
               <SheetClose asChild>
@@ -75,7 +93,9 @@ export default function Navbar() {
                   className="justify-start text-base hover:bg-foreground/5"
                   asChild
                 >
-                  <Link href="#contact">Contact Us</Link>
+                  <Link href={navbarItem.contactUs.href}>
+                    {navbarItem.contactUs.label}
+                  </Link>
                 </Button>
               </SheetClose>
             </div>
@@ -83,7 +103,7 @@ export default function Navbar() {
         </Sheet>
       </div>
     );
-  }
+  };
 
   return (
     <SharedNavbar
