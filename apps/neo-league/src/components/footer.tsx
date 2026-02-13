@@ -54,39 +54,45 @@ export default function Footer() {
 
         {/* Main Footer Content */}
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-          {/* Our Socials */}
+          {/*    Socials */}
           <div className="space-y-4 text-center md:text-left">
             <h3 className="font-black text-brand-dark-blue text-lg">
               Our Socials
             </h3>
             <div className="flex justify-center gap-4 md:justify-start">
-              <Link
-                href="https://facebook.com/RMITNeoCultureTech"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary transition-colors hover:text-primary/70"
-                aria-label="Facebook"
-              >
-                <Facebook className="h-8 w-8" />
-              </Link>
-              <Link
-                href="https://instagram.com/rmitnct"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary transition-colors hover:text-primary/70"
-                aria-label="Instagram"
-              >
-                <Instagram className="h-8 w-8" />
-              </Link>
-              <Link
-                href="https://linkedin.com/company/rmit-nct"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary transition-colors hover:text-primary/70"
-                aria-label="LinkedIn"
-              >
-                <Linkedin className="h-8 w-8" />
-              </Link>
+              <div className="rounded-lg bg-white p-3 text-blue-600 transition-colors duration-200 hover:bg-blue-50 hover:text-blue-700">
+                <Link
+                  href="https://facebook.com/RMITNeoCultureTech"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary transition-colors hover:text-primary/70"
+                  aria-label="Facebook"
+                >
+                  <Facebook className="h-8 w-8" />
+                </Link>
+              </div>
+              <div className="rounded-lg bg-white p-3 text-blue-600 transition-colors duration-200 hover:bg-blue-50 hover:text-blue-700">
+                <Link
+                  href="https://instagram.com/rmitnct"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary transition-colors hover:text-primary/70"
+                  aria-label="Instagram"
+                >
+                  <Instagram className="h-8 w-8" />
+                </Link>
+              </div>
+              <div className="rounded-lg bg-white p-3 text-blue-600 transition-colors duration-200 hover:bg-blue-50 hover:text-blue-700">
+                <Link
+                  href="https://linkedin.com/company/rmit-nct"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary transition-colors hover:text-primary/70"
+                  aria-label="LinkedIn"
+                >
+                  <Linkedin className="h-8 w-8" />
+                </Link>
+              </div>
             </div>
           </div>
 
@@ -96,23 +102,24 @@ export default function Footer() {
               Contact Us
             </h3>
             <div className="space-y-2 text-primary text-sm">
+              <p>
+                <span className="font-bold">Ngo Van Tai</span>
+                <span> - Co-Project Leader</span>
+              </p>
               <div className="flex items-center justify-center gap-2 md:justify-start">
                 <Phone className="h-4 w-4 shrink-0" />
                 <div>
-                  <p>
-                    <span className="font-bold">Ngo Van Tai</span>
-                    <span> - Co-Project Leader</span>
-                  </p>
                   <span className="font-bold">0918498056</span>
                 </div>
               </div>
+
+              <p>
+                <span className="font-bold">Nguyen Ha Gia Tam</span>
+                <span> - Co-Project Leader</span>
+              </p>
               <div className="flex items-center justify-center gap-2 md:justify-start">
                 <Phone className="h-4 w-4 shrink-0" />
                 <div>
-                  <p>
-                    <span className="font-bold">Nguyen Ha Gia Tam</span>
-                    <span> - Co-Project Leader</span>
-                  </p>
                   <span className="font-bold">0765386296</span>
                 </div>
               </div>
@@ -141,7 +148,7 @@ export default function Footer() {
 
           {/* Core Values */}
           <div className="space-y-4 text-center md:text-left">
-            <h3 className="font-black text-brand-dark-blue text-lg">
+            <h3 className="font-bold text-brand-dark-blue text-dark text-lg">
               Core Values
             </h3>
             <ul className="space-y-1 font-bold text-sm tracking-wide">
