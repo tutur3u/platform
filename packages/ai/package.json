@@ -9,7 +9,7 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "packageManager": "bun@1.3.8",
+  "packageManager": "bun@1.3.9",
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^2.2.12",
     "@ai-sdk/anthropic": "^1.2.12",
@@ -51,7 +51,7 @@
     "@ncthub/types": "workspace:*",
     "@ncthub/typescript-config": "workspace:*",
     "@types/node": "^25.2.3",
-    "@types/react": "^19.2.13",
+    "@types/react": "^19.2.14",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   },
