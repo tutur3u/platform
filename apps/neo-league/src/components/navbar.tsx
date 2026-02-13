@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@ncthub/ui/button';
-import { MenuIcon } from '@ncthub/ui/icons';
+import { MenuIcon, X } from '@ncthub/ui/icons';
 import { Navbar as SharedNavbar } from '@ncthub/ui/navbar';
 import {
   Sheet,
@@ -53,17 +53,23 @@ export default function Navbar() {
 
         <SheetContent
           side="right"
-          className="flex h-full flex-col border-l bg-background/95 p-0"
+          className="flex h-full flex-col border-l bg-background/95 p-0 [&>button]:hidden"
         >
-          <SheetHeader className="border-b px-6 pt-6 pb-5">
+          <SheetHeader className="flex-row items-center justify-between border-b px-6 py-6">
             <SheetTitle className="font-bold text-lg">Menu</SheetTitle>
+            <SheetClose className="rounded-md p-2 text-foreground/80 transition hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close navigation</span>
+            </SheetClose>
           </SheetHeader>
-          <div className="flex flex-1 flex-col gap-3 px-6 pt-6 pb-8">
+          <div className="flex flex-1 flex-col gap-3 px-6 pt-3 pb-8">
             {navItems.map((item) => (
               <SheetClose key={item.href} asChild>
                 <Button
                   variant="ghost"
-                  className="justify-start text-base hover:bg-foreground/5"
+                  className={
+                    'justify-start font-bold text-base hover:bg-foreground/5'
+                  }
                   asChild
                 >
                   <Link href={item.href}>{item.label}</Link>
