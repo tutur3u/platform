@@ -45,10 +45,10 @@ export async function GET(
     const permissions = await getPermissions({
       wsId: normalizedWsId,
     });
-if (!permissions) {
-  return Response.json({ error: 'Not found' }, { status: 404 });
-}
-const { containsPermission } = permissions;
+    if (!permissions) {
+      return Response.json({ error: 'Not found' }, { status: 404 });
+    }
+    const { containsPermission } = permissions;
 
     // Also allow users to view their own profile
     const { data: isLinkedUser } = await supabase
@@ -168,10 +168,10 @@ export async function PATCH(
     const permissions = await getPermissions({
       wsId: normalizedWsId,
     });
-if (!permissions) {
-  return Response.json({ error: 'Not found' }, { status: 404 });
-}
-const { containsPermission } = permissions;
+    if (!permissions) {
+      return Response.json({ error: 'Not found' }, { status: 404 });
+    }
+    const { containsPermission } = permissions;
 
     if (!containsPermission('manage_workforce')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -254,10 +254,10 @@ export async function DELETE(
     const permissions = await getPermissions({
       wsId: normalizedWsId,
     });
-if (!permissions) {
-  return Response.json({ error: 'Not found' }, { status: 404 });
-}
-const { containsPermission } = permissions;
+    if (!permissions) {
+      return Response.json({ error: 'Not found' }, { status: 404 });
+    }
+    const { containsPermission } = permissions;
 
     if (!containsPermission('manage_workforce')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

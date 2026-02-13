@@ -30,7 +30,7 @@ export default async function MeetingsPage({
 }: MeetingsPageProps) {
   const { wsId: id } = await params;
   const workspace = await getWorkspace(id);
-if (!workspace) notFound();
+  if (!workspace) notFound();
   const wsId = workspace?.id;
 
   const user = await getCurrentUser();

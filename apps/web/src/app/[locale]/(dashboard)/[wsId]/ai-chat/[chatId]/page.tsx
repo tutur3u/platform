@@ -31,8 +31,8 @@ export default async function AIPage({ params, searchParams }: Props) {
   const hasSecrets = await verifyHasSecrets(wsId, ['ENABLE_CHAT']);
   if (!hasSecrets) redirect(`/${wsId}`);
   const permissions = await getPermissions({ wsId });
-if (!permissions) notFound();
-const { withoutPermission } = permissions;
+  if (!permissions) notFound();
+  const { withoutPermission } = permissions;
 
   if (withoutPermission('ai_chat')) notFound();
   if (!chatId) notFound();

@@ -40,15 +40,15 @@ export default async function WorkspaceReportsSettingsPage({
   const { wsId: id } = await params;
 
   const workspace = await getWorkspace(id);
-if (!workspace) notFound();
+  if (!workspace) notFound();
   const wsId = workspace?.id;
 
   const permissions = await getPermissions({
     wsId,
     redirectTo: `/${wsId}/settings`,
   });
-if (!permissions) notFound();
-const { withoutPermission } = permissions;
+  if (!permissions) notFound();
+  const { withoutPermission } = permissions;
 
   if (withoutPermission('manage_user_report_templates'))
     redirect(`/${wsId}/settings`);

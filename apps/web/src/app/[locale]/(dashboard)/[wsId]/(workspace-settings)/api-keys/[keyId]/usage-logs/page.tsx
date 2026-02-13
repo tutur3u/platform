@@ -52,8 +52,8 @@ export default async function ApiKeyUsageLogsPage({
         const permissions = await getPermissions({
           wsId,
         });
-if (!permissions) notFound();
-const { withoutPermission } = permissions;
+        if (!permissions) notFound();
+        const { withoutPermission } = permissions;
 
         if (withoutPermission('manage_api_keys')) redirect(`/${wsId}/settings`);
 

@@ -18,7 +18,7 @@ export default async function WorkspaceTagsPage({ params }: Props) {
   const { wsId: id } = await params;
 
   const workspace = await getWorkspace(id);
-if (!workspace) notFound();
+  if (!workspace) notFound();
   const wsId = workspace.id;
 
   return <TagManager wsId={wsId} />;

@@ -56,10 +56,10 @@ export async function PUT(req: Request, { params }: Params) {
 
   // Check permissions
   const permissions = await getPermissions({ wsId });
-if (!permissions) {
-  return Response.json({ error: 'Not found' }, { status: 404 });
-}
-const { containsPermission } = permissions;
+  if (!permissions) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+  const { containsPermission } = permissions;
   if (!containsPermission('update_users')) {
     return NextResponse.json(
       { message: 'Insufficient permissions to update users' },
@@ -210,10 +210,10 @@ export async function DELETE(_: Request, { params }: Params) {
 
   // Check permissions
   const permissions = await getPermissions({ wsId });
-if (!permissions) {
-  return Response.json({ error: 'Not found' }, { status: 404 });
-}
-const { containsPermission } = permissions;
+  if (!permissions) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+  const { containsPermission } = permissions;
   if (!containsPermission('delete_users')) {
     return NextResponse.json(
       { message: 'Insufficient permissions to delete users' },

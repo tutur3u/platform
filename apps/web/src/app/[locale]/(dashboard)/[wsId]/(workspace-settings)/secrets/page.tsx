@@ -34,7 +34,7 @@ export default async function WorkspaceSecretsPage({
 }: Props) {
   const { wsId: id } = await params;
   const workspace = await getWorkspace(id);
-if (!workspace) notFound();
+  if (!workspace) notFound();
   const wsId = workspace?.id;
 
   // Enforce permission check - only users with manage_workspace_secrets can access
@@ -42,8 +42,8 @@ if (!workspace) notFound();
     wsId: ROOT_WORKSPACE_ID,
     enableNotFound: true,
   });
-if (!permissions) notFound();
-const { withoutPermission } = permissions;
+  if (!permissions) notFound();
+  const { withoutPermission } = permissions;
 
   if (withoutPermission('manage_workspace_secrets')) {
     throw new Error(

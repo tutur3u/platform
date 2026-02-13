@@ -18,10 +18,10 @@ export async function PUT(req: Request, { params }: Params) {
   const permissions = await getPermissions({
     wsId,
   });
-if (!permissions) {
-  return Response.json({ error: 'Not found' }, { status: 404 });
-}
-const { withoutPermission } = permissions;
+  if (!permissions) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+  const { withoutPermission } = permissions;
 
   if (withoutPermission('manage_workspace_roles')) {
     return NextResponse.json(
@@ -71,10 +71,10 @@ export async function DELETE(_: Request, { params }: Params) {
   const permissions = await getPermissions({
     wsId,
   });
-if (!permissions) {
-  return Response.json({ error: 'Not found' }, { status: 404 });
-}
-const { withoutPermission } = permissions;
+  if (!permissions) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+  const { withoutPermission } = permissions;
 
   if (withoutPermission('manage_workspace_roles')) {
     return NextResponse.json(

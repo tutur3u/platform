@@ -36,8 +36,8 @@ export default async function WorkspaceUserAttendancePage({ params }: Props) {
         const permissions = await getPermissions({
           wsId,
         });
-if (!permissions) notFound();
-const { containsPermission } = permissions;
+        if (!permissions) notFound();
+        const { containsPermission } = permissions;
 
         const canCheckUserAttendance = containsPermission(
           'check_user_attendance'

@@ -44,10 +44,10 @@ export async function GET(request: Request, { params }: Params) {
 
     // Check permissions
     const permissions = await getPermissions({ wsId });
-if (!permissions) {
-  return Response.json({ error: 'Not found' }, { status: 404 });
-}
-const { containsPermission } = permissions;
+    if (!permissions) {
+      return Response.json({ error: 'Not found' }, { status: 404 });
+    }
+    const { containsPermission } = permissions;
     const canViewInventory = containsPermission('view_inventory');
     const canViewStockQuantity = containsPermission('view_stock_quantity');
 

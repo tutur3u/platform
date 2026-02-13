@@ -44,8 +44,8 @@ export default async function WorkspaceAIExecutionsPage({
         const permissions = await getPermissions({
           wsId,
         });
-if (!permissions) notFound();
-const { withoutPermission } = permissions;
+        if (!permissions) notFound();
+        const { withoutPermission } = permissions;
 
         if (
           wsId !== ROOT_WORKSPACE_ID ||

@@ -74,10 +74,10 @@ export async function POST(
     const permissions = await getPermissions({
       wsId,
     });
-if (!permissions) {
-  return Response.json({ error: 'Not found' }, { status: 404 });
-}
-const { withoutPermission } = permissions;
+    if (!permissions) {
+      return Response.json({ error: 'Not found' }, { status: 404 });
+    }
+    const { withoutPermission } = permissions;
 
     if (withoutPermission('send_user_group_post_emails')) {
       console.log(

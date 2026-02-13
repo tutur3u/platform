@@ -37,10 +37,10 @@ export async function GET(_: Request, { params }: Params) {
 
   // Check permissions
   const permissions = await getPermissions({ wsId });
-if (!permissions) {
-  return Response.json({ error: 'Not found' }, { status: 404 });
-}
-const { containsPermission } = permissions;
+  if (!permissions) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+  const { containsPermission } = permissions;
   if (!containsPermission('view_inventory')) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
   }
@@ -133,10 +133,10 @@ export async function PATCH(req: Request, { params }: Params) {
 
   // Check permissions
   const permissions = await getPermissions({ wsId });
-if (!permissions) {
-  return Response.json({ error: 'Not found' }, { status: 404 });
-}
-const { containsPermission } = permissions;
+  if (!permissions) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+  const { containsPermission } = permissions;
   if (!containsPermission('update_inventory')) {
     return NextResponse.json(
       { message: 'Insufficient permissions to update products' },

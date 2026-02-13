@@ -39,17 +39,17 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
 
   const user = await getCurrentUser();
   const ws = await getWorkspace(id);
-if (!ws) notFound();
+  if (!ws) notFound();
   const wsId = ws?.id;
 
   const permissions = await getPermissions({
     wsId,
   });
-if (!permissions) notFound();
-const { containsPermission } = permissions;
+  if (!permissions) notFound();
+  const { containsPermission } = permissions;
 
   const secrets = await getSecrets({ wsId });
-if (!secrets) notFound();
+  if (!secrets) notFound();
   const disableInvite = await verifyHasSecrets(wsId, ['DISABLE_INVITE']);
 
   const preventWorkspaceDeletion =

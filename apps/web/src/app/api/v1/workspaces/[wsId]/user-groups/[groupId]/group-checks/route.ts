@@ -32,10 +32,10 @@ export async function POST(req: Request, { params }: Params) {
 
   // Check permissions
   const permissions = await getPermissions({ wsId });
-if (!permissions) {
-  return Response.json({ error: 'Not found' }, { status: 404 });
-}
-const { withoutPermission } = permissions;
+  if (!permissions) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+  const { withoutPermission } = permissions;
   if (withoutPermission('update_user_groups_posts')) {
     return NextResponse.json(
       { message: 'Insufficient permissions to update user group posts' },

@@ -9,8 +9,8 @@ export async function UsersCategoryStatistics({ wsId }: { wsId: string }) {
   const permissions = await getPermissions({
     wsId,
   });
-if (!permissions) notFound();
-const { containsPermission } = permissions;
+  if (!permissions) notFound();
+  const { containsPermission } = permissions;
 
   if (!enabled || !containsPermission('manage_users')) return null;
 

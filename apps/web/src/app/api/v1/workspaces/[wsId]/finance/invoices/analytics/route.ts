@@ -28,10 +28,10 @@ export async function GET(req: Request, { params }: Params) {
 
   // Check permissions
   const permissions = await getPermissions({ wsId });
-if (!permissions) {
-  return Response.json({ error: 'Not found' }, { status: 404 });
-}
-const { withoutPermission } = permissions;
+  if (!permissions) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+  const { withoutPermission } = permissions;
   if (withoutPermission('view_invoices')) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
   }

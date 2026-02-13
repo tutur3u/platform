@@ -19,13 +19,13 @@ export default async function CalendarPage({ params }: PageProps) {
   const t = await getTranslations('common');
   const { wsId } = await params;
   const workspace = await getWorkspace(wsId);
-if (!workspace) notFound();
+  if (!workspace) notFound();
 
   const permissions = await getPermissions({
     wsId,
   });
-if (!permissions) notFound();
-const { withoutPermission } = permissions;
+  if (!permissions) notFound();
+  const { withoutPermission } = permissions;
 
   if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
   if (!workspace) return null;

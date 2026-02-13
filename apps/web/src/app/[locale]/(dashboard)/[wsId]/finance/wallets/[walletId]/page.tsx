@@ -28,7 +28,7 @@ export default async function WorkspaceWalletDetailsPage({
   const { wsId: id, walletId } = await params;
   const sp = await searchParams;
   const workspace = await getWorkspace(id);
-if (!workspace) notFound();
+  if (!workspace) notFound();
   const wsId = workspace.id;
 
   return (

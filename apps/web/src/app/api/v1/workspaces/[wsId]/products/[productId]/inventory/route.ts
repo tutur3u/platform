@@ -53,10 +53,10 @@ export async function POST(req: Request, { params }: Params) {
 
   // Check permissions
   const permissions = await getPermissions({ wsId });
-if (!permissions) {
-  return Response.json({ error: 'Not found' }, { status: 404 });
-}
-const { containsPermission } = permissions;
+  if (!permissions) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+  const { containsPermission } = permissions;
   if (!containsPermission('update_stock_quantity')) {
     return NextResponse.json(
       { message: 'Insufficient permissions to update stock quantities' },
@@ -159,10 +159,10 @@ export async function PATCH(req: Request, { params }: Params) {
   const wsId = await normalizeWorkspaceId(id);
   // Check permissions
   const permissions = await getPermissions({ wsId });
-if (!permissions) {
-  return Response.json({ error: 'Not found' }, { status: 404 });
-}
-const { containsPermission } = permissions;
+  if (!permissions) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+  const { containsPermission } = permissions;
   if (!containsPermission('update_stock_quantity')) {
     return NextResponse.json(
       { message: 'Insufficient permissions to update stock quantities' },
@@ -452,10 +452,10 @@ export async function GET(_: Request, { params }: Params) {
 
   const wsId = await normalizeWorkspaceId(id);
   const permissions = await getPermissions({ wsId });
-if (!permissions) {
-  return Response.json({ error: 'Not found' }, { status: 404 });
-}
-const { containsPermission } = permissions;
+  if (!permissions) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+  const { containsPermission } = permissions;
   if (!containsPermission('view_stock_quantity')) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
   }
@@ -485,10 +485,10 @@ export async function DELETE(_: Request, { params }: Params) {
   const wsId = await normalizeWorkspaceId(id);
   // Check permissions
   const permissions = await getPermissions({ wsId });
-if (!permissions) {
-  return Response.json({ error: 'Not found' }, { status: 404 });
-}
-const { containsPermission } = permissions;
+  if (!permissions) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+  const { containsPermission } = permissions;
   if (!containsPermission('update_stock_quantity')) {
     return NextResponse.json(
       { message: 'Insufficient permissions to update stock quantities' },

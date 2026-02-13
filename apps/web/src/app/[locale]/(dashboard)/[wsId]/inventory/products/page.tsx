@@ -48,8 +48,8 @@ export default async function WorkspaceProductsPage({
         const permissions = await getPermissions({
           wsId,
         });
-if (!permissions) notFound();
-const { containsPermission } = permissions;
+        if (!permissions) notFound();
+        const { containsPermission } = permissions;
 
         if (!containsPermission('view_inventory')) {
           return (

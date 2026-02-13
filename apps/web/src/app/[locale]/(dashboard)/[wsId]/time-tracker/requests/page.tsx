@@ -105,8 +105,8 @@ export default async function TimeTrackerRequestsPage({ params }: PageProps) {
         }
 
         const permissions = await getPermissions({ wsId });
-if (!permissions) notFound();
-const { containsPermission } = permissions;
+        if (!permissions) notFound();
+        const { containsPermission } = permissions;
 
         const currentUser = await getCurrentUser();
 

@@ -62,7 +62,7 @@ interface UsageContentProps {
 export default async function UsageContent({ wsId }: UsageContentProps) {
   const t = await getTranslations();
   const workspace = await getWorkspace(wsId);
-if (!workspace) notFound();
+  if (!workspace) notFound();
 
   if (!workspace) notFound();
 

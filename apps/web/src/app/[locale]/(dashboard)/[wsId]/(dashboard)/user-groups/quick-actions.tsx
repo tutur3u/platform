@@ -28,8 +28,8 @@ export default async function UserGroupQuickActions({
 
   const t = await getTranslations();
   const permissions = await getPermissions({ wsId });
-if (!permissions) notFound();
-const { containsPermission } = permissions;
+  if (!permissions) notFound();
+  const { containsPermission } = permissions;
 
   const canViewUserGroups = containsPermission('view_user_groups');
   const canCheckUserAttendance = containsPermission('check_user_attendance');

@@ -18,8 +18,8 @@ export default async function Layout({ children, params }: LayoutProps) {
   const permissions = await getPermissions({
     wsId,
   });
-if (!permissions) notFound();
-const { withoutPermission } = permissions;
+  if (!permissions) notFound();
+  const { withoutPermission } = permissions;
 
   if (withoutPermission('ai_chat')) redirect(`/${wsId}`);
 

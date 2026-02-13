@@ -56,8 +56,8 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
       {async ({ wsId, groupId, postId }) => {
         const t = await getTranslations();
         const permissions = await getPermissions({ wsId });
-if (!permissions) notFound();
-const { containsPermission } = permissions;
+        if (!permissions) notFound();
+        const { containsPermission } = permissions;
         const canViewUserGroupsPosts = containsPermission(
           'view_user_groups_posts'
         );

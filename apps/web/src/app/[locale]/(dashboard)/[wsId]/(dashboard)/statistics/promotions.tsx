@@ -11,8 +11,8 @@ export default async function PromotionsStatistics({ wsId }: { wsId: string }) {
   const permissions = await getPermissions({
     wsId,
   });
-if (!permissions) notFound();
-const { withoutPermission } = permissions;
+  if (!permissions) notFound();
+  const { withoutPermission } = permissions;
 
   if (withoutPermission('view_inventory')) return null;
   const { count: promotions, error } = await supabase

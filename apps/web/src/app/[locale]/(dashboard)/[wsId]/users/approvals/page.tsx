@@ -50,8 +50,8 @@ export default async function UserApprovalsPage({ params }: PageProps) {
         }
 
         const permissions = await getPermissions({ wsId });
-if (!permissions) notFound();
-const { containsPermission } = permissions;
+        if (!permissions) notFound();
+        const { containsPermission } = permissions;
         const canApproveReports = containsPermission('approve_reports');
         const canApprovePosts = containsPermission('approve_posts');
 

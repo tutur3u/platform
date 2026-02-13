@@ -35,7 +35,7 @@ export default async function Layout({ children, params }: LayoutProps) {
   const { wsId: id } = await params;
 
   const workspace = await getWorkspace(id, { useAdmin: true });
-if (!workspace) notFound();
+  if (!workspace) notFound();
 
   const isPolarConfigured =
     !!process.env.POLAR_WEBHOOK_SECRET && !!process.env.POLAR_ACCESS_TOKEN;

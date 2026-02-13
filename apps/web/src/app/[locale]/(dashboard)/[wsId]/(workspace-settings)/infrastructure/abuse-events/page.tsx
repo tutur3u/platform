@@ -48,8 +48,8 @@ export default async function AbuseEventsPage({ params, searchParams }: Props) {
         const t = await getTranslations();
 
         const permissions = await getPermissions({ wsId });
-if (!permissions) notFound();
-const { containsPermission } = permissions;
+        if (!permissions) notFound();
+        const { containsPermission } = permissions;
         const canViewInfrastructure = containsPermission('view_infrastructure');
         if (!canViewInfrastructure) {
           notFound();

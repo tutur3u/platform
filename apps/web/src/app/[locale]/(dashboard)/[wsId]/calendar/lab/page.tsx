@@ -24,8 +24,8 @@ export default async function CalendarLabPage({ params }: PageProps) {
     <WorkspaceWrapper params={params}>
       {async ({ workspace, wsId }) => {
         const permissions = await getPermissions({ wsId });
-if (!permissions) notFound();
-const { withoutPermission } = permissions;
+        if (!permissions) notFound();
+        const { withoutPermission } = permissions;
 
         const supabase = await createClient();
 

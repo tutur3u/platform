@@ -28,8 +28,8 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         const permissions = await getPermissions({
           wsId,
         });
-if (!permissions) notFound();
-const { containsPermission } = permissions;
+        if (!permissions) notFound();
+        const { containsPermission } = permissions;
         const canViewUserGroupsReports = containsPermission(
           'view_user_groups_reports'
         );

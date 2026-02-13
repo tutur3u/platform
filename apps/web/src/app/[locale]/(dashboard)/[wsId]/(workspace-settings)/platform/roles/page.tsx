@@ -93,8 +93,8 @@ export default async function PlatformRolesPage({
         const permissions = await getPermissions({
           wsId,
         });
-if (!permissions) notFound();
-const { withoutPermission } = permissions;
+        if (!permissions) notFound();
+        const { withoutPermission } = permissions;
 
         if (withoutPermission('manage_workspace_roles'))
           redirect(`/${wsId}/settings`);

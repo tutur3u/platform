@@ -22,8 +22,8 @@ export default async function NewChangelogPage({ params }: Props) {
   const { wsId } = await params;
 
   const permissions = await getPermissions({ wsId });
-if (!permissions) notFound();
-const { withoutPermission } = permissions;
+  if (!permissions) notFound();
+  const { withoutPermission } = permissions;
 
   if (withoutPermission('manage_changelog')) {
     redirect(`/${wsId}/settings`);

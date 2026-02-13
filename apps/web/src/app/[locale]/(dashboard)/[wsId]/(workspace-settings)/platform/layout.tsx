@@ -10,8 +10,8 @@ export default async function InfrastructureLayout({
   const permissions = await getPermissions({
     wsId: ROOT_WORKSPACE_ID,
   });
-if (!permissions) notFound();
-const { withoutPermission } = permissions;
+  if (!permissions) notFound();
+  const { withoutPermission } = permissions;
   if (withoutPermission('view_infrastructure')) notFound();
   return children;
 }

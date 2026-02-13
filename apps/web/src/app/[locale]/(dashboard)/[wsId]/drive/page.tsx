@@ -47,8 +47,8 @@ export default async function WorkspaceStorageObjectsPage({
         const permissions = await getPermissions({
           wsId,
         });
-if (!permissions) notFound();
-const { withoutPermission } = permissions;
+        if (!permissions) notFound();
+        const { withoutPermission } = permissions;
         const t = await getTranslations();
         const { path } = await searchParams;
 

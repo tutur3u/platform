@@ -53,8 +53,8 @@ export default async function WorkspaceHomePage({ params }: Props) {
         const permissions = await getPermissions({
           wsId, // This is the validated UUID, not the legacy identifier
         });
-if (!permissions) notFound();
-const { withoutPermission } = permissions;
+        if (!permissions) notFound();
+        const { withoutPermission } = permissions;
 
         const isInternalUser = isValidTuturuuuEmail(currentUser?.email);
         const isInternalWorkspace = wsId === ROOT_WORKSPACE_ID;

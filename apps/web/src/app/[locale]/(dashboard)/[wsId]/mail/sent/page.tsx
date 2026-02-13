@@ -33,7 +33,7 @@ interface Props {
 export default async function MailPage({ params, searchParams }: Props) {
   const { wsId: id } = await params;
   const workspace = await getWorkspace(id);
-if (!workspace) notFound();
+  if (!workspace) notFound();
   const wsId = workspace?.id;
 
   const searchParamsData = searchParams ? await searchParams : {};

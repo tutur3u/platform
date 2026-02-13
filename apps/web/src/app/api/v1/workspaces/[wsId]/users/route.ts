@@ -137,10 +137,10 @@ export async function POST(req: Request, { params }: Params) {
   const { wsId } = await params;
   // Check permissions
   const permissions = await getPermissions({ wsId });
-if (!permissions) {
-  return Response.json({ error: 'Not found' }, { status: 404 });
-}
-const { containsPermission } = permissions;
+  if (!permissions) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+  const { containsPermission } = permissions;
   if (!containsPermission('create_users')) {
     return NextResponse.json(
       { message: 'Insufficient permissions to create users' },

@@ -16,10 +16,10 @@ export async function DELETE(_: Request, { params }: Params) {
 
   // Check permissions
   const permissions = await getPermissions({ wsId });
-if (!permissions) {
-  return Response.json({ error: 'Not found' }, { status: 404 });
-}
-const { withoutPermission } = permissions;
+  if (!permissions) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+  const { withoutPermission } = permissions;
   if (withoutPermission('update_user_groups')) {
     return NextResponse.json(
       { message: 'Insufficient permissions to update user groups' },

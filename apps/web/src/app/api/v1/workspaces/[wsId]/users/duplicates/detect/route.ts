@@ -35,10 +35,10 @@ export async function POST(_req: Request, { params }: Params) {
 
     // Check permissions - require view_users_private_info to access email/phone
     const permissions = await getPermissions({ wsId });
-if (!permissions) {
-  return Response.json({ error: 'Not found' }, { status: 404 });
-}
-const { withoutPermission } = permissions;
+    if (!permissions) {
+      return Response.json({ error: 'Not found' }, { status: 404 });
+    }
+    const { withoutPermission } = permissions;
     if (withoutPermission('view_users_private_info')) {
       return NextResponse.json(
         { message: 'Insufficient permissions to detect duplicate users' },

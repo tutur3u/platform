@@ -44,10 +44,10 @@ export async function POST(req: Request, { params }: Params) {
   const permissions = await getPermissions({
     wsId,
   });
-if (!permissions) {
-  return Response.json({ error: 'Not found' }, { status: 404 });
-}
-const { withoutPermission } = permissions;
+  if (!permissions) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+  const { withoutPermission } = permissions;
 
   if (withoutPermission('create_invoices')) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });

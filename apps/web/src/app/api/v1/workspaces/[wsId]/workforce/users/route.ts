@@ -68,10 +68,10 @@ export async function GET(
     const permissions = await getPermissions({
       wsId: normalizedWsId,
     });
-if (!permissions) {
-  return Response.json({ error: 'Not found' }, { status: 404 });
-}
-const { containsPermission } = permissions;
+    if (!permissions) {
+      return Response.json({ error: 'Not found' }, { status: 404 });
+    }
+    const { containsPermission } = permissions;
 
     if (
       !containsPermission('view_workforce') &&
@@ -204,10 +204,10 @@ export async function POST(
     const permissions = await getPermissions({
       wsId: normalizedWsId,
     });
-if (!permissions) {
-  return Response.json({ error: 'Not found' }, { status: 404 });
-}
-const { containsPermission } = permissions;
+    if (!permissions) {
+      return Response.json({ error: 'Not found' }, { status: 404 });
+    }
+    const { containsPermission } = permissions;
 
     if (!containsPermission('manage_workforce')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

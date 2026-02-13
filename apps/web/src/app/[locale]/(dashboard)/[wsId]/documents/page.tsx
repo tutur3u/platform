@@ -30,8 +30,8 @@ export default async function DocumentsPage({ params }: Props) {
         const permissions = await getPermissions({
           wsId,
         });
-if (!permissions) notFound();
-const { withoutPermission } = permissions;
+        if (!permissions) notFound();
+        const { withoutPermission } = permissions;
 
         if (withoutPermission('manage_documents')) redirect(`/${wsId}`);
 

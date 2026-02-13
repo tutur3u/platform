@@ -22,7 +22,7 @@ export default async function TasksSidebar({
 
   // Resolve workspace ID (handles "personal", "internal", etc.)
   const workspace = await getWorkspace(wsId);
-if (!workspace) notFound();
+  if (!workspace) notFound();
   const resolvedWsId = workspace?.id;
 
   // Use the same RPC as the tasks page to get accessible tasks

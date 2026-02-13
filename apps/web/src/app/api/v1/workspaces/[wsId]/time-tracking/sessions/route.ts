@@ -455,10 +455,10 @@ export async function POST(
       const permissions = await getPermissions({
         wsId: normalizedWsId,
       });
-if (!permissions) {
-  return Response.json({ error: 'Not found' }, { status: 404 });
-}
-const { containsPermission } = permissions;
+      if (!permissions) {
+        return Response.json({ error: 'Not found' }, { status: 404 });
+      }
+      const { containsPermission } = permissions;
       const canBypass = containsPermission(
         'bypass_time_tracking_request_approval'
       );

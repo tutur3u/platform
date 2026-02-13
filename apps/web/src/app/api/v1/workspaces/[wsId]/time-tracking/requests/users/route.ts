@@ -35,10 +35,10 @@ export async function GET(
     }
 
     const permissions = await getPermissions({ wsId });
-if (!permissions) {
-  return Response.json({ error: 'Not found' }, { status: 404 });
-}
-const { withoutPermission } = permissions;
+    if (!permissions) {
+      return Response.json({ error: 'Not found' }, { status: 404 });
+    }
+    const { withoutPermission } = permissions;
 
     if (withoutPermission('manage_time_tracking_requests')) {
       return NextResponse.json(

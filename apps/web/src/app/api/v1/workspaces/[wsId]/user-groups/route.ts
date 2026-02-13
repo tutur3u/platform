@@ -37,10 +37,10 @@ export async function GET(_: Request, { params }: Params) {
 
   // Check permissions
   const permissions = await getPermissions({ wsId });
-if (!permissions) {
-  return Response.json({ error: 'Not found' }, { status: 404 });
-}
-const { withoutPermission } = permissions;
+  if (!permissions) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+  const { withoutPermission } = permissions;
   if (withoutPermission('view_user_groups')) {
     return NextResponse.json(
       { message: 'Insufficient permissions to view user groups' },
@@ -70,10 +70,10 @@ export async function POST(req: Request, { params }: Params) {
 
   // Check permissions
   const permissions = await getPermissions({ wsId });
-if (!permissions) {
-  return Response.json({ error: 'Not found' }, { status: 404 });
-}
-const { withoutPermission } = permissions;
+  if (!permissions) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+  const { withoutPermission } = permissions;
   if (withoutPermission('create_user_groups')) {
     return NextResponse.json(
       { message: 'Insufficient permissions to create user groups' },

@@ -22,8 +22,8 @@ export default async function WorkspaceInvoicesPage({ params }: Props) {
         const permissions = await getPermissions({
           wsId,
         });
-if (!permissions) notFound();
-const { withoutPermission } = permissions;
+        if (!permissions) notFound();
+        const { withoutPermission } = permissions;
         if (withoutPermission('create_invoices')) notFound();
 
         return <NewInvoicePage wsId={wsId} />;

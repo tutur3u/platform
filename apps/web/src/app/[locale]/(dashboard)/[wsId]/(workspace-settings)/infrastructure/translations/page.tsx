@@ -9,8 +9,8 @@ export default async function TranslationsPage() {
   const permissions = await getPermissions({
     wsId: ROOT_WORKSPACE_ID,
   });
-if (!permissions) notFound();
-const { containsPermission } = permissions;
+  if (!permissions) notFound();
+  const { containsPermission } = permissions;
 
   const canGenerateWithAI = containsPermission('manage_workspace_roles');
 
