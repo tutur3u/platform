@@ -11,8 +11,8 @@ import Link from 'next/link';
 
 export default function Footer() {
   return (
-    <footer className="gradient-background border-primary/10 border-t py-12">
-      <div className="mx-auto max-w-7xl space-y-8 px-6">
+    <footer className="gradient-background border-primary/10 border-t py-10 md:py-12">
+      <div className="mx-auto max-w-7xl space-y-8 px-4 sm:px-6">
         {/* Top Section - Logos */}
         <div className="flex flex-col items-center justify-between gap-8 md:flex-row">
           {/* Neo League Logo */}
@@ -53,14 +53,14 @@ export default function Footer() {
         </div>
 
         {/* Main Footer Content */}
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-3 lg:gap-8">
           {/*    Socials */}
           <div className="space-y-4 text-center md:text-left">
             <h3 className="font-black text-brand-dark-blue text-lg">
               Our Socials
             </h3>
             <div className="flex justify-center gap-4 md:justify-start">
-              <div className="rounded-lg bg-white p-3 text-blue-600 transition-colors duration-200 hover:bg-blue-50 hover:text-blue-700">
+              <div className="rounded-lg bg-white/50 p-3 text-blue-600 transition-colors duration-200 hover:bg-blue-50 hover:text-blue-700">
                 <Link
                   href="https://facebook.com/RMITNeoCultureTech"
                   target="_blank"
@@ -71,7 +71,7 @@ export default function Footer() {
                   <Facebook className="h-8 w-8" />
                 </Link>
               </div>
-              <div className="rounded-lg bg-white p-3 text-blue-600 transition-colors duration-200 hover:bg-blue-50 hover:text-blue-700">
+              <div className="rounded-lg bg-white/50 p-3 text-blue-600 transition-colors duration-200 hover:bg-blue-50 hover:text-blue-700">
                 <Link
                   href="https://instagram.com/rmitnct"
                   target="_blank"
@@ -82,7 +82,7 @@ export default function Footer() {
                   <Instagram className="h-8 w-8" />
                 </Link>
               </div>
-              <div className="rounded-lg bg-white p-3 text-blue-600 transition-colors duration-200 hover:bg-blue-50 hover:text-blue-700">
+              <div className="rounded-lg bg-white/50 p-3 text-blue-600 transition-colors duration-200 hover:bg-blue-50 hover:text-blue-700">
                 <Link
                   href="https://linkedin.com/company/rmit-nct"
                   target="_blank"
