@@ -9,6 +9,7 @@ import { CustomDataTable } from '@/components/custom-data-table';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { productUnitColumns } from './columns';
 import { ProductUnitForm } from './form';
+import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Units',
@@ -35,9 +36,11 @@ export default async function WorkspaceUnitsPage({
       {async ({ wsId }) => {
         const t = await getTranslations();
 
-        const { containsPermission } = await getPermissions({
+        const permissions = await getPermissions({
           wsId,
         });
+if (!permissions) notFound();
+const { containsPermission } = permissions;
 
         if (!containsPermission('view_inventory')) {
           return (

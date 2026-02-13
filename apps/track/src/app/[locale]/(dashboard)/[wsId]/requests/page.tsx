@@ -2,6 +2,7 @@ import { AlertTriangle } from '@tuturuuu/icons';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { RequestsClient } from './requests-client';
 
@@ -103,17 +104,19 @@ export default async function TimeTrackerRequestsPage({ params }: PageProps) {
           );
         }
 
-        const { containsPermission } = await getPermissions({ wsId });
+        const permissions = await getPermissions({ wsId });
+        if (!permissions) notFound();
 
         const currentUser = await getCurrentUser();
 
-        const canManageTimeTrackingRequests = containsPermission(
+        const canManageTimeTrackingRequests = permissions.containsPermission(
           'manage_time_tracking_requests'
         );
 
-        const canBypassTimeTrackingRequestApproval = containsPermission(
-          'bypass_time_tracking_request_approval'
-        );
+        const canBypassTimeTrackingRequestApproval =
+          permissions.containsPermission(
+            'bypass_time_tracking_request_approval'
+          );
 
         return (
           <div className="container mx-auto px-4 py-6 md:px-8">

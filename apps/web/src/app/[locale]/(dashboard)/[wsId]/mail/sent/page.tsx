@@ -9,6 +9,7 @@ import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import MailClientWrapper from '../client';
+import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Sent',
@@ -32,6 +33,7 @@ interface Props {
 export default async function MailPage({ params, searchParams }: Props) {
   const { wsId: id } = await params;
   const workspace = await getWorkspace(id);
+if (!workspace) notFound();
   const wsId = workspace?.id;
 
   const searchParamsData = searchParams ? await searchParams : {};

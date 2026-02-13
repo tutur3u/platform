@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation';
 import { verifySecret } from '../workspace-helper';
 import { FEATURE_FLAGS } from './data';
 import type { FeatureFlag, FeatureFlagMap } from './types';
@@ -7,18 +6,18 @@ export async function requireFeatureFlags(
   wsId: string,
   {
     requiredFlags = [],
-    redirectTo,
     forceAdmin = false,
   }: {
     requiredFlags: FeatureFlag[];
-    redirectTo: string | null;
     forceAdmin?: boolean;
   }
-): Promise<FeatureFlagMap> {
+): Promise<{ featureFlags: FeatureFlagMap; missingFlags: FeatureFlag[] }> {
   const featureFlags = await getFeatureFlags(wsId, forceAdmin);
   const missingFlags = requiredFlags.filter((flag) => !featureFlags[flag]);
-  if (missingFlags.length > 0 && redirectTo) redirect(redirectTo);
-  return featureFlags;
+  return {
+    featureFlags,
+    missingFlags,
+  };
 }
 
 /**

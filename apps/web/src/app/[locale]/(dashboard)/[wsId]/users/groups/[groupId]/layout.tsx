@@ -33,7 +33,9 @@ export default async function Layout({ children, params }: LayoutProps) {
   const { wsId: id, groupId } = await params;
   const wsId = await normalizeWorkspaceId(id);
 
-  const { containsPermission } = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId });
+if (!permissions) notFound();
+const { containsPermission } = permissions;
   const hasManageUsersPermission = containsPermission('manage_users');
 
   if (groupId === '~') {

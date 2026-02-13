@@ -1,7 +1,7 @@
+import { siteConfig } from '@/constants/configs';
 import { getPlan } from '@tuturuuu/utils/plan-helpers';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import { siteConfig } from '@/constants/configs';
 
 interface Props {
   params: Promise<{
@@ -22,7 +22,7 @@ export const generateMetadata = async ({
   const untitled = locale === 'vi' ? 'Kế hoạch' : 'Plan';
 
   const plan = await getPlan(planId);
-  const planName = plan.name || untitled;
+  const planName = plan?.name || untitled;
 
   const title = `${planName} - Tuturuuu Meet`;
   const description = locale === 'vi' ? viDescription : enDescription;

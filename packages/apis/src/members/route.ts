@@ -22,6 +22,9 @@ interface Params {
 const normalizeWorkspaceId = async (wsId: string) => {
   if (wsId.toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
     const workspace = await getWorkspace(wsId);
+    if (!workspace) {
+      return null;
+    }
     return workspace.id;
   }
 
@@ -33,6 +36,10 @@ export async function GET(_: NextRequest, { params }: Params) {
   const supabase = await createClient();
 
   const wsId = await normalizeWorkspaceId(id);
+
+  if (!wsId) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
 
   // Fetch workspace creator_id
   const { data: workspace } = await supabase
@@ -90,6 +97,10 @@ export async function DELETE(req: NextRequest, { params }: Params) {
 
   const supabase = await createClient();
   const resolvedWsId = await normalizeWorkspaceId(wsId);
+
+  if (!resolvedWsId) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
 
   // Revoke Polar seat BEFORE deleting member (best-effort)
   if (userId) {

@@ -28,7 +28,7 @@ export default async function TaskBoardServerPage({ params }: Props) {
   if (!user) redirect('/login');
 
   const workspace = await getWorkspace(id);
-  if (!workspace) redirect('/');
+  if (!workspace) notFound();
 
   const supabase = await createClient();
   const board = await getTaskBoard(supabase, boardId);

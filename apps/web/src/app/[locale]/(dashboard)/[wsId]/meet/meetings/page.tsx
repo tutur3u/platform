@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader } from '@tuturuuu/ui/card';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { MeetingsContent } from './meetings-content';
 
@@ -30,6 +30,7 @@ export default async function MeetingsPage({
 }: MeetingsPageProps) {
   const { wsId: id } = await params;
   const workspace = await getWorkspace(id);
+if (!workspace) notFound();
   const wsId = workspace?.id;
 
   const user = await getCurrentUser();

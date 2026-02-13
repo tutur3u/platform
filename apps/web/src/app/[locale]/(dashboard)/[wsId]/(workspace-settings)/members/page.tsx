@@ -9,7 +9,7 @@ import {
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import InviteLinksSection from './_components/invite-links-section';
@@ -42,9 +42,11 @@ export default async function WorkspaceMembersPage({
   return (
     <WorkspaceWrapper params={params}>
       {async ({ workspace, wsId }) => {
-        const { withoutPermission } = await getPermissions({
+        const permissions = await getPermissions({
           wsId,
         });
+if (!permissions) notFound();
+const { withoutPermission } = permissions;
 
         if (withoutPermission('manage_workspace_members'))
           redirect(`/${wsId}/settings`);

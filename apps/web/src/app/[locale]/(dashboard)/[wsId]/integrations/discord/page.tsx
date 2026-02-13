@@ -2,7 +2,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import DiscordIntegrationDashboard from './discord-integration-dashboard';
 
 export const metadata: Metadata = {
@@ -21,6 +21,7 @@ export default async function DiscordIntegrationPage({ params }: Props) {
   const { wsId: id } = await params;
 
   const workspace = await getWorkspace(id);
+if (!workspace) notFound();
   const wsId = workspace?.id;
 
   const user = await getCurrentUser();

@@ -1,6 +1,6 @@
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import type React from 'react';
 import { Navigation, type NavLink } from '@/components/navigation';
@@ -16,9 +16,11 @@ export default async function Layout({ children, params }: LayoutProps) {
   const t = await getTranslations('workspace-ai-layout');
   const { wsId } = await params;
 
-  const { withoutPermission } = await getPermissions({
+  const permissions = await getPermissions({
     wsId,
   });
+if (!permissions) notFound();
+const { withoutPermission } = permissions;
 
   if (withoutPermission('ai_lab')) redirect(`/${wsId}`);
   const user = await getCurrentUser();

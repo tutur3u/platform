@@ -3,6 +3,7 @@ import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
 import { CalendarSidebar } from './sidebar';
+import { notFound } from 'next/navigation';
 
 interface TasksSidebarProps {
   wsId: string;
@@ -21,6 +22,7 @@ export default async function TasksSidebar({
 
   // Resolve workspace ID (handles "personal", "internal", etc.)
   const workspace = await getWorkspace(wsId);
+if (!workspace) notFound();
   const resolvedWsId = workspace?.id;
 
   // Use the same RPC as the tasks page to get accessible tasks

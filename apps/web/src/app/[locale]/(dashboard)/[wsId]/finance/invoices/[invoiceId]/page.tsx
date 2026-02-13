@@ -27,9 +27,11 @@ export default async function WorkspaceInvoiceDetailsPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
-        const { withoutPermission, containsPermission } = await getPermissions({
+        const permissions = await getPermissions({
           wsId,
         });
+if (!permissions) notFound();
+const { withoutPermission, containsPermission } = permissions;
         if (withoutPermission('view_invoices')) notFound();
 
         const canUpdateInvoices = containsPermission('update_invoices');

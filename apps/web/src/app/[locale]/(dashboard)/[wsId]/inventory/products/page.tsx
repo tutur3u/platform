@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { ProductsPageClient } from './products-page-client';
+import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Products',
@@ -44,9 +45,11 @@ export default async function WorkspaceProductsPage({
       {async ({ wsId }) => {
         const t = await getTranslations();
 
-        const { containsPermission } = await getPermissions({
+        const permissions = await getPermissions({
           wsId,
         });
+if (!permissions) notFound();
+const { containsPermission } = permissions;
 
         if (!containsPermission('view_inventory')) {
           return (

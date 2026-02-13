@@ -7,6 +7,7 @@ import {
   getWorkspaceConfig as getWorkspaceConfigUtil,
   isPersonalWorkspace as isPersonalWorkspaceUtil,
 } from '@tuturuuu/utils/workspace-helper';
+import { notFound } from 'next/navigation';
 
 /**
  * Normalizes a workspace identifier (slug or special keyword) into a UUID.
@@ -24,6 +25,7 @@ export const normalizeWorkspaceId = async (
 
   if (normalized === PERSONAL_WORKSPACE_SLUG) {
     const workspace = await getWorkspace(wsIdParam);
+    if (!workspace) notFound();
     return workspace.id;
   }
 

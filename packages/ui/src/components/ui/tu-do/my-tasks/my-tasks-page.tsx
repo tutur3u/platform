@@ -1,7 +1,7 @@
 import { MyTasksDataLoader } from '@tuturuuu/ui/tu-do/my-tasks/my-tasks-data-loader';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
 interface Props {
   params: Promise<{
@@ -21,7 +21,7 @@ export default async function MyTasksPage({ params }: Props) {
   if (!user) redirect('/login');
 
   const workspace = await getWorkspace(id);
-  if (!workspace) redirect('/');
+  if (!workspace) notFound();
 
   return (
     <MyTasksDataLoader

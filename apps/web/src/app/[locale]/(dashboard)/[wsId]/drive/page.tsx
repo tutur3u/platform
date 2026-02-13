@@ -11,7 +11,7 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { formatBytes } from '@/utils/file-helper';
@@ -44,9 +44,11 @@ export default async function WorkspaceStorageObjectsPage({
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
-        const { withoutPermission } = await getPermissions({
+        const permissions = await getPermissions({
           wsId,
         });
+if (!permissions) notFound();
+const { withoutPermission } = permissions;
         const t = await getTranslations();
         const { path } = await searchParams;
 

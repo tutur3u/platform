@@ -65,7 +65,11 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   // Check permissions
-  const { withoutPermission } = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId });
+if (!permissions) {
+  return Response.json({ error: 'Not found' }, { status: 404 });
+}
+const { withoutPermission } = permissions;
   if (withoutPermission('create_inventory')) {
     return NextResponse.json(
       { message: 'Insufficient permissions to create products' },

@@ -33,7 +33,9 @@ export default async function GuestUserLeadsPage({
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
-        const { containsPermission } = await getPermissions({ wsId });
+        const permissions = await getPermissions({ wsId });
+if (!permissions) notFound();
+const { containsPermission } = permissions;
         const canCreateLeadGenerations = containsPermission(
           'create_lead_generations'
         );

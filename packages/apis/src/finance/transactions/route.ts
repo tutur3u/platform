@@ -28,9 +28,15 @@ const TransactionSchema = z.object({
 export async function GET(req: Request, { params }: Params) {
   const { wsId } = await params;
 
-  const { withoutPermission } = await getPermissions({
+  const permissions = await getPermissions({
     wsId,
   });
+
+  if (!permissions) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { withoutPermission } = permissions;
 
   if (
     withoutPermission('view_transactions') &&
@@ -100,9 +106,15 @@ export async function GET(req: Request, { params }: Params) {
 export async function POST(req: Request, { params }: Params) {
   const { wsId } = await params;
 
-  const { withoutPermission } = await getPermissions({
+  const permissions = await getPermissions({
     wsId,
   });
+
+  if (!permissions) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { withoutPermission } = permissions;
 
   if (withoutPermission('create_transactions')) {
     return NextResponse.json(

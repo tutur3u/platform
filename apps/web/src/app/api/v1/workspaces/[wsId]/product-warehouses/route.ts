@@ -12,7 +12,11 @@ export async function GET(_: Request, { params }: Params) {
   const { wsId: id } = await params;
 
   // Check permissions
-  const { containsPermission } = await getPermissions({ wsId: id });
+  const permissions = await getPermissions({ wsId: id });
+if (!permissions) {
+  return Response.json({ error: 'Not found' }, { status: 404 });
+}
+const { containsPermission } = permissions;
   if (!containsPermission('view_inventory')) {
     return NextResponse.json(
       { message: 'Insufficient permissions to view inventory' },
@@ -42,7 +46,11 @@ export async function POST(req: Request, { params }: Params) {
   const { wsId: id } = await params;
 
   // Check permissions
-  const { containsPermission } = await getPermissions({ wsId: id });
+  const permissions = await getPermissions({ wsId: id });
+if (!permissions) {
+  return Response.json({ error: 'Not found' }, { status: 404 });
+}
+const { containsPermission } = permissions;
   if (!containsPermission('create_inventory')) {
     return NextResponse.json(
       { message: 'Insufficient permissions to create warehouses' },

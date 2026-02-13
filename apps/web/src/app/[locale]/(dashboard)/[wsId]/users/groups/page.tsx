@@ -4,6 +4,7 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import UserGroupForm from './form';
@@ -45,9 +46,11 @@ export default async function WorkspaceUserGroupsPage({
         const sp = await searchParams;
 
         // Check permissions
-        const { withoutPermission, containsPermission } = await getPermissions({
+        const workspacePermissions = await getPermissions({
           wsId,
         });
+        if (!workspacePermissions) notFound();
+        const { withoutPermission, containsPermission } = workspacePermissions;
 
         if (withoutPermission('view_user_groups')) {
           return (

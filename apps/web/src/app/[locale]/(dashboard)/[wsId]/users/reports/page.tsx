@@ -32,9 +32,11 @@ export default async function WorkspaceUserReportsPage({ params }: Props) {
           notFound();
         }
 
-        const { containsPermission } = await getPermissions({
+        const permissions = await getPermissions({
           wsId,
         });
+if (!permissions) notFound();
+const { containsPermission } = permissions;
 
         const canViewUserGroupsReports = containsPermission(
           'view_user_groups_reports'

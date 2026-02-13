@@ -12,9 +12,15 @@ interface Params {
 export async function GET(_: Request, { params }: Params) {
   const supabase = await createClient();
   const { walletId: id, wsId } = await params;
-  const { withoutPermission } = await getPermissions({
+  const permissions = await getPermissions({
     wsId,
   });
+
+  if (!permissions) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { withoutPermission } = permissions;
 
   if (withoutPermission('view_transactions')) {
     return NextResponse.json(
@@ -60,9 +66,15 @@ export async function PUT(req: Request, { params }: Params) {
   const supabase = await createClient();
   const data = await req.json();
   const { walletId: id, wsId } = await params;
-  const { withoutPermission } = await getPermissions({
+  const permissions = await getPermissions({
     wsId,
   });
+
+  if (!permissions) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { withoutPermission } = permissions;
 
   if (withoutPermission('update_wallets')) {
     return NextResponse.json(
@@ -117,9 +129,15 @@ export async function DELETE(_: Request, { params }: Params) {
   const supabase = await createClient();
   const { walletId: id, wsId } = await params;
 
-  const { withoutPermission } = await getPermissions({
+  const permissions = await getPermissions({
     wsId,
   });
+
+  if (!permissions) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { withoutPermission } = permissions;
 
   if (withoutPermission('delete_wallets')) {
     return NextResponse.json(

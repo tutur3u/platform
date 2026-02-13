@@ -1,5 +1,6 @@
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
@@ -30,9 +31,11 @@ export default async function InventoryPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
-        const { containsPermission } = await getPermissions({
+        const permissions = await getPermissions({
           wsId,
         });
+        if (!permissions) notFound();
+        const { containsPermission } = permissions;
         const t = await getTranslations();
 
         if (!containsPermission('view_inventory')) {

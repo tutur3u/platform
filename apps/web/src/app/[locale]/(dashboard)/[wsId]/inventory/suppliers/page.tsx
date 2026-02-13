@@ -9,6 +9,7 @@ import { CustomDataTable } from '@/components/custom-data-table';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { productSupplierColumns } from './columns';
 import { ProductSupplierForm } from './form';
+import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Suppliers',
@@ -36,9 +37,11 @@ export default async function WorkspaceSuppliersPage({
       {async ({ wsId }) => {
         const t = await getTranslations();
 
-        const { containsPermission } = await getPermissions({
+        const permissions = await getPermissions({
           wsId,
         });
+if (!permissions) notFound();
+const { containsPermission } = permissions;
 
         if (!containsPermission('view_inventory')) {
           return (

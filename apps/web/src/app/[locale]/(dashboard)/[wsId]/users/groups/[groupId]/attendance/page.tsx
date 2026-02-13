@@ -29,9 +29,11 @@ export default async function UserGroupAttendancePage({
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, groupId }) => {
-        const { containsPermission } = await getPermissions({
+        const permissions = await getPermissions({
           wsId,
         });
+if (!permissions) notFound();
+const { containsPermission } = permissions;
         const canCheckUserAttendance = containsPermission(
           'check_user_attendance'
         );

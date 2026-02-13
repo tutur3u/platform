@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Integrations',
@@ -21,6 +22,7 @@ export default async function IntegrationsPage({ params }: Props) {
   const { wsId: id } = await params;
 
   const workspace = await getWorkspace(id);
+if (!workspace) notFound();
   const wsId = workspace?.id;
 
   const integrations = [

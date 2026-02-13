@@ -26,11 +26,13 @@ export default async function MeetTogetherPlanDetailsPage({
 }: Props) {
   const { planId } = await params;
 
-  const platformUser = await getCurrentUser(true);
+  const platformUser = await getCurrentUser();
   const plan = await getPlan(planId);
   const users: PlanUser[] = await getUsers(planId);
   const polls = await getPollsForPlan(planId);
   const timeblocks = await getTimeBlocks(planId);
+
+  if (!plan) return notFound();
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center">
@@ -45,7 +47,6 @@ export default async function MeetTogetherPlanDetailsPage({
           >
             <PlanDetailsClient
               plan={plan}
-              // isCreator={isCreator}
               polls={polls}
               users={users}
               timeblocks={timeblocks}

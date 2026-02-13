@@ -3,7 +3,7 @@ import TaskLabelsClient from '@tuturuuu/ui/tu-do/labels/client';
 import type { TaskLabel } from '@tuturuuu/ui/tu-do/labels/types';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
@@ -24,11 +24,13 @@ export default async function TaskLabelsPage({ params }: Props) {
   if (!user) redirect('/login');
 
   const workspace = await getWorkspace(id);
-  if (!workspace) redirect('/');
+  if (!workspace) notFound();
 
   const wsId = workspace.id;
 
-  const { withoutPermission } = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId });
+  if (!permissions) notFound();
+  const { withoutPermission } = permissions;
   if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
 
   const supabase = await createClient();

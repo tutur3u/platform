@@ -15,9 +15,13 @@ interface Params {
 export async function PUT(req: Request, { params }: Params) {
   const supabase = await createClient();
   const { wsId, walletId, roleId } = await params;
-  const { withoutPermission } = await getPermissions({
+  const permissions = await getPermissions({
     wsId,
   });
+if (!permissions) {
+  return Response.json({ error: 'Not found' }, { status: 404 });
+}
+const { withoutPermission } = permissions;
 
   if (withoutPermission('manage_workspace_roles')) {
     return NextResponse.json(
@@ -64,9 +68,13 @@ export async function PUT(req: Request, { params }: Params) {
 export async function DELETE(_: Request, { params }: Params) {
   const supabase = await createClient();
   const { wsId, walletId, roleId } = await params;
-  const { withoutPermission } = await getPermissions({
+  const permissions = await getPermissions({
     wsId,
   });
+if (!permissions) {
+  return Response.json({ error: 'Not found' }, { status: 404 });
+}
+const { withoutPermission } = permissions;
 
   if (withoutPermission('manage_workspace_roles')) {
     return NextResponse.json(

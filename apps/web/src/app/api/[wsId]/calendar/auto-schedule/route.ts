@@ -294,7 +294,11 @@ export async function GET(
     console.log(
       `[HEALTH-CHECK-${requestId}] Checking permissions for workspace: ${wsId}`
     );
-    const { withoutPermission } = await getPermissions({ wsId });
+    const permissions = await getPermissions({ wsId });
+if (!permissions) {
+  return Response.json({ error: 'Not found' }, { status: 404 });
+}
+const { withoutPermission } = permissions;
     if (withoutPermission('manage_calendar')) {
       console.log(
         `[HEALTH-CHECK-${requestId}] Permission denied for manage_calendar`

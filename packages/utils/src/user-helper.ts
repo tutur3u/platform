@@ -5,7 +5,6 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import type { User, UserPrivateDetails } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { notFound, redirect } from 'next/navigation';
 
 import { resolveWorkspaceId } from './constants';
 
@@ -145,7 +144,7 @@ export async function getCurrentWorkspaceUser(
   return null;
 }
 
-export async function getCurrentUser(noRedirect?: boolean) {
+export async function getCurrentUser() {
   const supabase = await createClient();
 
   const {
@@ -153,8 +152,7 @@ export async function getCurrentUser(noRedirect?: boolean) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    if (noRedirect) return null;
-    redirect('/login');
+    return null;
   }
 
   const { data, error } = await supabase
@@ -167,7 +165,7 @@ export async function getCurrentUser(noRedirect?: boolean) {
 
   if (error) {
     console.error('Error getting user:', error);
-    notFound();
+    return null;
   }
 
   const { user_private_details, ...rest } = data;

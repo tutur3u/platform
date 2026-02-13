@@ -94,7 +94,7 @@ export default async function TaskDetailServerPage({ params }: Props) {
   if (!user) redirect('/login');
 
   const workspace = await getWorkspace(id);
-  if (!workspace) redirect('/');
+  if (!workspace) notFound();
 
   const task = await getTaskDetails(taskId);
   if (!task) notFound();

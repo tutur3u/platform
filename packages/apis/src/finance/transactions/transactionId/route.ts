@@ -57,9 +57,15 @@ export async function GET(_: Request, { params }: Params) {
     );
   }
 
-  const { withoutPermission } = await getPermissions({
+  const permissions = await getPermissions({
     wsId,
   });
+
+  if (!permissions) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { withoutPermission } = permissions;
 
   if (withoutPermission('view_transactions')) {
     return NextResponse.json(
@@ -133,9 +139,15 @@ export async function PUT(req: Request, { params }: Params) {
 
   const data = parsed.data;
 
-  const { withoutPermission } = await getPermissions({
+  const permissions = await getPermissions({
     wsId,
   });
+
+  if (!permissions) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { withoutPermission } = permissions;
 
   if (withoutPermission('update_transactions')) {
     return NextResponse.json(
@@ -320,9 +332,15 @@ export async function DELETE(_: Request, { params }: Params) {
     );
   }
 
-  const { withoutPermission } = await getPermissions({
+  const permissions = await getPermissions({
     wsId,
   });
+
+  if (!permissions) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { withoutPermission } = permissions;
 
   if (withoutPermission('delete_transactions')) {
     return NextResponse.json(

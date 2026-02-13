@@ -4,6 +4,7 @@ import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import { transformInvoiceSearchResults } from '@tuturuuu/utils/finance/transform-invoice-results';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { z } from 'zod';
@@ -109,15 +110,18 @@ export default async function InvoicesPage({
   const resolvedSearchParams = await searchParams;
 
   const workspace = await getWorkspace(id);
+  if (!workspace) notFound();
   const wsId = workspace.id;
   const [initialData, weekStartsOn] = await Promise.all([
     getInitialData(wsId, resolvedSearchParams),
     getWeekStartsOn(wsId),
   ]);
 
-  const { containsPermission } = await getPermissions({
+  const permissions = await getPermissions({
     wsId,
   });
+  if (!permissions) notFound();
+  const { containsPermission } = permissions;
 
   const canExportFinanceData = containsPermission('export_finance_data');
 

@@ -49,7 +49,9 @@ export default async function EmailBlacklistPage({
       {async ({ wsId, locale }) => {
         const t = await getTranslations();
 
-        const { containsPermission } = await getPermissions({ wsId });
+        const permissions = await getPermissions({ wsId });
+if (!permissions) notFound();
+const { containsPermission } = permissions;
         const canViewInfrastructure = containsPermission('view_infrastructure');
         if (!canViewInfrastructure) {
           notFound();

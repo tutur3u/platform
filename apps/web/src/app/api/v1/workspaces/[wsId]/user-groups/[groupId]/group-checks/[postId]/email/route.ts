@@ -71,9 +71,13 @@ export async function POST(
       `[POST /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email] Request received`
     );
 
-    const { withoutPermission } = await getPermissions({
+    const permissions = await getPermissions({
       wsId,
     });
+if (!permissions) {
+  return Response.json({ error: 'Not found' }, { status: 404 });
+}
+const { withoutPermission } = permissions;
 
     if (withoutPermission('send_user_group_post_emails')) {
       console.log(

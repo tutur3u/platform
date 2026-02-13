@@ -10,9 +10,15 @@ interface Params {
 export async function GET(_: Request, { params }: Params) {
   const supabase = await createClient();
   const { wsId } = await params;
-  const { withoutPermission } = await getPermissions({
+  const permissions = await getPermissions({
     wsId,
   });
+
+  if (!permissions) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { withoutPermission } = permissions;
 
   // TODO: Migrate to another permission
   if (withoutPermission('manage_finance')) {
@@ -51,9 +57,15 @@ const TagSchema = z.object({
 export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
   const { wsId } = await params;
-  const { withoutPermission } = await getPermissions({
+  const permissions = await getPermissions({
     wsId,
   });
+
+  if (!permissions) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { withoutPermission } = permissions;
 
   // TODO: Migrate to another permission
   if (withoutPermission('manage_finance')) {

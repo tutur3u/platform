@@ -4,6 +4,7 @@ import type { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/m
 import StatisticCard from '@tuturuuu/ui/finance/statistics/card';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import dayjs from 'dayjs';
+import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
 const enabled = true;
@@ -36,9 +37,11 @@ export default async function MonthlyExpenseStatistics({
       })
     : { data: 0 };
 
-  const { containsPermission } = await getPermissions({
+  const permissions = await getPermissions({
     wsId,
   });
+  if (!permissions) notFound();
+  const { containsPermission } = permissions;
 
   if (!enabled || !containsPermission('manage_finance')) return null;
 

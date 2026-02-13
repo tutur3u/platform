@@ -5,7 +5,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { permissions, totalPermissions } from '@tuturuuu/utils/permissions';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
@@ -38,9 +38,11 @@ export default async function WorkspaceRolesPage({
       {async ({ wsId }) => {
         const supabase = await createClient();
 
-        const { withoutPermission } = await getPermissions({
+        const workspacePermissions = await getPermissions({
           wsId,
         });
+        if (!workspacePermissions) notFound();
+        const { withoutPermission } = workspacePermissions;
 
         if (withoutPermission('manage_workspace_roles'))
           redirect(`/${wsId}/settings`);

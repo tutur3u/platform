@@ -24,7 +24,9 @@ export default async function UserGroupDetailsPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, groupId, locale }) => {
-        const { containsPermission } = await getPermissions({ wsId });
+        const permissions = await getPermissions({ wsId });
+if (!permissions) notFound();
+const { containsPermission } = permissions;
         const canUpdateUserGroups = containsPermission('update_user_groups');
 
         const group = await getData(wsId, groupId);

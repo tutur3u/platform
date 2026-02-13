@@ -9,6 +9,7 @@ export default async function ServerMenu() {
     data: { user: sbUser },
   } = await supabase.auth.getUser();
 
-  const user = await getCurrentUser(true);
+  const user = await getCurrentUser();
+
   return <Menu sbUser={sbUser} user={user} />;
 }

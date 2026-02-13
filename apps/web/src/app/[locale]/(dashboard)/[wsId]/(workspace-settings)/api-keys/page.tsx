@@ -7,7 +7,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { getPermissions, verifySecret } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { apiKeyColumns } from './columns';
@@ -48,9 +48,11 @@ export default async function WorkspaceApiKeysPage({
         )
           redirect(`/${wsId}/settings`);
 
-        const { withoutPermission } = await getPermissions({
+        const permissions = await getPermissions({
           wsId,
         });
+if (!permissions) notFound();
+const { withoutPermission } = permissions;
 
         if (withoutPermission('manage_api_keys')) redirect(`/${wsId}/settings`);
 

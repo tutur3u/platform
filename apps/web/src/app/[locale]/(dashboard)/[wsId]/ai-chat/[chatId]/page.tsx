@@ -6,7 +6,7 @@ import {
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import Chat from '../chat';
 import { getChats } from '../helper';
 
@@ -28,10 +28,11 @@ interface Props {
 
 export default async function AIPage({ params, searchParams }: Props) {
   const { wsId, chatId } = await params;
-  await verifyHasSecrets(wsId, ['ENABLE_CHAT'], `/${wsId}`);
-  const { withoutPermission } = await getPermissions({
-    wsId,
-  });
+  const hasSecrets = await verifyHasSecrets(wsId, ['ENABLE_CHAT']);
+  if (!hasSecrets) redirect(`/${wsId}`);
+  const permissions = await getPermissions({ wsId });
+if (!permissions) notFound();
+const { withoutPermission } = permissions;
 
   if (withoutPermission('ai_chat')) notFound();
   if (!chatId) notFound();

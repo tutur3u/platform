@@ -1,6 +1,7 @@
 import { MeetTogetherPage } from '@tuturuuu/ui/legacy/meet/page';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Plans',
@@ -25,6 +26,7 @@ export default async function TumeetPage({
 }: TumeetPageProps) {
   const { wsId: id } = await params;
   const workspace = await getWorkspace(id);
+if (!workspace) notFound();
   const wsId = workspace?.id;
 
   return (

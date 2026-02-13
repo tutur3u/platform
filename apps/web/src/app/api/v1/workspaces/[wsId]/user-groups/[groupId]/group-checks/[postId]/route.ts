@@ -17,7 +17,11 @@ export async function PUT(req: Request, { params }: Params) {
   const { wsId, groupId, postId } = await params;
 
   // Check permissions
-  const { withoutPermission } = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId });
+if (!permissions) {
+  return Response.json({ error: 'Not found' }, { status: 404 });
+}
+const { withoutPermission } = permissions;
   const canUpdateUserGroupsPosts = !withoutPermission(
     'update_user_groups_posts'
   );

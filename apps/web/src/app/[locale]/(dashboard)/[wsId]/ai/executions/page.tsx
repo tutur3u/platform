@@ -5,7 +5,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { CostExport } from './components/cost-export';
@@ -41,9 +41,11 @@ export default async function WorkspaceAIExecutionsPage({
       {async ({ wsId, locale }) => {
         const t = await getTranslations();
 
-        const { withoutPermission } = await getPermissions({
+        const permissions = await getPermissions({
           wsId,
         });
+if (!permissions) notFound();
+const { withoutPermission } = permissions;
 
         if (
           wsId !== ROOT_WORKSPACE_ID ||

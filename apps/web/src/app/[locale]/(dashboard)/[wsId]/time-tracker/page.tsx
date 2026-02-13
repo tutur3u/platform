@@ -191,8 +191,10 @@ async function TimerCardWrapper({
   timerDataPromise: Promise<Awaited<ReturnType<typeof fetchTimerData>>>;
   wsId: string;
   userId: string;
-  workspace: Awaited<
-    ReturnType<typeof import('@tuturuuu/utils/workspace-helper').getWorkspace>
+  workspace: NonNullable<
+    Awaited<
+      ReturnType<typeof import('@tuturuuu/utils/workspace-helper').getWorkspace>
+    >
   >;
 }) {
   const timerData = await timerDataPromise;

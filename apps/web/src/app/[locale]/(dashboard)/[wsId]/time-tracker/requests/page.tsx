@@ -4,6 +4,7 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { RequestsClient } from './requests-client';
+import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Time Tracking Requests',
@@ -103,7 +104,9 @@ export default async function TimeTrackerRequestsPage({ params }: PageProps) {
           );
         }
 
-        const { containsPermission } = await getPermissions({ wsId });
+        const permissions = await getPermissions({ wsId });
+if (!permissions) notFound();
+const { containsPermission } = permissions;
 
         const currentUser = await getCurrentUser();
 

@@ -1,6 +1,7 @@
 import WalletDetailsPage from '@tuturuuu/ui/finance/wallets/walletId/wallet-details-page';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Wallet Details',
@@ -27,6 +28,7 @@ export default async function WorkspaceWalletDetailsPage({
   const { wsId: id, walletId } = await params;
   const sp = await searchParams;
   const workspace = await getWorkspace(id);
+if (!workspace) notFound();
   const wsId = workspace.id;
 
   return (

@@ -4,6 +4,7 @@ import {
   getWorkspaceConfig,
 } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Recurring Transactions',
@@ -26,6 +27,7 @@ export default async function WorkspaceRecurringTransactionsPage({
     getWorkspace(id),
     getWorkspaceConfig(id, 'DEFAULT_CURRENCY'),
   ]);
+  if (!workspace) notFound();
   const wsId = workspace.id;
 
   return <RecurringTransactionsPage wsId={wsId} currency={currency ?? 'USD'} />;

@@ -1,14 +1,17 @@
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
+import { notFound } from 'next/navigation';
 
 export async function InventoryCategoryStatistics({ wsId }: { wsId: string }) {
   const t = await getTranslations();
 
   const enabled = true;
 
-  const { containsPermission } = await getPermissions({
+  const permissions = await getPermissions({
     wsId,
   });
+if (!permissions) notFound();
+const { containsPermission } = permissions;
 
   if (!enabled || !containsPermission('view_inventory')) return null;
 

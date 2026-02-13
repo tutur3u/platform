@@ -6,7 +6,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { CustomDataTable } from '@/components/custom-data-table';
@@ -40,12 +40,15 @@ export default async function WorkspaceReportsSettingsPage({
   const { wsId: id } = await params;
 
   const workspace = await getWorkspace(id);
+if (!workspace) notFound();
   const wsId = workspace?.id;
 
-  const { withoutPermission } = await getPermissions({
+  const permissions = await getPermissions({
     wsId,
     redirectTo: `/${wsId}/settings`,
   });
+if (!permissions) notFound();
+const { withoutPermission } = permissions;
 
   if (withoutPermission('manage_user_report_templates'))
     redirect(`/${wsId}/settings`);

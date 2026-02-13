@@ -9,6 +9,7 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { secretColumns } from './columns';
 import SecretForm from './form';
+import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Secrets',
@@ -33,13 +34,16 @@ export default async function WorkspaceSecretsPage({
 }: Props) {
   const { wsId: id } = await params;
   const workspace = await getWorkspace(id);
+if (!workspace) notFound();
   const wsId = workspace?.id;
 
   // Enforce permission check - only users with manage_workspace_secrets can access
-  const { withoutPermission } = await getPermissions({
+  const permissions = await getPermissions({
     wsId: ROOT_WORKSPACE_ID,
     enableNotFound: true,
   });
+if (!permissions) notFound();
+const { withoutPermission } = permissions;
 
   if (withoutPermission('manage_workspace_secrets')) {
     throw new Error(

@@ -16,12 +16,14 @@ interface Props {
 }
 
 export default async function TransactionsPage({ wsId }: Props) {
-  const [t, workspace, { containsPermission }, currency] = await Promise.all([
+  const [t, workspace, permissions, currency] = await Promise.all([
     getTranslations(),
     getWorkspace(wsId),
     getPermissions({ wsId }),
     getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY'),
   ]);
+  if (!workspace || !permissions) return notFound();
+  const { containsPermission } = permissions;
 
   const canViewTransactions = containsPermission('view_transactions');
   const canExportFinanceData = containsPermission('export_finance_data');

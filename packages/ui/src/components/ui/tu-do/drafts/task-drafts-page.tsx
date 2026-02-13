@@ -3,7 +3,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { DraftsPage } from '@tuturuuu/ui/tu-do/drafts/drafts-page';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
 /**
@@ -47,11 +47,13 @@ export default async function TaskDraftsPage({ params, config = {} }: Props) {
   if (!user) redirect('/login');
 
   const workspace = await getWorkspace(id);
-  if (!workspace) redirect('/');
+  if (!workspace) notFound();
 
   const wsId = workspace.id;
 
-  const { withoutPermission } = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId });
+  if (!permissions) notFound();
+  const { withoutPermission } = permissions;
   if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
 
   const t = await getTranslations();

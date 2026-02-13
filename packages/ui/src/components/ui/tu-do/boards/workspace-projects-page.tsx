@@ -10,7 +10,7 @@ import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { EnhancedBoardsView } from './enhanced-boards-view';
 import { TaskBoardForm } from './form';
@@ -136,11 +136,14 @@ export default async function WorkspaceProjectsPage({
   const { wsId: id } = await params;
   const sp = await searchParams;
   const workspace = await getWorkspace(id);
-  const wsId = workspace?.id;
+  if (!workspace) notFound();
+  const wsId = workspace.id;
 
-  const { withoutPermission } = await getPermissions({
+  const permissions = await getPermissions({
     wsId,
   });
+  if (!permissions) notFound();
+  const { withoutPermission } = permissions;
 
   if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
 

@@ -87,9 +87,13 @@ export async function PATCH(
       );
     }
 
-    const { withoutPermission, containsPermission } = await getPermissions({
+    const permissions = await getPermissions({
       wsId,
     });
+if (!permissions) {
+  return Response.json({ error: 'Not found' }, { status: 404 });
+}
+const { withoutPermission, containsPermission } = permissions;
 
     const actionData = validation.data;
 
