@@ -7,7 +7,7 @@ import type { BoardTemplate } from '@tuturuuu/ui/tu-do/templates/types';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
 /**
@@ -122,11 +122,13 @@ export default async function TaskTemplatesPage({
   if (!user) redirect('/login');
 
   const workspace = await getWorkspace(id);
-  if (!workspace) redirect('/');
+  if (!workspace) notFound();
 
   const wsId = workspace.id;
 
-  const { withoutPermission } = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId });
+  if (!permissions) notFound();
+  const { withoutPermission } = permissions;
   if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
 
   const { templates } = await getTemplates(wsId);

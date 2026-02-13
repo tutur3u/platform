@@ -42,9 +42,13 @@ export async function GET(
     }
 
     // Check for view_workforce or manage_workforce permission
-    const { containsPermission } = await getPermissions({
+    const permissions = await getPermissions({
       wsId: normalizedWsId,
     });
+    if (!permissions) {
+      return Response.json({ error: 'Not found' }, { status: 404 });
+    }
+    const { containsPermission } = permissions;
 
     // Also allow users to view their own profile
     const { data: isLinkedUser } = await supabase
@@ -161,9 +165,13 @@ export async function PATCH(
     }
 
     // Check for manage_workforce permission
-    const { containsPermission } = await getPermissions({
+    const permissions = await getPermissions({
       wsId: normalizedWsId,
     });
+    if (!permissions) {
+      return Response.json({ error: 'Not found' }, { status: 404 });
+    }
+    const { containsPermission } = permissions;
 
     if (!containsPermission('manage_workforce')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -243,9 +251,13 @@ export async function DELETE(
     }
 
     // Check for manage_workforce permission
-    const { containsPermission } = await getPermissions({
+    const permissions = await getPermissions({
       wsId: normalizedWsId,
     });
+    if (!permissions) {
+      return Response.json({ error: 'Not found' }, { status: 404 });
+    }
+    const { containsPermission } = permissions;
 
     if (!containsPermission('manage_workforce')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

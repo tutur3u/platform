@@ -8,6 +8,7 @@ import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { batchColumns } from '@/data/columns/batches';
+import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Batches',
@@ -35,9 +36,11 @@ export default async function WorkspaceBatchesPage({
       {async ({ wsId }) => {
         const t = await getTranslations();
 
-        const { containsPermission } = await getPermissions({
+        const permissions = await getPermissions({
           wsId,
         });
+        if (!permissions) notFound();
+        const { containsPermission } = permissions;
 
         if (!containsPermission('view_inventory')) {
           return (

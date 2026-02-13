@@ -72,9 +72,13 @@ async function getDataWithApiKey({
 async function getDataFromSession({ wsId }: { wsId: string }) {
   const supabase = await createClient();
 
-  const { withoutPermission } = await getPermissions({
+  const permissions = await getPermissions({
     wsId,
   });
+  if (!permissions) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+  const { withoutPermission } = permissions;
 
   if (withoutPermission('view_invoices')) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });

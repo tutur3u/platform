@@ -39,8 +39,12 @@ export default async function TimeTrackerHistoryPage({
         let canBypassTimeTrackingRequestApproval = false;
 
         if (!isPersonal) {
-          const [{ containsPermission }, resolvedCurrentUser] =
-            await Promise.all([getPermissions({ wsId }), getCurrentUser()]);
+          const [permissions, resolvedCurrentUser] = await Promise.all([
+            getPermissions({ wsId }),
+            getCurrentUser(),
+          ]);
+          if (!permissions) notFound();
+          const { containsPermission } = permissions;
 
           currentUser = resolvedCurrentUser;
           canManageTimeTrackingRequests = containsPermission(

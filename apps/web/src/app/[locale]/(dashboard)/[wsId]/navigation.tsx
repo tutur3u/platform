@@ -103,6 +103,7 @@ import {
   getSecret,
   getSecrets,
 } from '@tuturuuu/utils/workspace-helper';
+import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import type { NavLink } from '@/components/navigation';
 import { DEV_MODE } from '@/constants/common';
@@ -133,6 +134,7 @@ export async function WorkspaceNavigationLinks({
     supabase.auth.getUser(),
     getSecrets({ wsId: resolvedWorkspaceId, forceAdmin: true }),
   ]);
+  if (!secrets) notFound();
 
   // Helper to check secrets from cached list
   const hasSecret = (name: string, value: string) =>
@@ -199,12 +201,14 @@ export async function WorkspaceNavigationLinks({
       .eq('id', 'finance_show_invoices')
       .maybeSingle(),
   ]);
+  if (!workspacePermissions) notFound();
 
   const { withoutPermission } = workspacePermissions;
 
   // Get root permissions only if user is a root member
   const withoutRootPermission = rootMemberData.data
-    ? (await getPermissions({ wsId: ROOT_WORKSPACE_ID })).withoutPermission
+    ? ((await getPermissions({ wsId: ROOT_WORKSPACE_ID }))?.withoutPermission ??
+      (() => true))
     : () => true;
 
   const allowDiscordIntegrations =

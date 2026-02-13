@@ -14,7 +14,11 @@ export async function PUT(req: Request, { params }: Params) {
   const data = await req.json();
   const { categoryId: id, wsId } = await params;
 
-  const { containsPermission } = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId });
+  if (!permissions) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+  const { containsPermission } = permissions;
   if (!containsPermission('update_inventory')) {
     return NextResponse.json(
       { message: 'Insufficient permissions to update inventory' },
@@ -42,7 +46,11 @@ export async function DELETE(_: Request, { params }: Params) {
   const supabase = await createClient();
   const { categoryId: id, wsId } = await params;
 
-  const { containsPermission } = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId });
+  if (!permissions) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+  const { containsPermission } = permissions;
   if (!containsPermission('delete_inventory')) {
     return NextResponse.json(
       { message: 'Insufficient permissions to delete inventory' },

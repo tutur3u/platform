@@ -136,6 +136,7 @@ export default async function TimeTrackerPage({
       {async ({ workspace, wsId, locale, isPersonal }) => {
         const user = await getCurrentSupabaseUser();
         if (!user) return notFound();
+        if (!workspace) return notFound();
 
         // Fetch timer data
         const timerDataPromise = fetchTimerData(user.id, wsId);
@@ -191,8 +192,10 @@ async function TimerCardWrapper({
   timerDataPromise: Promise<Awaited<ReturnType<typeof fetchTimerData>>>;
   wsId: string;
   userId: string;
-  workspace: Awaited<
-    ReturnType<typeof import('@tuturuuu/utils/workspace-helper').getWorkspace>
+  workspace: NonNullable<
+    Awaited<
+      ReturnType<typeof import('@tuturuuu/utils/workspace-helper').getWorkspace>
+    >
   >;
 }) {
   const timerData = await timerDataPromise;

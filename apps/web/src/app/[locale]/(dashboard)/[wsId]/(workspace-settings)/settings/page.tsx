@@ -19,6 +19,7 @@ import BasicInfo from './basic-info';
 import WorkspaceLogoSettings from './logo';
 import RemoveYourself from './remove-yourself';
 import Security from './security';
+import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Settings',
@@ -38,13 +39,17 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
 
   const user = await getCurrentUser();
   const ws = await getWorkspace(id);
+  if (!ws) notFound();
   const wsId = ws?.id;
 
-  const { containsPermission } = await getPermissions({
+  const permissions = await getPermissions({
     wsId,
   });
+  if (!permissions) notFound();
+  const { containsPermission } = permissions;
 
   const secrets = await getSecrets({ wsId });
+  if (!secrets) notFound();
   const disableInvite = await verifyHasSecrets(wsId, ['DISABLE_INVITE']);
 
   const preventWorkspaceDeletion =

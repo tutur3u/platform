@@ -6,6 +6,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { secretColumns } from './columns';
 import SecretForm from './form';
@@ -33,13 +34,13 @@ export default async function WorkspaceSecretsPage({
 }: Props) {
   const { wsId: id } = await params;
   const workspace = await getWorkspace(id);
+  if (!workspace) notFound();
   const wsId = workspace?.id;
 
   // Enforce permission check - only users with manage_workspace_secrets can access
-  const { withoutPermission } = await getPermissions({
-    wsId: ROOT_WORKSPACE_ID,
-    enableNotFound: true,
-  });
+  const permissions = await getPermissions({ wsId: ROOT_WORKSPACE_ID });
+  if (!permissions) notFound();
+  const { withoutPermission } = permissions;
 
   if (withoutPermission('manage_workspace_secrets')) {
     throw new Error(

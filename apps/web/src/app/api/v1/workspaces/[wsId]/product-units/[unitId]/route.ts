@@ -13,7 +13,11 @@ export async function PUT(req: Request, { params }: Params) {
   const { wsId, unitId: id } = await params;
 
   // Check permissions
-  const { containsPermission } = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId });
+  if (!permissions) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+  const { containsPermission } = permissions;
   if (!containsPermission('update_inventory')) {
     return NextResponse.json(
       { message: 'Insufficient permissions to update units' },
@@ -44,7 +48,11 @@ export async function DELETE(_: Request, { params }: Params) {
   const { wsId, unitId: id } = await params;
 
   // Check permissions
-  const { containsPermission } = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId });
+  if (!permissions) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+  const { containsPermission } = permissions;
   if (!containsPermission('delete_inventory')) {
     return NextResponse.json(
       { message: 'Insufficient permissions to delete units' },

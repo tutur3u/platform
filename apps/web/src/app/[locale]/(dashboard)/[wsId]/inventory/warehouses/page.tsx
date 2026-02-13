@@ -9,6 +9,7 @@ import { CustomDataTable } from '@/components/custom-data-table';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { productWarehouseColumns } from './columns';
 import { ProductWarehouseForm } from './form';
+import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Warehouses',
@@ -36,9 +37,11 @@ export default async function WorkspaceWarehousesPage({
       {async ({ wsId }) => {
         const t = await getTranslations();
 
-        const { withoutPermission, containsPermission } = await getPermissions({
+        const permissions = await getPermissions({
           wsId,
         });
+        if (!permissions) notFound();
+        const { withoutPermission, containsPermission } = permissions;
 
         if (withoutPermission('view_inventory')) {
           return (

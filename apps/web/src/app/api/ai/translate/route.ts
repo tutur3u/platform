@@ -26,9 +26,13 @@ export async function POST(req: Request) {
       );
     }
 
-    const { withoutPermission } = await getPermissions({
+    const permissions = await getPermissions({
       wsId: ROOT_WORKSPACE_ID,
     });
+    if (!permissions) {
+      return Response.json({ error: 'Not found' }, { status: 404 });
+    }
+    const { withoutPermission } = permissions;
 
     if (withoutPermission('manage_workspace_roles')) {
       console.error(

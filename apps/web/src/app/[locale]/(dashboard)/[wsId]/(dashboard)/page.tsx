@@ -20,6 +20,7 @@ import TasksAssignedToMe from './tasks/tasks-assigned-to-me';
 import TimeTrackingMetrics from './time-tracker/time-tracking-metrics';
 import UserGroupQuickActions from './user-groups/quick-actions';
 import VoiceAssistantCard from './voice-assistant-card';
+import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Workspace Details',
@@ -49,9 +50,11 @@ export default async function WorkspaceHomePage({ params }: Props) {
           return <LoadingStatisticCard />;
         }
 
-        const { withoutPermission } = await getPermissions({
+        const permissions = await getPermissions({
           wsId, // This is the validated UUID, not the legacy identifier
         });
+        if (!permissions) notFound();
+        const { withoutPermission } = permissions;
 
         const isInternalUser = isValidTuturuuuEmail(currentUser?.email);
         const isInternalWorkspace = wsId === ROOT_WORKSPACE_ID;

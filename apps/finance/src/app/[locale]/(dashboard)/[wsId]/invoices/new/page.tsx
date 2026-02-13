@@ -1,5 +1,6 @@
 import NewInvoicePage from '@tuturuuu/ui/finance/invoices/new-invoice-page';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
 export default async function WorkspaceNewInvoicePage({ params }: Props) {
   const { wsId: id } = await params;
   const workspace = await getWorkspace(id);
+  if (!workspace) notFound();
 
   return (
     <Suspense>

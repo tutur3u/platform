@@ -1,6 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { notFound } from 'next/navigation';
 import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
 import { CalendarSidebar } from './sidebar';
 
@@ -21,7 +22,8 @@ export default async function TasksSidebar({
 
   // Resolve workspace ID (handles "personal", "internal", etc.)
   const workspace = await getWorkspace(wsId);
-  const resolvedWsId = workspace?.id;
+  if (!workspace) notFound();
+  const resolvedWsId = workspace.id;
 
   // Use the same RPC as the tasks page to get accessible tasks
   const supabase = await createClient();

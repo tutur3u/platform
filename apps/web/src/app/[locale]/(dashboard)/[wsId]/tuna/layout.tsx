@@ -14,7 +14,7 @@ export default async function TunaLayout({ children, params }: LayoutProps) {
   const workspace = await getWorkspace(id);
 
   // Tuna is only available in personal workspaces
-  if (!workspace.personal) {
+  if (!workspace?.personal) {
     redirect(`/personal/tuna`);
   }
 

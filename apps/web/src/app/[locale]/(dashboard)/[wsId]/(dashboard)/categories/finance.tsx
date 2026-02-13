@@ -3,6 +3,7 @@ import {
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
+import { notFound } from 'next/navigation';
 
 export async function FinanceCategoryStatistics({ wsId }: { wsId: string }) {
   const t = await getTranslations();
@@ -11,9 +12,11 @@ export async function FinanceCategoryStatistics({ wsId }: { wsId: string }) {
   const enabled =
     forceEnable || (await verifyHasSecrets(wsId, ['ENABLE_FINANCE']));
 
-  const { containsPermission } = await getPermissions({
+  const permissions = await getPermissions({
     wsId,
   });
+  if (!permissions) notFound();
+  const { containsPermission } = permissions;
 
   if (!enabled || !containsPermission('manage_finance')) return null;
 

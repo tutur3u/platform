@@ -9,6 +9,7 @@ import {
   getWorkspace,
   getWorkspaceConfig,
 } from '@tuturuuu/utils/workspace-helper';
+import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
@@ -30,12 +31,14 @@ export default async function WalletsPage({
   pageSize,
   financePrefix = '/finance',
 }: Props) {
-  const [t, { containsPermission }, currency, workspace] = await Promise.all([
+  const [t, permissions, currency, workspace] = await Promise.all([
     getTranslations(),
     getPermissions({ wsId }),
     getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY'),
     getWorkspace(wsId),
   ]);
+  if (!permissions || !workspace) notFound();
+  const { containsPermission } = permissions;
 
   const canCreateWallets = containsPermission('create_wallets');
   const canUpdateWallets = containsPermission('update_wallets');

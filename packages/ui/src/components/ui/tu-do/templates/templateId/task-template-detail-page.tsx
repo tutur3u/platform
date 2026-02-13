@@ -111,11 +111,13 @@ export default async function TaskTemplateDetailPage({ params }: Props) {
   if (!user) redirect('/login');
 
   const workspace = await getWorkspace(id);
-  if (!workspace) redirect('/');
+  if (!workspace) notFound();
 
   const wsId = workspace.id;
 
-  const { withoutPermission } = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId });
+  if (!permissions) notFound();
+  const { withoutPermission } = permissions;
   if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
 
   const template = await getTemplate(templateId);

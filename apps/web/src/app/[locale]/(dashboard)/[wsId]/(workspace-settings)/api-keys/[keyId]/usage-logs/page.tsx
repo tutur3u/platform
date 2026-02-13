@@ -14,7 +14,7 @@ import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { usageLogsColumns } from './columns';
@@ -49,9 +49,11 @@ export default async function ApiKeyUsageLogsPage({
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
-        const { withoutPermission } = await getPermissions({
+        const permissions = await getPermissions({
           wsId,
         });
+        if (!permissions) notFound();
+        const { withoutPermission } = permissions;
 
         if (withoutPermission('manage_api_keys')) redirect(`/${wsId}/settings`);
 

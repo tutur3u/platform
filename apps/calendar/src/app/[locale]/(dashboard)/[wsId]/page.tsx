@@ -4,7 +4,7 @@ import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import CalendarClientPage from './client';
 
 export const metadata: Metadata = {
@@ -22,7 +22,12 @@ interface PageProps {
 export default async function CalendarPage({ params }: PageProps) {
   const { wsId, locale } = await params;
   const workspace = await getWorkspace(wsId);
-  const { withoutPermission } = await getPermissions({ wsId });
+  if (!workspace) notFound();
+
+  const permissions = await getPermissions({ wsId });
+  if (!permissions) notFound();
+
+  const { withoutPermission } = permissions;
 
   const supabase = await createClient();
 

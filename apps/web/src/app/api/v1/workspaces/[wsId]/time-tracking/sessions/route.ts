@@ -452,9 +452,13 @@ export async function POST(
       }
 
       // Check if user has permission to bypass approval
-      const { containsPermission } = await getPermissions({
+      const permissions = await getPermissions({
         wsId: normalizedWsId,
       });
+      if (!permissions) {
+        return Response.json({ error: 'Not found' }, { status: 404 });
+      }
+      const { containsPermission } = permissions;
       const canBypass = containsPermission(
         'bypass_time_tracking_request_approval'
       );

@@ -46,11 +46,12 @@ export default async function WorkspaceUsersPage({
   const sp = await searchParams;
 
   const workspace = await getWorkspace(id);
+  if (!workspace) notFound();
   const wsId = workspace.id;
 
-  const { containsPermission } = await getPermissions({
-    wsId,
-  });
+  const workspacePermissions = await getPermissions({ wsId });
+  if (!workspacePermissions) notFound();
+  const { containsPermission } = workspacePermissions;
 
   const hasPrivateInfo = containsPermission('view_users_private_info');
   const hasPublicInfo = containsPermission('view_users_public_info');

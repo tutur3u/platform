@@ -42,7 +42,9 @@ export default async function UserGroupDetailsPage({
     <WorkspaceWrapper params={params}>
       {async ({ wsId, groupId }) => {
         const t = await getTranslations();
-        const { containsPermission } = await getPermissions({ wsId });
+        const permissions = await getPermissions({ wsId });
+        if (!permissions) notFound();
+        const { containsPermission } = permissions;
 
         const canViewUserGroups = containsPermission('view_user_groups');
         if (!canViewUserGroups) {

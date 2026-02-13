@@ -5,6 +5,7 @@ import {
   getWorkspaceConfig,
 } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Finance',
@@ -25,6 +26,7 @@ export default async function WorkspaceFinancePage({
   const { wsId: id } = await params;
 
   const [sp, workspace] = await Promise.all([searchParams, getWorkspace(id)]);
+  if (!workspace) notFound();
   const wsId = workspace.id;
 
   // Fetch currency from workspace config

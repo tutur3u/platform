@@ -1,7 +1,7 @@
 import { Navigation, type NavLink } from '@tuturuuu/ui/custom/navigation';
 import { QuickActions } from '@tuturuuu/ui/finance/shared/quick-actions';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import type React from 'react';
 
@@ -21,9 +21,11 @@ export default async function FinanceLayout({
   const { wsId } = await params;
   const t = await getTranslations('workspace-finance-tabs');
 
-  const { withoutPermission } = await getPermissions({
+  const permissions = await getPermissions({
     wsId,
   });
+  if (!permissions) notFound();
+  const { withoutPermission } = permissions;
 
   if (withoutPermission('manage_finance')) redirect(`/${wsId}`);
 

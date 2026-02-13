@@ -41,11 +41,12 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
   const t = await getTranslations('user-data-table');
   const { wsId: id, userId } = await params;
   const workspace = await getWorkspace(id);
+  if (!workspace) notFound();
   const wsId = workspace.id;
 
-  const { containsPermission } = await getPermissions({
-    wsId,
-  });
+  const permissions = await getPermissions({ wsId });
+  if (!permissions) notFound();
+  const { containsPermission } = permissions;
 
   const hasPrivateInfo = containsPermission('view_users_private_info');
   const hasPublicInfo = containsPermission('view_users_public_info');

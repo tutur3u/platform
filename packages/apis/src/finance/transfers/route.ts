@@ -32,7 +32,13 @@ const TransferSchema = z
 export async function POST(req: Request, { params }: Params) {
   const { wsId } = await params;
 
-  const { withoutPermission } = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId });
+
+  if (!permissions) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { withoutPermission } = permissions;
 
   if (withoutPermission('create_transactions')) {
     return NextResponse.json(

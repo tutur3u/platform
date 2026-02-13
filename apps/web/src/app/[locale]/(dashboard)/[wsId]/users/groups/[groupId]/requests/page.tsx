@@ -15,7 +15,9 @@ export default async function GroupRequestsPage({
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, groupId }) => {
-        const { containsPermission } = await getPermissions({ wsId });
+        const permissions = await getPermissions({ wsId });
+        if (!permissions) notFound();
+        const { containsPermission } = permissions;
         const canApproveReports = containsPermission('approve_reports');
         const canApprovePosts = containsPermission('approve_posts');
 

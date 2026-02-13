@@ -42,7 +42,11 @@ export async function POST(request: NextRequest) {
   }
 
   // Permission check
-  const { withoutPermission } = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId });
+  if (!permissions) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+  const { withoutPermission } = permissions;
   if (withoutPermission('manage_calendar')) {
     return NextResponse.json(
       { error: 'You do not have permission to manage calendar' },

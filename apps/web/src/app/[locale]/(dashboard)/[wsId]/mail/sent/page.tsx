@@ -7,6 +7,7 @@ import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
+import { notFound } from 'next/navigation';
 import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import MailClientWrapper from '../client';
 
@@ -32,6 +33,7 @@ interface Props {
 export default async function MailPage({ params, searchParams }: Props) {
   const { wsId: id } = await params;
   const workspace = await getWorkspace(id);
+  if (!workspace) notFound();
   const wsId = workspace?.id;
 
   const searchParamsData = searchParams ? await searchParams : {};

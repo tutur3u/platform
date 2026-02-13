@@ -16,9 +16,10 @@ interface Params {
   }>;
 }
 
-const normalizeWorkspaceId = async (wsId: string) => {
+const normalizeWorkspaceId = async (wsId: string): Promise<string | null> => {
   if (wsId.toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
     const workspace = await getWorkspace(wsId);
+    if (!workspace) return null;
     return workspace.id;
   }
 
@@ -31,6 +32,9 @@ export async function GET(request: NextRequest, { params }: Params) {
   const sbAdmin = await createAdminClient();
 
   const wsId = await normalizeWorkspaceId(id);
+  if (!wsId) {
+    return NextResponse.json({ error: 'Workspace not found' }, { status: 404 });
+  }
 
   // Get status filter from query params
   const searchParams = request.nextUrl.searchParams;

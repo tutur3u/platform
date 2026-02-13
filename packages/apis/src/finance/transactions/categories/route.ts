@@ -12,9 +12,15 @@ export async function GET(_: Request, { params }: Params) {
   const supabase = await createClient();
   const { wsId } = await params;
 
-  const { withoutPermission } = await getPermissions({
+  const permissions = await getPermissions({
     wsId,
   });
+
+  if (!permissions) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { withoutPermission } = permissions;
 
   if (withoutPermission('view_transactions')) {
     return NextResponse.json(
@@ -45,9 +51,15 @@ export async function POST(req: Request, { params }: Params) {
   const { wsId } = await params;
   const data = await req.json();
 
-  const { withoutPermission } = await getPermissions({
+  const permissions = await getPermissions({
     wsId,
   });
+
+  if (!permissions) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { withoutPermission } = permissions;
 
   if (withoutPermission('create_transactions')) {
     return NextResponse.json(

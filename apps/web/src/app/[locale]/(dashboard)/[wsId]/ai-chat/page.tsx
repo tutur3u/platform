@@ -1,10 +1,10 @@
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import {
   getPermissions,
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { notFound, redirect } from 'next/navigation';
 import Chat from './chat';
 import { getChats } from './helper';
 
@@ -28,10 +28,14 @@ export default async function AIPage({ params, searchParams }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
-        await verifyHasSecrets(wsId, ['ENABLE_CHAT'], `/${wsId}`);
-        const { withoutPermission } = await getPermissions({
+        const hasSecrets = await verifyHasSecrets(wsId, ['ENABLE_CHAT']);
+        if (!hasSecrets) redirect(`/${wsId}`);
+
+        const permissions = await getPermissions({
           wsId,
         });
+        if (!permissions) notFound();
+        const { withoutPermission } = permissions;
 
         if (withoutPermission('ai_chat')) notFound();
 

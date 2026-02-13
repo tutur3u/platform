@@ -7,9 +7,11 @@ export default async function InfrastructureLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { withoutPermission } = await getPermissions({
+  const permissions = await getPermissions({
     wsId: ROOT_WORKSPACE_ID,
   });
+  if (!permissions) notFound();
+  const { withoutPermission } = permissions;
   if (withoutPermission('view_infrastructure')) notFound();
   return children;
 }

@@ -12,6 +12,7 @@ import { CustomDataTable } from '@/components/custom-data-table';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { getPromotionColumns } from './columns';
 import WorkspaceSettingsForm from './settings-form';
+import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Promotions',
@@ -38,9 +39,11 @@ export default async function WorkspacePromotionsPage({
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
         const t = await getTranslations();
-        const { containsPermission } = await getPermissions({
+        const permissions = await getPermissions({
           wsId,
         });
+        if (!permissions) notFound();
+        const { containsPermission } = permissions;
 
         if (!containsPermission('view_inventory')) {
           return (

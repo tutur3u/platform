@@ -8,6 +8,7 @@ import { TransactionCategoryForm } from '@tuturuuu/ui/finance/transactions/categ
 import { TypeFilterWrapper } from '@tuturuuu/ui/finance/transactions/categories/type-filter-wrapper';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
@@ -20,6 +21,7 @@ export default async function TransactionsCategoriesPage({
   currency = 'USD',
 }: Props) {
   const workspace = await getWorkspace(id);
+  if (!workspace) notFound();
   const wsId = workspace.id;
 
   // Fetch initial data for SSR hydration (first page with default params)

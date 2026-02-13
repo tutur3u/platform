@@ -29,7 +29,13 @@ interface Params {
 export async function GET(_: Request, { params }: Params) {
   const supabase = await createClient();
   const { walletId, wsId } = await params;
-  const { withoutPermission } = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId });
+
+  if (!permissions) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { withoutPermission } = permissions;
 
   if (withoutPermission('view_transactions')) {
     return NextResponse.json(

@@ -8,7 +8,6 @@ import type {
   WorkspaceProductTier,
 } from '@tuturuuu/types';
 import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
-import { notFound, redirect } from 'next/navigation';
 
 import {
   PERSONAL_WORKSPACE_SLUG,
@@ -17,6 +16,30 @@ import {
 } from './constants';
 import { isValidTuturuuuEmail } from './email/client';
 import { permissions as rolePermissions } from './permissions';
+
+export class WorkspaceAuthError extends Error {
+  constructor(message = 'User not authenticated') {
+    super(message);
+    this.name = 'WorkspaceAuthError';
+  }
+}
+
+export class WorkspaceAccessError extends Error {
+  constructor(message = 'Workspace access denied') {
+    super(message);
+    this.name = 'WorkspaceAccessError';
+  }
+}
+
+export class WorkspaceRedirectRequiredError extends Error {
+  public readonly redirectTo: string;
+
+  constructor(redirectTo: string, message = 'Workspace redirect required') {
+    super(message);
+    this.name = 'WorkspaceRedirectRequiredError';
+    this.redirectTo = redirectTo;
+  }
+}
 
 // Structured logging utility
 const logWorkspaceError = (
@@ -136,14 +159,19 @@ export async function getWorkspaceTier(
  *
  * @returns The workspace object with a `joined` boolean indicating membership status.
  *
- * @throws Redirects to `/login` if the user is not authenticated.
- * @throws Calls `notFound()` (throws) if the workspace does not exist or access is denied.
- *         Callers should handle this in a try/catch or expect navigation to 404.
+ * Returns `null` when the user is not authenticated or the workspace cannot be fetched.
+ * Callers are responsible for handling navigation/response behavior.
  */
 export async function getWorkspace(
   id: string,
   options: { useAdmin?: boolean } = {}
-) {
+): Promise<
+  | (Workspace & {
+      joined: boolean;
+      tier: WorkspaceProductTier | null;
+    })
+  | null
+> {
   const supabase = await createClient();
   const sbAdmin = options.useAdmin ? await createAdminClient() : supabase;
 
@@ -151,7 +179,7 @@ export async function getWorkspace(
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect('/login');
+  if (!user) return null;
 
   const queryBuilder = sbAdmin
     .from('workspaces')
@@ -178,9 +206,7 @@ export async function getWorkspace(
       errorDetails: error.details,
     });
 
-    // Return null to let the caller handle the error appropriately
-    // This allows for more graceful error handling in different contexts
-    notFound();
+    return null;
   }
 
   const workspaceJoined = data.workspace_members.some(
@@ -235,7 +261,7 @@ export async function getWorkspaces(options: { useAdmin?: boolean } = {}) {
       errorCode: error.code,
       errorDetails: error.details,
     });
-    notFound();
+    return null;
   }
 
   return data.map((ws) => {
@@ -266,7 +292,7 @@ export async function getWorkspaceInvites() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect('/login');
+  if (!user) return null;
 
   const invitesQuery = supabase
     .from('workspace_invites')
@@ -286,8 +312,7 @@ export async function getWorkspaceInvites() {
     emailInvitesQuery,
   ]);
 
-  if (invites.error || emailInvites?.error)
-    throw invites.error || emailInvites?.error;
+  if (invites.error || emailInvites?.error) return null;
 
   const data = [...invites.data, ...(emailInvites?.data || [])] as Workspace[];
   return data;
@@ -334,9 +359,11 @@ export function enforceRootWorkspace(
   // Check if the workspace is the root workspace
   if (resolvedWorkspaceId === ROOT_WORKSPACE_ID) return;
 
-  // If not, redirect to the provided path or 404
-  if (options.redirectTo) redirect(options.redirectTo);
-  else notFound();
+  if (options.redirectTo) {
+    throw new WorkspaceRedirectRequiredError(options.redirectTo);
+  }
+
+  throw new WorkspaceAccessError('Root workspace required');
 }
 
 export async function enforceRootWorkspaceAdmin(
@@ -354,7 +381,7 @@ export async function enforceRootWorkspaceAdmin(
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect('/login');
+  if (!user) throw new WorkspaceAuthError();
 
   // Check if user is a member of root workspace (membership implies admin)
   const { error } = await supabase
@@ -365,8 +392,11 @@ export async function enforceRootWorkspaceAdmin(
     .single();
 
   if (error) {
-    if (options.redirectTo) redirect(options.redirectTo);
-    else notFound();
+    if (options.redirectTo) {
+      throw new WorkspaceRedirectRequiredError(options.redirectTo);
+    }
+
+    throw new WorkspaceAccessError('Root workspace admin required');
   }
 }
 
@@ -394,7 +424,7 @@ export async function getSecrets({
       errorCode: error.code,
       errorDetails: error.details,
     });
-    notFound();
+    return null;
   }
 
   return data as WorkspaceSecret[];
@@ -402,17 +432,16 @@ export async function getSecrets({
 
 export async function verifyHasSecrets(
   wsId: string,
-  requiredSecrets: string[],
-  redirectPath?: string
+  requiredSecrets: string[]
 ) {
   const secrets = await getSecrets({ wsId, forceAdmin: true });
+  if (!secrets) return false;
 
   const allSecretsVerified = requiredSecrets.every((secret) => {
     const { value } = getSecret(secret, secrets) || {};
     return value === 'true';
   });
 
-  if (!allSecretsVerified && redirectPath) redirect(redirectPath);
   return allSecretsVerified;
 }
 
@@ -435,6 +464,7 @@ export async function verifySecret({
   value: string;
 }) {
   const secrets = await getSecrets({ wsId, forceAdmin });
+  if (!secrets) return false;
   const secret = getSecret(name, secrets);
   return secret?.value === value;
 }
@@ -461,15 +491,7 @@ export async function getGuestGroup({ groupId }: { groupId: string }) {
 
   return data;
 }
-export async function getPermissions({
-  wsId,
-  redirectTo,
-  enableNotFound,
-}: {
-  wsId: string;
-  redirectTo?: string;
-  enableNotFound?: boolean;
-}) {
+export async function getPermissions({ wsId }: { wsId: string }) {
   const supabase = await createClient();
 
   const {
@@ -478,11 +500,7 @@ export async function getPermissions({
 
   if (!user) {
     console.error('User not found');
-    return {
-      permissions: [],
-      containsPermission: () => false,
-      withoutPermission: () => true,
-    };
+    return null;
   }
 
   const sbAdmin = await createAdminClient();
@@ -499,7 +517,7 @@ export async function getPermissions({
 
     if (!personalWorkspace) {
       console.error('Personal workspace not found for user', user.id);
-      notFound();
+      return null;
     }
 
     resolvedWorkspaceId = personalWorkspace.id;
@@ -538,12 +556,12 @@ export async function getPermissions({
 
   if (!workspaceData) {
     console.error('Workspace not found in getPermissions', resolvedWorkspaceId);
-    notFound();
+    return null;
   }
 
-  if (permissionsError) throw permissionsError;
-  if (workspaceError) throw workspaceError;
-  if (defaultError) throw defaultError;
+  if (permissionsError) return null;
+  if (workspaceError) return null;
+  if (defaultError) return null;
 
   const isCreator = workspaceData.creator_id === user.id;
   const hasPermissions =
@@ -559,15 +577,7 @@ export async function getPermissions({
   // }
 
   if (!isCreator && !hasPermissions) {
-    if (redirectTo) {
-      // if (DEV_MODE) console.log('Redirecting to', redirectTo);
-      redirect(redirectTo);
-    }
-
-    if (enableNotFound) {
-      // if (DEV_MODE) console.log('Not found');
-      notFound();
-    }
+    return null;
   }
 
   const permissions = isCreator
@@ -614,8 +624,7 @@ export interface GetWorkspaceUserOptions {
  * @param id - The workspace ID (can be a UUID or special identifier like 'personal')
  * @param userId - The platform user ID to look up
  * @param options - Configuration options
- * @returns The workspace user link data
- * @throws notFound() if not found and auto-repair fails
+ * @returns The workspace user link data or null if not found/repairable
  */
 export async function getWorkspaceUser(
   id: string,
@@ -643,7 +652,7 @@ export async function getWorkspaceUser(
   // If not found and auto-repair is disabled, throw
   if (!autoRepair) {
     console.error('Error fetching workspace user:', error);
-    notFound();
+    return null;
   }
 
   // Check if user is a workspace member first
@@ -660,7 +669,7 @@ export async function getWorkspaceUser(
       'User is not a workspace member, cannot create workspace user link:',
       { userId, wsId: resolvedWorkspaceId }
     );
-    notFound();
+    return null;
   }
 
   // Try to repair the missing link using the RPC function
@@ -682,7 +691,7 @@ export async function getWorkspaceUser(
         '[getWorkspaceUser] Failed to auto-repair workspace user link:',
         repairError
       );
-      notFound();
+      return null;
     }
 
     // Fetch the newly created link
@@ -698,13 +707,13 @@ export async function getWorkspaceUser(
         '[getWorkspaceUser] Failed to fetch repaired workspace user link:',
         fetchError
       );
-      notFound();
+      return null;
     }
 
     return repairedData;
   } catch (err) {
     console.error('[getWorkspaceUser] Error during auto-repair:', err);
-    notFound();
+    return null;
   }
 }
 

@@ -25,6 +25,9 @@ export async function POST(request: Request) {
     // Fetch workspace using the standardized utility
     // This resolves special IDs like 'personal' and ensures existence
     const workspace = await getWorkspace(id);
+    if (!workspace) {
+      return Response.json({ error: 'Workspace not found' }, { status: 404 });
+    }
 
     if (!workspace) {
       return NextResponse.json(

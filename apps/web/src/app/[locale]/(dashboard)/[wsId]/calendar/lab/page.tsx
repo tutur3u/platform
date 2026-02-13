@@ -3,7 +3,7 @@ import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import CalendarLabClientPage from './client';
 
@@ -23,7 +23,9 @@ export default async function CalendarLabPage({ params }: PageProps) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ workspace, wsId }) => {
-        const { withoutPermission } = await getPermissions({ wsId });
+        const permissions = await getPermissions({ wsId });
+        if (!permissions) notFound();
+        const { withoutPermission } = permissions;
 
         const supabase = await createClient();
 

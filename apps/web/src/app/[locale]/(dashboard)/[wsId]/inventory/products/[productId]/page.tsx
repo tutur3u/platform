@@ -10,6 +10,7 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { ProductForm } from './form';
+import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Product Details',
@@ -31,9 +32,11 @@ export default async function WorkspaceProductsPage({ params }: Props) {
         const t = await getTranslations();
         const { productId } = await params;
 
-        const { containsPermission } = await getPermissions({
+        const permissions = await getPermissions({
           wsId,
         });
+        if (!permissions) notFound();
+        const { containsPermission } = permissions;
 
         if (!containsPermission('view_inventory')) {
           return (

@@ -35,10 +35,17 @@ export async function GET(request: Request, { params }: Params) {
 
     // Resolve workspace ID
     const workspace = await getWorkspace(id);
+    if (!workspace) {
+      return Response.json({ error: 'Workspace not found' }, { status: 404 });
+    }
     const wsId = workspace.id;
 
     // Check permissions
-    const { containsPermission } = await getPermissions({ wsId });
+    const permissions = await getPermissions({ wsId });
+    if (!permissions) {
+      return Response.json({ error: 'Not found' }, { status: 404 });
+    }
+    const { containsPermission } = permissions;
     const hasPrivateInfo = containsPermission('view_users_private_info');
     const hasPublicInfo = containsPermission('view_users_public_info');
     const canCheckUserAttendance = containsPermission('check_user_attendance');

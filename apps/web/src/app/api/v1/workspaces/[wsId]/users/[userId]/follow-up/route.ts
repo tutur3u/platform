@@ -29,7 +29,11 @@ export async function POST(
   }
 ) {
   const { wsId, userId } = await params;
-  const { withoutPermission } = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId });
+  if (!permissions) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+  const { withoutPermission } = permissions;
 
   if (withoutPermission('create_lead_generations')) {
     return NextResponse.json(

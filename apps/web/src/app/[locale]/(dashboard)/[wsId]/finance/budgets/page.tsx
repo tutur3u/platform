@@ -4,6 +4,7 @@ import {
   getWorkspaceConfig,
 } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Budgets',
@@ -32,6 +33,7 @@ export default async function WorkspaceBudgetsPage({
     getWorkspace(id),
     getWorkspaceConfig(id, 'DEFAULT_CURRENCY'),
   ]);
+  if (!workspace) notFound();
   const wsId = workspace.id;
 
   return (

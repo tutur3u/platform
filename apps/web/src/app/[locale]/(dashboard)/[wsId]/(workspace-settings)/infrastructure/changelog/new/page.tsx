@@ -4,7 +4,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { ChangelogForm } from '../changelog-form';
 
 export const metadata: Metadata = {
@@ -21,7 +21,9 @@ interface Props {
 export default async function NewChangelogPage({ params }: Props) {
   const { wsId } = await params;
 
-  const { withoutPermission } = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId });
+  if (!permissions) notFound();
+  const { withoutPermission } = permissions;
 
   if (withoutPermission('manage_changelog')) {
     redirect(`/${wsId}/settings`);

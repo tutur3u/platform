@@ -37,7 +37,9 @@ export default async function FinancePage({
 }: Props) {
   const sp = searchParams;
 
-  const { containsPermission } = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId });
+  if (!permissions) return notFound();
+  const { containsPermission } = permissions;
 
   if (!containsPermission('view_finance_stats')) return notFound();
 

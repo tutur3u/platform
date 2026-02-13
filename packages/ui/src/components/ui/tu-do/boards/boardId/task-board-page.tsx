@@ -23,9 +23,12 @@ export default async function TaskBoardPage({ params }: Props) {
 
   const supabase = await createClient();
 
-  let resolvedWorkspace = workspace;
+  let resolvedWorkspace = workspace ?? null;
   if (!resolvedWorkspace) {
     resolvedWorkspace = await getWorkspace(wsId);
+  }
+  if (!resolvedWorkspace) {
+    notFound();
   }
 
   const board = await getTaskBoard(supabase, boardId);

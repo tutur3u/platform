@@ -76,9 +76,13 @@ export async function GET(
     // Normalize workspace ID (resolve special tokens like 'personal' to UUID)
     const normalizedWsId = await normalizeWorkspaceId(wsId);
 
-    const { withoutPermission } = await getPermissions({
+    const permissions = await getPermissions({
       wsId: normalizedWsId,
     });
+    if (!permissions) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+    const { withoutPermission } = permissions;
 
     if (withoutPermission('view_finance_stats')) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });

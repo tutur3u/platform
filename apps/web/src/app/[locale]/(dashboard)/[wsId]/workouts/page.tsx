@@ -1,7 +1,7 @@
 import { GradientHeadline } from '@tuturuuu/ui/custom/gradient-headline';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
 export const metadata: Metadata = {
@@ -19,10 +19,11 @@ export default async function CalendarPage({ params }: PageProps) {
   const t = await getTranslations('common');
   const { wsId } = await params;
   const workspace = await getWorkspace(wsId);
+  if (!workspace) notFound();
 
-  const { withoutPermission } = await getPermissions({
-    wsId,
-  });
+  const permissions = await getPermissions({ wsId });
+  if (!permissions) notFound();
+  const { withoutPermission } = permissions;
 
   if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
   if (!workspace) return null;

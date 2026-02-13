@@ -43,7 +43,11 @@ export async function GET(request: Request, { params }: Params) {
     const wsId = await normalizeWorkspaceId(id);
 
     // Check permissions
-    const { containsPermission } = await getPermissions({ wsId });
+    const permissions = await getPermissions({ wsId });
+    if (!permissions) {
+      return Response.json({ error: 'Not found' }, { status: 404 });
+    }
+    const { containsPermission } = permissions;
     const canViewInventory = containsPermission('view_inventory');
     const canViewStockQuantity = containsPermission('view_stock_quantity');
 

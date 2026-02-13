@@ -12,6 +12,7 @@ import {
   getPermissions,
   getWorkspaceConfig,
 } from '@tuturuuu/utils/workspace-helper';
+import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { FinanceCategoryStatistics } from './categories/finance';
 import FinanceToggle from './finance-toggle';
@@ -27,10 +28,12 @@ export default async function FinanceStatistics({
   const { showFinanceStats } = sp;
 
   // Check if user has permission to view confidential amounts
-  const [{ containsPermission }, currency] = await Promise.all([
+  const [permissions, currency] = await Promise.all([
     getPermissions({ wsId }),
     getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY'),
   ]);
+  if (!permissions) notFound();
+  const { containsPermission } = permissions;
   const canViewConfidentialAmount = containsPermission(
     'view_confidential_amount'
   );

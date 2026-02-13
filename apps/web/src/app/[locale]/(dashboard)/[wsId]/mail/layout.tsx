@@ -14,9 +14,10 @@ interface LayoutProps {
 export default async function Layout({ children, params }: LayoutProps) {
   const { wsId: id } = await params;
   const workspace = await getWorkspace(id);
+
   const user = await getCurrentSupabaseUser();
 
-  if (!workspace.personal) redirect(`/personal/mail`);
+  if (!workspace?.personal) redirect(`/personal/mail`);
   if (!isValidTuturuuuEmail(user?.email)) redirect(`/personal`);
 
   return children;

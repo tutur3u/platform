@@ -6,7 +6,7 @@ import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { type ReactNode, Suspense } from 'react';
 import { WorkspacePreparing } from '@/components/workspace-preparing';
@@ -35,6 +35,7 @@ export default async function Layout({ children, params }: LayoutProps) {
   const { wsId: id } = await params;
 
   const workspace = await getWorkspace(id, { useAdmin: true });
+  if (!workspace) notFound();
 
   const isPolarConfigured =
     !!process.env.POLAR_WEBHOOK_SECRET && !!process.env.POLAR_ACCESS_TOKEN;

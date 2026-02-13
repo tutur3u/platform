@@ -25,9 +25,11 @@ export default async function UserGroupIndicatorsPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, groupId }) => {
-        const { containsPermission } = await getPermissions({
+        const permissions = await getPermissions({
           wsId,
         });
+        if (!permissions) notFound();
+        const { containsPermission } = permissions;
         const canViewUserGroupsScores = containsPermission(
           'view_user_groups_scores'
         );

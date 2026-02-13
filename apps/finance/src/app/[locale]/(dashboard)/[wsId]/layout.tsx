@@ -30,13 +30,14 @@ export default async function Layout({ children, params }: LayoutProps) {
   if (!user?.id) redirect('/login');
 
   const workspace = await getWorkspace(id, { useAdmin: true });
+
+  if (!workspace) redirect('/onboarding');
+  if (!workspace?.joined) redirect('/');
+
   const wsId = workspace.id;
   const workspaceSlug = toWorkspaceSlug(wsId, {
     personal: !!workspace.personal,
   });
-
-  if (!workspace) redirect('/onboarding');
-  if (!workspace?.joined) redirect('/');
 
   const collapsed = (await cookies()).get(SIDEBAR_COLLAPSED_COOKIE_NAME);
   const behaviorCookie = (await cookies()).get(SIDEBAR_BEHAVIOR_COOKIE_NAME);

@@ -53,11 +53,13 @@ export default async function TaskProjectDetailPage({ params }: Props) {
   if (!currentUser) redirect('/login');
 
   const workspace = await getWorkspace(id);
-  if (!workspace) redirect('/');
+  if (!workspace) notFound();
 
   const wsId = workspace.id;
 
-  const { withoutPermission } = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId });
+  if (!permissions) notFound();
+  const { withoutPermission } = permissions;
   if (withoutPermission('manage_projects')) notFound();
 
   const supabase = await createClient();

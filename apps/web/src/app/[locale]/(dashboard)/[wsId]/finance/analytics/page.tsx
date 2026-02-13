@@ -22,10 +22,12 @@ export default async function WorkspaceAnalyticsPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
-        const [{ withoutPermission }, currency] = await Promise.all([
+        const [permissions, currency] = await Promise.all([
           getPermissions({ wsId }),
           getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY'),
         ]);
+        if (!permissions) notFound();
+        const { withoutPermission } = permissions;
         if (withoutPermission('view_finance_stats')) notFound();
 
         return <AnalyticsPage wsId={wsId} currency={currency ?? 'USD'} />;

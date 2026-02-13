@@ -32,9 +32,13 @@ export async function GET(request: Request, { params }: Params) {
     const wsId = await normalizeWorkspaceId(id);
 
     // Check permissions
-    const { containsPermission, withoutPermission } = await getPermissions({
+    const permissions = await getPermissions({
       wsId,
     });
+    if (!permissions) {
+      return Response.json({ error: 'Not found' }, { status: 404 });
+    }
+    const { containsPermission, withoutPermission } = permissions;
 
     if (withoutPermission('view_user_groups')) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });

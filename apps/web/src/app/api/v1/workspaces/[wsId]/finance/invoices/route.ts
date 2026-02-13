@@ -212,7 +212,11 @@ export async function GET(request: Request, { params }: Params) {
     const wsId = await normalizeWorkspaceId(id);
 
     // Check permissions
-    const { containsPermission } = await getPermissions({ wsId });
+    const permissions = await getPermissions({ wsId });
+    if (!permissions) {
+      return Response.json({ error: 'Not found' }, { status: 404 });
+    }
+    const { containsPermission } = permissions;
     const canViewInvoices = containsPermission('view_invoices');
 
     if (!canViewInvoices) {
@@ -378,9 +382,13 @@ export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
   const { wsId } = await params;
 
-  const { withoutPermission } = await getPermissions({
+  const permissions = await getPermissions({
     wsId,
   });
+  if (!permissions) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+  const { withoutPermission } = permissions;
   if (withoutPermission('create_invoices')) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }

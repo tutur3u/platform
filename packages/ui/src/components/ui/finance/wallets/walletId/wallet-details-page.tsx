@@ -36,17 +36,14 @@ interface Props {
 }
 
 export default async function WalletDetailsPage({ wsId, walletId }: Props) {
-  const [
-    t,
-    workspace,
-    { withoutPermission, containsPermission },
-    defaultCurrency,
-  ] = await Promise.all([
+  const [t, workspace, permissions, defaultCurrency] = await Promise.all([
     getTranslations(),
     getWorkspace(wsId),
     getPermissions({ wsId }),
     getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY'),
   ]);
+  if (!workspace || !permissions) notFound();
+  const { withoutPermission, containsPermission } = permissions;
   const canManageRoles = !withoutPermission('manage_workspace_roles');
 
   // Transaction permissions
