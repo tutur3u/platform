@@ -21,9 +21,7 @@ export default async function CalendarPage({ params }: PageProps) {
   const workspace = await getWorkspace(wsId);
   if (!workspace) notFound();
 
-  const permissions = await getPermissions({
-    wsId,
-  });
+  const permissions = await getPermissions({ wsId });
   if (!permissions) notFound();
   const { withoutPermission } = permissions;
 

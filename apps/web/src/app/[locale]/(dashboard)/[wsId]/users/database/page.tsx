@@ -49,9 +49,7 @@ export default async function WorkspaceUsersPage({
   if (!workspace) notFound();
   const wsId = workspace.id;
 
-  const workspacePermissions = await getPermissions({
-    wsId,
-  });
+  const workspacePermissions = await getPermissions({ wsId });
   if (!workspacePermissions) notFound();
   const { containsPermission } = workspacePermissions;
 

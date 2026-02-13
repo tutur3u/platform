@@ -4,7 +4,7 @@ import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies } from 'next/headers';
-import { notFound, redirect } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { type ReactNode, Suspense } from 'react';
 import {
   SIDEBAR_BEHAVIOR_COOKIE_NAME,
@@ -30,13 +30,14 @@ export default async function Layout({ children, params }: LayoutProps) {
   if (!user?.id) redirect('/login');
 
   const workspace = await getWorkspace(id, { useAdmin: true });
-  if (!workspace) notFound();
+
+  if (!workspace) redirect('/onboarding');
+  if (!workspace?.joined) redirect('/');
+
   const wsId = workspace.id;
   const workspaceSlug = toWorkspaceSlug(wsId, {
     personal: !!workspace.personal,
   });
-
-  if (!workspace?.joined) redirect('/');
 
   const collapsed = (await cookies()).get(SIDEBAR_COLLAPSED_COOKIE_NAME);
   const behaviorCookie = (await cookies()).get(SIDEBAR_BEHAVIOR_COOKIE_NAME);

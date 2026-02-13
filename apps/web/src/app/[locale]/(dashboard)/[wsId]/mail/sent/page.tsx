@@ -7,9 +7,9 @@ import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
+import { notFound } from 'next/navigation';
 import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import MailClientWrapper from '../client';
-import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Sent',

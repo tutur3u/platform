@@ -75,7 +75,7 @@ export default function UserNavClient({
   useEffect(() => {
     const fetchWorkspace = async () => {
       const workspace = await getWorkspace(params?.wsId as string | undefined);
-      if (!workspace) notFound();
+
       if (workspace) setWsId(workspace.id);
     };
     fetchWorkspace();

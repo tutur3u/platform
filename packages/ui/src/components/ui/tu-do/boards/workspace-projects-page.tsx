@@ -139,9 +139,7 @@ export default async function WorkspaceProjectsPage({
   if (!workspace) notFound();
   const wsId = workspace.id;
 
-  const permissions = await getPermissions({
-    wsId,
-  });
+  const permissions = await getPermissions({ wsId });
   if (!permissions) notFound();
   const { withoutPermission } = permissions;
 

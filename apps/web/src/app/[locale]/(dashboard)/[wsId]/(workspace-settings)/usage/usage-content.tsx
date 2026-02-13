@@ -64,8 +64,6 @@ export default async function UsageContent({ wsId }: UsageContentProps) {
   const workspace = await getWorkspace(wsId);
   if (!workspace) notFound();
 
-  if (!workspace) notFound();
-
   const isRootWorkspace = workspace.id === ROOT_WORKSPACE_ID;
 
   return (
