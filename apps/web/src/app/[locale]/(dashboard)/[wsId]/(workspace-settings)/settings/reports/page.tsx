@@ -43,10 +43,7 @@ export default async function WorkspaceReportsSettingsPage({
   if (!workspace) notFound();
   const wsId = workspace?.id;
 
-  const permissions = await getPermissions({
-    wsId,
-    redirectTo: `/${wsId}/settings`,
-  });
+  const permissions = await getPermissions({ wsId });
   if (!permissions) notFound();
   const { withoutPermission } = permissions;
 
@@ -123,7 +120,7 @@ export default async function WorkspaceReportsSettingsPage({
       <Separator className="my-4" />
 
       <Tabs defaultValue="report" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
+        <TabsList className="grid w-full grid-cols-2 lg:w-100">
           <TabsTrigger value="report">
             {t('ws-reports.report_template')}
           </TabsTrigger>
