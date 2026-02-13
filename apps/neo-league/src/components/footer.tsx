@@ -60,9 +60,9 @@ export default function Footer() {
               Our Socials
             </h3>
             <div className="flex justify-center gap-4 md:justify-start">
-              <div className="rounded-lg bg-white/50 p-3 text-blue-600 transition-colors duration-200 hover:bg-blue-50 hover:text-blue-700">
+              <div className="rounded-lg bg-white/50 p-3 transition-colors duration-200 hover:bg-blue-50">
                 <Link
-                  href="https://facebook.com/RMITNeoCultureTech"
+                  href="https://www.facebook.com/rmit.nct"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary transition-colors hover:text-primary/70"
@@ -71,7 +71,7 @@ export default function Footer() {
                   <Facebook className="h-8 w-8" />
                 </Link>
               </div>
-              <div className="rounded-lg bg-white/50 p-3 text-blue-600 transition-colors duration-200 hover:bg-blue-50 hover:text-blue-700">
+              <div className="rounded-lg bg-white/50 p-3 transition-colors duration-200 hover:bg-blue-50">
                 <Link
                   href="https://instagram.com/rmitnct"
                   target="_blank"
@@ -82,7 +82,7 @@ export default function Footer() {
                   <Instagram className="h-8 w-8" />
                 </Link>
               </div>
-              <div className="rounded-lg bg-white/50 p-3 text-blue-600 transition-colors duration-200 hover:bg-blue-50 hover:text-blue-700">
+              <div className="rounded-lg bg-white/50 p-3 transition-colors duration-200 hover:bg-blue-50">
                 <Link
                   href="https://linkedin.com/company/rmit-nct"
                   target="_blank"
