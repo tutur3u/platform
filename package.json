@@ -6,7 +6,7 @@
     "buildx": "turbo test lint build",
     "clean": "rm bun.lock && bunx npkill --delete-all -y",
     "dev": "turbo run dev --continue",
-    "dev:docs": "turbo run dev -F @ncthub/docs",
+    "dev:docs": "cd apps/docs && mintlify dev",
     "dev:nl": "turbo run dev -F @ncthub/neo-league",
     "dev:web": "turbo run dev -F @ncthub/web",
     "dev:ocr": "turbo run dev -F @ncthub/ocr",
