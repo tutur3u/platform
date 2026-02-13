@@ -30,7 +30,7 @@ export default function AvatarCard({
   return (
     <div
       className={cn(
-        'group card-hover relative flex flex-col items-center',
+        'group card-hover relative flex h-full flex-col items-center',
         containerClassName
       )}
     >
@@ -42,15 +42,15 @@ export default function AvatarCard({
 
       <div
         className={cn(
-          'relative h-64 w-full overflow-hidden rounded-t-xl bg-linear-to-r from-background/20 to-background',
+          'relative h-64 w-full overflow-hidden rounded-t-xl bg-linear-to-r from-primary/80 to-primary/60',
           backgroundClassName
         )}
       >
         <Avatar className={cn('h-full w-full rounded-none', avatarClassName)}>
-          <AvatarImage src={avatar} alt={name} className="object-contain" />
+          <AvatarImage src={avatar} alt={name} className="object-cover" />
           <AvatarFallback
             className={cn(
-              'gradient-bg font-black text-2xl text-white',
+              'rounded-none bg-transparent font-black text-2xl text-white',
               fallbackClassName
             )}
           >
@@ -61,7 +61,7 @@ export default function AvatarCard({
       </div>
       <div
         className={cn(
-          'glass-card h-full w-full rounded-b-xl px-6 py-8 text-center',
+          'glass-card w-full flex-1 rounded-b-xl px-6 py-8 text-center',
           cardClassName
         )}
       >

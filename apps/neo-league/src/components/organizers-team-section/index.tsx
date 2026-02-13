@@ -35,11 +35,10 @@ export default function OrganizersTeamSection() {
                     name={leader.name}
                     subtitle={leader.role || ''}
                     avatarClassName="ease-in-out transition-transform duration-500 hover:scale-105"
-                    fallbackClassName="text-3xl"
                     containerClassName="w-72"
-                    cardClassName="rounded-2xl px-8 py-12"
-                    nameClassName="mb-2 text-xl"
-                    subtitleClassName="font-medium text-lg text-secondary"
+                    cardClassName="px-8 py-8"
+                    nameClassName="mb-2 text-brand-light-blue text-lg"
+                    subtitleClassName="font-medium text-md text-primary/80"
                   />
                 </AnimatedSection>
               ))}
