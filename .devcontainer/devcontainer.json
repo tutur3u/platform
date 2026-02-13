@@ -1,0 +1,202 @@
+{
+  "name": "Tuturuuu Platform",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "24"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.13"
+    },
+    "ghcr.io/devcontainers-extra/features/bun:1": {
+      "version": "1.3.9"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "biomejs.biome",
+        "vitest.explorer",
+        "bradlc.vscode-tailwindcss",
+        "pflannery.vscode-versionlens",
+        "usernamehw.errorlens",
+        "YoavBls.pretty-ts-errors",
+        "typescriptteam.native-preview",
+        "aaron-bond.better-comments",
+        "PKief.material-icon-theme",
+        "lokalise.i18n-ally"
+      ],
+      "settings": {
+        "editor.codeActionsOnSave": {
+          "source.organizeImports.biome": "explicit",
+          "source.organizeImports": "explicit",
+          "source.sortMembers": "explicit",
+          "source.fixAll.biome": "explicit",
+          "source.fixAll": "explicit"
+        },
+        "files.eol": "\n",
+        "files.exclude": {
+          "**/.git": true,
+          "**/.svn": true,
+          "**/.hg": true,
+          "**/.DS_Store": true,
+          "**/Thumbs.db": true,
+          "**/flutter/ephemeral": true,
+          "**/Flutter/ephemeral": true,
+          "**/.symlinks": true,
+          "**/.plugin_symlinks": true,
+          ".agent": true,
+          ".agents": true,
+          ".claude": true,
+          ".codex": true,
+          ".continue": true,
+          ".cursor": true,
+          ".gemini": true,
+          "**/.idea": true,
+          ".idx": true,
+          ".junie": true,
+          ".opencode": true,
+          ".trae": true,
+          ".zed": true,
+          ".windsurf": true,
+          "**/.dart_tool": true,
+          "**/.next": true,
+          "**/__pycache__": true,
+          "**/.venv": true,
+          "**/*_cache": true,
+          "**/build": true,
+          "**/*.tsbuildinfo": true,
+          "conductor": true,
+          "skills": true,
+          "CODE_OF_CONDUCT.md": true,
+          "CONTRIBUTING.md": true,
+          "AGENTS.md": true,
+          "CLAUDE.md": true,
+          "GEMINI.md": true,
+          "WARP.md": true,
+          "SECURITY.md": true,
+          "LICENSE": true,
+          "**/node_modules": true,
+          "**/coverage": true,
+          "**/.turbo": true
+        },
+        "editor.formatOnPaste": false,
+        "editor.formatOnSave": true,
+        "editor.formatOnSaveMode": "file",
+        "editor.defaultFormatter": "biomejs.biome",
+        "[xml]": {
+          "editor.defaultFormatter": "biomejs.biome"
+        },
+        "[css]": {
+          "editor.defaultFormatter": "biomejs.biome"
+        },
+        "[json]": {
+          "editor.defaultFormatter": "biomejs.biome"
+        },
+        "[jsonc]": {
+          "editor.defaultFormatter": "biomejs.biome"
+        },
+        "[javascript]": {
+          "editor.defaultFormatter": "biomejs.biome"
+        },
+        "[typescript]": {
+          "editor.defaultFormatter": "biomejs.biome"
+        },
+        "[javascriptreact]": {
+          "editor.defaultFormatter": "biomejs.biome"
+        },
+        "[typescriptreact]": {
+          "editor.defaultFormatter": "biomejs.biome"
+        },
+        "typescript.tsdk": "node_modules/typescript/lib",
+        "workbench.editor.customLabels.patterns": {
+          "**/app/**/page.tsx": "${dirname} - Page",
+          "**/app/**/layout.tsx": "${dirname} - Layout",
+          "**/app/**/route.ts": "${dirname} - API Route",
+          "**/components/**/index.tsx": "${dirname} - Component"
+        },
+        "tailwindCSS.experimental.configFile": "packages/ui/src/globals.css",
+        "i18n-ally.enabledFrameworks": ["next-intl"],
+        "i18n-ally.localesPaths": [
+          "apps/calendar/messages",
+          "apps/web/messages",
+          "apps/rewise/messages",
+          "apps/nova/messages"
+        ],
+        "i18n-ally.autoDetection": true,
+        "i18n-ally.keystyle": "nested",
+        "codeQL.githubDatabase.update": "never",
+        "codeQL.githubDatabase.download": "never",
+        "IDX.aI.enableInlineCompletion": true,
+        "IDX.aI.enableCodebaseIndexing": true,
+        "i18n-ally.sourceLanguage": "en",
+        "typescript.experimental.useTsgo": true,
+        "cSpell.words": ["Tuturuuu", "tuturuuu"],
+        "python-envs.defaultEnvManager": "ms-python.python:venv",
+        "python-envs.defaultPackageManager": "ms-python.python:pip",
+        "python-envs.pythonProjects": [],
+        "vitest.disableWorkspaceWarning": true
+      }
+    }
+  },
+  "forwardPorts": [
+    7803, 7804, 7805, 7806, 7807, 7808, 7809, 7810, 3000, 3001, 3002, 3003,
+    8001, 8002, 8003, 8004
+  ],
+  "portsAttributes": {
+    "7803": {
+      "label": "Platform"
+    },
+    "7804": {
+      "label": "Rewise"
+    },
+    "7805": {
+      "label": "Nova"
+    },
+    "7806": {
+      "label": "Calendar"
+    },
+    "7807": {
+      "label": "Meet"
+    },
+    "7808": {
+      "label": "Finance"
+    },
+    "7809": {
+      "label": "Tasks"
+    },
+    "7810": {
+      "label": "Track"
+    },
+    "3000": {
+      "label": "External"
+    },
+    "3001": {
+      "label": "Rust Backend"
+    },
+    "3002": {
+      "label": "Shortener"
+    },
+    "3003": {
+      "label": "Playground"
+    },
+    "8001": {
+      "label": "Supabase API"
+    },
+    "8002": {
+      "label": "Supabase DB"
+    },
+    "8003": {
+      "label": "Supabase Studio"
+    },
+    "8004": {
+      "label": "Supabase Inbucket"
+    }
+  },
+  "mounts": [
+    "source=platform-bun-cache,target=/root/.bun,type=volume",
+    "source=platform-node_modules,target=${containerWorkspaceFolder}/node_modules,type=volume"
+  ],
+  "remoteUser": "root"
+}
