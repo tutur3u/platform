@@ -12032,6 +12032,7 @@
   },
   "ws-tasks": {
     "completed": "Đã hoàn thành",
+    "done_with_my_part": "Hoàn thành phần của tôi",
     "due_today": "Đến hạn hôm nay",
     "errors": {
       "missing_task_description": "Thiếu mô tả nhiệm vụ",
@@ -12039,12 +12040,21 @@
       "no_tasks_to_create": "Không có nhiệm vụ để tạo"
     },
     "last_30_days": "30 ngày qua",
+    "my_due_date": "Ngày hạn của tôi",
+    "my_estimate": "Ước lượng của tôi",
+    "my_priority": "Ưu tiên của tôi",
     "my_tasks_description": "Xem và quản lý tất cả nhiệm vụ được giao cho bạn trên tất cả các bảng",
     "no_due_date": "Không có ngày đến hạn",
     "no_tasks": "Không tìm thấy nhiệm vụ",
     "no_tasks_assigned": "Bạn chưa được giao nhiệm vụ nào",
     "overdue": "Quá hạn",
-    "upcoming": "Sắp tới"
+    "personal_completion": "Hoàn thành cá nhân",
+    "personal_notes": "Ghi chú cá nhân",
+    "personal_notes_placeholder": "Thêm ghi chú riêng về nhiệm vụ này...",
+    "personal_overrides": "Tùy chỉnh cá nhân",
+    "self_managed": "Tự quản lý",
+    "upcoming": "Sắp tới",
+    "use_team_value": "Dùng giá trị nhóm"
   },
   "ws-tasks-labels": {
     "cancel": "Hủy",

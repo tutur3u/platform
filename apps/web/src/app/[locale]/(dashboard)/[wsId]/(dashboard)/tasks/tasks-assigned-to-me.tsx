@@ -11,10 +11,15 @@ import {
   Zap,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { TaskUserOverride, UserBoardListOverride } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
+import {
+  isPersonallyHidden,
+  resolveEffectiveValues,
+} from '@tuturuuu/utils/task-overrides';
 import { isPast, isToday, isTomorrow } from 'date-fns';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
@@ -34,7 +39,7 @@ export default async function TasksAssignedToMe({
   const supabase = await createClient();
   const t = await getTranslations('dashboard');
 
-  // Use RPC function to get all accessible tasks
+  // Use RPC function to get all accessible tasks, excluding personal overrides
   const { data: rpcTasks, error: tasksError } = await supabase.rpc(
     'get_user_accessible_tasks',
     {
@@ -42,6 +47,8 @@ export default async function TasksAssignedToMe({
       p_ws_id: wsId,
       p_include_deleted: false,
       p_list_statuses: ['not_started', 'active'],
+      p_exclude_personally_completed: true,
+      p_exclude_personally_unassigned: true,
     }
   );
 
@@ -82,23 +89,33 @@ export default async function TasksAssignedToMe({
       auto_schedule: boolean | null;
     }
   >();
+  const overridesByTaskId = new Map<string, TaskUserOverride>();
+
   if (taskIds.length > 0) {
-    const { data: schedulingRows } = await (supabase as any)
-      .from('task_user_scheduling_settings')
-      .select(
+    const [schedulingResult, overridesResult] = await Promise.all([
+      (supabase as any)
+        .from('task_user_scheduling_settings')
+        .select(
+          `
+          task_id,
+          total_duration,
+          is_splittable,
+          min_split_duration_minutes,
+          max_split_duration_minutes,
+          calendar_hours,
+          auto_schedule
         `
-        task_id,
-        total_duration,
-        is_splittable,
-        min_split_duration_minutes,
-        max_split_duration_minutes,
-        calendar_hours,
-        auto_schedule
-      `
-      )
-      .eq('user_id', userId)
-      .in('task_id', taskIds);
-    (schedulingRows as any[] | null)?.forEach((r) => {
+        )
+        .eq('user_id', userId)
+        .in('task_id', taskIds),
+      (supabase as any)
+        .from('task_user_overrides')
+        .select('*')
+        .eq('user_id', userId)
+        .in('task_id', taskIds),
+    ]);
+
+    (schedulingResult.data as any[] | null)?.forEach((r: any) => {
       if (!r?.task_id) return;
       schedulingByTaskId.set(r.task_id, {
         total_duration: r.total_duration ?? null,
@@ -109,7 +126,21 @@ export default async function TasksAssignedToMe({
         auto_schedule: r.auto_schedule ?? null,
       });
     });
+
+    (overridesResult.data as TaskUserOverride[] | null)?.forEach((r) => {
+      if (!r?.task_id) return;
+      overridesByTaskId.set(r.task_id, r);
+    });
   }
+
+  // Fetch board/list personal status overrides
+  const { data: boardListOverridesRaw } = await (supabase as any)
+    .from('user_board_list_overrides')
+    .select('*')
+    .eq('user_id', userId);
+
+  const boardListOverrides: UserBoardListOverride[] =
+    (boardListOverridesRaw as UserBoardListOverride[] | null) ?? [];
 
   // Fetch assignees for all tasks
   const { data: assigneesData } = await supabase
@@ -165,22 +196,42 @@ export default async function TasksAssignedToMe({
     )
     .in('id', listIds);
 
-  // Map the data to match the expected structure
+  // Map the data to match the expected structure, applying personal overrides
   const assignedTasks = allTasks
-    ?.map((task) => ({
-      ...task,
-      ...(schedulingByTaskId.get(task.id) ?? {}),
-      list: listsData?.find((l) => l.id === task.list_id),
-      assignees: assigneesData
-        ?.filter((a) => a.task_id === task.id)
-        .map((a) => ({ user: a.user })),
-      labels: labelsData
-        ?.filter((l) => l.task_id === task.id)
-        .map((l) => ({ label: l.label })),
-    }))
+    ?.map((task) => {
+      const override = overridesByTaskId.get(task.id) ?? null;
+      const baseTask = {
+        ...task,
+        ...(schedulingByTaskId.get(task.id) ?? {}),
+        list: listsData?.find((l) => l.id === task.list_id) ?? null,
+        assignees:
+          assigneesData
+            ?.filter((a) => a.task_id === task.id)
+            .map((a) => ({ user: a.user })) ?? null,
+        labels:
+          labelsData
+            ?.filter((l) => l.task_id === task.id)
+            .map((l) => ({ label: l.label })) ?? null,
+        overrides: override,
+      };
+      return resolveEffectiveValues(baseTask, override);
+    })
+    .filter(
+      (task) =>
+        !isPersonallyHidden(
+          task,
+          overridesByTaskId.get(task.id) ?? null,
+          boardListOverrides
+        )
+    )
     .sort((a, b) => {
       // Sort by priority first
-      const priorityOrder = { critical: 4, high: 3, normal: 2, low: 1 };
+      const priorityOrder: Record<string, number> = {
+        critical: 4,
+        high: 3,
+        normal: 2,
+        low: 1,
+      };
       const aPriority = priorityOrder[a.priority || 'normal'] || 0;
       const bPriority = priorityOrder[b.priority || 'normal'] || 0;
 

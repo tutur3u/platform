@@ -60,11 +60,6 @@ CHECK (
     (approved_by IS NULL AND approved_at IS NULL AND rejected_by IS NULL AND rejected_at IS NULL AND rejection_reason IS NULL)
 );
 
--- Delete objects first to avoid foreign key constraint violation
-delete from storage.objects where bucket_id = 'time_tracking_requests';
-
-delete from storage.buckets where id = 'time_tracking_requests';
-
 -- Migration for creating the 'time_tracking_requests' bucket
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (

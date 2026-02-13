@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "sbr:link": "bun supabase link && node scripts/project-names.js",
-    "sbr:reset": "node scripts/confirm-reset.js && bun supabase db reset --linked && node scripts/project-names.js",
+    "sbr:reset": "node scripts/confirm-reset.js && node scripts/delete-storage-buckets.js && bun supabase db reset --linked && node scripts/project-names.js",
     "sbr:diff": "bun supabase db diff -f new_migration --linked",
     "sbr:typegen": "bun supabase gen types typescript --linked --schema public > ../../packages/types/src/supabase.ts && biome format --write ../../packages/types/src/supabase.ts",
     "sbr:up": "bun supabase migration up --linked",

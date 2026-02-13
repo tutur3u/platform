@@ -52,6 +52,7 @@ import { useTaskRealtimeSync } from './task-edit-dialog/hooks/use-task-realtime-
 import { useTaskRelationships } from './task-edit-dialog/hooks/use-task-relationships';
 import { useTaskSave } from './task-edit-dialog/hooks/use-task-save';
 import { useTaskYjsSync } from './task-edit-dialog/hooks/use-task-yjs-sync';
+import { PersonalOverridesSection } from './task-edit-dialog/personal-overrides-section';
 import { TaskActivitySection } from './task-edit-dialog/task-activity-section';
 import { TaskDeleteDialog } from './task-edit-dialog/task-delete-dialog';
 import { TaskInstancesSection } from './task-edit-dialog/task-instances-section';
@@ -1394,6 +1395,14 @@ export function TaskEditDialog({
                     scheduledEvents={localCalendarEvents}
                     disabled={disabled}
                     isDraftMode={!!draftId || (isCreateMode && saveAsDraft)}
+                  />
+                )}
+
+                {!disabled && !isCreateMode && (
+                  <PersonalOverridesSection
+                    taskId={task?.id}
+                    isCreateMode={isCreateMode}
+                    boardConfig={boardConfig}
                   />
                 )}
 

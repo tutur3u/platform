@@ -6,11 +6,14 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
+  UserMinus,
+  UserRoundCog,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskWithRelations } from '@tuturuuu/types';
 import type { Task as PrimitiveTask } from '@tuturuuu/types/primitives/Task';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -62,6 +65,39 @@ export default function TaskListWithCompletion({
     if (e && 'preventDefault' in e) {
       e.preventDefault();
       e.stopPropagation();
+    }
+
+    // Self-managed: use personal completion via overrides API
+    if (task.overrides?.self_managed) {
+      setCompletingTasks((prev) => new Set(prev).add(task.id));
+      setLocalTasks((prev) => prev.filter((t) => t.id !== task.id));
+
+      try {
+        const response = await fetch(
+          `/api/v1/users/me/tasks/${task.id}/overrides`,
+          {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              completed_at: new Date().toISOString(),
+            }),
+          }
+        );
+        if (!response.ok) throw new Error('Failed to update override');
+        toast.success('Task personally completed!');
+        onTaskUpdate?.();
+      } catch (error) {
+        console.error('Error updating task override:', error);
+        toast.error('Failed to update task');
+        setLocalTasks(tasks);
+      } finally {
+        setCompletingTasks((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(task.id);
+          return newSet;
+        });
+      }
+      return;
     }
 
     if (!task.list?.board?.id) {
@@ -141,6 +177,40 @@ export default function TaskListWithCompletion({
       setLocalTasks((prevTasks) =>
         prevTasks.map((t) => (t.id === task.id ? originalTask : t))
       );
+    } finally {
+      setCompletingTasks((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(task.id);
+        return newSet;
+      });
+    }
+  };
+
+  const handlePersonalUnassign = async (
+    task: TaskWithRelations,
+    e: MouseEvent
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCompletingTasks((prev) => new Set(prev).add(task.id));
+    setLocalTasks((prev) => prev.filter((t) => t.id !== task.id));
+
+    try {
+      const response = await fetch(
+        `/api/v1/users/me/tasks/${task.id}/overrides`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ personally_unassigned: true }),
+        }
+      );
+      if (!response.ok) throw new Error('Failed to update override');
+      toast.success('Marked as done with your part');
+      onTaskUpdate?.();
+    } catch (error) {
+      console.error('Error updating task override:', error);
+      toast.error('Failed to update task');
+      setLocalTasks(tasks);
     } finally {
       setCompletingTasks((prev) => {
         const newSet = new Set(prev);
@@ -270,16 +340,26 @@ export default function TaskListWithCompletion({
                     >
                       {/* Line 1: Task name on left, Board → List → Due date → Assignees + Estimation on right */}
                       <div className="hidden items-center justify-between gap-2 md:flex">
-                        <h4
-                          className={cn(
-                            'flex-1 font-bold text-base leading-snug transition-colors duration-200 group-hover:text-primary',
-                            isCompleted
-                              ? 'text-muted-foreground line-through'
-                              : 'text-foreground'
+                        <div className="flex flex-1 items-center gap-2">
+                          <h4
+                            className={cn(
+                              'font-bold text-base leading-snug transition-colors duration-200 group-hover:text-primary',
+                              isCompleted
+                                ? 'text-muted-foreground line-through'
+                                : 'text-foreground'
+                            )}
+                          >
+                            {task.name}
+                          </h4>
+                          {task.overrides?.self_managed && (
+                            <Badge
+                              variant="secondary"
+                              className="h-5 shrink-0 gap-1 border-dynamic-purple/30 bg-dynamic-purple/15 px-1.5 text-[10px] text-dynamic-purple"
+                            >
+                              <UserRoundCog className="h-3 w-3" />
+                            </Badge>
                           )}
-                        >
-                          {task.name}
-                        </h4>
+                        </div>
                         {/* Right side: Board → List → Due → Assignees → Estimation */}
                         <div className="flex shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs">
                           {/* Board name */}
@@ -400,6 +480,14 @@ export default function TaskListWithCompletion({
                     >
                       {task.name}
                     </h4>
+                    {task.overrides?.self_managed && (
+                      <Badge
+                        variant="secondary"
+                        className="h-5 shrink-0 gap-1 border-dynamic-purple/30 bg-dynamic-purple/15 px-1.5 text-[10px] text-dynamic-purple"
+                      >
+                        <UserRoundCog className="h-3 w-3" />
+                      </Badge>
+                    )}
                     {task.estimation_points !== null &&
                       task.estimation_points !== undefined && (
                         <TaskEstimationDisplay
@@ -500,6 +588,17 @@ export default function TaskListWithCompletion({
                   </p>
                 )} */}
               </button>
+
+              {/* Inline "Done with my part" action for self-managed tasks */}
+              {task.overrides?.self_managed && !isCompleting && (
+                <button
+                  type="button"
+                  onClick={(e) => handlePersonalUnassign(task, e)}
+                  className="hidden shrink-0 items-center gap-1 self-center rounded-md px-2 py-1 text-dynamic-red text-xs transition-opacity hover:bg-dynamic-red/10 md:flex md:opacity-0 md:group-hover:opacity-100"
+                >
+                  <UserMinus className="h-3.5 w-3.5" />
+                </button>
+              )}
             </div>
           </div>
         );

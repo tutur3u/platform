@@ -108,6 +108,7 @@ export type TaskWithRelations = {
   estimation_points?: number | null;
   archived?: boolean | null;
   list_id?: string | null;
+  created_at?: string | null;
   list: {
     id: string;
     name: string | null;
@@ -144,7 +145,13 @@ export type TaskWithRelations = {
   projects?: Array<{
     project: TaskProject | null;
   }>;
+  overrides?: TaskUserOverride | null;
 };
+
+export type TaskUserOverride = Tables<'task_user_overrides'>;
+export type UserBoardListOverride = Tables<'user_board_list_overrides'>;
+export type UserScopeOverrideStatus =
+  Database['public']['Enums']['user_scope_override_status'];
 
 export type WorkspaceCalendarEvent = Tables<'workspace_calendar_events'>;
 export type WorkspaceCalendar = Tables<'workspace_calendars'>;

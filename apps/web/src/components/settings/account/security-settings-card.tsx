@@ -256,6 +256,31 @@ export default function SecuritySettingsCard({
             </div>
           </div>
         </div>
+
+        <Separator />
+
+        {/* Danger Zone */}
+        <div className="rounded-lg border border-dynamic-red/20 bg-dynamic-red/5 p-4">
+          <div className="flex gap-3">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-dynamic-red" />
+            <div className="flex-1 space-y-3">
+              <div>
+                <p className="font-medium text-dynamic-red text-sm">
+                  {t('delete-account-danger-zone')}
+                </p>
+                <p className="text-dynamic-red text-sm">
+                  {t('delete-account-danger-description')}
+                </p>
+              </div>
+              <Button variant="destructive" size="sm" asChild>
+                <Link href="/account/delete">
+                  <AlertTriangle className="mr-2 h-4 w-4" />
+                  {t('delete-account')}
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
