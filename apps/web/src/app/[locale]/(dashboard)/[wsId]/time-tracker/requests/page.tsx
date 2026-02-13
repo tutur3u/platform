@@ -2,9 +2,9 @@ import { AlertTriangle } from '@tuturuuu/icons';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { RequestsClient } from './requests-client';
-import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Time Tracking Requests',

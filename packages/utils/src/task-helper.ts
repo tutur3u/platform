@@ -134,6 +134,62 @@ export async function getTasks(supabase: TypedSupabaseClient, boardId: string) {
   }
 }
 
+/**
+ * Fetch tasks for a single list with offset-based pagination.
+ * Results include relation data (assignees, labels, projects) matching getTasks().
+ */
+export async function getTasksForList(
+  supabase: TypedSupabaseClient,
+  listId: string,
+  options: { page?: number; limit?: number } = {}
+): Promise<{ tasks: Task[]; totalCount: number; hasMore: boolean }> {
+  const { page = 0, limit = 50 } = options;
+  const from = page * limit;
+  const to = from + limit - 1;
+
+  const { data, error, count } = await supabase
+    .from('tasks')
+    .select(
+      `
+        *,
+        assignees:task_assignees(
+          user:users(
+            id,
+            display_name,
+            avatar_url
+          )
+        ),
+        labels:task_labels(
+          label:workspace_task_labels(
+            id,
+            name,
+            color,
+            created_at
+          )
+        ),
+        projects:task_project_tasks(
+          project:task_projects(
+            id,
+            name,
+            status
+          )
+        )
+      `,
+      { count: 'exact' }
+    )
+    .eq('list_id', listId)
+    .is('deleted_at', null)
+    .order('sort_key', { ascending: true, nullsFirst: false })
+    .order('created_at', { ascending: true })
+    .range(from, to);
+
+  if (error) throw error;
+
+  const tasks = (data ?? []).map(transformTaskRecord);
+  const totalCount = count ?? 0;
+  return { tasks, totalCount, hasMore: from + tasks.length < totalCount };
+}
+
 export async function getTaskAssignees(
   supabase: TypedSupabaseClient,
   taskId: string

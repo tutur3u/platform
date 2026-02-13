@@ -20,6 +20,7 @@ import { TaskSection } from './task-section';
 
 interface TaskListProps {
   wsId: string;
+  userId: string;
   isPersonal: boolean;
   commandBarLoading: boolean;
   isAiGenerating?: boolean;
@@ -43,10 +44,13 @@ interface TaskListProps {
     section: 'overdue' | 'today' | 'upcoming' | 'completed'
   ) => void;
   handleUpdate: () => void;
+  availableLabels?: Array<{ id: string; name: string; color: string }>;
+  onCreateNewLabel?: () => void;
 }
 
 export default function TaskList({
   wsId,
+  userId,
   isPersonal,
   commandBarLoading,
   isAiGenerating = false,
@@ -63,6 +67,8 @@ export default function TaskList({
   collapsedSections,
   toggleSection,
   handleUpdate,
+  availableLabels,
+  onCreateNewLabel,
 }: TaskListProps) {
   const t = useTranslations();
   const params = useParams();
@@ -145,7 +151,10 @@ export default function TaskList({
           isCollapsed={collapsedSections.overdue}
           onToggle={() => toggleSection('overdue')}
           isPersonal={isPersonal}
+          userId={userId}
           onTaskUpdate={handleUpdate}
+          availableLabels={availableLabels}
+          onCreateNewLabel={onCreateNewLabel}
         />
       )}
 
@@ -160,7 +169,10 @@ export default function TaskList({
           isCollapsed={collapsedSections.today}
           onToggle={() => toggleSection('today')}
           isPersonal={isPersonal}
+          userId={userId}
           onTaskUpdate={handleUpdate}
+          availableLabels={availableLabels}
+          onCreateNewLabel={onCreateNewLabel}
         />
       )}
 
@@ -175,7 +187,10 @@ export default function TaskList({
           isCollapsed={collapsedSections.upcoming}
           onToggle={() => toggleSection('upcoming')}
           isPersonal={isPersonal}
+          userId={userId}
           onTaskUpdate={handleUpdate}
+          availableLabels={availableLabels}
+          onCreateNewLabel={onCreateNewLabel}
         />
       )}
 
@@ -220,7 +235,10 @@ export default function TaskList({
             isCollapsed={collapsedSections.completed}
             onToggle={() => toggleSection('completed')}
             isPersonal={isPersonal}
+            userId={userId}
             onTaskUpdate={handleUpdate}
+            availableLabels={availableLabels}
+            onCreateNewLabel={onCreateNewLabel}
           />
 
           {/* Infinite scroll trigger */}

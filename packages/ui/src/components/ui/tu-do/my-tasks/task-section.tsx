@@ -25,7 +25,10 @@ interface TaskSectionProps {
   isCollapsed: boolean;
   onToggle: () => void;
   isPersonal: boolean;
+  userId: string;
   onTaskUpdate: () => void;
+  availableLabels?: Array<{ id: string; name: string; color: string }>;
+  onCreateNewLabel?: () => void;
 }
 
 const COLOR_MAP = {
@@ -146,7 +149,10 @@ export function TaskSection({
   isCollapsed,
   onToggle,
   isPersonal,
+  userId,
   onTaskUpdate,
+  availableLabels,
+  onCreateNewLabel,
 }: TaskSectionProps) {
   const colors = COLOR_MAP[colorToken];
   const priorityGroups = groupTasksByPriority(tasks);
@@ -230,8 +236,11 @@ export function TaskSection({
               <TaskListWithCompletion
                 tasks={group.tasks}
                 isPersonal={isPersonal}
+                userId={userId}
                 initialLimit={10}
                 onTaskUpdate={onTaskUpdate}
+                availableLabels={availableLabels}
+                onCreateNewLabel={onCreateNewLabel}
               />
             </div>
           ))}

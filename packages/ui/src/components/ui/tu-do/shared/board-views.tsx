@@ -10,13 +10,14 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useSemanticTaskSearch } from '@tuturuuu/ui/hooks/use-semantic-task-search';
 import type { WorkspaceLabel } from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { KanbanBoard } from '../boards/boardId/kanban';
 import type { TaskFilters } from '../boards/boardId/task-filter';
 import { TimelineBoard } from '../boards/boardId/timeline-board';
 import { useTaskDialog } from '../hooks/useTaskDialog';
 import { BoardHeader, type ListStatusFilter } from '../shared/board-header';
 import { ListView } from '../shared/list-view';
+import { useProgressiveLoader } from '../shared/progressive-loader-context';
 import { RecycleBinPanel } from '../shared/recycle-bin-panel';
 
 export type ViewType = 'kanban' | 'list' | 'timeline';
@@ -61,6 +62,41 @@ export function BoardViews({
   const [recycleBinOpen, setRecycleBinOpen] = useState(false);
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const { createTask } = useTaskDialog();
+  const { pagination, loadListPage } = useProgressiveLoader();
+
+  // Detect whether any filter is active (requires all data to be loaded)
+  const hasActiveFilters = useMemo(
+    () =>
+      filters.labels.length > 0 ||
+      filters.assignees.length > 0 ||
+      filters.projects.length > 0 ||
+      filters.priorities.length > 0 ||
+      !!filters.dueDateRange?.from ||
+      !!filters.searchQuery?.trim() ||
+      filters.includeMyTasks ||
+      filters.includeUnassigned ||
+      !!filters.sortBy,
+    [filters]
+  );
+
+  // When filters or sorting are active, auto-load all remaining pages so
+  // client-side filtering/sorting operates on complete data.
+  const autoLoadingRef = useRef(false);
+  useEffect(() => {
+    if (!hasActiveFilters || autoLoadingRef.current) return;
+
+    // Find the first list that still has more pages and isn't loading
+    for (const list of lists) {
+      const state = pagination[list.id];
+      if (state?.hasMore && !state.isLoading) {
+        autoLoadingRef.current = true;
+        loadListPage(list.id, state.page + 1).finally(() => {
+          autoLoadingRef.current = false;
+        });
+        return; // Process one at a time; the next run picks up the next list
+      }
+    }
+  }, [hasActiveFilters, pagination, lists, loadListPage]);
 
   // Semantic search hook
   const {

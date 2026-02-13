@@ -7,7 +7,6 @@ import type {
   WorkspaceProductTier,
   WorkspaceTaskBoard,
 } from '@tuturuuu/types';
-import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useBoardRealtime } from '@tuturuuu/ui/hooks/useBoardRealtime';
 import {
@@ -22,12 +21,13 @@ import {
   setActiveBroadcast,
 } from './board-broadcast-context';
 import { BoardViews } from './board-views';
+import { ProgressiveLoaderProvider } from './progressive-loader-context';
+import { useProgressiveBoardLoader } from './use-progressive-board-loader';
 
 interface Props {
   workspace: Workspace;
   workspaceTier?: WorkspaceProductTier | null;
   initialBoard: WorkspaceTaskBoard;
-  initialTasks: Task[];
   initialLists: TaskList[];
   currentUserId?: string;
 }
@@ -36,7 +36,6 @@ export function BoardClient({
   workspace,
   workspaceTier,
   initialBoard,
-  initialTasks,
   initialLists,
   currentUserId,
 }: Props) {
@@ -50,20 +49,22 @@ export function BoardClient({
       return getTaskBoard(supabase, boardId);
     },
     initialData: initialBoard,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnMount: false, // Disable initial refetch on mount
+    staleTime: 5 * 60 * 1000,
+    refetchOnMount: false,
   });
 
-  const { data: tasks = initialTasks } = useQuery({
+  // Tasks start empty — populated progressively per-list by useProgressiveBoardLoader.
+  // Full reconciliation happens on window focus via queryFn.
+  const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', boardId],
     queryFn: async () => {
       const supabase = createClient();
       return await getTasks(supabase, boardId);
     },
-    initialData: initialTasks,
-    refetchOnMount: false, // Disable initial refetch on mount
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: 'always', // Reconcile task data when tab regains focus
+    initialData: [],
+    refetchOnMount: false,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: 'always',
   });
 
   const { data: lists = initialLists } = useQuery({
@@ -73,10 +74,13 @@ export function BoardClient({
       return getTaskLists(supabase, boardId);
     },
     initialData: initialLists,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnMount: false, // Disable initial refetch on mount
-    refetchOnWindowFocus: 'always', // Reconcile list data when tab regains focus
+    staleTime: 5 * 60 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: 'always',
   });
+
+  // Progressive per-list loading
+  const progressiveLoader = useProgressiveBoardLoader(boardId);
 
   // Fetch workspace labels once at the board level
   const { data: workspaceLabels = [] } = useWorkspaceLabels(board?.ws_id);
@@ -105,15 +109,17 @@ export function BoardClient({
 
   return (
     <BoardBroadcastProvider value={broadcast}>
-      <BoardViews
-        workspace={workspace}
-        workspaceTier={workspaceTier}
-        board={board}
-        tasks={tasks}
-        lists={lists}
-        workspaceLabels={workspaceLabels}
-        currentUserId={currentUserId}
-      />
+      <ProgressiveLoaderProvider value={progressiveLoader}>
+        <BoardViews
+          workspace={workspace}
+          workspaceTier={workspaceTier}
+          board={board}
+          tasks={tasks}
+          lists={lists}
+          workspaceLabels={workspaceLabels}
+          currentUserId={currentUserId}
+        />
+      </ProgressiveLoaderProvider>
     </BoardBroadcastProvider>
   );
 }

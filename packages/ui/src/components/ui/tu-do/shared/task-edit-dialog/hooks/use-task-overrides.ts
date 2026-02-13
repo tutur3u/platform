@@ -8,7 +8,10 @@ type OverrideInput = Partial<
   Omit<TaskUserOverride, 'task_id' | 'user_id' | 'created_at' | 'updated_at'>
 >;
 
-export function useTaskOverrides(taskId: string | undefined) {
+export function useTaskOverrides(
+  taskId: string | undefined,
+  onUpdate?: () => void
+) {
   const queryClient = useQueryClient();
   const queryKey = ['task-override', taskId];
 
@@ -75,6 +78,7 @@ export function useTaskOverrides(taskId: string | undefined) {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey });
+      onUpdate?.();
     },
   });
 
@@ -102,6 +106,7 @@ export function useTaskOverrides(taskId: string | undefined) {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey });
+      onUpdate?.();
     },
   });
 

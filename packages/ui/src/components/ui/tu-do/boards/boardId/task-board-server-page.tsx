@@ -1,10 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { BoardClient } from '@tuturuuu/ui/tu-do/shared/board-client';
-import {
-  getTaskBoard,
-  getTaskLists,
-  getTasks,
-} from '@tuturuuu/utils/task-helper';
+import { getTaskBoard, getTaskLists } from '@tuturuuu/utils/task-helper';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound, redirect } from 'next/navigation';
@@ -20,6 +16,9 @@ interface Props {
  * Shared Task Board Server Page component.
  * Handles workspace resolution, authentication, and data fetching.
  * Used by both apps/web and apps/tasks.
+ *
+ * Tasks are NOT fetched here — they are loaded progressively per-list
+ * on the client via useProgressiveBoardLoader for faster initial load.
  */
 export default async function TaskBoardServerPage({ params }: Props) {
   const { wsId: id, boardId } = await params;
@@ -31,7 +30,12 @@ export default async function TaskBoardServerPage({ params }: Props) {
   if (!workspace) notFound();
 
   const supabase = await createClient();
-  const board = await getTaskBoard(supabase, boardId);
+
+  // Fetch board and lists in parallel (fast ~100ms)
+  const [board, lists] = await Promise.all([
+    getTaskBoard(supabase, boardId),
+    getTaskLists(supabase, boardId),
+  ]);
 
   // If board doesn't exist, redirect to boards list page
   if (!board) {
@@ -43,15 +47,11 @@ export default async function TaskBoardServerPage({ params }: Props) {
     notFound();
   }
 
-  const tasks = await getTasks(supabase, boardId);
-  const lists = await getTaskLists(supabase, boardId);
-
   return (
     <BoardClient
       workspace={workspace}
       workspaceTier={(workspace as any)?.tier ?? null}
       initialBoard={board}
-      initialTasks={tasks}
       initialLists={lists}
       currentUserId={user.id}
     />

@@ -20093,6 +20093,53 @@ export type Database = {
           start_date: string;
         }[];
       };
+      get_user_tasks_with_relations: {
+        Args: {
+          p_exclude_personally_completed?: boolean;
+          p_exclude_personally_unassigned?: boolean;
+          p_filter_board_ids?: string[];
+          p_filter_label_ids?: string[];
+          p_filter_project_ids?: string[];
+          p_filter_self_managed_only?: boolean;
+          p_filter_ws_ids?: string[];
+          p_include_deleted?: boolean;
+          p_list_statuses?: Database['public']['Enums']['task_board_status'][];
+          p_user_id: string;
+          p_ws_id?: string;
+        };
+        Returns: {
+          assignees_data: Json;
+          labels_data: Json;
+          list_data: Json;
+          override_completed_at: string;
+          override_due_date_override: string;
+          override_estimation_override: number;
+          override_notes: string;
+          override_personally_unassigned: boolean;
+          override_priority_override: Database['public']['Enums']['task_priority'];
+          override_self_managed: boolean;
+          projects_data: Json;
+          sched_auto_schedule: boolean;
+          sched_calendar_hours: string;
+          sched_is_splittable: boolean;
+          sched_max_split_duration_minutes: number;
+          sched_min_split_duration_minutes: number;
+          sched_total_duration: number;
+          task_closed_at: string;
+          task_completed_at: string;
+          task_created_at: string;
+          task_creator_id: string;
+          task_deleted_at: string;
+          task_description: string;
+          task_end_date: string;
+          task_estimation_points: number;
+          task_id: string;
+          task_list_id: string;
+          task_name: string;
+          task_priority: Database['public']['Enums']['task_priority'];
+          task_start_date: string;
+        }[];
+      };
       get_user_whitelist_status: {
         Args: { user_id_param: string };
         Returns: {

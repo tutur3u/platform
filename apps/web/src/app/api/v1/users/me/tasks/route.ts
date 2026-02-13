@@ -1,4 +1,8 @@
-import type { TaskUserOverride, UserBoardListOverride } from '@tuturuuu/types';
+import type {
+  TaskUserOverride,
+  TaskWithRelations,
+  UserBoardListOverride,
+} from '@tuturuuu/types';
 import {
   isPersonallyHidden,
   resolveEffectiveValues,
@@ -6,23 +10,38 @@ import {
 import { type NextRequest, NextResponse } from 'next/server';
 import { authorizeRequest } from '@/lib/api-auth';
 
-interface TaskAssignee {
+/** Row shape returned by get_user_tasks_with_relations RPC */
+interface RpcTaskRow {
   task_id: string;
-  user: {
-    id: string;
-    display_name: string | null;
-    avatar_url: string | null;
-  } | null;
-}
-
-interface TaskLabel {
-  task_id: string;
-  label: {
-    id: string;
-    name: string;
-    color: string;
-    created_at: string;
-  } | null;
+  task_name: string | null;
+  task_description: string | null;
+  task_creator_id: string | null;
+  task_list_id: string | null;
+  task_start_date: string | null;
+  task_end_date: string | null;
+  task_priority: string | null;
+  task_completed_at: string | null;
+  task_closed_at: string | null;
+  task_deleted_at: string | null;
+  task_estimation_points: number | null;
+  task_created_at: string | null;
+  sched_total_duration: number | null;
+  sched_is_splittable: boolean | null;
+  sched_min_split_duration_minutes: number | null;
+  sched_max_split_duration_minutes: number | null;
+  sched_calendar_hours: string | null;
+  sched_auto_schedule: boolean | null;
+  override_self_managed: boolean | null;
+  override_completed_at: string | null;
+  override_priority_override: string | null;
+  override_due_date_override: string | null;
+  override_estimation_override: number | null;
+  override_personally_unassigned: boolean | null;
+  override_notes: string | null;
+  list_data: Record<string, unknown> | null;
+  assignees_data: Array<{ user: Record<string, unknown> | null }>;
+  labels_data: Array<{ label: Record<string, unknown> | null }>;
+  projects_data: Array<{ project: Record<string, unknown> | null }>;
 }
 
 export async function GET(req: NextRequest) {
@@ -39,47 +58,47 @@ export async function GET(req: NextRequest) {
     const wsId = url.searchParams.get('wsId');
     const isPersonal = url.searchParams.get('isPersonal') === 'true';
 
-    // Fetch all accessible tasks using the RPC function
-    const { data: rpcTasks, error: tasksError } = await supabase.rpc(
-      'get_user_accessible_tasks',
-      {
+    // Parse optional server-side filter params
+    const filterWsIds = url.searchParams.getAll('filterWsId');
+    const filterBoardIds = url.searchParams.getAll('filterBoardId');
+    const filterLabelIds = url.searchParams.getAll('filterLabelId');
+    const filterProjectIds = url.searchParams.getAll('filterProjectId');
+    const selfManagedOnly = url.searchParams.get('selfManagedOnly') === 'true';
+
+    // Single consolidated RPC call: tasks + all relations
+    const [rpcResult, boardListOverridesResult] = await Promise.all([
+      supabase.rpc('get_user_tasks_with_relations', {
         p_user_id: user.id,
         p_ws_id: isPersonal ? undefined : (wsId ?? undefined),
         p_include_deleted: false,
         p_list_statuses: ['not_started', 'active', 'done'],
         p_exclude_personally_completed: false,
         p_exclude_personally_unassigned: false,
-      }
-    );
+        p_filter_ws_ids: filterWsIds.length > 0 ? filterWsIds : undefined,
+        p_filter_board_ids:
+          filterBoardIds.length > 0 ? filterBoardIds : undefined,
+        p_filter_label_ids:
+          filterLabelIds.length > 0 ? filterLabelIds : undefined,
+        p_filter_project_ids:
+          filterProjectIds.length > 0 ? filterProjectIds : undefined,
+        p_filter_self_managed_only: selfManagedOnly,
+      }),
+      supabase
+        .from('user_board_list_overrides')
+        .select('*')
+        .eq('user_id', user.id),
+    ]);
 
-    if (tasksError) {
-      console.error('Error fetching tasks:', tasksError);
+    if (rpcResult.error) {
+      console.error('Error fetching tasks:', rpcResult.error);
       return NextResponse.json(
         { error: 'Failed to fetch tasks' },
         { status: 500 }
       );
     }
 
-    // Map RPC results to expected structure
-    const allTasks =
-      rpcTasks?.map((task) => ({
-        id: task.task_id,
-        name: task.task_name,
-        description: task.task_description,
-        creator_id: task.task_creator_id,
-        list_id: task.task_list_id,
-        start_date: task.task_start_date,
-        end_date: task.task_end_date,
-        priority: task.task_priority,
-        completed_at: task.task_completed_at,
-        closed_at: task.task_closed_at,
-        deleted_at: task.task_deleted_at,
-        estimation_points: task.task_estimation_points,
-        created_at: task.task_created_at,
-      })) ?? [];
-
-    const taskIds = allTasks.map((t) => t.id);
-    if (taskIds.length === 0) {
+    const rpcTasks = rpcResult.data ?? [];
+    if (rpcTasks.length === 0) {
       return NextResponse.json({
         overdue: [],
         today: [],
@@ -88,132 +107,68 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Fetch scheduling settings, overrides, board/list overrides, relations in parallel
-    const schedulingByTaskId = new Map<
-      string,
-      {
-        total_duration: number | null;
-        is_splittable: boolean | null;
-        min_split_duration_minutes: number | null;
-        max_split_duration_minutes: number | null;
-        calendar_hours: string | null;
-        auto_schedule: boolean | null;
-      }
-    >();
-    const overridesByTaskId = new Map<string, TaskUserOverride>();
-
-    const [
-      schedulingResult,
-      overridesResult,
-      boardListOverridesResult,
-      assigneesResult,
-      labelsResult,
-      projectsResult,
-    ] = await Promise.all([
-      supabase
-        .from('task_user_scheduling_settings')
-        .select(
-          'task_id, total_duration, is_splittable, min_split_duration_minutes, max_split_duration_minutes, calendar_hours, auto_schedule'
-        )
-        .eq('user_id', user.id)
-        .in('task_id', taskIds),
-      supabase
-        .from('task_user_overrides')
-        .select('*')
-        .eq('user_id', user.id)
-        .in('task_id', taskIds),
-      supabase
-        .from('user_board_list_overrides')
-        .select('*')
-        .eq('user_id', user.id),
-      supabase
-        .from('task_assignees')
-        .select('task_id, user:users(id, display_name, avatar_url)')
-        .in('task_id', taskIds),
-      supabase
-        .from('task_labels')
-        .select(
-          'task_id, label:workspace_task_labels(id, name, color, created_at)'
-        )
-        .in('task_id', taskIds),
-      supabase
-        .from('task_project_tasks')
-        .select('task_id, project:task_projects(*)')
-        .in('task_id', taskIds),
-    ]);
-
-    // Build scheduling map
-    schedulingResult.data?.forEach((r) => {
-      if (!r?.task_id) return;
-      schedulingByTaskId.set(r.task_id, {
-        total_duration: r.total_duration ?? null,
-        is_splittable: r.is_splittable ?? null,
-        min_split_duration_minutes: r.min_split_duration_minutes ?? null,
-        max_split_duration_minutes: r.max_split_duration_minutes ?? null,
-        calendar_hours: r.calendar_hours ?? null,
-        auto_schedule: r.auto_schedule ?? null,
-      });
-    });
-
-    // Build overrides map
-    (overridesResult.data as TaskUserOverride[] | null)?.forEach((r) => {
-      if (!r?.task_id) return;
-      overridesByTaskId.set(r.task_id, r);
-    });
-
     const boardListOverrides: UserBoardListOverride[] =
       (boardListOverridesResult.data as UserBoardListOverride[] | null) ?? [];
 
-    // Build relation maps
-    const assigneesByTaskId = new Map<
-      string,
-      { user: TaskAssignee['user'] }[]
-    >();
-    (assigneesResult.data as TaskAssignee[] | null)?.forEach((a) => {
-      if (!assigneesByTaskId.has(a.task_id))
-        assigneesByTaskId.set(a.task_id, []);
-      assigneesByTaskId.get(a.task_id)!.push({ user: a.user });
-    });
+    // Map RPC results to TaskWithRelations shape
+    const allTasksWithRelations = (rpcTasks as RpcTaskRow[]).map((row) => {
+      const override: TaskUserOverride | null =
+        row.override_self_managed != null
+          ? {
+              task_id: row.task_id,
+              user_id: user.id,
+              self_managed: row.override_self_managed,
+              completed_at: row.override_completed_at,
+              priority_override:
+                row.override_priority_override as TaskUserOverride['priority_override'],
+              due_date_override: row.override_due_date_override,
+              estimation_override: row.override_estimation_override,
+              personally_unassigned:
+                row.override_personally_unassigned ?? false,
+              notes: row.override_notes,
+              created_at: '',
+              updated_at: '',
+            }
+          : null;
 
-    const labelsByTaskId = new Map<string, { label: TaskLabel['label'] }[]>();
-    (labelsResult.data as TaskLabel[] | null)?.forEach((l) => {
-      if (!labelsByTaskId.has(l.task_id)) labelsByTaskId.set(l.task_id, []);
-      labelsByTaskId.get(l.task_id)!.push({ label: l.label });
-    });
+      const scheduling =
+        row.sched_total_duration != null ||
+        row.sched_is_splittable != null ||
+        row.sched_auto_schedule != null
+          ? {
+              total_duration: row.sched_total_duration ?? null,
+              is_splittable: row.sched_is_splittable ?? null,
+              min_split_duration_minutes:
+                row.sched_min_split_duration_minutes ?? null,
+              max_split_duration_minutes:
+                row.sched_max_split_duration_minutes ?? null,
+              calendar_hours: row.sched_calendar_hours ?? null,
+              auto_schedule: row.sched_auto_schedule ?? null,
+            }
+          : {};
 
-    const projectsByTaskId = new Map<string, { project: any }[]>();
-    projectsResult.data?.forEach((p) => {
-      if (!projectsByTaskId.has(p.task_id)) projectsByTaskId.set(p.task_id, []);
-      projectsByTaskId.get(p.task_id)!.push({ project: p.project });
-    });
-
-    // Fetch list and board data
-    const listIds = allTasks.map((t) => t.list_id).filter(Boolean);
-    const { data: listsData } = await supabase
-      .from('task_lists')
-      .select(
-        `
-        id, name, status,
-        board:workspace_boards!inner(
-          id, name, ws_id, estimation_type, extended_estimation, allow_zero_estimates,
-          workspaces(id, name, personal)
-        )
-      `
-      )
-      .in('id', listIds);
-
-    // Build tasks with relations and apply overrides
-    const allTasksWithRelations = allTasks.map((task) => {
-      const override = overridesByTaskId.get(task.id) ?? null;
       const baseTask = {
-        ...task,
-        ...(schedulingByTaskId.get(task.id) ?? {}),
-        list: listsData?.find((l) => l.id === task.list_id) || null,
-        assignees: assigneesByTaskId.get(task.id) || [],
-        labels: labelsByTaskId.get(task.id) || [],
-        projects: projectsByTaskId.get(task.id) || [],
+        id: row.task_id,
+        name: row.task_name ?? '',
+        description: row.task_description,
+        creator_id: row.task_creator_id,
+        list_id: row.task_list_id,
+        start_date: row.task_start_date,
+        end_date: row.task_end_date,
+        priority: row.task_priority,
+        completed_at: row.task_completed_at,
+        closed_at: row.task_closed_at,
+        deleted_at: row.task_deleted_at,
+        estimation_points: row.task_estimation_points,
+        created_at: row.task_created_at,
+        ...scheduling,
+        list: row.list_data as TaskWithRelations['list'],
+        assignees: (row.assignees_data ?? []) as TaskWithRelations['assignees'],
+        labels: (row.labels_data ?? []) as TaskWithRelations['labels'],
+        projects: (row.projects_data ?? []) as TaskWithRelations['projects'],
         overrides: override,
       };
+
       return resolveEffectiveValues(baseTask, override);
     });
 
@@ -222,7 +177,7 @@ export async function GET(req: NextRequest) {
     const personallyHiddenTasks: typeof allTasksWithRelations = [];
 
     for (const task of allTasksWithRelations) {
-      const override = overridesByTaskId.get(task.id) ?? null;
+      const override = task.overrides ?? null;
       if (isPersonallyHidden(task, override, boardListOverrides)) {
         personallyHiddenTasks.push(task);
       } else {

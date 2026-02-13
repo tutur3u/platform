@@ -1,9 +1,9 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { notFound } from 'next/navigation';
 import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
 import { CalendarSidebar } from './sidebar';
-import { notFound } from 'next/navigation';
 
 interface TasksSidebarProps {
   wsId: string;

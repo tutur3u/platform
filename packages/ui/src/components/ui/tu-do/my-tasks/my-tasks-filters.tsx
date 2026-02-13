@@ -240,7 +240,9 @@ function FilterChip({
   return (
     <TooltipProvider>
       <Tooltip>
-        <TooltipTrigger>{chip}</TooltipTrigger>
+        <TooltipTrigger asChild>
+          <div className="inline-flex">{chip}</div>
+        </TooltipTrigger>
         <TooltipContent>{tooltipContent}</TooltipContent>
       </Tooltip>
     </TooltipProvider>

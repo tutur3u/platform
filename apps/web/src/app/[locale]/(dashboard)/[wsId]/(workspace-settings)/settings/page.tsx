@@ -12,6 +12,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import AdminTaskEmbeddings from './admin-task-embeddings';
 import WorkspaceAvatarSettings from './avatar';
@@ -19,7 +20,6 @@ import BasicInfo from './basic-info';
 import WorkspaceLogoSettings from './logo';
 import RemoveYourself from './remove-yourself';
 import Security from './security';
-import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Settings',

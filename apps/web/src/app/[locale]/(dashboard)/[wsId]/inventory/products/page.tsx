@@ -12,10 +12,10 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { ProductsPageClient } from './products-page-client';
-import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Products',

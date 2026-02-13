@@ -2,7 +2,6 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { TaskWithRelations } from '@tuturuuu/types';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTaskDialog } from '@tuturuuu/ui/tu-do/hooks/useTaskDialog';
@@ -26,22 +25,43 @@ dayjs.extend(timezone);
 
 interface UseMyTasksStateProps {
   wsId: string;
+  userId: string;
   isPersonal: boolean;
 }
 
-export function useMyTasksState({ wsId, isPersonal }: UseMyTasksStateProps) {
+export function useMyTasksState({
+  wsId,
+  userId,
+  isPersonal,
+}: UseMyTasksStateProps) {
   const t = useTranslations();
   const queryClient = useQueryClient();
   const { onUpdate, openTaskById } = useTaskDialog();
 
-  // Fetch tasks via TanStack Query
+  // Filter state (declared before query so it can be passed as param)
+  const [taskFilters, setTaskFilters] = useState<{
+    workspaceIds: string[];
+    boardIds: string[];
+    labelIds: string[];
+    projectIds: string[];
+    selfManagedOnly: boolean;
+  }>({
+    workspaceIds: ['all'],
+    boardIds: ['all'],
+    labelIds: [],
+    projectIds: [],
+    selfManagedOnly: false,
+  });
+
+  // Fetch tasks via TanStack Query (filters applied server-side)
   const { data: queryData, isLoading: queryLoading } = useMyTasksQuery(
     wsId,
-    isPersonal
+    isPersonal,
+    taskFilters
   );
 
-  // Completed tasks with infinite scrolling
-  const completedQuery = useCompletedTasksQuery(wsId, isPersonal);
+  // Completed tasks with infinite scrolling (same filters as active tasks)
+  const completedQuery = useCompletedTasksQuery(wsId, isPersonal, taskFilters);
   const completedTasks = useMemo(
     () => completedQuery.data?.pages.flatMap((p) => p.completed) ?? [],
     [completedQuery.data]
@@ -82,6 +102,9 @@ export function useMyTasksState({ wsId, isPersonal }: UseMyTasksStateProps) {
   const [aiGeneratePriority, setAiGeneratePriority] = useState(true);
   const [aiGenerateLabels, setAiGenerateLabels] = useState(true);
 
+  // Auto-assign to me
+  const [autoAssignToMe, setAutoAssignToMe] = useState(true);
+
   // AI flow step: idle → reviewing → selecting-destination
   type AiFlowStep = 'idle' | 'reviewing' | 'selecting-destination';
   const [aiFlowStep, setAiFlowStep] = useState<AiFlowStep>('idle');
@@ -112,21 +135,6 @@ export function useMyTasksState({ wsId, isPersonal }: UseMyTasksStateProps) {
     today: true,
     upcoming: true,
     completed: true,
-  });
-
-  // Filter state
-  const [taskFilters, setTaskFilters] = useState<{
-    workspaceIds: string[];
-    boardIds: string[];
-    labelIds: string[];
-    projectIds: string[];
-    selfManagedOnly: boolean;
-  }>({
-    workspaceIds: ['all'],
-    boardIds: ['all'],
-    labelIds: [],
-    projectIds: [],
-    selfManagedOnly: false,
   });
 
   // Label creation dialog state
@@ -423,6 +431,7 @@ export function useMyTasksState({ wsId, isPersonal }: UseMyTasksStateProps) {
   // Create tasks from preview
   const createTasksMutation = useMutation({
     mutationFn: async (payload: {
+      targetWsId: string;
       entry: string;
       listId: string;
       tasks: Array<{
@@ -435,6 +444,7 @@ export function useMyTasksState({ wsId, isPersonal }: UseMyTasksStateProps) {
         projectIds?: string[];
       }>;
       labelIds: string[];
+      assigneeIds?: string[];
       generatedWithAI: boolean;
       generateDescriptions: boolean;
       generatePriority: boolean;
@@ -442,11 +452,15 @@ export function useMyTasksState({ wsId, isPersonal }: UseMyTasksStateProps) {
       clientTimezone: string;
       clientTimestamp: string;
     }) => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/tasks/journal`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      const { targetWsId, ...body } = payload;
+      const response = await fetch(
+        `/api/v1/workspaces/${targetWsId}/tasks/journal`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        }
+      );
       if (!response.ok) {
         const error = await response.json().catch(() => null);
         throw new Error(error?.error || 'Failed to create tasks');
@@ -512,13 +526,13 @@ export function useMyTasksState({ wsId, isPersonal }: UseMyTasksStateProps) {
         );
       }
 
-      if (
-        options?.assigneeIds &&
-        options.assigneeIds.length > 0 &&
-        newTask?.id
-      ) {
+      // Merge autoAssignToMe with any manually-selected assignees
+      const mergedAssigneeIds = new Set(options?.assigneeIds ?? []);
+      if (autoAssignToMe) mergedAssigneeIds.add(userId);
+
+      if (mergedAssigneeIds.size > 0 && newTask?.id) {
         await supabase.from('task_assignees').insert(
-          options.assigneeIds.map((assigneeId) => ({
+          [...mergedAssigneeIds].map((assigneeId) => ({
             task_id: newTask.id,
             user_id: assigneeId,
           }))
@@ -603,10 +617,12 @@ export function useMyTasksState({ wsId, isPersonal }: UseMyTasksStateProps) {
       }
 
       createTasksMutation.mutate({
+        targetWsId: selectedWorkspaceId,
         entry: (previewEntry ?? pendingTaskTitle).trim(),
         listId: selectedListId,
         tasks: confirmedTasks,
         labelIds: selectedLabelIds,
+        assigneeIds: autoAssignToMe ? [userId] : [],
         generatedWithAI: Boolean(lastResult?.metadata?.generatedWithAI),
         generateDescriptions: aiGenerateDescriptions,
         generatePriority: aiGeneratePriority,
@@ -715,137 +731,12 @@ export function useMyTasksState({ wsId, isPersonal }: UseMyTasksStateProps) {
     }
   };
 
-  // Computed: all visible tasks
-  const allVisibleTasks = useMemo(
-    () => [
-      ...(overdueTasks || []),
-      ...(todayTasks || []),
-      ...(upcomingTasks || []),
-    ],
+  // Server-side filtering: tasks are already filtered by the RPC.
+  // filteredTasks is now just the raw query data.
+  const filteredTasks = useMemo(
+    () => ({ overdueTasks, todayTasks, upcomingTasks }),
     [overdueTasks, todayTasks, upcomingTasks]
   );
-
-  const allVisibleLabels = useMemo(() => {
-    const ids = new Set<string>();
-    allVisibleTasks.forEach((task) => {
-      task.labels?.forEach((l) => {
-        if (l.label) ids.add(l.label.id);
-      });
-    });
-    return workspaceLabels.filter((label: any) => ids.has(label.id));
-  }, [allVisibleTasks, workspaceLabels]);
-
-  const allVisibleProjects = useMemo(() => {
-    const ids = new Set<string>();
-    allVisibleTasks.forEach((task) => {
-      task.projects?.forEach((p) => {
-        if (p.project) ids.add(p.project.id);
-      });
-    });
-    return workspaceProjects.filter((project: any) => ids.has(project.id));
-  }, [allVisibleTasks, workspaceProjects]);
-
-  // Tasks filtered by workspace and board
-  const tasksFilteredByWorkspaceAndBoard = useMemo(() => {
-    const { workspaceIds, boardIds } = taskFilters;
-    if (workspaceIds.includes('all') && boardIds.includes('all')) {
-      return { overdueTasks, todayTasks, upcomingTasks };
-    }
-    const filterFn = (task: TaskWithRelations) => {
-      const wsOk =
-        workspaceIds.includes('all') ||
-        workspaceIds.includes(task.list?.board?.ws_id ?? '');
-      const boardOk =
-        boardIds.includes('all') ||
-        boardIds.includes(task.list?.board?.id ?? '');
-      return wsOk && boardOk;
-    };
-    return {
-      overdueTasks: overdueTasks?.filter(filterFn),
-      todayTasks: todayTasks?.filter(filterFn),
-      upcomingTasks: upcomingTasks?.filter(filterFn),
-    };
-  }, [taskFilters, overdueTasks, todayTasks, upcomingTasks]);
-
-  // Available labels after workspace/board filter
-  const availableLabels = useMemo(() => {
-    const { workspaceIds, boardIds } = taskFilters;
-    if (workspaceIds.includes('all') && boardIds.includes('all')) {
-      return allVisibleLabels;
-    }
-    const allTasks = [
-      ...(tasksFilteredByWorkspaceAndBoard.overdueTasks || []),
-      ...(tasksFilteredByWorkspaceAndBoard.todayTasks || []),
-      ...(tasksFilteredByWorkspaceAndBoard.upcomingTasks || []),
-    ];
-    const ids = new Set<string>();
-    allTasks.forEach((task) => {
-      task.labels?.forEach((l) => {
-        if (l.label) ids.add(l.label.id);
-      });
-    });
-    return allVisibleLabels.filter((label: any) => ids.has(label.id));
-  }, [tasksFilteredByWorkspaceAndBoard, allVisibleLabels, taskFilters]);
-
-  // Available projects after workspace/board filter
-  const availableProjects = useMemo(() => {
-    const { workspaceIds, boardIds } = taskFilters;
-    if (workspaceIds.includes('all') && boardIds.includes('all')) {
-      return allVisibleProjects;
-    }
-    const allTasks = [
-      ...(tasksFilteredByWorkspaceAndBoard.overdueTasks || []),
-      ...(tasksFilteredByWorkspaceAndBoard.todayTasks || []),
-      ...(tasksFilteredByWorkspaceAndBoard.upcomingTasks || []),
-    ];
-    const ids = new Set<string>();
-    allTasks.forEach((task) => {
-      task.projects?.forEach((p) => {
-        if (p.project) ids.add(p.project.id);
-      });
-    });
-    return allVisibleProjects.filter((project: any) => ids.has(project.id));
-  }, [tasksFilteredByWorkspaceAndBoard, allVisibleProjects, taskFilters]);
-
-  // Fully filtered tasks (workspace + board + label + project + selfManaged)
-  const filteredTasks = useMemo(() => {
-    const { workspaceIds, boardIds, labelIds, projectIds, selfManagedOnly } =
-      taskFilters;
-    if (
-      workspaceIds.includes('all') &&
-      boardIds.includes('all') &&
-      labelIds.length === 0 &&
-      projectIds.length === 0 &&
-      !selfManagedOnly
-    ) {
-      return { overdueTasks, todayTasks, upcomingTasks };
-    }
-
-    const filterFn = (task: TaskWithRelations) => {
-      const wsOk =
-        workspaceIds.includes('all') ||
-        workspaceIds.includes(task.list?.board?.ws_id ?? '');
-      const boardOk =
-        boardIds.includes('all') ||
-        boardIds.includes(task.list?.board?.id ?? '');
-      const labelOk =
-        labelIds.length === 0 ||
-        task.labels?.some((l) => l.label && labelIds.includes(l.label.id));
-      const projectOk =
-        projectIds.length === 0 ||
-        task.projects?.some(
-          (p) => p.project && projectIds.includes(p.project.id)
-        );
-      const selfManagedOk = !selfManagedOnly || task.overrides?.self_managed;
-      return wsOk && boardOk && labelOk && projectOk && selfManagedOk;
-    };
-
-    return {
-      overdueTasks: overdueTasks?.filter(filterFn),
-      todayTasks: todayTasks?.filter(filterFn),
-      upcomingTasks: upcomingTasks?.filter(filterFn),
-    };
-  }, [taskFilters, overdueTasks, todayTasks, upcomingTasks]);
 
   return {
     // Query data
@@ -887,6 +778,8 @@ export function useMyTasksState({ wsId, isPersonal }: UseMyTasksStateProps) {
     setAiGeneratePriority,
     aiGenerateLabels,
     setAiGenerateLabels,
+    autoAssignToMe,
+    setAutoAssignToMe,
     previewOpen,
     setPreviewOpen,
     previewEntry,
@@ -923,8 +816,8 @@ export function useMyTasksState({ wsId, isPersonal }: UseMyTasksStateProps) {
     boardConfig,
     availableLists,
     selectedDestination,
-    availableLabels,
-    availableProjects,
+    availableLabels: workspaceLabels,
+    availableProjects: workspaceProjects,
     filteredTasks,
 
     // Mutations

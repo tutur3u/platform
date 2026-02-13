@@ -4,11 +4,11 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { batchColumns } from '@/data/columns/batches';
-import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Batches',

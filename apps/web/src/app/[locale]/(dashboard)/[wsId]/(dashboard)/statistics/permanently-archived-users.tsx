@@ -1,9 +1,9 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import StatisticCard from '@/components/cards/StatisticCard';
-import { notFound } from 'next/navigation';
 
 export default async function PermanentlyArchivedUsersStatistics({
   wsId,

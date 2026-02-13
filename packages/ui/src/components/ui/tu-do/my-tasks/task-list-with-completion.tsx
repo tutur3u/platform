@@ -31,19 +31,27 @@ import {
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { type MouseEvent, useState } from 'react';
+import { MyTaskContextMenu } from './my-task-context-menu';
 import { MY_TASKS_QUERY_KEY, type MyTasksData } from './use-my-tasks-query';
 
 interface TaskListWithCompletionProps {
   tasks: TaskWithRelations[];
   isPersonal?: boolean;
+  userId: string;
   initialLimit?: number;
   onTaskUpdate?: () => void;
+  availableLabels?: Array<{ id: string; name: string; color: string }>;
+  onCreateNewLabel?: () => void;
 }
 
 export default function TaskListWithCompletion({
   tasks,
+  isPersonal = false,
+  userId,
   initialLimit = 3,
   onTaskUpdate,
+  availableLabels = [],
+  onCreateNewLabel,
 }: TaskListWithCompletionProps) {
   const t = useTranslations('ws-tasks');
   const { openTask } = useTaskDialog();
@@ -52,6 +60,10 @@ export default function TaskListWithCompletion({
   const [completingTasks, setCompletingTasks] = useState<Set<string>>(
     new Set()
   );
+  const [contextMenuTaskId, setContextMenuTaskId] = useState<string | null>(
+    null
+  );
+  const [menuGuardUntil, setMenuGuardUntil] = useState(0);
 
   const displayedTasks = showAll ? tasks : tasks.slice(0, initialLimit);
   const hasMoreTasks = tasks.length > initialLimit;
@@ -102,11 +114,40 @@ export default function TaskListWithCompletion({
       e.stopPropagation();
     }
 
-    // Self-managed: use personal completion via overrides API
+    // Undo "done with my part" — clear personally_unassigned override
+    if (task.overrides?.personally_unassigned) {
+      setCompletingTasks((prev) => new Set(prev).add(task.id));
+      try {
+        const response = await fetch(
+          `/api/v1/users/me/tasks/${task.id}/overrides`,
+          {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ personally_unassigned: false }),
+          }
+        );
+        if (!response.ok) throw new Error('Failed to update override');
+        toast.success('Restored task to active');
+        onTaskUpdate?.();
+      } catch (error) {
+        console.error('Error updating task override:', error);
+        toast.error('Failed to update task.');
+      } finally {
+        setCompletingTasks((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(task.id);
+          return newSet;
+        });
+      }
+      return;
+    }
+
+    // Self-managed personal completion toggle
     if (task.overrides?.self_managed) {
+      const isAlreadyDone = !!task.overrides.completed_at;
       setCompletingTasks((prev) => new Set(prev).add(task.id));
       const snapshot = snapshotCache();
-      removeTaskFromCache(task.id);
+      if (!isAlreadyDone) removeTaskFromCache(task.id);
 
       try {
         const response = await fetch(
@@ -115,17 +156,21 @@ export default function TaskListWithCompletion({
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              completed_at: new Date().toISOString(),
+              completed_at: isAlreadyDone ? null : new Date().toISOString(),
             }),
           }
         );
         if (!response.ok) throw new Error('Failed to update override');
-        toast.success('Task personally completed!');
+        toast.success(
+          isAlreadyDone
+            ? 'Personal completion undone'
+            : 'Task personally completed!'
+        );
         onTaskUpdate?.();
       } catch (error) {
         console.error('Error updating task override:', error);
         toast.error('Failed to update task. Changes reverted.');
-        restoreCache(snapshot);
+        if (!isAlreadyDone) restoreCache(snapshot);
       } finally {
         setCompletingTasks((prev) => {
           const newSet = new Set(prev);
@@ -179,6 +224,23 @@ export default function TaskListWithCompletion({
         .eq('id', task.id);
 
       if (error) throw error;
+
+      // When completing a task, clear redundant personal overrides
+      if (
+        !isCompleted &&
+        (task.overrides?.completed_at || task.overrides?.personally_unassigned)
+      ) {
+        await fetch(`/api/v1/users/me/tasks/${task.id}/overrides`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            completed_at: null,
+            personally_unassigned: false,
+          }),
+        }).catch(() => {
+          // Non-critical cleanup — don't block the completion flow
+        });
+      }
 
       toast.success(
         isCompleted ? 'Task marked as incomplete' : 'Task completed!'
@@ -294,349 +356,384 @@ export default function TaskListWithCompletion({
         const isCompleting = completingTasks.has(task.id);
 
         return (
-          <div
+          <MyTaskContextMenu
             key={task.id}
-            className={cn(
-              'group relative overflow-hidden rounded-xl border p-5 shadow-sm transition-all duration-300',
-              taskOverdue &&
-                !task.archived &&
-                !isCompleted &&
-                !isPersonallyCompleted &&
-                !isPersonallyUnassigned
-                ? 'border-dynamic-red/30 bg-linear-to-br from-dynamic-red/5 via-dynamic-red/3 to-transparent'
-                : isCompleted || isPersonallyCompleted || isPersonallyUnassigned
-                  ? 'border-dynamic-green/20 bg-dynamic-green/5 opacity-70'
-                  : 'border-border/50 bg-linear-to-br from-card via-card/95 to-card/90 hover:border-primary/30 hover:shadow-lg'
-            )}
+            task={task}
+            userId={userId}
+            open={contextMenuTaskId === task.id}
+            onOpenChange={(open) => {
+              setContextMenuTaskId(open ? task.id : null);
+            }}
+            menuGuardUntil={menuGuardUntil}
+            isPersonal={isPersonal}
+            availableLabels={availableLabels}
+            onTaskUpdate={onTaskUpdate ?? (() => {})}
+            onCreateNewLabel={onCreateNewLabel}
           >
-            {/* Main content area */}
-            <div className="flex items-start gap-3">
-              {/* Checkbox for completion */}
-              <div className="flex items-start pt-1">
-                {isCompleting ? (
-                  <div className="p-0.5">
-                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                  </div>
-                ) : isCompleted ||
-                  isPersonallyCompleted ||
-                  isPersonallyUnassigned ? (
-                  <button
-                    type="button"
-                    onClick={(e) => handleToggleComplete(task, e)}
-                    className="group/checkbox rounded-md p-0.5 transition-all hover:bg-muted/50"
-                  >
-                    <CheckCircle2 className="h-5 w-5 text-dynamic-green transition-transform group-hover/checkbox:scale-110" />
-                  </button>
-                ) : (
-                  <Checkbox
-                    checked={false}
-                    onCheckedChange={() =>
-                      handleToggleComplete(task, {} as Record<string, never>)
-                    }
-                    className="h-5 w-5 transition-all hover:scale-110 hover:border-primary"
-                  />
-                )}
-              </div>
-
-              {/* Task info - clickable area */}
-              <button
-                type="button"
-                className="min-w-0 flex-1 text-left lg:gap-y-3"
-                onClick={(e) => handleEditTask(task, e)}
-              >
-                {/* Desktop layout */}
-                {(() => {
-                  const hasLabels = task.labels && task.labels.length > 0;
-                  const hasProjects = task.projects && task.projects.length > 0;
-                  const hasLine2 = hasLabels || hasProjects;
-                  return (
-                    <div
-                      className={cn('flex flex-col', hasLine2 ? 'gap-y-3' : '')}
+            <div
+              onContextMenu={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setContextMenuTaskId(task.id);
+                setMenuGuardUntil(Date.now() + 300);
+              }}
+              className={cn(
+                'group relative overflow-hidden rounded-xl border p-5 shadow-sm transition-all duration-300',
+                taskOverdue &&
+                  !task.archived &&
+                  !isCompleted &&
+                  !isPersonallyCompleted &&
+                  !isPersonallyUnassigned
+                  ? 'border-dynamic-red/30 bg-linear-to-br from-dynamic-red/5 via-dynamic-red/3 to-transparent'
+                  : isCompleted ||
+                      isPersonallyCompleted ||
+                      isPersonallyUnassigned
+                    ? 'border-dynamic-green/20 bg-dynamic-green/5 opacity-70'
+                    : 'border-border/50 bg-linear-to-br from-card via-card/95 to-card/90 hover:border-primary/30 hover:shadow-lg'
+              )}
+            >
+              {/* Main content area */}
+              <div className="flex items-start gap-3">
+                {/* Checkbox for completion */}
+                <div className="flex items-start pt-1">
+                  {isCompleting ? (
+                    <div className="p-0.5">
+                      <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                    </div>
+                  ) : isCompleted ||
+                    isPersonallyCompleted ||
+                    isPersonallyUnassigned ? (
+                    <button
+                      type="button"
+                      onClick={(e) => handleToggleComplete(task, e)}
+                      className="group/checkbox rounded-md p-0.5 transition-all hover:bg-muted/50"
                     >
-                      <div className="hidden items-center justify-between gap-2 md:flex">
-                        <div className="flex flex-1 items-center gap-2">
-                          <h4
-                            className={cn(
-                              'font-bold text-base leading-snug transition-colors duration-200 group-hover:text-primary',
-                              isCompleted ||
-                                isPersonallyCompleted ||
-                                isPersonallyUnassigned
-                                ? 'text-muted-foreground line-through'
-                                : 'text-foreground'
-                            )}
-                          >
-                            {task.name}
-                          </h4>
-                          {task.overrides?.self_managed && (
-                            <Badge
-                              variant="secondary"
-                              className="h-5 shrink-0 gap-1 border-dynamic-purple/30 bg-dynamic-purple/15 px-1.5 text-[10px] text-dynamic-purple"
-                            >
-                              <UserRoundCog className="h-3 w-3" />
-                            </Badge>
-                          )}
-                          {isPersonallyCompleted && (
-                            <Badge
-                              variant="secondary"
-                              className="h-5 shrink-0 gap-1 border-dynamic-green/30 bg-dynamic-green/15 px-1.5 text-[10px] text-dynamic-green"
-                            >
-                              <UserCheck className="h-3 w-3" />
-                              <span className="hidden sm:inline">
-                                {t('personally_done')}
-                              </span>
-                            </Badge>
-                          )}
-                          {isPersonallyUnassigned && (
-                            <Badge
-                              variant="secondary"
-                              className="h-5 shrink-0 gap-1 border-dynamic-orange/30 bg-dynamic-orange/15 px-1.5 text-[10px] text-dynamic-orange"
-                            >
-                              <UserMinus className="h-3 w-3" />
-                              <span className="hidden sm:inline">
-                                {t('done_with_my_part')}
-                              </span>
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs">
-                          {task.list?.board?.id && task.list?.board?.ws_id && (
-                            <Link
-                              href={`/${task.list.board.ws_id}/tasks/boards/${task.list.board.id}`}
-                              onClick={(e) => e.stopPropagation()}
-                              className="group/link flex items-center gap-1.5 rounded-lg bg-dynamic-green/10 px-2.5 py-1 font-semibold text-dynamic-green shadow-sm ring-1 ring-dynamic-green/20 transition-all hover:bg-dynamic-green/20 hover:shadow-md"
-                            >
-                              <span className="truncate group-hover/link:underline">
-                                {task.list?.board?.name || 'Board'}
-                              </span>
-                            </Link>
-                          )}
+                      <CheckCircle2 className="h-5 w-5 text-dynamic-green transition-transform group-hover/checkbox:scale-110" />
+                    </button>
+                  ) : (
+                    <Checkbox
+                      checked={false}
+                      onCheckedChange={() =>
+                        handleToggleComplete(task, {} as Record<string, never>)
+                      }
+                      className="h-5 w-5 transition-all hover:scale-110 hover:border-primary"
+                    />
+                  )}
+                </div>
 
-                          {task.list?.board?.id && task.list?.name && (
-                            <span className="text-muted-foreground/40">→</span>
-                          )}
-
-                          {task.list?.name && (
-                            <span className="truncate rounded-lg bg-dynamic-purple/10 px-2.5 py-1 font-semibold text-dynamic-purple shadow-sm ring-1 ring-dynamic-purple/20">
-                              {task.list.name}
-                            </span>
-                          )}
-
-                          {endDate && (
-                            <span className="text-muted-foreground/30">•</span>
-                          )}
-
-                          {endDate && (
-                            <div
+                {/* Task info - clickable area */}
+                <button
+                  type="button"
+                  className="min-w-0 flex-1 text-left lg:gap-y-3"
+                  onClick={(e) => handleEditTask(task, e)}
+                >
+                  {/* Desktop layout */}
+                  {(() => {
+                    const hasLabels = task.labels && task.labels.length > 0;
+                    const hasProjects =
+                      task.projects && task.projects.length > 0;
+                    const hasLine2 = hasLabels || hasProjects;
+                    return (
+                      <div
+                        className={cn(
+                          'flex flex-col',
+                          hasLine2 ? 'gap-y-3' : ''
+                        )}
+                      >
+                        <div className="hidden items-center justify-between gap-2 md:flex">
+                          <div className="flex flex-1 items-center gap-2">
+                            <h4
                               className={cn(
-                                'flex items-center gap-1.5 rounded-lg px-2.5 py-1 font-medium shadow-sm ring-1 transition-colors',
-                                taskOverdue && !task.archived && !isCompleted
-                                  ? 'bg-dynamic-red/10 text-dynamic-red ring-dynamic-red/20'
-                                  : 'bg-dynamic-orange/10 text-dynamic-orange ring-dynamic-orange/20'
+                                'font-bold text-base leading-snug transition-colors duration-200 group-hover:text-primary',
+                                isCompleted ||
+                                  isPersonallyCompleted ||
+                                  isPersonallyUnassigned
+                                  ? 'text-muted-foreground line-through'
+                                  : 'text-foreground'
                               )}
                             >
-                              <Calendar className="h-3.5 w-3.5 shrink-0" />
-                              <span className="truncate">
-                                {formatSmartDate(endDate)}
-                              </span>
-                            </div>
-                          )}
+                              {task.name}
+                            </h4>
+                            {task.overrides?.self_managed && (
+                              <Badge
+                                variant="secondary"
+                                className="h-5 shrink-0 gap-1 border-dynamic-purple/30 bg-dynamic-purple/15 px-1.5 text-[10px] text-dynamic-purple"
+                              >
+                                <UserRoundCog className="h-3 w-3" />
+                              </Badge>
+                            )}
+                            {isPersonallyCompleted && (
+                              <Badge
+                                variant="secondary"
+                                className="h-5 shrink-0 gap-1 border-dynamic-green/30 bg-dynamic-green/15 px-1.5 text-[10px] text-dynamic-green"
+                              >
+                                <UserCheck className="h-3 w-3" />
+                                <span className="hidden sm:inline">
+                                  {t('personally_done')}
+                                </span>
+                              </Badge>
+                            )}
+                            {isPersonallyUnassigned && (
+                              <Badge
+                                variant="secondary"
+                                className="h-5 shrink-0 gap-1 border-dynamic-orange/30 bg-dynamic-orange/15 px-1.5 text-[10px] text-dynamic-orange"
+                              >
+                                <UserMinus className="h-3 w-3" />
+                                <span className="hidden sm:inline">
+                                  {t('done_with_my_part')}
+                                </span>
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs">
+                            {task.list?.board?.id &&
+                              task.list?.board?.ws_id && (
+                                <Link
+                                  href={`/${task.list.board.ws_id}/tasks/boards/${task.list.board.id}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="group/link flex items-center gap-1.5 rounded-lg bg-dynamic-green/10 px-2.5 py-1 font-semibold text-dynamic-green shadow-sm ring-1 ring-dynamic-green/20 transition-all hover:bg-dynamic-green/20 hover:shadow-md"
+                                >
+                                  <span className="truncate group-hover/link:underline">
+                                    {task.list?.board?.name || 'Board'}
+                                  </span>
+                                </Link>
+                              )}
 
-                          {task.assignees && task.assignees.length > 0 && (
-                            <>
+                            {task.list?.board?.id && task.list?.name && (
+                              <span className="text-muted-foreground/40">
+                                →
+                              </span>
+                            )}
+
+                            {task.list?.name && (
+                              <span className="truncate rounded-lg bg-dynamic-purple/10 px-2.5 py-1 font-semibold text-dynamic-purple shadow-sm ring-1 ring-dynamic-purple/20">
+                                {task.list.name}
+                              </span>
+                            )}
+
+                            {endDate && (
                               <span className="text-muted-foreground/30">
                                 •
                               </span>
-                              <div className="flex -space-x-2">
-                                {task.assignees.slice(0, 2).map((assignee) => (
-                                  <Avatar
-                                    key={assignee.user?.id}
-                                    className="h-6 w-6 border-2 border-background shadow-sm ring-1 ring-border/50 transition-all duration-200 hover:z-10 hover:scale-110 hover:ring-primary/30"
-                                  >
-                                    <AvatarImage
-                                      src={
-                                        assignee.user?.avatar_url || undefined
-                                      }
-                                      alt={
-                                        assignee.user?.display_name || 'User'
-                                      }
-                                    />
-                                    <AvatarFallback className="font-semibold text-[9px]">
-                                      {(assignee.user?.display_name || 'U')
-                                        .charAt(0)
-                                        .toUpperCase()}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                ))}
-                                {task.assignees.length > 2 && (
-                                  <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-linear-to-br from-primary/20 to-primary/10 font-bold text-[8px] text-primary shadow-sm ring-1 ring-border/50">
-                                    +{task.assignees.length - 2}
-                                  </div>
-                                )}
-                              </div>
-                            </>
-                          )}
+                            )}
 
-                          {task.estimation_points !== null &&
-                            task.estimation_points !== undefined && (
+                            {endDate && (
+                              <div
+                                className={cn(
+                                  'flex items-center gap-1.5 rounded-lg px-2.5 py-1 font-medium shadow-sm ring-1 transition-colors',
+                                  taskOverdue && !task.archived && !isCompleted
+                                    ? 'bg-dynamic-red/10 text-dynamic-red ring-dynamic-red/20'
+                                    : 'bg-dynamic-orange/10 text-dynamic-orange ring-dynamic-orange/20'
+                                )}
+                              >
+                                <Calendar className="h-3.5 w-3.5 shrink-0" />
+                                <span className="truncate">
+                                  {formatSmartDate(endDate)}
+                                </span>
+                              </div>
+                            )}
+
+                            {task.assignees && task.assignees.length > 0 && (
                               <>
                                 <span className="text-muted-foreground/30">
                                   •
                                 </span>
-                                <TaskEstimationDisplay
-                                  points={task.estimation_points}
-                                  size="sm"
-                                  showIcon={true}
-                                  estimationType={
-                                    task.list?.board?.estimation_type
-                                  }
-                                />
+                                <div className="flex -space-x-2">
+                                  {task.assignees
+                                    .slice(0, 2)
+                                    .map((assignee) => (
+                                      <Avatar
+                                        key={assignee.user?.id}
+                                        className="h-6 w-6 border-2 border-background shadow-sm ring-1 ring-border/50 transition-all duration-200 hover:z-10 hover:scale-110 hover:ring-primary/30"
+                                      >
+                                        <AvatarImage
+                                          src={
+                                            assignee.user?.avatar_url ||
+                                            undefined
+                                          }
+                                          alt={
+                                            assignee.user?.display_name ||
+                                            'User'
+                                          }
+                                        />
+                                        <AvatarFallback className="font-semibold text-[9px]">
+                                          {(assignee.user?.display_name || 'U')
+                                            .charAt(0)
+                                            .toUpperCase()}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                    ))}
+                                  {task.assignees.length > 2 && (
+                                    <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-linear-to-br from-primary/20 to-primary/10 font-bold text-[8px] text-primary shadow-sm ring-1 ring-border/50">
+                                      +{task.assignees.length - 2}
+                                    </div>
+                                  )}
+                                </div>
                               </>
                             )}
+
+                            {task.estimation_points !== null &&
+                              task.estimation_points !== undefined && (
+                                <>
+                                  <span className="text-muted-foreground/30">
+                                    •
+                                  </span>
+                                  <TaskEstimationDisplay
+                                    points={task.estimation_points}
+                                    size="sm"
+                                    showIcon={true}
+                                    estimationType={
+                                      task.list?.board?.estimation_type
+                                    }
+                                  />
+                                </>
+                              )}
+                          </div>
                         </div>
                       </div>
+                    );
+                  })()}
+
+                  {/* Mobile layout */}
+                  <div className="space-y-4 md:hidden">
+                    <div className="mt-1 flex items-start gap-3">
+                      <h4
+                        className={cn(
+                          'line-clamp-2 flex-1 font-bold text-base leading-snug transition-colors duration-200 group-hover:text-primary',
+                          isCompleted ||
+                            isPersonallyCompleted ||
+                            isPersonallyUnassigned
+                            ? 'text-muted-foreground line-through'
+                            : 'text-foreground'
+                        )}
+                      >
+                        {task.name}
+                      </h4>
+                      {task.overrides?.self_managed && (
+                        <Badge
+                          variant="secondary"
+                          className="h-5 shrink-0 gap-1 border-dynamic-purple/30 bg-dynamic-purple/15 px-1.5 text-[10px] text-dynamic-purple"
+                        >
+                          <UserRoundCog className="h-3 w-3" />
+                        </Badge>
+                      )}
+                      {isPersonallyCompleted && (
+                        <Badge
+                          variant="secondary"
+                          className="h-5 shrink-0 gap-1 border-dynamic-green/30 bg-dynamic-green/15 px-1.5 text-[10px] text-dynamic-green"
+                        >
+                          <UserCheck className="h-3 w-3" />
+                        </Badge>
+                      )}
+                      {isPersonallyUnassigned && (
+                        <Badge
+                          variant="secondary"
+                          className="h-5 shrink-0 gap-1 border-dynamic-orange/30 bg-dynamic-orange/15 px-1.5 text-[10px] text-dynamic-orange"
+                        >
+                          <UserMinus className="h-3 w-3" />
+                        </Badge>
+                      )}
+                      {task.estimation_points !== null &&
+                        task.estimation_points !== undefined && (
+                          <TaskEstimationDisplay
+                            points={task.estimation_points}
+                            size="sm"
+                            showIcon={true}
+                            estimationType={task.list?.board?.estimation_type}
+                          />
+                        )}
                     </div>
-                  );
-                })()}
 
-                {/* Mobile layout */}
-                <div className="space-y-4 md:hidden">
-                  <div className="mt-1 flex items-start gap-3">
-                    <h4
-                      className={cn(
-                        'line-clamp-2 flex-1 font-bold text-base leading-snug transition-colors duration-200 group-hover:text-primary',
-                        isCompleted ||
-                          isPersonallyCompleted ||
-                          isPersonallyUnassigned
-                          ? 'text-muted-foreground line-through'
-                          : 'text-foreground'
-                      )}
-                    >
-                      {task.name}
-                    </h4>
-                    {task.overrides?.self_managed && (
-                      <Badge
-                        variant="secondary"
-                        className="h-5 shrink-0 gap-1 border-dynamic-purple/30 bg-dynamic-purple/15 px-1.5 text-[10px] text-dynamic-purple"
-                      >
-                        <UserRoundCog className="h-3 w-3" />
-                      </Badge>
-                    )}
-                    {isPersonallyCompleted && (
-                      <Badge
-                        variant="secondary"
-                        className="h-5 shrink-0 gap-1 border-dynamic-green/30 bg-dynamic-green/15 px-1.5 text-[10px] text-dynamic-green"
-                      >
-                        <UserCheck className="h-3 w-3" />
-                      </Badge>
-                    )}
-                    {isPersonallyUnassigned && (
-                      <Badge
-                        variant="secondary"
-                        className="h-5 shrink-0 gap-1 border-dynamic-orange/30 bg-dynamic-orange/15 px-1.5 text-[10px] text-dynamic-orange"
-                      >
-                        <UserMinus className="h-3 w-3" />
-                      </Badge>
-                    )}
-                    {task.estimation_points !== null &&
-                      task.estimation_points !== undefined && (
-                        <TaskEstimationDisplay
-                          points={task.estimation_points}
-                          size="sm"
-                          showIcon={true}
-                          estimationType={task.list?.board?.estimation_type}
-                        />
-                      )}
-                  </div>
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs">
+                        {task.list?.board?.id && task.list?.board?.ws_id && (
+                          <Link
+                            href={`/${task.list.board.ws_id}/tasks/boards/${task.list.board.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="group/link flex items-center gap-1 rounded-lg bg-dynamic-green/10 px-2 py-0.5 font-semibold text-dynamic-green shadow-sm ring-1 ring-dynamic-green/20 transition-all hover:bg-dynamic-green/20"
+                          >
+                            <span className="truncate group-hover/link:underline">
+                              {task.list?.board?.name || 'Board'}
+                            </span>
+                          </Link>
+                        )}
 
-                  <div className="space-y-3">
-                    <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs">
-                      {task.list?.board?.id && task.list?.board?.ws_id && (
-                        <Link
-                          href={`/${task.list.board.ws_id}/tasks/boards/${task.list.board.id}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="group/link flex items-center gap-1 rounded-lg bg-dynamic-green/10 px-2 py-0.5 font-semibold text-dynamic-green shadow-sm ring-1 ring-dynamic-green/20 transition-all hover:bg-dynamic-green/20"
-                        >
-                          <span className="truncate group-hover/link:underline">
-                            {task.list?.board?.name || 'Board'}
+                        {task.list?.board?.id && task.list?.name && (
+                          <span className="text-muted-foreground/40">→</span>
+                        )}
+
+                        {task.list?.name && (
+                          <span className="truncate rounded-lg bg-dynamic-purple/10 px-2 py-0.5 font-semibold text-dynamic-purple text-xs shadow-sm ring-1 ring-dynamic-purple/20">
+                            {task.list.name}
                           </span>
-                        </Link>
-                      )}
+                        )}
 
-                      {task.list?.board?.id && task.list?.name && (
-                        <span className="text-muted-foreground/40">→</span>
-                      )}
-
-                      {task.list?.name && (
-                        <span className="truncate rounded-lg bg-dynamic-purple/10 px-2 py-0.5 font-semibold text-dynamic-purple text-xs shadow-sm ring-1 ring-dynamic-purple/20">
-                          {task.list.name}
-                        </span>
-                      )}
-
-                      {endDate && (
-                        <span className="text-muted-foreground/30">•</span>
-                      )}
-
-                      {endDate && (
-                        <div
-                          className={cn(
-                            'flex items-center gap-1.5 rounded-lg px-2.5 py-1 font-medium shadow-sm ring-1 transition-colors',
-                            taskOverdue && !task.archived && !isCompleted
-                              ? 'bg-dynamic-red/10 text-dynamic-red ring-dynamic-red/20'
-                              : 'bg-dynamic-orange/10 text-dynamic-orange ring-dynamic-orange/20'
-                          )}
-                        >
-                          <Calendar className="h-3.5 w-3.5 shrink-0" />
-                          <span className="truncate">
-                            {formatSmartDate(endDate)}
-                          </span>
-                        </div>
-                      )}
-
-                      {task.assignees && task.assignees.length > 0 && (
-                        <>
+                        {endDate && (
                           <span className="text-muted-foreground/30">•</span>
-                          <div className="flex -space-x-2">
-                            {task.assignees.slice(0, 2).map((assignee) => (
-                              <Avatar
-                                key={assignee.user?.id}
-                                className="h-6 w-6 border-2 border-background shadow-sm ring-1 ring-border/50 transition-all duration-200 hover:z-10 hover:scale-110 hover:ring-primary/30"
-                              >
-                                <AvatarImage
-                                  src={assignee.user?.avatar_url || undefined}
-                                  alt={assignee.user?.display_name || 'User'}
-                                />
-                                <AvatarFallback className="font-semibold text-[9px]">
-                                  {(assignee.user?.display_name || 'U')
-                                    .charAt(0)
-                                    .toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                            ))}
-                            {task.assignees.length > 2 && (
-                              <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-linear-to-br from-primary/20 to-primary/10 font-bold text-[8px] text-primary shadow-sm ring-1 ring-border/50">
-                                +{task.assignees.length - 2}
-                              </div>
+                        )}
+
+                        {endDate && (
+                          <div
+                            className={cn(
+                              'flex items-center gap-1.5 rounded-lg px-2.5 py-1 font-medium shadow-sm ring-1 transition-colors',
+                              taskOverdue && !task.archived && !isCompleted
+                                ? 'bg-dynamic-red/10 text-dynamic-red ring-dynamic-red/20'
+                                : 'bg-dynamic-orange/10 text-dynamic-orange ring-dynamic-orange/20'
                             )}
+                          >
+                            <Calendar className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate">
+                              {formatSmartDate(endDate)}
+                            </span>
                           </div>
-                        </>
-                      )}
+                        )}
+
+                        {task.assignees && task.assignees.length > 0 && (
+                          <>
+                            <span className="text-muted-foreground/30">•</span>
+                            <div className="flex -space-x-2">
+                              {task.assignees.slice(0, 2).map((assignee) => (
+                                <Avatar
+                                  key={assignee.user?.id}
+                                  className="h-6 w-6 border-2 border-background shadow-sm ring-1 ring-border/50 transition-all duration-200 hover:z-10 hover:scale-110 hover:ring-primary/30"
+                                >
+                                  <AvatarImage
+                                    src={assignee.user?.avatar_url || undefined}
+                                    alt={assignee.user?.display_name || 'User'}
+                                  />
+                                  <AvatarFallback className="font-semibold text-[9px]">
+                                    {(assignee.user?.display_name || 'U')
+                                      .charAt(0)
+                                      .toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                              ))}
+                              {task.assignees.length > 2 && (
+                                <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-linear-to-br from-primary/20 to-primary/10 font-bold text-[8px] text-primary shadow-sm ring-1 ring-border/50">
+                                  +{task.assignees.length - 2}
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </button>
-
-              {/* Inline "Done with my part" action for self-managed tasks */}
-              {task.overrides?.self_managed && !isCompleting && (
-                <button
-                  type="button"
-                  onClick={(e) => handlePersonalUnassign(task, e)}
-                  className="hidden shrink-0 items-center gap-1 self-center rounded-md px-2 py-1 text-dynamic-red text-xs transition-opacity hover:bg-dynamic-red/10 md:flex md:opacity-0 md:group-hover:opacity-100"
-                >
-                  <UserMinus className="h-3.5 w-3.5" />
                 </button>
-              )}
+
+                {/* Inline "Done with my part" action for self-managed tasks */}
+                {task.overrides?.self_managed && !isCompleting && (
+                  <button
+                    type="button"
+                    onClick={(e) => handlePersonalUnassign(task, e)}
+                    className="hidden shrink-0 items-center gap-1 self-center rounded-md px-2 py-1 text-dynamic-red text-xs transition-opacity hover:bg-dynamic-red/10 md:flex md:opacity-0 md:group-hover:opacity-100"
+                  >
+                    <UserMinus className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
+          </MyTaskContextMenu>
         );
       })}
 

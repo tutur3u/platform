@@ -19,11 +19,13 @@ import { useMyTasksState } from './use-my-tasks-state';
 
 interface MyTasksContentProps {
   wsId: string;
+  userId: string;
   isPersonal: boolean;
 }
 
 export default function MyTasksContent({
   wsId,
+  userId,
   isPersonal,
 }: MyTasksContentProps) {
   const queryClient = useQueryClient();
@@ -33,6 +35,7 @@ export default function MyTasksContent({
   );
   const state = useMyTasksState({
     wsId,
+    userId,
     isPersonal,
   });
 
@@ -46,7 +49,7 @@ export default function MyTasksContent({
       />
 
       {/* Command Bar */}
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto mb-32 max-w-5xl">
         <CommandBar
           value={state.commandBarInput}
           onValueChange={state.setCommandBarInput}
@@ -71,6 +74,8 @@ export default function MyTasksContent({
           onAiGenerateDescriptionsChange={state.setAiGenerateDescriptions}
           onAiGeneratePriorityChange={state.setAiGeneratePriority}
           onAiGenerateLabelsChange={state.setAiGenerateLabels}
+          autoAssignToMe={state.autoAssignToMe}
+          onAutoAssignToMeChange={state.setAutoAssignToMe}
           workspaceLabels={state.workspaceLabels}
           workspaceProjects={state.workspaceProjects}
           workspaceMembers={state.workspaceMembers}
@@ -122,6 +127,7 @@ export default function MyTasksContent({
       {/* Task Sections */}
       <TaskList
         wsId={wsId}
+        userId={userId}
         isPersonal={isPersonal}
         commandBarLoading={
           state.commandBarLoading || state.previewMutation.isPending
@@ -140,6 +146,8 @@ export default function MyTasksContent({
         collapsedSections={state.collapsedSections}
         toggleSection={state.toggleSection}
         handleUpdate={state.handleUpdate}
+        availableLabels={state.workspaceLabels}
+        onCreateNewLabel={() => state.setNewLabelDialogOpen(true)}
       />
 
       {/* Board & List Selection Dialog */}

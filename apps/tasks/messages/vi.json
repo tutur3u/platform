@@ -12050,6 +12050,7 @@
       "no_list_selected": "Chưa chọn danh sách",
       "no_tasks_to_create": "Không có nhiệm vụ để tạo"
     },
+    "failed_to_update": "Cập nhật nhiệm vụ thất bại",
     "good_afternoon": "Chào buổi chiều",
     "good_evening": "Chào buổi tối",
     "good_morning": "Chào buổi sáng",
@@ -12062,6 +12063,7 @@
     "no_due_date": "Không có ngày đến hạn",
     "no_tasks": "Không tìm thấy nhiệm vụ",
     "no_tasks_assigned": "Bạn chưa được giao nhiệm vụ nào",
+    "open_in_board": "Mở trong bảng",
     "overdue": "Quá hạn",
     "personal_completion": "Hoàn thành cá nhân",
     "personal_notes": "Ghi chú cá nhân",
@@ -12077,6 +12079,9 @@
     "self_managed": "Tự quản lý",
     "tasks_completed": "nhiệm vụ đã hoàn thành",
     "tasks_selected": "{count} trên {total} nhiệm vụ đã chọn",
+    "unassign_me": "Hủy phân công",
+    "undo_complete": "Hoàn tác hoàn thành",
+    "undo_done_with_my_part": "Hoàn tác phần của tôi",
     "upcoming": "Sắp tới",
     "use_team_value": "Dùng giá trị nhóm"
   },

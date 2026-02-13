@@ -26,12 +26,12 @@ export function KanbanSkeleton() {
           {[1, 2, 3, 4].map((i) => (
             <Card key={i} className="h-full w-87.5 animate-pulse">
               <div className="p-4">
-                <div className="mb-4 h-6 w-32 rounded bg-gray-200"></div>
+                <div className="mb-4 h-6 w-32 rounded bg-muted"></div>
                 <div className="space-y-3">
                   {[1, 2, 3].map((j) => (
                     <div
                       key={j}
-                      className="h-24 w-full rounded bg-gray-100"
+                      className="h-24 w-full rounded bg-muted/50"
                     ></div>
                   ))}
                 </div>

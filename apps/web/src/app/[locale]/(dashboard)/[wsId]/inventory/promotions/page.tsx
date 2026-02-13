@@ -7,12 +7,12 @@ import { PromotionForm } from '@tuturuuu/ui/finance/invoices/promotion-form';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { getPromotionColumns } from './columns';
 import WorkspaceSettingsForm from './settings-form';
-import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Promotions',

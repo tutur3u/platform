@@ -1,8 +1,8 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { formatBytes } from '@tuturuuu/utils/format';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import StatisticCard from '@/components/cards/StatisticCard';
 import { notFound } from 'next/navigation';
+import StatisticCard from '@/components/cards/StatisticCard';
 
 // ============================================================================
 // Workspace Overview Stats

@@ -1,6 +1,6 @@
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 
 export async function UsersCategoryStatistics({ wsId }: { wsId: string }) {
   const t = await getTranslations();

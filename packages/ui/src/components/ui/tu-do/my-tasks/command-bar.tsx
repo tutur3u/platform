@@ -93,6 +93,8 @@ interface CommandBarProps {
   onAiGenerateDescriptionsChange?: (value: boolean) => void;
   onAiGeneratePriorityChange?: (value: boolean) => void;
   onAiGenerateLabelsChange?: (value: boolean) => void;
+  autoAssignToMe?: boolean;
+  onAutoAssignToMeChange?: (value: boolean) => void;
   workspaceLabels?: WorkspaceLabel[];
   workspaceProjects?: WorkspaceProject[];
   workspaceMembers?: WorkspaceMember[];
@@ -117,6 +119,8 @@ export function CommandBar({
   onAiGenerateDescriptionsChange,
   onAiGeneratePriorityChange,
   onAiGenerateLabelsChange,
+  autoAssignToMe = true,
+  onAutoAssignToMeChange,
   workspaceLabels = [],
   workspaceProjects = [],
   workspaceMembers = [],
@@ -317,10 +321,15 @@ export function CommandBar({
           {/* Inline Destination Selector */}
           <div className="mb-2">
             {hasDestination && selectedDestination ? (
-              <button
-                type="button"
+              <div
                 onClick={() => onOpenBoardSelector()}
-                className="group/dest inline-flex items-center gap-1.5 rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 px-2.5 py-1 text-dynamic-blue text-xs transition-all hover:bg-dynamic-blue/10"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onOpenBoardSelector();
+                  }
+                }}
+                className="group/dest inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 px-2.5 py-1 text-dynamic-blue text-xs transition-all hover:bg-dynamic-blue/10"
               >
                 <MapPin className="h-3 w-3 shrink-0" />
                 <span>
@@ -344,7 +353,7 @@ export function CommandBar({
                 >
                   <X className="h-3 w-3 shrink-0" />
                 </button>
-              </button>
+              </div>
             ) : (
               <button
                 type="button"
@@ -1261,6 +1270,25 @@ export function CommandBar({
                 )}
               />
               <span className="text-xs md:text-sm">AI</span>
+            </Button>
+
+            {/* Assign to me toggle */}
+            <Button
+              variant={autoAssignToMe ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => onAutoAssignToMeChange?.(!autoAssignToMe)}
+              disabled={isLoading}
+              className={cn(
+                'h-8 gap-1.5 rounded-lg border px-2.5 transition-all md:h-9 md:gap-2 md:px-3',
+                autoAssignToMe
+                  ? 'border-dynamic-purple/20 bg-dynamic-purple/5 text-dynamic-purple shadow-lg hover:bg-dynamic-purple/10 hover:shadow-xl'
+                  : 'border-border'
+              )}
+            >
+              <UserPlus className="h-3.5 w-3.5 md:h-4 md:w-4" />
+              <span className="hidden text-xs sm:inline md:text-sm">
+                Assign to me
+              </span>
             </Button>
           </div>
 

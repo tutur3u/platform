@@ -12077,6 +12077,7 @@
       "no_list_selected": "No list selected",
       "no_tasks_to_create": "No tasks to create"
     },
+    "failed_to_update": "Failed to update task",
     "good_afternoon": "Good afternoon",
     "good_evening": "Good evening",
     "good_morning": "Good morning",
@@ -12089,6 +12090,7 @@
     "no_due_date": "No Due Date",
     "no_tasks": "No Tasks Found",
     "no_tasks_assigned": "You don't have any tasks assigned to you yet",
+    "open_in_board": "Open in board",
     "overdue": "Overdue",
     "personal_completion": "Personal Completion",
     "personal_notes": "Personal Notes",
@@ -12104,6 +12106,9 @@
     "self_managed": "Self-managed",
     "tasks_completed": "tasks completed",
     "tasks_selected": "{count} of {total} tasks selected",
+    "unassign_me": "Unassign me",
+    "undo_complete": "Undo completion",
+    "undo_done_with_my_part": "Undo done with my part",
     "upcoming": "Upcoming",
     "use_team_value": "Use team value"
   },

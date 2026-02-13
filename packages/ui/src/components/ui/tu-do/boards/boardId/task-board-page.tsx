@@ -1,10 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Workspace, WorkspaceProductTier } from '@tuturuuu/types';
-import {
-  getTaskBoard,
-  getTaskLists,
-  getTasks,
-} from '@tuturuuu/utils/task-helper';
+import { getTaskBoard, getTaskLists } from '@tuturuuu/utils/task-helper';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound, redirect } from 'next/navigation';
@@ -31,7 +27,10 @@ export default async function TaskBoardPage({ params }: Props) {
     notFound();
   }
 
-  const board = await getTaskBoard(supabase, boardId);
+  const [board, lists] = await Promise.all([
+    getTaskBoard(supabase, boardId),
+    getTaskLists(supabase, boardId),
+  ]);
 
   // If board doesn't exist, redirect to boards list page
   if (!board) {
@@ -43,8 +42,6 @@ export default async function TaskBoardPage({ params }: Props) {
     notFound();
   }
 
-  const tasks = await getTasks(supabase, boardId);
-  const lists = await getTaskLists(supabase, boardId);
   const currentUser = await getCurrentUser();
 
   return (
@@ -52,7 +49,6 @@ export default async function TaskBoardPage({ params }: Props) {
       workspace={resolvedWorkspace}
       workspaceTier={(resolvedWorkspace as any)?.tier ?? null}
       initialBoard={board}
-      initialTasks={tasks}
       initialLists={lists}
       currentUserId={currentUser?.id}
     />

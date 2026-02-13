@@ -3,6 +3,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
+import { Loader2 } from '@tuturuuu/icons';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { cn } from '@tuturuuu/utils/format';
@@ -42,6 +43,9 @@ interface VirtualizedTaskListProps {
   taskHeightsRef?: React.MutableRefObject<Map<string, number>>;
   optimisticUpdateInProgress?: Set<string>;
   bulkUpdateCustomDueDate?: (date: Date | null) => Promise<void>;
+  onLoadMore?: () => void;
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
 }
 
 interface TaskListContentProps {
@@ -151,6 +155,40 @@ function TaskListContent({
   );
 }
 
+/** Sentinel element that triggers loading more items when scrolled into view */
+function LoadMoreSentinel({
+  onLoadMore,
+  isLoading,
+}: {
+  onLoadMore: () => void;
+  isLoading: boolean;
+}) {
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting && !isLoading) {
+          onLoadMore();
+        }
+      },
+      { rootMargin: '200px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [onLoadMore, isLoading]);
+
+  return (
+    <div ref={sentinelRef} className="flex justify-center py-2">
+      {isLoading && (
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      )}
+    </div>
+  );
+}
+
 function VirtualizedTaskListInner({
   tasks,
   column,
@@ -165,6 +203,9 @@ function VirtualizedTaskListInner({
   taskHeightsRef: externalTaskHeightsRef,
   optimisticUpdateInProgress,
   bulkUpdateCustomDueDate,
+  onLoadMore,
+  hasMore,
+  isLoadingMore,
 }: VirtualizedTaskListProps) {
   const t = useTranslations('common');
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -334,6 +375,15 @@ function VirtualizedTaskListInner({
     totalHeight = lastBottom;
   }
 
+  // Infinite scroll sentinel (rendered after tasks)
+  const loadMoreSentinel =
+    hasMore && onLoadMore ? (
+      <LoadMoreSentinel
+        onLoadMore={onLoadMore}
+        isLoading={isLoadingMore ?? false}
+      />
+    ) : null;
+
   return (
     <div
       ref={attachScrollableRef}
@@ -408,6 +458,7 @@ function VirtualizedTaskListInner({
               />
             </div>
           </div>
+          {loadMoreSentinel}
         </SortableContext>
       ) : (
         <SortableContext
@@ -429,6 +480,7 @@ function VirtualizedTaskListInner({
             optimisticUpdateInProgress={optimisticUpdateInProgress}
             bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
           />
+          {loadMoreSentinel}
         </SortableContext>
       )}
     </div>

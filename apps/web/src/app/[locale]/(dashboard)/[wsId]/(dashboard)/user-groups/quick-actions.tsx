@@ -9,8 +9,8 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { cn } from '@tuturuuu/utils/format';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import Link from 'next/link';
-import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 
 interface UserGroupQuickActionsProps {
   wsId: string;

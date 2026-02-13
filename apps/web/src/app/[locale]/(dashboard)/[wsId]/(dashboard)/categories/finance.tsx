@@ -2,8 +2,8 @@ import {
   getPermissions,
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
-import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 
 export async function FinanceCategoryStatistics({ wsId }: { wsId: string }) {
   const t = await getTranslations();

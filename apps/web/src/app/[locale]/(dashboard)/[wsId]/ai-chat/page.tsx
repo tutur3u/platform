@@ -1,10 +1,10 @@
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import {
   getPermissions,
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import Chat from './chat';
 import { getChats } from './helper';
 

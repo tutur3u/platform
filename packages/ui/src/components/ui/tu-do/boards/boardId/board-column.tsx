@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical } from '@tuturuuu/icons';
+import { GripVertical, Loader2 } from '@tuturuuu/icons';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -11,8 +11,9 @@ import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import type React from 'react';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
+import { useProgressiveLoader } from '../../shared/progressive-loader-context';
 import { ListActions } from './list-actions';
 import { statusIcons } from './status-section';
 import type { TaskFilters } from './task-filter';
@@ -82,6 +83,33 @@ export function BoardColumn({
   const t = useTranslations('common');
   const { createTask } = useTaskDialog();
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const { pagination, loadListPage } = useProgressiveLoader();
+  const listState = pagination[column.id];
+  const isInitialLoad = !listState || listState.isInitialLoad;
+
+  // Viewport detection — trigger first page load when column becomes visible
+  const columnRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = columnRef.current;
+    if (!el || listState) return; // Already loaded or loading
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          loadListPage(column.id, 0);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '200px' } // Pre-fetch slightly before visible
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [column.id, listState, loadListPage]);
+
+  // Load more pages (infinite scroll callback)
+  const handleLoadMore = useCallback(() => {
+    if (!listState || listState.isLoading || !listState.hasMore) return;
+    loadListPage(column.id, listState.page + 1);
+  }, [column.id, listState, loadListPage]);
 
   // Helper to translate standard list names
   const translateListName = (name: string): string => {
@@ -113,6 +141,16 @@ export function BoardColumn({
     },
   });
 
+  // Compose refs: dnd-kit sortable ref + our viewport detection ref
+  const composedRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      setNodeRef(node);
+      (columnRef as React.MutableRefObject<HTMLDivElement | null>).current =
+        node;
+    },
+    [setNodeRef]
+  );
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -125,6 +163,9 @@ export function BoardColumn({
   const colorClass =
     colorClasses[column.color as SupportedColor] || colorClasses.GRAY;
   const statusIcon = statusIcons[column.status];
+
+  // Badge count: prefer totalCount from progressive loader when available
+  const badgeCount = listState?.totalCount ?? tasks.length;
 
   // Memoize drag handle for performance
   const DragHandle = useMemo(
@@ -169,7 +210,7 @@ export function BoardColumn({
 
   return (
     <Card
-      ref={setNodeRef}
+      ref={composedRef}
       style={style}
       className={cn(
         'group flex h-full w-87.5 flex-col rounded-xl transition-all duration-200',
@@ -199,10 +240,10 @@ export function BoardColumn({
             variant="secondary"
             className={cn(
               'px-2 py-0.5 font-medium text-xs',
-              tasks.length === 0 ? 'text-muted-foreground' : 'text-foreground'
+              badgeCount === 0 ? 'text-muted-foreground' : 'text-foreground'
             )}
           >
-            {tasks.length}
+            {badgeCount}
           </Badge>
         </div>
         <div className="flex items-center gap-1">
@@ -221,22 +262,31 @@ export function BoardColumn({
         </div>
       </div>
 
-      {/* Virtualized Tasks Container */}
-      <VirtualizedTaskList
-        tasks={tasks}
-        column={column}
-        boardId={boardId}
-        onUpdate={handleUpdate}
-        isMultiSelectMode={isMultiSelectMode}
-        selectedTasks={selectedTasks}
-        isPersonalWorkspace={isPersonalWorkspace}
-        onTaskSelect={onTaskSelect}
-        onClearSelection={onClearSelection}
-        dragPreviewPosition={dragPreviewPosition}
-        taskHeightsRef={taskHeightsRef}
-        optimisticUpdateInProgress={optimisticUpdateInProgress}
-        bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
-      />
+      {/* Column content: skeleton during initial load, tasks after */}
+      {isInitialLoad ? (
+        <div className="flex flex-1 items-center justify-center p-4">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      ) : (
+        <VirtualizedTaskList
+          tasks={tasks}
+          column={column}
+          boardId={boardId}
+          onUpdate={handleUpdate}
+          isMultiSelectMode={isMultiSelectMode}
+          selectedTasks={selectedTasks}
+          isPersonalWorkspace={isPersonalWorkspace}
+          onTaskSelect={onTaskSelect}
+          onClearSelection={onClearSelection}
+          dragPreviewPosition={dragPreviewPosition}
+          taskHeightsRef={taskHeightsRef}
+          optimisticUpdateInProgress={optimisticUpdateInProgress}
+          bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
+          onLoadMore={handleLoadMore}
+          hasMore={listState?.hasMore ?? false}
+          isLoadingMore={listState?.isLoading ?? false}
+        />
+      )}
 
       <div className="rounded-b-xl border-t p-3 backdrop-blur-sm">
         <Button

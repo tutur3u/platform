@@ -1403,6 +1403,7 @@ export function TaskEditDialog({
                     taskId={task?.id}
                     isCreateMode={isCreateMode}
                     boardConfig={boardConfig}
+                    onUpdate={onUpdate}
                   />
                 )}
 

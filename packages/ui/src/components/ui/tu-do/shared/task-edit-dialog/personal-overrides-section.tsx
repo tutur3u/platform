@@ -3,7 +3,6 @@
 import {
   Calendar,
   Check,
-  CheckCircle,
   ChevronDown,
   Flag,
   Loader2,
@@ -36,16 +35,21 @@ interface PersonalOverridesSectionProps {
   taskId: string | undefined;
   isCreateMode: boolean;
   boardConfig: any;
+  onUpdate?: () => void;
 }
 
 export function PersonalOverridesSection({
   taskId,
   isCreateMode,
   boardConfig,
+  onUpdate,
 }: PersonalOverridesSectionProps) {
   const t = useTranslations();
   const { weekStartsOn, timezone, timeFormat } = useCalendarPreferences();
-  const { override, isLoading, upsert, isSaving } = useTaskOverrides(taskId);
+  const { override, isLoading, upsert, isSaving } = useTaskOverrides(
+    taskId,
+    onUpdate
+  );
   const [isExpanded, setIsExpanded] = useState(false);
   const [isPriorityOpen, setIsPriorityOpen] = useState(false);
   const [isEstimationOpen, setIsEstimationOpen] = useState(false);
@@ -62,14 +66,11 @@ export function PersonalOverridesSection({
     upsert({ self_managed: checked });
   };
 
-  const handleToggleCompletion = (checked: boolean) => {
+  const handleToggleDoneWithMyPart = (checked: boolean) => {
     upsert({
+      personally_unassigned: checked,
       completed_at: checked ? new Date().toISOString() : null,
     });
-  };
-
-  const handleToggleUnassigned = (checked: boolean) => {
-    upsert({ personally_unassigned: checked });
   };
 
   const handlePriorityChange = (priority: TaskPriority | null) => {
@@ -160,23 +161,6 @@ export function PersonalOverridesSection({
 
           {selfManaged && (
             <div className="space-y-3 rounded-lg border border-dynamic-purple/20 bg-dynamic-purple/5 p-3">
-              {/* Personal completion */}
-              <div className="flex items-center justify-between">
-                <Label
-                  htmlFor="personal-complete"
-                  className="flex cursor-pointer items-center gap-2 text-sm"
-                >
-                  <CheckCircle className="h-4 w-4 text-dynamic-green" />
-                  {t('ws-tasks.personal_completion')}
-                </Label>
-                <Switch
-                  id="personal-complete"
-                  checked={personallyCompleted}
-                  onCheckedChange={handleToggleCompletion}
-                  disabled={isSaving}
-                />
-              </div>
-
               {/* Personal priority */}
               <div className="flex items-center justify-between">
                 <Label className="flex items-center gap-2 text-sm">
@@ -323,19 +307,19 @@ export function PersonalOverridesSection({
                 </div>
               )}
 
-              {/* Personally unassigned */}
+              {/* Done with my part */}
               <div className="flex items-center justify-between">
                 <Label
-                  htmlFor="personally-unassigned"
+                  htmlFor="done-with-my-part"
                   className="flex cursor-pointer items-center gap-2 text-sm"
                 >
                   <UserMinus className="h-4 w-4 text-dynamic-red" />
                   {t('ws-tasks.done_with_my_part')}
                 </Label>
                 <Switch
-                  id="personally-unassigned"
-                  checked={personallyUnassigned}
-                  onCheckedChange={handleToggleUnassigned}
+                  id="done-with-my-part"
+                  checked={personallyCompleted || personallyUnassigned}
+                  onCheckedChange={handleToggleDoneWithMyPart}
                   disabled={isSaving}
                 />
               </div>

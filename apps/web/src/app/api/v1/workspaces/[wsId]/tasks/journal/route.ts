@@ -42,6 +42,7 @@ const requestSchema = z.object({
   tasks: z.array(providedTaskSchema).optional(),
   generatedWithAI: z.boolean().optional(),
   labelIds: z.array(z.string()).optional(),
+  assigneeIds: z.array(z.string()).optional(),
   generateDescriptions: z.boolean().optional(),
   generatePriority: z.boolean().optional(),
   generateLabels: z.boolean().optional(),
@@ -521,6 +522,7 @@ export async function POST(
       tasks,
       generatedWithAI,
       labelIds,
+      assigneeIds,
       generateDescriptions = true,
       generatePriority = true,
       generateLabels = true,
@@ -850,6 +852,25 @@ export async function POST(
 
       if (projectInsertError) {
         console.error('Error assigning projects to tasks:', projectInsertError);
+      }
+    }
+
+    // Assign users to tasks (e.g. auto-assign to creator)
+    const validAssigneeIds = (assigneeIds ?? []).filter(Boolean);
+    if (validAssigneeIds.length > 0 && insertedTasks.length > 0) {
+      const assigneeAssignments = insertedTasks.flatMap((task) =>
+        validAssigneeIds.map((uid) => ({
+          task_id: task.id,
+          user_id: uid,
+        }))
+      );
+
+      const { error: assigneeInsertError } = await supabase
+        .from('task_assignees')
+        .insert(assigneeAssignments);
+
+      if (assigneeInsertError) {
+        console.error('Error assigning users to tasks:', assigneeInsertError);
       }
     }
 

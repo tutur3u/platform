@@ -6,6 +6,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
@@ -20,7 +21,6 @@ import TasksAssignedToMe from './tasks/tasks-assigned-to-me';
 import TimeTrackingMetrics from './time-tracker/time-tracking-metrics';
 import UserGroupQuickActions from './user-groups/quick-actions';
 import VoiceAssistantCard from './voice-assistant-card';
-import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Workspace Details',
