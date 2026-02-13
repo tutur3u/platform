@@ -1,11 +1,13 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Calendar,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
   Loader2,
+  UserCheck,
   UserMinus,
   UserRoundCog,
 } from '@tuturuuu/icons';
@@ -27,7 +29,9 @@ import {
   isYesterday,
 } from 'date-fns';
 import Link from 'next/link';
-import { type MouseEvent, useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { type MouseEvent, useState } from 'react';
+import { MY_TASKS_QUERY_KEY, type MyTasksData } from './use-my-tasks-query';
 
 interface TaskListWithCompletionProps {
   tasks: TaskWithRelations[];
@@ -41,22 +45,53 @@ export default function TaskListWithCompletion({
   initialLimit = 3,
   onTaskUpdate,
 }: TaskListWithCompletionProps) {
+  const t = useTranslations('ws-tasks');
   const { openTask } = useTaskDialog();
+  const queryClient = useQueryClient();
   const [showAll, setShowAll] = useState(false);
-  const [localTasks, setLocalTasks] = useState<TaskWithRelations[]>(tasks);
   const [completingTasks, setCompletingTasks] = useState<Set<string>>(
     new Set()
   );
 
-  // Update local tasks when props change
-  useEffect(() => {
-    setLocalTasks(tasks);
-  }, [tasks]);
+  const displayedTasks = showAll ? tasks : tasks.slice(0, initialLimit);
+  const hasMoreTasks = tasks.length > initialLimit;
 
-  const displayedTasks = showAll
-    ? localTasks
-    : localTasks.slice(0, initialLimit);
-  const hasMoreTasks = localTasks.length > initialLimit;
+  // Helper: remove a task from query cache optimistically
+  const removeTaskFromCache = (taskId: string) => {
+    queryClient.setQueriesData<MyTasksData>(
+      { queryKey: [MY_TASKS_QUERY_KEY] },
+      (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          overdue: old.overdue.filter((t) => t.id !== taskId),
+          today: old.today.filter((t) => t.id !== taskId),
+          upcoming: old.upcoming.filter((t) => t.id !== taskId),
+          totalActiveTasks: old.totalActiveTasks - 1,
+        };
+      }
+    );
+  };
+
+  // Helper: restore query cache from snapshot
+  const restoreCache = (
+    snapshot: [readonly unknown[], MyTasksData | undefined][]
+  ) => {
+    for (const [key, data] of snapshot) {
+      queryClient.setQueryData(key, data);
+    }
+  };
+
+  // Helper: snapshot current query cache
+  const snapshotCache = () => {
+    const queries = queryClient.getQueriesData<MyTasksData>({
+      queryKey: [MY_TASKS_QUERY_KEY],
+    });
+    return queries.map(
+      ([key, data]) =>
+        [key, data] as [readonly unknown[], MyTasksData | undefined]
+    );
+  };
 
   const handleToggleComplete = async (
     task: TaskWithRelations,
@@ -70,7 +105,8 @@ export default function TaskListWithCompletion({
     // Self-managed: use personal completion via overrides API
     if (task.overrides?.self_managed) {
       setCompletingTasks((prev) => new Set(prev).add(task.id));
-      setLocalTasks((prev) => prev.filter((t) => t.id !== task.id));
+      const snapshot = snapshotCache();
+      removeTaskFromCache(task.id);
 
       try {
         const response = await fetch(
@@ -88,8 +124,8 @@ export default function TaskListWithCompletion({
         onTaskUpdate?.();
       } catch (error) {
         console.error('Error updating task override:', error);
-        toast.error('Failed to update task');
-        setLocalTasks(tasks);
+        toast.error('Failed to update task. Changes reverted.');
+        restoreCache(snapshot);
       } finally {
         setCompletingTasks((prev) => {
           const newSet = new Set(prev);
@@ -107,9 +143,7 @@ export default function TaskListWithCompletion({
 
     const supabase = createClient();
     setCompletingTasks((prev) => new Set(prev).add(task.id));
-
-    // Store original task for rollback
-    const originalTask = task;
+    const snapshot = snapshotCache();
 
     try {
       // Find the board's done list
@@ -134,24 +168,9 @@ export default function TaskListWithCompletion({
 
       const isCompleted = task.list?.status === 'done';
       const targetListId = isCompleted ? notStartedList.id : doneList.id;
-      const targetList = isCompleted ? notStartedList : doneList;
 
-      // Optimistically update local state
-      setLocalTasks((prevTasks) =>
-        prevTasks.map((t) =>
-          t.id === task.id
-            ? {
-                ...t,
-                list_id: targetListId,
-                list: {
-                  ...t.list!,
-                  id: targetListId,
-                  status: targetList.status,
-                },
-              }
-            : t
-        )
-      );
+      // Optimistic: remove from view (completion hides task)
+      removeTaskFromCache(task.id);
 
       // Move task to appropriate list
       const { error } = await supabase
@@ -164,19 +183,11 @@ export default function TaskListWithCompletion({
       toast.success(
         isCompleted ? 'Task marked as incomplete' : 'Task completed!'
       );
-
-      // Trigger parent refresh for server data
-      if (onTaskUpdate) {
-        onTaskUpdate();
-      }
+      onTaskUpdate?.();
     } catch (error) {
       console.error('Error updating task:', error);
-      toast.error('Failed to update task');
-
-      // Rollback optimistic update on error
-      setLocalTasks((prevTasks) =>
-        prevTasks.map((t) => (t.id === task.id ? originalTask : t))
-      );
+      toast.error('Failed to update task. Changes reverted.');
+      restoreCache(snapshot);
     } finally {
       setCompletingTasks((prev) => {
         const newSet = new Set(prev);
@@ -193,7 +204,8 @@ export default function TaskListWithCompletion({
     e.preventDefault();
     e.stopPropagation();
     setCompletingTasks((prev) => new Set(prev).add(task.id));
-    setLocalTasks((prev) => prev.filter((t) => t.id !== task.id));
+    const snapshot = snapshotCache();
+    removeTaskFromCache(task.id);
 
     try {
       const response = await fetch(
@@ -209,8 +221,8 @@ export default function TaskListWithCompletion({
       onTaskUpdate?.();
     } catch (error) {
       console.error('Error updating task override:', error);
-      toast.error('Failed to update task');
-      setLocalTasks(tasks);
+      toast.error('Failed to update task. Changes reverted.');
+      restoreCache(snapshot);
     } finally {
       setCompletingTasks((prev) => {
         const newSet = new Set(prev);
@@ -224,7 +236,6 @@ export default function TaskListWithCompletion({
     e.preventDefault();
     e.stopPropagation();
 
-    // Validate that the task has a valid board ID before opening
     if (!task.list?.board?.id) {
       toast.error('Task is not associated with a board');
       return;
@@ -247,9 +258,6 @@ export default function TaskListWithCompletion({
         })),
     };
 
-    // Type assertion is safe here because we're transforming the nested structure
-    // to match the flat structure expected by openTask (Task type from primitives)
-    // Pass task's actual workspace ID and personal flag for proper routing and realtime features
     openTask(
       transformedTask as unknown as PrimitiveTask,
       boardId,
@@ -281,6 +289,8 @@ export default function TaskListWithCompletion({
         const taskOverdue = isOverdue(task.end_date);
         const endDate = task.end_date ? new Date(task.end_date) : null;
         const isCompleted = task.list?.status === 'done';
+        const isPersonallyCompleted = !!task.overrides?.completed_at;
+        const isPersonallyUnassigned = !!task.overrides?.personally_unassigned;
         const isCompleting = completingTasks.has(task.id);
 
         return (
@@ -288,9 +298,13 @@ export default function TaskListWithCompletion({
             key={task.id}
             className={cn(
               'group relative overflow-hidden rounded-xl border p-5 shadow-sm transition-all duration-300',
-              taskOverdue && !task.archived && !isCompleted
+              taskOverdue &&
+                !task.archived &&
+                !isCompleted &&
+                !isPersonallyCompleted &&
+                !isPersonallyUnassigned
                 ? 'border-dynamic-red/30 bg-linear-to-br from-dynamic-red/5 via-dynamic-red/3 to-transparent'
-                : isCompleted
+                : isCompleted || isPersonallyCompleted || isPersonallyUnassigned
                   ? 'border-dynamic-green/20 bg-dynamic-green/5 opacity-70'
                   : 'border-border/50 bg-linear-to-br from-card via-card/95 to-card/90 hover:border-primary/30 hover:shadow-lg'
             )}
@@ -303,7 +317,9 @@ export default function TaskListWithCompletion({
                   <div className="p-0.5">
                     <Loader2 className="h-5 w-5 animate-spin text-primary" />
                   </div>
-                ) : isCompleted ? (
+                ) : isCompleted ||
+                  isPersonallyCompleted ||
+                  isPersonallyUnassigned ? (
                   <button
                     type="button"
                     onClick={(e) => handleToggleComplete(task, e)}
@@ -328,8 +344,7 @@ export default function TaskListWithCompletion({
                 className="min-w-0 flex-1 text-left lg:gap-y-3"
                 onClick={(e) => handleEditTask(task, e)}
               >
-                {/* Desktop layout (md/lg): Task name + metadata on line 1, labels/projects on line 2 */}
-                {/* Check if line 2 will have content */}
+                {/* Desktop layout */}
                 {(() => {
                   const hasLabels = task.labels && task.labels.length > 0;
                   const hasProjects = task.projects && task.projects.length > 0;
@@ -338,13 +353,14 @@ export default function TaskListWithCompletion({
                     <div
                       className={cn('flex flex-col', hasLine2 ? 'gap-y-3' : '')}
                     >
-                      {/* Line 1: Task name on left, Board → List → Due date → Assignees + Estimation on right */}
                       <div className="hidden items-center justify-between gap-2 md:flex">
                         <div className="flex flex-1 items-center gap-2">
                           <h4
                             className={cn(
                               'font-bold text-base leading-snug transition-colors duration-200 group-hover:text-primary',
-                              isCompleted
+                              isCompleted ||
+                                isPersonallyCompleted ||
+                                isPersonallyUnassigned
                                 ? 'text-muted-foreground line-through'
                                 : 'text-foreground'
                             )}
@@ -359,10 +375,30 @@ export default function TaskListWithCompletion({
                               <UserRoundCog className="h-3 w-3" />
                             </Badge>
                           )}
+                          {isPersonallyCompleted && (
+                            <Badge
+                              variant="secondary"
+                              className="h-5 shrink-0 gap-1 border-dynamic-green/30 bg-dynamic-green/15 px-1.5 text-[10px] text-dynamic-green"
+                            >
+                              <UserCheck className="h-3 w-3" />
+                              <span className="hidden sm:inline">
+                                {t('personally_done')}
+                              </span>
+                            </Badge>
+                          )}
+                          {isPersonallyUnassigned && (
+                            <Badge
+                              variant="secondary"
+                              className="h-5 shrink-0 gap-1 border-dynamic-orange/30 bg-dynamic-orange/15 px-1.5 text-[10px] text-dynamic-orange"
+                            >
+                              <UserMinus className="h-3 w-3" />
+                              <span className="hidden sm:inline">
+                                {t('done_with_my_part')}
+                              </span>
+                            </Badge>
+                          )}
                         </div>
-                        {/* Right side: Board → List → Due → Assignees → Estimation */}
                         <div className="flex shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs">
-                          {/* Board name */}
                           {task.list?.board?.id && task.list?.board?.ws_id && (
                             <Link
                               href={`/${task.list.board.ws_id}/tasks/boards/${task.list.board.id}`}
@@ -379,7 +415,6 @@ export default function TaskListWithCompletion({
                             <span className="text-muted-foreground/40">→</span>
                           )}
 
-                          {/* List name */}
                           {task.list?.name && (
                             <span className="truncate rounded-lg bg-dynamic-purple/10 px-2.5 py-1 font-semibold text-dynamic-purple shadow-sm ring-1 ring-dynamic-purple/20">
                               {task.list.name}
@@ -390,7 +425,6 @@ export default function TaskListWithCompletion({
                             <span className="text-muted-foreground/30">•</span>
                           )}
 
-                          {/* Due date */}
                           {endDate && (
                             <div
                               className={cn(
@@ -407,7 +441,6 @@ export default function TaskListWithCompletion({
                             </div>
                           )}
 
-                          {/* Assignees */}
                           {task.assignees && task.assignees.length > 0 && (
                             <>
                               <span className="text-muted-foreground/30">
@@ -443,7 +476,6 @@ export default function TaskListWithCompletion({
                             </>
                           )}
 
-                          {/* Estimation */}
                           {task.estimation_points !== null &&
                             task.estimation_points !== undefined && (
                               <>
@@ -466,14 +498,15 @@ export default function TaskListWithCompletion({
                   );
                 })()}
 
-                {/* Mobile layout (sm and below): Responsive multi-line layout */}
+                {/* Mobile layout */}
                 <div className="space-y-4 md:hidden">
-                  {/* Task name with estimation */}
                   <div className="mt-1 flex items-start gap-3">
                     <h4
                       className={cn(
                         'line-clamp-2 flex-1 font-bold text-base leading-snug transition-colors duration-200 group-hover:text-primary',
-                        isCompleted
+                        isCompleted ||
+                          isPersonallyCompleted ||
+                          isPersonallyUnassigned
                           ? 'text-muted-foreground line-through'
                           : 'text-foreground'
                       )}
@@ -488,6 +521,22 @@ export default function TaskListWithCompletion({
                         <UserRoundCog className="h-3 w-3" />
                       </Badge>
                     )}
+                    {isPersonallyCompleted && (
+                      <Badge
+                        variant="secondary"
+                        className="h-5 shrink-0 gap-1 border-dynamic-green/30 bg-dynamic-green/15 px-1.5 text-[10px] text-dynamic-green"
+                      >
+                        <UserCheck className="h-3 w-3" />
+                      </Badge>
+                    )}
+                    {isPersonallyUnassigned && (
+                      <Badge
+                        variant="secondary"
+                        className="h-5 shrink-0 gap-1 border-dynamic-orange/30 bg-dynamic-orange/15 px-1.5 text-[10px] text-dynamic-orange"
+                      >
+                        <UserMinus className="h-3 w-3" />
+                      </Badge>
+                    )}
                     {task.estimation_points !== null &&
                       task.estimation_points !== undefined && (
                         <TaskEstimationDisplay
@@ -499,11 +548,8 @@ export default function TaskListWithCompletion({
                       )}
                   </div>
 
-                  {/* Metadata rows */}
                   <div className="space-y-3">
-                    {/* First line: Board → List → Due date */}
                     <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs">
-                      {/* Board name */}
                       {task.list?.board?.id && task.list?.board?.ws_id && (
                         <Link
                           href={`/${task.list.board.ws_id}/tasks/boards/${task.list.board.id}`}
@@ -520,7 +566,6 @@ export default function TaskListWithCompletion({
                         <span className="text-muted-foreground/40">→</span>
                       )}
 
-                      {/* List name */}
                       {task.list?.name && (
                         <span className="truncate rounded-lg bg-dynamic-purple/10 px-2 py-0.5 font-semibold text-dynamic-purple text-xs shadow-sm ring-1 ring-dynamic-purple/20">
                           {task.list.name}
@@ -531,7 +576,6 @@ export default function TaskListWithCompletion({
                         <span className="text-muted-foreground/30">•</span>
                       )}
 
-                      {/* Due date */}
                       {endDate && (
                         <div
                           className={cn(
@@ -548,7 +592,6 @@ export default function TaskListWithCompletion({
                         </div>
                       )}
 
-                      {/* Assignees */}
                       {task.assignees && task.assignees.length > 0 && (
                         <>
                           <span className="text-muted-foreground/30">•</span>
@@ -580,13 +623,6 @@ export default function TaskListWithCompletion({
                     </div>
                   </div>
                 </div>
-
-                {/* Description
-                {task.description && getDescriptionText(task.description) && (
-                  <p className="line-clamp-2 rounded-lg border border-border/50 bg-muted/30 px-3.5 py-2.5 text-muted-foreground text-xs leading-relaxed shadow-sm backdrop-blur-sm">
-                    {getDescriptionText(task.description)}
-                  </p>
-                )} */}
               </button>
 
               {/* Inline "Done with my part" action for self-managed tasks */}

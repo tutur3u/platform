@@ -3,7 +3,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Workspace } from '@tuturuuu/types';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
-import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
+import {
+  useUpdateUserConfig,
+  useUserBooleanConfig,
+  useUserConfig,
+} from '@tuturuuu/ui/hooks/use-user-config';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
@@ -43,6 +54,17 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
     isLoading: expandTunaSectionsLoading,
     isPending: expandTunaSectionsPending,
   } = useUserBooleanConfig('TUNA_EXPAND_ALL_TASK_SECTIONS', true);
+
+  const {
+    value: forceDefaultWsRedirect,
+    setValue: setForceDefaultWsRedirect,
+    isLoading: forceDefaultWsRedirectLoading,
+    isPending: forceDefaultWsRedirectPending,
+  } = useUserBooleanConfig('TASKS_FORCE_DEFAULT_WORKSPACE_REDIRECT', false);
+
+  const { data: submitShortcut, isLoading: submitShortcutLoading } =
+    useUserConfig('TASK_SUBMIT_SHORTCUT', 'enter');
+  const updateSubmitShortcut = useUpdateUserConfig();
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ['user-task-settings'],
@@ -146,6 +168,47 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
             onCheckedChange={setExpandTunaSections}
             disabled={expandTunaSectionsLoading || expandTunaSectionsPending}
           />
+        </SettingItemTab>
+        <Separator />
+        <SettingItemTab
+          title={t('force_default_workspace_redirect')}
+          description={t('force_default_workspace_redirect_description')}
+        >
+          <Switch
+            checked={forceDefaultWsRedirect}
+            onCheckedChange={setForceDefaultWsRedirect}
+            disabled={
+              forceDefaultWsRedirectLoading || forceDefaultWsRedirectPending
+            }
+          />
+        </SettingItemTab>
+        <Separator />
+        <SettingItemTab
+          title={t('submit_shortcut')}
+          description={t('submit_shortcut_description')}
+        >
+          <Select
+            value={submitShortcut ?? 'enter'}
+            onValueChange={(val) =>
+              updateSubmitShortcut.mutate({
+                configId: 'TASK_SUBMIT_SHORTCUT',
+                value: val,
+              })
+            }
+            disabled={submitShortcutLoading || updateSubmitShortcut.isPending}
+          >
+            <SelectTrigger className="w-45">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="enter">
+                {t('submit_shortcut_enter')}
+              </SelectItem>
+              <SelectItem value="cmd_enter">
+                {t('submit_shortcut_cmd_enter')}
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </SettingItemTab>
         <Separator />
       </div>

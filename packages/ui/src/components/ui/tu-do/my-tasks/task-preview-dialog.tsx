@@ -1,12 +1,13 @@
 'use client';
 
-import type { UseMutationResult } from '@tanstack/react-query';
 import {
-  ChevronLeft,
-  ChevronRight,
+  Check,
+  ChevronDown,
+  ChevronUp,
   Loader2,
   MoreHorizontal,
-  Plus,
+  Save,
+  Square,
   Trash2,
 } from '@tuturuuu/icons';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
@@ -30,6 +31,7 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { Label } from '@tuturuuu/ui/label';
+import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { TaskEstimationMenu } from '@tuturuuu/ui/tu-do/boards/boardId/menus/task-estimation-menu';
@@ -179,14 +181,22 @@ interface BoardConfig {
   allow_zero_estimates: boolean | null;
 }
 
+export interface ConfirmedTask {
+  title: string;
+  description: string | null;
+  priority: TaskPriority | null;
+  labels: Array<{ id?: string; name: string }>;
+  dueDate: string | null;
+  estimationPoints?: number | null;
+  projectIds?: string[];
+}
+
 interface TaskPreviewDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   previewEntry: string | null;
   pendingTaskTitle: string;
   lastResult: JournalTaskResponse | null;
-  selectedListId: string;
-  boardsData: any[];
   workspaceLabels: WorkspaceLabel[];
   workspaceProjects: WorkspaceProject[];
   boardConfig: BoardConfig | undefined | null;
@@ -198,30 +208,9 @@ interface TaskPreviewDialogProps {
   setSelectedLabelIds: React.Dispatch<React.SetStateAction<string[]>>;
   currentPreviewIndex: number;
   setCurrentPreviewIndex: React.Dispatch<React.SetStateAction<number>>;
-  createTasksMutation: UseMutationResult<
-    any,
-    Error,
-    {
-      entry: string;
-      listId: string;
-      tasks: Array<{
-        title: string;
-        description: string | null;
-        priority: TaskPriority | null;
-        labels: Array<{ id?: string; name: string }>;
-        dueDate: string | null;
-        estimationPoints?: number | null;
-        projectIds?: string[];
-      }>;
-      labelIds: string[];
-      generatedWithAI: boolean;
-      generateDescriptions: boolean;
-      generatePriority: boolean;
-      generateLabels: boolean;
-      clientTimezone: string;
-      clientTimestamp: string;
-    }
-  >;
+  onConfirmReview: (confirmedTasks: ConfirmedTask[]) => void;
+  isCreating?: boolean;
+  submitShortcut?: 'enter' | 'cmd_enter';
 }
 
 export function TaskPreviewDialog({
@@ -230,20 +219,18 @@ export function TaskPreviewDialog({
   previewEntry,
   pendingTaskTitle,
   lastResult,
-  selectedListId,
-  boardsData,
   workspaceLabels,
   workspaceProjects,
   boardConfig,
   aiGenerateDescriptions,
   aiGeneratePriority,
   aiGenerateLabels,
-  clientTimezone,
   selectedLabelIds,
   setSelectedLabelIds,
-  currentPreviewIndex,
   setCurrentPreviewIndex,
-  createTasksMutation,
+  onConfirmReview,
+  isCreating = false,
+  submitShortcut = 'enter',
 }: TaskPreviewDialogProps) {
   const t = useTranslations();
   const {
@@ -264,7 +251,7 @@ export function TaskPreviewDialog({
   const lastInitializedLabelsKey = useRef<string | null>(null);
   const lastInitializedDueDatesKey = useRef<string | null>(null);
 
-  // Inline editing state for preview tasks
+  // Inline editing state
   const [previewTaskMenuOpen, setPreviewTaskMenuOpen] = useState<
     Record<number, boolean>
   >({});
@@ -290,6 +277,9 @@ export function TaskPreviewDialog({
   const [editingTaskDescription, setEditingTaskDescription] = useState<
     number | null
   >(null);
+  const [expandedTaskIndex, setExpandedTaskIndex] = useState<number | null>(
+    null
+  );
 
   const sortedLabels = useMemo(
     () =>
@@ -303,28 +293,13 @@ export function TaskPreviewDialog({
 
   const previewTasks = lastResult?.tasks ?? [];
   const generatedWithAI = Boolean(lastResult?.metadata?.generatedWithAI);
-  const isCreating = createTasksMutation.isPending;
-  const labelsLoading = false;
 
-  // Compute visible tasks for navigation
+  // Visible tasks (not removed)
   const visiblePreviewTasks = useMemo(() => {
     return previewTasks
       .map((task, originalIndex) => ({ task, originalIndex }))
       .filter(({ originalIndex }) => !removedTaskIndices.has(originalIndex));
   }, [previewTasks, removedTaskIndices]);
-
-  const disableConfirm =
-    isCreating || !selectedListId || visiblePreviewTasks.length === 0;
-
-  const currentVisibleTask = useMemo(() => {
-    if (
-      visiblePreviewTasks.length === 0 ||
-      currentPreviewIndex >= visiblePreviewTasks.length
-    ) {
-      return null;
-    }
-    return visiblePreviewTasks[currentPreviewIndex];
-  }, [visiblePreviewTasks, currentPreviewIndex]);
 
   const displayedWorkspaceLabels = useMemo(() => {
     if (!aiGenerateLabels) return [];
@@ -339,30 +314,8 @@ export function TaskPreviewDialog({
     setCurrentPreviewIndex(0);
     setEditingTaskTitle(null);
     setEditingTaskDescription(null);
+    setExpandedTaskIndex(null);
   }, [isCreating, onOpenChange, setCurrentPreviewIndex]);
-
-  const handleNextTask = useCallback(() => {
-    if (isCreating) return;
-    if (currentPreviewIndex < visiblePreviewTasks.length - 1) {
-      setEditingTaskTitle(null);
-      setEditingTaskDescription(null);
-      setCurrentPreviewIndex((prev) => prev + 1);
-    }
-  }, [
-    isCreating,
-    currentPreviewIndex,
-    visiblePreviewTasks.length,
-    setCurrentPreviewIndex,
-  ]);
-
-  const handlePreviousTask = useCallback(() => {
-    if (isCreating) return;
-    if (currentPreviewIndex > 0) {
-      setEditingTaskTitle(null);
-      setEditingTaskDescription(null);
-      setCurrentPreviewIndex((prev) => prev - 1);
-    }
-  }, [isCreating, currentPreviewIndex, setCurrentPreviewIndex]);
 
   const toggleLabel = useCallback(
     (labelId: string) => {
@@ -518,22 +471,6 @@ export function TaskPreviewDialog({
     [isCreating]
   );
 
-  const handleStartEditTitle = useCallback(
-    (index: number) => {
-      if (isCreating) return;
-      setEditingTaskTitle(index);
-    },
-    [isCreating]
-  );
-
-  const handleStartEditDescription = useCallback(
-    (index: number) => {
-      if (isCreating) return;
-      setEditingTaskDescription(index);
-    },
-    [isCreating]
-  );
-
   const handleSaveTitle = useCallback((index: number, value: string) => {
     const trimmedValue = value.trim();
     if (!trimmedValue) {
@@ -555,14 +492,6 @@ export function TaskPreviewDialog({
     setEditingTaskDescription(null);
   }, []);
 
-  const handleCancelEditTitle = useCallback(() => {
-    setEditingTaskTitle(null);
-  }, []);
-
-  const handleCancelEditDescription = useCallback(() => {
-    setEditingTaskDescription(null);
-  }, []);
-
   const handleRemovePreviewTask = useCallback(
     (index: number) => {
       if (isCreating) return;
@@ -572,24 +501,37 @@ export function TaskPreviewDialog({
         [index]: false,
       }));
 
+      if (expandedTaskIndex === index) {
+        setExpandedTaskIndex(null);
+      }
+
       const visibleTasks = previewTasks.filter(
         (_, i) => !removedTaskIndices.has(i) && i !== index
       );
 
       if (visibleTasks.length === 0) {
         handleCancelPreview();
-      } else if (currentPreviewIndex >= visibleTasks.length) {
-        setCurrentPreviewIndex(visibleTasks.length - 1);
       }
     },
     [
       isCreating,
       previewTasks,
       removedTaskIndices,
-      currentPreviewIndex,
+      expandedTaskIndex,
       handleCancelPreview,
-      setCurrentPreviewIndex,
     ]
+  );
+
+  const handleRestorePreviewTask = useCallback(
+    (index: number) => {
+      if (isCreating) return;
+      setRemovedTaskIndices((prev) => {
+        const next = new Set(prev);
+        next.delete(index);
+        return next;
+      });
+    },
+    [isCreating]
   );
 
   const handleMenuItemSelect = useCallback((e: Event, action: () => void) => {
@@ -597,15 +539,10 @@ export function TaskPreviewDialog({
     action();
   }, []);
 
+  // Build and submit confirmed tasks
   const handleConfirmTasks = useCallback(() => {
-    const createText = (previewEntry ?? pendingTaskTitle).trim();
-    if (!createText) {
-      toast.error(t('ws-tasks.errors.missing_task_description'));
-      return;
-    }
-
-    const tasksPayload = previewTasks
-      .map((task, index) => {
+    const tasksPayload: ConfirmedTask[] = previewTasks
+      .map((task, index): ConfirmedTask | null => {
         if (removedTaskIndices.has(index)) {
           return null;
         }
@@ -648,35 +585,15 @@ export function TaskPreviewDialog({
           projectIds: taskProjects,
         };
       })
-      .filter((task) => task !== null);
+      .filter((task): task is ConfirmedTask => task !== null);
 
     if (tasksPayload.length === 0) {
       toast.error('No tasks selected to create');
       return;
     }
 
-    let timestampMoment = dayjs().tz(clientTimezone);
-    if (!timestampMoment.isValid()) {
-      timestampMoment = dayjs();
-    }
-    const clientTimestamp = timestampMoment.toISOString();
-
-    createTasksMutation.mutate({
-      entry: createText,
-      listId: selectedListId,
-      generatedWithAI: Boolean(lastResult?.metadata?.generatedWithAI),
-      tasks: tasksPayload,
-      labelIds: selectedLabelIds,
-      generateDescriptions: aiGenerateDescriptions,
-      generatePriority: aiGeneratePriority,
-      generateLabels: aiGenerateLabels,
-      clientTimezone,
-      clientTimestamp,
-    });
+    onConfirmReview(tasksPayload);
   }, [
-    previewEntry,
-    pendingTaskTitle,
-    t,
     previewTasks,
     removedTaskIndices,
     aiGenerateLabels,
@@ -689,11 +606,7 @@ export function TaskPreviewDialog({
     previewTaskEstimations,
     previewTaskProjects,
     taskDueDates,
-    selectedLabelIds,
-    lastResult,
-    selectedListId,
-    clientTimezone,
-    createTasksMutation,
+    onConfirmReview,
   ]);
 
   // Initialize task label selections when preview opens
@@ -842,6 +755,7 @@ export function TaskPreviewDialog({
       setPreviewTaskProjects({});
       setPreviewTaskEstimations({});
       setRemovedTaskIndices(new Set());
+      setExpandedTaskIndex(null);
       return;
     }
 
@@ -866,6 +780,7 @@ export function TaskPreviewDialog({
     setPreviewTaskEstimations(initialEstimations);
     setPreviewTaskMenuOpen({});
     setRemovedTaskIndices(new Set());
+    setExpandedTaskIndex(null);
   }, [lastResult]);
 
   // Reset labels when aiGenerateLabels is disabled
@@ -894,6 +809,49 @@ export function TaskPreviewDialog({
     setSelectedLabelIds,
   ]);
 
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // Allow Enter / Cmd+Enter to submit when not editing inline
+  const handleDialogKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key !== 'Enter') return;
+      const isModifier = e.metaKey || e.ctrlKey;
+
+      // When submitShortcut is 'cmd_enter', only modifier+Enter submits
+      if (submitShortcut === 'cmd_enter' && !isModifier) return;
+
+      // Plain Enter: skip if inside textareas, inputs, or dropdown menus
+      if (!isModifier) {
+        const target = e.target as HTMLElement;
+        if (
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'INPUT' ||
+          target.closest('[role="menu"]') ||
+          target.closest('[role="listbox"]')
+        ) {
+          return;
+        }
+      }
+      if (
+        !isCreating &&
+        visiblePreviewTasks.length > 0 &&
+        editingTaskTitle === null &&
+        editingTaskDescription === null
+      ) {
+        e.preventDefault();
+        handleConfirmTasks();
+      }
+    },
+    [
+      isCreating,
+      visiblePreviewTasks.length,
+      editingTaskTitle,
+      editingTaskDescription,
+      handleConfirmTasks,
+      submitShortcut,
+    ]
+  );
+
   return (
     <Dialog
       open={open}
@@ -903,50 +861,44 @@ export function TaskPreviewDialog({
         }
       }}
     >
-      <DialogContent className="max-h-[85vh] overflow-y-auto">
+      <DialogContent
+        ref={contentRef}
+        className="max-h-[85vh] overflow-hidden sm:max-w-2xl"
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          contentRef.current?.focus();
+        }}
+        onKeyDown={handleDialogKeyDown}
+        tabIndex={-1}
+      >
         <DialogHeader>
           <DialogTitle>
-            Review Generated {previewTasks.length} Task
-            {previewTasks.length !== 1 ? 's' : ''}
+            {t('ws-tasks.review_tasks', {
+              fallback: `Review Generated ${previewTasks.length} Task${previewTasks.length !== 1 ? 's' : ''}`,
+            })}
           </DialogTitle>
           <DialogDescription>
-            {selectedListId
-              ? (() => {
-                  const board = boardsData.find((b: any) =>
-                    (b.task_lists as any[])?.some(
-                      (l: any) => l.id === selectedListId
-                    )
-                  );
-                  const lists = (board?.task_lists as any[]) || [];
-                  const list = lists.find((l: any) => l.id === selectedListId);
-                  const listName = list?.name || 'Unknown List';
-                  return `Tasks will be created in "${listName}"`;
-                })()
-              : 'Select a list to continue'}
+            {t('ws-tasks.select_tasks_to_keep', {
+              fallback:
+                'Select the tasks you want to keep, then choose a destination.',
+            })}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
-          {/* Workspace Labels */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="font-medium text-sm">Workspace Labels</Label>
-              <span className="text-muted-foreground text-xs">
-                Apply to all tasks
-              </span>
-            </div>
+        <ScrollArea className="max-h-[55vh] pr-4">
+          <div className="space-y-4 py-2">
+            {/* Workspace Labels */}
+            {aiGenerateLabels && sortedLabels.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="font-medium text-sm">
+                    Workspace Labels
+                  </Label>
+                  <span className="text-muted-foreground text-xs">
+                    Apply to all tasks
+                  </span>
+                </div>
 
-            {!aiGenerateLabels ? (
-              <p className="rounded-lg border border-dynamic-muted/30 bg-dynamic-muted/10 p-3 text-muted-foreground text-xs">
-                Label generation is disabled
-              </p>
-            ) : labelsLoading ? (
-              <div className="flex items-center gap-2 rounded-lg border border-dynamic-blue/30 bg-dynamic-blue/10 px-3 py-2 text-dynamic-blue text-xs">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Loading labels...</span>
-              </div>
-            ) : sortedLabels.length ? (
-              <>
                 <div className="flex flex-wrap gap-2">
                   {displayedWorkspaceLabels.map((label) => {
                     const selected = selectedLabelIds.includes(label.id);
@@ -980,37 +932,29 @@ export function TaskPreviewDialog({
                       : `Show ${sortedLabels.length - MAX_VISIBLE_WORKSPACE_LABELS} more`}
                   </button>
                 ) : null}
-              </>
-            ) : (
-              <p className="rounded-lg border border-dynamic-muted/30 bg-dynamic-muted/10 p-3 text-muted-foreground text-xs">
-                No workspace labels available
-              </p>
+              </div>
             )}
-          </div>
 
-          {/* Preview Tasks */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <p className="font-semibold text-foreground text-sm">
-                {generatedWithAI
-                  ? `AI-Generated Tasks (${previewTasks.length})`
-                  : `Manual Tasks (${previewTasks.length})`}
-              </p>
-              <Badge
-                variant="outline"
-                className="border-dynamic-blue/40 bg-transparent text-foreground text-xs"
-              >
-                {visiblePreviewTasks.length} task
-                {visiblePreviewTasks.length !== 1 ? 's' : ''}
-              </Badge>
-            </div>
+            {/* Task List */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="font-semibold text-foreground text-sm">
+                  {generatedWithAI
+                    ? `AI-Generated Tasks (${previewTasks.length})`
+                    : `Tasks (${previewTasks.length})`}
+                </p>
+                <Badge
+                  variant="outline"
+                  className="border-dynamic-blue/40 bg-transparent text-foreground text-xs"
+                >
+                  {visiblePreviewTasks.length} of {previewTasks.length} selected
+                </Badge>
+              </div>
 
-            {/* Single Task Display */}
-            {currentVisibleTask ? (
-              <div className="space-y-3">
-                {(() => {
-                  const { task, originalIndex } = currentVisibleTask;
-                  const displayIndex = currentPreviewIndex;
+              <div className="space-y-2">
+                {previewTasks.map((task, originalIndex) => {
+                  const isRemoved = removedTaskIndices.has(originalIndex);
+                  const isExpanded = expandedTaskIndex === originalIndex;
                   const selection = taskLabelSelections[originalIndex];
                   const suggestions = aiGenerateLabels
                     ? (selection?.suggestions ?? [])
@@ -1032,175 +976,417 @@ export function TaskPreviewDialog({
                       ? (previewTaskPriorities[originalIndex] ?? null)
                       : (task.priority ?? null);
 
+                  // Removed task — compact row with restore button
+                  if (isRemoved) {
+                    return (
+                      <div
+                        key={task.id ?? `${task.name}-${originalIndex}`}
+                        className="flex items-center gap-3 rounded-lg border border-muted-foreground/20 border-dashed bg-muted/30 px-3 py-2 opacity-60"
+                      >
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleRestorePreviewTask(originalIndex)
+                          }
+                          className="flex h-5 w-5 shrink-0 items-center justify-center rounded border border-muted-foreground/30"
+                          disabled={isCreating}
+                        >
+                          <Square className="h-3 w-3 text-muted-foreground/40" />
+                        </button>
+                        <span className="flex-1 truncate text-muted-foreground text-sm line-through">
+                          {currentName}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="xs"
+                          onClick={() =>
+                            handleRestorePreviewTask(originalIndex)
+                          }
+                          className="h-6 px-2 text-xs"
+                          disabled={isCreating}
+                        >
+                          Restore
+                        </Button>
+                      </div>
+                    );
+                  }
+
                   return (
                     <div
                       key={task.id ?? `${task.name}-${originalIndex}`}
-                      className="group rounded-md border border-dynamic-surface/30 bg-background/80 p-3"
+                      className="group rounded-lg border bg-background/80 transition-colors hover:border-border"
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 space-y-1">
-                          <div className="flex items-start gap-2">
-                            {/* Editable Title */}
-                            {editingTaskTitle === originalIndex ? (
-                              <div className="flex-1 space-y-2">
-                                <Textarea
-                                  value={currentName}
-                                  onChange={(e) => {
-                                    setPreviewTaskNames((prev) => ({
-                                      ...prev,
-                                      [originalIndex]: e.target.value,
-                                    }));
-                                  }}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && !e.shiftKey) {
-                                      e.preventDefault();
-                                      handleSaveTitle(
-                                        originalIndex,
-                                        currentName
-                                      );
-                                    } else if (e.key === 'Escape') {
-                                      handleCancelEditTitle();
-                                    }
-                                  }}
-                                  className="min-h-15 w-full resize-none break-all font-medium text-sm"
-                                  autoFocus
-                                  disabled={isCreating}
-                                />
-                                <div className="flex gap-2">
-                                  <Button
-                                    size="sm"
-                                    onClick={() =>
-                                      handleSaveTitle(
-                                        originalIndex,
-                                        currentName
-                                      )
-                                    }
-                                    disabled={isCreating}
-                                  >
-                                    Save
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={handleCancelEditTitle}
-                                    disabled={isCreating}
-                                  >
-                                    Cancel
-                                  </Button>
-                                </div>
-                              </div>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleStartEditTitle(originalIndex)
-                                }
-                                className="wrap-break-word line-clamp-2 flex-1 cursor-text rounded px-2 py-1 text-left font-medium text-foreground text-sm transition hover:bg-muted/50"
-                                disabled={isCreating}
-                              >
-                                {displayIndex + 1}. {currentName}
-                              </button>
-                            )}
+                      {/* Compact row */}
+                      <div className="flex items-center gap-3 px-3 py-2.5">
+                        {/* Checkbox (keep/discard) */}
+                        <button
+                          type="button"
+                          onClick={() => handleRemovePreviewTask(originalIndex)}
+                          className="flex h-5 w-5 shrink-0 items-center justify-center rounded border border-dynamic-green/60 bg-dynamic-green/15"
+                          disabled={isCreating}
+                          title="Click to discard"
+                        >
+                          <Check className="h-3 w-3 text-dynamic-green" />
+                        </button>
 
-                            {/* Inline Actions Menu */}
-                            <DropdownMenu
-                              open={menuOpen}
-                              onOpenChange={(open) => {
-                                setPreviewTaskMenuOpen((prev) => ({
-                                  ...prev,
-                                  [originalIndex]: open,
-                                }));
-                              }}
-                            >
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="xs"
-                                  className={cn(
-                                    'h-7 w-7 shrink-0 p-0 transition-all duration-200',
-                                    'hover:scale-105 hover:bg-muted',
-                                    menuOpen
-                                      ? 'opacity-100'
-                                      : 'opacity-0 group-hover:opacity-100',
-                                    menuOpen && 'bg-muted ring-1 ring-border'
-                                  )}
+                        {/* Title (click to expand) */}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedTaskIndex(
+                              isExpanded ? null : originalIndex
+                            )
+                          }
+                          className="flex flex-1 items-center gap-2 text-left"
+                          disabled={isCreating}
+                        >
+                          <span className="flex-1 truncate font-medium text-sm">
+                            {currentName}
+                          </span>
+                        </button>
+
+                        {/* Priority badge */}
+                        {aiGeneratePriority && currentPriority && (
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              'shrink-0 text-[10px]',
+                              priorityBadgeClass(currentPriority)
+                            )}
+                          >
+                            {getPriorityCopy(currentPriority)}
+                          </Badge>
+                        )}
+
+                        {/* Estimation */}
+                        {boardConfig?.estimation_type &&
+                          originalIndex in previewTaskEstimations &&
+                          previewTaskEstimations[originalIndex] !== null && (
+                            <TaskEstimationDisplay
+                              points={
+                                previewTaskEstimations[originalIndex] ?? 0
+                              }
+                              size="sm"
+                              estimationType={boardConfig.estimation_type}
+                              showIcon
+                            />
+                          )}
+
+                        {/* Due date chip */}
+                        {dueDateValue && (
+                          <span className="shrink-0 text-muted-foreground text-xs">
+                            {dueDateValue.toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                            })}
+                          </span>
+                        )}
+
+                        {/* Expand/collapse */}
+                        <Button
+                          variant="ghost"
+                          size="xs"
+                          className="h-6 w-6 shrink-0 p-0"
+                          onClick={() =>
+                            setExpandedTaskIndex(
+                              isExpanded ? null : originalIndex
+                            )
+                          }
+                          disabled={isCreating}
+                        >
+                          {isExpanded ? (
+                            <ChevronUp className="h-3.5 w-3.5" />
+                          ) : (
+                            <ChevronDown className="h-3.5 w-3.5" />
+                          )}
+                        </Button>
+                      </div>
+
+                      {/* Expanded details */}
+                      {isExpanded && (
+                        <div className="border-t px-3 py-3">
+                          <div className="space-y-3">
+                            {/* Title editing */}
+                            <div className="space-y-1">
+                              <p className="font-medium text-muted-foreground text-xs">
+                                Title
+                              </p>
+                              {editingTaskTitle === originalIndex ? (
+                                <div className="space-y-2">
+                                  <Textarea
+                                    value={currentName}
+                                    onChange={(e) => {
+                                      setPreviewTaskNames((prev) => ({
+                                        ...prev,
+                                        [originalIndex]: e.target.value,
+                                      }));
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        handleSaveTitle(
+                                          originalIndex,
+                                          currentName
+                                        );
+                                      } else if (e.key === 'Escape') {
+                                        setEditingTaskTitle(null);
+                                      }
+                                    }}
+                                    className="min-h-10 w-full resize-none text-sm"
+                                    autoFocus
+                                    disabled={isCreating}
+                                  />
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="sm"
+                                      onClick={() =>
+                                        handleSaveTitle(
+                                          originalIndex,
+                                          currentName
+                                        )
+                                      }
+                                      disabled={isCreating}
+                                    >
+                                      Save
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => setEditingTaskTitle(null)}
+                                      disabled={isCreating}
+                                    >
+                                      Cancel
+                                    </Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setEditingTaskTitle(originalIndex)
+                                  }
+                                  className="w-full cursor-text rounded px-2 py-1 text-left font-medium text-sm transition hover:bg-muted/50"
                                   disabled={isCreating}
                                 >
-                                  <MoreHorizontal className="h-3 w-3" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent
-                                align="end"
-                                className="w-56"
-                                sideOffset={5}
-                                onClick={(e) => {
-                                  e.stopPropagation();
+                                  {currentName}
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Description */}
+                            <div className="space-y-1">
+                              <p className="font-medium text-muted-foreground text-xs">
+                                Description
+                              </p>
+                              {aiGenerateDescriptions ? (
+                                editingTaskDescription === originalIndex ? (
+                                  <div className="space-y-2">
+                                    <Textarea
+                                      value={currentDescription || ''}
+                                      onChange={(e) => {
+                                        setPreviewTaskDescriptions((prev) => ({
+                                          ...prev,
+                                          [originalIndex]: e.target.value,
+                                        }));
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (
+                                          e.key === 'Enter' &&
+                                          e.metaKey &&
+                                          !e.shiftKey
+                                        ) {
+                                          e.preventDefault();
+                                          handleSaveDescription(
+                                            originalIndex,
+                                            currentDescription || ''
+                                          );
+                                        } else if (e.key === 'Escape') {
+                                          setEditingTaskDescription(null);
+                                        }
+                                      }}
+                                      className="min-h-20 w-full resize-none text-sm"
+                                      placeholder="Add a description..."
+                                      autoFocus
+                                      disabled={isCreating}
+                                    />
+                                    <div className="flex gap-2">
+                                      <Button
+                                        size="sm"
+                                        onClick={() =>
+                                          handleSaveDescription(
+                                            originalIndex,
+                                            currentDescription || ''
+                                          )
+                                        }
+                                        disabled={isCreating}
+                                      >
+                                        Save
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() =>
+                                          setEditingTaskDescription(null)
+                                        }
+                                        disabled={isCreating}
+                                      >
+                                        Cancel
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setEditingTaskDescription(originalIndex)
+                                    }
+                                    className="line-clamp-3 w-full cursor-text rounded px-2 py-1 text-left text-sm leading-relaxed opacity-90 transition hover:bg-muted/50"
+                                    disabled={isCreating}
+                                  >
+                                    {currentDescription || 'No description'}
+                                  </button>
+                                )
+                              ) : (
+                                <p className="text-muted-foreground text-sm italic">
+                                  Description generation disabled
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Inline actions row */}
+                            <div className="flex flex-wrap items-center gap-2">
+                              {/* Priority / Estimation / Labels / Projects menu */}
+                              <DropdownMenu
+                                open={menuOpen}
+                                onOpenChange={(open) => {
+                                  setPreviewTaskMenuOpen((prev) => ({
+                                    ...prev,
+                                    [originalIndex]: open,
+                                  }));
                                 }}
                               >
-                                {/* Priority Menu */}
-                                <TaskPriorityMenu
-                                  currentPriority={currentPriority}
-                                  isLoading={isCreating}
-                                  onPriorityChange={(priority) =>
-                                    handlePreviewTaskPriorityChange(
-                                      originalIndex,
-                                      priority
-                                    )
-                                  }
-                                  onMenuItemSelect={handleMenuItemSelect}
-                                  onClose={() =>
-                                    setPreviewTaskMenuOpen((prev) => ({
-                                      ...prev,
-                                      [originalIndex]: false,
-                                    }))
-                                  }
-                                />
-
-                                {/* Estimation Menu */}
-                                {boardConfig?.estimation_type && (
-                                  <TaskEstimationMenu
-                                    currentPoints={
-                                      originalIndex in previewTaskEstimations
-                                        ? previewTaskEstimations[originalIndex]
-                                        : null
-                                    }
-                                    estimationType={boardConfig.estimation_type}
-                                    extendedEstimation={
-                                      boardConfig.extended_estimation || false
-                                    }
-                                    allowZeroEstimates={
-                                      boardConfig.allow_zero_estimates ?? true
-                                    }
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="xs"
+                                    className="h-7 gap-1.5 px-2 text-xs"
+                                    disabled={isCreating}
+                                  >
+                                    <MoreHorizontal className="h-3 w-3" />
+                                    Options
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                  align="start"
+                                  className="w-56"
+                                  sideOffset={5}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                  }}
+                                >
+                                  <TaskPriorityMenu
+                                    currentPriority={currentPriority}
                                     isLoading={isCreating}
-                                    onEstimationChange={(points) =>
-                                      handlePreviewTaskEstimationChange(
+                                    onPriorityChange={(priority) =>
+                                      handlePreviewTaskPriorityChange(
                                         originalIndex,
-                                        points
+                                        priority
                                       )
                                     }
                                     onMenuItemSelect={handleMenuItemSelect}
+                                    onClose={() =>
+                                      setPreviewTaskMenuOpen((prev) => ({
+                                        ...prev,
+                                        [originalIndex]: false,
+                                      }))
+                                    }
                                   />
-                                )}
 
-                                {/* Labels Menu */}
-                                {aiGenerateLabels && (
-                                  <TaskLabelsMenu
-                                    taskLabels={suggestions
-                                      .filter((opt) => opt.selected)
-                                      .map((opt) => ({
-                                        id: opt.id || '',
-                                        name: opt.name,
-                                        color: 'gray' as const,
-                                      }))}
-                                    availableLabels={workspaceLabels}
-                                    isLoading={false}
-                                    onToggleLabel={(labelId) => {
-                                      handlePreviewTaskLabelToggle(
-                                        originalIndex,
-                                        labelId
+                                  {boardConfig?.estimation_type && (
+                                    <TaskEstimationMenu
+                                      currentPoints={
+                                        originalIndex in previewTaskEstimations
+                                          ? previewTaskEstimations[
+                                              originalIndex
+                                            ]
+                                          : null
+                                      }
+                                      estimationType={
+                                        boardConfig.estimation_type
+                                      }
+                                      extendedEstimation={
+                                        boardConfig.extended_estimation || false
+                                      }
+                                      allowZeroEstimates={
+                                        boardConfig.allow_zero_estimates ?? true
+                                      }
+                                      isLoading={isCreating}
+                                      onEstimationChange={(points) =>
+                                        handlePreviewTaskEstimationChange(
+                                          originalIndex,
+                                          points
+                                        )
+                                      }
+                                      onMenuItemSelect={handleMenuItemSelect}
+                                    />
+                                  )}
+
+                                  {aiGenerateLabels && (
+                                    <TaskLabelsMenu
+                                      taskLabels={suggestions
+                                        .filter((opt) => opt.selected)
+                                        .map((opt) => ({
+                                          id: opt.id || '',
+                                          name: opt.name,
+                                          color: 'gray' as const,
+                                        }))}
+                                      availableLabels={workspaceLabels}
+                                      isLoading={false}
+                                      onToggleLabel={(labelId) => {
+                                        handlePreviewTaskLabelToggle(
+                                          originalIndex,
+                                          labelId
+                                        );
+                                      }}
+                                      onCreateNewLabel={() => {
+                                        setPreviewTaskMenuOpen((prev) => ({
+                                          ...prev,
+                                          [originalIndex]: false,
+                                        }));
+                                      }}
+                                      onMenuItemSelect={handleMenuItemSelect}
+                                    />
+                                  )}
+
+                                  <TaskProjectsMenu
+                                    taskProjects={(
+                                      previewTaskProjects[originalIndex] || []
+                                    ).map((projectId) => {
+                                      const project = workspaceProjects.find(
+                                        (p) => p.id === projectId
                                       );
-                                    }}
-                                    onCreateNewLabel={() => {
+                                      return {
+                                        id: projectId,
+                                        name:
+                                          project?.name || 'Unknown Project',
+                                        status: null,
+                                      };
+                                    })}
+                                    availableProjects={workspaceProjects.map(
+                                      (p) => ({
+                                        id: p.id,
+                                        name: p.name,
+                                        status: null,
+                                      })
+                                    )}
+                                    isLoading={false}
+                                    onToggleProject={(projectId) =>
+                                      handlePreviewTaskProjectToggle(
+                                        originalIndex,
+                                        projectId
+                                      )
+                                    }
+                                    onCreateNewProject={() => {
                                       setPreviewTaskMenuOpen((prev) => ({
                                         ...prev,
                                         [originalIndex]: false,
@@ -1208,338 +1394,157 @@ export function TaskPreviewDialog({
                                     }}
                                     onMenuItemSelect={handleMenuItemSelect}
                                   />
-                                )}
 
-                                {/* Projects Menu */}
-                                <TaskProjectsMenu
-                                  taskProjects={(
-                                    previewTaskProjects[originalIndex] || []
-                                  ).map((projectId) => {
-                                    const project = workspaceProjects.find(
-                                      (p) => p.id === projectId
-                                    );
-                                    return {
-                                      id: projectId,
-                                      name: project?.name || 'Unknown Project',
-                                      status: null,
-                                    };
-                                  })}
-                                  availableProjects={workspaceProjects.map(
-                                    (p) => ({
-                                      id: p.id,
-                                      name: p.name,
-                                      status: null,
-                                    })
-                                  )}
-                                  isLoading={false}
-                                  onToggleProject={(projectId) =>
-                                    handlePreviewTaskProjectToggle(
-                                      originalIndex,
-                                      projectId
-                                    )
-                                  }
-                                  onCreateNewProject={() => {
-                                    setPreviewTaskMenuOpen((prev) => ({
-                                      ...prev,
-                                      [originalIndex]: false,
-                                    }));
-                                  }}
-                                  onMenuItemSelect={handleMenuItemSelect}
-                                />
+                                  <DropdownMenuSeparator />
 
-                                <DropdownMenuSeparator />
-
-                                {/* Remove Task */}
-                                <DropdownMenuItem
-                                  onSelect={(e) =>
-                                    handleMenuItemSelect(
-                                      e as unknown as Event,
-                                      () => {
-                                        handleRemovePreviewTask(originalIndex);
-                                      }
-                                    )
-                                  }
-                                  className="cursor-pointer text-dynamic-red hover:bg-dynamic-red/10 hover:text-dynamic-red/90"
-                                  disabled={isCreating}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                  Remove task
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-
-                          <p className="font-medium text-muted-foreground text-xs">
-                            Description
-                          </p>
-                          {aiGenerateDescriptions ? (
-                            editingTaskDescription === originalIndex ? (
-                              <div className="space-y-2">
-                                <Textarea
-                                  value={currentDescription || ''}
-                                  onChange={(e) => {
-                                    setPreviewTaskDescriptions((prev) => ({
-                                      ...prev,
-                                      [originalIndex]: e.target.value,
-                                    }));
-                                  }}
-                                  onKeyDown={(e) => {
-                                    if (
-                                      e.key === 'Enter' &&
-                                      e.metaKey &&
-                                      !e.shiftKey
-                                    ) {
-                                      e.preventDefault();
-                                      handleSaveDescription(
-                                        originalIndex,
-                                        currentDescription || ''
-                                      );
-                                    } else if (e.key === 'Escape') {
-                                      handleCancelEditDescription();
-                                    }
-                                  }}
-                                  className="min-h-20 w-full resize-none break-all text-sm"
-                                  placeholder="Add a description..."
-                                  autoFocus
-                                  disabled={isCreating}
-                                />
-                                <div className="flex gap-2">
-                                  <Button
-                                    size="sm"
-                                    onClick={() =>
-                                      handleSaveDescription(
-                                        originalIndex,
-                                        currentDescription || ''
+                                  <DropdownMenuItem
+                                    onSelect={(e) =>
+                                      handleMenuItemSelect(
+                                        e as unknown as Event,
+                                        () => {
+                                          handleRemovePreviewTask(
+                                            originalIndex
+                                          );
+                                        }
                                       )
                                     }
+                                    className="cursor-pointer text-dynamic-red hover:bg-dynamic-red/10 hover:text-dynamic-red/90"
                                     disabled={isCreating}
                                   >
-                                    Save
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={handleCancelEditDescription}
-                                    disabled={isCreating}
-                                  >
-                                    Cancel
-                                  </Button>
-                                </div>
-                              </div>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleStartEditDescription(originalIndex)
+                                    <Trash2 className="h-4 w-4" />
+                                    Remove task
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+
+                              {/* Due date picker */}
+                              <DateTimePicker
+                                date={dueDateValue}
+                                setDate={(date) =>
+                                  handleDueDateChange(originalIndex, date)
                                 }
-                                className="wrap-break-word line-clamp-3 w-full cursor-text rounded px-2 py-1 text-left text-foreground text-sm leading-relaxed opacity-90 transition hover:bg-muted/50"
+                                showTimeSelect
                                 disabled={isCreating}
-                              >
-                                {currentDescription || 'No description'}
-                              </button>
-                            )
-                          ) : (
-                            <p className="text-muted-foreground text-sm italic">
-                              Description generation disabled
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex flex-col gap-2">
-                          {aiGeneratePriority ? (
-                            <Badge
-                              variant="outline"
-                              className={priorityBadgeClass(currentPriority)}
-                            >
-                              {getPriorityCopy(currentPriority)}
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground text-xs italic">
-                              Priority disabled
-                            </span>
-                          )}
-                          {boardConfig?.estimation_type &&
-                            originalIndex in previewTaskEstimations &&
-                            previewTaskEstimations[originalIndex] !== null && (
-                              <TaskEstimationDisplay
-                                points={
-                                  previewTaskEstimations[originalIndex] ?? 0
-                                }
-                                size="sm"
-                                estimationType={boardConfig.estimation_type}
-                                showIcon
+                                preferences={{
+                                  weekStartsOn,
+                                  timezone: tzPreference,
+                                  timeFormat,
+                                }}
                               />
-                            )}
-                        </div>
-                      </div>
+                            </div>
 
-                      <div className="mt-3 space-y-1">
-                        <p className="text-muted-foreground text-xs uppercase tracking-wide">
-                          Due Date
-                        </p>
-                        <DateTimePicker
-                          date={dueDateValue}
-                          setDate={(date) =>
-                            handleDueDateChange(originalIndex, date)
-                          }
-                          showTimeSelect
-                          disabled={isCreating}
-                          preferences={{
-                            weekStartsOn,
-                            timezone: tzPreference,
-                            timeFormat,
-                          }}
-                        />
-                        {!dueDateValue ? (
-                          <p className="text-muted-foreground text-xs">
-                            No due date set
-                          </p>
-                        ) : null}
-                      </div>
-
-                      {aiGenerateLabels ? (
-                        <div className="mt-3 space-y-1">
-                          <p className="text-muted-foreground text-xs uppercase tracking-wide">
-                            Task Labels
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {suggestions.length ? (
-                              suggestions.map((option, optionIndex) => {
-                                if (
-                                  !expandedLabelCards[originalIndex] &&
-                                  optionIndex >= MAX_VISIBLE_PREVIEW_LABELS
-                                ) {
-                                  return null;
-                                }
-                                return (
+                            {/* Label suggestions */}
+                            {aiGenerateLabels && suggestions.length > 0 && (
+                              <div className="space-y-1">
+                                <p className="text-muted-foreground text-xs uppercase tracking-wide">
+                                  Task Labels
+                                </p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {suggestions.map((option, optionIndex) => {
+                                    if (
+                                      !expandedLabelCards[originalIndex] &&
+                                      optionIndex >= MAX_VISIBLE_PREVIEW_LABELS
+                                    ) {
+                                      return null;
+                                    }
+                                    return (
+                                      <button
+                                        key={`${task.id ?? `${task.name}-${option.name}`}-${optionIndex}`}
+                                        type="button"
+                                        onClick={() =>
+                                          toggleTaskLabelSuggestion(
+                                            originalIndex,
+                                            optionIndex
+                                          )
+                                        }
+                                        className={cn(
+                                          'rounded-full border px-2.5 py-0.5 font-medium text-xs transition',
+                                          option.selected
+                                            ? 'border-dynamic-purple/60 bg-dynamic-purple/15 text-dynamic-purple'
+                                            : 'border-dynamic-muted/40 text-muted-foreground'
+                                        )}
+                                      >
+                                        {option.displayName}
+                                        {option.isNew ? (
+                                          <span className="ml-1.5 text-[0.5625rem] text-dynamic-purple uppercase tracking-wide">
+                                            NEW
+                                          </span>
+                                        ) : null}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                                {suggestions.length >
+                                MAX_VISIBLE_PREVIEW_LABELS ? (
                                   <button
-                                    key={`${task.id ?? `${task.name}-${option.name}`}-${optionIndex}`}
                                     type="button"
                                     onClick={() =>
-                                      toggleTaskLabelSuggestion(
-                                        originalIndex,
-                                        optionIndex
-                                      )
+                                      toggleLabelPreviewExpansion(originalIndex)
                                     }
-                                    className={cn(
-                                      'rounded-full border px-3 py-1 font-medium text-xs transition',
-                                      option.selected
-                                        ? 'border-dynamic-purple/60 bg-dynamic-purple/15 text-dynamic-purple'
-                                        : 'border-dynamic-muted/40 text-muted-foreground'
-                                    )}
+                                    className="font-medium text-dynamic-blue text-xs hover:underline"
+                                    disabled={isCreating}
                                   >
-                                    {option.displayName}
-                                    {option.isNew ? (
-                                      <span className="ml-2 text-[0.625rem] text-dynamic-purple uppercase tracking-wide">
-                                        NEW
-                                      </span>
-                                    ) : null}
+                                    {expandedLabelCards[originalIndex]
+                                      ? 'Show less'
+                                      : `Show ${suggestions.length - MAX_VISIBLE_PREVIEW_LABELS} more`}
                                   </button>
-                                );
-                              })
-                            ) : (
-                              <span className="text-muted-foreground text-xs italic">
-                                No label suggestions
-                              </span>
+                                ) : null}
+                                {hasNewSelections ? (
+                                  <p className="text-muted-foreground text-xs">
+                                    New labels will be created automatically
+                                  </p>
+                                ) : null}
+                              </div>
                             )}
                           </div>
-                          {suggestions.length > MAX_VISIBLE_PREVIEW_LABELS ? (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                toggleLabelPreviewExpansion(originalIndex)
-                              }
-                              className="font-medium text-dynamic-blue text-xs hover:underline"
-                              disabled={isCreating}
-                            >
-                              {expandedLabelCards[originalIndex]
-                                ? 'Show less'
-                                : `Show ${suggestions.length - MAX_VISIBLE_PREVIEW_LABELS} more`}
-                            </button>
-                          ) : null}
-                          {hasNewSelections ? (
-                            <p className="text-muted-foreground text-xs">
-                              New labels will be created automatically
-                            </p>
-                          ) : null}
                         </div>
-                      ) : null}
+                      )}
                     </div>
                   );
-                })()}
-              </div>
-            ) : (
-              <p className="rounded-lg border border-dynamic-muted/30 bg-dynamic-muted/10 p-3 text-center text-muted-foreground text-sm">
-                No tasks to preview
-              </p>
-            )}
-          </div>
-
-          {/* Task Counter & Navigation */}
-          {visiblePreviewTasks.length > 0 && (
-            <div className="flex items-center justify-center gap-4 py-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handlePreviousTask}
-                disabled={isCreating || currentPreviewIndex === 0}
-                className="h-8 w-8 p-0"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-foreground text-sm">
-                  {currentPreviewIndex + 1}
-                </span>
-                <span className="text-muted-foreground text-sm">/</span>
-                <span className="text-muted-foreground text-sm">
-                  {visiblePreviewTasks.length}
-                </span>
+                })}
               </div>
 
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleNextTask}
-                disabled={
-                  isCreating ||
-                  currentPreviewIndex === visiblePreviewTasks.length - 1
-                }
-                className="h-8 w-8 p-0"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+              {visiblePreviewTasks.length === 0 && (
+                <p className="rounded-lg border border-dynamic-muted/30 bg-dynamic-muted/10 p-3 text-center text-muted-foreground text-sm">
+                  No tasks to preview
+                </p>
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        </ScrollArea>
 
-        <DialogFooter className="gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={handleCancelPreview}
-            disabled={isCreating}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            onClick={handleConfirmTasks}
-            disabled={disableConfirm}
-          >
-            {isCreating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin text-dynamic-blue" />
-                Creating...
-              </>
-            ) : (
-              <>
-                <Plus className="mr-2 h-4 w-4" />
-                Create {visiblePreviewTasks.length} Task
-                {visiblePreviewTasks.length !== 1 ? 's' : ''}
-              </>
-            )}
-          </Button>
+        <DialogFooter className="flex-row items-center justify-between gap-2 sm:justify-between">
+          <p className="text-muted-foreground text-xs">
+            {visiblePreviewTasks.length} of {previewTasks.length} tasks selected
+          </p>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleCancelPreview}
+              disabled={isCreating}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleConfirmTasks}
+              disabled={isCreating || visiblePreviewTasks.length === 0}
+            >
+              {isCreating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin text-dynamic-blue" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save {visiblePreviewTasks.length} Task
+                  {visiblePreviewTasks.length !== 1 ? 's' : ''}
+                </>
+              )}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
