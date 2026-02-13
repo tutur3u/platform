@@ -210,9 +210,9 @@ export function TaskDialogProvider({
       const isTaskWorkspacePersonal =
         options?.taskWorkspacePersonal ?? isPersonalWorkspace;
 
-      // Realtime is enabled for all non-personal workspaces regardless of
-      // the parent presence context (which may belong to a different workspace)
-      const shouldEnableRealtime = !isTaskWorkspacePersonal;
+      // Realtime sync (auto-save via Yjs) is always enabled in edit mode.
+      // Cursor presence requires tier check and non-personal workspace.
+      const shouldEnableCursors = !isTaskWorkspacePersonal && cursorsEnabled;
 
       setState({
         isOpen: true,
@@ -220,9 +220,8 @@ export function TaskDialogProvider({
         boardId,
         mode: 'edit',
         availableLists,
-        // Cursors require tier check (from context) but realtime is independent
-        collaborationMode: shouldEnableRealtime && cursorsEnabled,
-        realtimeEnabled: shouldEnableRealtime,
+        collaborationMode: shouldEnableCursors,
+        realtimeEnabled: true,
         fakeTaskUrl,
         taskWsId: options?.taskWsId,
         taskWorkspacePersonal: isTaskWorkspacePersonal,
@@ -308,9 +307,9 @@ export function TaskDialogProvider({
         const isTaskWorkspacePersonal =
           taskWorkspacePersonal ?? isPersonalWorkspace;
 
-        // Realtime is enabled for all non-personal workspaces regardless of
-        // the parent presence context (which may belong to a different workspace)
-        const shouldEnableRealtime = !isTaskWorkspacePersonal;
+        // Realtime sync (auto-save via Yjs) is always enabled in edit mode.
+        // Cursor presence requires tier check and non-personal workspace.
+        const shouldEnableCursors = !isTaskWorkspacePersonal && cursorsEnabled;
 
         // Open the task in edit mode
         setState({
@@ -319,8 +318,8 @@ export function TaskDialogProvider({
           boardId: task.list?.board_id,
           mode: 'edit',
           availableLists: (lists as TaskList[]) || undefined,
-          collaborationMode: shouldEnableRealtime && cursorsEnabled,
-          realtimeEnabled: shouldEnableRealtime,
+          collaborationMode: shouldEnableCursors,
+          realtimeEnabled: true,
           taskWsId,
           taskWorkspacePersonal: isTaskWorkspacePersonal,
         });

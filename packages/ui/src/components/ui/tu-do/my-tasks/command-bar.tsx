@@ -21,6 +21,7 @@ import {
 } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
+import { useUserConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
@@ -125,7 +126,22 @@ export function CommandBar({
   value,
   onValueChange,
 }: CommandBarProps) {
-  const [aiEnabled, setAiEnabled] = useState(false);
+  const [aiEnabled, setAiEnabled] = useState(true);
+
+  // Submit shortcut preference
+  const { data: submitShortcut } = useUserConfig(
+    'TASK_SUBMIT_SHORTCUT',
+    'enter'
+  );
+  const isMac =
+    typeof navigator !== 'undefined' &&
+    /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
+  const shortcutHint =
+    submitShortcut === 'cmd_enter'
+      ? isMac
+        ? '⌘+Enter'
+        : 'Ctrl+Enter'
+      : 'Enter';
 
   // Input history for undo functionality
   const inputHistoryRef = useRef<string[]>([]);
@@ -221,14 +237,13 @@ export function CommandBar({
     if (!value.trim()) return;
 
     try {
-      if (!hasDestination) {
-        onOpenBoardSelector(value.trim(), aiEnabled);
-        return;
-      }
-      // If AI is enabled, use AI generation
+      // AI mode: generate immediately without requiring destination
       if (aiEnabled) {
         onGenerateAI(value.trim());
         onValueChange('');
+      } else if (!hasDestination) {
+        onOpenBoardSelector(value.trim(), false);
+        return;
       } else {
         // Pass optional task fields
         const options: TaskOptions = {
@@ -266,11 +281,23 @@ export function CommandBar({
       return;
     }
 
-    // Handle CMD/Ctrl+Enter for submit
-    if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+    if (event.key !== 'Enter') return;
+
+    const isModifier = event.metaKey || event.ctrlKey;
+
+    // Cmd/Ctrl+Enter always submits regardless of setting
+    if (isModifier) {
+      event.preventDefault();
+      handleAction();
+      return;
+    }
+
+    // Plain Enter behaviour depends on the submit shortcut setting
+    if (submitShortcut === 'enter') {
       event.preventDefault();
       handleAction();
     }
+    // When 'cmd_enter', plain Enter falls through to default textarea newline
   };
 
   const handleSettingsOpenChange = (open: boolean) => {
@@ -283,44 +310,73 @@ export function CommandBar({
 
   return (
     <div className="relative">
-      {/* Subtle glow effect */}
-      <div className="absolute inset-0 -z-10 rounded-2xl bg-linear-to-br from-primary/8 to-dynamic-purple/6 opacity-0 blur-2xl transition-opacity duration-500 group-focus-within:opacity-100 md:rounded-3xl" />
       {/* Main Input Area */}
-      <div className="group relative rounded-2xl border border-border/0 bg-linear-to-br from-background to-primary/15 transition-all duration-300 focus-within:border-border/40 focus-within:shadow-[0_20px_50px_-15px_rgba(var(--primary)/0.15)] hover:shadow-xl md:rounded-3xl">
+      <div className="group relative rounded-xl border border-border/60 bg-background transition-all duration-200 focus-within:border-border focus-within:shadow-md">
         {/* Scrollable Textarea Container */}
-        <div className="mx-4 mt-4 max-h-[220px] overflow-hidden overflow-y-auto md:max-h-[250px] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-foreground/30 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:w-2">
+        <div className="max-h-45 overflow-hidden overflow-y-auto px-3 pt-3 md:px-4 md:pt-4 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-foreground/20 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:w-1.5">
+          {/* Inline Destination Selector */}
+          <div className="mb-2">
+            {hasDestination && selectedDestination ? (
+              <button
+                type="button"
+                onClick={() => onOpenBoardSelector()}
+                className="group/dest inline-flex items-center gap-1.5 rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 px-2.5 py-1 text-dynamic-blue text-xs transition-all hover:bg-dynamic-blue/10"
+              >
+                <MapPin className="h-3 w-3 shrink-0" />
+                <span>
+                  {selectedDestination.boardName} /{' '}
+                  {selectedDestination.listName}
+                </span>
+                <button
+                  type="button"
+                  tabIndex={0}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onClearDestination();
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.stopPropagation();
+                      onClearDestination();
+                    }
+                  }}
+                  className="inline-flex w-0 items-center justify-center overflow-hidden rounded-sm opacity-0 transition-all hover:bg-dynamic-blue/20 group-hover/dest:ml-0.5 group-hover/dest:w-4 group-hover/dest:opacity-100"
+                >
+                  <X className="h-3 w-3 shrink-0" />
+                </button>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => onOpenBoardSelector()}
+                disabled={isLoading}
+                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border border-dashed px-2.5 py-1 text-muted-foreground text-xs transition-all hover:border-primary/30 hover:bg-muted/50 hover:text-foreground"
+              >
+                <MapPin className="h-3 w-3 shrink-0" />
+                <span>Select destination...</span>
+              </button>
+            )}
+          </div>
+
           <Textarea
             id="my-tasks-command-bar-textarea"
             value={value}
             onChange={(e) => onValueChange(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="What's on your mind?"
-            className="h-full w-full resize-none border-0 bg-transparent p-2 text-base leading-relaxed placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-0 sm:px-6 md:min-h-[100px] md:px-2 md:pt-2 md:text-lg lg:text-xl"
+            placeholder={
+              aiEnabled
+                ? `Describe tasks to generate with AI... (${shortcutHint})`
+                : `Add a new task... (${shortcutHint})`
+            }
+            className="min-h-10 w-full resize-none border-0 bg-transparent p-0 text-sm leading-relaxed placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-0 md:min-h-12 md:text-base"
             disabled={isLoading}
           />
         </div>
 
         {/* Bottom Action Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-border/5 border-t px-3 py-3 sm:flex-nowrap md:px-4 md:py-4">
-          {/* Left Side: Location + Settings + AI + Destination Display */}
+        <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5 sm:flex-nowrap md:px-4 md:py-3">
+          {/* Left Side: Settings + AI */}
           <div className="flex items-center gap-1.5 sm:gap-2">
-            {/* Location Button - Only for Tasks */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onOpenBoardSelector()}
-              disabled={isLoading}
-              className={cn(
-                'h-8 w-8 rounded-lg border p-0 transition-all md:h-9 md:w-9',
-                hasDestination
-                  ? 'border-dynamic-blue/20 bg-dynamic-blue/5 text-dynamic-blue shadow-lg hover:bg-dynamic-blue/10 hover:shadow-xl md:border-border md:bg-transparent md:text-foreground md:shadow-none md:hover:bg-muted md:hover:shadow-none'
-                  : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
-              )}
-              title="Select destination"
-            >
-              <MapPin className="h-3.5 w-3.5 md:h-4 md:w-4" />
-            </Button>
-
             {/* Settings Button - AI settings when AI on, Task options when AI off */}
             <Popover
               open={settingsOpen}
@@ -1206,24 +1262,6 @@ export function CommandBar({
               />
               <span className="text-xs md:text-sm">AI</span>
             </Button>
-
-            {/* Destination Display - Shows selected board/list */}
-            {hasDestination && selectedDestination && (
-              <div className="group/destination relative hidden items-center rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 transition-all hover:bg-dynamic-blue/10 md:inline-flex">
-                <span className="px-2.5 py-1.5 text-dynamic-blue text-xs md:px-3 md:py-2 md:text-sm">
-                  {selectedDestination.boardName} /{' '}
-                  {selectedDestination.listName}
-                </span>
-                <button
-                  onClick={onClearDestination}
-                  className="h-full w-0 overflow-hidden pr-0 opacity-0 transition-all group-hover/destination:w-6 group-hover/destination:pr-2.5 group-hover/destination:opacity-100 md:group-hover/destination:w-7 md:group-hover/destination:pr-3"
-                  title="Clear destination"
-                  type="button"
-                >
-                  <X className="h-3 w-3 text-dynamic-blue hover:text-dynamic-blue/80 md:h-3.5 md:w-3.5" />
-                </button>
-              </div>
-            )}
           </div>
 
           {/* Right Side: Create Button */}

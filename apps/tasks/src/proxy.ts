@@ -154,20 +154,30 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       } = await supabase.auth.getUser();
 
       if (user) {
-        const defaultWorkspace = await getUserDefaultWorkspace();
+        // Check if user wants to force default workspace redirect
+        const { data: config } = await supabase
+          .from('user_configs')
+          .select('value')
+          .eq('user_id', user.id)
+          .eq('id', 'TASKS_FORCE_DEFAULT_WORKSPACE_REDIRECT')
+          .maybeSingle();
 
-        if (defaultWorkspace) {
-          const target = defaultWorkspace.personal
-            ? 'personal'
-            : defaultWorkspace.id === ROOT_WORKSPACE_ID
-              ? 'internal'
-              : defaultWorkspace.id;
-          const redirectUrl = new URL(`/${target}/boards`, req.nextUrl);
-          return NextResponse.redirect(redirectUrl);
+        if (config?.value === 'true') {
+          const defaultWorkspace = await getUserDefaultWorkspace();
+
+          if (defaultWorkspace) {
+            const target = defaultWorkspace.personal
+              ? 'personal'
+              : defaultWorkspace.id === ROOT_WORKSPACE_ID
+                ? 'internal'
+                : defaultWorkspace.id;
+            const redirectUrl = new URL(`/${target}/tasks`, req.nextUrl);
+            return NextResponse.redirect(redirectUrl);
+          }
         }
 
-        // Fallback to personal workspace if no default workspace found
-        const redirectUrl = new URL('/personal/boards', req.nextUrl);
+        // Default: redirect to personal tasks
+        const redirectUrl = new URL('/personal/tasks', req.nextUrl);
         return NextResponse.redirect(redirectUrl);
       }
     } catch (error) {
