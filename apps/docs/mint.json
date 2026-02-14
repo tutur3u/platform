@@ -6,17 +6,17 @@
     "light": "https://rmitnct.club/media/logos/transparent.png",
     "href": "https://rmitnct.club/"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "logo/logo.png",
   "css": "custom-styles.css",
   "defaultTheme": "dark",
   "toggleTheme": true,
   "colors": {
-    "primary": "#FBC721",
-    "light": "#ffffff",
-    "dark": "#1a1f3a",
+    "primary": "#4896AC",
+    "light": "#E3EDF9",
+    "dark": "#171624",
     "anchors": {
-      "from": "#5FC6E5",
-      "to": "#FBC721"
+      "from": "#4896AC",
+      "to": "#FBB61B"
     }
   },
   "topbarLinks": [

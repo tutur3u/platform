@@ -1,882 +1,183 @@
-/* NCT Hub Custom Branding Styles - Matching About Page Colors */
-
-/* Import Google Fonts - matching web app */
 @import url("https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap");
 
 :root {
-  /* Brand Colors - Exact from about page */
-  --nct-yellow: #fbc721;
-  --nct-blue: #5fc6e5;
-
-  /* Background Colors - Exact from about page bg-root-background */
-  --nct-dark-blue: hsl(240 23% 12%);
-  --nct-darker-blue: hsl(240 23% 10%);
-
-  /* Gradients */
-  --nct-gradient: linear-gradient(90deg, #5fc6e5 0%, #fbc721 100%);
-  --nct-gradient-reverse: linear-gradient(90deg, #fbc721 0%, #5fc6e5 100%);
+  --primary: #4896ac;
+  --primary-hover: #3a7a8e;
+  --navy: #202946;
+  --gold: #fbb61b;
+  --gold-hover: #e0a310;
+  --bg: #e3edf9;
+  --bg-card: #ffffff;
+  --bg-code: #e2e8f0;
+  --text-code: #202946;
+  --text: #202946;
+  --text-muted: #5a6578;
+  --border: rgba(72, 150, 172, 0.2);
+  --border-strong: rgba(72, 150, 172, 0.4);
 }
 
-/* Global background styling - Force dark theme */
-html,
+/* ----------------------------------------------------------
+   CSS Custom Properties — Dark theme
+   ---------------------------------------------------------- */
+.dark,
+[data-theme="dark"] {
+  --primary: #8ce7ff;
+  --primary-hover: #6fd4f0;
+  --navy: #171624;
+  --gold: #ffe120;
+  --gold-hover: #e6cb1a;
+  --bg: #171624;
+  --bg-card: #1e1d2f;
+  --bg-code: #13121f;
+  --text-code: inherit;
+  --text: #f2f7fc;
+  --text-muted: #a0aec0;
+  --border: rgba(140, 231, 255, 0.15);
+  --border-strong: rgba(140, 231, 255, 0.3);
+}
+
+/* ----------------------------------------------------------
+   Global Defaults
+   ---------------------------------------------------------- */
 body {
-  @apply min-h-screen text-white;
-  background-color: var(--nct-dark-blue) !important;
+  font-family:
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--text);
 }
 
-/* Force dark theme - override Mintlify's theme switching */
-html[data-theme="dark"],
-html[data-theme="light"],
-html {
-  background-color: var(--nct-dark-blue) !important;
-}
-
-/* Provide the same semantic utility used by the web app layouts */
-.bg-root-background {
-  background-color: hsl(240 23% 12%) !important;
-}
-
-/* Main content area */
-main,
-.main-content,
-.documentation-content {
-  background-color: var(--nct-dark-blue) !important;
-}
-
-/* Ensure all content areas have the dark blue background */
-.mintlify-docs,
-.mintlify-documentation,
-.mintlify-content,
-.mintlify-main,
-.mintlify-wrapper,
-.mintlify-container,
-[data-theme="dark"] .mintlify-docs,
-[data-theme="dark"] .mintlify-documentation,
-[data-theme="dark"] .mintlify-content,
-[data-theme="dark"] .mintlify-main,
-[data-theme="dark"] .mintlify-wrapper,
-[data-theme="dark"] .mintlify-container {
-  background-color: var(--nct-dark-blue) !important;
-}
-
-/* Sidebar styling - darker background */
-.sidebar,
-.navigation,
-.nav-sidebar {
-  @apply border-r-2 border-blue-500/20;
-  background-color: var(--nct-darker-blue) !important;
-}
-
-/* Card and content backgrounds - matching about page cards */
-.card,
-.content-area,
-.documentation-content,
-.content-wrapper,
-.main-wrapper {
-  @apply rounded-lg border border-blue-500/20;
-  background-color: var(--nct-dark-blue) !important;
-}
-
-/* Bold headline font styling with Tailwind utilities - matching web app */
+/* ----------------------------------------------------------
+   Typography — Gotham-style headings via Montserrat
+   ---------------------------------------------------------- */
 h1,
 h2,
 h3,
 h4,
 h5,
 h6 {
-  @apply leading-tight font-black tracking-tight;
   font-family:
-    "Noto Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
-    sans-serif;
-  font-weight: 800 !important;
+    "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 
-/* H1 styling - blue text with yellow underline */
 h1 {
-  @apply relative mb-4 text-4xl font-black md:text-5xl;
-  color: var(--nct-blue) !important;
-  border-bottom: 3px solid var(--nct-yellow) !important;
-  padding-bottom: 0.5rem !important;
+  color: var(--primary) !important;
+  border-bottom: 3px solid var(--gold);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
 }
 
-/* H1 underline effect - yellow line (backup method) */
-h1::after {
-  @apply absolute bottom-0 left-0 h-3 w-full rounded-sm;
-  content: "";
-  background: var(--nct-yellow);
-  transform: translateY(0.5rem);
-  z-index: 1;
-}
-
-/* Force yellow underlines on all heading levels */
-.mintlify-docs h1,
-.mintlify-documentation h1,
-.mintlify-content h1,
-.mintlify-main h1,
-.mintlify-wrapper h1,
-.mintlify-container h1,
-.mintlify-page h1,
-.mintlify-article h1 {
-  border-bottom: 3px solid var(--nct-yellow) !important;
-  padding-bottom: 0.5rem !important;
-}
-
-/* Remove underlines from H2 and other headings - only H1 gets yellow underline */
-.mintlify-docs h2,
-.mintlify-documentation h2,
-.mintlify-content h2,
-.mintlify-main h2,
-.mintlify-wrapper h2,
-.mintlify-container h2,
-.mintlify-page h2,
-.mintlify-article h2,
-.mintlify-docs h3,
-.mintlify-documentation h3,
-.mintlify-content h3,
-.mintlify-main h3,
-.mintlify-wrapper h3,
-.mintlify-container h3,
-.mintlify-page h3,
-.mintlify-article h3,
-.mintlify-docs h4,
-.mintlify-documentation h4,
-.mintlify-content h4,
-.mintlify-main h4,
-.mintlify-wrapper h4,
-.mintlify-container h4,
-.mintlify-page h4,
-.mintlify-article h4 {
-  border-bottom: none !important;
-  padding-bottom: 0 !important;
-}
-
-/* H2 styling - blue text without underline */
-h2 {
-  @apply mb-6 text-3xl font-black md:text-4xl;
-  color: var(--nct-blue) !important;
-}
-
-/* H3 styling - blue text */
-h3 {
-  @apply mb-4 text-2xl font-black md:text-3xl;
-  color: var(--nct-blue) !important;
-}
-
-/* H4 styling - blue text */
-h4 {
-  @apply mb-3 text-xl font-black md:text-2xl;
-  color: var(--nct-blue) !important;
-}
-
-/* Enhanced links - blue with darker blue hover */
+/* ----------------------------------------------------------
+   Links
+   ---------------------------------------------------------- */
 a {
-  @apply font-semibold transition-all duration-200 hover:underline;
-  color: var(--nct-blue) !important;
+  color: var(--primary);
+  font-weight: 500;
+  transition: color 0.2s ease;
 }
 
 a:hover {
-  color: #4a9bc7 !important; /* Slightly darker blue on hover */
+  color: var(--primary-hover);
 }
 
-/* Custom button styling - clean blue */
-.btn-primary,
-button[type="submit"],
-.mintlify-button,
-.button-primary {
-  @apply rounded-lg px-6 py-3 font-bold text-white transition-all duration-200 hover:-translate-y-1 hover:shadow-lg;
-  background: var(--nct-blue);
-  font-family: "Noto Sans", sans-serif;
-}
-
-.btn-primary:hover,
-button[type="submit"]:hover,
-.mintlify-button:hover,
-.button-primary:hover {
-  box-shadow: 0 8px 25px rgba(95, 198, 229, 0.3);
-  background: #4a9bc7; /* Slightly darker blue on hover */
-}
-
-/* Navigation enhancements */
-.nav-link {
-  @apply font-semibold transition-colors duration-200;
-  color: var(--nct-blue) !important;
-}
-
-.nav-link:hover {
-  color: #4a9bc7 !important; /* Slightly darker blue on hover */
-}
-
-.nav-link.active {
-  @apply bg-blue-500/10 font-bold;
-  color: var(--nct-blue) !important;
-}
-
-/* Sidebar link styling */
-.sidebar-link,
-.nav-item,
-.navigation-item {
-  @apply rounded-md px-3 py-2 font-semibold transition-all duration-200 hover:bg-blue-500/10;
-  color: var(--nct-blue) !important;
-}
-
-.sidebar-link:hover,
-.nav-item:hover,
-.navigation-item:hover {
-  color: #4a9bc7 !important; /* Slightly darker blue on hover */
-}
-
-.sidebar-link.active,
-.nav-item.active,
-.navigation-item.active {
-  @apply border-r-2 border-blue-500 font-bold;
-  background-color: rgba(95, 198, 229, 0.1) !important;
-  color: var(--nct-blue) !important;
-}
-
-/* Code block enhancements - darker background */
+/* ----------------------------------------------------------
+   Code Blocks
+   ---------------------------------------------------------- */
 pre {
-  @apply rounded-lg border border-l-4 border-blue-500/30 border-l-blue-500 p-4;
-  background-color: var(--nct-darker-blue) !important;
+  background-color: var(--bg-code) !important;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  border-radius: 8px;
+}
+
+:root pre code,
+:root pre span {
+  color: var(--text-code) !important;
 }
 
 code {
-  @apply rounded bg-blue-500/15 px-2 py-1 font-semibold;
-  color: var(--nct-blue) !important;
+  background-color: var(--bg-code);
+  color: var(--navy);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  font-size: 0.9em;
 }
 
-/* Custom accent elements - clean blue theme */
-.accent-blue {
-  @apply font-bold;
-  color: var(--nct-blue) !important;
-}
-
-.accent-primary {
-  @apply font-bold;
-  color: var(--nct-blue) !important;
-}
-
-.clean-text {
-  @apply font-black;
-  color: var(--nct-blue) !important;
-}
-
-/* NCT Hub specific utility classes */
-.nct-card {
-  @apply rounded-lg border border-blue-500/20 p-6 shadow-lg transition-all duration-200 hover:shadow-xl;
-  background-color: var(--nct-dark-blue) !important;
-}
-
-.nct-button {
-  @apply rounded-lg px-6 py-3 font-bold text-white transition-all duration-200 hover:-translate-y-1 hover:shadow-lg;
-  background: var(--nct-blue);
-}
-
-.nct-heading {
-  @apply mb-6 border-b-2 border-blue-500 pb-2 text-3xl font-black;
-  color: var(--nct-blue) !important;
-}
-
-.nct-text-primary {
-  @apply font-black;
-  color: var(--nct-blue) !important;
-}
-
-/* Table enhancements */
+/* ----------------------------------------------------------
+   Tables
+   ---------------------------------------------------------- */
 table {
-  @apply overflow-hidden rounded-lg border border-blue-500/30;
-  background-color: var(--nct-darker-blue) !important;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 th {
-  @apply bg-blue-500/20 font-bold;
-  color: var(--nct-blue) !important;
-  font-family: "Noto Sans", sans-serif;
+  background-color: rgba(72, 150, 172, 0.12);
+  color: var(--primary);
+  font-family: "Montserrat", sans-serif;
+  font-weight: 700;
+}
+
+.dark th,
+[data-theme="dark"] th {
+  background-color: rgba(140, 231, 255, 0.1);
 }
 
 td {
-  @apply border-b border-blue-500/10 text-white;
-  background-color: var(--nct-dark-blue) !important;
+  border-bottom: 1px solid var(--border);
 }
 
-tr:nth-child(even) td {
-  background-color: rgba(95, 198, 229, 0.05) !important;
+/* ----------------------------------------------------------
+   Blockquotes
+   ---------------------------------------------------------- */
+blockquote {
+  border-left: 4px solid var(--primary);
+  background-color: var(--bg-card);
+  padding: 1rem;
+  border-radius: 0 8px 8px 0;
+  color: var(--text);
 }
 
-/* Badge enhancements */
-.badge {
-  @apply rounded-md px-3 py-1 font-bold text-white;
-  background: var(--nct-blue);
-  font-family: "Noto Sans", sans-serif;
+/* ----------------------------------------------------------
+   Bold / Strong text
+   ---------------------------------------------------------- */
+strong,
+b {
+  color: var(--primary);
+  font-weight: 700;
 }
 
-/* Ensure all wrapper elements have the dark background */
-.wrapper,
-.container,
-.content,
-.page-content,
-.docs-content {
-  background-color: var(--nct-dark-blue) !important;
-}
-
-/* Force dark background on all Mintlify elements */
-.mintlify-docs *,
-.mintlify-documentation *,
-.mintlify-content *,
-.mintlify-main *,
-.mintlify-wrapper *,
-.mintlify-container * {
-  background-color: inherit !important;
-}
-
-/* Specific Mintlify element overrides */
-.mintlify-docs,
-.mintlify-documentation,
-.mintlify-content,
-.mintlify-main,
-.mintlify-wrapper,
-.mintlify-container,
-.mintlify-page,
-.mintlify-article {
-  background-color: var(--nct-dark-blue) !important;
-}
-
-/* Ensure text is visible on dark background */
-.mintlify-docs,
-.mintlify-documentation,
-.mintlify-content,
-.mintlify-main,
-.mintlify-wrapper,
-.mintlify-container,
-.mintlify-page,
-.mintlify-article,
-.mintlify-docs *,
-.mintlify-documentation *,
-.mintlify-content *,
-.mintlify-main *,
-.mintlify-wrapper *,
-.mintlify-container *,
-.mintlify-page *,
-.mintlify-article * {
-  color: #ffffff !important;
-}
-
-/* Custom scrollbar - yellow theme */
+/* ----------------------------------------------------------
+   Scrollbar (webkit)
+   ---------------------------------------------------------- */
 ::-webkit-scrollbar {
-  width: 10px;
+  width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--nct-darker-blue);
-  border-radius: 10px;
+  background: var(--bg);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--nct-yellow);
-  border-radius: 10px;
+  background: var(--gold);
+  border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #e6b800; /* Slightly darker yellow on hover */
+  background: var(--gold-hover);
 }
 
-/* Top bar enhancements */
-.topbar {
-  background: var(--nct-blue);
-  border-bottom: 2px solid var(--nct-blue);
-}
-
-.topbar-link {
-  color: #ffffff !important;
-  font-weight: 700;
-  font-family: "Noto Sans", sans-serif;
-}
-
-.topbar-link:hover {
-  color: rgba(255, 255, 255, 0.8) !important;
-}
-
-/* Search bar styling - prevent scroll-based color changes */
-.search-input,
-[data-testid="search-input"],
-input[type="search"],
-input[placeholder*="Search"],
-.search-bar,
-.mintlify-search,
-.mintlify-search-input,
-header input,
-.topbar input,
-nav input {
-  background-color: var(--nct-darker-blue) !important;
-  border: 2px solid var(--nct-blue) !important;
-  color: #ffffff !important;
-  transition: border-color 0.2s ease !important;
-}
-
-.search-input:focus,
-[data-testid="search-input"]:focus,
-input[type="search"]:focus,
-input[placeholder*="Search"]:focus,
-.search-bar:focus,
-.mintlify-search:focus,
-.mintlify-search-input:focus,
-header input:focus,
-.topbar input:focus,
-nav input:focus {
-  border-color: var(--nct-blue) !important;
-  box-shadow: 0 0 0 3px rgba(95, 198, 229, 0.1) !important;
-  background-color: var(--nct-darker-blue) !important;
-  color: #ffffff !important;
-}
-
-.search-input::placeholder,
-[data-testid="search-input"]::placeholder,
-input[type="search"]::placeholder,
-input[placeholder*="Search"]::placeholder,
-.search-bar::placeholder,
-.mintlify-search::placeholder,
-.mintlify-search-input::placeholder,
-header input::placeholder,
-.topbar input::placeholder,
-nav input::placeholder {
-  color: rgba(255, 255, 255, 0.6) !important;
-}
-
-/* Force search bar to maintain dark styling on scroll */
-.sticky .search-input,
-.scrolled .search-input,
-[data-scrolled="true"] .search-input,
-.topbar.sticky input,
-.topbar.scrolled input,
-header.sticky input,
-header.scrolled input,
-nav.sticky input,
-nav.scrolled input {
-  background-color: var(--nct-darker-blue) !important;
-  border: 2px solid var(--nct-blue) !important;
-  color: #ffffff !important;
-}
-
-/* Override any Mintlify scroll-based styles */
-.mintlify-topbar,
-.mintlify-header,
-.mintlify-nav,
-.mintlify-sticky,
-.mintlify-scrolled {
-  background: var(--nct-blue) !important;
-}
-
-.mintlify-topbar input,
-.mintlify-header input,
-.mintlify-nav input,
-.mintlify-sticky input,
-.mintlify-scrolled input {
-  background-color: var(--nct-darker-blue) !important;
-  border: 2px solid var(--nct-blue) !important;
-  color: #ffffff !important;
-}
-
-/* Additional scroll-based overrides */
-[class*="sticky"] input,
-[class*="scrolled"] input,
-[class*="fixed"] input,
-[class*="top"] input,
-[data-sticky] input,
-[data-scrolled] input,
-[data-fixed] input {
-  background-color: var(--nct-darker-blue) !important;
-  border: 2px solid var(--nct-blue) !important;
-  color: #ffffff !important;
-}
-
-/* Force all input elements in header/topbar areas to maintain dark styling */
-header [class*="search"],
-.topbar [class*="search"],
-nav [class*="search"],
-[class*="header"] [class*="search"],
-[class*="topbar"] [class*="search"] {
-  background-color: var(--nct-darker-blue) !important;
-  border: 2px solid var(--nct-blue) !important;
-  color: #ffffff !important;
-}
-
-/* Override any background changes on scroll */
-*[style*="background"] input,
-*[style*="backgroundColor"] input {
-  background-color: var(--nct-darker-blue) !important;
-}
-
-/* Footer enhancements */
-.footer {
-  background-color: var(--nct-darker-blue);
-  border-top: 2px solid var(--nct-blue);
-}
-
-/* Social media icons - Force NCT blue color */
-.footer a svg,
-footer a svg,
-[class*="social"] svg,
-.social-link svg,
-.footer-socials svg,
-.footer-socials a svg,
-/* Target all SVG elements in footer area */
-  .footer *
-  svg,
-footer * svg,
-[data-testid*="social"] svg,
-[aria-label*="social"] svg {
-  fill: var(--nct-blue) !important;
-  color: var(--nct-blue) !important;
-  stroke: var(--nct-blue) !important;
-  opacity: 1 !important;
-}
-
-/* Hover effects */
-.footer a:hover svg,
-footer a:hover svg,
-[class*="social"]:hover svg,
-.social-link:hover svg,
-.footer-socials a:hover svg,
-.footer * a:hover svg,
-footer * a:hover svg {
-  fill: #4a9bc7 !important;
-  color: #4a9bc7 !important;
-  stroke: #4a9bc7 !important;
-}
-
-/* Force override any inline styles or other CSS */
-.footer svg[style*="fill"],
-footer svg[style*="fill"],
-.footer svg[style*="color"],
-footer svg[style*="color"] {
-  fill: var(--nct-blue) !important;
-  color: var(--nct-blue) !important;
-}
-
-/* Nuclear option - target absolutely everything in footer */
-.footer *,
-footer *,
-[class*="footer"] *,
-[data-testid*="footer"] * {
-  fill: var(--nct-blue) !important;
-  color: var(--nct-blue) !important;
-  stroke: var(--nct-blue) !important;
-}
-
-/* Specific targeting for common social media icon classes */
-[class*="facebook"] svg,
-[class*="instagram"] svg,
-[class*="github"] svg,
-[class*="linkedin"] svg,
-a[href*="facebook"] svg,
-a[href*="instagram"] svg,
-a[href*="github"] svg,
-a[href*="linkedin"] svg {
-  fill: var(--nct-blue) !important;
-  color: var(--nct-blue) !important;
-  stroke: var(--nct-blue) !important;
-}
-
-/* Search enhancements */
-.search-input {
-  background-color: var(--nct-darker-blue);
-  border: 2px solid var(--nct-blue);
-  color: #ffffff;
-  transition: border-color 0.2s ease;
-}
-
-.search-input:focus {
-  border-color: var(--nct-blue);
-  box-shadow: 0 0 0 3px rgba(95, 198, 229, 0.1);
-}
-
-.search-input::placeholder {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-/* Blockquote styling */
-blockquote {
-  background-color: var(--nct-darker-blue);
-  border-left: 4px solid var(--nct-blue);
-  color: #ffffff;
-  padding: 1rem;
-  border-radius: 0 8px 8px 0;
-}
-
-/* List styling */
-ul,
-ol {
-  color: #ffffff;
-}
-
-li {
-  color: #ffffff;
-}
-
-/* Strong and bold text - blue theme */
-strong,
-b {
-  color: var(--nct-blue) !important;
+/* ----------------------------------------------------------
+   Utility Classes
+   ---------------------------------------------------------- */
+.accent-primary {
+  color: var(--primary);
   font-weight: 700;
 }
 
-/* Additional bold text classes */
-.bold-headline {
-  @apply text-3xl leading-tight font-black tracking-tight md:text-4xl;
-  color: var(--nct-blue) !important;
-  font-family:
-    "Noto Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
-    sans-serif;
-}
-
-.bold-headline-primary {
-  @apply text-3xl leading-tight font-black tracking-tight md:text-4xl;
-  color: var(--nct-blue) !important;
-  font-family:
-    "Noto Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
-    sans-serif;
-}
-
-/* Additional utility classes for easy use in MDX */
-.nct-grid {
-  @apply my-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3;
-}
-
-.nct-flex {
-  @apply flex flex-col items-center gap-4 md:flex-row;
-}
-
-.nct-section {
-  @apply mb-8 rounded-lg border border-blue-500/20 p-6;
-  background-color: var(--nct-dark-blue) !important;
-}
-
-.nct-highlight {
-  @apply rounded-r-lg border-l-4 border-blue-500 p-4;
-  background-color: rgba(95, 198, 229, 0.1) !important;
-}
-
-/* Ensure all text is visible on dark background */
-p,
-span,
-div {
-  color: #ffffff;
-}
-
-/* Hide emojis and unprofessional icons for cleaner look */
-.emoji,
-[role="img"],
-[data-emoji],
-[class*="emoji"],
-[class*="icon"],
-svg[class*="icon"],
-img[class*="icon"],
-i[class*="icon"],
-.icon,
-.emoji-icon,
-.feature-icon,
-.list-icon,
-.bullet-icon,
-.mintlify-icon,
-.mintlify-emoji {
-  display: none !important;
-}
-
-/* Hide specific emoji characters and common icons */
-span[aria-label*="emoji"],
-span[title*="emoji"],
-::before[content*="😀"],
-::before[content*="😊"],
-::before[content*="🚀"],
-::before[content*="⭐"],
-::before[content*="💡"],
-::before[content*="🎯"],
-::before[content*="🔥"],
-::before[content*="✨"],
-::before[content*="🎮"],
-::before[content*="🤖"],
-::before[content*="🏆"],
-::before[content*="🎨"],
-::before[content*="📊"],
-::before[content*="🎪"],
-::before[content*="🎲"],
-::before[content*="🏠"],
-::before[content*="📚"],
-::before[content*="💰"] {
-  display: none !important;
-}
-
-/* Hide icons in lists and feature lists, but keep dropdown arrows */
-ul li::before,
-ol li::before,
-li::before,
-.list-item::before,
-.feature-item::before,
-.key-feature::before,
-.game-mode::before {
-  display: none !important;
-}
-
-/* Hide ALL arrows by default */
-*::after {
-  display: none !important;
-}
-
-/* Show arrows ONLY for specific main navigation items */
-/* Target the main sidebar navigation container */
-nav[role="navigation"] > ul > li > a::after,
-.sidebar > ul > li > a::after,
-.mintlify-nav > ul > li > a::after,
-[data-mintlify-nav] > ul > li > a::after {
-  content: "▶" !important;
-  display: inline-block !important;
-  margin-left: 8px !important;
-  color: #ffffff !important;
-  font-size: 12px !important;
-  transition: transform 0.2s ease !important;
-  position: relative !important;
-  z-index: 1 !important;
-}
-
-/* Rotate arrows when expanded */
-nav[role="navigation"] > ul > li[aria-expanded="true"] > a::after,
-.sidebar > ul > li[aria-expanded="true"] > a::after,
-.mintlify-nav > ul > li[aria-expanded="true"] > a::after,
-[data-mintlify-nav] > ul > li[aria-expanded="true"] > a::after,
-nav[role="navigation"] > ul > li.expanded > a::after,
-.sidebar > ul > li.expanded > a::after,
-.mintlify-nav > ul > li.expanded > a::after,
-[data-mintlify-nav] > ul > li.expanded > a::after {
-  transform: rotate(90deg) !important;
-}
-
-/* Hide arrows in nested items (child navigation) */
-nav[role="navigation"] ul ul li a::after,
-.sidebar ul ul li a::after,
-.mintlify-nav ul ul li a::after,
-[data-mintlify-nav] ul ul li a::after {
-  display: none !important;
-}
-
-/* Hide arrows in table of contents */
-.table-of-contents a::after,
-.toc a::after,
-[data-toc] a::after,
-.on-this-page a::after,
-[data-on-this-page] a::after,
-[role="complementary"] a::after,
-[aria-label*="table"] a::after,
-[aria-label*="contents"] a::after {
-  display: none !important;
-}
-
-/* Hide SVG icons */
-svg[width="20"],
-svg[height="20"],
-svg[width="16"],
-svg[height="16"],
-svg[width="24"],
-svg[height="24"] {
-  display: none !important;
-}
-
-/* Hide any remaining icons */
-[data-icon],
-[data-emoji],
-[class*="feather"],
-[class*="lucide"],
-[class*="heroicon"],
-[class*="material-icon"] {
-  display: none !important;
-}
-
-/* Navigation breadcrumbs */
-.breadcrumb {
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.breadcrumb a {
-  color: var(--nct-blue) !important;
-}
-
-/* Anchor links in top navigation - make white */
-.anchors a,
-[class*="anchor"] a,
-.mintlify-anchor a,
-.anchor-link {
-  color: #ffffff !important;
-}
-
-.anchors a:hover,
-[class*="anchor"] a:hover,
-.mintlify-anchor a:hover,
-.anchor-link:hover {
-  color: rgba(255, 255, 255, 0.8) !important;
-}
-
-/* Nuclear approach for Documentation and GitHub Repository text */
-.anchors *,
-[class*="anchor"] *,
-.topbar .anchors *,
-header .anchors *,
-nav .anchors *,
-/* Target all elements in anchor areas */
-  .anchors,
-[class*="anchor"],
-.topbar .anchors,
-header .anchors,
-nav .anchors,
-/* Target common anchor link containers */
-  [data-testid*="anchor"],
-[data-testid*="link"],
-[role="link"],
-/* Target all text in the top navigation area */
-.topbar *,
-header *,
-nav * {
-  color: #ffffff !important;
-}
-
-/* Top navigation links - make white (for Documentation and other top nav items) */
-.topbar a,
-header a,
-nav a,
-.mintlify-topbar a,
-.mintlify-header a,
-.mintlify-nav a {
-  color: #ffffff !important;
-}
-
-.topbar a:hover,
-header a:hover,
-nav a:hover,
-.mintlify-topbar a:hover,
-.mintlify-header a:hover,
-.mintlify-nav a:hover {
-  color: rgba(255, 255, 255, 0.8) !important;
-}
-
-/* Normal title styling - removed NEO Docs custom styling */
-
-/* Ensure proper contrast for all elements */
-.muted-text {
-  color: rgba(255, 255, 255, 0.7);
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  h1 {
-    font-size: 2rem !important;
-  }
-  h2 {
-    font-size: 1.75rem !important;
-  }
-  h3 {
-    font-size: 1.25rem !important;
-  }
-}
-
-/* Dark mode specific adjustments */
-.dark {
-  --nct-dark-blue: hsl(240 23% 12%);
-  --nct-darker-blue: hsl(240 23% 10%);
+.accent-gold {
+  color: var(--gold);
+  font-weight: 700;
 }
