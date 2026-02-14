@@ -148,12 +148,6 @@ export default function AboutClubSection() {
                 </h3>
               </div>
 
-              {/* Accent Line */}
-              <div className="mb-6 flex items-center gap-3">
-                <div className="h-1 w-12 rounded-full bg-brand-light-blue" />
-                <div className="h-1 w-6 rounded-full bg-brand-light-yellow" />
-              </div>
-
               {/* Description */}
               <p className="mb-6 text-foreground/80 text-lg leading-relaxed">
                 We are a dynamic platform dedicated to empowering the tech
