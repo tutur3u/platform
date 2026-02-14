@@ -152,10 +152,47 @@ jobs:
 
           exit $parity_exit_code
 
+  i18n-namespace-check:
+    name: Namespace Check (shared → apps)
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      has_issues: ${{ steps.namespace-check.outputs.has_issues }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
+      - name: Run namespace check
+        id: namespace-check
+        run: |
+          set +e
+          namespace_output=$(node scripts/i18n-namespace-check.js 2>&1)
+          namespace_exit_code=$?
+          set -e
+
+          echo "$namespace_output"
+
+          if [ "$namespace_exit_code" -ne 0 ]; then
+            echo "has_issues=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_issues=false" >> $GITHUB_OUTPUT
+          fi
+
+          exit $namespace_exit_code
+
   comment:
     name: Comment on PR
     runs-on: ubuntu-latest
-    needs: [i18n-sort-check, i18n-translation-check, i18n-key-parity-check]
+    needs: [i18n-sort-check, i18n-translation-check, i18n-key-parity-check, i18n-namespace-check]
     if: always() && github.event_name == 'pull_request'
     permissions:
       contents: read
@@ -178,13 +215,15 @@ jobs:
             const hasParityIssues = '${{ needs.i18n-key-parity-check.outputs.has_issues }}';
             const missingInVi = '${{ needs.i18n-key-parity-check.outputs.missing_in_vi }}';
             const missingInEn = '${{ needs.i18n-key-parity-check.outputs.missing_in_en }}';
+            const hasNamespaceIssues = '${{ needs.i18n-namespace-check.outputs.has_issues }}';
 
             const timestamp = new Date().toLocaleString();
 
             const sortStatus = isSorted === 'true' ? '✅ Sorted' : '❌ Not sorted';
             const translationStatus = hasTranslationIssues === 'true' ? '❌ Issues found' : '✅ All in sync';
             const parityStatus = hasParityIssues === 'true' ? '❌ Keys mismatch' : '✅ Keys in sync';
-            const overallSuccess = isSorted === 'true' && hasTranslationIssues !== 'true' && hasParityIssues !== 'true';
+            const namespaceStatus = hasNamespaceIssues === 'true' ? '❌ Missing namespaces' : '✅ All present';
+            const overallSuccess = isSorted === 'true' && hasTranslationIssues !== 'true' && hasParityIssues !== 'true' && hasNamespaceIssues !== 'true';
 
             let parityDetails = '';
             if (hasParityIssues === 'true') {
@@ -205,7 +244,11 @@ jobs:
               }
               if (hasParityIssues === 'true') {
                 nextSteps += '**Key Parity Issues (en ↔ vi):**\n```bash\nbun i18n:key-parity\n```\n\n';
-                nextSteps += '> 💡 Use `bun i18n:sync` to auto-sync missing keys.\n';
+                nextSteps += '> 💡 Use `bun i18n:sync` to auto-sync missing keys.\n\n';
+              }
+              if (hasNamespaceIssues === 'true') {
+                nextSteps += '**Namespace Issues (shared → apps):**\n```bash\nbun i18n:namespace-check\n```\n\n';
+                nextSteps += '> 💡 Add missing namespaces to each app\'s `messages/en.json` and `vi.json`, or add exceptions to `i18n-namespace-check.config.json`.\n';
               }
             }
 
@@ -223,6 +266,7 @@ jobs:
             | 🔤 **Translation Sorting** | ${sortStatus} |
             | 🔑 **Translation Keys** | ${translationStatus} ${hasTranslationIssues === 'true' ? `(${issueCount} issues)` : ''} |
             | 🔄 **Key Parity (en ↔ vi)** | ${parityStatus}${parityDetails} |
+            | 📦 **Namespace Check (shared → apps)** | ${namespaceStatus} |
 
             ${nextSteps}
 

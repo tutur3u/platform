@@ -98,6 +98,7 @@
     "i18n:sort": "node scripts/i18n-sort.js",
     "i18n:sort:check": "node scripts/i18n-sort.js --check",
     "i18n:sync": "node scripts/i18n-sync-missing.js",
+    "i18n:namespace-check": "node scripts/i18n-namespace-check.js",
     "gemini": "bunx @google/gemini-cli@latest",
     "claude": "bunx @anthropic-ai/claude-code@latest",
     "stop": "cd apps/database && bun sb:stop",

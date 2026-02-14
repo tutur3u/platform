@@ -81,7 +81,8 @@
       "WebFetch(domain:ai-gateway.vercel.sh)",
       "WebFetch(domain:ai-sdk.dev)",
       "Bash(npx playwright test:*)",
-      "Bash(npx tsgo:*)"
+      "Bash(npx tsgo:*)",
+      "Bash(node scripts/i18n-namespace-check.js:*)"
     ]
   }
 }

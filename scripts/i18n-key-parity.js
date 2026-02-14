@@ -22,6 +22,7 @@ const TRANSLATION_DIRS = [
   'apps/rewise/messages',
   'apps/tasks/messages',
   'apps/meet/messages',
+  'apps/track/messages',
 ];
 
 /**

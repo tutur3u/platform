@@ -147,6 +147,17 @@ const checks = [
     },
   },
   {
+    name: 'i18n-namespace-check',
+    command: 'bun',
+    args: ['i18n:namespace-check'],
+    parseOutput: (stdout) => {
+      if (stdout.includes('All namespace checks passed')) {
+        return 'All namespaces present';
+      }
+      return 'Passed';
+    },
+  },
+  {
     name: 'Migration timestamps',
     command: 'bun',
     args: ['migration:timestamps:check'],
