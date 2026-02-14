@@ -52,9 +52,9 @@ jobs:
         if: steps.cache-supabase.outputs.cache-hit == 'true'
         run: docker load -i /tmp/supabase-docker/images.tar || (echo "Cache corrupted, pruning" && docker system prune -af)
 
-      - name: Start local Supabase
+      - name: Start local Supabase (retry on corrupted cache)
         working-directory: apps/database
-        run: supabase start
+        run: supabase start || (echo "Retrying after Docker prune..." && docker system prune -af && supabase start)
 
       - name: Save Docker images for cache
         if: steps.cache-supabase.outputs.cache-hit != 'true'

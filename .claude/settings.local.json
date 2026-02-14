@@ -82,7 +82,8 @@
       "WebFetch(domain:ai-sdk.dev)",
       "Bash(npx playwright test:*)",
       "Bash(npx tsgo:*)",
-      "Bash(node scripts/i18n-namespace-check.js:*)"
+      "Bash(node scripts/i18n-namespace-check.js:*)",
+      "Bash(gh cache list:*)"
     ]
   }
 }
