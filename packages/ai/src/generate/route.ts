@@ -1,11 +1,10 @@
 import {
-  createGoogleGenerativeAI,
-  type GoogleGenerativeAIProviderOptions,
-} from '@ai-sdk/google';
+  checkAiCredits,
+  deductAiCredits,
+} from '@tuturuuu/ai/credits/check-credits';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { type FinishReason, streamText } from 'ai';
-import { cookies } from 'next/headers';
+import { type FinishReason, gateway, streamText } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 
 const DEFAULT_MODEL_NAME = 'gemini-2.0-flash';
@@ -61,7 +60,7 @@ const ALLOWED_MODELS = [
 }[];
 
 export function createPOST(
-  options: { serverAPIKeyFallback?: boolean } = {
+  _options: { serverAPIKeyFallback?: boolean } = {
     serverAPIKeyFallback: false,
   }
 ) {
@@ -126,15 +125,20 @@ export function createPOST(
         return new Response('Missing prompt', { status: 400 });
       }
 
-      const apiKey =
-        (await cookies()).get('google_api_key')?.value ||
-        (options.serverAPIKeyFallback
-          ? process.env.GOOGLE_GENERATIVE_AI_API_KEY
-          : undefined);
-
-      if (!apiKey) {
-        console.error('Missing API key');
-        return new Response('Missing API key', { status: 400 });
+      // Pre-flight AI credit check (no userId available for API key auth)
+      const creditCheck = await checkAiCredits(
+        configs.wsId,
+        configs.model,
+        'generate'
+      );
+      if (!creditCheck.allowed) {
+        return NextResponse.json(
+          {
+            error: creditCheck.errorMessage || 'AI credits insufficient',
+            code: creditCheck.errorCode,
+          },
+          { status: 403 }
+        );
       }
 
       if (!configs?.model) {
@@ -178,10 +182,6 @@ export function createPOST(
 
       const apiKeyId = apiKeyData.id;
 
-      const google = createGoogleGenerativeAI({
-        apiKey: apiKey,
-      });
-
       let result: {
         input: string;
         output: string;
@@ -195,9 +195,12 @@ export function createPOST(
       } | null = null;
 
       const stream = streamText({
-        model: google(configs.model),
+        model: gateway(`google/${configs.model}`),
         prompt,
         system: configs.systemPrompt,
+        ...(creditCheck.maxOutputTokens
+          ? { maxOutputTokens: creditCheck.maxOutputTokens }
+          : {}),
         onFinish: async ({ text, finishReason, usage }) => {
           result = {
             input: prompt,
@@ -225,14 +228,30 @@ export function createPOST(
             system_prompt: configs.systemPrompt ?? '',
           };
 
-          const { error: saveError } = await sbAdmin
+          const { data: execData, error: saveError } = await sbAdmin
             .from('workspace_ai_executions')
-            .insert(insertData);
+            .insert(insertData)
+            .select('id')
+            .single();
 
           if (saveError) {
             console.error('Error saving AI execution');
             console.error(saveError);
           }
+
+          // Deduct AI credits (no userId for API key auth)
+          deductAiCredits({
+            wsId: configs.wsId,
+            modelId: configs.model,
+            inputTokens: usage.inputTokens ?? 0,
+            outputTokens: usage.outputTokens ?? 0,
+            reasoningTokens:
+              usage.outputTokenDetails?.reasoningTokens ??
+              usage.reasoningTokens ??
+              0,
+            feature: 'generate',
+            executionId: execData?.id,
+          }).catch((err) => console.error('Failed to deduct AI credits:', err));
         },
         providerOptions: {
           google: {
@@ -241,7 +260,7 @@ export function createPOST(
               thinkingBudget: configs.thinkingBudget ?? 0,
               includeThoughts: configs.includeThoughts ?? false,
             },
-          } satisfies GoogleGenerativeAIProviderOptions,
+          },
         },
       });
 

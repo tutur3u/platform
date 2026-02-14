@@ -1,16 +1,15 @@
-import { google } from '@ai-sdk/google';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { streamObject } from 'ai';
+import { gateway, streamObject } from 'ai';
 import { NextResponse } from 'next/server';
 import { quizSchema } from '../types';
 
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
-const DEFAULT_MODEL_NAME = 'gemini-2.5-flash';
+const DEFAULT_MODEL_NAME = 'google/gemini-2.5-flash';
 
 export async function POST(req: Request) {
   const sbAdmin = await createAdminClient();
@@ -68,7 +67,7 @@ export async function POST(req: Request) {
     // }
 
     const result = streamObject({
-      model: google(DEFAULT_MODEL_NAME),
+      model: gateway(DEFAULT_MODEL_NAME),
       // output: 'array',
       prompt:
         `Generate 10 quizzes with the following context (in the same language as the provided context): ` +

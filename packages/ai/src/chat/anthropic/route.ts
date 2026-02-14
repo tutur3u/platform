@@ -1,10 +1,10 @@
-import { anthropic } from '@ai-sdk/anthropic';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import {
   convertToModelMessages,
+  gateway,
   type ModelMessage,
   smoothStream,
   streamText,
@@ -92,7 +92,7 @@ export async function POST(req: Request) {
 
     const result = streamText({
       experimental_transform: smoothStream(),
-      model: anthropic(model),
+      model: gateway(`anthropic/${model}`),
       messages: modelMessages,
       system: systemInstruction,
       providerOptions: {

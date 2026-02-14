@@ -1,4 +1,3 @@
-import { google } from '@ai-sdk/google';
 import {
   MAIN_EVALUATION_PROMPT,
   OUTPUT_COMPARISON_PROMPT,
@@ -14,7 +13,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { NovaProblem } from '@tuturuuu/types';
-import { generateObject, streamObject } from 'ai';
+import { gateway, generateObject, streamObject } from 'ai';
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
 
@@ -35,9 +34,9 @@ const modelSafetySettings = [
 ];
 
 // Initialize model with appropriate provider
-const critizierModel = google('gemini-2.0-flash');
+const critizierModel = gateway('google/gemini-2.0-flash');
 
-const evaluatorModel = google('gemini-2.0-flash');
+const evaluatorModel = gateway('google/gemini-2.0-flash');
 
 // Schema definitions (reused from the original route)
 const PlagiarismSchema = z.object({

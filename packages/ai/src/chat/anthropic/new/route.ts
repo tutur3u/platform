@@ -1,6 +1,5 @@
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { generateText, type UIMessage } from 'ai';
+import { gateway, generateText, type UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
 
 export const maxDuration = 60;
@@ -13,10 +12,9 @@ const DEFAULT_MODEL_NAME = 'gemini-2.5-flash-lite';
 
 export async function POST(req: Request) {
   try {
-    const { model, message, previewToken } = (await req.json()) as {
+    const { model, message } = (await req.json()) as {
       model?: string;
       message?: string;
-      previewToken?: string;
     };
 
     if (!message)
@@ -30,10 +28,6 @@ export async function POST(req: Request) {
 
     if (!user) return NextResponse.json('Unauthorized', { status: 401 });
 
-    // eslint-disable-next-line no-undef
-    const apiKey = previewToken || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-    if (!apiKey) return new Response('Missing API key', { status: 400 });
-
     if (!model) return NextResponse.json('No model provided', { status: 400 });
 
     const prompt = buildPrompt([
@@ -44,12 +38,8 @@ export async function POST(req: Request) {
       },
     ]);
 
-    const google = createGoogleGenerativeAI({
-      apiKey,
-    });
-
     const result = await generateText({
-      model: google(DEFAULT_MODEL_NAME),
+      model: gateway(`google/${DEFAULT_MODEL_NAME}`),
       prompt,
       providerOptions: {
         google: {

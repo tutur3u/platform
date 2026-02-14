@@ -1,6 +1,10 @@
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { convertToModelMessages, generateText, type UIMessage } from 'ai';
+import {
+  convertToModelMessages,
+  gateway,
+  generateText,
+  type UIMessage,
+} from 'ai';
 import { NextResponse } from 'next/server';
 
 export const maxDuration = 60;
@@ -9,17 +13,12 @@ export const preferredRegion = 'sin1';
 const model = 'gemini-2.5-flash';
 
 export async function PATCH(req: Request) {
-  const { id, previewToken } = (await req.json()) as {
+  const { id } = (await req.json()) as {
     id?: string;
-    previewToken?: string;
   };
 
   try {
     if (!id) return new Response('Missing chat ID', { status: 400 });
-
-    // eslint-disable-next-line no-undef
-    const apiKey = previewToken || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-    if (!apiKey) return new Response('Missing API key', { status: 400 });
 
     const supabase = await createClient();
 
@@ -58,12 +57,8 @@ export async function PATCH(req: Request) {
 
     const modelMessages = await convertToModelMessages(messages);
 
-    const google = createGoogleGenerativeAI({
-      apiKey,
-    });
-
     const result = await generateText({
-      model: google(model),
+      model: gateway(`google/${model}`),
       messages: modelMessages,
       system: systemInstruction,
       providerOptions: {

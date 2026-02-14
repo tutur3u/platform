@@ -1,4 +1,8 @@
-import { google } from '@ai-sdk/google';
+import {
+  checkAiCredits,
+  deductAiCredits,
+} from '@tuturuuu/ai/credits/check-credits';
+import type { CreditCheckResult } from '@tuturuuu/ai/credits/types';
 import { quickJournalTaskSchema } from '@tuturuuu/ai/object/types';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
@@ -7,7 +11,7 @@ import {
   TaskPriorities,
   type TaskPriority,
 } from '@tuturuuu/types/primitives/Priority';
-import { generateObject } from 'ai';
+import { gateway, generateObject, NoObjectGeneratedError } from 'ai';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
@@ -52,7 +56,6 @@ const requestSchema = z.object({
 
 const MAX_TITLE_LENGTH = 120;
 const MAX_DESCRIPTION_LENGTH = 4000;
-const MAX_AI_TASKS = 50;
 const MAX_LABEL_SUGGESTIONS = 6;
 const LABEL_COLOR_PALETTE = [
   'blue',
@@ -298,7 +301,6 @@ function buildSystemPrompt(
 ) {
   const promptInstructions = [
     'You are an executive assistant turning raw journal notes into actionable tasks.',
-    `Return between 1 and ${MAX_AI_TASKS} tasks that capture distinct follow-ups from the note.`,
     generateDescriptions
       ? 'Each task must include a concise, verb-led title and a short description with clear next steps.'
       : 'Only provide a concise, verb-led title. Leave the description field empty.',
@@ -345,14 +347,19 @@ function normalizeProvidedTasks(
 }
 
 // Helper: generate AI tasks
-async function generateAiTasks(systemPrompt: string, trimmedEntry: string) {
+async function generateAiTasks(
+  systemPrompt: string,
+  trimmedEntry: string,
+  maxOutputTokens?: number | null
+) {
   const prompt = `${systemPrompt}\n\nJournal note:\n"""\n${trimmedEntry}\n"""`;
-  const { object } = await generateObject({
-    model: google('gemini-2.5-flash-lite'),
+  const { object, usage } = await generateObject({
+    model: gateway('google/gemini-2.5-flash-lite'),
     schema: quickJournalTaskSchema,
     prompt,
+    ...(maxOutputTokens ? { maxOutputTokens } : {}),
   });
-  return (object.tasks || [])
+  const tasks = (object.tasks || [])
     .map((task) => ({
       title: task.title?.trim() ?? '',
       description: task.description?.trim() ?? '',
@@ -364,6 +371,8 @@ async function generateAiTasks(systemPrompt: string, trimmedEntry: string) {
         : [],
     }))
     .filter((task) => task.title.length > 0);
+
+  return { tasks, usage };
 }
 
 // Helper: build candidate tasks from source
@@ -378,8 +387,6 @@ function buildCandidateTasks(
 ) {
   const candidateTasks: CandidateTask[] = [];
   for (const task of sourceTasks) {
-    if (candidateTasks.length >= MAX_AI_TASKS) break;
-
     const trimmedTitle = task.title?.trim().slice(0, MAX_TITLE_LENGTH) ?? '';
     if (!trimmedTitle) continue;
 
@@ -550,6 +557,28 @@ export async function POST(
       return NextResponse.json(wsAccess.body, { status: wsAccess.status });
     }
 
+    // Pre-flight AI credit check
+    let creditCheck: CreditCheckResult | null = null;
+    const shouldInvokeAIEarly = !tasks?.length || previewOnly;
+    if (shouldInvokeAIEarly) {
+      const result = await checkAiCredits(
+        wsId,
+        'gemini-2.5-flash-lite',
+        'task_journal',
+        { userId: user.id }
+      );
+      creditCheck = result;
+      if (!result.allowed) {
+        return NextResponse.json(
+          {
+            error: result.errorMessage || 'AI credits insufficient',
+            code: result.errorCode,
+          },
+          { status: 403 }
+        );
+      }
+    }
+
     let listCheck: { id: string; name: string | null } | null = null;
     if (listId) {
       const listResult = await getListIfProvided(supabase, listId, wsId);
@@ -587,9 +616,51 @@ export async function POST(
 
     if (shouldInvokeAI) {
       try {
-        aiTasks = await generateAiTasks(systemPrompt, trimmedEntry);
+        const result = await generateAiTasks(
+          systemPrompt,
+          trimmedEntry,
+          creditCheck?.maxOutputTokens
+        );
+        aiTasks = result.tasks;
+
+        // Deduct credits after successful AI generation
+        if (result.usage) {
+          deductAiCredits({
+            wsId,
+            userId: user.id,
+            modelId: 'gemini-2.5-flash-lite',
+            inputTokens: result.usage.inputTokens ?? 0,
+            outputTokens: result.usage.outputTokens ?? 0,
+            reasoningTokens:
+              result.usage.outputTokenDetails?.reasoningTokens ??
+              result.usage.reasoningTokens ??
+              0,
+            feature: 'task_journal',
+          }).catch((err: unknown) =>
+            console.error('Failed to deduct AI credits:', err)
+          );
+        }
       } catch (generationError) {
         console.error('Quick journal AI generation failed:', generationError);
+
+        // Even on failure, deduct credits for tokens consumed by the model
+        if (NoObjectGeneratedError.isInstance(generationError)) {
+          const failedUsage = generationError.usage;
+          if (failedUsage) {
+            deductAiCredits({
+              wsId,
+              userId: user.id,
+              modelId: 'gemini-2.5-flash-lite',
+              inputTokens: failedUsage.inputTokens ?? 0,
+              outputTokens: failedUsage.outputTokens ?? 0,
+              reasoningTokens: failedUsage.reasoningTokens ?? 0,
+              feature: 'task_journal',
+            }).catch((err: unknown) =>
+              console.error('Failed to deduct AI credits on error:', err)
+            );
+          }
+        }
+
         return NextResponse.json(
           { error: 'AI could not generate tasks from this journal entry.' },
           { status: 502 }

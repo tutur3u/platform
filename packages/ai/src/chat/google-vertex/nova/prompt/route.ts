@@ -1,4 +1,3 @@
-import { google } from '@ai-sdk/google';
 import type {
   NovaSubmissionCriteria,
   NovaSubmissionTestCase,
@@ -13,7 +12,7 @@ import type {
   NovaProblemTestCase,
 } from '@tuturuuu/types';
 import { checkPermission } from '@tuturuuu/utils/nova/submissions/check-permission';
-import { generateObject, streamObject } from 'ai';
+import { gateway, generateObject, streamObject } from 'ai';
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
 import {
@@ -40,9 +39,9 @@ const modelSafetySettings = [
 ];
 
 // Initialize model with appropriate provider
-const critizierModel = google('gemini-2.0-flash');
+const critizierModel = gateway('google/gemini-2.0-flash');
 
-const evaluatorModel = google('gemini-2.0-flash');
+const evaluatorModel = gateway('google/gemini-2.0-flash');
 
 // Schema definitions
 const PlagiarismSchema = z.object({

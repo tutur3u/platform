@@ -1,4 +1,7 @@
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import {
+  checkAiCredits,
+  deductAiCredits,
+} from '@tuturuuu/ai/credits/check-credits';
 import {
   createAdminClient,
   createClient,
@@ -7,6 +10,7 @@ import {
 import {
   convertToModelMessages,
   type FilePart,
+  gateway,
   type ImagePart,
   type ModelMessage,
   smoothStream,
@@ -14,13 +18,12 @@ import {
   type TextPart,
   type UIMessage,
 } from 'ai';
-import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
-const DEFAULT_MODEL_NAME = 'gemini-2.5-flash';
+const DEFAULT_MODEL_NAME = 'google/gemini-2.5-flash';
 
 async function getAllChatFiles(
   wsId: string,
@@ -214,7 +217,7 @@ function addFilesToContent(
 }
 
 export function createPOST(
-  options: { serverAPIKeyFallback?: boolean } = {
+  _options: { serverAPIKeyFallback?: boolean } = {
     serverAPIKeyFallback: false,
   }
 ) {
@@ -241,18 +244,6 @@ export function createPOST(
       if (!messages) {
         console.error('Missing messages');
         return new Response('Missing messages', { status: 400 });
-      }
-
-      const apiKey =
-        (await cookies()).get('google_api_key')?.value ||
-        (options.serverAPIKeyFallback
-          ? // eslint-disable-next-line no-undef
-            process.env.GOOGLE_GENERATIVE_AI_API_KEY
-          : undefined);
-
-      if (!apiKey) {
-        console.error('Missing API key');
-        return new Response('Missing API key', { status: 400 });
       }
 
       const supabase = await createClient();
@@ -385,16 +376,28 @@ export function createPOST(
         console.log('User message saved to database');
       }
 
-      // Instantiate Model with provided API key
-      const google = createGoogleGenerativeAI({
-        apiKey: apiKey,
-      });
+      // Pre-flight AI credit check
+      const creditCheck = wsId
+        ? await checkAiCredits(wsId, model, 'chat', { userId: user.id })
+        : null;
+      if (creditCheck && !creditCheck.allowed) {
+        return NextResponse.json(
+          {
+            error: creditCheck.errorMessage || 'AI credits insufficient',
+            code: creditCheck.errorCode,
+          },
+          { status: 403 }
+        );
+      }
 
       const result = streamText({
         experimental_transform: smoothStream(),
-        model: google(model),
+        model: gateway(`google/${model}`),
         messages: processedMessages,
         system: systemInstruction,
+        ...(creditCheck?.maxOutputTokens
+          ? { maxOutputTokens: creditCheck.maxOutputTokens }
+          : {}),
         providerOptions: {
           google: {
             safetySettings: [
@@ -423,17 +426,21 @@ export function createPOST(
             throw new Error('No content found');
           }
 
-          const { error } = await sbAdmin.from('ai_chat_messages').insert({
-            chat_id: chatId,
-            creator_id: user.id,
-            content: response.text,
-            role: 'ASSISTANT',
-            model: model.toLowerCase(),
-            finish_reason: response.finishReason,
-            prompt_tokens: response.usage.inputTokens,
-            completion_tokens: response.usage.outputTokens,
-            metadata: { source: 'Rewise' },
-          });
+          const { data: msgData, error } = await sbAdmin
+            .from('ai_chat_messages')
+            .insert({
+              chat_id: chatId,
+              creator_id: user.id,
+              content: response.text,
+              role: 'ASSISTANT',
+              model: model.toLowerCase(),
+              finish_reason: response.finishReason,
+              prompt_tokens: response.usage.inputTokens,
+              completion_tokens: response.usage.outputTokens,
+              metadata: { source: 'Rewise' },
+            })
+            .select('id')
+            .single();
 
           if (error) {
             console.log('ERROR ORIGIN: ROOT COMPLETION');
@@ -442,6 +449,25 @@ export function createPOST(
           }
 
           console.log('AI Response saved to database');
+
+          // Deduct AI credits
+          if (wsId) {
+            deductAiCredits({
+              wsId,
+              userId: user.id,
+              modelId: model,
+              inputTokens: response.usage.inputTokens ?? 0,
+              outputTokens: response.usage.outputTokens ?? 0,
+              reasoningTokens:
+                response.usage.outputTokenDetails?.reasoningTokens ??
+                response.usage.reasoningTokens ??
+                0,
+              feature: 'chat',
+              chatMessageId: msgData?.id,
+            }).catch((err) =>
+              console.error('Failed to deduct AI credits:', err)
+            );
+          }
         },
       });
 

@@ -1,7 +1,5 @@
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { generateObject } from 'ai';
-import { cookies } from 'next/headers';
+import { gateway, generateObject } from 'ai';
 import { z } from 'zod';
 
 const DEFAULT_MODEL_NAME = 'gemini-2.0-flash';
@@ -28,24 +26,9 @@ const transcriptSchema = z.object({
     .describe('Total audio duration in seconds'),
 });
 
-export function createPOST(
-  options: { serverAPIKeyFallback?: boolean } = {
-    serverAPIKeyFallback: false,
-  }
-) {
+export function createPOST() {
   return async function handler(req: Request) {
     try {
-      const apiKey =
-        (await cookies()).get('google_api_key')?.value ||
-        (options.serverAPIKeyFallback
-          ? process.env.GOOGLE_GENERATIVE_AI_API_KEY
-          : undefined);
-
-      if (!apiKey) {
-        console.error('Missing API key');
-        return new Response('Missing API key', { status: 400 });
-      }
-
       const supabase = await createClient();
 
       const {
@@ -56,10 +39,6 @@ export function createPOST(
         console.error('Unauthorized');
         return new Response('Unauthorized', { status: 401 });
       }
-
-      const google = createGoogleGenerativeAI({
-        apiKey,
-      });
 
       const formData = await req.formData();
       const audioFile = formData.get('audio') as File;
@@ -73,7 +52,7 @@ export function createPOST(
       const audioUint8Array = new Uint8Array(audioBuffer);
 
       const result = await generateObject({
-        model: google(DEFAULT_MODEL_NAME),
+        model: gateway(`google/${DEFAULT_MODEL_NAME}`),
         schema: transcriptSchema,
         system: systemInstruction,
         messages: [

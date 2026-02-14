@@ -1,7 +1,6 @@
-import { google } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
-import { generateObject } from 'ai';
+import { gateway, generateObject } from 'ai';
 import { emailDraftSchema } from './schema';
 
 export const maxDuration = 30;
@@ -98,7 +97,7 @@ Format the email content with proper paragraph breaks. Use double line breaks be
 Generate the email with a compelling subject line and well-crafted content.`;
 
     const result = await generateObject({
-      model: google('gemini-2.5-flash-lite'),
+      model: gateway('google/gemini-2.5-flash-lite'),
       schema: emailDraftSchema,
       prompt,
     });
