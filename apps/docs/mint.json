@@ -6,7 +6,7 @@
     "light": "https://rmitnct.club/media/logos/transparent.png",
     "href": "https://rmitnct.club/"
   },
-  "favicon": "/favicon.png",
+  "favicon": "logo/logo.png",
   "css": "custom-styles.css",
   "defaultTheme": "dark",
   "toggleTheme": true,
