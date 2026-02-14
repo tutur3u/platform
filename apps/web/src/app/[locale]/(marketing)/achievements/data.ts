@@ -281,7 +281,7 @@ export const achievements: Achievement[] = [
     name: 'CoverGo AI Hackathon 2025',
     achievement: 'Champion',
     teamName: 'RMIT x UIT',
-    image: '/hall-of-fames/covergo-ai-hackathon.jpg',
+    image: '/hall-of-fames/covergo-ai-hackathon.jpeg',
     teamMembers: [
       {
         name: 'Khoa Mai Dang',

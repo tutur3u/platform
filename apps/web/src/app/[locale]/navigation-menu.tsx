@@ -1,6 +1,5 @@
 'use client';
 
-import { useNavigation } from './shared/navigation-config';
 import { Badge } from '@ncthub/ui/badge';
 import { Card } from '@ncthub/ui/card';
 import { BookText, Gamepad2, Zap } from '@ncthub/ui/icons';
@@ -14,9 +13,10 @@ import {
   navigationMenuTriggerStyle,
 } from '@ncthub/ui/navigation-menu';
 import { cn } from '@ncthub/utils/format';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import React from 'react';
+import { useNavigation } from './shared/navigation-config';
 
 export function MainNavigationMenu() {
   const t = useTranslations();
@@ -56,7 +56,7 @@ export function MainNavigationMenu() {
           <NavigationMenuContent>
             <ul className="grid w-[400px] gap-3 bg-linear-to-br from-background via-background/95 to-background/90 p-6 backdrop-blur-sm md:w-[500px] md:grid-cols-2 lg:w-[800px]">
               <Card className="col-span-full mb-2 bg-primary/5 p-4">
-                <div className="flex items-center gap-2 text-sm font-medium">
+                <div className="flex items-center gap-2 font-medium text-sm">
                   <BookText className="h-4 w-4" />
                   <span>Learning Resources</span>
                 </div>
@@ -67,6 +67,7 @@ export function MainNavigationMenu() {
                   title={resource.label}
                   href={resource.href}
                   icon={resource.icon}
+                  external={resource.external}
                 >
                   {resource.description}
                 </ListItem>
@@ -82,7 +83,7 @@ export function MainNavigationMenu() {
           <NavigationMenuContent>
             <ul className="grid w-[400px] gap-3 bg-linear-to-br from-background via-background/95 to-background/90 p-6 backdrop-blur-sm md:w-[500px] md:grid-cols-2 lg:w-[800px] xl:w-[1000px] xl:grid-cols-3">
               <Card className="col-span-full mb-2 bg-primary/5 p-4">
-                <div className="flex items-center gap-2 text-sm font-medium">
+                <div className="flex items-center gap-2 font-medium text-sm">
                   <Zap className="h-4 w-4" />
                   <span>Utilities</span>
                 </div>
@@ -109,7 +110,7 @@ export function MainNavigationMenu() {
           <NavigationMenuContent>
             <ul className="grid w-[400px] gap-3 bg-linear-to-br from-background via-background/95 to-background/90 p-6 backdrop-blur-sm md:w-[500px] md:grid-cols-2 lg:w-[800px]">
               <Card className="col-span-full mb-2 bg-primary/5 p-4">
-                <div className="flex items-center gap-2 text-sm font-medium">
+                <div className="flex items-center gap-2 font-medium text-sm">
                   <Gamepad2 className="h-4 w-4" />
                   <span>Games</span>
                 </div>
@@ -139,10 +140,21 @@ const ListItem = React.forwardRef<
     icon: React.ReactNode;
     badge?: string;
     disabled?: boolean;
+    external?: boolean;
   }
 >(
   (
-    { className, href, title, icon, badge, disabled, children, ...props },
+    {
+      className,
+      href,
+      title,
+      icon,
+      badge,
+      disabled,
+      external,
+      children,
+      ...props
+    },
     ref
   ) => {
     if (!href) return null;
@@ -152,8 +164,10 @@ const ListItem = React.forwardRef<
           <Link
             href={href}
             ref={ref}
+            target={external ? '_blank' : undefined}
+            rel={external ? 'noopener noreferrer' : undefined}
             className={cn(
-              'group relative block h-full space-y-1 rounded-md border border-transparent p-4 leading-none no-underline outline-hidden transition-all duration-300 select-none',
+              'group relative block h-full select-none space-y-1 rounded-md border border-transparent p-4 leading-none no-underline outline-hidden transition-all duration-300',
               'opacity-90 hover:opacity-100',
               'hover:scale-[1.02] hover:border-border active:scale-[0.98]',
               disabled && 'cursor-not-allowed opacity-50',
@@ -163,10 +177,10 @@ const ListItem = React.forwardRef<
           >
             <div className="relative">
               <div className="flex items-center gap-2">
-                <div className="text-primary transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                <div className="text-primary transition-transform duration-300 group-hover:rotate-3 group-hover:scale-110">
                   {icon}
                 </div>
-                <div className="text-sm leading-none font-semibold">
+                <div className="font-semibold text-sm leading-none">
                   {title}
                 </div>
                 {badge && (
@@ -178,7 +192,7 @@ const ListItem = React.forwardRef<
                   </Badge>
                 )}
               </div>
-              <p className="mt-2 line-clamp-2 text-sm leading-snug text-muted-foreground opacity-80 transition-opacity duration-300 group-hover:opacity-100">
+              <p className="mt-2 line-clamp-2 text-muted-foreground text-sm leading-snug opacity-80 transition-opacity duration-300 group-hover:opacity-100">
                 {children}
               </p>
             </div>
