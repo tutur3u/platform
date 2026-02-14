@@ -1,11 +1,8 @@
 'use client';
 
-import { Project, projects } from './data';
-import ProjectCard from './project-card';
-import ProjectDetail from './project-detail';
 import {
   Carousel,
-  CarouselApi,
+  type CarouselApi,
   CarouselContent,
   CarouselItem,
 } from '@ncthub/ui/carousel';
@@ -13,6 +10,9 @@ import { Layers, LayoutGrid, Search, Smile } from '@ncthub/ui/icons';
 import { cn } from '@ncthub/utils/format';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useMemo, useState } from 'react';
+import { type Project, projects } from './data';
+import ProjectCard from './project-card';
+import ProjectDetail from './project-detail';
 
 type ProjectType = 'web' | 'software' | 'hardware' | undefined;
 type ProjectStatus = 'planning' | 'ongoing' | 'completed' | undefined;
@@ -162,9 +162,9 @@ export default function Projects() {
         viewport={{ once: true }}
         transition={{ duration: 0.6, delay: 0.2 }}
       >
-        <p className="text-2xl leading-normal font-extrabold md:text-3xl lg:text-4xl">
+        <p className="font-extrabold text-2xl leading-normal md:text-3xl lg:text-4xl">
           <span className="text-foreground">Don't miss our</span>{' '}
-          <span className="border-b-4 border-[#FBC721] whitespace-nowrap text-[#5FC6E5]">
+          <span className="whitespace-nowrap border-[#FBC721] border-b-4 text-[#5FC6E5]">
             other projects
           </span>
           <span className="text-foreground">!</span>
@@ -183,7 +183,7 @@ export default function Projects() {
               />
               <button
                 onClick={() => handleViewModeChange('carousel')}
-                className={`relative z-10 flex w-1/2 items-center justify-center gap-2.5 rounded-xl px-6 py-3 text-base font-bold transition-all duration-200 ${
+                className={`relative z-10 flex w-1/2 items-center justify-center gap-2.5 rounded-xl px-6 py-3 font-bold text-base transition-all duration-200 ${
                   viewMode === 'carousel'
                     ? 'text-primary-foreground shadow-sm'
                     : 'text-muted-foreground hover:scale-105 hover:text-foreground'
@@ -194,7 +194,7 @@ export default function Projects() {
               </button>
               <button
                 onClick={() => handleViewModeChange('grid')}
-                className={`relative z-10 flex w-1/2 items-center justify-center gap-2.5 rounded-xl px-6 py-3 text-base font-bold transition-all duration-200 ${
+                className={`relative z-10 flex w-1/2 items-center justify-center gap-2.5 rounded-xl px-6 py-3 font-bold text-base transition-all duration-200 ${
                   viewMode === 'grid'
                     ? 'text-primary-foreground shadow-sm'
                     : 'text-muted-foreground hover:scale-105 hover:text-foreground'
@@ -232,7 +232,7 @@ export default function Projects() {
                 <button
                   key={p.key}
                   onClick={() => handleTypeFilter(p.key as ProjectType)}
-                  className={`relative z-10 w-28 px-5 py-3 text-base font-bold transition-all duration-200 ${
+                  className={`relative z-10 w-28 px-5 py-3 font-bold text-base transition-all duration-200 ${
                     p.key === type
                       ? 'text-primary-foreground shadow-sm'
                       : 'text-muted-foreground hover:scale-105 hover:text-foreground'
@@ -270,7 +270,7 @@ export default function Projects() {
                 <button
                   key={p.key}
                   onClick={() => handleStatusFilter(p.key as ProjectStatus)}
-                  className={`relative z-10 w-28 py-3 text-base font-bold transition-all duration-200 ${
+                  className={`relative z-10 w-28 py-3 font-bold text-base transition-all duration-200 ${
                     p.key === 'completed' ? 'px-3' : 'px-5'
                   } ${
                     p.key === status
@@ -358,7 +358,7 @@ export default function Projects() {
                   <motion.button
                     onClick={() => setIsAutoScrolling(!isAutoScrolling)}
                     whileHover={{ scale: 1.05 }}
-                    className={`rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                    className={`rounded-xl px-4 py-2 font-medium text-sm transition-all duration-200 ${
                       isAutoScrolling
                         ? 'border border-white/20 bg-gradient-to-r from-blue-500/20 to-purple-600/20 text-foreground'
                         : 'border border-white/10 bg-white/10 text-muted-foreground'
@@ -411,19 +411,19 @@ export default function Projects() {
             <div className="mb-6">
               <Search className="mx-auto h-16 w-16 text-yellow-400 md:h-20 md:w-20" />
             </div>
-            <h3 className="mb-2 text-xl leading-normal font-extrabold md:text-4xl lg:text-5xl">
-              <span className="border-b-4 border-[#FBC721] whitespace-nowrap text-[#5FC6E5]">
+            <h3 className="mb-2 font-extrabold text-xl leading-normal md:text-4xl lg:text-5xl">
+              <span className="whitespace-nowrap border-[#FBC721] border-b-4 text-[#5FC6E5]">
                 NEOThing's
               </span>{' '}
               <span className="text-foreground"> Here :(</span>
             </h3>
-            <p className="mb-6 flex items-center justify-center gap-2 text-lg leading-normal font-bold text-muted-foreground md:text-xl lg:text-2xl">
+            <p className="mb-6 flex items-center justify-center gap-2 font-bold text-lg text-muted-foreground leading-normal md:text-xl lg:text-2xl">
               Try Clearing the Filters u just click{' '}
               <Smile className="h-6 w-6 text-yellow-400 md:h-8 md:w-8" />
             </p>
             <button
               onClick={clearAllFilters}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-3 text-lg font-bold text-primary-foreground transition-all duration-300 hover:scale-105 hover:shadow-lg"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-3 font-bold text-lg text-primary-foreground transition-all duration-300 hover:scale-105 hover:shadow-lg"
             >
               Clear Filters
             </button>
