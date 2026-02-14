@@ -47,12 +47,10 @@ jobs:
         with:
           path: /tmp/supabase-docker
           key: supabase-docker-${{ runner.os }}-${{ steps.supabase-version.outputs.version }}
-          restore-keys: |
-            supabase-docker-${{ runner.os }}-
 
       - name: Load cached Docker images
         if: steps.cache-supabase.outputs.cache-hit == 'true'
-        run: docker load -i /tmp/supabase-docker/images.tar
+        run: docker load -i /tmp/supabase-docker/images.tar || (echo "Cache corrupted, pruning" && docker system prune -af)
 
       - name: Start local Supabase
         working-directory: apps/database

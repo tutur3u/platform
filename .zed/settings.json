@@ -6,7 +6,7 @@
   "languages": {
     "TypeScript": {
       "formatter": { "language_server": { "name": "biome" } },
-      "language_servers": ["tsgo", "vtsls"]
+      "language_servers": ["tsgo", "vtsls", "oxlint"]
     },
     "JavaScript": { "formatter": { "language_server": { "name": "biome" } } },
     "TSX": { "formatter": { "language_server": { "name": "biome" } } },

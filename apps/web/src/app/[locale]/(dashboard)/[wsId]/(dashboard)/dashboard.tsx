@@ -176,7 +176,7 @@ const Dashboard = ({ data }: { data: AuroraForecast }) => {
           <TabsContent value="statistical" className="space-y-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <Select value={selectedModel} onValueChange={setSelectedModel}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-45">
                   <SelectValue placeholder={t('aurora_select_model')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -287,7 +287,7 @@ const Dashboard = ({ data }: { data: AuroraForecast }) => {
 
             <Card>
               <CardContent className="pt-6">
-                <div className="h-[400px]">
+                <div className="h-100">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
                       <CartesianGrid
@@ -356,7 +356,7 @@ const Dashboard = ({ data }: { data: AuroraForecast }) => {
           <TabsContent value="ml">
             <Card>
               <CardContent className="pt-6">
-                <div className="h-[400px]">
+                <div className="h-100">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={mlChartData}>
                       <CartesianGrid
