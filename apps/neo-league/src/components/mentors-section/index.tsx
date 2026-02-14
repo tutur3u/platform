@@ -4,6 +4,12 @@ import AnimatedSection from '../animated-section';
 import AvatarCard from '../avatar-card';
 import { mentors } from './data';
 
+function calculateDelay(index: number) {
+  const row = Math.floor(index / 4);
+  const col = index % 4;
+  return row * 0.1 + col * 0.05;
+}
+
 export default function MentorsSection() {
   return (
     <section id="mentors" className="px-6 py-20 md:px-8 md:py-24">
@@ -20,10 +26,7 @@ export default function MentorsSection() {
 
         <div className="grid grid-cols-2 gap-6 lg:grid-cols-4">
           {mentors.map((mentor, index) => (
-            <AnimatedSection
-              key={index}
-              delay={Math.floor(index / 4) * 0.1 + (index % 4) * 0.05}
-            >
+            <AnimatedSection key={index} delay={calculateDelay(index)}>
               <AvatarCard
                 avatar={mentor.avatar}
                 name={mentor.name}
