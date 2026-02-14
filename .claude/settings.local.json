@@ -80,7 +80,8 @@
       "Bash(bunx playwright test:*)",
       "WebFetch(domain:ai-gateway.vercel.sh)",
       "WebFetch(domain:ai-sdk.dev)",
-      "Bash(npx playwright test:*)"
+      "Bash(npx playwright test:*)",
+      "Bash(npx tsgo:*)"
     ]
   }
 }

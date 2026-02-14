@@ -140,8 +140,9 @@ export const EventDescriptionInput = ({
       if (!inThrottle) {
         func.apply(this, args);
         inThrottle = true;
-        // biome-ignore lint/suspicious/noAssignInExpressions: <>
-        setTimeout(() => (inThrottle = false), limit);
+        setTimeout(() => {
+          inThrottle = false;
+        }, limit);
       }
     };
   };

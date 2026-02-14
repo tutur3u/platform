@@ -18,30 +18,18 @@ interface Message {
   content: DemoMessageKey;
 }
 
+const demoConversation: Message[] = [
+  { role: 'user', content: 'input1' },
+  { role: 'assistant', content: 'response1' },
+  { role: 'user', content: 'input2' },
+  { role: 'assistant', content: 'response2' },
+];
+
 export default function InteractiveDemo() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentStep, setCurrentStep] = useState(0);
   const controls = useAnimation();
   const t = useTranslations('nova.interactive-demo');
-
-  const demoConversation: Message[] = [
-    {
-      role: 'user',
-      content: 'input1',
-    },
-    {
-      role: 'assistant',
-      content: 'response1',
-    },
-    {
-      role: 'user',
-      content: 'input2',
-    },
-    {
-      role: 'assistant',
-      content: 'response2',
-    },
-  ];
 
   useEffect(() => {
     if (currentStep < demoConversation.length) {
@@ -77,7 +65,7 @@ export default function InteractiveDemo() {
           </div>
 
           {/* Messages container */}
-          <div className="h-[400px] space-y-4 overflow-y-auto p-4">
+          <div className="h-100 space-y-4 overflow-y-auto p-4">
             {messages.map((message, index) => (
               <motion.div
                 key={index}

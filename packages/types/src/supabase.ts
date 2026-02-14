@@ -20150,6 +20150,18 @@ export type Database = {
           is_whitelisted: boolean;
         }[];
       };
+      get_user_workspace_subscription_info: {
+        Args: { _user_id: string };
+        Returns: {
+          member_count: number;
+          polar_subscription_id: string;
+          pricing_model: string;
+          subscription_tier: string;
+          ws_id: string;
+          ws_name: string;
+          ws_personal: boolean;
+        }[];
+      };
       get_wallet_balance_at_date: {
         Args: {
           _target_date: string;

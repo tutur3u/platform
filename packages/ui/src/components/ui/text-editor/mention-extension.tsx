@@ -166,7 +166,7 @@ export const Mention = Node.create({
 
   addOptions() {
     return {
-      translations: undefined,
+      translations: undefined as Record<string, unknown> | undefined,
     };
   },
 

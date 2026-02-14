@@ -220,10 +220,13 @@ export const MonthCalendar = ({
   ];
 
   // Create weeks (group by 7 days)
-  const weeks: Date[][] = [];
-  for (let i = 0; i < calendarDays.length; i += 7) {
-    weeks.push(calendarDays.slice(i, i + 7));
-  }
+  const weeks = useMemo(() => {
+    const result: Date[][] = [];
+    for (let i = 0; i < calendarDays.length; i += 7) {
+      result.push(calendarDays.slice(i, i + 7));
+    }
+    return result;
+  }, [calendarDays]);
 
   // Calculate multi-day event segments for rendering as spanning bars
   const multiDaySegments = useMemo(() => {
@@ -317,7 +320,7 @@ export const MonthCalendar = ({
     });
 
     return segments;
-  }, [getCurrentEvents]);
+  }, [getCurrentEvents, weeks]);
 
   // Get single-day all-day events for a day (multi-day events rendered separately as bars)
   const getSingleDayAllDayEvents = useCallback(
