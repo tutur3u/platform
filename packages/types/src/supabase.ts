@@ -7,11 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: '14.1';
-  };
   public: {
     Tables: {
       abuse_events: {
@@ -242,6 +237,271 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
+      };
+      ai_credit_feature_access: {
+        Row: {
+          enabled: boolean;
+          feature: string;
+          id: string;
+          max_requests_per_day: number | null;
+          tier: Database['public']['Enums']['workspace_product_tier'];
+        };
+        Insert: {
+          enabled?: boolean;
+          feature: string;
+          id?: string;
+          max_requests_per_day?: number | null;
+          tier: Database['public']['Enums']['workspace_product_tier'];
+        };
+        Update: {
+          enabled?: boolean;
+          feature?: string;
+          id?: string;
+          max_requests_per_day?: number | null;
+          tier?: Database['public']['Enums']['workspace_product_tier'];
+        };
+        Relationships: [];
+      };
+      ai_credit_plan_allocations: {
+        Row: {
+          allowed_features: string[];
+          allowed_models: string[];
+          created_at: string;
+          credits_per_seat: number | null;
+          daily_limit: number | null;
+          id: string;
+          is_active: boolean;
+          markup_multiplier: number;
+          max_credits_per_request: number | null;
+          max_output_tokens_per_request: number | null;
+          max_requests_per_day: number | null;
+          monthly_credits: number;
+          tier: Database['public']['Enums']['workspace_product_tier'];
+          updated_at: string;
+          weekly_limit: number | null;
+        };
+        Insert: {
+          allowed_features?: string[];
+          allowed_models?: string[];
+          created_at?: string;
+          credits_per_seat?: number | null;
+          daily_limit?: number | null;
+          id?: string;
+          is_active?: boolean;
+          markup_multiplier?: number;
+          max_credits_per_request?: number | null;
+          max_output_tokens_per_request?: number | null;
+          max_requests_per_day?: number | null;
+          monthly_credits?: number;
+          tier: Database['public']['Enums']['workspace_product_tier'];
+          updated_at?: string;
+          weekly_limit?: number | null;
+        };
+        Update: {
+          allowed_features?: string[];
+          allowed_models?: string[];
+          created_at?: string;
+          credits_per_seat?: number | null;
+          daily_limit?: number | null;
+          id?: string;
+          is_active?: boolean;
+          markup_multiplier?: number;
+          max_credits_per_request?: number | null;
+          max_output_tokens_per_request?: number | null;
+          max_requests_per_day?: number | null;
+          monthly_credits?: number;
+          tier?: Database['public']['Enums']['workspace_product_tier'];
+          updated_at?: string;
+          weekly_limit?: number | null;
+        };
+        Relationships: [];
+      };
+      ai_credit_transactions: {
+        Row: {
+          amount: number;
+          balance_id: string;
+          chat_message_id: string | null;
+          cost_usd: number | null;
+          created_at: string;
+          execution_id: string | null;
+          feature: string | null;
+          id: string;
+          input_tokens: number | null;
+          metadata: Json | null;
+          model_id: string | null;
+          output_tokens: number | null;
+          reasoning_tokens: number | null;
+          transaction_type: string;
+          user_id: string | null;
+          ws_id: string | null;
+        };
+        Insert: {
+          amount: number;
+          balance_id: string;
+          chat_message_id?: string | null;
+          cost_usd?: number | null;
+          created_at?: string;
+          execution_id?: string | null;
+          feature?: string | null;
+          id?: string;
+          input_tokens?: number | null;
+          metadata?: Json | null;
+          model_id?: string | null;
+          output_tokens?: number | null;
+          reasoning_tokens?: number | null;
+          transaction_type: string;
+          user_id?: string | null;
+          ws_id?: string | null;
+        };
+        Update: {
+          amount?: number;
+          balance_id?: string;
+          chat_message_id?: string | null;
+          cost_usd?: number | null;
+          created_at?: string;
+          execution_id?: string | null;
+          feature?: string | null;
+          id?: string;
+          input_tokens?: number | null;
+          metadata?: Json | null;
+          model_id?: string | null;
+          output_tokens?: number | null;
+          reasoning_tokens?: number | null;
+          transaction_type?: string;
+          user_id?: string | null;
+          ws_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_credit_transactions_balance_id_fkey';
+            columns: ['balance_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_ai_credit_balances';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ai_credit_transactions_chat_message_id_fkey';
+            columns: ['chat_message_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_chat_messages';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ai_credit_transactions_execution_id_fkey';
+            columns: ['execution_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_ai_executions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ai_credit_transactions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'ai_credit_transactions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'ai_credit_transactions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ai_credit_transactions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ai_credit_transactions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ai_credit_transactions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      ai_gateway_models: {
+        Row: {
+          cache_read_price_per_token: number | null;
+          cache_write_price_per_token: number | null;
+          context_window: number | null;
+          created_at: string;
+          description: string | null;
+          id: string;
+          input_price_per_token: number;
+          input_tiers: Json | null;
+          is_enabled: boolean;
+          max_tokens: number | null;
+          name: string;
+          output_price_per_token: number;
+          output_tiers: Json | null;
+          provider: string;
+          released_at: string | null;
+          synced_at: string;
+          tags: string[] | null;
+          type: string;
+          web_search_price: number | null;
+        };
+        Insert: {
+          cache_read_price_per_token?: number | null;
+          cache_write_price_per_token?: number | null;
+          context_window?: number | null;
+          created_at?: string;
+          description?: string | null;
+          id: string;
+          input_price_per_token?: number;
+          input_tiers?: Json | null;
+          is_enabled?: boolean;
+          max_tokens?: number | null;
+          name: string;
+          output_price_per_token?: number;
+          output_tiers?: Json | null;
+          provider: string;
+          released_at?: string | null;
+          synced_at?: string;
+          tags?: string[] | null;
+          type?: string;
+          web_search_price?: number | null;
+        };
+        Update: {
+          cache_read_price_per_token?: number | null;
+          cache_write_price_per_token?: number | null;
+          context_window?: number | null;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          input_price_per_token?: number;
+          input_tiers?: Json | null;
+          is_enabled?: boolean;
+          max_tokens?: number | null;
+          name?: string;
+          output_price_per_token?: number;
+          output_tiers?: Json | null;
+          provider?: string;
+          released_at?: string | null;
+          synced_at?: string;
+          tags?: string[] | null;
+          type?: string;
+          web_search_price?: number | null;
+        };
+        Relationships: [];
       };
       ai_models: {
         Row: {
@@ -12354,6 +12614,88 @@ export type Database = {
           },
         ];
       };
+      workspace_ai_credit_balances: {
+        Row: {
+          bonus_credits: number;
+          created_at: string;
+          id: string;
+          period_end: string;
+          period_start: string;
+          total_allocated: number;
+          total_used: number;
+          updated_at: string;
+          user_id: string | null;
+          ws_id: string | null;
+        };
+        Insert: {
+          bonus_credits?: number;
+          created_at?: string;
+          id?: string;
+          period_end: string;
+          period_start: string;
+          total_allocated?: number;
+          total_used?: number;
+          updated_at?: string;
+          user_id?: string | null;
+          ws_id?: string | null;
+        };
+        Update: {
+          bonus_credits?: number;
+          created_at?: string;
+          id?: string;
+          period_end?: string;
+          period_start?: string;
+          total_allocated?: number;
+          total_used?: number;
+          updated_at?: string;
+          user_id?: string | null;
+          ws_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_ai_credit_balances_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_ai_credit_balances_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_ai_credit_balances_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_ai_credit_balances_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_ai_credit_balances_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_ai_credit_balances_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_ai_executions: {
         Row: {
           api_key_id: string;
@@ -17045,7 +17387,36 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       calendar_event_participants: {
         Row: {
@@ -18440,6 +18811,50 @@ export type Database = {
       };
     };
     Functions: {
+      _resolve_workspace_tier: {
+        Args: { p_ws_id: string };
+        Returns: Database['public']['Enums']['workspace_product_tier'];
+      };
+      admin_get_ai_credit_entity_detail: {
+        Args: { p_user_id?: string; p_ws_id?: string };
+        Returns: Json;
+      };
+      admin_list_ai_credit_transactions: {
+        Args: {
+          p_end_date?: string;
+          p_feature?: string;
+          p_limit?: number;
+          p_model_id?: string;
+          p_page?: number;
+          p_scope?: string;
+          p_start_date?: string;
+          p_transaction_type?: string;
+          p_user_id?: string;
+          p_ws_id?: string;
+        };
+        Returns: {
+          amount: number;
+          balance_id: string;
+          cost_usd: number;
+          created_at: string;
+          feature: string;
+          id: string;
+          input_tokens: number;
+          metadata: Json;
+          model_id: string;
+          output_tokens: number;
+          reasoning_tokens: number;
+          total_count: number;
+          transaction_type: string;
+          user_avatar_url: string;
+          user_display_name: string;
+          user_id: string;
+          workspace_tier: string;
+          ws_id: string;
+          ws_member_count: number;
+          ws_name: string;
+        }[];
+      };
       archive_old_notifications: {
         Args: { p_days_threshold?: number };
         Returns: number;
@@ -18509,6 +18924,40 @@ export type Database = {
         Args: { p_request_id: string; p_user_id: string };
         Returns: boolean;
       };
+      check_ai_credit_allowance:
+        | {
+            Args: {
+              p_estimated_input_tokens?: number;
+              p_feature: string;
+              p_model_id: string;
+              p_ws_id: string;
+            };
+            Returns: {
+              allowed: boolean;
+              error_code: string;
+              error_message: string;
+              max_output_tokens: number;
+              remaining_credits: number;
+              tier: string;
+            }[];
+          }
+        | {
+            Args: {
+              p_estimated_input_tokens?: number;
+              p_feature: string;
+              p_model_id: string;
+              p_user_id?: string;
+              p_ws_id: string;
+            };
+            Returns: {
+              allowed: boolean;
+              error_code: string;
+              error_message: string;
+              max_output_tokens: number;
+              remaining_credits: number;
+              tier: string;
+            }[];
+          };
       check_email_blocked: { Args: { p_email: string }; Returns: boolean };
       check_email_bounce_status: {
         Args: { p_email_hash: string; p_window_days?: number };
@@ -18555,6 +19004,15 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      compute_ai_cost_from_gateway: {
+        Args: {
+          p_input_tokens: number;
+          p_model_id: string;
+          p_output_tokens: number;
+          p_reasoning_tokens?: number;
+        };
+        Returns: number;
       };
       compute_ai_cost_usd: {
         Args: {
@@ -18666,6 +19124,46 @@ export type Database = {
         };
         Returns: string;
       };
+      deduct_ai_credits:
+        | {
+            Args: {
+              p_chat_message_id?: string;
+              p_execution_id?: string;
+              p_feature?: string;
+              p_input_tokens: number;
+              p_metadata?: Json;
+              p_model_id: string;
+              p_output_tokens: number;
+              p_reasoning_tokens?: number;
+              p_ws_id: string;
+            };
+            Returns: {
+              credits_deducted: number;
+              error_code: string;
+              remaining_credits: number;
+              success: boolean;
+            }[];
+          }
+        | {
+            Args: {
+              p_chat_message_id?: string;
+              p_execution_id?: string;
+              p_feature?: string;
+              p_input_tokens: number;
+              p_metadata?: Json;
+              p_model_id: string;
+              p_output_tokens: number;
+              p_reasoning_tokens?: number;
+              p_user_id?: string;
+              p_ws_id: string;
+            };
+            Returns: {
+              credits_deducted: number;
+              error_code: string;
+              remaining_credits: number;
+              success: boolean;
+            }[];
+          };
       detect_duplicate_workspace_users: {
         Args: { _ws_id: string };
         Returns: {
@@ -18739,6 +19237,16 @@ export type Database = {
           hour_of_day: number;
         }[];
       };
+      get_ai_credit_usage_summary:
+        | { Args: { p_period_start?: string; p_ws_id: string }; Returns: Json }
+        | {
+            Args: {
+              p_period_start?: string;
+              p_user_id?: string;
+              p_ws_id: string;
+            };
+            Returns: Json;
+          };
       get_ai_execution_daily_stats_v2: {
         Args: {
           p_end_date?: string;
@@ -18846,7 +19354,7 @@ export type Database = {
       get_auth_provider_stats: {
         Args: never;
         Returns: {
-          last_sign_in_avg: unknown;
+          last_sign_in_avg: string;
           percentage: number;
           provider: string;
           user_count: number;
@@ -19500,6 +20008,49 @@ export type Database = {
           os: string;
         }[];
       };
+      get_or_create_credit_balance:
+        | {
+            Args: { p_ws_id: string };
+            Returns: {
+              bonus_credits: number;
+              created_at: string;
+              id: string;
+              period_end: string;
+              period_start: string;
+              total_allocated: number;
+              total_used: number;
+              updated_at: string;
+              user_id: string | null;
+              ws_id: string | null;
+            }[];
+            SetofOptions: {
+              from: '*';
+              to: 'workspace_ai_credit_balances';
+              isOneToOne: false;
+              isSetofReturn: true;
+            };
+          }
+        | {
+            Args: { p_user_id?: string; p_ws_id: string };
+            Returns: {
+              bonus_credits: number;
+              created_at: string;
+              id: string;
+              period_end: string;
+              period_start: string;
+              total_allocated: number;
+              total_used: number;
+              updated_at: string;
+              user_id: string | null;
+              ws_id: string | null;
+            }[];
+            SetofOptions: {
+              from: '*';
+              to: 'workspace_ai_credit_balances';
+              isOneToOne: false;
+              isSetofReturn: true;
+            };
+          };
       get_or_create_external_calendar: {
         Args: {
           p_calendar_id: string;
@@ -19638,6 +20189,7 @@ export type Database = {
         Args: { p_period?: string; p_ws_id: string };
         Returns: Json;
       };
+      get_platform_ai_credit_overview: { Args: never; Returns: Json };
       get_possible_excluded_groups: {
         Args: { _ws_id: string; included_groups: string[] };
         Returns: {
@@ -20064,7 +20616,7 @@ export type Database = {
         Args: { user_id: string };
         Returns: {
           active_sessions: number;
-          current_session_age: unknown;
+          current_session_age: string;
           total_sessions: number;
         }[];
       };
