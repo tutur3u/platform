@@ -41,26 +41,48 @@ jobs:
         id: supabase-version
         run: echo "version=$(supabase --version)" >> "$GITHUB_OUTPUT"
 
-      - name: Cache Supabase Docker images
+      - name: Restore cached Docker images
         id: cache-supabase
-        uses: actions/cache@v5
+        uses: actions/cache/restore@v5
         with:
           path: /tmp/supabase-docker
           key: supabase-docker-${{ runner.os }}-${{ steps.supabase-version.outputs.version }}
 
       - name: Load cached Docker images
         if: steps.cache-supabase.outputs.cache-hit == 'true'
-        run: docker load -i /tmp/supabase-docker/images.tar || (echo "Cache corrupted, pruning" && docker system prune -af)
+        run: docker load -i /tmp/supabase-docker/images.tar || true
 
-      - name: Start local Supabase (retry on corrupted cache)
+      - name: Start local Supabase
+        id: start-supabase
         working-directory: apps/database
-        run: supabase start || (echo "Retrying after Docker prune..." && docker system prune -af && supabase start)
+        run: |
+          if supabase start; then
+            echo "pruned=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Retrying after Docker prune..."
+            docker system prune -af
+            supabase start
+            echo "pruned=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Delete corrupted cache
+        if: steps.start-supabase.outputs.pruned == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh cache delete "supabase-docker-${{ runner.os }}-${{ steps.supabase-version.outputs.version }}" --repo "${{ github.repository }}" || true
 
       - name: Save Docker images for cache
-        if: steps.cache-supabase.outputs.cache-hit != 'true'
+        if: steps.cache-supabase.outputs.cache-hit != 'true' || steps.start-supabase.outputs.pruned == 'true'
         run: |
           mkdir -p /tmp/supabase-docker
-          docker images --format '{{.Repository}}:{{.Tag}}' | grep -E 'supabase|inbucket|imgproxy' | grep -v '<none>' | xargs -r docker save -o /tmp/supabase-docker/images.tar
+          docker images --format '{{.Repository}}:{{.Tag}}' | grep 'supabase/' | grep -v '<none>' | xargs -r docker save -o /tmp/supabase-docker/images.tar
+
+      - name: Cache Docker images
+        if: steps.cache-supabase.outputs.cache-hit != 'true' || steps.start-supabase.outputs.pruned == 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: /tmp/supabase-docker
+          key: supabase-docker-${{ runner.os }}-${{ steps.supabase-version.outputs.version }}
 
       - name: Reset database (apply migrations + seed)
         working-directory: apps/database
