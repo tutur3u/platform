@@ -28,8 +28,31 @@ jobs:
         with:
           version: latest
 
+      - name: Get Supabase CLI version
+        id: supabase-version
+        run: echo "version=$(supabase --version)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Supabase Docker images
+        id: cache-supabase
+        uses: actions/cache@v5
+        with:
+          path: /tmp/supabase-docker
+          key: supabase-docker-${{ runner.os }}-${{ steps.supabase-version.outputs.version }}
+          restore-keys: |
+            supabase-docker-${{ runner.os }}-
+
+      - name: Load cached Docker images
+        if: steps.cache-supabase.outputs.cache-hit == 'true'
+        run: docker load -i /tmp/supabase-docker/images.tar
+
       - run: supabase init
       - run: supabase db start
+
+      - name: Save Docker images for cache
+        if: steps.cache-supabase.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p /tmp/supabase-docker
+          docker images --format '{{.Repository}}:{{.Tag}}' | grep -E 'supabase|inbucket|imgproxy' | grep -v '<none>' | xargs -r docker save -o /tmp/supabase-docker/images.tar
       - name: Verify generated types match Postgres schema
         run: |
           supabase gen types typescript --local > schema.gen.ts
