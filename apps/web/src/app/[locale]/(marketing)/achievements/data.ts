@@ -342,6 +342,38 @@ export const achievements: Achievement[] = [
     category: 'Competition',
   },
   {
+    name: ' RMIT Game Jam 2025',
+    achievement: 'Certificate of Completion',
+    image: '/hall-of-fames/rmit-game-jam-2025.jpg',
+    teamMembers: [
+      {
+        name: 'Tran Vinh Trong',
+        role: 'Game Developer',
+        isNctMember: true,
+      },
+      {
+        name: 'Nguyen Do Tuong Van',
+        role: 'Game Developer',
+        isNctMember: true,
+      },
+      {
+        name: 'Duong Phu Dong',
+        role: 'Game Developer',
+        isNctMember: true,
+      },
+      {
+        name: 'Tran Viet Duc',
+        role: 'Game Developer',
+        isNctMember: true,
+      },
+    ],
+    achievementDescription:
+      'This is an educational arcade word-puzzle game made for RMIT Game Jam 2025. Players race against the clock to identify fruit terminology by clicking letter bubbles, progressing through 3 increasingly difficult levels with 5 rounds each with rounds having chaos pace of moving letters and trick spellings. It combines vocabulary learning with reflex-based gameplay.',
+    year: 2025,
+    category: 'Award',
+    eventLink: 'https://www.youtube.com/watch?v=Xy53oYn1VT4',
+  },
+  {
     name: ' Sustainable Design Competition by Sustainable Textile Solution (STS)',
     achievement: '4R Design award',
     image: '/hall-of-fames/fashion-enterprise-program.jpg',
