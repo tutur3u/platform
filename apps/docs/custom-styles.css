@@ -161,12 +161,12 @@ b {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--gold);
+  background: var(--text-muted);
   border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--gold-hover);
+  background: var(--primary);
 }
 
 /* ----------------------------------------------------------
