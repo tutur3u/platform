@@ -2,7 +2,7 @@
 
 import { Calendar, Clock, Flag } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 
 interface MyTasksHeaderProps {
@@ -17,6 +17,7 @@ export function MyTasksHeader({
   upcomingCount,
 }: MyTasksHeaderProps) {
   const t = useTranslations();
+  const locale = useLocale();
 
   const { greetingMessage, formattedDate } = useMemo(() => {
     const now = new Date();
@@ -29,13 +30,13 @@ export function MyTasksHeader({
 
     return {
       greetingMessage: greeting,
-      formattedDate: now.toLocaleDateString(undefined, {
+      formattedDate: now.toLocaleDateString(locale, {
         weekday: 'long',
         month: 'long',
         day: 'numeric',
       }),
     };
-  }, [t]);
+  }, [t, locale]);
 
   const cards = [
     {

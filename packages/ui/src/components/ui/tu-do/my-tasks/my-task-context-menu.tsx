@@ -121,6 +121,14 @@ export function MyTaskContextMenu({
           onPriorityChange={handlePriorityChange}
           onMenuItemSelect={handleMenuItemSelect}
           onClose={() => onOpenChange(false)}
+          translations={{
+            priority: t('cmd_priority'),
+            none: t('ctx_none'),
+            urgent: t('preview_priority_urgent'),
+            high: t('preview_priority_high'),
+            medium: t('preview_priority_medium'),
+            low: t('preview_priority_low'),
+          }}
         />
 
         <TaskDueDateMenu
@@ -130,6 +138,17 @@ export function MyTaskContextMenu({
           onCustomDateClick={() => onOpenChange(false)}
           onMenuItemSelect={handleMenuItemSelect}
           onClose={() => onOpenChange(false)}
+          translations={{
+            dueDate: t('cmd_due_date'),
+            none: t('ctx_none'),
+            today: t('cmd_today'),
+            tomorrow: t('cmd_tomorrow'),
+            yesterday: t('date_yesterday'),
+            thisWeek: t('ctx_this_week'),
+            nextWeek: t('cmd_next_week'),
+            customDate: t('ctx_custom_date'),
+            removeDueDate: t('ctx_remove_due_date'),
+          }}
         />
 
         {isPersonal && (
@@ -140,6 +159,15 @@ export function MyTaskContextMenu({
             onToggleLabel={handleToggleLabel}
             onCreateNewLabel={onCreateNewLabel ?? (() => {})}
             onMenuItemSelect={handleMenuItemSelect}
+            translations={{
+              labels: t('cmd_labels'),
+              searchLabels: t('ctx_search_labels'),
+              loading: t('loading'),
+              noLabelsFound: t('ctx_no_labels_found'),
+              noLabelsAvailable: t('ctx_no_labels_available'),
+              applied: t('ctx_applied'),
+              createNewLabel: t('ctx_create_new_label'),
+            }}
           />
         )}
 
@@ -236,7 +264,7 @@ export function MyTaskContextMenu({
           className="text-dynamic-red focus:text-dynamic-red"
         >
           <Trash2 className="mr-2 h-4 w-4" />
-          Delete
+          {t('delete')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

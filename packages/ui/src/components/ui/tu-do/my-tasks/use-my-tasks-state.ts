@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
+import { AI_CREDITS_QUERY_KEY } from '@tuturuuu/ui/hooks/use-ai-credits';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTaskDialog } from '@tuturuuu/ui/tu-do/hooks/useTaskDialog';
 import { useBoardConfig } from '@tuturuuu/utils/task-helper';
@@ -232,6 +233,102 @@ export function useMyTasksState({
     enabled: isPersonal,
   });
 
+  // Check if current workspace has any boards (eager, for auto-creation)
+  const { data: wsBoardCount, isLoading: wsBoardCountLoading } = useQuery({
+    queryKey: ['workspace', wsId, 'board-count'],
+    queryFn: async () => {
+      const supabase = createClient();
+      const { count, error } = await supabase
+        .from('workspace_boards')
+        .select('id', { count: 'exact', head: true })
+        .eq('ws_id', wsId)
+        .is('deleted_at', null);
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+
+  // Auto-create a board if the workspace has none
+  const autoCreateAttemptedRef = useRef(false);
+
+  // Translated names for the auto-created board and its default lists
+  const defaultBoardName = t('ws-tasks.default_board_name');
+  const defaultListNames: Record<string, string> = useMemo(
+    () => ({
+      'To Do': t('ws-tasks.default_list_todo'),
+      'In Progress': t('ws-tasks.default_list_in_progress'),
+      Done: t('ws-tasks.default_list_done'),
+      Closed: t('ws-tasks.default_list_closed'),
+    }),
+    [t]
+  );
+
+  useEffect(() => {
+    if (wsBoardCountLoading || wsBoardCount === undefined) return;
+    if (wsBoardCount > 0) return;
+    if (autoCreateAttemptedRef.current) return;
+    autoCreateAttemptedRef.current = true;
+
+    const autoCreateBoard = async () => {
+      try {
+        const supabase = createClient();
+        const { data: newBoard, error } = await supabase
+          .from('workspace_boards')
+          .insert({ ws_id: wsId, name: defaultBoardName })
+          .select('id')
+          .single();
+
+        if (error) throw error;
+        if (!newBoard) return;
+
+        // Rename trigger-created default lists to translated names
+        const { data: lists } = await supabase
+          .from('task_lists')
+          .select('id, name')
+          .eq('board_id', newBoard.id);
+
+        if (lists) {
+          await Promise.all(
+            lists
+              .filter((l) => l.name && defaultListNames[l.name])
+              .map((l) =>
+                supabase
+                  .from('task_lists')
+                  .update({ name: defaultListNames[l.name!]! })
+                  .eq('id', l.id)
+              )
+          );
+        }
+
+        toast.info(t('ws-tasks.board_auto_created'));
+
+        // Refresh board-related queries so selectors pick up the new board
+        queryClient.invalidateQueries({
+          queryKey: ['workspace', wsId, 'board-count'],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['workspace', wsId, 'boards-with-lists'],
+        });
+        queryClient.invalidateQueries({ queryKey: ['all-user-boards'] });
+
+        // Auto-select the new board
+        setSelectedBoardId(newBoard.id);
+      } catch (err) {
+        console.error('Failed to auto-create board:', err);
+      }
+    };
+
+    autoCreateBoard();
+  }, [
+    wsBoardCount,
+    wsBoardCountLoading,
+    wsId,
+    t,
+    queryClient,
+    defaultBoardName,
+    defaultListNames,
+  ]);
+
   // Fetch boards with lists for selected workspace
   const { data: boardsDataRaw, isLoading: boardsLoading } = useQuery({
     queryKey: ['workspace', selectedWorkspaceId, 'boards-with-lists'],
@@ -407,11 +504,15 @@ export function useMyTasksState({
 
       const payload = await response.json().catch(() => null);
       if (!response.ok) {
-        const message =
-          payload && typeof payload === 'object' && 'error' in payload
-            ? (payload as { error?: string }).error
-            : undefined;
-        throw new Error(message || 'Failed to generate preview');
+        // Attach error code for credit-specific handling
+        const errorObj = payload as {
+          error?: string;
+          code?: string;
+        } | null;
+        const err = new Error(errorObj?.error || 'Failed to generate preview');
+        (err as any).code = errorObj?.code;
+        (err as any).status = response.status;
+        throw err;
       }
       return payload;
     },
@@ -422,9 +523,36 @@ export function useMyTasksState({
       setCurrentPreviewIndex(0);
       setPreviewOpen(true);
       setAiFlowStep('reviewing');
+      // Refresh credit balance after AI usage
+      queryClient.invalidateQueries({ queryKey: [AI_CREDITS_QUERY_KEY] });
     },
     onError: (mutationError: Error) => {
-      toast.error(mutationError.message || 'Failed to generate preview');
+      const code = (mutationError as any).code;
+      const status = (mutationError as any).status;
+
+      // Handle credit-specific 403 errors
+      if (status === 403 && code) {
+        // Refresh credit balance so indicator reflects current state
+        queryClient.invalidateQueries({ queryKey: [AI_CREDITS_QUERY_KEY] });
+        switch (code) {
+          case 'CREDITS_EXHAUSTED':
+            toast.error(t('ai-credits.error_credits_exhausted'));
+            return;
+          case 'MODEL_NOT_ALLOWED':
+            toast.error(t('ai-credits.error_model_not_allowed'));
+            return;
+          case 'FEATURE_NOT_ALLOWED':
+            toast.error(t('ai-credits.error_feature_not_allowed'));
+            return;
+          case 'DAILY_LIMIT_REACHED':
+            toast.error(t('ai-credits.error_daily_limit_reached'));
+            return;
+        }
+      }
+
+      toast.error(
+        mutationError.message || t('ws-tasks.errors.failed_generate_preview')
+      );
     },
   });
 
@@ -463,12 +591,14 @@ export function useMyTasksState({
       );
       if (!response.ok) {
         const error = await response.json().catch(() => null);
-        throw new Error(error?.error || 'Failed to create tasks');
+        throw new Error(
+          error?.error || t('ws-tasks.errors.failed_create_tasks')
+        );
       }
       return response.json();
     },
     onSuccess: () => {
-      toast.success('Tasks created successfully!');
+      toast.success(t('ws-tasks.tasks_created_successfully'));
       setPreviewOpen(false);
       setLastResult(null);
       setPreviewEntry(null);
@@ -476,9 +606,11 @@ export function useMyTasksState({
       setCommandBarInput('');
       setTaskCreatorMode(null);
       handleUpdate();
+      // Refresh credit balance after task creation (may consume credits)
+      queryClient.invalidateQueries({ queryKey: [AI_CREDITS_QUERY_KEY] });
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to create tasks');
+      toast.error(error.message || t('ws-tasks.errors.failed_create_tasks'));
     },
   });
 
@@ -540,9 +672,9 @@ export function useMyTasksState({
       }
 
       if (newTask) {
-        toast.success(`Task created successfully! Go to task`, {
+        toast.success(t('ws-tasks.task_created_successfully'), {
           action: {
-            label: 'Open',
+            label: t('common.open'),
             onClick: () => openTaskById(newTask.id),
           },
         });
@@ -551,23 +683,23 @@ export function useMyTasksState({
         handleUpdate();
         return true;
       } else {
-        toast.error('Failed to create task');
+        toast.error(t('ws-tasks.errors.failed_create_task'));
         return false;
       }
     } catch (error: any) {
       console.error('Error creating task:', error);
-      toast.error(error.message || 'Failed to create task');
+      toast.error(error.message || t('ws-tasks.errors.failed_create_task'));
       return false;
     } finally {
       setCommandBarLoading(false);
     }
   };
 
-  const handleGenerateAI = (entry: string) => {
+  const handleGenerateAI = async (entry: string): Promise<boolean> => {
     const trimmedEntry = entry.trim();
     if (!trimmedEntry) {
       toast.error(t('ws-tasks.errors.missing_task_description'));
-      return;
+      return false;
     }
 
     setPendingTaskTitle(trimmedEntry);
@@ -578,14 +710,20 @@ export function useMyTasksState({
       timestampMoment = dayjs();
     }
 
-    previewMutation.mutate({
-      entry: trimmedEntry,
-      generateDescriptions: aiGenerateDescriptions,
-      generatePriority: aiGeneratePriority,
-      generateLabels: aiGenerateLabels,
-      clientTimezone,
-      clientTimestamp: timestampMoment.toISOString(),
-    });
+    try {
+      await previewMutation.mutateAsync({
+        entry: trimmedEntry,
+        generateDescriptions: aiGenerateDescriptions,
+        generatePriority: aiGeneratePriority,
+        generateLabels: aiGenerateLabels,
+        clientTimezone,
+        clientTimestamp: timestampMoment.toISOString(),
+      });
+      return true;
+    } catch (_) {
+      // Error handling is already done in onError of the mutation
+      return false;
+    }
   };
 
   // Called when user finishes reviewing AI tasks and clicks "Save Tasks"
@@ -694,13 +832,13 @@ export function useMyTasksState({
       queryClient.invalidateQueries({
         queryKey: ['workspace', wsId, 'labels'],
       });
-      toast.success('Label created successfully!');
+      toast.success(t('ws-tasks.label_created'));
       setNewLabelDialogOpen(false);
       setNewLabelName('');
       setNewLabelColor('#3b82f6');
     } catch (error: any) {
       console.error('Error creating label:', error);
-      toast.error(error.message || 'Failed to create label');
+      toast.error(error.message || t('ws-tasks.errors.failed_create_label'));
     } finally {
       setCreatingLabel(false);
     }
@@ -720,12 +858,12 @@ export function useMyTasksState({
       queryClient.invalidateQueries({
         queryKey: ['workspace', wsId, 'projects'],
       });
-      toast.success('Project created successfully!');
+      toast.success(t('ws-tasks.project_created'));
       setNewProjectDialogOpen(false);
       setNewProjectName('');
     } catch (error: any) {
       console.error('Error creating project:', error);
-      toast.error(error.message || 'Failed to create project');
+      toast.error(error.message || t('ws-tasks.errors.failed_create_project'));
     } finally {
       setCreatingProject(false);
     }

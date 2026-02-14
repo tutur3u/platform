@@ -127,11 +127,11 @@ export default function TaskListWithCompletion({
           }
         );
         if (!response.ok) throw new Error('Failed to update override');
-        toast.success('Restored task to active');
+        toast.success(t('restored_to_active'));
         onTaskUpdate?.();
       } catch (error) {
         console.error('Error updating task override:', error);
-        toast.error('Failed to update task.');
+        toast.error(t('failed_update_task'));
       } finally {
         setCompletingTasks((prev) => {
           const newSet = new Set(prev);
@@ -163,13 +163,13 @@ export default function TaskListWithCompletion({
         if (!response.ok) throw new Error('Failed to update override');
         toast.success(
           isAlreadyDone
-            ? 'Personal completion undone'
-            : 'Task personally completed!'
+            ? t('personal_completion_undone')
+            : t('task_personally_completed')
         );
         onTaskUpdate?.();
       } catch (error) {
         console.error('Error updating task override:', error);
-        toast.error('Failed to update task. Changes reverted.');
+        toast.error(t('failed_update_task_reverted'));
         if (!isAlreadyDone) restoreCache(snapshot);
       } finally {
         setCompletingTasks((prev) => {
@@ -182,7 +182,7 @@ export default function TaskListWithCompletion({
     }
 
     if (!task.list?.board?.id) {
-      toast.error('Task is not associated with a board');
+      toast.error(t('task_not_on_board'));
       return;
     }
 
@@ -202,7 +202,7 @@ export default function TaskListWithCompletion({
       const notStartedList = lists?.find((l) => l.status === 'not_started');
 
       if (!doneList || !notStartedList) {
-        toast.error('Could not find appropriate lists for task completion');
+        toast.error(t('could_not_find_lists'));
         setCompletingTasks((prev) => {
           const newSet = new Set(prev);
           newSet.delete(task.id);
@@ -243,12 +243,12 @@ export default function TaskListWithCompletion({
       }
 
       toast.success(
-        isCompleted ? 'Task marked as incomplete' : 'Task completed!'
+        isCompleted ? t('task_marked_incomplete') : t('task_completed_toast')
       );
       onTaskUpdate?.();
     } catch (error) {
       console.error('Error updating task:', error);
-      toast.error('Failed to update task. Changes reverted.');
+      toast.error(t('failed_update_task_reverted'));
       restoreCache(snapshot);
     } finally {
       setCompletingTasks((prev) => {
@@ -279,11 +279,11 @@ export default function TaskListWithCompletion({
         }
       );
       if (!response.ok) throw new Error('Failed to update override');
-      toast.success('Marked as done with your part');
+      toast.success(t('marked_done_with_part'));
       onTaskUpdate?.();
     } catch (error) {
       console.error('Error updating task override:', error);
-      toast.error('Failed to update task. Changes reverted.');
+      toast.error(t('failed_update_task_reverted'));
       restoreCache(snapshot);
     } finally {
       setCompletingTasks((prev) => {
@@ -299,7 +299,7 @@ export default function TaskListWithCompletion({
     e.stopPropagation();
 
     if (!task.list?.board?.id) {
-      toast.error('Task is not associated with a board');
+      toast.error(t('task_not_on_board'));
       return;
     }
 
@@ -334,9 +334,9 @@ export default function TaskListWithCompletion({
   };
 
   const formatSmartDate = (date: Date) => {
-    if (isToday(date)) return 'Today';
-    if (isTomorrow(date)) return 'Tomorrow';
-    if (isYesterday(date)) return 'Yesterday';
+    if (isToday(date)) return t('date_today');
+    if (isTomorrow(date)) return t('date_tomorrow');
+    if (isYesterday(date)) return t('date_yesterday');
     return formatDistanceToNow(date, { addSuffix: true });
   };
 
@@ -748,14 +748,15 @@ export default function TaskListWithCompletion({
             {showAll ? (
               <>
                 <ChevronUp className="h-4 w-4 transition-transform group-hover:-translate-y-0.5" />
-                <span>Show Less</span>
+                <span>{t('show_less')}</span>
               </>
             ) : (
               <>
                 <ChevronDown className="h-4 w-4 transition-transform group-hover:translate-y-0.5" />
                 <span>
-                  Show {tasks.length - initialLimit} More Task
-                  {tasks.length - initialLimit !== 1 ? 's' : ''}
+                  {t('show_n_more_tasks', {
+                    count: tasks.length - initialLimit,
+                  })}
                 </span>
               </>
             )}

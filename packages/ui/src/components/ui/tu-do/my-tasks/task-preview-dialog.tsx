@@ -102,19 +102,11 @@ const priorityBadgeClass = (priority: TaskPriority | null) => {
   }
 };
 
-const getPriorityCopy = (priority: TaskPriority | null) => {
-  switch (priority) {
-    case 'critical':
-      return 'Urgent';
-    case 'high':
-      return 'High';
-    case 'normal':
-      return 'Medium';
-    case 'low':
-      return 'Low';
-    default:
-      return 'No Priority';
-  }
+const PRIORITY_KEYS: Record<string, string> = {
+  critical: 'preview_priority_urgent',
+  high: 'preview_priority_high',
+  normal: 'preview_priority_medium',
+  low: 'preview_priority_low',
 };
 
 const LABEL_COLOR_CLASSES: Record<string, string> = {
@@ -471,18 +463,21 @@ export function TaskPreviewDialog({
     [isCreating]
   );
 
-  const handleSaveTitle = useCallback((index: number, value: string) => {
-    const trimmedValue = value.trim();
-    if (!trimmedValue) {
-      toast.error('Task title cannot be empty');
-      return;
-    }
-    setPreviewTaskNames((prev) => ({
-      ...prev,
-      [index]: trimmedValue,
-    }));
-    setEditingTaskTitle(null);
-  }, []);
+  const handleSaveTitle = useCallback(
+    (index: number, value: string) => {
+      const trimmedValue = value.trim();
+      if (!trimmedValue) {
+        toast.error(t('ws-tasks.errors.task_title_empty'));
+        return;
+      }
+      setPreviewTaskNames((prev) => ({
+        ...prev,
+        [index]: trimmedValue,
+      }));
+      setEditingTaskTitle(null);
+    },
+    [t]
+  );
 
   const handleSaveDescription = useCallback((index: number, value: string) => {
     setPreviewTaskDescriptions((prev) => ({
@@ -588,7 +583,7 @@ export function TaskPreviewDialog({
       .filter((task): task is ConfirmedTask => task !== null);
 
     if (tasksPayload.length === 0) {
-      toast.error('No tasks selected to create');
+      toast.error(t('ws-tasks.errors.no_tasks_selected'));
       return;
     }
 
@@ -607,6 +602,7 @@ export function TaskPreviewDialog({
     previewTaskProjects,
     taskDueDates,
     onConfirmReview,
+    t,
   ]);
 
   // Initialize task label selections when preview opens
@@ -873,15 +869,10 @@ export function TaskPreviewDialog({
       >
         <DialogHeader>
           <DialogTitle>
-            {t('ws-tasks.review_tasks', {
-              fallback: `Review Generated ${previewTasks.length} Task${previewTasks.length !== 1 ? 's' : ''}`,
-            })}
+            {t('ws-tasks.review_tasks', { count: previewTasks.length })}
           </DialogTitle>
           <DialogDescription>
-            {t('ws-tasks.select_tasks_to_keep', {
-              fallback:
-                'Select the tasks you want to keep, then choose a destination.',
-            })}
+            {t('ws-tasks.select_tasks_to_keep')}
           </DialogDescription>
         </DialogHeader>
 
@@ -892,10 +883,10 @@ export function TaskPreviewDialog({
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label className="font-medium text-sm">
-                    Workspace Labels
+                    {t('ws-tasks.workspace_labels')}
                   </Label>
                   <span className="text-muted-foreground text-xs">
-                    Apply to all tasks
+                    {t('ws-tasks.apply_to_all_tasks')}
                   </span>
                 </div>
 
@@ -928,8 +919,11 @@ export function TaskPreviewDialog({
                     disabled={isCreating}
                   >
                     {workspaceLabelsExpanded
-                      ? 'Show less'
-                      : `Show ${sortedLabels.length - MAX_VISIBLE_WORKSPACE_LABELS} more`}
+                      ? t('ws-tasks.show_less')
+                      : t('ws-tasks.show_n_more', {
+                          count:
+                            sortedLabels.length - MAX_VISIBLE_WORKSPACE_LABELS,
+                        })}
                   </button>
                 ) : null}
               </div>
@@ -940,14 +934,19 @@ export function TaskPreviewDialog({
               <div className="flex items-center justify-between">
                 <p className="font-semibold text-foreground text-sm">
                   {generatedWithAI
-                    ? `AI-Generated Tasks (${previewTasks.length})`
-                    : `Tasks (${previewTasks.length})`}
+                    ? t('ws-tasks.ai_generated_tasks', {
+                        count: previewTasks.length,
+                      })
+                    : t('ws-tasks.tasks_count', { count: previewTasks.length })}
                 </p>
                 <Badge
                   variant="outline"
                   className="border-dynamic-blue/40 bg-transparent text-foreground text-xs"
                 >
-                  {visiblePreviewTasks.length} of {previewTasks.length} selected
+                  {t('ws-tasks.n_of_m_selected', {
+                    n: visiblePreviewTasks.length,
+                    m: previewTasks.length,
+                  })}
                 </Badge>
               </div>
 
@@ -1024,7 +1023,7 @@ export function TaskPreviewDialog({
                           onClick={() => handleRemovePreviewTask(originalIndex)}
                           className="flex h-5 w-5 shrink-0 items-center justify-center rounded border border-dynamic-green/60 bg-dynamic-green/15"
                           disabled={isCreating}
-                          title="Click to discard"
+                          title={t('ws-tasks.click_to_discard')}
                         >
                           <Check className="h-3 w-3 text-dynamic-green" />
                         </button>
@@ -1054,7 +1053,11 @@ export function TaskPreviewDialog({
                               priorityBadgeClass(currentPriority)
                             )}
                           >
-                            {getPriorityCopy(currentPriority)}
+                            {currentPriority && PRIORITY_KEYS[currentPriority]
+                              ? t(
+                                  `ws-tasks.${PRIORITY_KEYS[currentPriority]}` as 'ws-tasks.preview_priority_urgent'
+                                )
+                              : t('ws-tasks.preview_no_priority')}
                           </Badge>
                         )}
 
@@ -1155,7 +1158,7 @@ export function TaskPreviewDialog({
                                       onClick={() => setEditingTaskTitle(null)}
                                       disabled={isCreating}
                                     >
-                                      Cancel
+                                      {t('common.cancel')}
                                     </Button>
                                   </div>
                                 </div>
@@ -1205,7 +1208,9 @@ export function TaskPreviewDialog({
                                         }
                                       }}
                                       className="min-h-20 w-full resize-none text-sm"
-                                      placeholder="Add a description..."
+                                      placeholder={t(
+                                        'ws-tasks.add_description'
+                                      )}
                                       autoFocus
                                       disabled={isCreating}
                                     />
@@ -1230,7 +1235,7 @@ export function TaskPreviewDialog({
                                         }
                                         disabled={isCreating}
                                       >
-                                        Cancel
+                                        {t('common.cancel')}
                                       </Button>
                                     </div>
                                   </div>
@@ -1243,12 +1248,15 @@ export function TaskPreviewDialog({
                                     className="line-clamp-3 w-full cursor-text rounded px-2 py-1 text-left text-sm leading-relaxed opacity-90 transition hover:bg-muted/50"
                                     disabled={isCreating}
                                   >
-                                    {currentDescription || 'No description'}
+                                    {currentDescription ||
+                                      t('ws-tasks.no_description')}
                                   </button>
                                 )
                               ) : (
                                 <p className="text-muted-foreground text-sm italic">
-                                  Description generation disabled
+                                  {t(
+                                    'ws-tasks.description_generation_disabled'
+                                  )}
                                 </p>
                               )}
                             </div>
@@ -1300,6 +1308,18 @@ export function TaskPreviewDialog({
                                         [originalIndex]: false,
                                       }))
                                     }
+                                    translations={{
+                                      priority: t('ws-tasks.cmd_priority'),
+                                      none: t('ws-tasks.ctx_none'),
+                                      urgent: t(
+                                        'ws-tasks.preview_priority_urgent'
+                                      ),
+                                      high: t('ws-tasks.preview_priority_high'),
+                                      medium: t(
+                                        'ws-tasks.preview_priority_medium'
+                                      ),
+                                      low: t('ws-tasks.preview_priority_low'),
+                                    }}
                                   />
 
                                   {boardConfig?.estimation_type && (
@@ -1355,6 +1375,23 @@ export function TaskPreviewDialog({
                                         }));
                                       }}
                                       onMenuItemSelect={handleMenuItemSelect}
+                                      translations={{
+                                        labels: t('ws-tasks.cmd_labels'),
+                                        searchLabels: t(
+                                          'ws-tasks.ctx_search_labels'
+                                        ),
+                                        loading: t('ws-tasks.loading'),
+                                        noLabelsFound: t(
+                                          'ws-tasks.ctx_no_labels_found'
+                                        ),
+                                        noLabelsAvailable: t(
+                                          'ws-tasks.ctx_no_labels_available'
+                                        ),
+                                        applied: t('ws-tasks.ctx_applied'),
+                                        createNewLabel: t(
+                                          'ws-tasks.ctx_create_new_label'
+                                        ),
+                                      }}
                                     />
                                   )}
 
@@ -1467,7 +1504,7 @@ export function TaskPreviewDialog({
                                         {option.displayName}
                                         {option.isNew ? (
                                           <span className="ml-1.5 text-[0.5625rem] text-dynamic-purple uppercase tracking-wide">
-                                            NEW
+                                            {t('ws-tasks.new_label_badge')}
                                           </span>
                                         ) : null}
                                       </button>
@@ -1485,13 +1522,17 @@ export function TaskPreviewDialog({
                                     disabled={isCreating}
                                   >
                                     {expandedLabelCards[originalIndex]
-                                      ? 'Show less'
-                                      : `Show ${suggestions.length - MAX_VISIBLE_PREVIEW_LABELS} more`}
+                                      ? t('ws-tasks.show_less')
+                                      : t('ws-tasks.show_n_more', {
+                                          count:
+                                            suggestions.length -
+                                            MAX_VISIBLE_PREVIEW_LABELS,
+                                        })}
                                   </button>
                                 ) : null}
                                 {hasNewSelections ? (
                                   <p className="text-muted-foreground text-xs">
-                                    New labels will be created automatically
+                                    {t('ws-tasks.new_labels_auto_created')}
                                   </p>
                                 ) : null}
                               </div>
@@ -1506,7 +1547,7 @@ export function TaskPreviewDialog({
 
               {visiblePreviewTasks.length === 0 && (
                 <p className="rounded-lg border border-dynamic-muted/30 bg-dynamic-muted/10 p-3 text-center text-muted-foreground text-sm">
-                  No tasks to preview
+                  {t('ws-tasks.no_tasks_to_preview')}
                 </p>
               )}
             </div>
@@ -1515,7 +1556,10 @@ export function TaskPreviewDialog({
 
         <DialogFooter className="flex-row items-center justify-between gap-2 sm:justify-between">
           <p className="text-muted-foreground text-xs">
-            {visiblePreviewTasks.length} of {previewTasks.length} tasks selected
+            {t('ws-tasks.n_of_m_tasks_selected', {
+              n: visiblePreviewTasks.length,
+              m: previewTasks.length,
+            })}
           </p>
           <div className="flex gap-2">
             <Button
@@ -1524,7 +1568,7 @@ export function TaskPreviewDialog({
               onClick={handleCancelPreview}
               disabled={isCreating}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               type="button"
@@ -1534,13 +1578,14 @@ export function TaskPreviewDialog({
               {isCreating ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin text-dynamic-blue" />
-                  Saving...
+                  {t('ws-tasks.saving')}
                 </>
               ) : (
                 <>
                   <Save className="mr-2 h-4 w-4" />
-                  Save {visiblePreviewTasks.length} Task
-                  {visiblePreviewTasks.length !== 1 ? 's' : ''}
+                  {t('ws-tasks.save_n_tasks', {
+                    count: visiblePreviewTasks.length,
+                  })}
                 </>
               )}
             </Button>

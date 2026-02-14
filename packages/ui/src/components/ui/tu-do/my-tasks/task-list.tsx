@@ -110,8 +110,8 @@ export default function TaskList({
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           <p className="font-medium text-sm">
             {isAiGenerating
-              ? 'Generating tasks with AI...'
-              : 'Creating your task...'}
+              ? t('ws-tasks.generating_tasks_ai')
+              : t('ws-tasks.creating_your_task')}
           </p>
         </div>
       )}

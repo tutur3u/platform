@@ -413,22 +413,22 @@ describe('useMyTasksState', () => {
       expect(result.current.pendingTaskTitle).toBe('Build a landing page');
     });
 
-    it('calls previewMutation.mutate with correct params', () => {
-      const mockMutate = vi.fn();
+    it('calls previewMutation.mutateAsync with correct params', async () => {
+      const mockMutateAsync = vi.fn().mockResolvedValue({});
       mockUseMutation.mockReturnValue({
-        mutate: mockMutate,
-        mutateAsync: vi.fn(),
+        mutate: vi.fn(),
+        mutateAsync: mockMutateAsync,
         isPending: false,
       });
 
       const { result } = renderHook(() => useMyTasksState(DEFAULT_PROPS));
 
-      act(() => {
-        result.current.handleGenerateAI('Build a landing page');
+      await act(async () => {
+        await result.current.handleGenerateAI('Build a landing page');
       });
 
       // previewMutation is the first useMutation call
-      expect(mockMutate).toHaveBeenCalledWith(
+      expect(mockMutateAsync).toHaveBeenCalledWith(
         expect.objectContaining({
           entry: 'Build a landing page',
           generateDescriptions: true,
@@ -693,10 +693,10 @@ describe('useMyTasksState', () => {
     });
 
     it('routes to handleGenerateAI for AI mode with pending title', async () => {
-      const mockMutate = vi.fn();
+      const mockMutateAsync = vi.fn().mockResolvedValue({});
       mockUseMutation.mockReturnValue({
-        mutate: mockMutate,
-        mutateAsync: vi.fn(),
+        mutate: vi.fn(),
+        mutateAsync: mockMutateAsync,
         isPending: false,
       });
 
@@ -711,8 +711,8 @@ describe('useMyTasksState', () => {
         await result.current.handleBoardSelectorConfirm();
       });
 
-      // Should call previewMutation.mutate (handleGenerateAI path)
-      expect(mockMutate).toHaveBeenCalledWith(
+      // Should call previewMutation.mutateAsync (handleGenerateAI path)
+      expect(mockMutateAsync).toHaveBeenCalledWith(
         expect.objectContaining({
           entry: 'Generate tasks',
         })
@@ -779,9 +779,7 @@ describe('useMyTasksState', () => {
       expect(mockInvalidateQueries).toHaveBeenCalledWith({
         queryKey: ['workspace', 'ws-1', 'labels'],
       });
-      expect(mockToastSuccess).toHaveBeenCalledWith(
-        'Label created successfully!'
-      );
+      expect(mockToastSuccess).toHaveBeenCalledWith('ws-tasks.label_created');
       expect(result.current.newLabelDialogOpen).toBe(false);
       expect(result.current.newLabelName).toBe('');
       expect(result.current.newLabelColor).toBe('#3b82f6'); // reset to default
@@ -856,9 +854,7 @@ describe('useMyTasksState', () => {
       expect(mockInvalidateQueries).toHaveBeenCalledWith({
         queryKey: ['workspace', 'ws-1', 'projects'],
       });
-      expect(mockToastSuccess).toHaveBeenCalledWith(
-        'Project created successfully!'
-      );
+      expect(mockToastSuccess).toHaveBeenCalledWith('ws-tasks.project_created');
       expect(result.current.newProjectDialogOpen).toBe(false);
       expect(result.current.newProjectName).toBe('');
     });

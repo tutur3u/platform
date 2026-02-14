@@ -144,13 +144,17 @@ export function MyTasksFilters({
                     'all'
                   )
                     ? taskFilters.workspaceIds.length > 1
-                      ? `${taskFilters.workspaceIds.length} Workspaces`
+                      ? t('ws-tasks.n_workspaces', {
+                          count: taskFilters.workspaceIds.length,
+                        })
                       : selectedWorkspaces?.[0]?.name
                     : '';
 
                   const boardText = !taskFilters.boardIds.includes('all')
                     ? taskFilters.boardIds.length > 1
-                      ? `${taskFilters.boardIds.length} Boards`
+                      ? t('ws-tasks.n_boards', {
+                          count: taskFilters.boardIds.length,
+                        })
                       : selectedBoards?.[0]?.name
                     : '';
 
@@ -172,7 +176,9 @@ export function MyTasksFilters({
                 showTooltip={taskFilters.labelIds.length > 1}
               >
                 {taskFilters.labelIds.length > 1
-                  ? `${taskFilters.labelIds.length} Labels`
+                  ? t('ws-tasks.n_labels', {
+                      count: taskFilters.labelIds.length,
+                    })
                   : workspaceLabels?.find(
                       (l: any) => l.id === taskFilters.labelIds[0]
                     )?.name}
@@ -190,7 +196,9 @@ export function MyTasksFilters({
                 showTooltip={taskFilters.projectIds.length > 1}
               >
                 {taskFilters.projectIds.length > 1
-                  ? `${taskFilters.projectIds.length} Projects`
+                  ? t('ws-tasks.n_projects', {
+                      count: taskFilters.projectIds.length,
+                    })
                   : workspaceProjects?.find(
                       (p: any) => p.id === taskFilters.projectIds[0]
                     )?.name}

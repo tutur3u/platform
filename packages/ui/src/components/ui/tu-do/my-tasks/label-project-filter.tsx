@@ -11,6 +11,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface Item {
@@ -42,6 +43,7 @@ export function LabelProjectFilter({
   onSelectedLabelIdsChange,
   onSelectedProjectIdsChange,
 }: LabelProjectFilterProps) {
+  const t = useTranslations('ws-tasks');
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<ViewType>('main');
 
@@ -79,7 +81,7 @@ export function LabelProjectFilter({
               </PopoverTrigger>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Labels or Projects</p>
+              <p>{t('filter_labels_or_projects')}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -93,7 +95,7 @@ export function LabelProjectFilter({
               >
                 <div className="flex items-center gap-2">
                   <Tag className="h-4 w-4" />
-                  <span>Labels</span>
+                  <span>{t('filter_labels')}</span>
                 </div>
                 {selectedLabelIds.length > 0 && (
                   <span className="text-xs">{selectedLabelIds.length}</span>
@@ -106,7 +108,7 @@ export function LabelProjectFilter({
               >
                 <div className="flex items-center gap-2">
                   <Box className="h-4 w-4" />
-                  <span>Projects</span>
+                  <span>{t('filter_projects')}</span>
                 </div>
                 {selectedProjectIds.length > 0 && (
                   <span className="text-xs">{selectedProjectIds.length}</span>
@@ -122,9 +124,9 @@ export function LabelProjectFilter({
                 className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left font-semibold text-sm transition-colors hover:bg-muted"
               >
                 <ArrowLeft className="h-4 w-4" />
-                <span>Labels</span>
+                <span>{t('filter_labels')}</span>
               </button>
-              <ScrollArea className="max-h-[180px]">
+              <ScrollArea className="max-h-45">
                 {filteredLabels.length > 0 ? (
                   filteredLabels.map((label) => (
                     <Button
@@ -136,7 +138,7 @@ export function LabelProjectFilter({
                       <Checkbox checked={selectedLabelIds.includes(label.id)} />
                       <span
                         style={{ color: label.color }}
-                        className="line-clamp-2 min-w-0 whitespace-normal break-words text-left"
+                        className="wrap-break-word line-clamp-2 min-w-0 whitespace-normal text-left"
                       >
                         {label.name}
                       </span>
@@ -144,7 +146,7 @@ export function LabelProjectFilter({
                   ))
                 ) : (
                   <div className="px-2 py-2 text-center text-muted-foreground text-sm">
-                    No available labels for all available task(s)
+                    {t('filter_no_labels_available')}
                   </div>
                 )}
               </ScrollArea>
@@ -158,9 +160,9 @@ export function LabelProjectFilter({
                 className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left font-semibold text-sm transition-colors hover:bg-muted"
               >
                 <ArrowLeft className="h-4 w-4" />
-                <span>Projects</span>
+                <span>{t('filter_projects')}</span>
               </button>
-              <ScrollArea className="max-h-[180px] w-full">
+              <ScrollArea className="max-h-45 w-full">
                 {filteredProjects.length > 0 ? (
                   filteredProjects.map((project) => (
                     <Button
@@ -172,14 +174,14 @@ export function LabelProjectFilter({
                       <Checkbox
                         checked={selectedProjectIds.includes(project.id)}
                       />
-                      <span className="line-clamp-2 min-w-0 whitespace-normal break-words text-left">
+                      <span className="wrap-break-word line-clamp-2 min-w-0 whitespace-normal text-left">
                         {project.name}
                       </span>
                     </Button>
                   ))
                 ) : (
                   <div className="px-2 py-2 text-center text-muted-foreground text-sm">
-                    No available projects for all available task(s)
+                    {t('filter_no_projects_available')}
                   </div>
                 )}
               </ScrollArea>

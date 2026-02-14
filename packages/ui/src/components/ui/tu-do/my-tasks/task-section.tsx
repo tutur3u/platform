@@ -4,12 +4,14 @@ import { ChevronUp } from '@tuturuuu/icons';
 import type { TaskWithRelations } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import TaskListWithCompletion from './task-list-with-completion';
 
 interface PriorityGroup {
   key: string;
-  label: string;
+  labelKey: string;
+  count: number;
   dotClass: string;
   textClass: string;
   lineClass: string;
@@ -95,7 +97,8 @@ function groupTasksByPriority(tasks: TaskWithRelations[]): PriorityGroup[] {
   if (groups.critical.length > 0) {
     result.push({
       key: 'critical',
-      label: `Critical Priority (${groups.critical.length})`,
+      labelKey: 'critical',
+      count: groups.critical.length,
       dotClass: 'bg-dynamic-red',
       textClass: 'text-dynamic-red',
       lineClass: 'from-dynamic-red/30',
@@ -106,7 +109,8 @@ function groupTasksByPriority(tasks: TaskWithRelations[]): PriorityGroup[] {
   if (groups.high.length > 0) {
     result.push({
       key: 'high',
-      label: `High Priority (${groups.high.length})`,
+      labelKey: 'high',
+      count: groups.high.length,
       dotClass: 'bg-dynamic-orange',
       textClass: 'text-dynamic-orange',
       lineClass: 'from-dynamic-orange/30',
@@ -117,7 +121,8 @@ function groupTasksByPriority(tasks: TaskWithRelations[]): PriorityGroup[] {
   if (groups.normal.length > 0) {
     result.push({
       key: 'normal',
-      label: `Normal Priority (${groups.normal.length})`,
+      labelKey: 'normal',
+      count: groups.normal.length,
       dotClass: 'bg-dynamic-blue',
       textClass: 'text-dynamic-blue',
       lineClass: 'from-dynamic-blue/30',
@@ -129,7 +134,8 @@ function groupTasksByPriority(tasks: TaskWithRelations[]): PriorityGroup[] {
   if (lowAndNone.length > 0) {
     result.push({
       key: 'low',
-      label: `Low Priority (${lowAndNone.length})`,
+      labelKey: 'low',
+      count: lowAndNone.length,
       dotClass: 'bg-muted-foreground',
       textClass: 'text-muted-foreground',
       lineClass: 'from-muted-foreground/30',
@@ -154,6 +160,7 @@ export function TaskSection({
   availableLabels,
   onCreateNewLabel,
 }: TaskSectionProps) {
+  const t = useTranslations('ws-tasks');
   const colors = COLOR_MAP[colorToken];
   const priorityGroups = groupTasksByPriority(tasks);
 
@@ -224,7 +231,10 @@ export function TaskSection({
                     group.textClass
                   )}
                 >
-                  {group.label}
+                  {t(
+                    `priority_${group.labelKey}_count` as 'priority_critical_count',
+                    { count: group.count }
+                  )}
                 </span>
                 <div
                   className={cn(

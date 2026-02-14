@@ -2,11 +2,13 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogTitle } from '@tuturuuu/ui/dialog';
+import { useAiCredits } from '@tuturuuu/ui/hooks/use-ai-credits';
 import { useUserConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { TaskNewLabelDialog } from '@tuturuuu/ui/tu-do/boards/boardId/task-dialogs/TaskNewLabelDialog';
 import { TaskNewProjectDialog } from '@tuturuuu/ui/tu-do/boards/boardId/task-dialogs/TaskNewProjectDialog';
 import { TaskBoardForm } from '@tuturuuu/ui/tu-do/boards/form';
 import { CreateListDialog } from '@tuturuuu/ui/tu-do/shared/create-list-dialog';
+import { useTranslations } from 'next-intl';
 import type React from 'react';
 import { AiCreditIndicator } from './ai-credit-indicator';
 import { BoardSelectorDialog } from './board-selector-dialog';
@@ -28,7 +30,10 @@ export default function MyTasksContent({
   userId,
   isPersonal,
 }: MyTasksContentProps) {
+  const t = useTranslations('ws-tasks');
   const queryClient = useQueryClient();
+  const { data: credits } = useAiCredits(wsId);
+  const aiCreditsExhausted = credits ? credits.remaining <= 0 : false;
   const { data: submitShortcut } = useUserConfig(
     'TASK_SUBMIT_SHORTCUT',
     'enter'
@@ -91,9 +96,13 @@ export default function MyTasksContent({
           wsId={wsId}
           onCreateNewLabel={() => state.setNewLabelDialogOpen(true)}
           onCreateNewProject={() => state.setNewProjectDialogOpen(true)}
+          aiCreditsExhausted={aiCreditsExhausted}
+          aiCreditsTooltip={
+            aiCreditsExhausted ? t('ai_credits_exhausted_tooltip') : undefined
+          }
         />
         <div className="mt-2 flex items-center justify-end">
-          <AiCreditIndicator />
+          <AiCreditIndicator wsId={wsId} />
         </div>
       </div>
 
@@ -189,7 +198,7 @@ export default function MyTasksContent({
           style={{ maxWidth: '1200px', width: '85vw' } as React.CSSProperties}
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
-          <DialogTitle className="sr-only">Create New Board</DialogTitle>
+          <DialogTitle className="sr-only">{t('create_new_board')}</DialogTitle>
           <TaskBoardForm
             wsId={state.selectedWorkspaceId}
             data={{ name: state.newBoardName }}

@@ -25,6 +25,7 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 interface Item {
@@ -54,6 +55,7 @@ export function TaskFilter({
   onFilterChange,
   onCreateNewBoard,
 }: TaskFilterProps) {
+  const t = useTranslations('ws-tasks');
   const [selectedWorkspaceIds, setSelectedWorkspaceIds] = useState<string[]>([
     'all',
   ]);
@@ -126,12 +128,12 @@ export function TaskFilter({
                   )}
                 >
                   <Filter className="h-3.5 w-3.5" />
-                  <span>Workspaces</span>
+                  <span>{t('filter_workspaces')}</span>
                 </Button>
               </DropdownMenuTrigger>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Filter by workspaces</p>
+              <p>{t('filter_by_workspaces')}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -139,7 +141,7 @@ export function TaskFilter({
           <DropdownMenuGroup>
             <Collapsible open={workspacesOpen} onOpenChange={setWorkspacesOpen}>
               <CollapsibleTrigger className="flex w-full items-center justify-between px-2 py-1.5 font-semibold text-sm">
-                <DropdownMenuLabel>Workspaces</DropdownMenuLabel>
+                <DropdownMenuLabel>{t('filter_workspaces')}</DropdownMenuLabel>
                 {workspacesOpen ? (
                   <ChevronDown className="h-4 w-4" />
                 ) : (
@@ -155,7 +157,7 @@ export function TaskFilter({
                     checked={selectedWorkspaceIds.includes('all')}
                     className="mr-2"
                   />
-                  All Workspaces
+                  {t('filter_all_workspaces')}
                 </DropdownMenuItem>
                 {workspaces.map((ws) => (
                   <DropdownMenuItem
@@ -177,7 +179,7 @@ export function TaskFilter({
           <DropdownMenuGroup>
             <Collapsible open={boardsOpen} onOpenChange={setBoardsOpen}>
               <CollapsibleTrigger className="flex w-full items-center justify-between px-2 py-1.5 font-semibold text-sm">
-                <DropdownMenuLabel>Boards</DropdownMenuLabel>
+                <DropdownMenuLabel>{t('filter_boards')}</DropdownMenuLabel>
                 {boardsOpen ? (
                   <ChevronDown className="h-4 w-4" />
                 ) : (
@@ -186,7 +188,7 @@ export function TaskFilter({
               </CollapsibleTrigger>
               <CollapsibleContent>
                 {filteredBoards.length > 0 ? (
-                  <ScrollArea className="max-h-[180px]">
+                  <ScrollArea className="max-h-45">
                     <DropdownMenuItem
                       onSelect={(e) => e.preventDefault()}
                       onClick={() => handleBoardChange('all')}
@@ -195,7 +197,7 @@ export function TaskFilter({
                         checked={selectedBoardIds.includes('all')}
                         className="mr-2"
                       />
-                      All Boards
+                      {t('filter_all_boards')}
                     </DropdownMenuItem>
                     {filteredBoards.map((board) => (
                       <DropdownMenuItem
@@ -213,7 +215,7 @@ export function TaskFilter({
                   </ScrollArea>
                 ) : (
                   <div className="px-2 py-1.5 text-center text-muted-foreground text-sm">
-                    No boards available for the chosen workspaces.
+                    {t('filter_no_boards_for_workspaces')}
                   </div>
                 )}
                 <DropdownMenuItem
@@ -221,7 +223,7 @@ export function TaskFilter({
                   className="mt-1"
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  <span>Add New Board</span>
+                  <span>{t('filter_add_new_board')}</span>
                 </DropdownMenuItem>
               </CollapsibleContent>
             </Collapsible>

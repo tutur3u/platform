@@ -26,6 +26,16 @@ vi.mock('@tuturuuu/ui/hooks/use-user-config', () => ({
   useUserConfig: mockUseUserConfig,
 }));
 
+// Mock useAiCredits
+vi.mock('@tuturuuu/ui/hooks/use-ai-credits', () => ({
+  useAiCredits: () => ({ data: null, isLoading: false }),
+}));
+
+// Mock next-intl
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string) => key,
+}));
+
 // ── Mock child components ──────────────────────────────────────────────────
 vi.mock('../my-tasks-header', () => ({
   MyTasksHeader: (props: any) => (

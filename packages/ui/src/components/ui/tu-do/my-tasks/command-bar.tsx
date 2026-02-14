@@ -41,6 +41,7 @@ import {
   mapEstimationPoints,
 } from '@tuturuuu/ui/tu-do/shared/estimation-mapping';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import type { KeyboardEvent } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -79,7 +80,7 @@ interface WorkspaceEstimationConfig {
 
 interface CommandBarProps {
   onCreateTask: (title: string, options?: TaskOptions) => Promise<boolean>;
-  onGenerateAI: (entry: string) => void;
+  onGenerateAI: (entry: string) => Promise<boolean>;
   onOpenBoardSelector: (title?: string, isAi?: boolean) => void;
   selectedDestination: {
     boardName?: string;
@@ -104,6 +105,8 @@ interface CommandBarProps {
   onCreateNewProject?: () => void;
   value: string;
   onValueChange: (value: string) => void;
+  aiCreditsExhausted?: boolean;
+  aiCreditsTooltip?: string;
 }
 
 export function CommandBar({
@@ -129,8 +132,12 @@ export function CommandBar({
   onCreateNewProject,
   value,
   onValueChange,
+  aiCreditsExhausted = false,
+  aiCreditsTooltip,
 }: CommandBarProps) {
+  const t = useTranslations('ws-tasks');
   const [aiEnabled, setAiEnabled] = useState(true);
+  const effectiveAiEnabled = aiEnabled && !aiCreditsExhausted;
 
   // Submit shortcut preference
   const { data: submitShortcut } = useUserConfig(
@@ -242,9 +249,11 @@ export function CommandBar({
 
     try {
       // AI mode: generate immediately without requiring destination
-      if (aiEnabled) {
-        onGenerateAI(value.trim());
-        onValueChange('');
+      if (effectiveAiEnabled) {
+        const success = await onGenerateAI(value.trim());
+        if (success !== false) {
+          onValueChange('');
+        }
       } else if (!hasDestination) {
         onOpenBoardSelector(value.trim(), false);
         return;
@@ -362,7 +371,7 @@ export function CommandBar({
                 className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border border-dashed px-2.5 py-1 text-muted-foreground text-xs transition-all hover:border-primary/30 hover:bg-muted/50 hover:text-foreground"
               >
                 <MapPin className="h-3 w-3 shrink-0" />
-                <span>Select destination...</span>
+                <span>{t('cmd_select_destination')}</span>
               </button>
             )}
           </div>
@@ -373,9 +382,9 @@ export function CommandBar({
             onChange={(e) => onValueChange(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={
-              aiEnabled
-                ? `Describe tasks to generate with AI... (${shortcutHint})`
-                : `Add a new task... (${shortcutHint})`
+              effectiveAiEnabled
+                ? `${t('cmd_ai_placeholder')} (${shortcutHint})`
+                : `${t('cmd_task_placeholder')} (${shortcutHint})`
             }
             className="min-h-10 w-full resize-none border-0 bg-transparent p-0 text-sm leading-relaxed placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-0 md:min-h-12 md:text-base"
             disabled={isLoading}
@@ -410,7 +419,7 @@ export function CommandBar({
                   </TooltipTrigger>
                   {!hasDestination && (
                     <TooltipContent>
-                      <p>Select board/list for more configuration</p>
+                      <p>{t('cmd_select_board_hint')}</p>
                     </TooltipContent>
                   )}
                 </Tooltip>
@@ -422,7 +431,7 @@ export function CommandBar({
                   className="w-72 p-0"
                   sideOffset={8}
                 >
-                  {aiEnabled ? (
+                  {effectiveAiEnabled ? (
                     // AI Settings (unchanged)
                     <div className="space-y-3 p-4">
                       <div className="flex items-center gap-2 border-b pb-3">
@@ -430,7 +439,7 @@ export function CommandBar({
                           <Sparkles className="h-4 w-4 text-primary" />
                         </div>
                         <h4 className="font-semibold text-sm">
-                          AI Configuration
+                          {t('cmd_ai_configuration')}
                         </h4>
                       </div>
                       <div className="space-y-3">
@@ -440,10 +449,10 @@ export function CommandBar({
                               htmlFor="ai-descriptions"
                               className="font-medium text-sm"
                             >
-                              Generate descriptions
+                              {t('cmd_generate_descriptions')}
                             </Label>
                             <p className="text-muted-foreground text-xs">
-                              Add detailed context
+                              {t('cmd_add_detailed_context')}
                             </p>
                           </div>
                           <Switch
@@ -460,10 +469,10 @@ export function CommandBar({
                               htmlFor="ai-priority"
                               className="font-medium text-sm"
                             >
-                              Set priority
+                              {t('cmd_set_priority')}
                             </Label>
                             <p className="text-muted-foreground text-xs">
-                              Auto-assign importance
+                              {t('cmd_auto_assign_importance')}
                             </p>
                           </div>
                           <Switch
@@ -480,10 +489,10 @@ export function CommandBar({
                               htmlFor="ai-labels"
                               className="font-medium text-sm"
                             >
-                              Suggest labels
+                              {t('cmd_suggest_labels')}
                             </Label>
                             <p className="text-muted-foreground text-xs">
-                              Categorize automatically
+                              {t('cmd_categorize_automatically')}
                             </p>
                           </div>
                           <Switch
@@ -509,7 +518,7 @@ export function CommandBar({
                             >
                               <div className="flex items-center gap-2">
                                 <Flag className="h-4 w-4 text-dynamic-orange" />
-                                <span>Priority</span>
+                                <span>{t('cmd_priority')}</span>
                               </div>
                               <div className="flex items-center gap-2">
                                 {priority && (
@@ -525,8 +534,7 @@ export function CommandBar({
                                       priority === 'low' && 'text-dynamic-gray'
                                     )}
                                   >
-                                    {priority.charAt(0).toUpperCase() +
-                                      priority.slice(1)}
+                                    {t(`cmd_priority_${priority}`)}
                                   </span>
                                 )}
                                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -540,7 +548,7 @@ export function CommandBar({
                             >
                               <div className="flex items-center gap-2">
                                 <Calendar className="h-4 w-4 text-dynamic-purple" />
-                                <span>Due Date</span>
+                                <span>{t('cmd_due_date')}</span>
                               </div>
                               <div className="flex items-center gap-2">
                                 {dueDate && (
@@ -566,7 +574,7 @@ export function CommandBar({
                                 >
                                   <div className="flex items-center gap-2">
                                     <Timer className="h-4 w-4 text-dynamic-purple" />
-                                    <span>Estimation</span>
+                                    <span>{t('cmd_estimation')}</span>
                                   </div>
                                   <div className="flex items-center gap-2">
                                     {estimationPoints !== null && (
@@ -592,7 +600,7 @@ export function CommandBar({
                               >
                                 <div className="flex items-center gap-2">
                                   <Box className="h-4 w-4 text-dynamic-sky" />
-                                  <span>Projects</span>
+                                  <span>{t('cmd_projects')}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   {selectedProjectIds.length > 0 && (
@@ -613,7 +621,7 @@ export function CommandBar({
                               >
                                 <div className="flex items-center gap-2">
                                   <Tag className="h-4 w-4 text-dynamic-cyan" />
-                                  <span>Labels</span>
+                                  <span>{t('cmd_labels')}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   {selectedLabelIds.length > 0 && (
@@ -636,7 +644,7 @@ export function CommandBar({
                               >
                                 <div className="flex items-center gap-2">
                                   <UserStar className="h-4 w-4 text-dynamic-indigo" />
-                                  <span>Assignees</span>
+                                  <span>{t('cmd_assignees')}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   {selectedAssigneeIds.length > 0 && (
@@ -661,7 +669,7 @@ export function CommandBar({
                             >
                               <ArrowLeft className="h-4 w-4" />
                               <span className="font-semibold">
-                                Select Priority
+                                {t('cmd_select_priority')}
                               </span>
                             </button>
                             <button
@@ -675,7 +683,7 @@ export function CommandBar({
                               <div className="flex items-center gap-2">
                                 <Flag className="h-4 w-4 text-dynamic-red" />
                                 <span className="text-dynamic-red">
-                                  Critical
+                                  {t('cmd_priority_critical')}
                                 </span>
                               </div>
                               {priority === 'critical' && (
@@ -693,7 +701,7 @@ export function CommandBar({
                               <div className="flex items-center gap-2">
                                 <Flag className="h-4 w-4 text-dynamic-orange" />
                                 <span className="text-dynamic-orange">
-                                  High
+                                  {t('cmd_priority_high')}
                                 </span>
                               </div>
                               {priority === 'high' && (
@@ -711,7 +719,7 @@ export function CommandBar({
                               <div className="flex items-center gap-2">
                                 <Flag className="h-4 w-4 text-dynamic-blue" />
                                 <span className="text-dynamic-blue">
-                                  Normal
+                                  {t('cmd_priority_normal')}
                                 </span>
                               </div>
                               {priority === 'normal' && (
@@ -729,7 +737,7 @@ export function CommandBar({
                               <div className="flex items-center gap-2">
                                 <Flag className="h-4 w-4 text-muted-foreground" />
                                 <span className="text-muted-foreground">
-                                  Low
+                                  {t('cmd_priority_low')}
                                 </span>
                               </div>
                               {priority === 'low' && (
@@ -746,7 +754,7 @@ export function CommandBar({
                                 className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-muted-foreground text-sm transition-colors hover:bg-muted"
                               >
                                 <X className="h-4 w-4" />
-                                <span>Clear</span>
+                                <span>{t('cmd_clear')}</span>
                               </button>
                             )}
                           </div>
@@ -762,7 +770,7 @@ export function CommandBar({
                             >
                               <ArrowLeft className="h-4 w-4" />
                               <span className="font-semibold">
-                                Select Due Date
+                                {t('cmd_select_due_date')}
                               </span>
                             </button>
                             <button
@@ -775,7 +783,7 @@ export function CommandBar({
                             >
                               <div className="flex items-center gap-2">
                                 <Calendar className="h-4 w-4 text-dynamic-green" />
-                                <span>Today</span>
+                                <span>{t('cmd_today')}</span>
                               </div>
                               {dueDate?.toDateString() ===
                                 new Date().toDateString() && (
@@ -794,7 +802,7 @@ export function CommandBar({
                             >
                               <div className="flex items-center gap-2">
                                 <Calendar className="h-4 w-4 text-dynamic-blue" />
-                                <span>Tomorrow</span>
+                                <span>{t('cmd_tomorrow')}</span>
                               </div>
                               {(() => {
                                 const tomorrow = new Date();
@@ -819,7 +827,7 @@ export function CommandBar({
                             >
                               <div className="flex items-center gap-2">
                                 <Calendar className="h-4 w-4 text-dynamic-purple" />
-                                <span>Next Week</span>
+                                <span>{t('cmd_next_week')}</span>
                               </div>
                               {(() => {
                                 const nextWeek = new Date();
@@ -842,7 +850,7 @@ export function CommandBar({
                                 className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-muted-foreground text-sm transition-colors hover:bg-muted"
                               >
                                 <X className="h-4 w-4" />
-                                <span>Clear</span>
+                                <span>{t('cmd_clear')}</span>
                               </button>
                             )}
                           </div>
@@ -858,7 +866,7 @@ export function CommandBar({
                             >
                               <ArrowLeft className="h-4 w-4" />
                               <span className="font-semibold">
-                                Select Estimation
+                                {t('cmd_select_estimation')}
                               </span>
                             </button>
                             {availableEstimationIndices.map((index) => {
@@ -880,9 +888,7 @@ export function CommandBar({
                                   disabled={isDisabled}
                                   className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
                                   title={
-                                    isDisabled
-                                      ? 'Upgrade to use this value'
-                                      : ''
+                                    isDisabled ? t('cmd_upgrade_to_use') : ''
                                   }
                                 >
                                   <div className="flex items-center gap-2">
@@ -910,7 +916,7 @@ export function CommandBar({
                                 className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-muted-foreground text-sm transition-colors hover:bg-muted"
                               >
                                 <X className="h-4 w-4" />
-                                <span>Clear</span>
+                                <span>{t('cmd_clear')}</span>
                               </button>
                             )}
                           </div>
@@ -925,7 +931,7 @@ export function CommandBar({
                           >
                             <ArrowLeft className="h-4 w-4" />
                             <span className="font-semibold">
-                              Select Projects
+                              {t('cmd_select_projects')}
                             </span>
                           </button>
                           <ScrollArea style={{ height: projectsScrollHeight }}>
@@ -978,7 +984,7 @@ export function CommandBar({
                               className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-muted-foreground text-sm transition-colors hover:bg-muted hover:text-foreground"
                             >
                               <Plus className="h-4 w-4" />
-                              <span>Add New Project</span>
+                              <span>{t('cmd_add_new_project')}</span>
                             </button>
                           </div>
                         </div>
@@ -991,7 +997,9 @@ export function CommandBar({
                             className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
                           >
                             <ArrowLeft className="h-4 w-4" />
-                            <span className="font-semibold">Select Labels</span>
+                            <span className="font-semibold">
+                              {t('cmd_select_labels')}
+                            </span>
                           </button>
                           <ScrollArea style={{ height: labelsScrollHeight }}>
                             <div className="space-y-0.5">
@@ -1054,7 +1062,7 @@ export function CommandBar({
                               className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-muted-foreground text-sm transition-colors hover:bg-muted hover:text-foreground"
                             >
                               <Plus className="h-4 w-4" />
-                              <span>Add New Label</span>
+                              <span>{t('cmd_add_new_label')}</span>
                             </button>
                           </div>
                         </div>
@@ -1071,7 +1079,7 @@ export function CommandBar({
                           >
                             <ArrowLeft className="h-4 w-4" />
                             <span className="font-semibold">
-                              Select Assignees
+                              {t('cmd_select_assignees')}
                             </span>
                           </button>
 
@@ -1079,7 +1087,7 @@ export function CommandBar({
                           <div className="relative mb-3">
                             <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
-                              placeholder="Search members..."
+                              placeholder={t('cmd_search_members')}
                               value={assigneeSearchQuery}
                               onChange={(e) =>
                                 setAssigneeSearchQuery(e.target.value)
@@ -1100,7 +1108,9 @@ export function CommandBar({
                                 return (
                                   <div className="space-y-1.5">
                                     <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
-                                      Assigned ({assignedMembers.length})
+                                      {t('cmd_assigned_count', {
+                                        count: assignedMembers.length,
+                                      })}
                                     </p>
                                     <div className="flex flex-wrap gap-1.5">
                                       {assignedMembers.map((member) => (
@@ -1144,7 +1154,7 @@ export function CommandBar({
                                         className="mt-1 h-6 w-full text-dynamic-red text-xs hover:bg-dynamic-red/10 hover:text-dynamic-red"
                                       >
                                         <UserMinus className="mr-1 h-3 w-3" />
-                                        Remove all
+                                        {t('cmd_remove_all')}
                                       </Button>
                                     )}
                                   </div>
@@ -1183,19 +1193,19 @@ export function CommandBar({
                                     <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-muted/30 py-6">
                                       <UserPlus className="h-4 w-4 text-muted-foreground/40" />
                                       <p className="text-center text-muted-foreground text-xs">
-                                        No members found
+                                        {t('cmd_no_members_found')}
                                       </p>
                                     </div>
                                   ) : selectedAssigneeIds.length > 0 ? (
                                     <div className="rounded-lg bg-muted/30 py-3 text-center">
                                       <p className="text-muted-foreground text-xs">
-                                        All members assigned
+                                        {t('cmd_all_members_assigned')}
                                       </p>
                                     </div>
                                   ) : (
                                     <div className="rounded-lg bg-muted/30 py-3 text-center">
                                       <p className="text-muted-foreground text-xs">
-                                        No members available
+                                        {t('cmd_no_members_available')}
                                       </p>
                                     </div>
                                   );
@@ -1204,7 +1214,9 @@ export function CommandBar({
                                 return (
                                   <>
                                     <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
-                                      Available ({filteredMembers.length})
+                                      {t('cmd_available_count', {
+                                        count: filteredMembers.length,
+                                      })}
                                     </p>
                                     <div className="flex max-h-60 flex-col gap-1 overflow-y-auto">
                                       {filteredMembers.map((member) => (
@@ -1251,26 +1263,38 @@ export function CommandBar({
             </Popover>
 
             {/* AI Toggle Button (like Claude's extended thinking) */}
-            <Button
-              variant={aiEnabled ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setAiEnabled(!aiEnabled)}
-              disabled={isLoading}
-              className={cn(
-                'h-8 gap-1.5 rounded-lg border px-2.5 transition-all md:h-9 md:gap-2 md:px-3',
-                aiEnabled
-                  ? 'border-dynamic-blue/20 bg-dynamic-blue/5 text-dynamic-blue shadow-lg hover:bg-dynamic-blue/10 hover:shadow-xl'
-                  : 'border-border'
-              )}
-            >
-              <Sparkles
-                className={cn(
-                  'h-3.5 w-3.5 md:h-4 md:w-4',
-                  aiEnabled ? 'animate-pulse' : ''
-                )}
-              />
-              <span className="text-xs md:text-sm">AI</span>
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={effectiveAiEnabled ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setAiEnabled(!aiEnabled)}
+                    disabled={isLoading || aiCreditsExhausted}
+                    className={cn(
+                      'h-8 gap-1.5 rounded-lg border px-2.5 transition-all md:h-9 md:gap-2 md:px-3',
+                      effectiveAiEnabled
+                        ? 'border-dynamic-blue/20 bg-dynamic-blue/5 text-dynamic-blue shadow-lg hover:bg-dynamic-blue/10 hover:shadow-xl'
+                        : 'border-border',
+                      aiCreditsExhausted && 'cursor-not-allowed opacity-50'
+                    )}
+                  >
+                    <Sparkles
+                      className={cn(
+                        'h-3.5 w-3.5 md:h-4 md:w-4',
+                        effectiveAiEnabled ? 'animate-pulse' : ''
+                      )}
+                    />
+                    <span className="text-xs md:text-sm">{t('cmd_ai')}</span>
+                  </Button>
+                </TooltipTrigger>
+                {aiCreditsExhausted && aiCreditsTooltip ? (
+                  <TooltipContent>
+                    <p>{aiCreditsTooltip}</p>
+                  </TooltipContent>
+                ) : null}
+              </Tooltip>
+            </TooltipProvider>
 
             {/* Assign to me toggle */}
             <Button
@@ -1287,7 +1311,7 @@ export function CommandBar({
             >
               <UserPlus className="h-3.5 w-3.5 md:h-4 md:w-4" />
               <span className="hidden text-xs sm:inline md:text-sm">
-                Assign to me
+                {t('cmd_assign_to_me')}
               </span>
             </Button>
           </div>
@@ -1305,18 +1329,20 @@ export function CommandBar({
                 <>
                   <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent md:h-4 md:w-4" />
                   <span className="hidden sm:inline">
-                    {aiEnabled ? 'Generating...' : 'Creating...'}
+                    {effectiveAiEnabled
+                      ? t('cmd_generating')
+                      : t('cmd_creating')}
                   </span>
                 </>
-              ) : aiEnabled ? (
+              ) : effectiveAiEnabled ? (
                 <>
                   <Sparkles className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                  <span>Generate</span>
+                  <span>{t('cmd_generate')}</span>
                 </>
               ) : (
                 <>
                   <Plus className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                  <span>Create</span>
+                  <span>{t('cmd_create')}</span>
                 </>
               )}
             </Button>

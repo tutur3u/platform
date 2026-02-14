@@ -120,12 +120,12 @@ export function BoardSelectorDialog({
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-orange/10">
               <LayoutDashboard className="h-4 w-4 text-dynamic-orange" />
             </div>
-            Select Board & List
+            {t('ws-tasks.select_board_and_list')}
           </DialogTitle>
           <DialogDescription>
             {aiFlowStep === 'selecting-destination'
-              ? 'Choose where to save your reviewed tasks'
-              : 'Choose where to create your new task'}
+              ? t('ws-tasks.choose_save_destination')
+              : t('ws-tasks.choose_create_destination')}
           </DialogDescription>
         </DialogHeader>
 
@@ -138,14 +138,14 @@ export function BoardSelectorDialog({
                 className="flex items-center gap-2"
               >
                 <Users className="h-4 w-4 text-muted-foreground" />
-                Workspace
+                {t('ws-tasks.workspace')}
               </Label>
               <Select
                 value={selectedWorkspaceId}
                 onValueChange={onWorkspaceChange}
               >
                 <SelectTrigger id="workspace-select" className="w-full">
-                  <SelectValue placeholder="Select a workspace" />
+                  <SelectValue placeholder={t('ws-tasks.select_a_workspace')} />
                 </SelectTrigger>
                 <SelectContent>
                   {workspacesData.map((workspace) => (
@@ -163,7 +163,7 @@ export function BoardSelectorDialog({
           <div className="space-y-2">
             <Label htmlFor="board-select" className="flex items-center gap-2">
               <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
-              Board
+              {t('ws-tasks.board')}
             </Label>
             <Combobox
               t={t}
@@ -172,8 +172,8 @@ export function BoardSelectorDialog({
                 value: board.id,
                 label: board.name || 'Unnamed Board',
               }))}
-              label={boardsLoading ? 'Loading...' : undefined}
-              placeholder="Select a board"
+              label={boardsLoading ? t('ws-tasks.loading') : undefined}
+              placeholder={t('ws-tasks.select_a_board')}
               selected={selectedBoardId}
               onChange={(value) => onBoardChange(value as string)}
               onCreate={onCreateBoard}
@@ -186,7 +186,7 @@ export function BoardSelectorDialog({
           <div className="space-y-2">
             <Label htmlFor="list-select" className="flex items-center gap-2">
               <ListTodo className="h-4 w-4 text-muted-foreground" />
-              List
+              {t('ws-tasks.list')}
             </Label>
             <Combobox
               t={t}
@@ -197,8 +197,8 @@ export function BoardSelectorDialog({
               }))}
               placeholder={
                 !selectedBoardId
-                  ? 'Select a board first'
-                  : 'Select or create a list'
+                  ? t('ws-tasks.select_board_first')
+                  : t('ws-tasks.select_or_create_list')
               }
               selected={selectedListId}
               onChange={(value) => onListChange(value as string)}
@@ -211,14 +211,14 @@ export function BoardSelectorDialog({
 
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button onClick={onConfirm} disabled={!selectedListId}>
             {aiFlowStep === 'selecting-destination'
-              ? 'Save Tasks'
+              ? t('ws-tasks.save_tasks')
               : taskCreatorMode
-                ? 'Create task'
-                : 'Continue'}
+                ? t('ws-tasks.create_task')
+                : t('ws-tasks.continue')}
           </Button>
         </div>
       </DialogContent>

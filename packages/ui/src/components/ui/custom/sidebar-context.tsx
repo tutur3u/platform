@@ -39,6 +39,9 @@ export const SidebarContext = createContext<SidebarContextProps | undefined>(
   undefined
 );
 
+// Persistent cookie options — ensures setting survives browser restarts
+const COOKIE_OPTIONS = { maxAge: 365 * 24 * 60 * 60, path: '/' } as const;
+
 export const SidebarProvider = ({
   children,
   initialBehavior,
@@ -52,6 +55,12 @@ export const SidebarProvider = ({
     false
   );
   const hasAppliedRemote = useRef(false);
+  // Prevents remote sync from overwriting a user-initiated change
+  const userChangedRef = useRef(false);
+  // Allows reading current behavior inside the sync effect without
+  // adding `behavior` to its dependency array
+  const behaviorRef = useRef(behavior);
+  behaviorRef.current = behavior;
 
   // Fetch account-wide preference
   const { data: remoteBehavior, isSuccess: remoteLoaded } = useUserConfig(
@@ -63,19 +72,29 @@ export const SidebarProvider = ({
 
   // Sync from user_configs when not locally overridden
   useEffect(() => {
-    if (!remoteLoaded || localOverride || hasAppliedRemote.current) return;
-    if (isValidBehavior(remoteBehavior) && remoteBehavior !== behavior) {
+    if (
+      !remoteLoaded ||
+      localOverride ||
+      hasAppliedRemote.current ||
+      userChangedRef.current
+    )
+      return;
+    hasAppliedRemote.current = true;
+    if (
+      isValidBehavior(remoteBehavior) &&
+      remoteBehavior !== behaviorRef.current
+    ) {
       setBehavior(remoteBehavior);
-      setCookie(SIDEBAR_BEHAVIOR_COOKIE_NAME, remoteBehavior);
-      hasAppliedRemote.current = true;
+      setCookie(SIDEBAR_BEHAVIOR_COOKIE_NAME, remoteBehavior, COOKIE_OPTIONS);
     }
-  }, [remoteLoaded, remoteBehavior, localOverride, behavior]);
+  }, [remoteLoaded, remoteBehavior, localOverride]);
 
   const handleBehaviorChange = useCallback(
     (newBehavior: SidebarBehavior) => {
+      userChangedRef.current = true;
       setBehavior(newBehavior);
       // Always update cookie for SSR
-      setCookie(SIDEBAR_BEHAVIOR_COOKIE_NAME, newBehavior);
+      setCookie(SIDEBAR_BEHAVIOR_COOKIE_NAME, newBehavior, COOKIE_OPTIONS);
       // Save to user_configs (account-wide) unless locally overridden
       if (!localOverride) {
         updateConfig.mutate({
@@ -93,7 +112,7 @@ export const SidebarProvider = ({
       if (!enabled && isValidBehavior(remoteBehavior)) {
         // Turning off local override — sync to account-wide value
         setBehavior(remoteBehavior);
-        setCookie(SIDEBAR_BEHAVIOR_COOKIE_NAME, remoteBehavior);
+        setCookie(SIDEBAR_BEHAVIOR_COOKIE_NAME, remoteBehavior, COOKIE_OPTIONS);
       } else if (enabled) {
         // Turning on local override — save current behavior to account-wide first
         updateConfig.mutate({
