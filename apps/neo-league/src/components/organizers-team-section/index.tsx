@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@ncthub/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@ncthub/ui/tabs';
 import { getInitials } from '@ncthub/utils/name-helper';
 import AnimatedSection from '../animated-section';
+import AvatarCard from '../avatar-card';
 import { leaders, teams } from './data';
 
 export default function OrganizersTeamSection() {
@@ -29,20 +30,16 @@ export default function OrganizersTeamSection() {
             <div className="flex flex-wrap justify-center gap-8">
               {leaders.map((leader, index) => (
                 <AnimatedSection key={index} delay={index * 0.1}>
-                  <div className="card-hover flex w-72 flex-col items-center">
-                    <Avatar className="h-auto w-3/4 rounded-none">
-                      <AvatarImage src={leader.avatar} alt={leader.name} />
-                      <AvatarFallback className="gradient-bg font-black text-3xl text-white">
-                        {getInitials(leader.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="glass-card w-full rounded-2xl px-8 py-12 text-center">
-                      <h4 className="mb-2 font-black text-xl">{leader.name}</h4>
-                      <p className="font-medium text-lg text-secondary">
-                        {leader.role}
-                      </p>
-                    </div>
-                  </div>
+                  <AvatarCard
+                    avatar={leader.avatar || ''}
+                    name={leader.name}
+                    subtitle={leader.role || ''}
+                    avatarClassName="ease-in-out transition-transform duration-500 hover:scale-105"
+                    containerClassName="w-72"
+                    cardClassName="px-8 py-8"
+                    nameClassName="mb-2 text-brand-light-blue text-lg"
+                    subtitleClassName="font-medium text-md text-primary/80"
+                  />
                 </AnimatedSection>
               ))}
             </div>

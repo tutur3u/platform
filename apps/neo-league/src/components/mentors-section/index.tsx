@@ -1,10 +1,14 @@
 'use client';
 
-import { Avatar, AvatarFallback, AvatarImage } from '@ncthub/ui/avatar';
-import { getInitials } from '@ncthub/utils/name-helper';
-
 import AnimatedSection from '../animated-section';
+import AvatarCard from '../avatar-card';
 import { mentors } from './data';
+
+function calculateDelay(index: number) {
+  const row = Math.floor(index / 4);
+  const col = index % 4;
+  return row * 0.1 + col * 0.05;
+}
 
 export default function MentorsSection() {
   return (
@@ -22,22 +26,15 @@ export default function MentorsSection() {
 
         <div className="grid grid-cols-2 gap-6 lg:grid-cols-4">
           {mentors.map((mentor, index) => (
-            <AnimatedSection
-              key={index}
-              delay={Math.floor(index / 4) * 0.1 + (index % 4) * 0.05}
-            >
-              <div className="card-hover flex flex-col items-center">
-                <Avatar className="h-auto w-3/4 rounded-none">
-                  <AvatarImage src={mentor.avatar} alt={mentor.name} />
-                  <AvatarFallback className="gradient-bg font-black text-2xl text-white">
-                    {getInitials(mentor.name)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="glass-card h-full w-full rounded-xl px-6 py-8 text-center">
-                  <h4 className="mb-1 font-black">{mentor.name}</h4>
-                  <p className="text-base text-foreground">{mentor.field}</p>
-                </div>
-              </div>
+            <AnimatedSection key={index} delay={calculateDelay(index)}>
+              <AvatarCard
+                avatar={mentor.avatar}
+                name={mentor.name}
+                subtitle={mentor.field}
+                avatarClassName="ease-in-out transition-transform duration-500 hover:scale-105"
+                nameClassName="gradient-text"
+                subtitleClassName="text-sm opacity-80"
+              />
             </AnimatedSection>
           ))}
         </div>
