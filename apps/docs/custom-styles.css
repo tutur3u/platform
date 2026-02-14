@@ -59,10 +59,10 @@ h6 {
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.2;
-  color: var(--primary);
 }
 
 h1 {
+  color: var(--primary) !important;
   border-bottom: 3px solid var(--gold);
   padding-bottom: 0.5rem;
   margin-bottom: 1.5rem;
