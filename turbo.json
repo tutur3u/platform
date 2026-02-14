@@ -58,6 +58,9 @@
       "persistent": true
     },
     "test": {},
+    "test:e2e": {
+      "cache": false
+    },
     "test:watch": {
       "cache": false
     },

@@ -8,6 +8,7 @@ export const ci = {
   'codecov.yaml': true,
   'codeql.yml': true,
   'discord-python-ci.yml': true,
+  'e2e-tests.yaml': true,
   'external-internal-packages.yaml': true,
   'i18n-check.yaml': true,
   'mobile.yaml': true,

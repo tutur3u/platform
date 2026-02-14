@@ -11,7 +11,7 @@
     "type-check": "tsgo --build"
   },
   "dependencies": {
-    "@serwist/next": "^9.5.5",
+    "@serwist/next": "^10.0.0-preview.14",
     "@serwist/turbopack": "^10.0.0-preview.14",
     "esbuild-wasm": "^0.27.3",
     "serwist": "^10.0.0-preview.14"

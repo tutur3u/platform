@@ -74,7 +74,13 @@
       "Bash(node scripts/check-mobile.js:*)",
       "Bash(bunx supabase status:*)",
       "Bash(git mv:*)",
-      "Bash(nslookup:*)"
+      "Bash(nslookup:*)",
+      "Bash(supabase start:*)",
+      "Bash(supabase status:*)",
+      "Bash(bunx playwright test:*)",
+      "WebFetch(domain:ai-gateway.vercel.sh)",
+      "WebFetch(domain:ai-sdk.dev)",
+      "Bash(npx playwright test:*)"
     ]
   }
 }
