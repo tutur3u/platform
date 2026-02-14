@@ -117,11 +117,11 @@ export default async function Footer() {
             </Link>
 
             <Link
-              href="https://tuturuuu.com"
+              href="https://docs.rmitnct.club"
               target="_blank"
               className="text-foreground/50 hover:text-foreground/80"
             >
-              Tuturuuu
+              {t('common.documentation')}
             </Link>
           </div>
           <div className="flex flex-col items-start gap-1">
