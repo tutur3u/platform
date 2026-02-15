@@ -1,4 +1,5 @@
 import {
+  ArrowUpRight,
   Facebook,
   Globe,
   Instagram,
@@ -148,15 +149,25 @@ export default function Footer() {
 
           {/* Core Values */}
           <div className="space-y-4 text-center md:text-left">
-            <h3 className="font-bold text-brand-dark-blue text-dark text-lg">
+            <h3 className="font-black text-brand-dark-blue text-dark text-lg">
               Core Values
             </h3>
-            <ul className="space-y-1 font-bold text-sm tracking-wide">
-              <li>CULTURE</li>
-              <li>REVOLUTIONARY</li>
-              <li>COMPANIONSHIP</li>
-              <li>DIVERSITY</li>
-              <li>INCLUSION</li>
+            <ul className="space-y-2.5 font-bold text-sm tracking-wide">
+              {[
+                'CULTURE',
+                'REVOLUTIONARY',
+                'COMPANIONSHIP',
+                'DIVERSITY',
+                'INCLUSION',
+              ].map((value) => (
+                <li
+                  key={value}
+                  className="flex items-center justify-center gap-2 md:justify-start"
+                >
+                  <ArrowUpRight className="h-4 w-4" strokeWidth={3} />
+                  {value}
+                </li>
+              ))}
             </ul>
           </div>
         </div>
