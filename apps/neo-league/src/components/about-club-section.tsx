@@ -20,11 +20,12 @@ export default function AboutClubSection() {
               <div className="h-px flex-1 bg-linear-to-r from-primary/30 to-transparent" />
             </div>
 
-            <div className="mb-6">
-              <p className="mb-2 font-semibold text-primary-foreground text-sm uppercase tracking-[0.25em]">
+            {/* Header */}
+            <div>
+              <p className="font-semibold text-primary-foreground text-sm uppercase tracking-[0.25em]">
                 Who We Are
               </p>
-              <h2 className="font-black text-4xl leading-normal tracking-normal md:text-5xl">
+              <h2 className="font-black text-4xl leading-17 tracking-normal md:text-5xl">
                 <span className="text-primary underline decoration-6 decoration-brand-light-yellow underline-offset-8">
                   NEO CULTURE
                 </span>
@@ -33,7 +34,8 @@ export default function AboutClubSection() {
               </h2>
             </div>
 
-            <div className="mb-6 flex items-center gap-3">
+            {/* Accent Line */}
+            <div className="mb-6 flex items-center gap-7">
               <div className="h-1 w-16 rounded-full bg-linear-to-r from-brand-light-yellow to-brand-light-red" />
               <div className="h-1 w-8 rounded-full bg-brand-light-blue" />
             </div>
@@ -108,7 +110,7 @@ export default function AboutClubSection() {
           <div className="mb-12 grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
             {/* Left Column */}
             <AnimationSection
-              className="order-2 grid grid-cols-2 gap-4 md:order-1"
+              className="order-2 grid grid-cols-2 gap-10 md:order-1"
               delay={0.1}
             >
               <div className="group relative aspect-3/4 overflow-hidden rounded-2xl shadow-xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl">
@@ -152,12 +154,6 @@ export default function AboutClubSection() {
                   <br />
                   <span className="gradient-text">Tech Community</span>
                 </h3>
-              </div>
-
-              {/* Accent Line */}
-              <div className="mb-6 flex items-center gap-3">
-                <div className="h-1 w-12 rounded-full bg-brand-light-blue" />
-                <div className="h-1 w-6 rounded-full bg-brand-light-yellow" />
               </div>
 
               {/* Description */}
