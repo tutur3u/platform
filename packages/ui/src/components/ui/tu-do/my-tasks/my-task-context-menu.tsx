@@ -24,6 +24,7 @@ import { TaskPriorityMenu } from '@tuturuuu/ui/tu-do/boards/boardId/menus/task-p
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useCallback } from 'react';
+import { useTasksHref } from '../tasks-route-context';
 import { useTaskContextActions } from './use-task-context-actions';
 
 interface MyTaskContextMenuProps {
@@ -52,6 +53,7 @@ export function MyTaskContextMenu({
   children,
 }: MyTaskContextMenuProps) {
   const t = useTranslations('ws-tasks');
+  const tasksHref = useTasksHref();
 
   const {
     isLoading,
@@ -103,7 +105,7 @@ export function MyTaskContextMenu({
 
   const boardUrl =
     task.list?.board?.ws_id && task.list?.board?.id
-      ? `/${task.list.board.ws_id}/tasks/boards/${task.list.board.id}`
+      ? `/${task.list.board.ws_id}${tasksHref(`/boards/${task.list.board.id}`)}`
       : null;
 
   return (

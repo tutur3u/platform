@@ -83,7 +83,9 @@
       "Bash(npx playwright test:*)",
       "Bash(npx tsgo:*)",
       "Bash(node scripts/i18n-namespace-check.js:*)",
-      "Bash(gh cache list:*)"
+      "Bash(gh cache list:*)",
+      "WebFetch(domain:docs.openclaw.ai)",
+      "WebFetch(domain:useworkflow.dev)"
     ]
   }
 }

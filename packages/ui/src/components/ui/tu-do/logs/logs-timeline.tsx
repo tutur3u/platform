@@ -36,6 +36,7 @@ import {
 } from '@tuturuuu/ui/tu-do/shared/estimation-mapping';
 import { DescriptionDiffViewer } from '@tuturuuu/ui/tu-do/shared/task-edit-dialog/description-diff-viewer';
 import { TextDiffViewer } from '@tuturuuu/ui/tu-do/shared/text-diff-viewer';
+import { useTasksHref } from '@tuturuuu/ui/tu-do/tasks-route-context';
 import { cn } from '@tuturuuu/utils/format';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
@@ -584,6 +585,7 @@ function RapidChangeGroupEntry({
   estimationType,
   latestDeletions,
 }: RapidChangeGroupEntryProps) {
+  const tasksHref = useTasksHref();
   const [expanded, setExpanded] = useState(false);
 
   const startTime = new Date(group.first_changed_at);
@@ -799,7 +801,7 @@ function RapidChangeGroupEntry({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Link
-                        href={`/${wsId}/tasks/boards/${group.board_id}`}
+                        href={`/${wsId}${tasksHref(`/boards/${group.board_id}`)}`}
                         onClick={(e) => e.stopPropagation()}
                         className="group/board inline-flex items-center gap-1 text-xs hover:text-foreground"
                       >
@@ -1123,6 +1125,7 @@ function AggregatedActionEntry({
   index,
   dateLocale,
 }: AggregatedActionEntryProps) {
+  const tasksHref = useTasksHref();
   const { icon, color, borderColor } = getChangeIconWithBorder(
     group.change_type,
     null
@@ -1372,7 +1375,7 @@ function AggregatedActionEntry({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Link
-                      href={`/${wsId}/tasks/boards/${group.board_id}`}
+                      href={`/${wsId}${tasksHref(`/boards/${group.board_id}`)}`}
                       className="group/board inline-flex items-center gap-1 text-xs hover:text-foreground"
                     >
                       <LayoutGrid className="h-3 w-3 shrink-0 text-muted-foreground" />
@@ -1433,6 +1436,7 @@ function TimelineEntry({
   estimationType,
   isLatestDeletion,
 }: TimelineEntryProps) {
+  const tasksHref = useTasksHref();
   const { icon, color, borderColor } = getChangeIconWithBorder(
     entry.change_type,
     entry.field_name,
@@ -1576,7 +1580,7 @@ function TimelineEntry({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Link
-                        href={`/${wsId}/tasks/boards/${entry.board_id}`}
+                        href={`/${wsId}${tasksHref(`/boards/${entry.board_id}`)}`}
                         className="group/board inline-flex items-center gap-1 text-xs hover:text-foreground"
                       >
                         <LayoutGrid className="h-3 w-3 shrink-0 text-muted-foreground" />

@@ -19,6 +19,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useState } from 'react';
 import { getIconComponentByKey } from '../../custom/icon-picker';
+import { useTasksHref } from '../tasks-route-context';
 import { projectColumns } from './columns';
 import { BoardCardActions } from './row-actions';
 
@@ -44,6 +45,7 @@ async function getBoardsData(
 
 export function EnhancedBoardsView({ wsId }: EnhancedBoardsViewProps) {
   const t = useTranslations();
+  const tasksHref = useTasksHref();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -332,6 +334,7 @@ export function EnhancedBoardsView({ wsId }: EnhancedBoardsViewProps) {
             data={filteredData}
             count={hasActiveFilters ? filteredData.length : count}
             hideToolbar={true}
+            extraData={{ tasksHref }}
             defaultVisibility={{
               id: false,
               created_at: false,

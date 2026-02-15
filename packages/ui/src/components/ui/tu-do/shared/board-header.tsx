@@ -81,6 +81,7 @@ import { TaskFilter, type TaskFilters } from '../boards/boardId/task-filter';
 import { CopyBoardDialog } from '../boards/copy-board-dialog';
 import { TaskBoardForm } from '../boards/form';
 import { SaveAsTemplateDialog } from '../boards/save-as-template-dialog';
+import { useTasksHref } from '../tasks-route-context';
 import { BoardLayoutSettings } from './board-layout-settings';
 import { BoardSwitcher } from './board-switcher';
 import { BoardUserPresenceAvatarsComponent } from './board-user-presence-avatars';
@@ -236,6 +237,7 @@ export function BoardHeader({
   const { archiveBoard, unarchiveBoard } = useBoardActions(board.ws_id);
   const queryClient = useQueryClient();
   const router = useRouter();
+  const tasksHref = useTasksHref();
 
   // Track which board we've loaded config for to prevent re-loading
   const loadedBoardRef = useRef<string | null>(null);
@@ -326,7 +328,7 @@ export function BoardHeader({
       setIsLoading(true);
       const supabase = createClient();
       await supabase.from('workspace_boards').delete().eq('id', board.id);
-      router.push(`/${board.ws_id}/tasks/boards`);
+      router.push(`/${board.ws_id}${tasksHref('/boards')}`);
     } catch (error) {
       console.error('Failed to delete board:', error);
     } finally {

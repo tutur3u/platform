@@ -14,6 +14,7 @@ import {
 } from '@tuturuuu/ui/tu-do/shared/board-header';
 import type { ViewType } from '@tuturuuu/ui/tu-do/shared/board-views';
 import { ListView } from '@tuturuuu/ui/tu-do/shared/list-view';
+import { useTasksHref } from '@tuturuuu/ui/tu-do/tasks-route-context';
 import { useTranslations } from 'next-intl';
 
 interface TasksTabProps {
@@ -56,6 +57,7 @@ export function TasksTab({
   setIsMultiSelectMode,
 }: TasksTabProps) {
   const t = useTranslations('task_project_detail.tasks_tab');
+  const tasksHref = useTasksHref();
   const projectBoardId = `project:${projectId}`;
 
   const virtualBoard: Pick<
@@ -150,7 +152,7 @@ export function TasksTab({
             listStatusFilter={listStatusFilter}
             onListStatusFilterChange={setListStatusFilter}
             isPersonalWorkspace={workspace.personal}
-            backUrl={`/${wsId}/tasks/projects`}
+            backUrl={`/${wsId}${tasksHref('/projects')}`}
             hideActions={true}
             isMultiSelectMode={isMultiSelectMode}
             setIsMultiSelectMode={setIsMultiSelectMode}

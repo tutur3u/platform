@@ -12,6 +12,7 @@ import { BoardActions } from './row-actions';
 export const projectColumns = ({
   t,
   namespace,
+  extraData,
 }: ColumnGeneratorOptions<WorkspaceTaskBoard>): ColumnDef<WorkspaceTaskBoard>[] => [
   // {
   //   id: 'select',
@@ -61,7 +62,7 @@ export const projectColumns = ({
     cell: ({ row }) => (
       <div className="space-y-1">
         <Link
-          href={`/${row.original.ws_id}/tasks/boards/${row.getValue('id')}`}
+          href={`/${row.original.ws_id}${extraData?.tasksHref ? extraData.tasksHref(`/boards/${row.getValue('id')}`) : `/tasks/boards/${row.getValue('id')}`}`}
           className="line-clamp-1 max-w-32 break-all font-semibold hover:underline"
           onClick={(e) => e.stopPropagation()}
         >

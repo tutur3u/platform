@@ -1,6 +1,7 @@
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
 import { WorkspacePresenceProvider } from '@tuturuuu/ui/tu-do/providers/workspace-presence-provider';
 import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
+import { TasksRouteProvider } from '@tuturuuu/ui/tu-do/tasks-route-context';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
@@ -97,20 +98,22 @@ export default async function Layout({ children, params }: LayoutProps) {
           </Suspense>
         }
       >
-        <RealtimeLogProvider wsId={wsId}>
-          <WorkspacePresenceProvider
-            wsId={wsId}
-            tier={workspace.tier ?? null}
-            enabled={!workspace.personal}
-          >
-            <TaskDialogWrapper
-              isPersonalWorkspace={!!workspace.personal}
+        <TasksRouteProvider prefix="">
+          <RealtimeLogProvider wsId={wsId}>
+            <WorkspacePresenceProvider
               wsId={wsId}
+              tier={workspace.tier ?? null}
+              enabled={!workspace.personal}
             >
-              {children}
-            </TaskDialogWrapper>
-          </WorkspacePresenceProvider>
-        </RealtimeLogProvider>
+              <TaskDialogWrapper
+                isPersonalWorkspace={!!workspace.personal}
+                wsId={wsId}
+              >
+                {children}
+              </TaskDialogWrapper>
+            </WorkspacePresenceProvider>
+          </RealtimeLogProvider>
+        </TasksRouteProvider>
       </Structure>
     </SidebarProvider>
   );

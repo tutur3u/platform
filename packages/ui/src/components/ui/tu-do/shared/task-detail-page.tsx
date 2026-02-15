@@ -5,6 +5,7 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import { useTaskDialog } from '@tuturuuu/ui/tu-do/hooks/useTaskDialog';
 import { useTaskDialogContext } from '@tuturuuu/ui/tu-do/providers/task-dialog-provider';
 import { useOptionalWorkspacePresenceContext } from '@tuturuuu/ui/tu-do/providers/workspace-presence-provider';
+import { useTasksHref } from '@tuturuuu/ui/tu-do/tasks-route-context';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -24,6 +25,7 @@ export default function TaskDetailPage({
   const { openTask, onUpdate, onClose } = useTaskDialog();
   const { state: dialogState } = useTaskDialogContext();
   const wsPresence = useOptionalWorkspacePresenceContext();
+  const tasksHref = useTasksHref();
   const router = useRouter();
   const hasRedirectedRef = useRef(false);
   const [isNavigating, setIsNavigating] = useState(false);
@@ -42,10 +44,10 @@ export default function TaskDetailPage({
     if (window.history.length > 1) {
       router.back();
     } else {
-      const targetUrl = `/${wsId}/tasks/boards/${boardId}`;
+      const targetUrl = `/${wsId}${tasksHref(`/boards/${boardId}`)}`;
       router.push(targetUrl);
     }
-  }, [wsId, boardId, router]);
+  }, [wsId, boardId, router, tasksHref]);
 
   // Task was saved — stay on the dedicated task URL (don't navigate away)
   const handleUpdate = useCallback(() => {

@@ -12,9 +12,14 @@ interface Props {
     boardId: string;
     workspace?: Workspace & { tier?: WorkspaceProductTier | null };
   };
+  /** Route prefix for tasks URLs. Defaults to '/tasks' (web app). Set to '' for satellite apps. */
+  routePrefix?: string;
 }
 
-export default async function TaskBoardPage({ params }: Props) {
+export default async function TaskBoardPage({
+  params,
+  routePrefix = '/tasks',
+}: Props) {
   const { wsId, boardId, workspace } = params;
 
   const supabase = await createClient();
@@ -34,7 +39,7 @@ export default async function TaskBoardPage({ params }: Props) {
 
   // If board doesn't exist, redirect to boards list page
   if (!board) {
-    redirect(`/${wsId}/tasks/boards`);
+    redirect(`/${wsId}${routePrefix}/boards`);
   }
 
   // If board exists but belongs to different workspace, show 404

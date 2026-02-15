@@ -53,6 +53,7 @@ import {
   TableRow,
 } from '@tuturuuu/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { useTasksHref } from '@tuturuuu/ui/tu-do/tasks-route-context';
 import { cn } from '@tuturuuu/utils/format';
 import { AnimatePresence, motion } from 'motion/react';
 import { useLocale, useTranslations } from 'next-intl';
@@ -103,6 +104,7 @@ export default function LogsClient({
 }: LogsClientProps) {
   const t = useTranslations('tasks-logs');
   const locale = useLocale();
+  const tasksHref = useTasksHref();
 
   // View state with localStorage persistence
   const [viewMode, setViewMode] = useState<ViewMode>('timeline');
@@ -212,8 +214,9 @@ export default function LogsClient({
         wsId,
         locale,
         t: t as (key: string, options?: { defaultValue?: string }) => string,
+        tasksHref,
       }),
-    [wsId, locale, t]
+    [wsId, locale, t, tasksHref]
   );
 
   const table = useReactTable({

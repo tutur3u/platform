@@ -3,6 +3,7 @@
 import { Loader2 } from '@tuturuuu/icons';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
+import { useTasksHref } from '../tasks-route-context';
 import {
   ProjectGridCard,
   ProjectListItem,
@@ -22,6 +23,7 @@ export function TaskProjectsClient({
   initialProjects,
 }: TaskProjectsClientProps) {
   const router = useRouter();
+  const tasksHref = useTasksHref();
 
   // Dialog state
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -87,9 +89,9 @@ export function TaskProjectsClient({
 
   const navigateToProject = useCallback(
     (projectId: string) => {
-      router.push(`/${wsId}/tasks/projects/${projectId}`);
+      router.push(`/${wsId}${tasksHref(`/projects/${projectId}`)}`);
     },
-    [router, wsId]
+    [router, wsId, tasksHref]
   );
 
   return (

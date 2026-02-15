@@ -10,6 +10,8 @@ interface Props {
     wsId: string;
     boardId: string;
   }>;
+  /** Route prefix for tasks URLs. Defaults to '/tasks' (web app). Set to '' for satellite apps. */
+  routePrefix?: string;
 }
 
 /**
@@ -20,7 +22,10 @@ interface Props {
  * Tasks are NOT fetched here — they are loaded progressively per-list
  * on the client via useProgressiveBoardLoader for faster initial load.
  */
-export default async function TaskBoardServerPage({ params }: Props) {
+export default async function TaskBoardServerPage({
+  params,
+  routePrefix = '/tasks',
+}: Props) {
   const { wsId: id, boardId } = await params;
 
   const user = await getCurrentUser();
@@ -39,7 +44,7 @@ export default async function TaskBoardServerPage({ params }: Props) {
 
   // If board doesn't exist, redirect to boards list page
   if (!board) {
-    redirect(`/${workspace.id}/tasks/boards`);
+    redirect(`/${workspace.id}${routePrefix}/boards`);
   }
 
   // If board exists but belongs to different workspace, show 404

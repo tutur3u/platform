@@ -27,6 +27,7 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import NextLink from 'next/link';
 import { useFormatter, useTranslations } from 'next-intl';
+import { useTasksHref } from '../../tasks-route-context';
 import type { TaskProject } from '../types';
 import {
   HealthStatusBadge,
@@ -60,6 +61,7 @@ export function ProjectGridCard({
   isUnlinking,
 }: ProjectGridCardProps) {
   const t = useTranslations('task-projects.project_card');
+  const tasksHref = useTasksHref();
   const { dateTime } = useFormatter();
 
   return (
@@ -229,7 +231,7 @@ export function ProjectGridCard({
         {/* Actions */}
         <div className="mt-auto flex flex-col gap-2 pt-2">
           <NextLink
-            href={`/${wsId}/tasks/projects/${project.id}`}
+            href={`/${wsId}${tasksHref(`/projects/${project.id}`)}`}
             onClick={(e) => e.stopPropagation()}
           >
             <Button size="sm" variant="default" className="w-full">

@@ -16,6 +16,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef } from 'react';
+import { useTasksHref } from '../tasks-route-context';
 import { TaskSection } from './task-section';
 
 interface TaskListProps {
@@ -71,6 +72,7 @@ export default function TaskList({
   onCreateNewLabel,
 }: TaskListProps) {
   const t = useTranslations();
+  const tasksHref = useTasksHref();
   const params = useParams();
   const locale = params?.locale as string | undefined;
 
@@ -212,7 +214,7 @@ export default function TaskList({
             {locale && (
               <div className="flex flex-wrap items-center justify-center gap-3">
                 <Button variant="default" asChild className="gap-2">
-                  <Link href={`/${locale}/${wsId}/tasks/boards`}>
+                  <Link href={`/${locale}/${wsId}${tasksHref('/boards')}`}>
                     <LayoutDashboard className="h-4 w-4" />
                     {t('ws-tasks.browse_boards')}
                   </Link>

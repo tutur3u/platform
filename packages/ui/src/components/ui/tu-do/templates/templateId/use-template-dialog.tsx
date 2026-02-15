@@ -13,6 +13,7 @@ import {
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
+import { useTasksHref } from '@tuturuuu/ui/tu-do/tasks-route-context';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
@@ -40,6 +41,7 @@ export function UseTemplateDialog({
 }: UseTemplateDialogProps) {
   const t = useTranslations('ws-board-templates');
   const router = useRouter();
+  const tasksHref = useTasksHref();
 
   const [isUsing, setIsUsing] = useState(false);
   const [newBoardName, setNewBoardName] = useState(`${templateName} Copy`);
@@ -81,7 +83,7 @@ export function UseTemplateDialog({
       });
 
       onOpenChange(false);
-      router.push(`/${wsId}/tasks/boards/${data.board.id}`);
+      router.push(`/${wsId}${tasksHref(`/boards/${data.board.id}`)}`);
     } catch (error) {
       console.error('Error using template:', error);
       toast.error(

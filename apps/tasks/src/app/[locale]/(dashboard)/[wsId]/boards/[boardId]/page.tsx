@@ -8,5 +8,5 @@ interface Props {
 }
 
 export default async function Page({ params }: Props) {
-  return <TaskBoardServerPage params={params} />;
+  return <TaskBoardServerPage params={params} routePrefix="" />;
 }

@@ -24,6 +24,7 @@ import {
   getIconComponentByKey,
   type PlatformIconKey,
 } from '../../custom/icon-picker';
+import { useTasksHref } from '../tasks-route-context';
 
 interface BoardSwitcherProps {
   board: Pick<WorkspaceTaskBoard, 'id' | 'name' | 'ws_id' | 'ticket_prefix'> & {
@@ -65,6 +66,7 @@ function getDaysRemaining(deletedAt: string) {
 
 export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
   const router = useRouter();
+  const tasksHref = useTasksHref();
 
   // Use provided translations or fall back to English defaults
   const t = {
@@ -159,7 +161,7 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
                       key={otherBoard.id}
                       onClick={() =>
                         router.push(
-                          `/${board.ws_id}/tasks/boards/${otherBoard.id}`
+                          `/${board.ws_id}${tasksHref(`/boards/${otherBoard.id}`)}`
                         )
                       }
                       className={cn(
@@ -208,7 +210,7 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
                       key={otherBoard.id}
                       onClick={() =>
                         router.push(
-                          `/${board.ws_id}/tasks/boards/${otherBoard.id}`
+                          `/${board.ws_id}${tasksHref(`/boards/${otherBoard.id}`)}`
                         )
                       }
                       className={cn(
@@ -264,7 +266,7 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
                       key={otherBoard.id}
                       onClick={() =>
                         router.push(
-                          `/${board.ws_id}/tasks/boards/${otherBoard.id}`
+                          `/${board.ws_id}${tasksHref(`/boards/${otherBoard.id}`)}`
                         )
                       }
                       className={cn(

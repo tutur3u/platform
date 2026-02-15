@@ -31,6 +31,7 @@ import {
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { type MouseEvent, useState } from 'react';
+import { useTasksHref } from '../tasks-route-context';
 import { MyTaskContextMenu } from './my-task-context-menu';
 import { MY_TASKS_QUERY_KEY, type MyTasksData } from './use-my-tasks-query';
 
@@ -54,6 +55,7 @@ export default function TaskListWithCompletion({
   onCreateNewLabel,
 }: TaskListWithCompletionProps) {
   const t = useTranslations('ws-tasks');
+  const tasksHref = useTasksHref();
   const { openTask } = useTaskDialog();
   const queryClient = useQueryClient();
   const [showAll, setShowAll] = useState(false);
@@ -489,7 +491,7 @@ export default function TaskListWithCompletion({
                             {task.list?.board?.id &&
                               task.list?.board?.ws_id && (
                                 <Link
-                                  href={`/${task.list.board.ws_id}/tasks/boards/${task.list.board.id}`}
+                                  href={`/${task.list.board.ws_id}${tasksHref(`/boards/${task.list.board.id}`)}`}
                                   onClick={(e) => e.stopPropagation()}
                                   className="group/link flex items-center gap-1.5 rounded-lg bg-dynamic-green/10 px-2.5 py-1 font-semibold text-dynamic-green shadow-sm ring-1 ring-dynamic-green/20 transition-all hover:bg-dynamic-green/20 hover:shadow-md"
                                 >
@@ -648,7 +650,7 @@ export default function TaskListWithCompletion({
                       <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs">
                         {task.list?.board?.id && task.list?.board?.ws_id && (
                           <Link
-                            href={`/${task.list.board.ws_id}/tasks/boards/${task.list.board.id}`}
+                            href={`/${task.list.board.ws_id}${tasksHref(`/boards/${task.list.board.id}`)}`}
                             onClick={(e) => e.stopPropagation()}
                             className="group/link flex items-center gap-1 rounded-lg bg-dynamic-green/10 px-2 py-0.5 font-semibold text-dynamic-green shadow-sm ring-1 ring-dynamic-green/20 transition-all hover:bg-dynamic-green/20"
                           >

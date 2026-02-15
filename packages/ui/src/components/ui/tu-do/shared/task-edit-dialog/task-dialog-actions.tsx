@@ -20,6 +20,7 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { useTasksHref } from '@tuturuuu/ui/tu-do/tasks-route-context';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -62,6 +63,7 @@ export function TaskDialogActions({
   disabled = false,
 }: TaskDialogActionsProps) {
   const t = useTranslations();
+  const tasksHref = useTasksHref();
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 
   // Determine if we should show the back button (create mode with a pending relationship)
@@ -106,7 +108,7 @@ export function TaskDialogActions({
             <DropdownMenuItem
               onClick={() => {
                 // Navigate to board view
-                const boardUrl = `/${wsId}/tasks/boards/${boardId}`;
+                const boardUrl = `/${wsId}${tasksHref(`/boards/${boardId}`)}`;
                 window.location.href = boardUrl;
                 setIsMoreMenuOpen(false);
               }}

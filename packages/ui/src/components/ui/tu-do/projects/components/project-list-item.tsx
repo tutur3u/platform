@@ -21,6 +21,7 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import NextLink from 'next/link';
 import { useFormatter, useTranslations } from 'next-intl';
+import { useTasksHref } from '../../tasks-route-context';
 import type { TaskProject } from '../types';
 import {
   HealthStatusBadge,
@@ -54,6 +55,7 @@ export function ProjectListItem({
   isUnlinking,
 }: ProjectListItemProps) {
   const t = useTranslations('task-projects.project_card');
+  const tasksHref = useTasksHref();
   const { dateTime } = useFormatter();
 
   const progressPercent =
@@ -89,7 +91,7 @@ export function ProjectListItem({
             {/* Title Row with Badges */}
             <div className="flex flex-wrap items-center gap-3">
               <NextLink
-                href={`/${wsId}/tasks/projects/${project.id}`}
+                href={`/${wsId}${tasksHref(`/projects/${project.id}`)}`}
                 className="group/link"
                 onClick={(e) => e.stopPropagation()}
               >

@@ -66,12 +66,14 @@ interface ColumnsConfig {
   wsId: string;
   locale: string;
   t: TranslationFunction;
+  tasksHref?: (path: string) => string;
 }
 
 export function getColumns({
   wsId,
   locale,
   t,
+  tasksHref = (path: string) => `/tasks${path}`,
 }: ColumnsConfig): ColumnDef<TaskHistoryLogEntry>[] {
   const dateLocale = locale === 'vi' ? vi : enUS;
 
@@ -208,7 +210,7 @@ export function getColumns({
           <Tooltip>
             <TooltipTrigger asChild>
               <Link
-                href={`/${wsId}/tasks/boards/${board_id}`}
+                href={`/${wsId}${tasksHref(`/boards/${board_id}`)}`}
                 className="group/board inline-flex max-w-37.5 items-center gap-1.5 text-sm hover:text-foreground"
               >
                 <LayoutGrid className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
