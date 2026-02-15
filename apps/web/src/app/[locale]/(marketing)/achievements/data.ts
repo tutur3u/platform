@@ -281,7 +281,7 @@ export const achievements: Achievement[] = [
     name: 'CoverGo AI Hackathon 2025',
     achievement: 'Champion',
     teamName: 'RMIT x UIT',
-    image: '/hall-of-fames/covergo-ai-hackathon.jpg',
+    image: '/hall-of-fames/covergo-ai-hackathon.jpeg',
     teamMembers: [
       {
         name: 'Khoa Mai Dang',
@@ -340,6 +340,38 @@ export const achievements: Achievement[] = [
       'Awarded Champion of RMIT Hack-A-Venture 2024, a 24-hour hackathon, for our innovative Cashew Carbon Credits Platform. The platform empowers cashew farmers to earn additional income by selling carbon credits while helping buyers offset their carbon footprint. Our team developed a blockchain-based solution that ensures both technical feasibility and real-world impact, supporting sustainability through innovative technology.',
     year: 2025,
     category: 'Competition',
+  },
+  {
+    name: ' RMIT Game Jam 2025',
+    achievement: 'Certificate of Completion',
+    image: '/hall-of-fames/rmit-game-jam-2025.jpg',
+    teamMembers: [
+      {
+        name: 'Tran Vinh Trong',
+        role: 'Game Developer',
+        isNctMember: true,
+      },
+      {
+        name: 'Nguyen Do Tuong Van',
+        role: 'Game Developer',
+        isNctMember: true,
+      },
+      {
+        name: 'Duong Phu Dong',
+        role: 'Game Developer',
+        isNctMember: true,
+      },
+      {
+        name: 'Tran Viet Duc',
+        role: 'Game Developer',
+        isNctMember: true,
+      },
+    ],
+    achievementDescription:
+      'This is an educational arcade word-puzzle game made for RMIT Game Jam 2025. Players race against the clock to identify fruit terminology by clicking letter bubbles, progressing through 3 increasingly difficult levels with 5 rounds each with rounds having chaos pace of moving letters and trick spellings. It combines vocabulary learning with reflex-based gameplay.',
+    year: 2025,
+    category: 'Award',
+    eventLink: 'https://www.youtube.com/watch?v=Xy53oYn1VT4',
   },
   {
     name: ' Sustainable Design Competition by Sustainable Textile Solution (STS)',

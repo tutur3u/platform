@@ -9,7 +9,7 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "packageManager": "bun@1.3.8",
+  "packageManager": "bun@1.3.9",
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.95.3",
@@ -22,7 +22,7 @@
   "devDependencies": {
     "@ncthub/typescript-config": "workspace:*",
     "@types/node": "^25.2.3",
-    "@types/react": "^19.2.13",
+    "@types/react": "^19.2.14",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   },
