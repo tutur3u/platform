@@ -114,50 +114,96 @@ jobs:
       - name: Build workspace dependencies
         run: bunx turbo run build --filter=@tuturuuu/types --filter=@tuturuuu/supabase
 
-      - name: Install Playwright browsers
+      - name: Install Playwright browsers (web)
         working-directory: apps/web
         run: bunx playwright install chromium
 
-      # --- Start dev server ---
+      - name: Install Playwright browsers (tasks)
+        working-directory: apps/tasks
+        run: bunx playwright install chromium
+
+      # --- Start dev servers ---
       - name: Start web app
         working-directory: apps/web
         run: |
           NODE_OPTIONS='--experimental-require-module' npx next dev -p 7803 --turbopack &
-          echo "Waiting for dev server..."
+          echo "Waiting for web dev server..."
 
-      - name: Wait for dev server to be ready
+      - name: Start tasks app
+        working-directory: apps/tasks
+        run: |
+          NODE_OPTIONS='--experimental-require-module' npx next dev -p 7809 --turbopack &
+          echo "Waiting for tasks dev server..."
+
+      - name: Wait for web dev server to be ready
         run: |
           for i in $(seq 1 60); do
             if curl -s -o /dev/null -w "%{http_code}" http://localhost:7803/login | grep -q "200\|302\|307"; then
-              echo "Dev server is ready!"
+              echo "Web dev server is ready!"
               exit 0
             fi
             echo "Attempt $i/60 — waiting 5s..."
             sleep 5
           done
-          echo "Dev server failed to start within 5 minutes"
+          echo "Web dev server failed to start within 5 minutes"
+          exit 1
+
+      - name: Wait for tasks dev server to be ready
+        run: |
+          for i in $(seq 1 60); do
+            if curl -s -o /dev/null -w "%{http_code}" http://localhost:7809 | grep -q "200\|302\|307"; then
+              echo "Tasks dev server is ready!"
+              exit 0
+            fi
+            echo "Attempt $i/60 — waiting 5s..."
+            sleep 5
+          done
+          echo "Tasks dev server failed to start within 5 minutes"
           exit 1
 
       # --- Run E2E tests ---
-      - name: Run Playwright tests
+      - name: Run Playwright tests (web)
         working-directory: apps/web
         run: bunx playwright test
 
+      - name: Run Playwright tests (tasks)
+        working-directory: apps/tasks
+        env:
+          BASE_URL: http://localhost:7809
+          WEB_BASE_URL: http://localhost:7803
+        run: bunx playwright test
+
       # --- Upload artifacts on failure ---
-      - name: Upload Playwright report
+      - name: Upload web Playwright report
         uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: playwright-report
+          name: playwright-report-web
           path: apps/web/blob-report/
           retention-days: 14
 
-      - name: Upload test results
+      - name: Upload web test results
         uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: test-results
+          name: test-results-web
           path: apps/web/test-results/
+          retention-days: 14
+
+      - name: Upload tasks Playwright report
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-tasks
+          path: apps/tasks/blob-report/
+          retention-days: 14
+
+      - name: Upload tasks test results
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: test-results-tasks
+          path: apps/tasks/test-results/
           retention-days: 14
 
       # --- Cleanup ---
