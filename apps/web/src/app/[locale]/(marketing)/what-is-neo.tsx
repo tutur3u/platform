@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { Badge } from '@ncthub/ui/badge';
-import { Card, CardContent } from '@ncthub/ui/card';
+import { Badge } from "@ncthub/ui/badge";
+import { Card, CardContent } from "@ncthub/ui/card";
 import {
   Award,
   Building2,
@@ -9,30 +9,30 @@ import {
   Sparkles,
   TrendingUp,
   Users,
-} from '@ncthub/ui/icons';
-import { motion } from 'framer-motion';
+} from "@ncthub/ui/icons";
+import { motion } from "framer-motion";
 
 const stats = [
   {
-    number: '40+',
-    content: 'Active Members',
+    number: "40+",
+    content: "Active Members",
     icon: Users,
-    gradient: 'from-blue-500 to-cyan-500',
-    description: 'Passionate tech enthusiasts',
+    gradient: "from-blue-500 to-cyan-500",
+    description: "Passionate tech enthusiasts",
   },
   {
-    number: '25+',
-    content: 'Student Projects',
+    number: "25+",
+    content: "Student Projects",
     icon: Code,
-    gradient: 'from-purple-500 to-pink-500',
-    description: 'Innovation driven solutions',
+    gradient: "from-purple-500 to-pink-500",
+    description: "Innovation driven solutions",
   },
   {
-    number: '20+',
-    content: 'Industry Partners',
+    number: "20+",
+    content: "Industry Partners",
     icon: Building2,
-    gradient: 'from-green-500 to-emerald-500',
-    description: 'Leading tech companies',
+    gradient: "from-green-500 to-emerald-500",
+    description: "Leading tech companies",
   },
 ];
 
@@ -71,7 +71,7 @@ export default function WhatIsNeo() {
         viewport={{ once: true }}
       >
         <h1 className="mb-2 text-4xl leading-normal font-extrabold md:text-5xl lg:text-6xl">
-          What is{' '}
+          What is{" "}
           <span className="relative">
             <span className="border-b-4 border-[#FBC721] whitespace-nowrap text-[#5FC6E5]">
               NEO Culture
@@ -90,7 +90,7 @@ export default function WhatIsNeo() {
             >
               <Award className="h-6 w-6 text-[#FBC721]" />
             </motion.div>
-          </span>{' '}
+          </span>{" "}
           Tech?
         </h1>
       </motion.div>
@@ -106,8 +106,8 @@ export default function WhatIsNeo() {
         <p className="mt-6 text-lg font-semibold tracking-wide md:text-xl lg:mt-10 lg:text-3xl">
           Founded in 2020, we are the best club for
           <span className="relative text-[#5FC6E5]">
-            {' '}
-            SSET students{' '}
+            {" "}
+            SSET students{" "}
             <motion.span
               className="absolute right-0 -bottom-0.5 left-0 block h-0.5 bg-gradient-to-r from-[#5FC6E5] to-[#FBC721]"
               initial={{ scaleX: 0 }}
@@ -160,7 +160,7 @@ export default function WhatIsNeo() {
                     initial={{ scale: 0 }}
                     whileInView={{ scale: 1 }}
                     transition={{
-                      type: 'spring',
+                      type: "spring",
                       stiffness: 100,
                       delay: 1.2 + index * 0.2,
                     }}
@@ -175,7 +175,7 @@ export default function WhatIsNeo() {
 
                   {/* Title */}
                   <h3 className="mb-2 text-xl font-bold lg:text-2xl">
-                    {item.content.split(' ').map((word, i) => (
+                    {item.content.split(" ").map((word, i) => (
                       <span key={i} className="block">
                         {word}
                       </span>

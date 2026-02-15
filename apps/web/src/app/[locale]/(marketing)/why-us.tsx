@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { Badge } from '@ncthub/ui/badge';
-import { Button } from '@ncthub/ui/button';
+import { Badge } from "@ncthub/ui/badge";
+import { Button } from "@ncthub/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@ncthub/ui/card';
+} from "@ncthub/ui/card";
 import {
   ArrowRight,
   Briefcase,
@@ -17,61 +17,61 @@ import {
   Sparkles,
   Star,
   Users,
-} from '@ncthub/ui/icons';
-import { motion } from 'framer-motion';
-import Link from 'next/link';
+} from "@ncthub/ui/icons";
+import { motion } from "framer-motion";
+import Link from "next/link";
 
 const reasons = [
   {
-    title: 'CLUB DEPARTMENTS',
+    title: "CLUB DEPARTMENTS",
     icon: Briefcase,
     description:
-      'Explore detailed job descriptions for all 4 departments in our comprehensive JD booklet. Find the perfect role that matches your skills, interests, and career goals within NEO Culture Tech.',
-    gradient: 'from-yellow-400 to-orange-500',
+      "Explore detailed job descriptions for all 4 departments in our comprehensive JD booklet. Find the perfect role that matches your skills, interests, and career goals within NEO Culture Tech.",
+    gradient: "from-yellow-400 to-orange-500",
     features: [
-      'Technology Department',
-      'Finance and Logistic Department',
-      'Human Resources Department',
-      'Marketing & Communications Department',
+      "Technology Department",
+      "Finance and Logistic Department",
+      "Human Resources Department",
+      "Marketing & Communications Department",
     ],
-    buttonText: 'View JD Booklet',
-    link: 'https://drive.google.com/file/d/14kWxUjhau_xaohVEj5LvsmmcfeYCElI4/view?usp=sharing',
+    buttonText: "View JD Booklet",
+    link: "https://drive.google.com/file/d/14kWxUjhau_xaohVEj5LvsmmcfeYCElI4/view?usp=sharing",
     isExternal: true,
-    badgeText: 'Find Your Role',
+    badgeText: "Find Your Role",
   },
   {
-    title: 'NETWORKING',
+    title: "NETWORKING",
     icon: Users,
     description:
-      'Build meaningful connections with industry professionals, experienced alumni, and passionate peers. Our network opens doors to internships, mentorships, and career opportunities.',
-    gradient: 'from-blue-400 to-cyan-500',
+      "Build meaningful connections with industry professionals, experienced alumni, and passionate peers. Our network opens doors to internships, mentorships, and career opportunities.",
+    gradient: "from-blue-400 to-cyan-500",
     features: [
-      'Industry Mentor Matching',
-      'Peer Study Groups',
-      'Professional Development',
-      '24/7 Community Support',
+      "Industry Mentor Matching",
+      "Peer Study Groups",
+      "Professional Development",
+      "24/7 Community Support",
     ],
-    buttonText: 'Meet Our Team',
-    link: '/about',
+    buttonText: "Meet Our Team",
+    link: "/about",
     isExternal: false,
-    badgeText: 'Career Growth',
+    badgeText: "Career Growth",
   },
   {
-    title: 'MEMBERSHIP',
+    title: "MEMBERSHIP",
     icon: Heart,
     description:
-      'Be part of a community that believes in inclusive growth and continuous learning. We welcome all students passionate about technology, regardless of their background or experience level.',
-    gradient: 'from-purple-400 to-pink-500',
+      "Be part of a community that believes in inclusive growth and continuous learning. We welcome all students passionate about technology, regardless of their background or experience level.",
+    gradient: "from-purple-400 to-pink-500",
     features: [
-      'Inclusive Learning Environment',
-      'Knowledge Sharing Sessions',
-      'Fun Tech Challenges',
-      'Continuous Skill Development',
+      "Inclusive Learning Environment",
+      "Knowledge Sharing Sessions",
+      "Fun Tech Challenges",
+      "Continuous Skill Development",
     ],
-    buttonText: 'Join Neo Culture Tech',
-    link: 'https://forms.office.com/r/2DFkRBAxHf?origin=lprLink',
+    buttonText: "Join Neo Culture Tech",
+    link: "https://forms.office.com/r/2DFkRBAxHf?origin=lprLink",
     isExternal: true,
-    badgeText: 'Inclusive Community',
+    badgeText: "Inclusive Community",
   },
 ];
 
@@ -94,14 +94,14 @@ export default function WhyUs() {
           viewport={{ once: true }}
           className="mb-6 inline-flex items-center gap-2"
         >
-          <Sparkles className="h-8 w-8 text-yellow-400" />
+          <Sparkles className="h-6 w-6 text-[#FBC721]" />
           <Badge
             variant="outline"
-            className="border-yellow-400/50 px-4 py-2 text-lg text-yellow-400"
+            className="border-[#5FC6E5]/50 px-4 py-2 text-base text-[#5FC6E5]"
           >
             Why Choose Us
           </Badge>
-          <Sparkles className="h-8 w-8 text-yellow-400" />
+          <Sparkles className="h-6 w-6 text-[#FBC721]" />
         </motion.div>
 
         <h2 className="mb-4 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text pb-4 text-4xl font-bold text-transparent drop-shadow-sm md:text-6xl lg:text-8xl">
