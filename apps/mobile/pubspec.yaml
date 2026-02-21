@@ -28,7 +28,7 @@ dependencies:
   image_cropper: ^11.0.0
   image_picker: ^1.2.1
   intl: ^0.20.2
-  json_annotation: ^4.10.0
+  json_annotation: ^4.11.0
   lucide_icons: ^0.257.0
   mime: ^2.0.0
   package_info_plus: ^9.0.0
