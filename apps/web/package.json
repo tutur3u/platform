@@ -40,7 +40,7 @@
     "@google/genai": "^1.42.0",
     "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^5.2.2",
-    "@json-render/core": "^0.9.1",
+    "@json-render/core": "^0.10.0",
     "@json-render/react": "^0.9.1",
     "@mantine/charts": "^8.3.15",
     "@mantine/core": "^8.3.15",

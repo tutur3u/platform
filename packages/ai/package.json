@@ -40,7 +40,7 @@
     "@ai-sdk/revai": "^2.0.20",
     "@ai-sdk/togetherai": "^2.0.33",
     "@ai-sdk/xai": "^3.0.58",
-    "@json-render/core": "^0.9.1",
+    "@json-render/core": "^0.10.0",
     "@json-render/react": "^0.9.1",
     "@streamdown/cjk": "^1.0.2",
     "@streamdown/code": "^1.0.3",
