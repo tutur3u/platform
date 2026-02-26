@@ -8,6 +8,7 @@ import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/cubit/transaction_list_cubit.dart';
+import 'package:mobile/features/finance/view/transaction_detail_sheet.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -401,8 +402,50 @@ class _TransactionTile extends StatelessWidget {
     ].join(' \u00b7 ');
 
     return shad.GhostButton(
-      // TODO(tuturuuu): Implement transaction details page.
-      onPressed: () {},
+      onPressed: () async {
+        final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+        if (wsId == null) return;
+
+        final changed = await showTransactionDetailSheet(
+          context,
+          wsId: wsId,
+          transaction: tx,
+          onSave:
+              ({
+                required transactionId,
+                required amount,
+                description,
+                takenAt,
+                walletId,
+                categoryId,
+                reportOptIn,
+                isAmountConfidential,
+                isDescriptionConfidential,
+                isCategoryConfidential,
+              }) {
+                return FinanceRepository().updateTransaction(
+                  wsId: wsId,
+                  transactionId: transactionId,
+                  amount: amount,
+                  description: description,
+                  takenAt: takenAt,
+                  walletId: walletId,
+                  categoryId: categoryId,
+                  reportOptIn: reportOptIn,
+                  isAmountConfidential: isAmountConfidential,
+                  isDescriptionConfidential: isDescriptionConfidential,
+                  isCategoryConfidential: isCategoryConfidential,
+                );
+              },
+          onDelete: (transactionId) {
+            return FinanceRepository().deleteTransaction(transactionId);
+          },
+        );
+
+        if (!context.mounted || !changed) return;
+        final cubit = context.read<TransactionListCubit>();
+        await cubit.setSearch(cubit.state.search);
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(

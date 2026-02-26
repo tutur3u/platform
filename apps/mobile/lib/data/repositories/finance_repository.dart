@@ -1,20 +1,22 @@
+import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 
 /// Repository for finance operations (wallets, transactions, categories).
 class FinanceRepository {
+  FinanceRepository({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
+
+  final ApiClient _api;
+
   // ── Wallets ─────────────────────────────────────
 
   Future<List<Wallet>> getWallets(String wsId) async {
-    final response = await supabase
-        .from('workspace_wallets')
-        .select()
-        .eq('ws_id', wsId)
-        .order('name');
+    final response = await _api.getJsonList(FinanceEndpoints.wallets(wsId));
 
-    return (response as List<dynamic>)
+    return response
         .map((e) => Wallet.fromJson(e as Map<String, dynamic>))
         .toList();
   }
@@ -111,16 +113,72 @@ class FinanceRepository {
         .toList();
   }
 
+  Future<Transaction> updateTransaction({
+    required String wsId,
+    required String transactionId,
+    required double amount,
+    String? description,
+    DateTime? takenAt,
+    String? walletId,
+    String? categoryId,
+    bool? reportOptIn,
+    bool? isAmountConfidential,
+    bool? isDescriptionConfidential,
+    bool? isCategoryConfidential,
+  }) async {
+    final body = <String, dynamic>{'amount': amount};
+
+    if (description != null) {
+      body['description'] = description;
+    }
+
+    if (takenAt != null) {
+      body['taken_at'] = takenAt.toUtc().toIso8601String();
+    }
+
+    if (walletId != null) {
+      body['origin_wallet_id'] = walletId;
+    }
+
+    if (categoryId != null) {
+      body['category_id'] = categoryId;
+    }
+
+    if (reportOptIn != null) {
+      body['report_opt_in'] = reportOptIn;
+    }
+
+    if (isAmountConfidential != null) {
+      body['is_amount_confidential'] = isAmountConfidential;
+    }
+
+    if (isDescriptionConfidential != null) {
+      body['is_description_confidential'] = isDescriptionConfidential;
+    }
+
+    if (isCategoryConfidential != null) {
+      body['is_category_confidential'] = isCategoryConfidential;
+    }
+
+    await _api.putJson(FinanceEndpoints.transaction(wsId, transactionId), body);
+
+    final refreshed = await _api.getJson(
+      FinanceEndpoints.transaction(wsId, transactionId),
+    );
+
+    return Transaction.fromJson(refreshed);
+  }
+
+  Future<void> deleteTransaction(String transactionId) async {
+    await supabase.from('wallet_transactions').delete().eq('id', transactionId);
+  }
+
   // ── Categories ──────────────────────────────────
 
   Future<List<TransactionCategory>> getCategories(String wsId) async {
-    final response = await supabase
-        .from('transaction_categories')
-        .select()
-        .eq('ws_id', wsId)
-        .order('name');
+    final response = await _api.getJsonList(FinanceEndpoints.categories(wsId));
 
-    return (response as List<dynamic>)
+    return response
         .map((e) => TransactionCategory.fromJson(e as Map<String, dynamic>))
         .toList();
   }

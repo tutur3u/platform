@@ -12,6 +12,10 @@ class Transaction extends Equatable {
     this.categoryName,
     this.walletName,
     this.walletCurrency,
+    this.reportOptIn,
+    this.isAmountConfidential,
+    this.isDescriptionConfidential,
+    this.isCategoryConfidential,
   });
 
   factory Transaction.fromJson(Map<String, dynamic> json) {
@@ -31,9 +35,15 @@ class Transaction extends Equatable {
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : null,
-      categoryName: category?['name'] as String?,
-      walletName: wallet?['name'] as String?,
-      walletCurrency: wallet?['currency'] as String?,
+      categoryName:
+          category?['name'] as String? ?? json['category_name'] as String?,
+      walletName: wallet?['name'] as String? ?? json['wallet_name'] as String?,
+      walletCurrency:
+          wallet?['currency'] as String? ?? json['wallet_currency'] as String?,
+      reportOptIn: json['report_opt_in'] as bool?,
+      isAmountConfidential: json['is_amount_confidential'] as bool?,
+      isDescriptionConfidential: json['is_description_confidential'] as bool?,
+      isCategoryConfidential: json['is_category_confidential'] as bool?,
     );
   }
 
@@ -54,6 +64,11 @@ class Transaction extends Equatable {
   /// Joined from `workspace_wallets.currency`.
   final String? walletCurrency;
 
+  final bool? reportOptIn;
+  final bool? isAmountConfidential;
+  final bool? isDescriptionConfidential;
+  final bool? isCategoryConfidential;
+
   Map<String, dynamic> toJson() => {
     'id': id,
     'amount': amount,
@@ -62,6 +77,10 @@ class Transaction extends Equatable {
     'wallet_id': walletId,
     'taken_at': takenAt?.toIso8601String(),
     'created_at': createdAt?.toIso8601String(),
+    'report_opt_in': reportOptIn,
+    'is_amount_confidential': isAmountConfidential,
+    'is_description_confidential': isDescriptionConfidential,
+    'is_category_confidential': isCategoryConfidential,
   };
 
   @override
@@ -76,5 +95,9 @@ class Transaction extends Equatable {
     categoryName,
     walletName,
     walletCurrency,
+    reportOptIn,
+    isAmountConfidential,
+    isDescriptionConfidential,
+    isCategoryConfidential,
   ];
 }

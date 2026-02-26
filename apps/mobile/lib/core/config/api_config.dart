@@ -34,3 +34,14 @@ abstract final class ProfileEndpoints {
   static const avatarUploadUrl = '/api/v1/users/me/avatar/upload-url';
   static const avatar = '/api/v1/users/me/avatar';
 }
+
+/// Finance endpoint paths.
+abstract final class FinanceEndpoints {
+  static String wallets(String wsId) => '/api/workspaces/$wsId/wallets';
+
+  static String categories(String wsId) =>
+      '/api/workspaces/$wsId/transactions/categories';
+
+  static String transaction(String wsId, String transactionId) =>
+      '/api/workspaces/$wsId/transactions/$transactionId';
+}

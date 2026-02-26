@@ -366,6 +366,54 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeNoSearchResults => 'No matching transactions';
 
   @override
+  String get financeTransactionDetails => 'Transaction details';
+
+  @override
+  String get financeEditTransaction => 'Edit transaction';
+
+  @override
+  String get financeDeleteTransaction => 'Delete transaction';
+
+  @override
+  String get financeDeleteTransactionConfirm => 'Delete this transaction?';
+
+  @override
+  String get financeTransactionUpdated => 'Transaction updated';
+
+  @override
+  String get financeTransactionDeleted => 'Transaction deleted';
+
+  @override
+  String get financeAmount => 'Amount';
+
+  @override
+  String get financeDescription => 'Description';
+
+  @override
+  String get financeTakenAt => 'Taken at';
+
+  @override
+  String get financeCategory => 'Category';
+
+  @override
+  String get financeWallet => 'Wallet';
+
+  @override
+  String get financeInvalidAmount => 'Enter a valid amount';
+
+  @override
+  String get financeReportOptIn => 'Include in reports';
+
+  @override
+  String get financeConfidentialAmount => 'Confidential amount';
+
+  @override
+  String get financeConfidentialDescription => 'Confidential description';
+
+  @override
+  String get financeConfidentialCategory => 'Confidential category';
+
+  @override
   String get timerTitle => 'Time tracker';
 
   @override

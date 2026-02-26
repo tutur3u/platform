@@ -366,6 +366,54 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeNoSearchResults => 'Không tìm thấy giao dịch';
 
   @override
+  String get financeTransactionDetails => 'Chi tiết giao dịch';
+
+  @override
+  String get financeEditTransaction => 'Sửa giao dịch';
+
+  @override
+  String get financeDeleteTransaction => 'Xóa giao dịch';
+
+  @override
+  String get financeDeleteTransactionConfirm => 'Xóa giao dịch này?';
+
+  @override
+  String get financeTransactionUpdated => 'Đã cập nhật giao dịch';
+
+  @override
+  String get financeTransactionDeleted => 'Đã xóa giao dịch';
+
+  @override
+  String get financeAmount => 'Số tiền';
+
+  @override
+  String get financeDescription => 'Mô tả';
+
+  @override
+  String get financeTakenAt => 'Thời gian ghi nhận';
+
+  @override
+  String get financeCategory => 'Danh mục';
+
+  @override
+  String get financeWallet => 'Ví';
+
+  @override
+  String get financeInvalidAmount => 'Vui lòng nhập số tiền hợp lệ';
+
+  @override
+  String get financeReportOptIn => 'Bao gồm trong báo cáo';
+
+  @override
+  String get financeConfidentialAmount => 'Ẩn số tiền';
+
+  @override
+  String get financeConfidentialDescription => 'Ẩn mô tả';
+
+  @override
+  String get financeConfidentialCategory => 'Ẩn danh mục';
+
+  @override
   String get timerTitle => 'Bấm giờ';
 
   @override

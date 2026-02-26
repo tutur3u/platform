@@ -793,6 +793,102 @@ abstract class AppLocalizations {
   /// **'No matching transactions'**
   String get financeNoSearchResults;
 
+  /// No description provided for @financeTransactionDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction details'**
+  String get financeTransactionDetails;
+
+  /// No description provided for @financeEditTransaction.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit transaction'**
+  String get financeEditTransaction;
+
+  /// No description provided for @financeDeleteTransaction.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete transaction'**
+  String get financeDeleteTransaction;
+
+  /// No description provided for @financeDeleteTransactionConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this transaction?'**
+  String get financeDeleteTransactionConfirm;
+
+  /// No description provided for @financeTransactionUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction updated'**
+  String get financeTransactionUpdated;
+
+  /// No description provided for @financeTransactionDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction deleted'**
+  String get financeTransactionDeleted;
+
+  /// No description provided for @financeAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get financeAmount;
+
+  /// No description provided for @financeDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get financeDescription;
+
+  /// No description provided for @financeTakenAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Taken at'**
+  String get financeTakenAt;
+
+  /// No description provided for @financeCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get financeCategory;
+
+  /// No description provided for @financeWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet'**
+  String get financeWallet;
+
+  /// No description provided for @financeInvalidAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid amount'**
+  String get financeInvalidAmount;
+
+  /// No description provided for @financeReportOptIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Include in reports'**
+  String get financeReportOptIn;
+
+  /// No description provided for @financeConfidentialAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Confidential amount'**
+  String get financeConfidentialAmount;
+
+  /// No description provided for @financeConfidentialDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Confidential description'**
+  String get financeConfidentialDescription;
+
+  /// No description provided for @financeConfidentialCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Confidential category'**
+  String get financeConfidentialCategory;
+
   /// No description provided for @timerTitle.
   ///
   /// In en, this message translates to:
