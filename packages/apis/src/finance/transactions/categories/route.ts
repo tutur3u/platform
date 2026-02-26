@@ -14,7 +14,7 @@ export async function GET(req: Request, { params }: Params) {
 
   const permissions = await getPermissions({
     wsId,
-    request: req
+    request: req,
   });
 
   if (!permissions) {
@@ -54,7 +54,7 @@ export async function POST(req: Request, { params }: Params) {
 
   const permissions = await getPermissions({
     wsId,
-    request: req
+    request: req,
   });
 
   if (!permissions) {

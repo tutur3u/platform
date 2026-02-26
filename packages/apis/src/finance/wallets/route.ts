@@ -14,7 +14,7 @@ export async function GET(request: Request, { params }: Params) {
   const { wsId } = await params;
   const permissions = await getPermissions({
     wsId,
-    request
+    request,
   });
 
   if (!permissions) {
