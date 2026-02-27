@@ -150,8 +150,6 @@ GoRouter createAppRouter(
         builder: (context, state) => const WorkspaceSelectPage(),
       ),
 
-
-
       // ── Main shell with bottom navigation ────────
       ShellRoute(
         builder: (context, state, child) =>
@@ -182,15 +180,15 @@ GoRouter createAppRouter(
             path: Routes.settings,
             builder: (context, state) => const SettingsPage(),
           ),
-                // ── Time tracker sub-pages (full-page, outside shell) ──
-      GoRoute(
-        path: Routes.timerRequests,
-        builder: (context, state) => const TimeTrackerRequestsPage(),
-      ),
-      GoRoute(
-        path: Routes.timerManagement,
-        builder: (context, state) => const TimeTrackerManagementPage(),
-      ),
+          // ── Time tracker sub-pages (full-page, outside shell) ──
+          GoRoute(
+            path: Routes.timerRequests,
+            builder: (context, state) => const TimeTrackerRequestsPage(),
+          ),
+          GoRoute(
+            path: Routes.timerManagement,
+            builder: (context, state) => const TimeTrackerManagementPage(),
+          ),
           GoRoute(
             path: Routes.profileRoot,
             builder: (context, state) => const ProfilePage(),
