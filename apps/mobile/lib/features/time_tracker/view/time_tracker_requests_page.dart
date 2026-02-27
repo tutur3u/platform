@@ -19,6 +19,7 @@ import 'package:mobile/features/time_tracker/widgets/threshold_settings_dialog.d
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+import 'package:mobile/core/router/routes.dart';
 
 class TimeTrackerRequestsPage extends StatelessWidget {
   const TimeTrackerRequestsPage({super.key, this.repository});
@@ -92,7 +93,14 @@ class _RequestsViewState extends State<_RequestsView> {
           leading: [
             shad.OutlineButton(
               density: shad.ButtonDensity.icon,
-              onPressed: () => context.pop(),
+              onPressed: () {
+                final router = GoRouter.of(context);
+                if (router.canPop()) {
+                  router.pop();
+                  return;
+                }
+                context.go(Routes.timer);
+              },
               child: const Icon(Icons.arrow_back),
             ),
           ],

@@ -17,6 +17,7 @@ class AppRegistry {
       icon: Icons.check_box_outlined,
       labelBuilder: _labelTasks,
       pageBuilder: _pageTasks,
+      miniAppNavItems: _tasksMiniNav,
       isPinned: true,
     ),
     AppModule(
@@ -25,6 +26,7 @@ class AppRegistry {
       icon: Icons.calendar_today_outlined,
       labelBuilder: _labelCalendar,
       pageBuilder: _pageCalendar,
+      miniAppNavItems: _calendarMiniNav,
       isPinned: true,
     ),
     AppModule(
@@ -33,6 +35,7 @@ class AppRegistry {
       icon: Icons.account_balance_wallet_outlined,
       labelBuilder: _labelFinance,
       pageBuilder: _pageFinance,
+      miniAppNavItems: _financeMiniNav,
       isPinned: true,
     ),
     AppModule(
@@ -41,7 +44,68 @@ class AppRegistry {
       icon: Icons.timer_outlined,
       labelBuilder: _labelTimer,
       pageBuilder: _pageTimer,
+      miniAppNavItems: _timerMiniNav,
       isPinned: true,
+    ),
+  ];
+
+  static const List<MiniAppNavItem> _tasksMiniNav = [
+    MiniAppNavItem(
+      id: 'tasks_home',
+      route: Routes.tasks,
+      icon: Icons.check_box_outlined,
+      labelBuilder: _labelTasks,
+    ),
+  ];
+
+  static const List<MiniAppNavItem> _calendarMiniNav = [
+    MiniAppNavItem(
+      id: 'calendar_home',
+      route: Routes.calendar,
+      icon: Icons.calendar_today_outlined,
+      labelBuilder: _labelCalendar,
+    ),
+  ];
+
+  static const List<MiniAppNavItem> _financeMiniNav = [
+    MiniAppNavItem(
+      id: 'finance_home',
+      route: Routes.finance,
+      icon: Icons.home_outlined,
+      labelBuilder: _labelHome,
+    ),
+    MiniAppNavItem(
+      id: 'finance_transactions',
+      route: Routes.transactions,
+      icon: Icons.receipt_long_outlined,
+      labelBuilder: _labelRecentTransactions,
+    ),
+    MiniAppNavItem(
+      id: 'finance_settings',
+      route: Routes.settings,
+      icon: Icons.settings_outlined,
+      labelBuilder: _labelSettings,
+    ),
+  ];
+
+  static const List<MiniAppNavItem> _timerMiniNav = [
+    MiniAppNavItem(
+      id: 'timer_home',
+      route: Routes.timer,
+      icon: Icons.timer_outlined,
+      labelBuilder: _labelTimer,
+    ),
+    MiniAppNavItem(
+      id: 'timer_requests',
+      route: Routes.timerRequests,
+      icon: Icons.pending_actions,
+      labelBuilder: _timerRequestsTitle,
+    ),
+    MiniAppNavItem(
+      id: 'timer_management',
+      route: Routes.timerManagement,
+      icon: Icons.admin_panel_settings,
+      labelBuilder: _ltimerManagementTitle,
     ),
   ];
 
@@ -89,6 +153,14 @@ class AppRegistry {
   static String _labelCalendar(AppLocalizations l10n) => l10n.navCalendar;
   static String _labelFinance(AppLocalizations l10n) => l10n.navFinance;
   static String _labelTimer(AppLocalizations l10n) => l10n.navTimer;
+  static String _labelHome(AppLocalizations l10n) => l10n.navHome;
+  static String _labelSettings(AppLocalizations l10n) => l10n.navSettings;
+  static String _labelRecentTransactions(AppLocalizations l10n) =>
+      l10n.financeRecentTransactions;
+  static String _timerRequestsTitle(AppLocalizations l10n) =>
+      l10n.timerRequestsTitle;
+  static String _ltimerManagementTitle(AppLocalizations l10n) =>
+      l10n.timerManagementTitle;
 
   static Widget _pageTasks(BuildContext context) => const TaskListPage();
   static Widget _pageCalendar(BuildContext context) => const CalendarPage();

@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart' as lucide;
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
@@ -291,7 +292,14 @@ class _TransactionListViewState extends State<_TransactionListView> {
           leading: [
             shad.OutlineButton(
               density: shad.ButtonDensity.icon,
-              onPressed: () => context.pop(),
+              onPressed: () {
+                final router = GoRouter.of(context);
+                if (router.canPop()) {
+                  router.pop();
+                  return;
+                }
+                context.go(Routes.finance);
+              },
               child: const Icon(Icons.arrow_back),
             ),
           ],

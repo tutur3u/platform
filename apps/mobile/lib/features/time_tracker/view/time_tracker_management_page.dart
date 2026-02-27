@@ -12,6 +12,7 @@ import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+import 'package:mobile/core/router/routes.dart';
 
 class TimeTrackerManagementPage extends StatefulWidget {
   const TimeTrackerManagementPage({super.key, this.repository});
@@ -157,7 +158,14 @@ class _TimeTrackerManagementPageState extends State<TimeTrackerManagementPage> {
           leading: [
             shad.OutlineButton(
               density: shad.ButtonDensity.icon,
-              onPressed: () => context.pop(),
+              onPressed: () {
+                final router = GoRouter.of(context);
+                if (router.canPop()) {
+                  router.pop();
+                  return;
+                }
+                context.go(Routes.timer);
+              },
               child: const Icon(Icons.arrow_back),
             ),
           ],
