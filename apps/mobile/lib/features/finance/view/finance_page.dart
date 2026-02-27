@@ -14,6 +14,7 @@ import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/apps/widgets/apps_back_button.dart';
 import 'package:mobile/features/finance/cubit/finance_cubit.dart';
 import 'package:mobile/features/finance/view/transaction_detail_action.dart';
+import 'package:mobile/features/shell/view/avatar_dropdown.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -99,6 +100,7 @@ class _FinanceView extends StatelessWidget {
         shad.AppBar(
           leading: const [AppsBackButton()],
           title: Text(l10n.financeTitle),
+          trailing: const [AvatarDropdown()],
         ),
       ],
       child: BlocListener<WorkspaceCubit, WorkspaceState>(

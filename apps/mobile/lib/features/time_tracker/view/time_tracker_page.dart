@@ -11,6 +11,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/apps/widgets/apps_back_button.dart';
+import 'package:mobile/features/shell/view/avatar_dropdown.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
 import 'package:mobile/features/time_tracker/widgets/history_tab.dart';
@@ -120,6 +121,7 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
                 shad.AppBar(
                   leading: const [AppsBackButton()],
                   title: Text(l10n.timerTitle),
+                  trailing: const [AvatarDropdown()],
                 ),
               ],
               child: const Center(child: shad.CircularProgressIndicator()),
@@ -132,6 +134,7 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
                 shad.AppBar(
                   leading: const [AppsBackButton()],
                   title: Text(l10n.timerTitle),
+                  trailing: const [AvatarDropdown()],
                 ),
               ],
               child: _ErrorView(error: state.error),
@@ -144,6 +147,7 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
                 leading: const [AppsBackButton()],
                 title: Text(l10n.timerTitle),
                 trailing: [
+                  const AvatarDropdown(),
                   shad.IconButton.ghost(
                     onPressed: () {
                       shad.showDropdown<void>(

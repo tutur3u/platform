@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
 import 'package:mobile/features/apps/widgets/apps_back_button.dart';
@@ -17,6 +16,7 @@ import 'package:mobile/features/calendar/widgets/month_view.dart';
 import 'package:mobile/features/calendar/widgets/three_day_view.dart';
 import 'package:mobile/features/calendar/widgets/week_view.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
+import 'package:mobile/features/shell/view/avatar_dropdown.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -57,15 +57,9 @@ class _CalendarView extends StatelessWidget {
       headers: [
         shad.AppBar(
           leading: const [AppsBackButton()],
-          title: BlocBuilder<CalendarCubit, CalendarState>(
-            buildWhen: (prev, curr) =>
-                prev.effectiveFocusedMonth != curr.effectiveFocusedMonth,
-            builder: (context, state) {
-              final month = state.effectiveFocusedMonth;
-              return Text(DateFormat.yMMMM().format(month));
-            },
-          ),
+          title: Text(l10n.calendarTitle),
           trailing: [
+            const AvatarDropdown(),
             // Calendar connections.
             Tooltip(
               message: l10n.calendarConnectionsTitle,

@@ -10,10 +10,8 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/cubit/app_tab_state.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
+import 'package:mobile/features/apps/widgets/workspace_selector_button.dart';
 import 'package:mobile/features/shell/view/avatar_dropdown.dart';
-import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
-import 'package:mobile/features/workspace/cubit/workspace_state.dart';
-import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -71,7 +69,8 @@ class _ShellPageState extends State<ShellPage> {
     );
   }
 
-  Widget _buildNormalizedChild() {
+  Widget _buildNormalizedChild({bool preserveTop = false}) {
+    if (preserveTop) return widget.child;
     return MediaQuery.removePadding(
       context: context,
       removeTop: true,
@@ -85,11 +84,10 @@ class _ShellPageState extends State<ShellPage> {
     final items = _buildNavItems(context, state, l10n);
     final selectedIndex = _calculateSelectedIndex(context);
     final selectedKey = _keyForIndex(selectedIndex);
+    final moduleRoute = _isModuleRoute(context);
 
     return shad.Scaffold(
-      headers: [
-        _buildAppBar(context, l10n),
-      ],
+      headers: moduleRoute ? const [] : [_buildAppBar(context)],
       footers: [
         SafeArea(
           top: false,
@@ -116,7 +114,7 @@ class _ShellPageState extends State<ShellPage> {
           ),
         ),
       ],
-      child: _buildNormalizedChild(),
+      child: _buildNormalizedChild(preserveTop: moduleRoute),
     );
   }
 
@@ -129,6 +127,7 @@ class _ShellPageState extends State<ShellPage> {
     final l10n = context.l10n;
     final selectedIndex = _calculateSelectedIndex(context);
     final selectedKey = _keyForIndex(selectedIndex, useGlobalKey: false);
+    final moduleRoute = _isModuleRoute(context);
     void onSelected(Key? key) =>
         _onItemTapped(_indexForKey(key), context, state);
 
@@ -151,46 +150,20 @@ class _ShellPageState extends State<ShellPage> {
     }
 
     return shad.Scaffold(
-      headers: [
-        _buildAppBar(context, l10n),
-      ],
+      headers: moduleRoute ? const [] : [_buildAppBar(context)],
       child: Row(
         children: [
           sideNav,
-          Expanded(child: _buildNormalizedChild()),
+          Expanded(child: _buildNormalizedChild(preserveTop: moduleRoute)),
         ],
       ),
     );
   }
 
-  shad.AppBar _buildAppBar(BuildContext context, AppLocalizations l10n) {
-    return shad.AppBar(
-      title: BlocBuilder<WorkspaceCubit, WorkspaceState>(
-        buildWhen: (prev, curr) =>
-            prev.currentWorkspace != curr.currentWorkspace,
-        builder: (context, state) {
-          return shad.GhostButton(
-            onPressed: () => showWorkspacePickerSheet(context),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(
-                  child: Text(
-                    state.currentWorkspace?.name ?? l10n.appTitle,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const shad.Gap(4),
-                const Icon(Icons.arrow_drop_down, size: 20),
-              ],
-            ),
-          );
-        },
-      ),
-      trailing: const [
-        // Avatar dropdown
-        AvatarDropdown(),
-      ],
+  shad.AppBar _buildAppBar(BuildContext context) {
+    return const shad.AppBar(
+      title: WorkspaceSelectorButton(),
+      trailing: [AvatarDropdown()],
     );
   }
 
@@ -224,14 +197,14 @@ class _ShellPageState extends State<ShellPage> {
         child: const Icon(Icons.home_outlined, size: _navIconSize),
       ),
       shad.NavigationItem(
-        key: useGlobalKey ? _appsTabKey : _appsKey,
-        label: _buildNavLabel(appsLabel, labelStyle, compact: compact),
-        child: Icon(appsIcon, size: _navIconSize),
-      ),
-      shad.NavigationItem(
         key: _assistantKey,
         label: _buildNavLabel(l10n.navAssistant, labelStyle, compact: compact),
         child: const Icon(Icons.auto_awesome_outlined, size: _navIconSize),
+      ),
+      shad.NavigationItem(
+        key: useGlobalKey ? _appsTabKey : _appsKey,
+        label: _buildNavLabel(appsLabel, labelStyle, compact: compact),
+        child: Icon(appsIcon, size: _navIconSize),
       ),
     ];
   }
@@ -268,7 +241,7 @@ class _ShellPageState extends State<ShellPage> {
       return;
     }
     currentContext.go(Routes.apps);
-    _lastTabIndex = 1;
+    _lastTabIndex = 2;
     _tapStopwatch
       ..reset()
       ..start();
@@ -288,14 +261,14 @@ class _ShellPageState extends State<ShellPage> {
         _tapStopwatch.isRunning &&
         _tapStopwatch.elapsed < const Duration(milliseconds: 300);
 
-    if (index == 1 && isDoubleTap) {
+    if (index == 2 && isDoubleTap) {
       await _openAppsDrawerFromAppsTab();
       return;
     }
 
     final route = switch (index) {
-      1 => appRoute ?? Routes.apps,
-      2 => Routes.assistant,
+      1 => Routes.assistant,
+      2 => appRoute ?? Routes.apps,
       _ => Routes.home,
     };
     if (!context.mounted) {
@@ -329,7 +302,7 @@ class _ShellPageState extends State<ShellPage> {
 
     final now = DateTime.now();
     final lastTap = _lastAppsTabPointerUpAt;
-    final isCompactAppsReselection = _calculateSelectedIndex(context) == 1;
+    final isCompactAppsReselection = _calculateSelectedIndex(context) == 2;
     if (isCompactAppsReselection &&
         lastTap != null &&
         now.difference(lastTap) < const Duration(milliseconds: 300)) {
@@ -346,23 +319,28 @@ class _ShellPageState extends State<ShellPage> {
   }
 
   Key _keyForIndex(int index, {bool useGlobalKey = true}) => switch (index) {
-    1 => useGlobalKey ? _appsTabKey : _appsKey,
-    2 => _assistantKey,
+    1 => _assistantKey,
+    2 => useGlobalKey ? _appsTabKey : _appsKey,
     _ => _homeKey,
   };
 
   static int _indexForKey(Key? key) {
-    if (key == _appsKey || key is GlobalKey) return 1;
-    if (key == _assistantKey) return 2;
+    if (key == _assistantKey) return 1;
+    if (key == _appsKey || key is GlobalKey) return 2;
     return 0;
   }
 
   static int _calculateSelectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
 
-    if (location.startsWith(Routes.apps)) return 1;
-    if (AppRegistry.moduleFromLocation(location) != null) return 1;
-    if (location.startsWith(Routes.assistant)) return 2;
+    if (location.startsWith(Routes.assistant)) return 1;
+    if (location.startsWith(Routes.apps)) return 2;
+    if (AppRegistry.moduleFromLocation(location) != null) return 2;
     return 0; // home
+  }
+
+  static bool _isModuleRoute(BuildContext context) {
+    final location = GoRouterState.of(context).matchedLocation;
+    return AppRegistry.moduleFromLocation(location) != null;
   }
 }
