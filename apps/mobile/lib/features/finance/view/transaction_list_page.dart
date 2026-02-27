@@ -50,6 +50,7 @@ class _DateGroup {
 
 List<_DateGroup> _groupByDate(
   List<Transaction> transactions,
+  AppLocalizations l10n,
 ) {
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
@@ -73,9 +74,9 @@ List<_DateGroup> _groupByDate(
       orderedKeys.add(key);
       groups[key] = [];
       if (day == today) {
-        fullLabels[key] = 'Today';
+        fullLabels[key] = l10n.financeToday;
       } else if (day == yesterday) {
-        fullLabels[key] = 'Yesterday';
+        fullLabels[key] = l10n.financeYesterday;
       } else {
         final shortLabel = shortFormat.format(day);
         fullLabels[key] = fullFormat.format(day);
@@ -343,7 +344,7 @@ class _TransactionListViewState extends State<_TransactionListView> {
                     return _EmptyView(hasSearch: state.search.isNotEmpty);
                   }
 
-                  final groups = _groupByDate(state.transactions);
+                  final groups = _groupByDate(state.transactions, l10n);
                   return RefreshIndicator(
                     onRefresh: _onRefresh,
                     child: ListView.builder(
@@ -399,6 +400,7 @@ class _DayGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
+    final l10n = context.l10n;
     final colorScheme = theme.colorScheme;
     final stats = group.stats;
     final currency =
@@ -462,7 +464,8 @@ class _DayGroup extends StatelessWidget {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              '${stats.count} tx',
+                              '${stats.count} '
+                              '${l10n.financeTransactionCountShort}',
                               style: theme.typography.xSmall.copyWith(
                                 color: colorScheme.mutedForeground,
                                 fontWeight: FontWeight.w600,
@@ -532,7 +535,7 @@ class _DayGroup extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                'Net  ',
+                                '${l10n.financeNet}  ',
                                 style: theme.typography.xSmall.copyWith(
                                   color: colorScheme.mutedForeground,
                                 ),
@@ -561,25 +564,28 @@ class _DayGroup extends StatelessWidget {
                   ),
                 ),
               ),
-              AnimatedCrossFade(
-                firstChild: const SizedBox.shrink(),
-                secondChild: Column(
-                  children: [
-                    for (var i = 0; i < group.transactions.length; i++) ...[
-                      _TransactionTile(
-                        tx: group.transactions[i],
-                        onRefresh: onRefresh,
-                      ),
-                      if (i < group.transactions.length - 1)
-                        const SizedBox(height: 8),
-                    ],
-                    const SizedBox(height: 4),
-                  ],
-                ),
-                crossFadeState: isExpanded
-                    ? CrossFadeState.showSecond
-                    : CrossFadeState.showFirst,
+              AnimatedSize(
                 duration: const Duration(milliseconds: 180),
+                curve: Curves.easeInOut,
+                child: isExpanded
+                    ? Column(
+                        children: [
+                          for (
+                            var i = 0;
+                            i < group.transactions.length;
+                            i++
+                          ) ...[
+                            _TransactionTile(
+                              tx: group.transactions[i],
+                              onRefresh: onRefresh,
+                            ),
+                            if (i < group.transactions.length - 1)
+                              const SizedBox(height: 8),
+                          ],
+                          const SizedBox(height: 4),
+                        ],
+                      )
+                    : const SizedBox.shrink(),
               ),
             ],
           ),
@@ -784,7 +790,7 @@ class _TransactionTile extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.only(top: 2),
                         child: Text(
-                          'Transfer',
+                          context.l10n.financeTransfer,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: theme.typography.xSmall.copyWith(

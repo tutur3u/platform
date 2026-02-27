@@ -304,7 +304,11 @@ class _HistoryTabState extends State<HistoryTab> {
           session: session,
           categories: cubit.state.categories,
           thresholdDays: cubit.state.thresholdDays,
-          onDelete: () => _deleteSession(context, session.id),
+          onDelete: () => _deleteSession(
+            context,
+            session.id,
+            throwOnError: true,
+          ),
           onSave:
               ({
                 title,
@@ -367,7 +371,11 @@ class _HistoryTabState extends State<HistoryTab> {
     );
   }
 
-  Future<void> _deleteSession(BuildContext context, String sessionId) {
+  Future<void> _deleteSession(
+    BuildContext context,
+    String sessionId, {
+    bool throwOnError = false,
+  }) {
     final cubit = context.read<TimeTrackerCubit>();
     final wsId =
         context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '';
@@ -376,7 +384,7 @@ class _HistoryTabState extends State<HistoryTab> {
       sessionId,
       wsId,
       userId,
-      throwOnError: true,
+      throwOnError: throwOnError,
     );
   }
 

@@ -60,7 +60,17 @@ class TransactionListCubit extends Cubit<TransactionListState> {
   }
 
   Future<void> _fetch() async {
-    if (_wsId.isEmpty) return;
+    if (_wsId.isEmpty) {
+      emit(
+        state.copyWith(
+          status: TransactionListStatus.loaded,
+          hasMore: false,
+          clearCursor: true,
+          clearError: true,
+        ),
+      );
+      return;
+    }
     try {
       final result = await _repo.getTransactionsInfinite(
         wsId: _wsId,
