@@ -9,6 +9,7 @@ import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 Future<bool> showTransactionDetailSheet(
@@ -197,7 +198,9 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
 
     await shad.showDialog<void>(
       context: context,
-      builder: (_) => _DeleteTransactionDialog(
+      builder: (_) => AsyncDeleteConfirmationDialog(
+        toastContext: context,
+        maxWidth: MediaQuery.of(context).size.width * 0.85,
         title: l10n.financeDeleteTransaction,
         message: l10n.financeDeleteTransactionConfirm,
         cancelLabel: l10n.commonCancel,
@@ -237,6 +240,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
         content: Text(ctx.l10n.financeTransactionUpdated),
       ),
     );
+    Navigator.of(context).pop(true);
   }
 }
 
@@ -696,77 +700,6 @@ class _ToggleRow extends StatelessWidget {
         ),
       ],
     );
-  }
-}
-
-class _DeleteTransactionDialog extends StatefulWidget {
-  const _DeleteTransactionDialog({
-    required this.onConfirm,
-    required this.title,
-    required this.message,
-    required this.cancelLabel,
-    required this.confirmLabel,
-  });
-
-  final Future<void> Function() onConfirm;
-  final String title;
-  final String message;
-  final String cancelLabel;
-  final String confirmLabel;
-
-  @override
-  State<_DeleteTransactionDialog> createState() =>
-      _DeleteTransactionDialogState();
-}
-
-class _DeleteTransactionDialogState extends State<_DeleteTransactionDialog> {
-  bool _isDeleting = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: SizedBox(
-        width: MediaQuery.of(context).size.width * 0.85,
-        child: shad.AlertDialog(
-          title: Text(widget.title),
-          content: Text(widget.message),
-          actions: [
-            shad.OutlineButton(
-              onPressed: _isDeleting ? null : () => Navigator.of(context).pop(),
-              child: Text(widget.cancelLabel),
-            ),
-            shad.DestructiveButton(
-              onPressed: _isDeleting ? null : _handleConfirm,
-              child: _isDeleting
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: shad.CircularProgressIndicator(),
-                    )
-                  : Text(widget.confirmLabel),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _handleConfirm() async {
-    setState(() => _isDeleting = true);
-    try {
-      await widget.onConfirm();
-      if (!mounted) return;
-      Navigator.of(context).pop();
-    } on Exception {
-      if (!mounted) return;
-      shad.showToast(
-        context: context,
-        builder: (ctx, overlay) => shad.Alert.destructive(
-          content: Text(ctx.l10n.commonSomethingWentWrong),
-        ),
-      );
-      setState(() => _isDeleting = false);
-    }
   }
 }
 

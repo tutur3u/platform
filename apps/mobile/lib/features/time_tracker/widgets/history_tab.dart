@@ -372,7 +372,12 @@ class _HistoryTabState extends State<HistoryTab> {
     final wsId =
         context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '';
     final userId = _currentUserId();
-    return cubit.deleteSession(sessionId, wsId, userId);
+    return cubit.deleteSession(
+      sessionId,
+      wsId,
+      userId,
+      throwOnError: true,
+    );
   }
 
   String _currentUserId() {

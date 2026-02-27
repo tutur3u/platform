@@ -169,8 +169,11 @@ class FinanceRepository {
     return Transaction.fromJson(refreshed);
   }
 
-  Future<void> deleteTransaction(String transactionId) async {
-    await supabase.from('wallet_transactions').delete().eq('id', transactionId);
+  Future<void> deleteTransaction({
+    required String wsId,
+    required String transactionId,
+  }) async {
+    await _api.deleteJson(FinanceEndpoints.transaction(wsId, transactionId));
   }
 
   // ── Categories ──────────────────────────────────

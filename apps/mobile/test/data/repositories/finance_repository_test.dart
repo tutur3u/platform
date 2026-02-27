@@ -137,5 +137,17 @@ void main() {
         ).called(1);
       },
     );
+
+    test('deleteTransaction calls workspace transaction endpoint', () async {
+      when(
+        () => apiClient.deleteJson('/api/workspaces/ws_1/transactions/tx_1'),
+      ).thenAnswer((_) async => {'message': 'success'});
+
+      await repository.deleteTransaction(wsId: 'ws_1', transactionId: 'tx_1');
+
+      verify(
+        () => apiClient.deleteJson('/api/workspaces/ws_1/transactions/tx_1'),
+      ).called(1);
+    });
   });
 }

@@ -9,6 +9,7 @@ import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/features/time_tracker/utils/category_color.dart';
 import 'package:mobile/features/time_tracker/widgets/edit_session_dialog.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// A read-only bottom sheet that shows the full details of a
@@ -226,10 +227,12 @@ class _SessionDetailSheetState extends State<SessionDetailSheet> {
   /// sheet's context, and dialog/sheet dismissal is handled by the dialog.
   Future<void> _showDeleteConfirmation(BuildContext context) async {
     final l10n = context.l10n;
+    final sheetNavigator = Navigator.of(context);
 
     await shad.showDialog<void>(
       context: context,
-      builder: (dialogContext) => _DeleteConfirmationDialog(
+      builder: (dialogContext) => AsyncDeleteConfirmationDialog(
+        toastContext: context,
         onConfirm: () async {
           await widget.onDelete();
 
@@ -241,6 +244,7 @@ class _SessionDetailSheetState extends State<SessionDetailSheet> {
               content: Text(ctx.l10n.timerSessionDeleted),
             ),
           );
+          sheetNavigator.pop();
         },
         title: l10n.timerDeleteSession,
         message: l10n.timerDeleteConfirm,
@@ -290,93 +294,6 @@ class _SessionDetailSheetState extends State<SessionDetailSheet> {
     if (h > 0) return '${h}h ${m}m';
     if (m > 0) return '${m}m ${s}s';
     return '${s}s';
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Delete confirmation dialog with inline loading state
-// ---------------------------------------------------------------------------
-
-/// A confirmation dialog whose destructive confirm button shows a loading
-/// spinner while [onConfirm] is in-flight. Errors are surfaced as a toast;
-/// the dialog stays open so the user can retry or cancel.
-class _DeleteConfirmationDialog extends StatefulWidget {
-  const _DeleteConfirmationDialog({
-    required this.onConfirm,
-    required this.title,
-    required this.message,
-    required this.cancelLabel,
-    required this.confirmLabel,
-  });
-
-  /// Async action to run when the user taps confirm. Should throw on failure.
-  final Future<void> Function() onConfirm;
-  final String title;
-  final String message;
-  final String cancelLabel;
-  final String confirmLabel;
-
-  @override
-  State<_DeleteConfirmationDialog> createState() =>
-      _DeleteConfirmationDialogState();
-}
-
-class _DeleteConfirmationDialogState extends State<_DeleteConfirmationDialog> {
-  bool _isDeleting = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return shad.AlertDialog(
-      title: Text(widget.title),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(widget.message),
-          const shad.Gap(24),
-          shad.OutlineButton(
-            onPressed: _isDeleting ? null : () => Navigator.of(context).pop(),
-            child: Text(widget.cancelLabel),
-          ),
-          const shad.Gap(8),
-          shad.DestructiveButton(
-            onPressed: _isDeleting ? null : _handleConfirm,
-            child: _isDeleting
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: shad.CircularProgressIndicator(),
-                  )
-                : Text(widget.confirmLabel),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _handleConfirm() async {
-    final navigator = Navigator.of(context);
-    setState(() => _isDeleting = true);
-    try {
-      await widget.onConfirm();
-      if (!mounted) return;
-      navigator.pop();
-      if (navigator.canPop()) {
-        navigator.pop();
-      }
-    } on Exception catch (e, st) {
-      debugPrint('_DeleteConfirmationDialog confirm failed: $e');
-      debugPrintStack(stackTrace: st);
-      if (!mounted) return;
-      shad.showToast(
-        context: context,
-        builder: (ctx, overlay) => shad.Alert.destructive(
-          title: Text(ctx.l10n.commonSomethingWentWrong),
-          content: Text(ctx.l10n.commonSomethingWentWrong),
-        ),
-      );
-      setState(() => _isDeleting = false);
-    }
   }
 }
 
