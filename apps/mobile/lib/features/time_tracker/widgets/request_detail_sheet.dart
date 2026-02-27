@@ -164,6 +164,7 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
     final l10n = context.l10n;
     final theme = shad.Theme.of(context);
     final canEditRequest =
+        widget.canEdit &&
         widget.onEdit != null &&
         (_request.approvalStatus == ApprovalStatus.pending ||
             _request.approvalStatus == ApprovalStatus.needsInfo);
@@ -496,8 +497,8 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
       approvalStatus: status,
       approvedBy: status == ApprovalStatus.approved
           ? (_currentUserId ?? _request.approvedBy)
-          : _request.approvedBy,
-      approvedAt: status == ApprovalStatus.approved ? now : _request.approvedAt,
+          : null,
+      approvedAt: status == ApprovalStatus.approved ? now : null,
       rejectedBy: status == ApprovalStatus.rejected
           ? (_currentUserId ?? _request.rejectedBy)
           : null,

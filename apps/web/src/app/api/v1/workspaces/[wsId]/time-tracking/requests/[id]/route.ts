@@ -6,6 +6,7 @@ import { MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const updateRequestSchema = z.discriminatedUnion('action', [
   z.object({
@@ -66,6 +67,7 @@ export async function PATCH(
 ) {
   try {
     const { wsId, id } = await context.params;
+    const normalizedWsId = await normalizeWorkspaceId(wsId);
 
     // Parse and validate request body
     const body = await request.json();
@@ -94,7 +96,7 @@ export async function PATCH(
     const { data: memberCheck } = await supabase
       .from('workspace_members')
       .select('id:user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -106,7 +108,7 @@ export async function PATCH(
     }
 
     const permissions = await getPermissions({
-      wsId,
+      wsId: normalizedWsId,
       request,
     });
     if (!permissions) {
@@ -140,7 +142,7 @@ export async function PATCH(
       {
         p_request_id: id,
         p_action: actionData.action,
-        p_workspace_id: wsId,
+        p_workspace_id: normalizedWsId,
         p_bypass_rules: canBypass,
         p_rejection_reason:
           actionData.action === 'reject'
@@ -198,11 +200,13 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const normalizedWsId = await normalizeWorkspaceId(wsId);
+
     // Verify workspace membership
     const { data: memberCheck } = await supabase
       .from('workspace_members')
       .select('id:user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -218,7 +222,7 @@ export async function PUT(
       .from('time_tracking_requests')
       .select('*')
       .eq('id', id)
-      .eq('workspace_id', wsId)
+      .eq('workspace_id', normalizedWsId)
       .single();
 
     if (fetchError || !existingRequest) {

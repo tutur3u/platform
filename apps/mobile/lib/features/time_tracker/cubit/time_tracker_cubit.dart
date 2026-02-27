@@ -507,8 +507,9 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
   Future<void> deleteSession(
     String sessionId,
     String wsId,
-    String userId,
-  ) async {
+    String userId, {
+    bool throwOnError = false,
+  }) async {
     try {
       await _repo.deleteSession(wsId, sessionId);
 
@@ -523,6 +524,9 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
       await loadHistoryInitial(wsId, userId);
     } on Exception catch (e) {
       emit(state.copyWith(error: e.toString()));
+      if (throwOnError) {
+        rethrow;
+      }
     }
   }
 

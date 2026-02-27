@@ -47,6 +47,14 @@ class SessionDetailSheet extends StatefulWidget {
 }
 
 class _SessionDetailSheetState extends State<SessionDetailSheet> {
+  late TimeTrackingSession _session;
+
+  @override
+  void initState() {
+    super.initState();
+    _session = widget.session;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
@@ -54,13 +62,12 @@ class _SessionDetailSheetState extends State<SessionDetailSheet> {
     final dateFmt = DateFormat.yMMMd();
     final timeFmt = DateFormat.Hm();
 
-    final startTime = widget.session.startTime;
-    final endTime = widget.session.endTime;
+    final startTime = _session.startTime;
+    final endTime = _session.endTime;
 
     final categoryName = _resolvedCategoryName(l10n);
     final resolvedCategoryColor =
-        widget.session.categoryColor ??
-        _categoryById(widget.session.categoryId)?.color;
+        _session.categoryColor ?? _categoryById(_session.categoryId)?.color;
 
     return Container(
       decoration: BoxDecoration(
@@ -69,7 +76,6 @@ class _SessionDetailSheetState extends State<SessionDetailSheet> {
       ),
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Handle bar
@@ -111,77 +117,88 @@ class _SessionDetailSheetState extends State<SessionDetailSheet> {
               ),
             ],
           ),
-          const shad.Gap(20),
+          const shad.Gap(16),
 
-          // Session title
-          _DetailRow(
-            icon: shad.LucideIcons.tag,
-            label: l10n.timerSessionTitle,
-            value: widget.session.title?.isNotEmpty == true
-                ? widget.session.title!
-                : l10n.timerWorkSession,
-          ),
-          const shad.Gap(12),
+          Flexible(
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Session title
+                  _DetailRow(
+                    icon: shad.LucideIcons.tag,
+                    label: l10n.timerSessionTitle,
+                    value: _session.title?.isNotEmpty == true
+                        ? _session.title!
+                        : l10n.timerWorkSession,
+                  ),
+                  const shad.Gap(12),
 
-          // Category
-          _DetailRow(
-            icon: shad.LucideIcons.folder,
-            label: l10n.timerCategory,
-            value: categoryName,
-            colorDot: resolvedCategoryColor,
-          ),
-          const shad.Gap(12),
+                  // Category
+                  _DetailRow(
+                    icon: shad.LucideIcons.folder,
+                    label: l10n.timerCategory,
+                    value: categoryName,
+                    colorDot: resolvedCategoryColor,
+                  ),
+                  const shad.Gap(12),
 
-          // Start time
-          if (startTime != null) ...[
-            _DetailRow(
-              icon: shad.LucideIcons.calendar,
-              label: l10n.timerStartTime,
-              value:
-                  '${dateFmt.format(startTime.toLocal())}'
-                  '  ${timeFmt.format(startTime.toLocal())}',
-            ),
-            const shad.Gap(12),
-          ],
+                  // Start time
+                  if (startTime != null) ...[
+                    _DetailRow(
+                      icon: shad.LucideIcons.calendar,
+                      label: l10n.timerStartTime,
+                      value:
+                          '${dateFmt.format(startTime.toLocal())}'
+                          '  ${timeFmt.format(startTime.toLocal())}',
+                    ),
+                    const shad.Gap(12),
+                  ],
 
-          // End time
-          if (endTime != null) ...[
-            _DetailRow(
-              icon: shad.LucideIcons.calendarCheck,
-              label: l10n.timerEndTime,
-              value:
-                  '${dateFmt.format(endTime.toLocal())}'
-                  '  ${timeFmt.format(endTime.toLocal())}',
-            ),
-            const shad.Gap(12),
-          ],
+                  // End time
+                  if (endTime != null) ...[
+                    _DetailRow(
+                      icon: shad.LucideIcons.calendarCheck,
+                      label: l10n.timerEndTime,
+                      value:
+                          '${dateFmt.format(endTime.toLocal())}'
+                          '  ${timeFmt.format(endTime.toLocal())}',
+                    ),
+                    const shad.Gap(12),
+                  ],
 
-          // Duration
-          _DetailRow(
-            icon: shad.LucideIcons.clock,
-            label: l10n.timerDuration,
-            value: _formatDuration(widget.session.duration, l10n),
-            valueBold: true,
-          ),
+                  // Duration
+                  _DetailRow(
+                    icon: shad.LucideIcons.clock,
+                    label: l10n.timerDuration,
+                    value: _formatDuration(_session.duration, l10n),
+                    valueBold: true,
+                  ),
 
-          // Description (if present)
-          if (widget.session.description?.isNotEmpty == true) ...[
-            const shad.Gap(16),
-            const Divider(),
-            const shad.Gap(12),
-            Text(
-              l10n.timerDescription,
-              style: theme.typography.small.copyWith(
-                color: theme.colorScheme.mutedForeground,
-                fontWeight: FontWeight.w600,
+                  // Description (if present)
+                  if (_session.description?.isNotEmpty == true) ...[
+                    const shad.Gap(16),
+                    const Divider(),
+                    const shad.Gap(12),
+                    Text(
+                      l10n.timerDescription,
+                      style: theme.typography.small.copyWith(
+                        color: theme.colorScheme.mutedForeground,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const shad.Gap(6),
+                    Text(
+                      _session.description!,
+                      style: theme.typography.base,
+                    ),
+                  ],
+                ],
               ),
             ),
-            const shad.Gap(6),
-            Text(
-              widget.session.description!,
-              style: theme.typography.base,
-            ),
-          ],
+          ),
 
           const shad.Gap(24),
           const Divider(),
@@ -191,7 +208,6 @@ class _SessionDetailSheetState extends State<SessionDetailSheet> {
           shad.DestructiveButton(
             onPressed: () => _showDeleteConfirmation(context),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Icon(shad.LucideIcons.trash2, size: 16),
                 const shad.Gap(8),
@@ -206,10 +222,9 @@ class _SessionDetailSheetState extends State<SessionDetailSheet> {
 
   /// Shows a confirmation dialog whose destructive button owns the
   /// loading indicator. The sheet stays fully interactive while the dialog
-  /// is open; once the delete succeeds the dialog closes, a success toast
-  /// is shown on the sheet's context, and then the sheet itself is popped.
+  /// is open; once the delete succeeds a success toast is shown on the
+  /// sheet's context, and dialog/sheet dismissal is handled by the dialog.
   Future<void> _showDeleteConfirmation(BuildContext context) async {
-    final sheetNavigator = Navigator.of(context);
     final l10n = context.l10n;
 
     await shad.showDialog<void>(
@@ -226,9 +241,6 @@ class _SessionDetailSheetState extends State<SessionDetailSheet> {
               content: Text(ctx.l10n.timerSessionDeleted),
             ),
           );
-
-          // Close sheet after toast is queued.
-          sheetNavigator.pop();
         },
         title: l10n.timerDeleteSession,
         message: l10n.timerDeleteConfirm,
@@ -239,11 +251,10 @@ class _SessionDetailSheetState extends State<SessionDetailSheet> {
   }
 
   String _resolvedCategoryName(AppLocalizations l10n) {
-    if (widget.session.categoryName?.isNotEmpty == true) {
-      return widget.session.categoryName!;
+    if (_session.categoryName?.isNotEmpty == true) {
+      return _session.categoryName!;
     }
-    return _categoryById(widget.session.categoryId)?.name ??
-        l10n.timerNoCategory;
+    return _categoryById(_session.categoryId)?.name ?? l10n.timerNoCategory;
   }
 
   TimeTrackingCategory? _categoryById(String? id) {
@@ -251,18 +262,24 @@ class _SessionDetailSheetState extends State<SessionDetailSheet> {
     return widget.categories.where((c) => c.id == id).firstOrNull;
   }
 
-  void _openEditDialog(BuildContext context) {
-    unawaited(
-      showAdaptiveSheet<void>(
-        context: context,
-        builder: (_) => EditSessionDialog(
-          session: widget.session,
-          categories: widget.categories,
-          thresholdDays: widget.thresholdDays,
-          onSave: widget.onSave,
-        ),
+  Future<void> _openEditDialog(BuildContext context) async {
+    final sheetNavigator = Navigator.of(context);
+    final updatedSession = await showAdaptiveSheet<TimeTrackingSession>(
+      context: context,
+      builder: (_) => EditSessionDialog(
+        session: _session,
+        categories: widget.categories,
+        thresholdDays: widget.thresholdDays,
+        onSave: widget.onSave,
       ),
     );
+
+    if (!mounted || updatedSession == null) {
+      return;
+    }
+
+    setState(() => _session = updatedSession);
+    sheetNavigator.pop();
   }
 
   String _formatDuration(Duration d, AppLocalizations l10n) {
@@ -309,40 +326,44 @@ class _DeleteConfirmationDialogState extends State<_DeleteConfirmationDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: SizedBox(
-        width: MediaQuery.of(context).size.width * 0.85,
-        child: shad.AlertDialog(
-          title: Text(widget.title),
-          content: Text(widget.message),
-          actions: [
-            shad.OutlineButton(
-              onPressed: _isDeleting ? null : () => Navigator.of(context).pop(),
-              child: Text(widget.cancelLabel),
-            ),
-            shad.DestructiveButton(
-              onPressed: _isDeleting ? null : _handleConfirm,
-              child: _isDeleting
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: shad.CircularProgressIndicator(),
-                    )
-                  : Text(widget.confirmLabel),
-            ),
-          ],
-        ),
+    return shad.AlertDialog(
+      title: Text(widget.title),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(widget.message),
+          const shad.Gap(24),
+          shad.OutlineButton(
+            onPressed: _isDeleting ? null : () => Navigator.of(context).pop(),
+            child: Text(widget.cancelLabel),
+          ),
+          const shad.Gap(8),
+          shad.DestructiveButton(
+            onPressed: _isDeleting ? null : _handleConfirm,
+            child: _isDeleting
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: shad.CircularProgressIndicator(),
+                  )
+                : Text(widget.confirmLabel),
+          ),
+        ],
       ),
     );
   }
 
   Future<void> _handleConfirm() async {
+    final navigator = Navigator.of(context);
     setState(() => _isDeleting = true);
     try {
       await widget.onConfirm();
-      // onConfirm already pops the sheet; pop the dialog too.
       if (!mounted) return;
-      Navigator.of(context).pop();
+      navigator.pop();
+      if (navigator.canPop()) {
+        navigator.pop();
+      }
     } on Exception catch (e, st) {
       debugPrint('_DeleteConfirmationDialog confirm failed: $e');
       debugPrintStack(stackTrace: st);

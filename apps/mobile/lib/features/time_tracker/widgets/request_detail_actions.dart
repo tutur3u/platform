@@ -41,13 +41,9 @@ class RequestReasonBox extends StatelessWidget {
             ],
           ),
           const shad.Gap(4),
-          Row(
-            children: [
-              Text(
-                text,
-                style: theme.typography.small.copyWith(color: color),
-              ),
-            ],
+          Text(
+            text,
+            style: theme.typography.small.copyWith(color: color),
           ),
         ],
       ),

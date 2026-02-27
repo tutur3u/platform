@@ -167,7 +167,6 @@ class _EditSessionDialogState extends State<EditSessionDialog> {
                           shad.MenuButton(
                             onPressed: (context) {
                               setState(() => _categoryId = null);
-                              Navigator.of(context).pop();
                             },
                             child: Text(l10n.timerNoCategory),
                           ),
@@ -175,7 +174,6 @@ class _EditSessionDialogState extends State<EditSessionDialog> {
                             (c) => shad.MenuButton(
                               onPressed: (context) {
                                 setState(() => _categoryId = c.id);
-                                Navigator.of(context).pop();
                               },
                               child: Text(c.name ?? ''),
                             ),
@@ -251,7 +249,7 @@ class _EditSessionDialogState extends State<EditSessionDialog> {
                           ),
                         );
 
-                        navigator.pop();
+                        navigator.pop(_buildUpdatedSession());
                       } on Exception catch (e, st) {
                         debugPrint('EditSessionDialog save failed: $e');
                         debugPrintStack(stackTrace: st);
@@ -291,6 +289,32 @@ class _EditSessionDialogState extends State<EditSessionDialog> {
       !exceedsThreshold(widget.session.startTime, widget.thresholdDays);
 
   bool get _isValid => !_canEditTimes || _endTime.isAfter(_startTime);
+
+  TimeTrackingSession _buildUpdatedSession() {
+    final selectedCategory = widget.categories
+        .where((category) => category.id == _categoryId)
+        .firstOrNull;
+
+    return TimeTrackingSession(
+      id: widget.session.id,
+      title: _titleCtrl.text,
+      description: _descCtrl.text.isEmpty ? null : _descCtrl.text,
+      categoryId: _categoryId,
+      categoryName: selectedCategory?.name,
+      categoryColor: selectedCategory?.color,
+      startTime: _startTime,
+      endTime: _endTime,
+      wsId: widget.session.wsId,
+      userId: widget.session.userId,
+      taskId: widget.session.taskId,
+      parentSessionId: widget.session.parentSessionId,
+      isRunningFlag: widget.session.isRunningFlag,
+      durationSeconds: _endTime.difference(_startTime).inSeconds,
+      wasResumed: widget.session.wasResumed,
+      pendingApproval: widget.session.pendingApproval,
+      createdAt: widget.session.createdAt,
+    );
+  }
 
   String _formatDuration(Duration d, AppLocalizations l10n) {
     if (d.isNegative) {
