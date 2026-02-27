@@ -5,6 +5,7 @@ import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import type { User } from '@tuturuuu/types/primitives/User';
 import type { WorkspacePresenceState } from '@tuturuuu/ui/hooks/use-workspace-presence';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { SelectedElementIds } from '@/utils/excalidraw-selection';
 import { useExcalidrawCursor } from './useExcalidrawCursor';
 import { useExcalidrawElementSync } from './useExcalidrawElementSync';
 
@@ -80,6 +81,7 @@ export interface UseWhiteboardCollaborationResult {
     currentElements: readonly ExcalidrawElement[]
   ) => void;
   broadcastCursorPosition: (x: number, y: number, tool?: string) => void;
+  broadcastSelectionChange: (selectedElementIds: SelectedElementIds) => void;
 }
 
 export function useWhiteboardCollaboration({
@@ -175,7 +177,9 @@ export function useWhiteboardCollaboration({
   // Set up cursor sync (independent of presence)
   const {
     remoteCursors,
+    remoteSelections,
     broadcastCursor: broadcastCursorPosition,
+    broadcastSelection: broadcastSelectionChange,
     isConnected: isCursorConnected,
     error: cursorError,
   } = useExcalidrawCursor({
@@ -195,6 +199,7 @@ export function useWhiteboardCollaboration({
         if (!presence) continue;
 
         const cursor = remoteCursors.get(userId);
+        const selectedElementIds = remoteSelections.get(userId);
         const color = {
           background: getCollaboratorColor(userId),
           stroke: getCollaboratorColor(userId),
@@ -213,11 +218,19 @@ export function useWhiteboardCollaboration({
                 tool: cursor.tool as 'pointer' | 'laser',
               }
             : undefined,
+          selectedElementIds,
         });
       }
     } else {
       // Fallback: build from cursor data only
-      for (const [userId, cursor] of remoteCursors.entries()) {
+      const userIds = new Set<string>([
+        ...remoteCursors.keys(),
+        ...remoteSelections.keys(),
+      ]);
+
+      for (const userId of userIds) {
+        const cursor = remoteCursors.get(userId);
+        const selectedElementIds = remoteSelections.get(userId);
         const color = {
           background: getCollaboratorColor(userId),
           stroke: getCollaboratorColor(userId),
@@ -228,17 +241,20 @@ export function useWhiteboardCollaboration({
           socketId: userId as SocketId,
           username: 'Collaborator',
           color,
-          pointer: {
-            x: cursor.x,
-            y: cursor.y,
-            tool: cursor.tool as 'pointer' | 'laser',
-          },
+          pointer: cursor
+            ? {
+                x: cursor.x,
+                y: cursor.y,
+                tool: cursor.tool as 'pointer' | 'laser',
+              }
+            : undefined,
+          selectedElementIds,
         });
       }
     }
 
     return collabMap;
-  }, [externalPresenceState, remoteCursors]);
+  }, [externalPresenceState, remoteCursors, remoteSelections]);
 
   // Overall connection status (no separate presence channel needed)
   const isConnected = isElementSyncConnected && isCursorConnected;
@@ -251,5 +267,6 @@ export function useWhiteboardCollaboration({
     currentUserId: resolvedUserId,
     broadcastElementChanges,
     broadcastCursorPosition,
+    broadcastSelectionChange,
   };
 }

@@ -216,7 +216,6 @@ export function useCursorTracking(
         });
 
         channelRef.current = channel;
-
         // Listen for cursor movements from other users
         channel
           .on('broadcast', { event: 'cursor-move' }, (payload) => {
@@ -228,19 +227,20 @@ export function useCursorTracking(
                 metadata: broadcastMetadata,
               } = payload.payload;
 
-              if (broadcastUser.id !== user?.id) {
-                setCursors((prev) => {
-                  const updated = new Map(prev);
-                  updated.set(broadcastUser.id || '', {
-                    x,
-                    y,
-                    user: broadcastUser,
-                    metadata: broadcastMetadata,
-                    lastUpdatedAt: Date.now(),
-                  });
-                  return updated;
+              // Ignore own broadcasts (extra safety)
+              if (broadcastUser.id === user?.id) return;
+
+              setCursors((prev) => {
+                const updated = new Map(prev);
+                updated.set(broadcastUser.id || '', {
+                  x,
+                  y,
+                  user: broadcastUser,
+                  metadata: broadcastMetadata,
+                  lastUpdatedAt: Date.now(),
                 });
-              }
+                return updated;
+              });
             } catch (err) {
               handleError(err);
             }

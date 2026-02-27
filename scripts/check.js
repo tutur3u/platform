@@ -4,11 +4,11 @@
  * Unified Check Runner
  *
  * Runs all quality checks (formatting, tests, type-check, i18n, migrations)
- * and displays a formatted summary table at the end.
+ * and displays a summary at the end.
  *
  * Usage:
- *   node scripts/check.js
- *   bun check
+ *   node scripts/check.js [--table] [--timing] [--details]
+ *   bun check [--table] [--timing] [--details]
  *
  * Exit codes:
  *   0 - All checks passed
@@ -17,9 +17,12 @@
 
 const { spawn } = require('node:child_process');
 
+const USE_TABLE = process.argv.includes('--table');
+const SHOW_TIMING = process.argv.includes('--timing');
+const SHOW_DETAILS = process.argv.includes('--details');
+
 /**
  * Strip ANSI escape codes from a string
- * Uses String.fromCharCode to avoid control character in regex literal
  */
 const ESC = String.fromCharCode(27); // ESC character (0x1B)
 const ANSI_REGEX = new RegExp(`${ESC}\\[[0-9;]*m`, 'g');
@@ -28,26 +31,10 @@ function stripAnsi(str) {
 }
 
 /**
- * Calculate the display width of a string, accounting for emojis
- * Emojis like ✅ and ❌ take up 2 display columns
+ * Calculate the display width of a string
  */
 function getDisplayWidth(str) {
-  const stripped = stripAnsi(str);
-  let width = 0;
-  for (const char of stripped) {
-    const code = char.codePointAt(0);
-    // Emojis and other wide characters (simplified check)
-    if (
-      code > 0x1f600 ||
-      (code >= 0x2600 && code <= 0x27bf) ||
-      (code >= 0x2700 && code <= 0x27bf)
-    ) {
-      width += 2;
-    } else {
-      width += 1;
-    }
-  }
-  return width;
+  return stripAnsi(str).length;
 }
 
 // ANSI color codes
@@ -64,7 +51,7 @@ const colors = {
 // Check definitions
 const checks = [
   {
-    name: 'Biome (format & lint)',
+    name: 'biome',
     command: 'bun',
     args: ['biome', 'check'],
     parseOutput: (stdout) => {
@@ -74,12 +61,11 @@ const checks = [
     },
   },
   {
-    name: 'Tests',
+    name: 'tests',
     command: 'bun',
     args: ['test'],
     parseOutput: (stdout) => {
       const clean = stripAnsi(stdout);
-      // Find all "Tests  X passed" patterns (Vitest format) and sum them
       const testMatches = [...clean.matchAll(/Tests\s+(\d+)\s+passed/gi)];
       let totalTests = 0;
       for (const match of testMatches) {
@@ -92,12 +78,11 @@ const checks = [
     },
   },
   {
-    name: 'Type-check',
+    name: 'type-check',
     command: 'bun',
     args: ['type-check'],
     parseOutput: (stdout) => {
       const clean = stripAnsi(stdout);
-      // Look for turbo task summary: "Tasks:    33 successful, 33 total"
       const tasksMatch = clean.match(
         /Tasks:\s+(\d+)\s+successful,\s+(\d+)\s+total/i
       );
@@ -161,7 +146,7 @@ const checks = [
     },
   },
   {
-    name: 'Migration timestamps',
+    name: 'migration-timestamps',
     command: 'bun',
     args: ['migration:timestamps:check'],
     parseOutput: (stdout) => {
@@ -231,6 +216,15 @@ function runCheck(check) {
 }
 
 /**
+ * Format duration in human-readable form
+ */
+function formatDuration(ms) {
+  if (ms < 1000) return `${ms}ms`;
+  const seconds = (ms / 1000).toFixed(1);
+  return `${seconds}s`;
+}
+
+/**
  * Create a horizontal line for the table
  */
 function createLine(leftChar, midChar, rightChar, colWidths) {
@@ -253,7 +247,7 @@ function createRow(cells, colWidths) {
 /**
  * Print the summary table
  */
-function printSummaryTable(results) {
+function printSummary(results) {
   const allPassed = results.every((r) => r.success);
 
   console.log('\n');
@@ -268,48 +262,56 @@ function printSummaryTable(results) {
     );
   }
 
-  // Calculate column widths
-  const col1Header = 'Check';
-  const col2Header = 'Status';
-  const col1Width = Math.max(
-    col1Header.length,
-    ...results.map((r) => r.name.length)
-  );
-  const col2Width = Math.max(
-    col2Header.length,
-    ...results.map((r) => {
-      const prefix = r.success ? '✅ ' : '❌ ';
-      return getDisplayWidth(prefix) + r.status.length;
-    })
-  );
-  const colWidths = [col1Width, col2Width];
+  if (USE_TABLE) {
+    const col1Header = 'Check';
+    const col2Header = 'Status';
+    const col1Width = Math.max(
+      col1Header.length,
+      ...results.map((r) => r.name.length)
+    );
+    const col2Width = Math.max(
+      col2Header.length,
+      ...results.map((r) => {
+        const prefix = r.success ? 'PASS ' : 'FAIL ';
+        return getDisplayWidth(prefix) + r.status.length;
+      })
+    );
+    const colWidths = [col1Width, col2Width];
 
-  // Print table
-  console.log(createLine('┌', '┬', '┐', colWidths));
-  console.log(
-    createRow(
-      [
-        `${colors.bold}${col1Header}${colors.reset}`,
-        `${colors.bold}${col2Header}${colors.reset}`,
-      ],
-      colWidths
-    )
-  );
-  console.log(createLine('├', '┼', '┤', colWidths));
+    console.log(createLine('┌', '┬', '┐', colWidths));
+    console.log(
+      createRow(
+        [
+          `${colors.bold}${col1Header}${colors.reset}`,
+          `${colors.bold}${col2Header}${colors.reset}`,
+        ],
+        colWidths
+      )
+    );
+    console.log(createLine('├', '┼', '┤', colWidths));
 
-  for (const result of results) {
-    const icon = result.success ? '✅' : '❌';
-    const statusColor = result.success ? colors.green : colors.red;
-    const statusText = `${icon} ${statusColor}${result.status}${colors.reset}`;
-    console.log(createRow([result.name, statusText], colWidths));
+    for (const result of results) {
+      const statusText = result.success
+        ? `${colors.green}PASS ${result.status}${colors.reset}`
+        : `${colors.red}FAIL ${result.status}${colors.reset}`;
+      console.log(createRow([result.name, statusText], colWidths));
 
-    // Add separator between rows except for the last one
-    if (result !== results[results.length - 1]) {
-      console.log(createLine('├', '┼', '┤', colWidths));
+      if (result !== results[results.length - 1]) {
+        console.log(createLine('├', '┼', '┤', colWidths));
+      }
+    }
+
+    console.log(createLine('└', '┴', '┘', colWidths));
+  } else {
+    for (const result of results) {
+      const statusLabel = result.success ? 'PASS' : 'FAIL';
+      const statusColor = result.success ? colors.green : colors.red;
+      let output = `${statusColor}${statusLabel}${colors.reset} ${result.name}`;
+      if (SHOW_DETAILS) output += `: ${result.status}`;
+      if (SHOW_TIMING) output += ` (${formatDuration(result.duration)})`;
+      console.log(output);
     }
   }
-
-  console.log(createLine('└', '┴', '┘', colWidths));
 }
 
 /**
@@ -329,7 +331,7 @@ async function main() {
     console.log('\n');
   }
 
-  printSummaryTable(results);
+  printSummary(results);
 
   const allPassed = results.every((r) => r.success);
   process.exit(allPassed ? 0 : 1);

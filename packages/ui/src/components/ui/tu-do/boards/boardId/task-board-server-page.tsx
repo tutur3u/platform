@@ -31,7 +31,7 @@ export default async function TaskBoardServerPage({
   const user = await getCurrentUser();
   if (!user) redirect('/login');
 
-  const workspace = await getWorkspace(id);
+  const workspace = await getWorkspace(id, { useAdmin: true });
   if (!workspace) notFound();
 
   const supabase = await createClient();

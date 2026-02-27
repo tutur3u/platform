@@ -4,21 +4,24 @@
  * Mobile Check Runner
  *
  * Runs all Flutter/Dart quality checks (format, analyze, test)
- * from apps/mobile/ and displays a formatted summary table.
+ * from apps/mobile/ and displays a formatted summary.
  *
  * Usage:
- *   node scripts/check-mobile.js
- *   bun check:mobile
+ *   node scripts/check-mobile.js [--table] [--timing] [--details]
+ *   bun check:mobile [--table] [--timing] [--details]
  *
  * Exit codes:
- *   0 - All checks passed
- *   1 - One or more checks failed
+ *   0 - All critical checks passed (formatting changes are auto-applied)
+ *   1 - One or more critical checks failed
  */
 
 const { spawn } = require('node:child_process');
 const path = require('node:path');
 
 const MOBILE_DIR = path.resolve(__dirname, '..', 'apps', 'mobile');
+const USE_TABLE = process.argv.includes('--table');
+const SHOW_TIMING = process.argv.includes('--timing');
+const SHOW_DETAILS = process.argv.includes('--details');
 
 /**
  * Strip ANSI escape codes from a string
@@ -30,24 +33,10 @@ function stripAnsi(str) {
 }
 
 /**
- * Calculate the display width of a string, accounting for emojis
+ * Calculate the display width of a string
  */
 function getDisplayWidth(str) {
-  const stripped = stripAnsi(str);
-  let width = 0;
-  for (const char of stripped) {
-    const code = char.codePointAt(0);
-    if (
-      code > 0x1f600 ||
-      (code >= 0x2600 && code <= 0x27bf) ||
-      (code >= 0x2700 && code <= 0x27bf)
-    ) {
-      width += 2;
-    } else {
-      width += 1;
-    }
-  }
-  return width;
+  return stripAnsi(str).length;
 }
 
 // ANSI color codes
@@ -64,20 +53,24 @@ const colors = {
 // Check definitions — mirrors the CI's very_good_workflows pipeline
 const checks = [
   {
-    name: 'Dart format',
+    name: 'dart-format',
     command: 'dart',
     args: ['format', '--set-exit-if-changed', 'lib', 'test'],
+    allowNonZeroWhen: (code, stdout, stderr) => {
+      const output = stdout + stderr;
+      return code === 1 && output.includes('Formatted');
+    },
     parseOutput: (stdout) => {
       const clean = stripAnsi(stdout);
       const match = clean.match(/Formatted (\d+) files? \((\d+) changed\)/i);
       if (match) {
-        return `${match[1]} files checked`;
+        return `${match[1]} files checked (${match[2]} changed)`;
       }
       return 'Passed';
     },
   },
   {
-    name: 'Flutter analyze',
+    name: 'flutter-analyze',
     command: 'flutter',
     args: ['analyze'],
     parseOutput: (stdout) => {
@@ -93,7 +86,7 @@ const checks = [
     },
   },
   {
-    name: 'Flutter test',
+    name: 'flutter-test',
     command: 'flutter',
     args: ['test'],
     parseOutput: (stdout) => {
@@ -149,13 +142,17 @@ function runCheck(check) {
 
     proc.on('close', (code) => {
       const duration = Date.now() - startTime;
+      const allowedNonZero = check.allowNonZeroWhen?.(code, stdout, stderr);
+      const success = code === 0 || allowedNonZero;
+
       resolve({
         name: check.name,
-        success: code === 0,
+        success,
+        exitCode: code,
         stdout,
         stderr,
         duration,
-        status: code === 0 ? check.parseOutput(stdout + stderr) : 'Failed',
+        status: success ? check.parseOutput(stdout + stderr) : 'Failed',
       });
     });
 
@@ -223,57 +220,72 @@ function printSummaryTable(results) {
     );
   }
 
-  // Calculate column widths
-  const col1Header = 'Check';
-  const col2Header = 'Status';
-  const col3Header = 'Time';
-  const col1Width = Math.max(
-    col1Header.length,
-    ...results.map((r) => r.name.length)
-  );
-  const col2Width = Math.max(
-    col2Header.length,
-    ...results.map((r) => {
-      const prefix = r.success ? '✅ ' : '❌ ';
-      return getDisplayWidth(prefix) + r.status.length;
-    })
-  );
-  const col3Width = Math.max(
-    col3Header.length,
-    ...results.map((r) => formatDuration(r.duration).length)
-  );
-  const colWidths = [col1Width, col2Width, col3Width];
+  if (USE_TABLE) {
+    // Calculate column widths
+    const col1Header = 'Check';
+    const col2Header = 'Status';
+    const col3Header = 'Time';
+    const col1Width = Math.max(
+      col1Header.length,
+      ...results.map((r) => r.name.length)
+    );
+    const col2Width = Math.max(
+      col2Header.length,
+      ...results.map((r) => {
+        const prefix = r.success ? 'PASS ' : 'FAIL ';
+        return getDisplayWidth(prefix) + r.status.length;
+      })
+    );
+    const col3Width = Math.max(
+      col3Header.length,
+      ...results.map((r) => formatDuration(r.duration).length)
+    );
+    const colWidths = [col1Width, col2Width, col3Width];
 
-  // Print table
-  console.log(createLine('┌', '┬', '┐', colWidths));
-  console.log(
-    createRow(
-      [
-        `${colors.bold}${col1Header}${colors.reset}`,
-        `${colors.bold}${col2Header}${colors.reset}`,
-        `${colors.bold}${col3Header}${colors.reset}`,
-      ],
-      colWidths
-    )
-  );
-  console.log(createLine('├', '┼', '┤', colWidths));
+    // Print table
+    console.log(createLine('┌', '┬', '┐', colWidths));
+    console.log(
+      createRow(
+        [
+          `${colors.bold}${col1Header}${colors.reset}`,
+          `${colors.bold}${col2Header}${colors.reset}`,
+          `${colors.bold}${col3Header}${colors.reset}`,
+        ],
+        colWidths
+      )
+    );
+    console.log(createLine('├', '┼', '┤', colWidths));
 
-  for (const result of results) {
-    const icon = result.success ? '✅' : '❌';
-    const statusColor = result.success ? colors.green : colors.red;
-    const statusText = `${icon} ${statusColor}${result.status}${colors.reset}`;
-    const timeText = `${colors.dim}${formatDuration(result.duration)}${colors.reset}`;
-    console.log(createRow([result.name, statusText, timeText], colWidths));
+    for (const result of results) {
+      const statusColor = result.success ? colors.green : colors.red;
+      const statusLabel = result.success ? 'PASS' : 'FAIL';
+      const statusText = `${statusColor}${statusLabel} ${result.status}${colors.reset}`;
+      const timeText = `${colors.dim}${formatDuration(result.duration)}${colors.reset}`;
+      console.log(createRow([result.name, statusText, timeText], colWidths));
 
-    if (result !== results[results.length - 1]) {
-      console.log(createLine('├', '┼', '┤', colWidths));
+      if (result !== results[results.length - 1]) {
+        console.log(createLine('├', '┼', '┤', colWidths));
+      }
+    }
+
+    console.log(createLine('└', '┴', '┘', colWidths));
+  } else {
+    // Concise output for tokenmaxxing
+    for (const result of results) {
+      const statusLabel = result.success ? 'PASS' : 'FAIL';
+      const statusColor = result.success ? colors.green : colors.red;
+      let output = `${statusColor}${statusLabel}${colors.reset} ${result.name}`;
+      if (SHOW_DETAILS) output += `: ${result.status}`;
+      if (SHOW_TIMING) output += ` (${formatDuration(result.duration)})`;
+      console.log(output);
     }
   }
 
-  console.log(createLine('└', '┴', '┘', colWidths));
-  console.log(
-    `\n${colors.dim}Total time: ${formatDuration(totalDuration)}${colors.reset}`
-  );
+  if (SHOW_TIMING) {
+    console.log(
+      `\n${colors.dim}Total time: ${formatDuration(totalDuration)}${colors.reset}`
+    );
+  }
 }
 
 /**
