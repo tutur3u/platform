@@ -414,6 +414,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeConfidentialCategory => 'Confidential category';
 
   @override
+  String get financeToday => 'Today';
+
+  @override
+  String get financeYesterday => 'Yesterday';
+
+  @override
+  String get financeNet => 'Net';
+
+  @override
+  String get financeTransfer => 'Transfer';
+
+  @override
+  String get financeTransactionCountShort => 'tx';
+
+  @override
   String get timerTitle => 'Time tracker';
 
   @override

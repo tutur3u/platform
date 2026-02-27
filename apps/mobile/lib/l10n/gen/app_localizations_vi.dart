@@ -414,6 +414,21 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeConfidentialCategory => 'Ẩn danh mục';
 
   @override
+  String get financeToday => 'Hôm nay';
+
+  @override
+  String get financeYesterday => 'Hôm qua';
+
+  @override
+  String get financeNet => 'Ròng';
+
+  @override
+  String get financeTransfer => 'Chuyển khoản';
+
+  @override
+  String get financeTransactionCountShort => 'gd';
+
+  @override
   String get timerTitle => 'Bấm giờ';
 
   @override

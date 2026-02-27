@@ -194,7 +194,17 @@ class _RecentTransactionsSection extends StatelessWidget {
             ),
           )
         else
-          ...transactions.map(_TransactionTile.new),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              children: [
+                for (var i = 0; i < transactions.length; i++) ...[
+                  _TransactionTile(transactions[i]),
+                  if (i < transactions.length - 1) const shad.Gap(8),
+                ],
+              ],
+            ),
+          ),
       ],
     );
   }
@@ -224,85 +234,96 @@ class _TransactionTile extends StatelessWidget {
     final prefix = isExpense ? '' : '+';
     final formatted = formatCurrency(amount, currency);
 
-    return shad.GhostButton(
-      onPressed: () async {
-        final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-        if (wsId == null) return;
+    return shad.Card(
+      padding: EdgeInsets.zero,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: () async {
+          final wsId = context
+              .read<WorkspaceCubit>()
+              .state
+              .currentWorkspace
+              ?.id;
+          if (wsId == null) return;
 
-        final changed = await openTransactionDetailSheet(
-          context,
-          wsId: wsId,
-          transaction: tx,
-        );
+          final changed = await openTransactionDetailSheet(
+            context,
+            wsId: wsId,
+            transaction: tx,
+          );
 
-        if (!context.mounted || !changed) return;
-        _reload(context);
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: isExpense
-                    ? colorScheme.destructive.withValues(alpha: 0.12)
-                    : colorScheme.primary.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
+          if (!context.mounted || !changed) return;
+          _reload(context);
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: isExpense
+                      ? colorScheme.destructive.withValues(alpha: 0.12)
+                      : colorScheme.primary.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isExpense ? Icons.arrow_downward : Icons.arrow_upward,
+                  size: 18,
+                  color: isExpense
+                      ? colorScheme.destructive
+                      : colorScheme.primary,
+                ),
               ),
-              child: Icon(
-                isExpense ? Icons.arrow_downward : Icons.arrow_upward,
-                size: 18,
-                color: isExpense
-                    ? colorScheme.destructive
-                    : colorScheme.primary,
-              ),
-            ),
-            const shad.Gap(16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.p,
-                  ),
-                  if (subtitle.isNotEmpty)
+              const shad.Gap(12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      subtitle,
+                      title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.typography.textMuted,
+                      style: theme.typography.p.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    if (subtitle.isNotEmpty)
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.textMuted,
+                      ),
+                  ],
+                ),
+              ),
+              const shad.Gap(8),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '$prefix$formatted',
+                    style: theme.typography.p.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: isExpense
+                          ? colorScheme.destructive
+                          : colorScheme.primary,
+                    ),
+                  ),
+                  if (tx.takenAt != null)
+                    Text(
+                      '${tx.takenAt!.month}/${tx.takenAt!.day}',
+                      style: theme.typography.textSmall.copyWith(
+                        color: colorScheme.mutedForeground,
+                      ),
                     ),
                 ],
               ),
-            ),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '$prefix$formatted',
-                  style: theme.typography.p.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: isExpense
-                        ? colorScheme.destructive
-                        : colorScheme.primary,
-                  ),
-                ),
-                if (tx.takenAt != null)
-                  Text(
-                    '${tx.takenAt!.month}/${tx.takenAt!.day}',
-                    style: theme.typography.textSmall.copyWith(
-                      color: colorScheme.mutedForeground,
-                    ),
-                  ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -412,7 +433,7 @@ class _WalletsSection extends StatelessWidget {
           )
         else
           SizedBox(
-            height: responsiveValue(context, compact: 120, medium: 140),
+            height: responsiveValue(context, compact: 156, medium: 172),
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),

@@ -162,6 +162,11 @@
     "financeConfidentialAmount": "Ẩn số tiền",
     "financeConfidentialDescription": "Ẩn mô tả",
     "financeConfidentialCategory": "Ẩn danh mục",
+    "financeToday": "Hôm nay",
+    "financeYesterday": "Hôm qua",
+    "financeNet": "Ròng",
+    "financeTransfer": "Chuyển khoản",
+    "financeTransactionCountShort": "gd",
 
     "timerTitle": "Bấm giờ",
     "timerStart": "Bắt đầu",

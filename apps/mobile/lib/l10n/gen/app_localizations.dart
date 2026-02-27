@@ -889,6 +889,36 @@ abstract class AppLocalizations {
   /// **'Confidential category'**
   String get financeConfidentialCategory;
 
+  /// No description provided for @financeToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get financeToday;
+
+  /// No description provided for @financeYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get financeYesterday;
+
+  /// No description provided for @financeNet.
+  ///
+  /// In en, this message translates to:
+  /// **'Net'**
+  String get financeNet;
+
+  /// No description provided for @financeTransfer.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer'**
+  String get financeTransfer;
+
+  /// No description provided for @financeTransactionCountShort.
+  ///
+  /// In en, this message translates to:
+  /// **'tx'**
+  String get financeTransactionCountShort;
+
   /// No description provided for @timerTitle.
   ///
   /// In en, this message translates to:

@@ -62,8 +62,29 @@ class FinanceRepository {
         .toList();
   }
 
-  /// Cursor-based paginated transaction fetch, mirroring the web's
-  /// `/api/workspaces/[wsId]/transactions/infinite` endpoint.
+  /// Cursor-based paginated fetch via the web API
+  /// (`/api/workspaces/[wsId]/transactions/infinite`).
+  ///
+  /// Returns an [InfiniteTransactionResponse] with enriched transaction data
+  /// (tags, category icon/color, creator, transfer metadata).
+  Future<InfiniteTransactionResponse> getTransactionsInfinite({
+    required String wsId,
+    int limit = 20,
+    String? cursor,
+    String? search,
+  }) async {
+    final params = <String, String>{'limit': limit.toString()};
+    if (cursor != null) params['cursor'] = cursor;
+    if (search != null && search.isNotEmpty) params['q'] = search;
+
+    final query = Uri(queryParameters: params).query;
+    final response = await _api.getJson(
+      '${FinanceEndpoints.infiniteTransactions(wsId)}?$query',
+    );
+
+    return InfiniteTransactionResponse.fromJson(response);
+  }
+
   ///
   /// [cursor] is a composite `{taken_at}_{created_at}` string.  Pass `null`
   /// for the first page.  Returns `limit + 1` rows so the caller can detect

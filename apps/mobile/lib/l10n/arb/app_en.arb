@@ -162,6 +162,11 @@
     "financeConfidentialAmount": "Confidential amount",
     "financeConfidentialDescription": "Confidential description",
     "financeConfidentialCategory": "Confidential category",
+    "financeToday": "Today",
+    "financeYesterday": "Yesterday",
+    "financeNet": "Net",
+    "financeTransfer": "Transfer",
+    "financeTransactionCountShort": "tx",
 
     "timerTitle": "Time tracker",
     "timerStart": "Start",

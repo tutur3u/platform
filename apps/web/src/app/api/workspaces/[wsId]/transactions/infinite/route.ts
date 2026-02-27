@@ -10,7 +10,7 @@ interface Params {
 export async function GET(req: Request, { params }: Params) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(req);
     const { searchParams } = new URL(req.url);
 
     const cursor = searchParams.get('cursor');
