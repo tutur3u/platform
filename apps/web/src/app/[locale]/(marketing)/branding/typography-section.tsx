@@ -168,9 +168,7 @@ export default function TypographySection() {
         className="mb-16 space-y-6 text-center"
       >
         <h2 className="font-bold text-4xl tracking-tight md:text-5xl">
-          <span className="inline-block border-b-4 border-[#5FC6E5] pb-2 text-white">
-            Typography
-          </span>
+          Typography
         </h2>
 
         <p className="mx-auto max-w-2xl text-muted-foreground text-sm leading-relaxed md:text-base">

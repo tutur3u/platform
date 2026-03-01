@@ -1,12 +1,12 @@
-import { LOCALE_COOKIE_NAME, PUBLIC_PATHS } from './constants/common';
-import { Locale, defaultLocale, supportedLocales } from './i18n/routing';
 import { match } from '@formatjs/intl-localematcher';
 import { updateSession } from '@ncthub/supabase/next/proxy';
-import { SupabaseUser } from '@ncthub/supabase/next/user';
+import type { SupabaseUser } from '@ncthub/supabase/next/user';
 import Negotiator from 'negotiator';
-import createIntlMiddleware from 'next-intl/middleware';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import createIntlMiddleware from 'next-intl/middleware';
+import { LOCALE_COOKIE_NAME, PUBLIC_PATHS } from './constants/common';
+import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 
 export async function proxy(req: NextRequest): Promise<NextResponse> {
   // Make sure user session is always refreshed
@@ -31,7 +31,7 @@ export const config = {
      * - favicon.ico (favicon file)
      * - robots.txt (SEO)
      * - sitemap.xml (SEO)
-     * - site.webmanifest (SEO)
+     * - manifest.webmanifest (SEO)
      * - monitoring (analytics)
      * Excludes files with the following extensions for static assets:
      * - svg
@@ -44,7 +44,7 @@ export const config = {
      * - glb
      */
 
-    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|site.webmanifest|monitoring|.*\\.(?:svg|png|jpg|jpeg|pdf|gif|webp|glb)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|monitoring|.*\\.(?:svg|png|jpg|jpeg|pdf|gif|webp|glb)$).*)',
   ],
 };
 

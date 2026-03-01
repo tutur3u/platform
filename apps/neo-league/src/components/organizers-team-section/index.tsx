@@ -13,13 +13,13 @@ export default function OrganizersTeamSection() {
       <div className="mx-auto max-w-6xl">
         {/* Section Header */}
         <div className="mb-16 text-center">
-          <h2 className="mb-4 text-3xl md:text-4xl tracking-wide">
+          <h2 className="mb-4 text-3xl tracking-wide md:text-4xl">
             <span className="font-medium text-brand-teal italic">
               ORGANIZING{' '}
             </span>
             <span className="relative inline-block font-black text-brand-teal">
               TEAM
-              <span className="absolute left-0 -bottom-1 h-1 w-full bg-yellow-400"></span>
+              <span className="absolute -bottom-1 left-0 h-1 w-full bg-yellow-400"></span>
             </span>
           </h2>
           <p className="mx-auto max-w-2xl text-foreground/70 text-lg">
@@ -28,6 +28,7 @@ export default function OrganizersTeamSection() {
           </p>
         </div>
 
+        {/* Project Leaders */}
         {leaders.length > 0 && (
           <div className="mb-16">
             <h3 className="mb-8 text-center font-bold text-2xl">
@@ -52,7 +53,7 @@ export default function OrganizersTeamSection() {
           </div>
         )}
 
-        <div>
+        <div className="glass-card rounded-2xl p-8">
           <h3 className="mb-8 text-center font-bold text-2xl">
             <span className="text-primary">Teams</span>
           </h3>
@@ -74,52 +75,46 @@ export default function OrganizersTeamSection() {
             {/* Tab Contents */}
             {teams.map((team) => (
               <TabsContent key={team.name} value={team.name}>
-                <div className="glass-card rounded-2xl p-8">
-                  {/* Team Role/Description */}
-                  <div className="mb-8 text-center">
-                    <div className="gradient-bg mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl">
-                      <span className="font-black text-2xl text-white">
-                        {team.name.charAt(0)}
-                      </span>
-                    </div>
-                    <h4 className="mb-2 font-black text-xl">{team.name}</h4>
-                    <p className="mx-auto max-w-xl text-base text-foreground/70">
-                      {team.description}
-                    </p>
-                  </div>
+                {/* Team Header */}
+                <div className="mb-8 text-center">
+                  <h4 className="mb-2 font-black text-xl">{team.name}</h4>
+                  <p className="mx-auto max-w-xl text-base text-foreground/70">
+                    {team.description}
+                  </p>
+                </div>
 
-                  {/* Team Members Grid */}
-                  <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-                    {team.members.map((member, memberIndex) => (
-                      <AnimatedSection
-                        key={memberIndex}
-                        delay={
-                          Math.floor(memberIndex / 5) * 0.08 +
-                          (memberIndex % 5) * 0.03
-                        }
-                      >
-                        <div className="group flex flex-col items-center text-center">
-                          <Avatar className="mb-3 h-20 w-20 transition-transform duration-300 group-hover:scale-110 sm:h-24 sm:w-24">
-                            <AvatarImage
-                              src={member.avatar}
-                              alt={member.name}
-                            />
-                            <AvatarFallback className="bg-secondary/20 font-bold text-lg">
-                              {getInitials(member.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="font-semibold text-foreground text-sm">
-                            {member.name}
+                {/* Team Members Grid */}
+                <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                  {team.members.map((member, memberIndex) => (
+                    <AnimatedSection
+                      key={memberIndex}
+                      delay={
+                        Math.floor(memberIndex / 5) * 0.08 +
+                        (memberIndex % 5) * 0.03
+                      }
+                    >
+                      <div className="group flex flex-col items-center text-center">
+                        <Avatar className="mb-3 h-20 w-20 bg-white/40 transition-transform duration-300 group-hover:scale-110 sm:h-24 sm:w-24">
+                          <AvatarImage
+                            src={member.avatar}
+                            alt={member.name}
+                            className="object-cover"
+                          />
+                          <AvatarFallback className="bg-secondary/20 font-bold text-lg">
+                            {getInitials(member.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="font-semibold text-foreground text-sm">
+                          {member.name}
+                        </span>
+                        {member.role && (
+                          <span className="text-foreground/60 text-xs">
+                            {member.role}
                           </span>
-                          {member.role && (
-                            <span className="text-foreground/60 text-xs">
-                              {member.role}
-                            </span>
-                          )}
-                        </div>
-                      </AnimatedSection>
-                    ))}
-                  </div>
+                        )}
+                      </div>
+                    </AnimatedSection>
+                  ))}
                 </div>
               </TabsContent>
             ))}

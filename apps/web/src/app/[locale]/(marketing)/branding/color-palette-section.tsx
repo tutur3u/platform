@@ -24,7 +24,7 @@ export default function ColorPaletteSection() {
         viewport={{ once: true }}
         className="space-y-6 text-center"
       >
-        <h2 className="inline-block border-b-4 border-[#5FC6E5] pb-2 text-white font-bold text-5xl tracking-tight">
+        <h2 className="font-bold text-4xl tracking-tight md:text-5xl">
           Color Palette
         </h2>
         <p className="mx-auto max-w-2xl text-muted-foreground text-sm leading-relaxed md:text-base">

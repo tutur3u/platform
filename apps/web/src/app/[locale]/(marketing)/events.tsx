@@ -25,7 +25,7 @@ type EventType = {
   link?: string;
 };
 
-const EventImages: EventType[] = [
+const eventImages: EventType[] = [
   {
     src: '/club-day/sem-c-2025.png',
     title: 'Club Day Semester C 2025',
@@ -98,11 +98,8 @@ export default function Events() {
           <Camera className="h-6 w-6 text-primary" />
         </div>
 
-        <h2 className="mb-4 text-3xl font-bold md:text-4xl lg:text-5xl">
-          Memorable{' '}
-          <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-            Moments
-          </span>
+        <h2 className="mb-4 font-bold text-3xl md:text-4xl lg:text-5xl">
+          Memorable Moments
         </h2>
 
         <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
@@ -122,11 +119,11 @@ export default function Events() {
             viewport={{ once: true }}
             className="md:col-span-2 md:row-span-2 lg:col-span-2"
           >
-            <PrimaryEventCard event={EventImages[0]!} />
+            <PrimaryEventCard event={eventImages[0]!} />
           </motion.div>
 
           {/* Secondary Event Cards */}
-          {EventImages.slice(1).map((event, index) => (
+          {eventImages.slice(1).map((event, index) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 50 }}
@@ -147,13 +144,13 @@ export default function Events() {
           viewport={{ once: true }}
           className="text-center"
         >
-          <Card className="mx-auto max-w-md border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5">
+          <Card className="mx-auto max-w-md border-primary/20 bg-linear-to-r from-primary/5 to-secondary/5">
             <CardContent className="p-6">
               <Sparkles className="mx-auto mb-3 h-8 w-8 text-primary" />
-              <h3 className="mb-2 text-xl font-semibold">
+              <h3 className="mb-2 font-semibold text-xl">
                 Join Our Next Event
               </h3>
-              <p className="mb-4 text-sm text-muted-foreground">
+              <p className="mb-4 text-muted-foreground text-sm">
                 Don't miss out on our upcoming activities and networking
                 opportunities
               </p>
@@ -184,11 +181,11 @@ export default function Events() {
 const PrimaryEventCard = ({ event }: { event: EventType }) => {
   return (
     <Link
-      href={event.link ? event.link : 'https://www.facebook.com/rmit.nct'}
-      target="_blank"
-      rel="noopener noreferrer"
+      href={event.link ?? '#'}
+      target={event.link ? '_blank' : undefined}
+      rel={event.link ? 'noopener noreferrer' : undefined}
     >
-      <Card className="group relative h-full min-h-[400px] overflow-hidden border-2 transition-all duration-500 hover:border-primary/50 hover:shadow-2xl">
+      <Card className="group relative h-full min-h-100 overflow-hidden border-2 transition-all duration-500 hover:border-primary/50 hover:shadow-2xl">
         <div className="relative h-full">
           <Image
             src={event.src}
@@ -198,7 +195,7 @@ const PrimaryEventCard = ({ event }: { event: EventType }) => {
           />
 
           {/* Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" />
 
           {/* Content */}
           <div className="absolute right-0 bottom-0 left-0 p-6 text-white">
@@ -206,7 +203,7 @@ const PrimaryEventCard = ({ event }: { event: EventType }) => {
               Featured Event
             </Badge>
 
-            <h3 className="mb-2 text-2xl font-bold">{event.title}</h3>
+            <h3 className="mb-2 font-bold text-2xl">{event.title}</h3>
             <p className="mb-4 text-sm text-white/80">{event.description}</p>
 
             <div className="flex flex-wrap gap-4 text-sm">
@@ -233,9 +230,9 @@ const PrimaryEventCard = ({ event }: { event: EventType }) => {
 const SecondaryEventCard = ({ event }: { event: EventType }) => {
   return (
     <Link
-      href={event.link ? event.link : 'https://www.facebook.com/rmit.nct'}
-      target="_blank"
-      rel="noopener noreferrer"
+      href={event.link ?? '#'}
+      target={event.link ? '_blank' : undefined}
+      rel={event.link ? 'noopener noreferrer' : undefined}
     >
       <Card className="group relative h-48 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
         <div className="relative h-full">
@@ -247,12 +244,12 @@ const SecondaryEventCard = ({ event }: { event: EventType }) => {
           />
 
           {/* Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent" />
 
           {/* Content */}
           <div className="absolute right-0 bottom-0 left-0 p-4 text-white">
-            <h4 className="mb-1 text-sm font-semibold">{event.title}</h4>
-            <p className="mb-2 text-xs text-white/70">{event.description}</p>
+            <h4 className="mb-1 font-semibold text-sm">{event.title}</h4>
+            <p className="mb-2 text-white/70 text-xs">{event.description}</p>
 
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-1">

@@ -32,8 +32,8 @@ export async function GET(request: Request) {
   }
 
   // Get the user's tokens with more defensive query
-  let googleTokens;
-  let googleTokensError;
+  let googleTokens: any;
+  let googleTokensError: any;
 
   try {
     // Get wsId from query parameters

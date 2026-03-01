@@ -1,10 +1,5 @@
 'use client';
 
-import { type Mail } from '../data';
-import { useMail } from '../use-mail';
-import { MailDisplay } from './mail-display';
-import { MailList } from './mail-list';
-import { Nav } from './nav';
 import { Archive, Inbox, Search, Send } from '@ncthub/ui/icons';
 import { Input } from '@ncthub/ui/input';
 import {
@@ -17,6 +12,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@ncthub/ui/tabs';
 import { TooltipProvider } from '@ncthub/ui/tooltip';
 import { cn } from '@ncthub/utils/format';
 import * as React from 'react';
+import type { Mail } from '../data';
+import { useMail } from '../use-mail';
+import { MailDisplay } from './mail-display';
+import { MailList } from './mail-list';
+import { Nav } from './nav';
 
 interface MailProps {
   mails: Mail[];
@@ -37,43 +37,39 @@ export function Mail({
   return (
     <TooltipProvider delayDuration={0}>
       <ResizablePanelGroup
-        direction="horizontal"
-        onLayout={(sizes: number[]) => {
+        orientation="horizontal"
+        defaultLayout={{
+          nav: defaultLayout[0] ?? 20,
+          list: defaultLayout[1] ?? 32,
+          preview: defaultLayout[2] ?? 48,
+        }}
+        onLayoutChange={(sizes) => {
           document.cookie = `react-resizable-panels:layout:mail=${JSON.stringify(
             sizes
           )}`;
         }}
-        className="h-full max-h-[800px] items-stretch"
+        className="h-full max-h-200 items-stretch"
       >
         <ResizablePanel
+          id="nav"
           defaultSize={defaultLayout[0]}
           collapsedSize={navCollapsedSize}
           collapsible={true}
           minSize={15}
           maxSize={20}
-          onCollapse={async () => {
-            setIsCollapsed(true);
+          onResize={async (panelSize) => {
+            const collapsed = panelSize.asPercentage <= navCollapsedSize;
+            setIsCollapsed(collapsed);
             await fetch('/api/v1/infrastructure/sidebar', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
               },
-              body: JSON.stringify({ collapsed: true }),
-            });
-          }}
-          onResize={async () => {
-            setIsCollapsed(false);
-            await fetch('/api/v1/infrastructure/sidebar', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ collapsed: false }),
+              body: JSON.stringify({ collapsed }),
             });
           }}
           className={cn(
-            isCollapsed &&
-              'min-w-[50px] transition-all duration-300 ease-in-out'
+            isCollapsed && 'min-w-12.5 transition-all duration-300 ease-in-out'
           )}
         >
           <Nav
@@ -155,10 +151,10 @@ export function Mail({
           {/*/>*/}
         </ResizablePanel>
         <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={defaultLayout[1]} minSize={30}>
+        <ResizablePanel id="list" defaultSize={defaultLayout[1]} minSize={30}>
           <Tabs defaultValue="all">
             <div className="flex items-center px-4 py-2">
-              <h1 className="text-xl font-bold">Inbox</h1>
+              <h1 className="font-bold text-xl">Inbox</h1>
               <TabsList className="ml-auto">
                 <TabsTrigger
                   value="all"
@@ -193,6 +189,7 @@ export function Mail({
         </ResizablePanel>
         <ResizableHandle className="hidden md:block" />
         <ResizablePanel
+          id="preview"
           className="hidden md:block"
           defaultSize={defaultLayout[2]}
           minSize={30}

@@ -71,9 +71,14 @@ export function Structure({
 
       <TooltipProvider delayDuration={0}>
         <ResizablePanelGroup
-          direction="horizontal"
-          onLayout={(sizes: number[]) => {
-            const [sidebar, main] = sizes;
+          orientation="horizontal"
+          defaultLayout={{
+            sidebar: defaultLayout[0] ?? 20,
+            main: defaultLayout[1] ?? 80,
+          }}
+          onLayoutChange={(sizes) => {
+            const sidebar = sizes['sidebar'];
+            const main = sizes['main'];
             if (typeof sidebar === 'number' && typeof main === 'number') {
               debouncedSaveSizes?.({ sidebar, main });
             }
@@ -84,18 +89,16 @@ export function Structure({
           )}
         >
           <ResizablePanel
+            id="sidebar"
             defaultSize={defaultLayout[0]}
             collapsedSize={navCollapsedSize}
             collapsible={true}
             minSize={15}
             maxSize={40}
-            onCollapse={() => {
-              setIsCollapsed(true);
-              debouncedSaveCollapsed?.(true);
-            }}
-            onResize={() => {
-              setIsCollapsed(false);
-              debouncedSaveCollapsed?.(false);
+            onResize={(panelSize) => {
+              const collapsed = panelSize.asPercentage <= navCollapsedSize;
+              setIsCollapsed(collapsed);
+              debouncedSaveCollapsed?.(collapsed);
             }}
             className={cn(
               isCollapsed
@@ -144,7 +147,7 @@ export function Structure({
             </div>
           </ResizablePanel>
           <ResizableHandle withHandle className="hidden md:flex" />
-          <ResizablePanel defaultSize={defaultLayout[1]}>
+          <ResizablePanel id="main" defaultSize={defaultLayout[1]}>
             <main
               id="main-content"
               className="relative flex h-full min-h-screen flex-col overflow-y-auto p-4 pt-20 md:pt-4"

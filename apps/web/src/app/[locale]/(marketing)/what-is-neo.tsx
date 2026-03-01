@@ -14,7 +14,7 @@ import { motion } from 'framer-motion';
 
 const stats = [
   {
-    number: '40+',
+    number: '70+',
     content: 'Active Members',
     icon: Users,
     gradient: 'from-blue-500 to-cyan-500',
@@ -56,7 +56,7 @@ export default function WhatIsNeo() {
         <Sparkles className="h-6 w-6 text-[#FBC721]" />
         <Badge
           variant="outline"
-          className="border-[#5FC6E5]/50 px-4 py-2 text-base text-[#5FC6E5]"
+          className="border-[#5FC6E5]/50 px-4 py-2 text-[#5FC6E5] text-base"
         >
           Welcome to the Future
         </Badge>
@@ -70,10 +70,10 @@ export default function WhatIsNeo() {
         transition={{ duration: 0.8, delay: 0.4 }}
         viewport={{ once: true }}
       >
-        <h1 className="mb-2 text-4xl leading-normal font-extrabold md:text-5xl lg:text-6xl">
+        <h1 className="mb-2 font-extrabold text-4xl leading-normal md:text-5xl lg:text-6xl">
           What is{' '}
           <span className="relative">
-            <span className="border-b-4 border-[#FBC721] whitespace-nowrap text-[#5FC6E5]">
+            <span className="whitespace-nowrap border-[#FBC721] border-b-4 text-[#5FC6E5]">
               NEO Culture
             </span>
             <motion.div
@@ -103,20 +103,15 @@ export default function WhatIsNeo() {
         transition={{ duration: 0.8, delay: 0.6 }}
         viewport={{ once: true }}
       >
-        <p className="mt-6 text-lg font-semibold tracking-wide md:text-xl lg:mt-10 lg:text-3xl">
+        <p className="mt-6 font-semibold text-lg tracking-wide md:text-xl lg:mt-10 lg:text-3xl">
           Founded in 2020, we are the best club for
-          <span className="relative text-[#5FC6E5]">
+          <span className="border-[#FBC721] border-b-2 -pb-1 text-[#5FC6E5]">
             {' '}
-            SSET students{' '}
-            <motion.span
-              className="absolute right-0 -bottom-0.5 left-0 block h-0.5 bg-gradient-to-r from-[#5FC6E5] to-[#FBC721]"
-              initial={{ scaleX: 0 }}
-              whileInView={{ scaleX: 1 }}
-              transition={{ duration: 1, delay: 1 }}
-              viewport={{ once: true }}
-            />
+            SSET students
+          </span>{' '}
+          <span className="mt-1">
+            to explore the world of technology at RMIT University.
           </span>
-          to explore the world of technology at RMIT University.
         </p>
       </motion.div>
 
@@ -139,16 +134,16 @@ export default function WhatIsNeo() {
               whileHover={{ scale: 1.05 }}
               className="group"
             >
-              <Card className="relative overflow-hidden border-2 bg-gradient-to-br from-background/50 to-background backdrop-blur-sm transition-all duration-300 hover:border-primary/50">
+              <Card className="relative overflow-hidden border-2 bg-linear-to-br from-background/50 to-background backdrop-blur-sm transition-all duration-300 hover:border-primary/50">
                 {/* Background gradient effect */}
                 <div
-                  className={`absolute inset-0 bg-gradient-to-br ${item.gradient} opacity-0 transition-opacity duration-300 group-hover:opacity-10`}
+                  className={`absolute inset-0 bg-linear-to-br ${item.gradient} opacity-0 transition-opacity duration-300 group-hover:opacity-10`}
                 />
 
                 <CardContent className="relative p-8">
                   {/* Icon */}
                   <div
-                    className={`mx-auto mb-4 h-16 w-16 rounded-full bg-gradient-to-r ${item.gradient} p-0.5`}
+                    className={`mx-auto mb-4 h-16 w-16 rounded-full bg-linear-to-r ${item.gradient} p-0.5`}
                   >
                     <div className="flex h-full w-full items-center justify-center rounded-full bg-background">
                       <item.icon className="h-8 w-8 text-foreground transition-transform duration-300 group-hover:scale-110" />
@@ -167,14 +162,14 @@ export default function WhatIsNeo() {
                     viewport={{ once: true }}
                   >
                     <p
-                      className={`bg-gradient-to-r text-4xl font-extrabold md:text-5xl lg:text-6xl ${item.gradient} mb-2 bg-clip-text text-transparent`}
+                      className={`bg-linear-to-r font-extrabold text-4xl md:text-5xl lg:text-6xl ${item.gradient} mb-2 bg-clip-text text-transparent`}
                     >
                       {item.number}
                     </p>
                   </motion.div>
 
                   {/* Title */}
-                  <h3 className="mb-2 text-xl font-bold lg:text-2xl">
+                  <h3 className="mb-2 font-bold text-xl lg:text-2xl">
                     {item.content.split(' ').map((word, i) => (
                       <span key={i} className="block">
                         {word}
@@ -183,14 +178,14 @@ export default function WhatIsNeo() {
                   </h3>
 
                   {/* Description */}
-                  <p className="mb-4 text-sm text-muted-foreground">
+                  <p className="mb-4 text-muted-foreground text-sm">
                     {item.description}
                   </p>
 
                   {/* Trending indicator */}
                   <div className="flex items-center justify-center gap-1 text-green-500">
                     <TrendingUp className="h-4 w-4" />
-                    <span className="text-xs font-medium">Growing</span>
+                    <span className="font-medium text-xs">Growing</span>
                   </div>
                 </CardContent>
               </Card>

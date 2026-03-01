@@ -1,6 +1,6 @@
 # NCT Hub Monorepo
 
-This repository is a monorepo for all of NCT Hub's services, powered by Turborepo. View our documentation at [**docs.tuturuuu.com**](https://docs.tuturuuu.com).
+This repository is a monorepo for all of NCT Hub's services, powered by Turborepo. View our documentation at [**docs.rmitnct.club**](https://docs.rmitnct.club).
 
 ## Project Structure
 
@@ -24,17 +24,13 @@ This repository is a monorepo for all of NCT Hub's services, powered by Turborep
    cd hub
    ```
 
-2. **Configure Tiptap Pro Registry:**
-
-   > This step is no longer needed.
-
-3. **Install dependencies:**
+2. **Install dependencies:**
 
    ```bash
    bun i
    ```
 
-4. **Start the Supabase local development environment:**
+3. **Start the Supabase local development environment:**
 
    ```bash
    bun sb:start
@@ -42,11 +38,11 @@ This repository is a monorepo for all of NCT Hub's services, powered by Turborep
 
    This will provide the necessary URLs and keys for local development.
 
-5. **Create environment files:**
+4. **Create environment files:**
 
    Create a `.env.local` file in each app directory (`apps/*/.env.local`) using the corresponding `.env.example` template and add the Supabase URLs and keys from the previous step.
 
-6. **Start the desired application(s):**
+5. **Start the desired application(s):**
 
    Use the appropriate bun scripts to start the applications.
 

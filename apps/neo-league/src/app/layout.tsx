@@ -3,6 +3,7 @@ import { Poppins } from 'next/font/google';
 import '@ncthub/ui/globals.css';
 import './globals.css';
 import { BASE_URL } from '@/constants/configs';
+import JsonLd from '../components/json-ld';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -115,10 +116,6 @@ export const metadata: Metadata = {
       'en-US': BASE_URL,
     },
   },
-  icons: {
-    icon: '/favicon.ico',
-    apple: '/logo.png',
-  },
 };
 
 export default function RootLayout({
@@ -128,6 +125,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <JsonLd />
       <body className={`${poppins.className} antialiased`}>{children}</body>
     </html>
   );

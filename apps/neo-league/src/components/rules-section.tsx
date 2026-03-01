@@ -1,96 +1,141 @@
+import {
+  AlertOctagon,
+  CheckCircle2,
+  Component,
+  Cpu,
+  Gavel,
+  Trophy,
+  UserCheck,
+  Users,
+} from '@ncthub/ui/icons';
+
 export default function RulesSection() {
   return (
-    <section id="rules" className="px-6 py-20 md:px-8 md:py-24">
-      <div className="mx-auto max-w-6xl">
+    <section
+      id="rules"
+      className="relative overflow-hidden px-6 py-20 md:px-8 md:py-32"
+    >
+      <div className="relative z-10 mx-auto max-w-7xl">
         <div className="mb-16 text-center">
-          <h2 className="mb-4 text-3xl md:text-4xl tracking-wide">
+          <h2 className="mb-4 text-3xl tracking-wide md:text-4xl">
             <span className="font-medium text-brand-teal italic">
               ELIGIBILITY &{' '}
             </span>
             <span className="relative inline-block font-black text-brand-teal">
               RULES
-              <span className="absolute left-0 -bottom-1 h-1 w-full bg-yellow-400"></span>
+              <span className="absolute -bottom-1 left-0 h-1 w-full bg-yellow-400"></span>
             </span>
           </h2>
+          <p className="mx-auto mt-4 max-w-2xl font-bold text-lg text-primary">
+            The foundation for equity, inclusivity, and mutual respect
+            throughout the competition. Please review these requirements
+            carefully before registering.
+          </p>
         </div>
 
-        <div className="grid gap-8 md:grid-cols-2">
-          <div className="glass-card rounded-2xl p-8">
-            <h3 className="mb-6 flex items-center gap-3 font-black text-2xl">
-              <span className="gradient-bg flex h-10 w-10 items-center justify-center rounded-lg text-white">
-                ✓
-              </span>
-              ELIGIBILITY
-            </h3>
-            <ul className="space-y-4">
-              <li className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary">
-                  •
-                </span>
-                <span>
-                  Undergraduates <strong>over 18 years old</strong> from any
-                  university in Ho Chi Minh City
-                </span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary">
-                  •
-                </span>
-                <span>
-                  Team of <strong>exactly 4 members</strong> with diverse
-                  backgrounds (Business, Software, Robotics, etc.)
-                </span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary">
-                  •
-                </span>
-                <span>
-                  Projects must be{' '}
-                  <strong>functional physical prototypes</strong> — pure
-                  software solutions are excluded
-                </span>
-              </li>
-            </ul>
+        <div className="grid gap-6 md:grid-cols-2 lg:gap-12">
+          {/* Eligibility Card */}
+          <div className="group glass-card card-hover relative overflow-hidden rounded-3xl p-8 md:p-10">
+            <div className="relative">
+              <h3 className="mb-8 flex items-center gap-3 font-black text-2xl text-brand-teal uppercase tracking-wide">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-teal shadow-brand-teal/20 shadow-lg">
+                  <CheckCircle2 className="text-white text-xl" />
+                </div>
+                Eligibility
+              </h3>
+
+              <ul className="grid gap-4">
+                <li className="flex gap-4 rounded-xl border border-transparent bg-background/70 p-4 transition-all hover:border-brand-teal/20 hover:shadow-sm">
+                  <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-light-blue/10 text-brand-light-blue">
+                    <UserCheck className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-foreground">Who</h4>
+                    <p className="mt-1 text-muted-foreground text-sm">
+                      Undergraduates <strong>over 18 years old</strong> from any
+                      university in Ho Chi Minh City.
+                    </p>
+                  </div>
+                </li>
+                <li className="flex gap-4 rounded-xl border border-transparent bg-background/50 p-4 transition-all hover:border-brand-teal/20 hover:shadow-sm">
+                  <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-light-blue/10 text-brand-light-blue">
+                    <Users className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-foreground">
+                      Team Composition
+                    </h4>
+                    <p className="mt-1 text-muted-foreground text-sm">
+                      Exact team of <strong>4 members</strong> with diverse
+                      backgrounds (Business, Software, Robotics).
+                    </p>
+                  </div>
+                </li>
+                <li className="flex gap-4 rounded-xl border border-transparent bg-background/50 p-4 transition-all hover:border-brand-teal/20 hover:shadow-sm">
+                  <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-light-blue/10 text-brand-light-blue">
+                    <Component className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-foreground">Project Type</h4>
+                    <p className="mt-1 text-muted-foreground text-sm">
+                      Must be <strong>functional physical prototypes</strong>.
+                      Pure software solutions are excluded.
+                    </p>
+                  </div>
+                </li>
+              </ul>
+            </div>
           </div>
 
-          <div className="glass-card rounded-2xl p-8">
-            <h3 className="mb-6 flex items-center gap-3 font-black text-2xl">
-              <span className="gradient-bg flex h-10 w-10 items-center justify-center rounded-lg text-white">
-                !
-              </span>
-              RULES
-            </h3>
-            <ul className="space-y-4">
-              <li className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary">
-                  1
-                </span>
-                <span>
-                  <strong>ORIGINALITY:</strong> Projects must be created
-                  specifically for NEO League Season 2
-                </span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary">
-                  2
-                </span>
-                <span>
-                  <strong>INTEGRITY:</strong> Zero tolerance for plagiarism or
-                  &quot;ghost-building&quot; (using external professional
-                  services)
-                </span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary">
-                  3
-                </span>
-                <span>
-                  <strong>FINAL DAY:</strong> Finalists must surrender
-                  prototypes for morning inspection with 5-minute setup window
-                </span>
-              </li>
-            </ul>
+          {/* Rules Card */}
+          <div className="group glass-card card-hover relative overflow-hidden rounded-3xl p-8 md:p-10">
+            <div className="relative">
+              <h3 className="mb-8 flex items-center gap-3 font-black text-2xl text-brand-teal uppercase tracking-wide">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-teal shadow-brand-light-blue/20 shadow-lg">
+                  <AlertOctagon className="text-white text-xl" />
+                </div>
+                Rules
+              </h3>
+
+              <ul className="grid gap-4">
+                <li className="flex gap-4 rounded-xl border border-transparent bg-background/50 p-4 transition-all hover:border-brand-light-blue/20 hover:shadow-sm">
+                  <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-light-blue/10 text-brand-light-blue">
+                    <Cpu className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-foreground">Originality</h4>
+                    <p className="mt-1 text-muted-foreground text-sm">
+                      Projects must be created specifically for NEO League
+                      Season 2. No recycled work.
+                    </p>
+                  </div>
+                </li>
+                <li className="flex gap-4 rounded-xl border border-transparent bg-background/50 p-4 transition-all hover:border-brand-light-blue/20 hover:shadow-sm">
+                  <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-light-blue/10 text-brand-light-blue">
+                    <Gavel className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-foreground">Integrity</h4>
+                    <p className="mt-1 text-muted-foreground text-sm">
+                      Zero tolerance for plagiarism or "ghost-building"
+                      (external professional services).
+                    </p>
+                  </div>
+                </li>
+                <li className="flex gap-4 rounded-xl border border-transparent bg-background/50 p-4 transition-all hover:border-brand-light-blue/20 hover:shadow-sm">
+                  <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-light-blue/10 text-brand-light-blue">
+                    <Trophy className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-foreground">Final Day</h4>
+                    <p className="mt-1 text-muted-foreground text-sm">
+                      Finalists must surrender prototypes for morning inspection
+                      with a 5-minute setup window.
+                    </p>
+                  </div>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>

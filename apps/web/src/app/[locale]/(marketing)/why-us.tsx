@@ -97,16 +97,16 @@ export default function WhyUs() {
           <Sparkles className="h-6 w-6 text-[#FBC721]" />
           <Badge
             variant="outline"
-            className="border-[#5FC6E5]/50 px-4 py-2 text-base text-[#5FC6E5]"
+            className="border-[#5FC6E5]/50 px-4 py-2 text-[#5FC6E5] text-base"
           >
             Why Choose Us
           </Badge>
           <Sparkles className="h-6 w-6 text-[#FBC721]" />
         </motion.div>
 
-        <h2 className="mb-4 pb-4 text-4xl font-bold text-white drop-shadow-sm md:text-6xl lg:text-8xl">
+        <h2 className="mb-4 pb-4 font-bold text-4xl md:text-6xl lg:text-8xl">
           Why{' '}
-          <span className="border-b-4 border-[#FBC721] whitespace-nowrap text-[#5FC6E5]">
+          <span className="whitespace-nowrap border-[#FBC721] border-b-4 text-[#5FC6E5]">
             Us
           </span>
           <span>?</span>
@@ -130,24 +130,24 @@ export default function WhyUs() {
             whileHover={{ scale: 1.02 }}
             className="group"
           >
-            <Card className="h-full border-2 bg-gradient-to-br from-background/50 to-background shadow-lg backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-xl">
+            <Card className="h-full border-2 bg-linear-to-br from-background/50 to-background shadow-lg backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-xl">
               <CardHeader className="pb-4 text-center">
                 {/* Icon with gradient background */}
                 <div
-                  className={`mx-auto mb-4 h-16 w-16 rounded-full bg-gradient-to-r ${reason.gradient} p-0.5 transition-transform duration-300 group-hover:scale-105`}
+                  className={`mx-auto mb-4 h-16 w-16 rounded-full bg-linear-to-r ${reason.gradient} p-0.5 transition-transform duration-300 group-hover:scale-105`}
                 >
                   <div className="flex h-full w-full items-center justify-center rounded-full bg-background">
                     <reason.icon className="h-8 w-8 text-foreground transition-transform duration-300 group-hover:scale-110" />
                   </div>
                 </div>
 
-                <CardTitle className="mb-2 text-xl font-bold md:text-2xl">
+                <CardTitle className="mb-2 font-bold text-xl md:text-2xl">
                   {reason.title}
                 </CardTitle>
 
                 <Badge
                   variant="secondary"
-                  className={`bg-gradient-to-r ${reason.gradient} mb-4 border-0 text-white shadow-sm`}
+                  className={`bg-linear-to-r ${reason.gradient} mb-4 border-0 text-white shadow-sm`}
                 >
                   {reason.badgeText}
                 </Badge>
@@ -163,7 +163,7 @@ export default function WhyUs() {
                   {reason.features.map((feature, featureIndex) => (
                     <div key={featureIndex} className="flex items-center gap-2">
                       <Star className="h-4 w-4 fill-current text-yellow-400" />
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-muted-foreground text-sm">
                         {feature}
                       </span>
                     </div>

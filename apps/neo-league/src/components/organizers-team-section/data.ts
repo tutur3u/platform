@@ -72,7 +72,16 @@ export const teams: Team[] = [
     description: 'Coordinating team operations and internal communications.',
     members: [
       { name: 'Kelvin Lam', role: 'Team Leader' },
-      { name: 'Member 2', role: 'Member' },
+      {
+        name: 'Minh Nhat',
+        role: 'Member',
+        avatar: '/organizer-team/internal-affairs/minh-nhat.png',
+      },
+      {
+        name: 'Duy Khanh',
+        role: 'Member',
+        avatar: '/organizer-team/internal-affairs/duy-khanh.png',
+      },
       // Add more members
     ],
   },
@@ -81,11 +90,20 @@ export const teams: Team[] = [
     description: 'Managing venues, equipment, and operational logistics.',
     members: [
       {
-        name: 'Kim',
+        name: 'Thien Kim',
         role: 'Team Leader',
         avatar: '/organizer-team/logistic/kim.png',
       },
-      { name: 'Member 2' },
+      {
+        name: 'Mai Kim',
+        role: 'Member',
+        avatar: '/organizer-team/logistic/mai-kim.png',
+      },
+      {
+        name: 'Bao Ngoc',
+        role: 'Member',
+        avatar: '/organizer-team/logistic/ngoc.png',
+      },
       // Add more members
     ],
   },

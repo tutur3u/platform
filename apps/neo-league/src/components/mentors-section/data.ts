@@ -2,7 +2,7 @@ export const mentors = [
   {
     name: 'DR. BYRON MASON',
     field: 'Robotics & Mechatronics Engineering',
-    avatar: '/mentors/byronanthony-mason.png',
+    avatar: '/mentors/byron-mason.png',
   },
   {
     name: 'DR. DINH-SON VU',

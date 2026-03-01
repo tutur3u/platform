@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 /* Color Theme */
 :root {
   --primary: #202945;
@@ -9,12 +11,11 @@
   --background: #c4ecff;
   --foreground: #022539;
 
-  --brand-teal: #034a5b;
   --brand-light-yellow: #ffd65a;
   --brand-light-red: #ff8a89;
   --brand-light-blue: #356df9;
   --brand-dark-blue: #345ad1;
-  --brand-white: #ffffff;
+  --brand-teal: #034a5b;
 }
 
 .dark {

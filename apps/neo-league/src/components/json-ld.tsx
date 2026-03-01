@@ -98,13 +98,13 @@ const orgData = {
 
 export default function JsonLd() {
   return (
-    <>
+    <head>
       <script type="application/ld+json" suppressHydrationWarning>
         {JSON.stringify(eventData)}
       </script>
       <script type="application/ld+json" suppressHydrationWarning>
         {JSON.stringify(orgData)}
       </script>
-    </>
+    </head>
   );
 }

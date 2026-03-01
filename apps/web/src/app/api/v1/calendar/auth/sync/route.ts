@@ -1,4 +1,4 @@
-import { CalendarEvent as BaseCalendarEvent } from '@ncthub/ai/calendar/events';
+import type { CalendarEvent as BaseCalendarEvent } from '@ncthub/ai/calendar/events';
 import { createClient } from '@ncthub/supabase/next/server';
 import { OAuth2Client } from 'google-auth-library';
 import { google } from 'googleapis';
