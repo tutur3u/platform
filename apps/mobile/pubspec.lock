@@ -1265,10 +1265,10 @@ packages:
     dependency: "direct main"
     description:
       name: shadcn_flutter
-      sha256: e677bf66246fa97df82f32eb80c5b683af14a5b1799fd313016b26ed823a1d9e
+      sha256: b04e2f790e182007d02b78234c647df393f2ea95b39d8da88d7cbdaed56f7701
       url: "https://pub.dev"
     source: hosted
-    version: "0.0.51"
+    version: "0.0.52"
   shared_preferences:
     dependency: "direct main"
     description:
@@ -1740,4 +1740,4 @@ packages:
     version: "2.1.0"
 sdks:
   dart: ">=3.11.0 <4.0.0"
-  flutter: ">=3.41.0 <4.0.0"
+  flutter: ">=3.41.0"

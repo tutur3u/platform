@@ -32,7 +32,7 @@ dependencies:
   lucide_icons: ^0.257.0
   mime: ^2.0.0
   package_info_plus: ^9.0.0
-  shadcn_flutter: ^0.0.51
+  shadcn_flutter: ^0.0.52
   shared_preferences: ^2.5.4
   supabase_flutter: ^2.12.0
   url_launcher: ^6.3.2
