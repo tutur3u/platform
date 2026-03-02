@@ -38,7 +38,7 @@ export default function HeroSection() {
 
           {/* SEO: Visually hidden h1 for search engines */}
           <h1 className="sr-only">
-            RMIT NEO League 2026 — IoT Competition & Innovation Humanity
+            NEO League 2026 — RMIT IoT Competition & Innovation Humanity
             Challenge | Student IoT Hackathon Vietnam
           </h1>
 
