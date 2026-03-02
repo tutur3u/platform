@@ -24,7 +24,7 @@ dev = [
   "types-pytz",
 ]
 
-[project.gui-scripts]
+[project.scripts]
 test = "pytest"
 test-coverage = "pytest --cov"
 type-check = "mypy ."
@@ -32,8 +32,8 @@ format = "ruff format --check ."
 format-fix = "ruff format ."
 lint = "ruff lint --check ."
 lint-fix = "ruff lint ."
-dev = "uvicorn main:app --host 127.0.0.1 --port 5500 --reload"
-start = "uvicorn main:app --host 127.0.0.1 --port 5500"
+dev = "uvicorn app:app --host 127.0.0.1 --port 5500 --reload"
+start = "uvicorn app:app --host 127.0.0.1 --port 5500"
 run = "modal run modal_deployment.py"
 serve = "modal serve modal_deployment.py"
 deploy = "modal deploy modal_deployment.py"
