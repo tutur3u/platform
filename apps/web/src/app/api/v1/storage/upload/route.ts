@@ -1,20 +1,9 @@
-/**
- * Storage Upload API
- * POST /api/v1/storage/upload
- *
- * Uploads a file to the workspace drive
- */
-
 import { posix } from 'node:path';
 import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
 import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { createErrorResponse, withApiAuth } from '@/lib/api-middleware';
 
-// Route segment config for large file uploads
-export const maxDuration = 60; // 60 seconds timeout for uploads // Use Node.js runtime for better FormData handling
-
-// Configurable allowlist of acceptable MIME types and extensions
 const ALLOWED_MIME_TYPES = new Set([
   // Images
   'image/png',

@@ -7,9 +7,6 @@ import {
 } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 
-export const maxDuration = 60;
-export const preferredRegion = 'sin1';
-
 const model = 'gemini-2.5-flash-lite';
 
 export function createPATCH() {

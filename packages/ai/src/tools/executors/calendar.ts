@@ -2,6 +2,7 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import type { MiraToolContext } from '../mira-tools';
+import { getWorkspaceContextWorkspaceId } from '../workspace-context';
 import {
   decryptEventsForTools,
   encryptEventFieldsForTools,
@@ -17,6 +18,7 @@ export async function executeGetUpcomingEvents(
 ) {
   const days = (args.num_days as number) || (args.days as number) || 7;
   const tz = ctx.timezone;
+  const workspaceId = getWorkspaceContextWorkspaceId(ctx);
 
   // Build the query window in the user's timezone so "today" means their
   // full calendar day, not "from this UTC instant forward".
@@ -40,7 +42,7 @@ export async function executeGetUpcomingEvents(
   const { data: events, error } = await ctx.supabase
     .from('workspace_calendar_events')
     .select('id, title, description, start_at, end_at, location, is_encrypted')
-    .eq('ws_id', ctx.wsId)
+    .eq('ws_id', workspaceId)
     .gte('start_at', rangeStart.toISOString())
     .lte('start_at', rangeEnd.toISOString())
     .order('start_at', { ascending: true })
@@ -49,7 +51,7 @@ export async function executeGetUpcomingEvents(
   if (error) return { error: error.message };
   if (!events?.length) return { count: 0, events: [] };
 
-  const decrypted = await decryptEventsForTools(events, ctx.wsId);
+  const decrypted = await decryptEventsForTools(events, workspaceId);
 
   // Format dates in the user's timezone so the model presents local times
   const formatInTz = (iso: string) => {
@@ -88,6 +90,7 @@ export async function executeCreateEvent(
   args: Record<string, unknown>,
   ctx: MiraToolContext
 ) {
+  const workspaceId = getWorkspaceContextWorkspaceId(ctx);
   const title = args.title as string;
   const description = (args.description as string) ?? '';
   const location = (args.location as string) ?? null;
@@ -125,7 +128,7 @@ export async function executeCreateEvent(
 
   const encrypted = await encryptEventFieldsForTools(
     { title, description, location },
-    ctx.wsId
+    workspaceId
   );
 
   const { data: event, error } = await ctx.supabase
@@ -136,7 +139,7 @@ export async function executeCreateEvent(
       end_at: endAt,
       description: encrypted.description,
       location: encrypted.location,
-      ws_id: ctx.wsId,
+      ws_id: workspaceId,
       is_encrypted: encrypted.is_encrypted,
     })
     .select('id, title, start_at, end_at')
@@ -157,6 +160,7 @@ export async function executeUpdateEvent(
   args: Record<string, unknown>,
   ctx: MiraToolContext
 ) {
+  const workspaceId = getWorkspaceContextWorkspaceId(ctx);
   const eventId = args.eventId as string;
   const title = args.title as string | undefined;
   const description = args.description as string | undefined;
@@ -199,7 +203,7 @@ export async function executeUpdateEvent(
     .from('workspace_calendar_events')
     .select('is_encrypted')
     .eq('id', eventId)
-    .eq('ws_id', ctx.wsId)
+    .eq('ws_id', workspaceId)
     .single();
 
   if (fetchError || !existingEvent) {
@@ -225,7 +229,7 @@ export async function executeUpdateEvent(
     // but the helper expects the full object. We will merge carefully.
     const encrypted = await encryptEventFieldsForTools(
       fieldsToEncrypt,
-      ctx.wsId
+      workspaceId
     );
 
     if (title !== undefined) updates.title = encrypted.title;
@@ -240,7 +244,7 @@ export async function executeUpdateEvent(
     .from('workspace_calendar_events')
     .update(updates)
     .eq('id', eventId)
-    .eq('ws_id', ctx.wsId);
+    .eq('ws_id', workspaceId);
 
   if (error) return { error: error.message };
 
@@ -254,13 +258,14 @@ export async function executeDeleteEvent(
   args: Record<string, unknown>,
   ctx: MiraToolContext
 ) {
+  const workspaceId = getWorkspaceContextWorkspaceId(ctx);
   const eventId = args.eventId as string;
 
   const { error } = await ctx.supabase
     .from('workspace_calendar_events')
     .delete()
     .eq('id', eventId)
-    .eq('ws_id', ctx.wsId);
+    .eq('ws_id', workspaceId);
 
   if (error) return { error: error.message };
 
@@ -276,7 +281,8 @@ export async function executeCheckE2EEStatus(
   _args: Record<string, unknown>,
   ctx: MiraToolContext
 ) {
-  const key = await getWorkspaceKeyForTools(ctx.wsId);
+  const workspaceId = getWorkspaceContextWorkspaceId(ctx);
+  const key = await getWorkspaceKeyForTools(workspaceId);
   const hasKey = key !== null;
 
   if (!hasKey) {
@@ -291,7 +297,7 @@ export async function executeCheckE2EEStatus(
   const { count, error } = await ctx.supabase
     .from('workspace_calendar_events')
     .select('id', { count: 'exact', head: true })
-    .eq('ws_id', ctx.wsId)
+    .eq('ws_id', workspaceId)
     .eq('is_encrypted', false);
 
   return {
@@ -309,6 +315,7 @@ export async function executeEnableE2EE(
   _args: Record<string, unknown>,
   ctx: MiraToolContext
 ) {
+  const workspaceId = getWorkspaceContextWorkspaceId(ctx);
   try {
     const {
       isEncryptionEnabled,
@@ -326,7 +333,7 @@ export async function executeEnableE2EE(
     }
 
     // Check if key already exists
-    const existingKey = await getWorkspaceKeyForTools(ctx.wsId);
+    const existingKey = await getWorkspaceKeyForTools(workspaceId);
     if (existingKey) {
       return {
         success: true,
@@ -344,9 +351,10 @@ export async function executeEnableE2EE(
     );
     const sbAdmin = await createAdminClient();
 
-    const { error } = await sbAdmin
-      .from('workspace_encryption_keys')
-      .insert({ ws_id: ctx.wsId, encrypted_key: encryptedKey } as never);
+    const { error } = await sbAdmin.from('workspace_encryption_keys').insert({
+      ws_id: workspaceId,
+      encrypted_key: encryptedKey,
+    } as never);
 
     if (error) return { success: false, error: error.message };
 

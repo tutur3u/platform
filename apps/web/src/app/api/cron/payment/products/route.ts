@@ -1,9 +1,9 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceProductTier } from '@tuturuuu/types';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { syncProductToDatabase } from '@/utils/polar-product-helper';
 
 /**
  * Cron job to sync products from Polar.sh to database
@@ -49,67 +49,8 @@ export async function GET(req: NextRequest) {
         // Process each product
         for (const product of products) {
           try {
-            // Extract product_tier from metadata
-            const metadataProductTier = product.metadata?.product_tier;
-
-            if (
-              !metadataProductTier ||
-              typeof metadataProductTier !== 'string'
-            ) {
-              throw new Error('Missing or invalid product_tier in metadata');
-            }
-
-            const tier =
-              metadataProductTier.toUpperCase() as WorkspaceProductTier;
-
-            const firstPrice = product.prices.find((p) => 'amountType' in p);
-
-            const isSeatBased = firstPrice?.amountType === 'seat_based';
-            const isFixed = firstPrice?.amountType === 'fixed';
-
-            const price = isFixed ? firstPrice.priceAmount : null;
-
-            const pricePerSeat = isSeatBased
-              ? (firstPrice?.seatTiers?.tiers?.[0]?.pricePerSeat ?? null)
-              : null;
-
-            const minSeats = isSeatBased
-              ? firstPrice?.seatTiers?.minimumSeats
-              : null;
-
-            const maxSeats = isSeatBased
-              ? firstPrice?.seatTiers?.maximumSeats
-              : null;
-
-            // Prepare product data
-            const productData = {
-              id: product.id,
-              name: product.name,
-              description: product.description || '',
-              price,
-              recurring_interval: product.recurringInterval || 'month',
-              tier,
-              archived: product.isArchived ?? false,
-              pricing_model: firstPrice?.amountType,
-              price_per_seat: pricePerSeat,
-              min_seats: minSeats,
-              max_seats: maxSeats,
-            };
-
-            // Upsert product
-            const { error: dbError } = await sbAdmin
-              .from('workspace_subscription_products')
-              .upsert(productData, {
-                onConflict: 'id',
-                ignoreDuplicates: false,
-              });
-
-            if (dbError) {
-              failedCount++;
-              errors.push(`Product ${product.id}: ${dbError.message}`);
-            } else {
-              processedCount++;
-            }
+            await syncProductToDatabase(sbAdmin, product);
+            processedCount++;
           } catch (error) {
             failedCount++;
             const errorMessage =
@@ -149,5 +90,3 @@ export async function GET(req: NextRequest) {
     );
   }
 }
-
-export const maxDuration = 300; // 5 minutes

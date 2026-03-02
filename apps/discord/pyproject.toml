@@ -1,0 +1,31 @@
+[project]
+name = "tuturuuu-discord-bot"
+version = "0.1.0"
+description = "Discord bot services for Tuturuuu"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+  "modal",
+  "fastapi",
+  "uvicorn[standard]",
+  "aiohttp",
+  "requests",
+  "supabase",
+  "postgrest",
+  "pynacl",
+  "nanoid",
+  "pytz",
+  "python-dotenv",
+  "markitdown[all]>=0.1.5",
+]
+
+[dependency-groups]
+dev = [
+  "pytest",
+  "pytest-asyncio",
+  "pytest-cov",
+  "ruff",
+  "mypy",
+  "types-requests",
+  "types-pytz",
+]

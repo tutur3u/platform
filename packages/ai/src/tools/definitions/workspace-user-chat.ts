@@ -84,7 +84,8 @@ export const workspaceUserChatToolDefinitions = {
   }),
 
   list_workspace_members: tool({
-    description: 'List all members of the current workspace with their roles.',
+    description:
+      'List all members of the current workspace context from `workspace_members`. Use `get_workspace_context` to inspect the active workspace first, and `list_accessible_workspaces` + `set_workspace_context` when the user names another workspace.',
     inputSchema: z.object({}),
   }),
 

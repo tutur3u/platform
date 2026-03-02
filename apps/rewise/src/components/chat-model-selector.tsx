@@ -1,5 +1,5 @@
-import { type Model, models, providers } from '@tuturuuu/ai/models';
 import { Check } from '@tuturuuu/icons';
+import type { AIModelUI } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Command,
@@ -12,24 +12,37 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 export function ChatModelSelector({
   open,
   model,
+  models = [],
   className,
   setOpen,
   onChange,
 }: {
   open: boolean;
-  model?: Model;
+  model?: AIModelUI;
+  models?: AIModelUI[];
   className?: string;
 
   setOpen: (open: boolean) => void;
 
-  onChange: (value: Model) => void;
+  onChange: (value: AIModelUI) => void;
 }) {
-  const [previewModel, setPreviewModel] = useState<Model | undefined>(model);
+  const [previewModel, setPreviewModel] = useState<AIModelUI | undefined>(
+    model
+  );
+
+  const providers = useMemo(
+    () =>
+      models.reduce((acc, m) => {
+        if (!acc.includes(m.provider)) acc.push(m.provider);
+        return acc;
+      }, [] as string[]),
+    [models]
+  );
 
   const currentModel = model
     ? models.find((m) => m.value === model.value)
@@ -81,11 +94,7 @@ export function ChatModelSelector({
                         )
                           return;
 
-                        onChange(
-                          models.find(
-                            (m) => `${m.provider}-${m.value}` === currentValue
-                          ) as Model
-                        );
+                        onChange(m);
                       }}
                       onClick={() => setPreviewModel(m)}
                       onMouseOver={() => setPreviewModel(m)}

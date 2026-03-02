@@ -1,3 +1,4 @@
+import { BoardsListSkeleton } from '@tuturuuu/ui/tu-do/boards/boards-list-skeleton';
 import WorkspaceProjectsPage from '@tuturuuu/ui/tu-do/boards/workspace-projects-page';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
@@ -20,7 +21,7 @@ interface Props {
 
 export default async function ProjectsPage({ params, searchParams }: Props) {
   return (
-    <Suspense>
+    <Suspense fallback={<BoardsListSkeleton />}>
       <WorkspaceProjectsPage
         params={params}
         searchParams={searchParams}

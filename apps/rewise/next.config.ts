@@ -11,7 +11,6 @@ const WEB_APP_URL =
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
-  cacheComponents: true,
   typescript: {
     ignoreBuildErrors: true,
   },

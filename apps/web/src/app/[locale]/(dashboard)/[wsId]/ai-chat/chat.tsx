@@ -1,11 +1,10 @@
 'use client';
 
 import { DefaultChatTransport } from '@tuturuuu/ai/core';
-import { defaultModel, type Model, models } from '@tuturuuu/ai/models';
 import { useChat } from '@tuturuuu/ai/react';
 import type { UIMessage } from '@tuturuuu/ai/types';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { AIChat } from '@tuturuuu/types';
+import type { AIChat, AIModelUI } from '@tuturuuu/types';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { cn } from '@tuturuuu/utils/format';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
@@ -30,6 +29,17 @@ export interface ChatProps extends React.ComponentProps<'div'> {
   disableScrollToBottom?: boolean;
 }
 
+const DEFAULT_MODEL: AIModelUI = {
+  value: 'google/gemini-3-flash',
+  label: 'gemini-3-flash',
+  provider: 'google',
+};
+
+/** Extract provider from a gateway ID like "google/gemini-2.5-flash" → "google" */
+function extractProvider(modelId: string): string {
+  return modelId.includes('/') ? modelId.split('/')[0]! : 'google';
+}
+
 export default function Chat({
   defaultChat,
   wsId,
@@ -49,7 +59,7 @@ export default function Chat({
   const searchParams = useSearchParams();
 
   const [chat, setChat] = useState<Partial<AIChat> | undefined>(defaultChat);
-  const [model, setModel] = useState<Model | undefined>(defaultModel);
+  const [model, setModel] = useState<AIModelUI | undefined>(DEFAULT_MODEL);
   const [input, setInput] = useState('');
 
   const {
@@ -65,13 +75,7 @@ export default function Chat({
     transport: new DefaultChatTransport({
       api:
         chat?.model || model?.value
-          ? `/api/ai/chat/${(
-              chat?.model
-                ? models
-                    .find((m) => m.value === chat.model)
-                    ?.provider.toLowerCase() || model?.provider.toLowerCase()
-                : model?.provider.toLowerCase()
-            )?.replaceAll(' ', '-')}`
+          ? `/api/ai/chat/${extractProvider(chat?.model ?? model?.value ?? 'google/gemini-2.5-flash')}`
           : undefined,
       credentials: 'include',
       headers: { 'Custom-Header': 'value' },
@@ -120,7 +124,7 @@ export default function Chat({
       setSummarizing(true);
 
       const res = await fetch(
-        `/api/ai/chat/${model.provider.toLowerCase().replace(' ', '-')}/summary`,
+        `/api/ai/chat/${extractProvider(model.value)}/summary`,
         {
           credentials: 'include',
           method: 'PATCH',
@@ -231,7 +235,7 @@ export default function Chat({
     setPendingPrompt(input);
 
     const res = await fetch(
-      `/api/ai/chat/${model.provider.toLowerCase().replace(' ', '-')}/new`,
+      `/api/ai/chat/${extractProvider(model.value)}/new`,
       {
         credentials: 'include',
         method: 'POST',

@@ -1,10 +1,10 @@
-import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const FileUrlsRequestSchema = z.object({
-  wsId: z.string().uuid(),
+  wsId: z.string().min(1),
   chatId: z.string().uuid(),
 });
 
@@ -21,12 +21,43 @@ const SIGNED_URL_EXPIRY_SECONDS = 3600;
  * Storage path: `{wsId}/chats/ai/resources/{chatId}/`
  */
 export const POST = withSessionAuth(
-  async (req) => {
+  async (req, { user, supabase }) => {
     try {
       const body = await req.json();
-      const { wsId, chatId } = FileUrlsRequestSchema.parse(body);
+      const { wsId: wsIdRaw, chatId } = FileUrlsRequestSchema.parse(body);
+      const wsId = await normalizeWorkspaceId(wsIdRaw);
 
-      const supabase = await createDynamicAdminClient();
+      if (!wsId) {
+        return NextResponse.json(
+          { message: 'Invalid workspace ID' },
+          { status: 400 }
+        );
+      }
+
+      const { data: membership, error: membershipError } = await supabase
+        .from('workspace_members')
+        .select('user_id')
+        .eq('ws_id', wsId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (membershipError) {
+        console.error(
+          'Error validating workspace membership for file-urls:',
+          membershipError
+        );
+        return NextResponse.json(
+          { message: 'Failed to verify workspace access' },
+          { status: 500 }
+        );
+      }
+
+      if (!membership) {
+        return NextResponse.json(
+          { message: "You don't have access to this workspace" },
+          { status: 403 }
+        );
+      }
 
       // List all files in the chat's storage folder
       const storagePath = `${wsId}/chats/ai/resources/${chatId}`;
@@ -136,6 +167,12 @@ function extensionToMime(ext: string): string {
     mov: 'video/quicktime',
     txt: 'text/plain',
     csv: 'text/csv',
+    xls: 'application/vnd.ms-excel',
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ppt: 'application/vnd.ms-powerpoint',
+    pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    doc: 'application/msword',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     json: 'application/json',
     md: 'text/markdown',
   };

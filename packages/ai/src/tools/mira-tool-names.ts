@@ -67,6 +67,10 @@ export const MIRA_TOOL_NAMES = [
   'merge_memories',
   'create_image',
   'google_search',
+  'convert_file_to_markdown',
+  'list_accessible_workspaces',
+  'get_workspace_context',
+  'set_workspace_context',
   'update_my_settings',
   'set_theme',
   'render_ui',
@@ -77,4 +81,4 @@ export const MIRA_TOOL_NAMES = [
 ] as const;
 
 export type MiraToolName = (typeof MIRA_TOOL_NAMES)[number];
-export type DefinedMiraToolName = Exclude<MiraToolName, 'google_search'>;
+export type DefinedMiraToolName = MiraToolName;

@@ -6,9 +6,6 @@ import { gateway, Output, streamText } from 'ai';
 import { NextResponse } from 'next/server';
 import { quizSchema } from '../types';
 
-export const maxDuration = 60;
-export const preferredRegion = 'sin1';
-
 const DEFAULT_MODEL_NAME = 'google/gemini-2.5-flash';
 
 export async function POST(req: Request) {

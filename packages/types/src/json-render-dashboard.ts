@@ -138,6 +138,41 @@ export type JsonRenderBarChartProps = {
   height?: number;
 };
 
+export type JsonRenderArticleHeaderProps = {
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+  byline?: string;
+  publishedAt?: string;
+  readingTime?: string;
+};
+
+export type JsonRenderInsightSectionProps = {
+  title: string;
+  summary?: string;
+  tone?: 'neutral' | 'positive' | 'warning' | 'critical';
+};
+
+export type JsonRenderKeyPointsProps = {
+  title?: string;
+  points: string[];
+  ordered?: boolean;
+};
+
+export type JsonRenderSourceListItem = {
+  title: string;
+  url: string;
+  publisher?: string;
+  note?: string;
+};
+
+export type JsonRenderSourceListProps = {
+  title?: string;
+  sources: JsonRenderSourceListItem[];
+  compact?: boolean;
+  showUrl?: boolean;
+};
+
 export type JsonRenderFlashcardProps = {
   front: string;
   back: string;

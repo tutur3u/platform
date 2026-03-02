@@ -18,6 +18,26 @@ export interface CreditDeductionResult {
   errorCode: string | null;
 }
 
+export interface CreditReservationResult {
+  success: boolean;
+  reservationId: string | null;
+  remainingCredits: number;
+  errorCode: string | null;
+}
+
+export interface CreditReservationCommitResult {
+  success: boolean;
+  creditsDeducted: number;
+  remainingCredits: number;
+  errorCode: string | null;
+}
+
+export interface CreditReservationReleaseResult {
+  success: boolean;
+  remainingCredits: number;
+  errorCode: string | null;
+}
+
 export interface AiCreditStatus {
   totalAllocated: number;
   totalUsed: number;
@@ -58,7 +78,7 @@ export interface FeatureAccess {
 }
 
 export interface DeductCreditsParams {
-  wsId: string;
+  wsId?: string;
   userId?: string;
   modelId: string;
   inputTokens: number;

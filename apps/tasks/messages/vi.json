@@ -2097,6 +2097,7 @@
     "n_links": "{count, plural, other {# liên kết}}",
     "n_projects": "{count} dự án",
     "n_related_tasks": "{count, plural, other {# công việc liên quan}}",
+    "n_subtasks_abandoned": "{count, plural, other {# công việc con đã bỏ qua}}",
     "n_subtasks_completed": "{checked} trên {total} công việc con đã hoàn thành",
     "n_videos": "{count, plural, other {# video}}",
     "name_updated": "Đã cập nhật tên thành công",

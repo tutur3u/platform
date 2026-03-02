@@ -14,8 +14,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
-export const maxDuration = 300; // 5 minutes max for cron job
-
 export async function GET(req: NextRequest) {
   const cronSecret =
     process.env.CRON_SECRET ?? process.env.VERCEL_CRON_SECRET ?? '';

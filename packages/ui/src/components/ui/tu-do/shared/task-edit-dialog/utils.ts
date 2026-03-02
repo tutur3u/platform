@@ -1,5 +1,7 @@
+import type { QueryClient } from '@tanstack/react-query';
 import type { JSONContent } from '@tiptap/react';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { Task } from '@tuturuuu/types/primitives/Task';
 
 const supabase = createClient();
 
@@ -35,22 +37,28 @@ export function getDescriptionContent(desc: any): JSONContent | null {
 }
 
 /**
- * Saves Yjs-derived description to the database for embeddings and analytics
+ * Saves Yjs-derived description to the database for embeddings and analytics.
+ * After a successful save, optimistically updates the task's description in the
+ * ['tasks', boardId] React Query cache so that task card badges (e.g. checkbox
+ * counts) reflect the latest state without a full cache invalidation.
+ *
  * @param taskId - The task ID to update
  * @param getContent - Function that returns the current editor content (can be null if empty)
+ * @param boardId - Board ID used to locate the task in the React Query cache
+ * @param queryClient - React Query client for optimistic cache updates
  * @param context - Optional context string for logging (e.g., 'close', 'force-close', 'auto-close')
  */
 export async function saveYjsDescriptionToDatabase({
   taskId,
   getContent,
+  boardId,
+  queryClient,
   context = 'save',
 }: {
   taskId: string;
   getContent: () => JSONContent | null;
-  /** @deprecated No longer used - kept for backward compatibility */
   boardId?: string;
-  /** @deprecated No longer used - kept for backward compatibility */
-  queryClient?: any;
+  queryClient?: QueryClient;
   context?: string;
 }): Promise<boolean> {
   try {
@@ -72,12 +80,20 @@ export async function saveYjsDescriptionToDatabase({
       return false;
     }
 
-    console.log(`✅ Yjs description saved for embeddings (${context})`);
+    // Optimistically update the task's description in the cache so the task
+    // card badge (checkbox counts, etc.) reflects the latest editor state.
+    // This avoids full invalidation which would cause all tasks to flicker.
+    if (boardId && queryClient) {
+      queryClient.setQueryData<Task[]>(['tasks', boardId], (oldTasks) => {
+        if (!oldTasks) return oldTasks;
+        return oldTasks.map((t) =>
+          t.id === taskId
+            ? { ...t, description: descriptionString ?? undefined }
+            : t
+        );
+      });
+    }
 
-    // Note: We intentionally do NOT invalidate task caches here.
-    // The realtime subscription will handle updating other users,
-    // and the task card already has the latest content from Yjs.
-    // Invalidating would cause all tasks to flicker (disappear then reappear).
     return true;
   } catch (error) {
     console.error(`Failed to save Yjs description (${context}):`, error);

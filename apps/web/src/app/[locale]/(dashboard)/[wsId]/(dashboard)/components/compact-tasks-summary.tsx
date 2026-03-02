@@ -54,30 +54,35 @@ export default async function CompactTasksSummary({
   });
 
   return (
-    <Card className="min-w-0 border-border/50">
-      <CardHeader className="px-3 pt-3 pb-2 sm:px-4 sm:pt-4">
+    <Card className="min-w-0 border-0 bg-transparent shadow-none">
+      <CardHeader className="px-2 pt-2 pb-1">
         <div className="flex min-w-0 items-center justify-between gap-2">
-          <CardTitle className="flex min-w-0 items-center gap-2 truncate font-semibold text-sm">
+          <CardTitle className="flex min-w-0 items-center gap-1.5 truncate font-semibold text-xs">
             <ListTodo className="h-4 w-4 shrink-0 text-dynamic-orange" />
             <span className="truncate">{t('compact_tasks_title')}</span>
           </CardTitle>
-          <Link href={`/${wsId}/tasks`} className="shrink-0">
-            <Button variant="ghost" size="sm" className="h-7 text-xs">
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="h-5 shrink-0 px-1.5 text-[11px]"
+          >
+            <Link href={`/${wsId}/tasks`}>
               {t('view_all')}
               <ArrowRight className="ml-1 h-3 w-3" />
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       </CardHeader>
-      <CardContent className="px-3 pb-3 sm:px-4 sm:pb-4">
+      <CardContent className="px-2 pb-2">
         {total === 0 ? (
-          <div className="flex min-w-0 items-center gap-2 text-muted-foreground text-sm">
+          <div className="flex min-w-0 items-center gap-1.5 text-muted-foreground text-xs">
             <CheckCircle2 className="h-4 w-4 shrink-0 text-dynamic-green" />
             <span className="truncate">{t('compact_tasks_empty')}</span>
           </div>
         ) : (
           <div className="flex min-w-0 items-center gap-3">
-            <div className="shrink-0 font-bold text-2xl">{total}</div>
+            <div className="shrink-0 font-bold text-xl">{total}</div>
             <div className="flex min-w-0 flex-col gap-0.5 text-xs">
               {overdue > 0 && (
                 <span

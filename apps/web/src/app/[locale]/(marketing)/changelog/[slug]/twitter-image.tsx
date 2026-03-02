@@ -1,7 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { ImageResponse } from 'next/og';
-
-export const runtime = 'edge';
 export const alt = 'Tuturuuu Changelog';
 export const size = {
   width: 1200,

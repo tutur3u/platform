@@ -17,9 +17,9 @@
 
 const { spawn } = require('node:child_process');
 
-const USE_TABLE = process.argv.includes('--table');
-const SHOW_TIMING = process.argv.includes('--timing');
-const SHOW_DETAILS = process.argv.includes('--details');
+const useTable = process.argv.includes('--table');
+const showTiming = process.argv.includes('--timing');
+const showDetails = process.argv.includes('--details');
 
 /**
  * Strip ANSI escape codes from a string
@@ -262,9 +262,11 @@ function printSummary(results) {
     );
   }
 
-  if (USE_TABLE) {
+  if (useTable) {
     const col1Header = 'Check';
     const col2Header = 'Status';
+    const col3Header = 'Details';
+    const col4Header = 'Time';
     const col1Width = Math.max(
       col1Header.length,
       ...results.map((r) => r.name.length)
@@ -272,29 +274,56 @@ function printSummary(results) {
     const col2Width = Math.max(
       col2Header.length,
       ...results.map((r) => {
-        const prefix = r.success ? 'PASS ' : 'FAIL ';
-        return getDisplayWidth(prefix) + r.status.length;
+        const prefix = r.success ? 'PASS' : 'FAIL';
+        return getDisplayWidth(prefix);
       })
     );
+    const detailsValues = results.map((r) => r.status);
+    const timeValues = results.map((r) => formatDuration(r.duration));
     const colWidths = [col1Width, col2Width];
+    if (showDetails) {
+      colWidths.push(
+        Math.max(
+          getDisplayWidth(col3Header),
+          ...detailsValues.map((v) => getDisplayWidth(v))
+        )
+      );
+    }
+    if (showTiming) {
+      colWidths.push(
+        Math.max(
+          getDisplayWidth(col4Header),
+          ...timeValues.map((v) => getDisplayWidth(v))
+        )
+      );
+    }
 
     console.log(createLine('┌', '┬', '┐', colWidths));
-    console.log(
-      createRow(
-        [
-          `${colors.bold}${col1Header}${colors.reset}`,
-          `${colors.bold}${col2Header}${colors.reset}`,
-        ],
-        colWidths
-      )
-    );
+    const headerCells = [
+      `${colors.bold}${col1Header}${colors.reset}`,
+      `${colors.bold}${col2Header}${colors.reset}`,
+    ];
+    if (showDetails) {
+      headerCells.push(`${colors.bold}${col3Header}${colors.reset}`);
+    }
+    if (showTiming) {
+      headerCells.push(`${colors.bold}${col4Header}${colors.reset}`);
+    }
+    console.log(createRow(headerCells, colWidths));
     console.log(createLine('├', '┼', '┤', colWidths));
 
     for (const result of results) {
       const statusText = result.success
-        ? `${colors.green}PASS ${result.status}${colors.reset}`
-        : `${colors.red}FAIL ${result.status}${colors.reset}`;
-      console.log(createRow([result.name, statusText], colWidths));
+        ? `${colors.green}PASS${colors.reset}`
+        : `${colors.red}FAIL${colors.reset}`;
+      const rowCells = [result.name, statusText];
+      if (showDetails) rowCells.push(result.status);
+      if (showTiming) {
+        rowCells.push(
+          `${colors.dim}${formatDuration(result.duration)}${colors.reset}`
+        );
+      }
+      console.log(createRow(rowCells, colWidths));
 
       if (result !== results[results.length - 1]) {
         console.log(createLine('├', '┼', '┤', colWidths));
@@ -307,8 +336,8 @@ function printSummary(results) {
       const statusLabel = result.success ? 'PASS' : 'FAIL';
       const statusColor = result.success ? colors.green : colors.red;
       let output = `${statusColor}${statusLabel}${colors.reset} ${result.name}`;
-      if (SHOW_DETAILS) output += `: ${result.status}`;
-      if (SHOW_TIMING) output += ` (${formatDuration(result.duration)})`;
+      if (showDetails) output += `: ${result.status}`;
+      if (showTiming) output += ` (${formatDuration(result.duration)})`;
       console.log(output);
     }
   }

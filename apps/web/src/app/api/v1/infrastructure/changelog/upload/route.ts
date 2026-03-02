@@ -3,9 +3,6 @@ import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { checkChangelogPermission } from '../utils';
 
-// Route segment config for file uploads
-export const maxDuration = 60;
-
 // Allowed MIME types for changelog media
 const ALLOWED_MIME_TYPES = new Set([
   'image/png',

@@ -1,4 +1,3 @@
-import type { Model } from '@tuturuuu/ai/models';
 import type { UIMessage, UseChatHelpers } from '@tuturuuu/ai/types';
 import {
   ArrowDownToLine,
@@ -11,7 +10,7 @@ import {
   Lock,
 } from '@tuturuuu/icons';
 import { createDynamicClient } from '@tuturuuu/supabase/next/client';
-import type { AIChat } from '@tuturuuu/types';
+import type { AIChat, AIModelUI } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   FileUploader,
@@ -53,8 +52,8 @@ export interface ChatPanelProps
   input: string;
   inputRef: React.RefObject<HTMLTextAreaElement | null>;
   setInput: (input: string) => void;
-  model?: Model;
-  setModel: (model: Model) => void;
+  model?: AIModelUI;
+  setModel: (model: AIModelUI) => void;
   createChat: (input: string) => Promise<void>;
   updateChat: (data: Partial<AIChat>) => Promise<void>;
   clearChat: () => void;
@@ -470,7 +469,7 @@ export async function uploadFile(
   wsId: string,
   file: StatedFile,
   id?: string
-): Promise<{ data: any; error: any }> {
+): Promise<{ data: { path: string } | null; error: Error | string | null }> {
   if (!id) return { data: null, error: 'No chat id provided' };
 
   const fileName = file.rawFile.name;

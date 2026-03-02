@@ -255,7 +255,11 @@ function getAppTranslations(appDir) {
  *   - "namespace.key"   — skip a specific key
  */
 function loadExceptions() {
-  const configPath = path.join(ROOT_DIR, 'i18n-namespace-check.config.json');
+  const configPath = path.join(
+    ROOT_DIR,
+    'scripts',
+    'i18n-namespace-check.config.json'
+  );
   if (!fs.existsSync(configPath)) return {};
 
   return JSON.parse(fs.readFileSync(configPath, 'utf-8'));
@@ -459,7 +463,7 @@ function main() {
       "Fix: Add missing namespaces/keys to the affected app's messages/en.json and vi.json"
     );
     console.log(
-      'If a namespace is intentionally unused, add it to the namespace list in i18n-namespace-check.config.json'
+      'If a namespace is intentionally unused, add it to the namespace list in scripts/i18n-namespace-check.config.json'
     );
     console.log(
       'If specific keys are unused, add patterns (e.g. "namespace.*") to the keyExceptions section\n'

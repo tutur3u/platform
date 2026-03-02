@@ -59,6 +59,7 @@ interface EditorExtensionsOptions {
     project_name?: string;
     create_project?: string;
   };
+  readOnly?: boolean;
 }
 
 export function getEditorExtensions({
@@ -71,7 +72,7 @@ export function getEditorExtensions({
   onVideoUpload,
   mentionTranslations,
   readOnly = false,
-}: EditorExtensionsOptions & { readOnly?: boolean } = {}): Extensions {
+}: EditorExtensionsOptions = {}): Extensions {
   return [
     ...(doc
       ? [
@@ -185,7 +186,7 @@ export function getEditorExtensions({
         }),
     TaskList,
     ListConverter,
-    ...(readOnly ? [] : [ListItemDrag]),
+    ListItemDrag,
     Table.configure({
       resizable: !readOnly,
       lastColumnResizable: !readOnly,

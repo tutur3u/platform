@@ -3,8 +3,6 @@ import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { gateway, generateObject } from 'ai';
 import { emailDraftSchema } from './schema';
 
-export const maxDuration = 30;
-
 export async function POST(req: Request) {
   try {
     // Get the current user

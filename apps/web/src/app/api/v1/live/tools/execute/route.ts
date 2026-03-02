@@ -8,8 +8,6 @@ import { getWorkspaceTier } from '@tuturuuu/utils/workspace-helper';
 import { embed } from 'ai';
 import { isFeatureAvailable } from '@/lib/feature-tiers';
 
-export const maxDuration = 30;
-
 type ToolCallRequest = {
   wsId: string;
   functionName: string;

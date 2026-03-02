@@ -15,21 +15,21 @@ import {
   FileText,
   Image as ImageIcon,
   Link2,
+  ListChecks,
   ListTodo,
   ListTree,
   MoreHorizontal,
   Play,
+  SquareCenterlineDashedVertical,
   Timer,
   Trash2,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
-import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -80,7 +80,6 @@ import { TaskLabelsDisplay } from '../../shared/task-labels-display';
 import { TaskViewerAvatarsComponent } from '../../shared/user-presence-avatars';
 import {
   getCardColorClasses as getCardColorClassesUtil,
-  getListColorClasses,
   getListTextColorClass,
   getTicketBadgeColorClasses,
 } from '../../utils/taskColorUtils';
@@ -99,6 +98,7 @@ import {
   TaskRelatedMenu,
 } from './menus';
 import { TaskActions } from './task-actions';
+import { TaskCardCheckbox } from './task-card/TaskCardCheckbox';
 import { TaskCustomDateDialog } from './task-dialogs/TaskCustomDateDialog';
 import { TaskDeleteDialog } from './task-dialogs/TaskDeleteDialog';
 import { TaskNewLabelDialog } from './task-dialogs/TaskNewLabelDialog';
@@ -609,8 +609,10 @@ function TaskCardInner({
       });
     }
 
-    // Sub-tasks counter badge
+    // Sub-tasks counter badge (checked / total, excludes indeterminate)
     if (descriptionMeta.totalCheckboxes > 0) {
+      const allChecked =
+        descriptionMeta.checkedCheckboxes === descriptionMeta.totalCheckboxes;
       badges.push({
         id: 'subtasks',
         element: (
@@ -619,8 +621,7 @@ function TaskCardInner({
             variant="secondary"
             className={cn(
               'border font-medium text-[10px]',
-              descriptionMeta.checkedCheckboxes ===
-                descriptionMeta.totalCheckboxes
+              allChecked
                 ? 'border-dynamic-green/30 bg-dynamic-green/15 text-dynamic-green'
                 : 'border-dynamic-gray/30 bg-dynamic-gray/10 text-dynamic-gray'
             )}
@@ -632,9 +633,37 @@ function TaskCardInner({
               if (el) badgeRefs.current.set('subtasks', el as any);
             }}
           >
-            <ListTodo className="h-3 w-3" />
+            {allChecked ? (
+              <ListChecks className="h-3 w-3" />
+            ) : (
+              <ListTodo className="h-3 w-3" />
+            )}
             {descriptionMeta.checkedCheckboxes}/
             {descriptionMeta.totalCheckboxes}
+          </Badge>
+        ),
+      });
+    }
+
+    // Indeterminate (abandoned) sub-tasks badge
+    if (descriptionMeta.indeterminateCheckboxes > 0) {
+      badges.push({
+        id: 'indeterminate-subtasks',
+        element: (
+          <Badge
+            key="indeterminate-subtasks"
+            variant="secondary"
+            className="border border-dynamic-orange/30 bg-dynamic-orange/15 font-medium text-[10px] text-dynamic-orange"
+            title={t('n_subtasks_abandoned', {
+              count: descriptionMeta.indeterminateCheckboxes,
+            })}
+            ref={(el) => {
+              if (el)
+                badgeRefs.current.set('indeterminate-subtasks', el as any);
+            }}
+          >
+            <SquareCenterlineDashedVertical className="h-3 w-3" />
+            {descriptionMeta.indeterminateCheckboxes}
           </Badge>
         ),
       });
@@ -841,6 +870,7 @@ function TaskCardInner({
     boardConfig?.estimation_type,
     descriptionMeta.totalCheckboxes,
     descriptionMeta.checkedCheckboxes,
+    descriptionMeta.indeterminateCheckboxes,
     parentTask,
     childTasks,
     blockingTasks,
@@ -1704,20 +1734,11 @@ function TaskCardInner({
 
               {/* Checkbox: hidden for documents lists */}
               {taskList?.status !== 'documents' && (
-                <Checkbox
-                  checked={!!task.closed_at}
-                  className={cn(
-                    'h-4 w-4 flex-none transition-all duration-200',
-                    'data-[state=checked]:border-dynamic-green/70 data-[state=checked]:bg-dynamic-green/70',
-                    'hover:scale-110 hover:border-primary/50',
-                    getListColorClasses(taskList?.color as SupportedColor),
-                    isOverdue &&
-                      !task.closed_at &&
-                      'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20'
-                  )}
-                  disabled={isLoading}
-                  onCheckedChange={handleArchiveToggle}
-                  onClick={(e) => e.stopPropagation()}
+                <TaskCardCheckbox
+                  task={task}
+                  taskList={taskList}
+                  isLoading={isLoading}
+                  onToggle={handleArchiveToggle}
                 />
               )}
             </div>

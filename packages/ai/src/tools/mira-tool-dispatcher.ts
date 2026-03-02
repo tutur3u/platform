@@ -29,6 +29,7 @@ import {
   executeUpdateWallet,
 } from './executors/finance';
 import { executeGenerateImage } from './executors/image';
+import { executeConvertFileToMarkdown } from './executors/markitdown';
 import {
   executeDeleteMemory,
   executeListMemories,
@@ -36,6 +37,7 @@ import {
   executeRecall,
   executeRemember,
 } from './executors/memory';
+import { executeGoogleSearch } from './executors/search';
 import { executeUpdateMySettings } from './executors/settings';
 import {
   executeAddTaskAssignee,
@@ -78,7 +80,12 @@ import {
   executeUpdateTimeTrackingSession,
 } from './executors/timer';
 import { executeUpdateUserName } from './executors/user';
-import { executeListWorkspaceMembers } from './executors/workspace';
+import {
+  executeGetWorkspaceContext,
+  executeListAccessibleWorkspaces,
+  executeListWorkspaceMembers,
+  executeSetWorkspaceContext,
+} from './executors/workspace';
 import type { DefinedMiraToolName } from './mira-tool-definitions';
 import {
   buildRenderUiRecoverySpec,
@@ -94,6 +101,7 @@ type ToolHandler = (
 const toolHandlers = {
   select_tools: (args) => ({ ok: true, selectedTools: args.tools }),
   no_action_needed: () => ({ ok: true }),
+  google_search: executeGoogleSearch,
 
   get_my_tasks: executeGetMyTasks,
   create_task: executeCreateTask,
@@ -165,6 +173,10 @@ const toolHandlers = {
   merge_memories: executeMergeMemories,
 
   create_image: executeGenerateImage,
+  convert_file_to_markdown: executeConvertFileToMarkdown,
+  list_accessible_workspaces: executeListAccessibleWorkspaces,
+  get_workspace_context: executeGetWorkspaceContext,
+  set_workspace_context: executeSetWorkspaceContext,
 
   update_my_settings: executeUpdateMySettings,
   set_default_currency: executeSetDefaultCurrency,
@@ -181,11 +193,39 @@ export async function executeMiraTool(
 ): Promise<unknown> {
   if (toolName === 'render_ui') {
     if (!isRenderableRenderUiSpec(args)) {
+      const diagnosisParts: string[] = [];
+      if (typeof args.root !== 'string' || args.root.length === 0) {
+        diagnosisParts.push('`root` is missing or not a string');
+      }
+      const elements = args.elements;
+      if (
+        !elements ||
+        typeof elements !== 'object' ||
+        Array.isArray(elements)
+      ) {
+        diagnosisParts.push('`elements` is missing or not an object');
+      } else if (Object.keys(elements as object).length === 0) {
+        diagnosisParts.push(
+          '`elements` is empty — you must define at least elements[root]'
+        );
+      } else if (
+        typeof args.root === 'string' &&
+        args.root.length > 0 &&
+        !(args.root in (elements as Record<string, unknown>))
+      ) {
+        diagnosisParts.push(
+          `elements["${args.root}"] does not exist — the root element ID must be a key in elements`
+        );
+      }
+      const diagnosis =
+        diagnosisParts.length > 0
+          ? ` Diagnosis: ${diagnosisParts.join('; ')}.`
+          : '';
+
       return {
         spec: buildRenderUiRecoverySpec(args),
         recoveredFromInvalidSpec: true,
-        warning:
-          'Invalid render_ui spec was auto-recovered because elements was empty or root was missing.',
+        warning: `Invalid render_ui spec was auto-recovered.${diagnosis} Fix: elements MUST contain the root element. Example: { "root": "r", "elements": { "r": { "type": "Card", "props": { "title": "Result" }, "children": ["t"] }, "t": { "type": "Text", "props": { "content": "Your content here" }, "children": [] } } }.`,
       };
     }
     return { spec: args };

@@ -12,8 +12,6 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { isFeatureAvailable } from '@/lib/feature-tiers';
 
-export const maxDuration = 30;
-
 // System instruction for the AI assistant
 const SYSTEM_INSTRUCTION = `
 TUTURUUU VOICE ASSISTANT SYSTEM PROMPT

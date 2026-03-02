@@ -11,13 +11,13 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type SupabaseProvider from '@tuturuuu/ui/hooks/supabase-provider';
 import { debounce } from 'lodash';
 import { TextSelection } from 'prosemirror-state';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import type * as Y from 'yjs';
 import { migrateInlineImagesToBlock } from './content-migration';
-import { EditorDragHandle } from './drag-handle';
+// import { EditorDragHandle } from './drag-handle';
 import { getEditorExtensions } from './extensions';
-import { ToolBar } from './tool-bar';
+import { FixedToolbar, ToolBar } from './tool-bar';
 
 const hasContent = (node: JSONContent): boolean => {
   // Check for text content
@@ -67,7 +67,6 @@ interface RichTextEditorProps {
   availableLists?: TaskList[];
   queryClient?: QueryClient;
   allowCollaboration?: boolean;
-  editable?: boolean;
   /** Translations for mention chip dialogs */
   mentionTranslations?: {
     delete_task?: string;
@@ -115,7 +114,6 @@ export function RichTextEditor({
   yjsProvider = null,
   collaborationUser = null,
   allowCollaboration = false,
-  editable = true,
   mentionTranslations,
 }: RichTextEditorProps) {
   // Use refs to ensure we have stable references for handlers
@@ -183,8 +181,8 @@ export function RichTextEditor({
       // Task list specific styles - match regular list spacing
       '[&_ul[data-type="taskList"]]:list-none [&_ul[data-type="taskList"]]:ml-6 [&_ul[data-type="taskList"]]:pl-0 [&_ul[data-type="taskList"]]:pr-0 [&_ul[data-type="taskList"]]:mr-0 [&_ul[data-type="taskList"]]:my-3',
       '[&_ul[data-type="taskList"]_li]:flex [&_ul[data-type="taskList"]_li]:items-start [&_ul[data-type="taskList"]_li]:my-1',
-      '[&_ul[data-type="taskList"]_li>label]:flex-[0_0_auto] [&_ul[data-type="taskList"]_li>label]:mr-2 [&_ul[data-type="taskList"]_li>label]:select-none [&_ul[data-type="taskList"]_li>label]:pt-[0.453rem]',
-      '[&_ul[data-type="taskList"]_li>div]:flex-1 [&_ul[data-type="taskList"]_li>div]:min-w-0',
+      '[&_ul[data-type="taskList"]_.task-list-checkbox-label]:flex-[0_0_auto]',
+      '[&_ul[data-type="taskList"]_li>div:not(.task-list-checkbox-label)]:flex-1 [&_ul[data-type="taskList"]_li>div:not(.task-list-checkbox-label)]:min-w-0',
       '[&_ul[data-type="taskList"]_li_p]:my-1',
       // Checkbox styling
       '[&_ul[data-type="taskList"]_input[type="checkbox"]]:appearance-none [&_ul[data-type="taskList"]_input[type="checkbox"]]:h-[18px] [&_ul[data-type="taskList"]_input[type="checkbox"]]:w-[18px]',
@@ -193,13 +191,15 @@ export function RichTextEditor({
       '[&_ul[data-type="taskList"]_input[type="checkbox"]]:shrink-0',
       '[&_ul[data-type="taskList"]_input[type="checkbox"]:hover]:border-dynamic-gray [&_ul[data-type="taskList"]_input[type="checkbox"]:hover]:bg-dynamic-gray/10 [&_ul[data-type="taskList"]_input[type="checkbox"]:hover]:scale-105',
       '[&_ul[data-type="taskList"]_input[type="checkbox"]:focus]:outline-none [&_ul[data-type="taskList"]_input[type="checkbox"]:focus]:ring-2 [&_ul[data-type="taskList"]_input[type="checkbox"]:focus]:ring-dynamic-gray/30 [&_ul[data-type="taskList"]_input[type="checkbox"]:focus]:ring-offset-2 [&_ul[data-type="taskList"]_input[type="checkbox"]:focus]:border-dynamic-gray',
-      '[&_ul[data-type="taskList"]_input[type="checkbox"]:checked]:bg-dynamic-gray/20 [&_ul[data-type="taskList"]_input[type="checkbox"]:checked]:border-dynamic-gray',
-      '[&_ul[data-type="taskList"]_input[type="checkbox"]:checked:hover]:bg-dynamic-gray/10 [&_ul[data-type="taskList"]_input[type="checkbox"]:checked:hover]:border-dynamic-gray',
+      '[&_ul[data-type="taskList"]_input[type="checkbox"]:checked]:bg-dynamic-green/20 [&_ul[data-type="taskList"]_input[type="checkbox"]:checked]:border-dynamic-green',
+      '[&_ul[data-type="taskList"]_input[type="checkbox"]:checked:hover]:bg-dynamic-green/10 [&_ul[data-type="taskList"]_input[type="checkbox"]:checked:hover]:border-dynamic-green',
       // Light mode checkmark (dark/black)
       `[&_ul[data-type="taskList"]_input[type="checkbox"]:checked]:bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20fill%3D%22none%22%20stroke%3D%22%2309090b%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M4%208l2.5%202.5L12%205%22%2F%3E%3C%2Fsvg%3E')]`,
       // Dark mode checkmark (white)
       `dark:[&_ul[data-type="taskList"]_input[type="checkbox"]:checked]:bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M4%208l2.5%202.5L12%205%22%2F%3E%3C%2Fsvg%3E')]`,
       '[&_ul[data-type="taskList"]_input[type="checkbox"]:checked:bg-[length:14px_14px]',
+      // Indeterminate checkbox styling (fallback)
+      '[&_ul[data-type="taskList"]_input[type="checkbox"]:indeterminate]:bg-dynamic-orange/20 [&_ul[data-type="taskList"]_input[type="checkbox"]:indeterminate]:border-dynamic-orange',
       // Nested task lists
       '[&_ul[data-type="taskList"]_ul[data-type="taskList"]]:my-0 [&_ul[data-type="taskList"]_ul[data-type="taskList"]]:ml-0',
       // Blockquotes
@@ -280,7 +280,7 @@ export function RichTextEditor({
     content: allowCollaboration
       ? undefined
       : migrateInlineImagesToBlock(content),
-    editable: editable && !readOnly,
+    editable: !readOnly,
     immediatelyRender: false,
     editorProps: {
       attributes: {
@@ -512,8 +512,8 @@ export function RichTextEditor({
 
   // Update editor's editable state when props change
   useEffect(() => {
-    if (editor) editor.setEditable(editable && !readOnly);
-  }, [editor, editable, readOnly]);
+    if (editor) editor.setEditable(!readOnly);
+  }, [editor, readOnly]);
 
   // Update editor content when the content prop changes externally
   useEffect(() => {
@@ -625,11 +625,44 @@ export function RichTextEditor({
     }
   }, []);
 
+  // Track whether the fixed toolbar is visible in the viewport.
+  // When it is, we suppress the floating BubbleMenu to avoid duplication.
+  const fixedToolbarRef = useRef<HTMLDivElement>(null);
+  const [fixedToolbarVisible, setFixedToolbarVisible] = useState(true);
+
+  useEffect(() => {
+    const el = fixedToolbarRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry) setFixedToolbarVisible(entry.isIntersecting);
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="group relative h-full">
       {!readOnly && (
+        <FixedToolbar
+          ref={fixedToolbarRef}
+          editor={editor}
+          workspaceId={workspaceId}
+          onImageUpload={onImageUpload}
+          boardId={boardId}
+          availableLists={availableLists}
+          queryClient={queryClient}
+          onFlushChanges={flushEditorChanges}
+        />
+      )}
+      {!readOnly && (
         <ToolBar
           editor={editor}
+          fixedToolbarVisible={fixedToolbarVisible}
           saveButtonLabel={saveButtonLabel}
           savedButtonLabel={savedButtonLabel}
           workspaceId={workspaceId}
@@ -640,7 +673,8 @@ export function RichTextEditor({
           onFlushChanges={flushEditorChanges}
         />
       )}
-      {!readOnly && <EditorDragHandle editor={editor} />}
+      {/* Temporarily hide drag handle to resolve 'removeChild' error until finding a more robust solution
+      !readOnly && <EditorDragHandle editor={editor} /> */}
       <EditorContent editor={editor} className="h-full" />
     </div>
   );

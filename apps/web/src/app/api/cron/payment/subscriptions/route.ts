@@ -3,6 +3,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { syncSubscriptionToDatabase } from '@/utils/polar-subscription-helper';
 
 /**
  * Cron job to sync subscriptions from Polar.sh to database
@@ -68,50 +69,13 @@ export async function GET(req: NextRequest) {
             if (workspaceError || !workspace) {
               skippedCount++;
               errors.push(
-                `Subscription ${subscription.id}: ${workspaceError.message}`
+                `Subscription ${subscription.id}: ${workspaceError?.message ?? 'Workspace not found'}`
               );
               continue;
             }
 
-            // Prepare subscription data
-            const subscriptionData = {
-              ws_id: wsId,
-              status: subscription.status as any,
-              polar_subscription_id: subscription.id,
-              product_id: subscription.product.id,
-              current_period_start: subscription.currentPeriodStart
-                ? subscription.currentPeriodStart.toISOString()
-                : null,
-              current_period_end: subscription.currentPeriodEnd
-                ? subscription.currentPeriodEnd.toISOString()
-                : null,
-              cancel_at_period_end: subscription.cancelAtPeriodEnd ?? false,
-              created_at:
-                subscription.createdAt instanceof Date
-                  ? subscription.createdAt.toISOString()
-                  : new Date(subscription.createdAt).toISOString(),
-              updated_at:
-                subscription.modifiedAt instanceof Date
-                  ? subscription.modifiedAt.toISOString()
-                  : subscription.modifiedAt
-                    ? new Date(subscription.modifiedAt).toISOString()
-                    : null,
-            };
-
-            const { error: dbError } = await sbAdmin
-              .from('workspace_subscriptions')
-              .upsert([subscriptionData], {
-                onConflict: 'polar_subscription_id',
-              });
-
-            if (dbError) {
-              failedCount++;
-              errors.push(
-                `Subscription ${subscription.id}: ${dbError.message}`
-              );
-            } else {
-              processedCount++;
-            }
+            await syncSubscriptionToDatabase(sbAdmin, subscription);
+            processedCount++;
           } catch (error) {
             failedCount++;
             const errorMessage =
@@ -152,5 +116,3 @@ export async function GET(req: NextRequest) {
     );
   }
 }
-
-export const maxDuration = 300; // 5 minutes

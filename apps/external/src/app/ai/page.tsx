@@ -1,10 +1,11 @@
-import { models } from '@tuturuuu/ai/models';
-
 export default function AI() {
   return (
     <div>
       <h1>Models</h1>
-      <ul>{JSON.stringify(models, null, 2)}</ul>
+      <p>
+        Models are now served from the <code>ai_gateway_models</code> database
+        table. Visit the admin panel to view available models.
+      </p>
     </div>
   );
 }

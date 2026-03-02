@@ -15,12 +15,20 @@ export {
   toBareModelName,
   toGatewayModelId,
 } from './model-mapping';
+export {
+  commitFixedAiCreditReservation,
+  releaseFixedAiCreditReservation,
+  reserveFixedAiCredits,
+} from './reservations';
 export { syncGatewayModels } from './sync-gateway-models';
 export type {
   AiCreditStatus,
   CreditAllocation,
   CreditCheckResult,
   CreditDeductionResult,
+  CreditReservationCommitResult,
+  CreditReservationReleaseResult,
+  CreditReservationResult,
   DeductCreditsParams,
   FeatureAccess,
 } from './types';

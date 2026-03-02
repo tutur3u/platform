@@ -33,33 +33,7 @@ const ONBOARDING_BYPASS_PATHS = [
   '/verify',
   '/reset-password',
   '/mfa',
-  // Public/marketing pages (should match APP_PUBLIC_PATHS in public_paths.ts)
-  '/invite',
-  '/home',
-  '/pricing',
-  '/about',
-  '/contact',
-  '/features',
-  '/products',
-  '/solutions',
-  '/careers',
-  '/partners',
-  '/security',
-  '/contributors',
-  '/blog',
-  '/faq',
-  '/terms',
-  '/privacy',
-  '/branding',
-  '/changelog',
-  '/ai/chats',
-  '/qr-generator',
-  '/documents',
-  '/meet',
-  '/meet-together',
-  '/women-in-tech',
-  '/vietnamese-womens-day',
-  '/visualizations',
+  ...PUBLIC_PATHS,
 ];
 
 const isDev = process.env.NODE_ENV !== 'production';
@@ -280,6 +254,8 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
   // Rate-limit API routes at the edge BEFORE any serverless execution
   if (req.nextUrl.pathname.startsWith('/api')) {
+    if (isDev) return NextResponse.next(); // Skip rate limiting in development for easier testing
+
     initRateLimiters();
     const ip = extractIPFromRequest(req.headers);
 

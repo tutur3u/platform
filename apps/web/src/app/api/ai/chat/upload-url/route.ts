@@ -1,7 +1,7 @@
-import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const ALLOWED_EXTENSIONS = new Set([
   'png',
@@ -15,6 +15,12 @@ const ALLOWED_EXTENSIONS = new Set([
   'mov',
   'txt',
   'csv',
+  'xls',
+  'xlsx',
+  'ppt',
+  'pptx',
+  'doc',
+  'docx',
   'json',
   'md',
 ]);
@@ -23,7 +29,7 @@ const MAX_FILENAME_LENGTH = 255;
 
 const UploadUrlRequestSchema = z.object({
   filename: z.string().min(1).max(MAX_FILENAME_LENGTH),
-  wsId: z.string().uuid(),
+  wsId: z.string().min(1),
   chatId: z.string().uuid().optional(),
 });
 
@@ -36,10 +42,47 @@ const UploadUrlRequestSchema = z.object({
  * - The AI route automatically moves temp files on first message
  */
 export const POST = withSessionAuth(
-  async (req, { user }) => {
+  async (req, { user, supabase }) => {
     try {
       const body = await req.json();
-      const { filename, wsId, chatId } = UploadUrlRequestSchema.parse(body);
+      const {
+        filename,
+        wsId: wsIdRaw,
+        chatId,
+      } = UploadUrlRequestSchema.parse(body);
+      const wsId = await normalizeWorkspaceId(wsIdRaw);
+
+      if (!wsId) {
+        return NextResponse.json(
+          { message: 'Invalid workspace ID' },
+          { status: 400 }
+        );
+      }
+
+      const { data: membership, error: membershipError } = await supabase
+        .from('workspace_members')
+        .select('user_id')
+        .eq('ws_id', wsId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (membershipError) {
+        console.error(
+          'Error validating workspace membership for upload-url:',
+          membershipError
+        );
+        return NextResponse.json(
+          { message: 'Failed to verify workspace access' },
+          { status: 500 }
+        );
+      }
+
+      if (!membership) {
+        return NextResponse.json(
+          { message: "You don't have access to this workspace" },
+          { status: 403 }
+        );
+      }
 
       // Validate file extension
       const dotIndex = filename.lastIndexOf('.');
@@ -69,8 +112,6 @@ export const POST = withSessionAuth(
       const storagePath = chatId
         ? `${wsId}/chats/ai/resources/${chatId}/${timestampedName}`
         : `${wsId}/chats/ai/resources/temp/${user.id}/${timestampedName}`;
-
-      const supabase = await createDynamicAdminClient();
 
       // Generate signed upload URL (valid for 120 seconds)
       const { data, error } = await supabase.storage

@@ -212,9 +212,6 @@ export function useExcalidrawElementSync({
           try {
             const { senderId, changes } = payload.payload;
 
-            // Ignore own broadcasts (extra safety)
-            if (senderId === userId) return;
-
             if (DEV_MODE) {
               console.log(
                 `Received ${changes.length} element changes from ${senderId}`
@@ -272,14 +269,7 @@ export function useExcalidrawElementSync({
         }
       }, 100);
     };
-  }, [
-    channelName,
-    userId,
-    enabled,
-    onRemoteChanges,
-    handleError,
-    debouncedFlush,
-  ]);
+  }, [channelName, enabled, onRemoteChanges, handleError, debouncedFlush]);
 
   return {
     broadcastChanges,

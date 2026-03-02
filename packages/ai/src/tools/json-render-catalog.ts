@@ -229,6 +229,112 @@ export const dashboardCatalog = defineCatalog(schema, {
       description:
         'A simple vertical bar chart for visualizing lists of numbers.',
     },
+    ArticleHeader: {
+      props: z.object({
+        eyebrow: z
+          .string()
+          .optional()
+          .describe('Small context label shown above the title'),
+        title: z.string().describe('Main article title'),
+        subtitle: z
+          .string()
+          .optional()
+          .describe('Supporting subtitle under the title'),
+        byline: z.string().optional().describe('Author or analyst line'),
+        publishedAt: z
+          .string()
+          .optional()
+          .describe('Published or updated date text'),
+        readingTime: z
+          .string()
+          .optional()
+          .describe('Estimated reading time (e.g. "4 min read")'),
+      }),
+      hasChildren: false,
+      description:
+        'Hero-style heading block for blog/news content with title, subtitle, and metadata.',
+    },
+    InsightSection: {
+      props: z.object({
+        title: z.string().describe('Section heading'),
+        summary: z
+          .string()
+          .optional()
+          .describe('Optional short section summary'),
+        tone: z
+          .enum(['neutral', 'positive', 'warning', 'critical'])
+          .optional()
+          .describe('Visual emphasis style'),
+      }),
+      hasChildren: true,
+      description:
+        'Structured section wrapper for article-like analysis. Place supporting Text/List components as children.',
+    },
+    KeyPoints: {
+      props: z.object({
+        title: z
+          .string()
+          .optional()
+          .describe('Optional heading for the key points block'),
+        points: z
+          .array(z.string())
+          .min(1)
+          .describe('Bullet or numbered key points'),
+        ordered: z
+          .boolean()
+          .optional()
+          .describe('Render numbered list when true'),
+      }),
+      hasChildren: false,
+      description:
+        'Compact bullet/numbered list for takeaways, action items, or summary points.',
+    },
+    SourceList: {
+      props: z.object({
+        title: z
+          .string()
+          .optional()
+          .describe('Optional heading for the sources section'),
+        compact: z
+          .boolean()
+          .optional()
+          .describe(
+            'Use compact 2-column source chips when true (default true)'
+          ),
+        showUrl: z
+          .boolean()
+          .optional()
+          .describe(
+            'Show shortened URL preview under each source (default false)'
+          ),
+        sources: z
+          .array(
+            z.object({
+              title: z
+                .string()
+                .describe(
+                  'Human-readable source title (never paste full URL here)'
+                ),
+              url: z.httpUrl().describe('Source URL'),
+              publisher: z
+                .string()
+                .optional()
+                .describe(
+                  'Publisher/domain label like "Microsoft" or "InfoWorld"'
+                ),
+              note: z
+                .string()
+                .optional()
+                .describe('Optional short context note (keep concise)'),
+            })
+          )
+          .min(1)
+          .describe('List of sources'),
+      }),
+      hasChildren: false,
+      description:
+        'Reference list with clickable links for research/news responses.',
+    },
     Stat: {
       props: z.object({
         label: z.string().describe('Short label'),

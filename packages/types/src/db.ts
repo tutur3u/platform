@@ -1,6 +1,24 @@
 import type { Database, Tables } from './supabase';
 
 export type AIChat = Tables<'ai_chats'>;
+export type AIGatewayModel = Tables<'ai_gateway_models'>;
+
+/**
+ * UI-facing model representation derived from `ai_gateway_models`.
+ * - `value`: gateway model ID (e.g. `"google/gemini-2.5-flash"`)
+ * - `label`: display name (e.g. `"gemini-2.5-flash"`)
+ * - `provider`: provider name (e.g. `"google"`)
+ */
+export interface AIModelUI {
+  value: string;
+  label: string;
+  provider: string;
+  description?: string;
+  context?: number;
+  disabled?: boolean;
+  tags?: string[];
+}
+
 export type AIPrompt = Tables<'workspace_ai_prompts'>;
 export type AIWhitelistEmail = Tables<'ai_whitelisted_emails'>;
 export type WorkspaceAIExecution = Tables<'workspace_ai_executions'>;

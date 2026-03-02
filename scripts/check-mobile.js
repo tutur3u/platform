@@ -19,9 +19,9 @@ const { spawn } = require('node:child_process');
 const path = require('node:path');
 
 const MOBILE_DIR = path.resolve(__dirname, '..', 'apps', 'mobile');
-const USE_TABLE = process.argv.includes('--table');
-const SHOW_TIMING = process.argv.includes('--timing');
-const SHOW_DETAILS = process.argv.includes('--details');
+const useTable = process.argv.includes('--table');
+const showTiming = process.argv.includes('--timing');
+const showDetails = process.argv.includes('--details');
 
 /**
  * Strip ANSI escape codes from a string
@@ -143,7 +143,7 @@ function runCheck(check) {
     proc.on('close', (code) => {
       const duration = Date.now() - startTime;
       const allowedNonZero = check.allowNonZeroWhen?.(code, stdout, stderr);
-      const success = code === 0 || allowedNonZero;
+      const success = code === 0 || Boolean(allowedNonZero);
 
       resolve({
         name: check.name,
@@ -220,11 +220,12 @@ function printSummaryTable(results) {
     );
   }
 
-  if (USE_TABLE) {
+  if (useTable) {
     // Calculate column widths
     const col1Header = 'Check';
     const col2Header = 'Status';
-    const col3Header = 'Time';
+    const col3Header = 'Details';
+    const col4Header = 'Time';
     const col1Width = Math.max(
       col1Header.length,
       ...results.map((r) => r.name.length)
@@ -232,36 +233,50 @@ function printSummaryTable(results) {
     const col2Width = Math.max(
       col2Header.length,
       ...results.map((r) => {
-        const prefix = r.success ? 'PASS ' : 'FAIL ';
-        return getDisplayWidth(prefix) + r.status.length;
+        const prefix = r.success ? 'PASS' : 'FAIL';
+        return getDisplayWidth(prefix);
       })
     );
-    const col3Width = Math.max(
-      col3Header.length,
-      ...results.map((r) => formatDuration(r.duration).length)
-    );
-    const colWidths = [col1Width, col2Width, col3Width];
+    const colWidths = [col1Width, col2Width];
+    if (showDetails) {
+      colWidths.push(
+        Math.max(col3Header.length, ...results.map((r) => r.status.length))
+      );
+    }
+    if (showTiming) {
+      colWidths.push(
+        Math.max(
+          col4Header.length,
+          ...results.map((r) => formatDuration(r.duration).length)
+        )
+      );
+    }
 
     // Print table
     console.log(createLine('┌', '┬', '┐', colWidths));
-    console.log(
-      createRow(
-        [
-          `${colors.bold}${col1Header}${colors.reset}`,
-          `${colors.bold}${col2Header}${colors.reset}`,
-          `${colors.bold}${col3Header}${colors.reset}`,
-        ],
-        colWidths
-      )
-    );
+    const headerCells = [
+      `${colors.bold}${col1Header}${colors.reset}`,
+      `${colors.bold}${col2Header}${colors.reset}`,
+    ];
+    if (showDetails)
+      headerCells.push(`${colors.bold}${col3Header}${colors.reset}`);
+    if (showTiming)
+      headerCells.push(`${colors.bold}${col4Header}${colors.reset}`);
+    console.log(createRow(headerCells, colWidths));
     console.log(createLine('├', '┼', '┤', colWidths));
 
     for (const result of results) {
       const statusColor = result.success ? colors.green : colors.red;
       const statusLabel = result.success ? 'PASS' : 'FAIL';
-      const statusText = `${statusColor}${statusLabel} ${result.status}${colors.reset}`;
-      const timeText = `${colors.dim}${formatDuration(result.duration)}${colors.reset}`;
-      console.log(createRow([result.name, statusText, timeText], colWidths));
+      const statusText = `${statusColor}${statusLabel}${colors.reset}`;
+      const rowCells = [result.name, statusText];
+      if (showDetails) rowCells.push(result.status);
+      if (showTiming) {
+        rowCells.push(
+          `${colors.dim}${formatDuration(result.duration)}${colors.reset}`
+        );
+      }
+      console.log(createRow(rowCells, colWidths));
 
       if (result !== results[results.length - 1]) {
         console.log(createLine('├', '┼', '┤', colWidths));
@@ -275,13 +290,13 @@ function printSummaryTable(results) {
       const statusLabel = result.success ? 'PASS' : 'FAIL';
       const statusColor = result.success ? colors.green : colors.red;
       let output = `${statusColor}${statusLabel}${colors.reset} ${result.name}`;
-      if (SHOW_DETAILS) output += `: ${result.status}`;
-      if (SHOW_TIMING) output += ` (${formatDuration(result.duration)})`;
+      if (showDetails) output += `: ${result.status}`;
+      if (showTiming) output += ` (${formatDuration(result.duration)})`;
       console.log(output);
     }
   }
 
-  if (SHOW_TIMING) {
+  if (showTiming) {
     console.log(
       `\n${colors.dim}Total time: ${formatDuration(totalDuration)}${colors.reset}`
     );

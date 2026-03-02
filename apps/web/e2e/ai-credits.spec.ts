@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+const BASE_URL = process.env.BASE_URL || 'http://localhost:7803';
+
 // Test user: local@tuturuuu.com (ID: 00000000-0000-0000-0000-000000000001)
 // Auth state loaded from storageState
 
@@ -44,17 +46,23 @@ test.describe('AI Credits API', () => {
     }
   });
 
-  test('GET /api/v1/workspaces/{wsId}/ai/credits returns 401 for unauthenticated request', async ({
-    request,
+  test('GET /api/v1/workspaces/{wsId}/ai/credits returns 401/403 for unauthenticated request', async ({
+    playwright,
   }) => {
-    const response = await request.fetch(
-      '/api/v1/workspaces/personal/ai/credits',
-      {
-        headers: {},
-      }
-    );
-
-    expect([401, 403]).toContain(response.status());
+    // Create a fresh API context with no cookies/storageState so the request
+    // is truly unauthenticated.
+    const unauthCtx = await playwright.request.newContext({
+      baseURL: BASE_URL,
+      storageState: { cookies: [], origins: [] },
+    });
+    try {
+      const response = await unauthCtx.get(
+        '/api/v1/workspaces/personal/ai/credits'
+      );
+      expect([401, 403]).toContain(response.status());
+    } finally {
+      await unauthCtx.dispose();
+    }
   });
 
   test('Response includes tier, allowedModels, allowedFeatures, maxOutputTokens', async ({
@@ -188,12 +196,15 @@ test.describe('AI Credit Indicator UI', () => {
 });
 
 test.describe('Gateway Model Sync', () => {
-  test.use({ storageState: { cookies: [], origins: [] } });
-
   test('POST /api/v1/admin/ai-credits/sync-models requires authentication', async ({
-    request,
+    playwright,
   }) => {
-    const response = await request.fetch(
+    const unauthCtx = await playwright.request.newContext({
+      baseURL: BASE_URL,
+      storageState: { cookies: [], origins: [] },
+    });
+
+    const response = await unauthCtx.fetch(
       '/api/v1/admin/ai-credits/sync-models',
       {
         method: 'POST',
@@ -202,6 +213,7 @@ test.describe('Gateway Model Sync', () => {
     );
 
     expect([401, 403]).toContain(response.status());
+    await unauthCtx.dispose();
   });
 });
 

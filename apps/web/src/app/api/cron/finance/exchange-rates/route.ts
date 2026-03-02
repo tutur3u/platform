@@ -3,8 +3,6 @@ import { SUPPORTED_CURRENCIES } from '@tuturuuu/utils/currencies';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-export const maxDuration = 300;
-
 const PRIMARY_API_URL =
   'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json';
 const FALLBACK_API_URL =

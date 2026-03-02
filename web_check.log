@@ -1,0 +1,123 @@
+$ turbo run type-check --filter @tuturuuu/web
+• turbo 2.8.12
+• Packages in scope: @tuturuuu/web
+• Running type-check in 1 packages
+• Remote caching disabled
+@tuturuuu/offline:type-check: cache hit, replaying logs 71e4cf1b432d84cc
+@tuturuuu/offline:type-check: 
+@tuturuuu/offline:type-check: [0m[2m[35m$[0m [2m[1mtsgo --build[0m
+@tuturuuu/masonry:type-check: cache hit, replaying logs fdc16b4c2c44a8ab
+@tuturuuu/masonry:type-check: 
+@tuturuuu/masonry:type-check: [0m[2m[35m$[0m [2m[1mtsgo --project tsconfig.build.json[0m
+@tuturuuu/transactional:type-check: cache hit, replaying logs feca0b8eb64426f2
+@tuturuuu/transactional:type-check: 
+@tuturuuu/transactional:type-check: [0m[2m[35m$[0m [2m[1mtsgo --build[0m
+@tuturuuu/types:type-check: cache hit, replaying logs 76101e6d8e22cc96
+@tuturuuu/types:type-check: 
+@tuturuuu/types:type-check: [0m[2m[35m$[0m [2m[1mtsgo --project tsconfig.build.json[0m
+@tuturuuu/icons:type-check: cache hit, replaying logs ebf4ce4b0848c03d
+@tuturuuu/icons:type-check: 
+@tuturuuu/icons:type-check: [0m[2m[35m$[0m [2m[1mtsgo --build[0m
+@tuturuuu/masonry:build: cache hit, replaying logs 401b70afae22b6e3
+@tuturuuu/masonry:build: 
+@tuturuuu/masonry:build: [0m[2m[35m$[0m [2m[1mtsc --project tsconfig.build.json[0m
+@tuturuuu/types:build: cache hit, replaying logs 65f98c6e102973a4
+@tuturuuu/types:build: 
+@tuturuuu/types:build: [0m[2m[35m$[0m [2m[1mtsc --project tsconfig.build.json[0m
+@tuturuuu/google:type-check: cache hit, replaying logs 9916f16aa43eac7e
+@tuturuuu/google:type-check: 
+@tuturuuu/google:type-check: [0m[2m[35m$[0m [2m[1mtsgo --build[0m
+tuturuuu:build: cache hit, replaying logs adeb3e9967ef8f80
+tuturuuu:build: 
+tuturuuu:build: [0m[2m[35m$[0m [2m[1mtsc --project tsconfig.build.json[0m
+@tuturuuu/hooks:type-check: cache hit, replaying logs bf531c3e6e509f68
+@tuturuuu/hooks:type-check: 
+@tuturuuu/hooks:type-check: [0m[2m[35m$[0m [2m[1mtsgo --build[0m
+@tuturuuu/microsoft:type-check: cache hit, replaying logs 65a4cce3a75af01f
+@tuturuuu/microsoft:type-check: 
+@tuturuuu/microsoft:type-check: [0m[2m[35m$[0m [2m[1mtsgo --build[0m
+tuturuuu:type-check: cache hit, replaying logs e8c9ec686597180d
+tuturuuu:type-check: 
+tuturuuu:type-check: [0m[2m[35m$[0m [2m[1mtsgo --project tsconfig.build.json[0m
+@tuturuuu/supabase:type-check: cache hit, replaying logs f8e144e77b7ff357
+@tuturuuu/supabase:type-check: 
+@tuturuuu/supabase:type-check: [0m[2m[35m$[0m [2m[1mtsgo --build[0m
+@tuturuuu/vercel:type-check: cache hit, replaying logs 6e04e01dc0d4e378
+@tuturuuu/vercel:type-check: 
+@tuturuuu/vercel:type-check: [0m[2m[35m$[0m [2m[1mtsgo --build[0m
+@tuturuuu/supabase:build: cache hit, replaying logs dfb26a7d6fd07da6
+@tuturuuu/supabase:build: 
+@tuturuuu/supabase:build: [0m[2m[35m$[0m [2m[1mtsc --build[0m
+@tuturuuu/utils:type-check: cache hit, replaying logs 0f661efe28674bb1
+@tuturuuu/utils:type-check: 
+@tuturuuu/utils:type-check: [0m[2m[35m$[0m [2m[1mtsgo --build[0m
+@tuturuuu/email-service:type-check: cache hit, replaying logs b752b2061d8a8808
+@tuturuuu/email-service:type-check: 
+@tuturuuu/email-service:type-check: [0m[2m[35m$[0m [2m[1mtsgo --build[0m
+@tuturuuu/apis:type-check: cache hit, replaying logs a6c8ca482efc5958
+@tuturuuu/apis:type-check: 
+@tuturuuu/apis:type-check: [0m[2m[35m$[0m [2m[1mtsgo --build[0m
+@tuturuuu/ai:type-check: cache hit, replaying logs 68c8995a9a526d9b
+@tuturuuu/ai:type-check: 
+@tuturuuu/ai:type-check: [0m[2m[35m$[0m [2m[1mtsgo --project tsconfig.build.json[0m
+@tuturuuu/trigger:type-check: cache hit, replaying logs 13d9c5acbb3a761f
+@tuturuuu/trigger:type-check: 
+@tuturuuu/trigger:type-check: [0m[2m[35m$[0m [2m[1mtsgo --build[0m
+@tuturuuu/ui:type-check: cache hit, replaying logs 5848ef7a1166a7a3
+@tuturuuu/ui:type-check: 
+@tuturuuu/ui:type-check: [0m[2m[35m$[0m [2m[1mtsgo --build --force[0m
+@tuturuuu/auth:type-check: cache hit, replaying logs cf3620d6ab5aca26
+@tuturuuu/auth:type-check: 
+@tuturuuu/auth:type-check: [0m[2m[35m$[0m [2m[1mtsgo --build[0m
+@tuturuuu/web:type-check: cache miss, executing 997464ad137a200f
+@tuturuuu/web:type-check: $ tsgo --build
+@tuturuuu/web:type-check: src/app/[locale]/(dashboard)/[wsId]/(dashboard)/components/mira-chat-export.ts(3,15): error TS2305: Module '"@tuturuuu/ai/models"' has no exported member 'Attachment'.
+@tuturuuu/web:type-check: src/app/[locale]/(dashboard)/[wsId]/(dashboard)/components/mira-chat-export.ts(3,27): error TS2305: Module '"@tuturuuu/ai/models"' has no exported member 'Message'.
+@tuturuuu/web:type-check: src/app/[locale]/(dashboard)/[wsId]/(dashboard)/components/mira-chat-export.ts(5,27): error TS2307: Cannot find module '@tuturuuu/types/primitives/Chat' or its corresponding type declarations.
+@tuturuuu/web:type-check: src/app/[locale]/(dashboard)/[wsId]/(dashboard)/components/use-mira-chat-actions.ts(193,7): error TS2322: Type 'unknown' is not assignable to type 'Model'.
+@tuturuuu/web:type-check: src/app/[locale]/(dashboard)/[wsId]/(dashboard)/components/use-mira-chat-effects.ts(54,27): error TS2345: Argument of type 'UIMessagePart<UIDataTypes, UITools> | undefined' is not assignable to parameter of type 'UIMessagePart<UIDataTypes, UITools>'.
+@tuturuuu/web:type-check:   Type 'undefined' is not assignable to type 'UIMessagePart<UIDataTypes, UITools>'.
+@tuturuuu/web:type-check: src/app/api/payment/webhooks/route.ts(361,42): error TS2345: Argument of type 'import("/Users/vhpx/Documents/GitHub/platform/node_modules/.bun/@polar-sh+sdk@0.45.0/node_modules/@polar-sh/sdk/dist/esm/models/components/subscription").Subscription' is not assignable to parameter of type 'import("/Users/vhpx/Documents/GitHub/platform/node_modules/.bun/@polar-sh+sdk@0.45.1/node_modules/@polar-sh/sdk/dist/esm/models/components/subscription").Subscription'.
+@tuturuuu/web:type-check:   Types of property 'recurringInterval' are incompatible.
+@tuturuuu/web:type-check:     Type 'import("/Users/vhpx/Documents/GitHub/platform/node_modules/.bun/@polar-sh+sdk@0.45.0/node_modules/@polar-sh/sdk/dist/esm/models/components/subscriptionrecurringinterval").SubscriptionRecurringInterval' is not assignable to type 'import("/Users/vhpx/Documents/GitHub/platform/node_modules/.bun/@polar-sh+sdk@0.45.1/node_modules/@polar-sh/sdk/dist/esm/models/components/subscriptionrecurringinterval").SubscriptionRecurringInterval'.
+@tuturuuu/web:type-check:       Type 'Unrecognized<string>' is not assignable to type 'SubscriptionRecurringInterval'.
+@tuturuuu/web:type-check:         Type 'import("/Users/vhpx/Documents/GitHub/platform/node_modules/.bun/@polar-sh+sdk@0.45.0/node_modules/@polar-sh/sdk/dist/esm/types/unrecognized").Unrecognized<string>' is not assignable to type 'import("/Users/vhpx/Documents/GitHub/platform/node_modules/.bun/@polar-sh+sdk@0.45.1/node_modules/@polar-sh/sdk/dist/esm/types/unrecognized").Unrecognized<string>'.
+@tuturuuu/web:type-check:           Type 'Unrecognized<string>' is not assignable to type '{ [__brand]: "unrecognized"; }'.
+@tuturuuu/web:type-check:             Property '[__brand]' is missing in type 'String & { [__brand]: "unrecognized"; }' but required in type '{ [__brand]: "unrecognized"; }'.
+@tuturuuu/web:type-check: src/app/api/payment/webhooks/route.ts(412,42): error TS2345: Argument of type 'import("/Users/vhpx/Documents/GitHub/platform/node_modules/.bun/@polar-sh+sdk@0.45.0/node_modules/@polar-sh/sdk/dist/esm/models/components/subscription").Subscription' is not assignable to parameter of type 'import("/Users/vhpx/Documents/GitHub/platform/node_modules/.bun/@polar-sh+sdk@0.45.1/node_modules/@polar-sh/sdk/dist/esm/models/components/subscription").Subscription'.
+@tuturuuu/web:type-check:   Types of property 'recurringInterval' are incompatible.
+@tuturuuu/web:type-check:     Type 'import("/Users/vhpx/Documents/GitHub/platform/node_modules/.bun/@polar-sh+sdk@0.45.0/node_modules/@polar-sh/sdk/dist/esm/models/components/subscriptionrecurringinterval").SubscriptionRecurringInterval' is not assignable to type 'import("/Users/vhpx/Documents/GitHub/platform/node_modules/.bun/@polar-sh+sdk@0.45.1/node_modules/@polar-sh/sdk/dist/esm/models/components/subscriptionrecurringinterval").SubscriptionRecurringInterval'.
+@tuturuuu/web:type-check:       Type 'Unrecognized<string>' is not assignable to type 'SubscriptionRecurringInterval'.
+@tuturuuu/web:type-check:         Type 'import("/Users/vhpx/Documents/GitHub/platform/node_modules/.bun/@polar-sh+sdk@0.45.0/node_modules/@polar-sh/sdk/dist/esm/types/unrecognized").Unrecognized<string>' is not assignable to type 'import("/Users/vhpx/Documents/GitHub/platform/node_modules/.bun/@polar-sh+sdk@0.45.1/node_modules/@polar-sh/sdk/dist/esm/types/unrecognized").Unrecognized<string>'.
+@tuturuuu/web:type-check:           Type 'Unrecognized<string>' is not assignable to type '{ [__brand]: "unrecognized"; }'.
+@tuturuuu/web:type-check:             Property '[__brand]' is missing in type 'String & { [__brand]: "unrecognized"; }' but required in type '{ [__brand]: "unrecognized"; }'.
+@tuturuuu/web:type-check: src/app/api/payment/webhooks/route.ts(516,9): error TS2345: Argument of type 'import("/Users/vhpx/Documents/GitHub/platform/node_modules/.bun/@polar-sh+sdk@0.45.0/node_modules/@polar-sh/sdk/dist/esm/models/components/subscription").Subscription' is not assignable to parameter of type 'import("/Users/vhpx/Documents/GitHub/platform/node_modules/.bun/@polar-sh+sdk@0.45.1/node_modules/@polar-sh/sdk/dist/esm/models/components/subscription").Subscription'.
+@tuturuuu/web:type-check:   Types of property 'recurringInterval' are incompatible.
+@tuturuuu/web:type-check:     Type 'import("/Users/vhpx/Documents/GitHub/platform/node_modules/.bun/@polar-sh+sdk@0.45.0/node_modules/@polar-sh/sdk/dist/esm/models/components/subscriptionrecurringinterval").SubscriptionRecurringInterval' is not assignable to type 'import("/Users/vhpx/Documents/GitHub/platform/node_modules/.bun/@polar-sh+sdk@0.45.1/node_modules/@polar-sh/sdk/dist/esm/models/components/subscriptionrecurringinterval").SubscriptionRecurringInterval'.
+@tuturuuu/web:type-check:       Type 'Unrecognized<string>' is not assignable to type 'SubscriptionRecurringInterval'.
+@tuturuuu/web:type-check:         Type 'import("/Users/vhpx/Documents/GitHub/platform/node_modules/.bun/@polar-sh+sdk@0.45.0/node_modules/@polar-sh/sdk/dist/esm/types/unrecognized").Unrecognized<string>' is not assignable to type 'import("/Users/vhpx/Documents/GitHub/platform/node_modules/.bun/@polar-sh+sdk@0.45.1/node_modules/@polar-sh/sdk/dist/esm/types/unrecognized").Unrecognized<string>'.
+@tuturuuu/web:type-check:           Type 'Unrecognized<string>' is not assignable to type '{ [__brand]: "unrecognized"; }'.
+@tuturuuu/web:type-check:             Property '[__brand]' is missing in type 'String & { [__brand]: "unrecognized"; }' but required in type '{ [__brand]: "unrecognized"; }'.
+@tuturuuu/web:type-check: src/app/api/payment/webhooks/route.ts(581,61): error TS2345: Argument of type 'import("/Users/vhpx/Documents/GitHub/platform/node_modules/.bun/@polar-sh+sdk@0.45.0/node_modules/@polar-sh/sdk/dist/esm/models/components/order").Order' is not assignable to parameter of type 'import("/Users/vhpx/Documents/GitHub/platform/node_modules/.bun/@polar-sh+sdk@0.45.1/node_modules/@polar-sh/sdk/dist/esm/models/components/order").Order'.
+@tuturuuu/web:type-check:   Types of property 'status' are incompatible.
+@tuturuuu/web:type-check:     Type 'import("/Users/vhpx/Documents/GitHub/platform/node_modules/.bun/@polar-sh+sdk@0.45.0/node_modules/@polar-sh/sdk/dist/esm/models/components/orderstatus").OrderStatus' is not assignable to type 'import("/Users/vhpx/Documents/GitHub/platform/node_modules/.bun/@polar-sh+sdk@0.45.1/node_modules/@polar-sh/sdk/dist/esm/models/components/orderstatus").OrderStatus'.
+@tuturuuu/web:type-check:       Type 'Unrecognized<string>' is not assignable to type 'OrderStatus'.
+@tuturuuu/web:type-check:         Type 'import("/Users/vhpx/Documents/GitHub/platform/node_modules/.bun/@polar-sh+sdk@0.45.0/node_modules/@polar-sh/sdk/dist/esm/types/unrecognized").Unrecognized<string>' is not assignable to type 'import("/Users/vhpx/Documents/GitHub/platform/node_modules/.bun/@polar-sh+sdk@0.45.1/node_modules/@polar-sh/sdk/dist/esm/types/unrecognized").Unrecognized<string>'.
+@tuturuuu/web:type-check:           Type 'Unrecognized<string>' is not assignable to type '{ [__brand]: "unrecognized"; }'.
+@tuturuuu/web:type-check:             Property '[__brand]' is missing in type 'String & { [__brand]: "unrecognized"; }' but required in type '{ [__brand]: "unrecognized"; }'.
+@tuturuuu/web:type-check: src/app/api/payment/webhooks/route.ts(596,61): error TS2345: Argument of type 'import("/Users/vhpx/Documents/GitHub/platform/node_modules/.bun/@polar-sh+sdk@0.45.0/node_modules/@polar-sh/sdk/dist/esm/models/components/order").Order' is not assignable to parameter of type 'import("/Users/vhpx/Documents/GitHub/platform/node_modules/.bun/@polar-sh+sdk@0.45.1/node_modules/@polar-sh/sdk/dist/esm/models/components/order").Order'.
+@tuturuuu/web:type-check:   Types of property 'status' are incompatible.
+@tuturuuu/web:type-check:     Type 'import("/Users/vhpx/Documents/GitHub/platform/node_modules/.bun/@polar-sh+sdk@0.45.0/node_modules/@polar-sh/sdk/dist/esm/models/components/orderstatus").OrderStatus' is not assignable to type 'import("/Users/vhpx/Documents/GitHub/platform/node_modules/.bun/@polar-sh+sdk@0.45.1/node_modules/@polar-sh/sdk/dist/esm/models/components/orderstatus").OrderStatus'.
+@tuturuuu/web:type-check:       Type 'Unrecognized<string>' is not assignable to type 'OrderStatus'.
+@tuturuuu/web:type-check:         Type 'import("/Users/vhpx/Documents/GitHub/platform/node_modules/.bun/@polar-sh+sdk@0.45.0/node_modules/@polar-sh/sdk/dist/esm/types/unrecognized").Unrecognized<string>' is not assignable to type 'import("/Users/vhpx/Documents/GitHub/platform/node_modules/.bun/@polar-sh+sdk@0.45.1/node_modules/@polar-sh/sdk/dist/esm/types/unrecognized").Unrecognized<string>'.
+@tuturuuu/web:type-check:           Type 'Unrecognized<string>' is not assignable to type '{ [__brand]: "unrecognized"; }'.
+@tuturuuu/web:type-check:             Property '[__brand]' is missing in type 'String & { [__brand]: "unrecognized"; }' but required in type '{ [__brand]: "unrecognized"; }'.
+@tuturuuu/web:type-check: ERROR: command finished with error: command (/Users/vhpx/Documents/GitHub/platform/apps/web) /Users/vhpx/.bun/bin/bun run type-check exited (2)
+@tuturuuu/web#type-check: command (/Users/vhpx/Documents/GitHub/platform/apps/web) /Users/vhpx/.bun/bin/bun run type-check exited (2)
+
+ Tasks:    22 successful, 23 total
+Cached:    22 cached, 23 total
+  Time:    2.746s 
+Failed:    @tuturuuu/web#type-check
+
+ ERROR  run failed: command  exited (2)

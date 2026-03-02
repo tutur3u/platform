@@ -1,5 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createMiraStreamTools, type MiraToolContext } from './mira-tools';
+
+vi.mock('@tuturuuu/utils/constants', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@tuturuuu/utils/constants')>();
+  return {
+    ...actual,
+    DEV_MODE: true,
+  };
+});
 
 const dummyCtx = {
   userId: 'user-1',

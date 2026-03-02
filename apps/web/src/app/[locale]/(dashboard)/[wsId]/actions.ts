@@ -6,8 +6,8 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { fetchWorkspaces as _fetchWorkspaces } from '@tuturuuu/ui/lib/workspace-actions';
-import { syncSubscriptionToDatabase } from '@/app/api/payment/webhooks/route';
 import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
+import { syncSubscriptionToDatabase } from '@/utils/polar-subscription-helper';
 import { createFreeSubscription } from '@/utils/subscription-helper';
 
 export async function fetchWorkspaces() {
@@ -54,7 +54,7 @@ export async function setupWorkspace(wsId: string) {
 
   if (result.status === 'created' || result.status === 'already_active') {
     // Manually sync to DB to ensure immediate availability
-    await syncSubscriptionToDatabase(result.subscription);
+    await syncSubscriptionToDatabase(sbAdmin, result.subscription);
   }
 
   return { success: true };

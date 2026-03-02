@@ -603,23 +603,17 @@ export async function linkIdentity(provider: 'google' | 'github') {
    if (!user) throw new Error('Unauthorized');
    ```
 
-2. **Use edge runtime for auth routes**
-   ```typescript
-   // app/api/auth/otp/route.ts
-   export const runtime = 'edge';
-   ```
-
-3. **Redirect after authentication**
+2. **Redirect after authentication**
    ```typescript
    redirect('/dashboard'); // Don't return sensitive data
    ```
 
-4. **Handle errors gracefully**
+3. **Handle errors gracefully**
    ```typescript
    if (error) return { error: error.message };
    ```
 
-5. **Implement MFA for sensitive operations**
+4. **Implement MFA for sensitive operations**
    ```typescript
    const mfaRequired = await checkMFAEnabled(userId);
    ```

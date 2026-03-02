@@ -3,6 +3,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 export async function GET(
   _req: Request,
@@ -12,7 +13,8 @@ export async function GET(
     const { wsId } = await params;
     const supabase = await createClient();
 
-    // Auth check
+    // Auth check — must run BEFORE normalizeWorkspaceId because resolving
+    // "personal" requires an authenticated session.
     const {
       data: { user },
       error: authError,
@@ -22,11 +24,13 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const normalizedWsId = await normalizeWorkspaceId(wsId);
+
     // Workspace membership check
     const { data: memberCheck } = await supabase
       .from('workspace_members')
       .select('user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .maybeSingle();
 
@@ -45,7 +49,7 @@ export async function GET(
       .select(
         'id, workspace_subscriptions!left(created_at, status, workspace_subscription_products(tier))'
       )
-      .eq('id', wsId)
+      .eq('id', normalizedWsId)
       .maybeSingle();
 
     type ProductTier = 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
@@ -69,7 +73,7 @@ export async function GET(
     // Get or create current period balance (pass user.id for dual-track routing)
     const { data: balanceRows, error: balanceError } = await sbAdmin.rpc(
       'get_or_create_credit_balance',
-      { p_ws_id: wsId, p_user_id: user.id }
+      { p_ws_id: normalizedWsId, p_user_id: user.id }
     );
 
     if (balanceError) {
@@ -85,14 +89,48 @@ export async function GET(
       return NextResponse.json({ error: 'No balance found' }, { status: 500 });
     }
 
-    const totalAllocated = Number(balance.total_allocated ?? 0);
-    const totalUsed = Number(balance.total_used ?? 0);
+    const includedAllocated = Number(balance.total_allocated ?? 0);
+    const includedUsed = Number(balance.total_used ?? 0);
     const bonusCredits = Number(balance.bonus_credits ?? 0);
-    const remaining = totalAllocated + bonusCredits - totalUsed;
-    const percentUsed =
-      totalAllocated + bonusCredits > 0
-        ? (totalUsed / (totalAllocated + bonusCredits)) * 100
-        : 0;
+    const includedRemaining = includedAllocated + bonusCredits - includedUsed;
+
+    const { data: paygRows, error: paygError } = await sbAdmin
+      .from('workspace_credit_pack_purchases')
+      .select('tokens_granted, tokens_remaining, expires_at, status')
+      .eq('ws_id', normalizedWsId)
+      .in('status', ['active', 'canceled'])
+      .gt('expires_at', new Date().toISOString());
+
+    if (paygError) {
+      console.error('Error fetching payg credit packs:', paygError);
+      return NextResponse.json(
+        { error: 'Failed to get pay-as-you-go balances' },
+        { status: 500 }
+      );
+    }
+
+    const paygTotalGranted = (paygRows ?? []).reduce(
+      (sum: number, row: any) => sum + Number(row.tokens_granted ?? 0),
+      0
+    );
+    const paygRemaining = (paygRows ?? []).reduce(
+      (sum: number, row: any) => sum + Number(row.tokens_remaining ?? 0),
+      0
+    );
+    const paygUsed = paygTotalGranted - paygRemaining;
+
+    const nextExpiry = (paygRows ?? [])
+      .map((row: any) => row.expires_at)
+      .filter((value: unknown): value is string => typeof value === 'string')
+      .sort(
+        (a: string, b: string) => new Date(a).getTime() - new Date(b).getTime()
+      )[0];
+
+    const totalAllocated = includedAllocated + paygTotalGranted;
+    const totalUsed = includedUsed + paygUsed;
+    const remaining = includedRemaining + paygRemaining;
+    const totalPool = totalAllocated + bonusCredits;
+    const percentUsed = totalPool > 0 ? (totalUsed / totalPool) * 100 : 0;
 
     // Get tier allocation
     const { data: allocation } = await sbAdmin
@@ -124,7 +162,7 @@ export async function GET(
       const { data: subData } = await sbAdmin
         .from('workspace_subscriptions')
         .select('seat_count')
-        .eq('ws_id', wsId)
+        .eq('ws_id', normalizedWsId)
         .eq('status', 'active')
         .order('created_at', { ascending: false })
         .limit(1)
@@ -139,6 +177,18 @@ export async function GET(
       remaining,
       bonusCredits,
       percentUsed,
+      included: {
+        totalAllocated: includedAllocated,
+        totalUsed: includedUsed,
+        bonusCredits,
+        remaining: includedRemaining,
+      },
+      payg: {
+        totalGranted: paygTotalGranted,
+        totalUsed: paygUsed,
+        remaining: paygRemaining,
+        nextExpiry: nextExpiry ?? null,
+      },
       periodStart: balance.period_start,
       periodEnd: balance.period_end,
       tier,

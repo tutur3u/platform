@@ -2,9 +2,6 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { gateway, generateText, type UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
 
-export const maxDuration = 60;
-export const preferredRegion = 'sin1';
-
 const HUMAN_PROMPT = '\n\nHuman:';
 const AI_PROMPT = '\n\nAssistant:';
 

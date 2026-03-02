@@ -2,6 +2,10 @@ import type { CustomerSeat } from '@tuturuuu/payment/polar';
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
+import {
+  isAiCreditPackProduct,
+  parseWorkspaceProductTier,
+} from '@/utils/polar-product-metadata';
 import { createFreeSubscription } from '@/utils/subscription-helper';
 
 export async function fetchProducts() {
@@ -9,10 +13,55 @@ export async function fetchProducts() {
     const polar = createPolarClient();
 
     const res = await polar.products.list({ isArchived: false });
-    return res.result.items ?? [];
+    return (res.result.items ?? []).filter(
+      (product) =>
+        !isAiCreditPackProduct(product.metadata) &&
+        parseWorkspaceProductTier(product.metadata) != null
+    );
   } catch (err) {
     console.error('Failed to fetch products:', err);
     return [];
+  }
+}
+
+export interface CreditPackListItem {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  currency: string;
+  tokens: number;
+  expiryDays: number;
+  archived: boolean;
+}
+
+export async function fetchCreditPacks() {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('workspace_credit_packs')
+      .select('*')
+      .eq('archived', false)
+      .order('price', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching credit packs:', error);
+      return [] as CreditPackListItem[];
+    }
+
+    return (data ?? []).map((pack) => ({
+      id: pack.id,
+      name: pack.name ?? '',
+      description: pack.description,
+      price: Number(pack.price ?? 0),
+      currency: (pack.currency ?? 'usd').toLowerCase(),
+      tokens: Number(pack.tokens ?? 0),
+      expiryDays: Number(pack.expiry_days ?? 0),
+      archived: Boolean(pack.archived),
+    }));
+  } catch (error) {
+    console.error('Error fetching credit packs:', error);
+    return [] as CreditPackListItem[];
   }
 }
 
@@ -21,7 +70,9 @@ export async function fetchWorkspaceOrders(wsId: string) {
     const supabase = await createClient();
     const { data: orders, error } = await supabase
       .from('workspace_orders')
-      .select('*, workspace_subscription_products (name, price)')
+      .select(
+        '*, workspace_subscription_products (name, price), workspace_credit_packs (name, price)'
+      )
       .eq('ws_id', wsId)
       .order('created_at', { ascending: false })
       .limit(10);
@@ -36,10 +87,16 @@ export async function fetchWorkspaceOrders(wsId: string) {
       createdAt: order.created_at,
       billingReason: order.billing_reason ?? 'unknown',
       totalAmount: order.total_amount ?? 0,
-      originalAmount: order.workspace_subscription_products?.price ?? 0,
+      originalAmount:
+        order.workspace_subscription_products?.price ??
+        order.workspace_credit_packs?.price ??
+        0,
       currency: order.currency ?? 'usd',
       status: order.status,
-      productName: order.workspace_subscription_products?.name ?? 'N/A',
+      productName:
+        order.workspace_subscription_products?.name ??
+        order.workspace_credit_packs?.name ??
+        'N/A',
     }));
   } catch (error) {
     console.error('Error fetching workspace orders:', error);

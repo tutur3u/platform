@@ -13,6 +13,15 @@ A Discord bot that provides information about random free, public APIs and short
 
 ## Setup
 
+### 0. Local Python Environment (uv)
+
+```bash
+cd apps/discord
+uv sync
+```
+
+This creates and manages `.venv` automatically from `pyproject.toml`/`uv.lock`.
+
 ### 1. Create a Discord Application
 
 1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
@@ -97,6 +106,30 @@ modal run app.py::create_slash_command --force
 
 # Deploy the web app
 modal deploy app.py
+```
+
+### 6. Continuous Deployment (GitHub Actions)
+
+This repo includes a dedicated workflow at
+[`/.github/workflows/discord-modal-deploy.yml`](../../.github/workflows/discord-modal-deploy.yml)
+that deploys `apps/discord` to Modal after `Discord Python CI` succeeds on the
+`main` branch. It can also be triggered manually with `workflow_dispatch`.
+
+Configure these GitHub Actions secrets before enabling it:
+
+- `MODAL_TOKEN_ID`
+- `MODAL_TOKEN_SECRET`
+
+Optional GitHub Actions variable:
+
+- `MODAL_ENVIRONMENT`: target a non-default Modal environment
+
+The workflow uses the same `uv`-based dependency flow as local development:
+
+```bash
+cd apps/discord
+uv sync --locked
+uv run modal deploy app.py
 ```
 
 ## Project Structure

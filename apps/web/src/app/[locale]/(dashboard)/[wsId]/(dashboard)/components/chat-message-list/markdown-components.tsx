@@ -16,6 +16,36 @@ import { Streamdown } from 'streamdown';
 
 const plugins = { code, mermaid: mermaidPlugin, math, cjk };
 
+function isMarkdownTableBlock(content: string): boolean {
+  const lines = content
+    .trim()
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
+  if (lines.length < 2) return false;
+  const header = lines[0] ?? '';
+  const separator = lines[1] ?? '';
+
+  const hasPipeInHeader = header.includes('|');
+  const isSeparatorRow = /^\|?[\s:-|]+\|?$/.test(separator);
+  const hasDashInSeparator = separator.includes('-');
+
+  return hasPipeInHeader && isSeparatorRow && hasDashInSeparator;
+}
+
+function normalizeMarkdownTables(text: string): string {
+  if (!text.includes('```')) return text;
+
+  return text.replace(
+    /```(?:markdown|md)\s*\n([\s\S]*?)```/gi,
+    (fullMatch, body: string) => {
+      if (!isMarkdownTableBlock(body)) return fullMatch;
+      return body.trim();
+    }
+  );
+}
+
 class MarkdownErrorBoundary extends Component<
   { children: ReactNode; fallback: ReactNode },
   { hasError: boolean }
@@ -46,10 +76,16 @@ export function AssistantMarkdown({
   text: string;
   isAnimating: boolean;
 }) {
+  const normalizedText = useMemo(() => normalizeMarkdownTables(text), [text]);
+
   return (
-    <div className="wrap-break-word [&_pre]:overflow-x-hidden! [&_pre]:whitespace-pre-wrap! [&_pre_code]:whitespace-pre-wrap! [&_pre]:wrap-break-word [&_pre_code]:wrap-anywhere min-w-0 max-w-full overflow-hidden [&_pre]:max-w-full">
+    <div className="wrap-break-word [&_pre]:overflow-x-hidden! [&_pre]:whitespace-pre-wrap! [&_pre]:wrap-break-word [&_pre_code]:whitespace-pre-wrap! [&_pre_code]:wrap-anywhere min-w-0 max-w-full overflow-hidden [&_pre]:max-w-full">
       <MarkdownErrorBoundary
-        fallback={<p className="wrap-break-word whitespace-pre-wrap">{text}</p>}
+        fallback={
+          <p className="wrap-break-word whitespace-pre-wrap">
+            {normalizedText}
+          </p>
+        }
       >
         <Streamdown
           plugins={plugins}
@@ -61,7 +97,7 @@ export function AssistantMarkdown({
           }}
           linkSafety={{ enabled: false }}
         >
-          {text}
+          {normalizedText}
         </Streamdown>
       </MarkdownErrorBoundary>
     </div>

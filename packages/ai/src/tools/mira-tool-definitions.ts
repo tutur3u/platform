@@ -6,6 +6,7 @@ import { metaToolDefinitions } from './definitions/meta';
 import { renderUiToolDefinitions } from './definitions/render-ui';
 import { taskToolDefinitions } from './definitions/tasks';
 import { timeTrackingToolDefinitions } from './definitions/time-tracking';
+import { workspaceContextToolDefinitions } from './definitions/workspace-context';
 import { workspaceUserChatToolDefinitions } from './definitions/workspace-user-chat';
 import type { DefinedMiraToolName, MiraToolName } from './mira-tool-names';
 
@@ -16,6 +17,7 @@ type MiraToolDefinitions = typeof metaToolDefinitions &
   typeof timeTrackingToolDefinitions &
   typeof memoryToolDefinitions &
   typeof imageToolDefinitions &
+  typeof workspaceContextToolDefinitions &
   typeof workspaceUserChatToolDefinitions &
   typeof renderUiToolDefinitions;
 
@@ -45,6 +47,7 @@ export const miraToolDefinitions = mergeUniqueToolDefinitions(
   timeTrackingToolDefinitions,
   memoryToolDefinitions,
   imageToolDefinitions,
+  workspaceContextToolDefinitions,
   workspaceUserChatToolDefinitions,
   renderUiToolDefinitions
 );

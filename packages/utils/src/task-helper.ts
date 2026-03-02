@@ -2629,7 +2629,8 @@ interface NestedRelatedTask {
   id: string;
   name: string;
   display_number: number | null;
-  completed: boolean | null;
+  completed_at: string | null;
+  closed_at: string | null;
   priority: string | null;
   board_id: string | null;
   deleted_at: string | null;
@@ -2662,7 +2663,8 @@ export async function getTaskRelationships(
         id,
         name,
         display_number,
-        completed,
+        completed_at,
+        closed_at,
         priority,
         board_id,
         deleted_at,
@@ -2693,7 +2695,8 @@ export async function getTaskRelationships(
         id,
         name,
         display_number,
-        completed,
+        completed_at,
+        closed_at,
         priority,
         board_id,
         deleted_at,
@@ -2728,7 +2731,7 @@ export async function getTaskRelationships(
       id: targetTask.id,
       name: targetTask.name,
       display_number: targetTask.display_number,
-      completed: targetTask.completed,
+      completed: !!targetTask.closed_at || !!targetTask.completed_at,
       priority: (isTaskPriority(targetTask.priority)
         ? targetTask.priority
         : null) as 'low' | 'normal' | 'high' | 'critical' | null,
@@ -2761,7 +2764,7 @@ export async function getTaskRelationships(
       id: sourceTask.id,
       name: sourceTask.name,
       display_number: sourceTask.display_number,
-      completed: sourceTask.completed,
+      completed: !!sourceTask.closed_at || !!sourceTask.completed_at,
       priority: (isTaskPriority(sourceTask.priority)
         ? sourceTask.priority
         : null) as 'low' | 'normal' | 'high' | 'critical' | null,
@@ -2964,7 +2967,8 @@ export async function getWorkspaceTasks(
       id,
       name,
       display_number,
-      completed,
+      completed_at,
+      closed_at,
       priority,
       board_id,
       list:task_lists!inner(
@@ -3009,7 +3013,7 @@ export async function getWorkspaceTasks(
     id: task.id,
     name: task.name,
     display_number: task.display_number,
-    completed: task.completed,
+    completed: !!task.closed_at || !!task.completed_at,
     priority: task.priority,
     board_id: task.board_id,
     board_name: task.list?.board?.name ?? undefined,

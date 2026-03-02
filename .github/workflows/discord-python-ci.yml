@@ -35,19 +35,20 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: "pip"
-          cache-dependency-path: apps/discord/requirements.txt
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: apps/discord/uv.lock
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install ruff
+        run: uv sync --locked
 
       - name: Run Ruff linter
-        run: ruff check .
+        run: uv run ruff check .
 
       - name: Run Ruff formatter check
-        run: ruff format --check .
+        run: uv run ruff format --check .
 
   type-check:
     name: Type Check (mypy)
@@ -65,16 +66,17 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: "pip"
-          cache-dependency-path: apps/discord/requirements.txt
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: apps/discord/uv.lock
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+        run: uv sync --locked
 
       - name: Run mypy type checker
-        run: mypy . --config-file mypy.ini
+        run: uv run mypy . --config-file mypy.ini
 
   test:
     name: Test Suite
@@ -92,20 +94,21 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: "pip"
-          cache-dependency-path: apps/discord/requirements.txt
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: apps/discord/uv.lock
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+        run: uv sync --locked
 
       - name: Run tests with pytest
-        run: pytest
+        run: uv run pytest
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: pytest-results
           path: apps/discord/.pytest_cache
@@ -127,16 +130,17 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: "pip"
-          cache-dependency-path: apps/discord/requirements.txt
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: apps/discord/uv.lock
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+        run: uv sync --locked
 
       - name: Run tests with coverage
-        run: pytest --cov=. --cov-report=xml --cov-report=term-missing
+        run: uv run pytest --cov=. --cov-report=xml --cov-report=term-missing
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
@@ -164,20 +168,21 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: "pip"
-          cache-dependency-path: apps/discord/requirements.txt
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: apps/discord/uv.lock
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+        run: uv sync --locked
 
       - name: Check Python syntax
-        run: python -m py_compile *.py
+        run: uv run python -m py_compile *.py
 
       - name: Verify imports
         run: |
-          python -c "import daily_report; import commands; import discord_client; import wol_reminder"
+          uv run python -c "import daily_report; import commands; import discord_client; import wol_reminder"
           echo "✓ All modules import successfully"
 
   security:
@@ -196,17 +201,17 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: "pip"
-          cache-dependency-path: apps/discord/requirements.txt
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: apps/discord/uv.lock
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install safety
+        run: uv sync --locked
 
       - name: Run security audit with Safety
-        run: safety check --json || true
+        run: uv tool run safety check --json
         continue-on-error: true
 
   matrix-test:
@@ -230,16 +235,17 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
-          cache: "pip"
-          cache-dependency-path: apps/discord/requirements.txt
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: apps/discord/uv.lock
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+        run: uv sync --locked
 
       - name: Run tests
-        run: pytest -v
+        run: uv run pytest -v
 
       - name: Display Python version
-        run: python --version
+        run: uv run python --version

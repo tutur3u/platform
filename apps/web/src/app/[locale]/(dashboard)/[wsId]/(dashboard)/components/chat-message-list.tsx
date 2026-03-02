@@ -9,17 +9,14 @@ import {
   isAutoMermaidRepairPrompt,
   simpleStableHash,
 } from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/components/mermaid-auto-repair';
-import { resolveRenderUiSpecFromOutput } from '@/components/json-render/render-ui-spec';
 import 'katex/dist/katex.min.css';
 import mermaidParser from 'mermaid';
 import { useTranslations } from 'next-intl';
 import { type MutableRefObject, useCallback, useEffect, useRef } from 'react';
-import { groupMessageParts } from './chat-message-list/group-message-parts';
 import {
   getDisplayText,
   getErrorMessage,
   getMessageText,
-  hasOutputText,
   hasTextContent,
   hasToolParts,
 } from './chat-message-list/helpers';
@@ -27,6 +24,7 @@ import {
   AssistantMarkdown,
   ReasoningPart,
 } from './chat-message-list/markdown-components';
+import { resolveMessageRenderGroups } from './chat-message-list/resolve-message-render-groups';
 import {
   CopyButton,
   GroupedToolCallParts,
@@ -259,158 +257,57 @@ export default function ChatMessageList({
                     />
                   ) : (
                     <div className="flex min-w-0 max-w-full flex-col gap-2 overflow-hidden *:min-w-0 *:max-w-full">
-                      {(() => {
-                        const groups = groupMessageParts(message.parts);
-                        const lastReasoningIdx = groups.findLastIndex(
-                          (g) => g.kind === 'reasoning'
-                        );
-                        return groups.map((group, gi) => {
-                          if (group.kind === 'reasoning') {
-                            const isLatestReasoning = gi === lastReasoningIdx;
-                            // Only show "reasoning..." on the latest assistant message while it has no text yet
-                            const isReasoningInProgress =
-                              isLatestReasoning &&
-                              isStreaming &&
-                              isLastAssistant &&
-                              !hasOutputText(message);
-                            return (
-                              <ReasoningPart
-                                key={`reasoning-${group.index}`}
-                                text={
-                                  typeof group.text === 'string'
-                                    ? group.text
-                                    : JSON.stringify(group.text)
-                                }
-                                isAnimating={isReasoningInProgress}
-                              />
-                            );
-                          }
-                          if (group.kind === 'text') {
-                            return (
-                              <AssistantMarkdown
-                                key={`text-${group.index}`}
-                                text={
-                                  typeof group.text === 'string'
-                                    ? group.text
-                                    : JSON.stringify(group.text)
-                                }
-                                isAnimating={isStreaming && isLastAssistant}
-                              />
-                            );
-                          }
-                          if (group.kind === 'tool') {
-                            if (group.toolName === 'render_ui') {
-                              // Hide intermediate invalid/no-op render_ui calls
-                              // when a later valid UI spec exists in the same run.
-                              const partsWithValidity = group.parts.map(
-                                (part) => ({
-                                  part,
-                                  hasRenderableSpec:
-                                    !!resolveRenderUiSpecFromOutput(
-                                      (part as { output?: unknown }).output
-                                    ),
-                                  recoveredFromInvalidSpec: !!(
-                                    (part as { output?: unknown }).output &&
-                                    typeof (part as { output?: unknown })
-                                      .output === 'object' &&
-                                    (
-                                      part as {
-                                        output?: {
-                                          recoveredFromInvalidSpec?: boolean;
-                                        };
-                                      }
-                                    ).output?.recoveredFromInvalidSpec === true
-                                  ),
-                                })
-                              );
-                              const hasAnyRenderable = partsWithValidity.some(
-                                (entry) => entry.hasRenderableSpec
-                              );
-                              const hasRecoveredRenderable =
-                                partsWithValidity.some(
-                                  (entry) =>
-                                    entry.hasRenderableSpec &&
-                                    entry.recoveredFromInvalidSpec
-                                );
-                              const hasNonRecoveredRenderable =
-                                partsWithValidity.some(
-                                  (entry) =>
-                                    entry.hasRenderableSpec &&
-                                    !entry.recoveredFromInvalidSpec
-                                );
-                              const shouldDeferRecoveredPlaceholder =
-                                hasRecoveredRenderable &&
-                                !hasNonRecoveredRenderable &&
-                                isStreaming &&
-                                isLastAssistant;
-
-                              const visibleParts = hasNonRecoveredRenderable
-                                ? partsWithValidity
-                                    .filter(
-                                      (entry) =>
-                                        entry.hasRenderableSpec &&
-                                        !entry.recoveredFromInvalidSpec
-                                    )
-                                    .slice(-1)
-                                    .map((entry) => entry.part)
-                                : hasAnyRenderable
-                                  ? partsWithValidity
-                                      .filter(
-                                        (entry) => entry.hasRenderableSpec
-                                      )
-                                      .slice(-1)
-                                      .map((entry) => entry.part)
-                                  : group.parts;
-
-                              if (
-                                shouldDeferRecoveredPlaceholder &&
-                                visibleParts.length > 0
-                              ) {
-                                return null;
-                              }
-
-                              return visibleParts.map((part, idx) => (
-                                <ToolCallPart
-                                  key={`render-ui-${group.startIndex}-${idx}`}
-                                  part={part}
-                                />
-                              ));
-                            }
-                            if (group.parts.length === 1) {
-                              return (
-                                <ToolCallPart
-                                  key={`tool-${group.startIndex}`}
-                                  part={group.parts[0]!}
-                                />
-                              );
-                            }
-                            return (
-                              <GroupedToolCallParts
-                                key={`toolgroup-${group.startIndex}`}
-                                parts={group.parts}
-                                toolName={group.toolName}
-                              />
-                            );
-                          }
-                          return null;
-                        });
-                      })()}
-                      {/* Sources from Google Search grounding */}
-                      {(() => {
-                        const sourceParts = message.parts.filter(
-                          (
-                            p
-                          ): p is {
-                            type: 'source-url';
-                            url: string;
-                            title?: string;
-                            sourceId: string;
-                          } => p.type === 'source-url'
-                        );
-                        return sourceParts.length > 0 ? (
-                          <SourcesPart parts={sourceParts} />
-                        ) : null;
-                      })()}
+                      {resolveMessageRenderGroups({
+                        message,
+                        isStreaming,
+                        isLastAssistant,
+                      }).map((descriptor) => {
+                        if (descriptor.kind === 'reasoning') {
+                          return (
+                            <ReasoningPart
+                              key={descriptor.key}
+                              text={descriptor.text}
+                              isAnimating={descriptor.isAnimating}
+                            />
+                          );
+                        }
+                        if (descriptor.kind === 'text') {
+                          return (
+                            <AssistantMarkdown
+                              key={descriptor.key}
+                              text={descriptor.text}
+                              isAnimating={descriptor.isAnimating}
+                            />
+                          );
+                        }
+                        if (descriptor.kind === 'tool') {
+                          return (
+                            <ToolCallPart
+                              key={descriptor.key}
+                              part={descriptor.part}
+                              renderUiFailure={descriptor.renderUiFailure}
+                            />
+                          );
+                        }
+                        if (descriptor.kind === 'tool-group') {
+                          return (
+                            <GroupedToolCallParts
+                              key={descriptor.key}
+                              parts={descriptor.parts}
+                              toolName={descriptor.toolName}
+                            />
+                          );
+                        }
+                        if (descriptor.kind === 'sources') {
+                          return (
+                            <SourcesPart
+                              key={descriptor.key}
+                              parts={descriptor.parts}
+                            />
+                          );
+                        }
+                        return null;
+                      })}
                     </div>
                   )}
                 </div>

@@ -12,11 +12,22 @@ import type {
  * Returns allowance info including remaining credits and effective maxOutputTokens.
  */
 export async function checkAiCredits(
-  wsId: string,
+  wsId: string | undefined,
   modelId: string,
   feature: AiFeature,
   opts?: { userId?: string; estimatedInputTokens?: number }
 ): Promise<CreditCheckResult> {
+  if (!wsId) {
+    return {
+      allowed: false,
+      remainingCredits: 0,
+      tier: 'FREE',
+      maxOutputTokens: null,
+      errorCode: 'CREDIT_CHECK_FAILED',
+      errorMessage: 'Workspace ID is missing.',
+    };
+  }
+
   const sbAdmin = await createAdminClient();
   const gatewayModelId = resolveGatewayModelId(modelId);
 
@@ -71,6 +82,15 @@ export async function checkAiCredits(
 export async function deductAiCredits(
   params: DeductCreditsParams
 ): Promise<CreditDeductionResult> {
+  if (!params.wsId) {
+    return {
+      success: false,
+      creditsDeducted: 0,
+      remainingCredits: 0,
+      errorCode: 'DEDUCTION_FAILED',
+    };
+  }
+
   const sbAdmin = await createAdminClient();
   const gatewayModelId = resolveGatewayModelId(params.modelId);
 

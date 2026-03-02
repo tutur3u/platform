@@ -210,6 +210,7 @@ export interface DescriptionMetadata {
   linkCount: number;
   totalCheckboxes: number;
   checkedCheckboxes: number;
+  indeterminateCheckboxes: number;
 }
 
 export const getDescriptionMetadata = (
@@ -225,6 +226,7 @@ export const getDescriptionMetadata = (
     linkCount: 0,
     totalCheckboxes: 0,
     checkedCheckboxes: 0,
+    indeterminateCheckboxes: 0,
   };
 
   if (!description) return metadata;
@@ -266,10 +268,16 @@ export const getDescriptionMetadata = (
       }
 
       // Check for task items (checkboxes)
+      // Indeterminate items are counted separately and excluded from totalCheckboxes
+      // since they represent abandoned/not-proceeded tasks
       if (content.type === 'taskItem') {
-        metadata.totalCheckboxes++;
-        if (content.attrs?.checked === true) {
-          metadata.checkedCheckboxes++;
+        if (content.attrs?.checked === 'indeterminate') {
+          metadata.indeterminateCheckboxes++;
+        } else {
+          metadata.totalCheckboxes++;
+          if (content.attrs?.checked === true) {
+            metadata.checkedCheckboxes++;
+          }
         }
       }
 

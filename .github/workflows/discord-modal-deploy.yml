@@ -1,0 +1,68 @@
+name: Discord Modal Deploy
+
+on:
+  workflow_run:
+    workflows: ["Discord Python CI"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.13"
+  MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+  MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+  MODAL_ENVIRONMENT: ${{ vars.MODAL_ENVIRONMENT }}
+
+concurrency:
+  group: discord-modal-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy to Modal
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_branch == 'main'
+      )
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./apps/discord
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: apps/discord/uv.lock
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: Verify Modal credentials
+        run: |
+          if [ -z "${MODAL_TOKEN_ID}" ] || [ -z "${MODAL_TOKEN_SECRET}" ]; then
+            echo "MODAL_TOKEN_ID and MODAL_TOKEN_SECRET must be configured as GitHub Actions secrets."
+            exit 1
+          fi
+
+      - name: Deploy app
+        run: |
+          if [ -n "${MODAL_ENVIRONMENT}" ]; then
+            uv run modal deploy --env "${MODAL_ENVIRONMENT}" app.py
+          else
+            uv run modal deploy app.py
+          fi

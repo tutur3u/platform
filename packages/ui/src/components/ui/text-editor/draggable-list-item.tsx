@@ -74,7 +74,10 @@ export function DraggableListItemView({
   const [isHovered, setIsHovered] = useState(false);
   const [dropZone, setDropZone] = useState<DropZone | null>(null);
   // Track if user has manually overridden the checkbox state
-  const [manualOverride, setManualOverride] = useState<boolean | null>(null);
+  // Supports tri-state: false (unchecked), 'indeterminate', true (checked)
+  const [manualOverride, setManualOverride] = useState<
+    boolean | 'indeterminate' | null
+  >(null);
   const supabase = createClient();
 
   // Extract task mention IDs from this node's content
@@ -128,44 +131,55 @@ export function DraggableListItemView({
     return taskWithColor?.task_lists?.color?.toLowerCase() || null;
   }, [mentionedTasks]);
 
-  // Determine if checkbox should show as checked
+  // Determine checkbox state (tri-state: false | 'indeterminate' | true)
   // Priority: manual override > node.attrs.checked > auto-complete based on mentions
-  const isChecked = useMemo(() => {
+  const checkboxState = useMemo((): boolean | 'indeterminate' => {
     if (manualOverride !== null) return manualOverride;
-    if (node.attrs.checked !== undefined) return node.attrs.checked;
+    const attrChecked = node.attrs.checked;
+    if (attrChecked === 'indeterminate') return 'indeterminate';
+    if (attrChecked !== undefined) return !!attrChecked;
     return allMentionedTasksCompleted;
   }, [manualOverride, node.attrs.checked, allMentionedTasksCompleted]);
 
-  const handleCheckboxChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      if (!editor.isEditable) return;
+  const isChecked = checkboxState === true;
+  const isIndeterminate = checkboxState === 'indeterminate';
 
-      const pos = getPos();
-      if (typeof pos !== 'number') return;
+  // Cycle: unchecked -> indeterminate -> checked -> unchecked
+  const handleCheckboxCycle = useCallback(() => {
+    if (!editor.isEditable) return;
 
-      const newChecked = event.target.checked;
-      setManualOverride(newChecked);
+    const pos = getPos();
+    if (typeof pos !== 'number') return;
 
-      editor.commands.command(({ tr }) => {
-        tr.setNodeMarkup(pos, undefined, {
-          ...node.attrs,
-          checked: newChecked,
-        });
-        return true;
+    let nextState: boolean | 'indeterminate';
+    if (checkboxState === false) {
+      nextState = 'indeterminate';
+    } else if (checkboxState === 'indeterminate') {
+      nextState = true;
+    } else {
+      nextState = false;
+    }
+
+    setManualOverride(nextState);
+
+    editor.commands.command(({ tr }) => {
+      tr.setNodeMarkup(pos, undefined, {
+        ...node.attrs,
+        checked: nextState,
       });
-    },
-    [editor, getPos, node.attrs]
-  );
+      return true;
+    });
+  }, [editor, getPos, node.attrs, checkboxState]);
 
-  // Prevent click events when read-only
+  // Prevent default checkbox change and use our cycle handler
   const handleCheckboxClick = useCallback(
     (event: React.MouseEvent) => {
-      if (!editor.isEditable) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
+      event.preventDefault();
+      event.stopPropagation();
+      if (!editor.isEditable) return;
+      handleCheckboxCycle();
     },
-    [editor]
+    [editor, handleCheckboxCycle]
   );
 
   const handleMouseEnter = (event: React.MouseEvent) => {
@@ -267,95 +281,146 @@ export function DraggableListItemView({
       >
         <GripVertical className="h-3.5 w-3.5" />
       </div>
-
       {/* Drop indicator line for before */}
       {dropZone === 'before' && (
         <div className="pointer-events-none absolute -top-px right-0 left-0 h-0.5 bg-dynamic-blue" />
       )}
-
       {/* Task Item Checkbox (only for task items) */}
       {isTaskItem && (
-        <label
+        <div
           className={cn(
-            'task-list-checkbox-label mr-2 flex shrink-0 select-none pt-[0.453rem]',
+            'task-list-checkbox-label relative mr-2 flex shrink-0 select-none pt-[0.453rem]',
             !editor.isEditable && 'pointer-events-none'
           )}
           contentEditable={false}
         >
-          <input
-            type="checkbox"
-            checked={isChecked}
+          <button
+            type="button"
+            aria-label={
+              isChecked
+                ? 'Checked'
+                : isIndeterminate
+                  ? 'Indeterminate'
+                  : 'Unchecked'
+            }
             disabled={!editor.isEditable}
-            onChange={handleCheckboxChange}
             onClick={handleCheckboxClick}
             className={cn(
-              'task-list-checkbox h-4.5 w-4.5 cursor-pointer appearance-none',
-              'rounded-lg border-2 bg-background',
+              'task-list-checkbox flex h-4.5 w-4.5 items-center justify-center',
+              'cursor-pointer rounded-lg border-2 bg-background',
               'transition-all duration-150',
-              'checked:bg-center checked:bg-size-[14px_14px] checked:bg-no-repeat',
               // Default styles (no task mentions or no color)
               !completedTaskColor && [
                 'border-input',
                 'hover:scale-105 hover:border-dynamic-gray hover:bg-dynamic-gray/10',
                 'focus:border-dynamic-gray focus:outline-none focus:ring-2 focus:ring-dynamic-gray/30 focus:ring-offset-2',
-                'checked:border-dynamic-gray checked:bg-dynamic-gray/20',
+                isChecked &&
+                  'border-dynamic-green bg-dynamic-green/20 hover:border-dynamic-green hover:bg-dynamic-green/10 focus:border-dynamic-green focus:ring-dynamic-green/30',
+                isIndeterminate &&
+                  'border-dynamic-orange bg-dynamic-orange/20 hover:border-dynamic-orange hover:bg-dynamic-orange/10 focus:border-dynamic-orange focus:ring-dynamic-orange/30',
               ],
               // Dynamic color styles when tasks have a color
               completedTaskColor === 'red' && [
                 'border-dynamic-red/50',
                 'hover:scale-105 hover:border-dynamic-red hover:bg-dynamic-red/10',
                 'focus:border-dynamic-red focus:outline-none focus:ring-2 focus:ring-dynamic-red/30 focus:ring-offset-2',
-                'checked:border-dynamic-red checked:bg-dynamic-red/20',
+                (isChecked || isIndeterminate) &&
+                  'border-dynamic-red bg-dynamic-red/20',
               ],
               completedTaskColor === 'orange' && [
                 'border-dynamic-orange/50',
                 'hover:scale-105 hover:border-dynamic-orange hover:bg-dynamic-orange/10',
                 'focus:border-dynamic-orange focus:outline-none focus:ring-2 focus:ring-dynamic-orange/30 focus:ring-offset-2',
-                'checked:border-dynamic-orange checked:bg-dynamic-orange/20',
+                (isChecked || isIndeterminate) &&
+                  'border-dynamic-orange bg-dynamic-orange/20',
               ],
               completedTaskColor === 'yellow' && [
                 'border-dynamic-yellow/50',
                 'hover:scale-105 hover:border-dynamic-yellow hover:bg-dynamic-yellow/10',
                 'focus:border-dynamic-yellow focus:outline-none focus:ring-2 focus:ring-dynamic-yellow/30 focus:ring-offset-2',
-                'checked:border-dynamic-yellow checked:bg-dynamic-yellow/20',
+                (isChecked || isIndeterminate) &&
+                  'border-dynamic-yellow bg-dynamic-yellow/20',
               ],
               completedTaskColor === 'green' && [
                 'border-dynamic-green/50',
                 'hover:scale-105 hover:border-dynamic-green hover:bg-dynamic-green/10',
                 'focus:border-dynamic-green focus:outline-none focus:ring-2 focus:ring-dynamic-green/30 focus:ring-offset-2',
-                'checked:border-dynamic-green checked:bg-dynamic-green/20',
+                (isChecked || isIndeterminate) &&
+                  'border-dynamic-green bg-dynamic-green/20',
               ],
               completedTaskColor === 'cyan' && [
                 'border-dynamic-cyan/50',
                 'hover:scale-105 hover:border-dynamic-cyan hover:bg-dynamic-cyan/10',
                 'focus:border-dynamic-cyan focus:outline-none focus:ring-2 focus:ring-dynamic-cyan/30 focus:ring-offset-2',
-                'checked:border-dynamic-cyan checked:bg-dynamic-cyan/20',
+                (isChecked || isIndeterminate) &&
+                  'border-dynamic-cyan bg-dynamic-cyan/20',
               ],
               completedTaskColor === 'blue' && [
                 'border-dynamic-blue/50',
                 'hover:scale-105 hover:border-dynamic-blue hover:bg-dynamic-blue/10',
                 'focus:border-dynamic-blue focus:outline-none focus:ring-2 focus:ring-dynamic-blue/30 focus:ring-offset-2',
-                'checked:border-dynamic-blue checked:bg-dynamic-blue/20',
+                (isChecked || isIndeterminate) &&
+                  'border-dynamic-blue bg-dynamic-blue/20',
               ],
               completedTaskColor === 'purple' && [
                 'border-dynamic-purple/50',
                 'hover:scale-105 hover:border-dynamic-purple hover:bg-dynamic-purple/10',
                 'focus:border-dynamic-purple focus:outline-none focus:ring-2 focus:ring-dynamic-purple/30 focus:ring-offset-2',
-                'checked:border-dynamic-purple checked:bg-dynamic-purple/20',
+                (isChecked || isIndeterminate) &&
+                  'border-dynamic-purple bg-dynamic-purple/20',
               ],
               completedTaskColor === 'pink' && [
                 'border-dynamic-pink/50',
                 'hover:scale-105 hover:border-dynamic-pink hover:bg-dynamic-pink/10',
                 'focus:border-dynamic-pink focus:outline-none focus:ring-2 focus:ring-dynamic-pink/30 focus:ring-offset-2',
-                'checked:border-dynamic-pink checked:bg-dynamic-pink/20',
-              ],
-              // Light mode checkmark
-              `checked:bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20fill%3D%22none%22%20stroke%3D%22%2309090b%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M4%208l2.5%202.5L12%205%22%2F%3E%3C%2Fsvg%3E')]`,
-              // Dark mode checkmark
-              `dark:checked:bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M4%208l2.5%202.5L12%205%22%2F%3E%3C%2Fsvg%3E')]`
+                (isChecked || isIndeterminate) &&
+                  'border-dynamic-pink bg-dynamic-pink/20',
+              ]
             )}
-          />
-        </label>
+          >
+            {/* Checkmark icon */}
+            {isChecked && (
+              <svg
+                className={cn(
+                  'h-3.5 w-3.5',
+                  completedTaskColor ? 'text-foreground' : 'text-dynamic-green'
+                )}
+                viewBox="0 0 16 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path
+                  d="M4 8l2.5 2.5L12 5"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            )}
+            {/* Indeterminate dash icon */}
+            {isIndeterminate && (
+              <svg
+                className={cn(
+                  'h-3.5 w-3.5',
+                  completedTaskColor ? 'text-foreground' : 'text-dynamic-orange'
+                )}
+                viewBox="0 0 16 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path
+                  d="M4 8h8"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            )}
+          </button>
+        </div>
       )}
 
       {/* Content - with lower opacity when checked (if fade setting is enabled via body data attribute) */}

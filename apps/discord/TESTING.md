@@ -5,28 +5,28 @@ This document describes how to run tests, linting, and type checking for the Dis
 ## Prerequisites
 
 - Python 3.13+
-- All dependencies installed: `pip install -r requirements.txt`
+- uv installed ([Astral uv](https://docs.astral.sh/uv/))
 
 ## Quick Start
 
 ```bash
 # Install dependencies
-pip install -r requirements.txt
+uv sync
 
 # Run all tests
-pytest
+uv run pytest
 
 # Run tests with coverage
-pytest --cov
+uv run pytest --cov
 
 # Run linting
-ruff check .
+uv run ruff check .
 
 # Run formatter
-ruff format .
+uv run ruff format .
 
 # Run type checking
-mypy .
+uv run mypy .
 ```
 
 ## Continuous Integration
@@ -46,9 +46,9 @@ Checks code quality and style using Ruff linter and formatter.
 
 ```bash
 # Run locally
-ruff check .           # Check for lint errors
-ruff format --check .  # Check formatting without changes
-ruff format .          # Auto-fix formatting
+uv run ruff check .           # Check for lint errors
+uv run ruff format --check .  # Check formatting without changes
+uv run ruff format .          # Auto-fix formatting
 ```
 
 #### 2. **Type Check (mypy)**
@@ -57,7 +57,7 @@ Performs static type analysis to catch type-related bugs.
 
 ```bash
 # Run locally
-mypy . --ignore-missing-imports
+uv run mypy . --ignore-missing-imports
 ```
 
 #### 3. **Test Suite**
@@ -66,10 +66,10 @@ Runs all pytest tests with comprehensive output.
 
 ```bash
 # Run locally
-pytest                  # Run all tests
-pytest -v               # Verbose output
-pytest -k test_name     # Run specific test
-pytest tests/test_file.py  # Run specific file
+uv run pytest                  # Run all tests
+uv run pytest -v               # Verbose output
+uv run pytest -k test_name     # Run specific test
+uv run pytest tests/test_file.py  # Run specific file
 ```
 
 #### 4. **Test Coverage**
@@ -78,8 +78,8 @@ Generates code coverage reports and uploads to Codecov.
 
 ```bash
 # Run locally
-pytest --cov=. --cov-report=term-missing  # Terminal report
-pytest --cov=. --cov-report=html          # HTML report
+uv run pytest --cov=. --cov-report=term-missing  # Terminal report
+uv run pytest --cov=. --cov-report=html          # HTML report
 ```
 
 Coverage reports show which lines of code are executed during tests.
@@ -90,10 +90,10 @@ Verifies Python syntax and module imports.
 
 ```bash
 # Check syntax
-python -m py_compile *.py
+uv run python -m py_compile *.py
 
 # Verify imports
-python -c "import daily_report; import commands"
+uv run python -c "import daily_report; import commands; import discord_client; import wol_reminder"
 ```
 
 #### 6. **Security Audit**
@@ -102,8 +102,7 @@ Scans dependencies for known security vulnerabilities using Safety.
 
 ```bash
 # Run locally
-pip install safety
-safety check
+uv tool run safety check
 ```
 
 #### 7. **Matrix Test**
@@ -162,8 +161,8 @@ Use markers to categorize tests:
 Run specific categories:
 
 ```bash
-pytest -m unit           # Run only unit tests
-pytest -m "not slow"     # Skip slow tests
+uv run pytest -m unit           # Run only unit tests
+uv run pytest -m "not slow"     # Skip slow tests
 ```
 
 ### Fixtures
@@ -235,29 +234,29 @@ def example_function(param1: str, param2: int) -> bool:
 ### View Test Output
 
 ```bash
-pytest -v           # Verbose output
-pytest -vv          # Extra verbose
-pytest -s           # Show print statements
-pytest -l           # Show local variables in tracebacks
+uv run pytest -v           # Verbose output
+uv run pytest -vv          # Extra verbose
+uv run pytest -s           # Show print statements
+uv run pytest -l           # Show local variables in tracebacks
 ```
 
 ### Run Specific Tests
 
 ```bash
-pytest tests/test_daily_report.py::TestHelperFunctions::test_is_weekend_saturday
+uv run pytest tests/test_daily_report.py::TestHelperFunctions::test_is_weekend_saturday
 ```
 
 ### Debug with PDB
 
 ```bash
-pytest --pdb        # Drop into debugger on failure
-pytest --trace      # Drop into debugger at start
+uv run pytest --pdb        # Drop into debugger on failure
+uv run pytest --trace      # Drop into debugger at start
 ```
 
 ### Check Coverage Gaps
 
 ```bash
-pytest --cov=. --cov-report=term-missing
+uv run pytest --cov=. --cov-report=term-missing
 # Shows which lines aren't covered by tests
 ```
 
@@ -265,11 +264,11 @@ pytest --cov=. --cov-report=term-missing
 
 Before committing code, ensure:
 
-1. ✅ All tests pass: `pytest`
-2. ✅ Code is formatted: `ruff format .`
-3. ✅ No lint errors: `ruff check .`
-4. ✅ Type checking passes: `mypy .`
-5. ✅ Coverage maintained: `pytest --cov`
+1. ✅ All tests pass: `uv run pytest`
+2. ✅ Code is formatted: `uv run ruff format .`
+3. ✅ No lint errors: `uv run ruff check .`
+4. ✅ Type checking passes: `uv run mypy .`
+5. ✅ Coverage maintained: `uv run pytest --cov`
 
 ## Common Issues
 
@@ -281,7 +280,7 @@ Before committing code, ensure:
 
 ```bash
 cd apps/discord
-pip install -r requirements.txt
+uv sync
 ```
 
 ### Async Test Failures

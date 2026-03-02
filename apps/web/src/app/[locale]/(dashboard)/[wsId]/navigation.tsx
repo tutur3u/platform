@@ -1,5 +1,6 @@
 import {
   Archive,
+  BadgeDollarSign,
   Banknote,
   Bell,
   Blocks,
@@ -51,7 +52,6 @@ import {
   MailX,
   Megaphone,
   MessageCircleIcon,
-  NotepadText,
   Package,
   PencilRuler,
   Play,
@@ -216,7 +216,6 @@ export async function WorkspaceNavigationLinks({
       : String(userInvoiceValue) === 'true';
 
   const navLinks: (NavLink | null)[] = [
-    // ── Vertical 1: Mira (Home + AI companion) ──
     {
       title: t('common.dashboard'),
       href: `/${personalOrWsId}`,
@@ -224,7 +223,6 @@ export async function WorkspaceNavigationLinks({
       matchExact: true,
     },
     null,
-    // ── Vertical 2: Tasks ──
     {
       title: t('sidebar_tabs.tasks'),
       href: `/${personalOrWsId}/tasks`,
@@ -250,11 +248,11 @@ export async function WorkspaceNavigationLinks({
           icon: <Repeat className="h-4 w-4" />,
           requireRootMember: true,
         },
-        {
-          title: t('sidebar_tabs.notes'),
-          href: `/${personalOrWsId}/tasks/notes`,
-          icon: <NotepadText className="h-4 w-4" />,
-        },
+        // {
+        //   title: t('sidebar_tabs.notes'),
+        //   href: `/${personalOrWsId}/tasks/notes`,
+        //   icon: <NotepadText className="h-4 w-4" />,
+        // },
         {
           title: t('sidebar_tabs.drafts'),
           href: `/${personalOrWsId}/tasks/drafts`,
@@ -308,25 +306,26 @@ export async function WorkspaceNavigationLinks({
         },
       ],
     },
-    // ── Vertical 3: Calendar ──
     {
       title: t('sidebar_tabs.calendar'),
       icon: <Calendar className="h-5 w-5" />,
       href: `/${personalOrWsId}/calendar`,
       disabled: ENABLE_AI_ONLY || withoutPermission('manage_calendar'),
     },
-    // ── Vertical 4: Track (Time + Finance merged) ──
     {
-      title: t('sidebar_tabs.track'),
-      href: `/${personalOrWsId}/time-tracker`,
-      icon: <ClockFading className="h-5 w-5" />,
+      title: t('sidebar_tabs.whiteboards'),
+      href: `/${personalOrWsId}/whiteboards`,
+      icon: <PencilRuler className="h-5 w-5" />,
+      requiredWorkspaceTier: createTierRequirement('whiteboards', {
+        alwaysShow: true,
+      }),
+    },
+    {
+      title: t('sidebar_tabs.finance'),
+      href: `/${personalOrWsId}/finance`,
+      icon: <BadgeDollarSign className="h-5 w-5" />,
       experimental: 'beta',
       aliases: [
-        `/${personalOrWsId}/time-tracker`,
-        `/${personalOrWsId}/time-tracker/timer`,
-        `/${personalOrWsId}/time-tracker/history`,
-        `/${personalOrWsId}/time-tracker/management`,
-        `/${personalOrWsId}/time-tracker/requests`,
         `/${personalOrWsId}/finance`,
         `/${personalOrWsId}/finance/transactions`,
         `/${personalOrWsId}/finance/recurring`,
@@ -340,57 +339,8 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/finance/settings`,
       ],
       children: [
-        // ── Time Tracking ──
-        {
-          sectionLabel: t('sidebar_tabs.time_tracker'),
-          title: t('sidebar_tabs.overview'),
-          href: `/${personalOrWsId}/time-tracker`,
-          icon: <LayoutDashboard className="h-5 w-5" />,
-          matchExact: true,
-          requiredWorkspaceTier: createTierRequirement('time_tracker', {
-            alwaysShow: true,
-          }),
-        },
-        {
-          title: t('sidebar_tabs.timer'),
-          href: `/${personalOrWsId}/time-tracker/timer`,
-          icon: <Timer className="h-5 w-5" />,
-          requiredWorkspaceTier: createTierRequirement('time_tracker', {
-            alwaysShow: true,
-          }),
-        },
-        {
-          title: t('sidebar_tabs.history'),
-          href: `/${personalOrWsId}/time-tracker/history`,
-          icon: <ClipboardClock className="h-5 w-5" />,
-          requiredWorkspaceTier: createTierRequirement('time_tracker', {
-            alwaysShow: true,
-          }),
-        },
-        null,
-        {
-          title: t('sidebar_tabs.time_tracker_management'),
-          href: `/${personalOrWsId}/time-tracker/management`,
-          icon: <ChartGantt className="h-5 w-5" />,
-          requireRootWorkspace: true,
-          requireRootMember: true,
-          requiredWorkspaceTier: createTierRequirement('time_tracker', {
-            alwaysShow: true,
-          }),
-        },
-        {
-          title: t('sidebar_tabs.time_tracker_requests'),
-          href: `/${personalOrWsId}/time-tracker/requests`,
-          icon: <ClockCheck className="h-5 w-5" />,
-          disabled: isPersonal,
-          requiredWorkspaceTier: createTierRequirement('time_tracker', {
-            alwaysShow: true,
-          }),
-        },
-        null,
         // ── Finance: Core ──
         {
-          sectionLabel: t('sidebar_tabs.finance'),
           title: t('workspace-finance-tabs.overview'),
           href: `/${personalOrWsId}/finance`,
           icon: <LayoutDashboard className="h-5 w-5" />,
@@ -461,6 +411,68 @@ export async function WorkspaceNavigationLinks({
       ],
       disabled: ENABLE_AI_ONLY,
     },
+    {
+      title: t('sidebar_tabs.track'),
+      href: `/${personalOrWsId}/time-tracker`,
+      icon: <ClockFading className="h-5 w-5" />,
+      experimental: 'beta',
+      aliases: [
+        `/${personalOrWsId}/time-tracker`,
+        `/${personalOrWsId}/time-tracker/timer`,
+        `/${personalOrWsId}/time-tracker/history`,
+        `/${personalOrWsId}/time-tracker/management`,
+        `/${personalOrWsId}/time-tracker/requests`,
+      ],
+      children: [
+        // ── Time Tracking ──
+        {
+          title: t('sidebar_tabs.overview'),
+          href: `/${personalOrWsId}/time-tracker`,
+          icon: <LayoutDashboard className="h-5 w-5" />,
+          matchExact: true,
+          requiredWorkspaceTier: createTierRequirement('time_tracker', {
+            alwaysShow: true,
+          }),
+        },
+        {
+          title: t('sidebar_tabs.timer'),
+          href: `/${personalOrWsId}/time-tracker/timer`,
+          icon: <Timer className="h-5 w-5" />,
+          requiredWorkspaceTier: createTierRequirement('time_tracker', {
+            alwaysShow: true,
+          }),
+        },
+        {
+          title: t('sidebar_tabs.history'),
+          href: `/${personalOrWsId}/time-tracker/history`,
+          icon: <ClipboardClock className="h-5 w-5" />,
+          requiredWorkspaceTier: createTierRequirement('time_tracker', {
+            alwaysShow: true,
+          }),
+        },
+        null,
+        {
+          title: t('sidebar_tabs.time_tracker_management'),
+          href: `/${personalOrWsId}/time-tracker/management`,
+          icon: <ChartGantt className="h-5 w-5" />,
+          requireRootWorkspace: true,
+          requireRootMember: true,
+          requiredWorkspaceTier: createTierRequirement('time_tracker', {
+            alwaysShow: true,
+          }),
+        },
+        {
+          title: t('sidebar_tabs.time_tracker_requests'),
+          href: `/${personalOrWsId}/time-tracker/requests`,
+          icon: <ClockCheck className="h-5 w-5" />,
+          disabled: isPersonal,
+          requiredWorkspaceTier: createTierRequirement('time_tracker', {
+            alwaysShow: true,
+          }),
+        },
+      ],
+      disabled: ENABLE_AI_ONLY,
+    },
     null,
     // ── Vertical 5: More (collapsed features) ──
     {
@@ -479,14 +491,6 @@ export async function WorkspaceNavigationLinks({
             alwaysShow: true,
           }),
           experimental: 'beta',
-        },
-        {
-          title: t('sidebar_tabs.whiteboards'),
-          href: `/${personalOrWsId}/whiteboards`,
-          icon: <PencilRuler className="h-5 w-5" />,
-          requiredWorkspaceTier: createTierRequirement('whiteboards', {
-            alwaysShow: true,
-          }),
         },
         {
           title: t('sidebar_tabs.chat'),

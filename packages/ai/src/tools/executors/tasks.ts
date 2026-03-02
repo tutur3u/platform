@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@tuturuuu/supabase';
 import type { Enums, TablesInsert, TablesUpdate } from '@tuturuuu/types';
 import { parseTaskDateToUTCISO } from '@tuturuuu/utils/task-date-timezone';
 import type { MiraToolContext } from '../mira-tools';
+import { getWorkspaceContextWorkspaceId } from '../workspace-context';
 
 type RpcTask = {
   task_id: string;
@@ -23,7 +24,8 @@ export async function executeGetMyTasks(
   args: Record<string, unknown>,
   ctx: MiraToolContext
 ) {
-  const { userId, wsId, supabase } = ctx;
+  const { userId, supabase } = ctx;
+  const wsId = getWorkspaceContextWorkspaceId(ctx);
   const category = ((args.category ?? args.status) as string) || 'all';
 
   const { data: tasks, error } = await supabase.rpc(
@@ -58,8 +60,7 @@ export async function executeGetMyTasks(
       (t) =>
         t.task_end_date &&
         t.task_end_date >= todayStart.toISOString() &&
-        t.task_end_date <= todayEnd.toISOString() &&
-        t.task_end_date >= now.toISOString()
+        t.task_end_date <= todayEnd.toISOString()
     )
     .map(mapTask)
     .slice(0, 30);
@@ -83,7 +84,8 @@ export async function executeCreateTask(
   args: Record<string, unknown>,
   ctx: MiraToolContext
 ) {
-  const { userId, wsId, supabase } = ctx;
+  const { userId, supabase } = ctx;
+  const wsId = getWorkspaceContextWorkspaceId(ctx);
   const name = args.name as string;
   const description = args.description as string | null;
   const priority = (args.priority as Enums<'task_priority'> | null) ?? null;
@@ -287,7 +289,7 @@ export async function executeListBoards(
   const { data, error } = await ctx.supabase
     .from('workspace_boards')
     .select('id, name, created_at')
-    .eq('ws_id', ctx.wsId)
+    .eq('ws_id', getWorkspaceContextWorkspaceId(ctx))
     .order('created_at', { ascending: true });
 
   if (error) return { error: error.message };
@@ -302,7 +304,7 @@ export async function executeCreateBoard(
     .from('workspace_boards')
     .insert({
       name: args.name as string,
-      ws_id: ctx.wsId,
+      ws_id: getWorkspaceContextWorkspaceId(ctx),
     })
     .select('id, name')
     .single();
@@ -332,7 +334,7 @@ export async function executeUpdateBoard(
     .from('workspace_boards')
     .update(updates)
     .eq('id', boardId)
-    .eq('ws_id', ctx.wsId);
+    .eq('ws_id', getWorkspaceContextWorkspaceId(ctx));
 
   if (error) return { error: error.message };
   return { success: true, message: `Board ${boardId} updated` };
@@ -348,7 +350,7 @@ export async function executeDeleteBoard(
     .from('workspace_boards')
     .delete()
     .eq('id', boardId)
-    .eq('ws_id', ctx.wsId);
+    .eq('ws_id', getWorkspaceContextWorkspaceId(ctx));
 
   if (error) return { error: error.message };
   return { success: true, message: `Board ${boardId} deleted` };
@@ -382,7 +384,7 @@ export async function executeCreateTaskList(
     .from('workspace_boards')
     .select('id')
     .eq('id', boardId)
-    .eq('ws_id', ctx.wsId)
+    .eq('ws_id', getWorkspaceContextWorkspaceId(ctx))
     .single();
 
   if (!board) return { error: 'Board not found in this workspace' };
@@ -449,7 +451,7 @@ export async function executeListTaskLabels(
   const { data, error } = await ctx.supabase
     .from('workspace_task_labels')
     .select('id, name, color, ws_id')
-    .eq('ws_id', ctx.wsId);
+    .eq('ws_id', getWorkspaceContextWorkspaceId(ctx));
 
   if (error) return { error: error.message };
   return { count: data?.length ?? 0, labels: data ?? [] };
@@ -461,7 +463,7 @@ export async function executeCreateTaskLabel(
 ) {
   const insertData: TablesInsert<'workspace_task_labels'> = {
     name: args.name as string,
-    ws_id: ctx.wsId,
+    ws_id: getWorkspaceContextWorkspaceId(ctx),
     color: (args.color as string) ?? '#3B82F6',
   };
 
@@ -497,7 +499,7 @@ export async function executeUpdateTaskLabel(
     .from('workspace_task_labels')
     .update(updates)
     .eq('id', labelId)
-    .eq('ws_id', ctx.wsId);
+    .eq('ws_id', getWorkspaceContextWorkspaceId(ctx));
 
   if (error) return { error: error.message };
   return { success: true, message: `Label ${labelId} updated` };
@@ -513,7 +515,7 @@ export async function executeDeleteTaskLabel(
     .from('workspace_task_labels')
     .delete()
     .eq('id', labelId)
-    .eq('ws_id', ctx.wsId);
+    .eq('ws_id', getWorkspaceContextWorkspaceId(ctx));
 
   if (error) return { error: error.message };
   return { success: true, message: `Label ${labelId} deleted` };
@@ -535,7 +537,7 @@ export async function executeAddTaskLabels(
     .from('tasks')
     .select('id')
     .eq('id', taskId)
-    .eq('ws_id', ctx.wsId)
+    .eq('ws_id', getWorkspaceContextWorkspaceId(ctx))
     .maybeSingle();
 
   if (taskError) return { error: taskError.message };
@@ -548,7 +550,7 @@ export async function executeAddTaskLabels(
   const { data: labels, error: labelsError } = await ctx.supabase
     .from('workspace_task_labels')
     .select('id')
-    .eq('ws_id', ctx.wsId)
+    .eq('ws_id', getWorkspaceContextWorkspaceId(ctx))
     .in('id', uniqueLabelIds);
 
   if (labelsError) return { error: labelsError.message };
@@ -591,7 +593,7 @@ export async function executeRemoveTaskLabels(
     .from('tasks')
     .select('id')
     .eq('id', taskId)
-    .eq('ws_id', ctx.wsId)
+    .eq('ws_id', getWorkspaceContextWorkspaceId(ctx))
     .maybeSingle();
 
   if (taskError) return { error: taskError.message };
@@ -604,7 +606,7 @@ export async function executeRemoveTaskLabels(
   const { data: labels, error: labelsError } = await ctx.supabase
     .from('workspace_task_labels')
     .select('id')
-    .eq('ws_id', ctx.wsId)
+    .eq('ws_id', getWorkspaceContextWorkspaceId(ctx))
     .in('id', uniqueLabelIds);
 
   if (labelsError) return { error: labelsError.message };
@@ -635,7 +637,7 @@ export async function executeListProjects(
   const { data, error } = await ctx.supabase
     .from('task_projects')
     .select('id, name, description, created_at')
-    .eq('ws_id', ctx.wsId)
+    .eq('ws_id', getWorkspaceContextWorkspaceId(ctx))
     .order('created_at', { ascending: false });
 
   if (error) return { error: error.message };
@@ -648,7 +650,7 @@ export async function executeCreateProject(
 ) {
   const insertData: TablesInsert<'task_projects'> = {
     name: args.name as string,
-    ws_id: ctx.wsId,
+    ws_id: getWorkspaceContextWorkspaceId(ctx),
   };
   if (args.description) insertData.description = args.description as string;
 
@@ -685,7 +687,7 @@ export async function executeUpdateProject(
     .from('task_projects')
     .update(updates)
     .eq('id', projectId)
-    .eq('ws_id', ctx.wsId);
+    .eq('ws_id', getWorkspaceContextWorkspaceId(ctx));
 
   if (error) return { error: error.message };
   return { success: true, message: `Project ${projectId} updated` };
@@ -701,7 +703,7 @@ export async function executeDeleteProject(
     .from('task_projects')
     .delete()
     .eq('id', projectId)
-    .eq('ws_id', ctx.wsId);
+    .eq('ws_id', getWorkspaceContextWorkspaceId(ctx));
 
   if (error) return { error: error.message };
   return { success: true, message: `Project ${projectId} deleted` };
@@ -813,5 +815,6 @@ async function resolveDefaultBoardAndList(
   return { boardId: board.id, listId: list.id };
 }
 
+// Exported for potential reuse
 // Exported for potential reuse
 export { resolveDefaultBoardAndList };

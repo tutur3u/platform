@@ -341,9 +341,6 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 
-export const runtime = 'edge';
-export const maxDuration = 60;
-
 const chatRequestSchema = z.object({
   messages: z.array(
     z.object({
@@ -444,8 +441,6 @@ Use edge runtime for auth endpoints.
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-
-export const runtime = 'edge';
 
 const otpRequestSchema = z.object({
   email: z.email(),
@@ -655,16 +650,6 @@ export async function POST(request: NextRequest) {
    ```typescript
    const allowed = await hasPermission(user.id, wsId, 'manage_tasks');
    if (!allowed) return error(403);
-   ```
-
-4. **Use edge runtime for auth**
-   ```typescript
-   export const runtime = 'edge';
-   ```
-
-5. **Set max duration for long operations**
-   ```typescript
-   export const maxDuration = 60; // seconds
    ```
 
 ### ❌ DON'T

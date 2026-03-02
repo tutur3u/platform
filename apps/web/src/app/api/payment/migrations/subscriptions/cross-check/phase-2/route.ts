@@ -1,7 +1,7 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { syncSubscriptionToDatabase } from '@/app/api/payment/webhooks/route';
+import { syncSubscriptionToDatabase } from '@/utils/polar-subscription-helper';
 import {
   createNDJSONStream,
   fetchAllRows,
@@ -124,7 +124,7 @@ export async function POST() {
               }
             } else {
               try {
-                await syncSubscriptionToDatabase(polarSub);
+                await syncSubscriptionToDatabase(sbAdmin, polarSub);
                 polarSynced++;
               } catch (err) {
                 errors++;
@@ -263,5 +263,3 @@ export async function POST() {
     });
   });
 }
-
-export const maxDuration = 600; // 10 minutes

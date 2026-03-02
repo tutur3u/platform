@@ -9,7 +9,6 @@ const nextConfig: NextConfig = {
   ...serwistConfig,
   reactCompiler: true,
   reactStrictMode: true,
-  // cacheComponents: true,
   poweredByHeader: false,
   typescript: {
     ignoreBuildErrors: true,

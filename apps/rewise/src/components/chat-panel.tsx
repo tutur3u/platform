@@ -1,13 +1,12 @@
 /* eslint-disable no-unused-vars */
 
-import type { Model } from '@tuturuuu/ai/models';
 import type { UIMessage, UseChatHelpers } from '@tuturuuu/ai/types';
 import {
   createClient,
   createDynamicClient,
 } from '@tuturuuu/supabase/next/client';
 import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
-import type { AIChat } from '@tuturuuu/types';
+import type { AIChat, AIModelUI } from '@tuturuuu/types';
 import {
   FileUploader,
   type StatedFile,
@@ -54,8 +53,8 @@ export interface ChatPanelProps
   input: string;
   inputRef: React.RefObject<HTMLTextAreaElement | null>;
   setInput: (input: string) => void;
-  model?: Model;
-  setModel: (model: Model) => void;
+  model?: AIModelUI;
+  setModel: (model: AIModelUI) => void;
   createChat: (input: string) => Promise<void>;
   updateChat: (data: Partial<AIChat>) => Promise<void>;
   clearChat: () => void;

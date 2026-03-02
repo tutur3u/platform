@@ -17,8 +17,6 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { isFeatureAvailable } from '@/lib/feature-tiers';
 
-export const maxDuration = 30;
-
 // Mira's personality and system instruction
 const MIRA_SYSTEM_INSTRUCTION = `
 MIRA - YOUR PERSONAL AI COMPANION

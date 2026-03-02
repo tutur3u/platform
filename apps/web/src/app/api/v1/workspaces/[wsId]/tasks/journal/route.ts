@@ -183,8 +183,6 @@ type CandidateTask = {
   projectIds?: string[];
 };
 
-export const maxDuration = 45;
-
 // Helper: authenticate and restrict to Tuturuuu email
 async function getAuthorizedUser(supabase: TypedSupabaseClient) {
   const {

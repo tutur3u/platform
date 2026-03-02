@@ -88,6 +88,37 @@ export function isValidHttpUrl(url: string | null | undefined): boolean {
 }
 
 /**
+ * Format a number in compact notation (e.g., 1.2K, 125K, 3.4M).
+ * Numbers below `threshold` are returned as-is with locale grouping.
+ *
+ * @param value - The number to format
+ * @param opts - Options for formatting
+ * @param opts.threshold - Minimum value to trigger compact notation (default: 1000)
+ * @param opts.maximumFractionDigits - Max decimal places in compact form (default: 1)
+ * @param opts.locale - Locale for Intl formatting (default: 'en')
+ * @returns Formatted string (e.g., "999", "1.2K", "3.4M")
+ */
+export function formatCompactNumber(
+  value: number,
+  opts: {
+    threshold?: number;
+    maximumFractionDigits?: number;
+    locale?: string;
+  } = {}
+): string {
+  const { threshold = 1000, maximumFractionDigits = 1, locale = 'en' } = opts;
+
+  if (Math.abs(value) < threshold) {
+    return value.toLocaleString(locale);
+  }
+
+  return new Intl.NumberFormat(locale, {
+    notation: 'compact',
+    maximumFractionDigits,
+  }).format(value);
+}
+
+/**
  * Get the locale for a specific currency.
  * Re-exported from currencies module for backward compatibility.
  *

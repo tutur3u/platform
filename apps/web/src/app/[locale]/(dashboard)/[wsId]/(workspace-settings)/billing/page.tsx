@@ -9,10 +9,12 @@ import WorkspaceWrapper from '@/components/workspace-wrapper';
 import {
   checkManageSubscriptionPermission,
   ensureSubscription,
+  fetchCreditPacks,
   fetchProducts,
   fetchWorkspaceOrders,
 } from '@/utils/billing-helper';
 import { getSeatStatus } from '@/utils/seat-limits';
+import { AiCreditBillingCard } from './ai-credit-billing-card';
 import { BillingClient } from './billing-client';
 import BillingHistory from './billing-history';
 import { NoSubscriptionFound } from './no-subscription-found';
@@ -43,6 +45,7 @@ export default async function BillingPage({
           hasManageSubscriptionPermission,
           subscriptionResult,
           products,
+          creditPacks,
           seatStatus,
           orders,
           locale,
@@ -52,6 +55,7 @@ export default async function BillingPage({
           checkManageSubscriptionPermission(wsId, user.id),
           ensureSubscription(wsId), // Try to ensure subscription exists
           fetchProducts(),
+          fetchCreditPacks(),
           getSeatStatus(supabase, wsId),
           fetchWorkspaceOrders(wsId),
           getLocale(),
@@ -106,6 +110,12 @@ export default async function BillingPage({
               currentPlan={currentPlan}
               products={products}
               seatStatus={seatStatus}
+            />
+
+            <AiCreditBillingCard
+              wsId={wsId}
+              packs={creditPacks}
+              canPurchase={hasManageSubscriptionPermission}
             />
 
             <BillingHistory orders={orders} />

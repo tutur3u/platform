@@ -26,14 +26,44 @@ const ACCEPTED_MIME_TYPES = new Set([
   'application/pdf',
   'text/plain',
   'text/csv',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/json',
   'text/markdown',
 ]);
 
-const ACCEPT_STRING = [...ACCEPTED_MIME_TYPES].join(',');
+const ACCEPTED_EXTENSIONS = new Set([
+  '.xls',
+  '.xlsx',
+  '.ppt',
+  '.pptx',
+  '.doc',
+  '.docx',
+]);
+
+const ACCEPT_STRING = [...ACCEPTED_MIME_TYPES, ...ACCEPTED_EXTENSIONS].join(
+  ','
+);
+
+function isAcceptedFile(file: File): boolean {
+  const mimeType = file.type.toLowerCase();
+  if (ACCEPTED_MIME_TYPES.has(mimeType)) return true;
+
+  const fileName = file.name.toLowerCase();
+  const extIndex = fileName.lastIndexOf('.');
+  if (extIndex !== -1) {
+    const ext = fileName.substring(extIndex);
+    return ACCEPTED_EXTENSIONS.has(ext);
+  }
+  return false;
+}
 
 /**
- * Filters an array of raw `File` objects against the size, MIME-type, and
+ * Filters an array of raw `File` objects against the size, type/extension, and
  * remaining-capacity constraints. Returns only the files that pass all checks.
  */
 function filterValidFiles(candidates: File[], currentCount: number): File[] {
@@ -46,8 +76,8 @@ function filterValidFiles(candidates: File[], currentCount: number): File[] {
     // Enforce size limit
     if (file.size > MAX_FILE_SIZE) continue;
 
-    // Enforce accepted types
-    if (!ACCEPTED_MIME_TYPES.has(file.type)) continue;
+    // Enforce accepted types/extensions
+    if (!isAcceptedFile(file)) continue;
 
     valid.push(file);
   }
@@ -173,13 +203,13 @@ export default function ChatInputBar({
         setInput('');
       }}
       className={cn(
-        'flex min-w-0 flex-col rounded-xl border border-border/50 bg-background/80 backdrop-blur-sm',
+        'flex min-w-0 flex-col justify-center rounded-xl border border-border/50 bg-background/80 backdrop-blur-sm',
         'transition-colors focus-within:border-dynamic-purple/30'
       )}
     >
       {/* File preview chips — shown above the textarea when files are attached */}
       {hasFiles && onFileRemove && (
-        <div className="px-2.5 pt-2.5">
+        <div className="px-2 pt-2">
           <FilePreviewChips
             files={files}
             onRemove={onFileRemove}
@@ -189,7 +219,7 @@ export default function ChatInputBar({
       )}
 
       {/* Textarea + action buttons row */}
-      <div className="flex min-w-0 items-end gap-2.5 p-2.5">
+      <div className="flex min-w-0 items-center gap-2 p-2">
         <Textarea
           ref={textareaRef}
           tabIndex={0}
@@ -202,7 +232,7 @@ export default function ChatInputBar({
           placeholder={t('placeholder', { name: assistantName })}
           spellCheck={false}
           disabled={disabled}
-          className="scrollbar-none min-h-10.5 min-w-0 flex-1 resize-none bg-transparent px-2.5 py-2 text-sm placeholder-muted-foreground focus:outline-none"
+          className="scrollbar-none min-h-10.5 min-w-0 flex-1 resize-none bg-transparent px-2 py-2 text-sm placeholder-muted-foreground focus:outline-none"
         />
 
         <div className="flex items-center gap-1">
@@ -233,31 +263,41 @@ export default function ChatInputBar({
           )}
 
           {onVoiceToggle && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 shrink-0"
-              onClick={onVoiceToggle}
-              disabled={disabled}
-            >
-              <Mic className="h-4.5 w-4.5" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 shrink-0"
+                  onClick={onVoiceToggle}
+                  disabled={disabled}
+                >
+                  <Mic className="h-4.5 w-4.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t('voice_input')}</TooltipContent>
+            </Tooltip>
           )}
 
-          <Button
-            type="submit"
-            size="icon"
-            className={cn(
-              'h-9 w-9 shrink-0 transition-all',
-              canSubmit
-                ? 'bg-dynamic-purple text-white hover:bg-dynamic-purple/90'
-                : 'bg-muted text-muted-foreground'
-            )}
-            disabled={!canSubmit || disabled}
-          >
-            <Send className="h-4.5 w-4.5" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="submit"
+                size="icon"
+                className={cn(
+                  'h-9 w-9 shrink-0 transition-all',
+                  canSubmit
+                    ? 'bg-dynamic-purple text-white hover:bg-dynamic-purple/90'
+                    : 'bg-muted text-muted-foreground'
+                )}
+                disabled={!canSubmit || disabled}
+              >
+                <Send className="h-4.5 w-4.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{t('send_message')}</TooltipContent>
+          </Tooltip>
         </div>
       </div>
 

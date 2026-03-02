@@ -2,6 +2,25 @@ import type { UIMessage } from '@tuturuuu/ai/types';
 import { getToolName, isToolUIPart } from 'ai';
 import type { RenderGroup, ToolPartData } from './types';
 
+/**
+ * Starting from `startIdx`, find the index of the next tool-UI part,
+ * skipping over non-tool parts like `step-start`.
+ * Returns -1 if none is found.
+ */
+function findNextToolIndex(
+  parts: UIMessage['parts'],
+  startIdx: number
+): number {
+  for (let j = startIdx; j < parts.length; j++) {
+    if (isToolUIPart(parts[j]!)) return j;
+    // Stop scanning if we hit a text or reasoning part — those are
+    // meaningful content boundaries that should not be bridged.
+    const type = (parts[j] as { type?: string }).type;
+    if (type === 'text' || type === 'reasoning') return -1;
+  }
+  return -1;
+}
+
 export function groupMessageParts(parts: UIMessage['parts']): RenderGroup[] {
   if (!parts) return [];
 
@@ -32,6 +51,25 @@ export function groupMessageParts(parts: UIMessage['parts']): RenderGroup[] {
       }
     } else {
       if (currentToolGroup) {
+        // When the current group is render_ui, don't flush on step-start
+        // boundaries — the model may retry render_ui across steps, and we
+        // want to consolidate all attempts into a single group so the UI
+        // can show a single failure indicator with an attempt count.
+        if (
+          currentToolGroup.toolName === 'render_ui' &&
+          part.type === 'step-start'
+        ) {
+          const nextToolIdx = findNextToolIndex(parts, i + 1);
+          if (nextToolIdx !== -1) {
+            const nextPart = parts[nextToolIdx]!;
+            const nextName = getToolName(nextPart as never);
+            if (nextName === 'render_ui') {
+              // Skip this step-start; keep the render_ui group open.
+              continue;
+            }
+          }
+        }
+
         groups.push({ kind: 'tool', ...currentToolGroup });
         currentToolGroup = null;
       }

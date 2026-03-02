@@ -1,6 +1,7 @@
 import type { TablesInsert, TablesUpdate } from '@tuturuuu/types';
 import { z } from 'zod';
 import type { MiraToolContext } from '../mira-tools';
+import { getWorkspaceContextWorkspaceId } from '../workspace-context';
 
 const createWalletArgsSchema = z.object({
   name: z.string().trim().min(1),
@@ -60,11 +61,12 @@ export async function executeSetDefaultCurrency(
   ctx: MiraToolContext
 ) {
   const currency = (args.currency as string).toUpperCase();
+  const workspaceId = getWorkspaceContextWorkspaceId(ctx);
 
   const { error } = await ctx.supabase.from('workspace_configs').upsert(
     {
       id: 'DEFAULT_CURRENCY',
-      ws_id: ctx.wsId,
+      ws_id: workspaceId,
       value: currency,
       updated_at: new Date().toISOString(),
     },
@@ -90,7 +92,7 @@ export async function executeLogTransaction(
     const { data: wallet } = await ctx.supabase
       .from('workspace_wallets')
       .select('id')
-      .eq('ws_id', ctx.wsId)
+      .eq('ws_id', getWorkspaceContextWorkspaceId(ctx))
       .limit(1)
       .single();
 
@@ -128,7 +130,7 @@ export async function executeGetSpendingSummary(
   const { data: wallets } = await ctx.supabase
     .from('workspace_wallets')
     .select('id, name, currency, balance')
-    .eq('ws_id', ctx.wsId);
+    .eq('ws_id', getWorkspaceContextWorkspaceId(ctx));
 
   if (!wallets?.length)
     return { wallets: [], totalIncome: 0, totalExpenses: 0, net: 0 };
@@ -173,7 +175,7 @@ export async function executeListWallets(
   const { data, error } = await ctx.supabase
     .from('workspace_wallets')
     .select('id, name, currency, balance, type, created_at')
-    .eq('ws_id', ctx.wsId)
+    .eq('ws_id', getWorkspaceContextWorkspaceId(ctx))
     .order('created_at', { ascending: true });
 
   if (error) return { error: error.message };
@@ -192,7 +194,7 @@ export async function executeCreateWallet(
   const validated = parsed.data;
   const insertData: TablesInsert<'workspace_wallets'> = {
     name: validated.name,
-    ws_id: ctx.wsId,
+    ws_id: getWorkspaceContextWorkspaceId(ctx),
   };
   if (validated.currency) insertData.currency = validated.currency;
   if (validated.balance !== undefined) insertData.balance = validated.balance;
@@ -234,7 +236,7 @@ export async function executeUpdateWallet(
     .from('workspace_wallets')
     .update(updates)
     .eq('id', walletId)
-    .eq('ws_id', ctx.wsId);
+    .eq('ws_id', getWorkspaceContextWorkspaceId(ctx));
 
   if (error) return { error: error.message };
   return { success: true, message: `Wallet ${walletId} updated` };
@@ -250,7 +252,7 @@ export async function executeDeleteWallet(
     .from('workspace_wallets')
     .delete()
     .eq('id', walletId)
-    .eq('ws_id', ctx.wsId);
+    .eq('ws_id', getWorkspaceContextWorkspaceId(ctx));
 
   if (error) return { error: error.message };
   return { success: true, message: `Wallet ${walletId} deleted` };
@@ -266,7 +268,7 @@ export async function executeListTransactions(
   const { data: wallets } = await ctx.supabase
     .from('workspace_wallets')
     .select('id')
-    .eq('ws_id', ctx.wsId);
+    .eq('ws_id', getWorkspaceContextWorkspaceId(ctx));
 
   if (!wallets?.length) return { count: 0, transactions: [] };
 
@@ -300,10 +302,19 @@ export async function executeGetTransaction(
 ) {
   const transactionId = args.transactionId as string;
 
+  const { data: wallets } = await ctx.supabase
+    .from('workspace_wallets')
+    .select('id')
+    .eq('ws_id', getWorkspaceContextWorkspaceId(ctx));
+  const walletIds = wallets?.map((w) => w.id) ?? [];
+
+  if (!walletIds.length) return { error: 'No wallets in workspace' };
+
   const { data, error } = await ctx.supabase
     .from('wallet_transactions')
     .select('id, amount, description, taken_at, wallet_id, category_id')
     .eq('id', transactionId)
+    .in('wallet_id', walletIds)
     .single();
 
   if (error) return { error: error.message };
@@ -326,10 +337,19 @@ export async function executeUpdateTransaction(
     return { success: true, message: 'No fields to update' };
   }
 
+  const { data: wallets } = await ctx.supabase
+    .from('workspace_wallets')
+    .select('id')
+    .eq('ws_id', getWorkspaceContextWorkspaceId(ctx));
+  const walletIds = wallets?.map((w) => w.id) ?? [];
+
+  if (!walletIds.length) return { error: 'No wallets in workspace' };
+
   const { error } = await ctx.supabase
     .from('wallet_transactions')
     .update(updates)
-    .eq('id', transactionId);
+    .eq('id', transactionId)
+    .in('wallet_id', walletIds);
 
   if (error) return { error: error.message };
   return { success: true, message: `Transaction ${transactionId} updated` };
@@ -341,10 +361,19 @@ export async function executeDeleteTransaction(
 ) {
   const transactionId = args.transactionId as string;
 
+  const { data: wallets } = await ctx.supabase
+    .from('workspace_wallets')
+    .select('id')
+    .eq('ws_id', getWorkspaceContextWorkspaceId(ctx));
+  const walletIds = wallets?.map((w) => w.id) ?? [];
+
+  if (!walletIds.length) return { error: 'No wallets in workspace' };
+
   const { error } = await ctx.supabase
     .from('wallet_transactions')
     .delete()
-    .eq('id', transactionId);
+    .eq('id', transactionId)
+    .in('wallet_id', walletIds);
 
   if (error) return { error: error.message };
   return { success: true, message: `Transaction ${transactionId} deleted` };
@@ -357,7 +386,7 @@ export async function executeListTransactionCategories(
   const { data, error } = await ctx.supabase
     .from('transaction_categories')
     .select('id, name, is_expense, ws_id')
-    .eq('ws_id', ctx.wsId);
+    .eq('ws_id', getWorkspaceContextWorkspaceId(ctx));
 
   if (error) return { error: error.message };
   return { count: data?.length ?? 0, categories: data ?? [] };
@@ -372,7 +401,7 @@ export async function executeCreateTransactionCategory(
     .insert({
       name: args.name as string,
       is_expense: (args.isExpense as boolean) ?? true,
-      ws_id: ctx.wsId,
+      ws_id: getWorkspaceContextWorkspaceId(ctx),
     })
     .select('id, name, is_expense')
     .single();
@@ -403,7 +432,7 @@ export async function executeUpdateTransactionCategory(
     .from('transaction_categories')
     .update(updates)
     .eq('id', categoryId)
-    .eq('ws_id', ctx.wsId);
+    .eq('ws_id', getWorkspaceContextWorkspaceId(ctx));
 
   if (error) return { error: error.message };
   return { success: true, message: `Category ${categoryId} updated` };
@@ -419,7 +448,7 @@ export async function executeDeleteTransactionCategory(
     .from('transaction_categories')
     .delete()
     .eq('id', categoryId)
-    .eq('ws_id', ctx.wsId);
+    .eq('ws_id', getWorkspaceContextWorkspaceId(ctx));
 
   if (error) return { error: error.message };
   return { success: true, message: `Category ${categoryId} deleted` };
@@ -432,7 +461,7 @@ export async function executeListTransactionTags(
   const { data, error } = await ctx.supabase
     .from('transaction_tags')
     .select('id, name, color, description, ws_id')
-    .eq('ws_id', ctx.wsId);
+    .eq('ws_id', getWorkspaceContextWorkspaceId(ctx));
 
   if (error) return { error: error.message };
   return { count: data?.length ?? 0, tags: data ?? [] };
@@ -452,7 +481,7 @@ export async function executeCreateTransactionTag(
   const validated = parsed.data;
   const insertData: TablesInsert<'transaction_tags'> = {
     name: validated.name,
-    ws_id: ctx.wsId,
+    ws_id: getWorkspaceContextWorkspaceId(ctx),
   };
   if (validated.color) insertData.color = validated.color;
   if (validated.description) insertData.description = validated.description;
@@ -495,7 +524,7 @@ export async function executeUpdateTransactionTag(
     .from('transaction_tags')
     .update(updates)
     .eq('id', tagId)
-    .eq('ws_id', ctx.wsId);
+    .eq('ws_id', getWorkspaceContextWorkspaceId(ctx));
 
   if (error) return { error: error.message };
   return { success: true, message: `Tag ${tagId} updated` };
@@ -511,7 +540,7 @@ export async function executeDeleteTransactionTag(
     .from('transaction_tags')
     .delete()
     .eq('id', tagId)
-    .eq('ws_id', ctx.wsId);
+    .eq('ws_id', getWorkspaceContextWorkspaceId(ctx));
 
   if (error) return { error: error.message };
   return { success: true, message: `Tag ${tagId} deleted` };

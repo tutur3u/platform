@@ -6,7 +6,6 @@ const withNextIntl = createNextIntlPlugin();
 const nextConfig: NextConfig = {
   reactCompiler: true,
   reactStrictMode: true,
-  cacheComponents: true,
   poweredByHeader: false,
   typescript: {
     ignoreBuildErrors: true,

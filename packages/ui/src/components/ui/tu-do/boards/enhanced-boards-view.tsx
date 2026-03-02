@@ -20,6 +20,7 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useState } from 'react';
 import { getIconComponentByKey } from '../../custom/icon-picker';
 import { useTasksHref } from '../tasks-route-context';
+import { BoardsListSkeleton } from './boards-list-skeleton';
 import { projectColumns } from './columns';
 import { BoardCardActions } from './row-actions';
 
@@ -55,7 +56,7 @@ export function EnhancedBoardsView({ wsId }: EnhancedBoardsViewProps) {
   const pageSize = searchParams.get('pageSize') || '10';
 
   // Use React Query to consume the hydrated cache
-  const { data: queryData } = useQuery({
+  const { data: queryData, isPending } = useQuery({
     queryKey: ['boards', wsId, q, page, pageSize],
     queryFn: () => getBoardsData(wsId, q, page, pageSize),
     // Remove staleTime: 0 to use default behavior
@@ -160,6 +161,10 @@ export function EnhancedBoardsView({ wsId }: EnhancedBoardsViewProps) {
 
     return { filteredData: filtered, hasActiveFilters: hasFilters };
   }, [safeData, searchQuery, sortBy, sortOrder, boardStatusFilter]);
+
+  if (isPending) {
+    return <BoardsListSkeleton />;
+  }
 
   return (
     <div className="space-y-6">

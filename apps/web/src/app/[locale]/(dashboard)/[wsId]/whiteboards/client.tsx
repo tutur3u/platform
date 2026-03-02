@@ -64,7 +64,7 @@ export default function WhiteboardsList({
 }: WhiteboardsListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('lastModified');
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
 
   const getSortLabel = (option: SortOption) => {
     switch (option) {

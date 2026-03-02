@@ -2007,6 +2007,7 @@
     "n_links": "{count, plural, one {1 link} other {# links}}",
     "n_projects": "{count} projects",
     "n_related_tasks": "{count, plural, one {1 related task} other {# related tasks}}",
+    "n_subtasks_abandoned": "{count, plural, one {1 abandoned sub-task} other {# abandoned sub-tasks}}",
     "n_subtasks_completed": "{checked} of {total} sub-tasks completed",
     "n_videos": "{count, plural, one {1 video} other {# videos}}",
     "name_updated": "Name updated successfully",

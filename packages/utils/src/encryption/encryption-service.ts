@@ -10,11 +10,12 @@
  * - Field encryption: AES-GCM with random IV per encryption
  */
 
-import crypto from 'node:crypto';
+import { gcm } from '@noble/ciphers/aes.js';
+import { scryptAsync } from '@noble/hashes/scrypt.js';
+import { randomBytes } from '@noble/hashes/utils.js';
 import type { EncryptedCalendarEventFields, EncryptedField } from './types';
 
 // Encryption constants
-const ALGORITHM = 'aes-256-gcm';
 const KEY_LENGTH = 32; // 256 bits
 const IV_LENGTH = 12; // 96 bits for GCM
 const AUTH_TAG_LENGTH = 16; // 128 bits
@@ -60,36 +61,33 @@ async function getDerivedKey(masterKey: string): Promise<Buffer> {
     return cached;
   }
 
-  return new Promise((resolve, reject) => {
-    crypto.scrypt(
-      masterKey,
-      SCRYPT_SALT,
-      SCRYPT_KEY_LENGTH,
-      { N: SCRYPT_COST, r: SCRYPT_BLOCK_SIZE, p: SCRYPT_PARALLELISM },
-      (err, derivedKey) => {
-        if (err) {
-          reject(err);
-        } else {
-          // Evict oldest entry if cache is at capacity (FIFO eviction)
-          if (derivedKeyCache.size >= MAX_CACHE_SIZE) {
-            const oldestKey = derivedKeyCache.keys().next().value;
-            if (oldestKey !== undefined) {
-              derivedKeyCache.delete(oldestKey);
-            }
-          }
-          derivedKeyCache.set(masterKey, derivedKey);
-          resolve(derivedKey);
-        }
-      }
-    );
+  // Use @noble/hashes/scrypt instead of node:crypto for Vercel Edge compatibility
+  const derivedKeyArray = await scryptAsync(masterKey, SCRYPT_SALT, {
+    N: SCRYPT_COST,
+    r: SCRYPT_BLOCK_SIZE,
+    p: SCRYPT_PARALLELISM,
+    dkLen: SCRYPT_KEY_LENGTH,
   });
+
+  const derivedKey = Buffer.from(derivedKeyArray);
+
+  // Evict oldest entry if cache is at capacity (FIFO eviction)
+  if (derivedKeyCache.size >= MAX_CACHE_SIZE) {
+    const oldestKey = derivedKeyCache.keys().next().value;
+    if (oldestKey !== undefined) {
+      derivedKeyCache.delete(oldestKey);
+    }
+  }
+  derivedKeyCache.set(masterKey, derivedKey);
+
+  return derivedKey;
 }
 
 /**
  * Generate a new workspace encryption key (256-bit)
  */
 export function generateWorkspaceKey(): Buffer {
-  return crypto.randomBytes(KEY_LENGTH);
+  return Buffer.from(randomBytes(KEY_LENGTH));
 }
 
 /**
@@ -104,20 +102,16 @@ export async function encryptWorkspaceKey(
 ): Promise<string> {
   // Derive a consistent key from the master key string (async, cached)
   const derivedKey = await getDerivedKey(masterKey);
-  const iv = crypto.randomBytes(IV_LENGTH);
+  const iv = randomBytes(IV_LENGTH);
 
-  const cipher = crypto.createCipheriv(ALGORITHM, derivedKey, iv, {
-    authTagLength: AUTH_TAG_LENGTH,
-  });
-
-  const encrypted = Buffer.concat([
-    cipher.update(workspaceKey),
-    cipher.final(),
-  ]);
-  const authTag = cipher.getAuthTag();
+  const cipher = gcm(new Uint8Array(derivedKey), new Uint8Array(iv));
+  const encryptedAndTag = cipher.encrypt(new Uint8Array(workspaceKey));
 
   // Format: iv + encrypted + authTag
-  return Buffer.concat([iv, encrypted, authTag]).toString('base64');
+  return Buffer.concat([
+    Buffer.from(iv),
+    Buffer.from(encryptedAndTag),
+  ]).toString('base64');
 }
 
 /**
@@ -134,15 +128,12 @@ export async function decryptWorkspaceKey(
   const data = Buffer.from(encryptedKey, 'base64');
 
   const iv = data.subarray(0, IV_LENGTH);
-  const authTag = data.subarray(data.length - AUTH_TAG_LENGTH);
-  const encrypted = data.subarray(IV_LENGTH, data.length - AUTH_TAG_LENGTH);
+  const encryptedAndTag = data.subarray(IV_LENGTH);
 
-  const decipher = crypto.createDecipheriv(ALGORITHM, derivedKey, iv, {
-    authTagLength: AUTH_TAG_LENGTH,
-  });
-  decipher.setAuthTag(authTag);
+  const decipher = gcm(new Uint8Array(derivedKey), new Uint8Array(iv));
+  const decrypted = decipher.decrypt(new Uint8Array(encryptedAndTag));
 
-  return Buffer.concat([decipher.update(encrypted), decipher.final()]);
+  return Buffer.from(decrypted);
 }
 
 /**
@@ -171,18 +162,16 @@ export function encryptField(
     );
   }
 
-  const iv = crypto.randomBytes(IV_LENGTH);
-  const cipher = crypto.createCipheriv(ALGORITHM, workspaceKey, iv, {
-    authTagLength: AUTH_TAG_LENGTH,
-  });
+  const iv = randomBytes(IV_LENGTH);
+  const cipher = gcm(new Uint8Array(workspaceKey), new Uint8Array(iv));
 
-  const encrypted = Buffer.concat([
-    cipher.update(plaintext, 'utf8'),
-    cipher.final(),
-  ]);
-  const authTag = cipher.getAuthTag();
+  const textBytes = new TextEncoder().encode(plaintext);
+  const encryptedAndTag = cipher.encrypt(new Uint8Array(textBytes));
 
-  return Buffer.concat([iv, encrypted, authTag]).toString('base64');
+  return Buffer.concat([
+    Buffer.from(iv),
+    Buffer.from(encryptedAndTag),
+  ]).toString('base64');
 }
 
 /**
@@ -216,19 +205,12 @@ export function decryptField(
   }
 
   const iv = data.subarray(0, IV_LENGTH);
-  const authTag = data.subarray(data.length - AUTH_TAG_LENGTH);
-  const encrypted = data.subarray(IV_LENGTH, data.length - AUTH_TAG_LENGTH);
+  const encryptedAndTag = data.subarray(IV_LENGTH);
 
   try {
-    const decipher = crypto.createDecipheriv(ALGORITHM, workspaceKey, iv, {
-      authTagLength: AUTH_TAG_LENGTH,
-    });
-    decipher.setAuthTag(authTag);
-
-    return Buffer.concat([
-      decipher.update(encrypted),
-      decipher.final(),
-    ]).toString('utf8');
+    const decipher = gcm(new Uint8Array(workspaceKey), new Uint8Array(iv));
+    const decryptedBytes = decipher.decrypt(new Uint8Array(encryptedAndTag));
+    return new TextDecoder().decode(decryptedBytes);
   } catch (error) {
     // Decryption failed - log scrubbed warning and return original for backward compatibility
     const scrubbedSample = `${ciphertext.slice(0, 8)}...`;

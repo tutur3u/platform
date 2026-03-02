@@ -205,5 +205,3 @@ function extractTextFromTipTap(content: any): string {
 
   return '';
 }
-
-export const maxDuration = 300; // 5 minutes
