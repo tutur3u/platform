@@ -13,7 +13,7 @@ import Link from 'next/link';
 export default function Footer() {
   return (
     <footer
-      id="main-footer"
+      id="contact"
       className="gradient-background border-primary/10 border-t py-10 md:py-12"
     >
       <div className="mx-auto max-w-7xl space-y-8 px-4 sm:px-6">

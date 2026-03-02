@@ -15,26 +15,34 @@ import Image from 'next/image';
 import Link from 'next/link';
 import NavbarSeparator from './navbar-separator';
 
-const navItems = [
-  { href: '#handbook', label: 'See Handbook' },
-  { href: '#main-footer', label: 'Contact Us' },
-];
-
 export default function Navbar() {
   const DesktopActions = () => (
     <div className="hidden items-center gap-2 md:flex">
-      {navItems.map((item) => (
-        <Button
-          key={item.href}
-          variant="ghost"
-          className="hover:bg-transparent hover:text-foreground/50"
-          asChild
-        >
-          <Link href={item.href}>{item.label}</Link>
-        </Button>
-      ))}
+      <Button
+        className="hover:bg-transparent hover:text-foreground/50"
+        variant="ghost"
+      >
+        <Link href="#handbook">See Handbook</Link>
+      </Button>
 
-      <Button asChild className="btn-primary">
+      <Button
+        className="hover:bg-transparent hover:text-foreground/50"
+        variant="ghost"
+      >
+        <Link
+          href="#contact"
+          onClick={(e) => {
+            e.preventDefault();
+            document
+              .querySelector('#contact')
+              ?.scrollIntoView({ behavior: 'smooth' });
+          }}
+        >
+          Contact Us
+        </Link>
+      </Button>
+
+      <Button className="btn-primary">
         <Link href="#register">Register Now</Link>
       </Button>
     </div>
@@ -63,19 +71,44 @@ export default function Navbar() {
             </SheetClose>
           </SheetHeader>
           <div className="flex flex-1 flex-col gap-3 px-6 pt-3 pb-8">
-            {navItems.map((item) => (
-              <SheetClose key={item.href} asChild>
-                <Button
-                  variant="ghost"
-                  className={
-                    'justify-start font-bold text-base hover:bg-foreground/5'
-                  }
-                  asChild
+            <SheetClose asChild>
+              <Button
+                variant="ghost"
+                className="justify-start font-bold text-base hover:bg-foreground/5"
+                asChild
+              >
+                <Link href="#handbook">See Handbook</Link>
+              </Button>
+            </SheetClose>
+
+            <SheetClose asChild>
+              <Button
+                variant="ghost"
+                className="justify-start font-bold text-base hover:bg-foreground/5"
+                asChild
+              >
+                <Link
+                  href="#contact"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document
+                      .querySelector('#contact')
+                      ?.scrollIntoView({ behavior: 'smooth' });
+                  }}
                 >
-                  <Link href={item.href}>{item.label}</Link>
-                </Button>
-              </SheetClose>
-            ))}
+                  Contact Us
+                </Link>
+              </Button>
+            </SheetClose>
+
+            <SheetClose asChild>
+              <Button
+                className="btn-primary justify-start font-bold text-base"
+                asChild
+              >
+                <Link href="#register">Register Now</Link>
+              </Button>
+            </SheetClose>
           </div>
         </SheetContent>
       </Sheet>
