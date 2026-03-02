@@ -156,4 +156,146 @@ export const timeTrackingToolDefinitions = {
         path: ['sessionId'],
       }),
   }),
+
+  get_time_tracker_stats: tool({
+    description:
+      'Get time-tracker summary stats (today/week/month/streak) and daily activity for insights.',
+    inputSchema: z.object({
+      timezone: z
+        .string()
+        .optional()
+        .describe(
+          'IANA timezone (defaults to your current chat timezone or UTC)'
+        ),
+      summaryOnly: z
+        .boolean()
+        .optional()
+        .describe('When true, skip daily activity history (default true)'),
+      daysBack: z
+        .number()
+        .int()
+        .min(1)
+        .max(3650)
+        .optional()
+        .describe(
+          'How many days of daily activity to include when summaryOnly=false (default 365)'
+        ),
+    }),
+  }),
+
+  get_time_tracker_goals: tool({
+    description:
+      'List your time-tracker goals (optionally including inactive goals) and computed daily/weekly progress.',
+    inputSchema: z.object({
+      includeInactive: z
+        .boolean()
+        .optional()
+        .describe('Include inactive goals (default false)'),
+      timezone: z
+        .string()
+        .optional()
+        .describe('IANA timezone used for progress calculations'),
+      includeProgress: z
+        .boolean()
+        .optional()
+        .describe(
+          'Include daily/weekly progress percentages using current stats (default true)'
+        ),
+    }),
+  }),
+
+  list_time_tracking_categories: tool({
+    description:
+      'List time-tracking categories in the current workspace so you can map category names to category IDs.',
+    inputSchema: z.object({
+      cursor: z
+        .string()
+        .optional()
+        .describe('Pagination cursor from previous response (name|id)'),
+      limit: z
+        .number()
+        .int()
+        .min(1)
+        .max(50)
+        .optional()
+        .describe('Page size (default 20, max 50)'),
+    }),
+  }),
+
+  create_time_tracker_goal: tool({
+    description:
+      'Create a new time-tracker goal for the current workspace/user.',
+    inputSchema: z.object({
+      categoryId: z
+        .string()
+        .nullish()
+        .describe(
+          'Time tracking category UUID. Use "general", null, or omit for non-category goal.'
+        ),
+      dailyGoalMinutes: z
+        .number()
+        .int()
+        .min(1)
+        .describe('Required daily target in minutes (must be > 0)'),
+      weeklyGoalMinutes: z
+        .number()
+        .int()
+        .min(1)
+        .nullish()
+        .describe('Optional weekly target in minutes. Use null/omit to clear'),
+      isActive: z.boolean().optional().describe('Whether goal is active'),
+    }),
+  }),
+
+  update_time_tracker_goal: tool({
+    description:
+      'Update an existing time-tracker goal by goalId (or id alias).',
+    inputSchema: z
+      .object({
+        goalId: z.string().optional().describe('Goal UUID'),
+        id: z
+          .string()
+          .optional()
+          .describe('Alias for goalId. Use either goalId or id.'),
+        categoryId: z
+          .string()
+          .nullish()
+          .describe(
+            'Time tracking category UUID. Use "general", null, or empty to clear.'
+          ),
+        dailyGoalMinutes: z
+          .number()
+          .int()
+          .min(1)
+          .optional()
+          .describe('Updated daily target in minutes (must be > 0)'),
+        weeklyGoalMinutes: z
+          .number()
+          .int()
+          .min(1)
+          .nullish()
+          .describe('Updated weekly target in minutes. Use null/omit to clear'),
+        isActive: z.boolean().optional().describe('Updated active flag'),
+      })
+      .refine((data) => Boolean(data.goalId || data.id), {
+        message: 'goalId or id is required',
+        path: ['goalId'],
+      }),
+  }),
+
+  delete_time_tracker_goal: tool({
+    description: 'Delete a time-tracker goal by goalId (or id alias).',
+    inputSchema: z
+      .object({
+        goalId: z.string().optional().describe('Goal UUID'),
+        id: z
+          .string()
+          .optional()
+          .describe('Alias for goalId. Use either goalId or id.'),
+      })
+      .refine((data) => Boolean(data.goalId || data.id), {
+        message: 'goalId or id is required',
+        path: ['goalId'],
+      }),
+  }),
 } as const;

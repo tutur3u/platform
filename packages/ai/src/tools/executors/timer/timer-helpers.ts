@@ -3,6 +3,13 @@ import type { MiraToolContext } from '../../mira-tools';
 export const MIN_DURATION_SECONDS = 60;
 const ENABLE_APPROVAL_BYPASS_CHECK = false;
 
+export type ToolFailure = {
+  success: false;
+  error: string;
+  errorCode: string;
+  retryable: boolean;
+};
+
 function parseDateOnly(
   value: unknown,
   fieldName: string
@@ -243,4 +250,76 @@ export function coerceOptionalString(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+export function toFiniteNumber(value: unknown, fallback = 0): number {
+  return Number.isFinite(value) ? Number(value) : fallback;
+}
+
+export function buildToolFailure(
+  errorCode: string,
+  message: string,
+  retryable: boolean
+): ToolFailure {
+  return {
+    success: false,
+    error: message,
+    errorCode,
+    retryable,
+  };
+}
+
+export function isValidIanaTimezone(value: string): boolean {
+  try {
+    // RangeError for invalid IANA timezone names.
+    new Intl.DateTimeFormat('en-US', { timeZone: value }).format();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function resolveTimezone(
+  argsTimezone: unknown,
+  contextTimezone: string | undefined
+): {
+  requested: string | null;
+  resolved: string;
+  usedFallback: boolean;
+  validRequested: boolean;
+} {
+  const requestedRaw =
+    typeof argsTimezone === 'string' && argsTimezone.trim().length > 0
+      ? argsTimezone.trim()
+      : null;
+
+  if (requestedRaw && isValidIanaTimezone(requestedRaw)) {
+    return {
+      requested: requestedRaw,
+      resolved: requestedRaw,
+      usedFallback: false,
+      validRequested: true,
+    };
+  }
+
+  const contextTz =
+    typeof contextTimezone === 'string' && contextTimezone.trim().length > 0
+      ? contextTimezone.trim()
+      : null;
+
+  if (contextTz && isValidIanaTimezone(contextTz)) {
+    return {
+      requested: requestedRaw,
+      resolved: contextTz,
+      usedFallback: true,
+      validRequested: requestedRaw === null,
+    };
+  }
+
+  return {
+    requested: requestedRaw,
+    resolved: 'UTC',
+    usedFallback: true,
+    validRequested: requestedRaw === null,
+  };
 }

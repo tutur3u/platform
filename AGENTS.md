@@ -125,6 +125,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 
 ### 6.4 Tooling & CI
 
+- **Mira Tool Name Parity**: Keep Mira system-prompt examples, `MIRA_TOOL_NAMES`, tool definitions, and dispatcher handlers in sync. Never reference a tool name in prompts that is not actually registered/executable.
 - **Discord Python Tooling**: In `apps/discord`, use `uv` as the local environment/package workflow (`uv sync`, `uv run ...`) with `pyproject.toml` + `uv.lock` as the source of truth for local development.
 - **Discord CI Parity**: Keep the GitHub Actions workflow `.github/workflows/discord-python-ci.yml` aligned with the `uv` workflow and install dependencies via `uv sync --locked` so CI reproducibly uses `apps/discord/uv.lock`.
 - **Discord Modal Deploys**: For `apps/discord` continuous deployment, trigger Modal deploys from GitHub Actions only after the Discord-specific CI workflow succeeds, authenticate with `MODAL_TOKEN_ID` / `MODAL_TOKEN_SECRET`, and run the deploy via `uv run modal deploy ...`.
