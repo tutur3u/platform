@@ -2,7 +2,7 @@ import modal
 
 # Define base image and system dependencies
 image = (
-    modal.Image.debian_slim()
+    modal.Image.debian_slim(python_version="3.12.12")
     # Install system dependencies
     .apt_install(["libgl1-mesa-glx", "libglib2.0-0"])
     # Install Python packages
