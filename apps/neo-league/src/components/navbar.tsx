@@ -15,14 +15,31 @@ import Image from 'next/image';
 import Link from 'next/link';
 import NavbarSeparator from './navbar-separator';
 
-export default function Navbar() {
+// detect external links once, reuse everywhere
+const isExternal = (href: string) => href.startsWith('http');
+
+const Navbar = () => {
+  const renderLink = (href: string, label: string) => (
+    <Link
+      href={href}
+      target={isExternal(href) ? '_blank' : undefined}
+      rel={isExternal(href) ? 'noopener noreferrer' : undefined}
+      prefetch={isExternal(href) ? false : undefined}
+    >
+      {label}
+    </Link>
+  );
+
   const DesktopActions = () => (
     <div className="hidden items-center gap-2 md:flex">
       <Button
         className="hover:bg-transparent hover:text-foreground/50"
         variant="ghost"
       >
-        <Link href="#handbook">See Handbook</Link>
+        {renderLink(
+          'https://www.canva.com/design/DAG_HV24rBs/QdeItbhyKHSFwDW5jLT-FA/view?utlId=hed84b4065d',
+          'See Handbook'
+        )}
       </Button>
 
       <Button
@@ -42,8 +59,11 @@ export default function Navbar() {
         </Link>
       </Button>
 
-      <Button className="btn-primary">
-        <Link href="#register">Register Now</Link>
+      <Button asChild className="btn-primary">
+        {renderLink(
+          'https://forms.office.com/r/GdkwnUbty6?origin=lprLink',
+          'Register Now'
+        )}
       </Button>
     </div>
   );
@@ -51,8 +71,12 @@ export default function Navbar() {
   const MobileActions = () => (
     <div className="flex items-center gap-2 md:hidden">
       <Button asChild className="btn-primary">
-        <Link href="#register">Register Now</Link>
+        {renderLink(
+          'https://forms.office.com/r/GdkwnUbty6?origin=lprLink',
+          'Register Now'
+        )}
       </Button>
+
       <Sheet>
         <SheetTrigger className="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-background/80 text-foreground shadow-sm transition hover:bg-foreground/5 active:scale-95">
           <MenuIcon className="h-5 w-5" />
@@ -70,6 +94,7 @@ export default function Navbar() {
               <span className="sr-only">Close navigation</span>
             </SheetClose>
           </SheetHeader>
+
           <div className="flex flex-1 flex-col gap-3 px-6 pt-3 pb-8">
             <SheetClose asChild>
               <Button
@@ -118,7 +143,18 @@ export default function Navbar() {
   return (
     <SharedNavbar
       customLogoLink={
-        <Link href="/" className="flex flex-none items-center gap-2">
+        <Link
+          href="/"
+          scroll={false}
+          onClick={(e) => {
+            e.preventDefault();
+            window.scrollTo({
+              top: 0,
+              behavior: 'smooth',
+            });
+          }}
+          className="flex flex-none items-center gap-2"
+        >
           <Image
             src="/monkey-mascot.png"
             className="h-14 w-auto md:h-16 lg:h-20"
@@ -137,4 +173,6 @@ export default function Navbar() {
       }
     />
   );
-}
+};
+
+export default Navbar;
