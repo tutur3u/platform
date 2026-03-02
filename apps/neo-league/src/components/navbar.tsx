@@ -85,7 +85,18 @@ export default function Navbar() {
   return (
     <SharedNavbar
       customLogoLink={
-        <Link href="/" className="flex flex-none items-center gap-2">
+        <Link
+          href="/"
+          scroll={false}
+          onClick={(e) => {
+            e.preventDefault();
+            window.scrollTo({
+              top: 0,
+              behavior: 'smooth',
+            });
+          }}
+          className="flex flex-none items-center gap-2"
+        >
           <Image
             src="/monkey-mascot.png"
             className="h-14 w-auto md:h-16 lg:h-20"
