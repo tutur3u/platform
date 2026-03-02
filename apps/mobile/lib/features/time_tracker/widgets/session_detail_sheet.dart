@@ -227,9 +227,8 @@ class _SessionDetailSheetState extends State<SessionDetailSheet> {
   /// sheet's context, and dialog/sheet dismissal is handled by the dialog.
   Future<void> _showDeleteConfirmation(BuildContext context) async {
     final l10n = context.l10n;
-    final navigator = Navigator.of(context);
 
-    await shad.showDialog<bool>(
+    final didConfirm = await shad.showDialog<bool>(
       context: context,
       builder: (dialogContext) => AsyncDeleteConfirmationDialog(
         toastContext: context,
@@ -244,7 +243,6 @@ class _SessionDetailSheetState extends State<SessionDetailSheet> {
               content: Text(ctx.l10n.timerSessionDeleted),
             ),
           );
-          if (context.mounted) navigator.pop();
         },
         title: l10n.timerDeleteSession,
         message: l10n.timerDeleteConfirm,
@@ -252,6 +250,10 @@ class _SessionDetailSheetState extends State<SessionDetailSheet> {
         confirmLabel: l10n.timerDeleteSession,
       ),
     );
+
+    if (didConfirm == true && context.mounted) {
+      Navigator.of(context).pop();
+    }
   }
 
   String _resolvedCategoryName(AppLocalizations l10n) {

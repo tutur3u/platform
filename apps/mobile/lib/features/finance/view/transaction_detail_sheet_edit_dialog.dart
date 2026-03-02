@@ -4,11 +4,13 @@ class _EditTransactionDialog extends StatefulWidget {
   const _EditTransactionDialog({
     required this.wsId,
     required this.transaction,
+    required this.repository,
     required this.onSave,
   });
 
   final String wsId;
   final Transaction transaction;
+  final FinanceRepository repository;
   final Future<Transaction> Function({
     required String transactionId,
     required double amount,
@@ -28,7 +30,6 @@ class _EditTransactionDialog extends StatefulWidget {
 }
 
 class _EditTransactionDialogState extends State<_EditTransactionDialog> {
-  final FinanceRepository _repository = FinanceRepository();
   late final TextEditingController _amountController;
   late final TextEditingController _descriptionController;
   late DateTime _takenAt;
@@ -233,8 +234,8 @@ class _EditTransactionDialogState extends State<_EditTransactionDialog> {
     });
 
     try {
-      final wallets = await _repository.getWallets(widget.wsId);
-      final categories = await _repository.getCategories(widget.wsId);
+      final wallets = await widget.repository.getWallets(widget.wsId);
+      final categories = await widget.repository.getCategories(widget.wsId);
 
       if (!mounted) return;
       setState(() {
@@ -255,7 +256,7 @@ class _EditTransactionDialogState extends State<_EditTransactionDialog> {
 
   Future<void> _handleSave() async {
     final l10n = context.l10n;
-    final amount = double.tryParse(_amountController.text.trim());
+    final amount = _parseAmount(_amountController.text);
     if (_walletId == null || _categoryId == null) {
       shad.showToast(
         context: context,
@@ -431,5 +432,18 @@ class _EditTransactionDialogState extends State<_EditTransactionDialog> {
     final trimmed = fixed.replaceFirst(RegExp(r'\.?0+$'), '');
     if (trimmed == '-0') return '0';
     return trimmed;
+  }
+
+  double? _parseAmount(String rawValue) {
+    final input = rawValue.trim();
+    if (input.isEmpty) return null;
+
+    try {
+      final locale = Localizations.localeOf(context).toString();
+      final parsed = NumberFormat.decimalPattern(locale).parse(input);
+      return parsed.toDouble();
+    } on FormatException {
+      return double.tryParse(input);
+    }
   }
 }

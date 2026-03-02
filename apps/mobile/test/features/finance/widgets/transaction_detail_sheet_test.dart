@@ -2,11 +2,26 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
+import 'package:mobile/data/models/finance/wallet.dart';
+import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/view/transaction_detail_sheet.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 import '../../../helpers/helpers.dart';
+
+class _FakeFinanceRepository extends FinanceRepository {
+  @override
+  Future<List<Wallet>> getWallets(String wsId) async {
+    return const [Wallet(id: 'wallet_1', name: 'Main Wallet')];
+  }
+
+  @override
+  Future<List<TransactionCategory>> getCategories(String wsId) async {
+    return const [TransactionCategory(id: 'cat_1', name: 'Income')];
+  }
+}
 
 void main() {
   group('showTransactionDetailSheet', () {
@@ -47,6 +62,7 @@ void main() {
                       context,
                       wsId: 'ws_1',
                       transaction: transaction,
+                      repository: _FakeFinanceRepository(),
                       onSave:
                           ({
                             required transactionId,

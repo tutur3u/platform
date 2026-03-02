@@ -13,6 +13,7 @@ Future<bool> openTransactionDetailSheet(
     context,
     wsId: wsId,
     transaction: transaction,
+    repository: repository,
     onSave:
         ({
           required transactionId,

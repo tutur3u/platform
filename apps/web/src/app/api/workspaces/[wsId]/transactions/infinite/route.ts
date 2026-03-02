@@ -11,8 +11,8 @@ interface Params {
 export async function GET(req: Request, { params }: Params) {
   try {
     const { wsId } = await params;
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
     const supabase = await createClient(req);
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
     const { searchParams } = new URL(req.url);
 
     const cursor = searchParams.get('cursor');

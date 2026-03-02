@@ -18,6 +18,7 @@ Future<bool> showTransactionDetailSheet(
   BuildContext context, {
   required String wsId,
   required Transaction transaction,
+  required FinanceRepository repository,
   required Future<Transaction> Function({
     required String transactionId,
     required double amount,
@@ -38,6 +39,7 @@ Future<bool> showTransactionDetailSheet(
     builder: (_) => _TransactionDetailSheet(
       wsId: wsId,
       transaction: transaction,
+      repository: repository,
       onSave: onSave,
       onDelete: onDelete,
     ),
@@ -50,12 +52,14 @@ class _TransactionDetailSheet extends StatefulWidget {
   const _TransactionDetailSheet({
     required this.wsId,
     required this.transaction,
+    required this.repository,
     required this.onSave,
     required this.onDelete,
   });
 
   final String wsId;
   final Transaction transaction;
+  final FinanceRepository repository;
   final Future<Transaction> Function({
     required String transactionId,
     required double amount,
@@ -229,6 +233,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
       builder: (_) => _EditTransactionDialog(
         wsId: widget.wsId,
         transaction: _transaction,
+        repository: widget.repository,
         onSave: widget.onSave,
       ),
     );

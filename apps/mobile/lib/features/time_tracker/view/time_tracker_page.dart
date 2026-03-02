@@ -75,11 +75,12 @@ class _TimeTrackerView extends StatefulWidget {
 }
 
 class _TimeTrackerViewState extends State<_TimeTrackerView> {
-  late final int _index = widget.initialSection.index;
+  late final int _index;
 
   @override
   void initState() {
     super.initState();
+    _index = widget.initialSection.index;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final workspaceCubit = context.read<WorkspaceCubit>();

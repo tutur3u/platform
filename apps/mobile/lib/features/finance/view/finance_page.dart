@@ -37,12 +37,11 @@ class FinancePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final repository = FinanceRepository();
-
-    return RepositoryProvider.value(
-      value: repository,
+    return RepositoryProvider(
+      create: (_) => FinanceRepository(),
       child: BlocProvider(
         create: (context) {
+          final repository = context.read<FinanceRepository>();
           final cubit = FinanceCubit(
             financeRepository: repository,
           );

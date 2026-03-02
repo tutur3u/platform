@@ -43,6 +43,7 @@ class _ShellPageState extends State<ShellPage> {
   static const ValueKey<String> _assistantKey = ValueKey('assistant');
   static const ValueKey<String> _globalLayerKey = ValueKey('global-layer');
   static const ValueKey<String> _miniLayerKey = ValueKey('mini-layer');
+  static const ValueKey<String> _backToRootKey = ValueKey('back-to-root');
   static const double _navIconSize = 22;
 
   final Stopwatch _tapStopwatch = Stopwatch();
@@ -52,9 +53,12 @@ class _ShellPageState extends State<ShellPage> {
   DateTime? _lastAppsTabPointerUpAt;
   late final PageController _layerController;
   Widget? _cachedGlobalBody;
-  int _cachedGlobalTabIndex = 0;
   int _activeLayerPage = 1;
   bool _syncingLayerPage = false;
+  bool _showMiniNav = true;
+  String? _lastLayeredLocation;
+
+  DateTime? _lastBackToRootTapAt;
 
   bool _isAppsTabHit(Offset position) {
     final ctx = _appsTabKey.currentContext;
@@ -112,7 +116,6 @@ class _ShellPageState extends State<ShellPage> {
     final isMiniAppRoute = activeModule != null;
     if (!isMiniAppRoute) {
       _cachedGlobalBody = _buildNormalizedChild();
-      _cachedGlobalTabIndex = _calculateSelectedIndex(widget.matchedLocation);
       _activeLayerPage = 0;
       if (_layerController.hasClients && _layerController.page?.round() != 0) {
         _syncingLayerPage = true;
@@ -137,6 +140,12 @@ class _ShellPageState extends State<ShellPage> {
 
     if (_activeLayerPage != 1) {
       _activeLayerPage = 1;
+    }
+
+    // Reset to mini nav whenever the user navigates to a new mini-app location.
+    if (widget.matchedLocation != _lastLayeredLocation) {
+      _lastLayeredLocation = widget.matchedLocation;
+      _showMiniNav = true;
     }
 
     return _buildLayeredCompactLayout(context, state, activeModule);
@@ -208,7 +217,6 @@ class _ShellPageState extends State<ShellPage> {
     }
 
     final globalBody = _cachedGlobalBody ?? const DashboardPage();
-    final globalKey = _keyForIndex(_cachedGlobalTabIndex);
     final miniItems = _buildMiniAppNavItems(context, activeModule);
     final miniSelectedKey = _miniSelectedKey(
       context,
@@ -231,10 +239,26 @@ class _ShellPageState extends State<ShellPage> {
                     duration: const Duration(milliseconds: 180),
                     switchInCurve: Curves.easeOutCubic,
                     switchOutCurve: Curves.easeInCubic,
-                    child: _activeLayerPage == 0
+                    child: _showMiniNav
                         ? shad.NavigationBar(
+                            key: _miniLayerKey,
+                            selectedKey: miniSelectedKey,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            onSelected: (key) => _onMiniAppItemTapped(
+                              key,
+                              context,
+                              activeModule,
+                            ),
+                            children: miniItems,
+                          )
+                        : shad.NavigationBar(
                             key: _globalLayerKey,
-                            selectedKey: globalKey,
+                            // No selectedKey: none of the global tabs is
+                            // truly active while inside a mini-app, and
+                            // passing one would suppress taps on it.
                             padding: const EdgeInsets.symmetric(
                               horizontal: 8,
                               vertical: 4,
@@ -249,20 +273,6 @@ class _ShellPageState extends State<ShellPage> {
                               state,
                               context.l10n,
                             ).map((i) => Expanded(child: i)).toList(),
-                          )
-                        : shad.NavigationBar(
-                            key: _miniLayerKey,
-                            selectedKey: miniSelectedKey,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            onSelected: (key) => _onMiniAppItemTapped(
-                              key,
-                              context,
-                              activeModule,
-                            ),
-                            children: miniItems,
                           ),
                   ),
                 ),
@@ -410,17 +420,24 @@ class _ShellPageState extends State<ShellPage> {
     );
     final l10n = context.l10n;
 
-    return module.miniAppNavItems
-        .map(
-          (item) => Expanded(
-            child: shad.NavigationItem(
-              key: _miniNavKey(module.id, item.id),
-              label: _buildNavLabel(item.label(l10n), labelStyle),
-              child: Icon(item.icon, size: _navIconSize),
-            ),
+    return [
+      Expanded(
+        child: shad.NavigationItem(
+          key: _backToRootKey,
+          label: _buildNavLabel(l10n.navApps, labelStyle),
+          child: const Icon(Icons.apps_outlined, size: _navIconSize),
+        ),
+      ),
+      ...module.miniAppNavItems.map(
+        (item) => Expanded(
+          child: shad.NavigationItem(
+            key: _miniNavKey(module.id, item.id),
+            label: _buildNavLabel(item.label(l10n), labelStyle),
+            child: Icon(item.icon, size: _navIconSize),
           ),
-        )
-        .toList(growable: false);
+        ),
+      ),
+    ];
   }
 
   ValueKey<String> _miniNavKey(String moduleId, String itemId) =>
@@ -473,6 +490,22 @@ class _ShellPageState extends State<ShellPage> {
     BuildContext context,
     AppModule activeModule,
   ) async {
+    if (key == _backToRootKey) {
+      final now = DateTime.now();
+      final last = _lastBackToRootTapAt;
+      final isDoubleTap =
+          last != null &&
+          now.difference(last) < const Duration(milliseconds: 300);
+      _lastBackToRootTapAt = isDoubleTap ? null : now;
+      if (isDoubleTap) {
+        // Double-tap: go straight to the apps drawer.
+        await _openAppsDrawerFromAppsTab();
+      } else {
+        setState(() => _showMiniNav = false);
+      }
+      return;
+    }
+
     final selected = activeModule.miniAppNavItems.firstWhere(
       (item) => _miniNavKey(activeModule.id, item.id) == key,
       orElse: () => activeModule.miniAppNavItems.first,
@@ -493,11 +526,11 @@ class _ShellPageState extends State<ShellPage> {
   void _onNavBarHorizontalDragEnd(DragEndDetails details) {
     final velocity = details.primaryVelocity ?? 0;
     if (velocity > 250) {
-      unawaited(_setActiveLayerPage(0));
+      setState(() => _showMiniNav = false);
       return;
     }
     if (velocity < -250) {
-      unawaited(_setActiveLayerPage(1));
+      setState(() => _showMiniNav = true);
     }
   }
 
@@ -581,6 +614,16 @@ class _ShellPageState extends State<ShellPage> {
 
     if (index == 2 && isDoubleTap) {
       await _openAppsDrawerFromAppsTab();
+      return;
+    }
+
+    // When the global nav is shown as an overlay over a mini-app route
+    // (user tapped the back-to-root "Apps" button), tapping Apps again
+    // returns to the mini nav without leaving the current page.
+    if (index == 2 &&
+        !_showMiniNav &&
+        AppRegistry.moduleFromLocation(widget.matchedLocation) != null) {
+      setState(() => _showMiniNav = true);
       return;
     }
 
