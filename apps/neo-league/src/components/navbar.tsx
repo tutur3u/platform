@@ -17,7 +17,7 @@ import NavbarSeparator from './navbar-separator';
 
 const navItems = [
   { href: '#handbook', label: 'See Handbook' },
-  { href: '#contact', label: 'Contact Us' },
+  { href: '#main-footer', label: 'Contact Us' },
 ];
 
 export default function Navbar() {
