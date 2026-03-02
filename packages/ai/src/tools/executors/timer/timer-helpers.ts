@@ -1,4 +1,10 @@
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import type { MiraToolContext } from '../../mira-tools';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 export const MIN_DURATION_SECONDS = 60;
 const ENABLE_APPROVAL_BYPASS_CHECK = false;
@@ -49,11 +55,34 @@ function parseDateOnly(
 export function parseFlexibleDateTime(
   value: unknown,
   fieldName: string,
-  options?: { date?: unknown }
+  options?: { date?: unknown; timezone?: string }
 ): { ok: true; value: Date } | { ok: false; error: string } {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return { ok: true, value };
+  }
+
   if (typeof value !== 'string' || !value.trim()) {
     return { ok: false, error: `${fieldName} is required` };
   }
+
+  const resolvedTimezone =
+    typeof options?.timezone === 'string' &&
+    options.timezone.trim().length > 0 &&
+    isValidIanaTimezone(options.timezone.trim())
+      ? options.timezone.trim()
+      : null;
+
+  const parseNaiveDateTime = (input: string): Date | null => {
+    if (resolvedTimezone) {
+      const tzParsed = dayjs.tz(input, resolvedTimezone);
+      if (tzParsed.isValid()) {
+        return tzParsed.toDate();
+      }
+    }
+
+    const parsed = new Date(input);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  };
 
   const trimmed = value.trim();
   const isoDateTimeMatch = trimmed.match(
@@ -66,8 +95,12 @@ export function parseFlexibleDateTime(
       return { ok: false, error: dateParsed.error };
     }
 
-    const parsed = new Date(trimmed);
-    if (!Number.isNaN(parsed.getTime())) {
+    const hasExplicitOffset = /(?:Z|[+-][01]\d:[0-5]\d)$/i.test(trimmed);
+    const parsed = hasExplicitOffset
+      ? new Date(trimmed)
+      : parseNaiveDateTime(trimmed);
+
+    if (parsed && !Number.isNaN(parsed.getTime())) {
       return { ok: true, value: parsed };
     }
   }
@@ -82,8 +115,10 @@ export function parseFlexibleDateTime(
       return { ok: false, error: dateParsed.error };
     }
 
-    const combined = new Date(`${datePart}T${hours}:${minutes}:${seconds}`);
-    if (!Number.isNaN(combined.getTime())) {
+    const combined = parseNaiveDateTime(
+      `${datePart}T${hours}:${minutes}:${seconds}`
+    );
+    if (combined) {
       return { ok: true, value: combined };
     }
   }
@@ -101,10 +136,10 @@ export function parseFlexibleDateTime(
     }
 
     const [, hours, minutes, seconds = '00'] = timeOnlyMatch;
-    const combined = new Date(
+    const combined = parseNaiveDateTime(
       `${dateParsed.value}T${hours}:${minutes}:${seconds}`
     );
-    if (!Number.isNaN(combined.getTime())) {
+    if (combined) {
       return { ok: true, value: combined };
     }
   }

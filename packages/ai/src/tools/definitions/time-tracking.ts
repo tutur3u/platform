@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { tool } from '../core';
 
+const flexibleDateTimeInputSchema = z.string();
+
 export const timeTrackingToolDefinitions = {
   start_timer: tool({
     description:
@@ -77,12 +79,16 @@ export const timeTrackingToolDefinitions = {
         .nullish()
         .describe('Time tracking category UUID, or null/omit'),
       taskId: z.string().nullish().describe('Task UUID, or null/omit'),
-      startTime: z.iso
-        .datetime()
-        .describe('Start time (ISO 8601, YYYY-MM-DD HH:mm)'),
-      endTime: z.iso
-        .datetime()
-        .describe('End time (ISO 8601, YYYY-MM-DD HH:mm)'),
+      startTime: flexibleDateTimeInputSchema.describe(
+        'Start time. Accepts ISO 8601, YYYY-MM-DD HH:mm, or HH:mm when date is provided'
+      ),
+      endTime: flexibleDateTimeInputSchema.describe(
+        'End time. Accepts ISO 8601, YYYY-MM-DD HH:mm, or HH:mm when date is provided'
+      ),
+      date: z
+        .string()
+        .optional()
+        .describe('Date anchor (YYYY-MM-DD) required when using HH:mm inputs'),
     }),
   }),
 
@@ -108,14 +114,22 @@ export const timeTrackingToolDefinitions = {
           .optional()
           .describe('Updated category UUID'),
         taskId: z.string().nullable().optional().describe('Updated task UUID'),
-        startTime: z.iso
-          .datetime()
+        startTime: flexibleDateTimeInputSchema
           .optional()
-          .describe('Updated start time (ISO 8601, YYYY-MM-DD HH:mm)'),
-        endTime: z.iso
-          .datetime()
+          .describe(
+            'Updated start time. Accepts ISO 8601, YYYY-MM-DD HH:mm, or HH:mm when date is provided'
+          ),
+        endTime: flexibleDateTimeInputSchema
           .optional()
-          .describe('Updated end time (ISO 8601, YYYY-MM-DD HH:mm)'),
+          .describe(
+            'Updated end time. Accepts ISO 8601, YYYY-MM-DD HH:mm, or HH:mm when date is provided'
+          ),
+        date: z
+          .string()
+          .optional()
+          .describe(
+            'Date anchor (YYYY-MM-DD) required when using HH:mm inputs'
+          ),
       })
       .refine((data) => Boolean(data.sessionId || data.id), {
         message: 'sessionId or id is required',

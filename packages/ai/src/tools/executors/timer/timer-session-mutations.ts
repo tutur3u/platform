@@ -190,10 +190,12 @@ export async function executeCreateTimeTrackingEntry(
 
   const startParsed = parseFlexibleDateTime(parsedArgs.startTime, 'startTime', {
     date: parsedArgs.date,
+    timezone: ctx.timezone,
   });
   if (!startParsed.ok) return { error: startParsed.error };
   const endParsed = parseFlexibleDateTime(parsedArgs.endTime, 'endTime', {
     date: parsedArgs.date,
+    timezone: ctx.timezone,
   });
   if (!endParsed.ok) return { error: endParsed.error };
 
@@ -319,6 +321,7 @@ export async function executeUpdateTimeTrackingSession(
   if (parsedArgs.startTime !== undefined) {
     const parsed = parseFlexibleDateTime(parsedArgs.startTime, 'startTime', {
       date: parsedArgs.date,
+      timezone: ctx.timezone,
     });
     if (!parsed.ok) return { error: parsed.error };
     nextStartTime = parsed.value.toISOString();
@@ -328,6 +331,7 @@ export async function executeUpdateTimeTrackingSession(
   if (parsedArgs.endTime !== undefined) {
     const parsed = parseFlexibleDateTime(parsedArgs.endTime, 'endTime', {
       date: parsedArgs.date,
+      timezone: ctx.timezone,
     });
     if (!parsed.ok) return { error: parsed.error };
     nextEndTime = parsed.value.toISOString();
