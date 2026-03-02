@@ -8,12 +8,13 @@ interface Params {
   }>;
 }
 
-export async function GET(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function GET(req: Request, { params }: Params) {
+  const supabase = await createClient(req);
   const { wsId } = await params;
 
   const permissions = await getPermissions({
     wsId,
+    request: req,
   });
 
   if (!permissions) {
@@ -47,12 +48,13 @@ export async function GET(_: Request, { params }: Params) {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient();
+  const supabase = await createClient(req);
   const { wsId } = await params;
   const data = await req.json();
 
   const permissions = await getPermissions({
     wsId,
+    request: req,
   });
 
   if (!permissions) {

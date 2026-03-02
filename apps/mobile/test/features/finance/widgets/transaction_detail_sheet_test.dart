@@ -1,0 +1,164 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/data/models/finance/category.dart';
+import 'package:mobile/data/models/finance/transaction.dart';
+import 'package:mobile/data/models/finance/wallet.dart';
+import 'package:mobile/data/repositories/finance_repository.dart';
+import 'package:mobile/features/finance/view/transaction_detail_sheet.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+
+import '../../../helpers/helpers.dart';
+
+class _FakeFinanceRepository extends FinanceRepository {
+  @override
+  Future<List<Wallet>> getWallets(String wsId) async {
+    return const [Wallet(id: 'wallet_1', name: 'Main Wallet')];
+  }
+
+  @override
+  Future<List<TransactionCategory>> getCategories(String wsId) async {
+    return const [TransactionCategory(id: 'cat_1', name: 'Income')];
+  }
+}
+
+void main() {
+  group('showTransactionDetailSheet', () {
+    testWidgets('renders detail content and allows opening edit dialog', (
+      tester,
+    ) async {
+      var didSave = false;
+      double? savedAmount;
+      bool? savedReportOptIn;
+      bool? savedIsAmountConfidential;
+      bool? savedIsDescriptionConfidential;
+      bool? savedIsCategoryConfidential;
+
+      final transaction = Transaction(
+        id: 'tx_1',
+        amount: 120.5,
+        description: 'Consulting payment',
+        categoryId: 'cat_1',
+        walletId: 'wallet_1',
+        categoryName: 'Income',
+        walletName: 'Main Wallet',
+        walletCurrency: 'USD',
+        takenAt: DateTime(2026, 2, 15, 9, 30),
+        reportOptIn: true,
+        isAmountConfidential: false,
+        isDescriptionConfidential: false,
+        isCategoryConfidential: false,
+      );
+
+      await tester.pumpApp(
+        Scaffold(
+          body: Builder(
+            builder: (context) {
+              return ElevatedButton(
+                onPressed: () {
+                  unawaited(
+                    showTransactionDetailSheet(
+                      context,
+                      wsId: 'ws_1',
+                      transaction: transaction,
+                      repository: _FakeFinanceRepository(),
+                      onSave:
+                          ({
+                            required transactionId,
+                            required amount,
+                            description,
+                            takenAt,
+                            walletId,
+                            categoryId,
+                            reportOptIn,
+                            isAmountConfidential,
+                            isDescriptionConfidential,
+                            isCategoryConfidential,
+                          }) async {
+                            didSave = true;
+                            savedAmount = amount;
+                            savedReportOptIn = reportOptIn;
+                            savedIsAmountConfidential = isAmountConfidential;
+                            savedIsDescriptionConfidential =
+                                isDescriptionConfidential;
+                            savedIsCategoryConfidential =
+                                isCategoryConfidential;
+                            return transaction;
+                          },
+                      onDelete: (_) async {},
+                    ),
+                  );
+                },
+                child: const Text('Open details'),
+              );
+            },
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open details'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Transaction details'), findsOneWidget);
+      expect(find.text('Consulting payment'), findsOneWidget);
+      expect(find.text('Income'), findsOneWidget);
+      expect(find.text('Main Wallet'), findsOneWidget);
+
+      await tester.tap(find.text('Edit transaction'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Edit transaction'), findsAtLeastNWidgets(1));
+      expect(find.text('Amount'), findsWidgets);
+      expect(find.text('Description'), findsWidgets);
+      expect(find.text('Taken at'), findsWidgets);
+
+      await tester.enterText(find.byType(EditableText).first, '');
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Enter a valid amount'), findsOneWidget);
+      expect(didSave, isFalse);
+
+      await tester.enterText(find.byType(EditableText).first, '42.5');
+      await tester.tap(find.text('Settings'));
+      await tester.pumpAndSettle();
+
+      var switches = tester
+          .widgetList<shad.Switch>(find.byType(shad.Switch))
+          .toList(growable: false);
+      expect(switches, hasLength(4));
+      expect(switches[0].value, isTrue);
+      expect(switches[1].value, isFalse);
+      expect(switches[2].value, isFalse);
+      expect(switches[3].value, isFalse);
+
+      await tester.tap(find.byType(shad.Switch).at(0));
+      await tester.tap(find.byType(shad.Switch).at(1));
+      await tester.tap(find.byType(shad.Switch).at(2));
+      await tester.tap(find.byType(shad.Switch).at(3));
+      await tester.pumpAndSettle();
+
+      switches = tester
+          .widgetList<shad.Switch>(find.byType(shad.Switch))
+          .toList(growable: false);
+      expect(switches[0].value, isFalse);
+      expect(switches[1].value, isTrue);
+      expect(switches[2].value, isTrue);
+      expect(switches[3].value, isTrue);
+
+      await tester.tap(find.text('Save').last);
+      await tester.pumpAndSettle();
+
+      expect(didSave, isTrue);
+      expect(savedAmount, -42.5);
+      expect(savedReportOptIn, isFalse);
+      expect(savedIsAmountConfidential, isTrue);
+      expect(savedIsDescriptionConfidential, isTrue);
+      expect(savedIsCategoryConfidential, isTrue);
+
+      await tester.pump(const Duration(seconds: 6));
+      await tester.pumpAndSettle();
+    });
+  });
+}

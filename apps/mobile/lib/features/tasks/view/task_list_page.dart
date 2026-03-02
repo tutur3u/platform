@@ -2,15 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
-import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/user_task.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
-import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
+import 'package:mobile/features/apps/widgets/apps_back_button.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/shell/view/avatar_dropdown.dart';
 import 'package:mobile/features/tasks/cubit/task_list_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -203,17 +202,9 @@ class _TaskListView extends StatelessWidget {
     return shad.Scaffold(
       headers: [
         shad.AppBar(
-          leading: [
-            shad.OutlineButton(
-              density: shad.ButtonDensity.icon,
-              onPressed: () {
-                unawaited(context.read<AppTabCubit>().clearSelection());
-                context.go(Routes.apps);
-              },
-              child: const Icon(Icons.arrow_back),
-            ),
-          ],
+          leading: const [AppsBackButton()],
           title: Text(l10n.tasksTitle),
+          trailing: const [AvatarDropdown()],
         ),
       ],
       child: BlocListener<WorkspaceCubit, WorkspaceState>(

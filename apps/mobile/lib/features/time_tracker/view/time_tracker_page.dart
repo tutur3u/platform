@@ -11,6 +11,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/apps/widgets/apps_back_button.dart';
+import 'package:mobile/features/shell/view/avatar_dropdown.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
 import 'package:mobile/features/time_tracker/widgets/history_tab.dart';
@@ -21,6 +22,8 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+
+enum TimeTrackerSection { timer, history, stats }
 
 int _firstDayOfWeek(BuildContext context) {
   const weekdayByIndex = [
@@ -39,9 +42,16 @@ int _firstDayOfWeek(BuildContext context) {
 }
 
 class TimeTrackerPage extends StatelessWidget {
-  const TimeTrackerPage({super.key, this.repository});
+  const TimeTrackerPage({
+    super.key,
+    this.repository,
+    this.initialSection = TimeTrackerSection.timer,
+    this.initialStatsScope = TimeTrackerStatsScope.personal,
+  });
 
   final ITimeTrackerRepository? repository;
+  final TimeTrackerSection initialSection;
+  final TimeTrackerStatsScope initialStatsScope;
 
   @override
   Widget build(BuildContext context) {
@@ -52,24 +62,34 @@ class TimeTrackerPage extends StatelessWidget {
           repository: repo,
         );
       },
-      child: const _TimeTrackerView(),
+      child: _TimeTrackerView(
+        initialSection: initialSection,
+        initialStatsScope: initialStatsScope,
+      ),
     );
   }
 }
 
 class _TimeTrackerView extends StatefulWidget {
-  const _TimeTrackerView();
+  const _TimeTrackerView({
+    required this.initialSection,
+    required this.initialStatsScope,
+  });
+
+  final TimeTrackerSection initialSection;
+  final TimeTrackerStatsScope initialStatsScope;
 
   @override
   State<_TimeTrackerView> createState() => _TimeTrackerViewState();
 }
 
 class _TimeTrackerViewState extends State<_TimeTrackerView> {
-  int _index = 0;
+  late final int _index;
 
   @override
   void initState() {
     super.initState();
+    _index = widget.initialSection.index;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final workspaceCubit = context.read<WorkspaceCubit>();
@@ -91,9 +111,6 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final isPersonal =
-        context.watch<WorkspaceCubit>().state.currentWorkspace?.personal ??
-        true;
 
     return BlocListener<WorkspaceCubit, WorkspaceState>(
       listenWhen: (prev, curr) =>
@@ -120,6 +137,7 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
                 shad.AppBar(
                   leading: const [AppsBackButton()],
                   title: Text(l10n.timerTitle),
+                  trailing: const [AvatarDropdown()],
                 ),
               ],
               child: const Center(child: shad.CircularProgressIndicator()),
@@ -132,6 +150,7 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
                 shad.AppBar(
                   leading: const [AppsBackButton()],
                   title: Text(l10n.timerTitle),
+                  trailing: const [AvatarDropdown()],
                 ),
               ],
               child: _ErrorView(error: state.error),
@@ -144,63 +163,12 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
                 leading: const [AppsBackButton()],
                 title: Text(l10n.timerTitle),
                 trailing: [
+                  const AvatarDropdown(),
                   shad.IconButton.ghost(
-                    onPressed: () {
-                      shad.showDropdown<void>(
-                        context: context,
-                        builder: (context) {
-                          return shad.DropdownMenu(
-                            children: [
-                              shad.MenuButton(
-                                leading: const Icon(
-                                  Icons.timer_outlined,
-                                  size: 16,
-                                ),
-                                onPressed: _showPomodoroSettings,
-                                child: Text(l10n.timerPomodoro),
-                              ),
-                              if (!isPersonal) ...[
-                                shad.MenuButton(
-                                  leading: const Icon(
-                                    Icons.pending_actions,
-                                    size: 16,
-                                  ),
-                                  onPressed: (context) =>
-                                      context.push(Routes.timerRequests),
-                                  child: Text(l10n.timerRequestsTitle),
-                                ),
-                                shad.MenuButton(
-                                  leading: const Icon(
-                                    Icons.admin_panel_settings,
-                                    size: 16,
-                                  ),
-                                  onPressed: (context) =>
-                                      context.push(Routes.timerManagement),
-                                  child: Text(l10n.timerManagementTitle),
-                                ),
-                              ],
-                            ],
-                          );
-                        },
-                      );
-                    },
-                    icon: const Icon(Icons.more_vert),
+                    onPressed: () => _showPomodoroSettings(context),
+                    icon: const Icon(Icons.settings_outlined),
                   ),
                 ],
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Center(
-                  child: shad.Tabs(
-                    index: _index,
-                    onChanged: (index) => setState(() => _index = index),
-                    children: [
-                      shad.TabItem(child: Text(l10n.navTimer)),
-                      shad.TabItem(child: Text(l10n.timerHistory)),
-                      shad.TabItem(child: Text(l10n.timerStatsTitle)),
-                    ],
-                  ),
-                ),
               ),
             ],
             child: ResponsiveWrapper(
@@ -208,9 +176,9 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
               child: IndexedStack(
                 index: _index,
                 children: [
-                  TimerTab(onSeeAll: () => setState(() => _index = 1)),
+                  TimerTab(onSeeAll: () => context.go(Routes.timerHistory)),
                   const HistoryTab(),
-                  const StatsTab(),
+                  StatsTab(initialScope: widget.initialStatsScope),
                 ],
               ),
             ),

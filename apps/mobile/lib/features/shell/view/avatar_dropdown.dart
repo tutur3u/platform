@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:supabase_flutter/supabase_flutter.dart'; // For User type
@@ -34,6 +35,26 @@ class AvatarDropdown extends StatelessWidget {
       ),
       color: theme.colorScheme.popover,
       itemBuilder: (context) => [
+        PopupMenuItem<String>(
+          value: 'workspace',
+          child: Row(
+            children: [
+              Icon(
+                Icons.swap_horiz,
+                size: 16,
+                color: theme.colorScheme.popoverForeground,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                l10n.workspacePickerTitle,
+                style: theme.typography.p.copyWith(
+                  color: theme.colorScheme.popoverForeground,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
         PopupMenuItem<String>(
           value: 'profile',
           child: Row(
@@ -95,6 +116,8 @@ class AvatarDropdown extends StatelessWidget {
       ],
       onSelected: (value) {
         switch (value) {
+          case 'workspace':
+            showWorkspacePickerSheet(context);
           case 'profile':
             unawaited(context.push(Routes.profileRoot));
           case 'settings':

@@ -88,6 +88,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Clean Pass**: `bun check:mobile` is mandatory. It runs format, analyze, and test.
 - **API Pattern**: Use `createClient(request)` in web API routes to support mobile Bearer token auth.
 - **Widget Consistency**: Preserve per-field validation when refactoring into shared editable widgets.
+- **Route Alias During Tab Consolidation**: When merging a standalone page into an existing tabbed screen, keep the old route as an alias that opens the destination tab by passing an explicit initial tab/scope parameter.
 
 ## 6. Known Gotchas & Patterns
 
@@ -106,6 +107,8 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Markdown Table Priority**: For tabular assistant answers, prefer native Markdown tables in normal assistant text. Do not attempt unsupported `render_ui` table components, and do not wrap Markdown tables in fenced code blocks.
 - **Special Tag Prompt Rules**: Custom tags like `@<FOLLOWUP>` must not contain internal whitespace, but blank lines between distinct prompt sections are required.
 - **PR Maintainability Fixes**: When reviewers flag oversized files, prioritize extracting cohesive submodules (for example `render_ui` blog components or tool-step decision helpers) while keeping the original external APIs and behavior intact.
+- **Mobile Layered Nav Double-Tap**: In compact layered mini-app navigation, never consume the first `Apps` tap by immediately restoring mini-nav when the global nav layer is visible. Keep the global layer active long enough for double-tap detection so users can reopen Apps Hub reliably.
+- **Mobile Layered Nav Gesture Parity**: When rendering GlobalNav inside layered mini-app compact mode, preserve `Apps` gesture parity with root compact nav: single-tap returns to mini-nav, double-tap reopens Apps Hub, and long-press must still trigger Apps Hub with search pre-open behavior.
 
 ### 6.3 Security & Validation
 
