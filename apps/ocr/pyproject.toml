@@ -24,16 +24,16 @@ dev = [
   "types-pytz",
 ]
 
-[project.scripts]
-test = "uv run pytest"
-test-coverage = "uv run pytest --cov"
-type-check = "uv run mypy ."
-format = "uv run ruff format --check ."
-format-fix = "uv run ruff format ."
-lint = "uv run ruff lint --check ."
-lint-fix = "uv run ruff lint ."
-dev = "uv run uvicorn main:app --host 127.0.0.1 --port 5500 --reload"
-start = "uv run uvicorn main:app --host 127.0.0.1 --port 5500"
-run = "uv run modal run modal_deployment.py"
-serve = "uv run modal serve modal_deployment.py"
-deploy = "uv run modal deploy modal_deployment.py"
+[project.gui-scripts]
+test = "pytest"
+test-coverage = "pytest --cov"
+type-check = "mypy ."
+format = "ruff format --check ."
+format-fix = "ruff format ."
+lint = "ruff lint --check ."
+lint-fix = "ruff lint ."
+dev = "uvicorn main:app --host 127.0.0.1 --port 5500 --reload"
+start = "uvicorn main:app --host 127.0.0.1 --port 5500"
+run = "modal run modal_deployment.py"
+serve = "modal serve modal_deployment.py"
+deploy = "modal deploy modal_deployment.py"
