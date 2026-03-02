@@ -421,7 +421,7 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
   }
 
   void _showEditDialog(BuildContext context) {
-    if (widget.onEdit == null) {
+    if (!widget.canEdit || widget.onEdit == null) {
       return;
     }
 

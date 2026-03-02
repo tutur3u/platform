@@ -1,13 +1,18 @@
+import type { TypedSupabaseClient } from '@tuturuuu/supabase';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 // Helper function to verify transaction belongs to workspace
-async function verifyTransactionWorkspace(transactionId: string, wsId: string) {
-  const supabase = await createClient();
+async function verifyTransactionWorkspace(
+  transactionId: string,
+  wsId: string,
+  supabase?: TypedSupabaseClient
+) {
+  const sbClient = supabase || (await createClient());
 
-  const { data, error } = await supabase
+  const { data, error } = await sbClient
     .from('wallet_transactions')
     .select(`
       id,
@@ -20,6 +25,11 @@ async function verifyTransactionWorkspace(transactionId: string, wsId: string) {
     .single();
 
   if (error || !data) {
+    console.error('Error verifying transaction workspace:', {
+      transactionId,
+      wsId,
+      error: error?.message,
+    });
     return null;
   }
 
@@ -75,7 +85,11 @@ export async function GET(_: Request, { params }: Params) {
   }
 
   // Verify transaction belongs to workspace and fetch full data
-  const transaction = await verifyTransactionWorkspace(transactionId, wsId);
+  const transaction = await verifyTransactionWorkspace(
+    transactionId,
+    wsId,
+    supabase
+  );
 
   if (!transaction) {
     return NextResponse.json(
@@ -159,7 +173,11 @@ export async function PUT(req: Request, { params }: Params) {
   const supabase = await createClient();
 
   // Verify transaction belongs to workspace
-  const transaction = await verifyTransactionWorkspace(transactionId, wsId);
+  const transaction = await verifyTransactionWorkspace(
+    transactionId,
+    wsId,
+    supabase
+  );
 
   if (!transaction) {
     return NextResponse.json(
@@ -320,8 +338,8 @@ export async function PUT(req: Request, { params }: Params) {
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function DELETE(req: Request, { params }: Params) {
+  const supabase = await createClient(req);
   const { transactionId, wsId } = await params;
 
   // Validate UUID format
@@ -334,6 +352,7 @@ export async function DELETE(_: Request, { params }: Params) {
 
   const permissions = await getPermissions({
     wsId,
+    request: req,
   });
 
   if (!permissions) {
@@ -350,7 +369,11 @@ export async function DELETE(_: Request, { params }: Params) {
   }
 
   // Verify transaction belongs to workspace
-  const transaction = await verifyTransactionWorkspace(transactionId, wsId);
+  const transaction = await verifyTransactionWorkspace(
+    transactionId,
+    wsId,
+    supabase
+  );
 
   if (!transaction) {
     return NextResponse.json(

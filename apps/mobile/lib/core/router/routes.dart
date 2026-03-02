@@ -31,6 +31,7 @@ abstract final class Routes {
   static const transactionDetail = '/finance/transactions/:transactionId';
   static const categories = '/finance/categories';
   static const timerHistory = '/timer/history';
+  static const timerStats = '/timer/stats';
   static const timerRequests = '/timer/requests';
   static const timerManagement = '/timer/management';
 }

@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -10,7 +11,8 @@ interface Params {
 export async function GET(req: Request, { params }: Params) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(req);
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
     const { searchParams } = new URL(req.url);
 
     const cursor = searchParams.get('cursor');
@@ -69,7 +71,7 @@ export async function GET(req: Request, { params }: Params) {
     const { data, error } = await supabase.rpc(
       'get_wallet_transactions_with_permissions',
       {
-        p_ws_id: wsId,
+        p_ws_id: normalizedWsId,
         p_user_id: user.id, // Explicitly pass user ID
         p_wallet_ids: finalWalletIds,
         p_category_ids: categoryIds.length > 0 ? categoryIds : undefined,

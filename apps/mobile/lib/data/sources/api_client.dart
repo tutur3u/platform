@@ -82,6 +82,52 @@ class ApiClient {
     return _handleResponse(response);
   }
 
+  /// GET JSON array from [path] (relative to [ApiConfig.baseUrl]).
+  ///
+  /// Supports both raw array responses and object responses with `data: []`.
+  Future<List<dynamic>> getJsonList(
+    String path, {
+    bool requiresAuth = true,
+  }) async {
+    final url = Uri.parse('${ApiConfig.baseUrl}$path');
+
+    final response = await _performRequest(
+      () async => _client.get(
+        url,
+        headers: await _getHeaders(requiresAuth: requiresAuth),
+      ),
+      requiresAuth: requiresAuth,
+    );
+
+    // Reuse existing error handling behavior.
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _handleResponse(response);
+    }
+
+    if (response.body.isEmpty) return const [];
+
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is List<dynamic>) {
+        return decoded;
+      }
+      if (decoded is Map<String, dynamic> && decoded['data'] is List<dynamic>) {
+        return decoded['data'] as List<dynamic>;
+      }
+      throw const ApiException(
+        message: 'Expected a JSON array response',
+        statusCode: 0,
+      );
+    } on ApiException {
+      rethrow;
+    } on FormatException {
+      throw const ApiException(
+        message: 'Invalid JSON response',
+        statusCode: 0,
+      );
+    }
+  }
+
   /// POST JSON to [path] (relative to [ApiConfig.baseUrl]).
   ///
   /// Returns the decoded JSON body on success, or throws [ApiException].

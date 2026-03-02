@@ -8,6 +8,7 @@ import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/time_tracking/request.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
@@ -92,7 +93,14 @@ class _RequestsViewState extends State<_RequestsView> {
           leading: [
             shad.OutlineButton(
               density: shad.ButtonDensity.icon,
-              onPressed: () => context.pop(),
+              onPressed: () {
+                final router = GoRouter.of(context);
+                if (router.canPop()) {
+                  router.pop();
+                  return;
+                }
+                context.go(Routes.timer);
+              },
               child: const Icon(Icons.arrow_back),
             ),
           ],
