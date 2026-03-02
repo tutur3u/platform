@@ -17561,6 +17561,7 @@ export type Database = {
       };
       workspace_whiteboards: {
         Row: {
+          archived_at: string | null;
           created_at: string;
           creator_id: string;
           description: string | null;
@@ -17572,6 +17573,7 @@ export type Database = {
           ws_id: string;
         };
         Insert: {
+          archived_at?: string | null;
           created_at?: string;
           creator_id: string;
           description?: string | null;
@@ -17583,6 +17585,7 @@ export type Database = {
           ws_id: string;
         };
         Update: {
+          archived_at?: string | null;
           created_at?: string;
           creator_id?: string;
           description?: string | null;

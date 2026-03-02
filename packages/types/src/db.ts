@@ -36,6 +36,7 @@ export type WorkspaceUser = Tables<'workspace_users'>;
 export type WorkspacePromotion = Tables<'workspace_promotions'>;
 export type WorkspaceFlashcard = Tables<'workspace_flashcards'>;
 export type WorkspaceQuiz = Tables<'workspace_quizzes'>;
+export type WorkspaceWhiteboard = Tables<'workspace_whiteboards'>;
 export type WorkspaceTaskBoard = Tables<'workspace_boards'> & {
   href?: string;
   lists?: Partial<WorkspaceTaskList>[];

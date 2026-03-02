@@ -10,6 +10,7 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import WhiteboardForm, { type WhiteboardFormValues } from './whiteboardForm';
 
@@ -22,6 +23,7 @@ export default function CreateWhiteboardDialog({
   wsId,
   trigger,
 }: CreateWhiteboardDialogProps) {
+  const t = useTranslations('common');
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
@@ -39,7 +41,7 @@ export default function CreateWhiteboardDialog({
       } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        toast.error('You must be logged in to create a whiteboard');
+        toast.error(t('error_must_be_logged_in'));
         return;
       }
 
@@ -53,16 +55,16 @@ export default function CreateWhiteboardDialog({
 
       if (error) {
         console.error('Error creating whiteboard:', error);
-        toast.error('Failed to create whiteboard. Please try again.');
+        toast.error(t('create_whiteboard_error'));
         return;
       }
 
-      toast.success('Whiteboard created successfully!');
+      toast.success(t('create_whiteboard_success'));
       setOpen(false);
       router.refresh();
     } catch (error) {
       console.error('Unexpected error:', error);
-      toast.error('An unexpected error occurred. Please try again.');
+      toast.error(t('error_occurred'));
     } finally {
       setIsSubmitting(false);
     }
@@ -73,7 +75,7 @@ export default function CreateWhiteboardDialog({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Create New Whiteboard</DialogTitle>
+          <DialogTitle>{t('create_whiteboard')}</DialogTitle>
         </DialogHeader>
         <WhiteboardForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
       </DialogContent>

@@ -10,19 +10,21 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import type { Whiteboard } from './client';
 import WhiteboardForm, { type WhiteboardFormValues } from './whiteboardForm';
 
 interface EditWhiteboardDialogProps {
   whiteboard: Whiteboard;
-  trigger: React.ReactNode;
+  trigger?: React.ReactNode;
 }
 
 export default function EditWhiteboardDialog({
   whiteboard,
   trigger,
 }: EditWhiteboardDialogProps) {
+  const t = useTranslations('common');
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
@@ -33,47 +35,30 @@ export default function EditWhiteboardDialog({
     try {
       const supabase = createClient();
 
-      // Get the current user
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError || !user) {
-        toast.error('You must be logged in to edit a whiteboard');
-        return;
-      }
-
       // Update the whiteboard
       const { error } = await supabase
         .from('workspace_whiteboards')
         .update({
           title: values.title,
           description: values.description || null,
-          updated_at: new Date().toISOString(),
         })
         .eq('id', whiteboard.id);
 
       if (error) {
         console.error('Error updating whiteboard:', error);
-        toast.error('Failed to update whiteboard. Please try again.');
+        toast.error(t('update_whiteboard_error'));
         return;
       }
 
-      toast.success('Whiteboard updated successfully!');
+      toast.success(t('update_whiteboard_success'));
       setOpen(false);
       router.refresh();
     } catch (error) {
       console.error('Unexpected error:', error);
-      toast.error('An unexpected error occurred. Please try again.');
+      toast.error(t('error_occurred'));
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const defaultValues: WhiteboardFormValues = {
-    title: whiteboard.title,
-    description: whiteboard.description || '',
   };
 
   return (
@@ -81,11 +66,14 @@ export default function EditWhiteboardDialog({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Edit Whiteboard</DialogTitle>
+          <DialogTitle>{t('edit_whiteboard')}</DialogTitle>
         </DialogHeader>
         <WhiteboardForm
-          defaultValues={defaultValues}
           whiteboardId={whiteboard.id}
+          defaultValues={{
+            title: whiteboard.title,
+            description: whiteboard.description || '',
+          }}
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
         />

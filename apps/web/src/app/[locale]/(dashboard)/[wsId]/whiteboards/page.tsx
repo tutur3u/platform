@@ -83,5 +83,8 @@ async function getWhiteboards(wsId: string): Promise<Whiteboard[]> {
     dateCreated: new Date(whiteboard.created_at),
     lastModified: new Date(whiteboard.updated_at),
     creatorName: whiteboard.creator?.display_name || 'Unknown User',
+    archivedAt: whiteboard.archived_at
+      ? new Date(whiteboard.archived_at)
+      : undefined,
   }));
 }

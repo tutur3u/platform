@@ -13,6 +13,7 @@ import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { useTranslations } from 'next-intl';
 import * as z from 'zod';
 
 const formSchema = z.object({
@@ -38,6 +39,7 @@ export default function WhiteboardForm({
   onSubmit,
   isSubmitting,
 }: WhiteboardFormProps) {
+  const t = useTranslations('common');
   const isEditing = !!whiteboardId;
 
   const form = useForm({
@@ -57,10 +59,10 @@ export default function WhiteboardForm({
           name="title"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Title</FormLabel>
+              <FormLabel>{t('whiteboard_title')}</FormLabel>
               <FormControl>
                 <Input
-                  placeholder="Enter whiteboard title"
+                  placeholder={t('whiteboard_title_placeholder')}
                   autoFocus
                   {...field}
                 />
@@ -75,10 +77,10 @@ export default function WhiteboardForm({
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Description (Optional)</FormLabel>
+              <FormLabel>{t('whiteboard_description')}</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder="Add a brief description..."
+                  placeholder={t('whiteboard_description_placeholder')}
                   className="min-h-20 resize-none"
                   {...field}
                 />
@@ -92,11 +94,11 @@ export default function WhiteboardForm({
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting
               ? isEditing
-                ? 'Updating...'
-                : 'Creating...'
+                ? t('updating')
+                : t('creating')
               : isEditing
-                ? 'Update'
-                : 'Create'}
+                ? t('update_action')
+                : t('create')}
           </Button>
         </div>
       </form>
