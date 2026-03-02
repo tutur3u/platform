@@ -65,7 +65,7 @@ class TransactionTransfer extends Equatable {
 
 // ── Infinite-scroll page response ─────────────────────────────────────────
 
-class InfiniteTransactionResponse {
+class InfiniteTransactionResponse extends Equatable {
   const InfiniteTransactionResponse({
     required this.data,
     required this.hasMore,
@@ -85,6 +85,9 @@ class InfiniteTransactionResponse {
   final List<Transaction> data;
   final bool hasMore;
   final String? nextCursor;
+
+  @override
+  List<Object?> get props => [data, hasMore, nextCursor];
 }
 
 // ── Transaction ────────────────────────────────────────────────────────────

@@ -43,7 +43,6 @@ class _ShellPageState extends State<ShellPage> {
   static const ValueKey<String> _assistantKey = ValueKey('assistant');
   static const ValueKey<String> _globalLayerKey = ValueKey('global-layer');
   static const ValueKey<String> _miniLayerKey = ValueKey('mini-layer');
-  static const double _compactNavLabelWidth = 92;
   static const double _navIconSize = 22;
 
   final Stopwatch _tapStopwatch = Stopwatch();
@@ -118,12 +117,20 @@ class _ShellPageState extends State<ShellPage> {
       if (_layerController.hasClients && _layerController.page?.round() != 0) {
         _syncingLayerPage = true;
         unawaited(
-          _layerController.animateToPage(
-            0,
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutCubic,
-          ),
+          _layerController
+              .animateToPage(
+                0,
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+              )
+              .catchError((_) {})
+              .whenComplete(() {
+                if (!mounted) return;
+                setState(() => _syncingLayerPage = false);
+              }),
         );
+      } else {
+        _syncingLayerPage = false;
       }
       return _buildGlobalCompactScaffold(context, state);
     }
@@ -158,10 +165,13 @@ class _ShellPageState extends State<ShellPage> {
                   onPointerCancel: _stopLongPressTimer,
                   child: shad.NavigationBar(
                     selectedKey: selectedKey,
-                    alignment: shad.NavigationBarAlignment.spaceEvenly,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     onSelected: (key) =>
                         _onItemTapped(_indexForKey(key), context, state),
-                    children: items,
+                    children: items.map((i) => Expanded(child: i)).toList(),
                   ),
                 ),
               ),
@@ -181,12 +191,20 @@ class _ShellPageState extends State<ShellPage> {
     if (_layerController.hasClients && _layerController.page?.round() != 1) {
       _syncingLayerPage = true;
       unawaited(
-        _layerController.animateToPage(
-          1,
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOutCubic,
-        ),
+        _layerController
+            .animateToPage(
+              1,
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+            )
+            .catchError((_) {})
+            .whenComplete(() {
+              if (!mounted) return;
+              setState(() => _syncingLayerPage = false);
+            }),
       );
+    } else {
+      _syncingLayerPage = false;
     }
 
     final globalBody = _cachedGlobalBody ?? const DashboardPage();
@@ -217,7 +235,10 @@ class _ShellPageState extends State<ShellPage> {
                         ? shad.NavigationBar(
                             key: _globalLayerKey,
                             selectedKey: globalKey,
-                            alignment: shad.NavigationBarAlignment.spaceEvenly,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             onSelected: (key) => _onItemTapped(
                               _indexForKey(key),
                               context,
@@ -227,12 +248,15 @@ class _ShellPageState extends State<ShellPage> {
                               context,
                               state,
                               context.l10n,
-                            ),
+                            ).map((i) => Expanded(child: i)).toList(),
                           )
                         : shad.NavigationBar(
                             key: _miniLayerKey,
                             selectedKey: miniSelectedKey,
-                            alignment: shad.NavigationBarAlignment.spaceEvenly,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             onSelected: (key) => _onMiniAppItemTapped(
                               key,
                               context,
@@ -338,37 +362,34 @@ class _ShellPageState extends State<ShellPage> {
         : null;
     final appsLabel = selectedModule?.label(l10n) ?? l10n.navApps;
     final appsIcon = selectedModule?.icon ?? Icons.apps_outlined;
-    final compact = useGlobalKey;
 
     return [
       shad.NavigationItem(
         key: _homeKey,
-        label: _buildNavLabel(l10n.navHome, labelStyle, compact: compact),
+        label: _buildNavLabel(l10n.navHome, labelStyle),
         child: const Icon(Icons.home_outlined, size: _navIconSize),
       ),
       shad.NavigationItem(
         key: _assistantKey,
-        label: _buildNavLabel(l10n.navAssistant, labelStyle, compact: compact),
+        label: _buildNavLabel(l10n.navAssistant, labelStyle),
         child: const Icon(Icons.auto_awesome_outlined, size: _navIconSize),
       ),
       shad.NavigationItem(
         key: useGlobalKey ? _appsTabKey : _appsKey,
-        label: _buildNavLabel(appsLabel, labelStyle, compact: compact),
+        label: _buildNavLabel(appsLabel, labelStyle),
         child: Icon(appsIcon, size: _navIconSize),
       ),
     ];
   }
 
-  Widget _buildNavLabel(String text, TextStyle style, {required bool compact}) {
-    final label = Text(
+  Widget _buildNavLabel(String text, TextStyle style) {
+    return Text(
       text,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       textAlign: TextAlign.center,
       style: style,
     );
-    if (!compact) return label;
-    return SizedBox(width: _compactNavLabelWidth, child: label);
   }
 
   @override
@@ -378,7 +399,7 @@ class _ShellPageState extends State<ShellPage> {
     super.dispose();
   }
 
-  List<shad.NavigationItem> _buildMiniAppNavItems(
+  List<Widget> _buildMiniAppNavItems(
     BuildContext context,
     AppModule module,
   ) {
@@ -391,10 +412,12 @@ class _ShellPageState extends State<ShellPage> {
 
     return module.miniAppNavItems
         .map(
-          (item) => shad.NavigationItem(
-            key: _miniNavKey(module.id, item.id),
-            label: _buildNavLabel(item.label(l10n), labelStyle, compact: true),
-            child: Icon(item.icon, size: _navIconSize),
+          (item) => Expanded(
+            child: shad.NavigationItem(
+              key: _miniNavKey(module.id, item.id),
+              label: _buildNavLabel(item.label(l10n), labelStyle),
+              child: Icon(item.icon, size: _navIconSize),
+            ),
           ),
         )
         .toList(growable: false);
@@ -484,19 +507,42 @@ class _ShellPageState extends State<ShellPage> {
     }
 
     _syncingLayerPage = true;
-    if (_layerController.hasClients) {
+    final currentPage = _layerController.hasClients
+        ? _layerController.page?.round()
+        : null;
+
+    if (!_layerController.hasClients || currentPage == page) {
+      if (mounted) {
+        setState(() {
+          _activeLayerPage = page;
+          _syncingLayerPage = false;
+        });
+      } else {
+        _activeLayerPage = page;
+        _syncingLayerPage = false;
+      }
+      return;
+    }
+
+    try {
       await _layerController.animateToPage(
         page,
         duration: const Duration(milliseconds: 220),
         curve: Curves.easeOutCubic,
       );
+    } on Exception {
+      // no-op: ensure syncing flag is reset in finally
+    } finally {
+      if (mounted) {
+        setState(() {
+          _activeLayerPage = page;
+          _syncingLayerPage = false;
+        });
+      } else {
+        _activeLayerPage = page;
+        _syncingLayerPage = false;
+      }
     }
-
-    if (!mounted) return;
-    setState(() {
-      _activeLayerPage = page;
-      _syncingLayerPage = false;
-    });
   }
 
   void _handleAppsLongPress() {

@@ -7,9 +7,8 @@ Future<bool> openTransactionDetailSheet(
   BuildContext context, {
   required String wsId,
   required Transaction transaction,
+  required FinanceRepository repository,
 }) {
-  final repository = FinanceRepository();
-
   return showTransactionDetailSheet(
     context,
     wsId: wsId,

@@ -21,9 +21,13 @@ class WorkspaceSelectorButton extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                state.currentWorkspace?.name ?? l10n.appTitle,
-                overflow: TextOverflow.ellipsis,
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 180),
+                child: Text(
+                  state.currentWorkspace?.name ?? l10n.appTitle,
+                  overflow: TextOverflow.ellipsis,
+                  softWrap: false,
+                ),
               ),
               const shad.Gap(4),
               const Icon(Icons.arrow_drop_down, size: 20),

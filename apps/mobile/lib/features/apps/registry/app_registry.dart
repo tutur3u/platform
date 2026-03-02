@@ -78,7 +78,7 @@ class AppRegistry {
       id: 'finance_transactions',
       route: Routes.transactions,
       icon: Icons.receipt_long_outlined,
-      labelBuilder: _labelRecentTransactions,
+      labelBuilder: _labelTransactions,
     ),
     MiniAppNavItem(
       id: 'finance_settings',
@@ -96,6 +96,18 @@ class AppRegistry {
       labelBuilder: _labelTimer,
     ),
     MiniAppNavItem(
+      id: 'timer_history',
+      route: Routes.timerHistory,
+      icon: Icons.history,
+      labelBuilder: _labelTimerHistory,
+    ),
+    MiniAppNavItem(
+      id: 'timer_stats',
+      route: Routes.timerStats,
+      icon: Icons.bar_chart_outlined,
+      labelBuilder: _labelTimerStats,
+    ),
+    MiniAppNavItem(
       id: 'timer_requests',
       route: Routes.timerRequests,
       icon: Icons.pending_actions,
@@ -105,7 +117,7 @@ class AppRegistry {
       id: 'timer_management',
       route: Routes.timerManagement,
       icon: Icons.admin_panel_settings,
-      labelBuilder: _ltimerManagementTitle,
+      labelBuilder: _timerManagementTitle,
     ),
   ];
 
@@ -155,11 +167,13 @@ class AppRegistry {
   static String _labelTimer(AppLocalizations l10n) => l10n.navTimer;
   static String _labelHome(AppLocalizations l10n) => l10n.navHome;
   static String _labelSettings(AppLocalizations l10n) => l10n.navSettings;
-  static String _labelRecentTransactions(AppLocalizations l10n) =>
-      l10n.financeRecentTransactions;
+  static String _labelTransactions(AppLocalizations l10n) =>
+      l10n.financeTransactions;
+  static String _labelTimerHistory(AppLocalizations l10n) => l10n.timerHistory;
+  static String _labelTimerStats(AppLocalizations l10n) => l10n.timerStatsTitle;
   static String _timerRequestsTitle(AppLocalizations l10n) =>
       l10n.timerRequestsTitle;
-  static String _ltimerManagementTitle(AppLocalizations l10n) =>
+  static String _timerManagementTitle(AppLocalizations l10n) =>
       l10n.timerManagementTitle;
 
   static Widget _pageTasks(BuildContext context) => const TaskListPage();

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide AppBar, Card, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
@@ -36,16 +37,25 @@ class FinancePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) {
-        final cubit = FinanceCubit(
-          financeRepository: FinanceRepository(),
-        );
-        final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-        if (wsId != null) unawaited(cubit.loadFinanceData(wsId));
-        return cubit;
-      },
-      child: const _FinanceView(),
+    final repository = FinanceRepository();
+
+    return RepositoryProvider.value(
+      value: repository,
+      child: BlocProvider(
+        create: (context) {
+          final cubit = FinanceCubit(
+            financeRepository: repository,
+          );
+          final wsId = context
+              .read<WorkspaceCubit>()
+              .state
+              .currentWorkspace
+              ?.id;
+          if (wsId != null) unawaited(cubit.loadFinanceData(wsId));
+          return cubit;
+        },
+        child: const _FinanceView(),
+      ),
     );
   }
 }
@@ -250,6 +260,7 @@ class _TransactionTile extends StatelessWidget {
             context,
             wsId: wsId,
             transaction: tx,
+            repository: context.read<FinanceRepository>(),
           );
 
           if (!context.mounted || !changed) return;
@@ -315,7 +326,9 @@ class _TransactionTile extends StatelessWidget {
                   ),
                   if (tx.takenAt != null)
                     Text(
-                      '${tx.takenAt!.month}/${tx.takenAt!.day}',
+                      DateFormat.yMd(
+                        Localizations.localeOf(context).toString(),
+                      ).format(tx.takenAt!),
                       style: theme.typography.textSmall.copyWith(
                         color: colorScheme.mutedForeground,
                       ),

@@ -80,7 +80,7 @@ class _AsyncDeleteConfirmationDialogState
       if (!mounted) {
         return;
       }
-      Navigator.of(context).pop();
+      Navigator.of(context).pop(true);
     } on Exception {
       if (!mounted) {
         return;

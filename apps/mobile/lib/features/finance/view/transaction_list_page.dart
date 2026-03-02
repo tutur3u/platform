@@ -79,10 +79,8 @@ List<_DateGroup> _groupByDate(
         fullLabels[key] = l10n.financeYesterday;
       } else {
         final shortLabel = shortFormat.format(day);
-        fullLabels[key] = fullFormat.format(day);
-        if (fullLabels[key] == null || fullLabels[key]!.isEmpty) {
-          fullLabels[key] = shortLabel;
-        }
+        final fullLabel = fullFormat.format(day);
+        fullLabels[key] = fullLabel.isEmpty ? shortLabel : fullLabel;
       }
     }
     groups[key]!.add(tx);
@@ -135,15 +133,20 @@ class TransactionListPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) {
-        final cubit = TransactionListCubit(
-          financeRepository: FinanceRepository(),
-        );
-        unawaited(_loadFromWorkspace(context, cubit));
-        return cubit;
-      },
-      child: const _TransactionListView(),
+    final repository = FinanceRepository();
+
+    return RepositoryProvider.value(
+      value: repository,
+      child: BlocProvider(
+        create: (context) {
+          final cubit = TransactionListCubit(
+            financeRepository: repository,
+          );
+          unawaited(_loadFromWorkspace(context, cubit));
+          return cubit;
+        },
+        child: const _TransactionListView(),
+      ),
     );
   }
 }
@@ -345,6 +348,7 @@ class _TransactionListViewState extends State<_TransactionListView> {
                   }
 
                   final groups = _groupByDate(state.transactions, l10n);
+                  final repository = context.read<FinanceRepository>();
                   return RefreshIndicator(
                     onRefresh: _onRefresh,
                     child: ListView.builder(
@@ -366,6 +370,7 @@ class _TransactionListViewState extends State<_TransactionListView> {
                           isExpanded: _isDayExpanded(group.key),
                           onToggle: () => _toggleDay(group.key),
                           onRefresh: _onRefresh,
+                          repository: repository,
                         );
                       },
                     ),
@@ -390,12 +395,14 @@ class _DayGroup extends StatelessWidget {
     required this.isExpanded,
     required this.onToggle,
     required this.onRefresh,
+    required this.repository,
   });
 
   final _DateGroup group;
   final bool isExpanded;
   final VoidCallback onToggle;
   final Future<void> Function() onRefresh;
+  final FinanceRepository repository;
 
   @override
   Widget build(BuildContext context) {
@@ -578,6 +585,7 @@ class _DayGroup extends StatelessWidget {
                             _TransactionTile(
                               tx: group.transactions[i],
                               onRefresh: onRefresh,
+                              repository: repository,
                             ),
                             if (i < group.transactions.length - 1)
                               const SizedBox(height: 8),
@@ -600,10 +608,15 @@ class _DayGroup extends StatelessWidget {
 // ------------------------------------------------------------------
 
 class _TransactionTile extends StatelessWidget {
-  const _TransactionTile({required this.tx, required this.onRefresh});
+  const _TransactionTile({
+    required this.tx,
+    required this.onRefresh,
+    required this.repository,
+  });
 
   final Transaction tx;
   final Future<void> Function() onRefresh;
+  final FinanceRepository repository;
 
   /// Parse a hex color string (e.g. '#ff0000' or 'ff0000') to a Flutter Color.
   Color? _parseHex(String? hex) {
@@ -658,6 +671,7 @@ class _TransactionTile extends StatelessWidget {
             context,
             wsId: wsId,
             transaction: tx,
+            repository: repository,
           );
 
           if (!context.mounted || !changed) return;

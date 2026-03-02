@@ -229,7 +229,7 @@ class _SessionDetailSheetState extends State<SessionDetailSheet> {
     final l10n = context.l10n;
     final navigator = Navigator.of(context);
 
-    await shad.showDialog<void>(
+    await shad.showDialog<bool>(
       context: context,
       builder: (dialogContext) => AsyncDeleteConfirmationDialog(
         toastContext: context,
@@ -244,10 +244,7 @@ class _SessionDetailSheetState extends State<SessionDetailSheet> {
               content: Text(ctx.l10n.timerSessionDeleted),
             ),
           );
-          navigator.pop();
-          if (context.mounted) {
-            navigator.pop();
-          }
+          if (context.mounted) navigator.pop();
         },
         title: l10n.timerDeleteSession,
         message: l10n.timerDeleteConfirm,
