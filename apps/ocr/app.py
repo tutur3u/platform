@@ -1,14 +1,15 @@
 import asyncio
 import base64
+import os
+
 import cv2
 import numpy as np
-import os
-import re
-
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 from paddleocr import PaddleOCRVL
+from pydantic import BaseModel
+
+from extraction import extract_info
 
 os.environ["OMP_NUM_THREADS"] = "1"
 
@@ -56,10 +57,10 @@ async def process_frame(frame):
                 # Extract text with confidence scores for debugging
                 text_with_confidence = []
                 if rec_texts and rec_scores:
-                    for i, (text, confidence) in enumerate(zip(rec_texts, rec_scores)):
-                        print(
-                            f"Processing item {i}: '{text}' (confidence: {confidence:.2f})"
-                        )
+                    for i, (text, confidence) in enumerate(
+                        zip(rec_texts, rec_scores, strict=False)
+                    ):
+                        print(f"Processing item {i}: '{text}' (confidence: {confidence:.2f})")
 
                         # Only include text with reasonable confidence
                         if confidence > 0.5:
@@ -81,63 +82,8 @@ async def process_frame(frame):
         raise
 
 
-def extract_info(text):
-    """
-    Extracts name and student number from the extracted text.
-    Updated to remove specified keywords and months before processing.
-    Handles names split across lines and formats uppercase names correctly.
-    """
-    print(f"Processing text for extraction: '{text}'")
-
-    # Define the excluded keywords, including months of the year
-    excluded_keywords = r"(RMIT|Student|STUDENT|UNIVERSITY|SINH\sVIEN|January|February|March|April|May|June|July|August|September|October|November|December)"
-
-    # Remove excluded keywords from the text
-    cleaned_text = re.sub(excluded_keywords, "", text, flags=re.IGNORECASE)
-    print(f"Cleaned text: '{cleaned_text}'")
-
-    # Try multiple patterns for more flexibility
-    patterns = [
-        # Original pattern
-        r"([A-Z][a-zA-Z]+(?:[\s\n]+[A-Z][a-zA-Z]+)*)\s*\n*\s*(\d{7})",
-        # More flexible pattern for names and student numbers
-        r"([A-Za-z]+(?:[\s\n]+[A-Za-z]+)+).*?(\d{7})",
-        # Even more flexible - any sequence of letters followed by 7 digits
-        r"([A-Za-z\s]+).*?(\d{7})",
-        # Look for 7 digits anywhere and try to find name before it
-        r"([A-Za-z]+(?:\s+[A-Za-z]+)+).*?(\d{7})",
-    ]
-
-    for i, pattern in enumerate(patterns):
-        match = re.search(pattern, cleaned_text, re.MULTILINE | re.DOTALL)
-        if match:
-            print(f"Pattern {i+1} matched: {match.groups()}")
-            name, student_number = match.groups()
-
-            # Clean and format the name
-            name = re.sub(
-                r"\s+", " ", name.strip()
-            )  # Replace multiple spaces with single space
-            name_parts = name.split()
-            formatted_name_parts = [
-                part.capitalize() if part.isupper() or part.islower() else part
-                for part in name_parts
-                if len(part) > 1  # Filter out single characters
-            ]
-
-            if formatted_name_parts and len(student_number) == 7:
-                formatted_name = " ".join(formatted_name_parts)
-                print(
-                    f"Successfully extracted: name='{formatted_name}', student_number='{student_number}'"
-                )
-                return formatted_name.strip(), student_number.strip()
-
-    print("No patterns matched")
-    return None
-
-
 class Request(BaseModel):
-    imageData: str
+    image_data: str
 
 
 @app.post("/capture")
@@ -146,20 +92,19 @@ async def capture(request: Request):
     Endpoint to capture an image, process it, and extract ID information.
     """
     try:
-
-        # Validate imageData
-        if not request.imageData:
+        # Validate image_data
+        if not request.image_data:
             raise HTTPException(status_code=400, detail="No image data provided")
 
-        # Check if imageData has the data URL prefix
-        if "," not in request.imageData:
+        # Check if image_data has the data URL prefix
+        if "," not in request.image_data:
             raise HTTPException(
                 status_code=400,
                 detail="Invalid image data format - missing data URL prefix",
             )
 
         # Decode the base64 image
-        image_data = request.imageData.split(",")[1]
+        image_data = request.image_data.split(",")[1]
         print(f"Base64 data length: {len(image_data)}")
 
         nparr = np.frombuffer(base64.b64decode(image_data), np.uint8)
@@ -181,15 +126,15 @@ async def capture(request: Request):
         if info:
             name, student_number = info
             return {"name": name, "studentNumber": student_number}
-        else:
-            return {
-                "error": "No match found in the provided ID data",
-                "extracted_text": extracted_text,
-                "debug": True,
-            }
+
+        return {
+            "error": "No match found in the provided ID data",
+            "extracted_text": extracted_text,
+            "debug": True,
+        }
 
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Unexpected error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        print(f"Unexpected error: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {e}") from e

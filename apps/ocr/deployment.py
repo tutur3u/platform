@@ -2,13 +2,13 @@ import modal
 
 # Define base image and system dependencies
 image = (
-    modal.Image.debian_slim(python_version="3.12.12")
+    modal.Image.debian_slim(python_version="3.12")
     # Install system dependencies
     .apt_install(["libgl1-mesa-glx", "libglib2.0-0"])
     # Install Python packages
-    .pip_install_from_requirements("requirements.txt")
+    .pip_install_from_pyproject("pyproject.toml")
     # Add local source code
-    .add_local_python_source("main")
+    .add_local_python_source("app")
 )
 app = modal.App("ocr-service", image=image)
 
@@ -17,6 +17,6 @@ app = modal.App("ocr-service", image=image)
 @modal.concurrent(max_inputs=100)
 @modal.asgi_app()
 def fastapi_app():
-    from main import app
+    from apps.ocr.app import app
 
     return app

@@ -28,3 +28,6 @@ env/
 
 # Logs
 *.log
+
+# Mypy cache
+.mypy_cache/
