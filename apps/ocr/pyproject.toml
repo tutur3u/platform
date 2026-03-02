@@ -3,7 +3,7 @@ name = "ocr-service"
 version = "0.1.0"
 description = "OCR service for extracting student information from ID cards"
 readme = "README.md"
-requires-python = "==3.12"
+requires-python = "==3.12.0"
 dependencies = [
   "fastapi[standard]==0.116.1",
   "modal==1.1.2",
@@ -25,13 +25,13 @@ dev = [
 ]
 
 [project.scripts]
-test = "uv run pytest",
-test:coverage = "uv run pytest --cov",
-type-check = "uv run mypy .",
-format = "uv run ruff format --check .",
-format:fix = "uv run ruff format .",
-lint = "uv run ruff lint --check .",
-lint:fix = "uv run ruff lint .",
+test = "uv run pytest"
+test-coverage = "uv run pytest --cov"
+type-check = "uv run mypy ."
+format = "uv run ruff format --check ."
+format-fix = "uv run ruff format ."
+lint = "uv run ruff lint --check ."
+lint-fix = "uv run ruff lint ."
 dev = "uv run uvicorn main:app --host 127.0.0.1 --port 5500 --reload"
 start = "uv run uvicorn main:app --host 127.0.0.1 --port 5500"
 run = "uv run modal run modal_deployment.py"

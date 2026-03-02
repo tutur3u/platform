@@ -1,7 +1,7 @@
 import re
 
 
-def extract_info(text):
+def extract_info(text: str):
     """
     Extracts name and student number from the extracted text.
     Updated to remove specified keywords and months before processing.

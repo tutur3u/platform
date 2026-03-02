@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import os
 
@@ -9,7 +10,7 @@ from paddleocr import PaddleOCRVL  # type: ignore
 from pydantic import BaseModel
 
 from extraction import extract_info
-from frame_processor import process_frame
+from parser import parse_result
 
 os.environ["OMP_NUM_THREADS"] = "1"
 
@@ -63,7 +64,8 @@ async def capture(request: Request):
         print(f"Frame shape: {frame.shape}")
 
         # Process the frame and extract text
-        extracted_text = await process_frame(ocr, frame)
+        result = await asyncio.to_thread(ocr.predict, frame)
+        extracted_text = parse_result(result)
 
         print(f"Extracted text: {extracted_text}")
 
