@@ -15,7 +15,7 @@ dependencies:
   device_info_plus: ^12.3.0
   equatable: ^2.0.8
   firebase_analytics: ^12.1.2
-  firebase_crashlytics: ^5.0.7
+  firebase_crashlytics: ^5.0.8
   flutter:
     sdk: flutter
   flutter_bloc: ^9.1.1
