@@ -675,7 +675,7 @@ export function RichTextEditor({
       )}
       {/* Temporarily hide drag handle to resolve 'removeChild' error until finding a more robust solution
       !readOnly && <EditorDragHandle editor={editor} /> */}
-      <EditorContent editor={editor} className="h-full" />
+      <EditorContent editor={editor} />
     </div>
   );
 }

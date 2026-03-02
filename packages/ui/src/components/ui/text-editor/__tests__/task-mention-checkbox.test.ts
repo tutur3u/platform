@@ -1,4 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
+import {
+  areAllMentionedTasksCompleted,
+  extractTaskMentionIds,
+  getCompletedTaskColor,
+  getNextTriState,
+  type MentionedTaskRow,
+  resolveCheckboxState,
+} from '../task-item-checkbox';
 
 // Mock the Supabase client
 vi.mock('@tuturuuu/supabase/next/client', () => ({
@@ -15,7 +23,6 @@ vi.mock('@tuturuuu/supabase/next/client', () => ({
   }),
 }));
 
-// Test the extractTaskMentionIds function logic
 describe('Task Mention Detection', () => {
   describe('extractTaskMentionIds logic', () => {
     it('should return empty array for empty node', () => {
@@ -24,78 +31,50 @@ describe('Task Mention Detection', () => {
           // No children to traverse
         }),
       };
-      const taskIds: string[] = [];
-      mockNode.descendants(
-        (childNode: {
-          type: { name: string };
-          attrs: { entityType?: string; entityId?: string };
-        }) => {
-          if (
-            childNode.type.name === 'mention' &&
-            childNode.attrs.entityType === 'task' &&
-            childNode.attrs.entityId
-          ) {
-            taskIds.push(childNode.attrs.entityId);
-          }
-          return true;
-        }
-      );
+
+      const taskIds = extractTaskMentionIds(mockNode as never);
       expect(taskIds).toEqual([]);
     });
 
     it('should extract task mention IDs from nodes', () => {
-      const mockChildren = [
-        { type: { name: 'paragraph' }, attrs: {} },
-        {
-          type: { name: 'mention' },
-          attrs: { entityType: 'task', entityId: 'task-123' },
-        },
-        {
-          type: { name: 'mention' },
-          attrs: { entityType: 'user', entityId: 'user-456' },
-        },
-        {
-          type: { name: 'mention' },
-          attrs: { entityType: 'task', entityId: 'task-789' },
-        },
-      ];
+      const mockNode = {
+        descendants: vi.fn((callback) => {
+          callback({ type: { name: 'paragraph' }, attrs: {} });
+          callback({
+            type: { name: 'mention' },
+            attrs: { entityType: 'task', entityId: 'task-123' },
+          });
+          callback({
+            type: { name: 'mention' },
+            attrs: { entityType: 'user', entityId: 'user-456' },
+          });
+          callback({
+            type: { name: 'mention' },
+            attrs: { entityType: 'task', entityId: 'task-789' },
+          });
+        }),
+      };
 
-      const taskIds: string[] = [];
-      mockChildren.forEach((childNode) => {
-        if (
-          childNode.type.name === 'mention' &&
-          childNode.attrs.entityType === 'task' &&
-          childNode.attrs.entityId
-        ) {
-          taskIds.push(childNode.attrs.entityId);
-        }
-      });
+      const taskIds = extractTaskMentionIds(mockNode as never);
 
       expect(taskIds).toEqual(['task-123', 'task-789']);
     });
 
     it('should skip non-task mentions', () => {
-      const mockChildren = [
-        {
-          type: { name: 'mention' },
-          attrs: { entityType: 'user', entityId: 'user-123' },
-        },
-        {
-          type: { name: 'mention' },
-          attrs: { entityType: 'project', entityId: 'proj-456' },
-        },
-      ];
+      const mockNode = {
+        descendants: vi.fn((callback) => {
+          callback({
+            type: { name: 'mention' },
+            attrs: { entityType: 'user', entityId: 'user-123' },
+          });
+          callback({
+            type: { name: 'mention' },
+            attrs: { entityType: 'project', entityId: 'proj-456' },
+          });
+        }),
+      };
 
-      const taskIds: string[] = [];
-      mockChildren.forEach((childNode) => {
-        if (
-          childNode.type.name === 'mention' &&
-          childNode.attrs.entityType === 'task' &&
-          childNode.attrs.entityId
-        ) {
-          taskIds.push(childNode.attrs.entityId);
-        }
-      });
+      const taskIds = extractTaskMentionIds(mockNode as never);
 
       expect(taskIds).toEqual([]);
     });
@@ -103,21 +82,8 @@ describe('Task Mention Detection', () => {
 
   describe('allMentionedTasksCompleted logic', () => {
     it('should return false when no tasks', () => {
-      const mentionedTasks: Array<{
-        id: string;
-        closed_at: string | null;
-        task_lists: { status: string | null };
-      }> = [];
-      const result =
-        mentionedTasks.length > 0 &&
-        mentionedTasks.every((task) => {
-          const listStatus = task.task_lists?.status;
-          return (
-            task.closed_at !== null ||
-            listStatus === 'done' ||
-            listStatus === 'closed'
-          );
-        });
+      const mentionedTasks: MentionedTaskRow[] = [];
+      const result = areAllMentionedTasksCompleted(mentionedTasks);
       expect(result).toBe(false);
     });
 
@@ -134,14 +100,7 @@ describe('Task Mention Detection', () => {
           task_lists: { status: 'active' },
         },
       ];
-      const result = mentionedTasks.every((task) => {
-        const listStatus = task.task_lists?.status;
-        return (
-          task.closed_at !== null ||
-          listStatus === 'done' ||
-          listStatus === 'closed'
-        );
-      });
+      const result = areAllMentionedTasksCompleted(mentionedTasks);
       expect(result).toBe(true);
     });
 
@@ -150,14 +109,7 @@ describe('Task Mention Detection', () => {
         { id: 'task-1', closed_at: null, task_lists: { status: 'done' } },
         { id: 'task-2', closed_at: null, task_lists: { status: 'closed' } },
       ];
-      const result = mentionedTasks.every((task) => {
-        const listStatus = task.task_lists?.status;
-        return (
-          task.closed_at !== null ||
-          listStatus === 'done' ||
-          listStatus === 'closed'
-        );
-      });
+      const result = areAllMentionedTasksCompleted(mentionedTasks);
       expect(result).toBe(true);
     });
 
@@ -170,14 +122,7 @@ describe('Task Mention Detection', () => {
         },
         { id: 'task-2', closed_at: null, task_lists: { status: 'active' } },
       ];
-      const result = mentionedTasks.every((task) => {
-        const listStatus = task.task_lists?.status;
-        return (
-          task.closed_at !== null ||
-          listStatus === 'done' ||
-          listStatus === 'closed'
-        );
-      });
+      const result = areAllMentionedTasksCompleted(mentionedTasks);
       expect(result).toBe(false);
     });
   });
@@ -188,8 +133,7 @@ describe('Task Mention Detection', () => {
         id: string;
         task_lists: { color: string | null };
       }> = [];
-      const taskWithColor = mentionedTasks.find((t) => t.task_lists?.color);
-      const result = taskWithColor?.task_lists?.color?.toLowerCase() || null;
+      const result = getCompletedTaskColor(mentionedTasks);
       expect(result).toBe(null);
     });
 
@@ -198,8 +142,7 @@ describe('Task Mention Detection', () => {
         { id: 'task-1', task_lists: { color: 'Green' } },
         { id: 'task-2', task_lists: { color: 'Blue' } },
       ];
-      const taskWithColor = mentionedTasks.find((t) => t.task_lists?.color);
-      const result = taskWithColor?.task_lists?.color?.toLowerCase() || null;
+      const result = getCompletedTaskColor(mentionedTasks);
       expect(result).toBe('green');
     });
 
@@ -208,44 +151,70 @@ describe('Task Mention Detection', () => {
         { id: 'task-1', task_lists: { color: null } },
         { id: 'task-2', task_lists: { color: 'Purple' } },
       ];
-      const taskWithColor = mentionedTasks.find((t) => t.task_lists?.color);
-      const result = taskWithColor?.task_lists?.color?.toLowerCase() || null;
+      const result = getCompletedTaskColor(mentionedTasks);
       expect(result).toBe('purple');
     });
   });
 
-  describe('isChecked priority logic', () => {
+  describe('checkbox priority logic', () => {
     it('should prioritize manual override', () => {
-      const manualOverride: boolean | null = true;
-      const nodeChecked: boolean | undefined = false;
+      const manualOverride = true;
+      const nodeChecked = false;
       const allMentionedTasksCompleted = false;
 
-      const result =
-        manualOverride ?? nodeChecked ?? allMentionedTasksCompleted;
+      const result = resolveCheckboxState({
+        manualOverride,
+        nodeChecked,
+        allMentionedTasksCompleted,
+      });
 
       expect(result).toBe(true);
     });
 
     it('should use node.attrs.checked when no manual override', () => {
-      const manualOverride: boolean | null = null;
-      const nodeChecked: boolean | undefined = true;
+      const manualOverride = null;
+      const nodeChecked = true;
       const allMentionedTasksCompleted = false;
 
-      const result =
-        manualOverride ?? nodeChecked ?? allMentionedTasksCompleted;
+      const result = resolveCheckboxState({
+        manualOverride,
+        nodeChecked,
+        allMentionedTasksCompleted,
+      });
 
       expect(result).toBe(true);
     });
 
     it('should use allMentionedTasksCompleted as fallback', () => {
-      const manualOverride: boolean | null = null;
-      const nodeChecked: boolean | undefined = undefined;
+      const manualOverride = null;
+      const nodeChecked = undefined;
       const allMentionedTasksCompleted = true;
 
-      const result =
-        manualOverride ?? nodeChecked ?? allMentionedTasksCompleted;
+      const result = resolveCheckboxState({
+        manualOverride,
+        nodeChecked,
+        allMentionedTasksCompleted,
+      });
 
       expect(result).toBe(true);
+    });
+
+    it('should preserve indeterminate node state', () => {
+      const result = resolveCheckboxState({
+        manualOverride: null,
+        nodeChecked: 'indeterminate',
+        allMentionedTasksCompleted: false,
+      });
+
+      expect(result).toBe('indeterminate');
+    });
+  });
+
+  describe('tri-state cycle', () => {
+    it('should cycle false -> indeterminate -> true -> false', () => {
+      expect(getNextTriState(false)).toBe('indeterminate');
+      expect(getNextTriState('indeterminate')).toBe(true);
+      expect(getNextTriState(true)).toBe(false);
     });
   });
 });

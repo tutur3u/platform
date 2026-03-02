@@ -21,12 +21,10 @@ import type SupabaseProvider from '@tuturuuu/ui/hooks/supabase-provider';
 import type * as Y from 'yjs';
 import { CustomImage } from './image-extension';
 import { ListConverter } from './list-converter-extension';
-import {
-  DraggableListItem,
-  DraggableTaskItem,
-  ListItemDrag,
-} from './list-item-drag-extension';
+import { ListItemBase } from './list-item-extension';
 import { Mention } from './mention-extension';
+import { NodeDrag } from './node-drag-extension';
+import { TriStateTaskItem } from './task-item-tristate-extension';
 import { Video } from './video-extension';
 
 interface EditorExtensionsOptions {
@@ -170,23 +168,13 @@ export function getEditorExtensions({
     Mention.configure({
       translations: mentionTranslations,
     }),
-    readOnly
-      ? DraggableListItem.extend({
-          draggable: false,
-        })
-      : DraggableListItem,
-    readOnly
-      ? DraggableTaskItem.extend({
-          draggable: false,
-        }).configure({
-          nested: true,
-        })
-      : DraggableTaskItem.configure({
-          nested: true,
-        }),
+    ListItemBase,
+    TriStateTaskItem.configure({
+      nested: true,
+    }),
     TaskList,
     ListConverter,
-    ListItemDrag,
+    NodeDrag,
     Table.configure({
       resizable: !readOnly,
       lastColumnResizable: !readOnly,
