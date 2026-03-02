@@ -106,6 +106,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Markdown Table Priority**: For tabular assistant answers, prefer native Markdown tables in normal assistant text. Do not attempt unsupported `render_ui` table components, and do not wrap Markdown tables in fenced code blocks.
 - **Special Tag Prompt Rules**: Custom tags like `@<FOLLOWUP>` must not contain internal whitespace, but blank lines between distinct prompt sections are required.
 - **PR Maintainability Fixes**: When reviewers flag oversized files, prioritize extracting cohesive submodules (for example `render_ui` blog components or tool-step decision helpers) while keeping the original external APIs and behavior intact.
+- **Executor Module Boundaries**: When a tool executor file grows beyond roughly 400 LOC, split it by concern (for example sessions, goals, categories) and keep the original entrypoint as a thin barrel re-export so dispatcher imports remain stable.
 
 ### 6.3 Security & Validation
 

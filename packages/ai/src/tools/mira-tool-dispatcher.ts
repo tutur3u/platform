@@ -71,8 +71,10 @@ import {
 import { executeSetTheme } from './executors/theme';
 import {
   executeCreateTimeTrackerGoal,
+  executeCreateTimeTrackingCategory,
   executeCreateTimeTrackingEntry,
   executeDeleteTimeTrackerGoal,
+  executeDeleteTimeTrackingCategory,
   executeDeleteTimeTrackingSession,
   executeGetTimeTrackerGoals,
   executeGetTimeTrackerStats,
@@ -83,6 +85,7 @@ import {
   executeStartTimer,
   executeStopTimer,
   executeUpdateTimeTrackerGoal,
+  executeUpdateTimeTrackingCategory,
   executeUpdateTimeTrackingSession,
 } from './executors/timer';
 import { executeUpdateUserName } from './executors/user';
@@ -167,6 +170,9 @@ const toolHandlers = {
   stop_timer: executeStopTimer,
   list_time_tracking_sessions: executeListTimeTrackingSessions,
   list_time_tracking_categories: executeListTimeTrackingCategories,
+  create_time_tracking_category: executeCreateTimeTrackingCategory,
+  update_time_tracking_category: executeUpdateTimeTrackingCategory,
+  delete_time_tracking_category: executeDeleteTimeTrackingCategory,
   get_time_tracking_session: executeGetTimeTrackingSession,
   get_time_tracker_stats: executeGetTimeTrackerStats,
   get_time_tracker_goals: executeGetTimeTrackerGoals,

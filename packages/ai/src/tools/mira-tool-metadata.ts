@@ -61,6 +61,12 @@ export const MIRA_TOOL_DIRECTORY: Record<MiraToolName, string> = {
     'List your time tracking history with pagination and filters',
   list_time_tracking_categories:
     'List time-tracking categories and IDs for category selection/mapping',
+  create_time_tracking_category:
+    'Create a time-tracking category in the current workspace',
+  update_time_tracking_category:
+    'Update a time-tracking category by ID in the current workspace',
+  delete_time_tracking_category:
+    'Delete a time-tracking category by ID in the current workspace',
   get_time_tracking_session: 'Get one time tracking session by ID',
   get_time_tracker_stats:
     'Get time-tracker summary stats and activity data for insights',

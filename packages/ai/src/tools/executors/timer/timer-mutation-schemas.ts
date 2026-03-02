@@ -121,6 +121,37 @@ export type DeleteTimeTrackerGoalArgs = z.infer<
   typeof deleteTimeTrackerGoalArgsSchema
 >;
 
+export const createTimeTrackingCategoryArgsSchema = z.object({
+  name: z.string().trim().min(1, 'name is required'),
+  description: z.union([z.string(), z.null()]).optional(),
+  color: z.union([z.string(), z.null()]).optional(),
+});
+
+export type CreateTimeTrackingCategoryArgs = z.infer<
+  typeof createTimeTrackingCategoryArgsSchema
+>;
+
+export const updateTimeTrackingCategoryArgsSchema = z.object({
+  categoryId: z.union([z.string(), z.null()]).optional(),
+  id: z.union([z.string(), z.null()]).optional(),
+  name: z.union([z.string(), z.null()]).optional(),
+  description: z.union([z.string(), z.null()]).optional(),
+  color: z.union([z.string(), z.null()]).optional(),
+});
+
+export type UpdateTimeTrackingCategoryArgs = z.infer<
+  typeof updateTimeTrackingCategoryArgsSchema
+>;
+
+export const deleteTimeTrackingCategoryArgsSchema = z.object({
+  categoryId: z.union([z.string(), z.null()]).optional(),
+  id: z.union([z.string(), z.null()]).optional(),
+});
+
+export type DeleteTimeTrackingCategoryArgs = z.infer<
+  typeof deleteTimeTrackingCategoryArgsSchema
+>;
+
 export function getZodErrorMessage(error: unknown): string {
   if (error instanceof z.ZodError) {
     return error.issues[0]?.message ?? 'Invalid arguments';

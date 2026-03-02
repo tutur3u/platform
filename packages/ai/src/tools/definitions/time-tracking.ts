@@ -222,6 +222,72 @@ export const timeTrackingToolDefinitions = {
     }),
   }),
 
+  create_time_tracking_category: tool({
+    description: 'Create a time-tracking category in the current workspace.',
+    inputSchema: z.object({
+      name: z.string().describe('Category name'),
+      description: z
+        .string()
+        .nullish()
+        .describe('Category description, or null/omit'),
+      color: z
+        .string()
+        .nullish()
+        .describe('Category color token, or null/omit (defaults to BLUE)'),
+    }),
+  }),
+
+  update_time_tracking_category: tool({
+    description: 'Update a time-tracking category by categoryId (or id alias).',
+    inputSchema: z
+      .object({
+        categoryId: z.string().optional().describe('Category UUID'),
+        id: z
+          .string()
+          .optional()
+          .describe('Alias for categoryId. Use either categoryId or id.'),
+        name: z.string().nullish().describe('Updated category name'),
+        description: z
+          .string()
+          .nullish()
+          .describe('Updated category description, or null to clear'),
+        color: z
+          .string()
+          .nullish()
+          .describe('Updated category color token, or null'),
+      })
+      .refine((data) => Boolean(data.categoryId || data.id), {
+        message: 'categoryId or id is required',
+        path: ['categoryId'],
+      })
+      .refine(
+        (data) =>
+          data.name !== undefined ||
+          data.description !== undefined ||
+          data.color !== undefined,
+        {
+          message: 'At least one updatable field is required',
+          path: ['name'],
+        }
+      ),
+  }),
+
+  delete_time_tracking_category: tool({
+    description: 'Delete a time-tracking category by categoryId (or id alias).',
+    inputSchema: z
+      .object({
+        categoryId: z.string().optional().describe('Category UUID'),
+        id: z
+          .string()
+          .optional()
+          .describe('Alias for categoryId. Use either categoryId or id.'),
+      })
+      .refine((data) => Boolean(data.categoryId || data.id), {
+        message: 'categoryId or id is required',
+        path: ['categoryId'],
+      }),
+  }),
+
   create_time_tracker_goal: tool({
     description:
       'Create a new time-tracker goal for the current workspace/user.',
