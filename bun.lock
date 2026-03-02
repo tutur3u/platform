@@ -43,10 +43,6 @@
         "typescript": "^5.9.3",
       },
     },
-    "apps/ocr": {
-      "name": "@ncthub/ocr",
-      "version": "1.0.0",
-    },
     "apps/web": {
       "name": "@ncthub/web",
       "version": "0.14.0",
@@ -376,7 +372,7 @@
       "devDependencies": {
         "@ncthub/types": "workspace:*",
         "@ncthub/typescript-config": "workspace:*",
-        "@types/node": "^25.3.2",
+        "@types/node": "^25.3.3",
         "@types/react": "^19.2.14",
         "typescript": "^5.9.3",
       },
@@ -834,8 +830,6 @@
     "@ncthub/db": ["@ncthub/db@workspace:apps/db"],
 
     "@ncthub/neo-league": ["@ncthub/neo-league@workspace:apps/neo-league"],
-
-    "@ncthub/ocr": ["@ncthub/ocr@workspace:apps/ocr"],
 
     "@ncthub/supabase": ["@ncthub/supabase@workspace:packages/supabase"],
 
