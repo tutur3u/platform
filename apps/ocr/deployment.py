@@ -8,7 +8,7 @@ image = (
     # Install Python packages
     .pip_install_from_pyproject("pyproject.toml")
     # Add local source code
-    .add_local_python_source("app")
+    .add_local_python_source("app", "extraction", "frame_processor")
 )
 app = modal.App("ocr-service", image=image)
 
