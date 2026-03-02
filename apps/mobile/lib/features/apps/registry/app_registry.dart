@@ -112,7 +112,7 @@ class AppRegistry {
       route: Routes.timerRequests,
       icon: Icons.pending_actions,
       labelBuilder: _timerRequestsTitle,
-    )
+    ),
   ];
 
   static List<AppModule> modules(BuildContext context) {
