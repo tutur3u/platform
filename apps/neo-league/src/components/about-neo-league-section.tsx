@@ -56,7 +56,7 @@ export default function AboutNeoLeagueSection() {
           <div className="mb-24 md:mb-32">
             {/* Banner Image */}
             <div className="relative mx-auto mb-12 max-w-6xl overflow-hidden rounded-2xl shadow-2xl md:mb-16">
-              <div className="relative aspect-[2.5/1]">
+              <div className="relative aspect-2.5/1">
                 <Image
                   src="/background.png"
                   alt="NEO League Season 2 Banner"
