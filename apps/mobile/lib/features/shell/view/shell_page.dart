@@ -421,11 +421,10 @@ class _ShellPageState extends State<ShellPage> {
     final l10n = context.l10n;
 
     return [
-      Expanded(
+      const Expanded(
         child: shad.NavigationItem(
           key: _backToRootKey,
-          label: _buildNavLabel(l10n.navApps, labelStyle),
-          child: const Icon(Icons.apps_outlined, size: _navIconSize),
+          child: Icon(Icons.chevron_left, size: _navIconSize),
         ),
       ),
       ...module.miniAppNavItems.map(
