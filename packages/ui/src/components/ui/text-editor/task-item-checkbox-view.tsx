@@ -15,7 +15,11 @@ import {
   useMentionedTaskStatuses,
 } from './task-item-checkbox';
 
-export function TaskItemContent({ node, getPos, editor }: NodeViewProps) {
+export function TaskItemCheckboxContent({
+  node,
+  getPos,
+  editor,
+}: NodeViewProps) {
   const [manualOverride, setManualOverride] = useState<TriStateChecked | null>(
     null
   );
@@ -209,7 +213,7 @@ export function TaskItemContent({ node, getPos, editor }: NodeViewProps) {
 
       <NodeViewContent
         className={cn(
-          'min-w-0 flex-1 transition-opacity duration-150',
+          'transition-opacity duration-150',
           isChecked && 'task-content-faded'
         )}
       />
@@ -217,10 +221,10 @@ export function TaskItemContent({ node, getPos, editor }: NodeViewProps) {
   );
 }
 
-export function TaskItemView(props: NodeViewProps) {
+export function TaskItemCheckboxView(props: NodeViewProps) {
   return (
     <DraggableNodeContainer {...props} as="li" className="flex items-start">
-      <TaskItemContent {...props} />
+      <TaskItemCheckboxContent {...props} />
     </DraggableNodeContainer>
   );
 }

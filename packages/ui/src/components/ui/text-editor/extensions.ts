@@ -24,7 +24,7 @@ import { ListConverter } from './list-converter-extension';
 import { ListItemBase } from './list-item-extension';
 import { Mention } from './mention-extension';
 import { NodeDrag } from './node-drag-extension';
-import { TriStateTaskItem } from './task-item-tristate-extension';
+import { TaskItemCheckbox } from './task-item-checkbox-extension';
 import { Video } from './video-extension';
 
 interface EditorExtensionsOptions {
@@ -169,9 +169,7 @@ export function getEditorExtensions({
       translations: mentionTranslations,
     }),
     ListItemBase,
-    TriStateTaskItem.configure({
-      nested: true,
-    }),
+    TaskItemCheckbox,
     TaskList,
     ListConverter,
     NodeDrag,

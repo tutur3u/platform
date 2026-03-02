@@ -123,7 +123,6 @@ export function DraggableNodeContainer({
     <NodeViewWrapper
       as={as}
       className={cn('relative', className)}
-      draggable={false}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onDragOver={handleDragOver}

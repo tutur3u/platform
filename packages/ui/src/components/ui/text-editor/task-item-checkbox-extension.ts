@@ -1,13 +1,12 @@
 import { TaskItem } from '@tiptap/extension-list';
 import { ReactNodeViewRenderer } from '@tiptap/react';
-import { TaskItemView } from './task-item-view';
+import { TaskItemCheckboxView } from './task-item-checkbox-view';
 
 /**
  * Task item extension with tri-state checkbox support.
  * `checked` supports: false | 'indeterminate' | true
  */
-export const TriStateTaskItem = TaskItem.extend({
-  draggable: true,
+export const TaskItemCheckbox = TaskItem.extend({
   addAttributes() {
     return {
       checked: {
@@ -26,6 +25,8 @@ export const TriStateTaskItem = TaskItem.extend({
   },
 
   addNodeView() {
-    return ReactNodeViewRenderer(TaskItemView);
+    return ReactNodeViewRenderer(TaskItemCheckboxView);
   },
+}).configure({
+  nested: true,
 });

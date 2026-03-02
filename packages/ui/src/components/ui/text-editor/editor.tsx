@@ -15,7 +15,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import type * as Y from 'yjs';
 import { migrateInlineImagesToBlock } from './content-migration';
-// import { EditorDragHandle } from './drag-handle';
 import { getEditorExtensions } from './extensions';
 import { FixedToolbar, ToolBar } from './tool-bar';
 
