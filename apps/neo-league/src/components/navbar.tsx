@@ -26,13 +26,13 @@ const navItems = [
 // detect external links once, reuse everywhere
 const isExternal = (href: string) => href.startsWith('http');
 
-export default function Navbar() {
+const Navbar = () => {
   const renderLink = (href: string, label: string) => (
     <Link
       href={href}
       target={isExternal(href) ? '_blank' : undefined}
       rel={isExternal(href) ? 'noopener noreferrer' : undefined}
-      prefetch={isExternal(href) ? false : undefined} // disabled prefetch for external
+      prefetch={isExternal(href) ? false : undefined}
     >
       {label}
     </Link>
@@ -68,6 +68,7 @@ export default function Navbar() {
           'Register Now'
         )}
       </Button>
+
       <Sheet>
         <SheetTrigger className="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-background/80 text-foreground shadow-sm transition hover:bg-foreground/5 active:scale-95">
           <MenuIcon className="h-5 w-5" />
@@ -126,4 +127,6 @@ export default function Navbar() {
       }
     />
   );
-}
+};
+
+export default Navbar;
