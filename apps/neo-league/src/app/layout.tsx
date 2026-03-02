@@ -14,15 +14,16 @@ export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: {
     default:
-      'RMIT NEO League 2026 | Innovation Humanity Challenge — IoT Competition',
-    template: '%s | RMIT NEO League 2026',
+      'Neo League 2026 — RMIT IoT Competition & Innovation Humanity Challenge',
+    template: '%s | Neo League 2026 — RMIT IoT Competition',
   },
   description:
     'RMIT NEO League Season 2 — the premier IoT competition for university students in Vietnam. Hosted by RMIT NEO Culture Technology Club, teams engineer integrated IoT solutions addressing UN Sustainable Development Goals through hardware prototyping, sensor integration, and smart technologies. March 2 – May 29, 2026, Ho Chi Minh City.',
   keywords: [
     // Brand keywords
+    'Neo League',
+    'Neo League 2026',
     'RMIT NEO League',
-    'NEO League',
     'RMIT Neo League 2026',
     'Neo Culture Technology',
     'RMIT NCT',
@@ -86,13 +87,13 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: 'RMIT NEO League 2026 | IoT Competition & Innovation Challenge',
+    title: 'Neo League 2026 — RMIT IoT Competition & Innovation Challenge',
     description:
-      "Vietnam's premier student IoT competition — engineer integrated hardware and IoT solutions addressing UN Sustainable Development Goals. Hosted by RMIT NEO Culture Technology Club.",
+      "Neo League is Vietnam's premier student IoT competition — engineer integrated hardware and IoT solutions addressing UN Sustainable Development Goals. Hosted by RMIT NEO Culture Technology Club.",
     type: 'website',
     locale: 'en_US',
     url: BASE_URL,
-    siteName: 'RMIT NEO League — IoT Competition',
+    siteName: 'Neo League — RMIT IoT Competition',
     images: [
       {
         url: '/logo.png',
@@ -104,9 +105,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'RMIT NEO League 2026 | IoT Competition & Innovation Challenge',
+    title: 'Neo League 2026 — RMIT IoT Competition & Innovation Challenge',
     description:
-      "Vietnam's premier student IoT competition — engineer IoT solutions for UN SDGs. Join RMIT NEO Culture Technology Club's hardware innovation challenge.",
+      "Neo League — Vietnam's premier student IoT competition. Engineer IoT solutions for UN SDGs. Join RMIT NEO Culture Technology Club's hardware innovation challenge.",
     images: ['/logo.png'],
   },
   alternates: {
