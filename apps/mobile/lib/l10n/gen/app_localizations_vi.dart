@@ -510,6 +510,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerStatsTitle => 'Thống kê';
 
   @override
+  String get timerStatsPersonal => 'Cá nhân';
+
+  @override
+  String get timerStatsWorkspace => 'Không gian làm việc';
+
+  @override
   String get timerActivityHeatmap => 'Hoạt động';
 
   @override

@@ -507,7 +507,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerStreak => 'Streak';
 
   @override
-  String get timerStatsTitle => 'Statistics';
+  String get timerStatsTitle => 'Stats';
+
+  @override
+  String get timerStatsPersonal => 'Personal';
+
+  @override
+  String get timerStatsWorkspace => 'Workspace';
 
   @override
   String get timerActivityHeatmap => 'Activity';
@@ -724,7 +730,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerRequestUpdated => 'Request updated';
 
   @override
-  String get timerManagementTitle => 'Management';
+  String get timerManagementTitle => 'Manage';
 
   @override
   String get timerSearchSessions => 'Search sessions...';

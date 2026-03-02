@@ -1078,8 +1078,20 @@ abstract class AppLocalizations {
   /// No description provided for @timerStatsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Statistics'**
+  /// **'Stats'**
   String get timerStatsTitle;
+
+  /// No description provided for @timerStatsPersonal.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal'**
+  String get timerStatsPersonal;
+
+  /// No description provided for @timerStatsWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace'**
+  String get timerStatsWorkspace;
 
   /// No description provided for @timerActivityHeatmap.
   ///
@@ -1504,7 +1516,7 @@ abstract class AppLocalizations {
   /// No description provided for @timerManagementTitle.
   ///
   /// In en, this message translates to:
-  /// **'Management'**
+  /// **'Manage'**
   String get timerManagementTitle;
 
   /// No description provided for @timerSearchSessions.

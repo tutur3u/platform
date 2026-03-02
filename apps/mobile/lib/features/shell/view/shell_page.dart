@@ -45,6 +45,7 @@ class _ShellPageState extends State<ShellPage> {
   static const ValueKey<String> _miniLayerKey = ValueKey('mini-layer');
   static const ValueKey<String> _backToRootKey = ValueKey('back-to-root');
   static const double _navIconSize = 22;
+  static const double _navItemSpacing = 2;
 
   final Stopwatch _tapStopwatch = Stopwatch();
   int? _lastTabIndex;
@@ -57,6 +58,7 @@ class _ShellPageState extends State<ShellPage> {
   bool _syncingLayerPage = false;
   bool _showMiniNav = true;
   String? _lastLayeredLocation;
+  int _overlayAppsTapEpoch = 0;
 
   DateTime? _lastBackToRootTapAt;
 
@@ -254,25 +256,31 @@ class _ShellPageState extends State<ShellPage> {
                             ),
                             children: miniItems,
                           )
-                        : shad.NavigationBar(
-                            key: _globalLayerKey,
-                            // No selectedKey: none of the global tabs is
-                            // truly active while inside a mini-app, and
-                            // passing one would suppress taps on it.
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
+                        : Listener(
+                            behavior: HitTestBehavior.translucent,
+                            onPointerDown: _startLongPressTimer,
+                            onPointerUp: _stopLongPressTimer,
+                            onPointerCancel: _stopLongPressTimer,
+                            child: shad.NavigationBar(
+                              key: _globalLayerKey,
+                              // No selectedKey: none of the global tabs is
+                              // truly active while inside a mini-app, and
+                              // passing one would suppress taps on it.
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              onSelected: (key) => _onItemTapped(
+                                _indexForKey(key),
+                                context,
+                                state,
+                              ),
+                              children: _buildNavItems(
+                                context,
+                                state,
+                                context.l10n,
+                              ).map((i) => Expanded(child: i)).toList(),
                             ),
-                            onSelected: (key) => _onItemTapped(
-                              _indexForKey(key),
-                              context,
-                              state,
-                            ),
-                            children: _buildNavItems(
-                              context,
-                              state,
-                              context.l10n,
-                            ).map((i) => Expanded(child: i)).toList(),
                           ),
                   ),
                 ),
@@ -376,16 +384,19 @@ class _ShellPageState extends State<ShellPage> {
     return [
       shad.NavigationItem(
         key: _homeKey,
+        spacing: _navItemSpacing,
         label: _buildNavLabel(l10n.navHome, labelStyle),
         child: const Icon(Icons.home_outlined, size: _navIconSize),
       ),
       shad.NavigationItem(
         key: _assistantKey,
+        spacing: _navItemSpacing,
         label: _buildNavLabel(l10n.navAssistant, labelStyle),
         child: const Icon(Icons.auto_awesome_outlined, size: _navIconSize),
       ),
       shad.NavigationItem(
         key: useGlobalKey ? _appsTabKey : _appsKey,
+        spacing: _navItemSpacing,
         label: _buildNavLabel(appsLabel, labelStyle),
         child: Icon(appsIcon, size: _navIconSize),
       ),
@@ -424,13 +435,22 @@ class _ShellPageState extends State<ShellPage> {
       const Expanded(
         child: shad.NavigationItem(
           key: _backToRootKey,
-          child: Icon(Icons.chevron_left, size: _navIconSize),
+          spacing: 0,
+          alignment: Alignment.center,
+          marginAlignment: Alignment.center,
+          child: SizedBox.square(
+            dimension: _navIconSize,
+            child: Center(
+              child: Icon(Icons.chevron_left, size: _navIconSize),
+            ),
+          ),
         ),
       ),
       ...module.miniAppNavItems.map(
         (item) => Expanded(
           child: shad.NavigationItem(
             key: _miniNavKey(module.id, item.id),
+            spacing: _navItemSpacing,
             label: _buildNavLabel(item.label(l10n), labelStyle),
             child: Icon(item.icon, size: _navIconSize),
           ),
@@ -612,17 +632,33 @@ class _ShellPageState extends State<ShellPage> {
         _tapStopwatch.elapsed < const Duration(milliseconds: 300);
 
     if (index == 2 && isDoubleTap) {
+      _overlayAppsTapEpoch++;
       await _openAppsDrawerFromAppsTab();
       return;
     }
 
-    // When the global nav is shown as an overlay over a mini-app route
-    // (user tapped the back-to-root "Apps" button), tapping Apps again
-    // returns to the mini nav without leaving the current page.
+    // In layered mini-app mode:
+    // - single Apps tap returns to mini nav
+    // - double Apps tap opens Apps Hub
+    // Delay the mini-nav restore slightly to preserve the double-tap window.
     if (index == 2 &&
         !_showMiniNav &&
         AppRegistry.moduleFromLocation(widget.matchedLocation) != null) {
-      setState(() => _showMiniNav = true);
+      _lastTabIndex = index;
+      _tapStopwatch
+        ..reset()
+        ..start();
+      final tapEpoch = ++_overlayAppsTapEpoch;
+      Future<void>.delayed(const Duration(milliseconds: 320), () {
+        if (!mounted || tapEpoch != _overlayAppsTapEpoch) {
+          return;
+        }
+        final stillInMiniApp =
+            AppRegistry.moduleFromLocation(widget.matchedLocation) != null;
+        if (stillInMiniApp && !_showMiniNav) {
+          setState(() => _showMiniNav = true);
+        }
+      });
       return;
     }
 

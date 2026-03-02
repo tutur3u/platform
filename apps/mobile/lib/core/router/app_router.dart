@@ -19,9 +19,9 @@ import 'package:mobile/features/onboarding/view/onboarding_page.dart';
 import 'package:mobile/features/profile/view/profile_page.dart';
 import 'package:mobile/features/settings/view/settings_page.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
-import 'package:mobile/features/time_tracker/view/time_tracker_management_page.dart';
 import 'package:mobile/features/time_tracker/view/time_tracker_page.dart';
 import 'package:mobile/features/time_tracker/view/time_tracker_requests_page.dart';
+import 'package:mobile/features/time_tracker/widgets/stats_tab.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/view/workspace_select_page.dart';
@@ -199,7 +199,10 @@ GoRouter createAppRouter(
           ),
           GoRoute(
             path: Routes.timerManagement,
-            builder: (context, state) => const TimeTrackerManagementPage(),
+            builder: (context, state) => const TimeTrackerPage(
+              initialSection: TimeTrackerSection.stats,
+              initialStatsScope: TimeTrackerStatsScope.workspace,
+            ),
           ),
           GoRoute(
             path: Routes.profileRoot,

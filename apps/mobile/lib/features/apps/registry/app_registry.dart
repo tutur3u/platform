@@ -112,13 +112,7 @@ class AppRegistry {
       route: Routes.timerRequests,
       icon: Icons.pending_actions,
       labelBuilder: _timerRequestsTitle,
-    ),
-    MiniAppNavItem(
-      id: 'timer_management',
-      route: Routes.timerManagement,
-      icon: Icons.admin_panel_settings,
-      labelBuilder: _timerManagementTitle,
-    ),
+    )
   ];
 
   static List<AppModule> modules(BuildContext context) {
@@ -173,8 +167,6 @@ class AppRegistry {
   static String _labelTimerStats(AppLocalizations l10n) => l10n.timerStatsTitle;
   static String _timerRequestsTitle(AppLocalizations l10n) =>
       l10n.timerRequestsTitle;
-  static String _timerManagementTitle(AppLocalizations l10n) =>
-      l10n.timerManagementTitle;
 
   static Widget _pageTasks(BuildContext context) => const TaskListPage();
   static Widget _pageCalendar(BuildContext context) => const CalendarPage();

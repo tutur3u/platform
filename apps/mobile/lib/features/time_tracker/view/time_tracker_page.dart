@@ -46,10 +46,12 @@ class TimeTrackerPage extends StatelessWidget {
     super.key,
     this.repository,
     this.initialSection = TimeTrackerSection.timer,
+    this.initialStatsScope = TimeTrackerStatsScope.personal,
   });
 
   final ITimeTrackerRepository? repository;
   final TimeTrackerSection initialSection;
+  final TimeTrackerStatsScope initialStatsScope;
 
   @override
   Widget build(BuildContext context) {
@@ -60,15 +62,22 @@ class TimeTrackerPage extends StatelessWidget {
           repository: repo,
         );
       },
-      child: _TimeTrackerView(initialSection: initialSection),
+      child: _TimeTrackerView(
+        initialSection: initialSection,
+        initialStatsScope: initialStatsScope,
+      ),
     );
   }
 }
 
 class _TimeTrackerView extends StatefulWidget {
-  const _TimeTrackerView({required this.initialSection});
+  const _TimeTrackerView({
+    required this.initialSection,
+    required this.initialStatsScope,
+  });
 
   final TimeTrackerSection initialSection;
+  final TimeTrackerStatsScope initialStatsScope;
 
   @override
   State<_TimeTrackerView> createState() => _TimeTrackerViewState();
@@ -169,7 +178,7 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
                 children: [
                   TimerTab(onSeeAll: () => context.go(Routes.timerHistory)),
                   const HistoryTab(),
-                  const StatsTab(),
+                  StatsTab(initialScope: widget.initialStatsScope),
                 ],
               ),
             ),
