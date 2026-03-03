@@ -191,6 +191,10 @@ class _RecentTransactionsSection extends StatelessWidget {
                 onPressed: () => context.push(Routes.transactions),
                 child: Text(l10n.financeViewAll),
               ),
+              shad.GhostButton(
+                onPressed: () => context.push(Routes.categories),
+                child: Text(l10n.financeCategories),
+              ),
             ],
           ),
         ),

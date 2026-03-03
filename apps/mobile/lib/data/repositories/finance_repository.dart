@@ -206,4 +206,44 @@ class FinanceRepository {
         .map((e) => TransactionCategory.fromJson(e as Map<String, dynamic>))
         .toList();
   }
+
+  Future<void> createCategory({
+    required String wsId,
+    required String name,
+    required bool isExpense,
+    String? icon,
+    String? color,
+  }) async {
+    await _api.postJson(FinanceEndpoints.categories(wsId), {
+      'name': name,
+      'is_expense': isExpense,
+      'icon': icon,
+      'color': color,
+    });
+  }
+
+  Future<void> updateCategory({
+    required String wsId,
+    required String categoryId,
+    required String name,
+    required bool isExpense,
+    String? icon,
+    String? color,
+  }) async {
+    final body = <String, dynamic>{
+      'name': name,
+      'is_expense': isExpense,
+      'icon': icon,
+      'color': color,
+    };
+
+    await _api.putJson(FinanceEndpoints.category(wsId, categoryId), body);
+  }
+
+  Future<void> deleteCategory({
+    required String wsId,
+    required String categoryId,
+  }) async {
+    await _api.deleteJson(FinanceEndpoints.category(wsId, categoryId));
+  }
 }
