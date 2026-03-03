@@ -98,7 +98,11 @@ export async function executeSetWorkspaceContext(
   ctx: MiraToolContext
 ) {
   const workspaceId =
-    typeof args.workspaceId === 'string' ? args.workspaceId : '';
+    typeof args.workspaceId === 'string'
+      ? args.workspaceId
+      : typeof args.workspaceContextId === 'string'
+        ? args.workspaceContextId
+        : '';
   if (!workspaceId.trim()) {
     return { error: 'workspaceId is required.' };
   }

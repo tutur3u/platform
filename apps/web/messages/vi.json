@@ -2268,6 +2268,8 @@
     "rate_limited_retry": "Bạn đang bị giới hạn tần suất. Thử lại sau {seconds} giây…",
     "realestate": "Bất động sản",
     "realestate-description": "Tối ưu hóa hoạt động kinh doanh bất động sản của bạn.",
+    "realtime_connection_issue_description": "Các cập nhật trực tiếp của bảng hiện tạm thời không khả dụng. Hãy tải lại hoặc mở lại bảng nếu việc đồng bộ không tự khôi phục.",
+    "realtime_connection_issue_title": "Kết nối realtime bị gián đoạn",
     "recycle_bin": "Thùng rác",
     "recycle_bin_description": "Các công việc đã xóa từ bảng này. Chọn công việc để khôi phục hoặc xóa vĩnh viễn.",
     "red": "Đỏ",
@@ -7050,6 +7052,22 @@
   "settings-workspaces": {
     "workspaces": "Không gian làm việc",
     "workspaces-description": "Không gian làm việc mà bạn có quyền truy cập sẽ được liệt kê ở đây."
+  },
+  "sidebar_recent_items": {
+    "board_badge": "Bảng",
+    "debt_item": "Khoản nợ",
+    "description": "Quay lại nhanh các bảng, công việc và công cụ trong workspace.",
+    "invoice_item": "Hóa đơn",
+    "project_item": "Dự án",
+    "show_less": "Thu gọn",
+    "show_more": "Hiển thị thêm {count}",
+    "task_board_item": "Bảng nhiệm vụ",
+    "task_item": "Công việc",
+    "template_item": "Mẫu",
+    "title": "Đã truy cập gần đây",
+    "transaction_item": "Giao dịch",
+    "wallet_item": "Ví",
+    "whiteboard_item": "Bảng trắng"
   },
   "sidebar_tabs": {
     "ai": "Trí tuệ nhân tạo",

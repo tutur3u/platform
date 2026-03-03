@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { DefaultChatTransport } from '@tuturuuu/ai/core';
 import type { AIModelUI } from '@tuturuuu/types';
 import { useAiCredits } from '@tuturuuu/ui/hooks/use-ai-credits';
+import { normalizeWorkspaceContextId } from '@tuturuuu/utils/constants';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { resolveTimezone } from '@/lib/calendar-settings-resolver';
 import {
@@ -222,8 +223,8 @@ export function useMiraChatConfig({ wsId }: UseMiraChatConfigParams) {
 
   useEffect(() => {
     const key = `${WORKSPACE_CONTEXT_STORAGE_KEY_PREFIX}${wsId}`;
-    const stored = localStorage.getItem(key)?.trim();
-    setWorkspaceContextId(stored || 'personal');
+    const stored = localStorage.getItem(key);
+    setWorkspaceContextId(normalizeWorkspaceContextId(stored));
 
     // Listen for external workspace context changes (e.g. from the selector badge)
     const handleWorkspaceContextChange = (event: Event) => {
@@ -234,7 +235,7 @@ export function useMiraChatConfig({ wsId }: UseMiraChatConfigParams) {
         }>
       ).detail;
       if (detail?.wsId !== wsId) return;
-      const next = detail.workspaceContextId?.trim() || 'personal';
+      const next = normalizeWorkspaceContextId(detail.workspaceContextId);
       setWorkspaceContextId(next);
     };
 
@@ -251,7 +252,8 @@ export function useMiraChatConfig({ wsId }: UseMiraChatConfigParams) {
   }, [wsId]);
 
   useEffect(() => {
-    const nextWorkspaceContextId = workspaceContextId || 'personal';
+    const nextWorkspaceContextId =
+      normalizeWorkspaceContextId(workspaceContextId);
     localStorage.setItem(
       `${WORKSPACE_CONTEXT_STORAGE_KEY_PREFIX}${wsId}`,
       nextWorkspaceContextId

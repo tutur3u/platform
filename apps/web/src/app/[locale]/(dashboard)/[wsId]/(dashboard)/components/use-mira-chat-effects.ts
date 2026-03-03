@@ -2,6 +2,7 @@
 
 import type { QueryClient } from '@tanstack/react-query';
 import type { UIMessage } from '@tuturuuu/ai/types';
+import { normalizeWorkspaceContextId } from '@tuturuuu/utils/constants';
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import { useEffect, useRef } from 'react';
 import type { MessageFileAttachment } from './file-preview-chips';
@@ -90,7 +91,7 @@ export function useMiraChatEffects({
             typeof nextWorkspaceContextId === 'string' &&
             nextWorkspaceContextId.trim().length > 0
           ) {
-            const trimmed = nextWorkspaceContextId.trim();
+            const trimmed = normalizeWorkspaceContextId(nextWorkspaceContextId);
             // Update the config hook state
             setWorkspaceContextId(trimmed);
             // Persist to localStorage and dispatch the event immediately

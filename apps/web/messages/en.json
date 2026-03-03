@@ -2268,6 +2268,8 @@
     "rate_limited_retry": "You're being rate limited. Retrying in {seconds}s…",
     "realestate": "Real Estate",
     "realestate-description": "Optimize your real estate business operations.",
+    "realtime_connection_issue_description": "Live board updates are temporarily unavailable. Refresh or reopen the board if syncing does not recover.",
+    "realtime_connection_issue_title": "Realtime connection interrupted",
     "recycle_bin": "Recycle Bin",
     "recycle_bin_description": "Deleted tasks from this board. Select tasks to restore or permanently delete them.",
     "red": "Red",
@@ -7050,6 +7052,22 @@
   "settings-workspaces": {
     "workspaces": "Workspaces",
     "workspaces-description": "Workspaces that you have access to will be listed here."
+  },
+  "sidebar_recent_items": {
+    "board_badge": "Board",
+    "debt_item": "Debt",
+    "description": "Jump back into boards, tasks, and workspace tools.",
+    "invoice_item": "Invoice",
+    "project_item": "Project",
+    "show_less": "Show less",
+    "show_more": "Show {count} more",
+    "task_board_item": "Task board",
+    "task_item": "Task",
+    "template_item": "Template",
+    "title": "Recently visited",
+    "transaction_item": "Transaction",
+    "wallet_item": "Wallet",
+    "whiteboard_item": "Whiteboard"
   },
   "sidebar_tabs": {
     "ai": "AI",

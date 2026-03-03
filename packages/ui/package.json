@@ -190,6 +190,14 @@
       "types": "./src/components/ui/tu-do/shared/task-dialog-manager.tsx",
       "import": "./src/components/ui/tu-do/shared/task-dialog-manager.tsx"
     },
+    "./tu-do/shared/recent-sidebar-events": {
+      "types": "./src/components/ui/tu-do/shared/recent-sidebar-events.ts",
+      "import": "./src/components/ui/tu-do/shared/recent-sidebar-events.ts"
+    },
+    "./tu-do/shared/task-open-events": {
+      "types": "./src/components/ui/tu-do/shared/task-open-events.ts",
+      "import": "./src/components/ui/tu-do/shared/task-open-events.ts"
+    },
     "./tu-do/hooks/*": "./src/components/ui/tu-do/hooks/*",
     "./tu-do/providers/*": "./src/components/ui/tu-do/providers/*.tsx",
     "./tu-do/shared/*": "./src/components/ui/tu-do/shared/*.tsx",

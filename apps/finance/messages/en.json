@@ -2103,6 +2103,8 @@
     "quick_settings": "Quick Settings",
     "realestate": "Real Estate",
     "realestate-description": "Optimize your real estate business operations.",
+    "realtime_connection_issue_description": "Live board updates are temporarily unavailable. Refresh or reopen the board if syncing does not recover.",
+    "realtime_connection_issue_title": "Realtime connection interrupted",
     "recycle_bin": "Recycle Bin",
     "recycle_bin_description": "Deleted tasks from this board. Select tasks to restore or permanently delete them.",
     "red": "Red",

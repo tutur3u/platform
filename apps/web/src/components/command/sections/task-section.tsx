@@ -13,9 +13,9 @@ import {
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { CommandGroup, CommandItem } from '@tuturuuu/ui/command';
+import { dispatchRequestOpenTask } from '@tuturuuu/ui/tu-do/shared/task-open-events';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { useRouter } from 'next/navigation';
 import { addRecentTask } from '../utils/recent-items';
 import type { TaskSearchResult } from '../utils/use-task-search';
 
@@ -24,7 +24,6 @@ dayjs.extend(relativeTime);
 interface TaskSectionProps {
   tasks: TaskSearchResult[];
   isLoading: boolean;
-  wsId: string | null;
   workspaceName?: string;
   query: string;
   onSelect?: () => void;
@@ -85,13 +84,10 @@ const listStatusConfig = {
 export function TaskSection({
   tasks,
   isLoading,
-  wsId,
   workspaceName,
   query,
   onSelect,
 }: TaskSectionProps) {
-  const router = useRouter();
-
   if (isLoading) {
     return (
       <CommandGroup heading="Tasks">
@@ -122,17 +118,13 @@ export function TaskSection({
   }
 
   const handleTaskSelect = (task: TaskSearchResult) => {
-    if (!wsId) return;
-
     // Track in recent items
     addRecentTask(task.id, task.name, task.board_name);
 
-    // Navigate to task (assuming task detail page exists)
-    // Adjust this URL based on your routing structure
-    router.push(`/${wsId}/tasks/${task.id}`);
-
     // Close command palette
     onSelect?.();
+
+    dispatchRequestOpenTask({ taskId: task.id });
   };
 
   const headingText = query.trim()

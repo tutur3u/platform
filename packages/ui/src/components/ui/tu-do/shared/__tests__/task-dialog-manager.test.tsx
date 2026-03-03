@@ -9,7 +9,9 @@ import {
   TaskDialogProvider,
   useTaskDialogContext,
 } from '../../providers/task-dialog-provider';
+import { RECENT_SIDEBAR_VISIT_EVENT } from '../recent-sidebar-events';
 import { TaskDialogManager } from '../task-dialog-manager';
+import { REQUEST_OPEN_TASK_EVENT } from '../task-open-events';
 
 // Mock Next.js navigation (no longer needs useRouter/usePathname for URL manipulation)
 vi.mock('next/navigation', () => ({
@@ -24,6 +26,93 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/workspace-1/tasks',
   useSearchParams: () => new URLSearchParams(),
   useParams: () => ({ wsId: 'workspace-1' }),
+}));
+
+vi.mock('@tuturuuu/supabase/next/client', () => ({
+  createClient: vi.fn(() => ({
+    auth: {
+      getSession: vi.fn().mockResolvedValue({
+        data: { session: null },
+      }),
+    },
+    from: vi.fn((table: string) => {
+      if (table === 'tasks') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              single: vi.fn().mockResolvedValue({
+                data: {
+                  id: 'task-1',
+                  name: 'Test Task',
+                  description: '',
+                  priority: 'normal',
+                  start_date: undefined,
+                  end_date: null,
+                  estimation_points: null,
+                  list_id: 'list-1',
+                  created_at: '2024-01-01T00:00:00Z',
+                  sort_key: 1000,
+                  display_number: 1,
+                  list: {
+                    id: 'list-1',
+                    name: 'To Do',
+                    board_id: 'board-1',
+                    board: {
+                      id: 'board-1',
+                      ws_id: 'workspace-1',
+                      workspace: { personal: false },
+                    },
+                  },
+                  assignees: [],
+                  labels: [],
+                  projects: [],
+                },
+                error: null,
+              }),
+            })),
+          })),
+        };
+      }
+
+      if (table === 'task_lists') {
+        const orderChain = {
+          order: vi.fn(() => orderChain),
+        };
+
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              eq: vi.fn(() => orderChain),
+            })),
+          })),
+        };
+      }
+
+      if (table === 'users') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              single: vi.fn().mockResolvedValue({
+                data: null,
+                error: null,
+              }),
+            })),
+          })),
+        };
+      }
+
+      return {
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            single: vi.fn().mockResolvedValue({
+              data: null,
+              error: null,
+            }),
+          })),
+        })),
+      };
+    }),
+  })),
 }));
 
 // Mock the TaskEditDialog component since it's lazy-loaded
@@ -270,6 +359,95 @@ describe('TaskDialogManager', () => {
         '',
         '/workspace-1/tasks/task-1'
       );
+    });
+  });
+
+  it('dispatches a recent visit snapshot when an edit dialog opens', async () => {
+    const listener = vi.fn();
+    window.addEventListener(
+      RECENT_SIDEBAR_VISIT_EVENT,
+      listener as EventListener
+    );
+
+    const TestComponent = () => {
+      const { openTask } = useTaskDialogContext();
+
+      React.useEffect(() => {
+        openTask(
+          {
+            ...mockTask,
+            list: {
+              board: { name: 'Tuverse' },
+              name: 'Backlog',
+            },
+          } as Task,
+          'board-1',
+          [mockList]
+        );
+      }, [openTask]);
+
+      return <TaskDialogManager wsId="workspace-1" />;
+    };
+
+    render(
+      <Wrapper>
+        <TestComponent />
+      </Wrapper>
+    );
+
+    await waitFor(() => {
+      expect(listener).toHaveBeenCalled();
+    });
+
+    const event = listener.mock.calls.at(-1)?.[0] as CustomEvent<{
+      href: string;
+      scopeWsId: string;
+      snapshot: {
+        badges: Array<{ kind: string; value?: string }>;
+        title: string;
+      };
+    }>;
+
+    expect(event.detail).toMatchObject({
+      href: '/workspace-1/tasks/task-1',
+      scopeWsId: 'workspace-1',
+      snapshot: {
+        badges: [
+          { kind: 'board', value: 'Tuverse' },
+          { kind: 'list', value: 'Backlog' },
+        ],
+        title: 'Test Task',
+      },
+    });
+
+    window.removeEventListener(
+      RECENT_SIDEBAR_VISIT_EVENT,
+      listener as EventListener
+    );
+  });
+
+  it('opens a task when a shared task-open event is dispatched', async () => {
+    render(
+      <Wrapper>
+        <TaskDialogManager wsId="workspace-1" />
+      </Wrapper>
+    );
+
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent(REQUEST_OPEN_TASK_EVENT, {
+          detail: { taskId: 'task-42' },
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(
+        document.querySelector('[data-testid="task-edit-dialog"]')
+      ).toBeInTheDocument();
+      expect(
+        document.querySelector('[data-testid="task-name"]')
+      ).toHaveTextContent('Test Task');
     });
   });
 

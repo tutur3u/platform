@@ -12,6 +12,7 @@ import {
   CommandList,
 } from '@tuturuuu/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { normalizeWorkspaceContextId } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
@@ -80,8 +81,8 @@ function MiraWorkspaceContextSelector({ wsId }: { wsId: string }) {
 
   useEffect(() => {
     const syncWorkspaceContext = () => {
-      const stored = localStorage.getItem(storageKey)?.trim();
-      setWorkspaceContextId(stored || 'personal');
+      const stored = localStorage.getItem(storageKey);
+      setWorkspaceContextId(normalizeWorkspaceContextId(stored));
     };
 
     const handleStorage = (event: StorageEvent) => {
@@ -99,7 +100,7 @@ function MiraWorkspaceContextSelector({ wsId }: { wsId: string }) {
       if (detail?.wsId !== wsId) return;
       // Read directly from event detail instead of localStorage to avoid
       // timing issues where the persistence effect hasn't flushed yet.
-      const next = detail.workspaceContextId?.trim() || 'personal';
+      const next = normalizeWorkspaceContextId(detail.workspaceContextId);
       setWorkspaceContextId(next);
     };
 
@@ -127,11 +128,12 @@ function MiraWorkspaceContextSelector({ wsId }: { wsId: string }) {
 
   const selectContext = useCallback(
     (newContextId: string) => {
-      localStorage.setItem(storageKey, newContextId);
-      setWorkspaceContextId(newContextId);
+      const normalizedContextId = normalizeWorkspaceContextId(newContextId);
+      localStorage.setItem(storageKey, normalizedContextId);
+      setWorkspaceContextId(normalizedContextId);
       window.dispatchEvent(
         new CustomEvent(WORKSPACE_CONTEXT_EVENT, {
-          detail: { wsId, workspaceContextId: newContextId },
+          detail: { wsId, workspaceContextId: normalizedContextId },
         })
       );
       setOpen(false);
