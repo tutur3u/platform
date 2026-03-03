@@ -16,6 +16,16 @@ import { Streamdown } from 'streamdown';
 
 const plugins = { code, mermaid: mermaidPlugin, math, cjk };
 
+function isMarkdownTableSeparator(separator: string): boolean {
+  for (const char of separator) {
+    if (char !== '|' && char !== '-' && char !== ':' && !/\s/.test(char)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 function isMarkdownTableBlock(content: string): boolean {
   const lines = content
     .trim()
@@ -28,7 +38,7 @@ function isMarkdownTableBlock(content: string): boolean {
   const separator = lines[1] ?? '';
 
   const hasPipeInHeader = header.includes('|');
-  const isSeparatorRow = /^\|?[\s:-|]+\|?$/.test(separator);
+  const isSeparatorRow = isMarkdownTableSeparator(separator);
   const hasDashInSeparator = separator.includes('-');
 
   return hasPipeInHeader && isSeparatorRow && hasDashInSeparator;
@@ -103,6 +113,11 @@ export function AssistantMarkdown({
     </div>
   );
 }
+
+export const __testUtils = {
+  isMarkdownTableBlock,
+  normalizeMarkdownTables,
+};
 
 function getLatestReasoningHeader(text: string): string | null {
   if (!text) return null;
