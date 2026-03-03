@@ -51,6 +51,11 @@ export const teams: Team[] = [
         role: 'Member',
         avatar: '/organizer-team/program/phuc-huynh.png',
       },
+      {
+        name: 'Dung Dao',
+        role: 'Member',
+        avatar: '/organizer-team/program/dung-dao.png',
+      },
     ],
   },
   {
