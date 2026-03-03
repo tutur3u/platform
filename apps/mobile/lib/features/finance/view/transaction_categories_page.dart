@@ -78,9 +78,7 @@ class _TransactionCategoriesViewState
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.add, size: 16),
-                  const shad.Gap(4),
-                  Text(l10n.financeCreateCategory),
+                  const Icon(Icons.add, size: 16)
                 ],
               ),
             ),
