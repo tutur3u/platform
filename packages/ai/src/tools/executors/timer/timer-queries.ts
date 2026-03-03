@@ -8,6 +8,16 @@ import {
   toFiniteNumber,
 } from './timer-helpers';
 
+const encodeCategoryCursorName = (value: string) => encodeURIComponent(value);
+
+const decodeCategoryCursorName = (value: string) => {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+};
+
 export async function executeListTimeTrackingSessions(
   args: Record<string, unknown>,
   ctx: MiraToolContext
@@ -467,7 +477,7 @@ export async function executeListTimeTrackingCategories(
     .limit(limit + 1);
 
   if (cursor !== undefined) {
-    if (typeof cursor !== 'string' || !cursor.includes('|')) {
+    if (typeof cursor !== 'string') {
       return buildToolFailure(
         'TT_CATEGORIES_INVALID_CURSOR',
         'Invalid cursor format',
@@ -475,7 +485,18 @@ export async function executeListTimeTrackingCategories(
       );
     }
 
-    const [lastName, lastId] = cursor.split('|');
+    const separatorIndex = cursor.lastIndexOf('|');
+    if (separatorIndex <= 0 || separatorIndex === cursor.length - 1) {
+      return buildToolFailure(
+        'TT_CATEGORIES_INVALID_CURSOR',
+        'Invalid cursor format',
+        false
+      );
+    }
+
+    const rawName = cursor.slice(0, separatorIndex);
+    const lastId = cursor.slice(separatorIndex + 1);
+    const lastName = decodeCategoryCursorName(rawName);
     if (!lastName || !lastId) {
       return buildToolFailure(
         'TT_CATEGORIES_INVALID_CURSOR',
@@ -507,7 +528,9 @@ export async function executeListTimeTrackingCategories(
     categories,
     count: categories.length,
     hasMore,
-    nextCursor: last ? `${last.name}|${last.id}` : null,
+    nextCursor: last
+      ? `${encodeCategoryCursorName(last.name)}|${last.id}`
+      : null,
     meta: {
       workspaceId,
       workspaceContextId: ctx.workspaceContext?.workspaceContextId ?? ctx.wsId,

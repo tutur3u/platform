@@ -154,6 +154,8 @@ export async function executeStopTimer(
       duration_seconds: durationSeconds,
     })
     .eq('id', session.id)
+    .eq('user_id', ctx.userId)
+    .eq('ws_id', ctx.wsId)
     .eq('is_running', true)
     .select('id');
 
@@ -518,6 +520,7 @@ export async function executeMoveTimeTrackingSession(
       updated_at: new Date().toISOString(),
     })
     .eq('id', sessionId)
+    .eq('ws_id', ctx.wsId)
     .eq('user_id', ctx.userId)
     .select(
       `
