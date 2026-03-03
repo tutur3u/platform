@@ -58,7 +58,7 @@ export default function Footer() {
 
         {/* Main Footer Content */}
         <div className="grid gap-6 md:grid-cols-3 lg:gap-8">
-          {/*    Socials */}
+          {/* Socials */}
           <div className="space-y-4 text-center md:text-left">
             <h3 className="font-black text-brand-dark-blue text-lg">
               Our Socials
@@ -66,11 +66,11 @@ export default function Footer() {
             <div className="flex justify-center gap-4 md:justify-start">
               <div className="rounded-lg bg-white/50 p-3 transition-colors duration-200 hover:bg-blue-50">
                 <Link
-                  href="https://www.facebook.com/rmit.nct"
+                  href="https://www.facebook.com/rmit.neoleague/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary transition-colors hover:text-primary/70"
-                  aria-label="Facebook"
+                  aria-label="Neo League Facebook"
                 >
                   <Facebook className="h-8 w-8" />
                 </Link>
@@ -134,6 +134,17 @@ export default function Footer() {
                   className="font-bold hover:underline"
                 >
                   neoculturetechclub.sgs@rmit.edu.vn
+                </a>
+              </div>
+              <div className="flex items-center justify-center gap-2 md:justify-start">
+                <Facebook className="h-4 w-4 shrink-0" />
+                <a
+                  href="https://www.facebook.com/rmit.nct"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-bold hover:underline"
+                >
+                  Neo Culture Technology
                 </a>
               </div>
               <div className="flex items-center justify-center gap-2 md:justify-start">
