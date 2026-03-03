@@ -3,9 +3,9 @@ import type { Tables } from '@tuturuuu/types';
 export type MutationError = { error: string };
 
 export type TimerRelatedEntity = {
-  id?: string;
-  name?: string | null;
-  color?: string | null;
+  id: string;
+  name: string | null;
+  color: string | null;
 } | null;
 
 export type TimeTrackingCategory = Tables<'time_tracking_categories'>;
@@ -29,17 +29,51 @@ export interface TimerSession {
   task?: TimerRelatedEntity;
 }
 
+function asTimerRelatedEntity(value: unknown): TimerRelatedEntity {
+  if (!value || typeof value !== 'object') return null;
+
+  const candidate = value as Record<string, unknown>;
+  const id = typeof candidate.id === 'string' ? candidate.id : null;
+  if (!id) return null;
+
+  const name =
+    typeof candidate.name === 'string' || candidate.name === null
+      ? candidate.name
+      : null;
+  const color =
+    typeof candidate.color === 'string' || candidate.color === null
+      ? candidate.color
+      : null;
+
+  return {
+    id,
+    name,
+    color,
+  };
+}
+
 export function toTimerSession(
   row: Record<string, unknown>,
   overrides: Partial<TimerSession> = {}
 ): TimerSession {
+  const sessionId =
+    typeof row.id === 'string' && row.id.trim().length > 0 ? row.id : null;
+  if (!sessionId) {
+    throw new Error('Invalid or missing session id');
+  }
+
   const startedAt =
     typeof row.start_time === 'string' || typeof row.start_time === 'number'
       ? row.start_time
-      : '';
+      : typeof row.created_at === 'string' || typeof row.created_at === 'number'
+        ? row.created_at
+        : typeof row.updated_at === 'string' ||
+            typeof row.updated_at === 'number'
+          ? row.updated_at
+          : new Date(0).toISOString();
 
   const baseSession: TimerSession = {
-    id: typeof row.id === 'string' ? row.id : '',
+    id: sessionId,
     title: typeof row.title === 'string' ? row.title : null,
     startedAt,
     endedAt:
@@ -57,14 +91,8 @@ export function toTimerSession(
         ? row.pending_approval
         : undefined,
     wsId: typeof row.ws_id === 'string' ? row.ws_id : undefined,
-    category:
-      row.category && typeof row.category === 'object'
-        ? (row.category as TimerRelatedEntity)
-        : null,
-    task:
-      row.task && typeof row.task === 'object'
-        ? (row.task as TimerRelatedEntity)
-        : null,
+    category: asTimerRelatedEntity(row.category),
+    task: asTimerRelatedEntity(row.task),
   };
 
   return { ...baseSession, ...overrides };
@@ -173,6 +201,9 @@ export function normalizeGoalCategoryIdInput(
   }
 
   const trimmed = value.trim();
+  // User-facing normalization: treat blank and "general" category inputs as
+  // the same "no category" intent, so the trimmed value reaches the branch
+  // below that returns { ok: true, categoryId: null }.
   if (!trimmed || trimmed.toLowerCase() === 'general') {
     return { ok: true, categoryId: null };
   }
