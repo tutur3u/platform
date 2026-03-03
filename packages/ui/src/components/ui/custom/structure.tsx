@@ -9,7 +9,7 @@ import {
 import { TooltipProvider } from '@ncthub/ui/tooltip';
 import { cn } from '@ncthub/utils/format';
 import { Menu, X } from 'lucide-react';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 interface StructureProps {
   defaultLayout?: number[];
@@ -109,7 +109,7 @@ export function Structure({
           >
             <div
               className={cn(
-                'items-center border-b border-foreground/10 p-2 md:flex md:h-16 md:p-0',
+                'items-center border-foreground/10 border-b p-2 md:flex md:h-16 md:p-0',
                 isCollapsed ? 'justify-center' : 'max-sm:py-1'
               )}
             >
@@ -142,7 +142,7 @@ export function Structure({
             <div className="scrollbar-none flex flex-1 flex-col gap-4 overflow-auto">
               {sidebarContent}
             </div>
-            <div className="border-t border-foreground/10 p-2">
+            <div className="border-foreground/10 border-t p-2">
               {isCollapsed ? userPopover : actions}
             </div>
           </ResizablePanel>
