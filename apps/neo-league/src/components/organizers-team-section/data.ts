@@ -29,7 +29,7 @@ export const teams: Team[] = [
   {
     name: 'Program',
     description:
-      'Designing and managing competition content, challenges, and participant experience.',
+      'Designing and managing competition content, challenges, participant experience, and building the website.',
     members: [
       {
         name: 'Tai Ngo',
@@ -68,7 +68,6 @@ export const teams: Team[] = [
         role: 'Team Leader',
         avatar: '/organizer-team/external-affairs/tam.png',
       },
-      { name: 'Member 2' },
     ],
   },
   {
