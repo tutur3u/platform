@@ -78,6 +78,11 @@ export function parseFlexibleDateTime(
       if (tzParsed.isValid()) {
         return tzParsed.toDate();
       }
+    } else {
+      const utcParsed = dayjs.utc(input);
+      if (utcParsed.isValid()) {
+        return utcParsed.toDate();
+      }
     }
 
     const parsed = new Date(input);
@@ -288,7 +293,8 @@ export function coerceOptionalString(value: unknown): string | null {
 }
 
 export function toFiniteNumber(value: unknown, fallback = 0): number {
-  return Number.isFinite(value) ? Number(value) : fallback;
+  const coerced = Number(value);
+  return Number.isFinite(coerced) ? coerced : fallback;
 }
 
 export function buildToolFailure(
