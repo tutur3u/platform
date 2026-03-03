@@ -36,8 +36,21 @@ export const teams: Team[] = [
         role: 'Team Leader',
         avatar: '/organizer-team/program/tai.png',
       },
-      { name: 'Nguyen Gia Khang', role: 'Website Leader' },
-      // Add more members
+      {
+        name: 'Khang Nguyen',
+        role: 'Website Leader',
+        avatar: '/organizer-team/program/khang-nguyen.png',
+      },
+      {
+        name: 'Dat Pham',
+        role: 'Website Leader',
+        avatar: '/organizer-team/program/dat-pham.png',
+      },
+      {
+        name: 'Phuc Huynh',
+        role: 'Website Leader',
+        avatar: '/organizer-team/program/phuc-huynh.png',
+      },
     ],
   },
   {
