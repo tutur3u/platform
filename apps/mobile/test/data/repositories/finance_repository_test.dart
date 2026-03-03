@@ -50,6 +50,10 @@ void main() {
             'name': 'Food',
             'is_expense': true,
             'ws_id': 'ws_1',
+            'icon': 'Utensils',
+            'color': '#ff0000',
+            'amount': 120.5,
+            'transaction_count': 3,
           },
         ],
       );
@@ -59,9 +63,77 @@ void main() {
       expect(categories, hasLength(1));
       expect(categories.first.id, 'cat_1');
       expect(categories.first.name, 'Food');
+      expect(categories.first.icon, 'Utensils');
+      expect(categories.first.color, '#ff0000');
+      expect(categories.first.amount, 120.5);
+      expect(categories.first.transactionCount, 3);
       verify(
         () => apiClient.getJsonList(
           '/api/workspaces/ws_1/transactions/categories',
+        ),
+      ).called(1);
+    });
+
+    test('createCategory posts payload to categories endpoint', () async {
+      when(
+        () => apiClient.postJson(any(), any()),
+      ).thenAnswer((_) async => {'message': 'success'});
+
+      await repository.createCategory(
+        wsId: 'ws_1',
+        name: 'Salary',
+        isExpense: false,
+        icon: 'Briefcase',
+      );
+
+      verify(
+        () =>
+            apiClient.postJson('/api/workspaces/ws_1/transactions/categories', {
+              'name': 'Salary',
+              'is_expense': false,
+              'icon': 'Briefcase',
+              'color': null,
+            }),
+      ).called(1);
+    });
+
+    test('updateCategory puts payload to category endpoint', () async {
+      when(
+        () => apiClient.putJson(any(), any()),
+      ).thenAnswer((_) async => {'message': 'success'});
+
+      await repository.updateCategory(
+        wsId: 'ws_1',
+        categoryId: 'cat_1',
+        name: 'Bills',
+        isExpense: true,
+        icon: 'Receipt',
+        color: '#00ff00',
+      );
+
+      verify(
+        () => apiClient.putJson(
+          '/api/workspaces/ws_1/transactions/categories/cat_1',
+          {
+            'name': 'Bills',
+            'is_expense': true,
+            'icon': 'Receipt',
+            'color': '#00ff00',
+          },
+        ),
+      ).called(1);
+    });
+
+    test('deleteCategory calls category delete endpoint', () async {
+      when(
+        () => apiClient.deleteJson(any()),
+      ).thenAnswer((_) async => {'message': 'success'});
+
+      await repository.deleteCategory(wsId: 'ws_1', categoryId: 'cat_1');
+
+      verify(
+        () => apiClient.deleteJson(
+          '/api/workspaces/ws_1/transactions/categories/cat_1',
         ),
       ).called(1);
     });

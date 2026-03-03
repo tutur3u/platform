@@ -81,10 +81,10 @@ class AppRegistry {
       labelBuilder: _labelTransactions,
     ),
     MiniAppNavItem(
-      id: 'finance_settings',
-      route: Routes.settings,
-      icon: Icons.settings_outlined,
-      labelBuilder: _labelSettings,
+      id: 'finance_categories',
+      route: Routes.categories,
+      icon: Icons.category_outlined,
+      labelBuilder: _labelCategories,
     ),
   ];
 
@@ -160,9 +160,10 @@ class AppRegistry {
   static String _labelFinance(AppLocalizations l10n) => l10n.navFinance;
   static String _labelTimer(AppLocalizations l10n) => l10n.navTimer;
   static String _labelHome(AppLocalizations l10n) => l10n.navHome;
-  static String _labelSettings(AppLocalizations l10n) => l10n.navSettings;
   static String _labelTransactions(AppLocalizations l10n) =>
       l10n.financeTransactions;
+  static String _labelCategories(AppLocalizations l10n) =>
+      l10n.financeCategories;
   static String _labelTimerHistory(AppLocalizations l10n) => l10n.timerHistory;
   static String _labelTimerStats(AppLocalizations l10n) => l10n.timerStatsTitle;
   static String _timerRequestsTitle(AppLocalizations l10n) =>

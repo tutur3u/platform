@@ -29,7 +29,7 @@ void main() {
 
       expect(routes, contains(Routes.finance));
       expect(routes, contains(Routes.transactions));
-      expect(routes, contains(Routes.settings));
+      expect(routes, contains(Routes.categories));
       expect(routes.length, greaterThanOrEqualTo(3));
     });
 

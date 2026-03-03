@@ -88,6 +88,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Clean Pass**: `bun check:mobile` is mandatory. It runs format, analyze, and test.
 - **API Pattern**: Use `createClient(request)` in web API routes to support mobile Bearer token auth.
 - **Widget Consistency**: Preserve per-field validation when refactoring into shared editable widgets.
+- **Mobile API Error Surfacing**: In mobile form submit handlers, catch `ApiException` separately and surface `e.message` (with safe fallback) instead of only a generic toast; this prevents silent failures when backend rejects a request.
 - **Route Alias During Tab Consolidation**: When merging a standalone page into an existing tabbed screen, keep the old route as an alias that opens the destination tab by passing an explicit initial tab/scope parameter.
 - **iOS Lockstep**: After bumping FlutterFire or other iOS-backed Flutter dependencies in `apps/mobile/pubspec.yaml` or `apps/mobile/pubspec.lock`, refresh and commit `apps/mobile/ios/Podfile.lock` so CocoaPods snapshots do not drift and break iOS CI during `pod install`.
 
@@ -107,6 +108,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Render UI Text Fidelity**: Components that display AI-authored prose in `render_ui` (for example `KeyPoints`, `InsightSection` summaries) must render Markdown semantics (bold, emphasis, inline code, links) instead of showing raw markdown tokens.
 - **Markdown Table Priority**: For tabular assistant answers, prefer native Markdown tables in normal assistant text. Do not attempt unsupported `render_ui` table components, and do not wrap Markdown tables in fenced code blocks.
 - **Special Tag Prompt Rules**: Custom tags like `@<FOLLOWUP>` must not contain internal whitespace, but blank lines between distinct prompt sections are required.
+- **Flutter Toast Overlay Context**: In `shadcn_flutter`, call `showToast` with a context captured from `Navigator.of(context, rootNavigator: true).context` (captured before async gaps). Dialog/sheet-local contexts can sit below overlays and trigger `InheritedTheme.capture` ancestor assertions.
 - **PR Maintainability Fixes**: When reviewers flag oversized files, prioritize extracting cohesive submodules (for example `render_ui` blog components or tool-step decision helpers) while keeping the original external APIs and behavior intact.
 - **Executor Module Boundaries**: When file grows beyond roughly 500 LOC, split it by concern (for example sessions, goals, categories) and keep the original entrypoint as a thin barrel re-export so dispatcher imports remain stable.
 

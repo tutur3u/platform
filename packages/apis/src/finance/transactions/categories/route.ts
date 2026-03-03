@@ -70,13 +70,10 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const { error } = await supabase
-    .from('transaction_categories')
-    .upsert({
-      ...data,
-      ws_id: wsId,
-    })
-    .eq('id', data.id);
+  const { data: res, error } = await supabase.from('transaction_categories').insert({
+    ...data,
+    ws_id: wsId,
+  }).select().single();
 
   if (error) {
     console.log(error);
@@ -86,5 +83,7 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json({ message: 'success' });
+  console.log('Created transaction category:', res);
+
+  return NextResponse.json({ message: 'success', data: res });
 }

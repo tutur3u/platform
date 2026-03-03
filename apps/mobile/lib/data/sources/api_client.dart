@@ -53,8 +53,17 @@ class ApiClient {
     String? token;
 
     if (requiresAuth) {
-      await _ensureValidSession();
       token = supabase.auth.currentSession?.accessToken;
+      final hadTokenBeforeRefresh = token != null && token.isNotEmpty;
+
+      try {
+        await _ensureValidSession();
+        token = supabase.auth.currentSession?.accessToken ?? token;
+      } on ApiException {
+        if (!hadTokenBeforeRefresh) {
+          rethrow;
+        }
+      }
     }
 
     return {
