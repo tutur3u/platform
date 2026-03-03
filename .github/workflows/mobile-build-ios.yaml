@@ -103,7 +103,7 @@ jobs:
           echo "SIMULATOR_UDID=$DEVICE" >> $GITHUB_ENV
 
       - name: Update CocoaPods Repos
-        run: cd apps/mobile/ios && pod repo update
+        run: cd ios && pod repo update
         shell: bash
 
       - name: Build iOS (development flavor, simulator)
