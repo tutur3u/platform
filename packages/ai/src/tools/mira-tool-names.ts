@@ -75,6 +75,7 @@ export const MIRA_TOOL_NAMES = [
   'delete_memory',
   'merge_memories',
   'create_image',
+  'create_qr_code',
   'google_search',
   'convert_file_to_markdown',
   'list_accessible_workspaces',
