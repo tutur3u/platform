@@ -392,7 +392,7 @@ export function RecentSidebarItems({
       <section className="border-border/50 border-t pt-2">
         <div className="mb-1.5 flex items-center gap-2 px-2">
           <History className="h-3.5 w-3.5 text-muted-foreground" />
-          <p className="min-w-0 flex-1 font-semibold text-[10px] text-muted-foreground uppercase tracking-[0.16em]">
+          <p className="line-clamp-1 min-w-0 flex-1 font-semibold text-[10px] text-muted-foreground uppercase tracking-[0.16em]">
             {t('sidebar_recent_items.title')}
           </p>
           <Button
