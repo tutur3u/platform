@@ -142,25 +142,31 @@ export default function RulesSection() {
         </div>
 
         {/* Full Regulations CTA */}
-        <div className="mt-10 flex justify-center">
+        <div className="mt-12 flex justify-center">
           <a
             href="https://drive.google.com/file/d/1_5nPwmZz8aykH46vnTYjRGQDm7BBIRKi/view?usp=sharing"
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex items-center gap-3 rounded-2xl border border-brand-teal/30 bg-background/60 px-7 py-4 text-brand-teal transition-all hover:border-brand-teal hover:bg-brand-teal/10 hover:shadow-lg hover:shadow-brand-teal/10"
+            className="group glass-card card-hover relative w-full max-w-xl overflow-hidden rounded-3xl p-4 md:p-6"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-teal/10 transition-colors group-hover:bg-brand-teal/20">
-              <FileText className="h-5 w-5" />
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="flex h-10 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-teal shadow-brand-teal/20 shadow-lg">
+                  <FileText className="h-6 w-6 text-white" />
+                </div>
+
+                <div>
+                  <p className="text-lg font-black uppercase tracking-wide text-brand-teal">
+                    Full Rules & Regulations
+                  </p>
+                  <p className="mt-1 text-muted-foreground text-sm">
+                    Read the complete competition guidelines.
+                  </p>
+                </div>
+              </div>
+
+              <ExternalLink className="h-5 w-5 shrink-0 text-brand-teal opacity-60 transition group-hover:opacity-100" />
             </div>
-            <div className="text-left">
-              <p className="font-black text-sm uppercase tracking-wider">
-                Full Rules & Regulations
-              </p>
-              <p className="text-muted-foreground text-xs">
-                Read the complete competition guidelines
-              </p>
-            </div>
-            <ExternalLink className="ml-1 h-4 w-4 opacity-60 transition-opacity group-hover:opacity-100" />
           </a>
         </div>
       </div>
