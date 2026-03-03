@@ -30,6 +30,7 @@ export function useMiraMessageQueue({
   const [queuedText, setQueuedText] = useState<string | null>(null);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messageQueueRef = useRef<string[]>([]);
+  const pendingFlushAfterStopRef = useRef(false);
 
   const flushQueue = useCallback(async () => {
     const queue = [...messageQueueRef.current];
@@ -46,6 +47,7 @@ export function useMiraMessageQueue({
     );
     if (unique.length === 0 && !hasUploadedFiles) return;
 
+    pendingFlushAfterStopRef.current = false;
     messageQueueRef.current = [];
     debounceTimerRef.current = null;
     setQueuedText(null);
@@ -111,8 +113,8 @@ export function useMiraMessageQueue({
           clearTimeout(debounceTimerRef.current);
           debounceTimerRef.current = null;
         }
+        pendingFlushAfterStopRef.current = true;
         stop?.();
-        void flushQueue();
         return;
       }
 
@@ -126,11 +128,21 @@ export function useMiraMessageQueue({
     [attachedFiles, flushQueue, snapshotAttachmentsForMessage, status, stop]
   );
 
+  useEffect(() => {
+    const currentlyBusy = status === 'submitted' || status === 'streaming';
+    if (currentlyBusy || !pendingFlushAfterStopRef.current) {
+      return;
+    }
+
+    void flushQueue();
+  }, [flushQueue, status]);
+
   const resetQueue = useCallback(() => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
       debounceTimerRef.current = null;
     }
+    pendingFlushAfterStopRef.current = false;
     messageQueueRef.current = [];
     setQueuedText(null);
   }, []);

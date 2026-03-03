@@ -125,6 +125,8 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Fixed-Cost AI Reservations**: For fixed-price AI operations that call external services (for example MarkItDown conversion), reserve credits atomically before the external call, then commit the reservation on success or release it on every failure path. Do not rely on a soft allowance pre-check plus post-hoc deduction.
 - **AI/File Logging Hygiene**: In AI chat and file-processing code, never log raw uploaded file contents, full processed message bodies, or other user-provided payload text. Log only minimal metadata needed for debugging (counts, MIME types, masked identifiers, status).
 - **Experimental AI Tool Gating**: When an AI tool like `render_ui` is highly experimental or prone to recursive failure loops in production, conditionally omit it from both the stream tool definitions and the dynamic system prompt directory when `!DEV_MODE`. Do not rely solely on system prompt instructions to stop models from calling unstable tools.
+- **AI SDK Tool Part Parsing**: In Mira chat UI code, do not assume tool parts expose `.toolName` or `.toolCallId`. Resolve tool identity with the AI SDK helper first and fall back to the `type`/top-level `toolCallId` fields so visual tools (for example `render_ui`) and context-switch side effects still work with serialized message parts.
+- **Mira Retry After Stop**: In Mira chat queueing, do not call `sendMessage` in the same tick as `stop()` while `useChat` is still `submitted`/`streaming`. Queue the retry and flush only after the hook reports an idle status, or follow-up user turns can append locally while the assistant remains stuck in `Thinking...`.
 
 ### 6.4 Tooling & CI
 

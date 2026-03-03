@@ -10,6 +10,7 @@ export interface ChatMessageListProps {
   userAvatarUrl?: string | null;
   onAutoSubmitMermaidFix?: (prompt: string) => void;
   scrollContainerRef?: RefObject<HTMLDivElement | null>;
+  toolbarVisibilityAnchorRef?: RefObject<HTMLDivElement | null>;
   messageAttachments?: Map<string, MessageFileAttachment[]>;
 }
 

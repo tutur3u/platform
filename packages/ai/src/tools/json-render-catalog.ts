@@ -790,7 +790,7 @@ export const dashboardCatalog = defineCatalog(schema, {
           wsId: z.string().describe('Workspace ID slug or UUID'),
           requestId: z
             .string()
-            .uuid()
+            .guid()
             .optional()
             .describe('Request UUID used for storage prefix'),
           title: z.string().describe('Request title'),

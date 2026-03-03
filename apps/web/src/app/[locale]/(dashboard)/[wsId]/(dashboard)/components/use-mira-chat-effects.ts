@@ -5,6 +5,11 @@ import type { UIMessage } from '@tuturuuu/ai/types';
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import { useEffect, useRef } from 'react';
 import type { MessageFileAttachment } from './file-preview-chips';
+import {
+  WORKSPACE_CONTEXT_EVENT,
+  WORKSPACE_CONTEXT_STORAGE_KEY_PREFIX,
+} from './mira-chat-constants';
+import { getMiraToolCallId, getMiraToolName } from './mira-tool-part-utils';
 
 interface UseMiraChatEffectsParams {
   isFullscreen?: boolean;
@@ -18,6 +23,7 @@ interface UseMiraChatEffectsParams {
   >;
   setWorkspaceContextId: (value: string) => void;
   status: string;
+  wsId: string;
 }
 
 export function useMiraChatEffects({
@@ -30,6 +36,7 @@ export function useMiraChatEffects({
   setMessageAttachments,
   setWorkspaceContextId,
   status,
+  wsId,
 }: UseMiraChatEffectsParams) {
   const prevStatusRef = useRef(status);
   useEffect(() => {
@@ -37,7 +44,7 @@ export function useMiraChatEffects({
     prevStatusRef.current = status;
 
     const wasBusy = prev === 'submitted' || prev === 'streaming';
-    if (wasBusy && status === 'ready') {
+    if (wasBusy && (status === 'ready' || status === 'error')) {
       queryClient.invalidateQueries({ queryKey: ['ai-credits'] });
       routerRefresh();
     }
@@ -52,13 +59,10 @@ export function useMiraChatEffects({
         const part = parts[index];
         if (!part) continue;
 
-        // Extract tool name and state safely
-        const toolName =
-          (part as any).toolInvocation?.toolName || (part as any).toolName;
+        const toolName = getMiraToolName(part);
         const state =
           (part as any).toolInvocation?.state || (part as any).state;
-        const partId =
-          (part as any).toolInvocation?.toolCallId || (part as any).id || index;
+        const partId = getMiraToolCallId(part, index);
         const key = `${message.id}-${toolName}-${partId}`;
 
         if (state !== 'output-available') continue;
@@ -86,7 +90,21 @@ export function useMiraChatEffects({
             typeof nextWorkspaceContextId === 'string' &&
             nextWorkspaceContextId.trim().length > 0
           ) {
-            setWorkspaceContextId(nextWorkspaceContextId.trim());
+            const trimmed = nextWorkspaceContextId.trim();
+            // Update the config hook state
+            setWorkspaceContextId(trimmed);
+            // Persist to localStorage and dispatch the event immediately
+            // so the selector badge updates without waiting for the config
+            // hook's persistence useEffect to fire in a later render cycle.
+            localStorage.setItem(
+              `${WORKSPACE_CONTEXT_STORAGE_KEY_PREFIX}${wsId}`,
+              trimmed
+            );
+            window.dispatchEvent(
+              new CustomEvent(WORKSPACE_CONTEXT_EVENT, {
+                detail: { wsId, workspaceContextId: trimmed },
+              })
+            );
           }
         }
       }
@@ -97,6 +115,7 @@ export function useMiraChatEffects({
     onToggleFullscreen,
     queryClient,
     setWorkspaceContextId,
+    wsId,
   ]);
 
   const prevMessageIdsRef = useRef(new Set<string>());
