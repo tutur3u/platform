@@ -1,16 +1,20 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import {
   Bookmark,
   Globe,
   KanbanSquare,
   ListTodo,
+  Loader2,
   Lock,
   Plus,
   Search,
   Tags,
   Users,
 } from '@tuturuuu/icons';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -20,6 +24,15 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
+import { Combobox } from '@tuturuuu/ui/custom/combobox';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import {
   Select,
@@ -33,17 +46,48 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { SaveAsTemplateDialog } from './save-as-template-dialog';
 import type { BoardTemplate, TemplateFilter } from './types';
 
 interface Props {
   wsId: string;
   initialTemplates: BoardTemplate[];
+  templatesBasePath?: string;
 }
 
-export default function TemplatesClient({ wsId, initialTemplates }: Props) {
+type TemplateSourceBoard = Pick<WorkspaceTaskBoard, 'id' | 'name' | 'ws_id'>;
+
+export default function TemplatesClient({
+  wsId,
+  initialTemplates,
+  templatesBasePath = 'templates',
+}: Props) {
   const t = useTranslations('ws-board-templates');
   const [searchQuery, setSearchQuery] = useState('');
   const [visibility, setVisibility] = useState<TemplateFilter>('workspace');
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [selectedBoardId, setSelectedBoardId] = useState('');
+  const [selectedBoard, setSelectedBoard] =
+    useState<TemplateSourceBoard | null>(null);
+
+  const { data: availableBoards = [], isLoading: isBoardsLoading } = useQuery({
+    queryKey: ['template-source-boards', wsId],
+    queryFn: async (): Promise<TemplateSourceBoard[]> => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('workspace_boards')
+        .select('id, name, ws_id')
+        .eq('ws_id', wsId)
+        .is('deleted_at', null)
+        .is('archived_at', null)
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: pickerOpen,
+  });
 
   // Client-side filtering
   const filteredTemplates = useMemo(() => {
@@ -71,7 +115,9 @@ export default function TemplatesClient({ wsId, initialTemplates }: Props) {
         <CardContent className="space-y-4 p-4">
           <div className="flex flex-wrap gap-4">
             <div className="space-y-2">
-              <p className="font-medium text-sm leading-none">Search</p>
+              <p className="font-medium text-sm leading-none">
+                {t('gallery.search_label')}
+              </p>
               <div className="relative w-64">
                 <Input
                   placeholder={t('gallery.search_placeholder')}
@@ -84,7 +130,9 @@ export default function TemplatesClient({ wsId, initialTemplates }: Props) {
             </div>
 
             <div className="space-y-2">
-              <p className="font-medium text-sm leading-none">Visibility</p>
+              <p className="font-medium text-sm leading-none">
+                {t('gallery.visibility_label')}
+              </p>
               <Select
                 value={visibility}
                 onValueChange={(v) => setVisibility(v as TemplateFilter)}
@@ -107,6 +155,13 @@ export default function TemplatesClient({ wsId, initialTemplates }: Props) {
                   </SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="flex items-end">
+              <Button onClick={() => setPickerOpen(true)} className="gap-2">
+                <Plus className="h-4 w-4" />
+                {t('gallery.create_template')}
+              </Button>
             </div>
           </div>
           <div className="flex items-center gap-2 text-muted-foreground text-sm">
@@ -131,9 +186,46 @@ export default function TemplatesClient({ wsId, initialTemplates }: Props) {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredTemplates.map((template) => (
-            <TemplateCard key={template.id} template={template} wsId={wsId} />
+            <TemplateCard
+              key={template.id}
+              template={template}
+              wsId={wsId}
+              templatesBasePath={templatesBasePath}
+            />
           ))}
         </div>
+      )}
+
+      <ChooseSourceBoardDialog
+        open={pickerOpen}
+        onOpenChange={(open) => {
+          setPickerOpen(open);
+          if (!open) {
+            setSelectedBoardId('');
+          }
+        }}
+        isLoading={isBoardsLoading}
+        boards={availableBoards}
+        selectedBoardId={selectedBoardId}
+        onSelectBoard={setSelectedBoardId}
+        onContinue={() => {
+          const board = availableBoards.find(
+            (item) => item.id === selectedBoardId
+          );
+          if (!board) return;
+
+          setSelectedBoard(board);
+          setPickerOpen(false);
+          setSaveDialogOpen(true);
+        }}
+      />
+
+      {selectedBoard && (
+        <SaveAsTemplateDialog
+          board={selectedBoard}
+          open={saveDialogOpen}
+          onOpenChange={setSaveDialogOpen}
+        />
       )}
     </div>
   );
@@ -142,9 +234,14 @@ export default function TemplatesClient({ wsId, initialTemplates }: Props) {
 interface TemplateCardProps {
   template: BoardTemplate;
   wsId: string;
+  templatesBasePath: string;
 }
 
-function TemplateCard({ template, wsId }: TemplateCardProps) {
+function TemplateCard({
+  template,
+  wsId,
+  templatesBasePath,
+}: TemplateCardProps) {
   const t = useTranslations('ws-board-templates');
 
   const visibilityIcon =
@@ -159,7 +256,7 @@ function TemplateCard({ template, wsId }: TemplateCardProps) {
   const visibilityLabel = t(`visibility.${template.visibility}`);
 
   return (
-    <Link href={`/${wsId}/tasks/templates/${template.id}`}>
+    <Link href={`/${wsId}/${templatesBasePath}/${template.id}`}>
       <Card className="h-full overflow-hidden transition-all hover:border-primary/50 hover:shadow-md">
         <div className="aspect-video w-full overflow-hidden border-b bg-muted/30">
           {template.backgroundUrl ? (
@@ -244,6 +341,88 @@ function TemplateCard({ template, wsId }: TemplateCardProps) {
         </CardContent>
       </Card>
     </Link>
+  );
+}
+
+interface ChooseSourceBoardDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  isLoading: boolean;
+  boards: TemplateSourceBoard[];
+  selectedBoardId: string;
+  onSelectBoard: (boardId: string) => void;
+  onContinue: () => void;
+}
+
+function ChooseSourceBoardDialog({
+  open,
+  onOpenChange,
+  isLoading,
+  boards,
+  selectedBoardId,
+  onSelectBoard,
+  onContinue,
+}: ChooseSourceBoardDialogProps) {
+  const t = useTranslations('ws-board-templates');
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{t('gallery.create_template')}</DialogTitle>
+          <DialogDescription>
+            {t('gallery.create_template_description')}
+          </DialogDescription>
+        </DialogHeader>
+
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8 text-muted-foreground text-sm">
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <span>{t('gallery.loading_boards')}</span>
+          </div>
+        ) : boards.length === 0 ? (
+          <div className="space-y-1 rounded-md border border-dashed px-4 py-6 text-center">
+            <p className="font-medium text-sm">
+              {t('gallery.no_boards_available')}
+            </p>
+            <p className="text-muted-foreground text-sm">
+              {t('gallery.no_boards_available_description')}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2 py-2">
+            <p className="font-medium text-sm leading-none">
+              {t('gallery.choose_board_label')}
+            </p>
+            <Combobox
+              mode="single"
+              options={boards.map((board) => ({
+                value: board.id,
+                label: board.name || t('gallery.unnamed_board'),
+              }))}
+              selected={selectedBoardId}
+              onChange={(value) => onSelectBoard(value as string)}
+              placeholder={t('gallery.choose_board_placeholder')}
+              searchPlaceholder={t('gallery.search_boards_placeholder')}
+              emptyText={t('gallery.no_matching_boards')}
+              className="w-full"
+            />
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            {t('common.cancel')}
+          </Button>
+          <Button
+            onClick={onContinue}
+            disabled={boards.length === 0 || !selectedBoardId}
+          >
+            {t('gallery.continue')}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

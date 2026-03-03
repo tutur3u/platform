@@ -18,5 +18,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function TemplateDetailPage({ params }: Props) {
-  return <TaskTemplateDetailPage params={params} />;
+  return (
+    <TaskTemplateDetailPage
+      params={params}
+      config={{ templatesBasePath: 'tasks/templates' }}
+    />
+  );
 }

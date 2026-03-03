@@ -154,7 +154,11 @@ export default async function TaskTemplatesPage({
           </Link>
         }
       />
-      <TemplatesClient wsId={wsId} initialTemplates={templates} />
+      <TemplatesClient
+        wsId={wsId}
+        initialTemplates={templates}
+        templatesBasePath={templatesBasePath}
+      />
     </div>
   );
 }

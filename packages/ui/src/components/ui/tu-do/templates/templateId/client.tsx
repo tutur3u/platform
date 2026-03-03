@@ -54,6 +54,7 @@ import { UseTemplateDialog } from './use-template-dialog';
 interface Props {
   wsId: string;
   template: BoardTemplateWithContent;
+  templatesBasePath?: string;
 }
 
 // Priority configuration with icons and colors
@@ -218,7 +219,11 @@ function TaskPreviewCard({ task }: { task: TemplateTask }) {
   );
 }
 
-export default function TemplateDetailClient({ wsId, template }: Props) {
+export default function TemplateDetailClient({
+  wsId,
+  template,
+  templatesBasePath = 'templates',
+}: Props) {
   const t = useTranslations('ws-board-templates');
   const router = useRouter();
 
@@ -243,7 +248,7 @@ export default function TemplateDetailClient({ wsId, template }: Props) {
       }
 
       toast.success(t('detail.delete_success'));
-      router.push(`/${wsId}/tasks/templates`);
+      router.push(`/${wsId}/${templatesBasePath}`);
     } catch (error) {
       console.error('Error deleting template:', error);
       toast.error(
@@ -269,7 +274,7 @@ export default function TemplateDetailClient({ wsId, template }: Props) {
       router.back();
     } else {
       // Fallback to templates page if no history
-      router.push(`/${wsId}/tasks/templates`);
+      router.push(`/${wsId}/${templatesBasePath}`);
     }
   };
 
