@@ -5,6 +5,7 @@ import {
   Check,
   ChevronRight,
   ClipboardCopy,
+  Download,
   Globe,
   Loader2,
   RotateCcw,
@@ -27,6 +28,7 @@ import {
 } from './approval-request';
 import { JsonHighlight } from './json-highlight';
 import { parseGoogleSearchSources } from './parse-google-search-sources';
+import { parseQrCodeOutput } from './parse-qr-code-output';
 import { SourcesPart } from './sources-part';
 import { getToolPartStatus } from './tool-status';
 
@@ -72,6 +74,7 @@ export function ToolCallPart({
 
   const hasOutput = isDone || isError;
   const isImageTool = rawToolName === 'create_image';
+  const isQrCodeTool = rawToolName === 'create_qr_code';
 
   const outputText = isToolPart
     ? isError
@@ -202,6 +205,20 @@ export function ToolCallPart({
     );
   }
 
+  if (isQrCodeTool && isRunning) {
+    return (
+      <div className="flex items-start gap-2 rounded-lg border border-border/50 bg-foreground/2 px-3 py-2 text-xs">
+        <Loader2 className="mt-0.5 h-3.5 w-3.5 shrink-0 animate-spin text-muted-foreground" />
+        <span className="flex items-center gap-1.5">
+          <span className="font-medium">{toolName}</span>
+          <span className="text-muted-foreground">
+            {t('tool_generating_qr')}
+          </span>
+        </span>
+      </div>
+    );
+  }
+
   if (rawToolName === 'render_ui' && isRunning) {
     return (
       <div className="flex items-start gap-2 rounded-lg border border-dynamic-purple/30 bg-dynamic-purple/5 px-3 py-2 text-xs">
@@ -319,6 +336,77 @@ export function ToolCallPart({
                   <img
                     src={fullscreenImageUrl}
                     alt={t('generated_image')}
+                    className="max-h-[90vh] max-w-full object-contain"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </button>
+              )}
+            </DialogContent>
+          </Dialog>
+        </>
+      );
+    }
+  }
+
+  if (isQrCodeTool && isDone && !logicalError && outputRecord) {
+    const qrOutput = parseQrCodeOutput(outputRecord);
+    if (qrOutput) {
+      return (
+        <>
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-1.5 text-xs">
+              <Check className="h-3.5 w-3.5 text-dynamic-green" />
+              <span className="font-medium">{toolName}</span>
+              <span className="text-muted-foreground">{t('tool_done')}</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setFullscreenImageUrl(qrOutput.previewUrl)}
+              className="w-fit overflow-hidden rounded-lg border border-border/50 text-left transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-dynamic-blue focus:ring-offset-2"
+            >
+              {/* biome-ignore lint/performance/noImgElement: Dynamic URL from tool output */}
+              <img
+                src={qrOutput.previewUrl}
+                alt={t('generated_qr_code')}
+                className="h-auto max-h-64 w-auto cursor-pointer"
+                loading="lazy"
+              />
+            </button>
+
+            <a
+              href={qrOutput.downloadUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              download={qrOutput.fileName}
+              className="inline-flex w-fit items-center gap-1.5 rounded-md border border-border/60 bg-foreground/5 px-2.5 py-1.5 text-xs transition-colors hover:bg-foreground/10"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span>{t('download_qr_code')}</span>
+            </a>
+          </div>
+
+          <Dialog
+            open={fullscreenImageUrl !== null}
+            onOpenChange={(open) => !open && setFullscreenImageUrl(null)}
+          >
+            <DialogContent
+              className="max-h-[95vh] max-w-[95vw] border-0 bg-black/95 p-0"
+              showCloseButton={false}
+            >
+              <DialogTitle className="sr-only">
+                {t('generated_qr_code')}
+              </DialogTitle>
+              {fullscreenImageUrl && (
+                <button
+                  type="button"
+                  onClick={() => setFullscreenImageUrl(null)}
+                  className="flex size-full min-h-[50vh] items-center justify-center p-4 focus:outline-none focus:ring-0"
+                >
+                  {/* biome-ignore lint/performance/noImgElement: Dynamic URL from tool output */}
+                  <img
+                    src={fullscreenImageUrl}
+                    alt={t('generated_qr_code')}
                     className="max-h-[90vh] max-w-full object-contain"
                     onClick={(e) => e.stopPropagation()}
                   />

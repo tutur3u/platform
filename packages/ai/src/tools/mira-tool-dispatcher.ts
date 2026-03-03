@@ -37,6 +37,7 @@ import {
   executeRecall,
   executeRemember,
 } from './executors/memory';
+import { executeCreateQrCode } from './executors/qr';
 import { executeGoogleSearch } from './executors/search';
 import { executeUpdateMySettings } from './executors/settings';
 import {
@@ -191,6 +192,7 @@ const toolHandlers = {
   merge_memories: executeMergeMemories,
 
   create_image: executeGenerateImage,
+  create_qr_code: executeCreateQrCode,
   convert_file_to_markdown: executeConvertFileToMarkdown,
   list_accessible_workspaces: executeListAccessibleWorkspaces,
   get_workspace_context: executeGetWorkspaceContext,
