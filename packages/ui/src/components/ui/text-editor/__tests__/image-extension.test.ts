@@ -1,4 +1,8 @@
-import { NodeSelection, type Plugin } from 'prosemirror-state';
+import {
+  type EditorState,
+  NodeSelection,
+  type Plugin,
+} from 'prosemirror-state';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { __imageExtensionPrivate, CustomImage } from '../image-extension';
 import { MAX_IMAGE_SIZE, MAX_VIDEO_SIZE } from '../media-utils';
@@ -776,7 +780,7 @@ describe('ImageExtension', () => {
           from: 5,
           node: imageNode,
         },
-      } as any;
+      } as unknown as EditorState;
 
       Object.setPrototypeOf(state.selection, NodeSelection.prototype);
 
@@ -789,7 +793,7 @@ describe('ImageExtension', () => {
           from: 3,
           node: { type: { name: 'paragraph' } },
         },
-      } as any;
+      } as unknown as EditorState;
 
       Object.setPrototypeOf(state.selection, NodeSelection.prototype);
 
