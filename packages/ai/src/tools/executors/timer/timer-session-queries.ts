@@ -87,13 +87,14 @@ export async function executeMoveTimeTrackingSession(
 
   let targetCategoryId: string | null = null;
   if (session.category?.name) {
-    const { data: targetCategory, error: targetCategoryError } = await ctx.supabase
-      .from('time_tracking_categories')
-      .select('id')
-      .eq('ws_id', targetWorkspaceId)
-      .eq('name', session.category.name)
-      .limit(1)
-      .maybeSingle();
+    const { data: targetCategory, error: targetCategoryError } =
+      await ctx.supabase
+        .from('time_tracking_categories')
+        .select('id')
+        .eq('ws_id', targetWorkspaceId)
+        .eq('name', session.category.name)
+        .limit(1)
+        .maybeSingle();
 
     if (targetCategoryError) {
       return {

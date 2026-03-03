@@ -136,7 +136,9 @@ export async function executeGetTimeTrackerGoals(
     new Set(
       goals
         .map((goal) => goal.category_id)
-        .filter((categoryId): categoryId is string => typeof categoryId === 'string')
+        .filter(
+          (categoryId): categoryId is string => typeof categoryId === 'string'
+        )
     )
   );
 
@@ -149,14 +151,15 @@ export async function executeGetTimeTrackerGoals(
     const daysFromMonday = (startOfDay.day() + 6) % 7;
     const startOfWeek = startOfDay.subtract(daysFromMonday, 'day');
 
-    const { data: categorySessions, error: categorySessionsError } = await ctx.supabase
-      .from('time_tracking_sessions')
-      .select('category_id, start_time, duration_seconds')
-      .eq('ws_id', workspaceId)
-      .eq('user_id', ctx.userId)
-      .in('category_id', categoryIds)
-      .not('duration_seconds', 'is', null)
-      .gte('start_time', startOfWeek.toISOString());
+    const { data: categorySessions, error: categorySessionsError } =
+      await ctx.supabase
+        .from('time_tracking_sessions')
+        .select('category_id, start_time, duration_seconds')
+        .eq('ws_id', workspaceId)
+        .eq('user_id', ctx.userId)
+        .in('category_id', categoryIds)
+        .not('duration_seconds', 'is', null)
+        .gte('start_time', startOfWeek.toISOString());
 
     if (categorySessionsError) {
       return buildToolFailure(

@@ -57,9 +57,7 @@ export function toTimerSession(
   overrides: Partial<TimerSession> = {}
 ): TimerSession {
   const sessionId =
-    typeof row.id === 'string' && row.id.trim().length > 0
-      ? row.id
-      : null;
+    typeof row.id === 'string' && row.id.trim().length > 0 ? row.id : null;
   if (!sessionId) {
     throw new Error('Invalid or missing session id');
   }
@@ -67,8 +65,7 @@ export function toTimerSession(
   const startedAt =
     typeof row.start_time === 'string' || typeof row.start_time === 'number'
       ? row.start_time
-      : typeof row.created_at === 'string' ||
-          typeof row.created_at === 'number'
+      : typeof row.created_at === 'string' || typeof row.created_at === 'number'
         ? row.created_at
         : typeof row.updated_at === 'string' ||
             typeof row.updated_at === 'number'

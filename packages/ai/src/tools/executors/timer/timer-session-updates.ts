@@ -87,7 +87,9 @@ export async function executeUpdateTimeTrackingSession(
     if (taskId) {
       const { data: task, error: taskError } = await ctx.supabase
         .from('tasks')
-        .select('id, list:task_lists!inner(board:workspace_boards!inner(ws_id))')
+        .select(
+          'id, list:task_lists!inner(board:workspace_boards!inner(ws_id))'
+        )
         .eq('id', taskId)
         .eq('list.board.ws_id', workspaceId)
         .limit(1)

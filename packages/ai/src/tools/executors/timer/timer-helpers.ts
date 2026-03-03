@@ -259,11 +259,10 @@ export function resolveTimezone(
   };
 }
 
-
 async function hasBypassApprovalPermission(
-  ctx: MiraToolContext,
+  ctx: MiraToolContext
 ): Promise<boolean> {
-  const workspaceId = getWorkspaceContextWorkspaceId(ctx);  
+  const workspaceId = getWorkspaceContextWorkspaceId(ctx);
 
   const { data: workspace, error: workspaceError } = await ctx.supabase
     .from('workspaces')
@@ -317,7 +316,7 @@ async function hasBypassApprovalPermission(
 
 export async function shouldRequireApproval(
   startTime: Date,
-  ctx: MiraToolContext,
+  ctx: MiraToolContext
 ): Promise<{ requiresApproval: boolean; reason?: string }> {
   const workspaceId = getWorkspaceContextWorkspaceId(ctx);
 
@@ -370,4 +369,3 @@ export async function shouldRequireApproval(
 
   return { requiresApproval: false };
 }
-
