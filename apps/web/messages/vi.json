@@ -2898,6 +2898,8 @@
         "title_placeholder": "vd: Theo dõi khách hàng"
       },
       "attach_files": "Đính kèm tệp",
+      "copied_image": "Đã sao chép hình ảnh",
+      "copy_image": "Sao chép hình ảnh",
       "copy_message": "Sao chép tin nhắn",
       "copy_output": "Sao chép kết quả",
       "copy_raw_json": "Sao chép JSON thô",

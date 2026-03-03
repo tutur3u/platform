@@ -2898,6 +2898,8 @@
         "title_placeholder": "e.g. Client follow-up"
       },
       "attach_files": "Attach files",
+      "copied_image": "Image copied",
+      "copy_image": "Copy image",
       "copy_message": "Copy message",
       "copy_output": "Copy output",
       "copy_raw_json": "Copy raw JSON",

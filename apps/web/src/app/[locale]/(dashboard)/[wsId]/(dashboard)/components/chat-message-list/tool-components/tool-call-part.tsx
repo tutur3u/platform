@@ -58,6 +58,7 @@ export function ToolCallPart({
   const t = useTranslations('dashboard.mira_chat');
   const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedImageUrl, setCopiedImageUrl] = useState<string | null>(null);
   const [fullscreenImageUrl, setFullscreenImageUrl] = useState<string | null>(
     null
   );
@@ -123,6 +124,34 @@ export function ToolCallPart({
     const timer = setTimeout(() => setCopied(false), 1500);
     return () => clearTimeout(timer);
   }, [copied]);
+
+  useEffect(() => {
+    if (!copiedImageUrl) return;
+    const timer = setTimeout(() => setCopiedImageUrl(null), 1500);
+    return () => clearTimeout(timer);
+  }, [copiedImageUrl]);
+
+  const handleCopyImageToClipboard = useCallback(async (imageUrl: string) => {
+    if (!navigator.clipboard?.write || !('ClipboardItem' in window)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(imageUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const clipboardItem = new ClipboardItem({
+        [blob.type || 'image/png']: blob,
+      });
+      await navigator.clipboard.write([clipboardItem]);
+      setCopiedImageUrl(imageUrl);
+    } catch {
+      setCopiedImageUrl(null);
+    }
+  }, []);
 
   const { setTheme } = useTheme();
   useEffect(() => {
@@ -301,19 +330,41 @@ export function ToolCallPart({
               <span className="font-medium">{toolName}</span>
               <span className="text-muted-foreground">{t('tool_done')}</span>
             </div>
-            <button
-              type="button"
-              onClick={() => setFullscreenImageUrl(imageUrl)}
-              className="overflow-hidden rounded-lg border border-border/50 text-left transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-dynamic-blue focus:ring-offset-2"
-            >
-              {/* biome-ignore lint/performance/noImgElement: Dynamic URL from tool output */}
-              <img
-                src={imageUrl}
-                alt={t('generated_image')}
-                className="max-h-80 w-auto cursor-pointer"
-                loading="lazy"
-              />
-            </button>
+            <div className="group/image relative w-fit">
+              <button
+                type="button"
+                onClick={() => setFullscreenImageUrl(imageUrl)}
+                className="overflow-hidden rounded-lg border border-border/50 text-left transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-dynamic-blue focus:ring-offset-2"
+              >
+                {/* biome-ignore lint/performance/noImgElement: Dynamic URL from tool output */}
+                <img
+                  src={imageUrl}
+                  alt={t('generated_image')}
+                  className="max-h-80 w-auto cursor-pointer"
+                  loading="lazy"
+                />
+              </button>
+
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  void handleCopyImageToClipboard(imageUrl);
+                }}
+                className="absolute top-2 right-2 rounded-md border border-white/20 bg-black/60 p-1 text-white opacity-0 backdrop-blur-sm transition hover:bg-black/75 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white/60 group-hover/image:opacity-100"
+                title={
+                  copiedImageUrl === imageUrl
+                    ? t('copied_image')
+                    : t('copy_image')
+                }
+              >
+                {copiedImageUrl === imageUrl ? (
+                  <Check className="h-3.5 w-3.5" />
+                ) : (
+                  <ClipboardCopy className="h-3.5 w-3.5" />
+                )}
+              </button>
+            </div>
           </div>
           <Dialog
             open={fullscreenImageUrl !== null}
@@ -360,19 +411,41 @@ export function ToolCallPart({
               <span className="text-muted-foreground">{t('tool_done')}</span>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setFullscreenImageUrl(qrOutput.previewUrl)}
-              className="w-fit overflow-hidden rounded-lg border border-border/50 text-left transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-dynamic-blue focus:ring-offset-2"
-            >
-              {/* biome-ignore lint/performance/noImgElement: Dynamic URL from tool output */}
-              <img
-                src={qrOutput.previewUrl}
-                alt={t('generated_qr_code')}
-                className="h-auto max-h-64 w-auto cursor-pointer"
-                loading="lazy"
-              />
-            </button>
+            <div className="group/image relative w-fit">
+              <button
+                type="button"
+                onClick={() => setFullscreenImageUrl(qrOutput.previewUrl)}
+                className="w-fit overflow-hidden rounded-lg border border-border/50 text-left transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-dynamic-blue focus:ring-offset-2"
+              >
+                {/* biome-ignore lint/performance/noImgElement: Dynamic URL from tool output */}
+                <img
+                  src={qrOutput.previewUrl}
+                  alt={t('generated_qr_code')}
+                  className="h-auto max-h-64 w-auto cursor-pointer"
+                  loading="lazy"
+                />
+              </button>
+
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  void handleCopyImageToClipboard(qrOutput.previewUrl);
+                }}
+                className="absolute top-2 right-2 rounded-md border border-white/20 bg-black/60 p-1 text-white opacity-0 backdrop-blur-sm transition hover:bg-black/75 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white/60 group-hover/image:opacity-100"
+                title={
+                  copiedImageUrl === qrOutput.previewUrl
+                    ? t('copied_image')
+                    : t('copy_image')
+                }
+              >
+                {copiedImageUrl === qrOutput.previewUrl ? (
+                  <Check className="h-3.5 w-3.5" />
+                ) : (
+                  <ClipboardCopy className="h-3.5 w-3.5" />
+                )}
+              </button>
+            </div>
 
             <a
               href={qrOutput.downloadUrl}
