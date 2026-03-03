@@ -1,6 +1,10 @@
 import type { PermissionId } from '@tuturuuu/types';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import type { Tool, ToolSet } from 'ai';
+import {
+  getToolsBlockedByConsecutiveFailures,
+  hasReachedMiraToolCallLimit,
+} from '../chat/mira-render-ui-policy';
 import { createStreamRenderUiTool } from './definitions/render-ui';
 import { miraToolDefinitions } from './mira-tool-definitions';
 import { executeMiraTool } from './mira-tool-dispatcher';
@@ -46,6 +50,51 @@ export function createMiraStreamTools(
   >;
 
   for (const [name, def] of definitionEntries) {
+    if (name === 'select_tools') {
+      tools[name] = {
+        ...def,
+        execute: async (args: Record<string, unknown>) => {
+          const currentSteps = getSteps?.() ?? [];
+          const requestedTools = Array.isArray(args.tools)
+            ? args.tools.filter(
+                (toolName): toolName is string => typeof toolName === 'string'
+              )
+            : [];
+
+          if (hasReachedMiraToolCallLimit(currentSteps)) {
+            return {
+              ok: false,
+              error:
+                'Tool call limit reached for this response. Stop using tools and answer in plain text.',
+              selectedTools: [],
+            };
+          }
+
+          const blockedTools = new Set(
+            getToolsBlockedByConsecutiveFailures(currentSteps)
+          );
+          const selectedTools = requestedTools.filter(
+            (toolName) => !blockedTools.has(toolName)
+          );
+
+          if (selectedTools.length === requestedTools.length) {
+            return { ok: true, selectedTools };
+          }
+
+          return {
+            ok: true,
+            selectedTools,
+            skippedTools: requestedTools.filter((toolName) =>
+              blockedTools.has(toolName)
+            ),
+            warning:
+              'Skipped tools that already failed repeatedly in this response. Stop retrying them and answer in plain text or choose different tools.',
+          };
+        },
+      } as Tool;
+      continue;
+    }
+
     const requiredPerm = MIRA_TOOL_PERMISSIONS[name];
     let isMissingPermission = false;
     let missingPermissionsStr = '';

@@ -3,6 +3,8 @@ import {
   buildActiveToolsFromSelected,
   countRenderUiAttemptsInSteps,
   extractSelectedToolsFromSteps,
+  getToolsBlockedByConsecutiveFailures,
+  hasReachedMiraToolCallLimit,
   hasRenderableRenderUiInSteps,
   hasSuccessfulWorkspaceContextResolutionInSteps,
   hasToolCallInSteps,
@@ -29,11 +31,38 @@ export function prepareMiraToolStep({
   toolChoice?: 'required';
   activeTools: string[];
 } {
+  const blockedTools = new Set(getToolsBlockedByConsecutiveFailures(steps));
+
+  const filterBlockedTools = (toolNames: string[]) =>
+    toolNames.filter((toolName) => !blockedTools.has(toolName));
+  const finalizeActiveTools = (
+    activeTools: string[],
+    toolChoice?: 'required'
+  ) => {
+    const uniqueActiveTools = Array.from(new Set(activeTools));
+    const hasActionableTool = uniqueActiveTools.some(
+      (toolName) =>
+        toolName !== 'select_tools' && toolName !== 'no_action_needed'
+    );
+
+    if (!hasActionableTool && steps.length > 0) {
+      return { activeTools: [] };
+    }
+
+    return toolChoice
+      ? { toolChoice, activeTools: uniqueActiveTools }
+      : { activeTools: uniqueActiveTools };
+  };
+
   if (steps.length === 0) {
     return {
       toolChoice: 'required',
       activeTools: ['select_tools'],
     };
+  }
+
+  if (hasReachedMiraToolCallLimit(steps)) {
+    return { activeTools: [] };
   }
 
   const selectedTools = extractSelectedToolsFromSteps(steps);
@@ -49,36 +78,47 @@ export function prepareMiraToolStep({
       !(filterRenderUiForMarkdownTables && toolName === 'render_ui') &&
       !(filterSearchForMarkdownTables && toolName === 'google_search')
   );
+  const availableSelectedTools = filterBlockedTools(normalizedSelectedTools);
   const toolsForBuild = renderUiExhausted
-    ? normalizedSelectedTools.filter((t) => t !== 'render_ui')
-    : normalizedSelectedTools;
+    ? availableSelectedTools.filter((t) => t !== 'render_ui')
+    : availableSelectedTools;
 
   if (
     needsWorkspaceContextResolution &&
     !hasSuccessfulWorkspaceContextResolutionInSteps(steps)
   ) {
+    if (blockedTools.has('set_workspace_context')) {
+      return { activeTools: [] };
+    }
+
     const hasListedAccessibleWorkspaces = hasToolCallInSteps(
       steps,
       'list_accessible_workspaces'
     );
 
-    return {
-      toolChoice: 'required',
-      activeTools: hasListedAccessibleWorkspaces
-        ? ['get_workspace_context', 'set_workspace_context', 'select_tools']
-        : [
-            'list_accessible_workspaces',
-            'get_workspace_context',
-            'set_workspace_context',
-            'select_tools',
-          ],
-    };
+    return finalizeActiveTools(
+      filterBlockedTools(
+        hasListedAccessibleWorkspaces
+          ? ['get_workspace_context', 'set_workspace_context', 'select_tools']
+          : [
+              'list_accessible_workspaces',
+              'get_workspace_context',
+              'set_workspace_context',
+              'select_tools',
+            ]
+      ),
+      'required'
+    );
   }
 
   if (
     needsWorkspaceMembersTool &&
     !hasToolCallInSteps(steps, 'list_workspace_members')
   ) {
+    if (blockedTools.has('list_workspace_members')) {
+      return { activeTools: [] };
+    }
+
     const selected = buildActiveToolsFromSelected(toolsForBuild).filter(
       (toolName) =>
         toolName !== 'no_action_needed' &&
@@ -93,21 +133,19 @@ export function prepareMiraToolStep({
       'select_tools',
     ];
 
-    return {
-      toolChoice: 'required',
-      activeTools: Array.from(new Set(active)),
-    };
+    return finalizeActiveTools(filterBlockedTools(active), 'required');
   }
 
   if (forceGoogleSearch && !hasToolCallInSteps(steps, 'google_search')) {
+    if (blockedTools.has('google_search')) {
+      return { activeTools: [] };
+    }
+
     const active = buildActiveToolsFromSelected(toolsForBuild)
       .filter((toolName) => toolName !== 'no_action_needed')
       .concat('google_search', 'select_tools');
 
-    return {
-      toolChoice: 'required',
-      activeTools: Array.from(new Set(active)),
-    };
+    return finalizeActiveTools(filterBlockedTools(active), 'required');
   }
 
   if (
@@ -118,7 +156,7 @@ export function prepareMiraToolStep({
     !renderUiExhausted
   ) {
     const active = [
-      ...normalizedSelectedTools.filter(
+      ...availableSelectedTools.filter(
         (toolName) =>
           toolName !== 'select_tools' && toolName !== 'no_action_needed'
       ),
@@ -126,10 +164,7 @@ export function prepareMiraToolStep({
       'select_tools',
     ];
 
-    return {
-      toolChoice: 'required',
-      activeTools: Array.from(new Set(active)),
-    };
+    return finalizeActiveTools(filterBlockedTools(active), 'required');
   }
 
   const renderUiSelectedEver =
@@ -145,22 +180,17 @@ export function prepareMiraToolStep({
     const active = buildActiveToolsFromSelected(toolsForBuild)
       .filter((toolName) => toolName !== 'no_action_needed')
       .concat('render_ui', 'select_tools');
-    return {
-      toolChoice: 'required',
-      activeTools: Array.from(new Set(active)),
-    };
+    return finalizeActiveTools(filterBlockedTools(active), 'required');
   }
 
   if (hasRenderableRenderUiInSteps(steps)) {
     const active = buildActiveToolsFromSelected(toolsForBuild)
       .filter((toolName) => toolName !== 'render_ui')
       .concat('select_tools');
-    return {
-      activeTools: Array.from(new Set(active)),
-    };
+    return finalizeActiveTools(filterBlockedTools(active));
   }
 
-  return {
-    activeTools: buildActiveToolsFromSelected(toolsForBuild),
-  };
+  return finalizeActiveTools(
+    filterBlockedTools(buildActiveToolsFromSelected(toolsForBuild))
+  );
 }

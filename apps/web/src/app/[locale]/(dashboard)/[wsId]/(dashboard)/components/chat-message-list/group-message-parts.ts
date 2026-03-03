@@ -1,5 +1,6 @@
 import type { UIMessage } from '@tuturuuu/ai/types';
 import { getToolName, isToolUIPart } from 'ai';
+import { shouldRenderToolPart } from './helpers';
 import type { RenderGroup, ToolPartData } from './types';
 
 /**
@@ -35,8 +36,9 @@ export function groupMessageParts(parts: UIMessage['parts']): RenderGroup[] {
     const part = parts[i]!;
 
     if (isToolUIPart(part)) {
+      if (!shouldRenderToolPart(part)) continue;
+
       const name = getToolName(part as never);
-      if (name === 'no_action_needed') continue;
       if (currentToolGroup && currentToolGroup.toolName === name) {
         currentToolGroup.parts.push(part as ToolPartData);
       } else {

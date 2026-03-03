@@ -12,8 +12,41 @@ type ToolStepLike = {
   }>;
 };
 
+export const MAX_MIRA_TOOL_CALLS = 50;
+export const MAX_CONSECUTIVE_TOOL_FAILURES = 3;
+
+const META_TOOL_NAMES = new Set(['select_tools', 'no_action_needed']);
+const NO_OP_TOOL_MESSAGE_PATTERNS = [
+  /^no fields to update\b/i,
+  /^no settings to update\b/i,
+  /^no labels provided\b/i,
+];
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isNoProgressMessage(value: unknown): boolean {
+  if (typeof value !== 'string') return false;
+  const message = value.trim();
+  return NO_OP_TOOL_MESSAGE_PATTERNS.some((pattern) => pattern.test(message));
+}
+
+function isFailedToolResult(
+  toolName: string | undefined,
+  output: Record<string, unknown> | undefined
+): boolean {
+  if (!toolName || META_TOOL_NAMES.has(toolName) || !output) return false;
+
+  if (output.success === false || output.ok === false) {
+    return true;
+  }
+
+  if (typeof output.error === 'string' && output.error.trim().length > 0) {
+    return true;
+  }
+
+  return isNoProgressMessage(output.message);
 }
 
 function safeParseJson(value: string): unknown {
@@ -347,14 +380,6 @@ export function shouldForceWorkspaceMembersForLatestUserMessage(
 export function extractSelectedToolsFromSteps(steps: unknown[]): string[] {
   for (let i = steps.length - 1; i >= 0; i--) {
     const step = steps[i] as ToolStepLike | undefined;
-    const selectCall = step?.toolCalls?.find(
-      (toolCall) => toolCall.toolName === 'select_tools'
-    );
-    const tools = selectCall?.args?.tools ?? selectCall?.input?.tools;
-    if (Array.isArray(tools)) {
-      return tools.filter((tool): tool is string => typeof tool === 'string');
-    }
-
     const selectResult = step?.toolResults?.find(
       (toolResult) => toolResult.toolName === 'select_tools'
     );
@@ -363,6 +388,14 @@ export function extractSelectedToolsFromSteps(steps: unknown[]): string[] {
       return selectedTools.filter(
         (tool): tool is string => typeof tool === 'string'
       );
+    }
+
+    const selectCall = step?.toolCalls?.find(
+      (toolCall) => toolCall.toolName === 'select_tools'
+    );
+    const tools = selectCall?.args?.tools ?? selectCall?.input?.tools;
+    if (Array.isArray(tools)) {
+      return tools.filter((tool): tool is string => typeof tool === 'string');
     }
   }
   return [];
@@ -447,6 +480,15 @@ export function hasRenderableRenderUiInSteps(steps: unknown[]): boolean {
   });
 }
 
+export function countToolCallsInSteps(steps: unknown[]): number {
+  let count = 0;
+  for (const step of steps) {
+    const typedStep = step as ToolStepLike | undefined;
+    count += typedStep?.toolCalls?.length ?? 0;
+  }
+  return count;
+}
+
 /** Count how many render_ui tool calls have been attempted across all steps. */
 export function countRenderUiAttemptsInSteps(steps: unknown[]): number {
   let count = 0;
@@ -457,6 +499,46 @@ export function countRenderUiAttemptsInSteps(steps: unknown[]): number {
     }
   }
   return count;
+}
+
+export function getToolsBlockedByConsecutiveFailures(
+  steps: unknown[],
+  threshold = MAX_CONSECUTIVE_TOOL_FAILURES
+): string[] {
+  if (threshold <= 0) return [];
+
+  const streaks = new Map<string, number>();
+  const resolvedTools = new Set<string>();
+
+  for (let i = steps.length - 1; i >= 0; i--) {
+    const step = steps[i] as ToolStepLike | undefined;
+    const toolResults = step?.toolResults ?? [];
+
+    for (let j = toolResults.length - 1; j >= 0; j--) {
+      const toolResult = toolResults[j];
+      const toolName = toolResult?.toolName;
+      if (!toolName || META_TOOL_NAMES.has(toolName)) continue;
+      if (resolvedTools.has(toolName)) continue;
+
+      const output = isRecord(toolResult.output)
+        ? toolResult.output
+        : undefined;
+      if (isFailedToolResult(toolName, output)) {
+        streaks.set(toolName, (streaks.get(toolName) ?? 0) + 1);
+        continue;
+      }
+
+      resolvedTools.add(toolName);
+    }
+  }
+
+  return Array.from(streaks.entries())
+    .filter(([, count]) => count >= threshold)
+    .map(([toolName]) => toolName);
+}
+
+export function hasReachedMiraToolCallLimit(steps: unknown[]): boolean {
+  return countToolCallsInSteps(steps) >= MAX_MIRA_TOOL_CALLS;
 }
 
 export function buildActiveToolsFromSelected(

@@ -2,7 +2,10 @@ import type { ModelMessage } from 'ai';
 import { describe, expect, it } from 'vitest';
 import {
   buildActiveToolsFromSelected,
+  countToolCallsInSteps,
   extractSelectedToolsFromSteps,
+  getToolsBlockedByConsecutiveFailures,
+  hasReachedMiraToolCallLimit,
   hasRenderableRenderUiInSteps,
   hasToolCallInSteps,
   shouldForceGoogleSearchForLatestUserMessage,
@@ -230,6 +233,27 @@ describe('mira render_ui policy', () => {
     expect(extractSelectedToolsFromSteps(steps)).toEqual(['render_ui']);
   });
 
+  it('prefers select_tools result output over raw call args', () => {
+    const steps = [
+      {
+        toolCalls: [
+          {
+            toolName: 'select_tools',
+            args: { tools: ['get_my_tasks', 'create_task'] },
+          },
+        ],
+        toolResults: [
+          {
+            toolName: 'select_tools',
+            output: { selectedTools: ['get_my_tasks'] },
+          },
+        ],
+      },
+    ];
+
+    expect(extractSelectedToolsFromSteps(steps)).toEqual(['get_my_tasks']);
+  });
+
   it('detects whether render_ui has been called in steps', () => {
     const steps = [
       {
@@ -390,5 +414,60 @@ describe('mira render_ui policy', () => {
     ];
 
     expect(wasToolEverSelectedInSteps(steps, 'render_ui')).toBe(true);
+  });
+
+  it('blocks tools after three consecutive failures or no-op results', () => {
+    const steps = [
+      {
+        toolResults: [
+          {
+            toolName: 'create_task',
+            output: { success: false, error: 'Task creation failed' },
+          },
+        ],
+      },
+      {
+        toolResults: [
+          {
+            toolName: 'create_task',
+            output: { success: true, message: 'No fields to update' },
+          },
+        ],
+      },
+      {
+        toolResults: [
+          {
+            toolName: 'create_task',
+            output: { ok: false, error: 'Permission denied' },
+          },
+        ],
+      },
+      {
+        toolResults: [
+          {
+            toolName: 'get_my_tasks',
+            output: { success: true, tasks: [] },
+          },
+        ],
+      },
+    ];
+
+    expect(getToolsBlockedByConsecutiveFailures(steps)).toEqual([
+      'create_task',
+    ]);
+  });
+
+  it('counts tool calls and trips the hard tool-call limit at 50', () => {
+    const steps = Array.from({ length: 50 }, (_, index) => ({
+      toolCalls: [
+        {
+          toolName: index % 2 === 0 ? 'select_tools' : 'get_my_tasks',
+          args: {},
+        },
+      ],
+    }));
+
+    expect(countToolCallsInSteps(steps)).toBe(50);
+    expect(hasReachedMiraToolCallLimit(steps)).toBe(true);
   });
 });

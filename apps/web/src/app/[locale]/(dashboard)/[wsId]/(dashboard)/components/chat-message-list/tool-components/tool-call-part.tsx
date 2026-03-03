@@ -228,9 +228,7 @@ export function ToolCallPart({
         </div>
       );
     }
-    const isOnlyGoogleSearch =
-      selected?.length === 1 && selected[0] === 'google_search';
-    if (isOnlyGoogleSearch) return null;
+    return null;
   }
 
   if (rawToolName === 'google_search') {

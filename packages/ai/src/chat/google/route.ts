@@ -5,16 +5,11 @@ import {
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
-import {
-  consumeStream,
-  gateway,
-  smoothStream,
-  stepCountIs,
-  streamText,
-} from 'ai';
+import { consumeStream, gateway, smoothStream, streamText } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import type { CreditSource as SharedCreditSource } from '../credit-source';
 import {
+  hasReachedMiraToolCallLimit,
   shouldForceGoogleSearchForLatestUserMessage,
   shouldForceRenderUiForLatestUserMessage,
   shouldForceWorkspaceMembersForLatestUserMessage,
@@ -401,6 +396,7 @@ export function createPOST(
       const googleSearchTool = {
         google_search: google.tools.googleSearch({}),
       };
+      const MAX_MIRA_STEPS = 25;
 
       type PrepareStep = NonNullable<
         NonNullable<Parameters<typeof streamText>[0]>['prepareStep']
@@ -432,7 +428,9 @@ export function createPOST(
               tools: { ...miraTools, ...googleSearchTool } as NonNullable<
                 Parameters<typeof streamText>[0]
               >['tools'],
-              stopWhen: stepCountIs(25),
+              stopWhen: ({ steps }) =>
+                steps.length >= MAX_MIRA_STEPS ||
+                hasReachedMiraToolCallLimit(steps),
               toolChoice: 'auto' as const,
               prepareStep: prepareStep as NonNullable<
                 NonNullable<Parameters<typeof streamText>[0]>['prepareStep']

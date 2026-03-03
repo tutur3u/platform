@@ -42,10 +42,24 @@ export function hasTextContent(message: UIMessage): boolean {
 }
 
 export function hasToolParts(message: UIMessage): boolean {
+  return message.parts?.some((p) => shouldRenderToolPart(p)) ?? false;
+}
+
+export function shouldRenderToolPart(part: unknown): boolean {
+  if (!isToolUIPart(part as never)) return false;
+
+  const toolName = getToolName(part as never);
+  if (toolName === 'no_action_needed') return false;
+  if (toolName !== 'select_tools') return true;
+
+  const output = (part as { output?: unknown }).output;
+  if (!isObjectRecord(output)) return false;
+
+  const selectedTools = output.selectedTools;
   return (
-    message.parts?.some(
-      (p) => isToolUIPart(p) && getToolName(p as never) !== 'no_action_needed'
-    ) ?? false
+    Array.isArray(selectedTools) &&
+    selectedTools.length === 1 &&
+    selectedTools[0] === 'no_action_needed'
   );
 }
 

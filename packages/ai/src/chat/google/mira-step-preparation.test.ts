@@ -198,4 +198,70 @@ describe('prepareMiraToolStep', () => {
       'select_tools',
     ]);
   });
+
+  it('stops offering tools after a selected tool fails repeatedly', () => {
+    const result = prepareMiraToolStep({
+      steps: [
+        {
+          toolCalls: [
+            {
+              toolName: 'select_tools',
+              args: { tools: ['create_task'] },
+            },
+          ],
+        },
+        {
+          toolResults: [
+            {
+              toolName: 'create_task',
+              output: { success: false, error: 'Create failed' },
+            },
+          ],
+        },
+        {
+          toolResults: [
+            {
+              toolName: 'create_task',
+              output: { success: true, message: 'No fields to update' },
+            },
+          ],
+        },
+        {
+          toolResults: [
+            {
+              toolName: 'create_task',
+              output: { ok: false, error: 'Still failing' },
+            },
+          ],
+        },
+      ],
+      forceGoogleSearch: false,
+      forceRenderUi: false,
+      needsWorkspaceContextResolution: false,
+      needsWorkspaceMembersTool: false,
+      preferMarkdownTables: false,
+    });
+
+    expect(result.activeTools).toEqual([]);
+  });
+
+  it('stops offering tools after 50 tool calls in the same response', () => {
+    const result = prepareMiraToolStep({
+      steps: Array.from({ length: 50 }, (_, index) => ({
+        toolCalls: [
+          {
+            toolName: index === 0 ? 'select_tools' : 'get_my_tasks',
+            args: index === 0 ? { tools: ['get_my_tasks'] } : {},
+          },
+        ],
+      })),
+      forceGoogleSearch: false,
+      forceRenderUi: false,
+      needsWorkspaceContextResolution: false,
+      needsWorkspaceMembersTool: false,
+      preferMarkdownTables: false,
+    });
+
+    expect(result.activeTools).toEqual([]);
+  });
 });
