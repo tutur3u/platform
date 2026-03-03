@@ -15,31 +15,22 @@ import Image from 'next/image';
 import Link from 'next/link';
 import NavbarSeparator from './navbar-separator';
 
-// detect external links once, reuse everywhere
-const isExternal = (href: string) => href.startsWith('http');
-
 const Navbar = () => {
-  const renderLink = (href: string, label: string) => (
-    <Link
-      href={href}
-      target={isExternal(href) ? '_blank' : undefined}
-      rel={isExternal(href) ? 'noopener noreferrer' : undefined}
-      prefetch={isExternal(href) ? false : undefined}
-    >
-      {label}
-    </Link>
-  );
-
   const DesktopActions = () => (
     <div className="hidden items-center gap-2 md:flex">
       <Button
+        asChild
         className="hover:bg-transparent hover:text-foreground/50"
         variant="ghost"
       >
-        {renderLink(
-          'https://www.canva.com/design/DAG_HV24rBs/QdeItbhyKHSFwDW5jLT-FA/view?utlId=hed84b4065d',
-          'See Handbook'
-        )}
+        <Link
+          href="https://www.canva.com/design/DAG_HV24rBs/QdeItbhyKHSFwDW5jLT-FA/view?utlId=hed84b4065d"
+          target="_blank"
+          rel="noopener noreferrer"
+          prefetch={false}
+        >
+          See Handbook
+        </Link>
       </Button>
 
       <Button
@@ -60,10 +51,14 @@ const Navbar = () => {
       </Button>
 
       <Button asChild className="btn-primary">
-        {renderLink(
-          'https://forms.office.com/r/GdkwnUbty6?origin=lprLink',
-          'Register Now'
-        )}
+        <Link
+          href="https://forms.office.com/r/GdkwnUbty6?origin=lprLink"
+          target="_blank"
+          rel="noopener noreferrer"
+          prefetch={false}
+        >
+          Register Now
+        </Link>
       </Button>
     </div>
   );
@@ -71,10 +66,14 @@ const Navbar = () => {
   const MobileActions = () => (
     <div className="flex items-center gap-2 md:hidden">
       <Button asChild className="btn-primary">
-        {renderLink(
-          'https://forms.office.com/r/GdkwnUbty6?origin=lprLink',
-          'Register Now'
-        )}
+        <Link
+          href="https://forms.office.com/r/GdkwnUbty6?origin=lprLink"
+          target="_blank"
+          rel="noopener noreferrer"
+          prefetch={false}
+        >
+          Register Now
+        </Link>
       </Button>
 
       <Sheet>
