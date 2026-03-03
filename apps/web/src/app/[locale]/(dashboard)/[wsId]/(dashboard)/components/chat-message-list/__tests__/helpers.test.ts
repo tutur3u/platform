@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { groupMessageParts } from '../group-message-parts';
-import { getRenderableMessageAttachments, hasToolParts } from '../helpers';
+import {
+  getRenderableMessageAttachments,
+  hasToolParts,
+  hasVisualToolPart,
+  isNoActionSelectToolsPart,
+} from '../helpers';
 
 describe('chat message tool visibility', () => {
   it('hides select_tools errors from renderable tool output', () => {
@@ -26,7 +31,7 @@ describe('chat message tool visibility', () => {
     expect(groupMessageParts(parts)).toEqual([]);
   });
 
-  it('keeps select_tools visible when it resolves to no_action_needed', () => {
+  it('keeps select_tools no-action parts hidden from the transcript', () => {
     const parts = [
       {
         type: 'tool-select_tools',
@@ -47,13 +52,9 @@ describe('chat message tool visibility', () => {
         role: 'assistant',
         parts,
       } as never)
-    ).toBe(true);
-    expect(groupMessageParts(parts)).toMatchObject([
-      {
-        kind: 'tool',
-        toolName: 'select_tools',
-      },
-    ]);
+    ).toBe(false);
+    expect(groupMessageParts(parts)).toEqual([]);
+    expect(isNoActionSelectToolsPart(parts[0])).toBe(true);
   });
 
   it('falls back to message metadata attachments when the attachment map is empty', () => {
@@ -83,5 +84,22 @@ describe('chat message tool visibility', () => {
         type: 'audio/wav',
       }),
     ]);
+  });
+
+  it('detects visual render_ui tool output separately', () => {
+    expect(
+      hasVisualToolPart({
+        id: 'assistant-message',
+        role: 'assistant',
+        parts: [
+          {
+            type: 'tool-render_ui',
+            toolCallId: 'call-render-ui',
+            state: 'output-available',
+            output: { spec: { root: 'r', elements: { r: { type: 'Card' } } } },
+          },
+        ],
+      } as never)
+    ).toBe(true);
   });
 });

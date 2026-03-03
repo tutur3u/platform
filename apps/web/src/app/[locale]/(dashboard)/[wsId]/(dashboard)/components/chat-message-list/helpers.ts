@@ -46,12 +46,18 @@ export function hasToolParts(message: UIMessage): boolean {
   return message.parts?.some((p) => shouldRenderToolPart(p)) ?? false;
 }
 
-export function shouldRenderToolPart(part: unknown): boolean {
-  if (!isToolUIPart(part as never)) return false;
+export function hasVisualToolPart(message: UIMessage): boolean {
+  return (
+    message.parts?.some((part) => {
+      if (!isToolUIPart(part as never)) return false;
+      return getToolName(part as never) === 'render_ui';
+    }) ?? false
+  );
+}
 
-  const toolName = getToolName(part as never);
-  if (toolName === 'no_action_needed') return false;
-  if (toolName !== 'select_tools') return true;
+export function isNoActionSelectToolsPart(part: unknown): boolean {
+  if (!isToolUIPart(part as never)) return false;
+  if (getToolName(part as never) !== 'select_tools') return false;
 
   const output = (part as { output?: unknown }).output;
   if (!isObjectRecord(output)) return false;
@@ -62,6 +68,15 @@ export function shouldRenderToolPart(part: unknown): boolean {
     selectedTools.length === 1 &&
     selectedTools[0] === 'no_action_needed'
   );
+}
+
+export function shouldRenderToolPart(part: unknown): boolean {
+  if (!isToolUIPart(part as never)) return false;
+
+  const toolName = getToolName(part as never);
+  if (toolName === 'no_action_needed') return false;
+  if (toolName === 'select_tools') return false;
+  return true;
 }
 
 export function hasOutputText(message: UIMessage): boolean {

@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2, Sparkles, UserIcon } from '@tuturuuu/icons';
+import { Sparkles, UserIcon } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { cn } from '@tuturuuu/utils/format';
 import {
@@ -20,11 +20,13 @@ import {
   getRenderableMessageAttachments,
   hasTextContent,
   hasToolParts,
+  hasVisualToolPart,
 } from './chat-message-list/helpers';
 import {
   AssistantMarkdown,
   ReasoningPart,
 } from './chat-message-list/markdown-components';
+import { PendingAssistantIndicator } from './chat-message-list/pending-assistant-indicator';
 import { resolveMessageRenderGroups } from './chat-message-list/resolve-message-render-groups';
 import {
   CollapsibleToolSection,
@@ -169,7 +171,10 @@ export default function ChatMessageList({
           : '';
         const hasDisplayText = isUser ? displayText.trim().length > 0 : hasText;
         const hasTools = !isUser && hasToolParts(message);
+        const hasVisualTools = !isUser && hasVisualToolPart(message);
         const hasAttachments = isUser && userAttachments.length > 0;
+        const shouldShowAssistantFallback =
+          !isUser && !isStreaming && !hasText && hasTools && !hasVisualTools;
 
         // Skip messages with no renderable content
         if (!hasDisplayText && !hasTools && !hasAttachments) return null;
@@ -359,6 +364,15 @@ export default function ChatMessageList({
                           }
                         }
                         flushBatch();
+                        if (shouldShowAssistantFallback) {
+                          elements.push(
+                            <AssistantMarkdown
+                              key={`${message.id}-fallback`}
+                              text={t('assistant_empty_reply_fallback')}
+                              isAnimating={false}
+                            />
+                          );
+                        }
                         return elements;
                       })()}
                     </div>
@@ -390,20 +404,11 @@ export default function ChatMessageList({
             lastMsg?.role === 'user' ||
             (lastMsg?.role === 'assistant' && !hasTextContent(lastMsg));
           return showThinking ? (
-            <div className="mt-3 flex gap-2.5">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-dynamic-purple/15 text-dynamic-purple">
-                <Sparkles className="h-3.5 w-3.5" />
-              </div>
-              <div className="flex flex-col items-start">
-                <span className="mb-1 px-1 font-medium text-[11px] text-muted-foreground">
-                  {assistantName ?? 'Mira'}
-                </span>
-                <div className="flex items-center gap-2 rounded-2xl bg-muted/50 px-3.5 py-2.5 text-muted-foreground text-sm">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  {t('thinking')}
-                </div>
-              </div>
-            </div>
+            <PendingAssistantIndicator
+              assistantName={assistantName}
+              messageAttachments={messageAttachments}
+              messages={messages}
+            />
           ) : null;
         })()}
       <div

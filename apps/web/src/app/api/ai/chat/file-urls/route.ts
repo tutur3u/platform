@@ -114,7 +114,7 @@ export const POST = withSessionAuth(
         // Prefer the storage metadata because shared extensions like `.webm`
         // can represent either audio or video depending on the upload.
         const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
-        const mimeType = storageMimeType || extensionToMime(ext);
+        const mimeType = storageMimeType || inferMimeType(file.name, ext);
 
         // Strip the timestamp prefix from the display name
         // Storage names are formatted: `{timestamp}_{sanitizedFilename}`
@@ -186,4 +186,13 @@ function extensionToMime(ext: string): string {
     md: 'text/markdown',
   };
   return map[ext] ?? 'application/octet-stream';
+}
+
+function inferMimeType(name: string, ext: string): string {
+  const strippedName = stripTimestampPrefix(name).toLowerCase();
+  if (ext === 'webm' && strippedName.startsWith('mira-audio-')) {
+    return 'audio/webm';
+  }
+
+  return extensionToMime(ext);
 }
