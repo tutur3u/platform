@@ -110,6 +110,7 @@ describe('prepareMiraToolStep', () => {
     });
 
     expect(result.activeTools).toContain('get_my_tasks');
+    expect(result.activeTools).not.toContain('select_tools');
   });
 
   it('keeps forcing workspace resolution until set_workspace_context succeeds', () => {
@@ -255,6 +256,104 @@ describe('prepareMiraToolStep', () => {
           },
         ],
       })),
+      forceGoogleSearch: false,
+      forceRenderUi: false,
+      needsWorkspaceContextResolution: false,
+      needsWorkspaceMembersTool: false,
+      preferMarkdownTables: false,
+    });
+
+    expect(result.activeTools).toEqual([]);
+  });
+
+  it('disables tools after select_tools chooses no_action_needed', () => {
+    const result = prepareMiraToolStep({
+      steps: [
+        {
+          toolCalls: [
+            {
+              toolName: 'select_tools',
+              args: { tools: ['no_action_needed'] },
+            },
+          ],
+          toolResults: [
+            {
+              toolName: 'select_tools',
+              output: { ok: true, selectedTools: ['no_action_needed'] },
+            },
+          ],
+        },
+      ],
+      forceGoogleSearch: false,
+      forceRenderUi: false,
+      needsWorkspaceContextResolution: false,
+      needsWorkspaceMembersTool: false,
+      preferMarkdownTables: false,
+    });
+
+    expect(result.forcePlainTextResponse).toBe(true);
+    expect(result.toolChoice).toBe('none');
+    expect(result.activeTools).toEqual([]);
+  });
+
+  it('disables tools from select_tools results even when call args are absent', () => {
+    const result = prepareMiraToolStep({
+      steps: [
+        {
+          toolResults: [
+            {
+              toolName: 'select_tools',
+              output: { ok: true, selectedTools: ['no_action_needed'] },
+            },
+          ],
+        },
+        {
+          toolResults: [
+            {
+              toolName: 'select_tools',
+              output: { ok: true, selectedTools: ['no_action_needed'] },
+            },
+          ],
+        },
+      ],
+      forceGoogleSearch: false,
+      forceRenderUi: false,
+      needsWorkspaceContextResolution: false,
+      needsWorkspaceMembersTool: false,
+      preferMarkdownTables: false,
+    });
+
+    expect(result.forcePlainTextResponse).toBe(true);
+    expect(result.toolChoice).toBe('none');
+    expect(result.activeTools).toEqual([]);
+  });
+
+  it('stops after no_action_needed has already been executed', () => {
+    const result = prepareMiraToolStep({
+      steps: [
+        {
+          toolCalls: [
+            {
+              toolName: 'select_tools',
+              args: { tools: ['no_action_needed'] },
+            },
+            {
+              toolName: 'no_action_needed',
+              args: { reason: 'user said thanks' },
+            },
+          ],
+          toolResults: [
+            {
+              toolName: 'select_tools',
+              output: { ok: true, selectedTools: ['no_action_needed'] },
+            },
+            {
+              toolName: 'no_action_needed',
+              output: { reason: 'user said thanks' },
+            },
+          ],
+        },
+      ],
       forceGoogleSearch: false,
       forceRenderUi: false,
       needsWorkspaceContextResolution: false,

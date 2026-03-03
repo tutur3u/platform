@@ -86,6 +86,8 @@ type PersistAssistantResponseParams = {
   wsId?: string;
 };
 
+const VISUAL_TOOL_NAMES = new Set(['render_ui']);
+
 function collectToolData(steps: StepLike[]) {
   const allToolCalls = steps.flatMap((step) => step.toolCalls ?? []);
   const allToolResults = steps.flatMap((step) => step.toolResults ?? []);
@@ -143,6 +145,36 @@ function collectSerializableSources(response: StreamFinishResponseLike) {
     url: source.url,
     title: source.title,
   }));
+}
+
+function buildFallbackAssistantText(
+  response: StreamFinishResponseLike,
+  allToolCalls: ToolCallLike[]
+): string {
+  const calledToolNames = allToolCalls
+    .map((toolCall) => toolCall.toolName)
+    .filter((toolName): toolName is string => typeof toolName === 'string');
+
+  if (calledToolNames.some((toolName) => VISUAL_TOOL_NAMES.has(toolName))) {
+    return '';
+  }
+
+  if (
+    calledToolNames.length > 0 &&
+    calledToolNames.every((toolName) => toolName === 'recall')
+  ) {
+    return "I checked the saved context for this turn, but I didn't finish a visible reply. Please try again.";
+  }
+
+  if (calledToolNames.length > 0) {
+    return "I finished some background steps for this turn, but I didn't produce a visible reply. Please try again.";
+  }
+
+  if (response.finishReason === 'length') {
+    return 'I ran out of room before I could finish the reply. Please try again.';
+  }
+
+  return "I didn't produce a visible reply for this turn. Please try again.";
 }
 
 function logGoogleSearchDebug(response: StreamFinishResponseLike): void {
@@ -216,9 +248,11 @@ export async function persistAssistantResponse({
 }: PersistAssistantResponseParams): Promise<void> {
   const steps = response.steps ?? [];
   const { allToolCalls, allToolResults } = collectToolData(steps);
+  const persistedText =
+    response.text?.trim() || buildFallbackAssistantText(response, allToolCalls);
 
   if (
-    !response.text &&
+    !persistedText &&
     allToolCalls.length === 0 &&
     allToolResults.length === 0
   ) {
@@ -235,8 +269,8 @@ export async function persistAssistantResponse({
     .from('ai_chat_messages')
     .insert({
       chat_id: chatId,
+      content: persistedText,
       creator_id: userId,
-      content: response.text || '',
       role: 'ASSISTANT',
       model: (model.includes('/')
         ? model.split('/').pop()!

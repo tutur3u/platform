@@ -7,11 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: '14.1';
-  };
   public: {
     Tables: {
       abuse_events: {
@@ -49,6 +44,110 @@ export type Database = {
           user_agent?: string | null;
         };
         Relationships: [];
+      };
+      ai_chat_file_digests: {
+        Row: {
+          answer_context_markdown: string | null;
+          chat_id: string;
+          created_at: string;
+          digest_version: number;
+          display_name: string;
+          error_message: string | null;
+          extracted_markdown: string | null;
+          file_name: string;
+          file_size: number | null;
+          id: string;
+          limitations: Json;
+          media_type: string;
+          message_id: string | null;
+          processor_model: string;
+          status: string;
+          storage_path: string;
+          structured: Json;
+          suggested_alias: string | null;
+          summary: string | null;
+          title: string | null;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          answer_context_markdown?: string | null;
+          chat_id: string;
+          created_at?: string;
+          digest_version: number;
+          display_name: string;
+          error_message?: string | null;
+          extracted_markdown?: string | null;
+          file_name: string;
+          file_size?: number | null;
+          id?: string;
+          limitations?: Json;
+          media_type: string;
+          message_id?: string | null;
+          processor_model: string;
+          status: string;
+          storage_path: string;
+          structured?: Json;
+          suggested_alias?: string | null;
+          summary?: string | null;
+          title?: string | null;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          answer_context_markdown?: string | null;
+          chat_id?: string;
+          created_at?: string;
+          digest_version?: number;
+          display_name?: string;
+          error_message?: string | null;
+          extracted_markdown?: string | null;
+          file_name?: string;
+          file_size?: number | null;
+          id?: string;
+          limitations?: Json;
+          media_type?: string;
+          message_id?: string | null;
+          processor_model?: string;
+          status?: string;
+          storage_path?: string;
+          structured?: Json;
+          suggested_alias?: string | null;
+          summary?: string | null;
+          title?: string | null;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_chat_file_digests_chat_id_fkey';
+            columns: ['chat_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_chats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ai_chat_file_digests_message_id_fkey';
+            columns: ['message_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_chat_messages';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ai_chat_file_digests_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ai_chat_file_digests_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       ai_chat_members: {
         Row: {
@@ -17765,7 +17864,36 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       calendar_event_participants: {
         Row: {
@@ -19742,7 +19870,7 @@ export type Database = {
       get_auth_provider_stats: {
         Args: never;
         Returns: {
-          last_sign_in_avg: unknown;
+          last_sign_in_avg: string;
           percentage: number;
           provider: string;
           user_count: number;
@@ -21004,7 +21132,7 @@ export type Database = {
         Args: { user_id: string };
         Returns: {
           active_sessions: number;
-          current_session_age: unknown;
+          current_session_age: string;
           total_sessions: number;
         }[];
       };

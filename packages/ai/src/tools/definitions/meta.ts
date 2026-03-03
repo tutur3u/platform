@@ -19,7 +19,7 @@ const optionalTrimmedString = (max: number, field: string) =>
 export const metaToolDefinitions = {
   select_tools: tool({
     description:
-      'Pick which tools you need for this request. You MUST call this as your FIRST action every turn. Choose from the available tool names listed in the system prompt. Use no_action_needed ONLY for truly conversational turns with no durable info to save and no real-world lookup needed.',
+      'Pick which tools you need for this user turn. Call this once before using action tools, then reuse the selected set without calling it again unless you truly need to add or remove tools. Use no_action_needed ONLY for conversational/file-understanding turns with no durable info to save and no real-world lookup needed.',
     inputSchema: z.object({
       tools: z
         .array(z.string())
@@ -47,7 +47,7 @@ export const metaToolDefinitions = {
 
   no_action_needed: tool({
     description:
-      'Call only when the message is purely conversational and requires NO real action (no settings/memory updates, no search, no data/tool operation).',
+      'Call only when the user turn needs no action tools beyond normal answering. Do not use it when the user explicitly asked to persist preferences, identity, settings, memory, or to fetch real-time external information.',
     inputSchema: z.object({
       reason: z
         .string()
@@ -90,11 +90,17 @@ export const metaToolDefinitions = {
 
   load_chat_file: tool({
     description:
-      'Load one earlier chat file back into native model context so you can analyze the actual file contents before answering. Use this for prior-turn audio, image, video, PDF, or text files.',
+      'Load the digested understanding of one earlier chat file so you can analyze the actual contents before answering. Use this for prior-turn audio, image, video, PDF, text, or document files.',
     inputSchema: z.object({
       fileName: optionalTrimmedString(255, 'fileName').describe(
         'Optional current filename or alias. Use list_chat_files first if you need to inspect the available files.'
       ),
+      forceRefresh: z
+        .boolean()
+        .optional()
+        .describe(
+          'Optional retry switch. Set true when a previous digest failed or when you need a fresh re-digest instead of cached analysis.'
+        ),
       storagePath: optionalTrimmedString(1024, 'storagePath').describe(
         'Optional exact storage path. Prefer this when multiple files share a similar name.'
       ),
@@ -103,7 +109,7 @@ export const metaToolDefinitions = {
 
   rename_chat_file: tool({
     description:
-      'Rename a chat file by updating its display alias. This tool does not inspect file contents. If the new name depends on understanding an earlier file, load that file first.',
+      'Rename a chat file by updating its display alias. This tool does not inspect file contents. If the new name depends on understanding a file, load that file digest first.',
     inputSchema: z.object({
       fileName: optionalTrimmedString(255, 'fileName').describe(
         'Optional current filename or alias. Use list_chat_files first if you need to inspect the available files.'
@@ -119,7 +125,7 @@ export const metaToolDefinitions = {
 
   convert_file_to_markdown: tool({
     description:
-      'Convert attached office/document chat files (Excel, Word, PowerPoint, PDF, etc.) to markdown via MarkItDown. Do not use for audio, image, or video inputs that the model can already consume natively.',
+      'Convert attached office/document chat files (Excel, Word, PowerPoint, PDF, etc.) to markdown via MarkItDown when the user explicitly needs raw extracted text. Do not use for audio, image, or video inputs.',
     inputSchema: z.object({
       storagePath: optionalTrimmedString(1024, 'storagePath').describe(
         'Optional full storage path. If omitted, the latest document attachment from the current user turn is preferred, then the chat fallback is used.'

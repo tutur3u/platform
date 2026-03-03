@@ -13,6 +13,7 @@ import {
   shouldForceWorkspaceMembersForLatestUserMessage,
   shouldPreferMarkdownTablesForLatestUserMessage,
   shouldResolveWorkspaceContextForLatestUserMessage,
+  shouldStopAfterNoActionConclusion,
   wasToolEverSelectedInSteps,
 } from '../mira-render-ui-policy';
 
@@ -383,12 +384,8 @@ describe('mira render_ui policy', () => {
   });
 
   it('builds active tools without implicit no_action_needed', () => {
-    expect(buildActiveToolsFromSelected(['render_ui'])).toEqual([
-      'render_ui',
-      'select_tools',
-    ]);
+    expect(buildActiveToolsFromSelected(['render_ui'])).toEqual(['render_ui']);
     expect(buildActiveToolsFromSelected(['no_action_needed'])).toEqual([
-      'select_tools',
       'no_action_needed',
     ]);
   });
@@ -414,6 +411,44 @@ describe('mira render_ui policy', () => {
     ];
 
     expect(wasToolEverSelectedInSteps(steps, 'render_ui')).toBe(true);
+  });
+
+  it('stops after no_action_needed when actionable tools already ran', () => {
+    const steps = [
+      {
+        toolCalls: [
+          {
+            toolName: 'remember',
+            args: {},
+          },
+        ],
+      },
+      {
+        toolResults: [
+          {
+            toolName: 'select_tools',
+            output: { ok: true, selectedTools: ['no_action_needed'] },
+          },
+        ],
+      },
+    ];
+
+    expect(shouldStopAfterNoActionConclusion(steps)).toBe(true);
+  });
+
+  it('does not stop pure conversational no_action_needed turns early', () => {
+    const steps = [
+      {
+        toolResults: [
+          {
+            toolName: 'select_tools',
+            output: { ok: true, selectedTools: ['no_action_needed'] },
+          },
+        ],
+      },
+    ];
+
+    expect(shouldStopAfterNoActionConclusion(steps)).toBe(false);
   });
 
   it('blocks tools after three consecutive failures or no-op results', () => {

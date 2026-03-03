@@ -1,11 +1,25 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { createAdminClientMock } = vi.hoisted(() => ({
+const {
+  createAdminClientMock,
+  ensureChatFileDigestMock,
+  listChatFileDigestStatusesMock,
+} = vi.hoisted(() => ({
   createAdminClientMock: vi.fn(),
+  ensureChatFileDigestMock: vi.fn(),
+  listChatFileDigestStatusesMock: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: createAdminClientMock,
+}));
+
+vi.mock('../../chat/file-digests/cache', () => ({
+  listChatFileDigestStatuses: listChatFileDigestStatusesMock,
+}));
+
+vi.mock('../../chat/file-digests/ensure', () => ({
+  ensureChatFileDigest: ensureChatFileDigestMock,
 }));
 
 import {
@@ -17,6 +31,9 @@ import {
 describe('executeListChatFiles', () => {
   beforeEach(() => {
     createAdminClientMock.mockReset();
+    ensureChatFileDigestMock.mockReset();
+    listChatFileDigestStatusesMock.mockReset();
+    listChatFileDigestStatusesMock.mockResolvedValue(new Map());
   });
 
   it('treats wildcard-only queries as an unfiltered file listing', async () => {
@@ -154,7 +171,7 @@ describe('executeListChatFiles', () => {
     );
   });
 
-  it('loads a prior audio file back into native model context', async () => {
+  it('loads a prior audio file digest for grounded follow-up analysis', async () => {
     createAdminClientMock.mockResolvedValue({
       from: (table: string) => {
         if (table !== 'ai_chat_messages') {
@@ -191,15 +208,30 @@ describe('executeListChatFiles', () => {
       },
       storage: {
         from: () => ({
-          download: async () => ({
-            data: new Blob([new Uint8Array([1, 2, 3, 4])], {
-              type: 'audio/webm',
-            }),
-            error: null,
-          }),
           list: async () => ({ data: [], error: null }),
         }),
       },
+    });
+    ensureChatFileDigestMock.mockResolvedValue({
+      cached: false,
+      digest: {
+        answerContextMarkdown: 'This recording is a project update.',
+        digestVersion: 1,
+        displayName: 'mira-audio.webm',
+        extractedMarkdown: null,
+        fileName: 'mira-audio.webm',
+        keyFacts: ['Project update'],
+        limitations: [],
+        mediaType: 'audio/webm',
+        processorModel: 'google/gemini-3.1-flash-lite-preview',
+        status: 'ready',
+        storagePath:
+          'workspace-1/chats/ai/resources/chat-1/1772566303974_mira-audio.webm',
+        suggestedAlias: 'Project Update',
+        summary: 'Short project update.',
+        title: 'Project Update',
+      },
+      ok: true,
     });
 
     const result = await executeLoadChatFile(
@@ -215,14 +247,102 @@ describe('executeListChatFiles', () => {
 
     expect(result).toEqual(
       expect.objectContaining({
+        digest: expect.objectContaining({
+          answerContextMarkdown: 'This recording is a project update.',
+          suggestedAlias: 'Project Update',
+        }),
         file: expect.objectContaining({
           displayName: 'mira-audio.webm',
+          digestStatus: 'ready',
           fileName: 'mira-audio.webm',
-          nativeLoadingSupported: true,
           storagePath:
             'workspace-1/chats/ai/resources/chat-1/1772566303974_mira-audio.webm',
         }),
         ok: true,
+      })
+    );
+  });
+
+  it('passes forceRefresh through when explicitly retrying a file digest', async () => {
+    createAdminClientMock.mockResolvedValue({
+      from: (table: string) => {
+        if (table !== 'ai_chat_messages') {
+          throw new Error(`Unexpected table: ${table}`);
+        }
+
+        return {
+          select: () => ({
+            eq: () => ({
+              order: async () => ({
+                data: [
+                  {
+                    created_at: '2026-03-03T19:31:44.046Z',
+                    id: 'message-1',
+                    metadata: {
+                      attachments: [
+                        {
+                          name: '1772566303974_mira-audio.webm',
+                          size: 41827,
+                          storagePath:
+                            'workspace-1/chats/ai/resources/chat-1/1772566303974_mira-audio.webm',
+                          type: 'audio/webm',
+                        },
+                      ],
+                    },
+                    role: 'USER',
+                  },
+                ],
+                error: null,
+              }),
+            }),
+          }),
+        };
+      },
+      storage: {
+        from: () => ({
+          list: async () => ({ data: [], error: null }),
+        }),
+      },
+    });
+    ensureChatFileDigestMock.mockResolvedValue({
+      cached: false,
+      digest: {
+        answerContextMarkdown: 'Retried digest',
+        digestVersion: 1,
+        displayName: 'mira-audio.webm',
+        extractedMarkdown: null,
+        fileName: 'mira-audio.webm',
+        keyFacts: ['Retried'],
+        limitations: [],
+        mediaType: 'audio/webm',
+        processorModel: 'google/gemini-3.1-flash-lite-preview',
+        status: 'ready',
+        storagePath:
+          'workspace-1/chats/ai/resources/chat-1/1772566303974_mira-audio.webm',
+        suggestedAlias: null,
+        summary: 'Retried summary.',
+        title: 'Retried title',
+      },
+      ok: true,
+    });
+
+    await executeLoadChatFile(
+      {
+        forceRefresh: true,
+        storagePath:
+          'workspace-1/chats/ai/resources/chat-1/1772566303974_mira-audio.webm',
+      },
+      {
+        chatId: 'chat-1',
+        creditWsId: 'workspace-1',
+        userId: 'user-1',
+        wsId: 'workspace-1',
+      } as never
+    );
+
+    expect(ensureChatFileDigestMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        forceRefresh: true,
       })
     );
   });

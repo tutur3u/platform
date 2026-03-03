@@ -3,6 +3,9 @@ import {
   normalizeChatAttachmentMetadata,
   stripChatUploadTimestampPrefix,
 } from '../../chat/chat-attachment-metadata';
+import { listChatFileDigestStatuses } from '../../chat/file-digests/cache';
+import { ensureChatFileDigest } from '../../chat/file-digests/ensure';
+import { formatChatFileDigestForModel } from '../../chat/file-digests/format';
 import type { MiraToolContext } from '../mira-tools';
 
 type ChatMessageRow = {
@@ -15,6 +18,7 @@ type ChatMessageRow = {
 type ListedChatFile = {
   alias: string | null;
   createdAt: string | null;
+  digestStatus?: 'failed' | 'processing' | 'ready' | null;
   displayName: string;
   fileName: string;
   mediaType: string;
@@ -23,24 +27,6 @@ type ListedChatFile = {
   storagePath: string;
   turnIndex: number | null;
 };
-
-const NATIVE_CHAT_FILE_MEDIA_TYPES = new Set([
-  'application/json',
-  'application/pdf',
-  'text/csv',
-  'text/markdown',
-  'text/plain',
-]);
-
-function supportsNativeChatFile(mediaType: string): boolean {
-  return (
-    mediaType.startsWith('audio/') ||
-    mediaType.startsWith('image/') ||
-    mediaType.startsWith('video/') ||
-    mediaType.startsWith('text/') ||
-    NATIVE_CHAT_FILE_MEDIA_TYPES.has(mediaType)
-  );
-}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -127,8 +113,21 @@ async function loadChatFileState(ctx: MiraToolContext, latestFirst: boolean) {
     };
   }
 
+  const digestStatuses = await listChatFileDigestStatuses(
+    [
+      ...(fileList ?? []).map((file) => `${storagePath}/${file.name}`),
+      ...(chatMessages ?? []).flatMap((message) =>
+        normalizeChatAttachmentMetadata(
+          (message.metadata as Record<string, unknown> | null)?.attachments
+        ).map((attachment) => attachment.storagePath)
+      ),
+    ],
+    undefined
+  );
+
   return {
     chatMessages: (chatMessages ?? []) as ChatMessageRow[],
+    digestStatuses,
     fileList: fileList ?? [],
     ok: true as const,
     sbAdmin,
@@ -167,7 +166,8 @@ function buildListedChatFiles(
     metadata?: Record<string, unknown>;
     name: string;
   }>,
-  storagePath: string
+  storagePath: string,
+  digestStatuses: ReadonlyMap<string, 'failed' | 'processing' | 'ready'>
 ): ListedChatFile[] {
   const attachmentContext = buildAttachmentContext(chatMessages);
   const filesByStoragePath = new Map<string, ListedChatFile>();
@@ -182,6 +182,7 @@ function buildListedChatFiles(
         alias: attachment.alias ?? null,
         createdAt:
           typeof message.created_at === 'string' ? message.created_at : null,
+        digestStatus: digestStatuses.get(attachment.storagePath) ?? null,
         displayName:
           attachment.alias || stripChatUploadTimestampPrefix(attachment.name),
         fileName: stripChatUploadTimestampPrefix(attachment.name),
@@ -216,6 +217,8 @@ function buildListedChatFiles(
         existing?.createdAt ??
         metadata?.messageCreatedAt ??
         null,
+      digestStatus:
+        existing?.digestStatus ?? digestStatuses.get(fullPath) ?? null,
       displayName:
         existing?.alias ??
         metadata?.alias ??
@@ -270,8 +273,13 @@ export async function executeListChatFiles(
     return state;
   }
 
-  const { chatMessages, fileList, storagePath } = state;
-  const files = buildListedChatFiles(chatMessages, fileList, storagePath)
+  const { chatMessages, digestStatuses, fileList, storagePath } = state;
+  const files = buildListedChatFiles(
+    chatMessages,
+    fileList,
+    storagePath,
+    digestStatuses
+  )
     .filter((file) => {
       if (!query) return true;
       return (
@@ -298,6 +306,7 @@ export async function executeLoadChatFile(
   args: Record<string, unknown>,
   ctx: MiraToolContext
 ) {
+  const forceRefresh = args.forceRefresh === true;
   const requestedStoragePath =
     typeof args.storagePath === 'string' ? args.storagePath.trim() : '';
   const requestedFileName = normalizeQuery(args.fileName);
@@ -315,8 +324,13 @@ export async function executeLoadChatFile(
     return state;
   }
 
-  const { chatMessages, fileList, storagePath } = state;
-  const matches = buildListedChatFiles(chatMessages, fileList, storagePath)
+  const { chatMessages, digestStatuses, fileList, storagePath } = state;
+  const matches = buildListedChatFiles(
+    chatMessages,
+    fileList,
+    storagePath,
+    digestStatuses
+  )
     .filter((file) =>
       matchesRequestedListedFile(file, requestedFileName, requestedStoragePath)
     )
@@ -350,11 +364,53 @@ export async function executeLoadChatFile(
 
   const file = matches[0]!;
 
+  const digestResult = await ensureChatFileDigest({
+    attachment: {
+      alias: file.alias,
+      name: file.fileName,
+      size: file.size,
+      storagePath: file.storagePath,
+      type: file.mediaType,
+    },
+    chatId: ctx.chatId!,
+    creditWsId: ctx.creditWsId ?? null,
+    forceRefresh,
+    messageId: file.messageId,
+    userId: ctx.userId,
+    wsId: ctx.wsId,
+  });
+
+  if (!digestResult.ok) {
+    return {
+      ok: false,
+      error: digestResult.error,
+      file: {
+        ...file,
+        digestStatus: 'failed' as const,
+      },
+    };
+  }
+
   return {
     ok: true,
     file: {
       ...file,
-      nativeLoadingSupported: supportsNativeChatFile(file.mediaType),
+      digestStatus: 'ready' as const,
+      mediaType: digestResult.digest.mediaType,
+      storagePath: digestResult.digest.storagePath,
+    },
+    digest: {
+      answerContextMarkdown: digestResult.digest.answerContextMarkdown,
+      cached: digestResult.cached,
+      extractedMarkdown: digestResult.digest.extractedMarkdown,
+      forceRefresh,
+      formatted: formatChatFileDigestForModel(digestResult.digest, 'expanded'),
+      keyFacts: digestResult.digest.keyFacts,
+      limitations: digestResult.digest.limitations,
+      processorModel: digestResult.digest.processorModel,
+      suggestedAlias: digestResult.digest.suggestedAlias,
+      summary: digestResult.digest.summary,
+      title: digestResult.digest.title,
     },
   };
 }

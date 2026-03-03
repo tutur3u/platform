@@ -7,7 +7,9 @@ import {
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { consumeStream, gateway, smoothStream, streamText } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
+import { getLatestUserMessageWithAttachments } from '../chat-attachment-metadata';
 import type { CreditSource as SharedCreditSource } from '../credit-source';
+import { FILE_DIGEST_MODEL } from '../file-digests/constants';
 import {
   hasReachedMiraToolCallLimit,
   shouldForceGoogleSearchForLatestUserMessage,
@@ -15,6 +17,7 @@ import {
   shouldForceWorkspaceMembersForLatestUserMessage,
   shouldPreferMarkdownTablesForLatestUserMessage,
   shouldResolveWorkspaceContextForLatestUserMessage,
+  shouldStopAfterNoActionConclusion,
 } from '../mira-render-ui-policy';
 import { ChatRequestBodySchema, mapToUIMessages } from './chat-request-schema';
 import { systemInstruction } from './default-system-instruction';
@@ -25,7 +28,7 @@ import {
 } from './route-chat-resolution';
 import { performCreditPreflight } from './route-credits';
 import {
-  injectReferencedChatFilesIntoMessages,
+  isAttachmentOnlyUserTurn,
   persistLatestUserMessage,
   prepareProcessedMessages,
   rewriteAttachmentPathsInMessages,
@@ -35,66 +38,6 @@ import { persistAssistantResponse } from './stream-finish-persistence';
 
 const DEFAULT_MODEL_NAME = 'google/gemini-2.5-flash';
 type ThinkingMode = 'fast' | 'thinking';
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === 'object' && !Array.isArray(value);
-}
-
-function extractLoadedChatFilesFromSteps(steps: unknown[]) {
-  const filesByStoragePath = new Map<
-    string,
-    {
-      alias?: string | null;
-      introText: string;
-      name: string;
-      storagePath: string;
-      type: string;
-    }
-  >();
-
-  for (const step of steps) {
-    if (!isRecord(step) || !Array.isArray(step.toolResults)) continue;
-
-    for (const toolResult of step.toolResults) {
-      if (!isRecord(toolResult) || toolResult.toolName !== 'load_chat_file') {
-        continue;
-      }
-
-      const output = toolResult.output;
-      if (!isRecord(output) || output.ok !== true || !isRecord(output.file)) {
-        continue;
-      }
-
-      const file = output.file;
-      const storagePath =
-        typeof file.storagePath === 'string' ? file.storagePath : '';
-      const mediaType =
-        typeof file.mediaType === 'string' ? file.mediaType : '';
-      const fileName = typeof file.fileName === 'string' ? file.fileName : '';
-      const displayName =
-        typeof file.displayName === 'string' ? file.displayName : fileName;
-      const turnIndex =
-        typeof file.turnIndex === 'number' ? file.turnIndex : null;
-
-      if (!storagePath || !mediaType || !fileName) continue;
-
-      filesByStoragePath.set(storagePath, {
-        alias:
-          displayName && displayName !== fileName ? displayName : undefined,
-        introText:
-          turnIndex != null
-            ? `Earlier chat file from turn ${turnIndex}: ${displayName} (${mediaType}). Analyze the actual file contents before answering. Do not infer contents from the filename alone.`
-            : `Earlier chat file: ${displayName} (${mediaType}). Analyze the actual file contents before answering. Do not infer contents from the filename alone.`,
-        name: fileName,
-        storagePath,
-        type: mediaType,
-      });
-    }
-  }
-
-  return [...filesByStoragePath.values()];
-}
-
 export function createPOST(
   _options: {
     serverAPIKeyFallback?: boolean;
@@ -375,15 +318,37 @@ export function createPOST(
         mapToUIMessages(messages),
         moveFilesResult.movedPaths
       );
-      const preparedMessages = await prepareProcessedMessages(
-        normalizedMessages,
-        normalizedWsId ?? undefined,
-        chatId
-      );
-      if ('error' in preparedMessages) {
-        return preparedMessages.error;
+      const latestUserMessage = [...normalizedMessages]
+        .reverse()
+        .find((message) => message.role === 'user');
+      const latestUserText = (latestUserMessage?.parts ?? [])
+        .filter(
+          (part): part is { type: 'text'; text: string } =>
+            part.type === 'text' && typeof part.text === 'string'
+        )
+        .map((part) => part.text)
+        .join('\n')
+        .trim();
+      const latestUserAttachments = latestUserMessage?.metadata
+        ? getLatestUserMessageWithAttachments([latestUserMessage]).attachments
+        : [];
+      const isAttachmentOnlyTurn = latestUserMessage
+        ? isAttachmentOnlyUserTurn(latestUserMessage)
+        : false;
+      const latestAttachmentTurn =
+        getLatestUserMessageWithAttachments(normalizedMessages);
+
+      if (latestAttachmentTurn.attachments.length > 0) {
+        const digestPreflight = await performCreditPreflight({
+          model: FILE_DIGEST_MODEL,
+          sbAdmin,
+          userId: user.id,
+          wsId: billingWsId ?? normalizedWsId ?? undefined,
+        });
+        if ('error' in digestPreflight) {
+          return digestPreflight.error;
+        }
       }
-      const { processedMessages } = preparedMessages;
 
       const persistUserMessageError = await persistLatestUserMessage({
         chatId,
@@ -401,6 +366,18 @@ export function createPOST(
       if (persistUserMessageError) {
         return persistUserMessageError;
       }
+
+      const preparedMessages = await prepareProcessedMessages(
+        normalizedMessages,
+        normalizedWsId ?? undefined,
+        chatId,
+        user.id,
+        billingWsId ?? normalizedWsId ?? undefined
+      );
+      if ('error' in preparedMessages) {
+        return preparedMessages.error;
+      }
+      const { processedMessages } = preparedMessages;
 
       const creditPreflight = await performCreditPreflight({
         wsId: billingWsId ?? normalizedWsId ?? undefined,
@@ -425,12 +402,23 @@ export function createPOST(
         request: req,
         userId: user.id,
         chatId,
+        latestUserTurn: latestUserMessage
+          ? {
+              hasAttachments: latestUserAttachments.length > 0,
+              isAttachmentOnly: isAttachmentOnlyTurn,
+              text: latestUserText,
+            }
+          : undefined,
         supabase,
         timezone,
         getSteps: () => stepsRef.current,
       });
 
       const effectiveSource = isMiraMode ? 'Mira' : 'Rewise';
+      const shouldDisableMiraToolsForTurn =
+        isMiraMode &&
+        isAttachmentOnlyTurn &&
+        latestAttachmentTurn.attachments.length > 0;
 
       const resolvedGatewayModel = model.includes('/')
         ? gateway(model)
@@ -461,7 +449,9 @@ export function createPOST(
       const needsWorkspaceMembersTool =
         shouldForceWorkspaceMembersForLatestUserMessage(processedMessages);
 
-      // Provider-native Google Search tool for non-Mira mode.
+      // Provider-native Google Search is only safe when it is the sole tool set.
+      // Gemini 3.1 flash-lite-preview warns when provider-defined tools are
+      // combined with function tools in the same request.
       const googleSearchTool = {
         google_search: google.tools.googleSearch({}),
       };
@@ -470,11 +460,11 @@ export function createPOST(
       type PrepareStep = NonNullable<
         NonNullable<Parameters<typeof streamText>[0]>['prepareStep']
       >;
-      const prepareStep: PrepareStep = async ({ messages, steps }) => {
+      const prepareStep: PrepareStep = async ({ steps }) => {
         // Keep the mutable ref in sync so the render_ui preprocessor can
         // read current steps during Zod validation.
         stepsRef.current = steps;
-        const stepConfig = prepareMiraToolStep({
+        const stepPreparation = prepareMiraToolStep({
           steps,
           forceGoogleSearch,
           forceRenderUi,
@@ -483,27 +473,25 @@ export function createPOST(
           preferMarkdownTables,
         });
 
-        if (!normalizedWsId) {
-          return stepConfig;
+        if (stepPreparation.forcePlainTextResponse) {
+          return {
+            ...stepPreparation,
+            system: [
+              isMiraMode && miraSystemPrompt
+                ? miraSystemPrompt
+                : systemInstruction,
+              '',
+              'Tool selection is already complete for this response.',
+              'The "call select_tools first" rule has already been satisfied for this user turn.',
+              'Do not call select_tools again.',
+              'Do not call any tool unless the user asked for a genuinely new action that still requires it.',
+              'Output normal assistant text only.',
+              'If you emit another tool call here, that is an error.',
+            ].join('\n'),
+          };
         }
 
-        const loadedChatFiles = extractLoadedChatFilesFromSteps(steps);
-        if (loadedChatFiles.length === 0) {
-          return stepConfig;
-        }
-
-        const messagesWithLoadedChatFiles =
-          await injectReferencedChatFilesIntoMessages({
-            chatFiles: loadedChatFiles,
-            chatId,
-            messages,
-            wsId: normalizedWsId,
-          });
-
-        return {
-          ...stepConfig,
-          messages: messagesWithLoadedChatFiles,
-        };
+        return stepPreparation;
       };
 
       const result = streamText({
@@ -511,25 +499,32 @@ export function createPOST(
         experimental_transform: smoothStream(),
         model: resolvedGatewayModel,
         messages: processedMessages,
-        system:
+        system: [
           isMiraMode && miraSystemPrompt ? miraSystemPrompt : systemInstruction,
+          shouldDisableMiraToolsForTurn
+            ? 'This user turn contains only current-turn attachments. Answer directly in plain text or markdown from the provided attachment digest context. Do not call tools for this turn.'
+            : null,
+        ]
+          .filter(Boolean)
+          .join('\n\n'),
         ...(cappedMaxOutput ? { maxOutputTokens: cappedMaxOutput } : {}),
-        ...(miraTools
-          ? {
-              tools: { ...miraTools, ...googleSearchTool } as NonNullable<
-                Parameters<typeof streamText>[0]
-              >['tools'],
-              stopWhen: ({ steps }) =>
-                steps.length >= MAX_MIRA_STEPS ||
-                hasReachedMiraToolCallLimit(steps),
-              toolChoice: 'auto' as const,
-              prepareStep: prepareStep as NonNullable<
-                NonNullable<Parameters<typeof streamText>[0]>['prepareStep']
-              >,
-            }
-          : {
-              tools: googleSearchTool,
-            }),
+        ...(shouldDisableMiraToolsForTurn
+          ? {}
+          : miraTools
+            ? {
+                tools: miraTools,
+                stopWhen: ({ steps }) =>
+                  steps.length >= MAX_MIRA_STEPS ||
+                  hasReachedMiraToolCallLimit(steps) ||
+                  shouldStopAfterNoActionConclusion(steps),
+                toolChoice: 'auto' as const,
+                prepareStep: prepareStep as NonNullable<
+                  NonNullable<Parameters<typeof streamText>[0]>['prepareStep']
+                >,
+              }
+            : {
+                tools: googleSearchTool,
+              }),
         providerOptions: {
           google: {
             ...thinkingConfig,
@@ -574,7 +569,7 @@ export function createPOST(
             ],
           },
           gateway: {
-            order: ['vertex', 'google'],
+            order: ['google'],
             caching: 'auto',
           },
         },

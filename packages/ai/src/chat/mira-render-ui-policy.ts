@@ -541,6 +541,42 @@ export function hasReachedMiraToolCallLimit(steps: unknown[]): boolean {
   return countToolCallsInSteps(steps) >= MAX_MIRA_TOOL_CALLS;
 }
 
+function hasNonMetaToolCallInSteps(steps: unknown[]): boolean {
+  return steps.some((step) => {
+    const typedStep = step as ToolStepLike | undefined;
+    return (typedStep?.toolCalls ?? []).some(
+      (toolCall) =>
+        typeof toolCall.toolName === 'string' &&
+        !META_TOOL_NAMES.has(toolCall.toolName)
+    );
+  });
+}
+
+export function shouldStopAfterNoActionConclusion(steps: unknown[]): boolean {
+  const hasTerminalPlannerError = steps.some((step) => {
+    const typedStep = step as ToolStepLike | undefined;
+
+    return (typedStep?.toolResults ?? []).some((toolResult) => {
+      if (toolResult.toolName !== 'select_tools') return false;
+      const output = toolResult.output;
+      return (
+        isRecord(output) &&
+        typeof output.error === 'string' &&
+        output.error.includes('already concluded with no_action_needed')
+      );
+    });
+  });
+
+  if (hasTerminalPlannerError) {
+    return true;
+  }
+
+  return (
+    wasToolEverSelectedInSteps(steps, 'no_action_needed') &&
+    hasNonMetaToolCallInSteps(steps)
+  );
+}
+
 export function buildActiveToolsFromSelected(
   selectedTools: string[]
 ): string[] {
@@ -554,7 +590,6 @@ export function buildActiveToolsFromSelected(
       (toolName) =>
         toolName !== 'select_tools' && toolName !== 'no_action_needed'
     ),
-    'select_tools',
     ...(includesNoAction ? ['no_action_needed'] : []),
   ];
 

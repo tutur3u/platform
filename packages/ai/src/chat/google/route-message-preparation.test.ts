@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  isAttachmentOnlyUserTurn,
   persistLatestUserMessage,
   rewriteAttachmentPathsInMessages,
 } from './route-message-preparation';
@@ -46,6 +47,26 @@ describe('rewriteAttachmentPathsInMessages', () => {
 });
 
 describe('persistLatestUserMessage', () => {
+  it('treats empty attachment-only turns as attachment analysis turns', () => {
+    expect(
+      isAttachmentOnlyUserTurn({
+        id: 'user-1',
+        role: 'user',
+        metadata: {
+          attachments: [
+            {
+              name: 'note.wav',
+              size: 5,
+              storagePath: 'ws/chat/note.wav',
+              type: 'audio/wav',
+            },
+          ],
+        },
+        parts: [],
+      })
+    ).toBe(true);
+  });
+
   it('persists attachment-only turns without synthetic placeholder text', async () => {
     const insertChatMessage = vi.fn(async () => ({ error: null }));
 

@@ -6,12 +6,12 @@ import {
   getMessageAttachments,
 } from '../chat-attachment-metadata';
 import {
-  injectReferencedChatFilesIntoMessages,
-  processMessagesWithFiles,
+  injectFileDigestContextIntoUiMessages,
+  resolveChatFileDigests,
 } from './message-file-processing';
 
 export const MAX_CONTEXT_MESSAGES = 10;
-const ATTACHMENT_ONLY_PLACEHOLDERS = new Set([
+export const ATTACHMENT_ONLY_PLACEHOLDERS = new Set([
   'Please analyze the attached file(s).',
   'Please analyze the attached file(s)',
 ]);
@@ -110,29 +110,39 @@ function truncateProcessedMessages(
 export async function prepareProcessedMessages(
   normalizedMessages: UIMessage[],
   wsId: string | undefined,
-  chatId: string
+  chatId: string,
+  userId: string,
+  creditWsId?: string | null
 ): Promise<{ processedMessages: ModelMessage[] } | { error: Response }> {
-  const modelMessages = await convertToModelMessages(normalizedMessages);
+  const latestAttachmentTurn =
+    getLatestUserMessageWithAttachments(normalizedMessages);
+  let messagesWithFileContext = normalizedMessages;
+
+  if (wsId && chatId && latestAttachmentTurn.attachments.length > 0) {
+    const { digestBlocks } = await resolveChatFileDigests({
+      chatId,
+      chatFiles: latestAttachmentTurn.attachments,
+      creditWsId,
+      messageId: latestAttachmentTurn.message?.id,
+      userId,
+      wsId,
+    });
+
+    messagesWithFileContext = await injectFileDigestContextIntoUiMessages({
+      digestBlocks,
+      messages: normalizedMessages,
+      targetMessageId: latestAttachmentTurn.message?.id,
+    });
+  }
+
+  const modelMessages = await convertToModelMessages(messagesWithFileContext);
   const validationError = validateModelMessages(modelMessages);
   if (validationError) {
     return { error: validationError };
   }
 
-  const processedMessages =
-    wsId && chatId
-      ? await processMessagesWithFiles({
-          chatId,
-          chatFiles:
-            getLatestUserMessageWithAttachments(normalizedMessages).attachments,
-          messages: modelMessages,
-          wsId,
-        })
-      : modelMessages;
-
-  return { processedMessages: truncateProcessedMessages(processedMessages) };
+  return { processedMessages: truncateProcessedMessages(modelMessages) };
 }
-
-export { injectReferencedChatFilesIntoMessages };
 
 export function rewriteAttachmentPathsInMessages(
   normalizedMessages: UIMessage[],
@@ -172,6 +182,14 @@ function extractUserMessageText(message: UIMessage): string {
     .filter(Boolean)
     .join('\n')
     .trim();
+}
+
+export function isAttachmentOnlyUserTurn(message: UIMessage): boolean {
+  const hasAttachments = getMessageAttachments(message).length > 0;
+  if (!hasAttachments) return false;
+
+  const text = extractUserMessageText(message);
+  return text.length === 0 || ATTACHMENT_ONLY_PLACEHOLDERS.has(text);
 }
 
 function normalizePersistedUserMessageText(

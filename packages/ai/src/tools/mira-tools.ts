@@ -4,6 +4,7 @@ import type { Tool, ToolSet } from 'ai';
 import {
   getToolsBlockedByConsecutiveFailures,
   hasReachedMiraToolCallLimit,
+  wasToolEverSelectedInSteps,
 } from '../chat/mira-render-ui-policy';
 import { createStreamRenderUiTool } from './definitions/render-ui';
 import { miraToolDefinitions } from './mira-tool-definitions';
@@ -35,6 +36,11 @@ export function createMiraStreamTools(
 ): ToolSet {
   const tools: ToolSet = {};
   let renderUiInvalidAttempts = 0;
+  const attachmentOnlyDisallowedTools = new Set([
+    'remember',
+    'update_my_settings',
+    'update_user_name',
+  ]);
 
   // Create a per-stream render_ui tool with stateful preprocessor.
   // The preprocessor auto-populates a context-aware fallback on the first
@@ -55,11 +61,30 @@ export function createMiraStreamTools(
         ...def,
         execute: async (args: Record<string, unknown>) => {
           const currentSteps = getSteps?.() ?? [];
+          const hasClosedWithNoAction = wasToolEverSelectedInSteps(
+            currentSteps,
+            'no_action_needed'
+          );
           const requestedTools = Array.isArray(args.tools)
             ? args.tools.filter(
                 (toolName): toolName is string => typeof toolName === 'string'
               )
             : [];
+          const skippedForAttachmentOnlyTurn = ctx.latestUserTurn
+            ?.isAttachmentOnly
+            ? requestedTools.filter((toolName) =>
+                attachmentOnlyDisallowedTools.has(toolName)
+              )
+            : [];
+
+          if (hasClosedWithNoAction) {
+            return {
+              ok: false,
+              error:
+                'Tool selection already concluded with no_action_needed for this user turn. Respond in plain text without calling select_tools again.',
+              selectedTools: [],
+            };
+          }
 
           if (hasReachedMiraToolCallLimit(currentSteps)) {
             return {
@@ -74,21 +99,42 @@ export function createMiraStreamTools(
             getToolsBlockedByConsecutiveFailures(currentSteps)
           );
           const selectedTools = requestedTools.filter(
-            (toolName) => !blockedTools.has(toolName)
+            (toolName) =>
+              !blockedTools.has(toolName) &&
+              !skippedForAttachmentOnlyTurn.includes(toolName)
           );
 
-          if (selectedTools.length === requestedTools.length) {
+          if (
+            ctx.latestUserTurn?.isAttachmentOnly &&
+            selectedTools.length === 0 &&
+            skippedForAttachmentOnlyTurn.length > 0
+          ) {
+            return {
+              ok: true,
+              selectedTools: ['no_action_needed'],
+              skippedTools: skippedForAttachmentOnlyTurn,
+              warning:
+                'Persistence tools are disabled for attachment-only turns unless the user explicitly asks in text to save or change long-term settings.',
+            };
+          }
+
+          if (
+            selectedTools.length === requestedTools.length &&
+            skippedForAttachmentOnlyTurn.length === 0
+          ) {
             return { ok: true, selectedTools };
           }
 
           return {
             ok: true,
             selectedTools,
-            skippedTools: requestedTools.filter((toolName) =>
-              blockedTools.has(toolName)
-            ),
+            skippedTools: requestedTools
+              .filter((toolName) => blockedTools.has(toolName))
+              .concat(skippedForAttachmentOnlyTurn),
             warning:
-              'Skipped tools that already failed repeatedly in this response. Stop retrying them and answer in plain text or choose different tools.',
+              skippedForAttachmentOnlyTurn.length > 0
+                ? 'Skipped tools that cannot run on an attachment-only turn without an explicit text instruction to persist or change long-term behavior.'
+                : 'Skipped tools that already failed repeatedly in this response. Stop retrying them and answer in plain text or choose different tools.',
           };
         },
       } as Tool;

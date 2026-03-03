@@ -20,6 +20,17 @@ export type PrepareMiraToolStepInput = {
   preferMarkdownTables: boolean;
 };
 
+type PrepareMiraToolChoice =
+  | 'none'
+  | 'required'
+  | { toolName: string; type: 'tool' };
+
+type PrepareMiraToolStepResult = {
+  toolChoice?: PrepareMiraToolChoice;
+  activeTools: string[];
+  forcePlainTextResponse?: boolean;
+};
+
 export function prepareMiraToolStep({
   steps,
   forceGoogleSearch,
@@ -27,18 +38,15 @@ export function prepareMiraToolStep({
   needsWorkspaceContextResolution,
   needsWorkspaceMembersTool,
   preferMarkdownTables,
-}: PrepareMiraToolStepInput): {
-  toolChoice?: 'required';
-  activeTools: string[];
-} {
+}: PrepareMiraToolStepInput): PrepareMiraToolStepResult {
   const blockedTools = new Set(getToolsBlockedByConsecutiveFailures(steps));
 
   const filterBlockedTools = (toolNames: string[]) =>
     toolNames.filter((toolName) => !blockedTools.has(toolName));
   const finalizeActiveTools = (
     activeTools: string[],
-    toolChoice?: 'required'
-  ) => {
+    toolChoice?: PrepareMiraToolChoice
+  ): PrepareMiraToolStepResult => {
     const uniqueActiveTools = Array.from(new Set(activeTools));
     const hasActionableTool = uniqueActiveTools.some(
       (toolName) =>
@@ -46,6 +54,18 @@ export function prepareMiraToolStep({
     );
 
     if (!hasActionableTool && steps.length > 0) {
+      const shouldStopForNoActionNeeded =
+        uniqueActiveTools.includes('no_action_needed') &&
+        wasToolEverSelectedInSteps(steps, 'no_action_needed');
+
+      if (shouldStopForNoActionNeeded) {
+        return {
+          activeTools: [],
+          forcePlainTextResponse: true,
+          toolChoice: 'none',
+        };
+      }
+
       return { activeTools: [] };
     }
 

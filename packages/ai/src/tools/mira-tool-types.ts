@@ -7,6 +7,11 @@ export interface MiraToolContext {
   creditWsId?: string;
   workspaceContext?: MiraWorkspaceContextState;
   chatId?: string;
+  latestUserTurn?: {
+    hasAttachments: boolean;
+    isAttachmentOnly: boolean;
+    text: string;
+  };
   supabase: TypedSupabaseClient;
   timezone?: string;
 }

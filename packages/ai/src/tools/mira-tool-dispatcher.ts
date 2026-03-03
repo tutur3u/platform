@@ -113,6 +113,12 @@ type ToolHandler = (
   ctx: MiraToolContext
 ) => Promise<unknown> | unknown;
 
+const ATTACHMENT_ONLY_PERSISTENCE_TOOLS = new Set([
+  'remember',
+  'update_my_settings',
+  'update_user_name',
+]);
+
 const toolHandlers = {
   select_tools: (args) => ({ ok: true, selectedTools: args.tools }),
   no_action_needed: () => ({ ok: true }),
@@ -219,6 +225,17 @@ export async function executeMiraTool(
   args: Record<string, unknown>,
   ctx: MiraToolContext
 ): Promise<unknown> {
+  if (
+    ctx.latestUserTurn?.isAttachmentOnly &&
+    ATTACHMENT_ONLY_PERSISTENCE_TOOLS.has(toolName)
+  ) {
+    return {
+      ok: false,
+      error:
+        'Persistence tools are blocked for attachment-only turns unless the user explicitly asks in text to save or change long-term settings.',
+    };
+  }
+
   if (toolName === 'render_ui') {
     if (!isRenderableRenderUiSpec(args)) {
       const diagnosisParts: string[] = [];

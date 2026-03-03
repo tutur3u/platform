@@ -21,6 +21,7 @@ type PrepareMiraRuntimeParams = {
   wsId?: string;
   workspaceContextId?: string;
   creditWsId?: string;
+  latestUserTurn?: MiraToolContext['latestUserTurn'];
   request: NextRequest;
   userId: string;
   chatId: string;
@@ -35,6 +36,7 @@ export async function prepareMiraRuntime({
   wsId,
   workspaceContextId,
   creditWsId,
+  latestUserTurn,
   request,
   userId,
   chatId,
@@ -90,6 +92,7 @@ export async function prepareMiraRuntime({
     creditWsId,
     workspaceContext: resolvedWorkspaceContext,
     chatId,
+    latestUserTurn,
     supabase,
     timezone,
   };
