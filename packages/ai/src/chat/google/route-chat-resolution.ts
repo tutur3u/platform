@@ -28,10 +28,6 @@ export async function resolveChatIdForUser(
 }
 
 type MoveTempFilesToThreadParams = {
-  loadThread: () => PromiseLike<{
-    data: { role?: string }[] | null;
-    error: { message: string } | null;
-  }>;
   listFiles: (tempStoragePath: string) => PromiseLike<{
     data: { name: string }[] | null;
     error: AdminClientLike | null;
@@ -45,27 +41,19 @@ type MoveTempFilesToThreadParams = {
   userId: string;
 };
 
+type MoveTempFilesToThreadResult =
+  | { error: Response; movedPaths?: never }
+  | { error: null; movedPaths: Map<string, string> };
+
 export async function moveTempFilesToThread({
-  loadThread,
   listFiles,
   moveFile,
   wsId,
   chatId,
   userId,
-}: MoveTempFilesToThreadParams): Promise<Response | null> {
+}: MoveTempFilesToThreadParams): Promise<MoveTempFilesToThreadResult> {
   if (!wsId) {
-    return null;
-  }
-
-  const { data: thread, error: threadError } = await loadThread();
-
-  if (threadError) {
-    console.error('Error getting thread:', threadError);
-    return new Response(threadError.message, { status: 500 });
-  }
-
-  if (!thread || thread.length === 0) {
-    return null;
+    return { error: null, movedPaths: new Map() };
   }
 
   const tempStoragePath = `${wsId}/chats/ai/resources/temp/${userId}`;
@@ -73,26 +61,29 @@ export async function moveTempFilesToThread({
 
   if (listError) {
     console.error('Error getting files:', listError);
-    return null;
+    return { error: null, movedPaths: new Map() };
   }
 
   if (!files?.length) {
-    return null;
+    return { error: null, movedPaths: new Map() };
   }
 
+  const movedPaths = new Map<string, string>();
   await Promise.all(
     files.map(async (file) => {
       const fileName = file.name;
-      const { error: copyError } = await moveFile(
-        `${tempStoragePath}/${fileName}`,
-        `${wsId}/chats/ai/resources/${chatId}/${fileName}`
-      );
+      const fromPath = `${tempStoragePath}/${fileName}`;
+      const toPath = `${wsId}/chats/ai/resources/${chatId}/${fileName}`;
+      const { error: copyError } = await moveFile(fromPath, toPath);
 
       if (copyError) {
         console.error('File copy error:', { fileName, copyError });
+        return;
       }
+
+      movedPaths.set(fromPath, toPath);
     })
   );
 
-  return null;
+  return { error: null, movedPaths };
 }

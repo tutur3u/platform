@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { normalizeChatAttachmentMetadata } from '../../chat/chat-attachment-metadata';
 import {
   commitFixedAiCreditReservation,
   releaseFixedAiCreditReservation,
@@ -11,10 +12,48 @@ const CREDIT_FEATURE = 'chat' as const;
 const MARKITDOWN_LEDGER_MODEL = 'markitdown/conversion';
 const DEFAULT_MARKITDOWN_TIMEOUT_MS = 30_000;
 const MIN_MARKITDOWN_TIMEOUT_MS = 1_000;
+const NATIVE_MULTIMODAL_EXTENSIONS = new Set([
+  'aac',
+  'flac',
+  'jpeg',
+  'jpg',
+  'm4a',
+  'mov',
+  'mp3',
+  'mp4',
+  'ogg',
+  'png',
+  'wav',
+  'webm',
+  'webp',
+]);
 
 function stripTimestampPrefix(name: string): string {
   const match = name.match(/^\d+_(.+)$/);
   return match?.[1] ?? name;
+}
+
+function getFileExtension(name: string): string {
+  const normalizedName = stripTimestampPrefix(name).toLowerCase();
+  const lastDotIndex = normalizedName.lastIndexOf('.');
+  if (lastDotIndex === -1) return '';
+  return normalizedName.slice(lastDotIndex + 1);
+}
+
+function isNativeMultimodalFile(
+  fileName: string,
+  mediaType?: string | null
+): boolean {
+  if (
+    typeof mediaType === 'string' &&
+    (mediaType.startsWith('audio/') ||
+      mediaType.startsWith('image/') ||
+      mediaType.startsWith('video/'))
+  ) {
+    return true;
+  }
+
+  return NATIVE_MULTIMODAL_EXTENSIONS.has(getFileExtension(fileName));
 }
 
 function parseBaseUrl(value: string): string | null {
@@ -195,7 +234,7 @@ export async function executeConvertFileToMarkdown(
 
   const storagePathArg =
     typeof args.storagePath === 'string' ? args.storagePath.trim() : '';
-  const fileNameArg =
+  let fileNameArg =
     typeof args.fileName === 'string' ? args.fileName.trim() : '';
   const maxCharactersRaw =
     typeof args.maxCharacters === 'number' &&
@@ -207,14 +246,35 @@ export async function executeConvertFileToMarkdown(
   const expectedPrefix = `${ctx.wsId}/chats/ai/resources/`;
   let targetPath = storagePathArg;
   let selectedFileName = '';
+  let selectedMediaType: string | null = null;
 
   const sbAdmin = await createAdminClient();
 
   if (targetPath) {
-    if (!targetPath.startsWith(expectedPrefix) || targetPath.includes('..')) {
+    if (
+      (!targetPath.startsWith(expectedPrefix) || targetPath.includes('..')) &&
+      ctx.chatId &&
+      !targetPath.includes('/')
+    ) {
+      fileNameArg ||= targetPath;
+      targetPath = '';
+    } else if (
+      !targetPath.startsWith(expectedPrefix) ||
+      targetPath.includes('..')
+    ) {
       return { ok: false, error: 'Invalid storagePath for current workspace.' };
     }
-    selectedFileName = targetPath.split('/').pop() ?? targetPath;
+
+    if (targetPath) {
+      selectedFileName = targetPath.split('/').pop() ?? targetPath;
+      if (isNativeMultimodalFile(selectedFileName)) {
+        return {
+          ok: false,
+          error:
+            'Audio, image, and video attachments are already available to the model natively. Do not use convert_file_to_markdown for this file; analyze the attachment directly and answer the user.',
+        };
+      }
+    }
   } else {
     if (!ctx.chatId) {
       return {
@@ -225,6 +285,33 @@ export async function executeConvertFileToMarkdown(
     }
 
     const chatFolder = `${ctx.wsId}/chats/ai/resources/${ctx.chatId}`;
+    const { data: recentMessages, error: recentMessagesError } = await sbAdmin
+      .from('ai_chat_messages')
+      .select('id, metadata, role, created_at')
+      .eq('chat_id', ctx.chatId)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (recentMessagesError) {
+      return {
+        ok: false,
+        error: `Failed to inspect recent chat messages: ${recentMessagesError.message}`,
+      };
+    }
+
+    const latestUserAttachments =
+      recentMessages?.find((message) => {
+        if (String(message.role ?? '').toLowerCase() !== 'user') return false;
+        return (
+          normalizeChatAttachmentMetadata(
+            (message.metadata as Record<string, unknown> | null)?.attachments
+          ).length > 0
+        );
+      })?.metadata ?? null;
+    const preferredAttachments = normalizeChatAttachmentMetadata(
+      (latestUserAttachments as Record<string, unknown> | null)?.attachments
+    );
+
     const { data: listedFiles, error: listError } = await sbAdmin.storage
       .from('workspaces')
       .list(chatFolder, {
@@ -247,14 +334,29 @@ export async function executeConvertFileToMarkdown(
       return { ok: false, error: 'No files found in this chat.' };
     }
 
+    const preferredStoragePaths = new Set(
+      preferredAttachments.map((attachment) => attachment.storagePath)
+    );
+    const preferredFileNameSet = new Set(
+      preferredAttachments.map((attachment) => attachment.name.toLowerCase())
+    );
+    const preferredFiles = realFiles.filter((entry) =>
+      preferredStoragePaths.has(`${chatFolder}/${entry.name}`)
+    );
+
+    const matchByName = (entry: (typeof realFiles)[number]) =>
+      entry.name.toLowerCase() === fileNameArg.toLowerCase() ||
+      stripTimestampPrefix(entry.name).toLowerCase() ===
+        fileNameArg.toLowerCase();
+
     const pickedFile = fileNameArg
-      ? realFiles.find(
-          (entry) =>
-            entry.name.toLowerCase() === fileNameArg.toLowerCase() ||
-            stripTimestampPrefix(entry.name).toLowerCase() ===
-              fileNameArg.toLowerCase()
-        )
-      : realFiles[0];
+      ? (preferredFiles.find(matchByName) ?? realFiles.find(matchByName))
+      : (preferredFiles.find((entry) => {
+          const strippedName = stripTimestampPrefix(entry.name).toLowerCase();
+          return preferredFileNameSet.has(strippedName);
+        }) ??
+        preferredFiles[0] ??
+        realFiles[0]);
 
     if (!pickedFile) {
       return {
@@ -264,6 +366,21 @@ export async function executeConvertFileToMarkdown(
     }
 
     selectedFileName = pickedFile.name;
+    selectedMediaType =
+      typeof pickedFile.metadata?.mimetype === 'string'
+        ? pickedFile.metadata.mimetype
+        : typeof pickedFile.metadata?.mediaType === 'string'
+          ? pickedFile.metadata.mediaType
+          : null;
+
+    if (isNativeMultimodalFile(selectedFileName, selectedMediaType)) {
+      return {
+        ok: false,
+        error:
+          'Audio, image, and video attachments are already available to the model natively. Do not use convert_file_to_markdown for this file; analyze the attachment directly and answer the user.',
+      };
+    }
+
     targetPath = `${chatFolder}/${pickedFile.name}`;
   }
 

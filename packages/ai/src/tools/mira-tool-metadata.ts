@@ -91,8 +91,14 @@ export const MIRA_TOOL_DIRECTORY: Record<MiraToolName, string> = {
     'Generate a QR code from text with custom colors/size and save it to Drive',
   google_search:
     'Search the web for real-time info (news, prices, weather, facts).',
+  list_chat_files:
+    'List files uploaded in the current chat so you can pick only the relevant attachment before referencing, loading, or converting it. This is discovery only and does not inspect file contents.',
+  load_chat_file:
+    'Load one specific earlier chat file back into native model context for actual analysis. Use this for prior-turn audio, image, video, PDF, or text files before discussing or renaming them based on content.',
+  rename_chat_file:
+    'Rename a chat file by setting a human-friendly alias/display name without changing the underlying storage path.',
   convert_file_to_markdown:
-    'Convert attached files (Excel, Word, PowerPoint, PDF, etc.) into markdown via MarkItDown. Costs 100 credits per request.',
+    'Convert attached office/document files (Excel, Word, PowerPoint, PDF, etc.) into markdown via MarkItDown. Prefer choosing a specific file from the current turn or list_chat_files results. Do not use for audio, image, or video attachments. Costs 100 credits per request.',
   list_accessible_workspaces:
     'List every workspace you can access, with member counts',
   get_workspace_context:

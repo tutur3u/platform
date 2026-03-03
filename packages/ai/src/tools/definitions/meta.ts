@@ -67,15 +67,65 @@ export const metaToolDefinitions = {
     }),
   }),
 
+  list_chat_files: tool({
+    description:
+      'List files that have been uploaded in the current chat so you can reference only the relevant ones by name before loading, converting, or discussing them. This tool does not inspect file contents.',
+    inputSchema: z.object({
+      limit: z
+        .number()
+        .int()
+        .min(1)
+        .max(50)
+        .optional()
+        .describe('Optional maximum number of files to return. Default is 20.'),
+      latestFirst: z
+        .boolean()
+        .optional()
+        .describe('Optional sort order. Defaults to true for newest first.'),
+      query: optionalTrimmedString(255, 'query').describe(
+        'Optional filename, alias, or MIME query to narrow the result set.'
+      ),
+    }),
+  }),
+
+  load_chat_file: tool({
+    description:
+      'Load one earlier chat file back into native model context so you can analyze the actual file contents before answering. Use this for prior-turn audio, image, video, PDF, or text files.',
+    inputSchema: z.object({
+      fileName: optionalTrimmedString(255, 'fileName').describe(
+        'Optional current filename or alias. Use list_chat_files first if you need to inspect the available files.'
+      ),
+      storagePath: optionalTrimmedString(1024, 'storagePath').describe(
+        'Optional exact storage path. Prefer this when multiple files share a similar name.'
+      ),
+    }),
+  }),
+
+  rename_chat_file: tool({
+    description:
+      'Rename a chat file by updating its display alias. This tool does not inspect file contents. If the new name depends on understanding an earlier file, load that file first.',
+    inputSchema: z.object({
+      fileName: optionalTrimmedString(255, 'fileName').describe(
+        'Optional current filename or alias. Use list_chat_files first if you need to inspect the available files.'
+      ),
+      newName: requiredTrimmedString(255, 'newName').describe(
+        'New display name/alias for the file.'
+      ),
+      storagePath: optionalTrimmedString(1024, 'storagePath').describe(
+        'Optional exact storage path. Prefer this when multiple files share a similar name.'
+      ),
+    }),
+  }),
+
   convert_file_to_markdown: tool({
     description:
-      'Convert an attached chat file (Excel, Word, PowerPoint, PDF, etc.) to markdown via MarkItDown.',
+      'Convert attached office/document chat files (Excel, Word, PowerPoint, PDF, etc.) to markdown via MarkItDown. Do not use for audio, image, or video inputs that the model can already consume natively.',
     inputSchema: z.object({
       storagePath: optionalTrimmedString(1024, 'storagePath').describe(
-        'Optional full storage path. If omitted, the latest file from the current chat is converted.'
+        'Optional full storage path. If omitted, the latest document attachment from the current user turn is preferred, then the chat fallback is used.'
       ),
       fileName: optionalTrimmedString(255, 'fileName').describe(
-        'Optional filename from current chat attachments (for example: "report.xlsx"). Used when storagePath is not provided.'
+        'Optional filename from current chat attachments or from list_chat_files results (for example: "report.xlsx"). Used when storagePath is not provided.'
       ),
       maxCharacters: z
         .number()

@@ -25,14 +25,76 @@ import {
 } from './route-chat-resolution';
 import { performCreditPreflight } from './route-credits';
 import {
+  injectReferencedChatFilesIntoMessages,
   persistLatestUserMessage,
   prepareProcessedMessages,
+  rewriteAttachmentPathsInMessages,
 } from './route-message-preparation';
 import { prepareMiraRuntime } from './route-mira-runtime';
 import { persistAssistantResponse } from './stream-finish-persistence';
 
 const DEFAULT_MODEL_NAME = 'google/gemini-2.5-flash';
 type ThinkingMode = 'fast' | 'thinking';
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function extractLoadedChatFilesFromSteps(steps: unknown[]) {
+  const filesByStoragePath = new Map<
+    string,
+    {
+      alias?: string | null;
+      introText: string;
+      name: string;
+      storagePath: string;
+      type: string;
+    }
+  >();
+
+  for (const step of steps) {
+    if (!isRecord(step) || !Array.isArray(step.toolResults)) continue;
+
+    for (const toolResult of step.toolResults) {
+      if (!isRecord(toolResult) || toolResult.toolName !== 'load_chat_file') {
+        continue;
+      }
+
+      const output = toolResult.output;
+      if (!isRecord(output) || output.ok !== true || !isRecord(output.file)) {
+        continue;
+      }
+
+      const file = output.file;
+      const storagePath =
+        typeof file.storagePath === 'string' ? file.storagePath : '';
+      const mediaType =
+        typeof file.mediaType === 'string' ? file.mediaType : '';
+      const fileName = typeof file.fileName === 'string' ? file.fileName : '';
+      const displayName =
+        typeof file.displayName === 'string' ? file.displayName : fileName;
+      const turnIndex =
+        typeof file.turnIndex === 'number' ? file.turnIndex : null;
+
+      if (!storagePath || !mediaType || !fileName) continue;
+
+      filesByStoragePath.set(storagePath, {
+        alias:
+          displayName && displayName !== fileName ? displayName : undefined,
+        introText:
+          turnIndex != null
+            ? `Earlier chat file from turn ${turnIndex}: ${displayName} (${mediaType}). Analyze the actual file contents before answering. Do not infer contents from the filename alone.`
+            : `Earlier chat file: ${displayName} (${mediaType}). Analyze the actual file contents before answering. Do not infer contents from the filename alone.`,
+        name: fileName,
+        storagePath,
+        type: mediaType,
+      });
+    }
+  }
+
+  return [...filesByStoragePath.values()];
+}
+
 export function createPOST(
   _options: {
     serverAPIKeyFallback?: boolean;
@@ -296,9 +358,7 @@ export function createPOST(
       const chatId = resolvedChatId.chatId;
 
       const sbDynamic = await createDynamicClient();
-      const moveFilesError = await moveTempFilesToThread({
-        loadThread: () =>
-          supabase.from('ai_chat_messages').select('*').eq('chat_id', chatId),
+      const moveFilesResult = await moveTempFilesToThread({
         listFiles: (tempStoragePath) =>
           sbDynamic.storage.from('workspaces').list(tempStoragePath),
         moveFile: (fromPath, toPath) =>
@@ -307,11 +367,14 @@ export function createPOST(
         chatId,
         userId: user.id,
       });
-      if (moveFilesError) {
-        return moveFilesError;
+      if (moveFilesResult.error) {
+        return moveFilesResult.error;
       }
 
-      const normalizedMessages = mapToUIMessages(messages);
+      const normalizedMessages = rewriteAttachmentPathsInMessages(
+        mapToUIMessages(messages),
+        moveFilesResult.movedPaths
+      );
       const preparedMessages = await prepareProcessedMessages(
         normalizedMessages,
         normalizedWsId ?? undefined,
@@ -323,11 +386,17 @@ export function createPOST(
       const { processedMessages } = preparedMessages;
 
       const persistUserMessageError = await persistLatestUserMessage({
-        processedMessages,
         chatId,
         insertChatMessage: (args) =>
-          supabase.rpc('insert_ai_chat_message', args),
+          typeof args.id === 'string' && args.id.length > 0
+            ? sbAdmin
+                .from('ai_chat_messages')
+                .upsert([args], { onConflict: 'id' })
+            : sbAdmin.from('ai_chat_messages').insert([args]),
+        model,
+        normalizedMessages,
         source: isMiraMode ? 'Mira' : 'Rewise',
+        userId: user.id,
       });
       if (persistUserMessageError) {
         return persistUserMessageError;
@@ -401,11 +470,11 @@ export function createPOST(
       type PrepareStep = NonNullable<
         NonNullable<Parameters<typeof streamText>[0]>['prepareStep']
       >;
-      const prepareStep: PrepareStep = ({ steps }) => {
+      const prepareStep: PrepareStep = async ({ messages, steps }) => {
         // Keep the mutable ref in sync so the render_ui preprocessor can
         // read current steps during Zod validation.
         stepsRef.current = steps;
-        return prepareMiraToolStep({
+        const stepConfig = prepareMiraToolStep({
           steps,
           forceGoogleSearch,
           forceRenderUi,
@@ -413,6 +482,28 @@ export function createPOST(
           needsWorkspaceMembersTool,
           preferMarkdownTables,
         });
+
+        if (!normalizedWsId) {
+          return stepConfig;
+        }
+
+        const loadedChatFiles = extractLoadedChatFilesFromSteps(steps);
+        if (loadedChatFiles.length === 0) {
+          return stepConfig;
+        }
+
+        const messagesWithLoadedChatFiles =
+          await injectReferencedChatFilesIntoMessages({
+            chatFiles: loadedChatFiles,
+            chatId,
+            messages,
+            wsId: normalizedWsId,
+          });
+
+        return {
+          ...stepConfig,
+          messages: messagesWithLoadedChatFiles,
+        };
       };
 
       const result = streamText({

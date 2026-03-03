@@ -1,12 +1,72 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { gateway, generateText, type UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
+import { normalizeChatAttachmentMetadata } from '../../chat-attachment-metadata';
 
 const HUMAN_PROMPT = '\n\nHuman:';
 const AI_PROMPT = '\n\nAssistant:';
+const FILE_ONLY_PLACEHOLDERS = new Set([
+  'Please analyze the attached file(s).',
+  'Please analyze the attached file(s)',
+]);
 
 /** Always use a lightweight model for title generation */
 const TITLE_MODEL = 'google/gemini-2.5-flash-lite';
+
+type Json =
+  | null
+  | boolean
+  | number
+  | string
+  | Json[]
+  | { [key: string]: Json | undefined };
+
+function buildTitleSeed(
+  message: string | undefined,
+  messageMetadata: Record<string, unknown> | undefined
+): string {
+  const trimmed = message?.trim() ?? '';
+  if (trimmed.length > 0 && !FILE_ONLY_PLACEHOLDERS.has(trimmed)) {
+    return `"${trimmed}"`;
+  }
+
+  const attachments = normalizeChatAttachmentMetadata(
+    messageMetadata?.attachments
+  );
+  if (attachments.length === 0) {
+    return `"${trimmed || 'New chat'}"`;
+  }
+
+  const describedAttachments = attachments.slice(0, 3).map((attachment) => {
+    const label = attachment.alias || attachment.name;
+    const mediaFamily = attachment.type?.split('/')[0] ?? 'file';
+    return `${mediaFamily} file "${label}"`;
+  });
+  const remainingCount = attachments.length - describedAttachments.length;
+
+  return `The conversation starts with ${describedAttachments.join(', ')}${
+    remainingCount > 0 ? ` and ${remainingCount} more file(s)` : ''
+  }.`;
+}
+
+export function normalizeInitialUserMessageContent(
+  message: string,
+  messageMetadata: Record<string, unknown> | undefined
+): string {
+  const trimmed = message.trim();
+  const attachments = normalizeChatAttachmentMetadata(
+    messageMetadata?.attachments
+  );
+
+  if (attachments.length > 0 && FILE_ONLY_PLACEHOLDERS.has(trimmed)) {
+    return '';
+  }
+
+  return trimmed;
+}
 
 export function createPOST(
   _options: {
@@ -16,18 +76,21 @@ export function createPOST(
 ) {
   return async function handler(req: Request) {
     try {
-      const { id, model, message, isMiraMode } = (await req.json()) as {
-        id?: string;
-        model?: string;
-        message?: string;
-        isMiraMode?: boolean;
-      };
+      const { id, isMiraMode, message, messageId, messageMetadata, model } =
+        (await req.json()) as {
+          id?: string;
+          isMiraMode?: boolean;
+          messageMetadata?: Record<string, unknown>;
+          messageId?: string;
+          model?: string;
+          message?: string;
+        };
 
       if (!message)
         return NextResponse.json('No message provided', { status: 400 });
 
       const supabase = await createClient();
-
+      const sbAdmin = await createAdminClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -37,7 +100,12 @@ export function createPOST(
       const prompt = buildPrompt([
         {
           id: 'initial-message',
-          parts: [{ type: 'text', text: `"${message}"` }],
+          parts: [
+            {
+              type: 'text',
+              text: buildTitleSeed(message, messageMetadata),
+            },
+          ],
           role: 'user',
         },
       ]);
@@ -86,7 +154,7 @@ export function createPOST(
         ? (model.includes('/') ? model.split('/').pop()! : model).toLowerCase()
         : 'gemini-2.5-flash-lite';
 
-      const { data: chat, error: chatError } = await supabase
+      const { data: chat, error: chatError } = await sbAdmin
         .from('ai_chats')
         .insert({
           id,
@@ -102,15 +170,34 @@ export function createPOST(
         return NextResponse.json(chatError.message, { status: 500 });
       }
 
-      const { error: msgError } = await supabase.rpc('insert_ai_chat_message', {
-        message: message,
-        chat_id: chat.id,
+      const persistedContent = normalizeInitialUserMessageContent(
+        message,
+        messageMetadata
+      );
+      const persistedMetadata = {
         source: isMiraMode ? 'Mira' : 'Rewise',
-      });
+        ...(messageMetadata ?? {}),
+      } as Json;
 
-      if (msgError) {
-        console.log(msgError);
-        return NextResponse.json(msgError.message, { status: 500 });
+      const insertArgs = {
+        chat_id: chat.id,
+        content: persistedContent,
+        creator_id: user.id,
+        ...(messageId ? { id: messageId } : {}),
+        metadata: persistedMetadata,
+        model: resolvedModel,
+        role: 'USER' as const,
+      };
+
+      const { error: messageError } = messageId
+        ? await sbAdmin
+            .from('ai_chat_messages')
+            .upsert([insertArgs], { onConflict: 'id' })
+        : await sbAdmin.from('ai_chat_messages').insert([insertArgs]);
+
+      if (messageError) {
+        console.log(messageError);
+        return NextResponse.json(messageError.message, { status: 500 });
       }
 
       return NextResponse.json({ id: chat.id, title }, { status: 200 });

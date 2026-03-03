@@ -8,6 +8,11 @@ import {
 } from './executors/calendar';
 import { executeSetImmersiveMode } from './executors/chat';
 import {
+  executeListChatFiles,
+  executeLoadChatFile,
+  executeRenameChatFile,
+} from './executors/chat-files';
+import {
   executeCreateTransactionCategory,
   executeCreateTransactionTag,
   executeCreateWallet,
@@ -193,6 +198,9 @@ const toolHandlers = {
 
   create_image: executeGenerateImage,
   create_qr_code: executeCreateQrCode,
+  list_chat_files: executeListChatFiles,
+  load_chat_file: executeLoadChatFile,
+  rename_chat_file: executeRenameChatFile,
   convert_file_to_markdown: executeConvertFileToMarkdown,
   list_accessible_workspaces: executeListAccessibleWorkspaces,
   get_workspace_context: executeGetWorkspaceContext,

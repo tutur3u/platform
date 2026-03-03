@@ -1,15 +1,46 @@
 import { MAX_CHAT_MESSAGE_LENGTH } from '@tuturuuu/utils/constants';
 import type { ModelMessage, UIMessage } from 'ai';
 import { convertToModelMessages } from 'ai';
-import { processMessagesWithFiles } from './message-file-processing';
+import {
+  getLatestUserMessageWithAttachments,
+  getMessageAttachments,
+} from '../chat-attachment-metadata';
+import {
+  injectReferencedChatFilesIntoMessages,
+  processMessagesWithFiles,
+} from './message-file-processing';
 
 export const MAX_CONTEXT_MESSAGES = 10;
+const ATTACHMENT_ONLY_PLACEHOLDERS = new Set([
+  'Please analyze the attached file(s).',
+  'Please analyze the attached file(s)',
+]);
 
-type SupabaseRpcClientLike = {
-  message: string;
+type Json =
+  | null
+  | boolean
+  | number
+  | string
+  | Json[]
+  | { [key: string]: Json | undefined };
+
+type InsertChatMessageArgs = {
   chat_id: string;
-  source: 'Mira' | 'Rewise';
+  content: string;
+  creator_id: string;
+  id?: string;
+  metadata?: Json;
+  model?: string;
+  role: 'USER';
 };
+
+type InsertChatMessageResult = PromiseLike<{
+  error: { message: string } | null;
+}>;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
 
 function validateModelMessages(modelMessages: ModelMessage[]): Response | null {
   for (const message of modelMessages) {
@@ -89,69 +120,123 @@ export async function prepareProcessedMessages(
 
   const processedMessages =
     wsId && chatId
-      ? await processMessagesWithFiles(modelMessages, wsId, chatId)
+      ? await processMessagesWithFiles({
+          chatId,
+          chatFiles:
+            getLatestUserMessageWithAttachments(normalizedMessages).attachments,
+          messages: modelMessages,
+          wsId,
+        })
       : modelMessages;
 
   return { processedMessages: truncateProcessedMessages(processedMessages) };
 }
 
-function extractLatestUserMessageContent(
-  processedMessages: ModelMessage[]
+export { injectReferencedChatFilesIntoMessages };
+
+export function rewriteAttachmentPathsInMessages(
+  normalizedMessages: UIMessage[],
+  movedPaths: ReadonlyMap<string, string>
+): UIMessage[] {
+  if (movedPaths.size === 0) return normalizedMessages;
+
+  return normalizedMessages.map((message) => {
+    if (!isRecord(message.metadata)) {
+      return message;
+    }
+
+    const attachments = getMessageAttachments(message);
+    if (attachments.length === 0) {
+      return message;
+    }
+
+    const rewrittenAttachments = attachments.map((attachment) => ({
+      ...attachment,
+      storagePath:
+        movedPaths.get(attachment.storagePath) ?? attachment.storagePath,
+    }));
+
+    return {
+      ...message,
+      metadata: {
+        ...message.metadata,
+        attachments: rewrittenAttachments,
+      },
+    };
+  });
+}
+
+function extractUserMessageText(message: UIMessage): string {
+  return (message.parts ?? [])
+    .map((part) => (part.type === 'text' ? part.text : ''))
+    .filter(Boolean)
+    .join('\n')
+    .trim();
+}
+
+function normalizePersistedUserMessageText(
+  text: string,
+  hasAttachments: boolean
 ): string {
-  const userMessages = processedMessages.filter(
-    (msg: ModelMessage) => msg.role === 'user'
-  );
-
-  const lastMessage = userMessages[userMessages.length - 1];
-  if (typeof lastMessage?.content === 'string') {
-    return lastMessage.content;
-  }
-
-  if (Array.isArray(lastMessage?.content)) {
-    return lastMessage.content
-      .map((part) => {
-        if (part.type === 'text') return part.text;
-        if (part.type === 'image') return '[Image attached]';
-        if (part.type === 'file')
-          return `[File: ${(part as { name?: string }).name || 'attached'}]`;
-        return '';
-      })
-      .filter(Boolean)
-      .join('\n');
-  }
-
-  return 'Message with attachments';
+  if (!hasAttachments) return text;
+  return ATTACHMENT_ONLY_PLACEHOLDERS.has(text) ? '' : text;
 }
 
 type PersistLatestUserMessageParams = {
-  processedMessages: ModelMessage[];
   chatId: string;
-  insertChatMessage: (
-    args: SupabaseRpcClientLike
-  ) => PromiseLike<{ error: { message: string } | null }>;
+  insertChatMessage: (args: InsertChatMessageArgs) => InsertChatMessageResult;
+  model: string;
+  normalizedMessages: UIMessage[];
   source: 'Mira' | 'Rewise';
+  userId: string;
 };
 
+function getLatestUserMessage(
+  normalizedMessages: UIMessage[]
+): UIMessage | undefined {
+  return [...normalizedMessages]
+    .reverse()
+    .find((message) => message.role === 'user');
+}
+
+function normalizeModelName(model: string): string {
+  return (model.includes('/') ? model.split('/').pop()! : model).toLowerCase();
+}
+
 export async function persistLatestUserMessage({
-  processedMessages,
   chatId,
   insertChatMessage,
+  model,
+  normalizedMessages,
   source,
+  userId,
 }: PersistLatestUserMessageParams): Promise<Response | null> {
-  if (processedMessages.length === 1) {
+  const latestUserMessage = getLatestUserMessage(normalizedMessages);
+  if (!latestUserMessage) {
     return null;
   }
 
-  const messageContent = extractLatestUserMessageContent(processedMessages);
-  if (!messageContent) {
+  const hasAttachments = getMessageAttachments(latestUserMessage).length > 0;
+  const messageContent = normalizePersistedUserMessageText(
+    extractUserMessageText(latestUserMessage),
+    hasAttachments
+  );
+  if (!messageContent && !hasAttachments) {
     console.log('No message found');
     throw new Error('No message found');
   }
 
   const { error: insertMsgError } = await insertChatMessage({
-    message: messageContent,
     chat_id: chatId,
-    source,
+    content: messageContent,
+    creator_id: userId,
+    ...(latestUserMessage.id ? { id: latestUserMessage.id } : {}),
+    metadata: {
+      source,
+      ...(latestUserMessage.metadata ?? {}),
+    } as Json,
+    model: normalizeModelName(model),
+    role: 'USER',
   });
 
   if (insertMsgError) {

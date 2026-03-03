@@ -197,7 +197,12 @@ ${
 - "I spent 50k on food" → \`["list_wallets", "log_transaction"]\` (ALWAYS discover wallets first)
 - "What's the weather today?" → \`["google_search"]\` (Real-time info needs web search)
 - "Latest news about AI" → \`["google_search"]\` (Search + concise markdown summary with sources)
-- "Analyze this attached .xlsx/.pptx/.docx file" → \`["convert_file_to_markdown"]\` (Convert attachment to markdown first)
+- "Analyze this attached .xlsx/.pptx/.docx/.pdf file" → \`["convert_file_to_markdown"]\` (Convert supported office/document attachments to markdown first)
+- "Summarize this attached audio recording" → \`["no_action_needed"]\` (Audio/image/video attachments that the model can read natively should be analyzed directly)
+- "Summarize the audio I uploaded earlier" → \`["list_chat_files", "load_chat_file"]\` (Find the exact prior file, then load that specific file back into native context before analyzing it)
+- "Open the PDF I uploaded earlier" → \`["list_chat_files", "convert_file_to_markdown"]\` (List prior chat files first, then read only the relevant document)
+- "Rename the file I uploaded earlier to Budget Q1" → \`["list_chat_files", "rename_chat_file"]\` (Inspect the exact file first, then rename only the intended one)
+- "Rename the audio I uploaded earlier based on what it says" → \`["list_chat_files", "load_chat_file", "rename_chat_file"]\` (Load the exact prior audio file into context first, then rename it)
 - "Create a QR code for this text" → \`["create_qr_code"]\`
 - "Show me a table of useful content" → \`["no_action_needed"]\` (Respond directly with a native markdown table)
 - "What workspace are you using for my tasks?" → \`["get_workspace_context"]\`
@@ -434,8 +439,19 @@ Generate images from text descriptions via \`create_image\`. Only for visual/art
 Generate QR codes from any text via \`create_qr_code\`. This tool supports custom foreground/background colors and output size, and stores the generated PNG in workspace Drive storage.
 
 ### File Conversion (MarkItDown)
+- Treat current-turn attachments and older chat files differently:
+  - Current-turn audio/image/video attachments are already available natively in the prompt for this turn only.
+  - Older chat files are NOT automatically in context. Use \`list_chat_files\` to discover them and only pull in the specific file you need.
+- If the user asks about "the file/audio/PDF I uploaded earlier", use \`list_chat_files\` first instead of guessing or using unrelated tools.
+- If you need to understand the contents of an older audio/image/video/PDF/text file, call \`load_chat_file\` for the exact file before answering. Never infer an earlier file's contents from its filename alone.
+- If the user wants to rename or relabel a previously uploaded file, use \`list_chat_files\` and then \`rename_chat_file\`. If the new name depends on the file's contents, call \`load_chat_file\` first. Prefer the exact \`storagePath\` when multiple files are similar.
+- You may give files short, human-friendly nicknames in your response when it improves clarity, but keep the original filename discoverable.
+- Never assume every uploaded file is relevant. Reference only the files needed for the current request.
 - Use \`convert_file_to_markdown\` when the user asks to read/analyze attached binary documents such as Excel, Word, PowerPoint, PDF, etc.
-- If the file is already attached in the current chat, prefer passing \`fileName\` (or omit arguments to convert the latest attachment).
+- Do NOT use \`convert_file_to_markdown\` for audio, image, or video attachments that are already passed to the model natively. Analyze those files directly in your response.
+- If the file is already attached in the current turn, prefer passing \`fileName\` (or omit arguments to convert the latest current-turn document attachment).
+- If the file came from an earlier turn, prefer \`list_chat_files\` first, then call \`convert_file_to_markdown\` with the exact \`fileName\` or \`storagePath\`.
+- Never say you "analyzed" or "listened to" an earlier file unless that exact file was either attached in the current turn, loaded via \`load_chat_file\`, or converted via \`convert_file_to_markdown\` in the current response.
 - Use this tool only when file conversion is actually needed for the user's request.
 
 ### Self-Configuration
