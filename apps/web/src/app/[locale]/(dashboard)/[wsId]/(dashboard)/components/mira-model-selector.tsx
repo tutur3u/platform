@@ -339,6 +339,7 @@ export default function MiraModelSelector({
   const modelById = useMemo(() => {
     return new Map(availableModels.map((m) => [m.value, m] as const));
   }, [availableModels]);
+  const selectedModel = modelById.get(model.value) ?? model;
 
   const allowedModelLookup = useMemo(() => {
     if (!allowedModelIds) return null;
@@ -522,8 +523,8 @@ export default function MiraModelSelector({
               className="h-8 min-w-0 max-w-full gap-2 rounded-full px-3 font-mono text-muted-foreground text-sm"
               disabled={disabled}
             >
-              <ProviderLogo provider={model.provider} size={16} />
-              <span className="min-w-0 truncate">{model.label}</span>
+              <ProviderLogo provider={selectedModel.provider} size={16} />
+              <span className="min-w-0 truncate">{selectedModel.label}</span>
               <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>

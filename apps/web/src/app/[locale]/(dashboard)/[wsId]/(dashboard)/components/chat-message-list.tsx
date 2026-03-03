@@ -17,6 +17,7 @@ import {
   getDisplayText,
   getErrorMessage,
   getMessageText,
+  getRenderableMessageAttachments,
   hasTextContent,
   hasToolParts,
 } from './chat-message-list/helpers';
@@ -159,14 +160,16 @@ export default function ChatMessageList({
     >
       {messages.map((message, index) => {
         const isUser = message.role === 'user';
+        const userAttachments = isUser
+          ? getRenderableMessageAttachments(message, messageAttachments)
+          : [];
         const hasText = hasTextContent(message);
         const displayText = isUser
           ? getDisplayText(message, isAutoMermaidRepairPrompt)
           : '';
         const hasDisplayText = isUser ? displayText.trim().length > 0 : hasText;
         const hasTools = !isUser && hasToolParts(message);
-        const hasAttachments =
-          isUser && (messageAttachments?.get(message.id)?.length ?? 0) > 0;
+        const hasAttachments = isUser && userAttachments.length > 0;
 
         // Skip messages with no renderable content
         if (!hasDisplayText && !hasTools && !hasAttachments) return null;
@@ -256,7 +259,7 @@ export default function ChatMessageList({
                   {isUser ? (
                     <UserMessageContent
                       displayText={displayText}
-                      attachments={messageAttachments?.get(message.id)}
+                      attachments={userAttachments}
                     />
                   ) : (
                     <div className="flex min-w-0 max-w-full flex-col gap-2 overflow-hidden *:min-w-0 *:max-w-full">

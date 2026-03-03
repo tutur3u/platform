@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@tuturuuu/ui/sonner';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
+import type { SetStateAction } from 'react';
 import { useCallback, useRef, useState } from 'react';
 import type { ChatFile, MessageFileAttachment } from './file-preview-chips';
 import {
@@ -17,6 +18,13 @@ interface UseMiraChatAttachmentsParams {
   chatId?: string;
   deleteFileFailedMessage: string;
 }
+
+type OutgoingAttachmentMetadata = {
+  name: string;
+  size: number;
+  storagePath: string;
+  type: string;
+};
 
 export function useMiraChatAttachments({
   wsId,
@@ -62,13 +70,30 @@ export function useMiraChatAttachments({
       }),
   });
 
+  const setAttachedFilesState = useCallback(
+    (updater: SetStateAction<ChatFile[]>) => {
+      setAttachedFiles((prev) => {
+        const next =
+          typeof updater === 'function'
+            ? (updater as (value: ChatFile[]) => ChatFile[])(prev)
+            : updater;
+        attachedFilesRef.current = next;
+        return next;
+      });
+    },
+    []
+  );
+
   const handleFilesSelected = useCallback(
     async (files: File[]) => {
+      let uploadedCount = 0;
       const newChatFiles: ChatFile[] = files.map((file) => ({
         id: generateRandomUUID(),
         file,
         previewUrl:
-          file.type.startsWith('image/') || file.type.startsWith('video/')
+          file.type.startsWith('audio/') ||
+          file.type.startsWith('image/') ||
+          file.type.startsWith('video/')
             ? URL.createObjectURL(file)
             : null,
         storagePath: null,
@@ -76,10 +101,10 @@ export function useMiraChatAttachments({
         status: 'pending' as const,
       }));
 
-      setAttachedFiles((prev) => [...prev, ...newChatFiles]);
+      setAttachedFilesState((prev) => [...prev, ...newChatFiles]);
 
       for (const chatFile of newChatFiles) {
-        setAttachedFiles((prev) =>
+        setAttachedFilesState((prev) =>
           prev.map((file) =>
             file.id === chatFile.id ? { ...file, status: 'uploading' } : file
           )
@@ -92,7 +117,7 @@ export function useMiraChatAttachments({
         });
 
         if (error || !path) {
-          setAttachedFiles((prev) =>
+          setAttachedFilesState((prev) =>
             prev.map((file) =>
               file.id === chatFile.id
                 ? { ...file, storagePath: path, status: 'error' }
@@ -122,7 +147,7 @@ export function useMiraChatAttachments({
           readUrls = await fetchSignedReadUrlsMutation.mutateAsync([path]);
         } catch (error) {
           console.error('[Mira Chat] Failed to fetch signed read URLs:', error);
-          setAttachedFiles((prev) =>
+          setAttachedFilesState((prev) =>
             prev.map((file) =>
               file.id === chatFile.id
                 ? { ...file, storagePath: path, status: 'error' }
@@ -134,20 +159,24 @@ export function useMiraChatAttachments({
         }
         const signedUrl = readUrls.get(path) ?? null;
 
-        setAttachedFiles((prev) =>
+        setAttachedFilesState((prev) =>
           prev.map((file) =>
             file.id === chatFile.id
               ? { ...file, storagePath: path, signedUrl, status: 'uploaded' }
               : file
           )
         );
+        uploadedCount += 1;
       }
+
+      return uploadedCount;
     },
     [
       chatId,
       deleteChatFileFromStorageMutation,
       deleteFileFailedMessage,
       fetchSignedReadUrlsMutation,
+      setAttachedFilesState,
       uploadChatFileMutation,
       wsId,
     ]
@@ -169,7 +198,7 @@ export function useMiraChatAttachments({
         if (!isSnapshotted) URL.revokeObjectURL(file.previewUrl);
       }
 
-      setAttachedFiles((prev) => prev.filter((item) => item.id !== id));
+      setAttachedFilesState((prev) => prev.filter((item) => item.id !== id));
 
       if (!removedStoragePath) return;
 
@@ -182,7 +211,12 @@ export function useMiraChatAttachments({
           if (deleted.error) toast.error(deleteFileFailedMessage);
         });
     },
-    [deleteChatFileFromStorageMutation, deleteFileFailedMessage, wsId]
+    [
+      deleteChatFileFromStorageMutation,
+      deleteFileFailedMessage,
+      setAttachedFilesState,
+      wsId,
+    ]
   );
 
   const snapshotAttachmentsForMessage = useCallback((messageId: string) => {
@@ -210,8 +244,29 @@ export function useMiraChatAttachments({
     });
   }, []);
 
+  const getUploadedAttachmentMetadata = useCallback(() => {
+    const currentAttachedFiles = attachedFilesRef.current;
+
+    return currentAttachedFiles
+      .filter(
+        (file): file is ChatFile & { storagePath: string } =>
+          file.status === 'uploaded' &&
+          typeof file.storagePath === 'string' &&
+          file.storagePath.length > 0
+      )
+      .map(
+        (file) =>
+          ({
+            name: file.file.name,
+            size: file.file.size,
+            storagePath: file.storagePath,
+            type: file.file.type,
+          }) satisfies OutgoingAttachmentMetadata
+      );
+  }, []);
+
   const clearAttachedFiles = useCallback(() => {
-    setAttachedFiles((prev) => {
+    setAttachedFilesState((prev) => {
       const preservedUrls = new Set<string>();
 
       for (const attachments of messageAttachmentsRef.current.values()) {
@@ -228,7 +283,7 @@ export function useMiraChatAttachments({
 
       return [];
     });
-  }, []);
+  }, [setAttachedFilesState]);
 
   const cleanupPendingUploads = useCallback(async () => {
     const pendingStoragePaths = attachedFilesRef.current
@@ -277,6 +332,7 @@ export function useMiraChatAttachments({
     cleanupPendingUploads,
     handleFileRemove,
     handleFilesSelected,
+    getUploadedAttachmentMetadata,
     messageAttachments,
     messageAttachmentsRef,
     setMessageAttachments,

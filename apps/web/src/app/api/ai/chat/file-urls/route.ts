@@ -108,10 +108,13 @@ export const POST = withSessionAuth(
       const files = realFiles.map((file, index) => {
         const signedData = signedUrls?.[index];
         const fullPath = `${storagePath}/${file.name}`;
+        const storageMimeType =
+          file.metadata?.mimetype || file.metadata?.mediaType || null;
 
-        // Derive MIME type from extension
+        // Prefer the storage metadata because shared extensions like `.webm`
+        // can represent either audio or video depending on the upload.
         const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
-        const mimeType = extensionToMime(ext);
+        const mimeType = storageMimeType || extensionToMime(ext);
 
         // Strip the timestamp prefix from the display name
         // Storage names are formatted: `{timestamp}_{sanitizedFilename}`
@@ -156,6 +159,8 @@ function stripTimestampPrefix(name: string): string {
 /** Map common file extensions to MIME types. */
 function extensionToMime(ext: string): string {
   const map: Record<string, string> = {
+    aac: 'audio/aac',
+    flac: 'audio/flac',
     png: 'image/png',
     jpg: 'image/jpeg',
     jpeg: 'image/jpeg',
@@ -163,6 +168,10 @@ function extensionToMime(ext: string): string {
     gif: 'image/gif',
     pdf: 'application/pdf',
     mp4: 'video/mp4',
+    mp3: 'audio/mpeg',
+    m4a: 'audio/mp4',
+    ogg: 'audio/ogg',
+    wav: 'audio/wav',
     webm: 'video/webm',
     mov: 'video/quicktime',
     txt: 'text/plain',

@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { DefaultChatTransport } from '@tuturuuu/ai/core';
+import { createClient } from '@tuturuuu/supabase/next/client';
 import type { AIModelUI } from '@tuturuuu/types';
 import { useAiCredits } from '@tuturuuu/ui/hooks/use-ai-credits';
 import { normalizeWorkspaceContextId } from '@tuturuuu/utils/constants';
@@ -22,6 +23,26 @@ interface UseMiraChatConfigParams {
   wsId: string;
 }
 
+async function fetchGatewayModelCapabilities(): Promise<AIModelUI[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('ai_gateway_models')
+    .select('id, name, provider, description, context_window, tags, is_enabled')
+    .eq('type', 'language');
+
+  if (error || !data) return [];
+
+  return data.map((model) => ({
+    value: model.id,
+    label: model.name,
+    provider: model.provider,
+    description: model.description ?? undefined,
+    context: model.context_window ?? undefined,
+    tags: model.tags ?? undefined,
+    disabled: !model.is_enabled,
+  }));
+}
+
 export function useMiraChatConfig({ wsId }: UseMiraChatConfigParams) {
   const [model, setModel] = useState<AIModelUI>(INITIAL_MODEL);
   const [thinkingMode, setThinkingMode] = useState<ThinkingMode>('fast');
@@ -29,10 +50,23 @@ export function useMiraChatConfig({ wsId }: UseMiraChatConfigParams) {
   const [workspaceContextId, setWorkspaceContextId] =
     useState<string>('personal');
 
+  const { data: gatewayModels } = useQuery({
+    queryKey: ['ai-gateway-models', 'capabilities'],
+    queryFn: fetchGatewayModelCapabilities,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const resolvedModel = useMemo(
+    () =>
+      gatewayModels?.find((candidate) => candidate.value === model.value) ??
+      model,
+    [gatewayModels, model]
+  );
+
   const supportsFileInput = useMemo(() => {
-    const tags = model.tags;
+    const tags = resolvedModel.tags;
     return Array.isArray(tags) && tags.includes('file-input');
-  }, [model]);
+  }, [resolvedModel]);
 
   // model.value is already the gateway ID (e.g. "google/gemini-2.5-flash")
   const gatewayModelId = model.value;
@@ -152,12 +186,14 @@ export function useMiraChatConfig({ wsId }: UseMiraChatConfigParams) {
         value: string;
         provider: string;
         label?: string;
+        tags?: string[];
       };
       if (parsed.value && parsed.provider) {
         setModel({
           value: parsed.value,
           provider: parsed.provider,
           label: parsed.label ?? parsed.value.split('/').pop() ?? parsed.value,
+          tags: Array.isArray(parsed.tags) ? parsed.tags : undefined,
         });
       } else {
         setModel(INITIAL_MODEL);
@@ -178,7 +214,12 @@ export function useMiraChatConfig({ wsId }: UseMiraChatConfigParams) {
     }
     localStorage.setItem(
       `${MODEL_STORAGE_KEY_PREFIX}${wsId}`,
-      JSON.stringify({ value: model.value, provider: model.provider })
+      JSON.stringify({
+        value: model.value,
+        provider: model.provider,
+        label: model.label,
+        tags: model.tags,
+      })
     );
   }, [model, wsId]);
 

@@ -3,6 +3,7 @@ import { render, waitFor } from '@testing-library/react';
 import type { UIMessage } from '@tuturuuu/ai/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { Dispatch, SetStateAction } from 'react';
+import { useRef } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import type { MessageFileAttachment } from '../file-preview-chips';
 import {
@@ -11,7 +12,18 @@ import {
 } from '../mira-chat-constants';
 import { useMiraChatEffects } from '../use-mira-chat-effects';
 
+const audioAttachment: MessageFileAttachment = {
+  id: 'attachment-1',
+  name: 'clip.wav',
+  size: 1,
+  type: 'audio/wav',
+  previewUrl: null,
+  signedUrl: null,
+  storagePath: 'ws/audio.wav',
+};
+
 function TestHarness(props: {
+  initialMessageAttachments?: Map<string, MessageFileAttachment[]>;
   messages: UIMessage[];
   queryClient: QueryClient;
   routerRefresh: () => void;
@@ -21,8 +33,15 @@ function TestHarness(props: {
   setWorkspaceContextId: (value: string) => void;
   wsId: string;
 }) {
+  const messageAttachmentsRef = useRef(
+    new Map<string, MessageFileAttachment[]>()
+  );
+  messageAttachmentsRef.current =
+    props.initialMessageAttachments ??
+    new Map<string, MessageFileAttachment[]>();
+
   useMiraChatEffects({
-    messageAttachmentsRef: { current: new Map() },
+    messageAttachmentsRef,
     status: 'ready',
     isFullscreen: false,
     onToggleFullscreen: undefined,
@@ -176,5 +195,61 @@ describe('useMiraChatEffects', () => {
       WORKSPACE_CONTEXT_EVENT,
       handleWorkspaceContextEvent
     );
+  });
+
+  it('clears transient pending attachment snapshots when the real user message arrives', async () => {
+    const queryClient = new QueryClient();
+    const setWorkspaceContextId = vi.fn();
+    const setMessageAttachments = vi.fn((updater) => {
+      const prev = new Map([
+        ['pending', [audioAttachment]],
+        ['user-1', [audioAttachment]],
+      ]);
+
+      return typeof updater === 'function' ? updater(prev) : updater;
+    });
+
+    render(
+      <TestHarness
+        initialMessageAttachments={
+          new Map([
+            ['pending', [audioAttachment]],
+            ['user-1', [audioAttachment]],
+          ])
+        }
+        wsId="dashboard-ws"
+        queryClient={queryClient}
+        routerRefresh={vi.fn()}
+        setMessageAttachments={setMessageAttachments}
+        setWorkspaceContextId={setWorkspaceContextId}
+        messages={[
+          {
+            id: 'user-1',
+            role: 'user',
+            parts: [
+              { type: 'text', text: 'Please analyze the attached file(s).' },
+            ],
+          },
+        ]}
+      />
+    );
+
+    await waitFor(() => {
+      expect(setMessageAttachments).toHaveBeenCalledTimes(1);
+    });
+
+    const updater = setMessageAttachments.mock.calls[0]?.[0] as (
+      prev: Map<string, MessageFileAttachment[]>
+    ) => Map<string, MessageFileAttachment[]>;
+    const next = updater(
+      new Map([
+        ['pending', [audioAttachment]],
+        ['user-1', [audioAttachment]],
+      ])
+    );
+
+    expect(next.has('pending')).toBe(false);
+    expect(next.has('queued')).toBe(false);
+    expect(next.get('user-1')).toHaveLength(1);
   });
 });

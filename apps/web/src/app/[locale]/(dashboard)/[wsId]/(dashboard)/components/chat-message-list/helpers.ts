@@ -1,5 +1,6 @@
 import type { UIMessage } from '@tuturuuu/ai/types';
 import { getToolName, isToolUIPart } from 'ai';
+import type { MessageFileAttachment } from '../file-preview-chips';
 
 function isTextPart(part: unknown): part is { type: 'text'; text: string } {
   return (
@@ -89,12 +90,29 @@ const FILE_ONLY_PLACEHOLDERS = new Set([
   'Please analyze the attached file(s)',
 ]);
 
+function isLegacyAttachmentSummary(text: string): boolean {
+  const lines = text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  return (
+    lines.length > 0 && lines.every((line) => /^\[File:\s.+\]$/.test(line))
+  );
+}
+
 export function getDisplayText(
   message: UIMessage,
   isAutoMermaidRepairPrompt: (text: string) => boolean
 ): string {
   const raw = getMessageText(message);
-  if (FILE_ONLY_PLACEHOLDERS.has(raw.trim())) return '';
+  const trimmed = raw.trim();
+  if (
+    FILE_ONLY_PLACEHOLDERS.has(trimmed) ||
+    isLegacyAttachmentSummary(trimmed)
+  ) {
+    return '';
+  }
   if (isAutoMermaidRepairPrompt(raw)) return '';
   return raw;
 }
@@ -103,4 +121,88 @@ export function isObjectRecord(
   value: unknown
 ): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+export function getRenderableMessageAttachments(
+  message: UIMessage,
+  messageAttachments?: Map<string, MessageFileAttachment[]>
+): MessageFileAttachment[] {
+  const directAttachments = messageAttachments?.get(message.id) ?? [];
+  const metadataAttachments = normalizeMessageMetadataAttachments(message);
+
+  if (metadataAttachments.length === 0) {
+    return directAttachments;
+  }
+
+  if (directAttachments.length === 0) {
+    return metadataAttachments;
+  }
+
+  const attachmentsByKey = new Map<string, MessageFileAttachment>();
+
+  for (const attachment of directAttachments) {
+    attachmentsByKey.set(
+      `${attachment.storagePath || attachment.name}|${attachment.type}`,
+      attachment
+    );
+  }
+
+  for (const attachment of metadataAttachments) {
+    const key = `${attachment.storagePath || attachment.name}|${attachment.type}`;
+    const existing = attachmentsByKey.get(key);
+    if (!existing) {
+      attachmentsByKey.set(key, attachment);
+      continue;
+    }
+
+    attachmentsByKey.set(key, {
+      ...existing,
+      alias: attachment.alias ?? existing.alias ?? null,
+    });
+  }
+
+  return [...attachmentsByKey.values()];
+}
+
+function normalizeMessageMetadataAttachments(
+  message: UIMessage
+): MessageFileAttachment[] {
+  if (!isObjectRecord(message.metadata)) return [];
+
+  const rawAttachments = message.metadata.attachments;
+  if (!Array.isArray(rawAttachments)) return [];
+
+  const normalized: MessageFileAttachment[] = [];
+
+  rawAttachments.forEach((entry, index) => {
+    if (!isObjectRecord(entry)) return;
+
+    const storagePath =
+      typeof entry.storagePath === 'string' ? entry.storagePath.trim() : '';
+    const name = typeof entry.name === 'string' ? entry.name.trim() : '';
+
+    if (!storagePath || !name) return;
+
+    normalized.push({
+      alias:
+        typeof entry.alias === 'string' && entry.alias.trim().length > 0
+          ? entry.alias.trim()
+          : null,
+      id: `metadata-${message.id}-${index}`,
+      name,
+      previewUrl: null,
+      signedUrl: null,
+      size:
+        typeof entry.size === 'number' && Number.isFinite(entry.size)
+          ? Math.max(0, Math.floor(entry.size))
+          : 0,
+      storagePath,
+      type:
+        typeof entry.type === 'string' && entry.type.trim().length > 0
+          ? entry.type.trim()
+          : 'application/octet-stream',
+    });
+  });
+
+  return normalized;
 }

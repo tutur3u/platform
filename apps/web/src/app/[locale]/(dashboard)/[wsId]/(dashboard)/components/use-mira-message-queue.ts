@@ -2,35 +2,61 @@
 
 import type { UIMessage } from '@tuturuuu/ai/types';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
+import type { MutableRefObject } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChatFile } from './file-preview-chips';
 import { QUEUE_DEBOUNCE_MS } from './mira-chat-constants';
 
 interface UseMiraMessageQueueParams {
-  attachedFiles: ChatFile[];
+  attachedFilesRef: MutableRefObject<ChatFile[]>;
   chatId?: string;
   clearAttachedFiles: () => void;
-  createChat: (userInput: string) => Promise<void>;
+  createChat: (
+    userInput: string,
+    options?: {
+      messageId?: string;
+      messageMetadata?: Record<string, unknown>;
+    }
+  ) => Promise<void>;
+  messages: UIMessage[];
   sendMessageWithCurrentConfig: (message: UIMessage) => void;
+  getUploadedAttachmentMetadata: () => Array<Record<string, unknown>>;
   snapshotAttachmentsForMessage: (messageId: string) => void;
   status: string;
   stop?: () => void;
 }
 
+type PendingOptimisticMessage = {
+  dispatched: boolean;
+  message: UIMessage;
+};
+
 export function useMiraMessageQueue({
-  attachedFiles,
+  attachedFilesRef,
   chatId,
   clearAttachedFiles,
   createChat,
+  messages,
   sendMessageWithCurrentConfig,
+  getUploadedAttachmentMetadata,
   snapshotAttachmentsForMessage,
   status,
   stop,
 }: UseMiraMessageQueueParams) {
   const [queuedText, setQueuedText] = useState<string | null>(null);
+  const [optimisticPendingMessage, setOptimisticPendingMessage] =
+    useState<UIMessage | null>(null);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messageQueueRef = useRef<string[]>([]);
   const pendingFlushAfterStopRef = useRef(false);
+  const pendingOptimisticMessageRef = useRef<PendingOptimisticMessage | null>(
+    null
+  );
+
+  const clearOptimisticPendingMessage = useCallback(() => {
+    pendingOptimisticMessageRef.current = null;
+    setOptimisticPendingMessage(null);
+  }, []);
 
   const flushQueue = useCallback(async () => {
     const queue = [...messageQueueRef.current];
@@ -42,7 +68,8 @@ export function useMiraMessageQueue({
       unique.push(message);
     }
 
-    const hasUploadedFiles = attachedFiles.some(
+    const currentAttachedFiles = attachedFilesRef.current;
+    const hasUploadedFiles = currentAttachedFiles.some(
       (file) => file.status === 'uploaded'
     );
     if (unique.length === 0 && !hasUploadedFiles) return;
@@ -56,39 +83,69 @@ export function useMiraMessageQueue({
       unique.length > 0
         ? unique.join('\n\n')
         : 'Please analyze the attached file(s).';
+    const messageId = generateRandomUUID();
+    const attachmentMetadata = getUploadedAttachmentMetadata();
+    const messageMetadata =
+      attachmentMetadata.length > 0
+        ? { attachments: attachmentMetadata }
+        : undefined;
+    const shouldClearAttachments = attachmentMetadata.length > 0;
+    const outgoingMessage: UIMessage = {
+      id: messageId,
+      role: 'user',
+      ...(messageMetadata ? { metadata: messageMetadata } : {}),
+      parts: [{ type: 'text', text: combined }],
+    };
+
+    pendingOptimisticMessageRef.current = {
+      dispatched: !!chatId,
+      message: outgoingMessage,
+    };
+    setOptimisticPendingMessage(outgoingMessage);
 
     if (!chatId) {
-      snapshotAttachmentsForMessage('pending');
-      snapshotAttachmentsForMessage('__latest_user_upload');
+      if (shouldClearAttachments) {
+        snapshotAttachmentsForMessage('pending');
+        snapshotAttachmentsForMessage(messageId);
+        clearAttachedFiles();
+      }
       try {
-        await createChat(combined);
+        await createChat(combined, {
+          messageId,
+          messageMetadata,
+        });
       } catch (error) {
+        clearOptimisticPendingMessage();
         console.error('[Mira Chat] Failed to create chat from queued input:', {
           error,
         });
       }
     } else {
-      snapshotAttachmentsForMessage('__latest_user_upload');
-      sendMessageWithCurrentConfig({
-        id: generateRandomUUID(),
-        role: 'user',
-        parts: [{ type: 'text', text: combined }],
-      });
+      if (shouldClearAttachments) {
+        snapshotAttachmentsForMessage(messageId);
+        clearAttachedFiles();
+      }
+      sendMessageWithCurrentConfig(outgoingMessage);
     }
-
-    clearAttachedFiles();
   }, [
-    attachedFiles,
+    attachedFilesRef,
     chatId,
     clearAttachedFiles,
+    clearOptimisticPendingMessage,
     createChat,
+    getUploadedAttachmentMetadata,
     sendMessageWithCurrentConfig,
     snapshotAttachmentsForMessage,
   ]);
 
   const handleSubmit = useCallback(
     (value: string) => {
-      if (!value.trim() && attachedFiles.length === 0) return;
+      const currentAttachedFiles = attachedFilesRef.current;
+      if (!value.trim() && currentAttachedFiles.length === 0) return;
+      const hasUploadedFiles = currentAttachedFiles.some(
+        (file) => file.status === 'uploaded'
+      );
+      const shouldSendImmediately = hasUploadedFiles;
 
       if (value.trim()) {
         messageQueueRef.current.push(value.trim());
@@ -103,7 +160,7 @@ export function useMiraMessageQueue({
       }
       setQueuedText(unique.length > 0 ? unique.join('\n\n') : null);
 
-      if (attachedFiles.length > 0) {
+      if (currentAttachedFiles.length > 0) {
         snapshotAttachmentsForMessage('queued');
       }
 
@@ -118,6 +175,11 @@ export function useMiraMessageQueue({
         return;
       }
 
+      if (shouldSendImmediately) {
+        void flushQueue();
+        return;
+      }
+
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
@@ -125,7 +187,7 @@ export function useMiraMessageQueue({
         void flushQueue();
       }, QUEUE_DEBOUNCE_MS);
     },
-    [attachedFiles, flushQueue, snapshotAttachmentsForMessage, status, stop]
+    [attachedFilesRef, flushQueue, snapshotAttachmentsForMessage, status, stop]
   );
 
   useEffect(() => {
@@ -137,6 +199,34 @@ export function useMiraMessageQueue({
     void flushQueue();
   }, [flushQueue, status]);
 
+  useEffect(() => {
+    const pendingMessage = pendingOptimisticMessageRef.current;
+    if (!pendingMessage) return;
+
+    const hasRealMessage = messages.some(
+      (message) => message.id === pendingMessage.message.id
+    );
+    if (hasRealMessage) {
+      clearOptimisticPendingMessage();
+      return;
+    }
+
+    if (!chatId || pendingMessage.dispatched) {
+      return;
+    }
+
+    sendMessageWithCurrentConfig(pendingMessage.message);
+    pendingOptimisticMessageRef.current = {
+      ...pendingMessage,
+      dispatched: true,
+    };
+  }, [
+    chatId,
+    clearOptimisticPendingMessage,
+    messages,
+    sendMessageWithCurrentConfig,
+  ]);
+
   const resetQueue = useCallback(() => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
@@ -145,7 +235,8 @@ export function useMiraMessageQueue({
     pendingFlushAfterStopRef.current = false;
     messageQueueRef.current = [];
     setQueuedText(null);
-  }, []);
+    clearOptimisticPendingMessage();
+  }, [clearOptimisticPendingMessage]);
 
   useEffect(
     () => () => {
@@ -158,6 +249,7 @@ export function useMiraMessageQueue({
 
   return {
     handleSubmit,
+    optimisticPendingMessage,
     queuedText,
     resetQueue,
   };

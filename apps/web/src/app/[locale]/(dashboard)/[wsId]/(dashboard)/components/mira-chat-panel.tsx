@@ -123,8 +123,10 @@ export default function MiraChatPanel({
 
   const {
     attachedFiles,
+    attachedFilesRef,
     clearAttachedFiles,
     cleanupPendingUploads,
+    getUploadedAttachmentMetadata,
     handleFileRemove,
     handleFilesSelected,
     messageAttachments,
@@ -246,7 +248,6 @@ export default function MiraChatPanel({
       messageAttachments,
       messages,
       model,
-      sendMessageWithCurrentConfig,
       setChat,
       setFallbackChatId,
       setInput,
@@ -261,16 +262,19 @@ export default function MiraChatPanel({
       wsId,
     });
 
-  const { handleSubmit, queuedText, resetQueue } = useMiraMessageQueue({
-    attachedFiles,
-    chatId: chat?.id,
-    clearAttachedFiles,
-    createChat,
-    sendMessageWithCurrentConfig,
-    snapshotAttachmentsForMessage,
-    status,
-    stop,
-  });
+  const { handleSubmit, optimisticPendingMessage, queuedText, resetQueue } =
+    useMiraMessageQueue({
+      attachedFilesRef,
+      chatId: chat?.id,
+      clearAttachedFiles,
+      createChat,
+      getUploadedAttachmentMetadata,
+      messages,
+      sendMessageWithCurrentConfig,
+      snapshotAttachmentsForMessage,
+      status,
+      stop,
+    });
   submitTextRef.current = handleSubmit;
 
   const pendingDisplay = queuedText ?? pendingPrompt;
@@ -363,6 +367,7 @@ export default function MiraChatPanel({
             messageAttachments={messageAttachments}
             messages={messages}
             onAutoSubmitMermaidFix={handleSubmit}
+            optimisticPendingMessage={optimisticPendingMessage}
             pendingDisplay={pendingDisplay}
             pendingPrompt={pendingPrompt}
             queuedText={queuedText}

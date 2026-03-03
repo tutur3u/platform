@@ -1,4 +1,4 @@
-import { CheckCircle2, ClipboardList, Paperclip } from '@tuturuuu/icons';
+import { CheckCircle2, ClipboardList } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -94,22 +94,11 @@ export function UserMessageContent({
   displayText: string;
   attachments?: MessageFileAttachment[];
 }) {
-  const t = useTranslations('dashboard.mira_chat');
   const hasDisplayText = displayText.trim().length > 0;
   const hasAttachments = (attachments?.length ?? 0) > 0;
 
   if (!hasDisplayText && hasAttachments) {
-    return (
-      <>
-        <MessageFileAttachments attachments={attachments!} invertColors />
-        <div className="flex items-center gap-1.5 px-0.5 text-background/60">
-          <Paperclip className="h-3 w-3" />
-          <span className="text-[11px]">
-            {t('files_attached', { count: attachments!.length })}
-          </span>
-        </div>
-      </>
-    );
+    return <MessageFileAttachments attachments={attachments!} invertColors />;
   }
 
   return (

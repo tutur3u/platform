@@ -5,6 +5,98 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import type { AIChat } from '@tuturuuu/types';
 import type { MessageFileAttachment } from './file-preview-chips';
 
+function normalizeStoredAttachments(metadata: unknown): Array<{
+  alias: string | null;
+  name: string;
+  size: number;
+  storagePath: string;
+  type: string;
+}> {
+  const rawAttachments =
+    metadata &&
+    typeof metadata === 'object' &&
+    !Array.isArray(metadata) &&
+    'attachments' in metadata
+      ? (metadata as { attachments?: unknown }).attachments
+      : null;
+
+  if (!Array.isArray(rawAttachments)) return [];
+
+  return rawAttachments
+    .map((entry) => {
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+        return null;
+      }
+
+      const storagePath =
+        typeof entry.storagePath === 'string' ? entry.storagePath.trim() : '';
+      const name = typeof entry.name === 'string' ? entry.name.trim() : '';
+
+      if (!storagePath || !name) return null;
+
+      return {
+        alias:
+          typeof entry.alias === 'string' && entry.alias.trim().length > 0
+            ? entry.alias.trim()
+            : null,
+        name,
+        size:
+          typeof entry.size === 'number' && Number.isFinite(entry.size)
+            ? Math.max(0, Math.floor(entry.size))
+            : 0,
+        storagePath,
+        type:
+          typeof entry.type === 'string'
+            ? entry.type
+            : 'application/octet-stream',
+      };
+    })
+    .filter(
+      (
+        entry
+      ): entry is {
+        alias: string | null;
+        name: string;
+        size: number;
+        storagePath: string;
+        type: string;
+      } => entry !== null
+    );
+}
+
+async function fetchSignedReadUrlMap(
+  paths: string[]
+): Promise<Map<string, string>> {
+  const urls = new Map<string, string>();
+
+  for (let index = 0; index < paths.length; index += 10) {
+    const chunk = paths.slice(index, index + 10);
+    const res = await fetch('/api/ai/chat/signed-read-url', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ paths: chunk }),
+      cache: 'no-store',
+    });
+
+    if (!res.ok) {
+      throw new Error(`Failed to fetch signed read URLs (HTTP ${res.status})`);
+    }
+
+    const { urls: chunkUrls } = (await res.json()) as {
+      urls: Array<{ path: string; signedUrl: string | null }>;
+    };
+
+    for (const item of chunkUrls) {
+      if (item.signedUrl) {
+        urls.set(item.path, item.signedUrl);
+      }
+    }
+  }
+
+  return urls;
+}
+
 export interface RestoredChatPayload {
   chat: Partial<AIChat>;
   messages: UIMessage[];
@@ -108,6 +200,7 @@ export function restoreMessages(
         id: message.id,
         role: normalizeRestoredRole(message.role),
         parts,
+        ...(metadata ? { metadata } : {}),
       };
     });
 }
@@ -157,66 +250,95 @@ export async function loadExistingChat({
     ? restoreMessages(messagesData)
     : [];
   const messageAttachments = new Map<string, MessageFileAttachment[]>();
+  const attachmentEntries = (messagesData ?? []).flatMap((message) =>
+    normalizeStoredAttachments(message.metadata).map((attachment, index) => ({
+      attachment,
+      index,
+      messageId: message.id,
+    }))
+  );
 
   try {
-    const fileUrlsRes = await fetch('/api/ai/chat/file-urls', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ wsId, chatId: chatData.id }),
-      cache: 'no-store',
-    });
+    if (attachmentEntries.length > 0) {
+      const signedUrlMap = await fetchSignedReadUrlMap(
+        attachmentEntries.map(({ attachment }) => attachment.storagePath)
+      );
 
-    if (fileUrlsRes.ok) {
-      const { files } = (await fileUrlsRes.json()) as {
-        files: Array<{
-          path: string;
-          name: string;
-          size: number;
-          type: string;
-          signedUrl: string | null;
-        }>;
-      };
-
-      if (files.length > 0) {
-        const firstUserMessage = messagesData?.find(
-          (message) => message.role.toLowerCase() === 'user'
-        );
-
-        files.forEach((file, index) => {
-          let targetMsgId = (file as any).message_id;
-
-          if (!targetMsgId) {
-            const msgMatch = messagesData?.find((m) => {
-              const meta = m.metadata as any;
-              return (
-                meta &&
-                Array.isArray(meta.attachments) &&
-                meta.attachments.some(
-                  (a: any) =>
-                    a.storagePath === file.path ||
-                    a.url === file.path ||
-                    a.id === file.path
-                )
-              );
-            });
-            targetMsgId = msgMatch?.id || firstUserMessage?.id;
-          }
-
-          if (targetMsgId) {
-            const existing = messageAttachments.get(targetMsgId) || [];
-            existing.push({
-              id: `stored-${file.path.replace(/[^a-zA-Z0-9]/g, '-')}-${index}`,
-              name: file.name,
-              size: file.size,
-              type: file.type,
-              previewUrl: null,
-              storagePath: file.path,
-              signedUrl: file.signedUrl,
-            });
-            messageAttachments.set(targetMsgId, existing);
-          }
+      for (const { attachment, index, messageId } of attachmentEntries) {
+        const existing = messageAttachments.get(messageId) || [];
+        existing.push({
+          alias: attachment.alias,
+          id: `stored-${attachment.storagePath.replace(/[^a-zA-Z0-9]/g, '-')}-${index}`,
+          name: attachment.name,
+          previewUrl: null,
+          signedUrl: signedUrlMap.get(attachment.storagePath) ?? null,
+          size: attachment.size,
+          storagePath: attachment.storagePath,
+          type: attachment.type,
         });
+        messageAttachments.set(messageId, existing);
+      }
+    } else {
+      const fileUrlsRes = await fetch('/api/ai/chat/file-urls', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wsId, chatId: chatData.id }),
+        cache: 'no-store',
+      });
+
+      if (fileUrlsRes.ok) {
+        const { files } = (await fileUrlsRes.json()) as {
+          files: Array<{
+            path: string;
+            name: string;
+            size: number;
+            type: string;
+            signedUrl: string | null;
+          }>;
+        };
+
+        if (files.length > 0) {
+          const firstUserMessage = messagesData?.find(
+            (message) => message.role.toLowerCase() === 'user'
+          );
+
+          files.forEach((file, index) => {
+            let targetMsgId = (file as any).message_id;
+
+            if (!targetMsgId) {
+              const msgMatch = messagesData?.find((m) => {
+                const meta = m.metadata as any;
+                return (
+                  meta &&
+                  Array.isArray(meta.attachments) &&
+                  meta.attachments.some(
+                    (a: any) =>
+                      a.storagePath === file.path ||
+                      a.url === file.path ||
+                      a.id === file.path
+                  )
+                );
+              });
+              targetMsgId = msgMatch?.id || firstUserMessage?.id;
+            }
+
+            if (targetMsgId) {
+              const existing = messageAttachments.get(targetMsgId) || [];
+              existing.push({
+                alias: null,
+                id: `stored-${file.path.replace(/[^a-zA-Z0-9]/g, '-')}-${index}`,
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                previewUrl: null,
+                storagePath: file.path,
+                signedUrl: file.signedUrl,
+              });
+              messageAttachments.set(targetMsgId, existing);
+            }
+          });
+        }
       }
     }
   } catch (err) {

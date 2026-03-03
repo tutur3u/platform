@@ -27,7 +27,6 @@ interface UseMiraChatActionsParams {
   messageAttachments: Map<string, MessageFileAttachment[]>;
   messages: UIMessage[];
   model: AIModelUI;
-  sendMessageWithCurrentConfig: (message: UIMessage) => void | Promise<void>;
   setChat: Dispatch<SetStateAction<Partial<AIChat> | undefined>>;
   setFallbackChatId: (value: string) => void;
   setInput: (value: string) => void;
@@ -44,6 +43,12 @@ interface UseMiraChatActionsParams {
   wsId: string;
 }
 
+type CreateChatParams = {
+  messageId?: string;
+  messageMetadata?: Record<string, unknown>;
+  userInput: string;
+};
+
 export function useMiraChatActions({
   chat,
   chatId,
@@ -54,7 +59,6 @@ export function useMiraChatActions({
   messageAttachments,
   messages,
   model,
-  sendMessageWithCurrentConfig,
   setChat,
   setFallbackChatId,
   setInput,
@@ -69,7 +73,11 @@ export function useMiraChatActions({
   wsId,
 }: UseMiraChatActionsParams) {
   const { mutateAsync: createChatMutation } = useMutation({
-    mutationFn: async (userInput: string) => {
+    mutationFn: async ({
+      messageId,
+      messageMetadata,
+      userInput,
+    }: CreateChatParams) => {
       const res = await fetch('/api/ai/chat/new', {
         credentials: 'include',
         cache: 'no-store',
@@ -80,7 +88,9 @@ export function useMiraChatActions({
         },
         body: JSON.stringify({
           id: stableChatId,
+          messageId,
           model: gatewayModelId,
+          messageMetadata,
           message: userInput,
           isMiraMode: true,
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -106,7 +116,7 @@ export function useMiraChatActions({
         userInput,
       };
     },
-    onSuccess: (data, userInput) => {
+    onSuccess: (data) => {
       setChat({
         id: data.id,
         title: data.title,
@@ -115,11 +125,6 @@ export function useMiraChatActions({
       });
       setStoredChatId(data.id);
       localStorage.setItem(`${STORAGE_KEY_PREFIX}${wsId}`, data.id);
-      sendMessageWithCurrentConfig({
-        id: generateRandomUUID(),
-        role: 'user',
-        parts: [{ type: 'text', text: userInput }],
-      });
       setPendingPrompt(null);
     },
     onError: () => {
@@ -129,9 +134,19 @@ export function useMiraChatActions({
   });
 
   const createChat = useCallback(
-    async (userInput: string) => {
+    async (
+      userInput: string,
+      options?: {
+        messageId?: string;
+        messageMetadata?: Record<string, unknown>;
+      }
+    ) => {
       setPendingPrompt(userInput);
-      await createChatMutation(userInput).catch(() => {});
+      await createChatMutation({
+        messageId: options?.messageId,
+        messageMetadata: options?.messageMetadata,
+        userInput,
+      });
     },
     [setPendingPrompt, createChatMutation]
   );

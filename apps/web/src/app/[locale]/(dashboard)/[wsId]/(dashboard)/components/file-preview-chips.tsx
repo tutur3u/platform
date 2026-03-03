@@ -2,6 +2,8 @@
 
 import {
   AlertCircle,
+  AudioLines,
+  AudioWaveform,
   Download,
   ExternalLink,
   FileText,
@@ -34,6 +36,7 @@ export interface ChatFile {
  *  the chat history. Unlike `ChatFile` this does not hold a `File` handle —
  *  only the information needed to render a preview chip inside a message bubble. */
 export interface MessageFileAttachment {
+  alias?: string | null;
   id: string;
   name: string;
   size: number;
@@ -56,6 +59,12 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+export function getAttachmentDisplayName(
+  attachment: Pick<MessageFileAttachment, 'alias' | 'name'>
+): string {
+  return attachment.alias?.trim() || attachment.name;
+}
+
 /** Return the best available media source URL for an attachment.
  *  Prefers signed URL (persists across refreshes / blob URL revocation),
  *  falls back to blob URL (immediate, works during current session). */
@@ -73,11 +82,18 @@ function isVideoType(type: string): boolean {
   return type.startsWith('video/');
 }
 
+function isAudioType(type: string): boolean {
+  return type.startsWith('audio/');
+}
+
 function isPdfType(type: string): boolean {
   return type === 'application/pdf';
 }
 
 function FileIcon({ mimeType }: { mimeType: string }) {
+  if (isAudioType(mimeType)) {
+    return <AudioLines className="h-4 w-4 text-dynamic-cyan" />;
+  }
   if (isImageType(mimeType)) {
     return <ImageIcon className="h-4 w-4 text-dynamic-blue" />;
   }
@@ -110,14 +126,19 @@ function FileChip({
   onRemove: () => void;
   disabled?: boolean;
 }) {
-  const { file, previewUrl, status } = chatFile;
+  const { file, previewUrl, signedUrl, status } = chatFile;
+  const isAudio = isAudioType(file.type);
   const isImage = isImageType(file.type);
   const isVideo = isVideoType(file.type);
+  const audioSrc = signedUrl || previewUrl;
 
   return (
     <div
       className={cn(
-        'group relative flex items-center gap-2 rounded-lg border bg-background/80 p-1.5 pr-2 shadow-sm backdrop-blur-sm transition-all',
+        'group relative rounded-xl border bg-background/80 shadow-sm backdrop-blur-sm transition-all',
+        isAudio && audioSrc
+          ? 'flex w-full min-w-[17rem] max-w-sm flex-col gap-2 p-2.5 pr-10'
+          : 'flex items-center gap-2 p-1.5 pr-2',
         status === 'error'
           ? 'border-destructive/40 bg-destructive/5'
           : status === 'uploading'
@@ -125,45 +146,60 @@ function FileChip({
             : 'border-border/60 hover:border-border'
       )}
     >
-      {/* Thumbnail / Icon */}
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted/60">
-        {isImage && previewUrl ? (
-          // biome-ignore lint/performance/noImgElement: blob URL not compatible with Next.js Image
-          <img
-            src={previewUrl}
-            alt={file.name}
-            className="h-full w-full object-cover"
-          />
-        ) : isVideo && previewUrl ? (
-          <div className="relative flex h-full w-full items-center justify-center">
-            <video
+      <div className={cn('flex gap-2', isAudio && audioSrc && 'items-start')}>
+        {/* Thumbnail / Icon */}
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted/60">
+          {isImage && previewUrl ? (
+            // biome-ignore lint/performance/noImgElement: blob URL not compatible with Next.js Image
+            <img
               src={previewUrl}
+              alt={file.name}
               className="h-full w-full object-cover"
-              muted
-              preload="metadata"
             />
-            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-              <Play className="h-3.5 w-3.5 fill-white text-white" />
+          ) : isVideo && previewUrl ? (
+            <div className="relative flex h-full w-full items-center justify-center">
+              <video
+                src={previewUrl}
+                className="h-full w-full object-cover"
+                muted
+                preload="metadata"
+              />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                <Play className="h-3.5 w-3.5 fill-white text-white" />
+              </div>
             </div>
-          </div>
-        ) : (
-          <FileIcon mimeType={file.type} />
-        )}
+          ) : isAudio ? (
+            <div className="flex h-full w-full items-center justify-center bg-muted">
+              <AudioWaveform className="h-4 w-4 text-foreground/70" />
+            </div>
+          ) : (
+            <FileIcon mimeType={file.type} />
+          )}
+        </div>
+
+        {/* Name + size */}
+        <div className="flex min-w-0 flex-col">
+          <span className="max-w-48 truncate font-medium text-xs leading-tight">
+            {file.name}
+          </span>
+          <span className="text-[10px] text-muted-foreground leading-tight">
+            {status === 'uploading'
+              ? 'Uploading…'
+              : status === 'error'
+                ? 'Failed'
+                : formatFileSize(file.size)}
+          </span>
+        </div>
       </div>
 
-      {/* Name + size */}
-      <div className="flex min-w-0 flex-col">
-        <span className="max-w-30 truncate font-medium text-xs leading-tight">
-          {file.name}
-        </span>
-        <span className="text-[10px] text-muted-foreground leading-tight">
-          {status === 'uploading'
-            ? 'Uploading…'
-            : status === 'error'
-              ? 'Failed'
-              : formatFileSize(file.size)}
-        </span>
-      </div>
+      {isAudio && audioSrc && (
+        <audio
+          controls
+          preload="metadata"
+          src={audioSrc}
+          className="h-10 w-full"
+        />
+      )}
 
       {/* Remove button */}
       {!disabled && (
@@ -327,7 +363,7 @@ function MessageAttachmentChip({
           // biome-ignore lint/performance/noImgElement: signed/blob URL not compatible with Next.js Image
           <img
             src={src}
-            alt={attachment.name}
+            alt={getAttachmentDisplayName(attachment)}
             className="h-full w-full object-cover"
           />
         ) : (
@@ -343,7 +379,7 @@ function MessageAttachmentChip({
             invertColors ? 'text-background' : 'text-foreground'
           )}
         >
-          {attachment.name}
+          {getAttachmentDisplayName(attachment)}
         </span>
         <span
           className={cn(
@@ -443,7 +479,13 @@ function MessageImageThumbnail({
   return (
     <button
       type="button"
-      onClick={() => onExpand({ kind: 'image', src, alt: attachment.name })}
+      onClick={() =>
+        onExpand({
+          kind: 'image',
+          src,
+          alt: getAttachmentDisplayName(attachment),
+        })
+      }
       className={cn(
         'group/img relative overflow-hidden rounded-xl transition-all',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
@@ -473,7 +515,7 @@ function MessageImageThumbnail({
       <img
         key={retryCount}
         src={src}
-        alt={attachment.name}
+        alt={getAttachmentDisplayName(attachment)}
         onLoad={() => setLoaded(true)}
         onError={() => setErrored(true)}
         className={cn(
@@ -700,7 +742,7 @@ function MessageVideoPlayer({
             onExpand({
               kind: 'video',
               src,
-              alt: attachment.name,
+              alt: getAttachmentDisplayName(attachment),
               type: attachment.type,
             })
           }
@@ -726,8 +768,83 @@ function MessageVideoPlayer({
         >
           <FileVideo className="h-3 w-3 shrink-0 text-white/70" />
           <span className="truncate text-[10px] text-white/90">
-            {attachment.name}
+            {getAttachmentDisplayName(attachment)}
           </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Audio player (inline in message bubble)
+// ---------------------------------------------------------------------------
+
+function MessageAudioPlayer({
+  attachment,
+  invertColors,
+}: {
+  attachment: MessageFileAttachment;
+  invertColors?: boolean;
+}) {
+  const src = getMediaSrc(attachment);
+
+  return (
+    <div
+      className={cn(
+        'flex max-w-72 flex-col gap-3 overflow-hidden rounded-xl p-3',
+        invertColors
+          ? 'bg-background/10'
+          : 'border border-border/40 bg-muted/30'
+      )}
+    >
+      <div className="flex items-center gap-3">
+        <div
+          className={cn(
+            'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
+            invertColors ? 'bg-background/15' : 'bg-dynamic-cyan/10'
+          )}
+        >
+          <AudioWaveform
+            className={cn(
+              'h-5 w-5',
+              invertColors ? 'text-background/80' : 'text-dynamic-cyan'
+            )}
+          />
+        </div>
+        <div className="min-w-0">
+          <p
+            className={cn(
+              'truncate font-medium text-xs',
+              invertColors ? 'text-background' : 'text-foreground'
+            )}
+          >
+            {getAttachmentDisplayName(attachment)}
+          </p>
+          <p
+            className={cn(
+              'text-[10px]',
+              invertColors ? 'text-background/50' : 'text-muted-foreground'
+            )}
+          >
+            {formatFileSize(attachment.size)}
+          </p>
+        </div>
+      </div>
+
+      {src ? (
+        <audio src={src} controls preload="metadata" className="h-10 w-full" />
+      ) : (
+        <div
+          className={cn(
+            'flex items-center gap-2 rounded-lg px-3 py-2 text-[11px]',
+            invertColors
+              ? 'bg-background/10 text-background/60'
+              : 'bg-muted/60 text-muted-foreground'
+          )}
+        >
+          <AudioLines className="h-3.5 w-3.5" />
+          {getAttachmentDisplayName(attachment)}
         </div>
       )}
     </div>
@@ -779,7 +896,7 @@ function MessagePdfPreview({
             invertColors ? 'text-background' : 'text-foreground'
           )}
         >
-          {attachment.name}
+          {getAttachmentDisplayName(attachment)}
         </span>
         <span
           className={cn(
@@ -804,7 +921,7 @@ function MessagePdfPreview({
               ? 'bg-background/15 text-background/70 hover:bg-background/25 hover:text-background'
               : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
           )}
-          aria-label={`Open ${attachment.name}`}
+          aria-label={`Open ${getAttachmentDisplayName(attachment)}`}
         >
           <ExternalLink className="h-3.5 w-3.5" />
         </a>
@@ -843,11 +960,16 @@ export function MessageFileAttachments({
   if (attachments.length === 0) return null;
 
   // Categorise attachments by type
+  const audios = attachments.filter((a) => isAudioType(a.type));
   const images = attachments.filter((a) => isImageType(a.type));
   const videos = attachments.filter((a) => isVideoType(a.type));
   const pdfs = attachments.filter((a) => isPdfType(a.type));
   const others = attachments.filter(
-    (a) => !isImageType(a.type) && !isVideoType(a.type) && !isPdfType(a.type)
+    (a) =>
+      !isAudioType(a.type) &&
+      !isImageType(a.type) &&
+      !isVideoType(a.type) &&
+      !isPdfType(a.type)
   );
 
   return (
@@ -871,6 +993,19 @@ export function MessageFileAttachments({
                 attachment={video}
                 invertColors={invertColors}
                 onExpand={handleMediaExpand}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Audio players */}
+        {audios.length > 0 && (
+          <div className="flex flex-col gap-1.5">
+            {audios.map((audio) => (
+              <MessageAudioPlayer
+                key={audio.id}
+                attachment={audio}
+                invertColors={invertColors}
               />
             ))}
           </div>

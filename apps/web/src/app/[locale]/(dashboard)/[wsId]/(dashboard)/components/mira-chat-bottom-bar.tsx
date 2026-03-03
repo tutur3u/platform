@@ -17,7 +17,7 @@ interface MiraChatBottomBarProps {
   inputRef: RefObject<HTMLTextAreaElement | null>;
   isBusy: boolean;
   onFileRemove: (id: string) => void;
-  onFilesSelected?: (files: File[]) => void;
+  onFilesSelected?: (files: File[]) => Promise<number> | number | undefined;
   onSubmit: (value: string) => void;
   onVoiceToggle?: () => void;
   setInput: (value: string) => void;

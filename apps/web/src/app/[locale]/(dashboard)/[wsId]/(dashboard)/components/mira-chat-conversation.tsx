@@ -19,6 +19,7 @@ interface MiraChatConversationProps {
   messageAttachments: Map<string, MessageFileAttachment[]>;
   messages: UIMessage[];
   onAutoSubmitMermaidFix: (prompt: string) => void;
+  optimisticPendingMessage: UIMessage | null;
   pendingDisplay: string | null;
   pendingPrompt: string | null;
   queuedText: string | null;
@@ -37,6 +38,7 @@ export function MiraChatConversation({
   messageAttachments,
   messages,
   onAutoSubmitMermaidFix,
+  optimisticPendingMessage,
   pendingDisplay,
   pendingPrompt,
   queuedText,
@@ -45,27 +47,53 @@ export function MiraChatConversation({
   userAvatarUrl,
   userName,
 }: MiraChatConversationProps) {
+  const optimisticMessageMissing =
+    optimisticPendingMessage &&
+    !messages.some((message) => message.id === optimisticPendingMessage.id)
+      ? optimisticPendingMessage
+      : null;
+
+  const insertOptimisticPendingMessage = (items: UIMessage[]) => {
+    if (!optimisticMessageMissing) return items;
+
+    let insertionIndex = items.length;
+    while (
+      insertionIndex > 0 &&
+      items[insertionIndex - 1]?.role === 'assistant'
+    ) {
+      insertionIndex -= 1;
+    }
+
+    return [
+      ...items.slice(0, insertionIndex),
+      optimisticMessageMissing,
+      ...items.slice(insertionIndex),
+    ];
+  };
+
   const renderedMessages =
-    (pendingDisplay || hasFileOnlyPending) && messages.length === 0
-      ? [
-          {
-            id: 'pending',
-            role: 'user' as const,
-            parts: pendingDisplay
-              ? [{ type: 'text' as const, text: pendingDisplay }]
-              : [],
-          },
-        ]
-      : queuedText
+    optimisticMessageMissing && messages.length === 0
+      ? [optimisticMessageMissing]
+      : (pendingDisplay || hasFileOnlyPending) && messages.length === 0
         ? [
-            ...messages,
             {
-              id: 'queued',
+              id: 'pending',
               role: 'user' as const,
-              parts: [{ type: 'text' as const, text: queuedText }],
+              parts: pendingDisplay
+                ? [{ type: 'text' as const, text: pendingDisplay }]
+                : [],
             },
           ]
-        : messages;
+        : queuedText
+          ? [
+              ...insertOptimisticPendingMessage(messages),
+              {
+                id: 'queued',
+                role: 'user' as const,
+                parts: [{ type: 'text' as const, text: queuedText }],
+              },
+            ]
+          : insertOptimisticPendingMessage(messages);
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">

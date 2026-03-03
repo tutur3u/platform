@@ -4,6 +4,11 @@ import { withSessionAuth } from '@/lib/api-auth';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const ALLOWED_EXTENSIONS = new Set([
+  'aac',
+  'flac',
+  'm4a',
+  'mp3',
+  'ogg',
   'png',
   'jpg',
   'jpeg',
@@ -23,6 +28,7 @@ const ALLOWED_EXTENSIONS = new Set([
   'docx',
   'json',
   'md',
+  'wav',
 ]);
 
 const MAX_FILENAME_LENGTH = 255;

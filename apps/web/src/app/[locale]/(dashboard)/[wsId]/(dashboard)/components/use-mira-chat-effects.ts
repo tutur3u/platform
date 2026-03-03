@@ -132,11 +132,16 @@ export function useMiraChatEffects({
       const latestUpload = messageAttachmentsRef.current.get(
         '__latest_user_upload'
       );
-      if (!latestUpload?.length) continue;
+      const hasDirectAttachments = !!messageAttachmentsRef.current.get(
+        message.id
+      )?.length;
+      if (!latestUpload?.length && !hasDirectAttachments) continue;
 
       setMessageAttachments((prev) => {
         const next = new Map(prev);
-        next.set(message.id, latestUpload);
+        if (latestUpload?.length) {
+          next.set(message.id, latestUpload);
+        }
         next.delete('__latest_user_upload');
         next.delete('pending');
         next.delete('queued');
