@@ -1,6 +1,6 @@
-import type { MiraToolContext } from '../mira-tools';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import QRCode from 'qrcode';
-import {createAdminClient} from '@tuturuuu/supabase/next/server';
+import type { MiraToolContext } from '../mira-tools';
 import { getWorkspaceContextWorkspaceId } from '../workspace-context';
 
 const DEFAULT_SIZE = 512;
@@ -83,7 +83,6 @@ export async function executeCreateQrCode(
   const storagePath = `${wsId}/${DRIVE_QR_PREFIX}/${fileId}-${fileName}`;
 
   try {
-
     const qrDataUrl = await QRCode.toDataURL(rawValue, {
       type: 'image/png',
       width: size,

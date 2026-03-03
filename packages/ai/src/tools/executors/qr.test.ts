@@ -2,8 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MiraToolContext } from '../mira-tools';
 import { executeCreateQrCode } from './qr';
 
-const qrcodeToDataUrlMock = vi.fn();
-const createAdminClientMock = vi.fn();
+const { qrcodeToDataUrlMock, createAdminClientMock } = vi.hoisted(() => ({
+  qrcodeToDataUrlMock: vi.fn(),
+  createAdminClientMock: vi.fn(),
+}));
 
 vi.mock('qrcode', () => ({
   default: {
