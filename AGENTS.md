@@ -107,8 +107,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Markdown Table Priority**: For tabular assistant answers, prefer native Markdown tables in normal assistant text. Do not attempt unsupported `render_ui` table components, and do not wrap Markdown tables in fenced code blocks.
 - **Special Tag Prompt Rules**: Custom tags like `@<FOLLOWUP>` must not contain internal whitespace, but blank lines between distinct prompt sections are required.
 - **PR Maintainability Fixes**: When reviewers flag oversized files, prioritize extracting cohesive submodules (for example `render_ui` blog components or tool-step decision helpers) while keeping the original external APIs and behavior intact.
-- **Mobile Layered Nav Double-Tap**: In compact layered mini-app navigation, never consume the first `Apps` tap by immediately restoring mini-nav when the global nav layer is visible. Keep the global layer active long enough for double-tap detection so users can reopen Apps Hub reliably.
-- **Mobile Layered Nav Gesture Parity**: When rendering GlobalNav inside layered mini-app compact mode, preserve `Apps` gesture parity with root compact nav: single-tap returns to mini-nav, double-tap reopens Apps Hub, and long-press must still trigger Apps Hub with search pre-open behavior.
+- **Executor Module Boundaries**: When file grows beyond roughly 500 LOC, split it by concern (for example sessions, goals, categories) and keep the original entrypoint as a thin barrel re-export so dispatcher imports remain stable.
 
 ### 6.3 Security & Validation
 
@@ -128,6 +127,8 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 
 ### 6.4 Tooling & CI
 
+- **Mira Tool Name Parity**: Keep Mira system-prompt examples, `MIRA_TOOL_NAMES`, tool definitions, and dispatcher handlers in sync. Never reference a tool name in prompts that is not actually registered/executable.
+- **Targeted Test Runs**: For single-package/unit validation, run the package-local test runner directly (for example `bun --cwd packages/ai vitest run src/tools/executors/timer.test.ts`) instead of `bun test <path>` from repo root, which fans out to monorepo-wide `turbo run test`.
 - **Discord Python Tooling**: In `apps/discord`, use `uv` as the local environment/package workflow (`uv sync`, `uv run ...`) with `pyproject.toml` + `uv.lock` as the source of truth for local development.
 - **Discord CI Parity**: Keep the GitHub Actions workflow `.github/workflows/discord-python-ci.yml` aligned with the `uv` workflow and install dependencies via `uv sync --locked` so CI reproducibly uses `apps/discord/uv.lock`.
 - **Discord Modal Deploys**: For `apps/discord` continuous deployment, trigger Modal deploys from GitHub Actions only after the Discord-specific CI workflow succeeds, authenticate with `MODAL_TOKEN_ID` / `MODAL_TOKEN_SECRET`, and run the deploy via `uv run modal deploy ...`.

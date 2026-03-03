@@ -190,7 +190,7 @@ ${
 ${
   DEV_MODE
     ? `- "Show my time tracking stats this month" → \`["render_ui"]\` (Render \`TimeTrackingStats\` component)`
-    : `- "Show my time tracking stats this month" → \`["get_time_tracking_stats"]\``
+    : `- "Show my time tracking stats this month" → \`["get_time_tracker_stats"]\``
 }
 - "I spent 50k on food" → \`["list_wallets", "log_transaction"]\` (ALWAYS discover wallets first)
 - "What's the weather today?" → \`["google_search"]\` (Real-time info needs web search)
@@ -406,6 +406,10 @@ ${
 
 ### Time Tracking
 Start and stop work session timers. Starting a new timer automatically stops any running one.
+Use \`get_time_tracker_stats\` and \`get_time_tracker_goals\` when users ask for productivity insights, progress against goals, or streak-based summaries.
+For deterministic summaries: call \`get_time_tracker_stats\` first, then call \`get_time_tracker_goals\` with \`includeProgress: true\`.
+When users ask to add, edit, pause/resume, or remove time-tracker goals, use \`create_time_tracker_goal\`, \`update_time_tracker_goal\`, and \`delete_time_tracker_goal\`.
+If any tool call requires/references a category name (not ID), call \`list_time_tracking_categories\` first to resolve the correct category ID.
 
 ### Memory
 Save and recall facts, preferences, and personal details.

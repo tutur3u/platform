@@ -1,7 +1,21 @@
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import type { MiraToolContext } from '../../mira-tools';
+import { getWorkspaceContextWorkspaceId } from '../../workspace-context';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 export const MIN_DURATION_SECONDS = 60;
 const ENABLE_APPROVAL_BYPASS_CHECK = false;
+
+export type ToolFailure = {
+  success: false;
+  error: string;
+  errorCode: string;
+  retryable: boolean;
+};
 
 function parseDateOnly(
   value: unknown,
@@ -42,11 +56,39 @@ function parseDateOnly(
 export function parseFlexibleDateTime(
   value: unknown,
   fieldName: string,
-  options?: { date?: unknown }
+  options?: { date?: unknown; timezone?: string }
 ): { ok: true; value: Date } | { ok: false; error: string } {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return { ok: true, value };
+  }
+
   if (typeof value !== 'string' || !value.trim()) {
     return { ok: false, error: `${fieldName} is required` };
   }
+
+  const resolvedTimezone =
+    typeof options?.timezone === 'string' &&
+    options.timezone.trim().length > 0 &&
+    isValidIanaTimezone(options.timezone.trim())
+      ? options.timezone.trim()
+      : null;
+
+  const parseNaiveDateTime = (input: string): Date | null => {
+    if (resolvedTimezone) {
+      const tzParsed = dayjs.tz(input, resolvedTimezone);
+      if (tzParsed.isValid()) {
+        return tzParsed.toDate();
+      }
+    } else {
+      const utcParsed = dayjs.utc(input);
+      if (utcParsed.isValid()) {
+        return utcParsed.toDate();
+      }
+    }
+
+    const parsed = new Date(input);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  };
 
   const trimmed = value.trim();
   const isoDateTimeMatch = trimmed.match(
@@ -59,8 +101,12 @@ export function parseFlexibleDateTime(
       return { ok: false, error: dateParsed.error };
     }
 
-    const parsed = new Date(trimmed);
-    if (!Number.isNaN(parsed.getTime())) {
+    const hasExplicitOffset = /(?:Z|[+-][01]\d:[0-5]\d)$/i.test(trimmed);
+    const parsed = hasExplicitOffset
+      ? new Date(trimmed)
+      : parseNaiveDateTime(trimmed);
+
+    if (parsed && !Number.isNaN(parsed.getTime())) {
       return { ok: true, value: parsed };
     }
   }
@@ -75,8 +121,10 @@ export function parseFlexibleDateTime(
       return { ok: false, error: dateParsed.error };
     }
 
-    const combined = new Date(`${datePart}T${hours}:${minutes}:${seconds}`);
-    if (!Number.isNaN(combined.getTime())) {
+    const combined = parseNaiveDateTime(
+      `${datePart}T${hours}:${minutes}:${seconds}`
+    );
+    if (combined) {
       return { ok: true, value: combined };
     }
   }
@@ -94,10 +142,10 @@ export function parseFlexibleDateTime(
     }
 
     const [, hours, minutes, seconds = '00'] = timeOnlyMatch;
-    const combined = new Date(
+    const combined = parseNaiveDateTime(
       `${dateParsed.value}T${hours}:${minutes}:${seconds}`
     );
-    if (!Number.isNaN(combined.getTime())) {
+    if (combined) {
       return { ok: true, value: combined };
     }
   }
@@ -132,13 +180,94 @@ export function normalizeCursor(cursor: unknown):
   return { ok: true, lastStartTime, lastId };
 }
 
+export function coerceOptionalString(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+export function toFiniteNumber(value: unknown, fallback = 0): number {
+  const coerced = Number(value);
+  return Number.isFinite(coerced) ? coerced : fallback;
+}
+
+export function buildToolFailure(
+  errorCode: string,
+  message: string,
+  retryable: boolean
+): ToolFailure {
+  return {
+    success: false,
+    error: message,
+    errorCode,
+    retryable,
+  };
+}
+
+export function isValidIanaTimezone(value: string): boolean {
+  try {
+    // RangeError for invalid IANA timezone names.
+    new Intl.DateTimeFormat('en-US', { timeZone: value }).format();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function resolveTimezone(
+  argsTimezone: unknown,
+  contextTimezone: string | undefined
+): {
+  requested: string | null;
+  resolved: string;
+  usedFallback: boolean;
+  validRequested: boolean;
+} {
+  const requestedRaw =
+    typeof argsTimezone === 'string' && argsTimezone.trim().length > 0
+      ? argsTimezone.trim()
+      : null;
+
+  if (requestedRaw && isValidIanaTimezone(requestedRaw)) {
+    return {
+      requested: requestedRaw,
+      resolved: requestedRaw,
+      usedFallback: false,
+      validRequested: true,
+    };
+  }
+
+  const contextTz =
+    typeof contextTimezone === 'string' && contextTimezone.trim().length > 0
+      ? contextTimezone.trim()
+      : null;
+
+  if (contextTz && isValidIanaTimezone(contextTz)) {
+    return {
+      requested: requestedRaw,
+      resolved: contextTz,
+      usedFallback: true,
+      validRequested: requestedRaw === null,
+    };
+  }
+
+  return {
+    requested: requestedRaw,
+    resolved: 'UTC',
+    usedFallback: true,
+    validRequested: requestedRaw === null,
+  };
+}
+
 async function hasBypassApprovalPermission(
   ctx: MiraToolContext
 ): Promise<boolean> {
+  const workspaceId = getWorkspaceContextWorkspaceId(ctx);
+
   const { data: workspace, error: workspaceError } = await ctx.supabase
     .from('workspaces')
     .select('creator_id')
-    .eq('id', ctx.wsId)
+    .eq('id', workspaceId)
     .maybeSingle();
 
   if (workspaceError) {
@@ -150,7 +279,7 @@ async function hasBypassApprovalPermission(
   const { data: defaults, error: defaultsError } = await ctx.supabase
     .from('workspace_default_permissions')
     .select('permission')
-    .eq('ws_id', ctx.wsId)
+    .eq('ws_id', workspaceId)
     .eq('enabled', true)
     .eq('permission', 'bypass_time_tracking_request_approval')
     .limit(1);
@@ -168,7 +297,7 @@ async function hasBypassApprovalPermission(
         'workspace_roles!inner(ws_id, workspace_role_permissions(permission, enabled))'
       )
       .eq('user_id', ctx.userId)
-      .eq('workspace_roles.ws_id', ctx.wsId);
+      .eq('workspace_roles.ws_id', workspaceId);
 
   if (rolePermissionsError) {
     throw new Error(rolePermissionsError.message);
@@ -189,10 +318,12 @@ export async function shouldRequireApproval(
   startTime: Date,
   ctx: MiraToolContext
 ): Promise<{ requiresApproval: boolean; reason?: string }> {
+  const workspaceId = getWorkspaceContextWorkspaceId(ctx);
+
   const { data: settings, error } = await ctx.supabase
     .from('workspace_settings')
     .select('missed_entry_date_threshold')
-    .eq('ws_id', ctx.wsId)
+    .eq('ws_id', workspaceId)
     .maybeSingle();
 
   if (error) {
@@ -237,10 +368,4 @@ export async function shouldRequireApproval(
   }
 
   return { requiresApproval: false };
-}
-
-export function coerceOptionalString(value: unknown): string | null {
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
 }

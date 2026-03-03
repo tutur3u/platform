@@ -32,22 +32,20 @@ function createApprovalRequiredContext(): MiraToolContext {
     wsId: '00000000-0000-0000-0000-000000000000',
     userId: '11111111-1111-1111-1111-111111111111',
     supabase,
+    timezone: 'Asia/Bangkok',
   } as unknown as MiraToolContext;
 }
 
 describe('parseFlexibleDateTime', () => {
-  it('accepts HH:mm when date is provided', () => {
+  it('interprets HH:mm in provided timezone when date is provided', () => {
     const result = parseFlexibleDateTime('08:00', 'startTime', {
       date: '2026-02-24',
+      timezone: 'Asia/Bangkok',
     });
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value.getFullYear()).toBe(2026);
-      expect(result.value.getMonth()).toBe(1);
-      expect(result.value.getDate()).toBe(24);
-      expect(result.value.getHours()).toBe(8);
-      expect(result.value.getMinutes()).toBe(0);
+      expect(result.value.toISOString()).toBe('2026-02-24T01:00:00.000Z');
     }
   });
 
@@ -93,7 +91,13 @@ describe('executeCreateTimeTrackingEntry', () => {
     }
 
     expect(result).toHaveProperty('nextStep');
-    expect(result).toHaveProperty('approvalRequest.startTime');
-    expect(result).toHaveProperty('approvalRequest.endTime');
+    expect(result).toHaveProperty(
+      'approvalRequest.startTime',
+      '2026-02-24T01:00:00.000Z'
+    );
+    expect(result).toHaveProperty(
+      'approvalRequest.endTime',
+      '2026-02-24T10:00:00.000Z'
+    );
   });
 });

@@ -59,7 +59,22 @@ export const MIRA_TOOL_DIRECTORY: Record<MiraToolName, string> = {
   stop_timer: 'Stop the running time tracking session',
   list_time_tracking_sessions:
     'List your time tracking history with pagination and filters',
+  list_time_tracking_categories:
+    'List time-tracking categories and IDs for category selection/mapping',
+  create_time_tracking_category:
+    'Create a time-tracking category in the current workspace',
+  update_time_tracking_category:
+    'Update a time-tracking category by ID in the current workspace',
+  delete_time_tracking_category:
+    'Delete a time-tracking category by ID in the current workspace',
   get_time_tracking_session: 'Get one time tracking session by ID',
+  get_time_tracker_stats:
+    'Get time-tracker summary stats and activity data for insights',
+  get_time_tracker_goals:
+    'List time-tracker goals with optional daily/weekly progress',
+  create_time_tracker_goal: 'Create a time-tracker goal',
+  update_time_tracker_goal: 'Update a time-tracker goal',
+  delete_time_tracker_goal: 'Delete a time-tracker goal',
   create_time_tracking_entry:
     'Create a stopped/manual time tracking history entry. If approval is required, it returns requiresApproval with next-step guidance for the user/UI to handle approval.',
   update_time_tracking_session: 'Update a time tracking history session',

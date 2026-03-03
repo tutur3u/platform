@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { tool } from '../core';
 
+const flexibleDateTimeInputSchema = z.string();
+
 export const timeTrackingToolDefinitions = {
   start_timer: tool({
     description:
@@ -77,12 +79,16 @@ export const timeTrackingToolDefinitions = {
         .nullish()
         .describe('Time tracking category UUID, or null/omit'),
       taskId: z.string().nullish().describe('Task UUID, or null/omit'),
-      startTime: z.iso
-        .datetime()
-        .describe('Start time (ISO 8601, YYYY-MM-DD HH:mm)'),
-      endTime: z.iso
-        .datetime()
-        .describe('End time (ISO 8601, YYYY-MM-DD HH:mm)'),
+      startTime: flexibleDateTimeInputSchema.describe(
+        'Start time. Accepts ISO 8601, YYYY-MM-DD HH:mm, or HH:mm when date is provided'
+      ),
+      endTime: flexibleDateTimeInputSchema.describe(
+        'End time. Accepts ISO 8601, YYYY-MM-DD HH:mm, or HH:mm when date is provided'
+      ),
+      date: z
+        .string()
+        .optional()
+        .describe('Date anchor (YYYY-MM-DD) required when using HH:mm inputs'),
     }),
   }),
 
@@ -108,14 +114,22 @@ export const timeTrackingToolDefinitions = {
           .optional()
           .describe('Updated category UUID'),
         taskId: z.string().nullable().optional().describe('Updated task UUID'),
-        startTime: z.iso
-          .datetime()
+        startTime: flexibleDateTimeInputSchema
           .optional()
-          .describe('Updated start time (ISO 8601, YYYY-MM-DD HH:mm)'),
-        endTime: z.iso
-          .datetime()
+          .describe(
+            'Updated start time. Accepts ISO 8601, YYYY-MM-DD HH:mm, or HH:mm when date is provided'
+          ),
+        endTime: flexibleDateTimeInputSchema
           .optional()
-          .describe('Updated end time (ISO 8601, YYYY-MM-DD HH:mm)'),
+          .describe(
+            'Updated end time. Accepts ISO 8601, YYYY-MM-DD HH:mm, or HH:mm when date is provided'
+          ),
+        date: z
+          .string()
+          .optional()
+          .describe(
+            'Date anchor (YYYY-MM-DD) required when using HH:mm inputs'
+          ),
       })
       .refine((data) => Boolean(data.sessionId || data.id), {
         message: 'sessionId or id is required',
@@ -154,6 +168,214 @@ export const timeTrackingToolDefinitions = {
       .refine((data) => Boolean(data.sessionId || data.id), {
         message: 'sessionId or id is required',
         path: ['sessionId'],
+      }),
+  }),
+
+  get_time_tracker_stats: tool({
+    description:
+      'Get time-tracker summary stats (today/week/month/streak) and daily activity for insights.',
+    inputSchema: z.object({
+      timezone: z
+        .string()
+        .optional()
+        .describe(
+          'IANA timezone (defaults to your current chat timezone or UTC)'
+        ),
+      summaryOnly: z
+        .boolean()
+        .optional()
+        .describe('When true, skip daily activity history (default true)'),
+      daysBack: z
+        .number()
+        .int()
+        .min(1)
+        .max(3650)
+        .optional()
+        .describe(
+          'How many days of daily activity to include when summaryOnly=false (default 365)'
+        ),
+    }),
+  }),
+
+  get_time_tracker_goals: tool({
+    description:
+      'List your time-tracker goals (optionally including inactive goals) and computed daily/weekly progress.',
+    inputSchema: z.object({
+      includeInactive: z
+        .boolean()
+        .optional()
+        .describe('Include inactive goals (default false)'),
+      timezone: z
+        .string()
+        .optional()
+        .describe('IANA timezone used for progress calculations'),
+      includeProgress: z
+        .boolean()
+        .optional()
+        .describe(
+          'Include daily/weekly progress percentages using current stats (default true)'
+        ),
+    }),
+  }),
+
+  list_time_tracking_categories: tool({
+    description:
+      'List time-tracking categories in the current workspace so you can map category names to category IDs.',
+    inputSchema: z.object({
+      cursor: z
+        .string()
+        .optional()
+        .describe('Pagination cursor from previous response (name|id)'),
+      limit: z
+        .number()
+        .int()
+        .min(1)
+        .max(50)
+        .optional()
+        .describe('Page size (default 20, max 50)'),
+    }),
+  }),
+
+  create_time_tracking_category: tool({
+    description: 'Create a time-tracking category in the current workspace.',
+    inputSchema: z.object({
+      name: z.string().describe('Category name'),
+      description: z
+        .string()
+        .nullish()
+        .describe('Category description, or null/omit'),
+      color: z
+        .string()
+        .nullish()
+        .describe('Category color token, or null/omit (defaults to BLUE)'),
+    }),
+  }),
+
+  update_time_tracking_category: tool({
+    description: 'Update a time-tracking category by categoryId (or id alias).',
+    inputSchema: z
+      .object({
+        categoryId: z.string().optional().describe('Category UUID'),
+        id: z
+          .string()
+          .optional()
+          .describe('Alias for categoryId. Use either categoryId or id.'),
+        name: z.string().nullish().describe('Updated category name'),
+        description: z
+          .string()
+          .nullish()
+          .describe('Updated category description, or null to clear'),
+        color: z
+          .string()
+          .nullish()
+          .describe('Updated category color token, or null'),
+      })
+      .refine((data) => Boolean(data.categoryId || data.id), {
+        message: 'categoryId or id is required',
+        path: ['categoryId'],
+      })
+      .refine(
+        (data) =>
+          data.name !== undefined ||
+          data.description !== undefined ||
+          data.color !== undefined,
+        {
+          message: 'At least one updatable field is required',
+          path: ['name'],
+        }
+      ),
+  }),
+
+  delete_time_tracking_category: tool({
+    description: 'Delete a time-tracking category by categoryId (or id alias).',
+    inputSchema: z
+      .object({
+        categoryId: z.string().optional().describe('Category UUID'),
+        id: z
+          .string()
+          .optional()
+          .describe('Alias for categoryId. Use either categoryId or id.'),
+      })
+      .refine((data) => Boolean(data.categoryId || data.id), {
+        message: 'categoryId or id is required',
+        path: ['categoryId'],
+      }),
+  }),
+
+  create_time_tracker_goal: tool({
+    description:
+      'Create a new time-tracker goal for the current workspace/user.',
+    inputSchema: z.object({
+      categoryId: z
+        .string()
+        .nullish()
+        .describe(
+          'Time tracking category UUID. Use "general", null, or omit for non-category goal.'
+        ),
+      dailyGoalMinutes: z
+        .number()
+        .int()
+        .min(1)
+        .describe('Required daily target in minutes (must be > 0)'),
+      weeklyGoalMinutes: z
+        .number()
+        .int()
+        .min(1)
+        .nullish()
+        .describe('Optional weekly target in minutes. Use null/omit to clear'),
+      isActive: z.boolean().optional().describe('Whether goal is active'),
+    }),
+  }),
+
+  update_time_tracker_goal: tool({
+    description:
+      'Update an existing time-tracker goal by goalId (or id alias).',
+    inputSchema: z
+      .object({
+        goalId: z.string().optional().describe('Goal UUID'),
+        id: z
+          .string()
+          .optional()
+          .describe('Alias for goalId. Use either goalId or id.'),
+        categoryId: z
+          .string()
+          .nullish()
+          .describe(
+            'Time tracking category UUID. Use "general", null, or empty to clear.'
+          ),
+        dailyGoalMinutes: z
+          .number()
+          .int()
+          .min(1)
+          .optional()
+          .describe('Updated daily target in minutes (must be > 0)'),
+        weeklyGoalMinutes: z
+          .number()
+          .int()
+          .min(1)
+          .nullish()
+          .describe('Updated weekly target in minutes. Use null/omit to clear'),
+        isActive: z.boolean().optional().describe('Updated active flag'),
+      })
+      .refine((data) => Boolean(data.goalId || data.id), {
+        message: 'goalId or id is required',
+        path: ['goalId'],
+      }),
+  }),
+
+  delete_time_tracker_goal: tool({
+    description: 'Delete a time-tracker goal by goalId (or id alias).',
+    inputSchema: z
+      .object({
+        goalId: z.string().optional().describe('Goal UUID'),
+        id: z
+          .string()
+          .optional()
+          .describe('Alias for goalId. Use either goalId or id.'),
+      })
+      .refine((data) => Boolean(data.goalId || data.id), {
+        message: 'goalId or id is required',
+        path: ['goalId'],
       }),
   }),
 } as const;
