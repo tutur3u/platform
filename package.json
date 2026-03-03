@@ -70,5 +70,8 @@
     "sharp",
     "supabase",
     "unrs-resolver"
-  ]
+  ],
+  "dependencies": {
+    "react-resizable-panels": "^4.7.0"
+  }
 }

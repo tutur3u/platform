@@ -148,7 +148,7 @@ export function Mail({
           {/*      variant: 'ghost',*/}
           {/*    },*/}
           {/*  ]}*/}
-          {/*/>*/}
+          {/*/> */}
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel id="list" defaultSize={defaultLayout[1]} minSize={30}>
