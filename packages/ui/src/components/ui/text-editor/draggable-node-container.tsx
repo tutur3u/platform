@@ -131,7 +131,7 @@ export function DraggableNodeContainer({
     >
       <div
         className={cn(
-          'absolute top-[0.4rem] -left-6',
+          'absolute top-2 -left-6',
           'flex h-5 w-5 cursor-grab items-center justify-center',
           'rounded transition-opacity',
           'text-muted-foreground hover:bg-accent hover:text-foreground',
