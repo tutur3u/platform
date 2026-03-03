@@ -12,6 +12,7 @@ import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/cubit/transaction_list_cubit.dart';
 import 'package:mobile/features/finance/utils/transaction_icon.dart';
 import 'package:mobile/features/finance/view/transaction_detail_action.dart';
+import 'package:mobile/features/finance/widgets/wallet_visual_avatar.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -277,6 +278,29 @@ class _TransactionListViewState extends State<_TransactionListView> {
     });
   }
 
+  Future<void> _onCreateTransaction() async {
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    if (wsId == null) return;
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
+
+    final created = await openCreateTransactionSheet(
+      context,
+      wsId: wsId,
+      repository: context.read<FinanceRepository>(),
+    );
+
+    if (!mounted || !created) return;
+    await _onRefresh();
+    if (toastContext.mounted) {
+      shad.showToast(
+        context: toastContext,
+        builder: (ctx, _) => shad.Alert(
+          content: Text(ctx.l10n.financeTransactionCreated),
+        ),
+      );
+    }
+  }
+
   bool _isDayExpanded(String key) => _expandedDays[key] ?? true;
 
   void _toggleDay(String key) {
@@ -307,6 +331,12 @@ class _TransactionListViewState extends State<_TransactionListView> {
             ),
           ],
           title: Text(l10n.financeTransactions),
+          trailing: [
+            shad.PrimaryButton(
+              onPressed: _onCreateTransaction,
+              child: const Icon(Icons.add, size: 16),
+            ),
+          ],
         ),
       ],
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
@@ -729,7 +759,12 @@ class _TransactionTile extends StatelessWidget {
                         if (tx.walletName != null)
                           _Chip(
                             label: tx.walletName!,
-                            icon: lucide.LucideIcons.walletCards,
+                            leading: WalletVisualAvatar(
+                              icon: tx.walletIcon,
+                              imageSrc: tx.walletImageSrc,
+                              fallbackIcon: lucide.LucideIcons.walletCards,
+                              size: 14,
+                            ),
                           ),
                         if (tx.isTransfer && tx.transfer != null)
                           _Chip(
@@ -827,10 +862,11 @@ class _TransactionTile extends StatelessWidget {
 // ------------------------------------------------------------------
 
 class _Chip extends StatelessWidget {
-  const _Chip({required this.label, this.icon, this.color});
+  const _Chip({required this.label, this.icon, this.leading, this.color});
 
   final String label;
   final IconData? icon;
+  final Widget? leading;
   final Color? color;
 
   @override
@@ -852,7 +888,10 @@ class _Chip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (icon != null) ...[
+          if (leading != null) ...[
+            leading!,
+            const SizedBox(width: 4),
+          ] else if (icon != null) ...[
             Icon(icon, size: 11, color: effectiveColor.withValues(alpha: 0.8)),
             const SizedBox(width: 3),
           ],

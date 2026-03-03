@@ -144,11 +144,9 @@ class _WalletDialogState extends State<WalletDialog> {
                     Expanded(
                       child: _type == 'CREDIT'
                           ? shad.PrimaryButton(
-                              onPressed: null,
                               child: Text(l10n.financeWalletTypeCredit),
                             )
                           : shad.OutlineButton(
-                              onPressed: null,
                               child: Text(l10n.financeWalletTypeCredit),
                             ),
                     ),

@@ -458,6 +458,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeTransactionDetails => 'Transaction details';
 
   @override
+  String get financeCreateTransaction => 'Create transaction';
+
+  @override
   String get financeEditTransaction => 'Edit transaction';
 
   @override
@@ -465,6 +468,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeDeleteTransactionConfirm => 'Delete this transaction?';
+
+  @override
+  String get financeTransactionCreated => 'Transaction created';
 
   @override
   String get financeTransactionUpdated => 'Transaction updated';
@@ -486,6 +492,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeWallet => 'Wallet';
+
+  @override
+  String get financeSelectWalletAndCategoryFirst => 'Choose a wallet and category first';
 
   @override
   String get financeInvalidAmount => 'Enter a valid amount';

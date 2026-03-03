@@ -1,35 +1,25 @@
 part of 'transaction_detail_sheet.dart';
 
-class _EditTransactionDialog extends StatefulWidget {
-  const _EditTransactionDialog({
+class _TransactionFormDialog extends StatefulWidget {
+  const _TransactionFormDialog({
     required this.wsId,
-    required this.transaction,
     required this.repository,
-    required this.onSave,
+    this.transaction,
+    this.onSave,
+    this.onCreate,
   });
 
   final String wsId;
-  final Transaction transaction;
   final FinanceRepository repository;
-  final Future<Transaction> Function({
-    required String transactionId,
-    required double amount,
-    String? description,
-    DateTime? takenAt,
-    String? walletId,
-    String? categoryId,
-    bool? reportOptIn,
-    bool? isAmountConfidential,
-    bool? isDescriptionConfidential,
-    bool? isCategoryConfidential,
-  })
-  onSave;
+  final Transaction? transaction;
+  final TransactionSaveHandler? onSave;
+  final TransactionCreateHandler? onCreate;
 
   @override
-  State<_EditTransactionDialog> createState() => _EditTransactionDialogState();
+  State<_TransactionFormDialog> createState() => _TransactionFormDialogState();
 }
 
-class _EditTransactionDialogState extends State<_EditTransactionDialog> {
+class _TransactionFormDialogState extends State<_TransactionFormDialog> {
   late final TextEditingController _amountController;
   late final TextEditingController _descriptionController;
   late DateTime _takenAt;
@@ -48,6 +38,13 @@ class _EditTransactionDialogState extends State<_EditTransactionDialog> {
   String? _optionsError;
   bool _isSaving = false;
 
+  bool get _isCreate => widget.transaction == null;
+
+  void _onAmountChanged() {
+    if (!mounted) return;
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -56,7 +53,9 @@ class _EditTransactionDialogState extends State<_EditTransactionDialog> {
     final selectedCategory = _selectedCategory;
 
     return shad.AlertDialog(
-      title: Text(l10n.financeEditTransaction),
+      title: Text(
+        _isCreate ? l10n.financeCreateTransaction : l10n.financeEditTransaction,
+      ),
       content: SizedBox(
         width: double.maxFinite,
         child: SingleChildScrollView(
@@ -86,33 +85,26 @@ class _EditTransactionDialogState extends State<_EditTransactionDialog> {
                     ),
                   ),
                 if (_tabIndex == 0) ...[
-                  Text(l10n.financeAmount, style: theme.typography.small),
-                  const shad.Gap(4),
-                  shad.TextField(
-                    controller: _amountController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                      signed: true,
-                    ),
-                    placeholder: Text(l10n.financeAmount),
-                  ),
-                  const shad.Gap(16),
-                  Text(l10n.financeDescription, style: theme.typography.small),
-                  const shad.Gap(4),
-                  shad.TextField(
-                    controller: _descriptionController,
-                    maxLines: 3,
-                    placeholder: Text(l10n.financeDescription),
-                  ),
-                  const shad.Gap(16),
                   Text(l10n.financeWallet, style: theme.typography.small),
                   const shad.Gap(4),
                   shad.OutlineButton(
                     onPressed: _wallets.isEmpty ? null : _pickWallet,
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(selectedWallet?.name ?? '-'),
+                        WalletVisualAvatar(
+                          icon: selectedWallet?.icon,
+                          imageSrc: selectedWallet?.imageSrc,
+                          fallbackIcon: Icons.wallet_outlined,
+                          size: 28,
+                        ),
+                        const shad.Gap(8),
+                        Expanded(
+                          child: Text(
+                            selectedWallet?.name ?? '-',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                         const Icon(Icons.expand_more, size: 16),
                       ],
                     ),
@@ -123,14 +115,78 @@ class _EditTransactionDialogState extends State<_EditTransactionDialog> {
                   shad.OutlineButton(
                     onPressed: _categories.isEmpty ? null : _pickCategory,
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(selectedCategory?.name ?? '-'),
+                        Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: _selectedCategoryColor.withValues(
+                              alpha: 0.16,
+                            ),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            _selectedCategoryIcon,
+                            size: 13,
+                            color: _selectedCategoryColor,
+                          ),
+                        ),
+                        const shad.Gap(8),
+                        Expanded(
+                          child: Text(
+                            selectedCategory?.name ?? '-',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                         const Icon(Icons.expand_more, size: 16),
                       ],
                     ),
                   ),
                   const shad.Gap(16),
+                  if (_walletId == null || _categoryId == null)
+                    Text(
+                      l10n.financeSelectWalletAndCategoryFirst,
+                      style: theme.typography.small.copyWith(
+                        color: theme.colorScheme.mutedForeground,
+                      ),
+                    )
+                  else ...[
+                    Text(l10n.financeAmount, style: theme.typography.small),
+                    const shad.Gap(4),
+                    shad.TextField(
+                      key: ValueKey(_selectedCurrency),
+                      controller: _amountController,
+                      keyboardType: TextInputType.numberWithOptions(
+                        decimal: _currencyFractionDigits(_selectedCurrency) > 0,
+                      ),
+                      inputFormatters: _amountInputFormatters(
+                        _selectedCurrency,
+                      ),
+                      placeholder: Text(
+                        '${currencySymbol(_selectedCurrency)}0',
+                      ),
+                    ),
+                    const shad.Gap(6),
+                    Text(
+                      _amountPreview,
+                      style: theme.typography.xSmall.copyWith(
+                        color: theme.colorScheme.mutedForeground,
+                      ),
+                    ),
+                    const shad.Gap(16),
+                    Text(
+                      l10n.financeDescription,
+                      style: theme.typography.small,
+                    ),
+                    const shad.Gap(4),
+                    shad.TextField(
+                      controller: _descriptionController,
+                      maxLines: 3,
+                      placeholder: Text(l10n.financeDescription),
+                    ),
+                    const shad.Gap(16),
+                  ],
                   Text(l10n.financeTakenAt, style: theme.typography.small),
                   const shad.Gap(4),
                   shad.OutlineButton(
@@ -188,7 +244,9 @@ class _EditTransactionDialogState extends State<_EditTransactionDialog> {
                   height: 16,
                   child: shad.CircularProgressIndicator(),
                 )
-              : Text(l10n.timerSave),
+              : Text(
+                  _isCreate ? l10n.financeCreateTransaction : l10n.timerSave,
+                ),
         ),
       ],
     );
@@ -196,7 +254,9 @@ class _EditTransactionDialogState extends State<_EditTransactionDialog> {
 
   @override
   void dispose() {
-    _amountController.dispose();
+    _amountController
+      ..removeListener(_onAmountChanged)
+      ..dispose();
     _descriptionController.dispose();
     super.dispose();
   }
@@ -204,25 +264,27 @@ class _EditTransactionDialogState extends State<_EditTransactionDialog> {
   @override
   void initState() {
     super.initState();
-    final amount = widget.transaction.amount ?? 0;
+    final amount = widget.transaction?.amount ?? 0;
     _amountController = TextEditingController(
-      text: _formatInitialAmount(amount),
+      text: _formatInitialAmount(amount.abs()),
     );
     _descriptionController = TextEditingController(
-      text: widget.transaction.description ?? '',
+      text: widget.transaction?.description ?? '',
     );
     _takenAt =
-        widget.transaction.takenAt ??
-        widget.transaction.createdAt ??
+        widget.transaction?.takenAt ??
+        widget.transaction?.createdAt ??
         DateTime.now();
-    _walletId = widget.transaction.walletId;
-    _categoryId = widget.transaction.categoryId;
-    _reportOptIn = widget.transaction.reportOptIn ?? true;
-    _isAmountConfidential = widget.transaction.isAmountConfidential ?? false;
+    _walletId = widget.transaction?.walletId;
+    _categoryId = widget.transaction?.categoryId;
+    _reportOptIn = widget.transaction?.reportOptIn ?? true;
+    _isAmountConfidential = widget.transaction?.isAmountConfidential ?? false;
     _isDescriptionConfidential =
-        widget.transaction.isDescriptionConfidential ?? false;
+        widget.transaction?.isDescriptionConfidential ?? false;
     _isCategoryConfidential =
-        widget.transaction.isCategoryConfidential ?? false;
+        widget.transaction?.isCategoryConfidential ?? false;
+
+    _amountController.addListener(_onAmountChanged);
 
     unawaited(_loadOptions());
   }
@@ -241,8 +303,10 @@ class _EditTransactionDialogState extends State<_EditTransactionDialog> {
       setState(() {
         _wallets = wallets;
         _categories = categories;
-        _walletId ??= wallets.isNotEmpty ? wallets.first.id : null;
-        _categoryId ??= categories.isNotEmpty ? categories.first.id : null;
+        if (!_isCreate) {
+          _walletId ??= wallets.isNotEmpty ? wallets.first.id : null;
+          _categoryId ??= categories.isNotEmpty ? categories.first.id : null;
+        }
       });
     } on Exception {
       if (!mounted) return;
@@ -261,7 +325,7 @@ class _EditTransactionDialogState extends State<_EditTransactionDialog> {
       shad.showToast(
         context: context,
         builder: (ctx, overlay) => shad.Alert.destructive(
-          content: Text(ctx.l10n.commonSomethingWentWrong),
+          content: Text(ctx.l10n.financeSelectWalletAndCategoryFirst),
         ),
       );
       return;
@@ -284,8 +348,28 @@ class _EditTransactionDialogState extends State<_EditTransactionDialog> {
       final isExpense = selectedCategory?.isExpense != false;
       final signedAmount = isExpense ? -amount.abs() : amount.abs();
 
-      final updated = await widget.onSave(
-        transactionId: widget.transaction.id,
+      if (_isCreate) {
+        await widget.onCreate!(
+          amount: signedAmount,
+          description: _descriptionController.text.trim().isEmpty
+              ? null
+              : _descriptionController.text.trim(),
+          takenAt: _takenAt,
+          walletId: _walletId,
+          categoryId: _categoryId,
+          reportOptIn: _reportOptIn,
+          isAmountConfidential: _isAmountConfidential,
+          isDescriptionConfidential: _isDescriptionConfidential,
+          isCategoryConfidential: _isCategoryConfidential,
+        );
+
+        if (!mounted) return;
+        Navigator.of(context).pop(true);
+        return;
+      }
+
+      final updated = await widget.onSave!(
+        transactionId: widget.transaction!.id,
         amount: signedAmount,
         description: _descriptionController.text.trim().isEmpty
             ? null
@@ -328,9 +412,32 @@ class _EditTransactionDialogState extends State<_EditTransactionDialog> {
                     .map(
                       (wallet) => shad.GhostButton(
                         onPressed: () => Navigator.of(dialogCtx).pop(wallet.id),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(wallet.name ?? ''),
+                        child: Row(
+                          children: [
+                            WalletVisualAvatar(
+                              icon: wallet.icon,
+                              imageSrc: wallet.imageSrc,
+                              fallbackIcon: Icons.wallet_outlined,
+                              size: 28,
+                            ),
+                            const shad.Gap(8),
+                            Expanded(
+                              child: Text(
+                                wallet.name ?? '',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Text(
+                              wallet.currency ?? 'USD',
+                              style: shad.Theme.of(dialogCtx).typography.xSmall
+                                  .copyWith(
+                                    color: shad.Theme.of(
+                                      dialogCtx,
+                                    ).colorScheme.mutedForeground,
+                                  ),
+                            ),
+                          ],
                         ),
                       ),
                     )
@@ -368,9 +475,37 @@ class _EditTransactionDialogState extends State<_EditTransactionDialog> {
                       (category) => shad.GhostButton(
                         onPressed: () =>
                             Navigator.of(dialogCtx).pop(category.id),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(category.name ?? ''),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 26,
+                              height: 26,
+                              decoration: BoxDecoration(
+                                color: _categoryColor(
+                                  category,
+                                ).withValues(alpha: 0.16),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                resolvePlatformIcon(
+                                  category.icon,
+                                  fallback: category.isExpense != false
+                                      ? Icons.arrow_downward
+                                      : Icons.arrow_upward,
+                                ),
+                                size: 14,
+                                color: _categoryColor(category),
+                              ),
+                            ),
+                            const shad.Gap(8),
+                            Expanded(
+                              child: Text(
+                                category.name ?? '',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     )
@@ -427,6 +562,37 @@ class _EditTransactionDialogState extends State<_EditTransactionDialog> {
     return _categories.where((c) => c.id == _categoryId).firstOrNull;
   }
 
+  String get _selectedCurrency => _selectedWallet?.currency ?? 'USD';
+
+  IconData get _selectedCategoryIcon {
+    final category = _selectedCategory;
+    return resolvePlatformIcon(
+      category?.icon,
+      fallback: category?.isExpense != false
+          ? Icons.arrow_downward
+          : Icons.arrow_upward,
+    );
+  }
+
+  Color get _selectedCategoryColor {
+    final category = _selectedCategory;
+    if (category == null) {
+      return shad.Theme.of(context).colorScheme.mutedForeground;
+    }
+    return _categoryColor(category);
+  }
+
+  String get _amountPreview {
+    final parsed = _parseAmount(_amountController.text);
+    if (parsed == null) {
+      return '${context.l10n.financeAmount}: --';
+    }
+    final isExpense = _selectedCategory?.isExpense != false;
+    final signed = isExpense ? -parsed.abs() : parsed.abs();
+    final formatted = formatCurrency(signed, _selectedCurrency);
+    return '${context.l10n.financeAmount}: $formatted';
+  }
+
   String _formatInitialAmount(double value) {
     final fixed = value.toStringAsFixed(6);
     final trimmed = fixed.replaceFirst(RegExp(r'\.?0+$'), '');
@@ -441,9 +607,68 @@ class _EditTransactionDialogState extends State<_EditTransactionDialog> {
     try {
       final locale = Localizations.localeOf(context).toString();
       final parsed = NumberFormat.decimalPattern(locale).parse(input);
-      return parsed.toDouble();
+      final value = parsed.toDouble();
+      if (_currencyFractionDigits(_selectedCurrency) == 0 && value % 1 != 0) {
+        return null;
+      }
+      return value;
     } on FormatException {
-      return double.tryParse(input);
+      final fallback = double.tryParse(input.replaceAll(',', '.'));
+      if (fallback == null) return null;
+      if (_currencyFractionDigits(_selectedCurrency) == 0 &&
+          fallback % 1 != 0) {
+        return null;
+      }
+      return fallback;
     }
+  }
+
+  int _currencyFractionDigits(String code) {
+    final upper = code.toUpperCase();
+    return upper == 'JPY' || upper == 'VND' ? 0 : 2;
+  }
+
+  List<TextInputFormatter> _amountInputFormatters(String currencyCode) {
+    final digits = _currencyFractionDigits(currencyCode);
+    return [
+      FilteringTextInputFormatter.allow(RegExp('[0-9.,]')),
+      TextInputFormatter.withFunction((oldValue, newValue) {
+        if (newValue.text.isEmpty) return newValue;
+        final separatorMatches = RegExp('[.,]').allMatches(newValue.text);
+        if (separatorMatches.length > 1) {
+          return oldValue;
+        }
+        if (digits == 0 && separatorMatches.isNotEmpty) {
+          return oldValue;
+        }
+        if (digits > 0 && separatorMatches.isNotEmpty) {
+          final separatorIndex = separatorMatches.first.start;
+          final decimalLength = newValue.text.length - separatorIndex - 1;
+          if (decimalLength > digits) {
+            return oldValue;
+          }
+        }
+        return newValue;
+      }),
+    ];
+  }
+
+  Color _categoryColor(TransactionCategory category) {
+    final parsed = _parseHex(category.color);
+    if (parsed != null) return parsed;
+    final isExpense = category.isExpense != false;
+    final colorScheme = shad.Theme.of(context).colorScheme;
+    return isExpense ? colorScheme.destructive : colorScheme.primary;
+  }
+
+  Color? _parseHex(String? hex) {
+    if (hex == null) return null;
+    final cleaned = hex.replaceFirst('#', '');
+    if (cleaned.length != 6 && cleaned.length != 8) return null;
+    final value = int.tryParse(
+      cleaned.length == 6 ? 'FF$cleaned' : cleaned,
+      radix: 16,
+    );
+    return value != null ? Color(value) : null;
   }
 }

@@ -248,6 +248,51 @@ class FinanceRepository {
     return Transaction.fromJson(refreshed);
   }
 
+  Future<void> createTransaction({
+    required String wsId,
+    required double amount,
+    required DateTime takenAt,
+    required String walletId,
+    String? description,
+    String? categoryId,
+    bool? reportOptIn,
+    bool? isAmountConfidential,
+    bool? isDescriptionConfidential,
+    bool? isCategoryConfidential,
+  }) async {
+    final body = <String, dynamic>{
+      'amount': amount,
+      'origin_wallet_id': walletId,
+      'taken_at': takenAt.toUtc().toIso8601String(),
+    };
+
+    if (description != null) {
+      body['description'] = description;
+    }
+
+    if (categoryId != null) {
+      body['category_id'] = categoryId;
+    }
+
+    if (reportOptIn != null) {
+      body['report_opt_in'] = reportOptIn;
+    }
+
+    if (isAmountConfidential != null) {
+      body['is_amount_confidential'] = isAmountConfidential;
+    }
+
+    if (isDescriptionConfidential != null) {
+      body['is_description_confidential'] = isDescriptionConfidential;
+    }
+
+    if (isCategoryConfidential != null) {
+      body['is_category_confidential'] = isCategoryConfidential;
+    }
+
+    await _api.postJson(FinanceEndpoints.transactions(wsId), body);
+  }
+
   Future<void> deleteTransaction({
     required String wsId,
     required String transactionId,

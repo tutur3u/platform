@@ -49,3 +49,40 @@ Future<bool> openTransactionDetailSheet(
     },
   );
 }
+
+Future<bool> openCreateTransactionSheet(
+  BuildContext context, {
+  required String wsId,
+  required FinanceRepository repository,
+}) {
+  return showCreateTransactionSheet(
+    context,
+    wsId: wsId,
+    repository: repository,
+    onCreate:
+        ({
+          required amount,
+          description,
+          takenAt,
+          walletId,
+          categoryId,
+          reportOptIn,
+          isAmountConfidential,
+          isDescriptionConfidential,
+          isCategoryConfidential,
+        }) {
+          return repository.createTransaction(
+            wsId: wsId,
+            amount: amount,
+            description: description,
+            takenAt: takenAt ?? DateTime.now(),
+            walletId: walletId!,
+            categoryId: categoryId,
+            reportOptIn: reportOptIn,
+            isAmountConfidential: isAmountConfidential,
+            isDescriptionConfidential: isDescriptionConfidential,
+            isCategoryConfidential: isCategoryConfidential,
+          );
+        },
+  );
+}

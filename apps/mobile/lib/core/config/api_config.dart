@@ -39,6 +39,9 @@ abstract final class ProfileEndpoints {
 abstract final class FinanceEndpoints {
   static String wallets(String wsId) => '/api/workspaces/$wsId/wallets';
 
+  static String transactions(String wsId) =>
+      '/api/workspaces/$wsId/transactions';
+
   static String wallet(String wsId, String walletId) =>
       '/api/workspaces/$wsId/wallets/$walletId';
 

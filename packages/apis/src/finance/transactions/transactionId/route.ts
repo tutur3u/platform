@@ -55,8 +55,8 @@ const TransactionUpdateSchema = z.object({
   is_category_confidential: z.boolean().optional(),
 });
 
-export async function GET(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function GET(req: Request, { params }: Params) {
+  const supabase = await createClient(req);
   const { transactionId, wsId } = await params;
 
   // Validate UUID format
@@ -69,6 +69,7 @@ export async function GET(_: Request, { params }: Params) {
 
   const permissions = await getPermissions({
     wsId,
+    request: req,
   });
 
   if (!permissions) {
@@ -155,6 +156,7 @@ export async function PUT(req: Request, { params }: Params) {
 
   const permissions = await getPermissions({
     wsId,
+    request: req,
   });
 
   if (!permissions) {
@@ -170,7 +172,7 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-  const supabase = await createClient();
+  const supabase = await createClient(req);
 
   // Verify transaction belongs to workspace
   const transaction = await verifyTransactionWorkspace(

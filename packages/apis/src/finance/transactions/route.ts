@@ -30,6 +30,7 @@ export async function GET(req: Request, { params }: Params) {
 
   const permissions = await getPermissions({
     wsId,
+    request: req,
   });
 
   if (!permissions) {
@@ -108,6 +109,7 @@ export async function POST(req: Request, { params }: Params) {
 
   const permissions = await getPermissions({
     wsId,
+    request: req,
   });
 
   if (!permissions) {
@@ -123,7 +125,7 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const supabase = await createClient();
+  const supabase = await createClient(req);
 
   // Get authenticated user
   const {
