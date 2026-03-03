@@ -48,10 +48,30 @@ function sanitizeFileName(value: unknown): string {
 }
 
 function toPngBytes(dataUrl: string): Uint8Array {
-  const base64 = dataUrl.split(',')[1];
-  if (!base64) {
-    throw new Error('QR image generation returned invalid data URL.');
+  if (!dataUrl.startsWith('data:')) {
+    throw new Error("Malformed data URL: expected 'data:[mime];base64,<data>'");
   }
+
+  const commaIndex = dataUrl.indexOf(',');
+  if (commaIndex < 0) {
+    throw new Error("Malformed data URL: expected 'data:[mime];base64,<data>'");
+  }
+
+  const metadata = dataUrl.slice(5, commaIndex);
+  if (!/^[^,]*;base64$/i.test(metadata)) {
+    throw new Error("Malformed data URL: expected 'data:[mime];base64,<data>'");
+  }
+
+  const mime = metadata.slice(0, -';base64'.length).toLowerCase();
+  if (mime && mime !== 'image/png') {
+    throw new Error("Malformed data URL: expected 'data:[mime];base64,<data>'");
+  }
+
+  const base64 = dataUrl.slice(commaIndex + 1).trim();
+  if (!base64) {
+    throw new Error("Malformed data URL: expected 'data:[mime];base64,<data>'");
+  }
+
   return Uint8Array.from(Buffer.from(base64, 'base64'));
 }
 
@@ -123,7 +143,7 @@ export async function executeCreateQrCode(
       qrCodeUrl: urlData.signedUrl,
       downloadUrl: urlData.signedUrl,
       storagePath,
-      drivePath: storagePath.replace(`${ctx.wsId}/`, ''),
+      drivePath: storagePath.replace(`${wsId}/`, ''),
       fileName,
       size,
       foregroundColor,

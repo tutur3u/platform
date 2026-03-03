@@ -1,6 +1,12 @@
 import { z } from 'zod';
 import { tool } from '../core';
 
+const hexColorSchema = z
+  .string()
+  .trim()
+  .regex(/^#(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/)
+  .optional();
+
 export const imageToolDefinitions = {
   create_image: tool({
     description: 'Generate an image from a text description.',
@@ -30,18 +36,12 @@ export const imageToolDefinitions = {
         .min(1)
         .max(4096)
         .describe('Text content to encode into the QR code'),
-      foregroundColor: z
-        .string()
-        .trim()
-        .regex(/^#(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/)
-        .optional()
-        .describe('QR foreground color in hex, e.g. #000000'),
-      backgroundColor: z
-        .string()
-        .trim()
-        .regex(/^#(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/)
-        .optional()
-        .describe('QR background color in hex, e.g. #FFFFFF'),
+      foregroundColor: hexColorSchema.describe(
+        'QR foreground color in hex, e.g. #000000'
+      ),
+      backgroundColor: hexColorSchema.describe(
+        'QR background color in hex, e.g. #FFFFFF'
+      ),
       size: z
         .number()
         .int()
@@ -54,6 +54,10 @@ export const imageToolDefinitions = {
         .trim()
         .min(1)
         .max(120)
+        .regex(
+          /^[A-Za-z0-9._ -]+$/,
+          'Filename may only include letters, numbers, spaces, dot, underscore, and hyphen.'
+        )
         .optional()
         .describe('Optional desired filename for download and storage'),
     }),
