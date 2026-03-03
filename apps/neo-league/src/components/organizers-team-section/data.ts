@@ -56,6 +56,11 @@ export const teams: Team[] = [
         role: 'Member',
         avatar: '/organizer-team/program/dung-dao.png',
       },
+      {
+        name: 'Khang Phan',
+        role: 'Member',
+        avatar: '/organizer-team/program/khang-phan.png',
+      },
     ],
   },
   {
@@ -64,7 +69,7 @@ export const teams: Team[] = [
       'Managing partnerships, sponsorships, and external communications.',
     members: [
       {
-        name: 'Nguyen Ha Gia Tam',
+        name: 'Tam Nguyen',
         role: 'Team Leader',
         avatar: '/organizer-team/external-affairs/tam.png',
       },
@@ -92,19 +97,24 @@ export const teams: Team[] = [
         avatar: '/organizer-team/internal-affairs/tin-lam.png',
       },
       {
-        name: 'Minh Nhat',
+        name: 'Nhat Nguyen',
         role: 'Member',
-        avatar: '/organizer-team/internal-affairs/minh-nhat.png',
+        avatar: '/organizer-team/internal-affairs/nhat-nguyen.png',
       },
       {
-        name: 'Duy Khanh',
+        name: 'Khanh Tran',
         role: 'Member',
-        avatar: '/organizer-team/internal-affairs/duy-khanh.png',
+        avatar: '/organizer-team/internal-affairs/khanh-tran.png',
       },
       {
-        name: 'Ngoc Anh',
+        name: 'Anh Nguyen',
         role: 'Member',
-        avatar: '/organizer-team/internal-affairs/ngoc-anh.png',
+        avatar: '/organizer-team/internal-affairs/anh-nguyen.png',
+      },
+      {
+        name: 'Phuong Tran',
+        role: 'Member',
+        avatar: '/organizer-team/internal-affairs/phuong-tran.png',
       },
     ],
   },
@@ -113,19 +123,19 @@ export const teams: Team[] = [
     description: 'Managing venues, equipment, and operational logistics.',
     members: [
       {
-        name: 'Thien Kim',
+        name: 'Kim Pham',
         role: 'Team Leader',
         avatar: '/organizer-team/logistic/kim.png',
       },
       {
-        name: 'Mai Kim',
+        name: 'Kim Huynh',
         role: 'Member',
-        avatar: '/organizer-team/logistic/mai-kim.png',
+        avatar: '/organizer-team/logistic/kim-huynh.png',
       },
       {
-        name: 'Bao Ngoc',
+        name: 'Ngoc Tran',
         role: 'Member',
-        avatar: '/organizer-team/logistic/ngoc.png',
+        avatar: '/organizer-team/logistic/ngoc-tran.png',
       },
     ],
   },
