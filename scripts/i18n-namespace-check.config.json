@@ -2,8 +2,8 @@
   "$comment": "Namespaces from shared packages that specific apps intentionally do not use. Remove entries as apps add the missing translations.",
   "apps/web": ["certificates"],
   "apps/tasks": ["certificates"],
-  "apps/calendar": ["certificates"],
-  "apps/finance": ["certificates"],
+  "apps/calendar": ["certificates", "ws-board-templates"],
+  "apps/finance": ["certificates", "ws-board-templates"],
   "apps/meet": [
     "certificates",
     "finance-analytics",
@@ -22,7 +22,7 @@
     "ws-presence",
     "ws-tasks-labels"
   ],
-  "apps/track": ["certificates"],
+  "apps/track": ["certificates", "ws-board-templates"],
   "apps/nova": [
     "certificates",
     "dashboard",
@@ -45,25 +45,14 @@
     "ws-tasks",
     "ws-tasks-labels"
   ],
-  "apps/rewise": ["certificates"],
+  "apps/rewise": ["certificates", "ws-board-templates"],
 
   "$keyExceptionsComment": "Key-level exceptions for shared package translation keys that specific apps do not need. Supports wildcards: 'namespace.*' skips all keys under a namespace. Remove entries as apps add the missing keys.",
   "keyExceptions": {
     "apps/web": ["settings.calendar.*", "ws-polls.*"],
     "apps/tasks": ["settings.calendar.*", "ws-polls.*"],
-    "apps/calendar": [
-      "settings.tasks.*",
-      "ws-board-templates.*",
-      "ws-polls.*",
-      "ws-tasks.*"
-    ],
-    "apps/finance": [
-      "calendar.*",
-      "settings.*",
-      "ws-board-templates.*",
-      "ws-polls.*",
-      "ws-tasks.*"
-    ],
+    "apps/calendar": ["settings.tasks.*", "ws-polls.*", "ws-tasks.*"],
+    "apps/finance": ["calendar.*", "settings.*", "ws-polls.*", "ws-tasks.*"],
     "apps/meet": [
       "calendar.*",
       "common.*",
@@ -76,13 +65,7 @@
       "ws-task-boards.*",
       "ws-tasks.*"
     ],
-    "apps/track": [
-      "calendar.*",
-      "settings.*",
-      "ws-board-templates.*",
-      "ws-polls.*",
-      "ws-tasks.*"
-    ],
+    "apps/track": ["calendar.*", "settings.*", "ws-polls.*", "ws-tasks.*"],
     "apps/nova": [
       "calendar.*",
       "common.*",
@@ -95,12 +78,6 @@
       "ws-courses.*",
       "ws-task-boards.*"
     ],
-    "apps/rewise": [
-      "calendar.*",
-      "settings.*",
-      "ws-board-templates.*",
-      "ws-polls.*",
-      "ws-tasks.*"
-    ]
+    "apps/rewise": ["calendar.*", "settings.*", "ws-polls.*", "ws-tasks.*"]
   }
 }
