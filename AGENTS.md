@@ -89,6 +89,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **API Pattern**: Use `createClient(request)` in web API routes to support mobile Bearer token auth.
 - **Widget Consistency**: Preserve per-field validation when refactoring into shared editable widgets.
 - **Route Alias During Tab Consolidation**: When merging a standalone page into an existing tabbed screen, keep the old route as an alias that opens the destination tab by passing an explicit initial tab/scope parameter.
+- **iOS Lockstep**: After bumping FlutterFire or other iOS-backed Flutter dependencies in `apps/mobile/pubspec.yaml` or `apps/mobile/pubspec.lock`, refresh and commit `apps/mobile/ios/Podfile.lock` so CocoaPods snapshots do not drift and break iOS CI during `pod install`.
 
 ## 6. Known Gotchas & Patterns
 
