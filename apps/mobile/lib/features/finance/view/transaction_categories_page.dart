@@ -75,12 +75,7 @@ class _TransactionCategoriesViewState
           trailing: [
             shad.PrimaryButton(
               onPressed: _onCreate,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.add, size: 16)
-                ],
-              ),
+              child: const Icon(Icons.add, size: 16),
             ),
           ],
         ),

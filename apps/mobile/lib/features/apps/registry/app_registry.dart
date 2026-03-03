@@ -86,6 +86,12 @@ class AppRegistry {
       icon: Icons.category_outlined,
       labelBuilder: _labelCategories,
     ),
+    MiniAppNavItem(
+      id: 'finance_wallets',
+      route: Routes.wallets,
+      icon: Icons.bar_chart_outlined,
+      labelBuilder: _labelWallets,
+    ),
   ];
 
   static const List<MiniAppNavItem> _timerMiniNav = [
@@ -158,6 +164,7 @@ class AppRegistry {
   static String _labelTasks(AppLocalizations l10n) => l10n.navTasks;
   static String _labelCalendar(AppLocalizations l10n) => l10n.navCalendar;
   static String _labelFinance(AppLocalizations l10n) => l10n.navFinance;
+  static String _labelWallets(AppLocalizations l10n) => l10n.financeWallets;
   static String _labelTimer(AppLocalizations l10n) => l10n.navTimer;
   static String _labelHome(AppLocalizations l10n) => l10n.navHome;
   static String _labelTransactions(AppLocalizations l10n) =>

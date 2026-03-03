@@ -70,10 +70,14 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const { data: res, error } = await supabase.from('transaction_categories').insert({
-    ...data,
-    ws_id: wsId,
-  }).select().single();
+  const { data: res, error } = await supabase
+    .from('transaction_categories')
+    .insert({
+      ...data,
+      ws_id: wsId,
+    })
+    .select()
+    .single();
 
   if (error) {
     console.log(error);

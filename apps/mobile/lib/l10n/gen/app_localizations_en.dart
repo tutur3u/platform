@@ -348,6 +348,92 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeNoWallets => 'No wallets yet';
 
   @override
+  String get financeCreateWallet => 'Create wallet';
+
+  @override
+  String get financeEditWallet => 'Edit wallet';
+
+  @override
+  String get financeDeleteWallet => 'Delete wallet';
+
+  @override
+  String get financeDeleteWalletConfirm => 'Delete this wallet?';
+
+  @override
+  String get financeWalletName => 'Wallet name';
+
+  @override
+  String get financeWalletNameRequired => 'Wallet name is required';
+
+  @override
+  String get financeWalletDescriptionTooLong => 'Description must be 500 characters or fewer';
+
+  @override
+  String get financeWalletTypeStandard => 'Standard';
+
+  @override
+  String get financeWalletTypeCredit => 'Credit';
+
+  @override
+  String get financeWalletCurrency => 'Currency';
+
+  @override
+  String get financeWalletSelectCurrency => 'Select currency';
+
+  @override
+  String get financeWalletSearchCurrency => 'Search currencies';
+
+  @override
+  String get financeWalletCurrencyRequired => 'Enter a valid 3-letter currency code';
+
+  @override
+  String get financeWalletIconOrImage => 'Icon or image';
+
+  @override
+  String get financeWalletNoVisual => 'No icon selected';
+
+  @override
+  String get financeWalletPickImage => 'Pick image';
+
+  @override
+  String get financeWalletClearVisual => 'Clear visual';
+
+  @override
+  String get financeWalletCreditDetails => 'Credit details';
+
+  @override
+  String get financeWalletCreditLimit => 'Credit limit';
+
+  @override
+  String get financeWalletCreditLimitRequired => 'Credit limit must be greater than 0';
+
+  @override
+  String get financeWalletStatementDate => 'Statement date';
+
+  @override
+  String get financeWalletPaymentDate => 'Payment date';
+
+  @override
+  String get financeWalletDateRequired => 'Enter a date between 1 and 31';
+
+  @override
+  String get financeWalletBankTab => 'Bank';
+
+  @override
+  String get financeWalletMobileTab => 'Mobile';
+
+  @override
+  String get financeWalletSearchImage => 'Search images';
+
+  @override
+  String financeWalletImageCount(int count) {
+    return '$count available';
+  }
+
+  @override
+  String get financeWalletClearImage => 'Clear image';
+
+  @override
   String get financeNoTransactions => 'No transactions yet';
 
   @override

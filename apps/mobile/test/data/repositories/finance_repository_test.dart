@@ -38,6 +38,80 @@ void main() {
       ).called(1);
     });
 
+    test('createWallet posts payload to wallets endpoint', () async {
+      when(
+        () => apiClient.postJson(any(), any()),
+      ).thenAnswer((_) async => {'message': 'success'});
+
+      await repository.createWallet(
+        wsId: 'ws_1',
+        name: 'Main wallet',
+        description: 'Everyday spending',
+        type: 'CREDIT',
+        currency: 'USD',
+        icon: 'Wallet',
+        limit: 1000,
+        statementDate: 10,
+        paymentDate: 20,
+      );
+
+      verify(
+        () => apiClient.postJson('/api/workspaces/ws_1/wallets', {
+          'name': 'Main wallet',
+          'description': 'Everyday spending',
+          'type': 'CREDIT',
+          'currency': 'USD',
+          'icon': 'Wallet',
+          'image_src': null,
+          'limit': 1000,
+          'statement_date': 10,
+          'payment_date': 20,
+        }),
+      ).called(1);
+    });
+
+    test('updateWallet puts payload to wallet endpoint', () async {
+      when(
+        () => apiClient.putJson(any(), any()),
+      ).thenAnswer((_) async => {'message': 'success'});
+
+      await repository.updateWallet(
+        wsId: 'ws_1',
+        walletId: 'wallet_1',
+        name: 'Savings',
+        description: 'Long term',
+        type: 'STANDARD',
+        currency: 'VND',
+        imageSrc: 'bank/vietcombank',
+      );
+
+      verify(
+        () => apiClient.putJson('/api/workspaces/ws_1/wallets/wallet_1', {
+          'name': 'Savings',
+          'description': 'Long term',
+          'type': 'STANDARD',
+          'currency': 'VND',
+          'icon': null,
+          'image_src': 'bank/vietcombank',
+          'limit': null,
+          'statement_date': null,
+          'payment_date': null,
+        }),
+      ).called(1);
+    });
+
+    test('deleteWallet calls wallet delete endpoint', () async {
+      when(
+        () => apiClient.deleteJson(any()),
+      ).thenAnswer((_) async => {'message': 'success'});
+
+      await repository.deleteWallet(wsId: 'ws_1', walletId: 'wallet_1');
+
+      verify(
+        () => apiClient.deleteJson('/api/workspaces/ws_1/wallets/wallet_1'),
+      ).called(1);
+    });
+
     test('getCategories maps list response', () async {
       when(
         () => apiClient.getJsonList(
