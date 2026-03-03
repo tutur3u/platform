@@ -1,5 +1,10 @@
 import { Decoration, DecorationSet, type EditorView } from '@tiptap/pm/view';
-import { type EditorState, Plugin, PluginKey } from 'prosemirror-state';
+import {
+  type EditorState,
+  NodeSelection,
+  Plugin,
+  PluginKey,
+} from 'prosemirror-state';
 import ImageResize from 'tiptap-extension-resize-image';
 import {
   getImageDimensions,
@@ -13,6 +18,55 @@ import {
   generateUploadId,
   imageUploadPlaceholderPluginKey,
 } from './upload-placeholder';
+
+function getSelectedImagePos(state: EditorState): number | null {
+  const { selection } = state;
+  if (!(selection instanceof NodeSelection)) {
+    return null;
+  }
+
+  const nodeName = selection.node.type.name;
+  if (nodeName !== 'imageResize' && nodeName !== 'image') {
+    return null;
+  }
+
+  return selection.from;
+}
+
+function clearImageResizeUIFromNodeDom(nodeDom: Node | null): void {
+  if (!(nodeDom instanceof HTMLElement)) {
+    return;
+  }
+
+  const container = nodeDom.firstElementChild;
+  if (!(container instanceof HTMLElement)) {
+    return;
+  }
+
+  if (!container.querySelector('img, video')) {
+    return;
+  }
+
+  container.style.border = '';
+  container.style.removeProperty('border');
+  container.style.removeProperty('border-width');
+  container.style.removeProperty('border-style');
+  container.style.removeProperty('border-color');
+  container.style.removeProperty('border-image');
+
+  for (const child of Array.from(container.children)) {
+    if (child.tagName === 'IMG' || child.tagName === 'VIDEO') {
+      continue;
+    }
+
+    child.remove();
+  }
+}
+
+export const __imageExtensionPrivate = {
+  clearImageResizeUIFromNodeDom,
+  getSelectedImagePos,
+};
 
 export type ImageSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -288,6 +342,47 @@ export const CustomImage = (options: ImageOptions = {}) => {
             });
 
             return modified ? tr : null;
+          },
+        }),
+
+        // Image resize UI cleanup plugin
+        new Plugin({
+          key: new PluginKey('imageResizeUiCleanupPlugin'),
+
+          view: (view) => {
+            const clearPreviousSelection = (prevState: EditorState) => {
+              const previousImagePos = getSelectedImagePos(prevState);
+              const currentImagePos = getSelectedImagePos(view.state);
+
+              if (
+                previousImagePos === null ||
+                previousImagePos === currentImagePos
+              ) {
+                return;
+              }
+
+              clearImageResizeUIFromNodeDom(view.nodeDOM(previousImagePos));
+            };
+
+            const handleBlur = () => {
+              const selectedImagePos = getSelectedImagePos(view.state);
+              if (selectedImagePos === null) {
+                return;
+              }
+
+              clearImageResizeUIFromNodeDom(view.nodeDOM(selectedImagePos));
+            };
+
+            view.dom.addEventListener('blur', handleBlur, true);
+
+            return {
+              update: (_nextView, prevState) => {
+                clearPreviousSelection(prevState);
+              },
+              destroy: () => {
+                view.dom.removeEventListener('blur', handleBlur, true);
+              },
+            };
           },
         }),
 
