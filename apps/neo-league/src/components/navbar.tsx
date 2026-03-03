@@ -4,19 +4,67 @@ import { Button } from '@ncthub/ui/button';
 import { MenuIcon, X } from '@ncthub/ui/icons';
 import { Navbar as SharedNavbar } from '@ncthub/ui/navbar';
 import {
+  NavigationMenu,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  navigationMenuTriggerStyle,
+} from '@ncthub/ui/navigation-menu';
+import { Separator } from '@ncthub/ui/separator';
+import {
   Sheet,
   SheetClose,
   SheetContent,
+  SheetFooter,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
 } from '@ncthub/ui/sheet';
+import { cn } from '@ncthub/utils/format';
 import Image from 'next/image';
 import Link from 'next/link';
+import { navigationItems } from '@/config/navigation';
 import NavbarSeparator from './navbar-separator';
 
-const Navbar = () => {
-  const DesktopActions = () => (
+function handleSmoothScroll(
+  e: React.MouseEvent<HTMLAnchorElement>,
+  href: string
+) {
+  e.preventDefault();
+  const targetId = href.replace('#', '');
+  const element = document.querySelector(`#${targetId}`);
+  if (element) {
+    element.scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+function DesktopNavLinks() {
+  return (
+    <div className="flex w-full items-center justify-center">
+      <NavigationMenu className="scrollbar-none flex w-4/5 max-w-none flex-none justify-between overflow-x-auto">
+        <NavigationMenuList>
+          {navigationItems.map((item) => (
+            <NavigationMenuItem key={item.href}>
+              <NavigationMenuLink
+                href={item.href}
+                onClick={(e) => handleSmoothScroll(e, item.href)}
+                className={cn(
+                  navigationMenuTriggerStyle(),
+                  'bg-transparent px-4 font-semibold transition-all duration-300 hover:bg-foreground/5'
+                )}
+              >
+                {item.label}
+              </NavigationMenuLink>
+            </NavigationMenuItem>
+          ))}
+        </NavigationMenuList>
+      </NavigationMenu>
+    </div>
+  );
+}
+
+function DesktopActions() {
+  return (
     <div className="hidden items-center gap-2 md:flex">
       <Button
         asChild
@@ -62,8 +110,10 @@ const Navbar = () => {
       </Button>
     </div>
   );
+}
 
-  const MobileActions = () => (
+function MobileActions() {
+  return (
     <div className="flex items-center gap-2 md:hidden">
       <Button asChild className="btn-primary">
         <Link
@@ -86,7 +136,7 @@ const Navbar = () => {
           side="right"
           className="flex h-full flex-col border-l bg-background/95 p-0 [&>button]:hidden"
         >
-          <SheetHeader className="flex-row items-center justify-between border-b px-6 py-6">
+          <SheetHeader className="flex-row items-center justify-between border-foreground/10 border-b px-6 py-6">
             <SheetTitle className="font-bold text-lg">Menu</SheetTitle>
             <SheetClose className="rounded-md p-2 text-foreground/80 transition hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <X className="h-4 w-4" />
@@ -94,51 +144,67 @@ const Navbar = () => {
             </SheetClose>
           </SheetHeader>
 
-          <div className="flex flex-1 flex-col gap-3 px-6 pt-3 pb-8">
-            <SheetClose asChild>
-              <Button
-                variant="ghost"
-                className="justify-start font-bold text-base hover:bg-foreground/5"
-                asChild
-              >
-                <Link href="#handbook">See Handbook</Link>
-              </Button>
-            </SheetClose>
+          <div className="flex flex-1 flex-col overflow-hidden px-6 pt-3 pb-8">
+            <div className="flex flex-1 flex-col items-start gap-1 overflow-y-auto">
+              {navigationItems.map((item) => (
+                <SheetClose key={item.href} asChild>
+                  <Button
+                    variant="ghost"
+                    className="justify-start font-semibold text-base hover:bg-foreground/5"
+                    asChild
+                  >
+                    <Link
+                      href={item.href}
+                      onClick={(e) => handleSmoothScroll(e, item.href)}
+                    >
+                      {item.label}
+                    </Link>
+                  </Button>
+                </SheetClose>
+              ))}
+            </div>
 
-            <SheetClose asChild>
-              <Button
-                variant="ghost"
-                className="justify-start font-bold text-base hover:bg-foreground/5"
-                asChild
-              >
-                <Link
-                  href="#contact"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    document
-                      .querySelector('#contact')
-                      ?.scrollIntoView({ behavior: 'smooth' });
-                  }}
+            <Separator className="my-2 bg-foreground/10" />
+
+            <SheetFooter className="p-0">
+              <SheetClose asChild>
+                <Button
+                  variant="ghost"
+                  className="justify-start text-base hover:bg-foreground/5"
+                  asChild
                 >
-                  Contact Us
-                </Link>
-              </Button>
-            </SheetClose>
+                  <Link href="#handbook">See Handbook</Link>
+                </Button>
+              </SheetClose>
 
-            <SheetClose asChild>
-              <Button
-                className="btn-primary justify-start font-bold text-base"
-                asChild
-              >
-                <Link href="#register">Register Now</Link>
-              </Button>
-            </SheetClose>
+              <SheetClose asChild>
+                <Button
+                  variant="ghost"
+                  className="justify-start text-base hover:bg-foreground/5"
+                  asChild
+                >
+                  <Link
+                    href="#contact"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      document
+                        .querySelector('#contact')
+                        ?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                  >
+                    Contact Us
+                  </Link>
+                </Button>
+              </SheetClose>
+            </SheetFooter>
           </div>
         </SheetContent>
       </Sheet>
     </div>
   );
+}
 
+export default function Navbar() {
   return (
     <SharedNavbar
       customLogoLink={
@@ -163,6 +229,7 @@ const Navbar = () => {
           />
         </Link>
       }
+      navigationMenu={<DesktopNavLinks />}
       separator={<NavbarSeparator />}
       actions={
         <div className="flex items-center gap-2">
@@ -172,6 +239,4 @@ const Navbar = () => {
       }
     />
   );
-};
-
-export default Navbar;
+}

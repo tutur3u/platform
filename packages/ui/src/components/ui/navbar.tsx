@@ -96,7 +96,7 @@ export function Navbar({
         )}
       >
         <div className="relative flex items-center justify-between gap-2 md:gap-4">
-          <div className="flex w-full items-center gap-2 md:gap-4">
+          <div className="flex w-full items-center gap-2 overflow-hidden md:gap-4">
             {customLogoLink || (
               <Link
                 href={homeUrl}
@@ -131,7 +131,7 @@ export function Navbar({
             )}
 
             {navigationMenu && (
-              <div className="ml-4 hidden w-full md:block">
+              <div className="ml-4 hidden w-full overflow-hidden md:block">
                 {navigationMenu}
               </div>
             )}

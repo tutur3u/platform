@@ -40,7 +40,7 @@ const missions = [
 
 export default function AboutNeoLeagueSection() {
   return (
-    <section id="about" className="relative py-16 md:py-24">
+    <section id="about-neo-league" className="relative py-16 md:py-24">
       {/* Decorative background elements */}
       <div
         className="blob absolute -top-20 -right-80 h-192 w-3xl animate-float"

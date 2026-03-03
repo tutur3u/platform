@@ -9,7 +9,7 @@ import { leaders, teams } from './data';
 
 export default function OrganizersTeamSection() {
   return (
-    <section id="organizing-team" className="px-6 py-20 md:px-8 md:py-24">
+    <section id="team" className="px-6 py-20 md:px-8 md:py-24">
       <div className="mx-auto max-w-6xl">
         {/* Section Header */}
         <div className="mb-16 text-center">
