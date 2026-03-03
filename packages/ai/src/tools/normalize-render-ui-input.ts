@@ -97,7 +97,16 @@ function buildContextAwareFallback(
     'start_timer',
     'stop_timer',
     'list_time_tracking_sessions',
+    'list_time_tracking_categories',
+    'create_time_tracking_category',
+    'update_time_tracking_category',
+    'delete_time_tracking_category',
     'get_time_tracking_session',
+    'get_time_tracker_stats',
+    'get_time_tracker_goals',
+    'create_time_tracker_goal',
+    'update_time_tracker_goal',
+    'delete_time_tracker_goal',
     'create_time_tracking_entry',
   ];
   const calendarTools = [

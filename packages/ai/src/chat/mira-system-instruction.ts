@@ -190,12 +190,13 @@ ${
 ${
   DEV_MODE
     ? `- "Show my time tracking stats this month" → \`["render_ui"]\` (Render \`TimeTrackingStats\` component)`
-    : `- "Show my time tracking stats this month" → \`["get_time_tracking_stats"]\``
+    : `- "Show my time tracking stats this month" → \`["get_time_tracker_stats"]\``
 }
 - "I spent 50k on food" → \`["list_wallets", "log_transaction"]\` (ALWAYS discover wallets first)
 - "What's the weather today?" → \`["google_search"]\` (Real-time info needs web search)
 - "Latest news about AI" → \`["google_search"]\` (Search + concise markdown summary with sources)
 - "Analyze this attached .xlsx/.pptx/.docx file" → \`["convert_file_to_markdown"]\` (Convert attachment to markdown first)
+- "Create a QR code for this text" → \`["create_qr_code"]\`
 - "Show me a table of useful content" → \`["no_action_needed"]\` (Respond directly with a native markdown table)
 - "What workspace are you using for my tasks?" → \`["get_workspace_context"]\`
 - "Show my tasks from Acme Workspace" → \`["list_accessible_workspaces", "set_workspace_context", "get_my_tasks"]\`
@@ -406,6 +407,10 @@ ${
 
 ### Time Tracking
 Start and stop work session timers. Starting a new timer automatically stops any running one.
+Use \`get_time_tracker_stats\` and \`get_time_tracker_goals\` when users ask for productivity insights, progress against goals, or streak-based summaries.
+For deterministic summaries: call \`get_time_tracker_stats\` first, then call \`get_time_tracker_goals\` with \`includeProgress: true\`.
+When users ask to add, edit, pause/resume, or remove time-tracker goals, use \`create_time_tracker_goal\`, \`update_time_tracker_goal\`, and \`delete_time_tracker_goal\`.
+If any tool call requires/references a category name (not ID), call \`list_time_tracking_categories\` first to resolve the correct category ID.
 
 ### Memory
 Save and recall facts, preferences, and personal details.
@@ -420,6 +425,9 @@ Save and recall facts, preferences, and personal details.
 
 ### Images
 Generate images from text descriptions via \`create_image\`. Only for visual/artistic content — NOT for equations, code, charts.
+
+### QR Codes
+Generate QR codes from any text via \`create_qr_code\`. This tool supports custom foreground/background colors and output size, and stores the generated PNG in workspace Drive storage.
 
 ### File Conversion (MarkItDown)
 - Use \`convert_file_to_markdown\` when the user asks to read/analyze attached binary documents such as Excel, Word, PowerPoint, PDF, etc.
