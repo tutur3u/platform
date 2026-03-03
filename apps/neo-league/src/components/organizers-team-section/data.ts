@@ -71,7 +71,11 @@ export const teams: Team[] = [
     name: 'Internal Affairs',
     description: 'Coordinating team operations and internal communications.',
     members: [
-      { name: 'Kelvin Lam', role: 'Team Leader' },
+      {
+        name: 'Tin Lam',
+        role: 'Team Leader',
+        avatar: '/organizer-team/internal-affairs/tin-lam.png',
+      },
       {
         name: 'Minh Nhat',
         role: 'Member',
@@ -82,7 +86,11 @@ export const teams: Team[] = [
         role: 'Member',
         avatar: '/organizer-team/internal-affairs/duy-khanh.png',
       },
-      // Add more members
+      {
+        name: 'Ngoc Anh',
+        role: 'Member',
+        avatar: '/organizer-team/internal-affairs/ngoc-anh.png',
+      },
     ],
   },
   {
