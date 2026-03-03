@@ -15,13 +15,19 @@ class PlatformIconOption {
 }
 
 final List<PlatformIconOption> platformIconOptions = platformIconKeys
-    .map(
-      (key) => PlatformIconOption(
+    .map((key) {
+      final icon = resolvePlatformIconData(key);
+      if (icon == null) {
+        return null;
+      }
+
+      return PlatformIconOption(
         key: key,
         label: _humanizePlatformIconKey(key),
-        icon: resolvePlatformIcon(key),
-      ),
-    )
+        icon: icon,
+      );
+    })
+    .whereType<PlatformIconOption>()
     .toList(growable: false);
 
 IconData resolvePlatformIcon(String? key, {IconData? fallback}) {
