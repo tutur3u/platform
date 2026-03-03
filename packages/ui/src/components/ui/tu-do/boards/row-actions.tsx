@@ -34,8 +34,8 @@ import { useBoardActions } from '@tuturuuu/ui/hooks/use-board-actions';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { SaveAsTemplateDialog } from '../templates/save-as-template-dialog';
 import { TaskBoardForm } from './form';
-import { SaveAsTemplateDialog } from './save-as-template-dialog';
 
 interface BoardActionsProps {
   board: WorkspaceTaskBoard;
