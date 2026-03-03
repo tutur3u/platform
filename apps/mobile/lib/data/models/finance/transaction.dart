@@ -1,5 +1,97 @@
 import 'package:equatable/equatable.dart';
 
+// ── Tag ────────────────────────────────────────────────────────────────────
+
+class TransactionTag extends Equatable {
+  const TransactionTag({
+    required this.id,
+    required this.name,
+    this.color,
+  });
+
+  factory TransactionTag.fromJson(Map<String, dynamic> json) => TransactionTag(
+    id: json['id'] as String,
+    name: json['name'] as String,
+    color: json['color'] as String?,
+  );
+
+  final String id;
+  final String name;
+  final String? color;
+
+  @override
+  List<Object?> get props => [id, name, color];
+}
+
+// ── Transfer metadata ──────────────────────────────────────────────────────
+
+class TransactionTransfer extends Equatable {
+  const TransactionTransfer({
+    required this.linkedTransactionId,
+    required this.linkedWalletId,
+    required this.linkedWalletName,
+    this.linkedWalletCurrency,
+    this.linkedAmount,
+    this.isOrigin = false,
+  });
+
+  factory TransactionTransfer.fromJson(Map<String, dynamic> json) =>
+      TransactionTransfer(
+        linkedTransactionId: json['linked_transaction_id'] as String,
+        linkedWalletId: json['linked_wallet_id'] as String,
+        linkedWalletName: json['linked_wallet_name'] as String? ?? '',
+        linkedWalletCurrency: json['linked_wallet_currency'] as String?,
+        linkedAmount: (json['linked_amount'] as num?)?.toDouble(),
+        isOrigin: json['is_origin'] as bool? ?? false,
+      );
+
+  final String linkedTransactionId;
+  final String linkedWalletId;
+  final String linkedWalletName;
+  final String? linkedWalletCurrency;
+  final double? linkedAmount;
+  final bool isOrigin;
+
+  @override
+  List<Object?> get props => [
+    linkedTransactionId,
+    linkedWalletId,
+    linkedWalletName,
+    linkedWalletCurrency,
+    linkedAmount,
+    isOrigin,
+  ];
+}
+
+// ── Infinite-scroll page response ─────────────────────────────────────────
+
+class InfiniteTransactionResponse extends Equatable {
+  const InfiniteTransactionResponse({
+    required this.data,
+    required this.hasMore,
+    this.nextCursor,
+  });
+
+  factory InfiniteTransactionResponse.fromJson(
+    Map<String, dynamic> json,
+  ) => InfiniteTransactionResponse(
+    data: (json['data'] as List<dynamic>)
+        .map((e) => Transaction.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    hasMore: json['hasMore'] as bool? ?? false,
+    nextCursor: json['nextCursor'] as String?,
+  );
+
+  final List<Transaction> data;
+  final bool hasMore;
+  final String? nextCursor;
+
+  @override
+  List<Object?> get props => [data, hasMore, nextCursor];
+}
+
+// ── Transaction ────────────────────────────────────────────────────────────
+
 class Transaction extends Equatable {
   const Transaction({
     required this.id,
@@ -10,14 +102,44 @@ class Transaction extends Equatable {
     this.takenAt,
     this.createdAt,
     this.categoryName,
+    this.categoryIcon,
+    this.categoryColor,
     this.walletName,
     this.walletCurrency,
+    this.reportOptIn,
+    this.isAmountConfidential,
+    this.isDescriptionConfidential,
+    this.isCategoryConfidential,
+    this.tags = const [],
+    this.creatorFullName,
+    this.transfer,
   });
 
   factory Transaction.fromJson(Map<String, dynamic> json) {
-    // Handle nested category/wallet from PostgREST join.
-    final category = json['category'] as Map<String, dynamic>?;
-    final wallet = json['wallet'] as Map<String, dynamic>?;
+    // Handle nested category/wallet from PostgREST join OR flat API response.
+    final categoryRaw = json['category'];
+    final walletRaw = json['wallet'];
+    final category = categoryRaw is Map<String, dynamic> ? categoryRaw : null;
+    final wallet = walletRaw is Map<String, dynamic> ? walletRaw : null;
+
+    // Parse tags array.
+    final tagsRaw = json['tags'] as List<dynamic>?;
+    final tags =
+        tagsRaw
+            ?.map(
+              (t) => TransactionTag.fromJson(t as Map<String, dynamic>),
+            )
+            .toList() ??
+        const <TransactionTag>[];
+
+    // Parse transfer metadata.
+    final transferRaw = json['transfer'] as Map<String, dynamic>?;
+    final transfer = transferRaw != null
+        ? TransactionTransfer.fromJson(transferRaw)
+        : null;
+
+    // Parse creator.
+    final userRaw = json['user'] as Map<String, dynamic>?;
 
     return Transaction(
       id: json['id'] as String,
@@ -31,9 +153,29 @@ class Transaction extends Equatable {
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : null,
-      categoryName: category?['name'] as String?,
-      walletName: wallet?['name'] as String?,
-      walletCurrency: wallet?['currency'] as String?,
+      // category may come as nested object (PostgREST) or flat string (API).
+      categoryName:
+          category?['name'] as String? ??
+          (categoryRaw is String ? categoryRaw : null) ??
+          json['category_name'] as String?,
+      categoryIcon: json['category_icon'] as String?,
+      categoryColor: json['category_color'] as String?,
+      // wallet may come as nested object (PostgREST) or flat string (API).
+      walletName:
+          wallet?['name'] as String? ??
+          (walletRaw is String ? walletRaw : null) ??
+          json['wallet_name'] as String?,
+      walletCurrency:
+          wallet?['currency'] as String? ?? json['wallet_currency'] as String?,
+      reportOptIn: json['report_opt_in'] as bool?,
+      isAmountConfidential: json['is_amount_confidential'] as bool?,
+      isDescriptionConfidential: json['is_description_confidential'] as bool?,
+      isCategoryConfidential: json['is_category_confidential'] as bool?,
+      tags: tags,
+      creatorFullName:
+          userRaw?['full_name'] as String? ??
+          json['creator_full_name'] as String?,
+      transfer: transfer,
     );
   }
 
@@ -48,11 +190,33 @@ class Transaction extends Equatable {
   /// Joined from `transaction_categories.name`.
   final String? categoryName;
 
+  /// Emoji / icon identifier for the category.
+  final String? categoryIcon;
+
+  /// Hex color for the category (e.g. `#ff0000`).
+  final String? categoryColor;
+
   /// Joined from `workspace_wallets.name`.
   final String? walletName;
 
   /// Joined from `workspace_wallets.currency`.
   final String? walletCurrency;
+
+  final bool? reportOptIn;
+  final bool? isAmountConfidential;
+  final bool? isDescriptionConfidential;
+  final bool? isCategoryConfidential;
+
+  /// Tags attached to this transaction.
+  final List<TransactionTag> tags;
+
+  /// Full name of the creator.
+  final String? creatorFullName;
+
+  /// Transfer metadata (if this is one side of a wallet transfer).
+  final TransactionTransfer? transfer;
+
+  bool get isTransfer => transfer != null;
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -62,6 +226,10 @@ class Transaction extends Equatable {
     'wallet_id': walletId,
     'taken_at': takenAt?.toIso8601String(),
     'created_at': createdAt?.toIso8601String(),
+    'report_opt_in': reportOptIn,
+    'is_amount_confidential': isAmountConfidential,
+    'is_description_confidential': isDescriptionConfidential,
+    'is_category_confidential': isCategoryConfidential,
   };
 
   @override
@@ -74,7 +242,16 @@ class Transaction extends Equatable {
     takenAt,
     createdAt,
     categoryName,
+    categoryIcon,
+    categoryColor,
     walletName,
     walletCurrency,
+    reportOptIn,
+    isAmountConfidential,
+    isDescriptionConfidential,
+    isCategoryConfidential,
+    tags,
+    creatorFullName,
+    transfer,
   ];
 }

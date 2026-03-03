@@ -18,7 +18,7 @@ class AppsBackButton extends StatelessWidget {
         unawaited(context.read<AppTabCubit>().clearSelection());
         context.go(Routes.apps);
       },
-      child: const Icon(Icons.arrow_back),
+      child: const Icon(Icons.chevron_left_outlined),
     );
   }
 }

@@ -4,16 +4,12 @@ import 'package:flutter/material.dart'
     hide AlertDialog, FilledButton, TextButton, TextField;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
-import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
 import 'package:mobile/features/time_tracker/widgets/category_picker.dart';
 import 'package:mobile/features/time_tracker/widgets/missed_entry_dialog.dart';
-import 'package:mobile/features/time_tracker/widgets/session_detail_sheet.dart';
-import 'package:mobile/features/time_tracker/widgets/session_tile.dart';
-import 'package:mobile/features/time_tracker/widgets/stats_cards.dart';
 import 'package:mobile/features/time_tracker/widgets/timer_controls.dart';
 import 'package:mobile/features/time_tracker/widgets/timer_display.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -30,11 +26,8 @@ class TimerTab extends StatelessWidget {
     return BlocBuilder<TimeTrackerCubit, TimeTrackerState>(
       builder: (context, state) {
         final l10n = context.l10n;
-        final theme = shad.Theme.of(context);
         final cubit = context.read<TimeTrackerCubit>();
-        final categoryColorById = {
-          for (final category in state.categories) category.id: category.color,
-        };
+
         final wsId =
             context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '';
         final userId = supabase.auth.currentUser?.id ?? '';
@@ -87,99 +80,9 @@ class TimerTab extends StatelessWidget {
               onSelected: cubit.selectCategory,
               onAddCategory: () => _showAddCategoryDialog(context, wsId),
             ),
-            const shad.Gap(24),
-            // Quick stats
-            StatsCards(stats: state.stats),
-            const shad.Gap(24),
-            // Recent sessions
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    l10n.timerRecentSessions,
-                    style: theme.typography.small.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  if (state.recentSessions.isNotEmpty && onSeeAll != null)
-                    shad.GhostButton(
-                      onPressed: onSeeAll,
-                      child: Text(l10n.timerSeeAll),
-                    ),
-                ],
-              ),
-            ),
-            if (state.recentSessions.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  l10n.timerNoSessions,
-                  style: theme.typography.textMuted,
-                ),
-              )
-            else
-              ...state.recentSessions.map(
-                (session) => SessionTile(
-                  session: session,
-                  categoryColor: categoryColorById[session.categoryId],
-                  onTap: () => _showDetailSheet(context, session, cubit, wsId),
-                  onDelete: () => unawaited(
-                    cubit.deleteSession(session.id, wsId, userId),
-                  ),
-                ),
-              ),
           ],
         );
       },
-    );
-  }
-
-  void _showDetailSheet(
-    BuildContext context,
-    TimeTrackingSession session,
-    TimeTrackerCubit cubit,
-    String wsId,
-  ) {
-    unawaited(
-      showAdaptiveSheet<void>(
-        context: context,
-        builder: (_) => SessionDetailSheet(
-          session: session,
-          categories: cubit.state.categories,
-          thresholdDays: cubit.state.thresholdDays,
-          onDelete: () async {
-            final userId = supabase.auth.currentUser?.id ?? '';
-            await cubit.deleteSession(
-              session.id,
-              wsId,
-              userId,
-              throwOnError: true,
-            );
-          },
-          onSave:
-              ({
-                title,
-                description,
-                categoryId,
-                startTime,
-                endTime,
-              }) async {
-                await cubit.editSession(
-                  session.id,
-                  wsId,
-                  userId: supabase.auth.currentUser?.id,
-                  title: title,
-                  description: description,
-                  categoryId: categoryId,
-                  startTime: startTime,
-                  endTime: endTime,
-                  throwOnError: true,
-                );
-              },
-        ),
-      ),
     );
   }
 

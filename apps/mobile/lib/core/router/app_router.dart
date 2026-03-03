@@ -19,8 +19,9 @@ import 'package:mobile/features/onboarding/view/onboarding_page.dart';
 import 'package:mobile/features/profile/view/profile_page.dart';
 import 'package:mobile/features/settings/view/settings_page.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
-import 'package:mobile/features/time_tracker/view/time_tracker_management_page.dart';
+import 'package:mobile/features/time_tracker/view/time_tracker_page.dart';
 import 'package:mobile/features/time_tracker/view/time_tracker_requests_page.dart';
+import 'package:mobile/features/time_tracker/widgets/stats_tab.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/view/workspace_select_page.dart';
@@ -150,25 +151,10 @@ GoRouter createAppRouter(
         builder: (context, state) => const WorkspaceSelectPage(),
       ),
 
-      // ── Time tracker sub-pages (full-page, outside shell) ──
-      GoRoute(
-        path: Routes.timerRequests,
-        builder: (context, state) => const TimeTrackerRequestsPage(),
-      ),
-      GoRoute(
-        path: Routes.timerManagement,
-        builder: (context, state) => const TimeTrackerManagementPage(),
-      ),
-
-      // ── Finance sub-pages (full-page, outside shell) ──
-      GoRoute(
-        path: Routes.transactions,
-        builder: (context, state) => const TransactionListPage(),
-      ),
-
       // ── Main shell with bottom navigation ────────
       ShellRoute(
-        builder: (context, state, child) => ShellPage(child: child),
+        builder: (context, state, child) =>
+            ShellPage(matchedLocation: state.matchedLocation, child: child),
         routes: [
           GoRoute(
             path: Routes.home,
@@ -188,8 +174,35 @@ GoRouter createAppRouter(
               builder: (context, _) => module.pageBuilder(context),
             ),
           GoRoute(
+            path: Routes.transactions,
+            builder: (context, state) => const TransactionListPage(),
+          ),
+          GoRoute(
             path: Routes.settings,
             builder: (context, state) => const SettingsPage(),
+          ),
+          GoRoute(
+            path: Routes.timerRequests,
+            builder: (context, state) => const TimeTrackerRequestsPage(),
+          ),
+          GoRoute(
+            path: Routes.timerHistory,
+            builder: (context, state) => const TimeTrackerPage(
+              initialSection: TimeTrackerSection.history,
+            ),
+          ),
+          GoRoute(
+            path: Routes.timerStats,
+            builder: (context, state) => const TimeTrackerPage(
+              initialSection: TimeTrackerSection.stats,
+            ),
+          ),
+          GoRoute(
+            path: Routes.timerManagement,
+            builder: (context, state) => const TimeTrackerPage(
+              initialSection: TimeTrackerSection.stats,
+              initialStatsScope: TimeTrackerStatsScope.workspace,
+            ),
           ),
           GoRoute(
             path: Routes.profileRoot,

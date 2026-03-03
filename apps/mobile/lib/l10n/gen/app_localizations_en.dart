@@ -366,6 +366,69 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeNoSearchResults => 'No matching transactions';
 
   @override
+  String get financeTransactionDetails => 'Transaction details';
+
+  @override
+  String get financeEditTransaction => 'Edit transaction';
+
+  @override
+  String get financeDeleteTransaction => 'Delete transaction';
+
+  @override
+  String get financeDeleteTransactionConfirm => 'Delete this transaction?';
+
+  @override
+  String get financeTransactionUpdated => 'Transaction updated';
+
+  @override
+  String get financeTransactionDeleted => 'Transaction deleted';
+
+  @override
+  String get financeAmount => 'Amount';
+
+  @override
+  String get financeDescription => 'Description';
+
+  @override
+  String get financeTakenAt => 'Taken at';
+
+  @override
+  String get financeCategory => 'Category';
+
+  @override
+  String get financeWallet => 'Wallet';
+
+  @override
+  String get financeInvalidAmount => 'Enter a valid amount';
+
+  @override
+  String get financeReportOptIn => 'Include in reports';
+
+  @override
+  String get financeConfidentialAmount => 'Confidential amount';
+
+  @override
+  String get financeConfidentialDescription => 'Confidential description';
+
+  @override
+  String get financeConfidentialCategory => 'Confidential category';
+
+  @override
+  String get financeToday => 'Today';
+
+  @override
+  String get financeYesterday => 'Yesterday';
+
+  @override
+  String get financeNet => 'Net';
+
+  @override
+  String get financeTransfer => 'Transfer';
+
+  @override
+  String get financeTransactionCountShort => 'tx';
+
+  @override
   String get timerTitle => 'Time tracker';
 
   @override
@@ -444,7 +507,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerStreak => 'Streak';
 
   @override
-  String get timerStatsTitle => 'Statistics';
+  String get timerStatsTitle => 'Stats';
+
+  @override
+  String get timerStatsPersonal => 'Personal';
+
+  @override
+  String get timerStatsWorkspace => 'Workspace';
 
   @override
   String get timerActivityHeatmap => 'Activity';
@@ -661,7 +730,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerRequestUpdated => 'Request updated';
 
   @override
-  String get timerManagementTitle => 'Management';
+  String get timerManagementTitle => 'Manage';
 
   @override
   String get timerSearchSessions => 'Search sessions...';

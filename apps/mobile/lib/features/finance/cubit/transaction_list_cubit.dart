@@ -12,13 +12,11 @@ class TransactionListCubit extends Cubit<TransactionListState> {
 
   final FinanceRepository _repo;
 
-  static const _pageSize = 20;
+  String _wsId = '';
 
-  List<String> _walletIds = [];
-
-  /// Initialise with wallet IDs and load the first page.
-  Future<void> load(List<String> walletIds) async {
-    _walletIds = walletIds;
+  /// Initialise with workspace ID and load the first page.
+  Future<void> load(String wsId) async {
+    _wsId = wsId;
     emit(
       state.copyWith(
         status: TransactionListStatus.loading,
@@ -62,35 +60,35 @@ class TransactionListCubit extends Cubit<TransactionListState> {
   }
 
   Future<void> _fetch() async {
+    if (_wsId.isEmpty) {
+      emit(
+        state.copyWith(
+          status: TransactionListStatus.loaded,
+          hasMore: false,
+          clearCursor: true,
+          clearError: true,
+        ),
+      );
+      return;
+    }
     try {
-      final rows = await _repo.getTransactionsPaginated(
-        walletIds: _walletIds,
+      final result = await _repo.getTransactionsInfinite(
+        wsId: _wsId,
         cursor: state.cursor,
         search: state.search.isEmpty ? null : state.search,
       );
 
-      final hasMore = rows.length > _pageSize;
-      final page = hasMore ? rows.sublist(0, _pageSize) : rows;
-
       final allTransactions = [
         ...state.transactions,
-        ...page,
+        ...result.data,
       ];
-
-      String? nextCursor;
-      if (page.isNotEmpty) {
-        final last = page.last;
-        final takenIso = last.takenAt?.toUtc().toIso8601String();
-        final createdIso = last.createdAt?.toUtc().toIso8601String();
-        nextCursor = '${takenIso}_$createdIso';
-      }
 
       emit(
         state.copyWith(
           status: TransactionListStatus.loaded,
           transactions: allTransactions,
-          hasMore: hasMore,
-          cursor: nextCursor,
+          hasMore: result.hasMore,
+          cursor: result.nextCursor,
           clearError: true,
         ),
       );
