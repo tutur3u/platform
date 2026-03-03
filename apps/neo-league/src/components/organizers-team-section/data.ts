@@ -85,6 +85,16 @@ export const teams: Team[] = [
         role: 'Team leader',
         avatar: '/organizer-team/marcom/nhat.png',
       },
+      {
+        name: 'Long Tran',
+        role: 'Member',
+        avatar: '/organizer-team/marcom/long-tran.png',
+      },
+      {
+        name: 'Minh Dam',
+        role: 'Member',
+        avatar: '/organizer-team/marcom/minh-dam.png',
+      },
     ],
   },
   {
