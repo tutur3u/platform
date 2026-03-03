@@ -15,47 +15,50 @@ import Image from 'next/image';
 import Link from 'next/link';
 import NavbarSeparator from './navbar-separator';
 
-const navItems = [
-  {
-    href: 'https://www.canva.com/design/DAG_HV24rBs/QdeItbhyKHSFwDW5jLT-FA/view?utlId=hed84b4065d',
-    label: 'See Handbook',
-  },
-  { href: '#contact', label: 'Contact Us' },
-];
-
-// detect external links once, reuse everywhere
-const isExternal = (href: string) => href.startsWith('http');
-
 const Navbar = () => {
-  const renderLink = (href: string, label: string) => (
-    <Link
-      href={href}
-      target={isExternal(href) ? '_blank' : undefined}
-      rel={isExternal(href) ? 'noopener noreferrer' : undefined}
-      prefetch={isExternal(href) ? false : undefined}
-    >
-      {label}
-    </Link>
-  );
-
   const DesktopActions = () => (
     <div className="hidden items-center gap-2 md:flex">
-      {navItems.map((item) => (
-        <Button
-          key={item.href}
-          variant="ghost"
-          className="hover:bg-transparent hover:text-foreground/50"
-          asChild
+      <Button
+        asChild
+        className="hover:bg-transparent hover:text-foreground/50"
+        variant="ghost"
+      >
+        <Link
+          href="https://www.canva.com/design/DAG_HV24rBs/QdeItbhyKHSFwDW5jLT-FA/view?utlId=hed84b4065d"
+          target="_blank"
+          rel="noopener noreferrer"
+          prefetch={false}
         >
-          {renderLink(item.href, item.label)}
-        </Button>
-      ))}
+          See Handbook
+        </Link>
+      </Button>
+
+      <Button
+        className="hover:bg-transparent hover:text-foreground/50"
+        variant="ghost"
+      >
+        <Link
+          href="#contact"
+          onClick={(e) => {
+            e.preventDefault();
+            document
+              .querySelector('#contact')
+              ?.scrollIntoView({ behavior: 'smooth' });
+          }}
+        >
+          Contact Us
+        </Link>
+      </Button>
 
       <Button asChild className="btn-primary">
-        {renderLink(
-          'https://forms.office.com/r/GdkwnUbty6?origin=lprLink',
-          'Register Now'
-        )}
+        <Link
+          href="https://forms.office.com/r/GdkwnUbty6?origin=lprLink"
+          target="_blank"
+          rel="noopener noreferrer"
+          prefetch={false}
+        >
+          Register Now
+        </Link>
       </Button>
     </div>
   );
@@ -63,10 +66,14 @@ const Navbar = () => {
   const MobileActions = () => (
     <div className="flex items-center gap-2 md:hidden">
       <Button asChild className="btn-primary">
-        {renderLink(
-          'https://forms.office.com/r/GdkwnUbty6?origin=lprLink',
-          'Register Now'
-        )}
+        <Link
+          href="https://forms.office.com/r/GdkwnUbty6?origin=lprLink"
+          target="_blank"
+          rel="noopener noreferrer"
+          prefetch={false}
+        >
+          Register Now
+        </Link>
       </Button>
 
       <Sheet>
@@ -88,17 +95,44 @@ const Navbar = () => {
           </SheetHeader>
 
           <div className="flex flex-1 flex-col gap-3 px-6 pt-3 pb-8">
-            {navItems.map((item) => (
-              <SheetClose key={item.href} asChild>
-                <Button
-                  variant="ghost"
-                  className="justify-start font-bold text-base hover:bg-foreground/5"
-                  asChild
+            <SheetClose asChild>
+              <Button
+                variant="ghost"
+                className="justify-start font-bold text-base hover:bg-foreground/5"
+                asChild
+              >
+                <Link href="#handbook">See Handbook</Link>
+              </Button>
+            </SheetClose>
+
+            <SheetClose asChild>
+              <Button
+                variant="ghost"
+                className="justify-start font-bold text-base hover:bg-foreground/5"
+                asChild
+              >
+                <Link
+                  href="#contact"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document
+                      .querySelector('#contact')
+                      ?.scrollIntoView({ behavior: 'smooth' });
+                  }}
                 >
-                  {renderLink(item.href, item.label)}
-                </Button>
-              </SheetClose>
-            ))}
+                  Contact Us
+                </Link>
+              </Button>
+            </SheetClose>
+
+            <SheetClose asChild>
+              <Button
+                className="btn-primary justify-start font-bold text-base"
+                asChild
+              >
+                <Link href="#register">Register Now</Link>
+              </Button>
+            </SheetClose>
           </div>
         </SheetContent>
       </Sheet>
