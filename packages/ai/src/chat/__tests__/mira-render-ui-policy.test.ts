@@ -142,6 +142,20 @@ describe('mira render_ui policy', () => {
     );
   });
 
+  it('requires workspace context resolution for time tracking requests that name a workspace with "for"', () => {
+    const messages: ModelMessage[] = [
+      {
+        role: 'user',
+        content:
+          'track my time for zeus 8pm-11pm today development smart assistant',
+      },
+    ];
+
+    expect(shouldResolveWorkspaceContextForLatestUserMessage(messages)).toBe(
+      true
+    );
+  });
+
   it('does not mistake status phrasing for a workspace name', () => {
     const messages: ModelMessage[] = [
       { role: 'user', content: "what's my tasks in progress" },

@@ -4,6 +4,7 @@ import {
   countRenderUiAttemptsInSteps,
   extractSelectedToolsFromSteps,
   hasRenderableRenderUiInSteps,
+  hasSuccessfulWorkspaceContextResolutionInSteps,
   hasToolCallInSteps,
   wasToolEverSelectedInSteps,
 } from '../mira-render-ui-policy';
@@ -54,7 +55,7 @@ export function prepareMiraToolStep({
 
   if (
     needsWorkspaceContextResolution &&
-    !hasToolCallInSteps(steps, 'set_workspace_context')
+    !hasSuccessfulWorkspaceContextResolutionInSteps(steps)
   ) {
     const hasListedAccessibleWorkspaces = hasToolCallInSteps(
       steps,

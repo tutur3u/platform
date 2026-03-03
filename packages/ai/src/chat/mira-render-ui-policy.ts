@@ -156,11 +156,17 @@ function extractTextFromUserMessage(message: ModelMessage): string {
 const PRODUCTIVITY_WORKSPACE_SCOPE_CUE_REGEX =
   /\b(my tasks?|tasks?|calendar|events?|agenda|finance|spending|wallet|transactions?|workspace|workspace members?|members?|teammates?|team)\b/;
 
+const TIME_TRACKING_SCOPE_CUE_REGEX =
+  /\b(?:time tracking|time entr(?:y|ies)|timer)\b|\b(?:track|log|record|add)\b.*\b(?:time|hours?)\b/i;
+
 const WORKSPACE_MEMBER_CUE_REGEX =
   /\b(workspace|workspace members?|members?|teammates?|team)\b/;
 
 const WORKSPACE_QUALIFIER_REGEX =
   /\b(?:in|from|inside|within|under)\s+["'`]?([a-z0-9][\w&./-]*(?:\s+[a-z0-9][\w&./-]*){0,4})["'`]?/i;
+
+const TIME_TRACKING_WORKSPACE_QUALIFIER_REGEX =
+  /\b(?:track|log|record|add)(?:\s+my)?\s+(?:time|hours?|time tracking)\s+for\s+["'`]?([a-z][\w&./-]*(?:\s+[a-z][\w&./-]*){0,4})["'`]?(?=\s+(?:\d|today\b|tomorrow\b|yesterday\b|tonight\b|this\b|next\b)|$)/i;
 
 const DISALLOWED_WORKSPACE_QUALIFIERS = new Set([
   'progress',
@@ -187,11 +193,32 @@ function normalizeWorkspaceQualifierCandidate(candidate: string): string {
     .toLowerCase();
 }
 
-function hasExplicitWorkspaceQualifier(text: string): boolean {
-  const match = text.match(WORKSPACE_QUALIFIER_REGEX);
-  if (!match?.[1]) return false;
+function hasProductivityWorkspaceScopeCue(text: string): boolean {
+  return (
+    PRODUCTIVITY_WORKSPACE_SCOPE_CUE_REGEX.test(text) ||
+    TIME_TRACKING_SCOPE_CUE_REGEX.test(text)
+  );
+}
 
-  const normalizedCandidate = normalizeWorkspaceQualifierCandidate(match[1]);
+function extractWorkspaceQualifierCandidate(text: string): string | null {
+  const genericMatch = text.match(WORKSPACE_QUALIFIER_REGEX);
+  if (genericMatch?.[1]) {
+    return genericMatch[1];
+  }
+
+  const timeTrackingMatch = text.match(TIME_TRACKING_WORKSPACE_QUALIFIER_REGEX);
+  if (timeTrackingMatch?.[1]) {
+    return timeTrackingMatch[1];
+  }
+
+  return null;
+}
+
+function hasExplicitWorkspaceQualifier(text: string): boolean {
+  const candidate = extractWorkspaceQualifierCandidate(text);
+  if (!candidate) return false;
+
+  const normalizedCandidate = normalizeWorkspaceQualifierCandidate(candidate);
   if (!normalizedCandidate) return false;
   if (DISALLOWED_WORKSPACE_QUALIFIERS.has(normalizedCandidate)) return false;
 
@@ -290,7 +317,7 @@ export function shouldResolveWorkspaceContextForLatestUserMessage(
     if (!text) return false;
 
     return (
-      PRODUCTIVITY_WORKSPACE_SCOPE_CUE_REGEX.test(text) &&
+      hasProductivityWorkspaceScopeCue(text) &&
       hasExplicitWorkspaceQualifier(text)
     );
   }
@@ -383,6 +410,20 @@ export function hasToolCallInSteps(
       (toolResult) => toolResult.toolName === toolName
     );
     return called || hasResult;
+  });
+}
+
+export function hasSuccessfulWorkspaceContextResolutionInSteps(
+  steps: unknown[]
+): boolean {
+  return steps.some((step) => {
+    const typedStep = step as ToolStepLike | undefined;
+    return (typedStep?.toolResults ?? []).some(
+      (toolResult) =>
+        toolResult.toolName === 'set_workspace_context' &&
+        isRecord(toolResult.output) &&
+        toolResult.output.success === true
+    );
   });
 }
 
