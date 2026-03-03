@@ -4717,6 +4717,6 @@ IconData? resolvePlatformIconData(String? key) {
     case 'ZoomOut':
       return shad.LucideIcons.zoomOut;
     default:
-      return shad.LucideIcons.circle;
+      return null;
   }
 }

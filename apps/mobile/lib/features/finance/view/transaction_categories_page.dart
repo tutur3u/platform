@@ -75,7 +75,10 @@ class _TransactionCategoriesViewState
           trailing: [
             shad.PrimaryButton(
               onPressed: _onCreate,
-              child: const Icon(Icons.add, size: 16),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [Icon(Icons.add, size: 16)],
+              ),
             ),
           ],
         ),
@@ -155,24 +158,26 @@ class _TransactionCategoriesViewState
     final l10n = context.l10n;
     final toastContext = context;
 
-    await shad.showDialog<bool>(
-      context: context,
-      builder: (_) => AsyncDeleteConfirmationDialog(
-        title: l10n.financeDeleteCategory,
-        message: l10n.financeDeleteCategoryConfirm,
-        cancelLabel: l10n.commonCancel,
-        confirmLabel: l10n.financeDeleteCategory,
-        toastContext: toastContext,
-        onConfirm: () async {
-          await repository.deleteCategory(
-            wsId: wsId,
-            categoryId: category.id,
-          );
-        },
-      ),
-    );
+    final deleted =
+        await shad.showDialog<bool>(
+          context: context,
+          builder: (_) => AsyncDeleteConfirmationDialog(
+            title: l10n.financeDeleteCategory,
+            message: l10n.financeDeleteCategoryConfirm,
+            cancelLabel: l10n.commonCancel,
+            confirmLabel: l10n.financeDeleteCategory,
+            toastContext: toastContext,
+            onConfirm: () async {
+              await repository.deleteCategory(
+                wsId: wsId,
+                categoryId: category.id,
+              );
+            },
+          ),
+        ) ??
+        false;
 
-    if (!mounted) return;
+    if (!mounted || !deleted) return;
     await _loadCategories();
   }
 
@@ -187,7 +192,15 @@ class _TransactionCategoriesViewState
 
   Future<void> _loadCategories() async {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) return;
+    if (wsId == null) {
+      if (!mounted) return;
+      setState(() {
+        _categories = const [];
+        _isLoading = false;
+        _error = null;
+      });
+      return;
+    }
 
     setState(() {
       _isLoading = true;
