@@ -88,6 +88,11 @@ export const teams: Team[] = [
         role: 'Member',
         avatar: '/organizer-team/external-affairs/man-thai.png',
       },
+      {
+        name: 'Tam Dang',
+        role: 'Member',
+        avatar: '/organizer-team/external-affairs/tam-dang.png',
+      },
     ],
   },
   {
@@ -109,6 +114,11 @@ export const teams: Team[] = [
         name: 'Minh Dam',
         role: 'Member',
         avatar: '/organizer-team/marcom/minh-dam.png',
+      },
+      {
+        name: 'Duong Vu',
+        role: 'Member',
+        avatar: '/organizer-team/marcom/duong-vu.png',
       },
     ],
   },
