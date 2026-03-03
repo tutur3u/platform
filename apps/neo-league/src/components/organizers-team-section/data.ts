@@ -73,6 +73,21 @@ export const teams: Team[] = [
         role: 'Team Leader',
         avatar: '/organizer-team/external-affairs/tam.png',
       },
+      {
+        name: 'An Nguyen',
+        role: 'Member',
+        avatar: '/organizer-team/external-affairs/an-nguyen.png',
+      },
+      {
+        name: 'Duyen Duong',
+        role: 'Member',
+        avatar: '/organizer-team/external-affairs/duyen-duong.png',
+      },
+      {
+        name: 'Man Thai',
+        role: 'Member',
+        avatar: '/organizer-team/external-affairs/man-thai.png',
+      },
     ],
   },
   {
