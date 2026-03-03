@@ -87,23 +87,39 @@ export async function executeMoveTimeTrackingSession(
 
   let targetCategoryId: string | null = null;
   if (session.category?.name) {
-    const { data: targetCategory } = await ctx.supabase
+    const { data: targetCategory, error: targetCategoryError } = await ctx.supabase
       .from('time_tracking_categories')
       .select('id')
       .eq('ws_id', targetWorkspaceId)
       .eq('name', session.category.name)
+      .limit(1)
       .maybeSingle();
+
+    if (targetCategoryError) {
+      return {
+        error: `Failed to resolve matching category in target workspace: ${targetCategoryError.message}`,
+      };
+    }
+
     targetCategoryId = targetCategory?.id ?? null;
   }
 
   let targetTaskId: string | null = null;
   if (session.task?.name) {
-    const { data: targetTask } = await ctx.supabase
+    const { data: targetTask, error: targetTaskError } = await ctx.supabase
       .from('tasks')
       .select('id, list:task_lists!inner(board:workspace_boards!inner(ws_id))')
       .eq('list.board.ws_id', targetWorkspaceId)
       .eq('name', session.task.name)
+      .limit(1)
       .maybeSingle();
+
+    if (targetTaskError) {
+      return {
+        error: `Failed to resolve matching task in target workspace: ${targetTaskError.message}`,
+      };
+    }
+
     targetTaskId = targetTask?.id ?? null;
   }
 

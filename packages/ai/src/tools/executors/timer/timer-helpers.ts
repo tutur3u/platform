@@ -2,6 +2,7 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import type { MiraToolContext } from '../../mira-tools';
+import { getWorkspaceContextWorkspaceId } from '../../workspace-context';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -179,113 +180,6 @@ export function normalizeCursor(cursor: unknown):
   return { ok: true, lastStartTime, lastId };
 }
 
-async function hasBypassApprovalPermission(
-  ctx: MiraToolContext
-): Promise<boolean> {
-  const { data: workspace, error: workspaceError } = await ctx.supabase
-    .from('workspaces')
-    .select('creator_id')
-    .eq('id', ctx.wsId)
-    .maybeSingle();
-
-  if (workspaceError) {
-    throw new Error(workspaceError.message);
-  }
-
-  if (workspace?.creator_id === ctx.userId) return true;
-
-  const { data: defaults, error: defaultsError } = await ctx.supabase
-    .from('workspace_default_permissions')
-    .select('permission')
-    .eq('ws_id', ctx.wsId)
-    .eq('enabled', true)
-    .eq('permission', 'bypass_time_tracking_request_approval')
-    .limit(1);
-
-  if (defaultsError) {
-    throw new Error(defaultsError.message);
-  }
-
-  if (defaults?.length) return true;
-
-  const { data: rolePermissions, error: rolePermissionsError } =
-    await ctx.supabase
-      .from('workspace_role_members')
-      .select(
-        'workspace_roles!inner(ws_id, workspace_role_permissions(permission, enabled))'
-      )
-      .eq('user_id', ctx.userId)
-      .eq('workspace_roles.ws_id', ctx.wsId);
-
-  if (rolePermissionsError) {
-    throw new Error(rolePermissionsError.message);
-  }
-
-  if (!rolePermissions?.length) return false;
-
-  return rolePermissions.some((membership) =>
-    (membership.workspace_roles?.workspace_role_permissions || []).some(
-      (permission) =>
-        permission.enabled &&
-        permission.permission === 'bypass_time_tracking_request_approval'
-    )
-  );
-}
-
-export async function shouldRequireApproval(
-  startTime: Date,
-  ctx: MiraToolContext
-): Promise<{ requiresApproval: boolean; reason?: string }> {
-  const { data: settings, error } = await ctx.supabase
-    .from('workspace_settings')
-    .select('missed_entry_date_threshold')
-    .eq('ws_id', ctx.wsId)
-    .maybeSingle();
-
-  if (error) {
-    return { requiresApproval: true };
-  }
-
-  const rawThresholdDays = settings?.missed_entry_date_threshold;
-  if (rawThresholdDays === null || rawThresholdDays === undefined) {
-    return { requiresApproval: false };
-  }
-
-  const thresholdDays = Number(rawThresholdDays);
-  if (!Number.isFinite(thresholdDays) || thresholdDays < 0) {
-    return { requiresApproval: false };
-  }
-
-  if (ENABLE_APPROVAL_BYPASS_CHECK) {
-    let bypassAllowed = false;
-    try {
-      bypassAllowed = await hasBypassApprovalPermission(ctx);
-    } catch {
-      return { requiresApproval: true };
-    }
-    if (bypassAllowed) return { requiresApproval: false };
-  }
-
-  if (thresholdDays === 0) {
-    return {
-      requiresApproval: true,
-      reason: 'Workspace requires approval for all missed entries.',
-    };
-  }
-
-  const thresholdAgo = new Date();
-  thresholdAgo.setDate(thresholdAgo.getDate() - thresholdDays);
-
-  if (startTime < thresholdAgo) {
-    return {
-      requiresApproval: true,
-      reason: `Entry is older than ${thresholdDays} day${thresholdDays === 1 ? '' : 's'} threshold.`,
-    };
-  }
-
-  return { requiresApproval: false };
-}
-
 export function coerceOptionalString(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
@@ -364,3 +258,116 @@ export function resolveTimezone(
     validRequested: requestedRaw === null,
   };
 }
+
+
+async function hasBypassApprovalPermission(
+  ctx: MiraToolContext,
+): Promise<boolean> {
+  const workspaceId = getWorkspaceContextWorkspaceId(ctx);  
+
+  const { data: workspace, error: workspaceError } = await ctx.supabase
+    .from('workspaces')
+    .select('creator_id')
+    .eq('id', workspaceId)
+    .maybeSingle();
+
+  if (workspaceError) {
+    throw new Error(workspaceError.message);
+  }
+
+  if (workspace?.creator_id === ctx.userId) return true;
+
+  const { data: defaults, error: defaultsError } = await ctx.supabase
+    .from('workspace_default_permissions')
+    .select('permission')
+    .eq('ws_id', workspaceId)
+    .eq('enabled', true)
+    .eq('permission', 'bypass_time_tracking_request_approval')
+    .limit(1);
+
+  if (defaultsError) {
+    throw new Error(defaultsError.message);
+  }
+
+  if (defaults?.length) return true;
+
+  const { data: rolePermissions, error: rolePermissionsError } =
+    await ctx.supabase
+      .from('workspace_role_members')
+      .select(
+        'workspace_roles!inner(ws_id, workspace_role_permissions(permission, enabled))'
+      )
+      .eq('user_id', ctx.userId)
+      .eq('workspace_roles.ws_id', workspaceId);
+
+  if (rolePermissionsError) {
+    throw new Error(rolePermissionsError.message);
+  }
+
+  if (!rolePermissions?.length) return false;
+
+  return rolePermissions.some((membership) =>
+    (membership.workspace_roles?.workspace_role_permissions || []).some(
+      (permission) =>
+        permission.enabled &&
+        permission.permission === 'bypass_time_tracking_request_approval'
+    )
+  );
+}
+
+export async function shouldRequireApproval(
+  startTime: Date,
+  ctx: MiraToolContext,
+): Promise<{ requiresApproval: boolean; reason?: string }> {
+  const workspaceId = getWorkspaceContextWorkspaceId(ctx);
+
+  const { data: settings, error } = await ctx.supabase
+    .from('workspace_settings')
+    .select('missed_entry_date_threshold')
+    .eq('ws_id', workspaceId)
+    .maybeSingle();
+
+  if (error) {
+    return { requiresApproval: true };
+  }
+
+  const rawThresholdDays = settings?.missed_entry_date_threshold;
+  if (rawThresholdDays === null || rawThresholdDays === undefined) {
+    return { requiresApproval: false };
+  }
+
+  const thresholdDays = Number(rawThresholdDays);
+  if (!Number.isFinite(thresholdDays) || thresholdDays < 0) {
+    return { requiresApproval: false };
+  }
+
+  if (ENABLE_APPROVAL_BYPASS_CHECK) {
+    let bypassAllowed = false;
+    try {
+      bypassAllowed = await hasBypassApprovalPermission(ctx);
+    } catch {
+      return { requiresApproval: true };
+    }
+    if (bypassAllowed) return { requiresApproval: false };
+  }
+
+  if (thresholdDays === 0) {
+    return {
+      requiresApproval: true,
+      reason: 'Workspace requires approval for all missed entries.',
+    };
+  }
+
+  const thresholdAgo = new Date();
+  thresholdAgo.setDate(thresholdAgo.getDate() - thresholdDays);
+
+  if (startTime < thresholdAgo) {
+    return {
+      requiresApproval: true,
+      reason: `Entry is older than ${thresholdDays} day${thresholdDays === 1 ? '' : 's'} threshold.`,
+    };
+  }
+
+  return { requiresApproval: false };
+}
+

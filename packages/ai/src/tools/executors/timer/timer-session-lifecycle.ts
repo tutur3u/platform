@@ -151,10 +151,17 @@ export async function executeStopTimer(
     .eq('user_id', ctx.userId)
     .eq('ws_id', workspaceId)
     .eq('is_running', true)
-    .select('id');
+    .select(
+      `
+      *,
+      category:time_tracking_categories(*),
+      task:tasks(*)
+    `
+    )
+    .single();
 
   if (error) return { error: error.message };
-  if (!stoppedRows?.length) {
+  if (!stoppedRows) {
     return { error: 'Failed to stop timer: no running session was updated' };
   }
 
@@ -164,7 +171,7 @@ export async function executeStopTimer(
   return {
     success: true,
     message: `Timer stopped: "${session.title}" — ${hours}h ${minutes}m`,
-    session: toTimerSession(session as Record<string, unknown>, {
+    session: toTimerSession(stoppedRows as Record<string, unknown>, {
       durationSeconds,
       durationFormatted: `${hours}h ${minutes}m`,
     }),
@@ -209,7 +216,7 @@ export async function executeCreateTimeTrackingEntry(
     return { error: 'Session must be at least 1 minute long' };
   }
 
-  const approvalCheck = await shouldRequireApproval(startTime, ctx);
+  const approvalCheck = await shouldRequireApproval(startTime, ctx, workspaceId);
   if (approvalCheck.requiresApproval) {
     return {
       success: true,

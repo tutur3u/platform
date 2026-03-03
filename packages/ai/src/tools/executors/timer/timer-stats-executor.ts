@@ -28,6 +28,7 @@ export async function fetchTimeTrackerStats(
 ) {
   const summaryOnly = options?.summaryOnly ?? true;
   const daysBack = options?.daysBack ?? 365;
+  const appliedDaysBack = summaryOnly ? 0 : daysBack;
   const timezoneResolution = resolveTimezone(options?.timezone, ctx.timezone);
   const workspaceId = getWorkspaceContextWorkspaceId(ctx);
 
@@ -36,7 +37,7 @@ export async function fetchTimeTrackerStats(
     p_ws_id: workspaceId,
     p_is_personal: ctx.workspaceContext?.personal ?? false,
     p_timezone: timezoneResolution.resolved,
-    p_days_back: summaryOnly ? 0 : daysBack,
+    p_days_back: appliedDaysBack,
   });
 
   if (error) {
@@ -74,7 +75,7 @@ export async function fetchTimeTrackerStats(
     timezone: timezoneResolution.resolved,
     timezoneResolution,
     summaryOnly,
-    daysBack,
+    daysBack: appliedDaysBack,
     todayTime,
     weekTime,
     monthTime,

@@ -56,14 +56,16 @@ export function toTimerSession(
   row: Record<string, unknown>,
   overrides: Partial<TimerSession> = {}
 ): TimerSession {
-  if (
-    typeof row.start_time !== 'string' &&
-    typeof row.start_time !== 'number'
-  ) {
-    throw new Error('toTimerSession: start_time is required');
-  }
-
-  const startedAt = row.start_time;
+  const startedAt =
+    typeof row.start_time === 'string' || typeof row.start_time === 'number'
+      ? row.start_time
+      : typeof row.created_at === 'string' ||
+          typeof row.created_at === 'number'
+        ? row.created_at
+        : typeof row.updated_at === 'string' ||
+            typeof row.updated_at === 'number'
+          ? row.updated_at
+          : new Date(0).toISOString();
 
   const baseSession: TimerSession = {
     id: typeof row.id === 'string' ? row.id : '',
