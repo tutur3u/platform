@@ -246,7 +246,7 @@ export default function MiraDashboardClient({
         'relative flex flex-col overflow-hidden',
         isFullscreen
           ? 'fixed inset-0 z-50 bg-background p-3 sm:p-4'
-          : 'h-[calc(100vh-5rem)] min-h-0 xl:h-[calc(100vh-2rem)]'
+          : 'h-[calc(100vh-5rem)] min-h-0 md:h-[calc(100vh-2rem)]'
       )}
     >
       {/* Animated gradient backdrop in fullscreen */}
