@@ -62,10 +62,44 @@ export async function executeUpdateTimeTrackingSession(
     updates.description = coerceOptionalString(parsedArgs.description);
   }
   if (parsedArgs.categoryId !== undefined) {
-    updates.category_id = coerceOptionalString(parsedArgs.categoryId);
+    const categoryId = coerceOptionalString(parsedArgs.categoryId);
+
+    if (categoryId) {
+      const { data: category, error: categoryError } = await ctx.supabase
+        .from('time_tracking_categories')
+        .select('id')
+        .eq('id', categoryId)
+        .eq('ws_id', workspaceId)
+        .eq('user_id', ctx.userId)
+        .maybeSingle();
+
+      if (categoryError) return { error: categoryError.message };
+      if (!category) {
+        return { error: 'Category not found in current workspace' };
+      }
+    }
+
+    updates.category_id = categoryId;
   }
   if (parsedArgs.taskId !== undefined) {
-    updates.task_id = coerceOptionalString(parsedArgs.taskId);
+    const taskId = coerceOptionalString(parsedArgs.taskId);
+
+    if (taskId) {
+      const { data: task, error: taskError } = await ctx.supabase
+        .from('tasks')
+        .select('id, list:task_lists!inner(board:workspace_boards!inner(ws_id))')
+        .eq('id', taskId)
+        .eq('list.board.ws_id', workspaceId)
+        .limit(1)
+        .maybeSingle();
+
+      if (taskError) return { error: taskError.message };
+      if (!task) {
+        return { error: 'Task not found in current workspace' };
+      }
+    }
+
+    updates.task_id = taskId;
   }
 
   let nextStartTime = existing.start_time;

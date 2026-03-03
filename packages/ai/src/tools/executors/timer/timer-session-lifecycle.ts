@@ -216,7 +216,7 @@ export async function executeCreateTimeTrackingEntry(
     return { error: 'Session must be at least 1 minute long' };
   }
 
-  const approvalCheck = await shouldRequireApproval(startTime, ctx, workspaceId);
+  const approvalCheck = await shouldRequireApproval(startTime, ctx);
   if (approvalCheck.requiresApproval) {
     return {
       success: true,

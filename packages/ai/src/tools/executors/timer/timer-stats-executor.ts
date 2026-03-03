@@ -27,7 +27,7 @@ export async function fetchTimeTrackerStats(
   }
 ) {
   const summaryOnly = options?.summaryOnly ?? true;
-  const daysBack = options?.daysBack ?? 365;
+  const daysBack = Math.max(0, Math.min(options?.daysBack ?? 365, 365));
   const appliedDaysBack = summaryOnly ? 0 : daysBack;
   const timezoneResolution = resolveTimezone(options?.timezone, ctx.timezone);
   const workspaceId = getWorkspaceContextWorkspaceId(ctx);

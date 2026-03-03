@@ -56,6 +56,14 @@ export function toTimerSession(
   row: Record<string, unknown>,
   overrides: Partial<TimerSession> = {}
 ): TimerSession {
+  const sessionId =
+    typeof row.id === 'string' && row.id.trim().length > 0
+      ? row.id
+      : null;
+  if (!sessionId) {
+    throw new Error('Invalid or missing session id');
+  }
+
   const startedAt =
     typeof row.start_time === 'string' || typeof row.start_time === 'number'
       ? row.start_time
@@ -68,7 +76,7 @@ export function toTimerSession(
           : new Date(0).toISOString();
 
   const baseSession: TimerSession = {
-    id: typeof row.id === 'string' ? row.id : '',
+    id: sessionId,
     title: typeof row.title === 'string' ? row.title : null,
     startedAt,
     endedAt:
