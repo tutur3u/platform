@@ -43,12 +43,12 @@ export const teams: Team[] = [
       },
       {
         name: 'Dat Pham',
-        role: 'Website Leader',
+        role: 'Member',
         avatar: '/organizer-team/program/dat-pham.png',
       },
       {
         name: 'Phuc Huynh',
-        role: 'Website Leader',
+        role: 'Member',
         avatar: '/organizer-team/program/phuc-huynh.png',
       },
     ],
@@ -64,20 +64,18 @@ export const teams: Team[] = [
         avatar: '/organizer-team/external-affairs/tam.png',
       },
       { name: 'Member 2' },
-      // Add more members
     ],
   },
   {
     name: 'Marcom',
-    description: 'Communication TBU',
+    description:
+      'Crafting brand messaging, social media content, and promotional campaigns.',
     members: [
       {
         name: 'Nhat Vo',
         role: 'Team leader',
         avatar: '/organizer-team/marcom/nhat.png',
       },
-      { name: 'Member 2' },
-      // Add more members
     ],
   },
   {
@@ -125,7 +123,6 @@ export const teams: Team[] = [
         role: 'Member',
         avatar: '/organizer-team/logistic/ngoc.png',
       },
-      // Add more members
     ],
   },
   {
