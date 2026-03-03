@@ -79,7 +79,7 @@ export function AssistantMarkdown({
   const normalizedText = useMemo(() => normalizeMarkdownTables(text), [text]);
 
   return (
-    <div className="wrap-break-word [&_pre]:overflow-x-hidden! [&_pre]:whitespace-pre-wrap! [&_pre]:wrap-break-word [&_pre_code]:whitespace-pre-wrap! [&_pre_code]:wrap-anywhere min-w-0 max-w-full overflow-hidden [&_pre]:max-w-full">
+    <div className="wrap-break-word [&_pre]:overflow-x-hidden! [&_pre]:whitespace-pre-wrap! [&_pre]:wrap-break-word [&_pre_code]:whitespace-pre-wrap! [&_pre_code]:wrap-anywhere [&_a]:break-all min-w-0 max-w-full overflow-hidden [&_pre]:max-w-full">
       <MarkdownErrorBoundary
         fallback={
           <p className="wrap-break-word whitespace-pre-wrap">
