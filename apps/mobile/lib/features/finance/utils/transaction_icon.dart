@@ -1,10 +1,16 @@
 import 'package:flutter/widgets.dart';
 import 'package:lucide_icons/lucide_icons.dart' as lucide;
+import 'package:mobile/core/icons/platform_icon_data.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 
 IconData resolveTransactionCategoryIcon(Transaction tx) {
   if (tx.isTransfer) {
     return lucide.LucideIcons.arrowLeftRight;
+  }
+
+  final resolved = resolvePlatformIconData(tx.categoryIcon);
+  if (resolved != null) {
+    return resolved;
   }
 
   final iconName = (tx.categoryIcon ?? '').toLowerCase().replaceAll('-', '_');

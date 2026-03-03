@@ -19,6 +19,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_bloc: ^9.1.1
+  flutter_colorpicker: ^1.1.0
   flutter_localizations:
     sdk: flutter
   flutter_secure_storage: ^10.0.0

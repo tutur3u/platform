@@ -17,12 +17,13 @@ const TransactionCategoryUpdateSchema = z.object({
   color: z.string().nullable().optional(),
 });
 
-export async function GET(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function GET(req: Request, { params }: Params) {
+  const supabase = await createClient(req);
   const { categoryId, wsId } = await params;
 
   const permissions = await getPermissions({
     wsId,
+    request: req,
   });
 
   if (!permissions) {
@@ -72,6 +73,7 @@ export async function PUT(req: Request, { params }: Params) {
 
   const permissions = await getPermissions({
     wsId,
+    request: req,
   });
 
   if (!permissions) {
@@ -87,12 +89,13 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-  const supabase = await createClient();
+  const supabase = await createClient(req);
 
   const { error } = await supabase
     .from('transaction_categories')
     .update(data)
-    .eq('id', categoryId);
+    .eq('id', categoryId)
+    .eq('ws_id', wsId);
 
   if (error) {
     console.log(error);
@@ -105,12 +108,13 @@ export async function PUT(req: Request, { params }: Params) {
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function DELETE(req: Request, { params }: Params) {
+  const supabase = await createClient(req);
   const { categoryId, wsId } = await params;
 
   const permissions = await getPermissions({
     wsId,
+    request: req,
   });
 
   if (!permissions) {
@@ -129,12 +133,13 @@ export async function DELETE(_: Request, { params }: Params) {
   const { error } = await supabase
     .from('transaction_categories')
     .delete()
-    .eq('id', categoryId);
+    .eq('id', categoryId)
+    .eq('ws_id', wsId);
 
   if (error) {
     console.log(error);
     return NextResponse.json(
-      { message: 'Error creating transaction category' },
+      { message: 'Error deleting transaction category' },
       { status: 500 }
     );
   }

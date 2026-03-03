@@ -351,6 +351,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeNoTransactions => 'No transactions yet';
 
   @override
+  String get financeNoCategories => 'No categories yet';
+
+  @override
   String get financeIncome => 'Income';
 
   @override
@@ -412,6 +415,51 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeConfidentialCategory => 'Confidential category';
+
+  @override
+  String get financeCreateCategory => 'Create category';
+
+  @override
+  String get financeEditCategory => 'Edit category';
+
+  @override
+  String get financeDeleteCategory => 'Delete category';
+
+  @override
+  String get financeDeleteCategoryConfirm => 'Delete this category?';
+
+  @override
+  String get financeCategoryNameRequired => 'Category name is required';
+
+  @override
+  String get financeType => 'Type';
+
+  @override
+  String get financeIcon => 'Icon';
+
+  @override
+  String get financeSelectIcon => 'Select icon';
+
+  @override
+  String get financeSearchIcons => 'Search icons';
+
+  @override
+  String get financeNoIconsFound => 'No icons found';
+
+  @override
+  String get financePreview => 'Preview';
+
+  @override
+  String get financeNoColor => 'No color';
+
+  @override
+  String get financePickColor => 'Pick color';
+
+  @override
+  String get financeInvalidColor => 'Enter a valid hex color';
+
+  @override
+  String get financeRandomizeColor => 'Randomize';
 
   @override
   String get financeToday => 'Today';

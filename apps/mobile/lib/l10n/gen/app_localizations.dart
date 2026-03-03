@@ -763,6 +763,12 @@ abstract class AppLocalizations {
   /// **'No transactions yet'**
   String get financeNoTransactions;
 
+  /// No description provided for @financeNoCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'No categories yet'**
+  String get financeNoCategories;
+
   /// No description provided for @financeIncome.
   ///
   /// In en, this message translates to:
@@ -888,6 +894,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Confidential category'**
   String get financeConfidentialCategory;
+
+  /// No description provided for @financeCreateCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Create category'**
+  String get financeCreateCategory;
+
+  /// No description provided for @financeEditCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit category'**
+  String get financeEditCategory;
+
+  /// No description provided for @financeDeleteCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete category'**
+  String get financeDeleteCategory;
+
+  /// No description provided for @financeDeleteCategoryConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this category?'**
+  String get financeDeleteCategoryConfirm;
+
+  /// No description provided for @financeCategoryNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Category name is required'**
+  String get financeCategoryNameRequired;
+
+  /// No description provided for @financeType.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get financeType;
+
+  /// No description provided for @financeIcon.
+  ///
+  /// In en, this message translates to:
+  /// **'Icon'**
+  String get financeIcon;
+
+  /// No description provided for @financeSelectIcon.
+  ///
+  /// In en, this message translates to:
+  /// **'Select icon'**
+  String get financeSelectIcon;
+
+  /// No description provided for @financeSearchIcons.
+  ///
+  /// In en, this message translates to:
+  /// **'Search icons'**
+  String get financeSearchIcons;
+
+  /// No description provided for @financeNoIconsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No icons found'**
+  String get financeNoIconsFound;
+
+  /// No description provided for @financePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get financePreview;
+
+  /// No description provided for @financeNoColor.
+  ///
+  /// In en, this message translates to:
+  /// **'No color'**
+  String get financeNoColor;
+
+  /// No description provided for @financePickColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick color'**
+  String get financePickColor;
+
+  /// No description provided for @financeInvalidColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid hex color'**
+  String get financeInvalidColor;
+
+  /// No description provided for @financeRandomizeColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Randomize'**
+  String get financeRandomizeColor;
 
   /// No description provided for @financeToday.
   ///

@@ -351,6 +351,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeNoTransactions => 'Chưa có giao dịch';
 
   @override
+  String get financeNoCategories => 'Chưa có danh mục';
+
+  @override
   String get financeIncome => 'Thu nhập';
 
   @override
@@ -412,6 +415,51 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeConfidentialCategory => 'Ẩn danh mục';
+
+  @override
+  String get financeCreateCategory => 'Tạo danh mục';
+
+  @override
+  String get financeEditCategory => 'Sửa danh mục';
+
+  @override
+  String get financeDeleteCategory => 'Xóa danh mục';
+
+  @override
+  String get financeDeleteCategoryConfirm => 'Xóa danh mục này?';
+
+  @override
+  String get financeCategoryNameRequired => 'Vui lòng nhập tên danh mục';
+
+  @override
+  String get financeType => 'Loại';
+
+  @override
+  String get financeIcon => 'Biểu tượng';
+
+  @override
+  String get financeSelectIcon => 'Chọn biểu tượng';
+
+  @override
+  String get financeSearchIcons => 'Tìm biểu tượng';
+
+  @override
+  String get financeNoIconsFound => 'Không tìm thấy biểu tượng';
+
+  @override
+  String get financePreview => 'Xem trước';
+
+  @override
+  String get financeNoColor => 'Chưa có màu';
+
+  @override
+  String get financePickColor => 'Chọn màu';
+
+  @override
+  String get financeInvalidColor => 'Nhập mã màu hex hợp lệ';
+
+  @override
+  String get financeRandomizeColor => 'Ngẫu nhiên';
 
   @override
   String get financeToday => 'Hôm nay';
