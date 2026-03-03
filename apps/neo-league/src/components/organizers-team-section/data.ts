@@ -172,6 +172,11 @@ export const teams: Team[] = [
         role: 'Member',
         avatar: '/organizer-team/logistic/ngoc-tran.png',
       },
+      {
+        name: 'Khoa Nguyen',
+        role: 'Member',
+        avatar: '/organizer-team/logistic/khoa-nguyen.png',
+      },
     ],
   },
   {
