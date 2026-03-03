@@ -25,11 +25,22 @@ export function useMiraChatPersistence({
   const [fallbackChatId, setFallbackChatId] = useState(generateRandomUUID);
   const [initialMessages, setInitialMessages] = useState<UIMessage[]>([]);
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
-  const [storedChatId, setStoredChatId] = useState<string | null>(null);
+  const [storedChatId, setStoredChatId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(`${STORAGE_KEY_PREFIX}${wsId}`);
+  });
 
-  useEffect(() => {
-    setStoredChatId(localStorage.getItem(`${STORAGE_KEY_PREFIX}${wsId}`));
-  }, [wsId]);
+  // Re-read from localStorage when wsId changes
+  // (lazy initializer only runs on first mount)
+  const [trackedWsId, setTrackedWsId] = useState(wsId);
+  if (wsId !== trackedWsId) {
+    setTrackedWsId(wsId);
+    const nextId =
+      typeof window !== 'undefined'
+        ? localStorage.getItem(`${STORAGE_KEY_PREFIX}${wsId}`)
+        : null;
+    setStoredChatId(nextId);
+  }
 
   const restoredChatQuery = useQuery({
     queryKey: ['mira-chat-restore', wsId, storedChatId],
@@ -38,7 +49,11 @@ export function useMiraChatPersistence({
       return loadExistingChat({ wsId, storedChatId });
     },
     enabled: storedChatId != null,
-    staleTime: Infinity,
+    // Always refetch from Supabase on mount so that navigating away and back
+    // restores the full conversation (including messages sent during the
+    // previous session that are not in the stale TanStack cache).
+    staleTime: 0,
+    gcTime: 0,
   });
 
   useEffect(() => {

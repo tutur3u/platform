@@ -28,6 +28,7 @@ import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import { useSidebar } from '@/context/sidebar-context';
 import { meetsAnyTierRequirement } from '@/lib/feature-tiers';
 import { Nav } from './nav';
+import { RecentSidebarItems } from './recent-sidebar-items';
 import { WorkspaceSelect } from './workspace-select';
 
 interface StructureProps {
@@ -438,6 +439,13 @@ export function Structure({
 
   const currentTitle = navState.titleHistory[navState.titleHistory.length - 1];
   const filteredCurrentLinks = getFilteredLinks(navState.currentLinks);
+  const filteredRootLinks = getFilteredLinks(links);
+
+  const handleSidebarNavigation = () => {
+    if (window.innerWidth < 768) {
+      setIsCollapsed(true);
+    }
+  };
 
   const matchedLinks = (
     navState.history.length > 0
@@ -498,7 +506,7 @@ export function Structure({
   );
 
   const sidebarContent = (
-    <div className="relative h-full overflow-hidden">
+    <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
       {/* Active Timer Indicator */}
       {activeTimerSession && (
         <div className="p-2 pt-0">
@@ -510,70 +518,74 @@ export function Structure({
         </div>
       )}
 
-      <div
-        key={navState.history.length}
-        className={cn(
-          'absolute flex h-full min-h-0 w-full flex-col transition-transform duration-300 ease-in-out',
-          navState.direction === 'forward'
-            ? 'slide-in-from-right animate-in'
-            : 'slide-in-from-left animate-in',
-          // Adjust top position when timer is active
-          activeTimerSession && (!isCollapsed ? 'top-21' : 'top-8')
-        )}
-      >
-        {navState.history.length === 0 ? (
-          <div className="scrollbar-none min-h-0 flex-1 overflow-y-auto">
-            <Nav
-              key={`${user?.id}-root`}
-              wsId={wsId}
-              isCollapsed={isCollapsed}
-              links={filteredCurrentLinks}
-              onSubMenuClick={handleNavChange}
-              onClick={() => {
-                if (window.innerWidth < 768) {
-                  setIsCollapsed(true);
-                }
-              }}
-            />
-          </div>
-        ) : (
-          <>
-            <Nav
-              key={`${user?.id}-back`}
-              wsId={wsId}
-              isCollapsed={isCollapsed}
-              links={[backButton]}
-              onSubMenuClick={handleNavChange}
-              onClick={() => {
-                /* For the back button, we don't want to close the sidebar */
-              }}
-            />
-            {!isCollapsed && currentTitle && (
-              <div className="p-2 pt-0">
-                <h2 className="line-clamp-1 px-2 font-semibold text-muted-foreground text-sm uppercase tracking-wide">
-                  {currentTitle}
-                </h2>
-              </div>
-            )}
-            {!isCollapsed && <div className="mx-4 my-1 border-b" />}
-            {filteredCurrentLinks.length > 0 && (
-              <div className="scrollbar-none flex-1 overflow-y-auto">
-                <Nav
-                  key={`${user?.id}-nav`}
-                  wsId={wsId}
-                  isCollapsed={isCollapsed}
-                  links={filteredCurrentLinks}
-                  onSubMenuClick={handleNavChange}
-                  onClick={() => {
-                    if (window.innerWidth < 768) {
-                      setIsCollapsed(true);
-                    }
-                  }}
-                />
-              </div>
-            )}
-          </>
-        )}
+      <div className="relative min-h-0 flex-1">
+        <div
+          key={navState.history.length}
+          className={cn(
+            'absolute inset-0 flex min-h-0 flex-col transition-transform duration-300 ease-in-out',
+            navState.direction === 'forward'
+              ? 'slide-in-from-right animate-in'
+              : 'slide-in-from-left animate-in'
+          )}
+        >
+          {navState.history.length === 0 ? (
+            <div className="scrollbar-none min-h-0 flex-1 overflow-y-auto">
+              <Nav
+                key={`${user?.id}-root`}
+                wsId={wsId}
+                isCollapsed={isCollapsed}
+                links={filteredCurrentLinks}
+                onSubMenuClick={handleNavChange}
+                onClick={handleSidebarNavigation}
+              />
+              <RecentSidebarItems
+                wsId={wsId}
+                isCollapsed={isCollapsed}
+                links={filteredRootLinks}
+                onNavigate={handleSidebarNavigation}
+              />
+            </div>
+          ) : (
+            <>
+              <Nav
+                key={`${user?.id}-back`}
+                wsId={wsId}
+                isCollapsed={isCollapsed}
+                links={[backButton]}
+                onSubMenuClick={handleNavChange}
+                onClick={() => {
+                  /* For the back button, we don't want to close the sidebar */
+                }}
+              />
+              {!isCollapsed && currentTitle && (
+                <div className="p-2 pt-0">
+                  <h2 className="line-clamp-1 px-2 font-semibold text-muted-foreground text-sm uppercase tracking-wide">
+                    {currentTitle}
+                  </h2>
+                </div>
+              )}
+              {!isCollapsed && <div className="mx-4 my-1 border-b" />}
+              {filteredCurrentLinks.length > 0 && (
+                <div className="scrollbar-none flex-1 overflow-y-auto">
+                  <Nav
+                    key={`${user?.id}-nav`}
+                    wsId={wsId}
+                    isCollapsed={isCollapsed}
+                    links={filteredCurrentLinks}
+                    onSubMenuClick={handleNavChange}
+                    onClick={handleSidebarNavigation}
+                  />
+                  <RecentSidebarItems
+                    wsId={wsId}
+                    isCollapsed={isCollapsed}
+                    links={filteredRootLinks}
+                    onNavigate={handleSidebarNavigation}
+                  />
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

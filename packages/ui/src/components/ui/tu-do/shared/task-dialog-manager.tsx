@@ -2,13 +2,20 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { Task } from '@tuturuuu/types/primitives/Task';
+import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTaskDialogContext } from '../providers/task-dialog-provider';
 import {
   useOptionalWorkspacePresenceContext,
   WorkspacePresenceProvider,
 } from '../providers/workspace-presence-provider';
+import { dispatchRecentSidebarVisit } from './recent-sidebar-events';
 import { TaskEditDialog } from './task-edit-dialog';
+import {
+  REQUEST_OPEN_TASK_EVENT,
+  type RequestOpenTaskPayload,
+} from './task-open-events';
 
 /**
  * Manager component that renders the centralized task dialog
@@ -45,11 +52,21 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
       }
 
       const effectiveWsId = state.taskWsId || wsId;
+      const effectiveWorkspaceSlug = toWorkspaceSlug(effectiveWsId, {
+        personal: state.taskWorkspacePersonal ?? isPersonalWorkspace,
+      });
       // Extract locale prefix from URL (e.g. "/vi" from "/vi/ws-123/...")
-      const wsSegment = `/${effectiveWsId}`;
+      const wsSegment = `/${effectiveWorkspaceSlug}`;
+      const fallbackWsSegment = `/${effectiveWsId}`;
       const wsIndex = currentPath.indexOf(wsSegment);
-      const localePrefix = wsIndex > 0 ? currentPath.substring(0, wsIndex) : '';
-      const taskUrl = `${localePrefix}/${effectiveWsId}/tasks/${state.task.id}`;
+      const fallbackWsIndex = currentPath.indexOf(fallbackWsSegment);
+      const localePrefix =
+        wsIndex > 0
+          ? currentPath.substring(0, wsIndex)
+          : fallbackWsIndex > 0
+            ? currentPath.substring(0, fallbackWsIndex)
+            : '';
+      const taskUrl = `${localePrefix}/${effectiveWorkspaceSlug}/tasks/${state.task.id}`;
 
       if (currentPath !== taskUrl) {
         window.history.pushState(
@@ -72,7 +89,15 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
       originalPathnameRef.current = null;
       hasChangedUrlRef.current = false;
     }
-  }, [state.isOpen, state.fakeTaskUrl, state.task?.id, state.taskWsId, wsId]);
+  }, [
+    state.isOpen,
+    state.fakeTaskUrl,
+    state.task?.id,
+    state.taskWsId,
+    state.taskWorkspacePersonal,
+    isPersonalWorkspace,
+    wsId,
+  ]);
 
   // Handle browser back button when a fake task URL is active
   useEffect(() => {
@@ -164,6 +189,28 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
     [openTaskById]
   );
 
+  useEffect(() => {
+    const handleTaskOpenRequest = (event: Event) => {
+      const customEvent = event as CustomEvent<RequestOpenTaskPayload>;
+      const taskId = customEvent.detail?.taskId;
+      if (!taskId) return;
+
+      void openTaskById(taskId);
+    };
+
+    window.addEventListener(
+      REQUEST_OPEN_TASK_EVENT,
+      handleTaskOpenRequest as EventListener
+    );
+
+    return () => {
+      window.removeEventListener(
+        REQUEST_OPEN_TASK_EVENT,
+        handleTaskOpenRequest as EventListener
+      );
+    };
+  }, [openTaskById]);
+
   // Open subtask creation dialog for the current task
   const handleAddSubtask = useCallback(() => {
     if (!state.task?.id || !state.boardId || !state.task?.list_id) return;
@@ -239,6 +286,80 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
     state.mode,
     state.task?.id,
     state.boardId,
+  ]);
+
+  useEffect(() => {
+    if (
+      typeof window === 'undefined' ||
+      !state.isOpen ||
+      state.mode === 'create'
+    ) {
+      return;
+    }
+
+    const taskId = state.task?.id;
+    const boardId = state.boardId;
+    if (!taskId || !boardId) return;
+
+    const taskWithLocation = state.task as
+      | (Task & {
+          list?: {
+            board?: {
+              name?: string | null;
+            } | null;
+            name?: string | null;
+          };
+        })
+      | undefined;
+
+    const currentPath = window.location.pathname;
+    const currentWorkspaceSlug = toWorkspaceSlug(wsId, {
+      personal: isPersonalWorkspace,
+    });
+    const wsSegment = `/${currentWorkspaceSlug}`;
+    const fallbackWsSegment = `/${wsId}`;
+    const wsIndex = currentPath.indexOf(wsSegment);
+    const fallbackWsIndex = currentPath.indexOf(fallbackWsSegment);
+    const localePrefix = wsIndex > 0 ? currentPath.slice(0, wsIndex) : '';
+    const fallbackLocalePrefix =
+      fallbackWsIndex > 0 ? currentPath.slice(0, fallbackWsIndex) : '';
+    const targetWsId = state.taskWsId || wsId;
+    const targetWorkspaceSlug = toWorkspaceSlug(targetWsId, {
+      personal: state.taskWorkspacePersonal ?? isPersonalWorkspace,
+    });
+    const href = `${
+      localePrefix || fallbackLocalePrefix
+    }/${targetWorkspaceSlug}/tasks/${taskId}`;
+    const taskName = taskWithLocation?.name || '';
+    const boardName = taskWithLocation?.list?.board?.name || '';
+    const listName = taskWithLocation?.list?.name || '';
+    const badges = [];
+
+    if (boardName) {
+      badges.push({ kind: 'board' as const, value: boardName });
+    }
+    if (listName) {
+      badges.push({ kind: 'list' as const, value: listName });
+    }
+
+    dispatchRecentSidebarVisit({
+      href,
+      scopeWsId: wsId,
+      snapshot: {
+        badges,
+        iconKey: 'task',
+        title: taskName,
+      },
+    });
+  }, [
+    state.boardId,
+    state.isOpen,
+    state.mode,
+    state.task,
+    state.taskWsId,
+    state.taskWorkspacePersonal,
+    isPersonalWorkspace,
+    wsId,
   ]);
 
   // Determine if the task needs its own presence provider (cross-workspace tasks)

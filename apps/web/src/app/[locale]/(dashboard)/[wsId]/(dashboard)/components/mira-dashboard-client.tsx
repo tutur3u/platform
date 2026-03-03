@@ -1,12 +1,22 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { User, Users } from '@tuturuuu/icons';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { Brain, CheckIcon, ChevronDown, User, Users } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@tuturuuu/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { normalizeWorkspaceContextId } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { fetchWorkspaces } from '../../actions';
 import { useMiraSoul } from '../hooks/use-mira-soul';
 import {
   WORKSPACE_CONTEXT_EVENT,
@@ -61,21 +71,18 @@ function FullscreenGradientBg() {
   );
 }
 
-interface WorkspaceSummary {
-  id: string;
-  name?: string | null;
-}
-
-function MiraWorkspaceContextBadge({ wsId }: { wsId: string }) {
+function MiraWorkspaceContextSelector({ wsId }: { wsId: string }) {
   const t = useTranslations('dashboard.mira_chat');
   const [workspaceContextId, setWorkspaceContextId] =
     useState<string>('personal');
+  const [open, setOpen] = useState(false);
+
+  const storageKey = `${WORKSPACE_CONTEXT_STORAGE_KEY_PREFIX}${wsId}`;
 
   useEffect(() => {
-    const storageKey = `${WORKSPACE_CONTEXT_STORAGE_KEY_PREFIX}${wsId}`;
     const syncWorkspaceContext = () => {
-      const stored = localStorage.getItem(storageKey)?.trim();
-      setWorkspaceContextId(stored || 'personal');
+      const stored = localStorage.getItem(storageKey);
+      setWorkspaceContextId(normalizeWorkspaceContextId(stored));
     };
 
     const handleStorage = (event: StorageEvent) => {
@@ -91,7 +98,10 @@ function MiraWorkspaceContextBadge({ wsId }: { wsId: string }) {
         }>
       ).detail;
       if (detail?.wsId !== wsId) return;
-      syncWorkspaceContext();
+      // Read directly from event detail instead of localStorage to avoid
+      // timing issues where the persistence effect hasn't flushed yet.
+      const next = normalizeWorkspaceContextId(detail.workspaceContextId);
+      setWorkspaceContextId(next);
     };
 
     syncWorkspaceContext();
@@ -108,19 +118,35 @@ function MiraWorkspaceContextBadge({ wsId }: { wsId: string }) {
         handleWorkspaceContextChange
       );
     };
-  }, [wsId]);
+  }, [wsId, storageKey]);
 
   const { data: workspaces, isLoading } = useQuery({
     queryKey: ['mira-dashboard-workspaces'],
-    queryFn: async () => {
-      const res = await fetch('/api/workspaces', { cache: 'no-store' });
-      if (!res.ok) {
-        throw new Error(`Failed to load workspaces: ${res.status}`);
-      }
-      return (await res.json()) as WorkspaceSummary[];
-    },
+    queryFn: () => fetchWorkspaces(),
     staleTime: 5 * 60 * 1000,
   });
+
+  const selectContext = useCallback(
+    (newContextId: string) => {
+      const normalizedContextId = normalizeWorkspaceContextId(newContextId);
+      localStorage.setItem(storageKey, normalizedContextId);
+      setWorkspaceContextId(normalizedContextId);
+      window.dispatchEvent(
+        new CustomEvent(WORKSPACE_CONTEXT_EVENT, {
+          detail: { wsId, workspaceContextId: normalizedContextId },
+        })
+      );
+      setOpen(false);
+    },
+    [wsId, storageKey]
+  );
+
+  const personalWorkspace = workspaces?.find((ws) => ws.personal);
+  const sharedWorkspaces =
+    workspaces?.filter((ws) => !ws.personal && ws.name) || [];
+
+  const personalLabel =
+    personalWorkspace?.name || t('workspace_context_personal');
 
   const workspaceName =
     workspaceContextId === 'personal'
@@ -131,39 +157,75 @@ function MiraWorkspaceContextBadge({ wsId }: { wsId: string }) {
           ? t('workspace_context_loading')
           : t('workspace_context_unknown'));
 
-  const Icon = workspaceContextId === 'personal' ? User : Users;
+  const Icon = Brain;
   const isPersonalWorkspaceContext = workspaceContextId === 'personal';
 
-  const badge = (
-    <Badge
-      variant="outline"
-      title={`${t('workspace_context_label')}: ${workspaceName}`}
-      aria-label={`${t('workspace_context_label')}: ${workspaceName}`}
-      className={cn(
-        'h-8 overflow-hidden border-border/50 bg-background/60 text-foreground text-xs backdrop-blur-sm',
-        isPersonalWorkspaceContext
-          ? 'w-8 justify-center px-0'
-          : 'max-w-35 gap-1.5 px-2'
-      )}
-    >
-      <Icon className="h-3 w-3 shrink-0" aria-hidden />
-      {!isPersonalWorkspaceContext ? (
-        <span className="truncate">{workspaceName}</span>
-      ) : null}
-    </Badge>
-  );
-
-  if (!isPersonalWorkspaceContext) {
-    return badge;
-  }
-
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>{badge}</TooltipTrigger>
-      <TooltipContent>
-        {t('workspace_context_label')}: {workspaceName}
-      </TooltipContent>
-    </Tooltip>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className={cn(
+            'h-8 gap-1.5 border-border/50 bg-background/60 text-xs backdrop-blur-sm',
+            isPersonalWorkspaceContext ? 'px-2' : 'max-w-40 px-2'
+          )}
+          aria-label={t('workspace_context_select')}
+        >
+          <Icon className="h-3 w-3 shrink-0" aria-hidden />
+          <span className="truncate">{workspaceName}</span>
+          <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-52 p-0" align="end">
+        <Command>
+          <CommandInput placeholder={t('workspace_context_search')} />
+          <CommandEmpty>{t('workspace_context_unknown')}</CommandEmpty>
+          <CommandList className="max-h-56">
+            <CommandGroup heading={t('workspace_context_personal')}>
+              <CommandItem
+                value={`${personalLabel} personal`}
+                onSelect={() => selectContext('personal')}
+                className="gap-2 text-sm"
+              >
+                <User className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{personalLabel}</span>
+                <CheckIcon
+                  className={cn(
+                    'ml-auto h-3.5 w-3.5 shrink-0',
+                    isPersonalWorkspaceContext ? 'opacity-100' : 'opacity-0'
+                  )}
+                />
+              </CommandItem>
+            </CommandGroup>
+            {sharedWorkspaces.length > 0 && (
+              <CommandGroup heading={t('workspace_context_shared')}>
+                {sharedWorkspaces.map((ws) => (
+                  <CommandItem
+                    key={ws.id}
+                    value={`${ws.name} ${ws.id}`}
+                    onSelect={() => selectContext(ws.id)}
+                    className="gap-2 text-sm"
+                  >
+                    <Users className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate">{ws.name}</span>
+                    <CheckIcon
+                      className={cn(
+                        'ml-auto h-3.5 w-3.5 shrink-0',
+                        workspaceContextId === ws.id
+                          ? 'opacity-100'
+                          : 'opacity-0'
+                      )}
+                    />
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -184,7 +246,7 @@ export default function MiraDashboardClient({
         'relative flex flex-col overflow-hidden',
         isFullscreen
           ? 'fixed inset-0 z-50 bg-background p-3 sm:p-4'
-          : 'h-[calc(100vh-5rem)] min-h-0 xl:h-[calc(100vh-2rem)]'
+          : 'h-[calc(100vh-5rem)] min-h-0 md:h-[calc(100vh-2rem)]'
       )}
     >
       {/* Animated gradient backdrop in fullscreen */}
@@ -223,7 +285,7 @@ export default function MiraDashboardClient({
             onResetPanelState={() =>
               setChatPanelResetKey((current) => current + 1)
             }
-            workspaceContextBadge={<MiraWorkspaceContextBadge wsId={wsId} />}
+            workspaceContextBadge={<MiraWorkspaceContextSelector wsId={wsId} />}
           />
         </div>
       </div>

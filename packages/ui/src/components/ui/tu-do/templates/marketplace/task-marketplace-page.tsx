@@ -156,7 +156,11 @@ export default async function TaskMarketplacePage({
           description={t('marketplace.description')}
         />
       </div>
-      <MarketplaceClient wsId={wsId} templates={templates} />
+      <MarketplaceClient
+        wsId={wsId}
+        templates={templates}
+        templatesBasePath={templatesBasePath}
+      />
     </div>
   );
 }

@@ -17,6 +17,17 @@ export const resolveWorkspaceId = (identifier: string): string => {
   return identifier;
 };
 
+export const normalizeWorkspaceContextId = (identifier?: string | null) => {
+  const trimmed = identifier?.trim();
+  if (!trimmed) return PERSONAL_WORKSPACE_SLUG;
+
+  if (trimmed.toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
+    return PERSONAL_WORKSPACE_SLUG;
+  }
+
+  return resolveWorkspaceId(trimmed);
+};
+
 export const toWorkspaceSlug = (
   workspaceId: string,
   { personal = false }: { personal?: boolean } = {}

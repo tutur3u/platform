@@ -87,6 +87,8 @@ export const MIRA_TOOL_DIRECTORY: Record<MiraToolName, string> = {
   delete_memory: 'Delete a saved memory',
   merge_memories: 'Merge multiple memories into one',
   create_image: 'Generate an image from a text description',
+  create_qr_code:
+    'Generate a QR code from text with custom colors/size and save it to Drive',
   google_search:
     'Search the web for real-time info (news, prices, weather, facts).',
   convert_file_to_markdown:

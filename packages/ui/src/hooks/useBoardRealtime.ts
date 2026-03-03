@@ -3,8 +3,10 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef } from 'react';
 import type { BoardBroadcastFn } from '../components/ui/tu-do/shared/board-broadcast-context';
+import { toast } from './use-toast';
 
 export function useBoardRealtime(
   boardId: string,
@@ -22,11 +24,13 @@ export function useBoardRealtime(
 ): { broadcast: BoardBroadcastFn } {
   const { enabled = true, onTaskChange, onListChange } = options ?? {};
   const queryClient = useQueryClient();
+  const t = useTranslations('common');
 
   // Hold channel ref so the returned broadcast fn always targets the current channel
   const channelRef = useRef<ReturnType<
     ReturnType<typeof createClient>['channel']
   > | null>(null);
+  const hasShownConnectionToastRef = useRef(false);
 
   // Deferred cleanup timer — prevents StrictMode "leave then immediate rejoin"
   // race that kills the subscription on the Supabase Realtime server.
@@ -345,14 +349,18 @@ export function useBoardRealtime(
     });
 
     channel.subscribe((status, err) => {
+      if (status === 'SUBSCRIBED') {
+        hasShownConnectionToastRef.current = false;
+      }
+
       if (DEV_MODE) {
         if (status === 'SUBSCRIBED') {
           console.log(
             `[useBoardRealtime] Channel connected for board ${boardId}`
           );
         } else if (status === 'CHANNEL_ERROR') {
-          console.error(
-            `[useBoardRealtime] Channel error for board ${boardId}:`,
+          console.warn(
+            `[useBoardRealtime] Channel error for board ${boardId}`,
             err
           );
         } else if (status === 'TIMED_OUT') {
@@ -360,6 +368,18 @@ export function useBoardRealtime(
             `[useBoardRealtime] Channel timed out for board ${boardId}`
           );
         }
+      }
+
+      if (
+        (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') &&
+        !hasShownConnectionToastRef.current
+      ) {
+        hasShownConnectionToastRef.current = true;
+        toast({
+          description: t('realtime_connection_issue_description'),
+          title: t('realtime_connection_issue_title'),
+          variant: 'destructive',
+        });
       }
     });
 
@@ -381,7 +401,7 @@ export function useBoardRealtime(
         }
       }, 100);
     };
-  }, [boardId, enabled, queryClient]);
+  }, [boardId, enabled, queryClient, t]);
 
   // ── Sender-side batched broadcast ───────────────────────────────
   const flushBroadcastBatch = useCallback(() => {

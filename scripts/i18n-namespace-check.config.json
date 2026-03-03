@@ -2,8 +2,8 @@
   "$comment": "Namespaces from shared packages that specific apps intentionally do not use. Remove entries as apps add the missing translations.",
   "apps/web": ["certificates"],
   "apps/tasks": ["certificates"],
-  "apps/calendar": ["certificates"],
-  "apps/finance": ["certificates"],
+  "apps/calendar": ["certificates", "ws-board-templates"],
+  "apps/finance": ["certificates", "ws-board-templates"],
   "apps/meet": [
     "certificates",
     "finance-analytics",
@@ -22,7 +22,7 @@
     "ws-presence",
     "ws-tasks-labels"
   ],
-  "apps/track": ["certificates"],
+  "apps/track": ["certificates", "ws-board-templates"],
   "apps/nova": [
     "certificates",
     "dashboard",
@@ -45,7 +45,7 @@
     "ws-tasks",
     "ws-tasks-labels"
   ],
-  "apps/rewise": ["certificates"],
+  "apps/rewise": ["certificates", "ws-board-templates"],
 
   "$keyExceptionsComment": "Key-level exceptions for shared package translation keys that specific apps do not need. Supports wildcards: 'namespace.*' skips all keys under a namespace. Remove entries as apps add the missing keys.",
   "keyExceptions": {
