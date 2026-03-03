@@ -77,15 +77,32 @@ to this endpoint.
 	 - `bun install`
 2. Enter the OCR workspace:
 	 - `cd apps/ocr`
-3. Install Python packages (use one of the following):
+3. Install Python packages:
 	 - `uv sync`
-6. Start the dev server:
-	 - `uv run uvicorn app:app --host 127.0.0.1 --port 5500 --reload`
+4. Start the dev server:
+	 - `poe dev`
 
 The service listens on `http://127.0.0.1:5500`. Web clients should set
 `OCR_SERVICE_URL=http://127.0.0.1:5500` (see `.env` usage in
 `turbo.json` and the web app) so their proxy route forwards to the
 local server.
+
+### Script Aliases (via Poe)
+
+The project uses `poethepoet` ([Poe the Poet](https://poethepoet.natn.io/)) to manage common script aliases. You can run them using `poe <task>`.
+
+| Command | Description |
+| --- | --- |
+| `poe dev` | Start the FastAPI development server with reload. |
+| `poe start` | Start the FastAPI server without reload. |
+| `poe test` | Run unit tests with `pytest`. |
+| `poe test-coverage` | Run tests and generate a coverage report. |
+| `poe lint` | Check for linting issues using `ruff`. |
+| `poe lint-fix` | Automatically fix linting issues. |
+| `poe format` | Check code formatting. |
+| `poe format-fix` | Fix code formatting. |
+| `poe type-check` | Run static type checking with `mypy`. |
+| `poe modal-deploy` | Deploy the service to Modal. |
 
 ## Modal deployment
 
@@ -99,10 +116,10 @@ local server.
 Typical workflow (all commands run from `apps/ocr`):
 
 1. Ensure dependencies are installed locally (see setup above).
-2. `modal run deployment.py` – run one-off tasks or debugging.
-3. `modal serve deployment.py` – run the FastAPI app locally through
+2. `poe modal-run` – run one-off tasks or debugging.
+3. `poe modal-serve` – run the FastAPI app locally through
 	 Modal tunnels.
-4. `modal deploy deployment.py` – deploy the app to Modal’s cloud and
+4. `poe modal-deploy` – deploy the app to Modal’s cloud and
 	 obtain the public URL.
 
 Ensure Modal credentials are available via `MODAL_TOKEN_ID` and

@@ -15,6 +15,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+  "poethepoet",
   "pytest",
   "pytest-asyncio",
   "pytest-cov",
@@ -24,7 +25,7 @@ dev = [
   "types-pytz",
 ]
 
-[project.scripts]
+[tool.poe.tasks]
 test = "pytest"
 test-coverage = "pytest --cov"
 type-check = "mypy ."
@@ -34,6 +35,6 @@ lint = "ruff lint --check ."
 lint-fix = "ruff lint ."
 dev = "uvicorn app:app --host 127.0.0.1 --port 5500 --reload"
 start = "uvicorn app:app --host 127.0.0.1 --port 5500"
-run = "modal run modal_deployment.py"
-serve = "modal serve modal_deployment.py"
-deploy = "modal deploy modal_deployment.py"
+modal-run = "modal run deployment.py"
+modal-serve = "modal serve deployment.py"
+modal-deploy = "modal deploy deployment.py"
