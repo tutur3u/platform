@@ -44,6 +44,17 @@ typedef TransactionCreateHandler =
       bool? isCategoryConfidential,
     });
 
+Color? _parseHexColor(String? hex) {
+  if (hex == null) return null;
+  final cleaned = hex.replaceFirst('#', '');
+  if (cleaned.length != 6 && cleaned.length != 8) return null;
+  final value = int.tryParse(
+    cleaned.length == 6 ? 'FF$cleaned' : cleaned,
+    radix: 16,
+  );
+  return value != null ? Color(value) : null;
+}
+
 Future<bool> showTransactionDetailSheet(
   BuildContext context, {
   required String wsId,
@@ -119,7 +130,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
         ? DateFormat.yMMMd().add_jm().format(date.toLocal())
         : '-';
     final categoryColor =
-        _parseHex(_transaction.categoryColor) ??
+        _parseHexColor(_transaction.categoryColor) ??
         (isExpense ? theme.colorScheme.destructive : theme.colorScheme.primary);
     final categoryIcon = resolvePlatformIcon(
       _transaction.categoryIcon,
@@ -298,17 +309,6 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
       ),
     );
     Navigator.of(context).pop(true);
-  }
-
-  Color? _parseHex(String? hex) {
-    if (hex == null) return null;
-    final cleaned = hex.replaceFirst('#', '');
-    if (cleaned.length != 6 && cleaned.length != 8) return null;
-    final value = int.tryParse(
-      cleaned.length == 6 ? 'FF$cleaned' : cleaned,
-      radix: 16,
-    );
-    return value != null ? Color(value) : null;
   }
 }
 

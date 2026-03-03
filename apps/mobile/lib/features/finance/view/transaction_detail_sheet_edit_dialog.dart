@@ -654,21 +654,10 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
   }
 
   Color _categoryColor(TransactionCategory category) {
-    final parsed = _parseHex(category.color);
+    final parsed = _parseHexColor(category.color);
     if (parsed != null) return parsed;
     final isExpense = category.isExpense != false;
     final colorScheme = shad.Theme.of(context).colorScheme;
     return isExpense ? colorScheme.destructive : colorScheme.primary;
-  }
-
-  Color? _parseHex(String? hex) {
-    if (hex == null) return null;
-    final cleaned = hex.replaceFirst('#', '');
-    if (cleaned.length != 6 && cleaned.length != 8) return null;
-    final value = int.tryParse(
-      cleaned.length == 6 ? 'FF$cleaned' : cleaned,
-      radix: 16,
-    );
-    return value != null ? Color(value) : null;
   }
 }

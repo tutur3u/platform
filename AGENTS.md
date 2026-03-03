@@ -104,6 +104,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 ### 6.2 UI & Rendering Patterns
 
 - **Dashboard Overlay UX**: For compact+expandable dashboard widgets near chat actions, avoid icon-only rails; use labeled compact triggers and reserve layout space to prevent overlap at desktop breakpoints.
+- **Dart Part Helper Reuse**: When a feature uses `part` files, keep shared parsing/formatting helpers at library scope in the parent file and reuse them from each part; avoid duplicating identical private methods across sibling states.
 - **Local Storage Mirroring**: If UI state is persisted to `localStorage` but displayed outside the owning component tree, do not rely on the `storage` event alone; emit a same-tab custom event or lift the state so in-tab mirrors stay reactive.
 - **Render UI Text Fidelity**: Components that display AI-authored prose in `render_ui` (for example `KeyPoints`, `InsightSection` summaries) must render Markdown semantics (bold, emphasis, inline code, links) instead of showing raw markdown tokens.
 - **Markdown Table Priority**: For tabular assistant answers, prefer native Markdown tables in normal assistant text. Do not attempt unsupported `render_ui` table components, and do not wrap Markdown tables in fenced code blocks.
