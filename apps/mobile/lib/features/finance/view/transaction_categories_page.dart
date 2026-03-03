@@ -42,6 +42,7 @@ class _TransactionCategoriesViewState
   List<TransactionCategory> _categories = const [];
   bool _isLoading = false;
   String? _error;
+  int _categoriesRequestId = 0;
 
   @override
   void initState() {
@@ -93,6 +94,7 @@ class _TransactionCategoriesViewState
               ? const Center(child: shad.CircularProgressIndicator())
               : _error != null
               ? ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   children: [
                     const SizedBox(height: 120),
                     Center(
@@ -109,6 +111,7 @@ class _TransactionCategoriesViewState
                 )
               : _categories.isEmpty
               ? ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   children: [
                     const SizedBox(height: 120),
                     Center(
@@ -124,6 +127,7 @@ class _TransactionCategoriesViewState
                   ],
                 )
               : ListView.separated(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                   itemCount: _categories.length,
                   separatorBuilder: (_, _) => const shad.Gap(8),
@@ -191,9 +195,11 @@ class _TransactionCategoriesViewState
   }
 
   Future<void> _loadCategories() async {
+    final requestId = ++_categoriesRequestId;
+
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) {
-      if (!mounted) return;
+      if (!mounted || requestId != _categoriesRequestId) return;
       setState(() {
         _categories = const [];
         _isLoading = false;
@@ -201,6 +207,8 @@ class _TransactionCategoriesViewState
       });
       return;
     }
+
+    if (!mounted || requestId != _categoriesRequestId) return;
 
     setState(() {
       _isLoading = true;
@@ -211,13 +219,13 @@ class _TransactionCategoriesViewState
       final categories = await context.read<FinanceRepository>().getCategories(
         wsId,
       );
-      if (!mounted) return;
+      if (!mounted || requestId != _categoriesRequestId) return;
       setState(() => _categories = categories);
     } on Exception {
-      if (!mounted) return;
+      if (!mounted || requestId != _categoriesRequestId) return;
       setState(() => _error = context.l10n.commonSomethingWentWrong);
     } finally {
-      if (mounted) {
+      if (mounted && requestId == _categoriesRequestId) {
         setState(() => _isLoading = false);
       }
     }

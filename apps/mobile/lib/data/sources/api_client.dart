@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as developer;
 
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
@@ -59,10 +60,20 @@ class ApiClient {
       try {
         await _ensureValidSession();
         token = supabase.auth.currentSession?.accessToken ?? token;
-      } on ApiException {
+      } on ApiException catch (error, stackTrace) {
         if (!hadTokenBeforeRefresh) {
           rethrow;
         }
+
+        developer.log(
+          'token refresh suppressed, using existing token',
+          name: 'ApiClient',
+          error: error,
+          stackTrace: stackTrace,
+          level: 500,
+        );
+
+        token = supabase.auth.currentSession?.accessToken ?? token;
       }
     }
 

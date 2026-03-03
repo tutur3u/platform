@@ -94,7 +94,8 @@ export async function PUT(req: Request, { params }: Params) {
   const { error } = await supabase
     .from('transaction_categories')
     .update(data)
-    .eq('id', categoryId);
+    .eq('id', categoryId)
+    .eq('ws_id', wsId);
 
   if (error) {
     console.log(error);
@@ -132,12 +133,13 @@ export async function DELETE(req: Request, { params }: Params) {
   const { error } = await supabase
     .from('transaction_categories')
     .delete()
-    .eq('id', categoryId);
+    .eq('id', categoryId)
+    .eq('ws_id', wsId);
 
   if (error) {
     console.log(error);
     return NextResponse.json(
-      { message: 'Error creating transaction category' },
+      { message: 'Error deleting transaction category' },
       { status: 500 }
     );
   }
