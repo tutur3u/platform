@@ -8,9 +8,9 @@ export const navigationItems: NavigationItem[] = [
   { label: 'Neo League', href: '#about-neo-league' },
   { label: 'Sponsors', href: '#sponsors' },
   { label: 'Phases', href: '#phases' },
-  { label: 'Dates', href: '#dates' },
-  { label: 'Rules', href: '#rules' },
+  { label: 'Important Dates', href: '#dates' },
+  { label: 'Eligibility & Rules', href: '#rules' },
   { label: 'Mentors', href: '#mentors' },
-  { label: 'Team', href: '#team' },
+  { label: 'Organizing Team', href: '#team' },
   { label: 'Contact', href: '#contact' },
 ];
