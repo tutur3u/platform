@@ -36,7 +36,6 @@ export default function HeroSection() {
             />
           </div>
 
-          {/* SEO: Visually hidden h1 for search engines */}
           <h1 className="sr-only">
             NEO League 2026 — RMIT IoT Competition & Innovation Humanity
             Challenge | Student IoT Hackathon Vietnam
@@ -59,7 +58,13 @@ export default function HeroSection() {
             className="flex animate-slide-up flex-col justify-center gap-4 sm:flex-row"
             style={{ animationDelay: '0.4s' }}
           >
-            <Link href="#register" className="btn-primary animate-pulse-glow">
+            <Link
+              href="https://forms.office.com/r/GdkwnUbty6?origin=lprLink"
+              target="_blank"
+              rel="noopener noreferrer"
+              prefetch={false}
+              className="btn-primary animate-pulse-glow"
+            >
               Register Now
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -70,11 +75,12 @@ export default function HeroSection() {
               >
                 <path
                   fillRule="evenodd"
-                  d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+                  d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 010-1.414z"
                   clipRule="evenodd"
                 />
               </svg>
             </Link>
+
             <Link href="#about" className="btn-secondary">
               Learn More
             </Link>
@@ -90,7 +96,6 @@ export default function HeroSection() {
         </div>
       </div>
 
-      {/* Scroll Indicator */}
       <button
         type="button"
         onClick={handleScrollClick}
