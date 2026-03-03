@@ -26,8 +26,10 @@ import {
 } from './chat-message-list/markdown-components';
 import { resolveMessageRenderGroups } from './chat-message-list/resolve-message-render-groups';
 import {
+  CollapsibleToolSection,
   CopyButton,
   GroupedToolCallParts,
+  isVisualToolDescriptor,
   SourcesPart,
   ToolCallPart,
 } from './chat-message-list/tool-components';
@@ -55,6 +57,7 @@ export default function ChatMessageList({
   userAvatarUrl,
   onAutoSubmitMermaidFix,
   scrollContainerRef,
+  toolbarVisibilityAnchorRef,
   messageAttachments,
 }: ChatMessageListProps) {
   const t = useTranslations('dashboard.mira_chat');
@@ -257,57 +260,104 @@ export default function ChatMessageList({
                     />
                   ) : (
                     <div className="flex min-w-0 max-w-full flex-col gap-2 overflow-hidden *:min-w-0 *:max-w-full">
-                      {resolveMessageRenderGroups({
-                        message,
-                        isStreaming,
-                        isLastAssistant,
-                      }).map((descriptor) => {
-                        if (descriptor.kind === 'reasoning') {
-                          return (
-                            <ReasoningPart
-                              key={descriptor.key}
-                              text={descriptor.text}
-                              isAnimating={descriptor.isAnimating}
-                            />
-                          );
+                      {(() => {
+                        const descriptors = resolveMessageRenderGroups({
+                          message,
+                          isStreaming,
+                          isLastAssistant,
+                        });
+                        const elements: React.ReactNode[] = [];
+                        let genericToolBatch: Extract<
+                          (typeof descriptors)[number],
+                          { kind: 'tool' | 'tool-group' }
+                        >[] = [];
+
+                        const flushBatch = () => {
+                          if (genericToolBatch.length === 0) return;
+                          if (genericToolBatch.length === 1) {
+                            const d = genericToolBatch[0]!;
+                            elements.push(
+                              d.kind === 'tool' ? (
+                                <ToolCallPart
+                                  key={d.key}
+                                  part={d.part}
+                                  renderUiFailure={d.renderUiFailure}
+                                />
+                              ) : (
+                                <GroupedToolCallParts
+                                  key={d.key}
+                                  parts={d.parts}
+                                  toolName={d.toolName}
+                                />
+                              )
+                            );
+                          } else {
+                            elements.push(
+                              <CollapsibleToolSection
+                                key={`collapsible-${genericToolBatch[0]!.key}`}
+                                descriptors={genericToolBatch}
+                              />
+                            );
+                          }
+                          genericToolBatch = [];
+                        };
+
+                        for (const descriptor of descriptors) {
+                          if (descriptor.kind === 'reasoning') {
+                            flushBatch();
+                            elements.push(
+                              <ReasoningPart
+                                key={descriptor.key}
+                                text={descriptor.text}
+                                isAnimating={descriptor.isAnimating}
+                              />
+                            );
+                          } else if (descriptor.kind === 'text') {
+                            flushBatch();
+                            elements.push(
+                              <AssistantMarkdown
+                                key={descriptor.key}
+                                text={descriptor.text}
+                                isAnimating={descriptor.isAnimating}
+                              />
+                            );
+                          } else if (
+                            descriptor.kind === 'tool' ||
+                            descriptor.kind === 'tool-group'
+                          ) {
+                            if (isVisualToolDescriptor(descriptor)) {
+                              flushBatch();
+                              elements.push(
+                                descriptor.kind === 'tool' ? (
+                                  <ToolCallPart
+                                    key={descriptor.key}
+                                    part={descriptor.part}
+                                    renderUiFailure={descriptor.renderUiFailure}
+                                  />
+                                ) : (
+                                  <GroupedToolCallParts
+                                    key={descriptor.key}
+                                    parts={descriptor.parts}
+                                    toolName={descriptor.toolName}
+                                  />
+                                )
+                              );
+                            } else {
+                              genericToolBatch.push(descriptor);
+                            }
+                          } else if (descriptor.kind === 'sources') {
+                            flushBatch();
+                            elements.push(
+                              <SourcesPart
+                                key={descriptor.key}
+                                parts={descriptor.parts}
+                              />
+                            );
+                          }
                         }
-                        if (descriptor.kind === 'text') {
-                          return (
-                            <AssistantMarkdown
-                              key={descriptor.key}
-                              text={descriptor.text}
-                              isAnimating={descriptor.isAnimating}
-                            />
-                          );
-                        }
-                        if (descriptor.kind === 'tool') {
-                          return (
-                            <ToolCallPart
-                              key={descriptor.key}
-                              part={descriptor.part}
-                              renderUiFailure={descriptor.renderUiFailure}
-                            />
-                          );
-                        }
-                        if (descriptor.kind === 'tool-group') {
-                          return (
-                            <GroupedToolCallParts
-                              key={descriptor.key}
-                              parts={descriptor.parts}
-                              toolName={descriptor.toolName}
-                            />
-                          );
-                        }
-                        if (descriptor.kind === 'sources') {
-                          return (
-                            <SourcesPart
-                              key={descriptor.key}
-                              parts={descriptor.parts}
-                            />
-                          );
-                        }
-                        return null;
-                      })}
+                        flushBatch();
+                        return elements;
+                      })()}
                     </div>
                   )}
                 </div>
@@ -353,6 +403,11 @@ export default function ChatMessageList({
             </div>
           ) : null;
         })()}
+      <div
+        ref={toolbarVisibilityAnchorRef}
+        aria-hidden="true"
+        className="h-px w-full shrink-0"
+      />
     </div>
   );
 }

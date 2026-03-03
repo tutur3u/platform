@@ -224,6 +224,30 @@ export function useMiraChatConfig({ wsId }: UseMiraChatConfigParams) {
     const key = `${WORKSPACE_CONTEXT_STORAGE_KEY_PREFIX}${wsId}`;
     const stored = localStorage.getItem(key)?.trim();
     setWorkspaceContextId(stored || 'personal');
+
+    // Listen for external workspace context changes (e.g. from the selector badge)
+    const handleWorkspaceContextChange = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{
+          wsId?: string;
+          workspaceContextId?: string;
+        }>
+      ).detail;
+      if (detail?.wsId !== wsId) return;
+      const next = detail.workspaceContextId?.trim() || 'personal';
+      setWorkspaceContextId(next);
+    };
+
+    window.addEventListener(
+      WORKSPACE_CONTEXT_EVENT,
+      handleWorkspaceContextChange
+    );
+    return () => {
+      window.removeEventListener(
+        WORKSPACE_CONTEXT_EVENT,
+        handleWorkspaceContextChange
+      );
+    };
   }, [wsId]);
 
   useEffect(() => {

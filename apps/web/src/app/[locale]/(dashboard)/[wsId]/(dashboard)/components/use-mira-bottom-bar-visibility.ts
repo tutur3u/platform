@@ -1,82 +1,92 @@
 'use client';
 
 import type { RefObject } from 'react';
-import { useEffect, useRef, useState } from 'react';
-import { SCROLL_END_DELAY_MS } from './mira-chat-constants';
+import { useEffect, useState } from 'react';
 
 interface UseMiraBottomBarVisibilityParams {
+  auxiliaryToolbarRef: RefObject<HTMLDivElement | null>;
   hasMessages: boolean;
   scrollContainerRef: RefObject<HTMLDivElement | null>;
+  toolbarVisibilityAnchorRef: RefObject<HTMLDivElement | null>;
   viewOnly: boolean;
 }
 
 export function useMiraBottomBarVisibility({
+  auxiliaryToolbarRef,
   hasMessages,
   scrollContainerRef,
+  toolbarVisibilityAnchorRef,
   viewOnly,
 }: UseMiraBottomBarVisibilityParams) {
   const [bottomBarVisible, setBottomBarVisible] = useState(true);
-  const firstMessageSeenRef = useRef(false);
-  const scrollEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [auxiliaryToolbarHeight, setAuxiliaryToolbarHeight] = useState(0);
 
   useEffect(() => {
-    if (!hasMessages) return;
-    const element = scrollContainerRef.current;
+    const element = auxiliaryToolbarRef.current;
     if (!element) return;
 
-    const onScroll = () => {
-      const isNearBottom =
-        element.scrollHeight - element.scrollTop - element.clientHeight < 50;
-
-      if (viewOnly) {
-        setBottomBarVisible(isNearBottom);
-        return;
-      }
-
-      if (isNearBottom) {
-        setBottomBarVisible(true);
-        if (scrollEndTimerRef.current) {
-          clearTimeout(scrollEndTimerRef.current);
-          scrollEndTimerRef.current = null;
-        }
-        return;
-      }
-
-      setBottomBarVisible(false);
-      if (scrollEndTimerRef.current) clearTimeout(scrollEndTimerRef.current);
-      scrollEndTimerRef.current = setTimeout(() => {
-        scrollEndTimerRef.current = null;
-        setBottomBarVisible(true);
-      }, SCROLL_END_DELAY_MS);
+    const updateHeight = () => {
+      setAuxiliaryToolbarHeight(element.scrollHeight);
     };
 
-    element.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
+    updateHeight();
+
+    if (typeof ResizeObserver === 'undefined') return;
+
+    const observer = new ResizeObserver(() => {
+      updateHeight();
+    });
+    observer.observe(element);
 
     return () => {
-      element.removeEventListener('scroll', onScroll);
-      if (scrollEndTimerRef.current) {
-        clearTimeout(scrollEndTimerRef.current);
-        scrollEndTimerRef.current = null;
-      }
+      observer.disconnect();
     };
-  }, [hasMessages, scrollContainerRef, viewOnly]);
+  }, [auxiliaryToolbarRef]);
 
   useEffect(() => {
     if (!hasMessages) {
-      firstMessageSeenRef.current = false;
       setBottomBarVisible(true);
       return;
     }
 
-    if (firstMessageSeenRef.current) return;
+    if (viewOnly) {
+      setBottomBarVisible(false);
+      return;
+    }
 
-    firstMessageSeenRef.current = true;
-    setBottomBarVisible(true);
-  }, [hasMessages]);
+    const root = scrollContainerRef.current;
+    const target = toolbarVisibilityAnchorRef.current;
+    if (!root || !target) {
+      setBottomBarVisible(false);
+      return;
+    }
+
+    const safeBottomOffset = Math.max(auxiliaryToolbarHeight + 16, 48);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setBottomBarVisible(entry?.isIntersecting ?? false);
+      },
+      {
+        root,
+        threshold: 1,
+        rootMargin: `0px 0px -${safeBottomOffset}px 0px`,
+      }
+    );
+
+    observer.observe(target);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [
+    auxiliaryToolbarHeight,
+    hasMessages,
+    scrollContainerRef,
+    toolbarVisibilityAnchorRef,
+    viewOnly,
+  ]);
 
   return {
     bottomBarVisible,
-    setBottomBarVisible,
   };
 }

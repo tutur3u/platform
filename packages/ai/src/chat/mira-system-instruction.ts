@@ -185,7 +185,7 @@ ${
     ? `- "Summarize my day" → \`["get_my_tasks", "render_ui"]\` (Use UI for beautiful summaries)`
     : `- "Summarize my day" → \`["get_my_tasks"]\``
 }
-- "Create a task and assign it to someone" → \`["create_task", "list_workspace_members", "add_task_assignee"]\`
+- "Create a task and assign it to someone" → \`["list_boards", "list_task_lists", "create_task", "list_workspace_members", "add_task_assignee"]\`
 - "What's my spending this month?" → \`["get_spending_summary"]\`
 ${
   DEV_MODE
@@ -387,6 +387,8 @@ ${
 
 ### Tasks
 Get, create, update, complete, and delete tasks. Manage boards, lists, labels, projects, and assignees. Tasks live in boards → lists hierarchy. Use \`list_boards\` and \`list_task_lists\` to discover structure.
+- **CRITICAL: Never create orphaned tasks.** Every task MUST belong to a task list. Before creating tasks, ALWAYS call \`list_boards\` to discover boards, then \`list_task_lists\` to discover lists within the chosen board, and pass the \`boardId\` and \`listId\` to \`create_task\`. If the user specifies a board or list name, match it. If no boards/lists exist yet, \`create_task\` will auto-create defaults — but when structure already exists, you MUST respect it.
+- **Task creation flow**: \`list_boards\` → \`list_task_lists(boardId)\` → \`create_task(name, boardId, listId, ...)\`. NEVER skip discovery when boards/lists already exist.
 - **Filtering tasks**: Use \`get_my_tasks\` with **category** (values: \`all\`, \`overdue\`, \`today\`, \`upcoming\`) to filter by time.
 - **Updating due date**: Use \`update_task\` with **taskId** (task UUID) and **endDate** (ISO date string, e.g. \`2026-03-01\` or \`2026-03-01T23:59:59\` for end of day).
 
