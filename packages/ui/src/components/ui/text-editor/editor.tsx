@@ -15,7 +15,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import type * as Y from 'yjs';
 import { migrateInlineImagesToBlock } from './content-migration';
-// import { EditorDragHandle } from './drag-handle';
 import { getEditorExtensions } from './extensions';
 import { FixedToolbar, ToolBar } from './tool-bar';
 
@@ -675,7 +674,7 @@ export function RichTextEditor({
       )}
       {/* Temporarily hide drag handle to resolve 'removeChild' error until finding a more robust solution
       !readOnly && <EditorDragHandle editor={editor} /> */}
-      <EditorContent editor={editor} className="h-full" />
+      <EditorContent editor={editor} />
     </div>
   );
 }
