@@ -1,3 +1,5 @@
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+
 export type DeliverySkipReason =
   | 'consolidated_to_latest'
   | 'deadline_elapsed'
@@ -298,3 +300,128 @@ export const planQueuedNotifications = (
     skipped,
   };
 };
+
+export async function fetchTaskStateMap(
+  sbAdmin: TypedSupabaseClient,
+  notifications: QueuedNotification[]
+) {
+  const taskIds = [
+    ...new Set(
+      notifications
+        .map((notification) => getQueuedNotificationTaskId(notification))
+        .filter((taskId): taskId is string => Boolean(taskId))
+    ),
+  ];
+
+  if (taskIds.length === 0) {
+    return new Map<string, TaskStateSnapshot>();
+  }
+
+  const { data: tasks } = await sbAdmin
+    .from('tasks')
+    .select('id, completed_at, closed_at, deleted_at, end_date')
+    .in('id', taskIds);
+
+  const taskStateMap = new Map<string, TaskStateSnapshot>();
+  for (const task of (tasks || []) as Array<{
+    id: string;
+    completed_at: string | null;
+    closed_at: string | null;
+    deleted_at: string | null;
+    end_date: string | null;
+  }>) {
+    taskStateMap.set(task.id, {
+      id: task.id,
+      completedAt: task.completed_at,
+      closedAt: task.closed_at,
+      deletedAt: task.deleted_at,
+      endDate: task.end_date,
+    });
+  }
+
+  return taskStateMap;
+}
+
+export async function markDeliveryLogsSkipped(
+  sbAdmin: TypedSupabaseClient,
+  skippedEntries: Array<{
+    deliveryLogId: string;
+    reason: string;
+    consolidatedIntoNotificationId?: string;
+  }>
+) {
+  if (skippedEntries.length === 0) {
+    return;
+  }
+
+  const now = new Date().toISOString();
+  const groupedEntries = new Map<string, string[]>();
+
+  for (const entry of skippedEntries) {
+    const key = `${entry.reason}:${entry.consolidatedIntoNotificationId || 'none'}`;
+    const existing = groupedEntries.get(key) || [];
+    existing.push(entry.deliveryLogId);
+    groupedEntries.set(key, existing);
+  }
+
+  for (const [key, logIds] of groupedEntries) {
+    const [reason, consolidatedIntoNotificationId] = key.split(':');
+    await sbAdmin
+      .from('notification_delivery_log')
+      .update({
+        status: 'skipped',
+        skip_reason: reason,
+        consolidated_into_notification_id:
+          consolidatedIntoNotificationId === 'none'
+            ? null
+            : consolidatedIntoNotificationId,
+        updated_at: now,
+      } as never)
+      .in('id', logIds)
+      .eq('status', 'pending');
+  }
+}
+
+export async function markDeliveryLogsFailedForBatches(
+  sbAdmin: TypedSupabaseClient,
+  batchIds: string[],
+  errorMessage: string
+) {
+  if (batchIds.length === 0) {
+    return;
+  }
+
+  await sbAdmin
+    .from('notification_delivery_log')
+    .update({
+      status: 'failed',
+      error_message: errorMessage,
+      updated_at: new Date().toISOString(),
+    } as never)
+    .in('batch_id', batchIds)
+    .eq('status', 'pending');
+}
+
+export async function markBatchesSkipped(
+  sbAdmin: TypedSupabaseClient,
+  batchIds: string[],
+  options: {
+    consolidatedIntoBatchId?: string;
+    reason: string;
+  }
+) {
+  if (batchIds.length === 0) {
+    return;
+  }
+
+  await sbAdmin
+    .from('notification_batches')
+    .update({
+      status: 'skipped',
+      skip_reason: options.reason,
+      consolidated_into_batch_id: options.consolidatedIntoBatchId || null,
+      updated_at: new Date().toISOString(),
+    } as never)
+    .in('id', batchIds)
+    .eq('status', 'pending');
+}

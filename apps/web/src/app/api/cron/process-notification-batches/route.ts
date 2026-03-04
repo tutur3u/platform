@@ -8,13 +8,15 @@ import NotificationDigestEmail, {
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import {
+  fetchTaskStateMap,
   getNotificationBatchRecipientKey,
   getQueuedNotificationActionUrl,
-  getQueuedNotificationTaskId,
+  markBatchesSkipped,
+  markDeliveryLogsFailedForBatches,
+  markDeliveryLogsSkipped,
   type NotificationBatchRecipient,
   planQueuedNotifications,
   type QueuedNotification,
-  type TaskStateSnapshot,
 } from '@/app/api/notifications/delivery-utils';
 
 const MAX_BATCH_SEEDS = 1000;
@@ -62,134 +64,6 @@ const getRecipientFromBatch = (
   email: batch.email,
   channel: batch.channel,
 });
-
-const groupStrings = (values: string[]) => {
-  const unique = [...new Set(values)];
-  return unique.length > 0 ? unique : [];
-};
-
-async function fetchTaskStateMap(
-  sbAdmin: any,
-  notifications: QueuedNotification[]
-) {
-  const taskIds = groupStrings(
-    notifications
-      .map((notification) => getQueuedNotificationTaskId(notification))
-      .filter((taskId): taskId is string => Boolean(taskId))
-  );
-
-  if (taskIds.length === 0) {
-    return new Map<string, TaskStateSnapshot>();
-  }
-
-  const { data: tasks } = await sbAdmin
-    .from('tasks')
-    .select('id, completed_at, closed_at, deleted_at, end_date')
-    .in('id', taskIds);
-
-  const taskStateMap = new Map<string, TaskStateSnapshot>();
-  for (const task of (tasks || []) as Array<{
-    id: string;
-    completed_at: string | null;
-    closed_at: string | null;
-    deleted_at: string | null;
-    end_date: string | null;
-  }>) {
-    taskStateMap.set(task.id, {
-      id: task.id,
-      completedAt: task.completed_at,
-      closedAt: task.closed_at,
-      deletedAt: task.deleted_at,
-      endDate: task.end_date,
-    });
-  }
-
-  return taskStateMap;
-}
-
-async function markDeliveryLogsSkipped(
-  sbAdmin: any,
-  skippedEntries: Array<{
-    deliveryLogId: string;
-    reason: string;
-    consolidatedIntoNotificationId?: string;
-  }>
-) {
-  if (skippedEntries.length === 0) {
-    return;
-  }
-
-  const now = new Date().toISOString();
-  const groupedEntries = new Map<string, string[]>();
-
-  for (const entry of skippedEntries) {
-    const key = `${entry.reason}:${entry.consolidatedIntoNotificationId || 'none'}`;
-    const existing = groupedEntries.get(key) || [];
-    existing.push(entry.deliveryLogId);
-    groupedEntries.set(key, existing);
-  }
-
-  for (const [key, logIds] of groupedEntries) {
-    const [reason, consolidatedIntoNotificationId] = key.split(':');
-    await sbAdmin
-      .from('notification_delivery_log')
-      .update({
-        status: 'skipped',
-        skip_reason: reason,
-        consolidated_into_notification_id:
-          consolidatedIntoNotificationId === 'none'
-            ? null
-            : consolidatedIntoNotificationId,
-        updated_at: now,
-      } as never)
-      .in('id', logIds)
-      .eq('status', 'pending');
-  }
-}
-
-async function markDeliveryLogsFailedForBatches(
-  sbAdmin: any,
-  batchIds: string[],
-  errorMessage: string
-) {
-  if (batchIds.length === 0) {
-    return;
-  }
-
-  await sbAdmin
-    .from('notification_delivery_log')
-    .update({
-      status: 'failed',
-      error_message: errorMessage,
-      updated_at: new Date().toISOString(),
-    } as never)
-    .in('batch_id', batchIds)
-    .eq('status', 'pending');
-}
-
-async function markBatchesSkipped(
-  sbAdmin: any,
-  batchIds: string[],
-  options: {
-    consolidatedIntoBatchId?: string;
-    reason: string;
-  }
-) {
-  if (batchIds.length === 0) {
-    return;
-  }
-
-  await sbAdmin
-    .from('notification_batches')
-    .update({
-      status: 'skipped',
-      skip_reason: options.reason,
-      consolidated_into_batch_id: options.consolidatedIntoBatchId || null,
-      updated_at: new Date().toISOString(),
-    } as never)
-    .in('id', batchIds)
-    .eq('status', 'pending');
-}
 
 export async function GET(req: NextRequest) {
   try {
@@ -417,12 +291,13 @@ export async function GET(req: NextRequest) {
         );
 
         await markDeliveryLogsSkipped(sbAdmin, staleSkipped);
+        await markDeliveryLogsSkipped(sbAdmin, consolidatedSkipped);
+        await markBatchesSkipped(sbAdmin, olderBatchIds, {
+          reason: 'consolidated_to_latest_batch',
+          consolidatedIntoBatchId: latestBatch.id,
+        });
 
         if (plan.notificationsToSend.length === 0) {
-          await markBatchesSkipped(sbAdmin, olderBatchIds, {
-            reason: 'consolidated_to_latest_batch',
-            consolidatedIntoBatchId: latestBatch.id,
-          });
           await markBatchesSkipped(sbAdmin, [latestBatch.id], {
             reason: staleSkipped[0]?.reason || 'task_inactive',
           });
@@ -545,12 +420,6 @@ export async function GET(req: NextRequest) {
             )
           )
           .eq('status', 'pending');
-
-        await markDeliveryLogsSkipped(sbAdmin, consolidatedSkipped);
-        await markBatchesSkipped(sbAdmin, olderBatchIds, {
-          reason: 'consolidated_to_latest_batch',
-          consolidatedIntoBatchId: latestBatch.id,
-        });
 
         await sbAdmin
           .from('notification_batches')

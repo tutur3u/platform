@@ -100,9 +100,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **User Email**: Never query `public.users.email` (it doesn't exist). Use `public.user_private_details`.
 - **Reset-Only Local Defaults**: If behavior should apply only after `bun sb:reset` (local dev bootstrap), implement it in `apps/database/scripts/*` and wire it into the reset script; do not encode reset-only behavior in migrations.
 - **Workspace-Scoped Mutation Follow-Through**: For workspace-scoped `UPDATE`/`DELETE` API handlers, request returning rows (`select(...).maybeSingle()` or equivalent) and stop follow-up side effects when no row matched; never run dependent child-table deletes/updates based only on a requested ID.
-- **Queued Task Notification Hygiene**: Email delivery workers must re-check current task state at send time. Skip queued deadline/task-change emails for tasks that are already completed, closed, deleted, or already past the reminder window, and consolidate older pending batches into the newest batch per recipient before sending to avoid backlog-driven spam.
 - **Notification Rollout Gates**: Temporary rollout flags that restrict notification workers to internal/root workspaces must default to off before merge. Do not leave email delivery or reminder generation limited to Tuturuuu-only traffic after validation.
-- **Notification Failure Cleanup**: When a notification worker marks a batch as `failed`, it must also resolve any still-pending `notification_delivery_log` rows for that failed batch (for example mark them `failed`). Do not leave terminally failed batches with delivery logs stuck in `pending`.
 
 ### 6.2 UI & Rendering Patterns
 

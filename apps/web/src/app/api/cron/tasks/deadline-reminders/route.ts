@@ -1,3 +1,4 @@
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
@@ -40,21 +41,6 @@ const INTERVAL_NAMES: Record<string, string> = {
   '7d': '1 week',
 };
 
-interface TaskWithDetails {
-  id: string;
-  name: string;
-  end_date: string;
-  task_lists: {
-    board_id: string;
-    workspace_boards: {
-      id: string;
-      name: string;
-      ws_id: string;
-    };
-  };
-  task_watchers: Array<{ user_id: string }>;
-}
-
 interface ReminderSettings {
   ws_id: string;
   reminder_intervals: string[];
@@ -71,21 +57,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const sbAdmin = await createAdminClient();
+    const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
     const now = new Date();
 
     // Get all workspaces with reminder settings
     // Note: Types for new tables will be available after running bun sb:typegen
-    const settingsQuery = (sbAdmin as any)
+    const { data: allSettings, error: settingsError } = await sbAdmin
       .from('workspace_task_reminder_settings')
       .select('ws_id, reminder_intervals, enabled')
       .eq('enabled', true);
-
-    const { data: allSettings, error: settingsError } =
-      (await settingsQuery) as {
-        data: ReminderSettings[] | null;
-        error: Error | null;
-      };
 
     if (settingsError) {
       console.error('Error fetching reminder settings:', settingsError);
@@ -119,9 +99,7 @@ export async function GET(req: NextRequest) {
     );
     const windowEnd = new Date(now.getTime() + maxIntervalMs + 5 * 60 * 1000); // +5min buffer
 
-    // Get tasks with due dates in the window
-    // Note: task_watchers relation will be available after running migrations
-    const tasksQuery = (sbAdmin as any)
+    const { data: tasks, error: tasksError } = await sbAdmin
       .from('tasks')
       .select(
         `
@@ -148,11 +126,6 @@ export async function GET(req: NextRequest) {
       .gte('end_date', now.toISOString())
       .lte('end_date', windowEnd.toISOString());
 
-    const { data: tasks, error: tasksError } = (await tasksQuery) as {
-      data: TaskWithDetails[] | null;
-      error: Error | null;
-    };
-
     if (tasksError) {
       console.error('Error fetching tasks:', tasksError);
       return NextResponse.json(
@@ -178,6 +151,7 @@ export async function GET(req: NextRequest) {
     }> = [];
 
     for (const task of tasks) {
+      if (!task.end_date) continue;
       const taskEndDate = new Date(task.end_date);
       const timeUntilDue = taskEndDate.getTime() - now.getTime();
       const watchers = task.task_watchers || [];
@@ -208,7 +182,7 @@ export async function GET(req: NextRequest) {
           for (const watcher of watchers) {
             // Check if already sent
             // Note: task_reminder_sent types will be available after running bun sb:typegen
-            const { data: existingReminder } = await (sbAdmin as any)
+            const { data: existingReminder } = await sbAdmin
               .from('task_reminder_sent')
               .select('id')
               .eq('task_id', task.id)
@@ -269,7 +243,7 @@ export async function GET(req: NextRequest) {
             }
 
             // Record that we sent this reminder
-            const { error: trackError } = await (sbAdmin as any)
+            const { error: trackError } = await sbAdmin
               .from('task_reminder_sent')
               .insert({
                 task_id: task.id,
