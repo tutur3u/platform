@@ -465,6 +465,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeTransactionDetails => 'Chi tiết giao dịch';
 
   @override
+  String get financeCreateTransaction => 'Tạo giao dịch';
+
+  @override
   String get financeEditTransaction => 'Sửa giao dịch';
 
   @override
@@ -472,6 +475,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeDeleteTransactionConfirm => 'Xóa giao dịch này?';
+
+  @override
+  String get financeTransactionCreated => 'Đã tạo giao dịch';
 
   @override
   String get financeTransactionUpdated => 'Đã cập nhật giao dịch';
@@ -493,6 +499,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeWallet => 'Ví';
+
+  @override
+  String get financeSelectWalletAndCategoryFirst => 'Hãy chọn ví và danh mục trước';
 
   @override
   String get financeInvalidAmount => 'Vui lòng nhập số tiền hợp lệ';

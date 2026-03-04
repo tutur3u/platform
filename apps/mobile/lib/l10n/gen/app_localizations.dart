@@ -973,6 +973,12 @@ abstract class AppLocalizations {
   /// **'Transaction details'**
   String get financeTransactionDetails;
 
+  /// No description provided for @financeCreateTransaction.
+  ///
+  /// In en, this message translates to:
+  /// **'Create transaction'**
+  String get financeCreateTransaction;
+
   /// No description provided for @financeEditTransaction.
   ///
   /// In en, this message translates to:
@@ -990,6 +996,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete this transaction?'**
   String get financeDeleteTransactionConfirm;
+
+  /// No description provided for @financeTransactionCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction created'**
+  String get financeTransactionCreated;
 
   /// No description provided for @financeTransactionUpdated.
   ///
@@ -1032,6 +1044,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Wallet'**
   String get financeWallet;
+
+  /// No description provided for @financeSelectWalletAndCategoryFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a wallet and category first'**
+  String get financeSelectWalletAndCategoryFirst;
 
   /// No description provided for @financeInvalidAmount.
   ///
