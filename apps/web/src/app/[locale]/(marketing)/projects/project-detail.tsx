@@ -1,5 +1,3 @@
-import { GLBViewerCanvas } from './3d-model';
-import { Project } from './data';
 import {
   Calendar,
   Code,
@@ -12,6 +10,8 @@ import {
 import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
 import { useState } from 'react';
+import { GLBViewerCanvas } from './3d-model';
+import type { Project } from './data';
 
 interface ProjectDetailProps {
   onClose: () => void;
@@ -92,7 +92,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
       onClick={handleBackdropClick}
     >
       <motion.div
-        className="border-border bg-background/95 relative max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-3xl border shadow-2xl backdrop-blur-lg"
+        className="relative max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-3xl border border-border bg-background/95 shadow-2xl backdrop-blur-lg"
         variants={MODAL_VARIANTS}
         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
         onClick={handleModalClick}
@@ -100,44 +100,45 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
         {/* Header */}
         <div className="relative p-8">
           <button
+            type="button"
             onClick={onClose}
-            className="bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground absolute right-6 top-6 z-10 rounded-full p-2 transition-all duration-200"
+            className="absolute top-6 right-6 z-10 rounded-full bg-muted/50 p-2 text-muted-foreground transition-all duration-200 hover:bg-muted hover:text-foreground"
           >
             <X size={20} />
           </button>
 
-          <div className="relative mb-8 h-48 w-full overflow-hidden rounded-2xl bg-gradient-to-br from-[#F4B71A]/20 to-[#1AF4E6]/20">
+          <div className="relative mb-8 h-48 w-full overflow-hidden rounded-2xl bg-linear-to-br from-[#F4B71A]/20 to-[#1AF4E6]/20">
             <Image
               src={image || '/media/background/demo.jpg'}
               fill
               alt={`${name} project demo`}
               className="object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+            <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
 
-            <div className="absolute left-4 top-4 flex gap-2">
+            <div className="absolute top-4 left-4 flex gap-2">
               <div
-                className={`text-primary-foreground rounded-full px-3 py-1 text-sm font-medium ${STATUS_CONFIG[status].color}`}
+                className={`rounded-full px-3 py-1 font-medium text-primary-foreground text-sm ${STATUS_CONFIG[status].color}`}
               >
                 {STATUS_CONFIG[status].label}
               </div>
-              <div className="border-border bg-muted text-foreground rounded-full border px-3 py-1 text-sm font-medium">
+              <div className="rounded-full border border-border bg-muted px-3 py-1 font-medium text-foreground text-sm">
                 {TYPE_LABELS[type]}
               </div>
-              <div className="border-border bg-muted text-foreground rounded-full border px-3 py-1 text-sm font-medium">
+              <div className="rounded-full border border-border bg-muted px-3 py-1 font-medium text-foreground text-sm">
                 {semester}
               </div>
             </div>
           </div>
 
           <div className="text-center">
-            <h1 className="mb-2 bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] bg-clip-text py-2 text-4xl font-bold leading-tight text-transparent md:text-5xl md:leading-tight">
+            <h1 className="mb-2 bg-linear-to-r from-[#F4B71A] to-[#1AF4E6] bg-clip-text py-2 font-bold text-4xl text-transparent leading-tight md:text-5xl md:leading-tight">
               {name}
             </h1>
             {manager && (
               <p className="text-muted-foreground text-xl">
                 Project Lead:{' '}
-                <span className="text-foreground font-semibold">{manager}</span>
+                <span className="font-semibold text-foreground">{manager}</span>
               </p>
             )}
 
@@ -151,7 +152,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
                     rel="noopener noreferrer"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="border-border bg-muted/80 text-foreground hover:border-border hover:bg-muted flex items-center gap-2 rounded-xl border px-6 py-3 backdrop-blur-sm transition-all duration-200"
+                    className="flex items-center gap-2 rounded-xl border border-border bg-muted/80 px-6 py-3 text-foreground backdrop-blur-sm transition-all duration-200 hover:border-border hover:bg-muted"
                   >
                     <Github size={20} />
                     <span className="font-medium">View Code</span>
@@ -164,7 +165,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
                     rel="noopener noreferrer"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="bg-foreground text-background hover:bg-foreground/90 flex items-center gap-2 rounded-xl px-6 py-3 font-medium transition-all duration-200"
+                    className="flex items-center gap-2 rounded-xl bg-foreground px-6 py-3 font-medium text-background transition-all duration-200 hover:bg-foreground/90"
                   >
                     <Play size={20} />
                     <span>View Demo</span>
@@ -177,7 +178,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
                     }}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#24a4db] to-[#1AF4E6] px-6 py-3 font-medium text-black transition-all duration-200 hover:shadow-lg hover:shadow-[#24a4db]/30"
+                    className="flex items-center gap-2 rounded-xl bg-linear-to-r from-[#24a4db] to-[#1AF4E6] px-6 py-3 font-medium text-black transition-all duration-200 hover:shadow-[#24a4db]/30 hover:shadow-lg"
                   >
                     <Component size={20} />
                     <span>{is3DViewOpen ? 'Close Model' : 'View Model'}</span>
@@ -245,12 +246,12 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="border-border bg-muted/50 rounded-xl border p-4 text-center"
+                className="rounded-xl border border-border bg-muted/50 p-4 text-center"
               >
                 <div className="mb-2 flex justify-center">
                   <stat.icon className="h-6 w-6 text-[#1AF4E6]" />
                 </div>
-                <p className="text-foreground text-2xl font-bold">
+                <p className="font-bold text-2xl text-foreground">
                   {stat.value}
                 </p>
                 <p className="text-muted-foreground text-sm">{stat.label}</p>
@@ -259,30 +260,30 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
           </div>
           {/* Description */}
           {description && (
-            <div className="border-border bg-muted/50 rounded-2xl border p-6">
-              <h2 className="text-foreground mb-4 text-2xl font-semibold">
+            <div className="rounded-2xl border border-border bg-muted/50 p-6">
+              <h2 className="mb-4 font-semibold text-2xl text-foreground">
                 About
               </h2>
-              <p className="text-muted-foreground text-lg leading-relaxed">
+              <p className="text-lg text-muted-foreground leading-relaxed">
                 {description}
               </p>
             </div>
           )}
           {/* Purpose */}
           {purpose && (
-            <div className="border-border bg-muted/50 rounded-2xl border p-6">
-              <h2 className="text-foreground mb-4 text-2xl font-semibold">
+            <div className="rounded-2xl border border-border bg-muted/50 p-6">
+              <h2 className="mb-4 font-semibold text-2xl text-foreground">
                 Purpose
               </h2>
-              <p className="text-muted-foreground text-lg leading-relaxed">
+              <p className="text-lg text-muted-foreground leading-relaxed">
                 {purpose}
               </p>
             </div>
           )}
           {/* Tech Stack */}
           {techStack && techStack.length > 0 && (
-            <div className="border-border bg-muted/50 rounded-2xl border p-6">
-              <h2 className="text-foreground mb-6 text-2xl font-semibold">
+            <div className="rounded-2xl border border-border bg-muted/50 p-6">
+              <h2 className="mb-6 font-semibold text-2xl text-foreground">
                 Technologies
               </h2>
               <div className="flex flex-wrap gap-3">
@@ -292,9 +293,9 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: index * 0.1 }}
-                    className="border-border bg-muted rounded-xl border px-4 py-2 backdrop-blur-sm"
+                    className="rounded-xl border border-border bg-muted px-4 py-2 backdrop-blur-sm"
                   >
-                    <span className="text-foreground font-medium">{tech}</span>
+                    <span className="font-medium text-foreground">{tech}</span>
                   </motion.div>
                 ))}
               </div>
@@ -302,8 +303,8 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
           )}
           {/* Team Members */}
           {members && members.length > 0 && (
-            <div className="border-border bg-muted/50 rounded-2xl border p-6">
-              <h2 className="text-foreground mb-6 text-2xl font-semibold">
+            <div className="rounded-2xl border border-border bg-muted/50 p-6">
+              <h2 className="mb-6 font-semibold text-2xl text-foreground">
                 Team Members
               </h2>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -313,10 +314,10 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    className="border-border bg-muted/50 hover:bg-muted group flex items-center justify-between rounded-xl border p-4 transition-colors"
+                    className="group flex items-center justify-between rounded-xl border border-border bg-muted/50 p-4 transition-colors hover:bg-muted"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="bg-foreground text-background flex h-10 w-10 items-center justify-center rounded-full font-bold">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground font-bold text-background">
                         {person.name
                           .split(' ')
                           .map((n) => n[0])
@@ -324,7 +325,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
                           .slice(0, 2)}
                       </div>
                       <div>
-                        <p className="text-foreground group-hover:text-foreground font-semibold transition-colors">
+                        <p className="font-semibold text-foreground transition-colors group-hover:text-foreground">
                           {person.name}
                         </p>
                         <p className="text-muted-foreground text-sm">
@@ -340,7 +341,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
         </div>
 
         {/* Footer */}
-        <div className="rounded-b-3xl border-t border-white/10 bg-white/5 px-8 py-6">
+        <div className="rounded-b-3xl border-white/10 border-t bg-white/5 px-8 py-6">
           <div className="flex justify-center gap-4">
             {githubUrl && (
               <motion.a
@@ -359,7 +360,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
               onClick={onClose}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="bg-foreground text-background hover:bg-foreground/90 rounded-2xl px-8 py-3 font-semibold transition-all duration-200"
+              className="rounded-2xl bg-foreground px-8 py-3 font-semibold text-background transition-all duration-200 hover:bg-foreground/90"
             >
               Close
             </motion.button>
