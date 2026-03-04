@@ -84,7 +84,7 @@ export default function BlogsPageClient() {
           <Sparkles className="h-5 w-5 text-[#FBC721]" />
           <Badge
             variant="outline"
-            className="border-[#5FC6E5]/50 px-3 py-1 text-sm text-[#5FC6E5]"
+            className="border-[#5FC6E5]/50 px-3 py-1 text-[#5FC6E5] text-sm"
           >
             Insights & Stories
           </Badge>
@@ -96,11 +96,11 @@ export default function BlogsPageClient() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="text-4xl leading-tight font-extrabold md:text-5xl lg:text-6xl"
+          className="font-extrabold text-4xl leading-tight md:text-5xl lg:text-6xl"
         >
           <span>NEO Culture Tech</span>{' '}
           <span className="relative">
-            <span className="border-b-4 border-[#FBC721] text-[#5FC6E5]">
+            <span className="border-[#FBC721] border-b-4 text-[#5FC6E5]">
               Blog
             </span>
             <motion.div
@@ -125,7 +125,7 @@ export default function BlogsPageClient() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.5 }}
-          className="mx-auto max-w-3xl text-lg font-medium text-muted-foreground md:text-xl"
+          className="mx-auto max-w-3xl font-medium text-lg text-muted-foreground md:text-xl"
         >
           Stay updated with the latest tech insights, tutorials, and stories
           from our community. Explore our articles and join the conversation.
@@ -169,18 +169,18 @@ export default function BlogsPageClient() {
                 )}
 
                 <CardHeader>
-                  <CardTitle className="line-clamp-2 text-xl font-bold transition-colors group-hover:text-[#5FC6E5]">
+                  <CardTitle className="line-clamp-2 font-bold text-xl transition-colors group-hover:text-[#5FC6E5]">
                     {blog.title}
                   </CardTitle>
                 </CardHeader>
 
                 <CardContent className="space-y-4">
-                  <p className="line-clamp-3 text-sm text-muted-foreground">
+                  <p className="line-clamp-3 text-muted-foreground text-sm">
                     {blog.excerpt}
                   </p>
 
                   {/* Meta Information */}
-                  <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                  <div className="flex flex-wrap items-center gap-4 text-muted-foreground text-xs">
                     <div className="flex items-center gap-1">
                       <User className="h-3 w-3" />
                       <span>{blog.author}</span>
@@ -206,13 +206,14 @@ export default function BlogsPageClient() {
 
                   {/* Read More Link */}
                   <div className="pt-2">
-                    <span className="inline-flex items-center text-sm font-medium text-[#5FC6E5] group-hover:underline">
+                    <span className="inline-flex items-center font-medium text-[#5FC6E5] text-sm group-hover:underline">
                       Read More
                       <svg
                         className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
+                        aria-hidden="true"
                       >
                         <path
                           strokeLinecap="round"
