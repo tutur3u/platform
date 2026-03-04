@@ -29,15 +29,38 @@ export const teams: Team[] = [
   {
     name: 'Program',
     description:
-      'Designing and managing competition content, challenges, and participant experience.',
+      'Designing and managing competition content, challenges, participant experience, and building the website.',
     members: [
       {
         name: 'Tai Ngo',
         role: 'Team Leader',
         avatar: '/organizer-team/program/tai.png',
       },
-      { name: 'Nguyen Gia Khang', role: 'Website Leader' },
-      // Add more members
+      {
+        name: 'Khang Nguyen',
+        role: 'Website Leader',
+        avatar: '/organizer-team/program/khang-nguyen.png',
+      },
+      {
+        name: 'Dat Pham',
+        role: 'Member',
+        avatar: '/organizer-team/program/dat-pham.png',
+      },
+      {
+        name: 'Phuc Huynh',
+        role: 'Member',
+        avatar: '/organizer-team/program/phuc-huynh.png',
+      },
+      {
+        name: 'Dung Dao',
+        role: 'Member',
+        avatar: '/organizer-team/program/dung-dao.png',
+      },
+      {
+        name: 'Khang Phan',
+        role: 'Member',
+        avatar: '/organizer-team/program/khang-phan.png',
+      },
     ],
   },
   {
@@ -46,43 +69,88 @@ export const teams: Team[] = [
       'Managing partnerships, sponsorships, and external communications.',
     members: [
       {
-        name: 'Nguyen Ha Gia Tam',
+        name: 'Tam Nguyen',
         role: 'Team Leader',
         avatar: '/organizer-team/external-affairs/tam.png',
       },
-      { name: 'Member 2' },
-      // Add more members
+      {
+        name: 'An Nguyen',
+        role: 'Member',
+        avatar: '/organizer-team/external-affairs/an-nguyen.png',
+      },
+      {
+        name: 'Duyen Duong',
+        role: 'Member',
+        avatar: '/organizer-team/external-affairs/duyen-duong.png',
+      },
+      {
+        name: 'Man Thai',
+        role: 'Member',
+        avatar: '/organizer-team/external-affairs/man-thai.png',
+      },
+      {
+        name: 'Tam Dang',
+        role: 'Member',
+        avatar: '/organizer-team/external-affairs/tam-dang.png',
+      },
     ],
   },
   {
     name: 'Marcom',
-    description: 'Communication TBU',
+    description:
+      'Crafting brand messaging, social media content, and promotional campaigns.',
     members: [
       {
         name: 'Nhat Vo',
         role: 'Team leader',
         avatar: '/organizer-team/marcom/nhat.png',
       },
-      { name: 'Member 2' },
-      // Add more members
+      {
+        name: 'Long Tran',
+        role: 'Member',
+        avatar: '/organizer-team/marcom/long-tran.png',
+      },
+      {
+        name: 'Minh Dam',
+        role: 'Member',
+        avatar: '/organizer-team/marcom/minh-dam.png',
+      },
+      {
+        name: 'Duong Vu',
+        role: 'Member',
+        avatar: '/organizer-team/marcom/duong-vu.png',
+      },
     ],
   },
   {
     name: 'Internal Affairs',
     description: 'Coordinating team operations and internal communications.',
     members: [
-      { name: 'Kelvin Lam', role: 'Team Leader' },
       {
-        name: 'Minh Nhat',
-        role: 'Member',
-        avatar: '/organizer-team/internal-affairs/minh-nhat.png',
+        name: 'Tin Lam',
+        role: 'Team Leader',
+        avatar: '/organizer-team/internal-affairs/tin-lam.png',
       },
       {
-        name: 'Duy Khanh',
+        name: 'Nhat Nguyen',
         role: 'Member',
-        avatar: '/organizer-team/internal-affairs/duy-khanh.png',
+        avatar: '/organizer-team/internal-affairs/nhat-nguyen.png',
       },
-      // Add more members
+      {
+        name: 'Khanh Tran',
+        role: 'Member',
+        avatar: '/organizer-team/internal-affairs/khanh-tran.png',
+      },
+      {
+        name: 'Anh Nguyen',
+        role: 'Member',
+        avatar: '/organizer-team/internal-affairs/anh-nguyen.png',
+      },
+      {
+        name: 'Phuong Tran',
+        role: 'Member',
+        avatar: '/organizer-team/internal-affairs/phuong-tran.png',
+      },
     ],
   },
   {
@@ -90,21 +158,25 @@ export const teams: Team[] = [
     description: 'Managing venues, equipment, and operational logistics.',
     members: [
       {
-        name: 'Thien Kim',
+        name: 'Kim Pham',
         role: 'Team Leader',
         avatar: '/organizer-team/logistic/kim.png',
       },
       {
-        name: 'Mai Kim',
+        name: 'Kim Huynh',
         role: 'Member',
-        avatar: '/organizer-team/logistic/mai-kim.png',
+        avatar: '/organizer-team/logistic/kim-huynh.png',
       },
       {
-        name: 'Bao Ngoc',
+        name: 'Ngoc Tran',
         role: 'Member',
-        avatar: '/organizer-team/logistic/ngoc.png',
+        avatar: '/organizer-team/logistic/ngoc-tran.png',
       },
-      // Add more members
+      {
+        name: 'Khoa Nguyen',
+        role: 'Member',
+        avatar: '/organizer-team/logistic/khoa-nguyen.png',
+      },
     ],
   },
   {

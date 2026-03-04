@@ -15,27 +15,50 @@ import Image from 'next/image';
 import Link from 'next/link';
 import NavbarSeparator from './navbar-separator';
 
-const navItems = [
-  { href: '#handbook', label: 'See Handbook' },
-  { href: '#contact', label: 'Contact Us' },
-];
-
-export default function Navbar() {
+const Navbar = () => {
   const DesktopActions = () => (
     <div className="hidden items-center gap-2 md:flex">
-      {navItems.map((item) => (
-        <Button
-          key={item.href}
-          variant="ghost"
-          className="hover:bg-transparent hover:text-foreground/50"
-          asChild
+      <Button
+        asChild
+        className="hover:bg-transparent hover:text-foreground/50"
+        variant="ghost"
+      >
+        <Link
+          href="https://www.canva.com/design/DAG_HV24rBs/QdeItbhyKHSFwDW5jLT-FA/view?utlId=hed84b4065d"
+          target="_blank"
+          rel="noopener noreferrer"
+          prefetch={false}
         >
-          <Link href={item.href}>{item.label}</Link>
-        </Button>
-      ))}
+          See Handbook
+        </Link>
+      </Button>
+
+      <Button
+        className="hover:bg-transparent hover:text-foreground/50"
+        variant="ghost"
+      >
+        <Link
+          href="#contact"
+          onClick={(e) => {
+            e.preventDefault();
+            document
+              .querySelector('#contact')
+              ?.scrollIntoView({ behavior: 'smooth' });
+          }}
+        >
+          Contact Us
+        </Link>
+      </Button>
 
       <Button asChild className="btn-primary">
-        <Link href="#register">Register Now</Link>
+        <Link
+          href="https://forms.office.com/r/GdkwnUbty6?origin=lprLink"
+          target="_blank"
+          rel="noopener noreferrer"
+          prefetch={false}
+        >
+          Register Now
+        </Link>
       </Button>
     </div>
   );
@@ -43,8 +66,16 @@ export default function Navbar() {
   const MobileActions = () => (
     <div className="flex items-center gap-2 md:hidden">
       <Button asChild className="btn-primary">
-        <Link href="#register">Register Now</Link>
+        <Link
+          href="https://forms.office.com/r/GdkwnUbty6?origin=lprLink"
+          target="_blank"
+          rel="noopener noreferrer"
+          prefetch={false}
+        >
+          Register Now
+        </Link>
       </Button>
+
       <Sheet>
         <SheetTrigger className="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-background/80 text-foreground shadow-sm transition hover:bg-foreground/5 active:scale-95">
           <MenuIcon className="h-5 w-5" />
@@ -62,20 +93,46 @@ export default function Navbar() {
               <span className="sr-only">Close navigation</span>
             </SheetClose>
           </SheetHeader>
+
           <div className="flex flex-1 flex-col gap-3 px-6 pt-3 pb-8">
-            {navItems.map((item) => (
-              <SheetClose key={item.href} asChild>
-                <Button
-                  variant="ghost"
-                  className={
-                    'justify-start font-bold text-base hover:bg-foreground/5'
-                  }
-                  asChild
+            <SheetClose asChild>
+              <Button
+                variant="ghost"
+                className="justify-start font-bold text-base hover:bg-foreground/5"
+                asChild
+              >
+                <Link href="#handbook">See Handbook</Link>
+              </Button>
+            </SheetClose>
+
+            <SheetClose asChild>
+              <Button
+                variant="ghost"
+                className="justify-start font-bold text-base hover:bg-foreground/5"
+                asChild
+              >
+                <Link
+                  href="#contact"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document
+                      .querySelector('#contact')
+                      ?.scrollIntoView({ behavior: 'smooth' });
+                  }}
                 >
-                  <Link href={item.href}>{item.label}</Link>
-                </Button>
-              </SheetClose>
-            ))}
+                  Contact Us
+                </Link>
+              </Button>
+            </SheetClose>
+
+            <SheetClose asChild>
+              <Button
+                className="btn-primary justify-start font-bold text-base"
+                asChild
+              >
+                <Link href="#register">Register Now</Link>
+              </Button>
+            </SheetClose>
           </div>
         </SheetContent>
       </Sheet>
@@ -85,7 +142,18 @@ export default function Navbar() {
   return (
     <SharedNavbar
       customLogoLink={
-        <Link href="/" className="flex flex-none items-center gap-2">
+        <Link
+          href="/"
+          scroll={false}
+          onClick={(e) => {
+            e.preventDefault();
+            window.scrollTo({
+              top: 0,
+              behavior: 'smooth',
+            });
+          }}
+          className="flex flex-none items-center gap-2"
+        >
           <Image
             src="/monkey-mascot.png"
             className="h-14 w-auto md:h-16 lg:h-20"
@@ -104,4 +172,6 @@ export default function Navbar() {
       }
     />
   );
-}
+};
+
+export default Navbar;

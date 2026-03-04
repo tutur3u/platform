@@ -5,9 +5,11 @@ const eventData = {
   '@type': ['Event', 'Hackathon'],
   name: 'Neo League 2026 - Innovation Humanity Challenge',
   alternateName: [
+    'Neo League',
+    'Neo League 2026',
+    'RMIT NEO League',
     'RMIT IoT Competition 2026',
     'NEO League Season 2',
-    'RMIT NEO League',
   ],
   description:
     'RMIT NEO League Season 2 is the premier IoT competition for university students in Vietnam. Hosted by RMIT NEO Culture Technology Club, teams engineer integrated IoT and hardware solutions addressing UN Sustainable Development Goals through prototyping, sensor integration, and smart technologies.',
@@ -96,6 +98,34 @@ const orgData = {
   ],
 };
 
+const websiteData = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'Neo League',
+  alternateName: ['RMIT NEO League', 'Neo League 2026'],
+  url: BASE_URL,
+  description:
+    "Neo League is Vietnam's premier student IoT competition hosted by RMIT NEO Culture Technology Club. University students engineer integrated hardware and IoT solutions addressing UN Sustainable Development Goals.",
+  publisher: {
+    '@type': 'Organization',
+    name: 'RMIT NEO Culture Technology Club',
+    url: 'https://rmitnct.club',
+  },
+};
+
+const breadcrumbData = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    {
+      '@type': 'ListItem',
+      position: 1,
+      name: 'Neo League 2026',
+      item: BASE_URL,
+    },
+  ],
+};
+
 export default function JsonLd() {
   return (
     <head>
@@ -104,6 +134,12 @@ export default function JsonLd() {
       </script>
       <script type="application/ld+json" suppressHydrationWarning>
         {JSON.stringify(orgData)}
+      </script>
+      <script type="application/ld+json" suppressHydrationWarning>
+        {JSON.stringify(websiteData)}
+      </script>
+      <script type="application/ld+json" suppressHydrationWarning>
+        {JSON.stringify(breadcrumbData)}
       </script>
     </head>
   );

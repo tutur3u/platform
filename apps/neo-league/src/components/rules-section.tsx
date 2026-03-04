@@ -3,11 +3,14 @@ import {
   CheckCircle2,
   Component,
   Cpu,
+  ExternalLink,
+  FileText,
   Gavel,
   Trophy,
   UserCheck,
   Users,
 } from '@ncthub/ui/icons';
+import Link from 'next/link';
 
 export default function RulesSection() {
   return (
@@ -137,6 +140,35 @@ export default function RulesSection() {
               </ul>
             </div>
           </div>
+        </div>
+
+        {/* Full Regulations CTA */}
+        <div className="mt-12 flex justify-center">
+          <Link
+            href="https://drive.google.com/file/d/1_5nPwmZz8aykH46vnTYjRGQDm7BBIRKi/view?usp=sharing"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group glass-card card-hover relative w-full max-w-xl overflow-hidden rounded-3xl p-4 md:p-6"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="flex h-10 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-teal shadow-brand-teal/20 shadow-lg">
+                  <FileText className="h-6 w-6 text-white" />
+                </div>
+
+                <div>
+                  <p className="font-black text-brand-teal text-lg uppercase tracking-wide">
+                    Full Rules & Regulations
+                  </p>
+                  <p className="mt-1 text-muted-foreground text-sm">
+                    Read the complete competition guidelines.
+                  </p>
+                </div>
+              </div>
+
+              <ExternalLink className="h-5 w-5 shrink-0 text-brand-teal opacity-60 transition group-hover:opacity-100" />
+            </div>
+          </Link>
         </div>
       </div>
     </section>
