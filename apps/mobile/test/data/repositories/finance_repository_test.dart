@@ -309,6 +309,63 @@ void main() {
       },
     );
 
+    test(
+      'updateTransfer sends transfer payload and refetches transaction',
+      () async {
+        Map<String, dynamic>? sentBody;
+
+        when(() => apiClient.putJson(any(), any())).thenAnswer((
+          invocation,
+        ) async {
+          sentBody = invocation.positionalArguments[1] as Map<String, dynamic>;
+          return {'message': 'success'};
+        });
+
+        when(
+          () => apiClient.getJson('/api/workspaces/ws_1/transactions/tx_1'),
+        ).thenAnswer(
+          (_) async => {
+            'id': 'tx_1',
+            'amount': -50,
+            'description': 'Transfer edit',
+            'wallet_id': 'wallet_1',
+          },
+        );
+
+        final transaction = await repository.updateTransfer(
+          wsId: 'ws_1',
+          originTransactionId: 'tx_1',
+          destinationTransactionId: 'tx_2',
+          originWalletId: 'wallet_1',
+          destinationWalletId: 'wallet_2',
+          amount: 50,
+          destinationAmount: 100,
+          description: 'Transfer edit',
+          takenAt: DateTime.utc(2026, 1, 1, 10, 30),
+          reportOptIn: true,
+          refreshedTransactionId: 'tx_1',
+        );
+
+        expect(sentBody, isNotNull);
+        expect(sentBody!['origin_transaction_id'], 'tx_1');
+        expect(sentBody!['destination_transaction_id'], 'tx_2');
+        expect(sentBody!['origin_wallet_id'], 'wallet_1');
+        expect(sentBody!['destination_wallet_id'], 'wallet_2');
+        expect(sentBody!['amount'], 50);
+        expect(sentBody!['destination_amount'], 100);
+        expect(sentBody!['report_opt_in'], true);
+
+        expect(transaction.id, 'tx_1');
+
+        verify(
+          () => apiClient.putJson('/api/workspaces/ws_1/transfers', any()),
+        ).called(1);
+        verify(
+          () => apiClient.getJson('/api/workspaces/ws_1/transactions/tx_1'),
+        ).called(1);
+      },
+    );
+
     test('deleteTransaction calls workspace transaction endpoint', () async {
       when(
         () => apiClient.deleteJson('/api/workspaces/ws_1/transactions/tx_1'),

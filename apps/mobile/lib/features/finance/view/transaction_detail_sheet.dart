@@ -6,17 +6,23 @@ import 'package:intl/intl.dart';
 import 'package:intl/number_symbols.dart';
 import 'package:mobile/core/icons/platform_icon.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/utils/currency_conversion.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/data/models/finance/category.dart';
+import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/widgets/wallet_visual_avatar.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
+part 'transaction_detail_sheet_amount_parsing.dart';
 part 'transaction_detail_sheet_edit_dialog.dart';
+part 'transaction_detail_sheet_edit_dialog_logic.dart';
+part 'transaction_detail_sheet_edit_dialog_widgets.dart';
 
 typedef TransactionSaveHandler =
     Future<Transaction> Function({
@@ -63,6 +69,8 @@ Future<bool> showTransactionDetailSheet(
   required FinanceRepository repository,
   required TransactionSaveHandler onSave,
   required Future<void> Function(String transactionId) onDelete,
+  String? workspaceCurrency,
+  List<ExchangeRate>? exchangeRates,
 }) async {
   final result = await showAdaptiveSheet<bool>(
     context: context,
@@ -72,6 +80,8 @@ Future<bool> showTransactionDetailSheet(
       repository: repository,
       onSave: onSave,
       onDelete: onDelete,
+      workspaceCurrency: workspaceCurrency,
+      exchangeRates: exchangeRates,
     ),
   );
 
@@ -83,6 +93,7 @@ Future<bool> showCreateTransactionSheet(
   required String wsId,
   required FinanceRepository repository,
   required TransactionCreateHandler onCreate,
+  List<ExchangeRate>? exchangeRates,
 }) async {
   final result = await showAdaptiveSheet<bool>(
     context: context,
@@ -90,6 +101,7 @@ Future<bool> showCreateTransactionSheet(
       wsId: wsId,
       repository: repository,
       onCreate: onCreate,
+      exchangeRates: exchangeRates,
     ),
   );
 
@@ -103,6 +115,8 @@ class _TransactionDetailSheet extends StatefulWidget {
     required this.repository,
     required this.onSave,
     required this.onDelete,
+    this.workspaceCurrency,
+    this.exchangeRates,
   });
 
   final String wsId;
@@ -110,6 +124,8 @@ class _TransactionDetailSheet extends StatefulWidget {
   final FinanceRepository repository;
   final TransactionSaveHandler onSave;
   final Future<void> Function(String transactionId) onDelete;
+  final String? workspaceCurrency;
+  final List<ExchangeRate>? exchangeRates;
 
   @override
   State<_TransactionDetailSheet> createState() =>
@@ -126,6 +142,17 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     final amount = _transaction.amount ?? 0;
     final isExpense = amount < 0;
     final currency = _transaction.walletCurrency ?? 'USD';
+    final wsCurrency = widget.workspaceCurrency ?? 'USD';
+    final exchangeRates = widget.exchangeRates ?? const [];
+    final convertedAmount = convertCurrency(
+      amount,
+      currency,
+      wsCurrency,
+      exchangeRates,
+    );
+    final showConvertedAmount =
+        convertedAmount != null &&
+        currency.toUpperCase() != wsCurrency.toUpperCase();
     final date = _transaction.takenAt ?? _transaction.createdAt;
     final dateText = date != null
         ? DateFormat.yMMMd().add_jm().format(date.toLocal())
@@ -186,12 +213,31 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
             const shad.Gap(20),
             _DetailRow(
               label: l10n.financeAmount,
-              value:
-                  '${isExpense ? '' : '+'}${formatCurrency(amount, currency)}',
-              valueColor: isExpense
-                  ? theme.colorScheme.destructive
-                  : theme.colorScheme.primary,
-              valueBold: true,
+              valueChild: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${isExpense ? '' : '+'}'
+                    '${formatCurrency(amount, currency)}',
+                    style: theme.typography.base.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: isExpense
+                          ? theme.colorScheme.destructive
+                          : theme.colorScheme.primary,
+                    ),
+                  ),
+                  if (showConvertedAmount) ...[
+                    const shad.Gap(4),
+                    Text(
+                      '≈ ${convertedAmount >= 0 ? '+' : ''}'
+                      '${formatCurrency(convertedAmount, wsCurrency)}',
+                      style: theme.typography.small.copyWith(
+                        color: theme.colorScheme.mutedForeground,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
             const shad.Gap(12),
             _DetailRow(
@@ -290,6 +336,8 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
   }
 
   Future<void> _showEditDialog() async {
+    final rootNav = Navigator.of(context, rootNavigator: true);
+    final toastContext = rootNav.context;
     final updated = await showAdaptiveSheet<Transaction>(
       context: context,
       builder: (_) => _TransactionFormDialog(
@@ -297,18 +345,21 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
         transaction: _transaction,
         repository: widget.repository,
         onSave: widget.onSave,
+        exchangeRates: widget.exchangeRates,
       ),
     );
 
     if (updated == null || !mounted) return;
 
     setState(() => _transaction = updated);
-    shad.showToast(
-      context: context,
-      builder: (ctx, overlay) => shad.Alert(
-        content: Text(ctx.l10n.financeTransactionUpdated),
-      ),
-    );
+    if (toastContext.mounted) {
+      shad.showToast(
+        context: toastContext,
+        builder: (ctx, overlay) => shad.Alert(
+          content: Text(ctx.l10n.financeTransactionUpdated),
+        ),
+      );
+    }
     Navigator.of(context).pop(true);
   }
 }
@@ -343,8 +394,6 @@ class _DetailRow extends StatelessWidget {
     required this.label,
     this.value,
     this.valueChild,
-    this.valueBold = false,
-    this.valueColor,
   }) : assert(
          (value == null) ^ (valueChild == null),
          'Either value or valueChild must be provided, but not both.',
@@ -353,8 +402,6 @@ class _DetailRow extends StatelessWidget {
   final String label;
   final String? value;
   final Widget? valueChild;
-  final bool valueBold;
-  final Color? valueColor;
 
   @override
   Widget build(BuildContext context) {
@@ -379,10 +426,7 @@ class _DetailRow extends StatelessWidget {
               valueChild ??
               Text(
                 value!,
-                style: theme.typography.base.copyWith(
-                  fontWeight: valueBold ? FontWeight.w600 : FontWeight.w400,
-                  color: valueColor,
-                ),
+                style: theme.typography.base,
               ),
         ),
       ],

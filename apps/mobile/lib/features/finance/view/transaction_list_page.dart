@@ -6,7 +6,9 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart' as lucide;
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/utils/currency_conversion.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
+import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/cubit/transaction_list_cubit.dart';
@@ -27,11 +29,13 @@ class _DailyStats {
     required this.income,
     required this.expense,
     required this.count,
+    required this.hasConvertedAmounts,
   });
 
   final double income;
   final double expense;
   final int count;
+  final bool hasConvertedAmounts;
   double get netTotal => income + expense; // expense is negative
 }
 
@@ -52,6 +56,8 @@ class _DateGroup {
 List<_DateGroup> _groupByDate(
   List<Transaction> transactions,
   AppLocalizations l10n,
+  String workspaceCurrency,
+  List<ExchangeRate> exchangeRates,
 ) {
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
@@ -91,8 +97,27 @@ List<_DateGroup> _groupByDate(
     final txList = groups[key]!;
     double income = 0;
     double expense = 0;
+    var hasConvertedAmounts = false;
     for (final tx in txList) {
-      final amt = tx.amount ?? 0;
+      final amount = tx.amount ?? 0;
+      final walletCurrency = tx.walletCurrency ?? workspaceCurrency;
+      final isWorkspaceCurrency =
+          walletCurrency.toUpperCase() == workspaceCurrency.toUpperCase();
+      final converted = convertCurrency(
+        amount,
+        walletCurrency,
+        workspaceCurrency,
+        exchangeRates,
+      );
+
+      if (!isWorkspaceCurrency && converted == null) {
+        hasConvertedAmounts = true;
+      }
+
+      final amt = isWorkspaceCurrency ? amount : (converted ?? amount);
+      if (!isWorkspaceCurrency) {
+        hasConvertedAmounts = true;
+      }
       if (amt >= 0) {
         income += amt;
       } else {
@@ -107,6 +132,7 @@ List<_DateGroup> _groupByDate(
         income: income,
         expense: expense,
         count: txList.length,
+        hasConvertedAmounts: hasConvertedAmounts,
       ),
     );
   }).toList();
@@ -282,11 +308,16 @@ class _TransactionListViewState extends State<_TransactionListView> {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
     final toastContext = Navigator.of(context, rootNavigator: true).context;
+    final exchangeRates = context
+        .read<TransactionListCubit>()
+        .state
+        .exchangeRates;
 
     final created = await openCreateTransactionSheet(
       context,
       wsId: wsId,
       repository: context.read<FinanceRepository>(),
+      exchangeRates: exchangeRates,
     );
 
     if (!mounted || !created) return;
@@ -383,7 +414,12 @@ class _TransactionListViewState extends State<_TransactionListView> {
                     return _EmptyView(hasSearch: state.search.isNotEmpty);
                   }
 
-                  final groups = _groupByDate(state.transactions, l10n);
+                  final groups = _groupByDate(
+                    state.transactions,
+                    l10n,
+                    state.workspaceCurrency,
+                    state.exchangeRates,
+                  );
                   final repository = context.read<FinanceRepository>();
                   return RefreshIndicator(
                     onRefresh: _onRefresh,
@@ -407,6 +443,8 @@ class _TransactionListViewState extends State<_TransactionListView> {
                           onToggle: () => _toggleDay(group.key),
                           onRefresh: _onRefresh,
                           repository: repository,
+                          currency: state.workspaceCurrency,
+                          exchangeRates: state.exchangeRates,
                         );
                       },
                     ),
@@ -432,6 +470,8 @@ class _DayGroup extends StatelessWidget {
     required this.onToggle,
     required this.onRefresh,
     required this.repository,
+    required this.currency,
+    required this.exchangeRates,
   });
 
   final _DateGroup group;
@@ -439,6 +479,8 @@ class _DayGroup extends StatelessWidget {
   final VoidCallback onToggle;
   final Future<void> Function() onRefresh;
   final FinanceRepository repository;
+  final String currency;
+  final List<ExchangeRate> exchangeRates;
 
   @override
   Widget build(BuildContext context) {
@@ -446,24 +488,16 @@ class _DayGroup extends StatelessWidget {
     final l10n = context.l10n;
     final colorScheme = theme.colorScheme;
     final stats = group.stats;
-    final currency =
-        group.transactions
-            .firstWhere(
-              (t) => t.walletCurrency != null,
-              orElse: () => group.transactions.first,
-            )
-            .walletCurrency ??
-        'USD';
-
+    final approximatePrefix = stats.hasConvertedAmounts ? '≈ ' : '';
     final incomeText = stats.income > 0
-        ? '+${formatCurrency(stats.income, currency)}'
+        ? '$approximatePrefix+${formatCurrency(stats.income, currency)}'
         : null;
     final expenseText = stats.expense < 0
-        ? formatCurrency(stats.expense, currency)
+        ? '$approximatePrefix${formatCurrency(stats.expense, currency)}'
         : null;
     final netText = stats.netTotal >= 0
-        ? '+${formatCurrency(stats.netTotal, currency)}'
-        : formatCurrency(stats.netTotal, currency);
+        ? '$approximatePrefix+${formatCurrency(stats.netTotal, currency)}'
+        : '$approximatePrefix${formatCurrency(stats.netTotal, currency)}';
     final netColor = stats.netTotal >= 0
         ? colorScheme.primary
         : colorScheme.destructive;
@@ -622,6 +656,8 @@ class _DayGroup extends StatelessWidget {
                               tx: group.transactions[i],
                               onRefresh: onRefresh,
                               repository: repository,
+                              workspaceCurrency: currency,
+                              exchangeRates: exchangeRates,
                             ),
                             if (i < group.transactions.length - 1)
                               const SizedBox(height: 8),
@@ -648,11 +684,15 @@ class _TransactionTile extends StatelessWidget {
     required this.tx,
     required this.onRefresh,
     required this.repository,
+    required this.workspaceCurrency,
+    required this.exchangeRates,
   });
 
   final Transaction tx;
   final Future<void> Function() onRefresh;
   final FinanceRepository repository;
+  final String workspaceCurrency;
+  final List<ExchangeRate> exchangeRates;
 
   /// Parse a hex color string (e.g. '#ff0000' or 'ff0000') to a Flutter Color.
   Color? _parseHex(String? hex) {
@@ -672,7 +712,16 @@ class _TransactionTile extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final amount = tx.amount ?? 0;
     final isExpense = amount < 0;
-    final currency = tx.walletCurrency ?? 'USD';
+    final currency = tx.walletCurrency ?? workspaceCurrency;
+    final convertedAmount = convertCurrency(
+      amount,
+      currency,
+      workspaceCurrency,
+      exchangeRates,
+    );
+    final showConvertedAmount =
+        convertedAmount != null &&
+        currency.toUpperCase() != workspaceCurrency.toUpperCase();
 
     // Title: description wins, fallback to category name
     final hasDescription = tx.description?.isNotEmpty ?? false;
@@ -687,6 +736,11 @@ class _TransactionTile extends StatelessWidget {
     final amountText = isExpense
         ? formatCurrency(amount, currency)
         : '+${formatCurrency(amount, currency)}';
+    final convertedAmountText = showConvertedAmount
+        ? (convertedAmount >= 0
+              ? '≈ +${formatCurrency(convertedAmount, workspaceCurrency)}'
+              : '≈ ${formatCurrency(convertedAmount, workspaceCurrency)}')
+        : null;
 
     final categoryIcon = resolveTransactionCategoryIcon(tx);
 
@@ -708,6 +762,8 @@ class _TransactionTile extends StatelessWidget {
             wsId: wsId,
             transaction: tx,
             repository: repository,
+            workspaceCurrency: workspaceCurrency,
+            exchangeRates: exchangeRates,
           );
 
           if (!context.mounted || !changed) return;
@@ -846,6 +902,18 @@ class _TransactionTile extends StatelessWidget {
                         padding: const EdgeInsets.only(top: 2),
                         child: Text(
                           context.l10n.financeTransfer,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.xSmall.copyWith(
+                            color: colorScheme.mutedForeground,
+                          ),
+                        ),
+                      ),
+                    if (convertedAmountText != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          convertedAmountText,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: theme.typography.xSmall.copyWith(

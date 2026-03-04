@@ -1,5 +1,6 @@
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/finance/category.dart';
+import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -18,6 +19,33 @@ class FinanceRepository {
 
     return response
         .map((e) => Wallet.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<String> getWorkspaceDefaultCurrency(String wsId) async {
+    try {
+      final response = await _api.getJson(
+        FinanceEndpoints.workspaceConfig(wsId, 'DEFAULT_CURRENCY'),
+      );
+      final value = response['value'] as String?;
+      if (value == null || value.trim().isEmpty) return 'USD';
+      return value.trim().toUpperCase();
+    } on ApiException catch (error) {
+      if (error.statusCode == 404) {
+        return 'USD';
+      }
+      rethrow;
+    }
+  }
+
+  Future<List<ExchangeRate>> getExchangeRates() async {
+    final response = await _api.getJson(FinanceEndpoints.exchangeRates);
+    final data = response['data'];
+    if (data is! List<dynamic>) return const [];
+
+    return data
+        .whereType<Map<String, dynamic>>()
+        .map(ExchangeRate.fromJson)
         .toList();
   }
 
@@ -293,6 +321,81 @@ class FinanceRepository {
     }
 
     await _api.postJson(FinanceEndpoints.transactions(wsId), body);
+  }
+
+  Future<void> createTransfer({
+    required String wsId,
+    required String originWalletId,
+    required String destinationWalletId,
+    required double amount,
+    DateTime? takenAt,
+    String? description,
+    double? destinationAmount,
+    bool? reportOptIn,
+  }) async {
+    final body = <String, dynamic>{
+      'origin_wallet_id': originWalletId,
+      'destination_wallet_id': destinationWalletId,
+      'amount': amount,
+      'taken_at': (takenAt ?? DateTime.now()).toUtc().toIso8601String(),
+    };
+
+    if (description != null) {
+      body['description'] = description;
+    }
+
+    if (destinationAmount != null) {
+      body['destination_amount'] = destinationAmount;
+    }
+
+    if (reportOptIn != null) {
+      body['report_opt_in'] = reportOptIn;
+    }
+
+    await _api.postJson(FinanceEndpoints.transfers(wsId), body);
+  }
+
+  Future<Transaction> updateTransfer({
+    required String wsId,
+    required String originTransactionId,
+    required String destinationTransactionId,
+    required String originWalletId,
+    required String destinationWalletId,
+    required double amount,
+    required DateTime takenAt,
+    required String refreshedTransactionId,
+    String? description,
+    double? destinationAmount,
+    bool? reportOptIn,
+  }) async {
+    final body = <String, dynamic>{
+      'origin_transaction_id': originTransactionId,
+      'destination_transaction_id': destinationTransactionId,
+      'origin_wallet_id': originWalletId,
+      'destination_wallet_id': destinationWalletId,
+      'amount': amount,
+      'taken_at': takenAt.toUtc().toIso8601String(),
+    };
+
+    if (description != null) {
+      body['description'] = description;
+    }
+
+    if (destinationAmount != null) {
+      body['destination_amount'] = destinationAmount;
+    }
+
+    if (reportOptIn != null) {
+      body['report_opt_in'] = reportOptIn;
+    }
+
+    await _api.putJson(FinanceEndpoints.transfers(wsId), body);
+
+    final refreshed = await _api.getJson(
+      FinanceEndpoints.transaction(wsId, refreshedTransactionId),
+    );
+
+    return Transaction.fromJson(refreshed);
   }
 
   Future<void> deleteTransaction({

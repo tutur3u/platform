@@ -6,6 +6,8 @@ class TransactionListState extends Equatable {
   const TransactionListState({
     this.status = TransactionListStatus.initial,
     this.transactions = const [],
+    this.workspaceCurrency = 'USD',
+    this.exchangeRates = const [],
     this.hasMore = true,
     this.cursor,
     this.search = '',
@@ -14,6 +16,8 @@ class TransactionListState extends Equatable {
 
   final TransactionListStatus status;
   final List<Transaction> transactions;
+  final String workspaceCurrency;
+  final List<ExchangeRate> exchangeRates;
   final bool hasMore;
   final String? cursor;
   final String search;
@@ -26,6 +30,8 @@ class TransactionListState extends Equatable {
   TransactionListState copyWith({
     TransactionListStatus? status,
     List<Transaction>? transactions,
+    String? workspaceCurrency,
+    List<ExchangeRate>? exchangeRates,
     bool? hasMore,
     String? cursor,
     String? search,
@@ -35,6 +41,8 @@ class TransactionListState extends Equatable {
   }) => TransactionListState(
     status: status ?? this.status,
     transactions: transactions ?? this.transactions,
+    workspaceCurrency: workspaceCurrency ?? this.workspaceCurrency,
+    exchangeRates: exchangeRates ?? this.exchangeRates,
     hasMore: hasMore ?? this.hasMore,
     cursor: clearCursor ? null : (cursor ?? this.cursor),
     search: search ?? this.search,
@@ -45,6 +53,8 @@ class TransactionListState extends Equatable {
   List<Object?> get props => [
     status,
     transactions,
+    workspaceCurrency,
+    exchangeRates,
     hasMore,
     cursor,
     search,

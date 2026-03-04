@@ -501,10 +501,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeWallet => 'Wallet';
 
   @override
+  String get financeDestinationWallet => 'Destination wallet';
+
+  @override
+  String get financeSelectDestinationWallet => 'Select destination wallet';
+
+  @override
+  String get financeTransferMode => 'Transfer mode';
+
+  @override
+  String get financeDestinationAmountOptional => 'Destination amount';
+
+  @override
   String get financeSelectWalletAndCategoryFirst => 'Choose a wallet and category first';
 
   @override
+  String get financeSelectWalletAndDestinationFirst => 'Choose source and destination wallets first';
+
+  @override
+  String get financeWalletsMustBeDifferent => 'Source and destination wallets must be different';
+
+  @override
   String get financeInvalidAmount => 'Enter a valid amount';
+
+  @override
+  String get financeInvalidDestinationAmount => 'Enter a valid destination amount';
 
   @override
   String get financeReportOptIn => 'Include in reports';
@@ -577,6 +598,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeTransactionCountShort => 'tx';
+
+  @override
+  String get financeExchangeRate => 'Exchange rate';
+
+  @override
+  String get financeDestinationAmountAuto => 'Auto';
+
+  @override
+  String get financeDestinationAmountOverride => 'Manual';
+
+  @override
+  String get financeDestinationAmountAutoHint => 'Auto-filled from live exchange rate';
+
+  @override
+  String get financeDestinationAmountOverrideHint => 'Using custom amount — tap to switch to auto';
+
+  @override
+  String get financeInvertRate => 'Invert rate';
 
   @override
   String get timerTitle => 'Time tracker';

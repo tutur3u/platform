@@ -1045,17 +1045,59 @@ abstract class AppLocalizations {
   /// **'Wallet'**
   String get financeWallet;
 
+  /// No description provided for @financeDestinationWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Destination wallet'**
+  String get financeDestinationWallet;
+
+  /// No description provided for @financeSelectDestinationWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Select destination wallet'**
+  String get financeSelectDestinationWallet;
+
+  /// No description provided for @financeTransferMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer mode'**
+  String get financeTransferMode;
+
+  /// No description provided for @financeDestinationAmountOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Destination amount'**
+  String get financeDestinationAmountOptional;
+
   /// No description provided for @financeSelectWalletAndCategoryFirst.
   ///
   /// In en, this message translates to:
   /// **'Choose a wallet and category first'**
   String get financeSelectWalletAndCategoryFirst;
 
+  /// No description provided for @financeSelectWalletAndDestinationFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose source and destination wallets first'**
+  String get financeSelectWalletAndDestinationFirst;
+
+  /// No description provided for @financeWalletsMustBeDifferent.
+  ///
+  /// In en, this message translates to:
+  /// **'Source and destination wallets must be different'**
+  String get financeWalletsMustBeDifferent;
+
   /// No description provided for @financeInvalidAmount.
   ///
   /// In en, this message translates to:
   /// **'Enter a valid amount'**
   String get financeInvalidAmount;
+
+  /// No description provided for @financeInvalidDestinationAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid destination amount'**
+  String get financeInvalidDestinationAmount;
 
   /// No description provided for @financeReportOptIn.
   ///
@@ -1200,6 +1242,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'tx'**
   String get financeTransactionCountShort;
+
+  /// No description provided for @financeExchangeRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Exchange rate'**
+  String get financeExchangeRate;
+
+  /// No description provided for @financeDestinationAmountAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get financeDestinationAmountAuto;
+
+  /// No description provided for @financeDestinationAmountOverride.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual'**
+  String get financeDestinationAmountOverride;
+
+  /// No description provided for @financeDestinationAmountAutoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-filled from live exchange rate'**
+  String get financeDestinationAmountAutoHint;
+
+  /// No description provided for @financeDestinationAmountOverrideHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Using custom amount — tap to switch to auto'**
+  String get financeDestinationAmountOverrideHint;
+
+  /// No description provided for @financeInvertRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Invert rate'**
+  String get financeInvertRate;
 
   /// No description provided for @timerTitle.
   ///

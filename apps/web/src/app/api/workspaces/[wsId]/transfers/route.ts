@@ -1,3 +1,3 @@
-import { POST } from '@tuturuuu/apis/finance/transfers/route';
+import { POST, PUT } from '@tuturuuu/apis/finance/transfers/route';
 
-export { POST };
+export { POST, PUT };

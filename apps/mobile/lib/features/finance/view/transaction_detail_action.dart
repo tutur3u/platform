@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/view/transaction_detail_sheet.dart';
@@ -8,12 +9,16 @@ Future<bool> openTransactionDetailSheet(
   required String wsId,
   required Transaction transaction,
   required FinanceRepository repository,
+  String? workspaceCurrency,
+  List<ExchangeRate>? exchangeRates,
 }) {
   return showTransactionDetailSheet(
     context,
     wsId: wsId,
     transaction: transaction,
     repository: repository,
+    workspaceCurrency: workspaceCurrency,
+    exchangeRates: exchangeRates,
     onSave:
         ({
           required transactionId,
@@ -54,11 +59,13 @@ Future<bool> openCreateTransactionSheet(
   BuildContext context, {
   required String wsId,
   required FinanceRepository repository,
+  List<ExchangeRate>? exchangeRates,
 }) {
   return showCreateTransactionSheet(
     context,
     wsId: wsId,
     repository: repository,
+    exchangeRates: exchangeRates,
     onCreate:
         ({
           required amount,
