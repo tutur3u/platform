@@ -111,10 +111,10 @@ List<_DateGroup> _groupByDate(
       );
 
       if (!isWorkspaceCurrency && converted == null) {
-        continue;
+        hasConvertedAmounts = true;
       }
 
-      final amt = isWorkspaceCurrency ? amount : converted!;
+      final amt = isWorkspaceCurrency ? amount : (converted ?? amount);
       if (!isWorkspaceCurrency) {
         hasConvertedAmounts = true;
       }

@@ -30,7 +30,7 @@ interface TransferFieldsProps {
 
 /**
  * Renders cross-currency transfer fields (destination amount + exchange rate).
- * Only visible when a destination wallet is selected.
+ * Only visible when a destination wallet is selected and currencies differ.
  *
  * When `isDestinationOverridden` is false and a suggested exchange rate is
  * available, the destination amount field is disabled and auto-filled by the
@@ -123,20 +123,20 @@ export function TransferFields({
                   disabled={loading || !hasFormPermission}
                   className={cn(
                     'flex items-center gap-1 rounded-md px-1.5 py-0.5 font-medium text-xs transition-colors',
-                    isDestinationOverridden
-                      ? 'bg-dynamic-orange/10 text-dynamic-orange hover:bg-dynamic-orange/20'
-                      : 'bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
+                    isAutoMode
+                      ? 'bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
+                      : 'bg-dynamic-orange/10 text-dynamic-orange hover:bg-dynamic-orange/20'
                   )}
                 >
-                  {isDestinationOverridden ? (
-                    <>
-                      <Pencil className="h-3 w-3" />
-                      {t('transaction-data-table.destination_override')}
-                    </>
-                  ) : (
+                  {isAutoMode ? (
                     <>
                       <Sparkles className="h-3 w-3" />
                       {t('transaction-data-table.destination_auto')}
+                    </>
+                  ) : (
+                    <>
+                      <Pencil className="h-3 w-3" />
+                      {t('transaction-data-table.destination_override')}
                     </>
                   )}
                 </button>
@@ -153,9 +153,9 @@ export function TransferFields({
             </FormControl>
             {isCrossCurrency && (
               <FormDescription>
-                {isDestinationOverridden
-                  ? t('transaction-data-table.destination_override_hint')
-                  : t('transaction-data-table.destination_auto_hint')}
+                {isAutoMode
+                  ? t('transaction-data-table.destination_auto_hint')
+                  : t('transaction-data-table.destination_override_hint')}
               </FormDescription>
             )}
             <FormMessage />

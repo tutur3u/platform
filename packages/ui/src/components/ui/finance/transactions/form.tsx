@@ -106,7 +106,7 @@ export function TransactionForm({
         : undefined,
       category_id: data?.category_id || '',
       taken_at: data?.taken_at ? new Date(data.taken_at) : new Date(),
-      report_opt_in: data?.report_opt_in || true,
+      report_opt_in: data?.report_opt_in ?? true,
       tag_ids: [] as string[],
       is_transfer: !!data?.transfer,
       is_amount_confidential:
@@ -193,6 +193,37 @@ export function TransactionForm({
     },
   });
 
+  const updateTransferMutation = useMutation({
+    mutationFn: async (payload: {
+      origin_transaction_id: string;
+      destination_transaction_id: string;
+      origin_wallet_id: string;
+      destination_wallet_id: string;
+      amount: number;
+      destination_amount?: number;
+      description?: string;
+      taken_at: Date;
+      report_opt_in: boolean;
+      tag_ids?: string[];
+    }) => {
+      const body = await fetcher(`/api/workspaces/${wsId}/transfers`, {
+        method: 'PUT',
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!body || body.message !== 'success') {
+        throw new Error(
+          body?.message ||
+            t('transaction-data-table.error_creating_transaction')
+        );
+      }
+
+      return body;
+    },
+  });
+
   const createOrUpdateTransactionMutation = useMutation({
     mutationFn: async (payload: {
       id?: string;
@@ -213,38 +244,6 @@ export function TransactionForm({
           : `/api/workspaces/${wsId}/transactions`,
         {
           method: payload.id ? 'PUT' : 'POST',
-          cache: 'no-store',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        }
-      );
-
-      if (!body || body.message !== 'success') {
-        throw new Error(
-          body?.message ||
-            t('transaction-data-table.error_creating_transaction')
-        );
-      }
-
-      return body;
-    },
-  });
-
-  const updateTransactionMutation = useMutation({
-    mutationFn: async (payload: {
-      id: string;
-      description?: string;
-      amount: number;
-      wallet_id: string;
-      category_id?: string | null;
-      taken_at: Date;
-      report_opt_in: boolean;
-      tag_ids?: string[];
-    }) => {
-      const body = await fetcher(
-        `/api/workspaces/${wsId}/transactions/${payload.id}`,
-        {
-          method: 'PUT',
           cache: 'no-store',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -395,28 +394,18 @@ export function TransactionForm({
             ? data.transfer.linked_transaction_id
             : data.id;
 
-          await Promise.all([
-            updateTransactionMutation.mutateAsync({
-              id: originTransactionId,
-              amount: -Math.abs(formData.amount),
-              description: formData.description,
-              wallet_id: formData.origin_wallet_id,
-              category_id: null,
-              taken_at: formData.taken_at,
-              report_opt_in: formData.report_opt_in,
-              tag_ids: formData.tag_ids,
-            }),
-            updateTransactionMutation.mutateAsync({
-              id: destinationTransactionId,
-              amount: Math.abs(destinationAmount ?? formData.amount),
-              description: formData.description,
-              wallet_id: formData.destination_wallet_id!,
-              category_id: null,
-              taken_at: formData.taken_at,
-              report_opt_in: formData.report_opt_in,
-              tag_ids: formData.tag_ids,
-            }),
-          ]);
+          await updateTransferMutation.mutateAsync({
+            origin_transaction_id: originTransactionId,
+            destination_transaction_id: destinationTransactionId,
+            origin_wallet_id: formData.origin_wallet_id,
+            destination_wallet_id: formData.destination_wallet_id!,
+            amount: formData.amount,
+            destination_amount: destinationAmount,
+            description: formData.description,
+            taken_at: formData.taken_at,
+            report_opt_in: formData.report_opt_in,
+            tag_ids: formData.tag_ids,
+          });
 
           await refreshTransactions();
         } else {

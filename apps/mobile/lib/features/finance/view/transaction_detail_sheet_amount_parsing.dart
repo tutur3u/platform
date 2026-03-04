@@ -68,7 +68,15 @@ double? parseAmount(
   final value = double.tryParse(normalized);
   if (value == null) return null;
 
-  if (fractionDigitsFn(currencyCode) == 0 && value % 1 != 0) {
+  final allowedFractionDigits = fractionDigitsFn(currencyCode);
+  var factor = 1.0;
+  for (var i = 0; i < allowedFractionDigits; i++) {
+    factor *= 10;
+  }
+
+  final scaled = value * factor;
+  final roundedScaled = scaled.roundToDouble();
+  if ((scaled - roundedScaled).abs() > 1e-9) {
     return null;
   }
 

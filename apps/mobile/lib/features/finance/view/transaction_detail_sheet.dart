@@ -13,6 +13,7 @@ import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/widgets/wallet_visual_avatar.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
@@ -335,6 +336,8 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
   }
 
   Future<void> _showEditDialog() async {
+    final rootNav = Navigator.of(context, rootNavigator: true);
+    final toastContext = rootNav.context;
     final updated = await showAdaptiveSheet<Transaction>(
       context: context,
       builder: (_) => _TransactionFormDialog(
@@ -349,12 +352,14 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     if (updated == null || !mounted) return;
 
     setState(() => _transaction = updated);
-    shad.showToast(
-      context: context,
-      builder: (ctx, overlay) => shad.Alert(
-        content: Text(ctx.l10n.financeTransactionUpdated),
-      ),
-    );
+    if (toastContext.mounted) {
+      shad.showToast(
+        context: toastContext,
+        builder: (ctx, overlay) => shad.Alert(
+          content: Text(ctx.l10n.financeTransactionUpdated),
+        ),
+      );
+    }
     Navigator.of(context).pop(true);
   }
 }

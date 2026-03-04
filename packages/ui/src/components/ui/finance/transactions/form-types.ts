@@ -24,7 +24,7 @@ export type TagDraft = Pick<DbTag, 'name'> & Partial<Pick<DbTag, 'color'>>;
 
 export interface TransactionFormProps {
   wsId: string;
-  data?: Transaction;
+  data?: Partial<Transaction>;
   onFinish?: (data: TransactionFormValues) => void;
   canCreateTransactions?: boolean;
   canUpdateTransactions?: boolean;

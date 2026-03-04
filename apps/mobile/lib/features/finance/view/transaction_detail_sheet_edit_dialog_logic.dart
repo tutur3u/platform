@@ -89,12 +89,13 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
 
   Future<void> _handleSave() async {
     final l10n = context.l10n;
+    final rootCtx = Navigator.of(context, rootNavigator: true).context;
     _reconcileSelectedIds();
     final amount = _parseAmount(_amountController.text);
     if (_isTransfer) {
       if (_walletId == null || _destinationWalletId == null) {
         shad.showToast(
-          context: context,
+          context: rootCtx,
           builder: (ctx, overlay) => shad.Alert.destructive(
             content: Text(ctx.l10n.financeSelectWalletAndDestinationFirst),
           ),
@@ -104,7 +105,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
 
       if (_walletId == _destinationWalletId) {
         shad.showToast(
-          context: context,
+          context: rootCtx,
           builder: (ctx, overlay) => shad.Alert.destructive(
             content: Text(ctx.l10n.financeWalletsMustBeDifferent),
           ),
@@ -113,7 +114,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
       }
     } else if (_walletId == null || _categoryId == null) {
       shad.showToast(
-        context: context,
+        context: rootCtx,
         builder: (ctx, overlay) => shad.Alert.destructive(
           content: Text(ctx.l10n.financeSelectWalletAndCategoryFirst),
         ),
@@ -121,9 +122,9 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
       return;
     }
 
-    if (amount == null) {
+    if (amount == null || amount <= 0) {
       shad.showToast(
-        context: context,
+        context: rootCtx,
         builder: (ctx, overlay) => shad.Alert.destructive(
           content: Text(l10n.financeInvalidAmount),
         ),
@@ -141,9 +142,9 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
 
     if (_isTransfer &&
         destinationAmountText.isNotEmpty &&
-        destinationAmount == null) {
+        (destinationAmount == null || destinationAmount <= 0)) {
       shad.showToast(
-        context: context,
+        context: rootCtx,
         builder: (ctx, overlay) => shad.Alert.destructive(
           content: Text(ctx.l10n.financeInvalidDestinationAmount),
         ),
@@ -197,6 +198,53 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
         return;
       }
 
+      if (_isTransfer) {
+        final transfer = widget.transaction?.transfer;
+        if (transfer == null ||
+            _walletId == null ||
+            _destinationWalletId == null) {
+          throw const ApiException(
+            statusCode: 400,
+            message: 'Invalid transfer context',
+          );
+        }
+
+        final sourceAmount = transfer.isOrigin
+            ? amount.abs()
+            : (destinationAmount?.abs() ?? amount.abs());
+        final transferDestinationAmount = _isCrossCurrency
+            ? (transfer.isOrigin
+                  ? (destinationAmount?.abs() ?? amount.abs())
+                  : amount.abs())
+            : sourceAmount;
+
+        final updated = await widget.repository.updateTransfer(
+          wsId: widget.wsId,
+          originTransactionId: transfer.isOrigin
+              ? widget.transaction!.id
+              : transfer.linkedTransactionId,
+          destinationTransactionId: transfer.isOrigin
+              ? transfer.linkedTransactionId
+              : widget.transaction!.id,
+          originWalletId: transfer.isOrigin
+              ? _walletId!
+              : _destinationWalletId!,
+          destinationWalletId: transfer.isOrigin
+              ? _destinationWalletId!
+              : _walletId!,
+          amount: sourceAmount,
+          destinationAmount: transferDestinationAmount,
+          description: normalizedDescription,
+          takenAt: _takenAt,
+          reportOptIn: _reportOptIn,
+          refreshedTransactionId: widget.transaction!.id,
+        );
+
+        if (!mounted) return;
+        Navigator.of(context).pop(updated);
+        return;
+      }
+
       final updated = await widget.onSave!(
         transactionId: widget.transaction!.id,
         amount: signedAmount,
@@ -212,14 +260,30 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
 
       if (!mounted) return;
       Navigator.of(context).pop(updated);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      final message = e.message.trim();
+      if (rootCtx.mounted) {
+        shad.showToast(
+          context: rootCtx,
+          builder: (ctx, overlay) => shad.Alert.destructive(
+            content: Text(
+              message.isEmpty ? ctx.l10n.commonSomethingWentWrong : message,
+            ),
+          ),
+        );
+      }
+      setState(() => _isSaving = false);
     } on Exception {
       if (!mounted) return;
-      shad.showToast(
-        context: context,
-        builder: (ctx, overlay) => shad.Alert.destructive(
-          content: Text(ctx.l10n.commonSomethingWentWrong),
-        ),
-      );
+      if (rootCtx.mounted) {
+        shad.showToast(
+          context: rootCtx,
+          builder: (ctx, overlay) => shad.Alert.destructive(
+            content: Text(ctx.l10n.commonSomethingWentWrong),
+          ),
+        );
+      }
       setState(() => _isSaving = false);
     }
   }

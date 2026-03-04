@@ -355,6 +355,49 @@ class FinanceRepository {
     await _api.postJson(FinanceEndpoints.transfers(wsId), body);
   }
 
+  Future<Transaction> updateTransfer({
+    required String wsId,
+    required String originTransactionId,
+    required String destinationTransactionId,
+    required String originWalletId,
+    required String destinationWalletId,
+    required double amount,
+    required DateTime takenAt,
+    required String refreshedTransactionId,
+    String? description,
+    double? destinationAmount,
+    bool? reportOptIn,
+  }) async {
+    final body = <String, dynamic>{
+      'origin_transaction_id': originTransactionId,
+      'destination_transaction_id': destinationTransactionId,
+      'origin_wallet_id': originWalletId,
+      'destination_wallet_id': destinationWalletId,
+      'amount': amount,
+      'taken_at': takenAt.toUtc().toIso8601String(),
+    };
+
+    if (description != null) {
+      body['description'] = description;
+    }
+
+    if (destinationAmount != null) {
+      body['destination_amount'] = destinationAmount;
+    }
+
+    if (reportOptIn != null) {
+      body['report_opt_in'] = reportOptIn;
+    }
+
+    await _api.putJson(FinanceEndpoints.transfers(wsId), body);
+
+    final refreshed = await _api.getJson(
+      FinanceEndpoints.transaction(wsId, refreshedTransactionId),
+    );
+
+    return Transaction.fromJson(refreshed);
+  }
+
   Future<void> deleteTransaction({
     required String wsId,
     required String transactionId,
