@@ -195,9 +195,11 @@ export function resolveMessageRenderGroups({
           typeof group.text === 'string'
             ? group.text
             : JSON.stringify(group.text);
-        const text = strippedLeadingAssistantMetaToolCall
-          ? rawText
-          : stripLeadingAssistantMetaToolCall(rawText);
+
+        const text =
+          message.role === 'assistant' && !strippedLeadingAssistantMetaToolCall
+            ? stripLeadingAssistantMetaToolCall(rawText)
+            : rawText;
 
         if (text.trim().length === 0) {
           break;

@@ -17,6 +17,24 @@ describe('resolveAttachmentForDigest', () => {
 
   it('rewrites stale temp chat paths to the durable chat resource path', async () => {
     createAdminClientMock.mockResolvedValue({
+      storage: {
+        from: (bucket: string) => {
+          if (bucket !== 'workspaces') {
+            throw new Error(`Unexpected bucket: ${bucket}`);
+          }
+
+          return {
+            list: async () => ({
+              data: [
+                {
+                  name: '1772573133179_mira-audio-2026-03-03T21-25-33-071Z.webm',
+                },
+              ],
+              error: null,
+            }),
+          };
+        },
+      },
       from: (table: string) => {
         if (table !== 'ai_chat_messages') {
           throw new Error(`Unexpected table: ${table}`);

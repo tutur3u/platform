@@ -3,6 +3,7 @@ import { MAX_CHAT_MESSAGE_LENGTH } from '@tuturuuu/utils/constants';
 import type { ModelMessage, UIMessage } from 'ai';
 import { convertToModelMessages } from 'ai';
 import {
+  FILE_ONLY_PLACEHOLDERS,
   getLatestUserMessageWithAttachments,
   getMessageAttachments,
 } from '../chat-attachment-metadata';
@@ -12,10 +13,6 @@ import {
 } from './message-file-processing';
 
 export const MAX_CONTEXT_MESSAGES = 10;
-export const ATTACHMENT_ONLY_PLACEHOLDERS = new Set([
-  'Please analyze the attached file(s).',
-  'Please analyze the attached file(s)',
-]);
 
 type InsertChatMessageArgs = {
   chat_id: string;
@@ -251,7 +248,7 @@ export function isAttachmentOnlyUserTurn(message: UIMessage): boolean {
   if (!hasAttachments) return false;
 
   const text = extractUserMessageText(message);
-  return text.length === 0 || ATTACHMENT_ONLY_PLACEHOLDERS.has(text);
+  return text.length === 0 || FILE_ONLY_PLACEHOLDERS.has(text);
 }
 
 function normalizePersistedUserMessageText(
@@ -259,7 +256,7 @@ function normalizePersistedUserMessageText(
   hasAttachments: boolean
 ): string {
   if (!hasAttachments) return text;
-  return ATTACHMENT_ONLY_PLACEHOLDERS.has(text) ? '' : text;
+  return FILE_ONLY_PLACEHOLDERS.has(text) ? '' : text;
 }
 
 type PersistLatestUserMessageParams = {

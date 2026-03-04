@@ -1,6 +1,9 @@
 import { deductAiCredits } from '@tuturuuu/ai/credits/check-credits';
 import type { CreditDeductionResult } from '../../credits/types';
-import { MIRA_VISUAL_TOOL_NAMES } from '../../tools/mira-tool-names';
+import {
+  MIRA_INTERNAL_TOOL_NAMES,
+  MIRA_VISUAL_TOOL_NAMES,
+} from '../../tools/mira-tool-names';
 
 type UsageLike = {
   inputTokens?: number;
@@ -88,7 +91,7 @@ type PersistAssistantResponseParams = {
 };
 
 const VISUAL_TOOL_NAMES = new Set<string>(MIRA_VISUAL_TOOL_NAMES);
-const INTERNAL_TOOL_NAMES = new Set(['select_tools', 'no_action_needed']);
+const INTERNAL_TOOL_NAMES = new Set<string>(MIRA_INTERNAL_TOOL_NAMES);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -140,9 +143,10 @@ function buildToolOutcomeSummary(allToolResults: ToolResultLike[]): string {
 
   for (const toolResult of allToolResults) {
     const toolName = getToolNameFromResult(toolResult);
+    if (!toolName || INTERNAL_TOOL_NAMES.has(toolName)) continue;
+
     const output = getRecord(toolResult.output);
-    if (!toolName || !output || output.success === false || output.ok === false)
-      continue;
+    if (!output || output.success === false || output.ok === false) continue;
 
     if (toolName === 'create_task') {
       const task = getRecord(output.task);
@@ -296,13 +300,17 @@ function buildFallbackAssistantText(
   allToolCalls: ToolCallLike[],
   allToolResults: ToolResultLike[]
 ): string {
-  const calledToolNames = allToolCalls
+  const allCalledToolNames = allToolCalls
     .map((toolCall) => toolCall.toolName)
     .filter((toolName): toolName is string => typeof toolName === 'string');
 
-  if (calledToolNames.some((toolName) => VISUAL_TOOL_NAMES.has(toolName))) {
+  if (allCalledToolNames.some((toolName) => VISUAL_TOOL_NAMES.has(toolName))) {
     return '';
   }
+
+  const calledToolNames = allCalledToolNames.filter(
+    (toolName) => !INTERNAL_TOOL_NAMES.has(toolName)
+  );
 
   if (
     calledToolNames.length > 0 &&

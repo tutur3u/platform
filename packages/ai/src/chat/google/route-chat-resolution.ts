@@ -69,9 +69,12 @@ export async function moveTempFilesToThread({
   const { data: files, error: listError } = await listFiles(tempStoragePath);
 
   if (listError) {
-    console.error('Error getting files:', listError);
+    console.error('list_temp_files_failed', {
+      wsId: maskIdentifier(wsId),
+      userId: maskIdentifier(userId),
+    });
     return {
-      error: new Response(listError.message || 'Failed to list temp files', {
+      error: new Response('Failed to list temp files', {
         status: 500,
       }),
     };
@@ -90,11 +93,10 @@ export async function moveTempFilesToThread({
       const { error: copyError } = await moveFile(fromPath, toPath);
 
       if (copyError) {
-        console.error('Temp file move failed', {
+        console.error('temp_file_move_failed', {
           chatId: maskIdentifier(chatId),
           userId: maskIdentifier(userId),
           wsId: maskIdentifier(wsId),
-          error: copyError.message ?? 'move_failed',
         });
         return {
           error: copyError,

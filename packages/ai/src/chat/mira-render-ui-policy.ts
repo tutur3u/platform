@@ -630,10 +630,61 @@ export function shouldStopAfterNoActionConclusion(steps: unknown[]): boolean {
     return true;
   }
 
-  return (
-    wasToolEverSelectedInSteps(steps, 'no_action_needed') &&
-    hasNonMetaToolCallInSteps(steps)
-  );
+  let lastNoActionStepIndex = -1;
+  let lastActionableStepIndex = -1;
+
+  for (const [index, step] of steps.entries()) {
+    const typedStep = step as ToolStepLike | undefined;
+
+    // Check for select_tools decisions
+    const selectResult = typedStep?.toolResults?.find(
+      (r) => r.toolName === 'select_tools'
+    );
+    const resultTools = selectResult?.output?.selectedTools;
+    if (Array.isArray(resultTools)) {
+      if (resultTools.includes('no_action_needed')) {
+        lastNoActionStepIndex = index;
+      }
+      if (
+        resultTools.some(
+          (t) => typeof t === 'string' && !META_TOOL_NAMES.has(t)
+        )
+      ) {
+        lastActionableStepIndex = index;
+      }
+    }
+
+    const selectCall = typedStep?.toolCalls?.find(
+      (c) => c.toolName === 'select_tools'
+    );
+    const callTools = selectCall?.args?.tools ?? selectCall?.input?.tools;
+    if (Array.isArray(callTools)) {
+      if (callTools.includes('no_action_needed')) {
+        lastNoActionStepIndex = index;
+      }
+      if (
+        callTools.some((t) => typeof t === 'string' && !META_TOOL_NAMES.has(t))
+      ) {
+        lastActionableStepIndex = index;
+      }
+    }
+
+    // Check for actual tool calls
+    if (
+      typedStep?.toolCalls?.some(
+        (c) =>
+          typeof c.toolName === 'string' && !META_TOOL_NAMES.has(c.toolName)
+      )
+    ) {
+      lastActionableStepIndex = index;
+    }
+  }
+
+  const isNoActionTerminal =
+    lastNoActionStepIndex !== -1 &&
+    lastNoActionStepIndex >= lastActionableStepIndex;
+
+  return isNoActionTerminal && hasNonMetaToolCallInSteps(steps);
 }
 
 export function buildActiveToolsFromSelected(

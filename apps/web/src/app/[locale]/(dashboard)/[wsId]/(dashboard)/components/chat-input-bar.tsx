@@ -67,6 +67,7 @@ const ACCEPTED_EXTENSIONS = new Set([
   '.ogg',
   '.wav',
   '.webm',
+  '.gif',
 ]);
 
 const ACCEPT_STRING = [...ACCEPTED_MIME_TYPES, ...ACCEPTED_EXTENSIONS].join(
@@ -166,12 +167,16 @@ export default function ChatInputBar({
   } = useChatAudioRecorder({
     disabled: disabled || !fileUploadsEnabled || maxFilesReached,
     onAudioReady: async (file, options) => {
-      const uploadedCount = (await onFilesSelected?.([file])) ?? 0;
-      if (!options.submitOnReady || uploadedCount <= 0) return;
+      try {
+        const uploadedCount = (await onFilesSelected?.([file])) ?? 0;
+        if (!options.submitOnReady || uploadedCount <= 0) return;
 
-      const trimmed = inputValueRef.current.trim();
-      onSubmit(trimmed);
-      setInput('');
+        const trimmed = inputValueRef.current.trim();
+        onSubmit(trimmed);
+        setInput('');
+      } catch (error) {
+        console.error('[Mira Chat] Failed to queue recorded audio:', error);
+      }
     },
   });
   const isPreparingAudio =
@@ -195,9 +200,13 @@ export default function ChatInputBar({
       const valid = filterValidFiles(Array.from(selectedFiles), files.length);
 
       if (valid.length > 0) {
-        void Promise.resolve(onFilesSelected?.(valid)).catch((error) => {
+        try {
+          void Promise.resolve(onFilesSelected?.(valid)).catch((error) => {
+            console.error('[Mira Chat] Failed to queue selected files:', error);
+          });
+        } catch (error) {
           console.error('[Mira Chat] Failed to queue selected files:', error);
-        });
+        }
       }
 
       // Reset input so the same file can be re-selected
@@ -232,9 +241,13 @@ export default function ChatInputBar({
       const valid = filterValidFiles(candidates, files.length);
 
       if (valid.length > 0) {
-        void Promise.resolve(onFilesSelected(valid)).catch((error) => {
+        try {
+          void Promise.resolve(onFilesSelected(valid)).catch((error) => {
+            console.error('[Mira Chat] Failed to queue pasted files:', error);
+          });
+        } catch (error) {
           console.error('[Mira Chat] Failed to queue pasted files:', error);
-        });
+        }
       }
 
       // If the clipboard only contained files (no text), prevent the default

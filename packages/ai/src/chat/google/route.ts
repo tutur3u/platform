@@ -610,19 +610,16 @@ export function createPOST(
         sendSources: true,
       });
     } catch (error) {
-      if (error instanceof Error) {
-        console.log(error.message);
-        return NextResponse.json(
-          {
-            message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${error instanceof Error ? error.stack : 'Unknown error'}\n\`\`\``,
-          },
-          {
-            status: 500,
-          }
-        );
-      }
-      console.log(error);
-      return new Response('Internal Server Error', { status: 500 });
+      const err = error as Error;
+      console.error('[AI Chat] Internal server error', {
+        name: err.name,
+        message: err.message,
+      });
+
+      return NextResponse.json(
+        { message: 'Internal server error' },
+        { status: 500 }
+      );
     }
   };
 }

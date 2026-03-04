@@ -199,11 +199,20 @@ export async function resolveAttachmentForDigest({
   );
   const candidatePaths = new Set<string>();
 
+  const sbAdmin = await createAdminClient();
+
   if (guessedStablePath !== attachment.storagePath) {
-    candidatePaths.add(guessedStablePath);
+    const fileName = getStorageFileName(guessedStablePath);
+    const folderPath = guessedStablePath.split('/').slice(0, -1).join('/');
+    const { data: exists } = await sbAdmin.storage
+      .from('workspaces')
+      .list(folderPath, { search: fileName });
+
+    if (exists && exists.length > 0) {
+      candidatePaths.add(guessedStablePath);
+    }
   }
 
-  const sbAdmin = await createAdminClient();
   const { data: chatMessages, error } = await sbAdmin
     .from('ai_chat_messages')
     .select('metadata')
@@ -431,12 +440,13 @@ async function digestNativeFile(
     new Set([
       attachment.storagePath,
       ...(isTempChatStoragePath(attachment.storagePath)
-        ? [
-            attachment.storagePath.replace(
+        ? (() => {
+            const stable = attachment.storagePath.replace(
               /\/chats\/ai\/resources\/temp\/[^/]+\//,
               `/chats/ai/resources/${chatId}/`
-            ),
-          ]
+            );
+            return stable !== attachment.storagePath ? [stable] : [];
+          })()
         : []),
     ])
   );
@@ -446,6 +456,18 @@ async function digestNativeFile(
   let error: { message?: string } | null = null;
 
   for (const storagePath of storageCandidates) {
+    if (
+      storagePath !== attachment.storagePath &&
+      isTempChatStoragePath(attachment.storagePath)
+    ) {
+      const fileName = getStorageFileName(storagePath);
+      const folderPath = storagePath.split('/').slice(0, -1).join('/');
+      const { data: exists } = await sbAdmin.storage
+        .from('workspaces')
+        .list(folderPath, { search: fileName });
+      if (!exists || exists.length === 0) continue;
+    }
+
     const downloadResult = await sbAdmin.storage
       .from('workspaces')
       .download(storagePath);

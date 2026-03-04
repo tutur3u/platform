@@ -47,7 +47,9 @@ describe('moveTempFilesToThread', () => {
     if (!result.error) {
       throw new Error('Expected error response');
     }
-    await expect(result.error.text()).resolves.toBe('list failed');
+    await expect(result.error.text()).resolves.toBe(
+      'Failed to list temp files'
+    );
   });
 
   it('returns an empty rewrite map when wsId is missing', async () => {

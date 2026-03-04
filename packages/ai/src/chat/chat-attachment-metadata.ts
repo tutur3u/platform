@@ -8,6 +8,11 @@ export type ChatAttachmentMetadata = {
   type?: string;
 };
 
+export const FILE_ONLY_PLACEHOLDERS = new Set([
+  'Please analyze the attached file(s).',
+  'Please analyze the attached file(s)',
+]);
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }

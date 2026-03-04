@@ -19,6 +19,7 @@ import {
   getErrorMessage,
   getMessageText,
   getRenderableMessageAttachments,
+  hasReasoningContent,
   hasToolParts,
   hasVisualToolPart,
 } from './chat-message-list/helpers';
@@ -180,7 +181,13 @@ export default function ChatMessageList({
           !hasVisualTools;
 
         // Skip messages with no renderable content
-        if (!hasDisplayText && !hasTools && !hasAttachments) return null;
+        if (
+          !hasDisplayText &&
+          !hasTools &&
+          !hasAttachments &&
+          !hasReasoningContent(message)
+        )
+          return null;
 
         const isLastAssistant = index === lastAssistantIndex;
 

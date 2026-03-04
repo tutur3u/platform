@@ -5,15 +5,14 @@ import {
 import type { Json } from '@tuturuuu/types';
 import { gateway, generateText, type UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
-import { normalizeChatAttachmentMetadata } from '../../chat-attachment-metadata';
+import {
+  FILE_ONLY_PLACEHOLDERS,
+  normalizeChatAttachmentMetadata,
+} from '../../chat-attachment-metadata';
 import { insertUserChatMessageSafely } from '../route-message-preparation';
 
 const HUMAN_PROMPT = '\n\nHuman:';
 const AI_PROMPT = '\n\nAssistant:';
-const FILE_ONLY_PLACEHOLDERS = new Set([
-  'Please analyze the attached file(s).',
-  'Please analyze the attached file(s)',
-]);
 
 /** Always use a lightweight model for title generation */
 const TITLE_MODEL = 'google/gemini-2.5-flash-lite';

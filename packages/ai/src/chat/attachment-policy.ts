@@ -1,6 +1,7 @@
 export const NATIVE_MULTIMODAL_FILE_EXTENSIONS = new Set([
   'aac',
   'flac',
+  'gif',
   'jpeg',
   'jpg',
   'm4a',

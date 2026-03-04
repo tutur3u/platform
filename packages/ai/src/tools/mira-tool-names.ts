@@ -95,5 +95,10 @@ export const MIRA_TOOL_NAMES = [
 
 export const MIRA_VISUAL_TOOL_NAMES = ['render_ui'] as const;
 
+export const MIRA_INTERNAL_TOOL_NAMES = [
+  'select_tools',
+  'no_action_needed',
+] as const;
+
 export type MiraToolName = (typeof MIRA_TOOL_NAMES)[number];
 export type DefinedMiraToolName = MiraToolName;

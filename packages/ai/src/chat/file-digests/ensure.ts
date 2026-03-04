@@ -1,3 +1,4 @@
+import { runWithLock } from '@tuturuuu/utils/redis';
 import { checkAiCredits, deductAiCredits } from '../../credits/check-credits';
 import {
   getReadyChatFileDigest,
@@ -11,11 +12,6 @@ import type {
   EnsureChatFileDigestResult,
 } from './types';
 import { digestChatFileWithGemini, resolveAttachmentForDigest } from './worker';
-
-const inFlightDigestRequests = new Map<
-  string,
-  Promise<EnsureChatFileDigestResult>
->();
 
 function resolveDisplayName(params: EnsureChatFileDigestParams): string {
   return params.attachment.alias || params.attachment.name;
@@ -31,6 +27,10 @@ export async function ensureChatFileDigest(
     userId: params.userId,
     wsId: params.wsId,
   });
+
+  const billingWsId = params.creditWsId ?? params.wsId;
+  const singleFlightKey = `digest:${billingWsId}:${params.userId}:${resolvedAttachment.storagePath}:${CHAT_FILE_DIGEST_VERSION}`;
+
   const existing = params.forceRefresh
     ? null
     : await getReadyChatFileDigest(
@@ -46,34 +46,60 @@ export async function ensureChatFileDigest(
     };
   }
 
-  const singleFlightKey = `${resolvedAttachment.storagePath}:${CHAT_FILE_DIGEST_VERSION}`;
-  if (!params.forceRefresh) {
-    const inFlight = inFlightDigestRequests.get(singleFlightKey);
-    if (inFlight) {
-      return inFlight;
-    }
-  }
-
   const runDigest = async (): Promise<EnsureChatFileDigestResult> => {
+    // Check again inside the lock to handle race conditions
+    const innerExisting = params.forceRefresh
+      ? null
+      : await getReadyChatFileDigest(
+          resolvedAttachment.storagePath,
+          CHAT_FILE_DIGEST_VERSION
+        );
+
+    if (innerExisting) {
+      return {
+        ok: true,
+        cached: true,
+        digest: innerExisting,
+      };
+    }
+
     const displayName = resolveDisplayName(params);
-    const billingWsId = params.creditWsId ?? params.wsId;
     let effectiveAttachment = resolvedAttachment;
 
-    const creditCheck = await checkAiCredits(
-      billingWsId || undefined,
-      FILE_DIGEST_MODEL,
-      'chat',
-      { userId: params.userId }
-    );
+    try {
+      const creditCheck = await checkAiCredits(
+        billingWsId || undefined,
+        FILE_DIGEST_MODEL,
+        'chat',
+        { userId: params.userId }
+      );
 
-    if (!creditCheck.allowed) {
-      const error =
-        creditCheck.errorMessage ||
-        'Insufficient credits to analyze the attached file.';
-      await saveFailedChatFileDigest({
+      if (!creditCheck.allowed) {
+        const error =
+          creditCheck.errorMessage ||
+          'Insufficient credits to analyze the attached file.';
+        await saveFailedChatFileDigest({
+          chatId: params.chatId,
+          displayName,
+          errorMessage: error,
+          fileName: resolvedAttachment.name,
+          mediaType: resolvedAttachment.type || 'application/octet-stream',
+          messageId: params.messageId,
+          processorModel: FILE_DIGEST_MODEL,
+          size: resolvedAttachment.size,
+          storagePath: resolvedAttachment.storagePath,
+          wsId: params.wsId,
+        });
+        return {
+          ok: false,
+          cached: false,
+          error,
+        };
+      }
+
+      await upsertProcessingChatFileDigest({
         chatId: params.chatId,
         displayName,
-        errorMessage: error,
         fileName: resolvedAttachment.name,
         mediaType: resolvedAttachment.type || 'application/octet-stream',
         messageId: params.messageId,
@@ -82,26 +108,7 @@ export async function ensureChatFileDigest(
         storagePath: resolvedAttachment.storagePath,
         wsId: params.wsId,
       });
-      return {
-        ok: false,
-        cached: false,
-        error,
-      };
-    }
 
-    await upsertProcessingChatFileDigest({
-      chatId: params.chatId,
-      displayName,
-      fileName: resolvedAttachment.name,
-      mediaType: resolvedAttachment.type || 'application/octet-stream',
-      messageId: params.messageId,
-      processorModel: FILE_DIGEST_MODEL,
-      size: resolvedAttachment.size,
-      storagePath: resolvedAttachment.storagePath,
-      wsId: params.wsId,
-    });
-
-    try {
       const digested = await digestChatFileWithGemini({
         attachmentResolved: true,
         attachment: resolvedAttachment,
@@ -223,13 +230,15 @@ export async function ensureChatFileDigest(
     }
   };
 
-  if (params.forceRefresh) {
-    return runDigest();
+  const lockResult = await runWithLock(singleFlightKey, runDigest);
+  if (typeof lockResult === 'object' && 'locked' in lockResult) {
+    return {
+      ok: false,
+      cached: false,
+      error:
+        'Conflict: Another digestion is already in progress for this file.',
+    };
   }
 
-  const inFlight = runDigest().finally(() => {
-    inFlightDigestRequests.delete(singleFlightKey);
-  });
-  inFlightDigestRequests.set(singleFlightKey, inFlight);
-  return inFlight;
+  return lockResult;
 }

@@ -114,7 +114,60 @@ describe('persistAssistantResponse', () => {
 
     expect(insertedPayload).toEqual(
       expect.objectContaining({
-        content: expect.not.stringContaining(
+        content: '',
+      })
+    );
+  });
+
+  it('persists a fallback reply when select_tools and recall are used together', async () => {
+    deductAiCreditsMock.mockResolvedValue({
+      success: true,
+    });
+
+    let insertedPayload: Record<string, unknown> | null = null;
+    const sbAdmin = {
+      from: () => ({
+        insert: (payload: Record<string, unknown>) => {
+          insertedPayload = payload;
+
+          return {
+            select: () => ({
+              single: async () => ({
+                data: { id: 'assistant-message-mixed' },
+                error: null,
+              }),
+            }),
+          };
+        },
+      }),
+    };
+
+    await persistAssistantResponse({
+      chatId: 'chat-1',
+      effectiveSource: 'Mira',
+      model: 'google/gemini-3.1-flash-lite-preview',
+      response: {
+        steps: [
+          {
+            toolCalls: [{ toolName: 'select_tools' }, { toolName: 'recall' }],
+            toolResults: [{ ok: true }, { ok: true }],
+          },
+        ],
+        text: '',
+        totalUsage: {
+          inputTokens: 10,
+          outputTokens: 5,
+          reasoningTokens: 0,
+        },
+      },
+      sbAdmin: sbAdmin as never,
+      userId: 'user-1',
+      wsId: 'ws-1',
+    });
+
+    expect(insertedPayload).toEqual(
+      expect.objectContaining({
+        content: expect.stringContaining(
           'I checked the saved context for this turn'
         ),
       })
@@ -261,6 +314,16 @@ describe('persistAssistantResponse', () => {
         content: expect.stringContaining(
           'I finished some background steps for this turn'
         ),
+      })
+    );
+    expect(insertedPayload).toEqual(
+      expect.objectContaining({
+        content: expect.not.stringContaining('I created'),
+      })
+    );
+    expect(insertedPayload).toEqual(
+      expect.objectContaining({
+        content: expect.not.stringContaining('successfully'),
       })
     );
   });

@@ -35,7 +35,7 @@ export function getErrorMessage(error: unknown): string {
 const LEADING_ASSISTANT_META_TOOL_CALL_PATTERN =
   /^\s*(?:`{1,3})?(?:select_tools|no_action_needed)\([^)\n]*\)(?:`{1,3})?\s*(?:\n+|$)/;
 const LEADING_ASSISTANT_META_TOOL_JSON_CANDIDATE_PATTERN =
-  /^\s*(?:`{1,3})?(\{[^\n]*\})(?:`{1,3})?\s*(?:\n+|$)/;
+  /^\s*(?:`{1,3})?(\{[\s\S]*?\})(?:`{1,3})?\s*(?:\n+|$)/;
 
 export function hasTextContent(message: UIMessage): boolean {
   return (

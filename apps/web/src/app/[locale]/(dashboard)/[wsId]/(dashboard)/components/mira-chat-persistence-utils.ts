@@ -347,7 +347,7 @@ export async function loadExistingChat({
     ? restoreMessages(messagesData)
     : [];
   const messageAttachments = new Map<string, MessageFileAttachment[]>();
-  const attachmentEntries = (messagesData ?? []).flatMap((message) =>
+  const attachmentEntries = restoredMessages.flatMap((message) =>
     normalizeStoredAttachments(message.metadata).map((attachment, index) => ({
       attachment,
       index,

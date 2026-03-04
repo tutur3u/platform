@@ -477,6 +477,29 @@ describe('mira render_ui policy', () => {
     expect(shouldStopAfterNoActionConclusion(steps)).toBe(false);
   });
 
+  it('does not stop early if a later step selects actionable tools after an early no_action_needed', () => {
+    const steps = [
+      {
+        toolResults: [
+          {
+            toolName: 'select_tools',
+            output: { ok: true, selectedTools: ['no_action_needed'] },
+          },
+        ],
+      },
+      {
+        toolResults: [
+          {
+            toolName: 'select_tools',
+            output: { ok: true, selectedTools: ['get_my_tasks'] },
+          },
+        ],
+      },
+    ];
+
+    expect(shouldStopAfterNoActionConclusion(steps)).toBe(false);
+  });
+
   it('blocks tools after three consecutive failures or no-op results', () => {
     const steps = [
       {
