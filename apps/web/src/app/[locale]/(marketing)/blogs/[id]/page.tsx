@@ -1,10 +1,9 @@
 'use client';
 
-import BlogDetailClient from './client';
 import { createClient } from '@ncthub/supabase/next/client';
-import { notFound } from 'next/navigation';
-import { useParams } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import BlogDetailClient from './client';
 
 export interface BlogDetail {
   id: string;
@@ -24,6 +23,9 @@ export interface BlogDetail {
 }
 
 export default function BlogDetailPage() {
+  // TODO: Remove this notFound() when the blogs feature is ready to go live
+  notFound();
+
   const supabase = createClient();
   const params = useParams();
 

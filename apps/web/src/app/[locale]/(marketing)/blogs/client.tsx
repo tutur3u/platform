@@ -209,6 +209,7 @@ export default function BlogsPageClient() {
                     <span className="inline-flex items-center font-medium text-[#5FC6E5] text-sm group-hover:underline">
                       Read More
                       <svg
+                        aria-hidden="true"
                         className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1"
                         fill="none"
                         viewBox="0 0 24 24"
