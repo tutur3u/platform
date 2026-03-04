@@ -24,8 +24,9 @@ export function Filter({ className }: { className: string }) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
+  const paramsKey = searchParams.toString();
 
-  const [view, setView] = useState('month');
+  const [view, setView] = useState('date');
 
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
@@ -37,35 +38,31 @@ export function Filter({ className }: { className: string }) {
   }, [startDate, endDate]);
 
   useEffect(() => {
-    const viewParam = searchParams.get('view');
-    const view =
+    const params = new URLSearchParams(paramsKey);
+    const viewParam = params.get('view');
+    const nextView =
       viewParam === 'date' || viewParam === 'month' || viewParam === 'year'
         ? viewParam
         : 'date';
 
-    setView(view);
-  }, [searchParams]);
+    setView((prev) => (prev === nextView ? prev : nextView));
 
-  useEffect(() => {
-    if (searchParams.toString() === '') return;
+    const startDateParam = params.get('startDate') || '';
+    const endDateParam = params.get('endDate') || '';
+    const nextStartDate = startDateParam
+      ? new Date(`${startDateParam}T00:00:00`)
+      : undefined;
+    const nextEndDate = endDateParam
+      ? new Date(`${endDateParam}T00:00:00`)
+      : undefined;
 
-    const startDateParam = searchParams.get('startDate');
-    const endDateParam = searchParams.get('endDate');
-    const currentStartDateParam = toDateParam(startDate);
-    const currentEndDateParam = toDateParam(endDate);
-
-    if ((startDateParam || '') !== currentStartDateParam) {
-      setStartDate(
-        startDateParam ? new Date(`${startDateParam}T00:00:00`) : undefined
-      );
-    }
-
-    if ((endDateParam || '') !== currentEndDateParam) {
-      setEndDate(
-        endDateParam ? new Date(`${endDateParam}T00:00:00`) : undefined
-      );
-    }
-  }, [searchParams, endDate, startDate]);
+    setStartDate((prev) =>
+      toDateParam(prev) === startDateParam ? prev : nextStartDate
+    );
+    setEndDate((prev) =>
+      toDateParam(prev) === endDateParam ? prev : nextEndDate
+    );
+  }, [paramsKey]);
 
   const resetFilter = () => {
     setView('date');
@@ -160,7 +157,7 @@ export function Filter({ className }: { className: string }) {
         variant="outline"
         className="w-full md:w-auto lg:min-w-24"
         onClick={resetFilter}
-        disabled={searchParams.toString() === ''}
+        disabled={paramsKey === ''}
       >
         Reset
       </Button>
