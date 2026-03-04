@@ -11,6 +11,7 @@ import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/view/transaction_detail_action.dart';
 import 'package:mobile/features/finance/view/wallet_detail_widgets.dart';
+import 'package:mobile/features/finance/widgets/grouped_transaction_accordion.dart';
 import 'package:mobile/features/finance/widgets/wallet_dialog.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -198,19 +199,12 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
               ),
             )
           else
-            for (var i = 0; i < _transactions.length; i++) ...[
-              WalletDetailTransactionCard(
-                transaction: _transactions[i],
-                workspaceCurrency: _workspaceCurrency,
-                exchangeRates: _exchangeRates,
-                onTap: () => _openTransaction(_transactions[i]),
-              ),
-              if (i < _transactions.length - 1) const shad.Gap(8),
-            ],
-          if (_isLoadingMore)
-            const Padding(
-              padding: EdgeInsets.only(top: 16),
-              child: Center(child: shad.CircularProgressIndicator()),
+            GroupedTransactionAccordion(
+              transactions: _transactions,
+              workspaceCurrency: _workspaceCurrency,
+              exchangeRates: _exchangeRates,
+              showLoadingMore: _isLoadingMore,
+              onTransactionTap: _openTransaction,
             ),
         ],
       ),
