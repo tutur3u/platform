@@ -1,119 +1,37 @@
 'use client';
-
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  ArrowLeftRight,
-  CalendarIcon,
-  Coins,
-  FileText,
-  FolderOpen,
-  Lock,
-  Settings2,
-  Wallet,
-} from '@tuturuuu/icons';
-import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
+import { ArrowLeftRight, Settings2, Wallet } from '@tuturuuu/icons';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import type { Wallet as WalletType } from '@tuturuuu/types/primitives/Wallet';
 import { Button } from '@tuturuuu/ui/button';
-import { Calendar } from '@tuturuuu/ui/calendar';
-import { Checkbox } from '@tuturuuu/ui/checkbox';
-import { CurrencyInput } from '@tuturuuu/ui/currency-input';
-import { Combobox } from '@tuturuuu/ui/custom/combobox';
-import { getIconComponentByKey } from '@tuturuuu/ui/custom/icon-picker';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@tuturuuu/ui/dialog';
-import { TransactionCategoryForm } from '@tuturuuu/ui/finance/transactions/categories/form';
-import {
-  getCategoryIcon,
-  getWalletIcon,
-} from '@tuturuuu/ui/finance/transactions/form-utils';
-import { TransferFields } from '@tuturuuu/ui/finance/transactions/transfer-fields';
-import { WalletForm } from '@tuturuuu/ui/finance/wallets/form';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@tuturuuu/ui/form';
+import { Form } from '@tuturuuu/ui/form';
+import { useExchangeRates } from '@tuturuuu/ui/hooks/use-exchange-rates';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
-import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { convertCurrency } from '@tuturuuu/utils/exchange-rates';
 import { fetcher } from '@tuturuuu/utils/fetcher';
-import { cn } from '@tuturuuu/utils/format';
-import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
-import { format } from 'date-fns';
-import { enUS, vi } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
-import * as z from 'zod';
-
-interface Props {
-  wsId: string;
-  data?: Transaction;
-  onFinish?: (data: z.infer<typeof FormSchema>) => void;
-  canCreateTransactions?: boolean;
-  canUpdateTransactions?: boolean;
-  canCreateConfidentialTransactions?: boolean;
-  canUpdateConfidentialTransactions?: boolean;
-}
-
-const FormSchema = z
-  .object({
-    id: z.string().optional(),
-    description: z.string().optional(),
-    amount: z.number().positive(),
-    origin_wallet_id: z.string().min(1),
-    destination_wallet_id: z.string().optional(),
-    destination_amount: z.number().positive().optional(),
-    category_id: z.string().optional(),
-    taken_at: z.date(),
-    report_opt_in: z.boolean(),
-    tag_ids: z.array(z.string()).optional(),
-    is_transfer: z.boolean().optional(),
-    is_amount_confidential: z.boolean().optional(),
-    is_description_confidential: z.boolean().optional(),
-    is_category_confidential: z.boolean().optional(),
-  })
-  .superRefine((data, ctx) => {
-    if (!data.is_transfer && (!data.category_id || data.category_id === '')) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Category is required',
-        path: ['category_id'],
-      });
-    }
-    if (data.is_transfer) {
-      if (!data.destination_wallet_id) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Destination wallet is required',
-          path: ['destination_wallet_id'],
-        });
-      }
-      if (data.origin_wallet_id === data.destination_wallet_id) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Source and destination wallets must be different',
-          path: ['destination_wallet_id'],
-        });
-      }
-    }
-  });
+import { FormBasicTab } from './form-basic-tab';
+import { FormContentDialog } from './form-content-dialog';
+import { FormMoreTab } from './form-more-tab';
+import {
+  roundTransferAmount,
+  TransactionFormSchema,
+  type TransactionFormValues,
+} from './form-schema';
+import type {
+  NewContent,
+  NewContentType,
+  TransactionFormProps,
+} from './form-types';
 
 export function TransactionForm({
   wsId,
@@ -123,13 +41,18 @@ export function TransactionForm({
   canUpdateTransactions,
   canCreateConfidentialTransactions,
   canUpdateConfidentialTransactions,
-}: Props) {
+}: TransactionFormProps) {
   const t = useTranslations();
   const locale = useLocale();
   const queryClient = useQueryClient();
 
   const [loading, setLoading] = useState(false);
   const [isTransfer, setIsTransfer] = useState(!!data?.transfer);
+  // Start in override mode when editing an existing transfer (preserve stored amounts).
+  // Start in auto mode for new transfers so the exchange rate pre-fills destination.
+  const [isDestinationOverridden, setIsDestinationOverridden] = useState(
+    !!data?.transfer
+  );
   const router = useRouter();
 
   const { data: categories, isLoading: categoriesLoading } = useQuery<
@@ -171,7 +94,7 @@ export function TransactionForm({
   );
 
   const form = useForm({
-    resolver: zodResolver(FormSchema),
+    resolver: zodResolver(TransactionFormSchema),
     defaultValues: {
       id: data?.id,
       description: data?.description || '',
@@ -271,16 +194,106 @@ export function TransactionForm({
   });
 
   const selectedWalletId = form.watch('origin_wallet_id');
+  const selectedDestinationWalletId = form.watch('destination_wallet_id');
+  const sourceAmount = form.watch('amount');
   const selectedWalletCurrency = useMemo(
     () => wallets?.find((w) => w.id === selectedWalletId)?.currency,
     [wallets, selectedWalletId]
   );
+  const selectedDestinationWalletCurrency = useMemo(
+    () => wallets?.find((w) => w.id === selectedDestinationWalletId)?.currency,
+    [wallets, selectedDestinationWalletId]
+  );
+  const isCrossCurrencyTransfer = useMemo(
+    () =>
+      !!selectedWalletCurrency &&
+      !!selectedDestinationWalletCurrency &&
+      selectedWalletCurrency.toUpperCase() !==
+        selectedDestinationWalletCurrency.toUpperCase(),
+    [selectedWalletCurrency, selectedDestinationWalletCurrency]
+  );
+  const { data: exchangeRateData } = useExchangeRates();
+  const suggestedExchangeRate = useMemo(() => {
+    if (
+      !isTransfer ||
+      !isCrossCurrencyTransfer ||
+      !selectedWalletCurrency ||
+      !selectedDestinationWalletCurrency ||
+      !exchangeRateData?.data
+    ) {
+      return null;
+    }
+
+    const convertedUnitAmount = convertCurrency(
+      1,
+      selectedWalletCurrency,
+      selectedDestinationWalletCurrency,
+      exchangeRateData.data
+    );
+
+    if (!convertedUnitAmount || !Number.isFinite(convertedUnitAmount)) {
+      return null;
+    }
+
+    return convertedUnitAmount;
+  }, [
+    isTransfer,
+    isCrossCurrencyTransfer,
+    selectedWalletCurrency,
+    selectedDestinationWalletCurrency,
+    exchangeRateData?.data,
+  ]);
+  // Reset override to auto when transfer is disabled
+  useEffect(() => {
+    if (!isTransfer) setIsDestinationOverridden(false);
+  }, [isTransfer]);
+
+  // Reset override to auto when the wallet pair changes (only for new transfers)
+  useEffect(() => {
+    if (data?.id) return;
+    if (!selectedWalletId && !selectedDestinationWalletId) return;
+
+    setIsDestinationOverridden(false);
+  }, [data?.id, selectedWalletId, selectedDestinationWalletId]);
+
+  // Auto-fill destination amount from source × exchange rate (source-driven only)
+  useEffect(() => {
+    if (
+      isDestinationOverridden ||
+      !isTransfer ||
+      !isCrossCurrencyTransfer ||
+      !suggestedExchangeRate ||
+      !Number.isFinite(suggestedExchangeRate) ||
+      !sourceAmount ||
+      sourceAmount <= 0
+    ) {
+      return;
+    }
+
+    const calculated = roundTransferAmount(
+      sourceAmount * suggestedExchangeRate
+    );
+    if (!Number.isFinite(calculated) || calculated <= 0) return;
+
+    form.setValue('destination_amount', calculated, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+  }, [
+    isDestinationOverridden,
+    isTransfer,
+    isCrossCurrencyTransfer,
+    suggestedExchangeRate,
+    sourceAmount,
+    form,
+  ]);
 
   const canManageConfidential =
     (hasCreatePermission && canCreateConfidentialTransactions) ||
     (hasUpdatePermission && canUpdateConfidentialTransactions);
 
-  async function onSubmit(formData: z.infer<typeof FormSchema>) {
+  async function onSubmit(formData: TransactionFormValues) {
     if (!hasFormPermission) {
       toast.error(t('common.insufficient_permissions'));
       return;
@@ -360,139 +373,27 @@ export function TransactionForm({
   }
 
   const [newContentType, setNewContentType] = useState<
-    'wallet' | 'transaction-category' | 'tag' | undefined
+    NewContentType | undefined
   >();
-  const [newContent, setNewContent] = useState<
-    | WalletType
-    | TransactionCategory
-    | { name: string; color?: string }
-    | undefined
-  >(undefined);
+  const [newContent, setNewContent] = useState<NewContent>(undefined);
   const [newTagColor, setNewTagColor] = useState('#3b82f6');
-
-  const PRESET_TAG_COLORS = [
-    '#ef4444',
-    '#f97316',
-    '#84cc16',
-    '#10b981',
-    '#3b82f6',
-    '#8b5cf6',
-    '#ec4899',
-  ];
-
-  const handleCreateTag = async () => {
-    if (!newContent || !('name' in newContent) || !newContent.name) return;
-
-    try {
-      const res = await fetch(`/api/workspaces/${wsId}/tags`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: newContent.name,
-          color: newTagColor,
-        }),
-      });
-
-      if (res.ok) {
-        const createdTag = await res.json();
-        queryClient.invalidateQueries({
-          queryKey: [`/api/workspaces/${wsId}/tags`],
-        });
-        const currentTags = form.getValues('tag_ids') || [];
-        form.setValue('tag_ids', [...currentTags, createdTag.id]);
-        setNewContent(undefined);
-        setNewContentType(undefined);
-        toast.success(t('ws-tags.created'));
-      } else {
-        toast.error(t('ws-tags.error_creating'));
-      }
-    } catch {
-      toast.error(t('ws-tags.error_creating'));
-    }
-  };
 
   // Disable transfer mode when editing existing non-transfer transactions
   const canToggleTransfer = !data?.id || !!data?.transfer;
 
   return (
-    <Dialog
-      open={!!newContent}
-      onOpenChange={(open) =>
-        setNewContent(open ? newContent || {} : undefined)
-      }
-    >
-      <DialogContent onOpenAutoFocus={(e) => e.preventDefault()}>
-        <DialogHeader>
-          <DialogTitle>
-            {newContentType === 'wallet'
-              ? t('ws-wallets.create')
-              : newContentType === 'tag'
-                ? t('ws-tags.create')
-                : t('ws-transaction-categories.create')}
-          </DialogTitle>
-        </DialogHeader>
-        {newContentType === 'wallet' ? (
-          <WalletForm
-            wsId={wsId}
-            data={newContent as WalletType}
-            onFinish={() => {
-              setNewContent(undefined);
-              setNewContentType(undefined);
-              queryClient.invalidateQueries({
-                queryKey: [`/api/workspaces/${wsId}/wallets`],
-              });
-            }}
-          />
-        ) : newContentType === 'tag' ? (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="font-medium text-sm">{t('ws-tags.name')}</label>
-              <Input
-                value={(newContent as { name: string })?.name || ''}
-                onChange={(e) => setNewContent({ name: e.target.value })}
-                placeholder={t('ws-tags.name_placeholder')}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="font-medium text-sm">
-                {t('ws-tags.color')}
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {PRESET_TAG_COLORS.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    className={cn(
-                      'h-8 w-8 rounded-full border-2 transition-transform hover:scale-110',
-                      newTagColor === color
-                        ? 'border-foreground'
-                        : 'border-transparent'
-                    )}
-                    style={{ backgroundColor: color }}
-                    onClick={() => setNewTagColor(color)}
-                  />
-                ))}
-              </div>
-            </div>
-            <Button onClick={handleCreateTag} className="w-full">
-              {t('ws-tags.create')}
-            </Button>
-          </div>
-        ) : (
-          <TransactionCategoryForm
-            wsId={wsId}
-            data={newContent as TransactionCategory}
-            onFinish={() => {
-              setNewContent(undefined);
-              setNewContentType(undefined);
-              queryClient.invalidateQueries({
-                queryKey: [`/api/workspaces/${wsId}/transactions/categories`],
-              });
-            }}
-          />
-        )}
-      </DialogContent>
-
+    <>
+      <FormContentDialog
+        wsId={wsId}
+        queryClient={queryClient}
+        form={form}
+        newContentType={newContentType}
+        setNewContentType={setNewContentType}
+        newContent={newContent}
+        setNewContent={setNewContent}
+        newTagColor={newTagColor}
+        setNewTagColor={setNewTagColor}
+      />
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
@@ -530,401 +431,39 @@ export function TransactionForm({
 
             {/* Tab 1: Basic - Essential fields */}
             <TabsContent value="basic" className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="origin_wallet_id"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>
-                        {t('transaction-data-table.wallet')}
-                      </FormLabel>
-                      <Combobox
-                        t={t}
-                        {...field}
-                        mode="single"
-                        options={
-                          wallets
-                            ? wallets.map((wallet) => ({
-                                value: wallet.id || '',
-                                label: wallet.name || '',
-                                icon: getWalletIcon(
-                                  wallet,
-                                  getIconComponentByKey
-                                ),
-                              }))
-                            : []
-                        }
-                        label={walletsLoading ? 'Loading...' : undefined}
-                        placeholder={t('transaction-data-table.select_wallet')}
-                        selected={field.value ?? ''}
-                        onChange={field.onChange}
-                        onCreate={(name) => {
-                          setNewContentType('wallet');
-                          setNewContent({ name });
-                        }}
-                        disabled={
-                          loading || walletsLoading || !hasFormPermission
-                        }
-                      />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {isTransfer ? (
-                  <FormField
-                    control={form.control}
-                    name="destination_wallet_id"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>
-                          {t('transaction-data-table.destination_wallet')}
-                        </FormLabel>
-                        <Combobox
-                          t={t}
-                          {...field}
-                          mode="single"
-                          options={
-                            wallets
-                              ? wallets
-                                  .filter((w) => w.id !== selectedWalletId)
-                                  .map((wallet) => ({
-                                    value: wallet.id || '',
-                                    label: wallet.name || '',
-                                    icon: getWalletIcon(
-                                      wallet,
-                                      getIconComponentByKey
-                                    ),
-                                  }))
-                              : []
-                          }
-                          label={walletsLoading ? 'Loading...' : undefined}
-                          placeholder={t(
-                            'transaction-data-table.select_destination_wallet'
-                          )}
-                          selected={field.value ?? ''}
-                          onChange={field.onChange}
-                          onCreate={(name) => {
-                            setNewContentType('wallet');
-                            setNewContent({ name });
-                          }}
-                          disabled={
-                            loading || walletsLoading || !hasFormPermission
-                          }
-                        />
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                ) : (
-                  <FormField
-                    control={form.control}
-                    name="category_id"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>
-                          {t('transaction-data-table.category')}
-                        </FormLabel>
-                        <Combobox
-                          t={t}
-                          {...field}
-                          mode="single"
-                          options={
-                            categories
-                              ? categories.map((category) => ({
-                                  value: category.id || '',
-                                  label: category.name || '',
-                                  icon: getCategoryIcon(
-                                    category,
-                                    getIconComponentByKey
-                                  ),
-                                  color: category.color
-                                    ? computeAccessibleLabelStyles(
-                                        category.color
-                                      )?.text
-                                    : undefined,
-                                }))
-                              : []
-                          }
-                          label={categoriesLoading ? 'Loading...' : undefined}
-                          placeholder={t(
-                            'transaction-data-table.select_category'
-                          )}
-                          selected={field.value ?? ''}
-                          onChange={field.onChange}
-                          onCreate={(name) => {
-                            setNewContentType('transaction-category');
-                            setNewContent({ name });
-                          }}
-                          disabled={
-                            loading || categoriesLoading || !hasFormPermission
-                          }
-                        />
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-              </div>
-
-              {isTransfer && (
-                <TransferFields
-                  form={form}
-                  wallets={wallets}
-                  loading={loading}
-                  hasFormPermission={!!hasFormPermission}
-                  t={t}
-                />
-              )}
-
-              <FormField
-                control={form.control}
-                name="amount"
-                disabled={loading || !hasFormPermission}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('transaction-data-table.amount')}</FormLabel>
-                    <FormControl>
-                      <CurrencyInput
-                        value={field.value}
-                        onChange={field.onChange}
-                        disabled={field.disabled}
-                        placeholder="0"
-                        currencySuffix={selectedWalletCurrency}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+              <FormBasicTab
+                form={form}
+                locale={locale}
+                wallets={wallets}
+                walletsLoading={walletsLoading}
+                categories={categories}
+                categoriesLoading={categoriesLoading}
+                selectedWalletId={selectedWalletId}
+                selectedWalletCurrency={selectedWalletCurrency}
+                loading={loading}
+                hasFormPermission={!!hasFormPermission}
+                isTransfer={isTransfer}
+                suggestedExchangeRate={suggestedExchangeRate}
+                isDestinationOverridden={isDestinationOverridden}
+                setIsDestinationOverridden={setIsDestinationOverridden}
+                setNewContentType={setNewContentType}
+                setNewContent={setNewContent}
               />
-
-              <FormField
-                control={form.control}
-                name="description"
-                disabled={loading || !hasFormPermission}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      {t('transaction-data-table.description')}
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder={t(
-                          'transaction-data-table.description_placeholder'
-                        )}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <Popover>
-                <FormField
-                  control={form.control}
-                  name="taken_at"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>
-                        {t('transaction-data-table.taken_at')}
-                      </FormLabel>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              'pl-3 text-left font-normal',
-                              !field.value && 'text-muted-foreground'
-                            )}
-                            disabled={!hasFormPermission}
-                          >
-                            {field.value ? (
-                              format(
-                                field.value,
-                                locale === 'vi' ? 'dd/MM/yyyy, ppp' : 'PPP',
-                                {
-                                  locale: locale === 'vi' ? vi : enUS,
-                                }
-                              )
-                            ) : (
-                              <span>
-                                {t('transaction-data-table.taken_at')}
-                              </span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="center">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          onSubmit={field.onChange}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </Popover>
             </TabsContent>
 
             {/* Tab 2: More - Tags, Report, and Confidential settings */}
             <TabsContent value="more" className="space-y-4">
-              <FormField
-                control={form.control}
-                name="tag_ids"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>{t('transaction-data-table.tags')}</FormLabel>
-                    <Combobox
-                      t={t}
-                      {...field}
-                      mode="multiple"
-                      options={
-                        tags
-                          ? tags.map((tag) => ({
-                              value: tag.id || '',
-                              label: tag.name || '',
-                              color: tag.color,
-                            }))
-                          : []
-                      }
-                      label={tagsLoading ? 'Loading...' : undefined}
-                      placeholder={
-                        !tagsLoading && (!tags || tags.length === 0)
-                          ? t('transaction-data-table.no_tags_hint')
-                          : t('transaction-data-table.select_tags')
-                      }
-                      selected={field.value || []}
-                      onChange={field.onChange}
-                      onCreate={(name) => {
-                        setNewContentType('tag');
-                        setNewContent({ name });
-                      }}
-                      disabled={loading || tagsLoading || !hasFormPermission}
-                    />
-                    <FormDescription>
-                      {t('transaction-data-table.tags_description')}
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
+              <FormMoreTab
+                form={form}
+                tags={tags}
+                tagsLoading={tagsLoading}
+                loading={loading}
+                hasFormPermission={!!hasFormPermission}
+                canManageConfidential={!!canManageConfidential}
+                isTransfer={isTransfer}
+                setNewContentType={setNewContentType}
+                setNewContent={setNewContent}
               />
-
-              <FormField
-                control={form.control}
-                name="report_opt_in"
-                render={({ field }) => (
-                  <FormItem className="flex items-center justify-between rounded-lg border p-3">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-sm">
-                        {t('transaction-data-table.report_opt_in')}
-                      </FormLabel>
-                      <FormDescription className="text-xs">
-                        {t('transaction-data-table.report_opt_in_description')}
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        disabled={!hasFormPermission}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {canManageConfidential && !isTransfer && (
-                <div className="rounded-lg border border-dynamic-orange/30 bg-dynamic-orange/5 p-3">
-                  <div className="mb-3 flex items-center gap-2">
-                    <Lock className="h-4 w-4 text-dynamic-orange" />
-                    <span className="font-medium text-sm">
-                      {t('workspace-finance-transactions.mark-as-confidential')}
-                    </span>
-                  </div>
-
-                  <div className="grid gap-2">
-                    <FormField
-                      control={form.control}
-                      name="is_amount_confidential"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center justify-between rounded-md bg-background/50 px-3 py-2">
-                          <div className="flex items-center gap-2">
-                            <Coins className="h-4 w-4 text-muted-foreground" />
-                            <FormLabel className="mt-0! font-normal text-sm">
-                              {t(
-                                'workspace-finance-transactions.confidential-amount'
-                              )}
-                            </FormLabel>
-                          </div>
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value || false}
-                              onCheckedChange={field.onChange}
-                              disabled={loading}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="is_description_confidential"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center justify-between rounded-md bg-background/50 px-3 py-2">
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4 text-muted-foreground" />
-                            <FormLabel className="mt-0! font-normal text-sm">
-                              {t(
-                                'workspace-finance-transactions.confidential-description'
-                              )}
-                            </FormLabel>
-                          </div>
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value || false}
-                              onCheckedChange={field.onChange}
-                              disabled={loading}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="is_category_confidential"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center justify-between rounded-md bg-background/50 px-3 py-2">
-                          <div className="flex items-center gap-2">
-                            <FolderOpen className="h-4 w-4 text-muted-foreground" />
-                            <FormLabel className="mt-0! font-normal text-sm">
-                              {t(
-                                'workspace-finance-transactions.confidential-category'
-                              )}
-                            </FormLabel>
-                          </div>
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value || false}
-                              onCheckedChange={field.onChange}
-                              disabled={loading}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-              )}
             </TabsContent>
           </Tabs>
 
@@ -945,6 +484,6 @@ export function TransactionForm({
           </Button>
         </form>
       </Form>
-    </Dialog>
+    </>
   );
 }
