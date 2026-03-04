@@ -7,7 +7,10 @@ class _TransactionFormDialog extends StatefulWidget {
     this.transaction,
     this.onSave,
     this.onCreate,
-  });
+  }) : assert(
+         transaction == null ? onCreate != null : onSave != null,
+         'Create mode requires onCreate; edit mode requires onSave.',
+       );
 
   final String wsId;
   final FinanceRepository repository;
@@ -303,10 +306,7 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
       setState(() {
         _wallets = wallets;
         _categories = categories;
-        if (!_isCreate) {
-          _walletId ??= wallets.isNotEmpty ? wallets.first.id : null;
-          _categoryId ??= categories.isNotEmpty ? categories.first.id : null;
-        }
+        _reconcileSelectedIds();
       });
     } on Exception {
       if (!mounted) return;
@@ -320,6 +320,7 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
 
   Future<void> _handleSave() async {
     final l10n = context.l10n;
+    _reconcileSelectedIds();
     final amount = _parseAmount(_amountController.text);
     if (_walletId == null || _categoryId == null) {
       shad.showToast(
@@ -600,47 +601,107 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
     return trimmed;
   }
 
-  double? _parseAmount(String rawValue) {
-    final input = rawValue.trim();
-    if (input.isEmpty) return null;
+  void _reconcileSelectedIds() {
+    final hasWallet =
+        _walletId != null && _wallets.any((wallet) => wallet.id == _walletId);
+    final hasCategory =
+        _categoryId != null &&
+        _categories.any((category) => category.id == _categoryId);
 
-    try {
-      final locale = Localizations.localeOf(context).toString();
-      final parsed = NumberFormat.decimalPattern(locale).parse(input);
-      final value = parsed.toDouble();
-      if (_currencyFractionDigits(_selectedCurrency) == 0 && value % 1 != 0) {
-        return null;
-      }
-      return value;
-    } on FormatException {
-      final fallback = double.tryParse(input.replaceAll(',', '.'));
-      if (fallback == null) return null;
-      if (_currencyFractionDigits(_selectedCurrency) == 0 &&
-          fallback % 1 != 0) {
-        return null;
-      }
-      return fallback;
+    _walletId = hasWallet
+        ? _walletId
+        : (_wallets.isNotEmpty ? _wallets.first.id : null);
+    _categoryId = hasCategory
+        ? _categoryId
+        : (_categories.isNotEmpty ? _categories.first.id : null);
+  }
+
+  NumberSymbols get _localeNumberSymbols {
+    final locale = Localizations.localeOf(context).toString();
+    return NumberFormat.decimalPattern(locale).symbols;
+  }
+
+  String get _localeDecimalSeparator => _localeNumberSymbols.DECIMAL_SEP;
+
+  String get _localeGroupingSeparator => _localeNumberSymbols.GROUP_SEP;
+
+  String _normalizeAmountInput(String rawValue) {
+    var normalized = rawValue.trim();
+    if (normalized.isEmpty) return normalized;
+
+    normalized = normalized.replaceAll(RegExp(r'[\s\u00A0\u202F]'), '');
+
+    final grouping = _localeGroupingSeparator;
+    if (grouping.isNotEmpty) {
+      normalized = normalized.replaceAll(grouping, '');
     }
+
+    final decimal = _localeDecimalSeparator;
+    if (decimal.isNotEmpty && decimal != '.') {
+      normalized = normalized.replaceAll(decimal, '.');
+    }
+
+    return normalized;
+  }
+
+  double? _parseAmount(String rawValue) {
+    final normalized = _normalizeAmountInput(rawValue);
+    if (normalized.isEmpty) return null;
+
+    final value = double.tryParse(normalized);
+    if (value == null) return null;
+
+    if (_currencyFractionDigits(_selectedCurrency) == 0 && value % 1 != 0) {
+      return null;
+    }
+
+    return value;
   }
 
   int _currencyFractionDigits(String code) {
     final upper = code.toUpperCase();
-    return upper == 'JPY' || upper == 'VND' ? 0 : 2;
+    const fractionDigitsByCurrency = <String, int>{
+      'BHD': 3,
+      'IQD': 3,
+      'JOD': 3,
+      'KWD': 3,
+      'LYD': 3,
+      'OMR': 3,
+      'TND': 3,
+    };
+
+    final configuredDigits = fractionDigitsByCurrency[upper];
+    if (configuredDigits != null) return configuredDigits;
+
+    try {
+      return NumberFormat.currency(name: upper).maximumFractionDigits;
+    } on Exception {
+      return 2;
+    }
   }
 
   List<TextInputFormatter> _amountInputFormatters(String currencyCode) {
     final digits = _currencyFractionDigits(currencyCode);
+    final decimalSeparator = _localeDecimalSeparator;
+    final escapedDecimal = RegExp.escape(decimalSeparator);
     return [
-      FilteringTextInputFormatter.allow(RegExp('[0-9.,]')),
+      FilteringTextInputFormatter.allow(
+        RegExp(digits == 0 ? '[0-9]' : '[0-9$escapedDecimal]'),
+      ),
       TextInputFormatter.withFunction((oldValue, newValue) {
         if (newValue.text.isEmpty) return newValue;
-        final separatorMatches = RegExp('[.,]').allMatches(newValue.text);
+
+        final separatorMatches = RegExp(
+          escapedDecimal,
+        ).allMatches(newValue.text);
         if (separatorMatches.length > 1) {
           return oldValue;
         }
+
         if (digits == 0 && separatorMatches.isNotEmpty) {
           return oldValue;
         }
+
         if (digits > 0 && separatorMatches.isNotEmpty) {
           final separatorIndex = separatorMatches.first.start;
           final decimalLength = newValue.text.length - separatorIndex - 1;

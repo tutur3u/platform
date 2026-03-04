@@ -61,7 +61,7 @@ export async function GET(req: Request, { params }: Params) {
   const itemsPerPage = Math.max(1, parseInt(itemsPerPageParam || '25', 10));
   const offset = (page - 1) * itemsPerPage;
 
-  const supabase = await createClient();
+  const supabase = await createClient(req);
 
   // Get authenticated user for permission checks
   const {
@@ -85,7 +85,7 @@ export async function GET(req: Request, { params }: Params) {
   );
 
   if (error) {
-    console.log(error);
+    console.error(error);
     return NextResponse.json(
       { message: 'Error fetching transactions' },
       { status: 500 }
@@ -257,7 +257,7 @@ export async function POST(req: Request, { params }: Params) {
     .single();
 
   if (error) {
-    console.log(error);
+    console.error(error);
     return NextResponse.json(
       { message: 'Error creating transaction' },
       { status: 500 }
@@ -276,7 +276,7 @@ export async function POST(req: Request, { params }: Params) {
       .insert(tagInserts);
 
     if (tagError) {
-      console.log(tagError);
+      console.error(tagError);
       // Don't fail the entire transaction if tags fail
     }
   }

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide AlertDialog, TextField;
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:intl/number_symbols.dart';
 import 'package:mobile/core/icons/platform_icon.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
@@ -345,8 +346,8 @@ class _DetailRow extends StatelessWidget {
     this.valueBold = false,
     this.valueColor,
   }) : assert(
-         value != null || valueChild != null,
-         'Either value or valueChild must be provided.',
+         (value == null) ^ (valueChild == null),
+         'Either value or valueChild must be provided, but not both.',
        );
 
   final String label;

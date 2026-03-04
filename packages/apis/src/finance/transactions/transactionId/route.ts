@@ -55,17 +55,23 @@ const TransactionUpdateSchema = z.object({
   is_category_confidential: z.boolean().optional(),
 });
 
-export async function GET(req: Request, { params }: Params) {
-  const supabase = await createClient(req);
-  const { transactionId, wsId } = await params;
+const TransactionRouteParamsSchema = z.object({
+  transactionId: z.uuid(),
+  wsId: z.uuid(),
+});
 
-  // Validate UUID format
-  if (!transactionId || !wsId) {
+export async function GET(req: Request, { params }: Params) {
+  const paramsValidation = TransactionRouteParamsSchema.safeParse(await params);
+
+  if (!paramsValidation.success) {
     return NextResponse.json(
       { message: 'Invalid transaction or workspace ID' },
       { status: 400 }
     );
   }
+  const { transactionId, wsId } = paramsValidation.data;
+
+  const supabase = await createClient(req);
 
   const permissions = await getPermissions({
     wsId,
@@ -133,15 +139,15 @@ export async function GET(req: Request, { params }: Params) {
 }
 
 export async function PUT(req: Request, { params }: Params) {
-  const { transactionId, wsId } = await params;
+  const paramsValidation = TransactionRouteParamsSchema.safeParse(await params);
 
-  // Validate UUID format
-  if (!transactionId || !wsId) {
+  if (!paramsValidation.success) {
     return NextResponse.json(
       { message: 'Invalid transaction or workspace ID' },
       { status: 400 }
     );
   }
+  const { transactionId, wsId } = paramsValidation.data;
 
   const parsed = TransactionUpdateSchema.safeParse(await req.json());
 
@@ -341,16 +347,17 @@ export async function PUT(req: Request, { params }: Params) {
 }
 
 export async function DELETE(req: Request, { params }: Params) {
-  const supabase = await createClient(req);
-  const { transactionId, wsId } = await params;
+  const paramsValidation = TransactionRouteParamsSchema.safeParse(await params);
 
-  // Validate UUID format
-  if (!transactionId || !wsId) {
+  if (!paramsValidation.success) {
     return NextResponse.json(
       { message: 'Invalid transaction or workspace ID' },
       { status: 400 }
     );
   }
+  const { transactionId, wsId } = paramsValidation.data;
+
+  const supabase = await createClient(req);
 
   const permissions = await getPermissions({
     wsId,

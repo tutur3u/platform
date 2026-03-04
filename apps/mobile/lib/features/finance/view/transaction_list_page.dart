@@ -334,7 +334,14 @@ class _TransactionListViewState extends State<_TransactionListView> {
           trailing: [
             shad.PrimaryButton(
               onPressed: _onCreateTransaction,
-              child: const Icon(Icons.add, size: 16),
+              child: Semantics(
+                label: l10n.financeCreateTransaction,
+                button: true,
+                child: Tooltip(
+                  message: l10n.financeCreateTransaction,
+                  child: const Icon(Icons.add, size: 16),
+                ),
+              ),
             ),
           ],
         ),

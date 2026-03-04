@@ -71,12 +71,18 @@ Future<bool> openCreateTransactionSheet(
           isDescriptionConfidential,
           isCategoryConfidential,
         }) {
+          if (walletId == null) {
+            throw ArgumentError(
+              'walletId must not be null when creating a transaction',
+            );
+          }
+
           return repository.createTransaction(
             wsId: wsId,
             amount: amount,
             description: description,
             takenAt: takenAt ?? DateTime.now(),
-            walletId: walletId!,
+            walletId: walletId,
             categoryId: categoryId,
             reportOptIn: reportOptIn,
             isAmountConfidential: isAmountConfidential,
