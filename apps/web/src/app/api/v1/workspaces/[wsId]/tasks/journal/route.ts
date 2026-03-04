@@ -1,3 +1,4 @@
+import { google } from '@ai-sdk/google';
 import { capMaxOutputTokensByCredits } from '@tuturuuu/ai/credits/cap-output-tokens';
 import {
   checkAiCredits,
@@ -21,7 +22,7 @@ import {
   MAX_NAME_LENGTH,
   MAX_SHORT_TEXT_LENGTH,
 } from '@tuturuuu/utils/constants';
-import { gateway, generateObject, NoObjectGeneratedError } from 'ai';
+import { generateObject, NoObjectGeneratedError } from 'ai';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
@@ -365,7 +366,7 @@ async function generateAiTasks(
 ) {
   const prompt = `${systemPrompt}\n\nJournal note:\n"""\n${trimmedEntry}\n"""`;
   const { object, usage } = await generateObject({
-    model: gateway('google/gemini-2.5-flash-lite'),
+    model: google('gemini-3.1-flash-lite-preview'),
     schema: quickJournalTaskSchema,
     prompt,
     ...(maxOutputTokens ? { maxOutputTokens } : {}),

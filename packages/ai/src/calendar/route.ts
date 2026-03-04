@@ -1,5 +1,6 @@
+import { google } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { gateway, Output, streamText } from 'ai';
+import { Output, streamText } from 'ai';
 import { calendarEventsSchema } from './events';
 
 export async function POST(req: Request) {
@@ -59,7 +60,7 @@ For example:
   promptText += `\nContext: ${context.prompt}`;
 
   const result = streamText({
-    model: gateway('google/gemini-2.0-flash'),
+    model: google('gemini-3.1-flash-lite-preview'),
     output: Output.object({ schema: calendarEventsSchema }),
     prompt: promptText,
   });

@@ -5,13 +5,7 @@ import {
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
-import {
-  consumeStream,
-  gateway,
-  smoothStream,
-  stepCountIs,
-  streamText,
-} from 'ai';
+import { consumeStream, smoothStream, stepCountIs, streamText } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import type { CreditSource as SharedCreditSource } from '../credit-source';
 import {
@@ -369,8 +363,8 @@ export function createPOST(
       const effectiveSource = isMiraMode ? 'Mira' : 'Rewise';
 
       const resolvedGatewayModel = model.includes('/')
-        ? gateway(model)
-        : gateway(`${defaultProvider}/${model}`);
+        ? google(model.split('/')[1]!)
+        : google(model);
 
       // Reasoning mode: default to fast unless the client explicitly requests thinking.
       const modelLower = model.toLowerCase();

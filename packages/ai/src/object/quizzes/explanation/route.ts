@@ -1,12 +1,13 @@
+import { google } from '@ai-sdk/google';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { gateway, Output, streamText } from 'ai';
+import { Output, streamText } from 'ai';
 import { NextResponse } from 'next/server';
 import { quizOptionExplanationSchema } from '../../types';
 
-const DEFAULT_MODEL_NAME = 'google/gemini-2.5-flash';
+const DEFAULT_MODEL_NAME = 'gemini-3.1-flash-lite-preview';
 
 export async function POST(req: Request) {
   const sbAdmin = await createAdminClient();
@@ -69,7 +70,7 @@ export async function POST(req: Request) {
     // }
 
     const result = streamText({
-      model: gateway(DEFAULT_MODEL_NAME),
+      model: google(DEFAULT_MODEL_NAME),
       prompt: `Generate an explanation with the following context: \n\n"""Question: ${question}""" \n\n"""Option: ${option.value}"""\n\nIs this option correct? ${option.is_correct ? 'Yes' : 'No'}\n\nNOTE: Provide it in the same language as the question and option, be concise and clear.`,
       output: Output.object({ schema: quizOptionExplanationSchema }),
       providerOptions: {

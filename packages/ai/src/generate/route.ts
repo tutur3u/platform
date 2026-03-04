@@ -1,3 +1,4 @@
+import { google } from '@ai-sdk/google';
 import { capMaxOutputTokensByCredits } from '@tuturuuu/ai/credits/cap-output-tokens';
 import {
   checkAiCredits,
@@ -5,10 +6,10 @@ import {
 } from '@tuturuuu/ai/credits/check-credits';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { type FinishReason, gateway, streamText } from 'ai';
+import { type FinishReason, streamText } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 
-const DEFAULT_MODEL_NAME = 'gemini-2.0-flash';
+const DEFAULT_MODEL_NAME = 'gemini-2.0-flash-lite';
 
 const ALLOWED_MODELS = [
   {
@@ -210,7 +211,7 @@ export function createPOST(
       }
 
       const stream = streamText({
-        model: gateway(`google/${configs.model}`),
+        model: google(configs.model),
         prompt,
         system: configs.systemPrompt,
         ...(cappedMaxOutput ? { maxOutputTokens: cappedMaxOutput } : {}),
