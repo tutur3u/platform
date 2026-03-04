@@ -1,12 +1,13 @@
 'use client';
 
+import { createClient } from '@ncthub/supabase/next/client';
 import { Badge } from '@ncthub/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@ncthub/ui/card';
 import { Award, Calendar, Clock, Sparkles, User } from '@ncthub/ui/icons';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { blogsData } from './data';
+import { useEffect, useState } from 'react';
 
 // Category color mapping
 const getCategoryColor = (category: string) => {
@@ -25,7 +26,50 @@ const getCategoryColor = (category: string) => {
   return colors[category as keyof typeof colors] || 'bg-gray-500 text-white';
 };
 
+interface Blog {
+  id: string;
+  title: string;
+  excerpt: string;
+  author: string;
+  date_published: string;
+  category: string;
+  image_url?: string;
+  read_time: string;
+  views_count?: number;
+  likes_count?: number;
+  tags?: string[];
+  is_published?: boolean;
+  slug?: string;
+}
+
 export default function BlogsPageClient() {
+  const supabase = createClient();
+
+  const [blogs, setBlogs] = useState<Blog[]>([]);
+  const fetchBlogs = async () => {
+    const { data, error } = await supabase
+      .from('neo_blogs')
+      .select('*')
+      .order('date_published', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching blogs:', error.message);
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      return [];
+    }
+
+    setBlogs(data as Blog[]);
+  };
+
+  useEffect(() => {
+    fetchBlogs();
+  }, []);
+
+  console.log('Fetched blogs:', blogs);
+
   return (
     <div className="container mx-auto space-y-16 px-4 py-16">
       {/* Hero Section */}
@@ -95,7 +139,7 @@ export default function BlogsPageClient() {
         transition={{ duration: 0.6, delay: 0.7 }}
         className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
       >
-        {blogsData.map((blog, index) => (
+        {blogs.map((blog, index) => (
           <motion.div
             key={blog.id}
             initial={{ opacity: 0, y: 20 }}
@@ -106,10 +150,10 @@ export default function BlogsPageClient() {
             <Link href={`/blogs/${blog.id}`}>
               <Card className="group h-full overflow-hidden transition-all duration-300 hover:border-[#5FC6E5]/50 hover:shadow-lg">
                 {/* Blog Image */}
-                {blog.imageUrl && (
+                {blog.image_url && (
                   <div className="relative h-48 w-full overflow-hidden">
                     <Image
-                      src={blog.imageUrl}
+                      src={blog.image_url}
                       alt={blog.title}
                       fill
                       className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -144,16 +188,19 @@ export default function BlogsPageClient() {
                     <div className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
                       <span>
-                        {new Date(blog.date).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })}
+                        {new Date(blog.date_published).toLocaleDateString(
+                          'en-US',
+                          {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          }
+                        )}
                       </span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      <span>{blog.readTime} read</span>
+                      <span>{blog.read_time} read</span>
                     </div>
                   </div>
 
@@ -166,6 +213,7 @@ export default function BlogsPageClient() {
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
+                        aria-hidden="true"
                       >
                         <path
                           strokeLinecap="round"

@@ -7,12 +7,33 @@ import { EditorContent, StarterKit, useEditor } from '@ncthub/ui/tiptap';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import type { Blog } from '../data';
+import type { BlogDetail } from './page';
 
-export default function BlogDetailClient({ blog }: { blog: Blog }) {
+export default function BlogDetailClient({ blog }: { blog: BlogDetail }) {
+  // Parse content if it's a string
+  const parsedContent =
+    typeof blog.content === 'string'
+      ? (() => {
+          try {
+            return JSON.parse(blog.content);
+          } catch (error) {
+            console.error('Failed to parse blog content:', error);
+            return {
+              type: 'doc',
+              content: [
+                {
+                  type: 'paragraph',
+                  content: [{ type: 'text', text: blog.content }],
+                },
+              ],
+            };
+          }
+        })()
+      : blog.content;
+
   const editor = useEditor({
     editable: false,
-    content: blog.content,
+    content: parsedContent,
     extensions: [StarterKit],
     editorProps: {
       attributes: {
@@ -63,7 +84,7 @@ export default function BlogDetailClient({ blog }: { blog: Blog }) {
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               <span>
-                {new Date(blog.date).toLocaleDateString('en-US', {
+                {new Date(blog.date_published).toLocaleDateString('en-US', {
                   month: 'long',
                   day: 'numeric',
                   year: 'numeric',
@@ -72,13 +93,13 @@ export default function BlogDetailClient({ blog }: { blog: Blog }) {
             </div>
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
-              <span>{blog.readTime} read</span>
+              <span>{blog.read_time} read</span>
             </div>
           </div>
         </motion.div>
 
         {/* Featured Image */}
-        {blog.imageUrl && (
+        {blog.image_url && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -86,7 +107,7 @@ export default function BlogDetailClient({ blog }: { blog: Blog }) {
             className="relative mb-12 h-96 w-full overflow-hidden rounded-2xl"
           >
             <Image
-              src={blog.imageUrl}
+              src={blog.image_url}
               alt={blog.title}
               fill
               className="object-cover"

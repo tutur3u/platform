@@ -3133,6 +3133,63 @@ export type Database = {
           transcript_id?: null | string;
         };
       };
+      neo_blogs: {
+        Insert: {
+          author?: null | string;
+          category?: null | string;
+          content?: null | string;
+          created_at?: string;
+          date_published?: string;
+          excerpt?: null | string;
+          id?: string;
+          image_url?: null | string;
+          is_published?: boolean;
+          likes_count?: number;
+          read_time?: null | string;
+          slug: string;
+          tags?: null | string[];
+          title: string;
+          updated_at?: string;
+          views_count?: number;
+        };
+        Relationships: [];
+        Row: {
+          author: null | string;
+          category: null | string;
+          content: null | string;
+          created_at: string;
+          date_published: string;
+          excerpt: null | string;
+          id: string;
+          image_url: null | string;
+          is_published: boolean;
+          likes_count: number;
+          read_time: null | string;
+          slug: string;
+          tags: null | string[];
+          title: string;
+          updated_at: string;
+          views_count: number;
+        };
+        Update: {
+          author?: null | string;
+          category?: null | string;
+          content?: null | string;
+          created_at?: string;
+          date_published?: string;
+          excerpt?: null | string;
+          id?: string;
+          image_url?: null | string;
+          is_published?: boolean;
+          likes_count?: number;
+          read_time?: null | string;
+          slug?: string;
+          tags?: null | string[];
+          title?: string;
+          updated_at?: string;
+          views_count?: number;
+        };
+      };
       nova_challenge_criteria: {
         Insert: {
           challenge_id: string;
