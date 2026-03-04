@@ -302,8 +302,10 @@ class _TransactionListViewState extends State<_TransactionListView> {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
     final toastContext = Navigator.of(context, rootNavigator: true).context;
-    final exchangeRates =
-        context.read<TransactionListCubit>().state.exchangeRates;
+    final exchangeRates = context
+        .read<TransactionListCubit>()
+        .state
+        .exchangeRates;
 
     final created = await openCreateTransactionSheet(
       context,

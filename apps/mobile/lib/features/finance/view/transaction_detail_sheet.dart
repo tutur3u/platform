@@ -18,7 +18,10 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
+part 'transaction_detail_sheet_amount_parsing.dart';
 part 'transaction_detail_sheet_edit_dialog.dart';
+part 'transaction_detail_sheet_edit_dialog_logic.dart';
+part 'transaction_detail_sheet_edit_dialog_widgets.dart';
 
 typedef TransactionSaveHandler =
     Future<Transaction> Function({
