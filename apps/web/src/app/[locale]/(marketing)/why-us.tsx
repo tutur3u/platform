@@ -69,7 +69,7 @@ const reasons = [
       'Continuous Skill Development',
     ],
     buttonText: 'Join Neo Culture Tech',
-    link: 'https://forms.office.com/r/2DFkRBAxHf?origin=lprLink',
+    link: ' https://forms.office.com/r/csPz8V73ad?origin=lprLink',
     isExternal: true,
     badgeText: 'Inclusive Community',
   },
