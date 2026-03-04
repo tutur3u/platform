@@ -50,7 +50,7 @@ function DesktopNavLinks() {
                 onClick={(e) => handleSmoothScroll(e, item.href)}
                 className={cn(
                   navigationMenuTriggerStyle(),
-                  'bg-transparent px-4 font-semibold transition-all duration-300 hover:bg-foreground/5'
+                  'bg-transparent px-4 transition-all duration-300 hover:bg-foreground/5'
                 )}
               >
                 {item.label}
@@ -68,7 +68,7 @@ function DesktopActions() {
     <div className="hidden items-center gap-2 md:flex">
       <Button
         asChild
-        className="hover:bg-transparent hover:text-foreground/50"
+        className="bg-transparent transition-all duration-300 hover:bg-foreground/5"
         variant="ghost"
       >
         <Link
@@ -82,17 +82,12 @@ function DesktopActions() {
       </Button>
 
       <Button
-        className="hover:bg-transparent hover:text-foreground/50"
+        className="bg-transparent transition-all duration-300 hover:bg-foreground/5"
         variant="ghost"
       >
         <Link
           href="#contact"
-          onClick={(e) => {
-            e.preventDefault();
-            document
-              .querySelector('#contact')
-              ?.scrollIntoView({ behavior: 'smooth' });
-          }}
+          onClick={(e) => handleSmoothScroll(e, '#contact')}
         >
           Contact Us
         </Link>
@@ -136,8 +131,16 @@ function MobileActions() {
           side="right"
           className="flex h-full flex-col border-l bg-background/95 p-0 [&>button]:hidden"
         >
-          <SheetHeader className="flex-row items-center justify-between border-foreground/10 border-b px-6 py-6">
-            <SheetTitle className="font-bold text-lg">Menu</SheetTitle>
+          <SheetHeader className="flex-row items-center justify-between border-foreground/10 border-b p-5">
+            <SheetTitle>
+              <Image
+                src="/logo.png"
+                className="h-14 w-auto object-contain"
+                width={350}
+                height={100}
+                alt="NEO League Logo"
+              />
+            </SheetTitle>
             <SheetClose className="rounded-md p-2 text-foreground/80 transition hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <X className="h-4 w-4" />
               <span className="sr-only">Close navigation</span>
