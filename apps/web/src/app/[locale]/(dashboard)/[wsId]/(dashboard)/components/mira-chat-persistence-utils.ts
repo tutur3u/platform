@@ -221,7 +221,9 @@ export function restoreMessages(
         message.content != null ||
         metadata?.toolCalls != null ||
         metadata?.reasoning != null ||
-        metadata?.sources != null
+        metadata?.sources != null ||
+        (Array.isArray(metadata?.attachments) &&
+          metadata.attachments.length > 0)
       );
     })
     .map((message) => {

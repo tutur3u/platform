@@ -35,8 +35,11 @@ type InsertChatMessageResult = PromiseLike<{
 
 type ExistingChatMessageRecord = {
   chat_id: string;
+  content: string | null;
   creator_id: string;
   id: string;
+  metadata: Json | null;
+  model: string | null;
   role: string;
 };
 
@@ -85,7 +88,11 @@ export async function insertUserChatMessageSafely({
     existingMessage &&
     existingMessage.chat_id === message.chat_id &&
     existingMessage.creator_id === message.creator_id &&
-    existingMessage.role === message.role
+    existingMessage.role === message.role &&
+    (existingMessage.content ?? '') === (message.content ?? '') &&
+    JSON.stringify(existingMessage.metadata) ===
+      JSON.stringify(message.metadata) &&
+    (existingMessage.model ?? '') === (message.model ?? '')
   ) {
     return { error: null };
   }
@@ -178,20 +185,30 @@ export async function prepareProcessedMessages(
   let messagesWithFileContext = normalizedMessages;
 
   if (wsId && chatId && latestAttachmentTurn.attachments.length > 0) {
-    const { digestBlocks } = await resolveChatFileDigests({
-      chatId,
-      chatFiles: latestAttachmentTurn.attachments,
-      creditWsId,
-      messageId: latestAttachmentTurn.message?.id,
-      userId,
-      wsId,
-    });
+    try {
+      const { digestBlocks } = await resolveChatFileDigests({
+        chatId,
+        chatFiles: latestAttachmentTurn.attachments,
+        creditWsId,
+        messageId: latestAttachmentTurn.message?.id,
+        userId,
+        wsId,
+      });
 
-    messagesWithFileContext = await injectFileDigestContextIntoUiMessages({
-      digestBlocks,
-      messages: normalizedMessages,
-      targetMessageId: latestAttachmentTurn.message?.id,
-    });
+      messagesWithFileContext = await injectFileDigestContextIntoUiMessages({
+        digestBlocks,
+        messages: normalizedMessages,
+        targetMessageId: latestAttachmentTurn.message?.id,
+      });
+    } catch (error) {
+      console.error('[AI Chat] Failed to resolve or inject file digests:', {
+        chatId: chatId.slice(0, 8),
+        messageId: latestAttachmentTurn.message?.id?.slice(0, 8) ?? null,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      // Fail open: continue with original messages
+      messagesWithFileContext = normalizedMessages;
+    }
   }
 
   const modelMessages = await convertToModelMessages(messagesWithFileContext);

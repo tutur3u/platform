@@ -339,7 +339,7 @@ export function createPOST(
       const latestAttachmentTurn =
         getLatestUserMessageWithAttachments(normalizedMessages);
 
-      if (latestAttachmentTurn.attachments.length > 0) {
+      if (latestUserAttachments.length > 0) {
         const digestPreflight = await performCreditPreflight({
           model: FILE_DIGEST_MODEL,
           sbAdmin,
@@ -613,7 +613,6 @@ export function createPOST(
       const err = error as Error;
       console.error('[AI Chat] Internal server error', {
         name: err.name,
-        message: err.message,
       });
 
       return NextResponse.json(

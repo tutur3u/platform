@@ -125,6 +125,7 @@ function getLeadingPlannerJsonEnvelopeLength(text: string): number {
   try {
     const parsed = JSON.parse(candidate);
     if (!isObjectRecord(parsed)) return 0;
+    if (parsed.__planner !== true) return 0;
     if (!Array.isArray(parsed.tools)) return 0;
     if (
       !parsed.tools.every((tool): tool is string => typeof tool === 'string')
@@ -132,7 +133,7 @@ function getLeadingPlannerJsonEnvelopeLength(text: string): number {
       return 0;
     }
 
-    const allowedKeys = new Set(['tools']);
+    const allowedKeys = new Set(['tools', '__planner']);
     if (Object.keys(parsed).some((key) => !allowedKeys.has(key))) {
       return 0;
     }

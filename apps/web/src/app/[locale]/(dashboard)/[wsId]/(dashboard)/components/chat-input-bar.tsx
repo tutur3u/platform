@@ -74,16 +74,62 @@ const ACCEPT_STRING = [...ACCEPTED_MIME_TYPES, ...ACCEPTED_EXTENSIONS].join(
   ','
 );
 
+const MIME_TO_EXTENSIONS: Record<string, string[]> = {
+  'audio/aac': ['.aac'],
+  'audio/flac': ['.flac'],
+  'audio/m4a': ['.m4a'],
+  'audio/mp4': ['.m4a', '.mp4'],
+  'audio/mpeg': ['.mp3'],
+  'audio/ogg': ['.ogg'],
+  'audio/wav': ['.wav'],
+  'audio/webm': ['.webm'],
+  'image/png': ['.png'],
+  'image/jpeg': ['.jpg', '.jpeg'],
+  'image/webp': ['.webp'],
+  'image/gif': ['.gif'],
+  'video/mp4': ['.mp4'],
+  'video/webm': ['.webm'],
+  'video/quicktime': ['.mov'],
+  'application/pdf': ['.pdf'],
+  'text/plain': ['.txt'],
+  'text/csv': ['.csv'],
+  'application/vnd.ms-excel': ['.xls'],
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': [
+    '.xlsx',
+  ],
+  'application/vnd.ms-powerpoint': ['.ppt'],
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': [
+    '.pptx',
+  ],
+  'application/msword': ['.doc'],
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': [
+    '.docx',
+  ],
+  'application/json': ['.json'],
+  'text/markdown': ['.md'],
+};
+
 function isAcceptedFile(file: File): boolean {
   const mimeType = file.type.toLowerCase();
   if (ACCEPTED_MIME_TYPES.has(mimeType)) return true;
 
+  // Fallback: check if the file's extension is in the allowed list
   const fileName = file.name.toLowerCase();
   const extIndex = fileName.lastIndexOf('.');
-  if (extIndex !== -1) {
-    const ext = fileName.substring(extIndex);
-    return ACCEPTED_EXTENSIONS.has(ext);
+  const extension = extIndex !== -1 ? fileName.substring(extIndex) : null;
+
+  if (extension && ACCEPTED_EXTENSIONS.has(extension)) return true;
+
+  // Final fallback: check if MIME type (even if not explicitly in ACCEPTED_MIME_TYPES)
+  // maps to an accepted extension
+  const mappedExtensions = MIME_TO_EXTENSIONS[mimeType];
+  if (
+    mappedExtensions?.some((ext) => ACCEPTED_EXTENSIONS.has(ext)) ||
+    ACCEPTED_MIME_TYPES.has(mimeType)
+  ) {
+    return true;
   }
+
   return false;
 }
 
@@ -171,11 +217,26 @@ export default function ChatInputBar({
         const uploadedCount = (await onFilesSelected?.([file])) ?? 0;
         if (!options.submitOnReady || uploadedCount <= 0) return;
 
-        const trimmed = inputValueRef.current.trim();
-        onSubmit(trimmed);
-        setInput('');
+        // Guard: do not submit if already streaming or busy.
+        // If busy, we poll until the hook reports idle before submitting.
+        const submitWhenReady = async () => {
+          if (isStreaming) {
+            setTimeout(submitWhenReady, 500);
+            return;
+          }
+
+          const trimmed = inputValueRef.current.trim();
+          onSubmit(trimmed);
+          setInput('');
+        };
+
+        void submitWhenReady();
       } catch (error) {
-        console.error('[Mira Chat] Failed to queue recorded audio:', error);
+        console.error('[Mira Chat] Failed to queue recorded audio:', {
+          status: 'error',
+          mediaType: file.type,
+          size: file.size,
+        });
       }
     },
   });
@@ -201,11 +262,15 @@ export default function ChatInputBar({
 
       if (valid.length > 0) {
         try {
-          void Promise.resolve(onFilesSelected?.(valid)).catch((error) => {
-            console.error('[Mira Chat] Failed to queue selected files:', error);
+          void Promise.resolve(onFilesSelected?.(valid)).catch(() => {
+            console.error('[Mira Chat] Failed to queue selected files', {
+              count: valid.length,
+            });
           });
-        } catch (error) {
-          console.error('[Mira Chat] Failed to queue selected files:', error);
+        } catch {
+          console.error('[Mira Chat] Failed to queue selected files', {
+            count: valid.length,
+          });
         }
       }
 
@@ -242,11 +307,15 @@ export default function ChatInputBar({
 
       if (valid.length > 0) {
         try {
-          void Promise.resolve(onFilesSelected(valid)).catch((error) => {
-            console.error('[Mira Chat] Failed to queue pasted files:', error);
+          void Promise.resolve(onFilesSelected(valid)).catch(() => {
+            console.error('[Mira Chat] Failed to queue pasted files', {
+              count: valid.length,
+            });
           });
-        } catch (error) {
-          console.error('[Mira Chat] Failed to queue pasted files:', error);
+        } catch {
+          console.error('[Mira Chat] Failed to queue pasted files', {
+            count: valid.length,
+          });
         }
       }
 
@@ -347,6 +416,7 @@ export default function ChatInputBar({
                     size="icon"
                     className="h-8 w-8 rounded-full border border-border/50 bg-background text-muted-foreground"
                     onClick={cancelRecording}
+                    aria-label={t('cancel_recording') || 'Cancel recording'}
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -358,6 +428,7 @@ export default function ChatInputBar({
                     size="sm"
                     className="h-8 rounded-full border-border/60 bg-background px-3"
                     onClick={() => stopRecording()}
+                    aria-label={t('stop_recording') || 'Stop recording'}
                   >
                     <CircleStop className="mr-1.5 h-4 w-4" />
                     {t('stop_recording')}
@@ -371,6 +442,7 @@ export default function ChatInputBar({
                         size="icon"
                         className="h-8 w-8 rounded-full bg-foreground text-background hover:bg-foreground/90"
                         onClick={handleImmediateAudioSend}
+                        aria-label={t('send_immediately') || 'Send immediately'}
                       >
                         <Send className="h-4 w-4" />
                       </Button>
@@ -427,6 +499,7 @@ export default function ChatInputBar({
                   )}
                   onClick={handleAttachClick}
                   disabled={disabled || maxFilesReached || hasPendingAudio}
+                  aria-label={t('attach_files') || 'Attach files'}
                 >
                   <Paperclip className="h-4.5 w-4.5" />
                 </Button>
@@ -452,6 +525,11 @@ export default function ChatInputBar({
                   )}
                   onClick={handleAudioToggle}
                   disabled={disabled || maxFilesReached || isPreparingAudio}
+                  aria-label={
+                    isRecording
+                      ? t('stop_recording') || 'Stop recording'
+                      : t('record_audio') || 'Record audio'
+                  }
                 >
                   {isPreparingAudio ? (
                     <Loader2 className="h-4.5 w-4.5 animate-spin" />
@@ -482,6 +560,7 @@ export default function ChatInputBar({
                   className="h-9 w-9 shrink-0"
                   onClick={onVoiceToggle}
                   disabled={disabled || hasPendingAudio}
+                  aria-label={t('voice_input') || 'Voice input'}
                 >
                   <Mic className="h-4.5 w-4.5" />
                 </Button>
@@ -502,6 +581,7 @@ export default function ChatInputBar({
                     : 'bg-muted text-muted-foreground'
                 )}
                 disabled={!canSubmit || disabled}
+                aria-label={t('send_message') || 'Send message'}
               >
                 <Send className="h-4.5 w-4.5" />
               </Button>

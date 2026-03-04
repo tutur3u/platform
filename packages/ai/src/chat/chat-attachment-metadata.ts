@@ -18,7 +18,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export function stripChatUploadTimestampPrefix(name: string): string {
-  const match = name.match(/^\d+_(.+)$/);
+  const match = name.match(/^(?:\d{10}|\d{13})_(.+)$/);
   return match?.[1] ?? name;
 }
 

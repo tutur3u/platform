@@ -53,6 +53,8 @@ const NATIVE_DIGEST_MEDIA_TYPES = new Set([
 const NATIVE_DIGEST_EXTENSIONS = new Set([
   'aac',
   'csv',
+  'doc',
+  'docx',
   'flac',
   'gif',
   'jpeg',
@@ -66,10 +68,14 @@ const NATIVE_DIGEST_EXTENSIONS = new Set([
   'ogg',
   'pdf',
   'png',
+  'ppt',
+  'pptx',
   'txt',
   'wav',
   'webm',
   'webp',
+  'xls',
+  'xlsx',
 ]);
 
 function maskIdentifier(value: string): string {
@@ -172,16 +178,20 @@ function attachmentMatchesDigestCandidate(
   candidate: ChatAttachmentMetadata,
   target: ChatAttachmentMetadata
 ): boolean {
+  if (candidate.storagePath === target.storagePath) return true;
+
   const normalizedTargetName = target.name.trim().toLowerCase();
   const normalizedTargetAlias = target.alias?.trim().toLowerCase() ?? '';
+
+  const candidateBaseName = getStorageFileName(candidate.storagePath);
+  const targetBaseName = getStorageFileName(target.storagePath);
+
+  if (candidateBaseName !== targetBaseName) return false;
 
   return (
     candidate.name.trim().toLowerCase() === normalizedTargetName ||
     (normalizedTargetAlias.length > 0 &&
-      (candidate.alias?.trim().toLowerCase() ?? '') ===
-        normalizedTargetAlias) ||
-    getStorageFileName(candidate.storagePath) ===
-      getStorageFileName(target.storagePath)
+      (candidate.alias?.trim().toLowerCase() ?? '') === normalizedTargetAlias)
   );
 }
 
@@ -238,9 +248,23 @@ export async function resolveAttachmentForDigest({
     }
   }
 
-  const resolvedStoragePath = [...candidatePaths].find(
-    (storagePath) => !isTempChatStoragePath(storagePath)
-  );
+  const candidatePathsList = [...candidatePaths];
+  let resolvedStoragePath: string | undefined;
+
+  for (const candidatePath of candidatePathsList) {
+    if (isTempChatStoragePath(candidatePath)) continue;
+
+    const fileName = getStorageFileName(candidatePath);
+    const folderPath = candidatePath.split('/').slice(0, -1).join('/');
+    const { data: exists } = await sbAdmin.storage
+      .from('workspaces')
+      .list(folderPath, { search: fileName });
+
+    if (exists && exists.length > 0) {
+      resolvedStoragePath = candidatePath;
+      break;
+    }
+  }
 
   if (!resolvedStoragePath) {
     return attachment;

@@ -2,7 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import type { Json } from '@tuturuuu/types';
+import type { Json } from '@tuturuuu/types/db';
 import { gateway, generateText, type UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
 import {
@@ -46,10 +46,10 @@ function buildTitleSeed(
 }
 
 export function normalizeInitialUserMessageContent(
-  message: string,
+  message: string | undefined,
   messageMetadata: Record<string, unknown> | undefined
 ): string {
-  const trimmed = message.trim();
+  const trimmed = message?.trim() ?? '';
   const attachments = normalizeChatAttachmentMetadata(
     messageMetadata?.attachments
   );
@@ -79,8 +79,13 @@ export function createPOST(
           message?: string;
         };
 
-      if (!message)
+      const hasAttachments =
+        normalizeChatAttachmentMetadata(messageMetadata?.attachments).length >
+        0;
+
+      if (!message && !hasAttachments && !messageId) {
         return NextResponse.json('No message provided', { status: 400 });
+      }
 
       const supabase = await createClient();
       const sbAdmin = await createAdminClient();

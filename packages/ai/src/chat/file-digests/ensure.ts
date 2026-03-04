@@ -230,7 +230,9 @@ export async function ensureChatFileDigest(
     }
   };
 
-  const lockResult = await runWithLock(singleFlightKey, runDigest);
+  const lockResult = await runWithLock(singleFlightKey, runDigest, {
+    ttlSeconds: 300,
+  });
   if (typeof lockResult === 'object' && 'locked' in lockResult) {
     return {
       ok: false,
