@@ -34,8 +34,4 @@ export interface TransactionFormProps {
 
 export type NewContentType = 'wallet' | 'transaction-category' | 'tag';
 
-export type NewContent =
-  | Wallet
-  | TransactionCategory
-  | TagDraft
-  | undefined;
+export type NewContent = Wallet | TransactionCategory | TagDraft | undefined;
