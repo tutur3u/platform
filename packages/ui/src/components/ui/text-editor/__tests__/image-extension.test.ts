@@ -1,6 +1,10 @@
-import type { Plugin } from 'prosemirror-state';
+import {
+  type EditorState,
+  NodeSelection,
+  type Plugin,
+} from 'prosemirror-state';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { CustomImage } from '../image-extension';
+import { __imageExtensionPrivate, CustomImage } from '../image-extension';
 import { MAX_IMAGE_SIZE, MAX_VIDEO_SIZE } from '../media-utils';
 
 // Mock media-utils
@@ -724,6 +728,76 @@ describe('ImageExtension', () => {
 
       const result = shortcuts.Backspace({ editor: mockEditor as any });
       expect(result).toBe(true);
+    });
+  });
+
+  describe('image resize UI cleanup helpers', () => {
+    const createImageNodeDom = () => {
+      const nodeDom = document.createElement('div');
+      const container = document.createElement('div');
+      container.setAttribute(
+        'style',
+        'position: relative; border: 1px dashed #6C6C6C; width: 320px;'
+      );
+
+      const image = document.createElement('img');
+      const alignController = document.createElement('div');
+      const resizeHandle = document.createElement('div');
+
+      container.appendChild(image);
+      container.appendChild(alignController);
+      container.appendChild(resizeHandle);
+      nodeDom.appendChild(container);
+
+      return { nodeDom, container, image, alignController, resizeHandle };
+    };
+
+    it('should clear dashed border and remove controls from image node DOM', () => {
+      const { nodeDom, container } = createImageNodeDom();
+
+      __imageExtensionPrivate.clearImageResizeUIFromNodeDom(nodeDom);
+
+      expect(container.getAttribute('style')).toBe(
+        'position: relative; width: 320px;'
+      );
+      expect(container.children.length).toBe(1);
+      expect(container.firstElementChild?.tagName).toBe('IMG');
+    });
+
+    it('should not throw when node DOM is null', () => {
+      expect(() => {
+        __imageExtensionPrivate.clearImageResizeUIFromNodeDom(null);
+      }).not.toThrow();
+    });
+
+    it('should return selected image position for image node selection', () => {
+      const imageNode = {
+        type: { name: 'imageResize' },
+      };
+
+      const state = {
+        selection: {
+          from: 5,
+          node: imageNode,
+        },
+      } as unknown as EditorState;
+
+      Object.setPrototypeOf(state.selection, NodeSelection.prototype);
+
+      expect(__imageExtensionPrivate.getSelectedImagePos(state)).toBe(5);
+    });
+
+    it('should return null for non-image selections', () => {
+      const state = {
+        selection: {
+          from: 3,
+          node: { type: { name: 'paragraph' } },
+        },
+      } as unknown as EditorState;
+
+      Object.setPrototypeOf(state.selection, NodeSelection.prototype);
+
+      expect(__imageExtensionPrivate.getSelectedImagePos(state)).toBeNull();
     });
   });
 });

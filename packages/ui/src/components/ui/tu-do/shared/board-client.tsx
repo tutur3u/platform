@@ -22,6 +22,7 @@ import {
 } from './board-broadcast-context';
 import { BoardViews } from './board-views';
 import { ProgressiveLoaderProvider } from './progressive-loader-context';
+import { dispatchRecentSidebarVisit } from './recent-sidebar-events';
 import { useProgressiveBoardLoader } from './use-progressive-board-loader';
 
 interface Props {
@@ -95,6 +96,39 @@ export function BoardClient({
     setActiveBroadcast(broadcast);
     return () => setActiveBroadcast(null);
   }, [broadcast]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !board?.id) return;
+
+    const badges = [];
+    const ticketPrefix = board.ticket_prefix ?? undefined;
+
+    if (ticketPrefix) {
+      badges.push({
+        kind: 'ticket-prefix' as const,
+        value: ticketPrefix,
+      });
+    }
+    if (board.archived_at) {
+      badges.push({ kind: 'archived' as const });
+    }
+
+    dispatchRecentSidebarVisit({
+      href: window.location.pathname,
+      scopeWsId: workspace.id,
+      snapshot: {
+        badges,
+        iconKey: 'task-board',
+        title: board.name || undefined,
+      },
+    });
+  }, [
+    board?.archived_at,
+    board?.id,
+    board?.name,
+    board?.ticket_prefix,
+    workspace.id,
+  ]);
 
   // Ensure board is not null and has required properties before rendering
   if (!board || !board.id) {

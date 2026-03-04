@@ -79,10 +79,10 @@ export function TaskItemCheckboxContent({
   );
 
   return (
-    <>
+    <div className="flex items-start gap-2">
       <div
         className={cn(
-          'task-list-checkbox-label relative mr-2 flex shrink-0 select-none pt-[0.453rem]',
+          'task-list-checkbox-label flex shrink-0 select-none pt-2.5',
           !editor.isEditable && 'pointer-events-none'
         )}
         contentEditable={false}
@@ -217,13 +217,13 @@ export function TaskItemCheckboxContent({
           isChecked && 'task-content-faded'
         )}
       />
-    </>
+    </div>
   );
 }
 
 export function TaskItemCheckboxView(props: NodeViewProps) {
   return (
-    <DraggableNodeContainer {...props} as="li" className="flex items-start">
+    <DraggableNodeContainer {...props} as="li" className="flex items-center">
       <TaskItemCheckboxContent {...props} />
     </DraggableNodeContainer>
   );

@@ -154,7 +154,7 @@
     "financeWalletSearchCurrency": "Search currencies",
     "financeWalletCurrencyRequired": "Enter a valid 3-letter currency code",
     "financeWalletIconOrImage": "Icon or image",
-    "financeWalletNoVisual": "No icon selected",
+    "financeWalletNoVisual": "No visual selected",
     "financeWalletPickImage": "Pick image",
     "financeWalletClearVisual": "Clear visual",
     "financeWalletCreditDetails": "Credit details",
@@ -166,7 +166,7 @@
     "financeWalletBankTab": "Bank",
     "financeWalletMobileTab": "Mobile",
     "financeWalletSearchImage": "Search images",
-    "financeWalletImageCount": "{count} available",
+    "financeWalletImageCount": "{count, plural, =0{No images} one{1 available} other{{count} available}}",
     "@financeWalletImageCount": {
         "placeholders": {
             "count": {

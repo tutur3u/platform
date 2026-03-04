@@ -60,8 +60,57 @@ interface CustomWhiteboardProps {
 const AUTO_SAVE_DEBOUNCE_MS = 1000;
 // Title save debounce (500ms)
 const TITLE_SAVE_DEBOUNCE_MS = 500;
+const VIEWPORT_SAVE_DEBOUNCE_MS = 400;
+const VIEWPORT_STORAGE_KEY_PREFIX = 'whiteboard-viewport';
 
 type SyncStatus = 'synced' | 'syncing' | 'error';
+
+interface PersistedViewport {
+  scrollX: number;
+  scrollY: number;
+  zoom: AppState['zoom'];
+}
+
+function parsePersistedViewport(
+  value: string | null
+): PersistedViewport | null {
+  if (!value) return null;
+
+  try {
+    const parsed = JSON.parse(value) as {
+      scrollX?: unknown;
+      scrollY?: unknown;
+      zoom?: unknown;
+    };
+
+    if (
+      typeof parsed.scrollX !== 'number' ||
+      typeof parsed.scrollY !== 'number' ||
+      !Number.isFinite(parsed.scrollX) ||
+      !Number.isFinite(parsed.scrollY)
+    ) {
+      return null;
+    }
+
+    if (typeof parsed.zoom === 'object' && parsed.zoom !== null) {
+      const zoomValue = (parsed.zoom as { value?: unknown }).value;
+
+      if (typeof zoomValue !== 'number' || !Number.isFinite(zoomValue)) {
+        return null;
+      }
+
+      return {
+        scrollX: parsed.scrollX,
+        scrollY: parsed.scrollY,
+        zoom: parsed.zoom as AppState['zoom'],
+      };
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 export function CustomWhiteboard({
   wsId,
@@ -86,10 +135,42 @@ export function CustomWhiteboard({
   const lastSelectionSignatureRef = useRef('');
   const previousElementsRef = useRef<readonly ExcalidrawElement[]>([]);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const viewportSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingViewportRef = useRef<PersistedViewport | null>(null);
   const pendingChangesRef = useRef(false);
   const requestedFileIdsRef = useRef<Set<string>>(new Set());
   const lastSnapshotUpdatedAtRef = useRef<string | null>(null);
   const previousConnectionStatusRef = useRef<boolean | null>(null);
+
+  const viewportStorageKey = useMemo(
+    () => `${VIEWPORT_STORAGE_KEY_PREFIX}:${wsId}:${boardId}`,
+    [wsId, boardId]
+  );
+
+  const persistedViewport = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+
+    try {
+      const storedValue = localStorage.getItem(viewportStorageKey);
+      return parsePersistedViewport(storedValue);
+    } catch {
+      return null;
+    }
+  }, [viewportStorageKey]);
+
+  const effectiveInitialData = useMemo(() => {
+    if (!persistedViewport) return initialData;
+
+    return {
+      ...initialData,
+      appState: {
+        ...initialData?.appState,
+        scrollX: persistedViewport.scrollX,
+        scrollY: persistedViewport.scrollY,
+        zoom: persistedViewport.zoom,
+      },
+    };
+  }, [initialData, persistedViewport]);
 
   const {
     collaborators,
@@ -193,6 +274,40 @@ export function CustomWhiteboard({
       presenceCount: v.count,
     }));
   }, [whiteboardViewers]);
+
+  const storeViewport = useCallback(
+    (viewport: PersistedViewport | null) => {
+      if (!viewport) return;
+
+      try {
+        localStorage.setItem(viewportStorageKey, JSON.stringify(viewport));
+      } catch (error) {
+        console.error('Failed to store whiteboard viewport:', error);
+      }
+    },
+    [viewportStorageKey]
+  );
+
+  const persistViewport = useCallback(
+    (appState: AppState) => {
+      const nextViewport: PersistedViewport = {
+        scrollX: appState.scrollX,
+        scrollY: appState.scrollY,
+        zoom: appState.zoom,
+      };
+
+      pendingViewportRef.current = nextViewport;
+
+      if (viewportSaveTimeoutRef.current) {
+        clearTimeout(viewportSaveTimeoutRef.current);
+      }
+
+      viewportSaveTimeoutRef.current = setTimeout(() => {
+        storeViewport(pendingViewportRef.current);
+      }, VIEWPORT_SAVE_DEBOUNCE_MS);
+    },
+    [storeViewport]
+  );
 
   const blobToDataURL = useCallback((blob: Blob): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -366,6 +481,7 @@ export function CustomWhiteboard({
   const handleChange = useCallback(
     (elements: readonly ExcalidrawElement[], appState: AppState) => {
       ensureImageFilesLoaded(elements);
+      persistViewport(appState);
 
       // Only compare elements (not appState which changes frequently)
       const currentState = JSON.stringify({
@@ -398,6 +514,7 @@ export function CustomWhiteboard({
       broadcastElementChanges,
       broadcastSelectionChange,
       triggerAutoSave,
+      persistViewport,
       ensureImageFilesLoaded,
     ]
   );
@@ -644,11 +761,17 @@ export function CustomWhiteboard({
       if (autoSaveTimeoutRef.current) {
         clearTimeout(autoSaveTimeoutRef.current);
       }
+
+      if (viewportSaveTimeoutRef.current) {
+        clearTimeout(viewportSaveTimeoutRef.current);
+      }
+      storeViewport(pendingViewportRef.current);
+
       if (titleSaveTimeoutRef.current) {
         clearTimeout(titleSaveTimeoutRef.current);
       }
     };
-  }, []);
+  }, [storeViewport]);
 
   // Handle keyboard shortcuts (Cmd+S / Ctrl+S)
   useEffect(() => {
@@ -766,7 +889,7 @@ export function CustomWhiteboard({
         {resolvedTheme ? (
           <Excalidraw
             excalidrawAPI={handleExcalidrawAPI}
-            initialData={initialData}
+            initialData={effectiveInitialData}
             onChange={handleChange}
             onPointerUpdate={handlePointerUpdate}
             generateIdForFile={handleGenerateIdForFile}

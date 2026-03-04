@@ -185,7 +185,7 @@ ${
     ? `- "Summarize my day" → \`["get_my_tasks", "render_ui"]\` (Use UI for beautiful summaries)`
     : `- "Summarize my day" → \`["get_my_tasks"]\``
 }
-- "Create a task and assign it to someone" → \`["create_task", "list_workspace_members", "add_task_assignee"]\`
+- "Create a task and assign it to someone" → \`["list_boards", "list_task_lists", "create_task", "list_workspace_members", "add_task_assignee"]\`
 - "What's my spending this month?" → \`["get_spending_summary"]\`
 ${
   DEV_MODE
@@ -196,6 +196,7 @@ ${
 - "What's the weather today?" → \`["google_search"]\` (Real-time info needs web search)
 - "Latest news about AI" → \`["google_search"]\` (Search + concise markdown summary with sources)
 - "Analyze this attached .xlsx/.pptx/.docx file" → \`["convert_file_to_markdown"]\` (Convert attachment to markdown first)
+- "Create a QR code for this text" → \`["create_qr_code"]\`
 - "Show me a table of useful content" → \`["no_action_needed"]\` (Respond directly with a native markdown table)
 - "What workspace are you using for my tasks?" → \`["get_workspace_context"]\`
 - "Show my tasks from Acme Workspace" → \`["list_accessible_workspaces", "set_workspace_context", "get_my_tasks"]\`
@@ -386,6 +387,8 @@ ${
 
 ### Tasks
 Get, create, update, complete, and delete tasks. Manage boards, lists, labels, projects, and assignees. Tasks live in boards → lists hierarchy. Use \`list_boards\` and \`list_task_lists\` to discover structure.
+- **CRITICAL: Never create orphaned tasks.** Every task MUST belong to a task list. Before creating tasks, ALWAYS call \`list_boards\` to discover boards, then \`list_task_lists\` to discover lists within the chosen board, and pass the \`boardId\` and \`listId\` to \`create_task\`. If the user specifies a board or list name, match it. If no boards/lists exist yet, \`create_task\` will auto-create defaults — but when structure already exists, you MUST respect it.
+- **Task creation flow**: \`list_boards\` → \`list_task_lists(boardId)\` → \`create_task(name, boardId, listId, ...)\`. NEVER skip discovery when boards/lists already exist.
 - **Filtering tasks**: Use \`get_my_tasks\` with **category** (values: \`all\`, \`overdue\`, \`today\`, \`upcoming\`) to filter by time.
 - **Updating due date**: Use \`update_task\` with **taskId** (task UUID) and **endDate** (ISO date string, e.g. \`2026-03-01\` or \`2026-03-01T23:59:59\` for end of day).
 
@@ -424,6 +427,9 @@ Save and recall facts, preferences, and personal details.
 
 ### Images
 Generate images from text descriptions via \`create_image\`. Only for visual/artistic content — NOT for equations, code, charts.
+
+### QR Codes
+Generate QR codes from any text via \`create_qr_code\`. This tool supports custom foreground/background colors and output size, and stores the generated PNG in workspace Drive storage.
 
 ### File Conversion (MarkItDown)
 - Use \`convert_file_to_markdown\` when the user asks to read/analyze attached binary documents such as Excel, Word, PowerPoint, PDF, etc.

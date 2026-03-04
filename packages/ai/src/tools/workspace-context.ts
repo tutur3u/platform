@@ -1,5 +1,8 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
-import { PERSONAL_WORKSPACE_SLUG } from '@tuturuuu/utils/constants';
+import {
+  normalizeWorkspaceContextId,
+  PERSONAL_WORKSPACE_SLUG,
+} from '@tuturuuu/utils/constants';
 import type { MiraToolContext } from './mira-tool-types';
 
 type WorkspaceMembershipRow = {
@@ -167,8 +170,9 @@ export async function resolveWorkspaceContextState({
     personalWorkspace ??
     accessibleWorkspaces[0]!;
 
-  const requested = requestedWorkspaceContextId?.trim();
-  if (!requested) {
+  const requested = normalizeWorkspaceContextId(requestedWorkspaceContextId);
+  const requestedRaw = requestedWorkspaceContextId?.trim();
+  if (!requestedRaw) {
     return toWorkspaceContextState(
       fallbackWorkspace,
       fallbackWorkspace.personal
@@ -177,7 +181,7 @@ export async function resolveWorkspaceContextState({
     );
   }
 
-  if (requested.toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
+  if (requested === PERSONAL_WORKSPACE_SLUG) {
     if (!personalWorkspace) {
       if (strict) {
         throw new Error('Personal workspace is not available for this user.');
@@ -204,7 +208,8 @@ export async function resolveWorkspaceContextState({
   }
 
   const nameMatches = accessibleWorkspaces.filter(
-    (workspace) => workspace.name.toLowerCase() === requested.toLowerCase()
+    (workspace) =>
+      workspace.name.toLowerCase() === (requestedRaw ?? '').toLowerCase()
   );
   if (nameMatches.length === 1) {
     return toWorkspaceContextState(
@@ -217,7 +222,7 @@ export async function resolveWorkspaceContextState({
     throw new Error(
       nameMatches.length > 1
         ? `Workspace name "${requested}" is ambiguous. Use the workspace ID instead.`
-        : `Workspace "${requested}" is not accessible for this user.`
+        : `Workspace "${requestedRaw}" is not accessible for this user.`
     );
   }
 

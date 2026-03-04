@@ -2,83 +2,87 @@
 
 import { Loader2 } from '@tuturuuu/icons';
 import type { Task } from '@tuturuuu/types/primitives/Task';
-import { useTaskDialog } from '@tuturuuu/ui/tu-do/hooks/useTaskDialog';
-import { useTaskDialogContext } from '@tuturuuu/ui/tu-do/providers/task-dialog-provider';
 import { useOptionalWorkspacePresenceContext } from '@tuturuuu/ui/tu-do/providers/workspace-presence-provider';
 import { useTasksHref } from '@tuturuuu/ui/tu-do/tasks-route-context';
+import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { dispatchRecentSidebarVisit } from './recent-sidebar-events';
+import { TaskEditDialog } from './task-edit-dialog';
+
+type TaskWithLocation = Task & {
+  list?: {
+    board?: {
+      name?: string | null;
+    } | null;
+    name?: string | null;
+  } | null;
+};
 
 interface TaskDetailPageProps {
-  task: Task;
+  task: TaskWithLocation;
   boardId: string;
-  boardName?: string;
-  listName?: string;
   wsId: string;
+  isPersonalWorkspace: boolean;
+  currentUser?: {
+    id: string;
+    display_name?: string;
+    email?: string;
+    avatar_url?: string;
+  };
 }
 
 export default function TaskDetailPage({
   task,
   boardId,
   wsId,
+  isPersonalWorkspace,
+  currentUser,
 }: TaskDetailPageProps) {
-  const { openTask, onUpdate, onClose } = useTaskDialog();
-  const { state: dialogState } = useTaskDialogContext();
   const wsPresence = useOptionalWorkspacePresenceContext();
   const tasksHref = useTasksHref();
   const router = useRouter();
   const hasRedirectedRef = useRef(false);
   const [isNavigating, setIsNavigating] = useState(false);
-  const wasOpenOnMount = useRef(dialogState.isOpen);
 
   // Handle navigation back to board view
   const navigateToBoard = useCallback(() => {
     if (hasRedirectedRef.current) {
-      console.log('⚠️ Navigation already triggered, skipping...');
       return;
     }
 
     hasRedirectedRef.current = true;
     setIsNavigating(true);
+    const workspaceSlug = toWorkspaceSlug(wsId, {
+      personal: isPersonalWorkspace,
+    });
 
     if (window.history.length > 1) {
       router.back();
     } else {
-      const targetUrl = `/${wsId}${tasksHref(`/boards/${boardId}`)}`;
+      const targetUrl = `/${workspaceSlug}${tasksHref(`/boards/${boardId}`)}`;
       router.push(targetUrl);
     }
-  }, [wsId, boardId, router, tasksHref]);
+  }, [boardId, isPersonalWorkspace, router, tasksHref, wsId]);
 
-  // Task was saved — stay on the dedicated task URL (don't navigate away)
   const handleUpdate = useCallback(() => {
-    console.log('🔄 Task updated on detail page');
-  }, []);
+    router.refresh();
+  }, [router]);
 
-  // Handle dialog close (user clicked X or pressed Escape)
   const handleClose = useCallback(() => {
-    console.log('❌ Dialog closed on detail page');
     navigateToBoard();
   }, [navigateToBoard]);
 
-  // Register the update and close callbacks
-  useEffect(() => {
-    if (wasOpenOnMount.current) return;
-
-    console.log('✅ Registering task detail page callbacks');
-    const unsubUpdate = onUpdate(handleUpdate);
-    onClose(handleClose);
-
-    return () => {
-      unsubUpdate();
-    };
-  }, [onUpdate, onClose, handleUpdate, handleClose]);
-
-  // Open task dialog on mount
-  useEffect(() => {
-    if (wasOpenOnMount.current) return;
-
-    openTask(task, boardId);
-  }, [task, boardId, openTask]);
+  const handleNavigateToTask = useCallback(
+    async (nextTaskId: string) => {
+      if (nextTaskId === task.id) return;
+      const workspaceSlug = toWorkspaceSlug(wsId, {
+        personal: isPersonalWorkspace,
+      });
+      router.push(`/${workspaceSlug}${tasksHref(`/${nextTaskId}`)}`);
+    },
+    [isPersonalWorkspace, router, task.id, tasksHref, wsId]
+  );
 
   // Track presence for avatar display — on the kanban board page,
   // BoardUserPresenceAvatarsComponent handles this, but on the dedicated
@@ -95,6 +99,31 @@ export default function TaskDetailPage({
     };
   }, [wsUpdateLocation, boardId, task.id]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const boardName = task.list?.board?.name || '';
+    const listName = task.list?.name || '';
+    const badges = [];
+
+    if (boardName) {
+      badges.push({ kind: 'board' as const, value: boardName });
+    }
+    if (listName) {
+      badges.push({ kind: 'list' as const, value: listName });
+    }
+
+    dispatchRecentSidebarVisit({
+      href: window.location.pathname,
+      scopeWsId: wsId,
+      snapshot: {
+        badges,
+        iconKey: 'task',
+        title: task.name || '',
+      },
+    });
+  }, [task.list?.board?.name, task.list?.name, task.name, wsId]);
+
   // Show loading state during navigation to prevent blank screen
   if (isNavigating) {
     return (
@@ -107,6 +136,20 @@ export default function TaskDetailPage({
     );
   }
 
-  // The centralized dialog will handle the display
-  return null;
+  return (
+    <TaskEditDialog
+      wsId={wsId}
+      task={task}
+      boardId={boardId}
+      isOpen={true}
+      collaborationMode={!isPersonalWorkspace && !!wsPresence?.cursorsEnabled}
+      isPersonalWorkspace={isPersonalWorkspace}
+      mode="edit"
+      currentUser={currentUser}
+      onClose={handleClose}
+      onUpdate={handleUpdate}
+      onNavigateToTask={handleNavigateToTask}
+      realtimeEnabled={true}
+    />
+  );
 }

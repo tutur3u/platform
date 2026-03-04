@@ -390,7 +390,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeWalletIconOrImage => 'Biểu tượng hoặc hình ảnh';
 
   @override
-  String get financeWalletNoVisual => 'Chưa chọn biểu tượng';
+  String get financeWalletNoVisual => 'Chưa chọn hình đại diện';
 
   @override
   String get financeWalletPickImage => 'Chọn hình ảnh';
@@ -427,7 +427,14 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String financeWalletImageCount(int count) {
-    return '$count mục';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count hình khả dụng',
+      one: '1 hình khả dụng',
+      zero: 'Không có hình ảnh',
+    );
+    return '$_temp0';
   }
 
   @override

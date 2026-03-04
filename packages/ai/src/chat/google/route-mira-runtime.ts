@@ -96,8 +96,12 @@ export async function prepareMiraRuntime({
 
   let miraSystemPrompt: string;
   try {
-    const { contextString, soul, isFirstInteraction } =
-      await buildMiraContext(ctx);
+    const { contextString, soul, isFirstInteraction } = await buildMiraContext({
+      userId,
+      wsId: resolvedWorkspaceContext.wsId,
+      supabase,
+      timezone,
+    });
     const dynamicInstruction = buildMiraSystemInstruction({
       soul,
       isFirstInteraction,

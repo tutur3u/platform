@@ -42,9 +42,14 @@ type SortOption = 'title-asc' | 'title-desc' | 'created-desc' | 'created-asc';
 interface Props {
   wsId: string;
   templates: BoardTemplate[];
+  templatesBasePath?: string;
 }
 
-export default function MarketplaceClient({ wsId, templates }: Props) {
+export default function MarketplaceClient({
+  wsId,
+  templates,
+  templatesBasePath = 'templates',
+}: Props) {
   const t = useTranslations('ws-board-templates');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('created-desc');
@@ -186,6 +191,7 @@ export default function MarketplaceClient({ wsId, templates }: Props) {
                 template={template}
                 wsId={wsId}
                 index={idx}
+                templatesBasePath={templatesBasePath}
               />
             ))}
           </div>
@@ -215,6 +221,7 @@ export default function MarketplaceClient({ wsId, templates }: Props) {
                 key={template.id}
                 template={template}
                 wsId={wsId}
+                templatesBasePath={templatesBasePath}
               />
             ))}
           </div>
@@ -228,13 +235,15 @@ function FeaturedTemplateCard({
   template,
   wsId,
   index,
+  templatesBasePath,
 }: {
   template: BoardTemplate;
   wsId: string;
   index: number;
+  templatesBasePath: string;
 }) {
   return (
-    <Link href={`/${wsId}/tasks/templates/${template.id}`}>
+    <Link href={`/${wsId}/${templatesBasePath}/${template.id}`}>
       <Card className="group relative h-full overflow-hidden border-border/50 bg-linear-to-br from-background via-background to-muted/30 transition-all hover:border-primary/50 hover:shadow-xl">
         <div className="aspect-video w-full overflow-hidden border-b bg-muted/50">
           {template.backgroundUrl ? (
@@ -327,12 +336,14 @@ function FeaturedTemplateCard({
 function MarketplaceTemplateCard({
   template,
   wsId,
+  templatesBasePath,
 }: {
   template: BoardTemplate;
   wsId: string;
+  templatesBasePath: string;
 }) {
   return (
-    <Link href={`/${wsId}/tasks/templates/${template.id}`}>
+    <Link href={`/${wsId}/${templatesBasePath}/${template.id}`}>
       <Card className="group h-full overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg">
         <div className="aspect-video w-full overflow-hidden border-b bg-muted/50">
           {template.backgroundUrl ? (

@@ -70,7 +70,7 @@ class FinanceRepository {
     int? statementDate,
     int? paymentDate,
   }) async {
-    await _api.putJson(FinanceEndpoints.wallet(wsId, walletId), {
+    final payload = <String, dynamic>{
       'name': name,
       'description': description,
       'type': type,
@@ -80,7 +80,9 @@ class FinanceRepository {
       'limit': limit,
       'statement_date': statementDate,
       'payment_date': paymentDate,
-    });
+    };
+
+    await _api.putJson(FinanceEndpoints.wallet(wsId, walletId), payload);
   }
 
   Future<void> deleteWallet({
@@ -333,12 +335,14 @@ class FinanceRepository {
     String? icon,
     String? color,
   }) async {
-    await _api.putJson(FinanceEndpoints.category(wsId, categoryId), {
+    final body = <String, dynamic>{
       'name': name,
       'is_expense': isExpense,
       'icon': icon,
       'color': color,
-    });
+    };
+
+    await _api.putJson(FinanceEndpoints.category(wsId, categoryId), body);
   }
 
   Future<void> deleteCategory({

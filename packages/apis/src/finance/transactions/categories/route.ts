@@ -1,6 +1,10 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
 interface Params {
   params: Promise<{
@@ -8,12 +12,20 @@ interface Params {
   }>;
 }
 
+const TransactionCategoryCreateSchema = z.object({
+  name: z.string().min(1),
+  is_expense: z.boolean(),
+  icon: z.string().nullable().optional(),
+  color: z.string().nullable().optional(),
+});
+
 export async function GET(req: Request, { params }: Params) {
   const supabase = await createClient(req);
   const { wsId } = await params;
+  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
   const permissions = await getPermissions({
-    wsId,
+    wsId: normalizedWsId,
     request: req,
   });
 
@@ -32,7 +44,7 @@ export async function GET(req: Request, { params }: Params) {
 
   const { data, error } = await supabase
     .rpc('get_transaction_categories_with_amount_by_workspace', {
-      p_ws_id: wsId,
+      p_ws_id: normalizedWsId,
     })
     .order('name', { ascending: true });
 
@@ -50,10 +62,20 @@ export async function GET(req: Request, { params }: Params) {
 export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient(req);
   const { wsId } = await params;
-  const data = await req.json();
+  const normalizedwsId = await normalizeWorkspaceId(wsId, supabase);
+  const parsed = TransactionCategoryCreateSchema.safeParse(await req.json());
+
+  if (!parsed.success) {
+    return NextResponse.json(
+      { message: 'Invalid request data', errors: parsed.error.issues },
+      { status: 400 }
+    );
+  }
+
+  const data = parsed.data;
 
   const permissions = await getPermissions({
-    wsId,
+    wsId: normalizedwsId,
     request: req,
   });
 
@@ -73,8 +95,11 @@ export async function POST(req: Request, { params }: Params) {
   const { data: res, error } = await supabase
     .from('transaction_categories')
     .insert({
-      ...data,
-      ws_id: wsId,
+      ws_id: normalizedwsId,
+      name: data.name,
+      is_expense: data.is_expense,
+      icon: data.icon ?? null,
+      color: data.color ?? null,
     })
     .select()
     .single();
@@ -86,8 +111,6 @@ export async function POST(req: Request, { params }: Params) {
       { status: 500 }
     );
   }
-
-  console.log('Created transaction category:', res);
 
   return NextResponse.json({ message: 'success', data: res });
 }

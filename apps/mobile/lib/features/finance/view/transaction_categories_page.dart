@@ -42,6 +42,7 @@ class _TransactionCategoriesViewState
   List<TransactionCategory> _categories = const [];
   bool _isLoading = false;
   String? _error;
+  int _categoriesRequestId = 0;
 
   @override
   void initState() {
@@ -75,7 +76,10 @@ class _TransactionCategoriesViewState
           trailing: [
             shad.PrimaryButton(
               onPressed: _onCreate,
-              child: const Icon(Icons.add, size: 16),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [Icon(Icons.add, size: 16)],
+              ),
             ),
           ],
         ),
@@ -90,6 +94,7 @@ class _TransactionCategoriesViewState
               ? const Center(child: shad.CircularProgressIndicator())
               : _error != null
               ? ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   children: [
                     const SizedBox(height: 120),
                     Center(
@@ -106,6 +111,7 @@ class _TransactionCategoriesViewState
                 )
               : _categories.isEmpty
               ? ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   children: [
                     const SizedBox(height: 120),
                     Center(
@@ -121,6 +127,7 @@ class _TransactionCategoriesViewState
                   ],
                 )
               : ListView.separated(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                   itemCount: _categories.length,
                   separatorBuilder: (_, _) => const shad.Gap(8),
@@ -155,24 +162,26 @@ class _TransactionCategoriesViewState
     final l10n = context.l10n;
     final toastContext = context;
 
-    await shad.showDialog<bool>(
-      context: context,
-      builder: (_) => AsyncDeleteConfirmationDialog(
-        title: l10n.financeDeleteCategory,
-        message: l10n.financeDeleteCategoryConfirm,
-        cancelLabel: l10n.commonCancel,
-        confirmLabel: l10n.financeDeleteCategory,
-        toastContext: toastContext,
-        onConfirm: () async {
-          await repository.deleteCategory(
-            wsId: wsId,
-            categoryId: category.id,
-          );
-        },
-      ),
-    );
+    final deleted =
+        await shad.showDialog<bool>(
+          context: context,
+          builder: (_) => AsyncDeleteConfirmationDialog(
+            title: l10n.financeDeleteCategory,
+            message: l10n.financeDeleteCategoryConfirm,
+            cancelLabel: l10n.commonCancel,
+            confirmLabel: l10n.financeDeleteCategory,
+            toastContext: toastContext,
+            onConfirm: () async {
+              await repository.deleteCategory(
+                wsId: wsId,
+                categoryId: category.id,
+              );
+            },
+          ),
+        ) ??
+        false;
 
-    if (!mounted) return;
+    if (!mounted || !deleted) return;
     await _loadCategories();
   }
 
@@ -186,8 +195,20 @@ class _TransactionCategoriesViewState
   }
 
   Future<void> _loadCategories() async {
+    final requestId = ++_categoriesRequestId;
+
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) return;
+    if (wsId == null) {
+      if (!mounted || requestId != _categoriesRequestId) return;
+      setState(() {
+        _categories = const [];
+        _isLoading = false;
+        _error = null;
+      });
+      return;
+    }
+
+    if (!mounted || requestId != _categoriesRequestId) return;
 
     setState(() {
       _isLoading = true;
@@ -198,13 +219,13 @@ class _TransactionCategoriesViewState
       final categories = await context.read<FinanceRepository>().getCategories(
         wsId,
       );
-      if (!mounted) return;
+      if (!mounted || requestId != _categoriesRequestId) return;
       setState(() => _categories = categories);
     } on Exception {
-      if (!mounted) return;
+      if (!mounted || requestId != _categoriesRequestId) return;
       setState(() => _error = context.l10n.commonSomethingWentWrong);
     } finally {
-      if (mounted) {
+      if (mounted && requestId == _categoriesRequestId) {
         setState(() => _isLoading = false);
       }
     }

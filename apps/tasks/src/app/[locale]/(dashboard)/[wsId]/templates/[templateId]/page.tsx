@@ -8,5 +8,10 @@ interface Props {
 }
 
 export default async function TemplateDetailPage({ params }: Props) {
-  return <TaskTemplateDetailPage params={params} />;
+  return (
+    <TaskTemplateDetailPage
+      params={params}
+      config={{ templatesBasePath: 'templates' }}
+    />
+  );
 }

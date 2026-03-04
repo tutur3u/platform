@@ -26,6 +26,14 @@ describe('Editor Extensions Integration', () => {
       expect(hasListConverter).toBe(true);
     });
 
+    it('should include text shortcuts extension', () => {
+      const extensions = getEditorExtensions();
+      const hasTextShortcuts = extensions.some(
+        (ext) => ext.name === 'textShortcuts'
+      );
+      expect(hasTextShortcuts).toBe(true);
+    });
+
     it('should include task list extensions', () => {
       const extensions = getEditorExtensions();
       const hasTaskList = extensions.some((ext) => ext.name === 'taskList');

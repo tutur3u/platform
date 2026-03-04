@@ -25,6 +25,7 @@ import { ListItemBase } from './list-item-extension';
 import { Mention } from './mention-extension';
 import { NodeDrag } from './node-drag-extension';
 import { TaskItemCheckbox } from './task-item-checkbox-extension';
+import { TextShortcuts } from './text-shortcuts-extension';
 import { Video } from './video-extension';
 
 interface EditorExtensionsOptions {
@@ -140,6 +141,7 @@ export function getEditorExtensions({
       },
       emptyNodeClass: 'is-empty',
     }),
+    TextShortcuts,
     Highlight,
     Link.configure({
       openOnClick: true,

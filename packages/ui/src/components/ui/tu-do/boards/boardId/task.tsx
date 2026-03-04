@@ -20,6 +20,7 @@ import {
   ListTree,
   MoreHorizontal,
   Play,
+  Share2,
   SquareCenterlineDashedVertical,
   Timer,
   Trash2,
@@ -77,6 +78,7 @@ import { AssigneeSelect } from '../../shared/assignee-select';
 import { useBoardBroadcast } from '../../shared/board-broadcast-context';
 import { TaskEstimationDisplay } from '../../shared/task-estimation-display';
 import { TaskLabelsDisplay } from '../../shared/task-labels-display';
+import { TaskShareDialog } from '../../shared/task-share-dialog';
 import { TaskViewerAvatarsComponent } from '../../shared/user-presence-avatars';
 import {
   getCardColorClasses as getCardColorClassesUtil,
@@ -151,6 +153,7 @@ function TaskCardInner({
   const [isLoading, setIsLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuGuardUntil, setMenuGuardUntil] = useState(0);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   // Use extracted dialog state management hook
   const { state: dialogState, actions: dialogActions } = useTaskDialogState();
@@ -176,6 +179,7 @@ function TaskCardInner({
 
   // Use React Query hooks for shared data (cached across all task cards)
   const { data: boardConfig } = useBoardConfig(boardId);
+  const taskShareWsId = boardConfig?.ws_id ?? wsId;
   const { data: workspaceLabels = [], isLoading: labelsLoading } =
     useWorkspaceLabels(boardConfig?.ws_id);
 
@@ -1460,6 +1464,20 @@ function TaskCardInner({
                   )}
 
                   <DropdownMenuSeparator />
+                  {taskShareWsId && (
+                    <DropdownMenuItem
+                      onSelect={(e) =>
+                        handleMenuItemSelect(e as unknown as Event, () => {
+                          setShareDialogOpen(true);
+                          setMenuOpen(false);
+                        })
+                      }
+                      className="cursor-pointer"
+                    >
+                      <Share2 className="h-4 w-4 text-foreground" />
+                      {t('task_sharing.share_task')}
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem
                     onSelect={handleDuplicateTask}
                     className="cursor-pointer"
@@ -1837,6 +1855,15 @@ function TaskCardInner({
           remove_due_date: t('remove_due_date'),
         }}
       />
+      {taskShareWsId && (
+        <TaskShareDialog
+          open={shareDialogOpen}
+          onOpenChange={setShareDialogOpen}
+          taskId={task.id}
+          taskName={task.name ?? ''}
+          wsId={taskShareWsId}
+        />
+      )}
 
       {!isOverlay && (
         <TaskActions taskId={task.id} boardId={boardId} onUpdate={onUpdate} />

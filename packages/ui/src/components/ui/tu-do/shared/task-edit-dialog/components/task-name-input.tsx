@@ -1,6 +1,11 @@
 import { Input } from '@tuturuuu/ui/input';
 import { MAX_TASK_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { useTranslations } from 'next-intl';
+import {
+  getNormalizedCursorPosition,
+  normalizeLiveTextReplacements,
+  normalizeTextReplacements,
+} from '../../../../text-editor/text-replacements';
 
 interface TaskNameInputProps {
   name: string;
@@ -28,6 +33,7 @@ export function TaskNameInput({
   disabled,
 }: TaskNameInputProps) {
   const t = useTranslations('ws-task-boards.dialog');
+
   return (
     <div className="group">
       <Input
@@ -37,15 +43,44 @@ export function TaskNameInput({
         value={name}
         maxLength={MAX_TASK_NAME_LENGTH}
         onChange={(e) => {
-          setName(e.target.value);
+          const rawValue = e.target.value;
+          const normalizedValue = normalizeLiveTextReplacements(rawValue);
+
+          if (rawValue !== normalizedValue) {
+            const rawCursorPosition =
+              e.target.selectionStart ?? rawValue.length;
+            const nextCursorPosition = getNormalizedCursorPosition(
+              rawValue,
+              rawCursorPosition,
+              normalizeLiveTextReplacements
+            );
+
+            requestAnimationFrame(() => {
+              titleInputRef.current?.setSelectionRange(
+                nextCursorPosition,
+                nextCursorPosition
+              );
+            });
+          }
+
+          setName(normalizedValue);
           // Trigger debounced save while typing (in edit mode)
-          if (!isCreateMode && e.target.value.trim()) {
-            updateName(e.target.value);
+          if (!isCreateMode && normalizedValue.trim()) {
+            updateName(normalizedValue);
           }
         }}
         onBlur={(e) => {
+          const normalizedValue = normalizeTextReplacements(e.target.value);
+
+          if (normalizedValue !== e.target.value) {
+            setName(normalizedValue);
+            if (!isCreateMode && normalizedValue.trim()) {
+              updateName(normalizedValue);
+            }
+          }
+
           // Flush pending save immediately when user clicks away (in edit mode)
-          if (!isCreateMode && e.target.value.trim()) {
+          if (!isCreateMode && normalizedValue.trim()) {
             flushNameUpdate();
           }
         }}

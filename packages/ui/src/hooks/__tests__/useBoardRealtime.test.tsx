@@ -10,6 +10,10 @@ import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBoardRealtime } from '../useBoardRealtime';
 
+const { toastMock } = vi.hoisted(() => ({
+  toastMock: vi.fn(),
+}));
+
 // Mock Supabase client
 vi.mock('@tuturuuu/supabase/next/client', () => ({
   createClient: vi.fn(),
@@ -20,12 +24,21 @@ vi.mock('@tuturuuu/utils/constants', () => ({
   DEV_MODE: false,
 }));
 
+vi.mock('../use-toast', () => ({
+  toast: toastMock,
+}));
+
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string) => key,
+}));
+
 describe('useBoardRealtime', () => {
   let queryClient: QueryClient;
   let mockChannel: any;
   let mockRemoveChannel: any;
   let mockCreateClient: any;
   let broadcastListeners: Map<string, (msg: { payload: any }) => void>;
+  let subscribeCallback: ((status: string, err?: unknown) => void) | undefined;
 
   const mockTask: Task = {
     id: 'task-1',
@@ -71,7 +84,10 @@ describe('useBoardRealtime', () => {
         }
         return mockChannel;
       }),
-      subscribe: vi.fn(() => mockChannel),
+      subscribe: vi.fn((callback?: (status: string, err?: unknown) => void) => {
+        subscribeCallback = callback;
+        return mockChannel;
+      }),
       send: vi.fn(),
     };
 
@@ -166,6 +182,7 @@ describe('useBoardRealtime', () => {
     });
 
     vi.clearAllMocks();
+    subscribeCallback = undefined;
   });
 
   afterEach(() => {
@@ -249,6 +266,22 @@ describe('useBoardRealtime', () => {
       });
 
       expect(mockChannel.subscribe).not.toHaveBeenCalled();
+    });
+
+    it('shows a destructive toast when the realtime channel errors', () => {
+      renderHook(() => useBoardRealtime('board-1', { enabled: true }), {
+        wrapper,
+      });
+
+      act(() => {
+        subscribeCallback?.('CHANNEL_ERROR');
+      });
+
+      expect(toastMock).toHaveBeenCalledWith({
+        description: 'realtime_connection_issue_description',
+        title: 'realtime_connection_issue_title',
+        variant: 'destructive',
+      });
     });
   });
 

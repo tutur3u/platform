@@ -100,8 +100,6 @@ export default async function TaskDetailServerPage({ params }: Props) {
   if (!task) notFound();
 
   const boardId = task.list?.board_id || '';
-  const boardName = task.list?.board?.name || undefined;
-  const listName = task.list?.name || undefined;
 
   // Convert the task to match the Task type expected by the component
   const taskForComponent = {
@@ -114,9 +112,18 @@ export default async function TaskDetailServerPage({ params }: Props) {
     <TaskDetailPageClient
       task={taskForComponent as any}
       boardId={boardId}
-      boardName={boardName}
-      listName={listName}
+      isPersonalWorkspace={!!workspace.personal}
       wsId={workspace.id}
+      currentUser={
+        user
+          ? {
+              id: user.id,
+              display_name: user.display_name || undefined,
+              email: 'email' in user ? user.email || undefined : undefined,
+              avatar_url: user.avatar_url || undefined,
+            }
+          : undefined
+      }
     />
   );
 }

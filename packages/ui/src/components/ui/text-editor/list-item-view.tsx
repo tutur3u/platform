@@ -10,7 +10,7 @@ export function ListItemContent(_props: NodeViewProps) {
 
 export function ListItemView(props: NodeViewProps) {
   return (
-    <DraggableNodeContainer {...props} as="li">
+    <DraggableNodeContainer {...props} as="li" className="flex items-center">
       <ListItemContent {...props} />
     </DraggableNodeContainer>
   );

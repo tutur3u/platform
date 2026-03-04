@@ -21,6 +21,7 @@ import {
   MAX_TEXT_FIELD_BYTES,
   MAX_URL_LENGTH,
   MAX_WORKSPACES_FOR_FREE_USERS,
+  normalizeWorkspaceContextId,
   PERSONAL_WORKSPACE_SLUG,
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
@@ -180,6 +181,33 @@ describe('toWorkspaceSlug', () => {
     it('should handle undefined options', () => {
       expect(toWorkspaceSlug('workspace-id', undefined)).toBe('workspace-id');
     });
+  });
+});
+
+describe('normalizeWorkspaceContextId', () => {
+  it('defaults empty values to the personal workspace slug', () => {
+    expect(normalizeWorkspaceContextId()).toBe(PERSONAL_WORKSPACE_SLUG);
+    expect(normalizeWorkspaceContextId(null)).toBe(PERSONAL_WORKSPACE_SLUG);
+    expect(normalizeWorkspaceContextId('   ')).toBe(PERSONAL_WORKSPACE_SLUG);
+  });
+
+  it('keeps personal workspace identifiers canonicalized to the personal slug', () => {
+    expect(normalizeWorkspaceContextId('personal')).toBe(
+      PERSONAL_WORKSPACE_SLUG
+    );
+    expect(normalizeWorkspaceContextId(' PERSONAL ')).toBe(
+      PERSONAL_WORKSPACE_SLUG
+    );
+  });
+
+  it('resolves the internal slug to the root workspace UUID', () => {
+    expect(normalizeWorkspaceContextId('internal')).toBe(ROOT_WORKSPACE_ID);
+    expect(normalizeWorkspaceContextId(' INTERNAL ')).toBe(ROOT_WORKSPACE_ID);
+  });
+
+  it('keeps regular workspace UUIDs unchanged after trimming', () => {
+    const uuid = '550e8400-e29b-41d4-a716-446655440000';
+    expect(normalizeWorkspaceContextId(` ${uuid} `)).toBe(uuid);
   });
 });
 

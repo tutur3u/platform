@@ -125,6 +125,26 @@ class _WalletImagePickerSheetState extends State<WalletImagePickerSheet> {
                                     padding: const EdgeInsets.all(2),
                                     child: SvgPicture.network(
                                       walletImageUrl(image.imageSrc),
+                                      placeholderBuilder: (_) => const Center(
+                                        child: SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child:
+                                              shad.CircularProgressIndicator(),
+                                        ),
+                                      ),
+                                      errorBuilder:
+                                          (
+                                            context,
+                                            error,
+                                            stackTrace,
+                                          ) => const Center(
+                                            child: Icon(
+                                              Icons
+                                                  .image_not_supported_outlined,
+                                              size: 18,
+                                            ),
+                                          ),
                                     ),
                                   ),
                                 )
@@ -135,6 +155,26 @@ class _WalletImagePickerSheetState extends State<WalletImagePickerSheet> {
                                     padding: const EdgeInsets.all(2),
                                     child: SvgPicture.network(
                                       walletImageUrl(image.imageSrc),
+                                      placeholderBuilder: (_) => const Center(
+                                        child: SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child:
+                                              shad.CircularProgressIndicator(),
+                                        ),
+                                      ),
+                                      errorBuilder:
+                                          (
+                                            context,
+                                            error,
+                                            stackTrace,
+                                          ) => const Center(
+                                            child: Icon(
+                                              Icons
+                                                  .image_not_supported_outlined,
+                                              size: 18,
+                                            ),
+                                          ),
                                     ),
                                   ),
                                 ),

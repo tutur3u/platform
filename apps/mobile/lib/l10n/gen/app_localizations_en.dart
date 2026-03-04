@@ -390,7 +390,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeWalletIconOrImage => 'Icon or image';
 
   @override
-  String get financeWalletNoVisual => 'No icon selected';
+  String get financeWalletNoVisual => 'No visual selected';
 
   @override
   String get financeWalletPickImage => 'Pick image';
@@ -427,7 +427,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String financeWalletImageCount(int count) {
-    return '$count available';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count available',
+      one: '1 available',
+      zero: 'No images',
+    );
+    return '$_temp0';
   }
 
   @override

@@ -72,7 +72,7 @@ export function TaskDialogActions({
   return (
     <>
       {/* Share button - only in edit mode */}
-      {!isCreateMode && taskId && onOpenShareDialog && !disabled && (
+      {!isCreateMode && taskId && onOpenShareDialog && (
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

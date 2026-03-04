@@ -35,13 +35,13 @@ class TransactionCategory extends Equatable {
 
   Map<String, dynamic> toJson() => {
     'id': id,
-    'name': name,
-    'is_expense': isExpense,
-    'ws_id': wsId,
-    'icon': icon,
-    'color': color,
-    'amount': amount,
-    'transaction_count': transactionCount,
+    if (name != null) 'name': name,
+    if (isExpense != null) 'is_expense': isExpense,
+    if (wsId != null) 'ws_id': wsId,
+    if (icon != null) 'icon': icon,
+    if (color != null) 'color': color,
+    if (amount != null) 'amount': amount,
+    if (transactionCount != null) 'transaction_count': transactionCount,
   };
 
   @override

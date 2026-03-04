@@ -26,6 +26,7 @@ class _CurrencyPickerDialogState extends State<CurrencyPickerDialog> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final normalized = _query.trim().toLowerCase();
+    final normalizedInitial = widget.initialCurrencyCode.trim().toLowerCase();
     final filtered = supportedCurrencies
         .where(
           (item) =>
@@ -57,7 +58,8 @@ class _CurrencyPickerDialogState extends State<CurrencyPickerDialog> {
                 separatorBuilder: (_, _) => const shad.Gap(4),
                 itemBuilder: (context, index) {
                   final currency = filtered[index];
-                  final selected = currency.code == widget.initialCurrencyCode;
+                  final selected =
+                      currency.code.toLowerCase() == normalizedInitial;
                   final child = Align(
                     alignment: Alignment.centerLeft,
                     child: Text('${currency.code} - ${currency.name}'),
