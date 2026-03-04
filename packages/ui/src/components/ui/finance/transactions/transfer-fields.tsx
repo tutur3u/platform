@@ -102,7 +102,7 @@ export function TransferFields({
     isRateInverted,
   ]);
 
-  if (!destinationWalletId) return null;
+  if (!destinationWalletId || !isCrossCurrency) return null;
 
   return (
     <div className="space-y-4">
