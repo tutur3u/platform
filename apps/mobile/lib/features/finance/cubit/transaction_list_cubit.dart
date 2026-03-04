@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 
@@ -21,11 +22,33 @@ class TransactionListCubit extends Cubit<TransactionListState> {
       state.copyWith(
         status: TransactionListStatus.loading,
         transactions: [],
+        workspaceCurrency: 'USD',
+        exchangeRates: const <ExchangeRate>[],
         hasMore: true,
         clearCursor: true,
         clearError: true,
       ),
     );
+
+    final workspaceCurrencyFuture = _repo
+        .getWorkspaceDefaultCurrency(wsId)
+        .catchError((_) => 'USD');
+    final exchangeRatesFuture = _repo.getExchangeRates().catchError(
+      (_) => <ExchangeRate>[],
+    );
+
+    final (workspaceCurrency, exchangeRates) = await (
+      workspaceCurrencyFuture,
+      exchangeRatesFuture,
+    ).wait;
+
+    emit(
+      state.copyWith(
+        workspaceCurrency: workspaceCurrency,
+        exchangeRates: exchangeRates,
+      ),
+    );
+
     await _fetch();
   }
 

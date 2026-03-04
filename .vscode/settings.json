@@ -29,7 +29,7 @@
     ".zed": true,
     ".windsurf": true,
     "**/.dart_tool": true,
-    "**/.next": true,
+    // "**/.next": true,
     "**/__pycache__": true,
     "**/.venv": true,
     "**/*_cache": true,
