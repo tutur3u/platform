@@ -245,15 +245,14 @@ export function TransactionForm({
       report_opt_in: boolean;
       tag_ids?: string[];
     }) => {
-      const res = await fetch(`/api/workspaces/${wsId}/transfers`, {
+      const body = await fetcher(`/api/workspaces/${wsId}/transfers`, {
         method: 'POST',
         cache: 'no-store',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
-      const body = await res.json().catch(() => null);
-      if (!res.ok) {
+      if (!body || body.message !== 'success') {
         throw new Error(
           body?.message ||
             t('transaction-data-table.error_creating_transaction')
@@ -295,15 +294,14 @@ export function TransactionForm({
       const destinationWallet = wallets?.find(
         (wallet) => wallet.id === formData.destination_wallet_id
       );
-      const isCrossCurrencyTransfer =
-        !!sourceWallet?.currency &&
-        !!destinationWallet?.currency &&
-        sourceWallet.currency.toUpperCase() !==
-          destinationWallet.currency.toUpperCase();
-
-      const destinationAmount = isCrossCurrencyTransfer
-        ? formData.destination_amount
-        : formData.amount;
+      const sourceCurrency = sourceWallet?.currency;
+      const destinationCurrency = destinationWallet?.currency;
+      const destinationAmount =
+        sourceCurrency &&
+        destinationCurrency &&
+        sourceCurrency.toUpperCase() === destinationCurrency.toUpperCase()
+          ? formData.amount
+          : formData.destination_amount;
 
       try {
         await createTransferMutation.mutateAsync({

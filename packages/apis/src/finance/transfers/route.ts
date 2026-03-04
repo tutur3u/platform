@@ -34,7 +34,27 @@ const TransferSchema = z
 export async function POST(req: Request, { params }: Params) {
   const { wsId } = await params;
   const supabase = await createClient(req);
-  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+  let normalizedWsId: string;
+
+  try {
+    normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : 'Invalid workspace';
+
+    if (errorMessage === 'User not authenticated') {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (errorMessage === 'Personal workspace not found') {
+      return NextResponse.json(
+        { message: 'Workspace not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ message: 'Invalid workspace' }, { status: 400 });
+  }
 
   const permissions = await getPermissions({
     wsId: normalizedWsId,
@@ -224,30 +244,17 @@ export async function POST(req: Request, { params }: Params) {
   if (linkErr) {
     console.error('Error linking transfer transactions:', linkErr);
     // Clean up both transactions
-    const fromDeleteResult = await supabase
+    const deleteTransfersResult = await supabase
       .from('wallet_transactions')
       .delete()
-      .eq('id', fromTx.id);
-    const toDeleteResult = await supabase
-      .from('wallet_transactions')
-      .delete()
-      .eq('id', toTx.id);
+      .in('id', [fromTx.id, toTx.id]);
 
-    if (fromDeleteResult.error) {
-      console.error('Failed to clean up source transfer transaction', {
+    if (deleteTransfersResult.error) {
+      console.error('Failed to clean up transfer transactions', {
         fromTransactionId: fromTx.id,
         toTransactionId: toTx.id,
         linkError: linkErr,
-        cleanupError: fromDeleteResult.error,
-      });
-    }
-
-    if (toDeleteResult.error) {
-      console.error('Failed to clean up destination transfer transaction', {
-        fromTransactionId: fromTx.id,
-        toTransactionId: toTx.id,
-        linkError: linkErr,
-        cleanupError: toDeleteResult.error,
+        cleanupError: deleteTransfersResult.error,
       });
     }
 
