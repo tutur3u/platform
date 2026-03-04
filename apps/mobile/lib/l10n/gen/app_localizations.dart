@@ -844,7 +844,7 @@ abstract class AppLocalizations {
   /// No description provided for @financeWalletNoVisual.
   ///
   /// In en, this message translates to:
-  /// **'No icon selected'**
+  /// **'No visual selected'**
   String get financeWalletNoVisual;
 
   /// No description provided for @financeWalletPickImage.

@@ -39,6 +39,7 @@ class _WalletsViewState extends State<_WalletsView> {
   List<Wallet> _wallets = const [];
   bool _isLoading = false;
   String? _error;
+  int _currentWalletsRequestToken = 0;
 
   @override
   void initState() {
@@ -87,6 +88,7 @@ class _WalletsViewState extends State<_WalletsView> {
               ? const Center(child: shad.CircularProgressIndicator())
               : _error != null
               ? ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   children: [
                     const SizedBox(height: 120),
                     Center(
@@ -103,6 +105,7 @@ class _WalletsViewState extends State<_WalletsView> {
                 )
               : _wallets.isEmpty
               ? ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   children: [
                     const SizedBox(height: 120),
                     Center(
@@ -118,6 +121,7 @@ class _WalletsViewState extends State<_WalletsView> {
                   ],
                 )
               : ListView.separated(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                   itemCount: _wallets.length,
                   separatorBuilder: (_, _) => const shad.Gap(8),
@@ -182,6 +186,7 @@ class _WalletsViewState extends State<_WalletsView> {
   }
 
   Future<void> _loadWallets() async {
+    final requestToken = ++_currentWalletsRequestToken;
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
 
@@ -192,13 +197,13 @@ class _WalletsViewState extends State<_WalletsView> {
 
     try {
       final wallets = await context.read<FinanceRepository>().getWallets(wsId);
-      if (!mounted) return;
+      if (!mounted || requestToken != _currentWalletsRequestToken) return;
       setState(() => _wallets = wallets);
     } on Exception {
-      if (!mounted) return;
+      if (!mounted || requestToken != _currentWalletsRequestToken) return;
       setState(() => _error = context.l10n.commonSomethingWentWrong);
     } finally {
-      if (mounted) {
+      if (mounted && requestToken == _currentWalletsRequestToken) {
         setState(() => _isLoading = false);
       }
     }

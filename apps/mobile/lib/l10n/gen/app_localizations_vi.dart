@@ -390,7 +390,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeWalletIconOrImage => 'Biểu tượng hoặc hình ảnh';
 
   @override
-  String get financeWalletNoVisual => 'Chưa chọn biểu tượng';
+  String get financeWalletNoVisual => 'Chưa chọn hình đại diện';
 
   @override
   String get financeWalletPickImage => 'Chọn hình ảnh';

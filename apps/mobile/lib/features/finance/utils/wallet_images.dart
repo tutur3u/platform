@@ -405,11 +405,17 @@ String walletImageUrl(String imageSrc) {
 }
 
 WalletImageOption? findWalletImageBySrc(String? imageSrc) {
-  if (imageSrc == null || imageSrc.trim().isEmpty) {
+  if (imageSrc == null) {
     return null;
   }
+
+  final trimmed = imageSrc.trim();
+  if (trimmed.isEmpty) {
+    return null;
+  }
+
   for (final item in walletImageOptions) {
-    if (item.imageSrc == imageSrc) {
+    if (item.imageSrc == trimmed) {
       return item;
     }
   }

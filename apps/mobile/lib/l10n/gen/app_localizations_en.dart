@@ -390,7 +390,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeWalletIconOrImage => 'Icon or image';
 
   @override
-  String get financeWalletNoVisual => 'No icon selected';
+  String get financeWalletNoVisual => 'No visual selected';
 
   @override
   String get financeWalletPickImage => 'Pick image';

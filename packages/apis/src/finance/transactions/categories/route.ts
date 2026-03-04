@@ -70,12 +70,26 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    return NextResponse.json(
+      { message: 'Invalid request payload' },
+      { status: 400 }
+    );
+  }
+
+  const payload = data as Record<string, unknown>;
+  const allowedFields = ['name', 'is_expense', 'icon', 'color'] as const;
+  const insertPayload: Record<string, unknown> = { ws_id: wsId };
+
+  for (const field of allowedFields) {
+    if (field in payload) {
+      insertPayload[field] = payload[field];
+    }
+  }
+
   const { data: res, error } = await supabase
     .from('transaction_categories')
-    .insert({
-      ...data,
-      ws_id: wsId,
-    })
+    .insert(insertPayload)
     .select()
     .single();
 

@@ -1,5 +1,8 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -12,6 +15,14 @@ interface Params {
 export async function GET(req: Request, { params }: Params) {
   const supabase = await createClient(req);
   const { walletId: id, wsId } = await params;
+  let normalizedWsId: string;
+
+  try {
+    normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+  } catch {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
   const permissions = await getPermissions({
     wsId,
     request: req,
@@ -34,6 +45,7 @@ export async function GET(req: Request, { params }: Params) {
     .from('workspace_wallets')
     .select('*, credit_wallets(limit, statement_date, payment_date)')
     .eq('id', id)
+    .eq('ws_id', normalizedWsId)
     .single();
 
   if (error) {
@@ -67,6 +79,14 @@ export async function PUT(req: Request, { params }: Params) {
   const supabase = await createClient(req);
   const data = await req.json();
   const { walletId: id, wsId } = await params;
+  let normalizedWsId: string;
+
+  try {
+    normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+  } catch {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
   const permissions = await getPermissions({
     wsId,
     request: req,
@@ -91,7 +111,8 @@ export async function PUT(req: Request, { params }: Params) {
   const { error } = await supabase
     .from('workspace_wallets')
     .update(walletData)
-    .eq('id', id);
+    .eq('id', id)
+    .eq('ws_id', normalizedWsId);
 
   if (error) {
     console.log(error);
@@ -121,7 +142,22 @@ export async function PUT(req: Request, { params }: Params) {
     }
   } else if (data.type === 'STANDARD') {
     // Remove credit data if switching from CREDIT to STANDARD
-    await supabase.from('credit_wallets').delete().eq('wallet_id', id);
+    const deleteResult = await supabase
+      .from('credit_wallets')
+      .delete()
+      .eq('wallet_id', id);
+
+    if (deleteResult.error) {
+      console.error('Failed to delete credit wallet details', {
+        walletId: id,
+        payload: data,
+        error: deleteResult.error,
+      });
+      return NextResponse.json(
+        { message: 'Error deleting credit wallet data' },
+        { status: 500 }
+      );
+    }
   }
 
   return NextResponse.json({ message: 'success' });
@@ -130,6 +166,13 @@ export async function PUT(req: Request, { params }: Params) {
 export async function DELETE(req: Request, { params }: Params) {
   const supabase = await createClient(req);
   const { walletId: id, wsId } = await params;
+  let normalizedWsId: string;
+
+  try {
+    normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+  } catch {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
 
   const permissions = await getPermissions({
     wsId,
@@ -152,7 +195,8 @@ export async function DELETE(req: Request, { params }: Params) {
   const { error } = await supabase
     .from('workspace_wallets')
     .delete()
-    .eq('id', id);
+    .eq('id', id)
+    .eq('ws_id', normalizedWsId);
 
   if (error) {
     console.log(error);
