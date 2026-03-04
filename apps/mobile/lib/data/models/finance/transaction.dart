@@ -106,6 +106,8 @@ class Transaction extends Equatable {
     this.categoryColor,
     this.walletName,
     this.walletCurrency,
+    this.walletIcon,
+    this.walletImageSrc,
     this.reportOptIn,
     this.isAmountConfidential,
     this.isDescriptionConfidential,
@@ -167,6 +169,14 @@ class Transaction extends Equatable {
           json['wallet_name'] as String?,
       walletCurrency:
           wallet?['currency'] as String? ?? json['wallet_currency'] as String?,
+      walletIcon:
+          wallet?['icon'] as String? ??
+          json['wallet_icon'] as String? ??
+          json['walletIcon'] as String?,
+      walletImageSrc:
+          wallet?['image_src'] as String? ??
+          json['wallet_image_src'] as String? ??
+          json['walletImageSrc'] as String?,
       reportOptIn: json['report_opt_in'] as bool?,
       isAmountConfidential: json['is_amount_confidential'] as bool?,
       isDescriptionConfidential: json['is_description_confidential'] as bool?,
@@ -201,6 +211,12 @@ class Transaction extends Equatable {
 
   /// Joined from `workspace_wallets.currency`.
   final String? walletCurrency;
+
+  /// Joined from `workspace_wallets.icon`.
+  final String? walletIcon;
+
+  /// Joined from `workspace_wallets.image_src`.
+  final String? walletImageSrc;
 
   final bool? reportOptIn;
   final bool? isAmountConfidential;
@@ -246,6 +262,8 @@ class Transaction extends Equatable {
     categoryColor,
     walletName,
     walletCurrency,
+    walletIcon,
+    walletImageSrc,
     reportOptIn,
     isAmountConfidential,
     isDescriptionConfidential,
