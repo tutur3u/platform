@@ -61,7 +61,11 @@ export async function moveTempFilesToThread({
 
   if (listError) {
     console.error('Error getting files:', listError);
-    return { error: null, movedPaths: new Map() };
+    return {
+      error: new Response(listError.message || 'Failed to list temp files', {
+        status: 500,
+      }),
+    };
   }
 
   if (!files?.length) {
@@ -69,7 +73,7 @@ export async function moveTempFilesToThread({
   }
 
   const movedPaths = new Map<string, string>();
-  await Promise.all(
+  const moveResults = await Promise.all(
     files.map(async (file) => {
       const fileName = file.name;
       const fromPath = `${tempStoragePath}/${fileName}`;
@@ -78,12 +82,28 @@ export async function moveTempFilesToThread({
 
       if (copyError) {
         console.error('File copy error:', { fileName, copyError });
-        return;
+        return {
+          error: copyError,
+          fileName,
+          fromPath,
+          toPath,
+        };
       }
 
       movedPaths.set(fromPath, toPath);
+      return null;
     })
   );
+
+  const failedMove = moveResults.find((result) => result !== null);
+  if (failedMove) {
+    return {
+      error: new Response(
+        failedMove.error.message || 'Failed to move one or more temp files',
+        { status: 500 }
+      ),
+    };
+  }
 
   return { error: null, movedPaths };
 }

@@ -37,6 +37,8 @@ export function createMiraStreamTools(
   const tools: ToolSet = {};
   let renderUiInvalidAttempts = 0;
   const attachmentOnlyDisallowedTools = new Set([
+    'delete_memory',
+    'merge_memories',
     'remember',
     'update_my_settings',
     'update_user_name',

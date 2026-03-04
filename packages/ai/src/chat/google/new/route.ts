@@ -5,6 +5,7 @@ import {
 import { gateway, generateText, type UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
 import { normalizeChatAttachmentMetadata } from '../../chat-attachment-metadata';
+import { insertUserChatMessageSafely } from '../route-message-preparation';
 
 const HUMAN_PROMPT = '\n\nHuman:';
 const AI_PROMPT = '\n\nAssistant:';
@@ -175,8 +176,8 @@ export function createPOST(
         messageMetadata
       );
       const persistedMetadata = {
-        source: isMiraMode ? 'Mira' : 'Rewise',
         ...(messageMetadata ?? {}),
+        source: isMiraMode ? 'Mira' : 'Rewise',
       } as Json;
 
       const insertArgs = {
@@ -189,11 +190,17 @@ export function createPOST(
         role: 'USER' as const,
       };
 
-      const { error: messageError } = messageId
-        ? await sbAdmin
+      const { error: messageError } = await insertUserChatMessageSafely({
+        findExistingMessageById: (existingMessageId) =>
+          sbAdmin
             .from('ai_chat_messages')
-            .upsert([insertArgs], { onConflict: 'id' })
-        : await sbAdmin.from('ai_chat_messages').insert([insertArgs]);
+            .select('id, chat_id, creator_id, role')
+            .eq('id', existingMessageId)
+            .maybeSingle(),
+        insertChatMessage: (args) =>
+          sbAdmin.from('ai_chat_messages').insert([args]),
+        message: insertArgs,
+      });
 
       if (messageError) {
         console.log(messageError);

@@ -38,8 +38,60 @@ type InsertChatMessageResult = PromiseLike<{
   error: { message: string } | null;
 }>;
 
+type ExistingChatMessageRecord = {
+  chat_id: string;
+  creator_id: string;
+  id: string;
+  role: string;
+};
+
+type FindExistingChatMessageResult = PromiseLike<{
+  data: ExistingChatMessageRecord | null;
+  error: { message: string } | null;
+}>;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+export async function insertUserChatMessageSafely({
+  findExistingMessageById,
+  insertChatMessage,
+  message,
+}: {
+  findExistingMessageById: (id: string) => FindExistingChatMessageResult;
+  insertChatMessage: (args: InsertChatMessageArgs) => InsertChatMessageResult;
+  message: InsertChatMessageArgs;
+}): Promise<{ error: { message: string } | null }> {
+  if (!message.id) {
+    return insertChatMessage(message);
+  }
+
+  const { data: existingMessage, error: existingMessageError } =
+    await findExistingMessageById(message.id);
+
+  if (existingMessageError) {
+    return { error: existingMessageError };
+  }
+
+  if (
+    existingMessage &&
+    existingMessage.chat_id === message.chat_id &&
+    existingMessage.creator_id === message.creator_id &&
+    existingMessage.role === message.role
+  ) {
+    return { error: null };
+  }
+
+  if (existingMessage) {
+    return {
+      error: {
+        message: 'Message ID already exists for a different chat message.',
+      },
+    };
+  }
+
+  return insertChatMessage(message);
 }
 
 function validateModelMessages(modelMessages: ModelMessage[]): Response | null {
@@ -202,6 +254,7 @@ function normalizePersistedUserMessageText(
 
 type PersistLatestUserMessageParams = {
   chatId: string;
+  findExistingMessageById: (id: string) => FindExistingChatMessageResult;
   insertChatMessage: (args: InsertChatMessageArgs) => InsertChatMessageResult;
   model: string;
   normalizedMessages: UIMessage[];
@@ -223,6 +276,7 @@ function normalizeModelName(model: string): string {
 
 export async function persistLatestUserMessage({
   chatId,
+  findExistingMessageById,
   insertChatMessage,
   model,
   normalizedMessages,
@@ -244,17 +298,21 @@ export async function persistLatestUserMessage({
     throw new Error('No message found');
   }
 
-  const { error: insertMsgError } = await insertChatMessage({
-    chat_id: chatId,
-    content: messageContent,
-    creator_id: userId,
-    ...(latestUserMessage.id ? { id: latestUserMessage.id } : {}),
-    metadata: {
-      source,
-      ...(latestUserMessage.metadata ?? {}),
-    } as Json,
-    model: normalizeModelName(model),
-    role: 'USER',
+  const { error: insertMsgError } = await insertUserChatMessageSafely({
+    findExistingMessageById,
+    insertChatMessage,
+    message: {
+      chat_id: chatId,
+      content: messageContent,
+      creator_id: userId,
+      ...(latestUserMessage.id ? { id: latestUserMessage.id } : {}),
+      metadata: {
+        ...(latestUserMessage.metadata ?? {}),
+        source,
+      } as Json,
+      model: normalizeModelName(model),
+      role: 'USER',
+    },
   });
 
   if (insertMsgError) {

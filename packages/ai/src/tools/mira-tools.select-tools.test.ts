@@ -105,10 +105,20 @@ describe('mira-tools select_tools safeguards', () => {
     }
 
     const result = await selectTools.execute({
-      tools: ['remember', 'update_my_settings'],
+      tools: [
+        'remember',
+        'delete_memory',
+        'merge_memories',
+        'update_my_settings',
+      ],
     });
 
     expect(result.selectedTools).toEqual(['no_action_needed']);
-    expect(result.skippedTools).toEqual(['remember', 'update_my_settings']);
+    expect(result.skippedTools).toEqual([
+      'remember',
+      'delete_memory',
+      'merge_memories',
+      'update_my_settings',
+    ]);
   });
 });

@@ -352,12 +352,14 @@ export function createPOST(
 
       const persistUserMessageError = await persistLatestUserMessage({
         chatId,
+        findExistingMessageById: (messageId) =>
+          sbAdmin
+            .from('ai_chat_messages')
+            .select('id, chat_id, creator_id, role')
+            .eq('id', messageId)
+            .maybeSingle(),
         insertChatMessage: (args) =>
-          typeof args.id === 'string' && args.id.length > 0
-            ? sbAdmin
-                .from('ai_chat_messages')
-                .upsert([args], { onConflict: 'id' })
-            : sbAdmin.from('ai_chat_messages').insert([args]),
+          sbAdmin.from('ai_chat_messages').insert([args]),
         model,
         normalizedMessages,
         source: isMiraMode ? 'Mira' : 'Rewise',
