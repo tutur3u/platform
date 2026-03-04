@@ -2,12 +2,22 @@ import { render } from '@react-email/render';
 import { sendSystemEmail } from '@tuturuuu/email-service';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import DeadlineReminderEmail from '@tuturuuu/transactional/emails/deadline-reminder';
-import NotificationDigestEmail from '@tuturuuu/transactional/emails/notification-digest';
+import NotificationDigestEmail, {
+  generateSubjectLine,
+  type NotificationItem,
+} from '@tuturuuu/transactional/emails/notification-digest';
 import WorkspaceInviteEmail from '@tuturuuu/transactional/emails/workspace-invite';
 import { MAX_NAME_LENGTH, ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  getQueuedNotificationActionUrl,
+  getQueuedNotificationTaskId,
+  planQueuedNotifications,
+  type QueuedNotification,
+  type TaskStateSnapshot,
+} from '@/app/api/notifications/delivery-utils';
 
 // Feature flag: When true, only send emails for notifications belonging to the root workspace
 // Set to false to allow emails for all workspaces
@@ -61,9 +71,91 @@ interface EmailConfigData {
 }
 
 interface DeliveryLogWithNotification {
+  id: string;
   batch_id: string;
   notification_id: string;
   notifications: NotificationData | null;
+}
+
+async function fetchTaskStateMap(
+  sbAdmin: any,
+  notifications: QueuedNotification[]
+) {
+  const taskIds = [
+    ...new Set(
+      notifications
+        .map((notification) => getQueuedNotificationTaskId(notification))
+        .filter((taskId): taskId is string => Boolean(taskId))
+    ),
+  ];
+
+  if (taskIds.length === 0) {
+    return new Map<string, TaskStateSnapshot>();
+  }
+
+  const { data: tasks } = await sbAdmin
+    .from('tasks')
+    .select('id, completed_at, closed_at, deleted_at, end_date')
+    .in('id', taskIds);
+
+  const taskStateMap = new Map<string, TaskStateSnapshot>();
+  for (const task of (tasks || []) as Array<{
+    id: string;
+    completed_at: string | null;
+    closed_at: string | null;
+    deleted_at: string | null;
+    end_date: string | null;
+  }>) {
+    taskStateMap.set(task.id, {
+      id: task.id,
+      completedAt: task.completed_at,
+      closedAt: task.closed_at,
+      deletedAt: task.deleted_at,
+      endDate: task.end_date,
+    });
+  }
+
+  return taskStateMap;
+}
+
+async function markSkippedDeliveryLogs(
+  sbAdmin: any,
+  skippedEntries: Array<{
+    deliveryLogId: string;
+    reason: string;
+    consolidatedIntoNotificationId?: string;
+  }>
+) {
+  if (skippedEntries.length === 0) {
+    return;
+  }
+
+  const now = new Date().toISOString();
+  const groupedEntries = new Map<string, string[]>();
+
+  for (const entry of skippedEntries) {
+    const key = `${entry.reason}:${entry.consolidatedIntoNotificationId || 'none'}`;
+    const existing = groupedEntries.get(key) || [];
+    existing.push(entry.deliveryLogId);
+    groupedEntries.set(key, existing);
+  }
+
+  for (const [key, logIds] of groupedEntries) {
+    const [reason, consolidatedIntoNotificationId] = key.split(':');
+    await sbAdmin
+      .from('notification_delivery_log')
+      .update({
+        status: 'skipped',
+        skip_reason: reason,
+        consolidated_into_notification_id:
+          consolidatedIntoNotificationId === 'none'
+            ? null
+            : consolidatedIntoNotificationId,
+        updated_at: now,
+      } as never)
+      .in('id', logIds)
+      .eq('status', 'pending');
+  }
 }
 
 // Render the appropriate email template based on type
@@ -307,6 +399,7 @@ export async function POST(req: NextRequest) {
       .from('notification_delivery_log')
       .select(
         `
+        id,
         batch_id,
         notification_id,
         notifications (
@@ -433,10 +526,11 @@ export async function POST(req: NextRequest) {
           await sbAdmin
             .from('notification_batches')
             .update({
-              status: 'sent',
+              status: 'skipped',
+              skip_reason: 'no_notifications',
               sent_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
-            })
+            } as never)
             .eq('id', batch.id);
 
           results.push({
@@ -473,49 +567,119 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // Get the notification from pre-fetched delivery logs
-        const notification = deliveryLogs[0]?.notifications as NotificationData;
-        if (!notification) {
+        const queuedNotifications: QueuedNotification[] = [];
+        for (const deliveryLog of deliveryLogs) {
+          const notification = deliveryLog.notifications;
+          if (!notification) {
+            continue;
+          }
+
+          queuedNotifications.push({
+            deliveryLogId: deliveryLog.id,
+            batchId: deliveryLog.batch_id,
+            notificationId: deliveryLog.notification_id,
+            type: notification.type,
+            title: notification.title,
+            description: notification.description ?? null,
+            data: notification.data,
+            createdAt: notification.created_at,
+            entityId: null,
+            entityType: null,
+            actionUrl:
+              (notification.data?.action_url as string | undefined) || null,
+          });
+        }
+
+        const taskStateMap = await fetchTaskStateMap(
+          sbAdmin,
+          queuedNotifications
+        );
+        const plan = planQueuedNotifications(queuedNotifications, taskStateMap);
+
+        const staleSkipped = plan.skipped.filter(
+          (entry) => entry.reason !== 'consolidated_to_latest'
+        );
+        const consolidatedSkipped = plan.skipped.filter(
+          (entry) => entry.reason === 'consolidated_to_latest'
+        );
+
+        await markSkippedDeliveryLogs(sbAdmin, staleSkipped);
+
+        if (plan.notificationsToSend.length === 0) {
+          await sbAdmin
+            .from('notification_batches')
+            .update({
+              status: 'skipped',
+              skip_reason: staleSkipped[0]?.reason || 'task_inactive',
+              updated_at: new Date().toISOString(),
+            } as never)
+            .eq('id', batch.id);
+
+          results.push({
+            batch_id: batch.id,
+            status: 'skipped',
+            email: userEmail,
+          });
+          processedCount++;
+          continue;
+        }
+
+        const notification = plan.notificationsToSend[0]!;
+        const primaryNotification = deliveryLogs.find(
+          (deliveryLog) =>
+            deliveryLog.notification_id === notification.notificationId
+        )?.notifications as NotificationData | undefined;
+
+        if (!primaryNotification) {
           throw new Error('No notification found in delivery log');
         }
 
         // Get email config from pre-fetched data (O(1) lookup)
-        const notifType = notification.type || notification.code || '';
+        const notifType =
+          primaryNotification.type || primaryNotification.code || '';
         const config = emailConfigsMap.get(notifType);
 
         let emailHtml: string;
         let emailSubject: string;
 
-        if (config?.email_template) {
+        if (config?.email_template && plan.notificationsToSend.length === 1) {
           const templateResult = await renderEmailTemplate({
             templateType: config.email_template as EmailTemplateType,
-            notification,
+            notification: primaryNotification,
             userName,
             workspaceName,
           });
           emailHtml = templateResult.html;
           emailSubject = templateResult.subject;
         } else {
+          const digestNotifications: NotificationItem[] =
+            plan.notificationsToSend.map((item) => ({
+              id: item.notificationId,
+              type: item.type,
+              title: item.title,
+              description: item.description || '',
+              data: item.data || {},
+              createdAt: item.createdAt,
+              actionUrl: getQueuedNotificationActionUrl(item),
+              isConsolidated: item.isConsolidated,
+              consolidatedCount: item.consolidatedCount,
+              changeTypes: item.changeTypes,
+            }));
+
           // Fallback to digest template
           emailHtml = await render(
             NotificationDigestEmail({
               userName,
               workspaceName,
-              notifications: [
-                {
-                  id: notification.id,
-                  type: notification.type,
-                  title: notification.title,
-                  description: notification.description,
-                  data: notification.data,
-                  createdAt: notification.created_at,
-                },
-              ],
+              notifications: digestNotifications,
               workspaceUrl:
                 process.env.NEXT_PUBLIC_APP_URL || 'https://tuturuuu.com',
             })
           );
-          emailSubject = `New notification from ${workspaceName}`;
+          emailSubject = generateSubjectLine(
+            digestNotifications,
+            workspaceName
+          );
         }
 
         // Send email via centralized EmailService (bypasses rate limiting for system emails)
@@ -534,7 +698,7 @@ export async function POST(req: NextRequest) {
           metadata: {
             templateType,
             entityType: 'notification',
-            entityId: notification.id,
+            entityId: primaryNotification.id,
           },
         });
 
@@ -555,18 +719,23 @@ export async function POST(req: NextRequest) {
             status: 'sent',
             sent_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-          })
-          .eq('batch_id', batch.id)
+          } as never)
+          .in(
+            'id',
+            plan.notificationsToSend.map((item) => item.deliveryLogId)
+          )
           .eq('status', 'pending');
+
+        await markSkippedDeliveryLogs(sbAdmin, consolidatedSkipped);
 
         await sbAdmin
           .from('notification_batches')
           .update({
             status: 'sent',
             sent_at: new Date().toISOString(),
-            notification_count: deliveryLogs.length,
+            notification_count: plan.notificationsToSend.length,
             updated_at: new Date().toISOString(),
-          })
+          } as never)
           .eq('id', batch.id);
 
         results.push({

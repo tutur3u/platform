@@ -82,6 +82,9 @@ export interface NotificationItem {
   data?: Record<string, unknown>;
   createdAt: string;
   actionUrl?: string;
+  isConsolidated?: boolean;
+  consolidatedCount?: number;
+  changeTypes?: string[];
 }
 
 // Extended notification item for consolidated per-task display
@@ -541,7 +544,13 @@ const consolidateByEntity = (
   for (const [, group] of entityGroups) {
     if (group.length === 1) {
       // Single notification, no consolidation needed
-      consolidated.push(group[0] as ConsolidatedNotification);
+      const single = group[0] as ConsolidatedNotification;
+      consolidated.push({
+        ...single,
+        isConsolidated:
+          single.isConsolidated ||
+          Boolean(single.consolidatedCount && single.consolidatedCount > 1),
+      });
     } else {
       // Multiple notifications for same entity - consolidate
       // Use the most recent notification as the base
@@ -670,30 +679,43 @@ const NotificationCard = ({
   return (
     <Section
       style={{
-        backgroundColor: '#ffffff',
-        borderRadius: '8px',
-        border: '1px solid #e5e7eb',
-        marginBottom: '8px',
+        backgroundColor: '#fffdf8',
+        borderRadius: '16px',
+        border: '1px solid #e7dece',
+        marginBottom: '12px',
         overflow: 'hidden',
+        boxShadow: '0 12px 28px rgba(77, 53, 32, 0.08)',
       }}
     >
       <Row>
         <td
           style={{
-            width: '4px',
+            width: '6px',
             backgroundColor: config.color,
             padding: 0,
           }}
         />
-        <td style={{ padding: '12px 16px' }}>
+        <td style={{ padding: '16px 18px' }}>
           <table cellPadding="0" cellSpacing="0" style={{ width: '100%' }}>
             <tr>
               <td>
+                <Text
+                  style={{
+                    margin: '0 0 6px',
+                    color: config.color,
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    letterSpacing: '0.14em',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  {config.label}
+                </Text>
                 <Link
                   href={actionUrl}
                   style={{
-                    color: '#111827',
-                    fontSize: '14px',
+                    color: '#181411',
+                    fontSize: '15px',
                     fontWeight: 600,
                     textDecoration: 'none',
                     lineHeight: '1.4',
@@ -706,19 +728,20 @@ const NotificationCard = ({
                 {isConsolidated && (
                   <span
                     style={{
-                      backgroundColor: '#e0e7ff',
-                      color: '#4338ca',
+                      backgroundColor: '#efe3cf',
+                      color: '#7c5431',
                       fontSize: '10px',
                       fontWeight: 600,
-                      padding: '2px 6px',
-                      borderRadius: '10px',
+                      padding: '4px 8px',
+                      borderRadius: '999px',
                       marginRight: '6px',
+                      display: 'inline-block',
                     }}
                   >
-                    {notification.consolidatedCount} changes
+                    {notification.consolidatedCount} updates
                   </span>
                 )}
-                <span style={{ color: '#9ca3af', fontSize: '12px' }}>
+                <span style={{ color: '#8b7b68', fontSize: '12px' }}>
                   {formatRelativeTime(notification.createdAt)}
                 </span>
               </td>
@@ -729,9 +752,9 @@ const NotificationCard = ({
                   <Text
                     style={{
                       margin: 0,
-                      color: '#6b7280',
+                      color: '#5b5147',
                       fontSize: '13px',
-                      lineHeight: '1.4',
+                      lineHeight: '1.55',
                     }}
                   >
                     {truncate(notification.description, 120)}
@@ -810,15 +833,16 @@ const NotificationGroup = ({
         <tr>
           <td
             style={{
-              backgroundColor: config.bgColor,
+              backgroundColor: '#f5ede1',
               color: config.color,
-              padding: '4px 10px',
-              borderRadius: '4px',
+              padding: '6px 12px',
+              borderRadius: '999px',
               fontSize: '12px',
               fontWeight: 600,
+              letterSpacing: '0.04em',
             }}
           >
-            {config.emoji} {config.label}
+            {config.label}
             {notifications.length > 1 && (
               <span style={{ fontWeight: 400, marginLeft: '4px' }}>
                 ({notifications.length})
@@ -866,14 +890,14 @@ const QuickStats = ({
   notifications: NotificationItem[];
 }) => {
   const groups = groupNotificationsByCategory(notifications);
-  const stats: Array<{ emoji: string; count: number; label: string }> = [];
+  const stats: Array<{ count: number; label: string; color: string }> = [];
 
   groups.forEach((items, category) => {
     const config = CATEGORY_CONFIG[category];
     stats.push({
-      emoji: config.emoji,
       count: items.length,
       label: config.label,
+      color: config.color,
     });
   });
 
@@ -883,10 +907,10 @@ const QuickStats = ({
   return (
     <Section
       style={{
-        backgroundColor: '#f9fafb',
-        borderRadius: '8px',
-        padding: '12px 16px',
-        marginBottom: '20px',
+        backgroundColor: '#f7f1e8',
+        borderRadius: '18px',
+        padding: '8px',
+        marginBottom: '24px',
       }}
     >
       <table cellPadding="0" cellSpacing="0" style={{ width: '100%' }}>
@@ -898,31 +922,33 @@ const QuickStats = ({
                 textAlign: 'center',
                 borderRight:
                   index < Math.min(stats.length, 4) - 1
-                    ? '1px solid #e5e7eb'
+                    ? '1px solid #eadfce'
                     : 'none',
-                padding: '0 8px',
+                padding: '14px 8px',
               }}
             >
               <Text
                 style={{
                   margin: 0,
-                  fontSize: '18px',
+                  fontSize: '22px',
                   fontWeight: 700,
-                  color: '#111827',
+                  color: '#181411',
+                  fontFamily: 'Georgia, "Times New Roman", serif',
                 }}
               >
                 {stat.count}
               </Text>
               <Text
                 style={{
-                  margin: '2px 0 0',
+                  margin: '4px 0 0',
                   fontSize: '11px',
-                  color: '#6b7280',
+                  color: stat.color,
                   textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
+                  letterSpacing: '0.12em',
+                  fontWeight: 700,
                 }}
               >
-                {stat.emoji} {stat.label}
+                {stat.label}
               </Text>
             </td>
           ))}
@@ -963,7 +989,7 @@ export const NotificationDigestEmail = ({
     notificationCount === 0
       ? `No new notifications in ${workspaceName}`
       : primaryNotification
-        ? `${getCategoryConfig(primaryNotification.type).emoji} ${primaryNotification.title}${notificationCount > 1 ? ` and ${notificationCount - 1} more` : ''}`
+        ? `${primaryNotification.title}${notificationCount > 1 ? ` and ${notificationCount - 1} more` : ''}`
         : `${notificationCount} notification${notificationCount !== 1 ? 's' : ''} in ${workspaceName}`;
 
   return (
@@ -982,35 +1008,35 @@ export const NotificationDigestEmail = ({
       <Tailwind>
         <Body
           style={{
-            backgroundColor: '#f3f4f6',
-            fontFamily:
-              '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+            background:
+              'linear-gradient(180deg, #efe4d3 0%, #f8f4ed 38%, #f3ede4 100%)',
+            fontFamily: '"Avenir Next", "Segoe UI", sans-serif',
             margin: 0,
-            padding: '24px 16px',
+            padding: '28px 16px',
           }}
         >
           <Container
             style={{
-              maxWidth: '520px',
+              maxWidth: '560px',
               margin: '0 auto',
             }}
           >
             {/* Header Card */}
             <Section
               style={{
-                backgroundColor: '#ffffff',
-                borderRadius: '12px',
+                backgroundColor: '#fffdf8',
+                borderRadius: '24px',
                 overflow: 'hidden',
-                marginBottom: '12px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                marginBottom: '14px',
+                border: '1px solid #eadfce',
+                boxShadow: '0 20px 50px rgba(90, 62, 38, 0.12)',
               }}
             >
-              {/* Gradient Header */}
               <Section
                 style={{
                   background:
-                    'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
-                  padding: '24px',
+                    'linear-gradient(135deg, #1d3528 0%, #2f5144 48%, #a36d3a 100%)',
+                  padding: '30px 28px 26px',
                 }}
               >
                 <Row>
@@ -1022,32 +1048,48 @@ export const NotificationDigestEmail = ({
                         width="32"
                         height="32"
                         style={{
-                          borderRadius: '6px',
-                          marginBottom: '12px',
+                          borderRadius: '10px',
+                          marginBottom: '14px',
+                          border: '1px solid rgba(255,255,255,0.2)',
                         }}
                       />
                     )}
+                    <Text
+                      style={{
+                        margin: '0 0 10px',
+                        color: 'rgba(255,255,255,0.72)',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        letterSpacing: '0.16em',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      Notification Brief
+                    </Text>
                     <Heading
                       style={{
                         margin: 0,
                         color: '#ffffff',
-                        fontSize: '20px',
+                        fontSize: '28px',
                         fontWeight: 700,
+                        letterSpacing: '-0.02em',
+                        fontFamily: 'Georgia, "Times New Roman", serif',
                       }}
                     >
                       {notificationCount === 0
                         ? "You're all caught up!"
-                        : `${notificationCount} new update${notificationCount !== 1 ? 's' : ''}`}
+                        : `${notificationCount} fresh update${notificationCount !== 1 ? 's' : ''}`}
                     </Heading>
                     <Text
                       style={{
-                        margin: '4px 0 0',
+                        margin: '8px 0 0',
                         color: 'rgba(255,255,255,0.8)',
-                        fontSize: '13px',
+                        fontSize: '14px',
+                        lineHeight: '1.5',
                       }}
                     >
                       {workspaceName}
-                      {timeRange && ` • ${timeRange}`}
+                      {timeRange ? ` · ${timeRange}` : ''}
                     </Text>
                   </Column>
                 </Row>
@@ -1065,32 +1107,33 @@ export const NotificationDigestEmail = ({
                   <Text
                     style={{
                       margin: 0,
-                      color: '#92400e',
+                      color: '#8b5a1f',
                       fontSize: '12px',
                       textAlign: 'center',
+                      fontWeight: 600,
                     }}
                   >
-                    ⚠️ {delayText} - These notifications are from an earlier time
-                    period
+                    {delayText}. This digest includes updates from an earlier
+                    window.
                   </Text>
                 </Section>
               )}
 
               {/* Content */}
-              <Section style={{ padding: '20px' }}>
+              <Section style={{ padding: '26px 24px 24px' }}>
                 {/* Greeting */}
                 <Text
                   style={{
-                    margin: '0 0 16px',
-                    color: '#374151',
-                    fontSize: '14px',
-                    lineHeight: '1.5',
+                    margin: '0 0 18px',
+                    color: '#43372c',
+                    fontSize: '15px',
+                    lineHeight: '1.7',
                   }}
                 >
                   Hi {userName},{' '}
                   {notificationCount === 0
                     ? 'no new notifications to show.'
-                    : "here's what needs your attention:"}
+                    : "here's the latest activity worth reviewing:"}
                 </Text>
 
                 {/* Quick Stats */}
@@ -1119,47 +1162,49 @@ export const NotificationDigestEmail = ({
                     }
                     style={{
                       display: 'inline-block',
-                      backgroundColor: '#4f46e5',
+                      backgroundColor: '#1f3b2f',
                       color: '#ffffff',
                       fontSize: '14px',
                       fontWeight: 600,
-                      padding: '12px 24px',
-                      borderRadius: '8px',
+                      padding: '14px 28px',
+                      borderRadius: '999px',
                       textDecoration: 'none',
+                      letterSpacing: '0.02em',
                     }}
                   >
                     {notificationCount === 0
-                      ? 'Go to Workspace'
-                      : 'View All Notifications'}
+                      ? 'Open workspace'
+                      : 'Review all notifications'}
                   </Button>
                 </Section>
               </Section>
             </Section>
 
             {/* Footer */}
-            <Section style={{ textAlign: 'center', padding: '16px 0' }}>
+            <Section style={{ textAlign: 'center', padding: '18px 4px 8px' }}>
               <Text
                 style={{
                   margin: '0 0 8px',
-                  color: '#6b7280',
+                  color: '#6f6254',
                   fontSize: '12px',
+                  lineHeight: '1.6',
                 }}
               >
                 <Link
                   href={`${workspaceUrl}/settings/notifications`}
-                  style={{ color: '#4f46e5', textDecoration: 'underline' }}
+                  style={{ color: '#1f3b2f', textDecoration: 'underline' }}
                 >
                   Manage preferences
                 </Link>
-                {' • '}
+                {' · '}
                 <Link
                   href={workspaceUrl}
-                  style={{ color: '#6b7280', textDecoration: 'none' }}
+                  style={{ color: '#6f6254', textDecoration: 'none' }}
                 >
                   {workspaceName}
                 </Link>
               </Text>
-              <Text style={{ margin: 0, color: '#9ca3af', fontSize: '11px' }}>
+              <Text style={{ margin: 0, color: '#9a8a78', fontSize: '11px' }}>
                 © {new Date().getFullYear()} Tuturuuu
               </Text>
             </Section>

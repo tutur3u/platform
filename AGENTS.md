@@ -100,6 +100,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **User Email**: Never query `public.users.email` (it doesn't exist). Use `public.user_private_details`.
 - **Reset-Only Local Defaults**: If behavior should apply only after `bun sb:reset` (local dev bootstrap), implement it in `apps/database/scripts/*` and wire it into the reset script; do not encode reset-only behavior in migrations.
 - **Workspace-Scoped Mutation Follow-Through**: For workspace-scoped `UPDATE`/`DELETE` API handlers, request returning rows (`select(...).maybeSingle()` or equivalent) and stop follow-up side effects when no row matched; never run dependent child-table deletes/updates based only on a requested ID.
+- **Queued Task Notification Hygiene**: Email delivery workers must re-check current task state at send time. Skip queued deadline/task-change emails for tasks that are already completed, closed, deleted, or already past the reminder window, and consolidate older pending batches into the newest batch per recipient before sending to avoid backlog-driven spam.
 
 ### 6.2 UI & Rendering Patterns
 
@@ -144,6 +145,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Mira Native Attachment Routing**: When a model can consume attachments natively, keep audio/image/video inputs on the multimodal path. Do not steer them into `convert_file_to_markdown`, and make file-conversion guards tolerant of bare filenames in tool args so planner mistakes degrade into corrective guidance instead of misleading workspace-path errors.
 - **Mira Attachment Visibility**: Persist the first user turn of a new chat before relying on restored chat state, and let user-message rendering fall back to `message.metadata.attachments` when the transient attachment map has not caught up yet so sent files do not flash and disappear.
 - **Mira Attachment Restoration Matching**: When rebuilding chat attachment state from stored file URLs, match files to messages by canonical `storagePath`, not filename. Recorder uploads and repeated exports can reuse the same filename across turns, so filename-based matching can attach a file to the wrong message or duplicate a single upload.
+- **Mira Attachment-Only Action Requests**: Do not globally disable Mira tools just because the latest user turn contains only attachments. Current-turn attachment digests can carry the user’s real request (for example an audio note asking to create tasks), so non-persistence action tools must still be available. Only persistence/identity tools should stay blocked unless the user explicitly asks to save or change long-term state.
 
 ### 6.4 Tooling & CI
 

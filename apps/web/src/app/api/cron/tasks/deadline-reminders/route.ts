@@ -150,6 +150,7 @@ export async function GET(req: NextRequest) {
       )
       .not('end_date', 'is', null)
       .is('completed_at', null)
+      .is('closed_at', null)
       .is('deleted_at', null)
       .gte('end_date', now.toISOString())
       .lte('end_date', windowEnd.toISOString());
