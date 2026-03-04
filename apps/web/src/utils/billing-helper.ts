@@ -1,6 +1,5 @@
-import type { CustomerSeat } from '@tuturuuu/payment/polar';
-import { createPolarClient } from '@tuturuuu/payment/polar/server';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import type { CustomerSeat, Polar } from '@tuturuuu/payment/polar';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
 import {
   isAiCreditPackProduct,
@@ -8,10 +7,8 @@ import {
 } from '@/utils/polar-product-metadata';
 import { createFreeSubscription } from '@/utils/subscription-helper';
 
-export async function fetchProducts() {
+export async function fetchProducts(polar: Polar) {
   try {
-    const polar = createPolarClient();
-
     const res = await polar.products.list({ isArchived: false });
     return (res.result.items ?? []).filter(
       (product) =>
@@ -35,9 +32,8 @@ export interface CreditPackListItem {
   archived: boolean;
 }
 
-export async function fetchCreditPacks() {
+export async function fetchCreditPacks(supabase: TypedSupabaseClient) {
   try {
-    const supabase = await createClient();
     const { data, error } = await supabase
       .from('workspace_credit_packs')
       .select('*')
@@ -65,9 +61,11 @@ export async function fetchCreditPacks() {
   }
 }
 
-export async function fetchWorkspaceOrders(wsId: string) {
+export async function fetchWorkspaceOrders(
+  supabase: TypedSupabaseClient,
+  wsId: string
+) {
   try {
-    const supabase = await createClient();
     const { data: orders, error } = await supabase
       .from('workspace_orders')
       .select(
@@ -105,11 +103,10 @@ export async function fetchWorkspaceOrders(wsId: string) {
 }
 
 export async function checkManageSubscriptionPermission(
+  supabase: TypedSupabaseClient,
   wsId: string,
   userId: string
 ) {
-  const supabase = await createClient();
-
   const { data, error } = await supabase.rpc('has_workspace_permission', {
     p_ws_id: wsId,
     p_user_id: userId,
@@ -124,16 +121,17 @@ export async function checkManageSubscriptionPermission(
   return data ?? false;
 }
 
-export async function ensureSubscription(wsId: string) {
+export async function ensureSubscription(
+  polar: Polar,
+  supabase: TypedSupabaseClient,
+  wsId: string
+) {
   // Check for existing subscription first
-  const existing = await fetchSubscription(wsId);
+  const existing = await fetchSubscription(polar, supabase, wsId);
   if (existing) return { subscription: existing, error: null };
 
   // No subscription found - attempt to create one
   try {
-    const supabase = await createClient();
-    const polar = createPolarClient();
-
     // Get or create Polar customer
     await getOrCreatePolarCustomer({ polar, supabase, wsId });
 
@@ -151,7 +149,13 @@ export async function ensureSubscription(wsId: string) {
     }
 
     // Poll database until webhook processes (max 30 seconds)
-    const newSubscription = await waitForSubscriptionSync(wsId, 10, 3000);
+    const newSubscription = await waitForSubscriptionSync(
+      polar,
+      supabase,
+      wsId,
+      10,
+      3000
+    );
 
     if (!newSubscription) {
       return {
@@ -170,9 +174,11 @@ export async function ensureSubscription(wsId: string) {
   }
 }
 
-export async function fetchSubscription(wsId: string) {
-  const supabase = await createClient();
-
+export async function fetchSubscription(
+  polar: Polar,
+  supabase: TypedSupabaseClient,
+  wsId: string
+) {
   const { data: dbSub, error } = await supabase
     .from('workspace_subscriptions')
     .select(
@@ -207,8 +213,6 @@ export async function fetchSubscription(wsId: string) {
   let seatList: CustomerSeat[] = [];
 
   try {
-    const polar = createPolarClient();
-
     const { seats } = await polar.customerSeats.listSeats({
       subscriptionId: dbSub.polar_subscription_id,
     });
@@ -233,12 +237,14 @@ export async function fetchSubscription(wsId: string) {
 }
 
 export async function waitForSubscriptionSync(
+  polar: Polar,
+  supabase: TypedSupabaseClient,
   wsId: string,
   maxAttempts: number = 10,
   delayMs: number = 500
 ) {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    const subscription = await fetchSubscription(wsId);
+    const subscription = await fetchSubscription(polar, supabase, wsId);
 
     if (subscription) {
       console.log(
