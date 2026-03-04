@@ -14,7 +14,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Sensitive Data**: NEVER commit secrets, API keys, tokens, or credentials. Reference environment variables by name only.
 - **Manual Dependency Edits**: NEVER manually edit `package.json` to add or update dependencies. Always use the CLI.
 - **UI Antipatterns**: NEVER use native browser dialogs (alert, confirm), hard-coded color classes (use dynamic-*), or emojis in UI code (use lucide-react via @tuturuuu/icons).
-- **Data Fetching (#1 Violation)**: **NEVER use useEffect for data fetching.** TanStack Query (useQuery/useMutation) is the **mandatory** standard. Raw fetch() in client components is forbidden.
+- **Data Fetching/Mutation (#1 Violation)**: **NEVER use useEffect for data fetching.** TanStack Query (useQuery/useMutation) is the **mandatory** standard. Raw fetch() in client components is forbidden.
 
 ### 2.2 Mandatory Actions
 
@@ -22,7 +22,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Bilingual Support**: ALWAYS provide translations for both English (en.json) AND Vietnamese (vi.json) for all user-facing strings.
 - **Navigation Parity**: ALWAYS update `navigation.tsx` in the relevant app when adding new routes (aliases + children + icons + permissions).
 - **Proactive Refactoring**: Evaluate files >400 LOC and components >200 LOC for extraction into smaller, focused units.
-- **Unified Verification**: Always end your session with a `bun check`. Ensure all checks pass (you may ignore ones that were not introduced by you). For mobile-only changes, run `bun check:mobile`.
+- **Unified Verification**: Always end your session with a `bun check`. Ensure all checks pass (you may ignore ones that were not introduced by you). For mobile changes, run `bun check:mobile`.
 - **UI Preflight Hygiene**: For newly added/edited UI files, normalize import ordering and Tailwind class ordering before full checks to reduce avoidable `biome` failures.
 - **Formatting Workflow**: For fixing formatting issues, try `bun ff` first before making manual edits.
 - **Session Retrospective**: Conduct a retrospective at the end of every session to document mistakes and update these guidelines.
@@ -41,7 +41,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 
 - **Workspace Protocol**: Internal packages use `workspace:*`.
 - **Server Components**: Default to Server Components; use 'use client' only when state/interactivity is required.
-- **Type Inference**: Import extended types from `@tuturuuu/types/db`. Never hand-edit generated type files.
+- **Type Inference**: Import extended types from `@tuturuuu/types/db`. Never hand-edit generated type files. Refrain from ad-hoc type definitions that duplicate DB types; extend them in `packages/types` if necessary.
 
 ## 4. Canonical Workflows
 
@@ -79,7 +79,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 
 ### 5.1 Data Fetching (TanStack Query)
 
-- **Mandatory Wrapper**: All client-side fetching must use `useQuery`/`useMutation`.
+- **Mandatory Wrapper**: All client-side fetching/mutation must use `useQuery`/`useMutation`.
 - **HTTP Cache Bypass**: Every { fetch } inside a `queryFn` MUST include { cache: 'no-store' }.
 - **Realtime (Kanban)**: Use **Supabase Broadcast** via `BoardBroadcastContext`. **NEVER** invalidate queries or use `postgres_changes` for task sync in boards.
 
@@ -89,7 +89,6 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **API Pattern**: Use `createClient(request)` in web API routes to support mobile Bearer token auth.
 - **Widget Consistency**: Preserve per-field validation when refactoring into shared editable widgets.
 - **Mobile API Error Surfacing**: In mobile form submit handlers, catch `ApiException` separately and surface `e.message` (with safe fallback) instead of only a generic toast; this prevents silent failures when backend rejects a request.
-- **Route Alias During Tab Consolidation**: When merging a standalone page into an existing tabbed screen, keep the old route as an alias that opens the destination tab by passing an explicit initial tab/scope parameter.
 - **iOS Lockstep**: After bumping FlutterFire or other iOS-backed Flutter dependencies in `apps/mobile/pubspec.yaml` or `apps/mobile/pubspec.lock`, refresh and commit `apps/mobile/ios/Podfile.lock` so CocoaPods snapshots do not drift and break iOS CI during `pod install`.
 
 ## 6. Known Gotchas & Patterns
@@ -105,39 +104,25 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 ### 6.2 UI & Rendering Patterns
 
 - **Dashboard Overlay UX**: For compact+expandable dashboard widgets near chat actions, avoid icon-only rails; use labeled compact triggers and reserve layout space to prevent overlap at desktop breakpoints.
-- **Dart Part Helper Reuse**: When a feature uses `part` files, keep shared parsing/formatting helpers at library scope in the parent file and reuse them from each part; avoid duplicating identical private methods across sibling states.
 - **Local Storage Mirroring**: If UI state is persisted to `localStorage` but displayed outside the owning component tree, do not rely on the `storage` event alone; emit a same-tab custom event or lift the state so in-tab mirrors stay reactive.
 - **In-Place Input Normalization**: If an input rewrites typed text on change (for example replacing ASCII shortcuts with symbols), preserve the caret/selection explicitly after normalization so mid-string edits do not jump the cursor.
 - **Shared Text Shortcut Rules**: If a dialog mixes plain text inputs and rich text editors, define typing shortcut replacements in a shared utility/extension and reuse them across both surfaces so title/body behavior does not drift.
 - **Recent Sidebar Persistence**: For workspace sidebar “recently visited” UI, persist only stable route data (for example `href` + timestamp) and derive localized titles/icons from current navigation state at render time. Do not store rendered labels in `localStorage`, or locale changes and nav refactors will leave stale sidebar entries.
 - **UI Package Export Coverage**: When adding a new module under `packages/ui/src` that will be imported through the `@tuturuuu/ui/...` package path, update `packages/ui/package.json` exports explicitly if the file extension is not covered by an existing wildcard pattern (for example `.ts` files when the export only matches `*.tsx`). Otherwise Next.js/Turbopack can fail with module resolution errors even though the file exists.
 - **Provider Boundary Bridges**: Before calling a context hook from shared surfaces like command palettes, nav popovers, or portals, verify the component is actually rendered inside that provider in the app tree. If not, use a provider-owned event bridge or lift the action instead of importing the hook directly.
-- **Task Sharing UI Gating**: Do not gate task share entry points on `ROOT_WORKSPACE_ID` or task editability. The share dialog should remain reachable from read-only task surfaces; only the public-access toggle is internal/root-workspace-only, and that restriction should live inside the share-link controls/API rather than hiding the entire sharing UI.
-- **Render UI Text Fidelity**: Components that display AI-authored prose in `render_ui` (for example `KeyPoints`, `InsightSection` summaries) must render Markdown semantics (bold, emphasis, inline code, links) instead of showing raw markdown tokens.
-- **Markdown Table Priority**: For tabular assistant answers, prefer native Markdown tables in normal assistant text. Do not attempt unsupported `render_ui` table components, and do not wrap Markdown tables in fenced code blocks.
 - **Markdown Separator Validation**: When detecting Markdown table separator rows, do not use ambiguous regex character ranges like `[\s:-|]`. Escape or reposition `-`, or prefer explicit per-character validation, to avoid false positives and CodeQL `js/overly-large-range` alerts.
 - **Special Tag Prompt Rules**: Custom tags like `@<FOLLOWUP>` must not contain internal whitespace, but blank lines between distinct prompt sections are required.
 - **Flutter Toast Overlay Context**: In `shadcn_flutter`, call `showToast` with a context captured from `Navigator.of(context, rootNavigator: true).context` (captured before async gaps). Dialog/sheet-local contexts can sit below overlays and trigger `InheritedTheme.capture` ancestor assertions.
-- **PR Maintainability Fixes**: When reviewers flag oversized files, prioritize extracting cohesive submodules (for example `render_ui` blog components or tool-step decision helpers) while keeping the original external APIs and behavior intact.
-- **Executor Module Boundaries**: When file grows beyond roughly 500 LOC, split it by concern (for example sessions, goals, categories) and keep the original entrypoint as a thin barrel re-export so dispatcher imports remain stable.
+- **Module Boundaries**: When file grows beyond roughly 500 LOC, split it by concern and keep the original entrypoint as a thin barrel re-export so dispatcher imports remain stable.
 
 ### 6.3 Security & Validation
 
-- **External URL Safety**: Any URL coming from model/tool output must be validated as `http(s)` before rendering clickable anchors (`href`) in web UI components; never trust raw tool-returned URLs.
 - **Chat Attachment Type Parity**: When adding a new attachment type for Mira chat, update all three surfaces together: `chat-input-bar.tsx` accept list, `/api/ai/chat/upload-url` extension allowlist, and `/api/ai/chat/file-urls` extension→MIME mapping.
-- **Fresh Chat Reset Integrity**: “New chat” flows in Mira must reset both persisted identifiers and the live chat runtime. If a stateful hook like `useChat` owns in-memory messages, force a remount or explicit runtime reset; also reset queue/pending input, attachment state, generative UI state, and workspace context back to `personal`.
 - **Office/Binary Attachment Handling**: For chat uploads that may be rejected by storage MIME checks (for example `.xlsx`/`.docx`), use a safe upload MIME fallback (`application/octet-stream`) and retry once without explicit `Content-Type`. In AI provider routes, never pass unsupported binary MIME types as inline `file` parts; convert them into explicit text notices instead.
-- **Client Upload Mutations**: In client components, wrap signed upload/delete flows for chat attachments in TanStack Query `useMutation` handlers instead of ad-hoc inline `fetch` control flow so retries, errors, and cache effects stay centralized.
-- **Mira Chat Decomposition**: When `mira-chat-panel.tsx` or similar chat containers exceed size limits, extract by concern: config/transport, attachment mutations, persistence/restore, side-effect watchers, and presentational header/body components. Do not collapse the code into one replacement mega-hook.
 - **Mira Workspace Context Sync**: When a Mira tool changes workspace context, update both the mutable server-side `MiraToolContext` used for later tool calls in the same response and the client-persisted chat config used for future turns; otherwise current-turn tools and later user requests will drift to different workspaces.
-- **Explicit Workspace Requests**: If a user names a workspace in a task/calendar/finance request (for example "my tasks in Tuturuuu"), planner heuristics must force workspace discovery/switch tools before workspace-scoped data tools. Do not let "my tasks" defaults short-circuit an explicitly named workspace.
-- **Time Tracking Workspace Phrasing**: Treat time-tracking requests like "track/log my time for \<workspace name\>" as explicit workspace requests, even when the user does not say "in \<workspace\>". Resolve the workspace before listing categories or creating/editing sessions.
-- **Workspace Resolution Completion**: In Mira planner step gating, workspace resolution is complete only after `set_workspace_context` returns a successful result. A failed or ambiguous switch attempt must keep discovery/switch tools active and prevent workspace-scoped mutations from proceeding on the fallback context.
-- **Workspace Member Queries**: Treat "who's in my workspace" (and similar bare member queries) and "who is in \<workspace name\>" as workspace-context-aware requests. Bare member queries default to the personal workspace. When the user names a specific workspace (e.g. "who is in Tuturuuu"), force workspace discovery/switch before `list_workspace_members`; treat "\<workspace name\>" as a placeholder for the user-supplied workspace identifier.
-- **MarkItDown Conversions**: For binary office/docs ingestion in Mira, route through the Discord `/markitdown` endpoint with plugins enabled, enforce fixed per-request credit charging in the tool executor, and pass files via Supabase signed read URLs (never raw multipart upload bytes to the endpoint).
 - **Fixed-Cost AI Reservations**: For fixed-price AI operations that call external services (for example MarkItDown conversion), reserve credits atomically before the external call, then commit the reservation on success or release it on every failure path. Do not rely on a soft allowance pre-check plus post-hoc deduction.
 - **AI/File Logging Hygiene**: In AI chat and file-processing code, never log raw uploaded file contents, full processed message bodies, or other user-provided payload text. Log only minimal metadata needed for debugging (counts, MIME types, masked identifiers, status).
-- **Experimental AI Tool Gating**: When an AI tool like `render_ui` is highly experimental or prone to recursive failure loops in production, conditionally omit it from both the stream tool definitions and the dynamic system prompt directory when `!DEV_MODE`. Do not rely solely on system prompt instructions to stop models from calling unstable tools.
+- **Experimental AI Tool Gating**: When an AI tool is highly experimental or prone to recursive failure loops in production, conditionally omit it from both the stream tool definitions and the dynamic system prompt directory when `!DEV_MODE`. Do not rely solely on system prompt instructions to stop models from calling unstable tools.
 - **AI SDK Tool Part Parsing**: In Mira chat UI code, do not assume tool parts expose `.toolName` or `.toolCallId`. Resolve tool identity with the AI SDK helper first and fall back to the `type`/top-level `toolCallId` fields so visual tools (for example `render_ui`) and context-switch side effects still work with serialized message parts.
 - **Mira Retry After Stop**: In Mira chat queueing, do not call `sendMessage` in the same tick as `stop()` while `useChat` is still `submitted`/`streaming`. Queue the retry and flush only after the hook reports an idle status, or follow-up user turns can append locally while the assistant remains stuck in `Thinking...`.
 
@@ -147,7 +132,6 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Targeted Test Runs**: For single-package/unit validation, run the package-local test runner directly (for example `bun --cwd packages/ai vitest run src/tools/executors/timer.test.ts`) instead of `bun test <path>` from repo root, which fans out to monorepo-wide `turbo run test`.
 - **Discord Python Tooling**: In `apps/discord`, use `uv` as the local environment/package workflow (`uv sync`, `uv run ...`) with `pyproject.toml` + `uv.lock` as the source of truth for local development.
 - **Discord CI Parity**: Keep the GitHub Actions workflow `.github/workflows/discord-python-ci.yml` aligned with the `uv` workflow and install dependencies via `uv sync --locked` so CI reproducibly uses `apps/discord/uv.lock`.
-- **Discord Modal Deploys**: For `apps/discord` continuous deployment, trigger Modal deploys from GitHub Actions only after the Discord-specific CI workflow succeeds, authenticate with `MODAL_TOKEN_ID` / `MODAL_TOKEN_SECRET`, and run the deploy via `uv run modal deploy ...`.
 - **Discord Service Logging**: In `apps/discord`, use module-level `logging` (`logger.exception` / `logger.error(..., exc_info=True)`) for error paths. Avoid ad-hoc `print()` for operational failures.
 - **Global Check Baseline Drift**: If `bun check` fails solely because repo-wide tool versions drift (for example Biome schema/CLI mismatch), do not modify unrelated workspace configs in feature PRs; complete scoped verification (for example `bun check:mobile` for mobile-only work) and report the pre-existing global failure explicitly.
 
