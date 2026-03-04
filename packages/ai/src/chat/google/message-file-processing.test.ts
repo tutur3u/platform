@@ -84,6 +84,25 @@ describe('injectFileDigestContextIntoMessages', () => {
       })
     );
   });
+
+  it('preserves existing message metadata when injecting digest text', async () => {
+    const processedMessages = await injectFileDigestContextIntoMessages({
+      digestBlocks: ['Current-turn attachment digest: note.wav (audio/wav)'],
+      messages: [
+        {
+          content: 'Analyze this',
+          metadata: { source: 'Mira' },
+          role: 'user',
+        } as never,
+      ],
+    });
+
+    expect(processedMessages[0]).toEqual(
+      expect.objectContaining({
+        metadata: { source: 'Mira' },
+      })
+    );
+  });
 });
 
 describe('processMessagesWithFiles', () => {
@@ -166,6 +185,65 @@ describe('processMessagesWithFiles', () => {
       Array.isArray(processedMessages[0]?.content) &&
         processedMessages[0]?.content.some((part) => part.type === 'file')
     ).toBe(false);
+  });
+
+  it('continues processing attachments when one digest throws', async () => {
+    ensureChatFileDigestMock
+      .mockRejectedValueOnce(new Error('boom'))
+      .mockResolvedValueOnce({
+        cached: false,
+        digest: {
+          answerContextMarkdown: 'Second attachment digest',
+          digestVersion: 1,
+          displayName: 'second.wav',
+          extractedMarkdown: null,
+          fileName: 'second.wav',
+          keyFacts: [],
+          limitations: [],
+          mediaType: 'audio/wav',
+          processorModel: 'google/gemini-3.1-flash-lite-preview',
+          status: 'ready',
+          storagePath: 'workspace-1/chats/ai/resources/chat-1/second.wav',
+          suggestedAlias: null,
+          summary: 'second summary',
+          title: 'second title',
+        },
+        ok: true,
+      });
+
+    const processedMessages = await processMessagesWithFiles({
+      chatFiles: [
+        {
+          name: 'first.wav',
+          storagePath: 'workspace-1/chats/ai/resources/chat-1/first.wav',
+          type: 'audio/wav',
+        },
+        {
+          name: 'second.wav',
+          storagePath: 'workspace-1/chats/ai/resources/chat-1/second.wav',
+          type: 'audio/wav',
+        },
+      ],
+      chatId: 'chat-1',
+      messages: [{ content: 'Analyze these files', role: 'user' }],
+      userId: 'user-1',
+      wsId: 'workspace-1',
+    });
+
+    expect(processedMessages[0]).toEqual(
+      expect.objectContaining({
+        content: expect.arrayContaining([
+          expect.objectContaining({
+            text: expect.stringContaining(
+              'The attachment could not be analyzed automatically due to an internal processing error.'
+            ),
+          }),
+          expect.objectContaining({
+            text: expect.stringContaining('Second attachment digest'),
+          }),
+        ]),
+      })
+    );
   });
 });
 

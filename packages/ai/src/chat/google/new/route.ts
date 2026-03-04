@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { Json } from '@tuturuuu/types';
 import { gateway, generateText, type UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
 import { normalizeChatAttachmentMetadata } from '../../chat-attachment-metadata';
@@ -16,14 +17,6 @@ const FILE_ONLY_PLACEHOLDERS = new Set([
 
 /** Always use a lightweight model for title generation */
 const TITLE_MODEL = 'google/gemini-2.5-flash-lite';
-
-type Json =
-  | null
-  | boolean
-  | number
-  | string
-  | Json[]
-  | { [key: string]: Json | undefined };
 
 function buildTitleSeed(
   message: string | undefined,
@@ -151,9 +144,14 @@ export function createPOST(
       }
 
       // Store bare model name for DB compatibility (ai_models FK)
-      const resolvedModel = model
-        ? (model.includes('/') ? model.split('/').pop()! : model).toLowerCase()
-        : 'gemini-2.5-flash-lite';
+      const resolvedModel = (() => {
+        if (!model) return 'gemini-2.5-flash-lite';
+        const modelParts = model.split('/');
+        const normalizedModel = model.includes('/')
+          ? (modelParts[modelParts.length - 1] ?? model)
+          : model;
+        return normalizedModel.toLowerCase();
+      })();
 
       const { data: chat, error: chatError } = await sbAdmin
         .from('ai_chats')
@@ -167,7 +165,13 @@ export function createPOST(
         .single();
 
       if (chatError) {
-        console.log(chatError);
+        console.error('Failed to create new AI chat.', {
+          code:
+            typeof chatError === 'object' && chatError && 'code' in chatError
+              ? String(chatError.code ?? 'chat_insert_failed')
+              : 'chat_insert_failed',
+          creatorId: user.id.slice(0, 8),
+        });
         return NextResponse.json(chatError.message, { status: 500 });
       }
 
@@ -203,16 +207,31 @@ export function createPOST(
       });
 
       if (messageError) {
-        console.log(messageError);
+        const { error: cleanupError } = await sbAdmin
+          .from('ai_chats')
+          .delete()
+          .eq('id', chat.id);
+
+        console.error('Failed to persist initial user message for new chat.', {
+          chatId: chat.id.slice(0, 8),
+          code:
+            typeof messageError === 'object' && 'code' in messageError
+              ? String(messageError.code ?? 'persist_failed')
+              : 'persist_failed',
+          cleanupFailed: Boolean(cleanupError),
+        });
         return NextResponse.json(messageError.message, { status: 500 });
       }
 
       return NextResponse.json({ id: chat.id, title }, { status: 200 });
     } catch (error: unknown) {
-      console.log(error);
+      console.error('Unexpected error while creating a new AI chat.', {
+        code:
+          error instanceof Error && error.name ? error.name : 'unknown_error',
+      });
       return NextResponse.json(
         {
-          message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${error instanceof Error ? error.stack : 'Unknown error'}`,
+          message: 'Could not create the chat. Please try again.',
         },
         {
           status: 500,

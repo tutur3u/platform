@@ -8,7 +8,10 @@ import type { Dispatch, SetStateAction } from 'react';
 import { useEffect, useState } from 'react';
 import type { MessageFileAttachment } from './file-preview-chips';
 import { STORAGE_KEY_PREFIX } from './mira-chat-constants';
-import { loadExistingChat } from './mira-chat-persistence-utils';
+import {
+  loadExistingChat,
+  mergeMessageAttachmentMaps,
+} from './mira-chat-persistence-utils';
 
 interface UseMiraChatPersistenceParams {
   wsId: string;
@@ -73,11 +76,22 @@ export function useMiraChatPersistence({
       return;
     }
 
-    if (!restoredChatQuery.data) return;
+    const restoredChat = restoredChatQuery.data;
+    if (!restoredChat) return;
 
-    setInitialMessages(restoredChatQuery.data.messages);
-    setChat(restoredChatQuery.data.chat);
-    setMessageAttachments(restoredChatQuery.data.messageAttachments);
+    setInitialMessages(restoredChat.messages);
+    setChat(restoredChat.chat);
+    setMessageAttachments((prev) => {
+      const filteredPrev = new Map(
+        [...prev].filter(([messageId]) =>
+          restoredChat.messageAttachments.has(messageId)
+        )
+      );
+      return mergeMessageAttachmentMaps(
+        filteredPrev,
+        restoredChat.messageAttachments
+      );
+    });
   }, [restoredChatQuery.data, setMessageAttachments, storedChatId, wsId]);
 
   return {

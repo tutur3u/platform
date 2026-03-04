@@ -2,6 +2,15 @@ type AdminClientLike = {
   message?: string;
 };
 
+function maskIdentifier(value: string | undefined): string {
+  if (!value) return 'unknown';
+  if (value.length <= 4) return '****';
+  if (value.length <= 8) {
+    return `${value.slice(0, 2)}...${value.slice(-2)}`;
+  }
+  return `${value.slice(0, 4)}...${value.slice(-4)}`;
+}
+
 export async function resolveChatIdForUser(
   requestedChatId: string | undefined,
   fetchLatestChatId: () => PromiseLike<{
@@ -81,7 +90,12 @@ export async function moveTempFilesToThread({
       const { error: copyError } = await moveFile(fromPath, toPath);
 
       if (copyError) {
-        console.error('File copy error:', { fileName, copyError });
+        console.error('Temp file move failed', {
+          chatId: maskIdentifier(chatId),
+          userId: maskIdentifier(userId),
+          wsId: maskIdentifier(wsId),
+          error: copyError.message ?? 'move_failed',
+        });
         return {
           error: copyError,
           fileName,
@@ -98,11 +112,12 @@ export async function moveTempFilesToThread({
   const failedMoves = moveResults.filter((result) => result !== null);
   if (failedMoves.length > 0) {
     console.error('One or more temp files could not be moved', {
-      chatId,
       failedCount: failedMoves.length,
       movedCount: movedPaths.size,
-      userId,
-      wsId,
+      chatId: maskIdentifier(chatId),
+      userId: maskIdentifier(userId),
+      wsId: maskIdentifier(wsId),
+      status: 'partial_move_failure',
     });
   }
 

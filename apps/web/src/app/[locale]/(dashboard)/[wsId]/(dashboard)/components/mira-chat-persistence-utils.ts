@@ -103,6 +103,61 @@ export interface RestoredChatPayload {
   messageAttachments: Map<string, MessageFileAttachment[]>;
 }
 
+function mergeAttachmentEntry(
+  existing: MessageFileAttachment,
+  incoming: MessageFileAttachment
+): MessageFileAttachment {
+  return {
+    ...incoming,
+    alias: incoming.alias ?? existing.alias ?? null,
+    previewUrl: existing.previewUrl ?? incoming.previewUrl,
+    signedUrl: incoming.signedUrl ?? existing.signedUrl,
+    storagePath: incoming.storagePath ?? existing.storagePath,
+    type:
+      incoming.type === 'application/octet-stream' && existing.type
+        ? existing.type
+        : incoming.type,
+  };
+}
+
+export function mergeMessageAttachmentMaps(
+  existing: Map<string, MessageFileAttachment[]>,
+  incoming: Map<string, MessageFileAttachment[]>
+): Map<string, MessageFileAttachment[]> {
+  if (existing.size === 0) {
+    return new Map(incoming);
+  }
+
+  const merged = new Map(existing);
+
+  for (const [messageId, attachments] of incoming.entries()) {
+    const current = merged.get(messageId) ?? [];
+    const attachmentsByPath = new Map<string, MessageFileAttachment>();
+
+    for (const attachment of current) {
+      attachmentsByPath.set(
+        attachment.storagePath ?? attachment.id,
+        attachment
+      );
+    }
+
+    for (const attachment of attachments) {
+      const key = attachment.storagePath ?? attachment.id;
+      const existingAttachment = attachmentsByPath.get(key);
+      attachmentsByPath.set(
+        key,
+        existingAttachment
+          ? mergeAttachmentEntry(existingAttachment, attachment)
+          : attachment
+      );
+    }
+
+    merged.set(messageId, [...attachmentsByPath.values()]);
+  }
+
+  return merged;
+}
+
 export function findMatchingMessageIdForStoredFile({
   files,
   messages,
@@ -321,7 +376,11 @@ export async function loadExistingChat({
         messageAttachments.set(messageId, existing);
       }
     }
+  } catch (err) {
+    console.error('[Mira Chat] Failed to load signed chat file URLs', err);
+  }
 
+  try {
     const fileUrlsRes = await fetch('/api/ai/chat/file-urls', {
       method: 'POST',
       credentials: 'include',

@@ -115,18 +115,12 @@ export function prepareMiraToolStep({
       steps,
       'list_accessible_workspaces'
     );
+    const requiredWorkspaceTools = hasListedAccessibleWorkspaces
+      ? ['set_workspace_context', 'select_tools']
+      : ['list_accessible_workspaces', 'set_workspace_context', 'select_tools'];
 
     return finalizeActiveTools(
-      filterBlockedTools(
-        hasListedAccessibleWorkspaces
-          ? ['get_workspace_context', 'set_workspace_context', 'select_tools']
-          : [
-              'list_accessible_workspaces',
-              'get_workspace_context',
-              'set_workspace_context',
-              'select_tools',
-            ]
-      ),
+      filterBlockedTools(requiredWorkspaceTools),
       'required'
     );
   }

@@ -12,6 +12,7 @@ import type { CreditSource as SharedCreditSource } from '../credit-source';
 import { FILE_DIGEST_MODEL } from '../file-digests/constants';
 import {
   hasReachedMiraToolCallLimit,
+  shouldBypassToolLoopForAttachmentReply,
   shouldForceGoogleSearchForLatestUserMessage,
   shouldForceRenderUiForLatestUserMessage,
   shouldForceWorkspaceMembersForLatestUserMessage,
@@ -446,6 +447,12 @@ export function createPOST(
         shouldResolveWorkspaceContextForLatestUserMessage(processedMessages);
       const needsWorkspaceMembersTool =
         shouldForceWorkspaceMembersForLatestUserMessage(processedMessages);
+      const shouldBypassMiraToolLoop =
+        isMiraMode &&
+        shouldBypassToolLoopForAttachmentReply(
+          processedMessages,
+          latestAttachmentTurn.attachments.length > 0
+        );
 
       // Provider-native Google Search is only safe when it is the sole tool set.
       // Gemini 3.1 flash-lite-preview warns when provider-defined tools are
@@ -484,6 +491,11 @@ export function createPOST(
               'Do not call select_tools again.',
               'Do not call any tool unless the user asked for a genuinely new action that still requires it.',
               'Output normal assistant text only.',
+              'You already have enough information from earlier tool results to answer.',
+              'Write the final user-facing response now.',
+              'Summarize concrete outcomes from successful tools (for example created items, updated records, discovered results, or completed actions).',
+              'Do not mention internal planner/meta tools such as select_tools or no_action_needed.',
+              'Do not say you only did "background steps" if real actions already succeeded.',
               'If you emit another tool call here, that is an error.',
             ].join('\n'),
           };
@@ -499,7 +511,11 @@ export function createPOST(
         messages: processedMessages,
         system: [
           isMiraMode && miraSystemPrompt ? miraSystemPrompt : systemInstruction,
+          shouldBypassMiraToolLoop
+            ? 'The current user turn is asking for a direct response about current-turn attachments. Do not call any tool. Answer in normal assistant text using the attachment digest/context already provided.'
+            : null,
           isMiraMode &&
+          !shouldBypassMiraToolLoop &&
           isAttachmentOnlyTurn &&
           latestAttachmentTurn.attachments.length > 0
             ? 'This user turn contains only current-turn attachments, so the attachment digest may contain the user’s actual request. You may use normal non-persistence action tools when the digest asks you to do something. Do not treat this as pure conversation by default. Never print a tool plan, tool names, or a JSON array of tools in assistant text; call the tool directly.'
@@ -508,7 +524,7 @@ export function createPOST(
           .filter(Boolean)
           .join('\n\n'),
         ...(cappedMaxOutput ? { maxOutputTokens: cappedMaxOutput } : {}),
-        ...(miraTools
+        ...(miraTools && !shouldBypassMiraToolLoop
           ? {
               tools: miraTools,
               stopWhen: ({ steps }) =>
@@ -520,9 +536,11 @@ export function createPOST(
                 NonNullable<Parameters<typeof streamText>[0]>['prepareStep']
               >,
             }
-          : {
-              tools: googleSearchTool,
-            }),
+          : !isMiraMode
+            ? {
+                tools: googleSearchTool,
+              }
+            : {}),
         providerOptions: {
           google: {
             ...thinkingConfig,

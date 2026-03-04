@@ -93,6 +93,7 @@ export function useChatAudioRecorder({
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const shouldDiscardRef = useRef(false);
+  const isStartingRef = useRef(false);
   const startedAtRef = useRef<number | null>(null);
   const submitOnReadyRef = useRef(false);
 
@@ -211,13 +212,20 @@ export function useChatAudioRecorder({
 
   const startRecording = useCallback(async () => {
     if (disabled || !onAudioReady) return;
-    if (!supportedFormat || recordingState !== 'idle') {
+    if (
+      isStartingRef.current ||
+      !supportedFormat ||
+      recordingState !== 'idle' ||
+      mediaRecorderRef.current ||
+      streamRef.current
+    ) {
       if (!supportedFormat) {
         toast.error(t('audio_recording_unavailable'));
       }
       return;
     }
 
+    isStartingRef.current = true;
     try {
       setRecordingState('requesting');
       shouldDiscardRef.current = false;
@@ -231,14 +239,21 @@ export function useChatAudioRecorder({
           autoGainControl: true,
         },
       });
-
-      const recorder = supportedFormat.recorderMimeType
-        ? new MediaRecorder(stream, {
-            mimeType: supportedFormat.recorderMimeType,
-          })
-        : new MediaRecorder(stream);
-
       streamRef.current = stream;
+
+      let recorder: MediaRecorder;
+      try {
+        recorder = supportedFormat.recorderMimeType
+          ? new MediaRecorder(stream, {
+              mimeType: supportedFormat.recorderMimeType,
+            })
+          : new MediaRecorder(stream);
+      } catch (error) {
+        stopStream(stream);
+        streamRef.current = null;
+        throw error;
+      }
+
       mediaRecorderRef.current = recorder;
       startedAtRef.current = Date.now();
       setElapsedMs(0);
@@ -280,6 +295,8 @@ export function useChatAudioRecorder({
       }
 
       toast.error(t('audio_recording_failed'));
+    } finally {
+      isStartingRef.current = false;
     }
   }, [
     cancelRecording,

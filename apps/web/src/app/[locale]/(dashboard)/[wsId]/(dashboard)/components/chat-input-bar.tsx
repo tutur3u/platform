@@ -33,9 +33,6 @@ const ACCEPTED_MIME_TYPES = new Set([
   'audio/ogg',
   'audio/wav',
   'audio/webm',
-  'audio/x-m4a',
-  'audio/x-wav',
-  'audio/wave',
   'image/png',
   'image/jpeg',
   'image/webp',
@@ -69,6 +66,7 @@ const ACCEPTED_EXTENSIONS = new Set([
   '.mp3',
   '.ogg',
   '.wav',
+  '.webm',
 ]);
 
 const ACCEPT_STRING = [...ACCEPTED_MIME_TYPES, ...ACCEPTED_EXTENSIONS].join(
@@ -197,7 +195,9 @@ export default function ChatInputBar({
       const valid = filterValidFiles(Array.from(selectedFiles), files.length);
 
       if (valid.length > 0) {
-        onFilesSelected?.(valid);
+        void Promise.resolve(onFilesSelected?.(valid)).catch((error) => {
+          console.error('[Mira Chat] Failed to queue selected files:', error);
+        });
       }
 
       // Reset input so the same file can be re-selected
@@ -232,7 +232,9 @@ export default function ChatInputBar({
       const valid = filterValidFiles(candidates, files.length);
 
       if (valid.length > 0) {
-        onFilesSelected(valid);
+        void Promise.resolve(onFilesSelected(valid)).catch((error) => {
+          console.error('[Mira Chat] Failed to queue pasted files:', error);
+        });
       }
 
       // If the clipboard only contained files (no text), prevent the default
@@ -277,7 +279,7 @@ export default function ChatInputBar({
         setInput('');
       }}
       className={cn(
-        'flex min-w-0 flex-col justify-center rounded-[1.35rem] border bg-background/90 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.28)] backdrop-blur-xl transition-colors',
+        'flex min-w-0 flex-col justify-center rounded-[1.35rem] border bg-background/90 shadow-lg backdrop-blur-xl transition-colors',
         hasPendingAudio || hasFiles
           ? 'border-foreground/12'
           : 'border-border/60',

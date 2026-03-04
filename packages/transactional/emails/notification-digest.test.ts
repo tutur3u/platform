@@ -2,6 +2,7 @@ import { render } from '@react-email/render';
 import { describe, expect, it } from 'vitest';
 import NotificationDigestEmail, {
   CATEGORY_CONFIG,
+  type ConsolidatedNotification,
   formatTimeRange,
   generateSubjectLine,
   getCategoryConfig,
@@ -603,7 +604,7 @@ describe('notification-digest utilities', () => {
     });
 
     it('should preserve pre-consolidated notifications from the server', async () => {
-      const notifications: NotificationItem[] = [
+      const notifications: ConsolidatedNotification[] = [
         {
           ...createNotification('task_completed', 'Close onboarding gap'),
           isConsolidated: true,
@@ -625,8 +626,10 @@ describe('notification-digest utilities', () => {
         })
       );
 
+      const htmlText = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+
       expect(html).toContain('updates');
-      expect(html).toContain('>4<');
+      expect(htmlText).toMatch(/\b4\s+updates?\b/i);
       expect(html).toContain('Notification Brief');
     });
   });

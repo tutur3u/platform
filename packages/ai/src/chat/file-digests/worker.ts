@@ -371,7 +371,15 @@ async function digestLargeMarkdown(
       `Part ${index + 1} of ${chunks.length}`
     );
     usage = addUsage(usage, partial.usage);
-    partialDigests.push(partial);
+    partialDigests.push({
+      answerContextMarkdown: partial.answerContextMarkdown,
+      extractedMarkdown: partial.extractedMarkdown,
+      keyFacts: partial.keyFacts,
+      limitations: partial.limitations,
+      suggestedAlias: partial.suggestedAlias,
+      summary: partial.summary,
+      title: partial.title,
+    });
   }
 
   const result = await generateObject({
@@ -455,7 +463,7 @@ async function digestNativeFile(
   if (error || !data) {
     console.error('[Chat File Digest] failed to download attachment', {
       chatId: maskIdentifier(chatId),
-      fileName: attachment.name,
+      fileName: maskIdentifier(attachment.name),
       storagePath: maskIdentifier(attachment.storagePath),
       wsId: maskIdentifier(wsId),
       error: error?.message,

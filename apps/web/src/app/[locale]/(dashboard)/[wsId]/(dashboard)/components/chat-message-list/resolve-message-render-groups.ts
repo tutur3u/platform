@@ -198,11 +198,12 @@ export function resolveMessageRenderGroups({
         const text = strippedLeadingAssistantMetaToolCall
           ? rawText
           : stripLeadingAssistantMetaToolCall(rawText);
-        strippedLeadingAssistantMetaToolCall = true;
 
         if (text.trim().length === 0) {
           break;
         }
+
+        strippedLeadingAssistantMetaToolCall = true;
 
         descriptors.push({
           kind: 'text',

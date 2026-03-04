@@ -91,11 +91,12 @@ export interface NotificationItem {
 export interface ConsolidatedNotification extends NotificationItem {
   /** True if this represents multiple notifications for the same entity */
   isConsolidated?: boolean;
-  /** Number of original notifications consolidated */
   consolidatedCount?: number;
-  /** Types of changes included (e.g., ['priority_changed', 'due_date_changed']) */
   changeTypes?: string[];
 }
+
+// Extended notification item for consolidated per-task display
+export interface ConsolidatedNotification extends NotificationItem {}
 
 interface NotificationDigestEmailProps {
   userName?: string;

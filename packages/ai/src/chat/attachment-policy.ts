@@ -1,0 +1,15 @@
+export const NATIVE_MULTIMODAL_FILE_EXTENSIONS = new Set([
+  'aac',
+  'flac',
+  'jpeg',
+  'jpg',
+  'm4a',
+  'mov',
+  'mp3',
+  'mp4',
+  'ogg',
+  'png',
+  'wav',
+  'webm',
+  'webp',
+]);

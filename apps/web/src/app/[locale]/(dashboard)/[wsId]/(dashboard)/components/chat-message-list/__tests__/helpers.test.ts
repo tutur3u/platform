@@ -132,6 +132,52 @@ describe('chat message tool visibility', () => {
     ]);
   });
 
+  it('dedupes metadata attachments even when one side falls back to octet-stream', () => {
+    expect(
+      getRenderableMessageAttachments(
+        {
+          id: 'user-2',
+          role: 'user',
+          metadata: {
+            attachments: [
+              {
+                alias: 'Recorded note',
+                name: 'mira-audio.webm',
+                size: 42,
+                storagePath: 'ws/chat/mira-audio.webm',
+                type: 'audio/webm',
+              },
+            ],
+          },
+          parts: [],
+        } as never,
+        new Map([
+          [
+            'user-2',
+            [
+              {
+                id: 'octet-stream-copy',
+                name: 'mira-audio.webm',
+                previewUrl: null,
+                signedUrl: 'https://example.com/audio.webm',
+                size: 42,
+                storagePath: 'ws/chat/mira-audio.webm',
+                type: 'application/octet-stream',
+              },
+            ],
+          ],
+        ])
+      )
+    ).toEqual([
+      expect.objectContaining({
+        alias: 'Recorded note',
+        name: 'mira-audio.webm',
+        storagePath: 'ws/chat/mira-audio.webm',
+        type: 'audio/webm',
+      }),
+    ]);
+  });
+
   it('strips leading planner meta tool calls from assistant display text', () => {
     expect(
       getAssistantDisplayText({
@@ -158,6 +204,21 @@ describe('chat message tool visibility', () => {
         ],
       } as never)
     ).toBe('Hello there.');
+  });
+
+  it('does not strip ordinary assistant JSON that is not a planner envelope', () => {
+    expect(
+      getAssistantDisplayText({
+        id: 'assistant-3',
+        role: 'assistant',
+        parts: [
+          {
+            type: 'text',
+            text: '{"tools":"explanation","note":"keep this"}\n\nHello there.',
+          },
+        ],
+      } as never)
+    ).toBe('{"tools":"explanation","note":"keep this"}\n\nHello there.');
   });
 
   it('detects visual render_ui tool output separately', () => {

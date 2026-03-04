@@ -3,6 +3,8 @@ import type { Json } from '@tuturuuu/types';
 import { CHAT_FILE_DIGEST_VERSION, FILE_DIGEST_MODEL } from './constants';
 import type { ChatFileDigest, ChatFileDigestDbRow } from './types';
 
+const DIGEST_STATUS_QUERY_CHUNK_SIZE = 500;
+
 type ErrorLike = {
   message?: string;
 };
@@ -73,6 +75,11 @@ function toStringArray(value: unknown): string[] {
     .filter((item) => item.length > 0);
 }
 
+function maskStorageKey(storagePath: string): string {
+  if (storagePath.length <= 12) return storagePath;
+  return `${storagePath.slice(0, 6)}...${storagePath.slice(-6)}`;
+}
+
 function normalizeDigest(row: ChatFileDigestDbRow): ChatFileDigest {
   const structured = isRecord(row.structured) ? row.structured : {};
   const limitations = toStringArray(row.limitations);
@@ -118,7 +125,7 @@ export async function getReadyChatFileDigest(
 
   if (error) {
     console.error('Failed to fetch ready chat file digest:', {
-      storagePath,
+      storagePath: maskStorageKey(storagePath),
       error: error.message,
     });
     return null;
@@ -139,31 +146,41 @@ export async function listChatFileDigestStatuses(
 
   const client =
     sbAdmin ?? ((await createAdminClient()) as unknown as AdminClientLike);
-  const query = client
-    .from('ai_chat_file_digests')
-    .select('storage_path, status, updated_at');
-  const { data, error } = await query
-    .in('storage_path', normalizedPaths)
-    .eq('digest_version', digestVersion)
-    .order('updated_at', { ascending: false });
-
-  if (error) {
-    console.error('Failed to list chat file digests:', {
-      count: normalizedPaths.length,
-      error: error.message,
-    });
-    return new Map();
-  }
-
   const statuses = new Map<string, 'ready' | 'failed' | 'processing'>();
-  for (const row of data ?? []) {
-    if (!statuses.has(row.storage_path)) {
-      statuses.set(
-        row.storage_path,
-        row.status === 'ready' || row.status === 'failed'
-          ? row.status
-          : 'processing'
-      );
+
+  for (
+    let startIndex = 0;
+    startIndex < normalizedPaths.length;
+    startIndex += DIGEST_STATUS_QUERY_CHUNK_SIZE
+  ) {
+    const chunk = normalizedPaths.slice(
+      startIndex,
+      startIndex + DIGEST_STATUS_QUERY_CHUNK_SIZE
+    );
+    const { data, error } = await client
+      .from('ai_chat_file_digests')
+      .select('storage_path, status, updated_at')
+      .in('storage_path', chunk)
+      .eq('digest_version', digestVersion)
+      .order('updated_at', { ascending: false });
+
+    if (error) {
+      console.error('Failed to list chat file digests:', {
+        count: chunk.length,
+        error: error.message,
+      });
+      continue;
+    }
+
+    for (const row of data ?? []) {
+      if (!statuses.has(row.storage_path)) {
+        statuses.set(
+          row.storage_path,
+          row.status === 'ready' || row.status === 'failed'
+            ? row.status
+            : 'processing'
+        );
+      }
     }
   }
 
@@ -252,7 +269,7 @@ export async function upsertProcessingChatFileDigest(
 
   if (error) {
     console.error('Failed to upsert processing chat file digest:', {
-      storagePath: params.storagePath,
+      storagePath: maskStorageKey(params.storagePath),
       error: error.message,
     });
   }
@@ -310,7 +327,7 @@ export async function saveReadyChatFileDigest(
 
   if (error) {
     console.error('Failed to save ready chat file digest:', {
-      storagePath: params.storagePath,
+      storagePath: maskStorageKey(params.storagePath),
       error: error.message,
     });
     return null;
@@ -344,7 +361,7 @@ export async function saveFailedChatFileDigest(
 
   if (error) {
     console.error('Failed to save failed chat file digest:', {
-      storagePath: params.storagePath,
+      storagePath: maskStorageKey(params.storagePath),
       error: error.message,
     });
   }
