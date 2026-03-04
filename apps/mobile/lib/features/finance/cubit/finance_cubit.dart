@@ -33,14 +33,14 @@ class FinanceCubit extends Cubit<FinanceState> {
 
       final wallets = await walletsFuture;
       final walletIds = wallets.map((w) => w.id).toList();
-      final results = await Future.wait<dynamic>([
-        _repo.getTransactions(walletIds: walletIds, limit: 10),
-        workspaceCurrencyFuture,
-        exchangeRatesFuture,
-      ]);
-      final transactions = results[0] as List<Transaction>;
-      final workspaceCurrency = results[1] as String;
-      final exchangeRates = results[2] as List<ExchangeRate>;
+      final transactionsFuture = _repo.getTransactions(
+        walletIds: walletIds,
+        limit: 10,
+      );
+
+      final transactions = await transactionsFuture;
+      final workspaceCurrency = await workspaceCurrencyFuture;
+      final exchangeRates = await exchangeRatesFuture;
 
       emit(
         state.copyWith(

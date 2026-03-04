@@ -24,13 +24,22 @@ class FinanceState extends Equatable {
       final balance = wallet.balance ?? 0;
       final walletCurrency = (wallet.currency ?? workspaceCurrency)
           .toUpperCase();
+      final targetCurrency = workspaceCurrency.toUpperCase();
+
+      if (walletCurrency == targetCurrency) {
+        return sum + balance;
+      }
+
       final converted = convertCurrency(
         balance,
         walletCurrency,
         workspaceCurrency,
         exchangeRates,
       );
-      return sum + (converted ?? balance);
+      if (converted == null) {
+        return sum;
+      }
+      return sum + converted;
     });
   }
 

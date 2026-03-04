@@ -29,7 +29,7 @@ class FinanceRepository {
       );
       final value = response['value'] as String?;
       if (value == null || value.trim().isEmpty) return 'USD';
-      return value.toUpperCase();
+      return value.trim().toUpperCase();
     } on ApiException catch (error) {
       if (error.statusCode == 404) {
         return 'USD';
