@@ -8,7 +8,9 @@ import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/utils/currency_conversion.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
+import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
@@ -142,7 +144,13 @@ class _FinanceView extends StatelessWidget {
                 child: ListView(
                   padding: const EdgeInsets.only(bottom: 32),
                   children: [
-                    _WalletsSection(wallets: state.wallets),
+                    _WalletsSection(
+                      wallets: state.wallets,
+                      workspaceCurrency: state.workspaceCurrency,
+                      exchangeRates: state.exchangeRates,
+                      totalBalance: state.totalBalance,
+                      showApproximateTotal: state.hasCrossCurrencyWallets,
+                    ),
                     const shad.Gap(8),
                     _RecentTransactionsSection(
                       transactions: state.recentTransactions,
@@ -259,11 +267,14 @@ class _TransactionTile extends StatelessWidget {
               ?.id;
           if (wsId == null) return;
 
+          final financeState = context.read<FinanceCubit>().state;
           final changed = await openTransactionDetailSheet(
             context,
             wsId: wsId,
             transaction: tx,
             repository: context.read<FinanceRepository>(),
+            workspaceCurrency: financeState.workspaceCurrency,
+            exchangeRates: financeState.exchangeRates,
           );
 
           if (!context.mounted || !changed) return;
@@ -347,9 +358,15 @@ class _TransactionTile extends StatelessWidget {
 }
 
 class _WalletCard extends StatelessWidget {
-  const _WalletCard({required this.wallet});
+  const _WalletCard({
+    required this.wallet,
+    required this.workspaceCurrency,
+    required this.exchangeRates,
+  });
 
   final Wallet wallet;
+  final String workspaceCurrency;
+  final List<ExchangeRate> exchangeRates;
 
   @override
   Widget build(BuildContext context) {
@@ -357,6 +374,15 @@ class _WalletCard extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final currency = wallet.currency ?? 'USD';
     final balance = wallet.balance ?? 0;
+    final converted = convertCurrency(
+      balance,
+      currency,
+      workspaceCurrency,
+      exchangeRates,
+    );
+    final showConverted =
+        currency.toUpperCase() != workspaceCurrency.toUpperCase() &&
+        converted != null;
 
     return SizedBox(
       width: responsiveValue(
@@ -405,6 +431,15 @@ class _WalletCard extends StatelessWidget {
                   color: colorScheme.mutedForeground,
                 ),
               ),
+              if (showConverted)
+                Text(
+                  '≈ ${formatCurrency(converted, workspaceCurrency)}',
+                  style: theme.typography.xSmall.copyWith(
+                    color: colorScheme.mutedForeground,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
             ],
           ),
         ),
@@ -418,9 +453,19 @@ class _WalletCard extends StatelessWidget {
 // ------------------------------------------------------------------
 
 class _WalletsSection extends StatelessWidget {
-  const _WalletsSection({required this.wallets});
+  const _WalletsSection({
+    required this.wallets,
+    required this.workspaceCurrency,
+    required this.exchangeRates,
+    required this.totalBalance,
+    required this.showApproximateTotal,
+  });
 
   final List<Wallet> wallets;
+  final String workspaceCurrency;
+  final List<ExchangeRate> exchangeRates;
+  final double totalBalance;
+  final bool showApproximateTotal;
 
   @override
   Widget build(BuildContext context) {
@@ -435,11 +480,24 @@ class _WalletsSection extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: Text(
-                  l10n.financeWallets,
-                  style: theme.typography.small.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.financeWallets,
+                      style: theme.typography.small.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      '${l10n.financeNet}: '
+                      '${showApproximateTotal ? '≈ ' : ''}'
+                      '${formatCurrency(totalBalance, workspaceCurrency)}',
+                      style: theme.typography.textSmall.copyWith(
+                        color: theme.colorScheme.mutedForeground,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               shad.GhostButton(
@@ -465,8 +523,11 @@ class _WalletsSection extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: wallets.length,
               separatorBuilder: (_, _) => const shad.Gap(12),
-              itemBuilder: (context, index) =>
-                  _WalletCard(wallet: wallets[index]),
+              itemBuilder: (context, index) => _WalletCard(
+                wallet: wallets[index],
+                workspaceCurrency: workspaceCurrency,
+                exchangeRates: exchangeRates,
+              ),
             ),
           ),
       ],

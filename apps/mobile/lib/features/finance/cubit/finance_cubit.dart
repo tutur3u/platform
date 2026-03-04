@@ -1,5 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:mobile/core/utils/currency_conversion.dart';
+import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
@@ -21,18 +23,32 @@ class FinanceCubit extends Cubit<FinanceState> {
     emit(state.copyWith(status: FinanceStatus.loading, clearError: true));
 
     try {
-      final wallets = await _repo.getWallets(wsId);
-      final walletIds = wallets.map((w) => w.id).toList();
-      final transactions = await _repo.getTransactions(
-        walletIds: walletIds,
-        limit: 10,
+      final walletsFuture = _repo.getWallets(wsId);
+      final workspaceCurrencyFuture = _repo
+          .getWorkspaceDefaultCurrency(wsId)
+          .catchError((_) => 'USD');
+      final exchangeRatesFuture = _repo.getExchangeRates().catchError(
+        (_) => <ExchangeRate>[],
       );
+
+      final wallets = await walletsFuture;
+      final walletIds = wallets.map((w) => w.id).toList();
+      final results = await Future.wait<dynamic>([
+        _repo.getTransactions(walletIds: walletIds, limit: 10),
+        workspaceCurrencyFuture,
+        exchangeRatesFuture,
+      ]);
+      final transactions = results[0] as List<Transaction>;
+      final workspaceCurrency = results[1] as String;
+      final exchangeRates = results[2] as List<ExchangeRate>;
 
       emit(
         state.copyWith(
           status: FinanceStatus.loaded,
           wallets: wallets,
           recentTransactions: transactions,
+          workspaceCurrency: workspaceCurrency,
+          exchangeRates: exchangeRates,
           clearError: true,
         ),
       );

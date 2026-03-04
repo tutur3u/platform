@@ -68,287 +68,288 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
           maxHeight: MediaQuery.of(context).size.height * 0.65,
         ),
         child: SizedBox(
-        width: double.maxFinite,
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              shad.Tabs(
-                index: _tabIndex,
-                onChanged: (value) => setState(() => _tabIndex = value),
-                children: [
-                  shad.TabItem(child: Text(l10n.financeTransactionDetails)),
-                  shad.TabItem(child: Text(l10n.settingsTitle)),
-                ],
-              ),
-              const shad.Gap(16),
-              if (_isLoadingOptions)
-                const Center(child: shad.CircularProgressIndicator())
-              else ...[
-                if (_optionsError != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Text(
-                      _optionsError!,
-                      style: theme.typography.small.copyWith(
-                        color: theme.colorScheme.destructive,
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                shad.Tabs(
+                  index: _tabIndex,
+                  onChanged: (value) => setState(() => _tabIndex = value),
+                  children: [
+                    shad.TabItem(child: Text(l10n.financeTransactionDetails)),
+                    shad.TabItem(child: Text(l10n.settingsTitle)),
+                  ],
+                ),
+                const shad.Gap(16),
+                if (_isLoadingOptions)
+                  const Center(child: shad.CircularProgressIndicator())
+                else ...[
+                  if (_optionsError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Text(
+                        _optionsError!,
+                        style: theme.typography.small.copyWith(
+                          color: theme.colorScheme.destructive,
+                        ),
                       ),
                     ),
-                  ),
-                if (_tabIndex == 0) ...[
-                  if (_isCreate) ...[
-                    _ToggleRow(
-                      label: l10n.financeTransferMode,
-                      value: _isTransfer,
-                      onChanged: (value) {
-                        setState(() {
-                          _isTransfer = value;
-                          if (_isTransfer) {
-                            _categoryId = null;
-                          } else {
-                            _destinationWalletId = null;
-                            _destinationAmountController.clear();
-                          }
-                        });
-                      },
-                    ),
-                    const shad.Gap(16),
-                  ],
-                  Text(l10n.financeWallet, style: theme.typography.small),
-                  const shad.Gap(4),
-                  shad.OutlineButton(
-                    onPressed: _wallets.isEmpty ? null : _pickWallet,
-                    child: Row(
-                      children: [
-                        WalletVisualAvatar(
-                          icon: selectedWallet?.icon,
-                          imageSrc: selectedWallet?.imageSrc,
-                          fallbackIcon: Icons.wallet_outlined,
-                          size: 28,
-                        ),
-                        const shad.Gap(8),
-                        Expanded(
-                          child: Text(
-                            selectedWallet?.name ?? '-',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const Icon(Icons.expand_more, size: 16),
-                      ],
-                    ),
-                  ),
-                  const shad.Gap(16),
-                  if (_isTransfer) ...[
-                    Text(
-                      l10n.financeDestinationWallet,
-                      style: theme.typography.small,
-                    ),
+                  if (_tabIndex == 0) ...[
+                    if (_isCreate) ...[
+                      _ToggleRow(
+                        label: l10n.financeTransferMode,
+                        value: _isTransfer,
+                        onChanged: (value) {
+                          setState(() {
+                            _isTransfer = value;
+                            if (_isTransfer) {
+                              _categoryId = null;
+                            } else {
+                              _destinationWalletId = null;
+                              _destinationAmountController.clear();
+                            }
+                          });
+                        },
+                      ),
+                      const shad.Gap(16),
+                    ],
+                    Text(l10n.financeWallet, style: theme.typography.small),
                     const shad.Gap(4),
                     shad.OutlineButton(
-                      onPressed: _wallets.length < 2
-                          ? null
-                          : _pickDestinationWallet,
+                      onPressed: _wallets.isEmpty ? null : _pickWallet,
                       child: Row(
                         children: [
                           WalletVisualAvatar(
-                            icon: selectedDestinationWallet?.icon,
-                            imageSrc: selectedDestinationWallet?.imageSrc,
+                            icon: selectedWallet?.icon,
+                            imageSrc: selectedWallet?.imageSrc,
                             fallbackIcon: Icons.wallet_outlined,
                             size: 28,
                           ),
                           const shad.Gap(8),
                           Expanded(
                             child: Text(
-                              selectedDestinationWallet?.name ??
-                                  l10n.financeSelectDestinationWallet,
+                              selectedWallet?.name ?? '-',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           const Icon(Icons.expand_more, size: 16),
                         ],
-                      ),
-                    ),
-                    const shad.Gap(16),
-                  ] else ...[
-                    Text(l10n.financeCategory, style: theme.typography.small),
-                    const shad.Gap(4),
-                    shad.OutlineButton(
-                      onPressed: _categories.isEmpty ? null : _pickCategory,
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: _selectedCategoryColor.withValues(
-                                alpha: 0.16,
-                              ),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              _selectedCategoryIcon,
-                              size: 13,
-                              color: _selectedCategoryColor,
-                            ),
-                          ),
-                          const shad.Gap(8),
-                          Expanded(
-                            child: Text(
-                              selectedCategory?.name ?? '-',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const Icon(Icons.expand_more, size: 16),
-                        ],
-                      ),
-                    ),
-                    const shad.Gap(16),
-                  ],
-                  if (!_canEditAmountFields)
-                    Text(
-                      _isTransfer
-                          ? l10n.financeSelectWalletAndDestinationFirst
-                          : l10n.financeSelectWalletAndCategoryFirst,
-                      style: theme.typography.small.copyWith(
-                        color: theme.colorScheme.mutedForeground,
-                      ),
-                    )
-                  else ...[
-                    Text(l10n.financeAmount, style: theme.typography.small),
-                    const shad.Gap(4),
-                    shad.TextField(
-                      key: ValueKey(_selectedCurrency),
-                      controller: _amountController,
-                      keyboardType: TextInputType.numberWithOptions(
-                        decimal: _currencyFractionDigits(_selectedCurrency) > 0,
-                      ),
-                      inputFormatters: _amountInputFormatters(
-                        _selectedCurrency,
-                      ),
-                      placeholder: Text(
-                        '${currencySymbol(_selectedCurrency)}0',
-                      ),
-                    ),
-                    const shad.Gap(6),
-                    Text(
-                      _amountPreview,
-                      style: theme.typography.xSmall.copyWith(
-                        color: theme.colorScheme.mutedForeground,
                       ),
                     ),
                     const shad.Gap(16),
                     if (_isTransfer) ...[
                       Text(
-                        l10n.financeDestinationAmountOptional,
+                        l10n.financeDestinationWallet,
                         style: theme.typography.small,
                       ),
                       const shad.Gap(4),
+                      shad.OutlineButton(
+                        onPressed: _wallets.length < 2
+                            ? null
+                            : _pickDestinationWallet,
+                        child: Row(
+                          children: [
+                            WalletVisualAvatar(
+                              icon: selectedDestinationWallet?.icon,
+                              imageSrc: selectedDestinationWallet?.imageSrc,
+                              fallbackIcon: Icons.wallet_outlined,
+                              size: 28,
+                            ),
+                            const shad.Gap(8),
+                            Expanded(
+                              child: Text(
+                                selectedDestinationWallet?.name ??
+                                    l10n.financeSelectDestinationWallet,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const Icon(Icons.expand_more, size: 16),
+                          ],
+                        ),
+                      ),
+                      const shad.Gap(16),
+                    ] else ...[
+                      Text(l10n.financeCategory, style: theme.typography.small),
+                      const shad.Gap(4),
+                      shad.OutlineButton(
+                        onPressed: _categories.isEmpty ? null : _pickCategory,
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                color: _selectedCategoryColor.withValues(
+                                  alpha: 0.16,
+                                ),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                _selectedCategoryIcon,
+                                size: 13,
+                                color: _selectedCategoryColor,
+                              ),
+                            ),
+                            const shad.Gap(8),
+                            Expanded(
+                              child: Text(
+                                selectedCategory?.name ?? '-',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const Icon(Icons.expand_more, size: 16),
+                          ],
+                        ),
+                      ),
+                      const shad.Gap(16),
+                    ],
+                    if (!_canEditAmountFields)
+                      Text(
+                        _isTransfer
+                            ? l10n.financeSelectWalletAndDestinationFirst
+                            : l10n.financeSelectWalletAndCategoryFirst,
+                        style: theme.typography.small.copyWith(
+                          color: theme.colorScheme.mutedForeground,
+                        ),
+                      )
+                    else ...[
+                      Text(l10n.financeAmount, style: theme.typography.small),
+                      const shad.Gap(4),
                       shad.TextField(
-                        key: ValueKey(_selectedDestinationCurrency),
-                        controller: _destinationAmountController,
+                        key: ValueKey(_selectedCurrency),
+                        controller: _amountController,
                         keyboardType: TextInputType.numberWithOptions(
                           decimal:
-                              _currencyFractionDigits(
-                                _selectedDestinationCurrency,
-                              ) >
-                              0,
+                              _currencyFractionDigits(_selectedCurrency) > 0,
                         ),
                         inputFormatters: _amountInputFormatters(
-                          _selectedDestinationCurrency,
+                          _selectedCurrency,
                         ),
                         placeholder: Text(
-                          '${currencySymbol(_selectedDestinationCurrency)}0',
+                          '${currencySymbol(_selectedCurrency)}0',
                         ),
                       ),
                       const shad.Gap(6),
                       Text(
-                        _destinationAmountPreview,
+                        _amountPreview,
                         style: theme.typography.xSmall.copyWith(
                           color: theme.colorScheme.mutedForeground,
                         ),
                       ),
-                      if (_isCrossCurrency &&
-                          _exchangeRatePreview.isNotEmpty) ...[
+                      const shad.Gap(16),
+                      if (_isTransfer) ...[
+                        Text(
+                          l10n.financeDestinationAmountOptional,
+                          style: theme.typography.small,
+                        ),
+                        const shad.Gap(4),
+                        shad.TextField(
+                          key: ValueKey(_selectedDestinationCurrency),
+                          controller: _destinationAmountController,
+                          keyboardType: TextInputType.numberWithOptions(
+                            decimal:
+                                _currencyFractionDigits(
+                                  _selectedDestinationCurrency,
+                                ) >
+                                0,
+                          ),
+                          inputFormatters: _amountInputFormatters(
+                            _selectedDestinationCurrency,
+                          ),
+                          placeholder: Text(
+                            '${currencySymbol(_selectedDestinationCurrency)}0',
+                          ),
+                        ),
                         const shad.Gap(6),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.currency_exchange,
-                              size: 13,
-                              color: theme.colorScheme.mutedForeground,
-                            ),
-                            const shad.Gap(4),
-                            Text(
-                              _exchangeRatePreview,
-                              style: theme.typography.xSmall.copyWith(
+                        Text(
+                          _destinationAmountPreview,
+                          style: theme.typography.xSmall.copyWith(
+                            color: theme.colorScheme.mutedForeground,
+                          ),
+                        ),
+                        if (_isCrossCurrency &&
+                            _exchangeRatePreview.isNotEmpty) ...[
+                          const shad.Gap(6),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.currency_exchange,
+                                size: 13,
                                 color: theme.colorScheme.mutedForeground,
                               ),
-                            ),
-                          ],
-                        ),
+                              const shad.Gap(4),
+                              Text(
+                                _exchangeRatePreview,
+                                style: theme.typography.xSmall.copyWith(
+                                  color: theme.colorScheme.mutedForeground,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                        const shad.Gap(16),
                       ],
+                      Text(
+                        l10n.financeDescription,
+                        style: theme.typography.small,
+                      ),
+                      const shad.Gap(4),
+                      shad.TextField(
+                        controller: _descriptionController,
+                        maxLines: 3,
+                        placeholder: Text(l10n.financeDescription),
+                      ),
                       const shad.Gap(16),
                     ],
-                    Text(
-                      l10n.financeDescription,
-                      style: theme.typography.small,
-                    ),
+                    Text(l10n.financeTakenAt, style: theme.typography.small),
                     const shad.Gap(4),
-                    shad.TextField(
-                      controller: _descriptionController,
-                      maxLines: 3,
-                      placeholder: Text(l10n.financeDescription),
+                    shad.OutlineButton(
+                      onPressed: () => _pickDateTime(context),
+                      child: Text(DateFormat.yMMMd().add_jm().format(_takenAt)),
                     ),
-                    const shad.Gap(16),
-                  ],
-                  Text(l10n.financeTakenAt, style: theme.typography.small),
-                  const shad.Gap(4),
-                  shad.OutlineButton(
-                    onPressed: () => _pickDateTime(context),
-                    child: Text(DateFormat.yMMMd().add_jm().format(_takenAt)),
-                  ),
-                ] else ...[
-                  _ToggleRow(
-                    label: l10n.financeReportOptIn,
-                    value: _reportOptIn,
-                    onChanged: (value) {
-                      setState(() => _reportOptIn = value);
-                    },
-                  ),
-                  if (!_isTransfer) ...[
-                    const shad.Gap(12),
+                  ] else ...[
                     _ToggleRow(
-                      label: l10n.financeConfidentialAmount,
-                      value: _isAmountConfidential,
+                      label: l10n.financeReportOptIn,
+                      value: _reportOptIn,
                       onChanged: (value) {
-                        setState(() => _isAmountConfidential = value);
+                        setState(() => _reportOptIn = value);
                       },
                     ),
-                    const shad.Gap(12),
-                    _ToggleRow(
-                      label: l10n.financeConfidentialDescription,
-                      value: _isDescriptionConfidential,
-                      onChanged: (value) {
-                        setState(() => _isDescriptionConfidential = value);
-                      },
-                    ),
-                    const shad.Gap(12),
-                    _ToggleRow(
-                      label: l10n.financeConfidentialCategory,
-                      value: _isCategoryConfidential,
-                      onChanged: (value) {
-                        setState(() => _isCategoryConfidential = value);
-                      },
-                    ),
+                    if (!_isTransfer) ...[
+                      const shad.Gap(12),
+                      _ToggleRow(
+                        label: l10n.financeConfidentialAmount,
+                        value: _isAmountConfidential,
+                        onChanged: (value) {
+                          setState(() => _isAmountConfidential = value);
+                        },
+                      ),
+                      const shad.Gap(12),
+                      _ToggleRow(
+                        label: l10n.financeConfidentialDescription,
+                        value: _isDescriptionConfidential,
+                        onChanged: (value) {
+                          setState(() => _isDescriptionConfidential = value);
+                        },
+                      ),
+                      const shad.Gap(12),
+                      _ToggleRow(
+                        label: l10n.financeConfidentialCategory,
+                        value: _isCategoryConfidential,
+                        onChanged: (value) {
+                          setState(() => _isCategoryConfidential = value);
+                        },
+                      ),
+                    ],
                   ],
                 ],
               ],
-            ],
+            ),
           ),
-        ),
         ),
       ),
       actions: [

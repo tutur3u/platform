@@ -2,7 +2,10 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { getPermissions,normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -32,7 +35,10 @@ export async function POST(req: Request, { params }: Params) {
   const { wsId } = await params;
   const normalizedWsId = await normalizeWorkspaceId(wsId);
 
-  const permissions = await getPermissions({ wsId: normalizedWsId, request: req });
+  const permissions = await getPermissions({
+    wsId: normalizedWsId,
+    request: req,
+  });
 
   if (!permissions) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
@@ -56,7 +62,6 @@ export async function POST(req: Request, { params }: Params) {
   if (!user) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
-
 
   // Get virtual_user_id for this workspace
   let { data: wsUser } = await supabase

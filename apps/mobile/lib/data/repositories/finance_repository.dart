@@ -1,5 +1,6 @@
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/finance/category.dart';
+import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -18,6 +19,33 @@ class FinanceRepository {
 
     return response
         .map((e) => Wallet.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<String> getWorkspaceDefaultCurrency(String wsId) async {
+    try {
+      final response = await _api.getJson(
+        FinanceEndpoints.workspaceConfig(wsId, 'DEFAULT_CURRENCY'),
+      );
+      final value = response['value'] as String?;
+      if (value == null || value.trim().isEmpty) return 'USD';
+      return value.toUpperCase();
+    } on ApiException catch (error) {
+      if (error.statusCode == 404) {
+        return 'USD';
+      }
+      rethrow;
+    }
+  }
+
+  Future<List<ExchangeRate>> getExchangeRates() async {
+    final response = await _api.getJson(FinanceEndpoints.exchangeRates);
+    final data = response['data'];
+    if (data is! List<dynamic>) return const [];
+
+    return data
+        .whereType<Map<String, dynamic>>()
+        .map(ExchangeRate.fromJson)
         .toList();
   }
 
