@@ -2,8 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions,normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -31,8 +30,9 @@ const TransferSchema = z
 
 export async function POST(req: Request, { params }: Params) {
   const { wsId } = await params;
+  const normalizedWsId = await normalizeWorkspaceId(wsId);
 
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId: normalizedWsId, request: req });
 
   if (!permissions) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
@@ -47,7 +47,7 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const supabase = await createClient();
+  const supabase = await createClient(req);
 
   const {
     data: { user },
@@ -57,14 +57,13 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const resolvedWsId = resolveWorkspaceId(wsId);
 
   // Get virtual_user_id for this workspace
   let { data: wsUser } = await supabase
     .from('workspace_user_linked_users')
     .select('virtual_user_id')
     .eq('platform_user_id', user.id)
-    .eq('ws_id', resolvedWsId)
+    .eq('ws_id', normalizedWsId)
     .single();
 
   if (!wsUser?.virtual_user_id) {
@@ -73,7 +72,7 @@ export async function POST(req: Request, { params }: Params) {
       .from('workspace_members')
       .select('user_id')
       .eq('user_id', user.id)
-      .eq('ws_id', resolvedWsId)
+      .eq('ws_id', normalizedWsId)
       .maybeSingle();
 
     if (!membership) {
@@ -87,14 +86,14 @@ export async function POST(req: Request, { params }: Params) {
       const sbAdmin = await createAdminClient();
       await sbAdmin.rpc('ensure_workspace_user_link', {
         target_user_id: user.id,
-        target_ws_id: resolvedWsId,
+        target_ws_id: normalizedWsId,
       });
 
       const { data: repairedUser } = await supabase
         .from('workspace_user_linked_users')
         .select('virtual_user_id')
         .eq('platform_user_id', user.id)
-        .eq('ws_id', resolvedWsId)
+        .eq('ws_id', normalizedWsId)
         .single();
 
       wsUser = repairedUser;
@@ -129,7 +128,7 @@ export async function POST(req: Request, { params }: Params) {
   const { data: wallets, error: walletsErr } = await supabase
     .from('workspace_wallets')
     .select('id, currency')
-    .eq('ws_id', wsId)
+    .eq('ws_id', normalizedWsId)
     .in('id', [data.origin_wallet_id, data.destination_wallet_id]);
 
   if (walletsErr || !wallets || wallets.length !== 2) {

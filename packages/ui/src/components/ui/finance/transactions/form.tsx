@@ -253,6 +253,22 @@ export function TransactionForm({
     setLoading(true);
 
     if (isTransfer) {
+      const sourceWallet = wallets?.find(
+        (wallet) => wallet.id === formData.origin_wallet_id
+      );
+      const destinationWallet = wallets?.find(
+        (wallet) => wallet.id === formData.destination_wallet_id
+      );
+      const isCrossCurrencyTransfer =
+        !!sourceWallet?.currency &&
+        !!destinationWallet?.currency &&
+        sourceWallet.currency.toUpperCase() !==
+          destinationWallet.currency.toUpperCase();
+
+      const destinationAmount = isCrossCurrencyTransfer
+        ? formData.destination_amount
+        : (formData.destination_amount ?? formData.amount);
+
       // Transfer mode: POST to transfer endpoint
       const res = await fetch(`/api/workspaces/${wsId}/transfers`, {
         method: 'POST',
@@ -261,7 +277,7 @@ export function TransactionForm({
           origin_wallet_id: formData.origin_wallet_id,
           destination_wallet_id: formData.destination_wallet_id,
           amount: formData.amount,
-          destination_amount: formData.destination_amount,
+          destination_amount: destinationAmount,
           description: formData.description,
           taken_at: formData.taken_at,
           report_opt_in: formData.report_opt_in,
@@ -630,7 +646,6 @@ export function TransactionForm({
                   wallets={wallets}
                   loading={loading}
                   hasFormPermission={!!hasFormPermission}
-                  originWalletId={selectedWalletId}
                   t={t}
                 />
               )}

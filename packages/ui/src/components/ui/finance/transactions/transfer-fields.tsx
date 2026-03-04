@@ -21,7 +21,6 @@ interface TransferFieldsProps {
   wallets: WalletType[] | undefined;
   loading: boolean;
   hasFormPermission: boolean;
-  originWalletId: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: (key: any) => string;
 }
@@ -36,9 +35,9 @@ export function TransferFields({
   wallets,
   loading,
   hasFormPermission,
-  originWalletId,
   t,
 }: TransferFieldsProps) {
+  const originWalletId = form.watch('origin_wallet_id');
   const destinationWalletId = form.watch('destination_wallet_id');
   const destinationAmount = form.watch('destination_amount');
   const sourceAmount = form.watch('amount');
@@ -54,7 +53,7 @@ export function TransferFields({
   );
 
   const isCrossCurrency = useMemo(() => {
-    if (!originWallet?.currency || !destWallet?.currency) return false;
+    if (!originWallet?.currency || !destWallet?.currency) return true;
     return (
       originWallet.currency.toUpperCase() !== destWallet.currency.toUpperCase()
     );
@@ -72,7 +71,7 @@ export function TransferFields({
     destWallet?.currency,
   ]);
 
-  if (!isCrossCurrency || !destinationWalletId) return null;
+  if (!destinationWalletId) return null;
 
   return (
     <div className="space-y-4">
@@ -94,9 +93,11 @@ export function TransferFields({
                 currencySuffix={destWallet?.currency}
               />
             </FormControl>
-            <FormDescription>
-              {t('transaction-data-table.cross_currency_note')}
-            </FormDescription>
+            {isCrossCurrency && (
+              <FormDescription>
+                {t('transaction-data-table.cross_currency_note')}
+              </FormDescription>
+            )}
             <FormMessage />
           </FormItem>
         )}

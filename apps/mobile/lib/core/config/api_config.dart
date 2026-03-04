@@ -54,6 +54,8 @@ abstract final class FinanceEndpoints {
   static String transaction(String wsId, String transactionId) =>
       '/api/workspaces/$wsId/transactions/$transactionId';
 
+  static String transfers(String wsId) => '/api/workspaces/$wsId/transfers';
+
   /// Cursor-based infinite-scroll endpoint (mirrors web's transactions/infinite).
   static String infiniteTransactions(String wsId) =>
       '/api/workspaces/$wsId/transactions/infinite';

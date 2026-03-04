@@ -295,6 +295,38 @@ class FinanceRepository {
     await _api.postJson(FinanceEndpoints.transactions(wsId), body);
   }
 
+  Future<void> createTransfer({
+    required String wsId,
+    required String originWalletId,
+    required String destinationWalletId,
+    required double amount,
+    DateTime? takenAt,
+    String? description,
+    double? destinationAmount,
+    bool? reportOptIn,
+  }) async {
+    final body = <String, dynamic>{
+      'origin_wallet_id': originWalletId,
+      'destination_wallet_id': destinationWalletId,
+      'amount': amount,
+      'taken_at': (takenAt ?? DateTime.now()).toUtc().toIso8601String(),
+    };
+
+    if (description != null) {
+      body['description'] = description;
+    }
+
+    if (destinationAmount != null) {
+      body['destination_amount'] = destinationAmount;
+    }
+
+    if (reportOptIn != null) {
+      body['report_opt_in'] = reportOptIn;
+    }
+
+    await _api.postJson(FinanceEndpoints.transfers(wsId), body);
+  }
+
   Future<void> deleteTransaction({
     required String wsId,
     required String transactionId,

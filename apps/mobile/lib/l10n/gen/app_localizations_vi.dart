@@ -501,10 +501,31 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeWallet => 'Ví';
 
   @override
+  String get financeDestinationWallet => 'Ví đích';
+
+  @override
+  String get financeSelectDestinationWallet => 'Chọn ví đích';
+
+  @override
+  String get financeTransferMode => 'Chế độ chuyển khoản';
+
+  @override
+  String get financeDestinationAmountOptional => 'Số tiền đích (tùy chọn)';
+
+  @override
   String get financeSelectWalletAndCategoryFirst => 'Hãy chọn ví và danh mục trước';
 
   @override
+  String get financeSelectWalletAndDestinationFirst => 'Hãy chọn ví nguồn và ví đích trước';
+
+  @override
+  String get financeWalletsMustBeDifferent => 'Ví nguồn và ví đích phải khác nhau';
+
+  @override
   String get financeInvalidAmount => 'Vui lòng nhập số tiền hợp lệ';
+
+  @override
+  String get financeInvalidDestinationAmount => 'Vui lòng nhập số tiền đích hợp lệ';
 
   @override
   String get financeReportOptIn => 'Bao gồm trong báo cáo';

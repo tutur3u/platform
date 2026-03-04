@@ -24,13 +24,16 @@ class _TransactionFormDialog extends StatefulWidget {
 
 class _TransactionFormDialogState extends State<_TransactionFormDialog> {
   late final TextEditingController _amountController;
+  late final TextEditingController _destinationAmountController;
   late final TextEditingController _descriptionController;
   late DateTime _takenAt;
 
   List<Wallet> _wallets = const [];
   List<TransactionCategory> _categories = const [];
   String? _walletId;
+  String? _destinationWalletId;
   String? _categoryId;
+  bool _isTransfer = false;
   bool _reportOptIn = true;
   bool _isAmountConfidential = false;
   bool _isDescriptionConfidential = false;
@@ -53,13 +56,18 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
     final l10n = context.l10n;
     final theme = shad.Theme.of(context);
     final selectedWallet = _selectedWallet;
+    final selectedDestinationWallet = _selectedDestinationWallet;
     final selectedCategory = _selectedCategory;
 
     return shad.AlertDialog(
       title: Text(
         _isCreate ? l10n.financeCreateTransaction : l10n.financeEditTransaction,
       ),
-      content: SizedBox(
+      content: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.65,
+        ),
+        child: SizedBox(
         width: double.maxFinite,
         child: SingleChildScrollView(
           child: Column(
@@ -88,6 +96,24 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
                     ),
                   ),
                 if (_tabIndex == 0) ...[
+                  if (_isCreate) ...[
+                    _ToggleRow(
+                      label: l10n.financeTransferMode,
+                      value: _isTransfer,
+                      onChanged: (value) {
+                        setState(() {
+                          _isTransfer = value;
+                          if (_isTransfer) {
+                            _categoryId = null;
+                          } else {
+                            _destinationWalletId = null;
+                            _destinationAmountController.clear();
+                          }
+                        });
+                      },
+                    ),
+                    const shad.Gap(16),
+                  ],
                   Text(l10n.financeWallet, style: theme.typography.small),
                   const shad.Gap(4),
                   shad.OutlineButton(
@@ -113,43 +139,79 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
                     ),
                   ),
                   const shad.Gap(16),
-                  Text(l10n.financeCategory, style: theme.typography.small),
-                  const shad.Gap(4),
-                  shad.OutlineButton(
-                    onPressed: _categories.isEmpty ? null : _pickCategory,
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            color: _selectedCategoryColor.withValues(
-                              alpha: 0.16,
-                            ),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            _selectedCategoryIcon,
-                            size: 13,
-                            color: _selectedCategoryColor,
-                          ),
-                        ),
-                        const shad.Gap(8),
-                        Expanded(
-                          child: Text(
-                            selectedCategory?.name ?? '-',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const Icon(Icons.expand_more, size: 16),
-                      ],
-                    ),
-                  ),
-                  const shad.Gap(16),
-                  if (_walletId == null || _categoryId == null)
+                  if (_isTransfer) ...[
                     Text(
-                      l10n.financeSelectWalletAndCategoryFirst,
+                      l10n.financeDestinationWallet,
+                      style: theme.typography.small,
+                    ),
+                    const shad.Gap(4),
+                    shad.OutlineButton(
+                      onPressed: _wallets.length < 2
+                          ? null
+                          : _pickDestinationWallet,
+                      child: Row(
+                        children: [
+                          WalletVisualAvatar(
+                            icon: selectedDestinationWallet?.icon,
+                            imageSrc: selectedDestinationWallet?.imageSrc,
+                            fallbackIcon: Icons.wallet_outlined,
+                            size: 28,
+                          ),
+                          const shad.Gap(8),
+                          Expanded(
+                            child: Text(
+                              selectedDestinationWallet?.name ??
+                                  l10n.financeSelectDestinationWallet,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const Icon(Icons.expand_more, size: 16),
+                        ],
+                      ),
+                    ),
+                    const shad.Gap(16),
+                  ] else ...[
+                    Text(l10n.financeCategory, style: theme.typography.small),
+                    const shad.Gap(4),
+                    shad.OutlineButton(
+                      onPressed: _categories.isEmpty ? null : _pickCategory,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: _selectedCategoryColor.withValues(
+                                alpha: 0.16,
+                              ),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              _selectedCategoryIcon,
+                              size: 13,
+                              color: _selectedCategoryColor,
+                            ),
+                          ),
+                          const shad.Gap(8),
+                          Expanded(
+                            child: Text(
+                              selectedCategory?.name ?? '-',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const Icon(Icons.expand_more, size: 16),
+                        ],
+                      ),
+                    ),
+                    const shad.Gap(16),
+                  ],
+                  if (!_canEditAmountFields)
+                    Text(
+                      _isTransfer
+                          ? l10n.financeSelectWalletAndDestinationFirst
+                          : l10n.financeSelectWalletAndCategoryFirst,
                       style: theme.typography.small.copyWith(
                         color: theme.colorScheme.mutedForeground,
                       ),
@@ -178,6 +240,58 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
                       ),
                     ),
                     const shad.Gap(16),
+                    if (_isTransfer) ...[
+                      Text(
+                        l10n.financeDestinationAmountOptional,
+                        style: theme.typography.small,
+                      ),
+                      const shad.Gap(4),
+                      shad.TextField(
+                        key: ValueKey(_selectedDestinationCurrency),
+                        controller: _destinationAmountController,
+                        keyboardType: TextInputType.numberWithOptions(
+                          decimal:
+                              _currencyFractionDigits(
+                                _selectedDestinationCurrency,
+                              ) >
+                              0,
+                        ),
+                        inputFormatters: _amountInputFormatters(
+                          _selectedDestinationCurrency,
+                        ),
+                        placeholder: Text(
+                          '${currencySymbol(_selectedDestinationCurrency)}0',
+                        ),
+                      ),
+                      const shad.Gap(6),
+                      Text(
+                        _destinationAmountPreview,
+                        style: theme.typography.xSmall.copyWith(
+                          color: theme.colorScheme.mutedForeground,
+                        ),
+                      ),
+                      if (_isCrossCurrency &&
+                          _exchangeRatePreview.isNotEmpty) ...[
+                        const shad.Gap(6),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.currency_exchange,
+                              size: 13,
+                              color: theme.colorScheme.mutedForeground,
+                            ),
+                            const shad.Gap(4),
+                            Text(
+                              _exchangeRatePreview,
+                              style: theme.typography.xSmall.copyWith(
+                                color: theme.colorScheme.mutedForeground,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      const shad.Gap(16),
+                    ],
                     Text(
                       l10n.financeDescription,
                       style: theme.typography.small,
@@ -204,34 +318,37 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
                       setState(() => _reportOptIn = value);
                     },
                   ),
-                  const shad.Gap(12),
-                  _ToggleRow(
-                    label: l10n.financeConfidentialAmount,
-                    value: _isAmountConfidential,
-                    onChanged: (value) {
-                      setState(() => _isAmountConfidential = value);
-                    },
-                  ),
-                  const shad.Gap(12),
-                  _ToggleRow(
-                    label: l10n.financeConfidentialDescription,
-                    value: _isDescriptionConfidential,
-                    onChanged: (value) {
-                      setState(() => _isDescriptionConfidential = value);
-                    },
-                  ),
-                  const shad.Gap(12),
-                  _ToggleRow(
-                    label: l10n.financeConfidentialCategory,
-                    value: _isCategoryConfidential,
-                    onChanged: (value) {
-                      setState(() => _isCategoryConfidential = value);
-                    },
-                  ),
+                  if (!_isTransfer) ...[
+                    const shad.Gap(12),
+                    _ToggleRow(
+                      label: l10n.financeConfidentialAmount,
+                      value: _isAmountConfidential,
+                      onChanged: (value) {
+                        setState(() => _isAmountConfidential = value);
+                      },
+                    ),
+                    const shad.Gap(12),
+                    _ToggleRow(
+                      label: l10n.financeConfidentialDescription,
+                      value: _isDescriptionConfidential,
+                      onChanged: (value) {
+                        setState(() => _isDescriptionConfidential = value);
+                      },
+                    ),
+                    const shad.Gap(12),
+                    _ToggleRow(
+                      label: l10n.financeConfidentialCategory,
+                      value: _isCategoryConfidential,
+                      onChanged: (value) {
+                        setState(() => _isCategoryConfidential = value);
+                      },
+                    ),
+                  ],
                 ],
               ],
             ],
           ),
+        ),
         ),
       ),
       actions: [
@@ -248,7 +365,11 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
                   child: shad.CircularProgressIndicator(),
                 )
               : Text(
-                  _isCreate ? l10n.financeCreateTransaction : l10n.timerSave,
+                  _isCreate
+                      ? (_isTransfer
+                            ? l10n.financeTransfer
+                            : l10n.financeCreateTransaction)
+                      : l10n.timerSave,
                 ),
         ),
       ],
@@ -258,6 +379,9 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
   @override
   void dispose() {
     _amountController
+      ..removeListener(_onAmountChanged)
+      ..dispose();
+    _destinationAmountController
       ..removeListener(_onAmountChanged)
       ..dispose();
     _descriptionController.dispose();
@@ -271,6 +395,12 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
     _amountController = TextEditingController(
       text: _formatInitialAmount(amount.abs()),
     );
+    final destinationAmount = widget.transaction?.transfer?.linkedAmount;
+    _destinationAmountController = TextEditingController(
+      text: destinationAmount == null
+          ? ''
+          : _formatInitialAmount(destinationAmount.abs()),
+    );
     _descriptionController = TextEditingController(
       text: widget.transaction?.description ?? '',
     );
@@ -279,7 +409,9 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
         widget.transaction?.createdAt ??
         DateTime.now();
     _walletId = widget.transaction?.walletId;
+    _destinationWalletId = widget.transaction?.transfer?.linkedWalletId;
     _categoryId = widget.transaction?.categoryId;
+    _isTransfer = widget.transaction?.isTransfer ?? false;
     _reportOptIn = widget.transaction?.reportOptIn ?? true;
     _isAmountConfidential = widget.transaction?.isAmountConfidential ?? false;
     _isDescriptionConfidential =
@@ -288,6 +420,7 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
         widget.transaction?.isCategoryConfidential ?? false;
 
     _amountController.addListener(_onAmountChanged);
+    _destinationAmountController.addListener(_onAmountChanged);
 
     unawaited(_loadOptions());
   }
@@ -322,7 +455,27 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
     final l10n = context.l10n;
     _reconcileSelectedIds();
     final amount = _parseAmount(_amountController.text);
-    if (_walletId == null || _categoryId == null) {
+    if (_isTransfer) {
+      if (_walletId == null || _destinationWalletId == null) {
+        shad.showToast(
+          context: context,
+          builder: (ctx, overlay) => shad.Alert.destructive(
+            content: Text(ctx.l10n.financeSelectWalletAndDestinationFirst),
+          ),
+        );
+        return;
+      }
+
+      if (_walletId == _destinationWalletId) {
+        shad.showToast(
+          context: context,
+          builder: (ctx, overlay) => shad.Alert.destructive(
+            content: Text(ctx.l10n.financeWalletsMustBeDifferent),
+          ),
+        );
+        return;
+      }
+    } else if (_walletId == null || _categoryId == null) {
       shad.showToast(
         context: context,
         builder: (ctx, overlay) => shad.Alert.destructive(
@@ -342,9 +495,50 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
       return;
     }
 
+    final destinationAmountText = _destinationAmountController.text.trim();
+    final destinationAmount = _isTransfer && destinationAmountText.isNotEmpty
+        ? _parseAmount(
+            destinationAmountText,
+            currencyCode: _selectedDestinationCurrency,
+          )
+        : null;
+
+    if (_isTransfer &&
+        destinationAmountText.isNotEmpty &&
+        destinationAmount == null) {
+      shad.showToast(
+        context: context,
+        builder: (ctx, overlay) => shad.Alert.destructive(
+          content: Text(ctx.l10n.financeInvalidDestinationAmount),
+        ),
+      );
+      return;
+    }
+
     setState(() => _isSaving = true);
 
     try {
+      final normalizedDescription = _descriptionController.text.trim().isEmpty
+          ? null
+          : _descriptionController.text.trim();
+
+      if (_isCreate && _isTransfer) {
+        await widget.repository.createTransfer(
+          wsId: widget.wsId,
+          originWalletId: _walletId!,
+          destinationWalletId: _destinationWalletId!,
+          amount: amount.abs(),
+          destinationAmount: destinationAmount,
+          description: normalizedDescription,
+          takenAt: _takenAt,
+          reportOptIn: _reportOptIn,
+        );
+
+        if (!mounted) return;
+        Navigator.of(context).pop(true);
+        return;
+      }
+
       final selectedCategory = _selectedCategory;
       final isExpense = selectedCategory?.isExpense != false;
       final signedAmount = isExpense ? -amount.abs() : amount.abs();
@@ -352,9 +546,7 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
       if (_isCreate) {
         await widget.onCreate!(
           amount: signedAmount,
-          description: _descriptionController.text.trim().isEmpty
-              ? null
-              : _descriptionController.text.trim(),
+          description: normalizedDescription,
           takenAt: _takenAt,
           walletId: _walletId,
           categoryId: _categoryId,
@@ -372,9 +564,7 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
       final updated = await widget.onSave!(
         transactionId: widget.transaction!.id,
         amount: signedAmount,
-        description: _descriptionController.text.trim().isEmpty
-            ? null
-            : _descriptionController.text.trim(),
+        description: normalizedDescription,
         takenAt: _takenAt,
         walletId: _walletId,
         categoryId: _categoryId,
@@ -457,7 +647,75 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
     );
 
     if (selectedWalletId == null || !mounted) return;
-    setState(() => _walletId = selectedWalletId);
+    setState(() {
+      _walletId = selectedWalletId;
+      if (_destinationWalletId == selectedWalletId) {
+        _destinationWalletId = null;
+      }
+    });
+  }
+
+  Future<void> _pickDestinationWallet() async {
+    final selectedWalletId = await shad.showDialog<String?>(
+      context: context,
+      builder: (dialogCtx) {
+        return shad.AlertDialog(
+          title: Text(context.l10n.financeDestinationWallet),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: _wallets
+                    .where((wallet) => wallet.id != _walletId)
+                    .map(
+                      (wallet) => shad.GhostButton(
+                        onPressed: () => Navigator.of(dialogCtx).pop(wallet.id),
+                        child: Row(
+                          children: [
+                            WalletVisualAvatar(
+                              icon: wallet.icon,
+                              imageSrc: wallet.imageSrc,
+                              fallbackIcon: Icons.wallet_outlined,
+                              size: 28,
+                            ),
+                            const shad.Gap(8),
+                            Expanded(
+                              child: Text(
+                                wallet.name ?? '',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Text(
+                              wallet.currency ?? 'USD',
+                              style: shad.Theme.of(dialogCtx).typography.xSmall
+                                  .copyWith(
+                                    color: shad.Theme.of(
+                                      dialogCtx,
+                                    ).colorScheme.mutedForeground,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+          ),
+          actions: [
+            shad.OutlineButton(
+              onPressed: () => Navigator.of(dialogCtx).pop(),
+              child: Text(context.l10n.commonCancel),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (selectedWalletId == null || !mounted) return;
+    setState(() => _destinationWalletId = selectedWalletId);
   }
 
   Future<void> _pickCategory() async {
@@ -559,11 +817,24 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
     return _wallets.where((w) => w.id == _walletId).firstOrNull;
   }
 
+  Wallet? get _selectedDestinationWallet {
+    return _wallets.where((w) => w.id == _destinationWalletId).firstOrNull;
+  }
+
   TransactionCategory? get _selectedCategory {
     return _categories.where((c) => c.id == _categoryId).firstOrNull;
   }
 
   String get _selectedCurrency => _selectedWallet?.currency ?? 'USD';
+
+  String get _selectedDestinationCurrency =>
+      _selectedDestinationWallet?.currency ?? _selectedCurrency;
+
+  bool get _canEditAmountFields {
+    if (_walletId == null) return false;
+    if (_isTransfer) return _destinationWalletId != null;
+    return _categoryId != null;
+  }
 
   IconData get _selectedCategoryIcon {
     final category = _selectedCategory;
@@ -584,7 +855,10 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
   }
 
   String get _amountPreview {
-    final parsed = _parseAmount(_amountController.text);
+    final parsed = _parseAmount(
+      _amountController.text,
+      currencyCode: _selectedCurrency,
+    );
     if (parsed == null) {
       return '${context.l10n.financeAmount}: --';
     }
@@ -592,6 +866,42 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
     final signed = isExpense ? -parsed.abs() : parsed.abs();
     final formatted = formatCurrency(signed, _selectedCurrency);
     return '${context.l10n.financeAmount}: $formatted';
+  }
+
+  bool get _isCrossCurrency {
+    final origin = _selectedWallet?.currency?.toUpperCase();
+    final dest = _selectedDestinationWallet?.currency?.toUpperCase();
+    if (origin == null || dest == null) return false;
+    return origin != dest;
+  }
+
+  String get _exchangeRatePreview {
+    final srcAmount = _parseAmount(
+      _amountController.text,
+      currencyCode: _selectedCurrency,
+    );
+    final dstAmount = _parseAmount(
+      _destinationAmountController.text,
+      currencyCode: _selectedDestinationCurrency,
+    );
+    if (srcAmount == null || dstAmount == null || srcAmount == 0) return '';
+    final rate = dstAmount / srcAmount;
+    return '1 $_selectedCurrency = '
+        '${rate.toStringAsFixed(4)} $_selectedDestinationCurrency';
+  }
+
+  String get _destinationAmountPreview {
+    final parsed = _parseAmount(
+      _destinationAmountController.text,
+      currencyCode: _selectedDestinationCurrency,
+    );
+
+    if (parsed == null) {
+      return '${context.l10n.financeDestinationAmountOptional}: --';
+    }
+
+    return '${context.l10n.financeDestinationAmountOptional}: '
+        '${formatCurrency(parsed.abs(), _selectedDestinationCurrency)}';
   }
 
   String _formatInitialAmount(double value) {
@@ -604,6 +914,9 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
   void _reconcileSelectedIds() {
     final hasWallet =
         _walletId != null && _wallets.any((wallet) => wallet.id == _walletId);
+    final hasDestinationWallet =
+        _destinationWalletId != null &&
+        _wallets.any((wallet) => wallet.id == _destinationWalletId);
     final hasCategory =
         _categoryId != null &&
         _categories.any((category) => category.id == _categoryId);
@@ -611,6 +924,16 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
     _walletId = hasWallet
         ? _walletId
         : (_isCreate ? null : (_wallets.isNotEmpty ? _wallets.first.id : null));
+
+    if (_isTransfer) {
+      if (!hasDestinationWallet || _destinationWalletId == _walletId) {
+        _destinationWalletId = null;
+      }
+      _categoryId = null;
+      return;
+    }
+
+    _destinationWalletId = null;
     _categoryId = hasCategory
         ? _categoryId
         : (_isCreate
@@ -646,14 +969,15 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
     return normalized;
   }
 
-  double? _parseAmount(String rawValue) {
+  double? _parseAmount(String rawValue, {String? currencyCode}) {
     final normalized = _normalizeAmountInput(rawValue);
     if (normalized.isEmpty) return null;
 
     final value = double.tryParse(normalized);
     if (value == null) return null;
 
-    if (_currencyFractionDigits(_selectedCurrency) == 0 && value % 1 != 0) {
+    final code = currencyCode ?? _selectedCurrency;
+    if (_currencyFractionDigits(code) == 0 && value % 1 != 0) {
       return null;
     }
 
