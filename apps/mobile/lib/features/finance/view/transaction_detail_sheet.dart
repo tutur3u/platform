@@ -1,37 +1,67 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart' hide AlertDialog, TextField;
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:intl/number_symbols.dart';
+import 'package:mobile/core/icons/platform_icon.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
+import 'package:mobile/features/finance/widgets/wallet_visual_avatar.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'transaction_detail_sheet_edit_dialog.dart';
 
+typedef TransactionSaveHandler =
+    Future<Transaction> Function({
+      required String transactionId,
+      required double amount,
+      String? description,
+      DateTime? takenAt,
+      String? walletId,
+      String? categoryId,
+      bool? reportOptIn,
+      bool? isAmountConfidential,
+      bool? isDescriptionConfidential,
+      bool? isCategoryConfidential,
+    });
+
+typedef TransactionCreateHandler =
+    Future<void> Function({
+      required double amount,
+      String? description,
+      DateTime? takenAt,
+      String? walletId,
+      String? categoryId,
+      bool? reportOptIn,
+      bool? isAmountConfidential,
+      bool? isDescriptionConfidential,
+      bool? isCategoryConfidential,
+    });
+
+Color? _parseHexColor(String? hex) {
+  if (hex == null) return null;
+  final cleaned = hex.replaceFirst('#', '');
+  if (cleaned.length != 6 && cleaned.length != 8) return null;
+  final value = int.tryParse(
+    cleaned.length == 6 ? 'FF$cleaned' : cleaned,
+    radix: 16,
+  );
+  return value != null ? Color(value) : null;
+}
+
 Future<bool> showTransactionDetailSheet(
   BuildContext context, {
   required String wsId,
   required Transaction transaction,
   required FinanceRepository repository,
-  required Future<Transaction> Function({
-    required String transactionId,
-    required double amount,
-    String? description,
-    DateTime? takenAt,
-    String? walletId,
-    String? categoryId,
-    bool? reportOptIn,
-    bool? isAmountConfidential,
-    bool? isDescriptionConfidential,
-    bool? isCategoryConfidential,
-  })
-  onSave,
+  required TransactionSaveHandler onSave,
   required Future<void> Function(String transactionId) onDelete,
 }) async {
   final result = await showAdaptiveSheet<bool>(
@@ -42,6 +72,24 @@ Future<bool> showTransactionDetailSheet(
       repository: repository,
       onSave: onSave,
       onDelete: onDelete,
+    ),
+  );
+
+  return result == true;
+}
+
+Future<bool> showCreateTransactionSheet(
+  BuildContext context, {
+  required String wsId,
+  required FinanceRepository repository,
+  required TransactionCreateHandler onCreate,
+}) async {
+  final result = await showAdaptiveSheet<bool>(
+    context: context,
+    builder: (_) => _TransactionFormDialog(
+      wsId: wsId,
+      repository: repository,
+      onCreate: onCreate,
     ),
   );
 
@@ -60,19 +108,7 @@ class _TransactionDetailSheet extends StatefulWidget {
   final String wsId;
   final Transaction transaction;
   final FinanceRepository repository;
-  final Future<Transaction> Function({
-    required String transactionId,
-    required double amount,
-    String? description,
-    DateTime? takenAt,
-    String? walletId,
-    String? categoryId,
-    bool? reportOptIn,
-    bool? isAmountConfidential,
-    bool? isDescriptionConfidential,
-    bool? isCategoryConfidential,
-  })
-  onSave;
+  final TransactionSaveHandler onSave;
   final Future<void> Function(String transactionId) onDelete;
 
   @override
@@ -94,6 +130,13 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     final dateText = date != null
         ? DateFormat.yMMMd().add_jm().format(date.toLocal())
         : '-';
+    final categoryColor =
+        _parseHexColor(_transaction.categoryColor) ??
+        (isExpense ? theme.colorScheme.destructive : theme.colorScheme.primary);
+    final categoryIcon = resolvePlatformIcon(
+      _transaction.categoryIcon,
+      fallback: isExpense ? Icons.arrow_downward : Icons.arrow_upward,
+    );
 
     return Container(
       decoration: BoxDecoration(
@@ -165,12 +208,31 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
             const shad.Gap(12),
             _DetailRow(
               label: l10n.financeCategory,
-              value: _transaction.categoryName ?? '-',
+              valueChild: _DetailValueWithIcon(
+                leading: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: categoryColor.withValues(alpha: 0.16),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(categoryIcon, size: 13, color: categoryColor),
+                ),
+                value: _transaction.categoryName ?? '-',
+              ),
             ),
             const shad.Gap(12),
             _DetailRow(
               label: l10n.financeWallet,
-              value: _transaction.walletName ?? '-',
+              valueChild: _DetailValueWithIcon(
+                leading: WalletVisualAvatar(
+                  icon: _transaction.walletIcon,
+                  imageSrc: _transaction.walletImageSrc,
+                  fallbackIcon: Icons.wallet_outlined,
+                  size: 24,
+                ),
+                value: _transaction.walletName ?? '-',
+              ),
             ),
             const shad.Gap(24),
             const Divider(),
@@ -230,7 +292,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
   Future<void> _showEditDialog() async {
     final updated = await showAdaptiveSheet<Transaction>(
       context: context,
-      builder: (_) => _EditTransactionDialog(
+      builder: (_) => _TransactionFormDialog(
         wsId: widget.wsId,
         transaction: _transaction,
         repository: widget.repository,
@@ -279,13 +341,18 @@ class _ToggleRow extends StatelessWidget {
 class _DetailRow extends StatelessWidget {
   const _DetailRow({
     required this.label,
-    required this.value,
+    this.value,
+    this.valueChild,
     this.valueBold = false,
     this.valueColor,
-  });
+  }) : assert(
+         (value == null) ^ (valueChild == null),
+         'Either value or valueChild must be provided, but not both.',
+       );
 
   final String label;
-  final String value;
+  final String? value;
+  final Widget? valueChild;
   final bool valueBold;
   final Color? valueColor;
 
@@ -308,11 +375,43 @@ class _DetailRow extends StatelessWidget {
         ),
         const shad.Gap(12),
         Expanded(
+          child:
+              valueChild ??
+              Text(
+                value!,
+                style: theme.typography.base.copyWith(
+                  fontWeight: valueBold ? FontWeight.w600 : FontWeight.w400,
+                  color: valueColor,
+                ),
+              ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DetailValueWithIcon extends StatelessWidget {
+  const _DetailValueWithIcon({
+    required this.leading,
+    required this.value,
+  });
+
+  final Widget leading;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        leading,
+        const shad.Gap(8),
+        Expanded(
           child: Text(
             value,
-            style: theme.typography.base.copyWith(
-              fontWeight: valueBold ? FontWeight.w600 : FontWeight.w400,
-              color: valueColor,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: shad.Theme.of(context).typography.base.copyWith(
+              fontWeight: FontWeight.w500,
             ),
           ),
         ),

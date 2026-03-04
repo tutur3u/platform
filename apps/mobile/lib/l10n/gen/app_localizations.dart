@@ -757,6 +757,174 @@ abstract class AppLocalizations {
   /// **'No wallets yet'**
   String get financeNoWallets;
 
+  /// No description provided for @financeCreateWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Create wallet'**
+  String get financeCreateWallet;
+
+  /// No description provided for @financeEditWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit wallet'**
+  String get financeEditWallet;
+
+  /// No description provided for @financeDeleteWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete wallet'**
+  String get financeDeleteWallet;
+
+  /// No description provided for @financeDeleteWalletConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this wallet?'**
+  String get financeDeleteWalletConfirm;
+
+  /// No description provided for @financeWalletName.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet name'**
+  String get financeWalletName;
+
+  /// No description provided for @financeWalletNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet name is required'**
+  String get financeWalletNameRequired;
+
+  /// No description provided for @financeWalletDescriptionTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Description must be 500 characters or fewer'**
+  String get financeWalletDescriptionTooLong;
+
+  /// No description provided for @financeWalletTypeStandard.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard'**
+  String get financeWalletTypeStandard;
+
+  /// No description provided for @financeWalletTypeCredit.
+  ///
+  /// In en, this message translates to:
+  /// **'Credit'**
+  String get financeWalletTypeCredit;
+
+  /// No description provided for @financeWalletCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency'**
+  String get financeWalletCurrency;
+
+  /// No description provided for @financeWalletSelectCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Select currency'**
+  String get financeWalletSelectCurrency;
+
+  /// No description provided for @financeWalletSearchCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Search currencies'**
+  String get financeWalletSearchCurrency;
+
+  /// No description provided for @financeWalletCurrencyRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid 3-letter currency code'**
+  String get financeWalletCurrencyRequired;
+
+  /// No description provided for @financeWalletIconOrImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Icon or image'**
+  String get financeWalletIconOrImage;
+
+  /// No description provided for @financeWalletNoVisual.
+  ///
+  /// In en, this message translates to:
+  /// **'No visual selected'**
+  String get financeWalletNoVisual;
+
+  /// No description provided for @financeWalletPickImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick image'**
+  String get financeWalletPickImage;
+
+  /// No description provided for @financeWalletClearVisual.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear visual'**
+  String get financeWalletClearVisual;
+
+  /// No description provided for @financeWalletCreditDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Credit details'**
+  String get financeWalletCreditDetails;
+
+  /// No description provided for @financeWalletCreditLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Credit limit'**
+  String get financeWalletCreditLimit;
+
+  /// No description provided for @financeWalletCreditLimitRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Credit limit must be greater than 0'**
+  String get financeWalletCreditLimitRequired;
+
+  /// No description provided for @financeWalletStatementDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Statement date'**
+  String get financeWalletStatementDate;
+
+  /// No description provided for @financeWalletPaymentDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment date'**
+  String get financeWalletPaymentDate;
+
+  /// No description provided for @financeWalletDateRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a date between 1 and 31'**
+  String get financeWalletDateRequired;
+
+  /// No description provided for @financeWalletBankTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank'**
+  String get financeWalletBankTab;
+
+  /// No description provided for @financeWalletMobileTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile'**
+  String get financeWalletMobileTab;
+
+  /// No description provided for @financeWalletSearchImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Search images'**
+  String get financeWalletSearchImage;
+
+  /// No description provided for @financeWalletImageCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No images} one{1 available} other{{count} available}}'**
+  String financeWalletImageCount(int count);
+
+  /// No description provided for @financeWalletClearImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear image'**
+  String get financeWalletClearImage;
+
   /// No description provided for @financeNoTransactions.
   ///
   /// In en, this message translates to:
@@ -805,6 +973,12 @@ abstract class AppLocalizations {
   /// **'Transaction details'**
   String get financeTransactionDetails;
 
+  /// No description provided for @financeCreateTransaction.
+  ///
+  /// In en, this message translates to:
+  /// **'Create transaction'**
+  String get financeCreateTransaction;
+
   /// No description provided for @financeEditTransaction.
   ///
   /// In en, this message translates to:
@@ -822,6 +996,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete this transaction?'**
   String get financeDeleteTransactionConfirm;
+
+  /// No description provided for @financeTransactionCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction created'**
+  String get financeTransactionCreated;
 
   /// No description provided for @financeTransactionUpdated.
   ///
@@ -864,6 +1044,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Wallet'**
   String get financeWallet;
+
+  /// No description provided for @financeSelectWalletAndCategoryFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a wallet and category first'**
+  String get financeSelectWalletAndCategoryFirst;
 
   /// No description provided for @financeInvalidAmount.
   ///

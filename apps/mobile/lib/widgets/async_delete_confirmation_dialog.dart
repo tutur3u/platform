@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart' hide AlertDialog;
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -81,6 +82,22 @@ class _AsyncDeleteConfirmationDialogState
         return;
       }
       Navigator.of(context).pop(true);
+    } on ApiException catch (e) {
+      if (!mounted) {
+        return;
+      }
+      if (!toastContext.mounted) {
+        setState(() => _isDeleting = false);
+        return;
+      }
+      final message = e.message.trim().isEmpty
+          ? toastContext.l10n.commonSomethingWentWrong
+          : e.message;
+      shad.showToast(
+        context: toastContext,
+        builder: (_, overlay) => shad.Alert.destructive(content: Text(message)),
+      );
+      setState(() => _isDeleting = false);
     } on Exception {
       if (!mounted) {
         return;

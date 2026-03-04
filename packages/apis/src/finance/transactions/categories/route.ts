@@ -1,5 +1,8 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -19,9 +22,10 @@ const TransactionCategoryCreateSchema = z.object({
 export async function GET(req: Request, { params }: Params) {
   const supabase = await createClient(req);
   const { wsId } = await params;
+  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
   const permissions = await getPermissions({
-    wsId,
+    wsId: normalizedWsId,
     request: req,
   });
 
@@ -40,7 +44,7 @@ export async function GET(req: Request, { params }: Params) {
 
   const { data, error } = await supabase
     .rpc('get_transaction_categories_with_amount_by_workspace', {
-      p_ws_id: wsId,
+      p_ws_id: normalizedWsId,
     })
     .order('name', { ascending: true });
 
@@ -58,6 +62,7 @@ export async function GET(req: Request, { params }: Params) {
 export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient(req);
   const { wsId } = await params;
+  const normalizedwsId = await normalizeWorkspaceId(wsId, supabase);
   const parsed = TransactionCategoryCreateSchema.safeParse(await req.json());
 
   if (!parsed.success) {
@@ -70,7 +75,7 @@ export async function POST(req: Request, { params }: Params) {
   const data = parsed.data;
 
   const permissions = await getPermissions({
-    wsId,
+    wsId: normalizedwsId,
     request: req,
   });
 
@@ -90,8 +95,11 @@ export async function POST(req: Request, { params }: Params) {
   const { data: res, error } = await supabase
     .from('transaction_categories')
     .insert({
-      ...data,
-      ws_id: wsId,
+      ws_id: normalizedwsId,
+      name: data.name,
+      is_expense: data.is_expense,
+      icon: data.icon ?? null,
+      color: data.color ?? null,
     })
     .select()
     .single();

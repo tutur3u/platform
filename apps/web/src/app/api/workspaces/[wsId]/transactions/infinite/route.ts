@@ -95,20 +95,24 @@ export async function GET(req: Request, { params }: Params) {
     const hasMore = (data || []).length > limit;
     const rawTransactions = hasMore ? data.slice(0, limit) : data || [];
 
-    // Batch fetch wallet currencies
+    // Batch fetch wallet details used by clients
     const uniqueWalletIds = [
       ...new Set(
         rawTransactions.map((t) => t.wallet_id).filter(Boolean) as string[]
       ),
     ];
     const walletCurrencyMap: Record<string, string> = {};
+    const walletIconMap: Record<string, string> = {};
+    const walletImageSrcMap: Record<string, string> = {};
     if (uniqueWalletIds.length > 0) {
-      const { data: walletCurrencies } = await supabase
+      const { data: walletDetails } = await supabase
         .from('workspace_wallets')
-        .select('id, currency')
+        .select('id, currency, icon, image_src')
         .in('id', uniqueWalletIds);
-      (walletCurrencies || []).forEach((w) => {
+      (walletDetails || []).forEach((w) => {
         if (w.currency) walletCurrencyMap[w.id] = w.currency;
+        if (w.icon) walletIconMap[w.id] = w.icon;
+        if (w.image_src) walletImageSrcMap[w.id] = w.image_src;
       });
     }
 
@@ -244,6 +248,8 @@ export async function GET(req: Request, { params }: Params) {
       ...t,
       wallet: t.wallet_name,
       wallet_currency: walletCurrencyMap[t.wallet_id] || undefined,
+      wallet_icon: walletIconMap[t.wallet_id] || undefined,
+      wallet_image_src: walletImageSrcMap[t.wallet_id] || undefined,
       category: t.category_name,
       category_icon: t.category_icon,
       category_color: t.category_color,
