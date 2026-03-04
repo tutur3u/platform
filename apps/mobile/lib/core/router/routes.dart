@@ -34,4 +34,7 @@ abstract final class Routes {
   static const timerStats = '/timer/stats';
   static const timerRequests = '/timer/requests';
   static const timerManagement = '/timer/management';
+
+  static String walletDetailPath(String walletId) =>
+      '/finance/wallets/$walletId';
 }

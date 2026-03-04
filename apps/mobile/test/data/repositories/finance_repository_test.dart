@@ -38,6 +38,118 @@ void main() {
       ).called(1);
     });
 
+    test('getWalletById returns wallet for existing id', () async {
+      when(
+        () => apiClient.getJson('/api/workspaces/ws_1/wallets/wallet_1'),
+      ).thenAnswer(
+        (_) async => {
+          'id': 'wallet_1',
+          'name': 'Travel',
+          'currency': 'EUR',
+          'type': 'STANDARD',
+        },
+      );
+
+      final wallet = await repository.getWalletById(
+        wsId: 'ws_1',
+        walletId: 'wallet_1',
+      );
+
+      expect(wallet, isNotNull);
+      expect(wallet?.id, 'wallet_1');
+      expect(wallet?.currency, 'EUR');
+      verify(
+        () => apiClient.getJson('/api/workspaces/ws_1/wallets/wallet_1'),
+      ).called(1);
+    });
+
+    test('getWalletById returns null on 404', () async {
+      when(
+        () => apiClient.getJson('/api/workspaces/ws_1/wallets/wallet_404'),
+      ).thenThrow(const ApiException(message: 'Not found', statusCode: 404));
+
+      final wallet = await repository.getWalletById(
+        wsId: 'ws_1',
+        walletId: 'wallet_404',
+      );
+
+      expect(wallet, isNull);
+    });
+
+    test(
+      'getTransactionsInfinite includes cursor and walletId query params',
+      () async {
+        when(
+          () => apiClient.getJson(
+            '/api/workspaces/ws_1/transactions/infinite?limit=20&cursor=abc_123&walletId=wallet_1',
+          ),
+        ).thenAnswer(
+          (_) async => {
+            'data': [
+              {
+                'id': 'tx_1',
+                'amount': -12.5,
+                'wallet_id': 'wallet_1',
+                'wallet_currency': 'USD',
+              },
+            ],
+            'hasMore': true,
+            'nextCursor': 'def_456',
+          },
+        );
+
+        final page = await repository.getTransactionsInfinite(
+          wsId: 'ws_1',
+          cursor: 'abc_123',
+          walletId: 'wallet_1',
+        );
+
+        expect(page.data, hasLength(1));
+        expect(page.hasMore, isTrue);
+        expect(page.nextCursor, 'def_456');
+        verify(
+          () => apiClient.getJson(
+            '/api/workspaces/ws_1/transactions/infinite?limit=20&cursor=abc_123&walletId=wallet_1',
+          ),
+        ).called(1);
+      },
+    );
+
+    test(
+      'getTransactionStats maps stats response with wallet currency key',
+      () async {
+        when(
+          () => apiClient.getJson(
+            '/api/workspaces/ws_1/transactions/stats?walletId=wallet_1',
+          ),
+        ).thenAnswer(
+          (_) async => {
+            'totalTransactions': 3,
+            'totalIncome': 100,
+            'totalExpense': -40,
+            'netTotal': 60,
+            'wallet_currency': 'JPY',
+          },
+        );
+
+        final stats = await repository.getTransactionStats(
+          wsId: 'ws_1',
+          walletId: 'wallet_1',
+        );
+
+        expect(stats.totalTransactions, 3);
+        expect(stats.totalIncome, 100);
+        expect(stats.totalExpense, -40);
+        expect(stats.netTotal, 60);
+        expect(stats.currency, 'JPY');
+        verify(
+          () => apiClient.getJson(
+            '/api/workspaces/ws_1/transactions/stats?walletId=wallet_1',
+          ),
+        ).called(1);
+      },
+    );
+
     test('createWallet posts payload to wallets endpoint', () async {
       when(
         () => apiClient.postJson(any(), any()),

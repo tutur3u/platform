@@ -2,6 +2,7 @@ import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
+import 'package:mobile/data/models/finance/transaction_stats.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
@@ -49,15 +50,19 @@ class FinanceRepository {
         .toList();
   }
 
-  Future<Wallet?> getWalletById(String walletId) async {
-    final response = await supabase
-        .from('workspace_wallets')
-        .select()
-        .eq('id', walletId)
-        .maybeSingle();
-
-    if (response == null) return null;
-    return Wallet.fromJson(response);
+  Future<Wallet?> getWalletById({
+    required String wsId,
+    required String walletId,
+  }) async {
+    try {
+      final response = await _api.getJson(
+        FinanceEndpoints.wallet(wsId, walletId),
+      );
+      return Wallet.fromJson(response);
+    } on ApiException catch (error) {
+      if (error.statusCode == 404) return null;
+      rethrow;
+    }
   }
 
   Future<void> createWallet({
@@ -160,10 +165,12 @@ class FinanceRepository {
     int limit = 20,
     String? cursor,
     String? search,
+    String? walletId,
   }) async {
     final params = <String, String>{'limit': limit.toString()};
     if (cursor != null) params['cursor'] = cursor;
     if (search != null && search.isNotEmpty) params['q'] = search;
+    if (walletId != null && walletId.isNotEmpty) params['walletId'] = walletId;
 
     final query = Uri(queryParameters: params).query;
     final response = await _api.getJson(
@@ -171,6 +178,23 @@ class FinanceRepository {
     );
 
     return InfiniteTransactionResponse.fromJson(response);
+  }
+
+  Future<TransactionStats> getTransactionStats({
+    required String wsId,
+    String? walletId,
+    String? search,
+  }) async {
+    final params = <String, String>{};
+    if (walletId != null && walletId.isNotEmpty) params['walletId'] = walletId;
+    if (search != null && search.isNotEmpty) params['q'] = search;
+
+    final query = Uri(queryParameters: params).query;
+    final endpoint = query.isEmpty
+        ? FinanceEndpoints.transactionStats(wsId)
+        : '${FinanceEndpoints.transactionStats(wsId)}?$query';
+    final response = await _api.getJson(endpoint);
+    return TransactionStats.fromJson(response);
   }
 
   ///

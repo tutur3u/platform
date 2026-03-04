@@ -375,6 +375,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeWalletTypeCredit => 'Tín dụng';
 
   @override
+  String get financeWalletMetadata => 'Thông tin ví';
+
+  @override
+  String get financeWalletBalance => 'Số dư';
+
+  @override
   String get financeWalletCurrency => 'Tiền tệ';
 
   @override
@@ -538,6 +544,15 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeConfidentialCategory => 'Ẩn danh mục';
+
+  @override
+  String get financeStatisticsSummary => 'Tổng quan thống kê';
+
+  @override
+  String get financeTotalTransactions => 'Tổng giao dịch';
+
+  @override
+  String get financeWalletNotFound => 'Không tìm thấy ví';
 
   @override
   String get financeCreateCategory => 'Tạo danh mục';
