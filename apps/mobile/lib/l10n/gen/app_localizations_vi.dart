@@ -348,6 +348,99 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeNoWallets => 'Chưa có ví';
 
   @override
+  String get financeCreateWallet => 'Tạo ví';
+
+  @override
+  String get financeEditWallet => 'Sửa ví';
+
+  @override
+  String get financeDeleteWallet => 'Xóa ví';
+
+  @override
+  String get financeDeleteWalletConfirm => 'Xóa ví này?';
+
+  @override
+  String get financeWalletName => 'Tên ví';
+
+  @override
+  String get financeWalletNameRequired => 'Vui lòng nhập tên ví';
+
+  @override
+  String get financeWalletDescriptionTooLong => 'Mô tả tối đa 500 ký tự';
+
+  @override
+  String get financeWalletTypeStandard => 'Thường';
+
+  @override
+  String get financeWalletTypeCredit => 'Tín dụng';
+
+  @override
+  String get financeWalletCurrency => 'Tiền tệ';
+
+  @override
+  String get financeWalletSelectCurrency => 'Chọn tiền tệ';
+
+  @override
+  String get financeWalletSearchCurrency => 'Tìm tiền tệ';
+
+  @override
+  String get financeWalletCurrencyRequired => 'Nhập mã tiền tệ 3 ký tự hợp lệ';
+
+  @override
+  String get financeWalletIconOrImage => 'Biểu tượng hoặc hình ảnh';
+
+  @override
+  String get financeWalletNoVisual => 'Chưa chọn hình đại diện';
+
+  @override
+  String get financeWalletPickImage => 'Chọn hình ảnh';
+
+  @override
+  String get financeWalletClearVisual => 'Xóa hình đại diện';
+
+  @override
+  String get financeWalletCreditDetails => 'Thông tin tín dụng';
+
+  @override
+  String get financeWalletCreditLimit => 'Hạn mức tín dụng';
+
+  @override
+  String get financeWalletCreditLimitRequired => 'Hạn mức tín dụng phải lớn hơn 0';
+
+  @override
+  String get financeWalletStatementDate => 'Ngày sao kê';
+
+  @override
+  String get financeWalletPaymentDate => 'Ngày thanh toán';
+
+  @override
+  String get financeWalletDateRequired => 'Nhập ngày từ 1 đến 31';
+
+  @override
+  String get financeWalletBankTab => 'Ngân hàng';
+
+  @override
+  String get financeWalletMobileTab => 'Ví điện tử';
+
+  @override
+  String get financeWalletSearchImage => 'Tìm hình ảnh';
+
+  @override
+  String financeWalletImageCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count hình khả dụng',
+      one: '1 hình khả dụng',
+      zero: 'Không có hình ảnh',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get financeWalletClearImage => 'Xóa hình ảnh';
+
+  @override
   String get financeNoTransactions => 'Chưa có giao dịch';
 
   @override

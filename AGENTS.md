@@ -100,6 +100,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Admin Client**: Use `createAdminClient` (sbAdmin) to bypass triggers checking `auth.uid()`. Validate permissions with user client first.
 - **User Email**: Never query `public.users.email` (it doesn't exist). Use `public.user_private_details`.
 - **Reset-Only Local Defaults**: If behavior should apply only after `bun sb:reset` (local dev bootstrap), implement it in `apps/database/scripts/*` and wire it into the reset script; do not encode reset-only behavior in migrations.
+- **Workspace-Scoped Mutation Follow-Through**: For workspace-scoped `UPDATE`/`DELETE` API handlers, request returning rows (`select(...).maybeSingle()` or equivalent) and stop follow-up side effects when no row matched; never run dependent child-table deletes/updates based only on a requested ID.
 
 ### 6.2 UI & Rendering Patterns
 
@@ -147,6 +148,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Discord CI Parity**: Keep the GitHub Actions workflow `.github/workflows/discord-python-ci.yml` aligned with the `uv` workflow and install dependencies via `uv sync --locked` so CI reproducibly uses `apps/discord/uv.lock`.
 - **Discord Modal Deploys**: For `apps/discord` continuous deployment, trigger Modal deploys from GitHub Actions only after the Discord-specific CI workflow succeeds, authenticate with `MODAL_TOKEN_ID` / `MODAL_TOKEN_SECRET`, and run the deploy via `uv run modal deploy ...`.
 - **Discord Service Logging**: In `apps/discord`, use module-level `logging` (`logger.exception` / `logger.error(..., exc_info=True)`) for error paths. Avoid ad-hoc `print()` for operational failures.
+- **Global Check Baseline Drift**: If `bun check` fails solely because repo-wide tool versions drift (for example Biome schema/CLI mismatch), do not modify unrelated workspace configs in feature PRs; complete scoped verification (for example `bun check:mobile` for mobile-only work) and report the pre-existing global failure explicitly.
 
 ### 6.5 Type Safety & Platform Details
 

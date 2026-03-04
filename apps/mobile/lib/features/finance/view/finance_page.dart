@@ -432,11 +432,21 @@ class _WalletsSection extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Text(
-            l10n.financeWallets,
-            style: theme.typography.small.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  l10n.financeWallets,
+                  style: theme.typography.small.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              shad.GhostButton(
+                onPressed: () => context.push(Routes.wallets),
+                child: Text(l10n.financeViewAll),
+              ),
+            ],
           ),
         ),
         if (wallets.isEmpty)

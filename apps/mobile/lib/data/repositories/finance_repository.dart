@@ -32,6 +32,66 @@ class FinanceRepository {
     return Wallet.fromJson(response);
   }
 
+  Future<void> createWallet({
+    required String wsId,
+    required String name,
+    required String type,
+    required String currency,
+    String? description,
+    String? icon,
+    String? imageSrc,
+    double? limit,
+    int? statementDate,
+    int? paymentDate,
+  }) async {
+    await _api.postJson(FinanceEndpoints.wallets(wsId), {
+      'name': name,
+      'description': description,
+      'type': type,
+      'currency': currency,
+      'icon': icon,
+      'image_src': imageSrc,
+      'limit': limit,
+      'statement_date': statementDate,
+      'payment_date': paymentDate,
+    });
+  }
+
+  Future<void> updateWallet({
+    required String wsId,
+    required String walletId,
+    required String name,
+    required String type,
+    required String currency,
+    String? description,
+    String? icon,
+    String? imageSrc,
+    double? limit,
+    int? statementDate,
+    int? paymentDate,
+  }) async {
+    final payload = <String, dynamic>{
+      'name': name,
+      'description': description,
+      'type': type,
+      'currency': currency,
+      'icon': icon,
+      'image_src': imageSrc,
+      'limit': limit,
+      'statement_date': statementDate,
+      'payment_date': paymentDate,
+    };
+
+    await _api.putJson(FinanceEndpoints.wallet(wsId, walletId), payload);
+  }
+
+  Future<void> deleteWallet({
+    required String wsId,
+    required String walletId,
+  }) async {
+    await _api.deleteJson(FinanceEndpoints.wallet(wsId, walletId));
+  }
+
   // ── Transactions ────────────────────────────────
 
   /// Fetches transactions for the given [walletIds].

@@ -16,6 +16,7 @@ import 'package:mobile/features/auth/view/signup_page.dart';
 import 'package:mobile/features/dashboard/view/dashboard_page.dart';
 import 'package:mobile/features/finance/view/transaction_categories_page.dart';
 import 'package:mobile/features/finance/view/transaction_list_page.dart';
+import 'package:mobile/features/finance/view/wallets_page.dart';
 import 'package:mobile/features/onboarding/view/onboarding_page.dart';
 import 'package:mobile/features/profile/view/profile_page.dart';
 import 'package:mobile/features/settings/view/settings_page.dart';
@@ -181,6 +182,10 @@ GoRouter createAppRouter(
           GoRoute(
             path: Routes.categories,
             builder: (context, state) => const TransactionCategoriesPage(),
+          ),
+          GoRoute(
+            path: Routes.wallets,
+            builder: (context, state) => const WalletsPage(),
           ),
           GoRoute(
             path: Routes.settings,
