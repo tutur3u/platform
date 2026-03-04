@@ -100,6 +100,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Admin Client**: Use `createAdminClient` (sbAdmin) to bypass triggers checking `auth.uid()`. Validate permissions with user client first.
 - **User Email**: Never query `public.users.email` (it doesn't exist). Use `public.user_private_details`.
 - **Reset-Only Local Defaults**: If behavior should apply only after `bun sb:reset` (local dev bootstrap), implement it in `apps/database/scripts/*` and wire it into the reset script; do not encode reset-only behavior in migrations.
+- **Workspace-Scoped Mutation Follow-Through**: For workspace-scoped `UPDATE`/`DELETE` API handlers, request returning rows (`select(...).maybeSingle()` or equivalent) and stop follow-up side effects when no row matched; never run dependent child-table deletes/updates based only on a requested ID.
 
 ### 6.2 UI & Rendering Patterns
 

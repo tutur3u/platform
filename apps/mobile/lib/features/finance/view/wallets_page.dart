@@ -186,9 +186,9 @@ class _WalletsViewState extends State<_WalletsView> {
   }
 
   Future<void> _loadWallets() async {
-    final requestToken = ++_currentWalletsRequestToken;
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
+    final requestToken = ++_currentWalletsRequestToken;
 
     setState(() {
       _isLoading = true;

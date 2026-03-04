@@ -108,11 +108,13 @@ export async function PUT(req: Request, { params }: Params) {
   // Extract credit-specific fields before updating the wallet
   const { limit, statement_date, payment_date, ...walletData } = data;
 
-  const { error } = await supabase
+  const { data: updatedWallet, error } = await supabase
     .from('workspace_wallets')
     .update(walletData)
+    .select('id')
     .eq('id', id)
-    .eq('ws_id', normalizedWsId);
+    .eq('ws_id', normalizedWsId)
+    .maybeSingle();
 
   if (error) {
     console.log(error);
@@ -120,6 +122,10 @@ export async function PUT(req: Request, { params }: Params) {
       { message: 'Error updating workspace wallets' },
       { status: 500 }
     );
+  }
+
+  if (!updatedWallet) {
+    return NextResponse.json({ message: 'Wallet not found' }, { status: 404 });
   }
 
   // Handle credit wallet data based on type

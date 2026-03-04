@@ -72,28 +72,15 @@ class FinanceRepository {
   }) async {
     final payload = <String, dynamic>{
       'name': name,
+      'description': description,
       'type': type,
       'currency': currency,
+      'icon': icon,
+      'image_src': imageSrc,
+      'limit': limit,
+      'statement_date': statementDate,
+      'payment_date': paymentDate,
     };
-
-    if (description != null) {
-      payload['description'] = description;
-    }
-    if (icon != null) {
-      payload['icon'] = icon;
-    }
-    if (imageSrc != null) {
-      payload['image_src'] = imageSrc;
-    }
-    if (limit != null) {
-      payload['limit'] = limit;
-    }
-    if (statementDate != null) {
-      payload['statement_date'] = statementDate;
-    }
-    if (paymentDate != null) {
-      payload['payment_date'] = paymentDate;
-    }
 
     await _api.putJson(FinanceEndpoints.wallet(wsId, walletId), payload);
   }
