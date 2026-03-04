@@ -610,10 +610,12 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
 
     _walletId = hasWallet
         ? _walletId
-        : (_wallets.isNotEmpty ? _wallets.first.id : null);
+        : (_isCreate ? null : (_wallets.isNotEmpty ? _wallets.first.id : null));
     _categoryId = hasCategory
         ? _categoryId
-        : (_categories.isNotEmpty ? _categories.first.id : null);
+        : (_isCreate
+              ? null
+              : (_categories.isNotEmpty ? _categories.first.id : null));
   }
 
   NumberSymbols get _localeNumberSymbols {
