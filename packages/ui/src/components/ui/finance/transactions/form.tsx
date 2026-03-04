@@ -157,6 +157,13 @@ export function TransactionForm({
   const hasUpdatePermission = canUpdateTransactions && data?.id;
   const hasFormPermission = hasCreatePermission || hasUpdatePermission;
 
+  const refreshTransactions = async () => {
+    await queryClient.invalidateQueries({
+      queryKey: [`/api/workspaces/${wsId}/transactions/infinite`],
+    });
+    router.refresh();
+  };
+
   const createTransferMutation = useMutation({
     mutationFn: async (payload: {
       origin_wallet_id: string;
@@ -184,11 +191,74 @@ export function TransactionForm({
 
       return body;
     },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: [`/api/workspaces/${wsId}/transactions/infinite`],
-      });
-      router.refresh();
+  });
+
+  const createOrUpdateTransactionMutation = useMutation({
+    mutationFn: async (payload: {
+      id?: string;
+      description?: string;
+      amount: number;
+      origin_wallet_id: string;
+      category_id?: string;
+      taken_at: Date;
+      report_opt_in: boolean;
+      tag_ids?: string[];
+      is_amount_confidential?: boolean;
+      is_description_confidential?: boolean;
+      is_category_confidential?: boolean;
+    }) => {
+      const body = await fetcher(
+        payload.id
+          ? `/api/workspaces/${wsId}/transactions/${payload.id}`
+          : `/api/workspaces/${wsId}/transactions`,
+        {
+          method: payload.id ? 'PUT' : 'POST',
+          cache: 'no-store',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!body || body.message !== 'success') {
+        throw new Error(
+          body?.message ||
+            t('transaction-data-table.error_creating_transaction')
+        );
+      }
+
+      return body;
+    },
+  });
+
+  const updateTransactionMutation = useMutation({
+    mutationFn: async (payload: {
+      id: string;
+      description?: string;
+      amount: number;
+      wallet_id: string;
+      category_id?: string | null;
+      taken_at: Date;
+      report_opt_in: boolean;
+      tag_ids?: string[];
+    }) => {
+      const body = await fetcher(
+        `/api/workspaces/${wsId}/transactions/${payload.id}`,
+        {
+          method: 'PUT',
+          cache: 'no-store',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!body || body.message !== 'success') {
+        throw new Error(
+          body?.message ||
+            t('transaction-data-table.error_creating_transaction')
+        );
+      }
+
+      return body;
     },
   });
 
@@ -300,73 +370,102 @@ export function TransactionForm({
 
     setLoading(true);
 
-    if (isTransfer) {
-      const sourceWallet = wallets?.find(
-        (wallet) => wallet.id === formData.origin_wallet_id
-      );
-      const destinationWallet = wallets?.find(
-        (wallet) => wallet.id === formData.destination_wallet_id
-      );
-      const sourceCurrency = sourceWallet?.currency;
-      const destinationCurrency = destinationWallet?.currency;
-      const destinationAmount =
-        sourceCurrency &&
-        destinationCurrency &&
-        sourceCurrency.toUpperCase() === destinationCurrency.toUpperCase()
-          ? formData.amount
-          : formData.destination_amount;
+    try {
+      if (isTransfer) {
+        const sourceWallet = wallets?.find(
+          (wallet) => wallet.id === formData.origin_wallet_id
+        );
+        const destinationWallet = wallets?.find(
+          (wallet) => wallet.id === formData.destination_wallet_id
+        );
+        const sourceCurrency = sourceWallet?.currency;
+        const destinationCurrency = destinationWallet?.currency;
+        const destinationAmount =
+          sourceCurrency &&
+          destinationCurrency &&
+          sourceCurrency.toUpperCase() === destinationCurrency.toUpperCase()
+            ? formData.amount
+            : formData.destination_amount;
 
-      try {
-        await createTransferMutation.mutateAsync({
-          origin_wallet_id: formData.origin_wallet_id,
-          destination_wallet_id: formData.destination_wallet_id!,
-          amount: formData.amount,
-          destination_amount: destinationAmount,
+        if (data?.id && data.transfer?.linked_transaction_id) {
+          const originTransactionId = data.transfer.is_origin
+            ? data.id
+            : data.transfer.linked_transaction_id;
+          const destinationTransactionId = data.transfer.is_origin
+            ? data.transfer.linked_transaction_id
+            : data.id;
+
+          await Promise.all([
+            updateTransactionMutation.mutateAsync({
+              id: originTransactionId,
+              amount: -Math.abs(formData.amount),
+              description: formData.description,
+              wallet_id: formData.origin_wallet_id,
+              category_id: null,
+              taken_at: formData.taken_at,
+              report_opt_in: formData.report_opt_in,
+              tag_ids: formData.tag_ids,
+            }),
+            updateTransactionMutation.mutateAsync({
+              id: destinationTransactionId,
+              amount: Math.abs(destinationAmount ?? formData.amount),
+              description: formData.description,
+              wallet_id: formData.destination_wallet_id!,
+              category_id: null,
+              taken_at: formData.taken_at,
+              report_opt_in: formData.report_opt_in,
+              tag_ids: formData.tag_ids,
+            }),
+          ]);
+
+          await refreshTransactions();
+        } else {
+          // New transfer mode
+          await createTransferMutation.mutateAsync({
+            origin_wallet_id: formData.origin_wallet_id,
+            destination_wallet_id: formData.destination_wallet_id!,
+            amount: formData.amount,
+            destination_amount: destinationAmount,
+            description: formData.description,
+            taken_at: formData.taken_at,
+            report_opt_in: formData.report_opt_in,
+            tag_ids: formData.tag_ids,
+          });
+
+          await refreshTransactions();
+        }
+      } else {
+        // Normal transaction mode
+        await createOrUpdateTransactionMutation.mutateAsync({
+          id: formData.id,
           description: formData.description,
+          amount:
+            categories?.find((c) => c.id === formData.category_id)
+              ?.is_expense === false
+              ? Math.abs(formData.amount)
+              : -Math.abs(formData.amount),
+          origin_wallet_id: formData.origin_wallet_id,
+          category_id: formData.category_id,
           taken_at: formData.taken_at,
           report_opt_in: formData.report_opt_in,
           tag_ids: formData.tag_ids,
+          is_amount_confidential: formData.is_amount_confidential,
+          is_description_confidential: formData.is_description_confidential,
+          is_category_confidential: formData.is_category_confidential,
         });
 
-        onFinish?.(formData);
-      } catch (error) {
-        setLoading(false);
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : t('transaction-data-table.error_creating_transaction')
-        );
+        await refreshTransactions();
       }
-    } else {
-      // Normal transaction mode
-      const res = await fetch(
-        formData?.id
-          ? `/api/workspaces/${wsId}/transactions/${formData.id}`
-          : `/api/workspaces/${wsId}/transactions`,
-        {
-          method: formData?.id ? 'PUT' : 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ...formData,
-            amount:
-              categories?.find((c) => c.id === formData.category_id)
-                ?.is_expense === false
-                ? Math.abs(formData.amount)
-                : -Math.abs(formData.amount),
-          }),
-        }
+
+      onFinish?.(formData);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t('transaction-data-table.error_creating_transaction')
       );
-
-      if (res.ok) {
-        queryClient.invalidateQueries({
-          queryKey: [`/api/workspaces/${wsId}/transactions/infinite`],
-        });
-        onFinish?.(formData);
-        router.refresh();
-      } else {
-        setLoading(false);
-        toast.error(t('transaction-data-table.error_creating_transaction'));
-      }
+    } finally {
+      setLoading(false);
     }
   }
 

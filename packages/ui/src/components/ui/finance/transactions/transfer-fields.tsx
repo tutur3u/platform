@@ -136,7 +136,7 @@ export function TransferFields({
                   ) : (
                     <>
                       <Sparkles className="h-3 w-3" />
-                      Auto
+                      {t('transaction-data-table.destination_auto')}
                     </>
                   )}
                 </button>

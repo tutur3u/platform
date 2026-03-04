@@ -9147,6 +9147,7 @@
     "description": "Description",
     "description_placeholder": "e.g., Lunch, Groceries, Taxi...",
     "destination_amount": "Destination Amount",
+    "destination_auto": "Auto",
     "destination_auto_badge": "Auto",
     "destination_auto_hint": "Auto-fill destination amount based on exchange rate",
     "destination_manual_badge": "Manual",

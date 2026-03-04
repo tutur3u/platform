@@ -15,6 +15,36 @@ interface Params {
   }>;
 }
 
+const NORMALIZATION_ERROR_MESSAGES = new Set([
+  'User not authenticated',
+  'Personal workspace not found',
+  'Invalid workspace',
+]);
+
+function isWorkspaceNormalizationError(error: unknown): error is Error {
+  if (!(error instanceof Error)) return false;
+
+  return (
+    NORMALIZATION_ERROR_MESSAGES.has(error.message) ||
+    error.name === 'WorkspaceAuthError' ||
+    error.name === 'WorkspaceAccessError' ||
+    error.name === 'WorkspaceRedirectRequiredError'
+  );
+}
+
+type TransferIntegrityIncident = {
+  wsId: string;
+  fromTransactionId: string;
+  toTransactionId: string;
+  linkError: string;
+  cleanupError?: string;
+};
+
+function notifyTransferIntegrityIncident(incident: TransferIntegrityIncident) {
+  console.error('[FinanceTransferIntegrityIncident]', incident);
+  process.emit('finance-transfer-integrity-incident', incident);
+}
+
 const TransferSchema = z
   .object({
     origin_wallet_id: z.string().uuid(),
@@ -39,8 +69,7 @@ export async function POST(req: Request, { params }: Params) {
   try {
     normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : 'Invalid workspace';
+    const errorMessage = error instanceof Error ? error.message : '';
 
     if (errorMessage === 'User not authenticated') {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
@@ -53,7 +82,21 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
-    return NextResponse.json({ message: 'Invalid workspace' }, { status: 400 });
+    if (isWorkspaceNormalizationError(error)) {
+      return NextResponse.json(
+        { message: 'Invalid workspace' },
+        { status: 400 }
+      );
+    }
+
+    console.error('Unexpected workspace normalization error in transfers API', {
+      wsId,
+      error,
+    });
+    return NextResponse.json(
+      { message: 'Internal server error' },
+      { status: 500 }
+    );
   }
 
   const permissions = await getPermissions({
@@ -243,19 +286,61 @@ export async function POST(req: Request, { params }: Params) {
 
   if (linkErr) {
     console.error('Error linking transfer transactions:', linkErr);
-    // Clean up both transactions
-    const deleteTransfersResult = await supabase
+    // Validate user still has access to both transactions before admin cleanup
+    const { data: rollbackValidationRows, error: rollbackValidationError } =
+      await supabase
+        .from('wallet_transactions')
+        .select('id')
+        .in('id', [fromTx.id, toTx.id]);
+
+    if (
+      rollbackValidationError ||
+      !rollbackValidationRows ||
+      rollbackValidationRows.length !== 2
+    ) {
+      notifyTransferIntegrityIncident({
+        wsId: normalizedWsId,
+        fromTransactionId: fromTx.id,
+        toTransactionId: toTx.id,
+        linkError: linkErr.message,
+        cleanupError: rollbackValidationError?.message,
+      });
+
+      return NextResponse.json(
+        {
+          message: 'Transfer rollback integrity error',
+          fromTransactionId: fromTx.id,
+          toTransactionId: toTx.id,
+          linkError: linkErr.message,
+        },
+        { status: 500 }
+      );
+    }
+
+    // Clean up both transactions with admin client to bypass auth.uid() trigger paths
+    const deleteTransfersResult = await sbAdmin
       .from('wallet_transactions')
       .delete()
       .in('id', [fromTx.id, toTx.id]);
 
     if (deleteTransfersResult.error) {
-      console.error('Failed to clean up transfer transactions', {
+      notifyTransferIntegrityIncident({
+        wsId: normalizedWsId,
         fromTransactionId: fromTx.id,
         toTransactionId: toTx.id,
-        linkError: linkErr,
-        cleanupError: deleteTransfersResult.error,
+        linkError: linkErr.message,
+        cleanupError: deleteTransfersResult.error.message,
       });
+
+      return NextResponse.json(
+        {
+          message: 'Transfer rollback integrity error',
+          fromTransactionId: fromTx.id,
+          toTransactionId: toTx.id,
+          linkError: linkErr.message,
+        },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json(

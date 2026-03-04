@@ -9147,6 +9147,7 @@
     "description": "Mô tả",
     "description_placeholder": "VD: Ăn trưa, Đi chợ, Taxi...",
     "destination_amount": "Số tiền nhận",
+    "destination_auto": "Tự động",
     "destination_auto_badge": "Tự động",
     "destination_auto_hint": "Tự động điền số tiền nhận dựa trên tỷ giá",
     "destination_manual_badge": "Thủ công",
