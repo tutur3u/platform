@@ -4,7 +4,7 @@ import type { ModelMessage, UIMessage } from 'ai';
 import { convertToModelMessages } from 'ai';
 import {
   FILE_ONLY_PLACEHOLDERS,
-  getLatestUserMessageWithAttachments,
+  getLatestUserAttachments,
   getMessageAttachments,
 } from '../chat-attachment-metadata';
 import {
@@ -90,8 +90,8 @@ export async function insertUserChatMessageSafely({
     existingMessage.creator_id === message.creator_id &&
     existingMessage.role === message.role &&
     (existingMessage.content ?? '') === (message.content ?? '') &&
-    JSON.stringify(existingMessage.metadata) ===
-      JSON.stringify(message.metadata) &&
+    JSON.stringify(existingMessage.metadata ?? {}) ===
+      JSON.stringify(message.metadata ?? {}) &&
     (existingMessage.model ?? '') === (message.model ?? '')
   ) {
     return { error: null };
@@ -180,17 +180,16 @@ export async function prepareProcessedMessages(
   userId: string,
   creditWsId?: string | null
 ): Promise<{ processedMessages: ModelMessage[] } | { error: Response }> {
-  const latestAttachmentTurn =
-    getLatestUserMessageWithAttachments(normalizedMessages);
+  const currentTurnAttachments = getLatestUserAttachments(normalizedMessages);
   let messagesWithFileContext = normalizedMessages;
 
-  if (wsId && chatId && latestAttachmentTurn.attachments.length > 0) {
+  if (wsId && chatId && currentTurnAttachments.attachments.length > 0) {
     try {
       const { digestBlocks } = await resolveChatFileDigests({
         chatId,
-        chatFiles: latestAttachmentTurn.attachments,
+        chatFiles: currentTurnAttachments.attachments,
         creditWsId,
-        messageId: latestAttachmentTurn.message?.id,
+        messageId: currentTurnAttachments.message?.id,
         userId,
         wsId,
       });
@@ -198,12 +197,12 @@ export async function prepareProcessedMessages(
       messagesWithFileContext = await injectFileDigestContextIntoUiMessages({
         digestBlocks,
         messages: normalizedMessages,
-        targetMessageId: latestAttachmentTurn.message?.id,
+        targetMessageId: currentTurnAttachments.message?.id,
       });
     } catch (error) {
       console.error('[AI Chat] Failed to resolve or inject file digests:', {
         chatId: chatId.slice(0, 8),
-        messageId: latestAttachmentTurn.message?.id?.slice(0, 8) ?? null,
+        messageId: currentTurnAttachments.message?.id?.slice(0, 8) ?? null,
         error: error instanceof Error ? error.message : String(error),
       });
       // Fail open: continue with original messages

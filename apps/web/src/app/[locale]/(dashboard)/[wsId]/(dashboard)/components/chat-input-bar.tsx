@@ -222,7 +222,16 @@ export default function ChatInputBar({
 
         // Guard: do not submit if already streaming or busy.
         // If busy, we poll until the hook reports idle before submitting.
+        const startedAt = Date.now();
         const submitWhenReady = async () => {
+          // If we've been waiting for more than 30 seconds, give up to avoid stuck loops.
+          if (Date.now() - startedAt > 30000) {
+            console.error(
+              '[Mira Chat] Audio submit timeout reached. Giving up.'
+            );
+            return;
+          }
+
           if (isStreamingRef.current) {
             setTimeout(submitWhenReady, 500);
             return;

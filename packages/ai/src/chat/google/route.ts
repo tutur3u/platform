@@ -7,7 +7,10 @@ import {
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { consumeStream, gateway, smoothStream, streamText } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
-import { getLatestUserMessageWithAttachments } from '../chat-attachment-metadata';
+import {
+  getLatestUserAttachments,
+  getLatestUserMessageWithAttachments,
+} from '../chat-attachment-metadata';
 import type { CreditSource as SharedCreditSource } from '../credit-source';
 import { FILE_DIGEST_MODEL } from '../file-digests/constants';
 import {
@@ -336,10 +339,10 @@ export function createPOST(
       const isAttachmentOnlyTurn = latestUserMessage
         ? isAttachmentOnlyUserTurn(latestUserMessage)
         : false;
-      const latestAttachmentTurn =
-        getLatestUserMessageWithAttachments(normalizedMessages);
+      const currentTurnAttachments =
+        getLatestUserAttachments(normalizedMessages);
 
-      if (latestAttachmentTurn.attachments.length > 0) {
+      if (currentTurnAttachments.attachments.length > 0) {
         const digestPreflight = await performCreditPreflight({
           model: FILE_DIGEST_MODEL,
           sbAdmin,
@@ -451,7 +454,7 @@ export function createPOST(
         isMiraMode &&
         shouldBypassToolLoopForAttachmentReply(
           processedMessages,
-          latestAttachmentTurn.attachments.length > 0
+          currentTurnAttachments.attachments.length > 0
         );
 
       // Provider-native Google Search is only safe when it is the sole tool set.
@@ -517,7 +520,7 @@ export function createPOST(
           isMiraMode &&
           !shouldBypassMiraToolLoop &&
           isAttachmentOnlyTurn &&
-          latestAttachmentTurn.attachments.length > 0
+          currentTurnAttachments.attachments.length > 0
             ? 'This user turn contains only current-turn attachments, so the attachment digest may contain the user’s actual request. You may use normal non-persistence action tools when the digest asks you to do something. Do not treat this as pure conversation by default. Never print a tool plan, tool names, or a JSON array of tools in assistant text; call the tool directly.'
             : null,
         ]

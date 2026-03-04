@@ -82,3 +82,18 @@ export function getLatestUserMessageWithAttachments(messages: UIMessage[]): {
 
   return { attachments: [], message: null };
 }
+
+export function getLatestUserAttachments(messages: UIMessage[]): {
+  attachments: ChatAttachmentMetadata[];
+  message: UIMessage | null;
+} {
+  const latestMessage = messages[messages.length - 1];
+  if (!latestMessage || latestMessage.role !== 'user') {
+    return { attachments: [], message: null };
+  }
+
+  return {
+    attachments: getMessageAttachments(latestMessage),
+    message: latestMessage,
+  };
+}

@@ -3,6 +3,7 @@ import {
   insertUserChatMessageSafely,
   isAttachmentOnlyUserTurn,
   persistLatestUserMessage,
+  prepareProcessedMessages,
   rewriteAttachmentPathsInMessages,
 } from './route-message-preparation';
 
@@ -71,7 +72,7 @@ describe('persistLatestUserMessage', () => {
   it('persists attachment-only turns without synthetic placeholder text', async () => {
     const insertChatMessage = vi.fn(async () => ({ error: null }));
     const findExistingMessageById = vi.fn(async () => ({
-      data: null as any,
+      data: null,
       error: null,
     }));
 
@@ -118,7 +119,7 @@ describe('persistLatestUserMessage', () => {
   it('does not let message metadata override the trusted source', async () => {
     const insertChatMessage = vi.fn(async () => ({ error: null }));
     const findExistingMessageById = vi.fn(async () => ({
-      data: null as any,
+      data: null,
       error: null,
     }));
 
@@ -226,7 +227,7 @@ describe('insertUserChatMessageSafely', () => {
   it('returns the original insert error when the duplicate lookup finds no row', async () => {
     const result = await insertUserChatMessageSafely({
       findExistingMessageById: async () => ({
-        data: null as any,
+        data: null,
         error: null,
       }),
       insertChatMessage: async () => ({
@@ -246,5 +247,44 @@ describe('insertUserChatMessageSafely', () => {
     });
 
     expect(result.error?.message).toContain('duplicate key value');
+  });
+});
+
+vi.mock('./message-file-processing', () => ({
+  resolveChatFileDigests: vi.fn(),
+  injectFileDigestContextIntoUiMessages: vi.fn(),
+}));
+
+describe('prepareProcessedMessages', () => {
+  it('does not process file digests if the latest user turn has no attachments', async () => {
+    const { resolveChatFileDigests } = await import(
+      './message-file-processing'
+    );
+
+    const messages: any[] = [
+      {
+        id: 'user-1',
+        role: 'user',
+        metadata: {
+          attachments: [{ name: 'old.pdf', storagePath: 'old.pdf' }],
+        },
+        parts: [{ type: 'text', text: 'analyze this' }],
+      },
+      {
+        id: 'assistant-1',
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'done' }],
+      },
+      {
+        id: 'user-2',
+        role: 'user',
+        metadata: {},
+        parts: [{ type: 'text', text: 'new question without attachments' }],
+      },
+    ];
+
+    await prepareProcessedMessages(messages, 'ws-1', 'chat-1', 'user-1');
+
+    expect(resolveChatFileDigests).not.toHaveBeenCalled();
   });
 });

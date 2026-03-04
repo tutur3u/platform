@@ -83,7 +83,7 @@ export function createPOST(
         normalizeChatAttachmentMetadata(messageMetadata?.attachments).length >
         0;
 
-      if (!message && !hasAttachments) {
+      if (!message && !hasAttachments && !messageId) {
         return NextResponse.json('No message provided', { status: 400 });
       }
 
