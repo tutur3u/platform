@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { groupMessageParts } from '../group-message-parts';
 import {
+  getAssistantDisplayText,
   getRenderableMessageAttachments,
   hasToolParts,
   hasVisualToolPart,
@@ -84,6 +85,79 @@ describe('chat message tool visibility', () => {
         type: 'audio/wav',
       }),
     ]);
+  });
+
+  it('dedupes repeated attachments with the same storage identity', () => {
+    expect(
+      getRenderableMessageAttachments(
+        {
+          id: 'user-1',
+          role: 'user',
+          parts: [],
+        } as never,
+        new Map([
+          [
+            'user-1',
+            [
+              {
+                id: 'dup-1',
+                name: 'mira-audio.webm',
+                previewUrl: 'blob:one',
+                signedUrl: null,
+                size: 42,
+                storagePath: 'ws/chat/mira-audio.webm',
+                type: 'audio/webm',
+              },
+              {
+                id: 'dup-2',
+                name: 'mira-audio.webm',
+                previewUrl: null,
+                signedUrl: 'https://example.com/audio.webm',
+                size: 42,
+                storagePath: 'ws/chat/mira-audio.webm',
+                type: 'audio/webm',
+              },
+            ],
+          ],
+        ])
+      )
+    ).toEqual([
+      expect.objectContaining({
+        name: 'mira-audio.webm',
+        previewUrl: 'blob:one',
+        signedUrl: 'https://example.com/audio.webm',
+        storagePath: 'ws/chat/mira-audio.webm',
+        type: 'audio/webm',
+      }),
+    ]);
+  });
+
+  it('strips leading planner meta tool calls from assistant display text', () => {
+    expect(
+      getAssistantDisplayText({
+        id: 'assistant-1',
+        role: 'assistant',
+        parts: [
+          {
+            type: 'text',
+            text: '{"tools":["no_action_needed"]}\n\nHello there.',
+          },
+        ],
+      } as never)
+    ).toBe('Hello there.');
+
+    expect(
+      getAssistantDisplayText({
+        id: 'assistant-2',
+        role: 'assistant',
+        parts: [
+          {
+            type: 'text',
+            text: 'select_tools(tools=["no_action_needed"])\n\nHello there.',
+          },
+        ],
+      } as never)
+    ).toBe('Hello there.');
   });
 
   it('detects visual render_ui tool output separately', () => {

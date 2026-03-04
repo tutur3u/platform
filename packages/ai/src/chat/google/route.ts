@@ -417,10 +417,6 @@ export function createPOST(
       });
 
       const effectiveSource = isMiraMode ? 'Mira' : 'Rewise';
-      const shouldDisableMiraToolsForTurn =
-        isMiraMode &&
-        isAttachmentOnlyTurn &&
-        latestAttachmentTurn.attachments.length > 0;
 
       const resolvedGatewayModel = model.includes('/')
         ? gateway(model)
@@ -503,30 +499,30 @@ export function createPOST(
         messages: processedMessages,
         system: [
           isMiraMode && miraSystemPrompt ? miraSystemPrompt : systemInstruction,
-          shouldDisableMiraToolsForTurn
-            ? 'This user turn contains only current-turn attachments. Answer directly in plain text or markdown from the provided attachment digest context. Do not call tools for this turn.'
+          isMiraMode &&
+          isAttachmentOnlyTurn &&
+          latestAttachmentTurn.attachments.length > 0
+            ? 'This user turn contains only current-turn attachments, so the attachment digest may contain the user’s actual request. You may use normal non-persistence action tools when the digest asks you to do something. Do not treat this as pure conversation by default. Never print a tool plan, tool names, or a JSON array of tools in assistant text; call the tool directly.'
             : null,
         ]
           .filter(Boolean)
           .join('\n\n'),
         ...(cappedMaxOutput ? { maxOutputTokens: cappedMaxOutput } : {}),
-        ...(shouldDisableMiraToolsForTurn
-          ? {}
-          : miraTools
-            ? {
-                tools: miraTools,
-                stopWhen: ({ steps }) =>
-                  steps.length >= MAX_MIRA_STEPS ||
-                  hasReachedMiraToolCallLimit(steps) ||
-                  shouldStopAfterNoActionConclusion(steps),
-                toolChoice: 'auto' as const,
-                prepareStep: prepareStep as NonNullable<
-                  NonNullable<Parameters<typeof streamText>[0]>['prepareStep']
-                >,
-              }
-            : {
-                tools: googleSearchTool,
-              }),
+        ...(miraTools
+          ? {
+              tools: miraTools,
+              stopWhen: ({ steps }) =>
+                steps.length >= MAX_MIRA_STEPS ||
+                hasReachedMiraToolCallLimit(steps) ||
+                shouldStopAfterNoActionConclusion(steps),
+              toolChoice: 'auto' as const,
+              prepareStep: prepareStep as NonNullable<
+                NonNullable<Parameters<typeof streamText>[0]>['prepareStep']
+              >,
+            }
+          : {
+              tools: googleSearchTool,
+            }),
         providerOptions: {
           google: {
             ...thinkingConfig,

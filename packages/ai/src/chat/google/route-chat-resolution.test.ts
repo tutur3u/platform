@@ -50,7 +50,7 @@ describe('moveTempFilesToThread', () => {
     await expect(result.error.text()).resolves.toBe('list failed');
   });
 
-  it('returns an error when any file move fails', async () => {
+  it('continues when some file moves fail and rewrites the successful subset', async () => {
     const moveFile = vi
       .fn()
       .mockResolvedValueOnce({ error: null })
@@ -67,10 +67,15 @@ describe('moveTempFilesToThread', () => {
       userId: 'user-1',
     });
 
-    expect(result.error).toBeInstanceOf(Response);
-    if (!result.error) {
-      throw new Error('Expected error response');
+    expect(result.error).toBeNull();
+    if (result.error) {
+      throw result.error;
     }
-    await expect(result.error.text()).resolves.toBe('move failed');
+    expect(result.movedPaths.size).toBe(1);
+    expect(
+      result.movedPaths.get(
+        'workspace-1/chats/ai/resources/temp/user-1/first.png'
+      )
+    ).toBe('workspace-1/chats/ai/resources/chat-1/first.png');
   });
 });

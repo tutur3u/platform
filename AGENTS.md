@@ -143,6 +143,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Mira No-Action Termination**: When `select_tools` resolves to only `no_action_needed`, close the tool loop for that response (`activeTools: []`, plain-text continuation) instead of forcing another meta-tool step. Otherwise providers can reopen `select_tools` and loop on no-op selections.
 - **Mira Native Attachment Routing**: When a model can consume attachments natively, keep audio/image/video inputs on the multimodal path. Do not steer them into `convert_file_to_markdown`, and make file-conversion guards tolerant of bare filenames in tool args so planner mistakes degrade into corrective guidance instead of misleading workspace-path errors.
 - **Mira Attachment Visibility**: Persist the first user turn of a new chat before relying on restored chat state, and let user-message rendering fall back to `message.metadata.attachments` when the transient attachment map has not caught up yet so sent files do not flash and disappear.
+- **Mira Attachment Restoration Matching**: When rebuilding chat attachment state from stored file URLs, match files to messages by canonical `storagePath`, not filename. Recorder uploads and repeated exports can reuse the same filename across turns, so filename-based matching can attach a file to the wrong message or duplicate a single upload.
 
 ### 6.4 Tooling & CI
 

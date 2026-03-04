@@ -32,12 +32,25 @@ export function getErrorMessage(error: unknown): string {
   }
 }
 
+const LEADING_ASSISTANT_META_TOOL_CALL_PATTERN =
+  /^\s*(?:`{1,3})?(?:select_tools|no_action_needed)\([^)\n]*\)(?:`{1,3})?\s*(?:\n+|$)/;
+const LEADING_ASSISTANT_META_TOOL_JSON_PATTERN =
+  /^\s*(?:`{1,3})?\{\s*"tools"\s*:\s*\[(?:\s*"[^"]+"\s*,?)*\]\s*\}(?:`{1,3})?\s*(?:\n+|$)/;
+
 export function hasTextContent(message: UIMessage): boolean {
   return (
     message.parts?.some(
       (p) =>
         (isTextPart(p) && p.text.trim().length > 0) ||
         (isReasoningPart(p) && p.text.trim().length > 0)
+    ) ?? false
+  );
+}
+
+export function hasReasoningContent(message: UIMessage): boolean {
+  return (
+    message.parts?.some(
+      (part) => isReasoningPart(part) && part.text.trim().length > 0
     ) ?? false
   );
 }
@@ -100,6 +113,25 @@ export function getMessageText(message: UIMessage): string {
   );
 }
 
+export function stripLeadingAssistantMetaToolCall(text: string): string {
+  let next = text;
+
+  while (
+    LEADING_ASSISTANT_META_TOOL_CALL_PATTERN.test(next) ||
+    LEADING_ASSISTANT_META_TOOL_JSON_PATTERN.test(next)
+  ) {
+    next = next
+      .replace(LEADING_ASSISTANT_META_TOOL_CALL_PATTERN, '')
+      .replace(LEADING_ASSISTANT_META_TOOL_JSON_PATTERN, '');
+  }
+
+  return next.trimStart();
+}
+
+export function getAssistantDisplayText(message: UIMessage): string {
+  return stripLeadingAssistantMetaToolCall(getMessageText(message));
+}
+
 const FILE_ONLY_PLACEHOLDERS = new Set([
   'Please analyze the attached file(s).',
   'Please analyze the attached file(s)',
@@ -142,7 +174,9 @@ export function getRenderableMessageAttachments(
   message: UIMessage,
   messageAttachments?: Map<string, MessageFileAttachment[]>
 ): MessageFileAttachment[] {
-  const directAttachments = messageAttachments?.get(message.id) ?? [];
+  const directAttachments = dedupeRenderableAttachments(
+    messageAttachments?.get(message.id) ?? []
+  );
   const metadataAttachments = normalizeMessageMetadataAttachments(message);
 
   if (metadataAttachments.length === 0) {
@@ -173,6 +207,32 @@ export function getRenderableMessageAttachments(
     attachmentsByKey.set(key, {
       ...existing,
       alias: attachment.alias ?? existing.alias ?? null,
+    });
+  }
+
+  return [...attachmentsByKey.values()];
+}
+
+function dedupeRenderableAttachments(
+  attachments: MessageFileAttachment[]
+): MessageFileAttachment[] {
+  const attachmentsByKey = new Map<string, MessageFileAttachment>();
+
+  for (const attachment of attachments) {
+    const key = `${attachment.storagePath || attachment.name}|${attachment.type}`;
+    const existing = attachmentsByKey.get(key);
+
+    if (!existing) {
+      attachmentsByKey.set(key, attachment);
+      continue;
+    }
+
+    attachmentsByKey.set(key, {
+      ...existing,
+      alias: attachment.alias ?? existing.alias ?? null,
+      previewUrl: existing.previewUrl ?? attachment.previewUrl,
+      signedUrl: existing.signedUrl ?? attachment.signedUrl,
+      storagePath: existing.storagePath ?? attachment.storagePath,
     });
   }
 

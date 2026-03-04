@@ -103,6 +103,48 @@ export interface RestoredChatPayload {
   messageAttachments: Map<string, MessageFileAttachment[]>;
 }
 
+export function findMatchingMessageIdForStoredFile({
+  files,
+  messages,
+}: {
+  files: Array<{
+    path: string;
+  }>;
+  messages: Array<{
+    id: string;
+    metadata: unknown;
+    role: string;
+  }>;
+}): Map<string, string> {
+  const messageIdByStoragePath = new Map<string, string>();
+
+  for (const message of messages) {
+    for (const attachment of normalizeStoredAttachments(message.metadata)) {
+      messageIdByStoragePath.set(attachment.storagePath, message.id);
+    }
+  }
+
+  const resolved = new Map<string, string>();
+  const userMessages = messages.filter(
+    (message) => message.role.toLowerCase() === 'user'
+  );
+  const canUseSingleMessageLegacyFallback =
+    userMessages.length === 1 && messageIdByStoragePath.size === 0;
+  const fallbackMessageId = canUseSingleMessageLegacyFallback
+    ? userMessages[0]?.id
+    : undefined;
+
+  for (const file of files) {
+    const matchedMessageId =
+      messageIdByStoragePath.get(file.path) ?? fallbackMessageId;
+    if (matchedMessageId) {
+      resolved.set(file.path, matchedMessageId);
+    }
+  }
+
+  return resolved;
+}
+
 export function restoreMessages(
   messagesData: Array<{
     id: string;
@@ -300,19 +342,13 @@ export async function loadExistingChat({
       };
 
       if (files.length > 0) {
-        const firstUserMessage = messagesData?.find(
-          (message) => message.role.toLowerCase() === 'user'
-        );
+        const messageIdByStoragePath = findMatchingMessageIdForStoredFile({
+          files,
+          messages: messagesData ?? [],
+        });
 
         files.forEach((file, index) => {
-          const msgMatch = messagesData?.find((message) =>
-            normalizeStoredAttachments(message.metadata).some(
-              (attachment) =>
-                attachment.storagePath === file.path ||
-                attachment.name === file.name
-            )
-          );
-          const targetMsgId = msgMatch?.id || firstUserMessage?.id;
+          const targetMsgId = messageIdByStoragePath.get(file.path);
           if (!targetMsgId) return;
 
           const existing = messageAttachments.get(targetMsgId) || [];

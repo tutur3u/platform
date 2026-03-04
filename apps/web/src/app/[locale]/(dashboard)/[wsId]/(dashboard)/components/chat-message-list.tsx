@@ -14,6 +14,7 @@ import mermaidParser from 'mermaid';
 import { useTranslations } from 'next-intl';
 import { type MutableRefObject, useCallback, useEffect, useRef } from 'react';
 import {
+  getAssistantDisplayText,
   getDisplayText,
   getErrorMessage,
   getMessageText,
@@ -185,7 +186,9 @@ export default function ChatMessageList({
         const prevMessage = messages[index - 1];
         const isContinuation = prevMessage?.role === message.role;
 
-        const messageText = isUser ? displayText : getMessageText(message);
+        const messageText = isUser
+          ? displayText
+          : getAssistantDisplayText(message);
 
         return (
           <div

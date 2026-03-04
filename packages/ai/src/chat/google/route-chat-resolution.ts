@@ -95,14 +95,15 @@ export async function moveTempFilesToThread({
     })
   );
 
-  const failedMove = moveResults.find((result) => result !== null);
-  if (failedMove) {
-    return {
-      error: new Response(
-        failedMove.error.message || 'Failed to move one or more temp files',
-        { status: 500 }
-      ),
-    };
+  const failedMoves = moveResults.filter((result) => result !== null);
+  if (failedMoves.length > 0) {
+    console.error('One or more temp files could not be moved', {
+      chatId,
+      failedCount: failedMoves.length,
+      movedCount: movedPaths.size,
+      userId,
+      wsId,
+    });
   }
 
   return { error: null, movedPaths };

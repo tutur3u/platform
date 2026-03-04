@@ -601,5 +601,33 @@ describe('notification-digest utilities', () => {
       expect(html).toContain('Backlog');
       expect(html).toContain('Done');
     });
+
+    it('should preserve pre-consolidated notifications from the server', async () => {
+      const notifications: NotificationItem[] = [
+        {
+          ...createNotification('task_completed', 'Close onboarding gap'),
+          isConsolidated: true,
+          consolidatedCount: 4,
+          changeTypes: [
+            'task_updated',
+            'task_due_date_changed',
+            'task_completed',
+          ],
+        },
+      ];
+
+      const html = await render(
+        NotificationDigestEmail({
+          userName: 'Test User',
+          workspaceName: 'Test Workspace',
+          notifications,
+          workspaceUrl: 'https://test.com',
+        })
+      );
+
+      expect(html).toContain('updates');
+      expect(html).toContain('>4<');
+      expect(html).toContain('Notification Brief');
+    });
   });
 });

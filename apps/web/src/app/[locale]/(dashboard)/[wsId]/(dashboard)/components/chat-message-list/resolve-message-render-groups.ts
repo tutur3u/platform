@@ -1,7 +1,7 @@
 import type { UIMessage } from 'ai';
 import { resolveRenderUiSpecFromOutput } from '@/components/json-render/render-ui-spec';
 import { groupMessageParts } from './group-message-parts';
-import { hasOutputText } from './helpers';
+import { hasOutputText, stripLeadingAssistantMetaToolCall } from './helpers';
 import type { ToolPartData } from './types';
 
 interface RenderUiOutput {
@@ -167,6 +167,7 @@ export function resolveMessageRenderGroups({
   const hasValidRenderUi = validRenderUiSpecs.length > 0;
   const lastReasoningIdx = groups.findLastIndex((g) => g.kind === 'reasoning');
   const descriptors: MessageRenderDescriptor[] = [];
+  let strippedLeadingAssistantMetaToolCall = false;
 
   for (const [gi, group] of groups.entries()) {
     switch (group.kind) {
@@ -190,13 +191,23 @@ export function resolveMessageRenderGroups({
         break;
       }
       case 'text': {
+        const rawText =
+          typeof group.text === 'string'
+            ? group.text
+            : JSON.stringify(group.text);
+        const text = strippedLeadingAssistantMetaToolCall
+          ? rawText
+          : stripLeadingAssistantMetaToolCall(rawText);
+        strippedLeadingAssistantMetaToolCall = true;
+
+        if (text.trim().length === 0) {
+          break;
+        }
+
         descriptors.push({
           kind: 'text',
           key: `text-${group.index}`,
-          text:
-            typeof group.text === 'string'
-              ? group.text
-              : JSON.stringify(group.text),
+          text,
           isAnimating: isStreaming && isLastAssistant,
         });
         break;

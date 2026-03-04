@@ -152,8 +152,14 @@ describe('persistLatestUserMessage', () => {
 });
 
 describe('insertUserChatMessageSafely', () => {
-  it('treats matching existing user messages as idempotent', async () => {
-    const insertChatMessage = vi.fn(async () => ({ error: null }));
+  it('treats duplicate inserts for matching existing user messages as idempotent', async () => {
+    const insertChatMessage = vi.fn(async () => ({
+      error: {
+        code: '23505',
+        message:
+          'duplicate key value violates unique constraint "ai_chat_messages_pkey"',
+      },
+    }));
 
     const result = await insertUserChatMessageSafely({
       findExistingMessageById: async () => ({
@@ -176,11 +182,18 @@ describe('insertUserChatMessageSafely', () => {
     });
 
     expect(result.error).toBeNull();
-    expect(insertChatMessage).not.toHaveBeenCalled();
+    expect(insertChatMessage).toHaveBeenCalledTimes(1);
   });
 
   it('rejects message ids that belong to a different record', async () => {
     const result = await insertUserChatMessageSafely({
+      insertChatMessage: async () => ({
+        error: {
+          code: '23505',
+          message:
+            'duplicate key value violates unique constraint "ai_chat_messages_pkey"',
+        },
+      }),
       findExistingMessageById: async () => ({
         data: {
           chat_id: 'chat-2',
@@ -190,7 +203,6 @@ describe('insertUserChatMessageSafely', () => {
         },
         error: null,
       }),
-      insertChatMessage: async () => ({ error: null }),
       message: {
         chat_id: 'chat-1',
         content: 'hello',
@@ -201,5 +213,30 @@ describe('insertUserChatMessageSafely', () => {
     });
 
     expect(result.error?.message).toContain('already exists');
+  });
+
+  it('returns the original insert error when the duplicate lookup finds no row', async () => {
+    const result = await insertUserChatMessageSafely({
+      findExistingMessageById: async () => ({
+        data: null,
+        error: null,
+      }),
+      insertChatMessage: async () => ({
+        error: {
+          code: '23505',
+          message:
+            'duplicate key value violates unique constraint "ai_chat_messages_pkey"',
+        },
+      }),
+      message: {
+        chat_id: 'chat-1',
+        content: 'hello',
+        creator_id: 'user-1',
+        id: 'message-1',
+        role: 'USER',
+      },
+    });
+
+    expect(result.error?.message).toContain('duplicate key value');
   });
 });

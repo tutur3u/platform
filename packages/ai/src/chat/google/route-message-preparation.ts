@@ -34,8 +34,13 @@ type InsertChatMessageArgs = {
   role: 'USER';
 };
 
+type ChatMessageInsertError = {
+  code?: string | null;
+  message: string;
+};
+
 type InsertChatMessageResult = PromiseLike<{
-  error: { message: string } | null;
+  error: ChatMessageInsertError | null;
 }>;
 
 type ExistingChatMessageRecord = {
@@ -47,7 +52,7 @@ type ExistingChatMessageRecord = {
 
 type FindExistingChatMessageResult = PromiseLike<{
   data: ExistingChatMessageRecord | null;
-  error: { message: string } | null;
+  error: ChatMessageInsertError | null;
 }>;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -65,6 +70,18 @@ export async function insertUserChatMessageSafely({
 }): Promise<{ error: { message: string } | null }> {
   if (!message.id) {
     return insertChatMessage(message);
+  }
+
+  const { error: insertError } = await insertChatMessage(message);
+  if (!insertError) {
+    return { error: null };
+  }
+
+  const isDuplicateInsert =
+    insertError.code === '23505' ||
+    /duplicate key value/i.test(insertError.message);
+  if (!isDuplicateInsert) {
+    return { error: insertError };
   }
 
   const { data: existingMessage, error: existingMessageError } =
@@ -91,7 +108,7 @@ export async function insertUserChatMessageSafely({
     };
   }
 
-  return insertChatMessage(message);
+  return { error: insertError };
 }
 
 function validateModelMessages(modelMessages: ModelMessage[]): Response | null {

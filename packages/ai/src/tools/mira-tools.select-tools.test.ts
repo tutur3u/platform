@@ -121,4 +121,24 @@ describe('mira-tools select_tools safeguards', () => {
       'update_my_settings',
     ]);
   });
+
+  it('still allows action tools on attachment-only turns', async () => {
+    const tools = createMiraStreamTools(attachmentOnlyCtx);
+
+    const selectTools = tools.select_tools as unknown as {
+      execute?: (
+        args: Record<string, unknown>
+      ) => Promise<Record<string, unknown>>;
+    };
+    if (typeof selectTools.execute !== 'function') {
+      throw new Error('select_tools execute is not available');
+    }
+
+    const result = await selectTools.execute({
+      tools: ['create_task', 'list_boards', 'remember'],
+    });
+
+    expect(result.selectedTools).toEqual(['create_task', 'list_boards']);
+    expect(result.skippedTools).toEqual(['remember']);
+  });
 });
