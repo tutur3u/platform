@@ -42,6 +42,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
+import { useExchangeRates } from '@tuturuuu/ui/hooks/use-exchange-rates';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { Input } from '@tuturuuu/ui/input';
@@ -52,6 +53,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { convertCurrency } from '@tuturuuu/utils/exchange-rates';
 import { fetcher } from '@tuturuuu/utils/fetcher';
 import { cn } from '@tuturuuu/utils/format';
 import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
@@ -115,6 +117,10 @@ const FormSchema = z
     }
   });
 
+function roundTransferAmount(value: number): number {
+  return Math.round(value * 1_000_000) / 1_000_000;
+}
+
 export function TransactionForm({
   wsId,
   data,
@@ -130,6 +136,11 @@ export function TransactionForm({
 
   const [loading, setLoading] = useState(false);
   const [isTransfer, setIsTransfer] = useState(!!data?.transfer);
+  // Start in override mode when editing an existing transfer (preserve stored amounts).
+  // Start in auto mode for new transfers so the exchange rate pre-fills destination.
+  const [isDestinationOverridden, setIsDestinationOverridden] = useState(
+    !!data?.transfer
+  );
   const router = useRouter();
 
   const { data: categories, isLoading: categoriesLoading } = useQuery<
@@ -235,10 +246,96 @@ export function TransactionForm({
   const hasFormPermission = hasCreatePermission || hasUpdatePermission;
 
   const selectedWalletId = form.watch('origin_wallet_id');
+  const selectedDestinationWalletId = form.watch('destination_wallet_id');
+  const sourceAmount = form.watch('amount');
   const selectedWalletCurrency = useMemo(
     () => wallets?.find((w) => w.id === selectedWalletId)?.currency,
     [wallets, selectedWalletId]
   );
+  const selectedDestinationWalletCurrency = useMemo(
+    () => wallets?.find((w) => w.id === selectedDestinationWalletId)?.currency,
+    [wallets, selectedDestinationWalletId]
+  );
+  const isCrossCurrencyTransfer = useMemo(
+    () =>
+      !!selectedWalletCurrency &&
+      !!selectedDestinationWalletCurrency &&
+      selectedWalletCurrency.toUpperCase() !==
+        selectedDestinationWalletCurrency.toUpperCase(),
+    [selectedWalletCurrency, selectedDestinationWalletCurrency]
+  );
+  const { data: exchangeRateData } = useExchangeRates();
+  const suggestedExchangeRate = useMemo(() => {
+    if (
+      !isTransfer ||
+      !isCrossCurrencyTransfer ||
+      !selectedWalletCurrency ||
+      !selectedDestinationWalletCurrency ||
+      !exchangeRateData?.data
+    ) {
+      return null;
+    }
+
+    const convertedUnitAmount = convertCurrency(
+      1,
+      selectedWalletCurrency,
+      selectedDestinationWalletCurrency,
+      exchangeRateData.data
+    );
+
+    if (!convertedUnitAmount || !Number.isFinite(convertedUnitAmount)) {
+      return null;
+    }
+
+    return convertedUnitAmount;
+  }, [
+    isTransfer,
+    isCrossCurrencyTransfer,
+    selectedWalletCurrency,
+    selectedDestinationWalletCurrency,
+    exchangeRateData?.data,
+  ]);
+  // Reset override to auto when transfer is disabled
+  useEffect(() => {
+    if (!isTransfer) setIsDestinationOverridden(false);
+  }, [isTransfer]);
+
+  // Reset override to auto when the wallet pair changes (only for new transfers)
+  useEffect(() => {
+    if (!data?.id) setIsDestinationOverridden(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedWalletId, selectedDestinationWalletId]);
+
+  // Auto-fill destination amount from source × exchange rate (source-driven only)
+  useEffect(() => {
+    if (
+      isDestinationOverridden ||
+      !isTransfer ||
+      !isCrossCurrencyTransfer ||
+      !suggestedExchangeRate ||
+      !Number.isFinite(suggestedExchangeRate) ||
+      !sourceAmount ||
+      sourceAmount <= 0
+    ) {
+      return;
+    }
+
+    const calculated = roundTransferAmount(sourceAmount * suggestedExchangeRate);
+    if (!Number.isFinite(calculated) || calculated <= 0) return;
+
+    form.setValue('destination_amount', calculated, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+  }, [
+    isDestinationOverridden,
+    isTransfer,
+    isCrossCurrencyTransfer,
+    suggestedExchangeRate,
+    sourceAmount,
+    form,
+  ]);
 
   const canManageConfidential =
     (hasCreatePermission && canCreateConfidentialTransactions) ||
@@ -640,15 +737,7 @@ export function TransactionForm({
                 )}
               </div>
 
-              {isTransfer && (
-                <TransferFields
-                  form={form}
-                  wallets={wallets}
-                  loading={loading}
-                  hasFormPermission={!!hasFormPermission}
-                  t={t}
-                />
-              )}
+
 
               <FormField
                 control={form.control}
@@ -670,6 +759,20 @@ export function TransactionForm({
                   </FormItem>
                 )}
               />
+                            {isTransfer && (
+                <TransferFields
+                  form={form}
+                  wallets={wallets}
+                  loading={loading}
+                  hasFormPermission={!!hasFormPermission}
+                  suggestedExchangeRate={suggestedExchangeRate}
+                  isDestinationOverridden={isDestinationOverridden}
+                  onToggleDestinationOverride={() =>
+                    setIsDestinationOverridden((v) => !v)
+                  }
+                  t={t}
+                />
+              )}
 
               <FormField
                 control={form.control}
