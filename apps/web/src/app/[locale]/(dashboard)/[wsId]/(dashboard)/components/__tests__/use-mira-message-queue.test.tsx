@@ -167,15 +167,15 @@ describe('useMiraMessageQueue', () => {
 
     await waitFor(() => {
       expect(createChat).toHaveBeenCalledTimes(1);
+      expect(result.current.optimisticPendingMessage).toEqual(
+        expect.objectContaining({
+          role: 'user',
+          parts: [{ type: 'text', text: 'first message' }],
+        })
+      );
     });
 
     expect(sendMessageWithCurrentConfig).not.toHaveBeenCalled();
-    expect(result.current.optimisticPendingMessage).toEqual(
-      expect.objectContaining({
-        role: 'user',
-        parts: [{ type: 'text', text: 'first message' }],
-      })
-    );
 
     rerender({
       chatId: 'chat-1',

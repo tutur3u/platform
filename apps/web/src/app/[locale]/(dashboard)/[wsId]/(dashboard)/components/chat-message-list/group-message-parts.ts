@@ -1,6 +1,6 @@
 import type { UIMessage } from '@tuturuuu/ai/types';
 import { getToolName, isToolUIPart } from 'ai';
-import { isNoActionSelectToolsPart, shouldRenderToolPart } from './helpers';
+import { shouldRenderToolPart } from './helpers';
 import type { RenderGroup, ToolPartData } from './types';
 
 /**
@@ -40,17 +40,6 @@ export function groupMessageParts(parts: UIMessage['parts']): RenderGroup[] {
 
       const name = getToolName(part as never);
       if (currentToolGroup && currentToolGroup.toolName === name) {
-        if (
-          name === 'select_tools' &&
-          isNoActionSelectToolsPart(part) &&
-          currentToolGroup.parts.every((toolPart) =>
-            isNoActionSelectToolsPart(toolPart)
-          )
-        ) {
-          currentToolGroup.parts = [part as ToolPartData];
-          continue;
-        }
-
         currentToolGroup.parts.push(part as ToolPartData);
       } else {
         if (currentToolGroup) {
@@ -78,22 +67,6 @@ export function groupMessageParts(parts: UIMessage['parts']): RenderGroup[] {
             const nextName = getToolName(nextPart as never);
             if (nextName === 'render_ui') {
               // Skip this step-start; keep the render_ui group open.
-              continue;
-            }
-          }
-        }
-
-        if (
-          currentToolGroup.toolName === 'select_tools' &&
-          currentToolGroup.parts.every((toolPart) =>
-            isNoActionSelectToolsPart(toolPart)
-          ) &&
-          part.type === 'step-start'
-        ) {
-          const nextToolIdx = findNextToolIndex(parts, i + 1);
-          if (nextToolIdx !== -1) {
-            const nextPart = parts[nextToolIdx]!;
-            if (isNoActionSelectToolsPart(nextPart)) {
               continue;
             }
           }

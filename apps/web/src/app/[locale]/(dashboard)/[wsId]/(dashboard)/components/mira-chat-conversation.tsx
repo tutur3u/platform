@@ -56,19 +56,7 @@ export function MiraChatConversation({
   const insertOptimisticPendingMessage = (items: UIMessage[]) => {
     if (!optimisticMessageMissing) return items;
 
-    let insertionIndex = items.length;
-    while (
-      insertionIndex > 0 &&
-      items[insertionIndex - 1]?.role === 'assistant'
-    ) {
-      insertionIndex -= 1;
-    }
-
-    return [
-      ...items.slice(0, insertionIndex),
-      optimisticMessageMissing,
-      ...items.slice(insertionIndex),
-    ];
+    return [...items, optimisticMessageMissing];
   };
 
   const renderedMessages =

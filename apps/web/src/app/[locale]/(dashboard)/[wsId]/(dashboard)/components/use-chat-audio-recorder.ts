@@ -113,7 +113,10 @@ export function useChatAudioRecorder({
   useEffect(
     () => () => {
       shouldDiscardRef.current = true;
-      mediaRecorderRef.current?.stop();
+      const mediaRecorder = mediaRecorderRef.current;
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
       mediaRecorderRef.current = null;
       stopStream(streamRef.current);
       streamRef.current = null;

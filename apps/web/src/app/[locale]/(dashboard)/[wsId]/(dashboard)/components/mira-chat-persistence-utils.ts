@@ -278,67 +278,61 @@ export async function loadExistingChat({
         });
         messageAttachments.set(messageId, existing);
       }
-    } else {
-      const fileUrlsRes = await fetch('/api/ai/chat/file-urls', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wsId, chatId: chatData.id }),
-        cache: 'no-store',
-      });
+    }
 
-      if (fileUrlsRes.ok) {
-        const { files } = (await fileUrlsRes.json()) as {
-          files: Array<{
-            path: string;
-            name: string;
-            size: number;
-            type: string;
-            signedUrl: string | null;
-          }>;
-        };
+    const fileUrlsRes = await fetch('/api/ai/chat/file-urls', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wsId, chatId: chatData.id }),
+      cache: 'no-store',
+    });
 
-        if (files.length > 0) {
-          const firstUserMessage = messagesData?.find(
-            (message) => message.role.toLowerCase() === 'user'
+    if (fileUrlsRes.ok) {
+      const { files } = (await fileUrlsRes.json()) as {
+        files: Array<{
+          path: string;
+          name: string;
+          size: number;
+          type: string;
+          signedUrl: string | null;
+        }>;
+      };
+
+      if (files.length > 0) {
+        const firstUserMessage = messagesData?.find(
+          (message) => message.role.toLowerCase() === 'user'
+        );
+
+        files.forEach((file, index) => {
+          const msgMatch = messagesData?.find((message) =>
+            normalizeStoredAttachments(message.metadata).some(
+              (attachment) =>
+                attachment.storagePath === file.path ||
+                attachment.name === file.name
+            )
           );
+          const targetMsgId = msgMatch?.id || firstUserMessage?.id;
+          if (!targetMsgId) return;
 
-          files.forEach((file, index) => {
-            let targetMsgId = (file as any).message_id;
+          const existing = messageAttachments.get(targetMsgId) || [];
+          const alreadyPresent = existing.some(
+            (attachment) => attachment.storagePath === file.path
+          );
+          if (alreadyPresent) return;
 
-            if (!targetMsgId) {
-              const msgMatch = messagesData?.find((m) => {
-                const meta = m.metadata as any;
-                return (
-                  meta &&
-                  Array.isArray(meta.attachments) &&
-                  meta.attachments.some(
-                    (a: any) =>
-                      a.storagePath === file.path ||
-                      a.url === file.path ||
-                      a.id === file.path
-                  )
-                );
-              });
-              targetMsgId = msgMatch?.id || firstUserMessage?.id;
-            }
-
-            if (targetMsgId) {
-              const existing = messageAttachments.get(targetMsgId) || [];
-              existing.push({
-                alias: null,
-                id: `stored-${file.path.replace(/[^a-zA-Z0-9]/g, '-')}-${index}`,
-                name: file.name,
-                size: file.size,
-                type: file.type,
-                previewUrl: null,
-                storagePath: file.path,
-                signedUrl: file.signedUrl,
-              });
-              messageAttachments.set(targetMsgId, existing);
-            }
+          existing.push({
+            alias: null,
+            id: `stored-${file.path.replace(/[^a-zA-Z0-9]/g, '-')}-${index}`,
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            previewUrl: null,
+            storagePath: file.path,
+            signedUrl: file.signedUrl,
           });
-        }
+          messageAttachments.set(targetMsgId, existing);
+        });
       }
     }
   } catch (err) {

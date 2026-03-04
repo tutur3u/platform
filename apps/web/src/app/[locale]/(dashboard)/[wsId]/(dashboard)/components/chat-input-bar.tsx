@@ -148,7 +148,9 @@ export default function ChatInputBar({
   const internalRef = useRef<HTMLTextAreaElement>(null);
   const textareaRef = externalRef ?? internalRef;
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const inputValueRef = useRef(input);
   const { formRef, onKeyDown } = useEnterSubmit();
+  inputValueRef.current = input;
 
   const hasFiles = files.length > 0;
   const isUploading = files.some((f) => f.status === 'uploading');
@@ -169,7 +171,7 @@ export default function ChatInputBar({
       const uploadedCount = (await onFilesSelected?.([file])) ?? 0;
       if (!options.submitOnReady || uploadedCount <= 0) return;
 
-      const trimmed = input.trim();
+      const trimmed = inputValueRef.current.trim();
       onSubmit(trimmed);
       setInput('');
     },
