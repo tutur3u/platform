@@ -169,12 +169,7 @@ export default function Projects() {
         </div>
       </motion.div>
 
-      <div className="relative mt-8 rounded-3xl border border-border/50 bg-background/60 p-6 shadow-2xl backdrop-blur-xl md:p-8">
-        {/* Background decorative elements */}
-        <div className="absolute inset-0 -z-10 overflow-hidden rounded-3xl">
-          <div className="absolute top-1/4 left-1/4 h-64 w-64 rounded-full bg-[#5FC6E5]/10 blur-3xl" />
-          <div className="absolute right-1/4 bottom-1/4 h-64 w-64 rounded-full bg-[#FBC721]/10 blur-3xl" />
-        </div>
+      <div className="relative mt-8 rounded-3xl bg-background/60 p-6 md:p-8">
         {filteredProjects.length > 0 ? (
           <div className="mx-auto grid max-w-7xl gap-6 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
             {filteredProjects.map((project, index) => (
