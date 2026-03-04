@@ -53,6 +53,37 @@ describe('injectFileDigestContextIntoMessages', () => {
       })
     );
   });
+
+  it('preserves non-text model content parts when adding digest text', async () => {
+    const processedMessages = await injectFileDigestContextIntoMessages({
+      digestBlocks: ['Current-turn attachment digest: image.png (image/png)'],
+      messages: [
+        {
+          content: [
+            {
+              image: new URL('https://example.com/image.png'),
+              type: 'image',
+            },
+          ],
+          role: 'user',
+        },
+      ] as never,
+    });
+
+    expect(processedMessages[0]).toEqual(
+      expect.objectContaining({
+        content: [
+          expect.objectContaining({ type: 'image' }),
+          expect.objectContaining({
+            text: expect.stringContaining(
+              'Current-turn attachment digest: image.png'
+            ),
+            type: 'text',
+          }),
+        ],
+      })
+    );
+  });
 });
 
 describe('processMessagesWithFiles', () => {

@@ -43,6 +43,7 @@ export async function ensureChatFileDigest(
 
   const displayName = resolveDisplayName(params);
   const billingWsId = params.creditWsId ?? params.wsId;
+  let effectiveAttachment = resolvedAttachment;
 
   const creditCheck = await checkAiCredits(
     billingWsId || undefined,
@@ -88,14 +89,14 @@ export async function ensureChatFileDigest(
 
   try {
     const digested = await digestChatFileWithGemini({
+      attachmentResolved: true,
       attachment: resolvedAttachment,
       chatId: params.chatId,
       creditWsId: params.creditWsId,
       userId: params.userId,
       wsId: params.wsId,
     });
-    const effectiveAttachment =
-      digested.resolvedAttachment ?? resolvedAttachment;
+    effectiveAttachment = digested.resolvedAttachment ?? resolvedAttachment;
 
     const deduction = await deductAiCredits({
       chatMessageId: params.messageId ?? undefined,
@@ -179,12 +180,12 @@ export async function ensureChatFileDigest(
       chatId: params.chatId,
       displayName,
       errorMessage: message,
-      fileName: resolvedAttachment.name,
-      mediaType: resolvedAttachment.type || 'application/octet-stream',
+      fileName: effectiveAttachment.name,
+      mediaType: effectiveAttachment.type || 'application/octet-stream',
       messageId: params.messageId,
       processorModel: FILE_DIGEST_MODEL,
-      size: resolvedAttachment.size,
-      storagePath: resolvedAttachment.storagePath,
+      size: effectiveAttachment.size,
+      storagePath: effectiveAttachment.storagePath,
       wsId: params.wsId,
     });
     return {

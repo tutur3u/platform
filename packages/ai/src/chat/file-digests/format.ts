@@ -67,10 +67,7 @@ export function buildAutoInjectedDigestBlocks(digests: ChatFileDigest[]): {
       formatChatFileDigestForModel(digest, 'compact'),
     ].join('\n');
 
-    if (
-      usedCharacters > 0 &&
-      usedCharacters + block.length > MAX_AUTO_INJECTED_DIGEST_CHARACTERS
-    ) {
+    if (usedCharacters + block.length > MAX_AUTO_INJECTED_DIGEST_CHARACTERS) {
       omittedCount += 1;
       continue;
     }

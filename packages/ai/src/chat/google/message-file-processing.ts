@@ -1,4 +1,4 @@
-import type { ModelMessage, TextPart, UIMessage } from 'ai';
+import type { ImagePart, ModelMessage, TextPart, UIMessage } from 'ai';
 import type { ChatAttachmentMetadata } from '../chat-attachment-metadata';
 import { ensureChatFileDigest } from '../file-digests/ensure';
 import { buildAutoInjectedDigestBlocks } from '../file-digests/format';
@@ -14,30 +14,38 @@ type ProcessMessagesWithFilesParams = {
   wsId: string;
 };
 
+const ATTACHMENT_DIGEST_CONCURRENCY = 4;
+type UserContent = Extract<ModelMessage, { role: 'user' }>['content'];
+type UserContentPart = Extract<UserContent, Array<unknown>>[number];
+
+function isUserContentPart(part: unknown): part is UserContentPart {
+  if (!part || typeof part !== 'object') return false;
+
+  const type = (part as { type?: unknown }).type;
+  return type === 'file' || type === 'image' || type === 'text';
+}
+
 function addDigestTextToContent(
   existingContent: ModelMessage['content'],
   digestBlocks: string[]
-): TextPart[] {
-  const contentParts: TextPart[] = [];
+): UserContent {
+  const digestTextParts: TextPart[] = digestBlocks.map((block) => ({
+    type: 'text',
+    text: block,
+  }));
 
   if (typeof existingContent === 'string') {
-    contentParts.push({ type: 'text', text: existingContent });
-  } else if (Array.isArray(existingContent)) {
-    for (const part of existingContent) {
-      if (part.type === 'text') {
-        contentParts.push(part);
-      }
-    }
+    return [{ type: 'text', text: existingContent }, ...digestTextParts];
   }
 
-  for (const block of digestBlocks) {
-    contentParts.push({
-      type: 'text',
-      text: block,
-    });
+  if (Array.isArray(existingContent)) {
+    return [
+      ...existingContent.filter(isUserContentPart),
+      ...digestTextParts,
+    ] satisfies Array<TextPart | ImagePart | UserContentPart>;
   }
 
-  return contentParts;
+  return digestTextParts;
 }
 
 function addDigestTextToUIParts(
@@ -162,22 +170,37 @@ export async function resolveChatFileDigests(
   const digests: ChatFileDigest[] = [];
   const failureBlocks: string[] = [];
 
-  for (const attachment of params.chatFiles) {
-    const result = await ensureChatFileDigest({
-      attachment,
-      chatId: params.chatId,
-      creditWsId: params.creditWsId,
-      messageId: params.messageId,
-      userId: params.userId,
-      wsId: params.wsId,
-    });
+  for (
+    let startIndex = 0;
+    startIndex < params.chatFiles.length;
+    startIndex += ATTACHMENT_DIGEST_CONCURRENCY
+  ) {
+    const batch = params.chatFiles.slice(
+      startIndex,
+      startIndex + ATTACHMENT_DIGEST_CONCURRENCY
+    );
+    const batchResults = await Promise.all(
+      batch.map(async (attachment) => ({
+        attachment,
+        result: await ensureChatFileDigest({
+          attachment,
+          chatId: params.chatId,
+          creditWsId: params.creditWsId,
+          messageId: params.messageId,
+          userId: params.userId,
+          wsId: params.wsId,
+        }),
+      }))
+    );
 
-    if (result.ok) {
-      digests.push(result.digest);
-      continue;
+    for (const { attachment, result } of batchResults) {
+      if (result.ok) {
+        digests.push(result.digest);
+        continue;
+      }
+
+      failureBlocks.push(buildDigestFailureBlock(attachment, result.error));
     }
-
-    failureBlocks.push(buildDigestFailureBlock(attachment, result.error));
   }
 
   const { contentBlocks } = buildAutoInjectedDigestBlocks(digests);

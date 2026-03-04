@@ -3,7 +3,63 @@ import type { Json } from '@tuturuuu/types';
 import { CHAT_FILE_DIGEST_VERSION, FILE_DIGEST_MODEL } from './constants';
 import type { ChatFileDigest, ChatFileDigestDbRow } from './types';
 
-type AdminClientLike = unknown;
+type ErrorLike = {
+  message?: string;
+};
+
+type DigestStatusRow = Pick<
+  ChatFileDigestDbRow,
+  'status' | 'storage_path' | 'updated_at'
+>;
+
+type MaybeSingleResult = PromiseLike<{
+  data: ChatFileDigestDbRow | null;
+  error: ErrorLike | null;
+}>;
+
+type ListResult = PromiseLike<{
+  data: DigestStatusRow[] | null;
+  error: ErrorLike | null;
+}>;
+
+type UpsertResult = PromiseLike<{
+  error: ErrorLike | null;
+}>;
+
+type UpsertSingleResult = PromiseLike<{
+  data: ChatFileDigestDbRow;
+  error: ErrorLike | null;
+}>;
+
+interface DigestSelectQuery {
+  eq(column: string, value: unknown): DigestSelectQuery;
+  in(column: string, values: string[]): DigestSelectQuery;
+  maybeSingle(): MaybeSingleResult;
+  order(
+    column: string,
+    options: {
+      ascending: boolean;
+    }
+  ): ListResult;
+}
+
+interface DigestUpsertQuery extends UpsertResult {
+  select(columns: string): {
+    single(): UpsertSingleResult;
+  };
+}
+
+type AdminClientLike = {
+  from(table: 'ai_chat_file_digests'): {
+    select(columns: string): DigestSelectQuery;
+    upsert(
+      payload: Record<string, unknown>,
+      options: {
+        onConflict: string;
+      }
+    ): DigestUpsertQuery;
+  };
+};
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -50,8 +106,8 @@ export async function getReadyChatFileDigest(
   digestVersion = CHAT_FILE_DIGEST_VERSION,
   sbAdmin?: AdminClientLike
 ): Promise<ChatFileDigest | null> {
-  const client = (sbAdmin ??
-    ((await createAdminClient()) as unknown as AdminClientLike)) as any;
+  const client =
+    sbAdmin ?? ((await createAdminClient()) as unknown as AdminClientLike);
   const { data, error } = await client
     .from('ai_chat_file_digests')
     .select('*')
@@ -81,8 +137,8 @@ export async function listChatFileDigestStatuses(
     return new Map();
   }
 
-  const client = (sbAdmin ??
-    ((await createAdminClient()) as unknown as AdminClientLike)) as any;
+  const client =
+    sbAdmin ?? ((await createAdminClient()) as unknown as AdminClientLike);
   const query = client
     .from('ai_chat_file_digests')
     .select('storage_path, status, updated_at');
@@ -127,7 +183,22 @@ type BaseDigestWriteParams = {
 };
 
 async function upsertDigestWithMessageFallback(
-  client: any,
+  client: AdminClientLike,
+  payload: Record<string, unknown>,
+  options: { onConflict: string; selectSingle: true }
+): Promise<{
+  data: ChatFileDigestDbRow;
+  error: ErrorLike | null;
+}>;
+async function upsertDigestWithMessageFallback(
+  client: AdminClientLike,
+  payload: Record<string, unknown>,
+  options?: { onConflict: string; selectSingle?: false }
+): Promise<{
+  error: ErrorLike | null;
+}>;
+async function upsertDigestWithMessageFallback(
+  client: AdminClientLike,
   payload: Record<string, unknown>,
   options?: { onConflict: string; selectSingle?: boolean }
 ) {
@@ -144,7 +215,7 @@ async function upsertDigestWithMessageFallback(
   };
 
   let result = await runUpsert(payload);
-  let error = result.error;
+  const error = result.error;
 
   if (
     error?.message?.includes('ai_chat_file_digests_message_id_fkey') &&
@@ -154,7 +225,6 @@ async function upsertDigestWithMessageFallback(
       ...payload,
       message_id: null,
     });
-    error = result.error;
   }
 
   return result;
@@ -164,8 +234,8 @@ export async function upsertProcessingChatFileDigest(
   params: BaseDigestWriteParams,
   sbAdmin?: AdminClientLike
 ): Promise<void> {
-  const client = (sbAdmin ??
-    ((await createAdminClient()) as unknown as AdminClientLike)) as any;
+  const client =
+    sbAdmin ?? ((await createAdminClient()) as unknown as AdminClientLike);
   const { error } = await upsertDigestWithMessageFallback(client, {
     chat_id: params.chatId,
     digest_version: CHAT_FILE_DIGEST_VERSION,
@@ -202,8 +272,8 @@ export async function saveReadyChatFileDigest(
   params: ReadyDigestParams,
   sbAdmin?: AdminClientLike
 ): Promise<ChatFileDigest | null> {
-  const client = (sbAdmin ??
-    ((await createAdminClient()) as unknown as AdminClientLike)) as any;
+  const client =
+    sbAdmin ?? ((await createAdminClient()) as unknown as AdminClientLike);
   const payload = {
     answer_context_markdown: params.answerContextMarkdown,
     chat_id: params.chatId,
@@ -255,8 +325,8 @@ export async function saveFailedChatFileDigest(
   },
   sbAdmin?: AdminClientLike
 ): Promise<void> {
-  const client = (sbAdmin ??
-    ((await createAdminClient()) as unknown as AdminClientLike)) as any;
+  const client =
+    sbAdmin ?? ((await createAdminClient()) as unknown as AdminClientLike);
   const { error } = await upsertDigestWithMessageFallback(client, {
     chat_id: params.chatId,
     digest_version: CHAT_FILE_DIGEST_VERSION,

@@ -25,6 +25,7 @@ import type { ChatFileDigestUsage } from './types';
 
 type WorkerParams = {
   attachment: ChatAttachmentMetadata;
+  attachmentResolved?: boolean;
   chatId: string;
   creditWsId?: string | null;
   userId: string;
@@ -586,7 +587,9 @@ async function digestDocumentViaMarkdown(
 export async function digestChatFileWithGemini(
   params: WorkerParams
 ): Promise<WorkerResult> {
-  const resolvedAttachment = await resolveAttachmentForDigest(params);
+  const resolvedAttachment = params.attachmentResolved
+    ? params.attachment
+    : await resolveAttachmentForDigest(params);
   const mediaType = resolvedAttachment.type || 'application/octet-stream';
   const extension = getFileExtension(resolvedAttachment.name);
 

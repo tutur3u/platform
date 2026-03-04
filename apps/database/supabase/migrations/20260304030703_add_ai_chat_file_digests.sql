@@ -42,7 +42,7 @@ CREATE POLICY "ai_chat_file_digests_select_authenticated"
       SELECT 1
       FROM public.ai_chats ac
       WHERE ac.id = ai_chat_file_digests.chat_id
-        AND ac.creator_id = auth.uid()
+        AND (ac.creator_id = auth.uid() OR ac.is_public = true)
     )
   );
 
