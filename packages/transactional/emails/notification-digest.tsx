@@ -88,8 +88,7 @@ export interface NotificationItem {
 }
 
 // Extended notification item for consolidated per-task display
-export interface ConsolidatedNotification extends NotificationItem {
-}
+export interface ConsolidatedNotification extends NotificationItem {}
 
 interface NotificationDigestEmailProps {
   userName?: string;
