@@ -2103,6 +2103,8 @@
     "quick_settings": "Cài đặt nhanh",
     "realestate": "Bất động sản",
     "realestate-description": "Tối ưu hóa hoạt động kinh doanh bất động sản của bạn.",
+    "realtime_connection_issue_description": "Các cập nhật trực tiếp của bảng hiện tạm thời không khả dụng. Hãy tải lại hoặc mở lại bảng nếu việc đồng bộ không tự khôi phục.",
+    "realtime_connection_issue_title": "Kết nối realtime bị gián đoạn",
     "recycle_bin": "Thùng rác",
     "recycle_bin_description": "Các công việc đã xóa từ bảng này. Chọn công việc để khôi phục hoặc xóa vĩnh viễn.",
     "red": "Đỏ",

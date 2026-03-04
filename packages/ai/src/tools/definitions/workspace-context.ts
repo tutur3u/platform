@@ -17,12 +17,29 @@ export const workspaceContextToolDefinitions = {
   set_workspace_context: tool({
     description:
       'Switch the current workspace context for task, calendar, and finance tools. Use `list_accessible_workspaces` first to get the target workspace ID. Use `personal` to switch back to the personal workspace.',
-    inputSchema: z.object({
-      workspaceId: z
-        .string()
-        .trim()
-        .min(1)
-        .describe('Target workspace ID or `personal`.'),
-    }),
+    inputSchema: z
+      .object({
+        workspaceId: z
+          .string()
+          .trim()
+          .min(1)
+          .optional()
+          .describe('Target workspace ID, `internal`, or `personal`.'),
+        workspaceContextId: z
+          .string()
+          .trim()
+          .min(1)
+          .optional()
+          .describe(
+            'Alias for workspaceId. Accepts a workspace UUID, `internal`, or `personal`.'
+          ),
+      })
+      .refine(
+        (value) => Boolean(value.workspaceId || value.workspaceContextId),
+        {
+          message: 'workspaceId is required.',
+          path: ['workspaceId'],
+        }
+      ),
   }),
 } as const;

@@ -198,6 +198,31 @@ void main() {
       ).called(1);
     });
 
+    test('updateCategory includes null icon and color when omitted', () async {
+      when(
+        () => apiClient.putJson(any(), any()),
+      ).thenAnswer((_) async => {'message': 'success'});
+
+      await repository.updateCategory(
+        wsId: 'ws_1',
+        categoryId: 'cat_1',
+        name: 'Bills',
+        isExpense: true,
+      );
+
+      verify(
+        () => apiClient.putJson(
+          '/api/workspaces/ws_1/transactions/categories/cat_1',
+          {
+            'name': 'Bills',
+            'is_expense': true,
+            'icon': null,
+            'color': null,
+          },
+        ),
+      ).called(1);
+    });
+
     test('deleteCategory calls category delete endpoint', () async {
       when(
         () => apiClient.deleteJson(any()),

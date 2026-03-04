@@ -10,6 +10,9 @@ interface Props {
     wsId: string;
     templateId: string;
   }>;
+  config?: {
+    templatesBasePath?: string;
+  };
 }
 
 async function getTemplate(
@@ -104,7 +107,11 @@ async function getTemplate(
  * Handles workspace resolution, permissions, and data fetching.
  * Used by both apps/web and apps/tasks.
  */
-export default async function TaskTemplateDetailPage({ params }: Props) {
+export default async function TaskTemplateDetailPage({
+  params,
+  config = {},
+}: Props) {
+  const { templatesBasePath = 'templates' } = config;
   const { wsId: id, templateId } = await params;
 
   const user = await getCurrentUser();
@@ -123,5 +130,11 @@ export default async function TaskTemplateDetailPage({ params }: Props) {
   const template = await getTemplate(templateId);
   if (!template) notFound();
 
-  return <TemplateDetailClient wsId={wsId} template={template} />;
+  return (
+    <TemplateDetailClient
+      wsId={wsId}
+      template={template}
+      templatesBasePath={templatesBasePath}
+    />
+  );
 }

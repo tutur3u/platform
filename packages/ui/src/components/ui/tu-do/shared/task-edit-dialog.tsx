@@ -9,7 +9,6 @@ import type { User } from '@tuturuuu/types/primitives/User';
 import { Dialog, DialogContent, DialogTitle } from '@tuturuuu/ui/dialog';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { useYjsCollaboration } from '@tuturuuu/ui/hooks/use-yjs-collaboration';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { convertListItemToTask } from '@tuturuuu/utils/editor';
 import {
   getTicketIdentifier,
@@ -1294,7 +1293,7 @@ export function TaskEditDialog({
                 }
                 isPersonalWorkspace={isPersonalWorkspace}
                 onOpenShareDialog={
-                  wsId === ROOT_WORKSPACE_ID
+                  !isCreateMode && task?.id
                     ? () => setShowShareDialog(true)
                     : undefined
                 }
@@ -1651,7 +1650,7 @@ export function TaskEditDialog({
       )}
 
       {/* Task Share Dialog */}
-      {!isCreateMode && task?.id && wsId === ROOT_WORKSPACE_ID && (
+      {!isCreateMode && task?.id && (
         <TaskShareDialog
           open={showShareDialog}
           onOpenChange={setShowShareDialog}

@@ -306,15 +306,9 @@ class FinanceRepository {
     final body = <String, dynamic>{
       'name': name,
       'is_expense': isExpense,
+      'icon': icon,
+      'color': color,
     };
-
-    if (icon != null) {
-      body['icon'] = icon;
-    }
-
-    if (color != null) {
-      body['color'] = color;
-    }
 
     await _api.putJson(FinanceEndpoints.category(wsId, categoryId), body);
   }

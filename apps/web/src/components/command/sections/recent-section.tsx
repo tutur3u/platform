@@ -7,24 +7,27 @@ import {
   CommandItem,
   CommandSeparator,
 } from '@tuturuuu/ui/command';
+import { dispatchRequestOpenTask } from '@tuturuuu/ui/tu-do/shared/task-open-events';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 import type { RecentItem } from '../utils/recent-items';
-import { clearAllRecent, getRecentItems } from '../utils/recent-items';
+import {
+  addRecentTask,
+  clearAllRecent,
+  getRecentItems,
+} from '../utils/recent-items';
 
 dayjs.extend(relativeTime);
 
 interface RecentSectionProps {
-  wsId: string | null;
   query: string;
   onSelect?: () => void;
   onApplySearch?: (query: string) => void;
 }
 
 export function RecentSection({
-  wsId,
   query,
   onSelect,
   onApplySearch,
@@ -50,11 +53,16 @@ export function RecentSection({
   const handleItemSelect = (item: RecentItem) => {
     if (item.type === 'page') {
       router.push(item.href);
-    } else if (item.type === 'task' && wsId) {
-      router.push(`/${wsId}/tasks/${item.taskId}`);
+      onSelect?.();
+      return;
     }
-    // Search items don't navigate, they just populate the search field
-    // This is handled by the parent component
+
+    if (item.type === 'task') {
+      addRecentTask(item.taskId, item.taskName, item.boardName);
+      onSelect?.();
+      dispatchRequestOpenTask({ taskId: item.taskId });
+      return;
+    }
 
     onSelect?.();
   };

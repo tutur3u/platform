@@ -3,6 +3,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useChat } from '@tuturuuu/ai/react';
 import type { UIMessage } from '@tuturuuu/ai/types';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
@@ -63,6 +64,8 @@ export default function MiraChatPanel({
   const [viewOnly, setViewOnly] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const toolbarContentRef = useRef<HTMLDivElement>(null);
+  const toolbarVisibilityAnchorRef = useRef<HTMLDivElement>(null);
   const greetingKey = useMemo(() => getGreetingKey(), []);
   const generativeUIStore = useMemo(() => createGenerativeUIAdapter(), []);
 
@@ -179,6 +182,7 @@ export default function MiraChatPanel({
     transport,
     onError(error) {
       console.error('[Mira Chat] Stream error:', error);
+      toast.error(t('stream_error'));
     },
   });
 
@@ -287,28 +291,21 @@ export default function MiraChatPanel({
     setMessageAttachments,
     setWorkspaceContextId,
     status,
+    wsId,
   });
 
-  const { bottomBarVisible, setBottomBarVisible } = useMiraBottomBarVisibility({
+  const { bottomBarVisible } = useMiraBottomBarVisibility({
+    auxiliaryToolbarRef: toolbarContentRef,
     hasMessages,
     scrollContainerRef,
+    toolbarVisibilityAnchorRef,
     viewOnly,
   });
-
-  const firstMessageSeenRef = useRef(false);
   useEffect(() => {
     if (!hasMessages) {
-      firstMessageSeenRef.current = false;
       setViewOnly(false);
-      setBottomBarVisible(true);
-      return;
     }
-
-    if (firstMessageSeenRef.current) return;
-    firstMessageSeenRef.current = true;
-    setViewOnly(false);
-    setBottomBarVisible(true);
-  }, [hasMessages, setBottomBarVisible]);
+  }, [hasMessages]);
 
   const handleNewConversation = useCallback(() => {
     if (status === 'submitted' || status === 'streaming') {
@@ -342,28 +339,16 @@ export default function MiraChatPanel({
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       <MiraChatHeader
-        activeCreditSource={activeCreditSource}
-        creditWsId={creditWsId}
         hasMessages={hasMessages}
         hotkeyLabels={hotkeyLabels}
         insightsDock={insightsDock}
         isFullscreen={isFullscreen}
-        isPersonalWorkspace={isPersonalDashboardWorkspace}
-        model={model}
-        modelPickerHotkeySignal={modelPickerHotkeySignal}
-        onCreditSourceChange={handleCreditSourceChange}
         onExportChat={handleExportChat}
-        onModelChange={handleModelChange}
         onNewConversation={handleNewConversation}
-        onThinkingModeChange={handleThinkingModeChange}
         onToggleFullscreen={onToggleFullscreen}
         onToggleViewOnly={() => setViewOnly((value) => !value)}
-        personalWsId={personalWorkspaceId ?? undefined}
         t={t}
-        thinkingMode={thinkingMode}
         viewOnly={viewOnly}
-        workspaceCreditLocked={workspaceCreditLocked}
-        wsId={wsId}
         workspaceContextBadge={workspaceContextBadge}
       />
 
@@ -382,6 +367,7 @@ export default function MiraChatPanel({
             pendingPrompt={pendingPrompt}
             queuedText={queuedText}
             scrollContainerRef={scrollContainerRef}
+            toolbarVisibilityAnchorRef={toolbarVisibilityAnchorRef}
             userAvatarUrl={userAvatarUrl}
             userName={userName}
           />
@@ -401,7 +387,6 @@ export default function MiraChatPanel({
           attachedFiles={attachedFiles}
           bottomBarVisible={bottomBarVisible}
           canUploadFiles={supportsFileInput}
-          hasMessages={hasMessages}
           input={input}
           inputRef={inputRef}
           isBusy={isBusy}
@@ -410,6 +395,21 @@ export default function MiraChatPanel({
           onSubmit={handleSubmit}
           onVoiceToggle={onVoiceToggle}
           setInput={setInput}
+          // Toolbar props
+          activeCreditSource={activeCreditSource}
+          creditWsId={creditWsId}
+          hotkeyLabels={hotkeyLabels}
+          isPersonalWorkspace={isPersonalDashboardWorkspace}
+          model={model}
+          modelPickerHotkeySignal={modelPickerHotkeySignal}
+          onCreditSourceChange={handleCreditSourceChange}
+          onModelChange={handleModelChange}
+          onThinkingModeChange={handleThinkingModeChange}
+          personalWsId={personalWorkspaceId ?? undefined}
+          thinkingMode={thinkingMode}
+          toolbarContentRef={toolbarContentRef}
+          workspaceCreditLocked={workspaceCreditLocked}
+          wsId={wsId}
         />
       </div>
     </div>

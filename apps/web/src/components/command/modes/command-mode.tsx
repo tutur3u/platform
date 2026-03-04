@@ -220,7 +220,6 @@ export function CommandMode({ wsId, navLinks, onClose }: CommandModeProps) {
           {!hasQuery && (
             <RecentSection
               key={recentRefreshKey}
-              wsId={wsId}
               query={query}
               onSelect={onClose}
               onApplySearch={setQuery}
@@ -249,7 +248,6 @@ export function CommandMode({ wsId, navLinks, onClose }: CommandModeProps) {
           <TaskSection
             tasks={tasks}
             isLoading={isLoadingTasks}
-            wsId={wsId}
             workspaceName={currentWorkspace?.name}
             query={query}
             onSelect={onClose}
