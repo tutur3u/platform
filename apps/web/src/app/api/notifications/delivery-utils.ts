@@ -133,8 +133,12 @@ export const getQueuedNotificationTaskId = (
   return null;
 };
 
+const hasTaskState = (
+  task: TaskStateSnapshot | null | undefined
+): task is TaskStateSnapshot => Boolean(task);
+
 const isTaskInactive = (task: TaskStateSnapshot | null | undefined): boolean =>
-  !task || Boolean(task.completedAt || task.closedAt || task.deletedAt);
+  Boolean(task && (task.completedAt || task.closedAt || task.deletedAt));
 
 const isDeadlineElapsed = (
   task: TaskStateSnapshot | null | undefined,
@@ -175,6 +179,7 @@ export const planQueuedNotifications = (
     const task = taskId ? taskStates.get(taskId) : undefined;
     if (
       taskId &&
+      hasTaskState(task) &&
       notification.type === DEADLINE_REMINDER_TYPE &&
       (isTaskInactive(task) || isDeadlineElapsed(task, now))
     ) {
@@ -189,6 +194,7 @@ export const planQueuedNotifications = (
 
     if (
       taskId &&
+      hasTaskState(task) &&
       STALE_WHEN_TASK_INACTIVE_TYPES.has(notification.type) &&
       isTaskInactive(task)
     ) {
@@ -207,12 +213,13 @@ export const planQueuedNotifications = (
   for (const [taskId, group] of taskGroups.entries()) {
     const sortedGroup = [...group].sort(sortByNewest);
     const task = taskStates.get(taskId);
+    const taskHasState = hasTaskState(task);
     const taskInactive = isTaskInactive(task);
     const deadlineElapsed = isDeadlineElapsed(task, now);
 
     let survivor: QueuedNotification | null = null;
 
-    if (taskInactive) {
+    if (taskHasState && taskInactive) {
       survivor =
         sortedGroup.find((notification) =>
           TERMINAL_TASK_NOTIFICATION_TYPES.has(notification.type)
@@ -232,7 +239,9 @@ export const planQueuedNotifications = (
           deliveryLogId: notification.deliveryLogId,
           notificationId: notification.notificationId,
           reason:
-            notification.type === DEADLINE_REMINDER_TYPE && deadlineElapsed
+            taskHasState &&
+            notification.type === DEADLINE_REMINDER_TYPE &&
+            deadlineElapsed
               ? 'deadline_elapsed'
               : 'task_inactive',
         });

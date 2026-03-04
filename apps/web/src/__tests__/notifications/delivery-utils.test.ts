@@ -128,6 +128,29 @@ describe('delivery-utils', () => {
       ]);
     });
 
+    it('does not treat missing task state as an inactive task', () => {
+      const notifications = [
+        createQueuedNotification({
+          deliveryLogId: 'log-missing-task',
+          notificationId: 'notif-missing-task',
+          type: 'deadline_reminder',
+          description: 'Due soon',
+        }),
+      ];
+
+      const plan = planQueuedNotifications(
+        notifications,
+        new Map(),
+        new Date('2026-03-04T10:30:00.000Z')
+      );
+
+      expect(plan.notificationsToSend).toHaveLength(1);
+      expect(plan.notificationsToSend[0]?.notificationId).toBe(
+        'notif-missing-task'
+      );
+      expect(plan.skipped).toHaveLength(0);
+    });
+
     it('keeps unrelated notifications separate', () => {
       const notifications = [
         createQueuedNotification({

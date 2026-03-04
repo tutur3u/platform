@@ -1,5 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { DEV_MODE, ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { DEV_MODE } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
@@ -40,9 +40,6 @@ const INTERVAL_NAMES: Record<string, string> = {
   '7d': '1 week',
 };
 
-// Feature flag: When true, only process reminders for the root workspace
-const RESTRICT_TO_ROOT_WORKSPACE_ONLY = true;
-
 interface TaskWithDetails {
   id: string;
   name: string;
@@ -79,14 +76,10 @@ export async function GET(req: NextRequest) {
 
     // Get all workspaces with reminder settings
     // Note: Types for new tables will be available after running bun sb:typegen
-    let settingsQuery = (sbAdmin as any)
+    const settingsQuery = (sbAdmin as any)
       .from('workspace_task_reminder_settings')
       .select('ws_id, reminder_intervals, enabled')
       .eq('enabled', true);
-
-    if (RESTRICT_TO_ROOT_WORKSPACE_ONLY) {
-      settingsQuery = settingsQuery.eq('ws_id', ROOT_WORKSPACE_ID);
-    }
 
     const { data: allSettings, error: settingsError } =
       (await settingsQuery) as {
@@ -128,7 +121,7 @@ export async function GET(req: NextRequest) {
 
     // Get tasks with due dates in the window
     // Note: task_watchers relation will be available after running migrations
-    let tasksQuery = (sbAdmin as any)
+    const tasksQuery = (sbAdmin as any)
       .from('tasks')
       .select(
         `
@@ -154,13 +147,6 @@ export async function GET(req: NextRequest) {
       .is('deleted_at', null)
       .gte('end_date', now.toISOString())
       .lte('end_date', windowEnd.toISOString());
-
-    if (RESTRICT_TO_ROOT_WORKSPACE_ONLY) {
-      tasksQuery = tasksQuery.eq(
-        'task_lists.workspace_boards.ws_id',
-        ROOT_WORKSPACE_ID
-      );
-    }
 
     const { data: tasks, error: tasksError } = (await tasksQuery) as {
       data: TaskWithDetails[] | null;

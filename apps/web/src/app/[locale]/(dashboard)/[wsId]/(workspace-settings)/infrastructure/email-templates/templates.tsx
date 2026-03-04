@@ -130,7 +130,7 @@ export const EMAIL_TEMPLATES: TemplateDefinition[] = [
         label: 'Task URL',
         type: 'text',
         placeholder: 'https://tuturuuu.com/tasks/...',
-        defaultValue: '',
+        defaultValue: 'https://tuturuuu.com/tasks/boards/roadmap?task=123',
       },
     ],
     defaultProps: {
@@ -140,7 +140,7 @@ export const EMAIL_TEMPLATES: TemplateDefinition[] = [
       workspaceName: 'Workspace',
       dueDate: new Date(Date.now() + 86400000).toISOString(),
       reminderInterval: '24 hours',
-      taskUrl: '',
+      taskUrl: 'https://tuturuuu.com/tasks/boards/roadmap?task=123',
     },
   },
   {

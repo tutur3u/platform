@@ -5,7 +5,6 @@ import NotificationDigestEmail, {
   generateSubjectLine,
   type NotificationItem,
 } from '@tuturuuu/transactional/emails/notification-digest';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import {
@@ -18,9 +17,8 @@ import {
   type TaskStateSnapshot,
 } from '@/app/api/notifications/delivery-utils';
 
-const RESTRICT_TO_ROOT_WORKSPACE_ONLY = true;
-const MAX_BATCH_SEEDS = 250;
-const MAX_RECIPIENTS_PER_RUN = 100;
+const MAX_BATCH_SEEDS = 1000;
+const MAX_RECIPIENTS_PER_RUN = 250;
 
 interface NotificationBatchRow {
   id: string;
@@ -69,64 +67,6 @@ const groupStrings = (values: string[]) => {
   const unique = [...new Set(values)];
   return unique.length > 0 ? unique : [];
 };
-
-async function filterBatchesToRootWorkspace(
-  sbAdmin: any,
-  batches: NotificationBatchRow[]
-) {
-  if (!RESTRICT_TO_ROOT_WORKSPACE_ONLY || batches.length === 0) {
-    return batches;
-  }
-
-  const batchesWithWsId = batches.filter((batch) => batch.ws_id !== null);
-  const batchesWithNullWsId = batches.filter((batch) => batch.ws_id === null);
-  const validBatchIds = new Set(
-    batchesWithWsId
-      .filter((batch) => batch.ws_id === ROOT_WORKSPACE_ID)
-      .map((batch) => batch.id)
-  );
-
-  if (batchesWithNullWsId.length === 0) {
-    return batches.filter((batch) => validBatchIds.has(batch.id));
-  }
-
-  const { data: deliveryLogsForCheck } = await sbAdmin
-    .from('notification_delivery_log')
-    .select(
-      `
-        batch_id,
-        notifications:notifications!notification_delivery_log_notification_id_fkey (
-          entity_id,
-          data
-        )
-      `
-    )
-    .in(
-      'batch_id',
-      batchesWithNullWsId.map((batch) => batch.id)
-    )
-    .eq('channel', 'email');
-
-  for (const log of (deliveryLogsForCheck || []) as Array<{
-    batch_id: string | null;
-    notifications: {
-      entity_id: string | null;
-      data: Record<string, unknown> | null;
-    } | null;
-  }>) {
-    const notification = log.notifications;
-
-    const workspaceId =
-      notification?.entity_id ||
-      (notification?.data?.workspace_id as string | undefined);
-
-    if (workspaceId === ROOT_WORKSPACE_ID && log.batch_id) {
-      validBatchIds.add(log.batch_id);
-    }
-  }
-
-  return batches.filter((batch) => validBatchIds.has(batch.id));
-}
 
 async function fetchTaskStateMap(
   sbAdmin: any,
@@ -207,6 +147,26 @@ async function markDeliveryLogsSkipped(
   }
 }
 
+async function markDeliveryLogsFailedForBatches(
+  sbAdmin: any,
+  batchIds: string[],
+  errorMessage: string
+) {
+  if (batchIds.length === 0) {
+    return;
+  }
+
+  await sbAdmin
+    .from('notification_delivery_log')
+    .update({
+      status: 'failed',
+      error_message: errorMessage,
+      updated_at: new Date().toISOString(),
+    } as never)
+    .in('batch_id', batchIds)
+    .eq('status', 'pending');
+}
+
 async function markBatchesSkipped(
   sbAdmin: any,
   batchIds: string[],
@@ -243,7 +203,7 @@ export async function GET(req: NextRequest) {
     const sbAdmin = await createAdminClient();
     const nowIso = new Date().toISOString();
 
-    let seedQuery = sbAdmin
+    const seedQuery = sbAdmin
       .from('notification_batches')
       .select(
         'id, ws_id, user_id, email, channel, status, window_start, window_end'
@@ -251,10 +211,6 @@ export async function GET(req: NextRequest) {
       .eq('status', 'pending')
       .eq('delivery_mode', 'batched')
       .lte('window_end', nowIso);
-
-    if (RESTRICT_TO_ROOT_WORKSPACE_ONLY) {
-      seedQuery = seedQuery.or(`ws_id.eq.${ROOT_WORKSPACE_ID},ws_id.is.null`);
-    }
 
     const { data: seedBatches, error: batchesError } = await seedQuery
       .order('window_end', { ascending: true })
@@ -268,10 +224,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const filteredSeedBatches = await filterBatchesToRootWorkspace(
-      sbAdmin,
-      (seedBatches || []) as NotificationBatchRow[]
-    );
+    const filteredSeedBatches = (seedBatches || []) as NotificationBatchRow[];
 
     if (filteredSeedBatches.length === 0) {
       return NextResponse.json({
@@ -350,10 +303,8 @@ export async function GET(req: NextRequest) {
           throw recipientBatchesError;
         }
 
-        const recipientBatches = await filterBatchesToRootWorkspace(
-          sbAdmin,
-          (allRecipientBatches || []) as NotificationBatchRow[]
-        );
+        const recipientBatches = (allRecipientBatches ||
+          []) as NotificationBatchRow[];
 
         if (recipientBatches.length === 0) {
           continue;
@@ -633,6 +584,12 @@ export async function GET(req: NextRequest) {
           } as never)
           .eq('id', activeBatchId)
           .eq('status', 'processing');
+
+        await markDeliveryLogsFailedForBatches(
+          sbAdmin,
+          [activeBatchId],
+          error instanceof Error ? error.message : 'Unknown error'
+        );
 
         results.push({
           batch_id: activeBatchId,
