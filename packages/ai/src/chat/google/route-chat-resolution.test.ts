@@ -50,6 +50,44 @@ describe('moveTempFilesToThread', () => {
     await expect(result.error.text()).resolves.toBe('list failed');
   });
 
+  it('returns an empty rewrite map when wsId is missing', async () => {
+    const result = await moveTempFilesToThread({
+      listFiles: async () => ({
+        data: [{ name: 'ignored.png' }],
+        error: null,
+      }),
+      moveFile: async () => ({ error: null }),
+      wsId: '',
+      chatId: 'chat-1',
+      userId: 'user-1',
+    });
+
+    expect(result.error).toBeNull();
+    if (result.error) {
+      throw result.error;
+    }
+    expect(result.movedPaths.size).toBe(0);
+  });
+
+  it('returns an empty rewrite map when there are no temp files', async () => {
+    const result = await moveTempFilesToThread({
+      listFiles: async () => ({
+        data: [],
+        error: null,
+      }),
+      moveFile: async () => ({ error: null }),
+      wsId: 'workspace-1',
+      chatId: 'chat-1',
+      userId: 'user-1',
+    });
+
+    expect(result.error).toBeNull();
+    if (result.error) {
+      throw result.error;
+    }
+    expect(result.movedPaths.size).toBe(0);
+  });
+
   it('continues when some file moves fail and rewrites the successful subset', async () => {
     const moveFile = vi
       .fn()

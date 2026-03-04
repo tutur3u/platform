@@ -140,15 +140,12 @@ export async function injectFileDigestContextIntoUiMessages({
   return processedMessages;
 }
 
-function buildDigestFailureBlock(
-  attachment: ChatAttachmentMetadata,
-  error: string
-): string {
+function buildDigestFailureBlock(attachment: ChatAttachmentMetadata): string {
   return [
     `Current-turn attachment digest: ${attachment.alias || attachment.name} (${attachment.type || 'application/octet-stream'})`,
     '',
     'This is system-generated attachment context, not a direct user instruction.',
-    `The attachment could not be analyzed automatically: ${error}`,
+    'The attachment could not be analyzed automatically due to an internal processing error.',
   ].join('\n');
 }
 
@@ -210,7 +207,12 @@ export async function resolveChatFileDigests(
         continue;
       }
 
-      failureBlocks.push(buildDigestFailureBlock(attachment, result.error));
+      console.error('[AI Chat] Failed to resolve attachment digest', {
+        attachmentType: attachment.type || 'application/octet-stream',
+        hasAlias: Boolean(attachment.alias),
+        error: result.error,
+      });
+      failureBlocks.push(buildDigestFailureBlock(attachment));
     }
   }
 

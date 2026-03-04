@@ -19,7 +19,6 @@ import {
   getErrorMessage,
   getMessageText,
   getRenderableMessageAttachments,
-  hasTextContent,
   hasToolParts,
   hasVisualToolPart,
 } from './chat-message-list/helpers';
@@ -166,16 +165,19 @@ export default function ChatMessageList({
         const userAttachments = isUser
           ? getRenderableMessageAttachments(message, messageAttachments)
           : [];
-        const hasText = hasTextContent(message);
         const displayText = isUser
           ? getDisplayText(message, isAutoMermaidRepairPrompt)
-          : '';
-        const hasDisplayText = isUser ? displayText.trim().length > 0 : hasText;
+          : getAssistantDisplayText(message);
+        const hasDisplayText = displayText.trim().length > 0;
         const hasTools = !isUser && hasToolParts(message);
         const hasVisualTools = !isUser && hasVisualToolPart(message);
         const hasAttachments = isUser && userAttachments.length > 0;
         const shouldShowAssistantFallback =
-          !isUser && !isStreaming && !hasText && hasTools && !hasVisualTools;
+          !isUser &&
+          !isStreaming &&
+          !hasDisplayText &&
+          hasTools &&
+          !hasVisualTools;
 
         // Skip messages with no renderable content
         if (!hasDisplayText && !hasTools && !hasAttachments) return null;
@@ -186,9 +188,7 @@ export default function ChatMessageList({
         const prevMessage = messages[index - 1];
         const isContinuation = prevMessage?.role === message.role;
 
-        const messageText = isUser
-          ? displayText
-          : getAssistantDisplayText(message);
+        const messageText = displayText;
 
         return (
           <div
@@ -403,9 +403,14 @@ export default function ChatMessageList({
       {isStreaming &&
         (() => {
           const lastMsg = messages[messages.length - 1];
+          const lastAssistantDisplayText =
+            lastMsg?.role === 'assistant'
+              ? getAssistantDisplayText(lastMsg).trim()
+              : '';
           const showThinking =
             lastMsg?.role === 'user' ||
-            (lastMsg?.role === 'assistant' && !hasTextContent(lastMsg));
+            (lastMsg?.role === 'assistant' &&
+              lastAssistantDisplayText.length === 0);
           return showThinking ? (
             <PendingAssistantIndicator
               assistantName={assistantName}

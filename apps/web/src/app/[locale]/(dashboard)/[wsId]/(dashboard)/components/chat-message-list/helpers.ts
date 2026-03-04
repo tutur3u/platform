@@ -34,8 +34,8 @@ export function getErrorMessage(error: unknown): string {
 
 const LEADING_ASSISTANT_META_TOOL_CALL_PATTERN =
   /^\s*(?:`{1,3})?(?:select_tools|no_action_needed)\([^)\n]*\)(?:`{1,3})?\s*(?:\n+|$)/;
-const LEADING_ASSISTANT_META_TOOL_JSON_PATTERN =
-  /^\s*(?:`{1,3})?\{\s*"tools"\s*:\s*\[(?:\s*"[^"]+"\s*,?)*\]\s*\}(?:`{1,3})?\s*(?:\n+|$)/;
+const LEADING_ASSISTANT_META_TOOL_JSON_CANDIDATE_PATTERN =
+  /^\s*(?:`{1,3})?(\{[^\n]*\})(?:`{1,3})?\s*(?:\n+|$)/;
 
 export function hasTextContent(message: UIMessage): boolean {
   return (
@@ -113,16 +113,52 @@ export function getMessageText(message: UIMessage): string {
   );
 }
 
+function getLeadingPlannerJsonEnvelopeLength(text: string): number {
+  const candidateMatch = text.match(
+    LEADING_ASSISTANT_META_TOOL_JSON_CANDIDATE_PATTERN
+  );
+  if (!candidateMatch) return 0;
+
+  const candidate = candidateMatch[1];
+  if (!candidate) return 0;
+
+  try {
+    const parsed = JSON.parse(candidate);
+    if (!isObjectRecord(parsed)) return 0;
+    if (!Array.isArray(parsed.tools)) return 0;
+    if (
+      !parsed.tools.every((tool): tool is string => typeof tool === 'string')
+    ) {
+      return 0;
+    }
+
+    const allowedKeys = new Set(['tools']);
+    if (Object.keys(parsed).some((key) => !allowedKeys.has(key))) {
+      return 0;
+    }
+
+    return candidateMatch[0].length;
+  } catch {
+    return 0;
+  }
+}
+
 export function stripLeadingAssistantMetaToolCall(text: string): string {
   let next = text;
 
-  while (
-    LEADING_ASSISTANT_META_TOOL_CALL_PATTERN.test(next) ||
-    LEADING_ASSISTANT_META_TOOL_JSON_PATTERN.test(next)
-  ) {
-    next = next
-      .replace(LEADING_ASSISTANT_META_TOOL_CALL_PATTERN, '')
-      .replace(LEADING_ASSISTANT_META_TOOL_JSON_PATTERN, '');
+  while (true) {
+    if (LEADING_ASSISTANT_META_TOOL_CALL_PATTERN.test(next)) {
+      next = next.replace(LEADING_ASSISTANT_META_TOOL_CALL_PATTERN, '');
+      continue;
+    }
+
+    const jsonEnvelopeLength = getLeadingPlannerJsonEnvelopeLength(next);
+    if (jsonEnvelopeLength > 0) {
+      next = next.slice(jsonEnvelopeLength);
+      continue;
+    }
+
+    break;
   }
 
   return next.trimStart();

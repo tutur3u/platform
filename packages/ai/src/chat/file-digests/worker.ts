@@ -371,7 +371,15 @@ async function digestLargeMarkdown(
       `Part ${index + 1} of ${chunks.length}`
     );
     usage = addUsage(usage, partial.usage);
-    partialDigests.push(partial);
+    partialDigests.push({
+      answerContextMarkdown: partial.answerContextMarkdown,
+      extractedMarkdown: partial.extractedMarkdown,
+      keyFacts: partial.keyFacts,
+      limitations: partial.limitations,
+      suggestedAlias: partial.suggestedAlias,
+      summary: partial.summary,
+      title: partial.title,
+    });
   }
 
   const result = await generateObject({

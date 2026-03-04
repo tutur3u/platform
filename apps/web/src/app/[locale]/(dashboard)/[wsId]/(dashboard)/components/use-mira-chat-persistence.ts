@@ -81,9 +81,17 @@ export function useMiraChatPersistence({
 
     setInitialMessages(restoredChat.messages);
     setChat(restoredChat.chat);
-    setMessageAttachments((prev) =>
-      mergeMessageAttachmentMaps(prev, restoredChat.messageAttachments)
-    );
+    setMessageAttachments((prev) => {
+      const filteredPrev = new Map(
+        [...prev].filter(([messageId]) =>
+          restoredChat.messageAttachments.has(messageId)
+        )
+      );
+      return mergeMessageAttachmentMaps(
+        filteredPrev,
+        restoredChat.messageAttachments
+      );
+    });
   }, [restoredChatQuery.data, setMessageAttachments, storedChatId, wsId]);
 
   return {

@@ -239,14 +239,21 @@ export function useChatAudioRecorder({
           autoGainControl: true,
         },
       });
-
-      const recorder = supportedFormat.recorderMimeType
-        ? new MediaRecorder(stream, {
-            mimeType: supportedFormat.recorderMimeType,
-          })
-        : new MediaRecorder(stream);
-
       streamRef.current = stream;
+
+      let recorder: MediaRecorder;
+      try {
+        recorder = supportedFormat.recorderMimeType
+          ? new MediaRecorder(stream, {
+              mimeType: supportedFormat.recorderMimeType,
+            })
+          : new MediaRecorder(stream);
+      } catch (error) {
+        stopStream(stream);
+        streamRef.current = null;
+        throw error;
+      }
+
       mediaRecorderRef.current = recorder;
       startedAtRef.current = Date.now();
       setElapsedMs(0);

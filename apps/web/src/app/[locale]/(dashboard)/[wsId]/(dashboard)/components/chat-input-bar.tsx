@@ -195,7 +195,9 @@ export default function ChatInputBar({
       const valid = filterValidFiles(Array.from(selectedFiles), files.length);
 
       if (valid.length > 0) {
-        onFilesSelected?.(valid);
+        void Promise.resolve(onFilesSelected?.(valid)).catch((error) => {
+          console.error('[Mira Chat] Failed to queue selected files:', error);
+        });
       }
 
       // Reset input so the same file can be re-selected
@@ -230,7 +232,9 @@ export default function ChatInputBar({
       const valid = filterValidFiles(candidates, files.length);
 
       if (valid.length > 0) {
-        onFilesSelected(valid);
+        void Promise.resolve(onFilesSelected(valid)).catch((error) => {
+          console.error('[Mira Chat] Failed to queue pasted files:', error);
+        });
       }
 
       // If the clipboard only contained files (no text), prevent the default

@@ -515,6 +515,7 @@ export function createPOST(
             ? 'The current user turn is asking for a direct response about current-turn attachments. Do not call any tool. Answer in normal assistant text using the attachment digest/context already provided.'
             : null,
           isMiraMode &&
+          !shouldBypassMiraToolLoop &&
           isAttachmentOnlyTurn &&
           latestAttachmentTurn.attachments.length > 0
             ? 'This user turn contains only current-turn attachments, so the attachment digest may contain the user’s actual request. You may use normal non-persistence action tools when the digest asks you to do something. Do not treat this as pure conversation by default. Never print a tool plan, tool names, or a JSON array of tools in assistant text; call the tool directly.'

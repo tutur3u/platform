@@ -204,4 +204,64 @@ describe('persistAssistantResponse', () => {
       })
     );
   });
+
+  it('does not persist a success summary when a tool result fails inside output', async () => {
+    deductAiCreditsMock.mockResolvedValue({
+      success: true,
+    });
+
+    let insertedPayload: Record<string, unknown> | null = null;
+    const sbAdmin = {
+      from: () => ({
+        insert: (payload: Record<string, unknown>) => {
+          insertedPayload = payload;
+
+          return {
+            select: () => ({
+              single: async () => ({
+                data: { id: 'assistant-message-4' },
+                error: null,
+              }),
+            }),
+          };
+        },
+      }),
+    };
+
+    await persistAssistantResponse({
+      chatId: 'chat-1',
+      effectiveSource: 'Mira',
+      model: 'google/gemini-3.1-flash-lite-preview',
+      response: {
+        steps: [
+          {
+            toolCalls: [{ toolName: 'create_task' }],
+            toolResults: [
+              {
+                output: { ok: false, error: 'validation_failed' },
+                toolName: 'create_task',
+              },
+            ],
+          },
+        ],
+        text: '',
+        totalUsage: {
+          inputTokens: 10,
+          outputTokens: 5,
+          reasoningTokens: 0,
+        },
+      },
+      sbAdmin: sbAdmin as never,
+      userId: 'user-1',
+      wsId: 'ws-1',
+    });
+
+    expect(insertedPayload).toEqual(
+      expect.objectContaining({
+        content: expect.stringContaining(
+          'I finished some background steps for this turn'
+        ),
+      })
+    );
+  });
 });

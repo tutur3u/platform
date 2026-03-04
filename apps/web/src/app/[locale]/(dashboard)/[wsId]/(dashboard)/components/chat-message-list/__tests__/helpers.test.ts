@@ -206,6 +206,21 @@ describe('chat message tool visibility', () => {
     ).toBe('Hello there.');
   });
 
+  it('does not strip ordinary assistant JSON that is not a planner envelope', () => {
+    expect(
+      getAssistantDisplayText({
+        id: 'assistant-3',
+        role: 'assistant',
+        parts: [
+          {
+            type: 'text',
+            text: '{"tools":"explanation","note":"keep this"}\n\nHello there.',
+          },
+        ],
+      } as never)
+    ).toBe('{"tools":"explanation","note":"keep this"}\n\nHello there.');
+  });
+
   it('detects visual render_ui tool output separately', () => {
     expect(
       hasVisualToolPart({

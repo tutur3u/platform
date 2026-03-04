@@ -281,7 +281,12 @@ function getLatestUserMessage(
 }
 
 function normalizeModelName(model: string): string {
-  return (model.includes('/') ? model.split('/').pop()! : model).toLowerCase();
+  if (!model) return '';
+  const modelParts = model.split('/');
+  const normalizedModel = model.includes('/')
+    ? (modelParts[modelParts.length - 1] ?? model)
+    : model;
+  return normalizedModel.toLowerCase();
 }
 
 export async function persistLatestUserMessage({

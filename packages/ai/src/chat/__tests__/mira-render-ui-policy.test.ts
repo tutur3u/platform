@@ -213,6 +213,12 @@ describe('mira render_ui policy', () => {
     expect(shouldBypassToolLoopForAttachmentReply(messages, true)).toBe(false);
   });
 
+  it('keeps the tool loop enabled for attachment-only turns with no text', () => {
+    const messages: ModelMessage[] = [{ role: 'user', content: '' }];
+
+    expect(shouldBypassToolLoopForAttachmentReply(messages, true)).toBe(false);
+  });
+
   it('extracts selected tools from latest select_tools call', () => {
     const steps = [
       {

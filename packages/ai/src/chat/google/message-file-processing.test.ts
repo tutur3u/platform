@@ -235,7 +235,7 @@ describe('processMessagesWithFiles', () => {
         content: expect.arrayContaining([
           expect.objectContaining({
             text: expect.stringContaining(
-              'The attachment could not be analyzed automatically: boom'
+              'The attachment could not be analyzed automatically due to an internal processing error.'
             ),
           }),
           expect.objectContaining({

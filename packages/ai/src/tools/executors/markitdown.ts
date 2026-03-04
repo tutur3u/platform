@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { NATIVE_MULTIMODAL_FILE_EXTENSIONS } from '../../chat/attachment-policy';
 import { normalizeChatAttachmentMetadata } from '../../chat/chat-attachment-metadata';
 import {
   commitFixedAiCreditReservation,
@@ -12,22 +13,6 @@ const CREDIT_FEATURE = 'chat' as const;
 const MARKITDOWN_LEDGER_MODEL = 'markitdown/conversion';
 const DEFAULT_MARKITDOWN_TIMEOUT_MS = 30_000;
 const MIN_MARKITDOWN_TIMEOUT_MS = 1_000;
-const NATIVE_MULTIMODAL_EXTENSIONS = new Set([
-  'aac',
-  'flac',
-  'jpeg',
-  'jpg',
-  'm4a',
-  'mov',
-  'mp3',
-  'mp4',
-  'ogg',
-  'png',
-  'wav',
-  'webm',
-  'webp',
-]);
-
 function stripTimestampPrefix(name: string): string {
   const match = name.match(/^\d+_(.+)$/);
   return match?.[1] ?? name;
@@ -53,7 +38,7 @@ function isNativeMultimodalFile(
     return true;
   }
 
-  return NATIVE_MULTIMODAL_EXTENSIONS.has(getFileExtension(fileName));
+  return NATIVE_MULTIMODAL_FILE_EXTENSIONS.has(getFileExtension(fileName));
 }
 
 function parseBaseUrl(value: string): string | null {
@@ -243,7 +228,9 @@ export async function executeConvertFileToMarkdown(
       : 120_000;
   const maxCharacters = Math.min(Math.max(maxCharactersRaw, 10_000), 120_000);
 
-  const expectedPrefix = `${ctx.wsId}/chats/ai/resources/`;
+  const expectedPrefix = ctx.chatId
+    ? `${ctx.wsId}/chats/ai/resources/${ctx.chatId}/`
+    : `${ctx.wsId}/chats/ai/resources/`;
   let targetPath = storagePathArg;
   let selectedFileName = '';
   let selectedMediaType: string | null = null;
@@ -293,9 +280,13 @@ export async function executeConvertFileToMarkdown(
       .limit(20);
 
     if (recentMessagesError) {
+      console.error('MarkItDown: failed to inspect recent chat messages', {
+        chatId: ctx.chatId ? `${ctx.chatId.slice(0, 4)}...` : 'unknown',
+        code: recentMessagesError.code ?? 'recent_messages_failed',
+      });
       return {
         ok: false,
-        error: `Failed to inspect recent chat messages: ${recentMessagesError.message}`,
+        error: 'Failed to inspect recent chat messages.',
       };
     }
 

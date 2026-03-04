@@ -111,7 +111,7 @@ function mergeAttachmentEntry(
     ...incoming,
     alias: incoming.alias ?? existing.alias ?? null,
     previewUrl: existing.previewUrl ?? incoming.previewUrl,
-    signedUrl: existing.signedUrl ?? incoming.signedUrl,
+    signedUrl: incoming.signedUrl ?? existing.signedUrl,
     storagePath: incoming.storagePath ?? existing.storagePath,
     type:
       incoming.type === 'application/octet-stream' && existing.type
@@ -376,7 +376,11 @@ export async function loadExistingChat({
         messageAttachments.set(messageId, existing);
       }
     }
+  } catch (err) {
+    console.error('[Mira Chat] Failed to load signed chat file URLs', err);
+  }
 
+  try {
     const fileUrlsRes = await fetch('/api/ai/chat/file-urls', {
       method: 'POST',
       credentials: 'include',

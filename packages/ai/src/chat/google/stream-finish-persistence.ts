@@ -94,13 +94,25 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
+function hasFailureFlag(value: unknown, seen = new WeakSet<object>()): boolean {
+  if (Array.isArray(value)) {
+    return value.some((item) => hasFailureFlag(item, seen));
+  }
+
+  if (!isRecord(value)) return false;
+  if (seen.has(value)) return false;
+  seen.add(value);
+
+  if (value.ok === false || value.success === false) {
+    return true;
+  }
+
+  return Object.values(value).some((entry) => hasFailureFlag(entry, seen));
+}
+
 function hasToolFailures(allToolResults: ToolResultLike[]): boolean {
-  return allToolResults.some((toolResult) => {
-    if (!isRecord(toolResult)) return false;
-    if ('ok' in toolResult && toolResult.ok === false) return true;
-    if ('success' in toolResult && toolResult.success === false) return true;
-    return false;
-  });
+  if (allToolResults.length === 0) return true;
+  return allToolResults.some((toolResult) => hasFailureFlag(toolResult));
 }
 
 function humanizeToolName(toolName: string): string {

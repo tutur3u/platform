@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { MIRA_TOOL_DIRECTORY } from '../../tools/mira-tools';
 import { buildMiraSystemInstruction } from '../mira-system-instruction';
 
 describe('buildMiraSystemInstruction', () => {
@@ -38,5 +39,18 @@ describe('buildMiraSystemInstruction', () => {
     expect(instruction).toContain(
       'then call `set_workspace_context` with the concrete workspace ID/context'
     );
+  });
+
+  it('only references registered tool names inside quoted strategy examples', () => {
+    const instruction = buildMiraSystemInstruction();
+    const referencedToolNames = [...instruction.matchAll(/`([^`]+)`/g)].flatMap(
+      (match) => match[1]?.match(/\b[a-z]+(?:_[a-z0-9]+)+\b/g) ?? []
+    );
+
+    const unknownToolNames = referencedToolNames.filter(
+      (toolName) => !(toolName in MIRA_TOOL_DIRECTORY)
+    );
+
+    expect(unknownToolNames).toEqual([]);
   });
 });

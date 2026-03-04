@@ -400,7 +400,7 @@ export function shouldBypassToolLoopForAttachmentReply(
     if (!message || message.role !== 'user') continue;
 
     const text = extractTextFromUserMessage(message).trim();
-    if (!text) return true;
+    if (!text) return false;
 
     const normalizedText = text.toLowerCase();
     if (DIRECT_ATTACHMENT_REPLY_PLACEHOLDER_SET.has(normalizedText)) {
@@ -430,7 +430,7 @@ export function shouldBypassToolLoopForAttachmentReply(
       return true;
     }
 
-    return true;
+    return false;
   }
 
   return false;
