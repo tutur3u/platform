@@ -7,7 +7,6 @@ import {
   Calendar,
   Gamepad2,
   GitBranch,
-  Newspaper,
   NotebookPen,
   Paintbrush,
   Puzzle,

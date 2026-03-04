@@ -71,5 +71,5 @@ export default function BlogDetailPage() {
 
   console.log('blogDetail', blogDetail);
 
-  return <BlogDetailClient blog={blogDetail} />;
+  return <BlogDetailClient blog={blogDetail!} />;
 }
