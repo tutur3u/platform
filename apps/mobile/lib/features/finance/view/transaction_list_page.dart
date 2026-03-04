@@ -101,15 +101,21 @@ List<_DateGroup> _groupByDate(
     for (final tx in txList) {
       final amount = tx.amount ?? 0;
       final walletCurrency = tx.walletCurrency ?? workspaceCurrency;
+      final isWorkspaceCurrency =
+          walletCurrency.toUpperCase() == workspaceCurrency.toUpperCase();
       final converted = convertCurrency(
         amount,
         walletCurrency,
         workspaceCurrency,
         exchangeRates,
       );
-      final amt = converted ?? amount;
-      if (converted != null &&
-          walletCurrency.toUpperCase() != workspaceCurrency.toUpperCase()) {
+
+      if (!isWorkspaceCurrency && converted == null) {
+        continue;
+      }
+
+      final amt = isWorkspaceCurrency ? amount : converted!;
+      if (!isWorkspaceCurrency) {
         hasConvertedAmounts = true;
       }
       if (amt >= 0) {

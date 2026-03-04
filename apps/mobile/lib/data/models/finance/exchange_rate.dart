@@ -11,7 +11,13 @@ class ExchangeRate extends Equatable {
   factory ExchangeRate.fromJson(Map<String, dynamic> json) => ExchangeRate(
     baseCurrency: json['base_currency'] as String? ?? 'USD',
     targetCurrency: json['target_currency'] as String? ?? 'USD',
-    rate: (json['rate'] as num?)?.toDouble() ?? 0,
+    rate: () {
+      final parsedRate = (json['rate'] as num?)?.toDouble();
+      if (parsedRate == null || parsedRate <= 0) {
+        throw const FormatException('Invalid exchange rate value');
+      }
+      return parsedRate;
+    }(),
     date: json['date'] as String? ?? '',
   );
 
