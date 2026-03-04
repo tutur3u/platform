@@ -100,6 +100,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **User Email**: Never query `public.users.email` (it doesn't exist). Use `public.user_private_details`.
 - **Reset-Only Local Defaults**: If behavior should apply only after `bun sb:reset` (local dev bootstrap), implement it in `apps/database/scripts/*` and wire it into the reset script; do not encode reset-only behavior in migrations.
 - **Workspace-Scoped Mutation Follow-Through**: For workspace-scoped `UPDATE`/`DELETE` API handlers, request returning rows (`select(...).maybeSingle()` or equivalent) and stop follow-up side effects when no row matched; never run dependent child-table deletes/updates based only on a requested ID.
+- **Notification Rollout Gates**: Temporary rollout flags that restrict notification workers to internal/root workspaces must default to off before merge. Do not leave email delivery or reminder generation limited to Tuturuuu-only traffic after validation.
 
 ### 6.2 UI & Rendering Patterns
 
@@ -161,6 +162,7 @@ See also:
 - **Mira Attachment Restoration Merge**: When restored chat state rehydrates attachment maps, merge it with any richer in-session attachment entries instead of replacing them wholesale; preserve existing blob previews and signed read URLs so freshly uploaded media stays previewable even if the restored snapshot still points at temp storage or lacks a signed URL.
 - **Mira Direct Attachment Replies**: For current-turn attachment requests that are clearly just analysis, summarization, or opinion (and do not require workspace/productivity/web/memory actions), bypass the Mira tool loop and answer directly from the injected digest context. Do not force `select_tools -> no_action_needed` for those turns.
 - **Mira Attachment Restoration Matching**: When rebuilding chat attachment state from stored file URLs, match files to messages by canonical `storagePath`, not filename. Recorder uploads and repeated exports can reuse the same filename across turns, so filename-based matching can attach a file to the wrong message or duplicate a single upload.
+- **Mira Attachment-Only Action Requests**: Do not globally disable Mira tools just because the latest user turn contains only attachments. Current-turn attachment digests can carry the user’s real request (for example an audio note asking to create tasks), so non-persistence action tools must still be available. Only persistence/identity tools should stay blocked unless the user explicitly asks to save or change long-term state.
 
 ### 6.4 Tooling & CI
 

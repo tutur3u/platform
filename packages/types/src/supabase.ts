@@ -5779,6 +5779,7 @@ export type Database = {
       notification_batches: {
         Row: {
           channel: string;
+          consolidated_into_batch_id: string | null;
           created_at: string;
           delivery_mode: Database['public']['Enums']['notification_delivery_mode'];
           email: string | null;
@@ -5786,6 +5787,7 @@ export type Database = {
           id: string;
           notification_count: number;
           sent_at: string | null;
+          skip_reason: string | null;
           status: string;
           updated_at: string;
           user_id: string | null;
@@ -5795,6 +5797,7 @@ export type Database = {
         };
         Insert: {
           channel: string;
+          consolidated_into_batch_id?: string | null;
           created_at?: string;
           delivery_mode?: Database['public']['Enums']['notification_delivery_mode'];
           email?: string | null;
@@ -5802,6 +5805,7 @@ export type Database = {
           id?: string;
           notification_count?: number;
           sent_at?: string | null;
+          skip_reason?: string | null;
           status?: string;
           updated_at?: string;
           user_id?: string | null;
@@ -5811,6 +5815,7 @@ export type Database = {
         };
         Update: {
           channel?: string;
+          consolidated_into_batch_id?: string | null;
           created_at?: string;
           delivery_mode?: Database['public']['Enums']['notification_delivery_mode'];
           email?: string | null;
@@ -5818,6 +5823,7 @@ export type Database = {
           id?: string;
           notification_count?: number;
           sent_at?: string | null;
+          skip_reason?: string | null;
           status?: string;
           updated_at?: string;
           user_id?: string | null;
@@ -5826,6 +5832,13 @@ export type Database = {
           ws_id?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'notification_batches_consolidated_into_batch_id_fkey';
+            columns: ['consolidated_into_batch_id'];
+            isOneToOne: false;
+            referencedRelation: 'notification_batches';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'notification_batches_ws_id_fkey';
             columns: ['ws_id'];
@@ -5846,36 +5859,42 @@ export type Database = {
         Row: {
           batch_id: string | null;
           channel: string;
+          consolidated_into_notification_id: string | null;
           created_at: string;
           error_message: string | null;
           id: string;
           notification_id: string;
           retry_count: number;
           sent_at: string | null;
+          skip_reason: string | null;
           status: string;
           updated_at: string;
         };
         Insert: {
           batch_id?: string | null;
           channel: string;
+          consolidated_into_notification_id?: string | null;
           created_at?: string;
           error_message?: string | null;
           id?: string;
           notification_id: string;
           retry_count?: number;
           sent_at?: string | null;
+          skip_reason?: string | null;
           status?: string;
           updated_at?: string;
         };
         Update: {
           batch_id?: string | null;
           channel?: string;
+          consolidated_into_notification_id?: string | null;
           created_at?: string;
           error_message?: string | null;
           id?: string;
           notification_id?: string;
           retry_count?: number;
           sent_at?: string | null;
+          skip_reason?: string | null;
           status?: string;
           updated_at?: string;
         };
@@ -5885,6 +5904,13 @@ export type Database = {
             columns: ['batch_id'];
             isOneToOne: false;
             referencedRelation: 'notification_batches';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'notification_delivery_log_consolidated_into_notification_i_fkey';
+            columns: ['consolidated_into_notification_id'];
+            isOneToOne: false;
+            referencedRelation: 'notifications';
             referencedColumns: ['id'];
           },
           {

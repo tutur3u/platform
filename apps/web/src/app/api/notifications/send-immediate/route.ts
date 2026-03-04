@@ -2,16 +2,28 @@ import { render } from '@react-email/render';
 import { sendSystemEmail } from '@tuturuuu/email-service';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import DeadlineReminderEmail from '@tuturuuu/transactional/emails/deadline-reminder';
-import NotificationDigestEmail from '@tuturuuu/transactional/emails/notification-digest';
+import NotificationDigestEmail, {
+  generateSubjectLine,
+  type NotificationItem,
+} from '@tuturuuu/transactional/emails/notification-digest';
 import WorkspaceInviteEmail from '@tuturuuu/transactional/emails/workspace-invite';
-import { MAX_NAME_LENGTH, ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  fetchTaskStateMap,
+  getNotificationBatchRecipientKey,
+  getQueuedNotificationActionUrl,
+  markBatchesSkipped,
+  markDeliveryLogsFailedForBatches,
+  markDeliveryLogsSkipped,
+  planQueuedNotifications,
+  type QueuedNotification,
+} from '@/app/api/notifications/delivery-utils';
 
-// Feature flag: When true, only send emails for notifications belonging to the root workspace
-// Set to false to allow emails for all workspaces
-const RESTRICT_TO_ROOT_WORKSPACE_ONLY = true;
+const MAX_IMMEDIATE_BATCH_SEEDS = 300;
+const MAX_RECIPIENTS_PER_RUN = 200;
 
 // Zod schema for request body validation
 const RequestBodySchema = z.object({
@@ -31,8 +43,10 @@ interface NotificationData {
   code?: string;
   title: string;
   description: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   created_at: string;
+  entity_id?: string | null;
+  entity_type?: string | null;
 }
 
 interface RenderTemplateParams {
@@ -61,9 +75,21 @@ interface EmailConfigData {
 }
 
 interface DeliveryLogWithNotification {
+  id: string;
   batch_id: string;
   notification_id: string;
   notifications: NotificationData | null;
+}
+
+interface NotificationBatchRow {
+  id: string;
+  ws_id: string | null;
+  user_id: string | null;
+  email: string | null;
+  channel: string;
+  status: string;
+  created_at: string;
+  window_end: string;
 }
 
 // Render the appropriate email template based on type
@@ -76,16 +102,17 @@ async function renderEmailTemplate(params: RenderTemplateParams): Promise<{
   switch (templateType) {
     case 'workspace-invite': {
       const inviterName =
-        notification.data?.inviter_name ||
-        notification.data?.inviterName ||
+        (notification.data?.inviter_name as string) ||
+        (notification.data?.inviterName as string) ||
         'Someone';
       const wsName =
-        notification.data?.workspace_name ||
-        notification.data?.workspaceName ||
+        (notification.data?.workspace_name as string) ||
+        (notification.data?.workspaceName as string) ||
         workspaceName ||
         'a workspace';
       const workspaceId =
-        notification.data?.workspace_id || notification.data?.workspaceId;
+        (notification.data?.workspace_id as string | undefined) ||
+        (notification.data?.workspaceId as string | undefined);
 
       const html = await render(
         WorkspaceInviteEmail({
@@ -125,7 +152,7 @@ async function renderEmailTemplate(params: RenderTemplateParams): Promise<{
 
       return {
         html,
-        subject: `Task Due Soon: ${taskName}`,
+        subject: `Due in ${reminderInterval}: ${taskName}`,
       };
     }
 
@@ -196,7 +223,9 @@ export async function POST(req: NextRequest) {
     // Build query for immediate batches
     let query = sbAdmin
       .from('notification_batches')
-      .select('*')
+      .select(
+        'id, ws_id, user_id, email, channel, status, created_at, window_end'
+      )
       .eq('status', 'pending')
       .eq('delivery_mode', 'immediate');
 
@@ -205,7 +234,9 @@ export async function POST(req: NextRequest) {
       query = query.in('id', batchIds);
     }
 
-    const { data: batches, error: batchesError } = await query.limit(20);
+    const { data: batches, error: batchesError } = await query
+      .order('created_at', { ascending: true })
+      .limit(MAX_IMMEDIATE_BATCH_SEEDS);
 
     if (batchesError) {
       console.error('Error fetching immediate batches:', batchesError);
@@ -222,83 +253,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // If restricted to root workspace, we need to filter batches after fetching
-    // because ws_id can be null for user-scoped notifications (like workspace invites)
-    // In that case, the workspace ID is stored in the notification's entity_id or data
-    let filteredBatches = batches;
-
-    if (RESTRICT_TO_ROOT_WORKSPACE_ONLY) {
-      // First, get the notification data for batches with null ws_id to check entity_id
-      const batchesWithNullWsId = batches.filter((b) => b.ws_id === null);
-      const batchesWithWsId = batches.filter((b) => b.ws_id !== null);
-
-      // Keep batches that have ws_id = ROOT_WORKSPACE_ID
-      const validBatchesWithWsId = batchesWithWsId.filter(
-        (b) => b.ws_id === ROOT_WORKSPACE_ID
-      );
-
-      // For batches with null ws_id, check the notification's entity_id or data->workspace_id
-      const validBatchIdsFromNullWsId: string[] = [];
-
-      if (batchesWithNullWsId.length > 0) {
-        const batchIdsToCheck = batchesWithNullWsId.map((b) => b.id);
-
-        // Get notifications for these batches to check their entity_id/data
-        const { data: deliveryLogsForCheck } = await sbAdmin
-          .from('notification_delivery_log')
-          .select(
-            `
-            batch_id,
-            notifications (
-              entity_id,
-              data
-            )
-          `
-          )
-          .in('batch_id', batchIdsToCheck)
-          .eq('channel', 'email');
-
-        if (deliveryLogsForCheck) {
-          for (const log of deliveryLogsForCheck) {
-            const notification = log.notifications as {
-              entity_id: string | null;
-              data: Record<string, unknown> | null;
-            } | null;
-            if (notification && log.batch_id) {
-              // Check entity_id first, then data->workspace_id
-              const workspaceId =
-                notification.entity_id ||
-                (notification.data?.workspace_id as string | undefined);
-
-              if (workspaceId === ROOT_WORKSPACE_ID) {
-                validBatchIdsFromNullWsId.push(log.batch_id as string);
-              }
-            }
-          }
-        }
-      }
-
-      // Combine valid batches
-      const validBatchIds = new Set([
-        ...validBatchesWithWsId.map((b) => b.id),
-        ...validBatchIdsFromNullWsId,
-      ]);
-
-      filteredBatches = batches.filter((b) => validBatchIds.has(b.id));
-
-      if (filteredBatches.length === 0) {
-        return NextResponse.json({
-          message:
-            'No immediate batches to process (filtered by root workspace)',
-          processed: 0,
-        });
-      }
-    }
-
-    // ========================================================================
-    // BATCH PRE-FETCH: Reduce N+1 queries by fetching all related data upfront
-    // With 20 batches limit, this reduces from 60+ queries to ~5 queries
-    // ========================================================================
+    const filteredBatches = batches as NotificationBatchRow[];
 
     const batchIdList = filteredBatches.map((b) => b.id);
 
@@ -307,16 +262,19 @@ export async function POST(req: NextRequest) {
       .from('notification_delivery_log')
       .select(
         `
+        id,
         batch_id,
         notification_id,
-        notifications (
+        notifications:notifications!notification_delivery_log_notification_id_fkey (
           id,
           type,
           code,
           title,
           description,
           data,
-          created_at
+          created_at,
+          entity_id,
+          entity_type
         )
       `
       )
@@ -401,47 +359,89 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // ========================================================================
-    // PROCESS BATCHES: Now using pre-fetched data (O(1) lookups)
-    // ========================================================================
-
     let processedCount = 0;
     let failedCount = 0;
     const results: Array<{
       batch_id: string;
       status: string;
       email?: string;
+      merged_batches?: number;
       error?: string;
     }> = [];
 
+    const recipientBatchGroups = new Map<string, NotificationBatchRow[]>();
     for (const batch of filteredBatches) {
+      const recipientKey = getNotificationBatchRecipientKey({
+        wsId: batch.ws_id,
+        userId: batch.user_id,
+        email: batch.email,
+        channel: batch.channel,
+      });
+      const existing = recipientBatchGroups.get(recipientKey) || [];
+      existing.push(batch);
+      recipientBatchGroups.set(recipientKey, existing);
+    }
+
+    const recipientBatchSeeds = Array.from(recipientBatchGroups.values())
+      .map((group) => group[0]!)
+      .slice(0, MAX_RECIPIENTS_PER_RUN);
+
+    for (const seedBatch of recipientBatchSeeds) {
+      let activeBatchId = seedBatch.id;
+      let recipientBatchIds: string[] = [seedBatch.id];
+
       try {
-        // Mark batch as processing
+        const recipientKey = getNotificationBatchRecipientKey({
+          wsId: seedBatch.ws_id,
+          userId: seedBatch.user_id,
+          email: seedBatch.email,
+          channel: seedBatch.channel,
+        });
+        const recipientBatches = [
+          ...(recipientBatchGroups.get(recipientKey) || []),
+        ].sort(
+          (a, b) =>
+            new Date(b.created_at || b.window_end).getTime() -
+            new Date(a.created_at || a.window_end).getTime()
+        );
+
+        if (recipientBatches.length === 0) {
+          continue;
+        }
+
+        const latestBatch = recipientBatches[0]!;
+        recipientBatchIds = recipientBatches.map((item) => item.id);
+        const olderBatchIds = recipientBatches.slice(1).map((item) => item.id);
+        activeBatchId = latestBatch.id;
+
         await sbAdmin
           .from('notification_batches')
           .update({
             status: 'processing',
             updated_at: new Date().toISOString(),
           })
-          .eq('id', batch.id)
+          .eq('id', latestBatch.id)
           .eq('status', 'pending');
 
-        // Get delivery logs from pre-fetched data (O(1) lookup)
-        const deliveryLogs = deliveryLogsByBatch.get(batch.id);
+        const deliveryLogs: DeliveryLogWithNotification[] = [];
+        for (const batch of recipientBatches) {
+          const logs = deliveryLogsByBatch.get(batch.id) || [];
+          deliveryLogs.push(...logs);
+        }
 
         if (!deliveryLogs || deliveryLogs.length === 0) {
-          await sbAdmin
-            .from('notification_batches')
-            .update({
-              status: 'sent',
-              sent_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', batch.id);
+          await markBatchesSkipped(sbAdmin, olderBatchIds, {
+            reason: 'consolidated_to_latest_batch',
+            consolidatedIntoBatchId: latestBatch.id,
+          });
+          await markBatchesSkipped(sbAdmin, [latestBatch.id], {
+            reason: 'no_notifications',
+          });
 
           results.push({
-            batch_id: batch.id,
+            batch_id: latestBatch.id,
             status: 'skipped',
+            merged_batches: recipientBatches.length,
           });
           processedCount++;
           continue;
@@ -451,12 +451,12 @@ export async function POST(req: NextRequest) {
         let userEmail: string;
         let userName: string;
 
-        if (batch.user_id) {
-          const user = usersMap.get(batch.user_id);
-          userEmail = user?.email || batch.email || '';
+        if (latestBatch.user_id) {
+          const user = usersMap.get(latestBatch.user_id);
+          userEmail = user?.email || latestBatch.email || '';
           userName = user?.display_name || userEmail;
         } else {
-          userEmail = batch.email || '';
+          userEmail = latestBatch.email || '';
           userName = userEmail;
         }
 
@@ -466,56 +466,127 @@ export async function POST(req: NextRequest) {
 
         // Get workspace details from pre-fetched data (O(1) lookup)
         let workspaceName = 'Tuturuuu';
-        if (batch.ws_id) {
-          const workspace = workspacesMap.get(batch.ws_id);
+        if (latestBatch.ws_id) {
+          const workspace = workspacesMap.get(latestBatch.ws_id);
           if (workspace) {
             workspaceName = workspace.name || 'Unknown Workspace';
           }
         }
 
-        // Get the notification from pre-fetched delivery logs
-        const notification = deliveryLogs[0]?.notifications as NotificationData;
-        if (!notification) {
+        const queuedNotifications: QueuedNotification[] = [];
+        for (const deliveryLog of deliveryLogs) {
+          const notification = deliveryLog.notifications;
+          if (!notification) {
+            continue;
+          }
+
+          queuedNotifications.push({
+            deliveryLogId: deliveryLog.id,
+            batchId: deliveryLog.batch_id,
+            notificationId: deliveryLog.notification_id,
+            type: notification.type,
+            title: notification.title,
+            description: notification.description ?? null,
+            data: notification.data,
+            createdAt: notification.created_at,
+            entityId: notification.entity_id ?? null,
+            entityType: notification.entity_type ?? null,
+            actionUrl:
+              (notification.data?.action_url as string | undefined) || null,
+          });
+        }
+
+        const taskStateMap = await fetchTaskStateMap(
+          sbAdmin,
+          queuedNotifications
+        );
+        const plan = planQueuedNotifications(queuedNotifications, taskStateMap);
+
+        const staleSkipped = plan.skipped.filter(
+          (entry) => entry.reason !== 'consolidated_to_latest'
+        );
+        const consolidatedSkipped = plan.skipped.filter(
+          (entry) => entry.reason === 'consolidated_to_latest'
+        );
+
+        await markDeliveryLogsSkipped(sbAdmin, staleSkipped);
+        await markDeliveryLogsSkipped(sbAdmin, consolidatedSkipped);
+        await markBatchesSkipped(sbAdmin, olderBatchIds, {
+          reason: 'consolidated_to_latest_batch',
+          consolidatedIntoBatchId: latestBatch.id,
+        });
+
+        if (plan.notificationsToSend.length === 0) {
+          await markBatchesSkipped(sbAdmin, [latestBatch.id], {
+            reason: staleSkipped[0]?.reason || 'task_inactive',
+          });
+
+          results.push({
+            batch_id: latestBatch.id,
+            status: 'skipped',
+            email: userEmail,
+            merged_batches: recipientBatches.length,
+          });
+          processedCount++;
+          continue;
+        }
+
+        const notification = plan.notificationsToSend[0]!;
+        const primaryNotification = deliveryLogs.find(
+          (deliveryLog) =>
+            deliveryLog.notification_id === notification.notificationId
+        )?.notifications as NotificationData | undefined;
+
+        if (!primaryNotification) {
           throw new Error('No notification found in delivery log');
         }
 
         // Get email config from pre-fetched data (O(1) lookup)
-        const notifType = notification.type || notification.code || '';
+        const notifType =
+          primaryNotification.type || primaryNotification.code || '';
         const config = emailConfigsMap.get(notifType);
 
         let emailHtml: string;
         let emailSubject: string;
 
-        if (config?.email_template) {
+        if (config?.email_template && plan.notificationsToSend.length === 1) {
           const templateResult = await renderEmailTemplate({
             templateType: config.email_template as EmailTemplateType,
-            notification,
+            notification: primaryNotification,
             userName,
             workspaceName,
           });
           emailHtml = templateResult.html;
           emailSubject = templateResult.subject;
         } else {
+          const digestNotifications: NotificationItem[] =
+            plan.notificationsToSend.map((item) => ({
+              id: item.notificationId,
+              type: item.type,
+              title: item.title,
+              description: item.description || '',
+              data: item.data || {},
+              createdAt: item.createdAt,
+              actionUrl: getQueuedNotificationActionUrl(item),
+              isConsolidated: item.isConsolidated,
+              consolidatedCount: item.consolidatedCount,
+              changeTypes: item.changeTypes,
+            }));
+
           // Fallback to digest template
           emailHtml = await render(
             NotificationDigestEmail({
               userName,
               workspaceName,
-              notifications: [
-                {
-                  id: notification.id,
-                  type: notification.type,
-                  title: notification.title,
-                  description: notification.description,
-                  data: notification.data,
-                  createdAt: notification.created_at,
-                },
-              ],
+              notifications: digestNotifications,
               workspaceUrl:
                 process.env.NEXT_PUBLIC_APP_URL || 'https://tuturuuu.com',
             })
           );
-          emailSubject = `New notification from ${workspaceName}`;
+          emailSubject = generateSubjectLine(
+            digestNotifications,
+            workspaceName
+          );
         }
 
         // Send email via centralized EmailService (bypasses rate limiting for system emails)
@@ -534,7 +605,7 @@ export async function POST(req: NextRequest) {
           metadata: {
             templateType,
             entityType: 'notification',
-            entityId: notification.id,
+            entityId: primaryNotification.id,
           },
         });
 
@@ -549,34 +620,43 @@ export async function POST(req: NextRequest) {
         }
 
         // Mark as sent
+        const sentAt = new Date().toISOString();
+
         await sbAdmin
           .from('notification_delivery_log')
           .update({
             status: 'sent',
-            sent_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq('batch_id', batch.id)
+            sent_at: sentAt,
+            updated_at: sentAt,
+          } as never)
+          .in(
+            'id',
+            plan.notificationsToSend.map((item) => item.deliveryLogId)
+          )
           .eq('status', 'pending');
 
         await sbAdmin
           .from('notification_batches')
           .update({
             status: 'sent',
-            sent_at: new Date().toISOString(),
-            notification_count: deliveryLogs.length,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', batch.id);
+            sent_at: sentAt,
+            notification_count: plan.notificationsToSend.length,
+            updated_at: sentAt,
+          } as never)
+          .eq('id', latestBatch.id);
 
         results.push({
-          batch_id: batch.id,
+          batch_id: latestBatch.id,
           status: 'sent',
           email: userEmail,
+          merged_batches: recipientBatches.length,
         });
         processedCount++;
       } catch (error) {
-        console.error(`Error processing immediate batch ${batch.id}:`, error);
+        console.error(
+          `Error processing immediate batch recipient ${seedBatch.id}:`,
+          error
+        );
 
         await sbAdmin
           .from('notification_batches')
@@ -586,10 +666,17 @@ export async function POST(req: NextRequest) {
               error instanceof Error ? error.message : 'Unknown error',
             updated_at: new Date().toISOString(),
           })
-          .eq('id', batch.id);
+          .in('id', recipientBatchIds)
+          .in('status', ['pending', 'processing']);
+
+        await markDeliveryLogsFailedForBatches(
+          sbAdmin,
+          recipientBatchIds,
+          error instanceof Error ? error.message : 'Unknown error'
+        );
 
         results.push({
-          batch_id: batch.id,
+          batch_id: activeBatchId,
           status: 'failed',
           error: error instanceof Error ? error.message : 'Unknown error',
         });
