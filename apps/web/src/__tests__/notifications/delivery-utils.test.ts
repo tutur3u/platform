@@ -151,6 +151,61 @@ describe('delivery-utils', () => {
       expect(plan.skipped).toHaveLength(0);
     });
 
+    it('does not treat missing task state as inactive for task updates', () => {
+      const notifications = [
+        createQueuedNotification({
+          deliveryLogId: 'log-update',
+          notificationId: 'notif-update',
+          type: 'task_updated',
+          data: { task_id: 'task-missing' },
+        }),
+      ];
+
+      const plan = planQueuedNotifications(
+        notifications,
+        new Map(),
+        new Date('2026-03-04T10:30:00.000Z')
+      );
+
+      expect(plan.notificationsToSend).toHaveLength(1);
+      expect(plan.notificationsToSend[0]?.notificationId).toBe('notif-update');
+      expect(plan.skipped).toHaveLength(0);
+    });
+
+    it('skips all notifications if task is inactive and no terminal updates exist', () => {
+      const notifications = [
+        createQueuedNotification({
+          deliveryLogId: 'log-update',
+          notificationId: 'notif-update',
+          type: 'task_updated',
+          createdAt: '2026-03-04T09:00:00.000Z',
+        }),
+      ];
+
+      const taskStates = new Map<string, TaskStateSnapshot>([
+        [
+          'task-1',
+          createTaskState({ completedAt: '2026-03-04T08:00:00.000Z' }),
+        ],
+      ]);
+
+      const plan = planQueuedNotifications(
+        notifications,
+        taskStates,
+        new Date('2026-03-04T09:10:00.000Z')
+      );
+
+      expect(plan.notificationsToSend).toHaveLength(0);
+      expect(plan.skipped).toEqual([
+        {
+          batchId: 'batch-1',
+          deliveryLogId: 'log-update',
+          notificationId: 'notif-update',
+          reason: 'task_inactive',
+        },
+      ]);
+    });
+
     it('keeps unrelated notifications separate', () => {
       const notifications = [
         createQueuedNotification({

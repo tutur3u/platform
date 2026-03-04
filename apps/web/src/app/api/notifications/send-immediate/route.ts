@@ -510,6 +510,7 @@ export async function POST(req: NextRequest) {
 
     for (const seedBatch of recipientBatchSeeds) {
       let activeBatchId = seedBatch.id;
+      let recipientBatchIds: string[] = [seedBatch.id];
 
       try {
         const recipientKey = getNotificationBatchRecipientKey({
@@ -531,6 +532,7 @@ export async function POST(req: NextRequest) {
         }
 
         const latestBatch = recipientBatches[0]!;
+        recipientBatchIds = recipientBatches.map((item) => item.id);
         const olderBatchIds = recipientBatches.slice(1).map((item) => item.id);
         activeBatchId = latestBatch.id;
 
@@ -791,11 +793,12 @@ export async function POST(req: NextRequest) {
               error instanceof Error ? error.message : 'Unknown error',
             updated_at: new Date().toISOString(),
           })
-          .eq('id', activeBatchId);
+          .in('id', recipientBatchIds)
+          .in('status', ['pending', 'processing']);
 
         await markDeliveryLogsFailedForBatches(
           sbAdmin,
-          [activeBatchId],
+          recipientBatchIds,
           error instanceof Error ? error.message : 'Unknown error'
         );
 

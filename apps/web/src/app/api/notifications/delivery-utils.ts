@@ -137,14 +137,11 @@ const hasTaskState = (
   task: TaskStateSnapshot | null | undefined
 ): task is TaskStateSnapshot => Boolean(task);
 
-const isTaskInactive = (task: TaskStateSnapshot | null | undefined): boolean =>
-  Boolean(task && (task.completedAt || task.closedAt || task.deletedAt));
+const isTaskInactive = (task: TaskStateSnapshot): boolean =>
+  Boolean(task.completedAt || task.closedAt || task.deletedAt);
 
-const isDeadlineElapsed = (
-  task: TaskStateSnapshot | null | undefined,
-  now: Date
-): boolean => {
-  const endTimestamp = getIsoTimestamp(task?.endDate);
+const isDeadlineElapsed = (task: TaskStateSnapshot, now: Date): boolean => {
+  const endTimestamp = getIsoTimestamp(task.endDate);
   if (endTimestamp == null) {
     return false;
   }
@@ -214,8 +211,8 @@ export const planQueuedNotifications = (
     const sortedGroup = [...group].sort(sortByNewest);
     const task = taskStates.get(taskId);
     const taskHasState = hasTaskState(task);
-    const taskInactive = isTaskInactive(task);
-    const deadlineElapsed = isDeadlineElapsed(task, now);
+    const taskInactive = taskHasState && isTaskInactive(task);
+    const deadlineElapsed = taskHasState && isDeadlineElapsed(task, now);
 
     let survivor: QueuedNotification | null = null;
 

@@ -263,6 +263,7 @@ export async function GET(req: NextRequest) {
 
     for (const seedBatch of recipientBatchSeeds) {
       let activeBatchId = seedBatch.id;
+      let recipientBatchIds: string[] = [seedBatch.id];
 
       try {
         let recipientBatchQuery = sbAdmin
@@ -312,6 +313,7 @@ export async function GET(req: NextRequest) {
 
         const latestBatch = recipientBatches[0]!;
         activeBatchId = latestBatch.id;
+        recipientBatchIds = recipientBatches.map((batch) => batch.id);
         const olderBatchIds = recipientBatches
           .slice(1)
           .map((batch) => batch.id);
@@ -582,12 +584,12 @@ export async function GET(req: NextRequest) {
               error instanceof Error ? error.message : 'Unknown error',
             updated_at: new Date().toISOString(),
           } as never)
-          .eq('id', activeBatchId)
-          .eq('status', 'processing');
+          .in('id', recipientBatchIds)
+          .in('status', ['pending', 'processing']);
 
         await markDeliveryLogsFailedForBatches(
           sbAdmin,
-          [activeBatchId],
+          recipientBatchIds,
           error instanceof Error ? error.message : 'Unknown error'
         );
 
