@@ -10,6 +10,7 @@ import {
   UserCheck,
   Users,
 } from '@ncthub/ui/icons';
+import Link from 'next/link';
 
 export default function RulesSection() {
   return (
@@ -143,7 +144,7 @@ export default function RulesSection() {
 
         {/* Full Regulations CTA */}
         <div className="mt-12 flex justify-center">
-          <a
+          <Link
             href="https://drive.google.com/file/d/1_5nPwmZz8aykH46vnTYjRGQDm7BBIRKi/view?usp=sharing"
             target="_blank"
             rel="noopener noreferrer"
@@ -156,7 +157,7 @@ export default function RulesSection() {
                 </div>
 
                 <div>
-                  <p className="text-lg font-black uppercase tracking-wide text-brand-teal">
+                  <p className="font-black text-brand-teal text-lg uppercase tracking-wide">
                     Full Rules & Regulations
                   </p>
                   <p className="mt-1 text-muted-foreground text-sm">
@@ -167,7 +168,7 @@ export default function RulesSection() {
 
               <ExternalLink className="h-5 w-5 shrink-0 text-brand-teal opacity-60 transition group-hover:opacity-100" />
             </div>
-          </a>
+          </Link>
         </div>
       </div>
     </section>
