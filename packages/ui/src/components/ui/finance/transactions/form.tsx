@@ -1,10 +1,6 @@
 'use client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  ArrowLeftRight,
-  Settings2,
-  Wallet,
-} from '@tuturuuu/icons';
+import { ArrowLeftRight, Settings2, Wallet } from '@tuturuuu/icons';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import type { Wallet as WalletType } from '@tuturuuu/types/primitives/Wallet';
 import { Button } from '@tuturuuu/ui/button';
