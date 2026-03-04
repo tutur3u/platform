@@ -32,6 +32,7 @@ export function useBestPromotionSelection({
   const hasAppliedBestPromotion = useRef(false);
 
   const lastResetKeyRef = useRef('');
+  const lastSelectionRequestRef = useRef('');
 
   useEffect(() => {
     const promotionKey = Array.isArray(linkedPromotions)
@@ -49,6 +50,7 @@ export function useBestPromotionSelection({
     if (resetKey !== lastResetKeyRef.current) {
       lastResetKeyRef.current = resetKey;
       hasAppliedBestPromotion.current = false;
+      lastSelectionRequestRef.current = '';
     }
 
     if (
@@ -104,6 +106,13 @@ export function useBestPromotionSelection({
 
     if (best?.id) {
       if (hasAppliedBestPromotion.current) return;
+
+      const selectionRequestKey = `${resetKey}|${best.id}`;
+      if (selectionRequestKey === lastSelectionRequestRef.current) {
+        return;
+      }
+
+      lastSelectionRequestRef.current = selectionRequestKey;
       hasAppliedBestPromotion.current = true;
       onSelectPromotion(best.id);
     }

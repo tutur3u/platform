@@ -32,6 +32,11 @@ const CONFIG_KEYS = [
 
 type ConfigKey = (typeof CONFIG_KEYS)[number];
 
+const hasSameConfigValues = (
+  left: Record<ConfigKey, string>,
+  right: Record<ConfigKey, string>
+) => CONFIG_KEYS.every((key) => left[key] === right[key]);
+
 function getCategoryIcon(category: TransactionCategory): React.ReactNode {
   if (category.icon) {
     const IconComponent = getIconComponentByKey(
@@ -96,7 +101,9 @@ export default function DebtLoanSettings({ workspaceId }: Props) {
       newValues[key] = categoryExists ? trimmed : NONE_OPTION;
     }
 
-    setInitialValues(newValues);
+    setInitialValues((previous) =>
+      hasSameConfigValues(previous, newValues) ? previous : newValues
+    );
     if (!initialized) {
       setSelectedValues(newValues);
       setInitialized(true);

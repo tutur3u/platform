@@ -197,18 +197,28 @@ export function TransactionForm({
 
   // Keep is_transfer in sync with local state
   useEffect(() => {
-    form.setValue('is_transfer', isTransfer);
+    if (form.getValues('is_transfer') !== isTransfer) {
+      form.setValue('is_transfer', isTransfer);
+    }
   }, [isTransfer, form]);
 
   useEffect(() => {
     if (existingTags && existingTags.length > 0) {
       const tagIds = existingTags.map((t) => t.tag_id);
-      form.setValue('tag_ids', tagIds);
+      const currentTagIds = form.getValues('tag_ids') || [];
+      const hasSameTagIds =
+        currentTagIds.length === tagIds.length &&
+        currentTagIds.every((id, index) => id === tagIds[index]);
+
+      if (!hasSameTagIds) {
+        form.setValue('tag_ids', tagIds);
+      }
     }
   }, [existingTags, form]);
 
   useEffect(() => {
-    if (data?.id || form.getValues('origin_wallet_id')) return;
+    const currentWalletId = form.getValues('origin_wallet_id');
+    if (data?.id || currentWalletId) return;
     if (!wallets || wallets.length === 0) return;
 
     const targetWalletId =
@@ -216,16 +226,20 @@ export function TransactionForm({
         ? defaultWalletId
         : wallets[0]?.id;
 
-    if (targetWalletId) {
+    if (targetWalletId && targetWalletId !== currentWalletId) {
       form.setValue('origin_wallet_id', targetWalletId);
     }
   }, [defaultWalletId, data?.id, form, wallets]);
 
   useEffect(() => {
-    if (data?.id || form.getValues('category_id')) return;
+    const currentCategoryId = form.getValues('category_id');
+    if (data?.id || currentCategoryId) return;
     if (!categories || categories.length === 0 || !defaultCategoryId) return;
 
-    if (categories.some((c) => c.id === defaultCategoryId)) {
+    if (
+      categories.some((c) => c.id === defaultCategoryId) &&
+      defaultCategoryId !== currentCategoryId
+    ) {
       form.setValue('category_id', defaultCategoryId);
     }
   }, [defaultCategoryId, data?.id, form, categories]);

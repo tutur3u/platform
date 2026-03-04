@@ -396,7 +396,8 @@ export function SubscriptionInvoice({
 
   // Validate and reset selectedMonth when groups change
   useEffect(() => {
-    if (selectedGroupIds.length === 0 || !userGroups.length) return;
+    if (selectedGroupIds.length === 0 || !userGroups.length || !selectedMonth)
+      return;
 
     const { earliestStart, latestEnd } = getGroupsDateRange(
       userGroups,
@@ -406,6 +407,7 @@ export function SubscriptionInvoice({
     if (!earliestStart || !latestEnd) return;
 
     const currentMonth = new Date(`${selectedMonth}-01`);
+    if (Number.isNaN(currentMonth.getTime())) return;
     const earliestMonthStart = new Date(earliestStart);
     earliestMonthStart.setDate(1);
     const latestMonthStart = new Date(latestEnd);
@@ -434,7 +436,7 @@ export function SubscriptionInvoice({
   ]);
 
   const navigateMonth = (direction: 'prev' | 'next') => {
-    if (selectedGroupIds.length === 0) return;
+    if (selectedGroupIds.length === 0 || !selectedMonth) return;
     const { earliestStart, latestEnd } = getGroupsDateRange(
       userGroups,
       selectedGroupIds
@@ -442,6 +444,7 @@ export function SubscriptionInvoice({
 
     if (!earliestStart || !latestEnd) return;
     const currentMonth = new Date(`${selectedMonth}-01`);
+    if (Number.isNaN(currentMonth.getTime())) return;
     const newMonth = new Date(currentMonth);
     if (direction === 'prev') newMonth.setMonth(newMonth.getMonth() - 1);
     else newMonth.setMonth(newMonth.getMonth() + 1);
@@ -452,7 +455,7 @@ export function SubscriptionInvoice({
   };
 
   const canNavigateMonth = (direction: 'prev' | 'next') => {
-    if (selectedGroupIds.length === 0) return false;
+    if (selectedGroupIds.length === 0 || !selectedMonth) return false;
     const { earliestStart, latestEnd } = getGroupsDateRange(
       userGroups,
       selectedGroupIds
@@ -460,6 +463,7 @@ export function SubscriptionInvoice({
 
     if (!earliestStart || !latestEnd) return false;
     const currentMonth = new Date(`${selectedMonth}-01`);
+    if (Number.isNaN(currentMonth.getTime())) return false;
     const targetMonth = new Date(currentMonth);
     if (direction === 'prev') targetMonth.setMonth(targetMonth.getMonth() - 1);
     else targetMonth.setMonth(targetMonth.getMonth() + 1);

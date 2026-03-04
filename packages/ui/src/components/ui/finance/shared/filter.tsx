@@ -17,6 +17,9 @@ import { DateRangePicker } from './date-range-picker';
 import { MonthRangePicker } from './month-range-picker';
 import { YearRangePicker } from './year-range-picker';
 
+const toDateParam = (date: Date | undefined): string =>
+  date ? format(date, 'yyyy-MM-dd') : '';
+
 export function Filter({ className }: { className: string }) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -48,12 +51,20 @@ export function Filter({ className }: { className: string }) {
 
     const startDateParam = searchParams.get('startDate');
     const endDateParam = searchParams.get('endDate');
+    const currentStartDateParam = toDateParam(startDate);
+    const currentEndDateParam = toDateParam(endDate);
 
-    if (startDateParam !== dayjs(startDate).format('yyyy-MM-dd'))
-      setStartDate(startDateParam ? new Date(startDateParam) : undefined);
+    if ((startDateParam || '') !== currentStartDateParam) {
+      setStartDate(
+        startDateParam ? new Date(`${startDateParam}T00:00:00`) : undefined
+      );
+    }
 
-    if (endDateParam !== dayjs(endDate).format('yyyy-MM-dd'))
-      setEndDate(endDateParam ? new Date(endDateParam) : undefined);
+    if ((endDateParam || '') !== currentEndDateParam) {
+      setEndDate(
+        endDateParam ? new Date(`${endDateParam}T00:00:00`) : undefined
+      );
+    }
   }, [searchParams, endDate, startDate]);
 
   const resetFilter = () => {
