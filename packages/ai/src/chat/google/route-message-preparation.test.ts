@@ -71,7 +71,7 @@ describe('persistLatestUserMessage', () => {
   it('persists attachment-only turns without synthetic placeholder text', async () => {
     const insertChatMessage = vi.fn(async () => ({ error: null }));
     const findExistingMessageById = vi.fn(async () => ({
-      data: null,
+      data: null as any,
       error: null,
     }));
 
@@ -118,7 +118,7 @@ describe('persistLatestUserMessage', () => {
   it('does not let message metadata override the trusted source', async () => {
     const insertChatMessage = vi.fn(async () => ({ error: null }));
     const findExistingMessageById = vi.fn(async () => ({
-      data: null,
+      data: null as any,
       error: null,
     }));
 
@@ -165,8 +165,11 @@ describe('insertUserChatMessageSafely', () => {
       findExistingMessageById: async () => ({
         data: {
           chat_id: 'chat-1',
+          content: 'hello',
           creator_id: 'user-1',
           id: 'message-1',
+          metadata: {},
+          model: 'gemini-2.5-flash',
           role: 'USER',
         },
         error: null,
@@ -177,6 +180,8 @@ describe('insertUserChatMessageSafely', () => {
         content: 'hello',
         creator_id: 'user-1',
         id: 'message-1',
+        metadata: {},
+        model: 'gemini-2.5-flash',
         role: 'USER',
       },
     });
@@ -197,8 +202,11 @@ describe('insertUserChatMessageSafely', () => {
       findExistingMessageById: async () => ({
         data: {
           chat_id: 'chat-2',
+          content: 'different',
           creator_id: 'user-2',
           id: 'message-1',
+          metadata: {},
+          model: 'gemini-2.5-flash',
           role: 'USER',
         },
         error: null,
@@ -218,7 +226,7 @@ describe('insertUserChatMessageSafely', () => {
   it('returns the original insert error when the duplicate lookup finds no row', async () => {
     const result = await insertUserChatMessageSafely({
       findExistingMessageById: async () => ({
-        data: null,
+        data: null as any,
         error: null,
       }),
       insertChatMessage: async () => ({

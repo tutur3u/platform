@@ -186,7 +186,7 @@ describe('chat message tool visibility', () => {
         parts: [
           {
             type: 'text',
-            text: '{"tools":["no_action_needed"]}\n\nHello there.',
+            text: '{"tools":["no_action_needed"],"__planner":true}\n\nHello there.',
           },
         ],
       } as never)

@@ -53,8 +53,6 @@ const NATIVE_DIGEST_MEDIA_TYPES = new Set([
 const NATIVE_DIGEST_EXTENSIONS = new Set([
   'aac',
   'csv',
-  'doc',
-  'docx',
   'flac',
   'gif',
   'jpeg',
@@ -68,14 +66,10 @@ const NATIVE_DIGEST_EXTENSIONS = new Set([
   'ogg',
   'pdf',
   'png',
-  'ppt',
-  'pptx',
   'txt',
   'wav',
   'webm',
   'webp',
-  'xls',
-  'xlsx',
 ]);
 
 function maskIdentifier(value: string): string {

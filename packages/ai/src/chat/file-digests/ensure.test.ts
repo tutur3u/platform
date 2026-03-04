@@ -37,6 +37,10 @@ vi.mock('./worker', () => ({
   resolveAttachmentForDigest: resolveAttachmentForDigestMock,
 }));
 
+vi.mock('@tuturuuu/utils/redis', () => ({
+  runWithLock: vi.fn((_key, task) => task()),
+}));
+
 import { ensureChatFileDigest } from './ensure';
 
 describe('ensureChatFileDigest', () => {

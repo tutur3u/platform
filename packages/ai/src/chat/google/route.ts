@@ -339,7 +339,7 @@ export function createPOST(
       const latestAttachmentTurn =
         getLatestUserMessageWithAttachments(normalizedMessages);
 
-      if (latestUserAttachments.length > 0) {
+      if (latestAttachmentTurn.attachments.length > 0) {
         const digestPreflight = await performCreditPreflight({
           model: FILE_DIGEST_MODEL,
           sbAdmin,
@@ -356,7 +356,7 @@ export function createPOST(
         findExistingMessageById: (messageId) =>
           sbAdmin
             .from('ai_chat_messages')
-            .select('id, chat_id, creator_id, role')
+            .select('id, chat_id, creator_id, role, content, metadata, model')
             .eq('id', messageId)
             .maybeSingle(),
         insertChatMessage: (args) =>

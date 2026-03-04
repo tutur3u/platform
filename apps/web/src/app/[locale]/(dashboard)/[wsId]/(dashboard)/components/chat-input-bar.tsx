@@ -201,6 +201,9 @@ export default function ChatInputBar({
   const isUploading = files.some((f) => f.status === 'uploading');
   const fileUploadsEnabled = !!onFilesSelected && canUploadFiles;
   const maxFilesReached = files.length >= MAX_FILE_COUNT;
+  const isStreamingRef = useRef(isStreaming);
+  isStreamingRef.current = isStreaming;
+
   const {
     browserSupportsAudioCapture,
     cancelRecording,
@@ -220,7 +223,7 @@ export default function ChatInputBar({
         // Guard: do not submit if already streaming or busy.
         // If busy, we poll until the hook reports idle before submitting.
         const submitWhenReady = async () => {
-          if (isStreaming) {
+          if (isStreamingRef.current) {
             setTimeout(submitWhenReady, 500);
             return;
           }
@@ -231,7 +234,7 @@ export default function ChatInputBar({
         };
 
         void submitWhenReady();
-      } catch (error) {
+      } catch (_error) {
         console.error('[Mira Chat] Failed to queue recorded audio:', {
           status: 'error',
           mediaType: file.type,

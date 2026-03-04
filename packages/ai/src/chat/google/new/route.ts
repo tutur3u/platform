@@ -2,7 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import type { Json } from '@tuturuuu/types/db';
+import type { Json } from '@tuturuuu/types';
 import { gateway, generateText, type UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
 import {
@@ -83,7 +83,7 @@ export function createPOST(
         normalizeChatAttachmentMetadata(messageMetadata?.attachments).length >
         0;
 
-      if (!message && !hasAttachments && !messageId) {
+      if (!message && !hasAttachments) {
         return NextResponse.json('No message provided', { status: 400 });
       }
 
@@ -202,7 +202,7 @@ export function createPOST(
         findExistingMessageById: (existingMessageId) =>
           sbAdmin
             .from('ai_chat_messages')
-            .select('id, chat_id, creator_id, role')
+            .select('id, chat_id, creator_id, role, content, metadata, model')
             .eq('id', existingMessageId)
             .maybeSingle(),
         insertChatMessage: (args) =>
