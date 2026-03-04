@@ -82,16 +82,13 @@ export interface NotificationItem {
   data?: Record<string, unknown>;
   createdAt: string;
   actionUrl?: string;
+  isConsolidated?: boolean;
+  consolidatedCount?: number;
+  changeTypes?: string[];
 }
 
 // Extended notification item for consolidated per-task display
 export interface ConsolidatedNotification extends NotificationItem {
-  /** True if this represents multiple notifications for the same entity */
-  isConsolidated?: boolean;
-  /** Number of original notifications consolidated */
-  consolidatedCount?: number;
-  /** Types of changes included (e.g., ['priority_changed', 'due_date_changed']) */
-  changeTypes?: string[];
 }
 
 interface NotificationDigestEmailProps {
@@ -541,7 +538,13 @@ const consolidateByEntity = (
   for (const [, group] of entityGroups) {
     if (group.length === 1) {
       // Single notification, no consolidation needed
-      consolidated.push(group[0] as ConsolidatedNotification);
+      const single = group[0] as ConsolidatedNotification;
+      consolidated.push({
+        ...single,
+        isConsolidated:
+          single.isConsolidated ||
+          Boolean(single.consolidatedCount && single.consolidatedCount > 1),
+      });
     } else {
       // Multiple notifications for same entity - consolidate
       // Use the most recent notification as the base
@@ -715,7 +718,7 @@ const NotificationCard = ({
                       marginRight: '6px',
                     }}
                   >
-                    {notification.consolidatedCount} changes
+                    {notification.consolidatedCount} updates
                   </span>
                 )}
                 <span style={{ color: '#9ca3af', fontSize: '12px' }}>
@@ -1027,6 +1030,18 @@ export const NotificationDigestEmail = ({
                         }}
                       />
                     )}
+                    <Text
+                      style={{
+                        margin: '0 0 8px',
+                        color: 'rgba(255,255,255,0.8)',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        letterSpacing: '0.14em',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      Notification Brief
+                    </Text>
                     <Heading
                       style={{
                         margin: 0,
