@@ -158,10 +158,23 @@ export async function ensureChatFileDigest(
     });
 
     if (!savedDigest) {
+      const error = 'Failed to persist the file digest.';
+      await saveFailedChatFileDigest({
+        chatId: params.chatId,
+        displayName,
+        errorMessage: error,
+        fileName: effectiveAttachment.name,
+        mediaType: effectiveAttachment.type || 'application/octet-stream',
+        messageId: params.messageId,
+        processorModel: FILE_DIGEST_MODEL,
+        size: effectiveAttachment.size,
+        storagePath: effectiveAttachment.storagePath,
+        wsId: params.wsId,
+      });
       return {
         ok: false,
         cached: false,
-        error: 'Failed to persist the file digest.',
+        error,
       };
     }
 

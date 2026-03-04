@@ -130,9 +130,14 @@ export function createMiraStreamTools(
           return {
             ok: true,
             selectedTools,
-            skippedTools: requestedTools
-              .filter((toolName) => blockedTools.has(toolName))
-              .concat(skippedForAttachmentOnlyTurn),
+            skippedTools: [
+              ...new Set([
+                ...requestedTools.filter((toolName) =>
+                  blockedTools.has(toolName)
+                ),
+                ...skippedForAttachmentOnlyTurn,
+              ]),
+            ],
             warning:
               skippedForAttachmentOnlyTurn.length > 0
                 ? 'Skipped tools that cannot run on an attachment-only turn without an explicit text instruction to persist or change long-term behavior.'

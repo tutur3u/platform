@@ -15,18 +15,12 @@ type ProcessMessagesWithFilesParams = {
 };
 
 const ATTACHMENT_DIGEST_CONCURRENCY = 4;
-type UserContent = Extract<ModelMessage, { role: 'user' }>['content'];
+type UserMessage = Extract<ModelMessage, { role: 'user' }>;
+type UserContent = UserMessage['content'];
 type UserContentPart = Extract<UserContent, Array<unknown>>[number];
 
-function isUserContentPart(part: unknown): part is UserContentPart {
-  if (!part || typeof part !== 'object') return false;
-
-  const type = (part as { type?: unknown }).type;
-  return type === 'file' || type === 'image' || type === 'text';
-}
-
 function addDigestTextToContent(
-  existingContent: ModelMessage['content'],
+  existingContent: UserContent,
   digestBlocks: string[]
 ): UserContent {
   const digestTextParts: TextPart[] = digestBlocks.map((block) => ({
@@ -39,10 +33,9 @@ function addDigestTextToContent(
   }
 
   if (Array.isArray(existingContent)) {
-    return [
-      ...existingContent.filter(isUserContentPart),
-      ...digestTextParts,
-    ] satisfies Array<TextPart | ImagePart | UserContentPart>;
+    return [...existingContent, ...digestTextParts] satisfies Array<
+      TextPart | ImagePart | UserContentPart
+    >;
   }
 
   return digestTextParts;
@@ -89,10 +82,12 @@ export async function injectFileDigestContextIntoMessages({
   }
 
   const processedMessages = [...messages];
-  const lastUserMessage = processedMessages[lastUserMessageIndex]!;
+  const lastUserMessage = processedMessages[
+    lastUserMessageIndex
+  ] as UserMessage;
 
   processedMessages[lastUserMessageIndex] = {
-    role: 'user',
+    ...lastUserMessage,
     content: addDigestTextToContent(lastUserMessage.content, digestBlocks),
   };
 
@@ -180,17 +175,33 @@ export async function resolveChatFileDigests(
       startIndex + ATTACHMENT_DIGEST_CONCURRENCY
     );
     const batchResults = await Promise.all(
-      batch.map(async (attachment) => ({
-        attachment,
-        result: await ensureChatFileDigest({
-          attachment,
-          chatId: params.chatId,
-          creditWsId: params.creditWsId,
-          messageId: params.messageId,
-          userId: params.userId,
-          wsId: params.wsId,
-        }),
-      }))
+      batch.map(async (attachment) => {
+        try {
+          return {
+            attachment,
+            result: await ensureChatFileDigest({
+              attachment,
+              chatId: params.chatId,
+              creditWsId: params.creditWsId,
+              messageId: params.messageId,
+              userId: params.userId,
+              wsId: params.wsId,
+            }),
+          };
+        } catch (error) {
+          return {
+            attachment,
+            result: {
+              ok: false as const,
+              cached: false,
+              error:
+                error instanceof Error
+                  ? error.message
+                  : 'Failed to analyze the attached file.',
+            },
+          };
+        }
+      })
     );
 
     for (const { attachment, result } of batchResults) {

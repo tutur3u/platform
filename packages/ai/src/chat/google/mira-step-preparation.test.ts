@@ -24,7 +24,6 @@ describe('prepareMiraToolStep', () => {
     expect(result.toolChoice).toBe('required');
     expect(result.activeTools).toEqual([
       'list_accessible_workspaces',
-      'get_workspace_context',
       'set_workspace_context',
       'select_tools',
     ]);
@@ -59,7 +58,6 @@ describe('prepareMiraToolStep', () => {
 
     expect(result.toolChoice).toBe('required');
     expect(result.activeTools).toEqual([
-      'get_workspace_context',
       'set_workspace_context',
       'select_tools',
     ]);
@@ -167,7 +165,54 @@ describe('prepareMiraToolStep', () => {
 
     expect(result.toolChoice).toBe('required');
     expect(result.activeTools).toEqual([
-      'get_workspace_context',
+      'set_workspace_context',
+      'select_tools',
+    ]);
+  });
+
+  it('does not re-offer get_workspace_context during explicit workspace switching', () => {
+    const result = prepareMiraToolStep({
+      steps: [
+        {
+          toolCalls: [
+            {
+              toolName: 'select_tools',
+              args: { tools: ['get_upcoming_events'] },
+            },
+          ],
+        },
+        {
+          toolCalls: [
+            {
+              toolName: 'get_workspace_context',
+              args: {},
+            },
+          ],
+          toolResults: [
+            {
+              toolName: 'get_workspace_context',
+              output: {
+                currentWorkspaceContext: {
+                  workspaceContextId: 'personal',
+                  wsId: 'workspace-1',
+                  name: 'PERSONAL',
+                  personal: true,
+                },
+              },
+            },
+          ],
+        },
+      ],
+      forceGoogleSearch: false,
+      forceRenderUi: false,
+      needsWorkspaceContextResolution: true,
+      needsWorkspaceMembersTool: false,
+      preferMarkdownTables: false,
+    });
+
+    expect(result.toolChoice).toBe('required');
+    expect(result.activeTools).toEqual([
+      'list_accessible_workspaces',
       'set_workspace_context',
       'select_tools',
     ]);

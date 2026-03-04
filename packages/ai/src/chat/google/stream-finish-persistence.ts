@@ -1,5 +1,6 @@
 import { deductAiCredits } from '@tuturuuu/ai/credits/check-credits';
 import type { CreditDeductionResult } from '../../credits/types';
+import { MIRA_VISUAL_TOOL_NAMES } from '../../tools/mira-tool-names';
 
 type UsageLike = {
   inputTokens?: number;
@@ -86,7 +87,138 @@ type PersistAssistantResponseParams = {
   wsId?: string;
 };
 
-const VISUAL_TOOL_NAMES = new Set(['render_ui']);
+const VISUAL_TOOL_NAMES = new Set<string>(MIRA_VISUAL_TOOL_NAMES);
+const INTERNAL_TOOL_NAMES = new Set(['select_tools', 'no_action_needed']);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function hasToolFailures(allToolResults: ToolResultLike[]): boolean {
+  return allToolResults.some((toolResult) => {
+    if (!isRecord(toolResult)) return false;
+    if ('ok' in toolResult && toolResult.ok === false) return true;
+    if ('success' in toolResult && toolResult.success === false) return true;
+    return false;
+  });
+}
+
+function humanizeToolName(toolName: string): string {
+  return toolName.replaceAll('_', ' ');
+}
+
+function getToolNameFromResult(toolResult: ToolResultLike): string | null {
+  const toolName = toolResult.toolName;
+  return typeof toolName === 'string' ? toolName : null;
+}
+
+function getRecord(value: unknown): Record<string, unknown> | null {
+  return isRecord(value) ? value : null;
+}
+
+function getString(value: unknown): string | null {
+  return typeof value === 'string' && value.trim().length > 0 ? value : null;
+}
+
+function buildToolOutcomeSummary(allToolResults: ToolResultLike[]): string {
+  const createdTasks: string[] = [];
+  let updatedTaskCount = 0;
+  let completedTaskCount = 0;
+  let deletedTaskCount = 0;
+
+  for (const toolResult of allToolResults) {
+    const toolName = getToolNameFromResult(toolResult);
+    const output = getRecord(toolResult.output);
+    if (!toolName || !output || output.success === false || output.ok === false)
+      continue;
+
+    if (toolName === 'create_task') {
+      const task = getRecord(output.task);
+      const taskName = getString(task?.name);
+      if (taskName) createdTasks.push(taskName);
+      continue;
+    }
+
+    if (toolName === 'update_task') {
+      updatedTaskCount += 1;
+      continue;
+    }
+
+    if (toolName === 'complete_task') {
+      completedTaskCount += 1;
+      continue;
+    }
+
+    if (toolName === 'delete_task') {
+      deletedTaskCount += 1;
+    }
+  }
+
+  const lines: string[] = [];
+
+  if (createdTasks.length > 0) {
+    lines.push(
+      createdTasks.length === 1
+        ? `I created 1 task: ${createdTasks[0]}.`
+        : `I created ${createdTasks.length} tasks: ${createdTasks.join(', ')}.`
+    );
+  }
+
+  if (updatedTaskCount > 0) {
+    lines.push(
+      updatedTaskCount === 1
+        ? 'I also updated 1 task.'
+        : `I also updated ${updatedTaskCount} tasks.`
+    );
+  }
+
+  if (completedTaskCount > 0) {
+    lines.push(
+      completedTaskCount === 1
+        ? 'I marked 1 task as complete.'
+        : `I marked ${completedTaskCount} tasks as complete.`
+    );
+  }
+
+  if (deletedTaskCount > 0) {
+    lines.push(
+      deletedTaskCount === 1
+        ? 'I deleted 1 task.'
+        : `I deleted ${deletedTaskCount} tasks.`
+    );
+  }
+
+  return lines.join('\n');
+}
+
+function buildSuccessfulToolSummary(allToolCalls: ToolCallLike[]): string {
+  const calledToolNames = allToolCalls
+    .map((toolCall) => toolCall.toolName)
+    .filter(
+      (toolName): toolName is string =>
+        typeof toolName === 'string' && !INTERNAL_TOOL_NAMES.has(toolName)
+    );
+
+  if (calledToolNames.length === 0) {
+    return '';
+  }
+
+  const counts = new Map<string, number>();
+  for (const toolName of calledToolNames) {
+    counts.set(toolName, (counts.get(toolName) ?? 0) + 1);
+  }
+
+  return [
+    'I completed the requested actions successfully.',
+    '',
+    'Actions completed:',
+    ...[...counts.entries()].map(([toolName, count]) =>
+      count > 1
+        ? `- ${humanizeToolName(toolName)} (${count} times)`
+        : `- ${humanizeToolName(toolName)}`
+    ),
+  ].join('\n');
+}
 
 function collectToolData(steps: StepLike[]) {
   const allToolCalls = steps.flatMap((step) => step.toolCalls ?? []);
@@ -149,7 +281,8 @@ function collectSerializableSources(response: StreamFinishResponseLike) {
 
 function buildFallbackAssistantText(
   response: StreamFinishResponseLike,
-  allToolCalls: ToolCallLike[]
+  allToolCalls: ToolCallLike[],
+  allToolResults: ToolResultLike[]
 ): string {
   const calledToolNames = allToolCalls
     .map((toolCall) => toolCall.toolName)
@@ -164,6 +297,18 @@ function buildFallbackAssistantText(
     calledToolNames.every((toolName) => toolName === 'recall')
   ) {
     return "I checked the saved context for this turn, but I didn't finish a visible reply. Please try again.";
+  }
+
+  if (calledToolNames.length > 0 && !hasToolFailures(allToolResults)) {
+    const concreteOutcomeSummary = buildToolOutcomeSummary(allToolResults);
+    if (concreteOutcomeSummary) {
+      return concreteOutcomeSummary;
+    }
+
+    const successfulToolSummary = buildSuccessfulToolSummary(allToolCalls);
+    if (successfulToolSummary) {
+      return successfulToolSummary;
+    }
   }
 
   if (calledToolNames.length > 0) {
@@ -249,7 +394,8 @@ export async function persistAssistantResponse({
   const steps = response.steps ?? [];
   const { allToolCalls, allToolResults } = collectToolData(steps);
   const persistedText =
-    response.text?.trim() || buildFallbackAssistantText(response, allToolCalls);
+    response.text?.trim() ||
+    buildFallbackAssistantText(response, allToolCalls, allToolResults);
 
   if (
     !persistedText &&

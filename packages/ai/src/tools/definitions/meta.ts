@@ -110,17 +110,23 @@ export const metaToolDefinitions = {
   rename_chat_file: tool({
     description:
       'Rename a chat file by updating its display alias. This tool does not inspect file contents. If the new name depends on understanding a file, load that file digest first.',
-    inputSchema: z.object({
-      fileName: optionalTrimmedString(255, 'fileName').describe(
-        'Optional current filename or alias. Use list_chat_files first if you need to inspect the available files.'
-      ),
-      newName: requiredTrimmedString(255, 'newName').describe(
-        'New display name/alias for the file.'
-      ),
-      storagePath: optionalTrimmedString(1024, 'storagePath').describe(
-        'Optional exact storage path. Prefer this when multiple files share a similar name.'
-      ),
-    }),
+    inputSchema: z
+      .object({
+        fileName: optionalTrimmedString(255, 'fileName').describe(
+          'Optional current filename or alias. Use list_chat_files first if you need to inspect the available files.'
+        ),
+        newName: requiredTrimmedString(255, 'newName').describe(
+          'New display name/alias for the file.'
+        ),
+        storagePath: optionalTrimmedString(1024, 'storagePath').describe(
+          'Optional exact storage path. Prefer this when multiple files share a similar name.'
+        ),
+      })
+      .refine((value) => Boolean(value.fileName || value.storagePath), {
+        message:
+          'Provide either fileName or storagePath to identify which file to rename.',
+        path: ['fileName'],
+      }),
   }),
 
   convert_file_to_markdown: tool({

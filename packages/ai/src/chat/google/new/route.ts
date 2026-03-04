@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { Json } from '@tuturuuu/types';
 import { gateway, generateText, type UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
 import { normalizeChatAttachmentMetadata } from '../../chat-attachment-metadata';
@@ -16,14 +17,6 @@ const FILE_ONLY_PLACEHOLDERS = new Set([
 
 /** Always use a lightweight model for title generation */
 const TITLE_MODEL = 'google/gemini-2.5-flash-lite';
-
-type Json =
-  | null
-  | boolean
-  | number
-  | string
-  | Json[]
-  | { [key: string]: Json | undefined };
 
 function buildTitleSeed(
   message: string | undefined,
@@ -203,7 +196,21 @@ export function createPOST(
       });
 
       if (messageError) {
-        console.log(messageError);
+        const { error: cleanupError } = await sbAdmin
+          .from('ai_chats')
+          .delete()
+          .eq('id', chat.id);
+
+        console.error('Failed to persist initial user message for new chat.', {
+          chatId: chat.id.slice(0, 8),
+          code:
+            typeof messageError === 'object' &&
+            messageError &&
+            'code' in messageError
+              ? String(messageError.code ?? 'persist_failed')
+              : 'persist_failed',
+          cleanupFailed: Boolean(cleanupError),
+        });
         return NextResponse.json(messageError.message, { status: 500 });
       }
 

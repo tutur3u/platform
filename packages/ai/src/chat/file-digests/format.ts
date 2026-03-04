@@ -30,7 +30,6 @@ export function formatChatFileDigestForModel(
   return [
     heading,
     `Type: ${digest.mediaType}`,
-    '',
     digest.answerContextMarkdown,
     keyFacts,
     limitations,

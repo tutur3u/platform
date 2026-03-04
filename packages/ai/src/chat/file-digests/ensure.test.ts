@@ -230,4 +230,63 @@ describe('ensureChatFileDigest', () => {
     expect(getReadyChatFileDigestMock).not.toHaveBeenCalled();
     expect(digestChatFileWithGeminiMock).toHaveBeenCalled();
   });
+
+  it('marks the digest as failed when persistence returns null after credit deduction', async () => {
+    getReadyChatFileDigestMock.mockResolvedValue(null);
+    checkAiCreditsMock.mockResolvedValue({
+      allowed: true,
+      errorCode: null,
+      errorMessage: null,
+      maxOutputTokens: 4096,
+      remainingCredits: 10_000,
+      tier: 'FREE',
+    });
+    digestChatFileWithGeminiMock.mockResolvedValue({
+      answerContextMarkdown: 'Digest body',
+      extractedMarkdown: null,
+      keyFacts: ['One fact'],
+      limitations: [],
+      suggestedAlias: null,
+      summary: 'Digest summary',
+      title: 'Digest title',
+      usage: {
+        inputTokens: 12,
+        outputTokens: 4,
+        reasoningTokens: 0,
+      },
+    });
+    deductAiCreditsMock.mockResolvedValue({
+      creditsDeducted: 1,
+      errorCode: null,
+      remainingCredits: 999,
+      success: true,
+    });
+    saveReadyChatFileDigestMock.mockResolvedValue(null);
+
+    const result = await ensureChatFileDigest({
+      attachment: {
+        name: 'memo.wav',
+        storagePath: 'ws/chats/ai/resources/chat-1/memo.wav',
+        type: 'audio/wav',
+      },
+      chatId: 'chat-1',
+      messageId: 'message-1',
+      userId: 'user-1',
+      wsId: 'ws',
+    });
+
+    expect(result).toEqual({
+      cached: false,
+      error: 'Failed to persist the file digest.',
+      ok: false,
+    });
+    expect(saveFailedChatFileDigestMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        errorMessage: 'Failed to persist the file digest.',
+        fileName: 'memo.wav',
+        messageId: 'message-1',
+        storagePath: 'ws/chats/ai/resources/chat-1/memo.wav',
+      })
+    );
+  });
 });

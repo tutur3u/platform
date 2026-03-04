@@ -377,6 +377,65 @@ export function shouldForceWorkspaceMembersForLatestUserMessage(
   return false;
 }
 
+const DIRECT_ATTACHMENT_REPLY_PLACEHOLDER_SET = new Set([
+  'please analyze the attached file(s).',
+  'please analyze the attached file(s)',
+]);
+
+const ATTACHMENT_TOOL_REQUIRED_REGEX =
+  /\b(create|add|update|delete|remove|move|schedule|remember|save|set|switch|search|look up|find|list|show|send|share|rename|transcribe|extract|convert)\b/i;
+const ATTACHMENT_TOOL_TARGET_REGEX =
+  /\b(task|tasks|calendar|event|events|workspace|member|members|board|project|projects|finance|wallet|transaction|transactions|memory|settings|profile|workspace context|web|internet|google|markdown|table|csv|json|rename)\b/i;
+const ATTACHMENT_DIRECT_REPLY_REGEX =
+  /\b(what do you think|what do u think|summari[sz]e|describe|analy[sz]e|analyze|review|caption|what's in|what is in|tell me about|feedback|impression)\b/i;
+
+export function shouldBypassToolLoopForAttachmentReply(
+  messages: ModelMessage[],
+  hasCurrentTurnAttachments: boolean
+): boolean {
+  if (!hasCurrentTurnAttachments) return false;
+
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i];
+    if (!message || message.role !== 'user') continue;
+
+    const text = extractTextFromUserMessage(message).trim();
+    if (!text) return true;
+
+    const normalizedText = text.toLowerCase();
+    if (DIRECT_ATTACHMENT_REPLY_PLACEHOLDER_SET.has(normalizedText)) {
+      return true;
+    }
+
+    if (
+      ATTACHMENT_TOOL_REQUIRED_REGEX.test(text) &&
+      ATTACHMENT_TOOL_TARGET_REGEX.test(text)
+    ) {
+      return false;
+    }
+
+    if (shouldForceGoogleSearchForLatestUserMessage(messages)) {
+      return false;
+    }
+
+    if (shouldResolveWorkspaceContextForLatestUserMessage(messages)) {
+      return false;
+    }
+
+    if (shouldForceWorkspaceMembersForLatestUserMessage(messages)) {
+      return false;
+    }
+
+    if (ATTACHMENT_DIRECT_REPLY_REGEX.test(text)) {
+      return true;
+    }
+
+    return true;
+  }
+
+  return false;
+}
+
 export function extractSelectedToolsFromSteps(steps: unknown[]): string[] {
   for (let i = steps.length - 1; i >= 0; i--) {
     const step = steps[i] as ToolStepLike | undefined;

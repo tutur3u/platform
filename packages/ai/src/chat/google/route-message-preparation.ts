@@ -1,3 +1,4 @@
+import type { Json } from '@tuturuuu/types';
 import { MAX_CHAT_MESSAGE_LENGTH } from '@tuturuuu/utils/constants';
 import type { ModelMessage, UIMessage } from 'ai';
 import { convertToModelMessages } from 'ai';
@@ -15,14 +16,6 @@ export const ATTACHMENT_ONLY_PLACEHOLDERS = new Set([
   'Please analyze the attached file(s).',
   'Please analyze the attached file(s)',
 ]);
-
-type Json =
-  | null
-  | boolean
-  | number
-  | string
-  | Json[]
-  | { [key: string]: Json | undefined };
 
 type InsertChatMessageArgs = {
   chat_id: string;
@@ -333,9 +326,14 @@ export async function persistLatestUserMessage({
   });
 
   if (insertMsgError) {
-    console.log('ERROR ORIGIN: ROOT START');
-    console.log(insertMsgError);
-    throw new Error(insertMsgError.message);
+    console.error('Failed to persist latest user message.', {
+      chatId: chatId.slice(0, 8),
+      messageId: latestUserMessage.id?.slice(0, 8) ?? null,
+      operation: 'persist_latest_user_message',
+      userId: userId.slice(0, 8),
+      code: 'persist_failed',
+    });
+    throw new Error('Failed to persist user message');
   }
 
   console.log('User message saved to database');
