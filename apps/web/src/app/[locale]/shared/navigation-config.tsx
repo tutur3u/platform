@@ -80,6 +80,13 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
       description: 'Find the best time slot for everyone, hassle-free.',
       icon: <Calendar />,
     },
+    // TODO: Uncomment when the blogs feature is ready to go live
+    // {
+    //   href: '/blogs',
+    //   label: t('common.blogs'),
+    //   description: 'Read our latest blog posts.',
+    //   icon: <Newspaper />,
+    // },
     {
       href: '/neo-meeting-agent',
       label: 'Neo Meeting Agent',

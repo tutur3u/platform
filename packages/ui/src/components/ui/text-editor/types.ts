@@ -1,1 +1,2 @@
-export type { JSONContent } from '@tiptap/react';
+export { EditorContent, type JSONContent, useEditor } from '@tiptap/react';
+export { StarterKit } from '@tiptap/starter-kit';
