@@ -510,7 +510,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeTransferMode => 'Transfer mode';
 
   @override
-  String get financeDestinationAmountOptional => 'Destination amount (optional)';
+  String get financeDestinationAmountOptional => 'Destination amount';
 
   @override
   String get financeSelectWalletAndCategoryFirst => 'Choose a wallet and category first';

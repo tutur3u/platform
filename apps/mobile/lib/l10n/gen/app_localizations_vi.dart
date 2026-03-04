@@ -510,7 +510,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeTransferMode => 'Chế độ chuyển khoản';
 
   @override
-  String get financeDestinationAmountOptional => 'Số tiền đích (tùy chọn)';
+  String get financeDestinationAmountOptional => 'Số tiền đích';
 
   @override
   String get financeSelectWalletAndCategoryFirst => 'Hãy chọn ví và danh mục trước';

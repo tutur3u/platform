@@ -198,7 +198,7 @@
     "financeDestinationWallet": "Ví đích",
     "financeSelectDestinationWallet": "Chọn ví đích",
     "financeTransferMode": "Chế độ chuyển khoản",
-    "financeDestinationAmountOptional": "Số tiền đích (tùy chọn)",
+    "financeDestinationAmountOptional": "Số tiền đích",
     "financeSelectWalletAndCategoryFirst": "Hãy chọn ví và danh mục trước",
     "financeSelectWalletAndDestinationFirst": "Hãy chọn ví nguồn và ví đích trước",
     "financeWalletsMustBeDifferent": "Ví nguồn và ví đích phải khác nhau",

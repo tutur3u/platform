@@ -1066,7 +1066,7 @@ abstract class AppLocalizations {
   /// No description provided for @financeDestinationAmountOptional.
   ///
   /// In en, this message translates to:
-  /// **'Destination amount (optional)'**
+  /// **'Destination amount'**
   String get financeDestinationAmountOptional;
 
   /// No description provided for @financeSelectWalletAndCategoryFirst.

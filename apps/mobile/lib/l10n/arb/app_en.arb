@@ -198,7 +198,7 @@
     "financeDestinationWallet": "Destination wallet",
     "financeSelectDestinationWallet": "Select destination wallet",
     "financeTransferMode": "Transfer mode",
-    "financeDestinationAmountOptional": "Destination amount (optional)",
+    "financeDestinationAmountOptional": "Destination amount",
     "financeSelectWalletAndCategoryFirst": "Choose a wallet and category first",
     "financeSelectWalletAndDestinationFirst": "Choose source and destination wallets first",
     "financeWalletsMustBeDifferent": "Source and destination wallets must be different",
