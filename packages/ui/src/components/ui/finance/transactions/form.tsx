@@ -203,22 +203,24 @@ export function TransactionForm({
   }, [isTransfer, form]);
 
   useEffect(() => {
-    if (existingTags && existingTags.length > 0) {
-      const tagIds = existingTags.map((t) => t.tag_id);
-      const currentTagIds = form.getValues('tag_ids') || [];
-      const hasSameTagIds =
-        currentTagIds.length === tagIds.length &&
-        currentTagIds.every((id, index) => id === tagIds[index]);
+    const tagIds = (existingTags || []).map((t) => t.tag_id);
+    const currentTagIds = form.getValues('tag_ids') || [];
+    const hasSameTagIds =
+      currentTagIds.length === tagIds.length &&
+      currentTagIds.every((id, index) => id === tagIds[index]);
 
-      if (!hasSameTagIds) {
-        form.setValue('tag_ids', tagIds);
-      }
+    if (!hasSameTagIds) {
+      form.setValue('tag_ids', tagIds);
     }
   }, [existingTags, form]);
 
   useEffect(() => {
+    const originWalletState = form.getFieldState('origin_wallet_id');
+    const isUserEdited =
+      originWalletState.isDirty || originWalletState.isTouched;
     const currentWalletId = form.getValues('origin_wallet_id');
-    if (data?.id || currentWalletId) return;
+
+    if (data?.id || isUserEdited || currentWalletId) return;
     if (!wallets || wallets.length === 0) return;
 
     const targetWalletId =
@@ -232,8 +234,11 @@ export function TransactionForm({
   }, [defaultWalletId, data?.id, form, wallets]);
 
   useEffect(() => {
+    const categoryState = form.getFieldState('category_id');
+    const isUserEdited = categoryState.isDirty || categoryState.isTouched;
     const currentCategoryId = form.getValues('category_id');
-    if (data?.id || currentCategoryId) return;
+
+    if (data?.id || isUserEdited || currentCategoryId) return;
     if (!categories || categories.length === 0 || !defaultCategoryId) return;
 
     if (

@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@tuturuuu/utils/format';
-import { format } from 'date-fns';
+import { format, isValid, parse } from 'date-fns';
 import dayjs from 'dayjs';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -18,7 +18,15 @@ import { MonthRangePicker } from './month-range-picker';
 import { YearRangePicker } from './year-range-picker';
 
 const toDateParam = (date: Date | undefined): string =>
-  date ? format(date, 'yyyy-MM-dd') : '';
+  date && isValid(date) ? format(date, 'yyyy-MM-dd') : '';
+
+const parseSafeDate = (
+  dateStr: string | null | undefined
+): Date | undefined => {
+  if (!dateStr) return undefined;
+  const parsed = parse(dateStr, 'yyyy-MM-dd', new Date());
+  return isValid(parsed) ? parsed : undefined;
+};
 
 export function Filter({ className }: { className: string }) {
   const searchParams = useSearchParams();
@@ -49,18 +57,18 @@ export function Filter({ className }: { className: string }) {
 
     const startDateParam = params.get('startDate') || '';
     const endDateParam = params.get('endDate') || '';
-    const nextStartDate = startDateParam
-      ? new Date(`${startDateParam}T00:00:00`)
-      : undefined;
-    const nextEndDate = endDateParam
-      ? new Date(`${endDateParam}T00:00:00`)
-      : undefined;
+    const nextStartDate = parseSafeDate(startDateParam);
+    const nextEndDate = parseSafeDate(endDateParam);
 
     setStartDate((prev) =>
-      toDateParam(prev) === startDateParam ? prev : nextStartDate
+      toDateParam(prev) === (nextStartDate ? startDateParam : '')
+        ? prev
+        : nextStartDate
     );
     setEndDate((prev) =>
-      toDateParam(prev) === endDateParam ? prev : nextEndDate
+      toDateParam(prev) === (nextEndDate ? endDateParam : '')
+        ? prev
+        : nextEndDate
     );
   }, [paramsKey]);
 
@@ -82,15 +90,13 @@ export function Filter({ className }: { className: string }) {
   };
 
   const isDirty = () => {
-    const startDateParam = searchParams.get('startDate');
-    const endDateParam = searchParams.get('endDate');
+    const startDateParam = searchParams.get('startDate') || '';
+    const endDateParam = searchParams.get('endDate') || '';
 
-    return (
-      (startDate && format(startDate, 'yyyy-MM-dd') !== startDateParam) ||
-      (endDate && format(endDate, 'yyyy-MM-dd') !== endDateParam) ||
-      (!startDate && startDateParam) ||
-      (!endDate && endDateParam)
-    );
+    const currentStart = toDateParam(startDate);
+    const currentEnd = toDateParam(endDate);
+
+    return currentStart !== startDateParam || currentEnd !== endDateParam;
   };
 
   return (
