@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeftRight,
   CalendarIcon,
@@ -234,6 +234,42 @@ export function TransactionForm({
   const hasUpdatePermission = canUpdateTransactions && data?.id;
   const hasFormPermission = hasCreatePermission || hasUpdatePermission;
 
+  const createTransferMutation = useMutation({
+    mutationFn: async (payload: {
+      origin_wallet_id: string;
+      destination_wallet_id: string;
+      amount: number;
+      destination_amount?: number;
+      description?: string;
+      taken_at: Date;
+      report_opt_in: boolean;
+      tag_ids?: string[];
+    }) => {
+      const res = await fetch(`/api/workspaces/${wsId}/transfers`, {
+        method: 'POST',
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const body = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(
+          body?.message ||
+            t('transaction-data-table.error_creating_transaction')
+        );
+      }
+
+      return body;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: [`/api/workspaces/${wsId}/transactions/infinite`],
+      });
+      router.refresh();
+    },
+  });
+
   const selectedWalletId = form.watch('origin_wallet_id');
   const selectedWalletCurrency = useMemo(
     () => wallets?.find((w) => w.id === selectedWalletId)?.currency,
@@ -267,35 +303,27 @@ export function TransactionForm({
 
       const destinationAmount = isCrossCurrencyTransfer
         ? formData.destination_amount
-        : (formData.destination_amount ?? formData.amount);
+        : formData.amount;
 
-      // Transfer mode: POST to transfer endpoint
-      const res = await fetch(`/api/workspaces/${wsId}/transfers`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      try {
+        await createTransferMutation.mutateAsync({
           origin_wallet_id: formData.origin_wallet_id,
-          destination_wallet_id: formData.destination_wallet_id,
+          destination_wallet_id: formData.destination_wallet_id!,
           amount: formData.amount,
           destination_amount: destinationAmount,
           description: formData.description,
           taken_at: formData.taken_at,
           report_opt_in: formData.report_opt_in,
           tag_ids: formData.tag_ids,
-        }),
-      });
-
-      if (res.ok) {
-        queryClient.invalidateQueries({
-          queryKey: [`/api/workspaces/${wsId}/transactions/infinite`],
         });
+
         onFinish?.(formData);
-        router.refresh();
-      } else {
+      } catch (error) {
         setLoading(false);
-        const err = await res.json().catch(() => null);
         toast.error(
-          err?.message || t('transaction-data-table.error_creating_transaction')
+          error instanceof Error
+            ? error.message
+            : t('transaction-data-table.error_creating_transaction')
         );
       }
     } else {

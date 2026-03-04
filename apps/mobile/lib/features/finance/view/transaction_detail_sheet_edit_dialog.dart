@@ -577,6 +577,15 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
 
       if (!mounted) return;
       Navigator.of(context).pop(updated);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      shad.showToast(
+        context: context,
+        builder: (ctx, overlay) => shad.Alert.destructive(
+          content: Text(e.message),
+        ),
+      );
+      setState(() => _isSaving = false);
     } on Exception {
       if (!mounted) return;
       shad.showToast(
@@ -863,6 +872,12 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
     if (parsed == null) {
       return '${context.l10n.financeAmount}: --';
     }
+
+    if (_isTransfer) {
+      final formatted = formatCurrency(parsed.abs(), _selectedCurrency);
+      return '${context.l10n.financeAmount}: $formatted';
+    }
+
     final isExpense = _selectedCategory?.isExpense != false;
     final signed = isExpense ? -parsed.abs() : parsed.abs();
     final formatted = formatCurrency(signed, _selectedCurrency);

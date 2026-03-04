@@ -53,7 +53,7 @@ export function TransferFields({
   );
 
   const isCrossCurrency = useMemo(() => {
-    if (!originWallet?.currency || !destWallet?.currency) return true;
+    if (!originWallet?.currency || !destWallet?.currency) return false;
     return (
       originWallet.currency.toUpperCase() !== destWallet.currency.toUpperCase()
     );

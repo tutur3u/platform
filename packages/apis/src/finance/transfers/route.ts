@@ -33,7 +33,8 @@ const TransferSchema = z
 
 export async function POST(req: Request, { params }: Params) {
   const { wsId } = await params;
-  const normalizedWsId = await normalizeWorkspaceId(wsId);
+  const supabase = await createClient(req);
+  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
   const permissions = await getPermissions({
     wsId: normalizedWsId,
@@ -52,8 +53,6 @@ export async function POST(req: Request, { params }: Params) {
       { status: 403 }
     );
   }
-
-  const supabase = await createClient(req);
 
   const {
     data: { user },
@@ -225,8 +224,33 @@ export async function POST(req: Request, { params }: Params) {
   if (linkErr) {
     console.error('Error linking transfer transactions:', linkErr);
     // Clean up both transactions
-    await supabase.from('wallet_transactions').delete().eq('id', fromTx.id);
-    await supabase.from('wallet_transactions').delete().eq('id', toTx.id);
+    const fromDeleteResult = await supabase
+      .from('wallet_transactions')
+      .delete()
+      .eq('id', fromTx.id);
+    const toDeleteResult = await supabase
+      .from('wallet_transactions')
+      .delete()
+      .eq('id', toTx.id);
+
+    if (fromDeleteResult.error) {
+      console.error('Failed to clean up source transfer transaction', {
+        fromTransactionId: fromTx.id,
+        toTransactionId: toTx.id,
+        linkError: linkErr,
+        cleanupError: fromDeleteResult.error,
+      });
+    }
+
+    if (toDeleteResult.error) {
+      console.error('Failed to clean up destination transfer transaction', {
+        fromTransactionId: fromTx.id,
+        toTransactionId: toTx.id,
+        linkError: linkErr,
+        cleanupError: toDeleteResult.error,
+      });
+    }
+
     return NextResponse.json(
       { message: 'Error creating transfer link' },
       { status: 500 }

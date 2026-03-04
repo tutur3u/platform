@@ -33,6 +33,8 @@ double? convertCurrency(
             .firstOrNull
             ?.rate;
 
-  if (fromRate == null || toRate == null || fromRate == 0) return null;
+  if (fromRate == null || toRate == null || fromRate <= 0 || toRate <= 0) {
+    return null;
+  }
   return amount * (toRate / fromRate);
 }
