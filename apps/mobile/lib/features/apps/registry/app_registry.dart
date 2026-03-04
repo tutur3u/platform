@@ -89,7 +89,7 @@ class AppRegistry {
     MiniAppNavItem(
       id: 'finance_wallets',
       route: Routes.wallets,
-      icon: Icons.bar_chart_outlined,
+      icon: Icons.account_balance_wallet_outlined,
       labelBuilder: _labelWallets,
     ),
   ];

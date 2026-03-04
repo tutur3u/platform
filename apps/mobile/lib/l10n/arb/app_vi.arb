@@ -166,7 +166,7 @@
     "financeWalletBankTab": "Ngân hàng",
     "financeWalletMobileTab": "Ví điện tử",
     "financeWalletSearchImage": "Tìm hình ảnh",
-    "financeWalletImageCount": "{count} mục",
+    "financeWalletImageCount": "{count, plural, =0{Không có hình ảnh} one{1 hình khả dụng} other{{count} hình khả dụng}}",
     "@financeWalletImageCount": {
         "placeholders": {
             "count": {

@@ -165,9 +165,9 @@ class _WalletsViewState extends State<_WalletsView> {
 
     final repository = context.read<FinanceRepository>();
     final l10n = context.l10n;
-    final toastContext = context;
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
 
-    await shad.showDialog<bool>(
+    final confirmed = await shad.showDialog<bool>(
       context: context,
       builder: (_) => AsyncDeleteConfirmationDialog(
         title: l10n.financeDeleteWallet,
@@ -181,7 +181,7 @@ class _WalletsViewState extends State<_WalletsView> {
       ),
     );
 
-    if (!mounted) return;
+    if (!mounted || confirmed != true) return;
     await _loadWallets();
   }
 

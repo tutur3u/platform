@@ -156,7 +156,7 @@ export async function PUT(req: Request, { params }: Params) {
     if (deleteResult.error) {
       console.error('Failed to delete credit wallet details', {
         walletId: id,
-        payload: data,
+        workspaceId: normalizedWsId,
         error: deleteResult.error,
       });
       return NextResponse.json(

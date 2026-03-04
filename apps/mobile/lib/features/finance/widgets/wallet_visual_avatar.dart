@@ -47,6 +47,11 @@ class WalletVisualAvatar extends StatelessWidget {
                     size: size * 0.46,
                     color: colorScheme.primary,
                   ),
+                  errorBuilder: (context, error, stackTrace) => Icon(
+                    resolvedIcon,
+                    size: size * 0.46,
+                    color: colorScheme.primary,
+                  ),
                 ),
               ),
             ),

@@ -916,7 +916,7 @@ abstract class AppLocalizations {
   /// No description provided for @financeWalletImageCount.
   ///
   /// In en, this message translates to:
-  /// **'{count} available'**
+  /// **'{count, plural, =0{No images} one{1 available} other{{count} available}}'**
   String financeWalletImageCount(int count);
 
   /// No description provided for @financeWalletClearImage.
