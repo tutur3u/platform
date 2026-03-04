@@ -510,7 +510,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeTransferMode => 'Chế độ chuyển khoản';
 
   @override
-  String get financeDestinationAmountOptional => 'Số tiền đích (tùy chọn)';
+  String get financeDestinationAmountOptional => 'Số tiền đích';
 
   @override
   String get financeSelectWalletAndCategoryFirst => 'Hãy chọn ví và danh mục trước';
@@ -598,6 +598,24 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeTransactionCountShort => 'gd';
+
+  @override
+  String get financeExchangeRate => 'Tỷ giá';
+
+  @override
+  String get financeDestinationAmountAuto => 'Tự động';
+
+  @override
+  String get financeDestinationAmountOverride => 'Thủ công';
+
+  @override
+  String get financeDestinationAmountAutoHint => 'Tự động điền từ tỷ giá thực tế';
+
+  @override
+  String get financeDestinationAmountOverrideHint => 'Dùng số tiền tùy chỉnh — nhấn để chuyển sang tự động';
+
+  @override
+  String get financeInvertRate => 'Đảo tỷ giá';
 
   @override
   String get timerTitle => 'Bấm giờ';
