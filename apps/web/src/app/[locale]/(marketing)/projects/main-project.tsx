@@ -14,9 +14,9 @@ export default function MainProject() {
         transition={{ duration: 1 }}
       >
         <div className="flex flex-col items-center text-center">
-          <div className="text-4xl leading-normal font-extrabold md:text-5xl lg:text-6xl">
+          <div className="font-extrabold text-4xl leading-normal md:text-5xl lg:text-6xl">
             <span className="text-foreground">NEO Culture</span>{' '}
-            <span className="border-b-4 border-[#FBC721] whitespace-nowrap text-[#5FC6E5]">
+            <span className="whitespace-nowrap border-[#FBC721] border-b-4 text-[#5FC6E5]">
               PROJECTS{' '}
               <motion.div
                 className="inline-block"
@@ -35,7 +35,7 @@ export default function MainProject() {
             </span>
           </div>
           <div className="mt-1 w-2/3 md:w-full">
-            <p className="text-lg leading-normal text-muted-foreground md:mt-4 md:max-w-2xl md:text-xl">
+            <p className="text-lg text-muted-foreground leading-normal md:mt-4 md:max-w-2xl md:text-xl">
               The place where you can learn, grow and have fun with technology,
               by building projects.
             </p>
@@ -50,9 +50,9 @@ export default function MainProject() {
         viewport={{ once: true }}
         transition={{ duration: 0.8, delay: 0.2 }}
       >
-        <p className="text-2xl leading-normal font-extrabold md:text-3xl lg:text-4xl">
+        <p className="font-extrabold text-2xl leading-normal md:text-3xl lg:text-4xl">
           <span className="text-foreground">Our</span>{' '}
-          <span className="border-b-4 border-[#FBC721] whitespace-nowrap text-[#5FC6E5]">
+          <span className="whitespace-nowrap border-[#FBC721] border-b-4 text-[#5FC6E5]">
             Flagship
           </span>{' '}
           <span className="text-foreground">Project</span>
@@ -73,7 +73,7 @@ export default function MainProject() {
               viewport={{ once: true }}
               transition={{ duration: 0.8, delay: 0.6 }}
             >
-              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-600/20 p-1">
+              <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-blue-500/20 to-purple-600/20 p-1">
                 <div className="relative h-64 overflow-hidden rounded-xl md:h-80 lg:h-96">
                   <Image
                     src="/media/marketing/landing-page.jpg"
@@ -81,10 +81,10 @@ export default function MainProject() {
                     fill
                     className="object-cover"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 to-purple-600/10"></div>
+                  <div className="absolute inset-0 bg-linear-to-tr from-blue-500/10 to-purple-600/10"></div>
                 </div>
               </div>
-              <div className="absolute -inset-4 rounded-3xl bg-gradient-to-r from-blue-500/20 to-purple-600/20 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100"></div>
+              <div className="absolute -inset-4 rounded-3xl bg-linear-to-r from-blue-500/20 to-purple-600/20 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100"></div>
             </motion.div>
 
             <motion.div
@@ -95,10 +95,10 @@ export default function MainProject() {
               transition={{ duration: 0.8, delay: 0.8 }}
             >
               <div>
-                <h3 className="mb-4 text-2xl font-extrabold text-foreground md:text-3xl lg:text-4xl">
+                <h3 className="mb-4 font-extrabold text-2xl text-foreground md:text-3xl lg:text-4xl">
                   NCT <span className="text-[#5FC6E5]">Hub Platform</span>
                 </h3>
-                <p className="text-md leading-relaxed font-medium text-muted-foreground md:text-lg">
+                <p className="font-medium text-md text-muted-foreground leading-relaxed md:text-lg">
                   The official web-based platform for RMIT Neo Culture Tech
                   based on Tuturuuu, serving as both an informative digital
                   showcase for visitors and a comprehensive management platform
@@ -108,21 +108,21 @@ export default function MainProject() {
 
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
-                  <div className="mt-3 h-2 w-2 flex-shrink-0 rounded-full bg-[#F4B71A]"></div>
+                  <div className="mt-3 h-2 w-2 shrink-0 rounded-full bg-[#F4B71A]"></div>
                   <p className="font-medium text-muted-foreground">
                     Interactive games and entertainment features including Neo
                     Chess, Neo Crush, with engaging experiences for all players
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
-                  <div className="mt-3 h-2 w-2 flex-shrink-0 rounded-full bg-[#1AF4E6]"></div>
+                  <div className="mt-3 h-2 w-2 shrink-0 rounded-full bg-[#1AF4E6]"></div>
                   <p className="font-medium text-muted-foreground">
                     Practical utility applications like ID scanner, time
                     tracking tools, and various productivity enhancing features.
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
-                  <div className="mt-3 h-2 w-2 flex-shrink-0 rounded-full bg-[#F4B71A]"></div>
+                  <div className="mt-3 h-2 w-2 shrink-0 rounded-full bg-[#F4B71A]"></div>
                   <p className="font-medium text-muted-foreground">
                     Comprehensive workspace management system for organizing
                     projects, managing team members, and streamlining club
