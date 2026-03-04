@@ -7,6 +7,7 @@ class _TransactionFormDialog extends StatefulWidget {
     this.transaction,
     this.onSave,
     this.onCreate,
+    this.exchangeRates,
   }) : assert(
          transaction == null ? onCreate != null : onSave != null,
          'Create mode requires onCreate; edit mode requires onSave.',
@@ -17,6 +18,7 @@ class _TransactionFormDialog extends StatefulWidget {
   final Transaction? transaction;
   final TransactionSaveHandler? onSave;
   final TransactionCreateHandler? onCreate;
+  final List<ExchangeRate>? exchangeRates;
 
   @override
   State<_TransactionFormDialog> createState() => _TransactionFormDialogState();
@@ -44,10 +46,18 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
   String? _optionsError;
   bool _isSaving = false;
 
+  // Exchange rate / destination-amount override state
+  // Start in override mode when editing an existing transfer (preserve stored
+  // amounts). Start in auto mode for new transfers so the exchange rate
+  // pre-fills the destination.
+  bool _isDestinationOverridden = false;
+  bool _isRateInverted = false;
+
   bool get _isCreate => widget.transaction == null;
 
   void _onAmountChanged() {
     if (!mounted) return;
+    _tryAutoFillDestinationAmount();
     setState(() {});
   }
 
@@ -108,6 +118,7 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
                             } else {
                               _destinationWalletId = null;
                               _destinationAmountController.clear();
+                              _isDestinationOverridden = false;
                             }
                           });
                         },
@@ -242,14 +253,73 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
                       ),
                       const shad.Gap(16),
                       if (_isTransfer) ...[
-                        Text(
-                          l10n.financeDestinationAmountOptional,
-                          style: theme.typography.small,
+                        // Destination amount label row with Auto/Manual badge
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                l10n.financeDestinationAmountOptional,
+                                style: theme.typography.small,
+                              ),
+                            ),
+                            if (_isCrossCurrency)
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _isDestinationOverridden =
+                                        !_isDestinationOverridden;
+                                  });
+                                  if (!_isDestinationOverridden) {
+                                    _tryAutoFillDestinationAmount();
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _isDestinationOverridden
+                                        ? Colors.orange.withValues(alpha: 0.12)
+                                        : Colors.blue.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        _isDestinationOverridden
+                                            ? Icons.edit
+                                            : Icons.auto_awesome,
+                                        size: 11,
+                                        color: _isDestinationOverridden
+                                            ? Colors.orange
+                                            : Colors.blue,
+                                      ),
+                                      const shad.Gap(3),
+                                      Text(
+                                        _isDestinationOverridden
+                                            ? l10n
+                                                .financeDestinationAmountOverride
+                                            : l10n.financeDestinationAmountAuto,
+                                        style: theme.typography.xSmall.copyWith(
+                                          color: _isDestinationOverridden
+                                              ? Colors.orange
+                                              : Colors.blue,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                         const shad.Gap(4),
                         shad.TextField(
                           key: ValueKey(_selectedDestinationCurrency),
                           controller: _destinationAmountController,
+                          enabled: !_isAutoMode,
                           keyboardType: TextInputType.numberWithOptions(
                             decimal:
                                 _currencyFractionDigits(
@@ -271,24 +341,79 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
                             color: theme.colorScheme.mutedForeground,
                           ),
                         ),
+                        if (_isCrossCurrency) ...[
+                          const shad.Gap(4),
+                          Text(
+                            _isDestinationOverridden
+                                ? l10n.financeDestinationAmountOverrideHint
+                                : l10n.financeDestinationAmountAutoHint,
+                            style: theme.typography.xSmall.copyWith(
+                              color: theme.colorScheme.mutedForeground,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
                         if (_isCrossCurrency &&
-                            _exchangeRatePreview.isNotEmpty) ...[
-                          const shad.Gap(6),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.currency_exchange,
-                                size: 13,
-                                color: theme.colorScheme.mutedForeground,
+                            _exchangeRateDisplay.isNotEmpty) ...[
+                          const shad.Gap(8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withValues(alpha: 0.06),
+                              border: Border.all(
+                                color: Colors.blue.withValues(alpha: 0.28),
                               ),
-                              const shad.Gap(4),
-                              Text(
-                                _exchangeRatePreview,
-                                style: theme.typography.xSmall.copyWith(
-                                  color: theme.colorScheme.mutedForeground,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.currency_exchange,
+                                  size: 14,
+                                  color: Colors.blue,
                                 ),
-                              ),
-                            ],
+                                const shad.Gap(6),
+                                Text(
+                                  '${l10n.financeExchangeRate}: ',
+                                  style: theme.typography.xSmall.copyWith(
+                                    color: Colors.blue,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    _exchangeRateDisplay,
+                                    style: theme.typography.xSmall.copyWith(
+                                      color: Colors.blue,
+                                      fontFeatures: const [
+                                        FontFeature.tabularFigures(),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () {
+                                    setState(
+                                      () => _isRateInverted = !_isRateInverted,
+                                    );
+                                  },
+                                  child: Tooltip(
+                                    message: l10n.financeInvertRate,
+                                    child: const Padding(
+                                      padding: EdgeInsets.all(4),
+                                      child: Icon(
+                                        Icons.swap_horiz,
+                                        size: 14,
+                                        color: Colors.blue,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                         const shad.Gap(16),
@@ -419,11 +544,49 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
         widget.transaction?.isDescriptionConfidential ?? false;
     _isCategoryConfidential =
         widget.transaction?.isCategoryConfidential ?? false;
+    // When editing an existing transfer, preserve the stored amounts
+    // (override). For new transfers, auto-fill from the exchange rate.
+    _isDestinationOverridden = widget.transaction?.isTransfer ?? false;
 
     _amountController.addListener(_onAmountChanged);
     _destinationAmountController.addListener(_onAmountChanged);
 
     unawaited(_loadOptions());
+  }
+
+  /// Auto-fills the destination amount from source × exchange rate.
+  /// Only runs when in auto mode (cross-currency, not overridden, rate set).
+  void _tryAutoFillDestinationAmount() {
+    if (_isDestinationOverridden) return;
+    if (!_isTransfer || !_isCrossCurrency) return;
+    final rate = _suggestedExchangeRate;
+    if (rate == null) return;
+    final src = _parseAmount(
+      _amountController.text,
+      currencyCode: _selectedCurrency,
+    );
+    if (src == null || src <= 0) return;
+    final calculated = _roundTransferAmount(src * rate);
+    if (!calculated.isFinite || calculated <= 0) return;
+    final formatted = _formatInitialAmount(calculated);
+    if (_destinationAmountController.text != formatted) {
+      _destinationAmountController.text = formatted;
+    }
+  }
+
+  /// Rounds a transfer amount to a reasonable number of decimal places.
+  double _roundTransferAmount(double value) {
+    final digits = _currencyFractionDigits(_selectedDestinationCurrency);
+    final factor = _pow10(digits);
+    return (value * factor).roundToDouble() / factor;
+  }
+
+  double _pow10(int exp) {
+    var result = 1.0;
+    for (var i = 0; i < exp; i++) {
+      result *= 10;
+    }
+    return result;
   }
 
   Future<void> _loadOptions() async {
@@ -653,7 +816,10 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
       if (_destinationWalletId == selectedWalletId) {
         _destinationWalletId = null;
       }
+      // Reset to auto mode when source wallet changes (new transfer only)
+      if (_isCreate) _isDestinationOverridden = false;
     });
+    _tryAutoFillDestinationAmount();
   }
 
   Future<void> _pickDestinationWallet() async {
@@ -716,7 +882,12 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
     );
 
     if (selectedWalletId == null || !mounted) return;
-    setState(() => _destinationWalletId = selectedWalletId);
+    setState(() {
+      _destinationWalletId = selectedWalletId;
+      // Reset to auto mode when destination wallet changes (new transfer only)
+      if (_isCreate) _isDestinationOverridden = false;
+    });
+    _tryAutoFillDestinationAmount();
   }
 
   Future<void> _pickCategory() async {
@@ -876,19 +1047,56 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog> {
     return origin != dest;
   }
 
-  String get _exchangeRatePreview {
-    final srcAmount = _parseAmount(
+  /// Live exchange rate suggested by the platform (1 source unit → dest units).
+  double? get _suggestedExchangeRate {
+    if (!_isTransfer || !_isCrossCurrency) return null;
+    final rates = widget.exchangeRates;
+    if (rates == null || rates.isEmpty) return null;
+    final converted = convertCurrency(
+      1,
+      _selectedCurrency,
+      _selectedDestinationCurrency,
+      rates,
+    );
+    if (converted == null || !converted.isFinite || converted <= 0) return null;
+    return converted;
+  }
+
+  /// Effective rate: prefer suggested, fall back to deriving from typed
+  /// amounts.
+  double? get _effectiveRate {
+    if (!_isCrossCurrency) return null;
+    final suggested = _suggestedExchangeRate;
+    if (suggested != null && suggested > 0) return suggested;
+    final src = _parseAmount(
       _amountController.text,
       currencyCode: _selectedCurrency,
     );
-    final dstAmount = _parseAmount(
+    final dst = _parseAmount(
       _destinationAmountController.text,
       currencyCode: _selectedDestinationCurrency,
     );
-    if (srcAmount == null || dstAmount == null || srcAmount == 0) return '';
-    final rate = dstAmount / srcAmount;
-    return '1 $_selectedCurrency = '
-        '${rate.toStringAsFixed(4)} $_selectedDestinationCurrency';
+    if (src == null || dst == null || src == 0) return null;
+    return dst / src;
+  }
+
+  /// Whether the destination amount is being auto-managed (not overridden).
+  bool get _isAutoMode =>
+      _isCrossCurrency &&
+      !_isDestinationOverridden &&
+      _suggestedExchangeRate != null;
+
+  /// Human-readable exchange rate string, respecting the invert toggle.
+  String get _exchangeRateDisplay {
+    final rate = _effectiveRate;
+    if (rate == null || !rate.isFinite) return '';
+    final originCur = _selectedCurrency;
+    final destCur = _selectedDestinationCurrency;
+    if (_isRateInverted) {
+      final inv = 1 / rate;
+      return '1 $destCur = ${inv.toStringAsFixed(4)} $originCur';
+    }
+    return '1 $originCur = ${rate.toStringAsFixed(4)} $destCur';
   }
 
   String get _destinationAmountPreview {

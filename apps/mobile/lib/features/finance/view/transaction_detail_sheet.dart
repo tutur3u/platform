@@ -89,6 +89,7 @@ Future<bool> showCreateTransactionSheet(
   required String wsId,
   required FinanceRepository repository,
   required TransactionCreateHandler onCreate,
+  List<ExchangeRate>? exchangeRates,
 }) async {
   final result = await showAdaptiveSheet<bool>(
     context: context,
@@ -96,6 +97,7 @@ Future<bool> showCreateTransactionSheet(
       wsId: wsId,
       repository: repository,
       onCreate: onCreate,
+      exchangeRates: exchangeRates,
     ),
   );
 
@@ -337,6 +339,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
         transaction: _transaction,
         repository: widget.repository,
         onSave: widget.onSave,
+        exchangeRates: widget.exchangeRates,
       ),
     );
 

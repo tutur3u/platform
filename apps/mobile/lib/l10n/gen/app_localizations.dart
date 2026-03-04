@@ -1243,6 +1243,42 @@ abstract class AppLocalizations {
   /// **'tx'**
   String get financeTransactionCountShort;
 
+  /// No description provided for @financeExchangeRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Exchange rate'**
+  String get financeExchangeRate;
+
+  /// No description provided for @financeDestinationAmountAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get financeDestinationAmountAuto;
+
+  /// No description provided for @financeDestinationAmountOverride.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual'**
+  String get financeDestinationAmountOverride;
+
+  /// No description provided for @financeDestinationAmountAutoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-filled from live exchange rate'**
+  String get financeDestinationAmountAutoHint;
+
+  /// No description provided for @financeDestinationAmountOverrideHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Using custom amount — tap to switch to auto'**
+  String get financeDestinationAmountOverrideHint;
+
+  /// No description provided for @financeInvertRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Invert rate'**
+  String get financeInvertRate;
+
   /// No description provided for @timerTitle.
   ///
   /// In en, this message translates to:

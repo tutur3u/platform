@@ -600,6 +600,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeTransactionCountShort => 'tx';
 
   @override
+  String get financeExchangeRate => 'Exchange rate';
+
+  @override
+  String get financeDestinationAmountAuto => 'Auto';
+
+  @override
+  String get financeDestinationAmountOverride => 'Manual';
+
+  @override
+  String get financeDestinationAmountAutoHint => 'Auto-filled from live exchange rate';
+
+  @override
+  String get financeDestinationAmountOverrideHint => 'Using custom amount — tap to switch to auto';
+
+  @override
+  String get financeInvertRate => 'Invert rate';
+
+  @override
   String get timerTitle => 'Time tracker';
 
   @override

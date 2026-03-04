@@ -228,6 +228,12 @@
     "financeNet": "Net",
     "financeTransfer": "Transfer",
     "financeTransactionCountShort": "tx",
+    "financeExchangeRate": "Exchange rate",
+    "financeDestinationAmountAuto": "Auto",
+    "financeDestinationAmountOverride": "Manual",
+    "financeDestinationAmountAutoHint": "Auto-filled from live exchange rate",
+    "financeDestinationAmountOverrideHint": "Using custom amount — tap to switch to auto",
+    "financeInvertRate": "Invert rate",
 
     "timerTitle": "Time tracker",
     "timerStart": "Start",

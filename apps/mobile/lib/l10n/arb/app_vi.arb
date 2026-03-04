@@ -228,6 +228,12 @@
     "financeNet": "Ròng",
     "financeTransfer": "Chuyển khoản",
     "financeTransactionCountShort": "gd",
+    "financeExchangeRate": "Tỷ giá",
+    "financeDestinationAmountAuto": "Tự động",
+    "financeDestinationAmountOverride": "Thủ công",
+    "financeDestinationAmountAutoHint": "Tự động điền từ tỷ giá thực tế",
+    "financeDestinationAmountOverrideHint": "Dùng số tiền tùy chỉnh — nhấn để chuyển sang tự động",
+    "financeInvertRate": "Đảo tỷ giá",
 
     "timerTitle": "Bấm giờ",
     "timerStart": "Bắt đầu",
