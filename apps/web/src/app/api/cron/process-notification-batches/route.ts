@@ -95,7 +95,7 @@ async function filterBatchesToRootWorkspace(
     .select(
       `
         batch_id,
-        notifications (
+        notifications:notifications!notification_delivery_log_notification_id_fkey (
           entity_id,
           data
         )
@@ -381,7 +381,7 @@ export async function GET(req: NextRequest) {
               id,
               batch_id,
               notification_id,
-              notifications (
+              notifications:notifications!notification_delivery_log_notification_id_fkey (
                 id,
                 type,
                 title,

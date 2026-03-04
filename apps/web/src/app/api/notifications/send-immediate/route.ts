@@ -341,7 +341,7 @@ export async function POST(req: NextRequest) {
           .select(
             `
             batch_id,
-            notifications (
+            notifications:notifications!notification_delivery_log_notification_id_fkey (
               entity_id,
               data
             )
@@ -402,7 +402,7 @@ export async function POST(req: NextRequest) {
         id,
         batch_id,
         notification_id,
-        notifications (
+        notifications:notifications!notification_delivery_log_notification_id_fkey (
           id,
           type,
           code,
