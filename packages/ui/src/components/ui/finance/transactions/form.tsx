@@ -1,17 +1,11 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  ArrowLeftRight,
-  Settings2,
-  Wallet,
-} from '@tuturuuu/icons';
+import { ArrowLeftRight, Settings2, Wallet } from '@tuturuuu/icons';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import type { Wallet as WalletType } from '@tuturuuu/types/primitives/Wallet';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Form,
-} from '@tuturuuu/ui/form';
+import { Form } from '@tuturuuu/ui/form';
 import { useExchangeRates } from '@tuturuuu/ui/hooks/use-exchange-rates';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
@@ -34,7 +28,11 @@ import {
   TransactionFormSchema,
   type TransactionFormValues,
 } from './form-schema';
-import { type NewContent, type NewContentType, type TransactionFormProps } from './form-types';
+import type {
+  NewContent,
+  NewContentType,
+  TransactionFormProps,
+} from './form-types';
 
 export function TransactionForm({
   wsId,
@@ -217,9 +215,11 @@ export function TransactionForm({
 
   // Reset override to auto when the wallet pair changes (only for new transfers)
   useEffect(() => {
-    if (!data?.id) setIsDestinationOverridden(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedWalletId, selectedDestinationWalletId]);
+    if (data?.id) return;
+    if (!selectedWalletId && !selectedDestinationWalletId) return;
+
+    setIsDestinationOverridden(false);
+  }, [data?.id, selectedWalletId, selectedDestinationWalletId]);
 
   // Auto-fill destination amount from source × exchange rate (source-driven only)
   useEffect(() => {
@@ -235,7 +235,9 @@ export function TransactionForm({
       return;
     }
 
-    const calculated = roundTransferAmount(sourceAmount * suggestedExchangeRate);
+    const calculated = roundTransferAmount(
+      sourceAmount * suggestedExchangeRate
+    );
     if (!Number.isFinite(calculated) || calculated <= 0) return;
 
     form.setValue('destination_amount', calculated, {
@@ -343,7 +345,9 @@ export function TransactionForm({
     }
   }
 
-  const [newContentType, setNewContentType] = useState<NewContentType | undefined>();
+  const [newContentType, setNewContentType] = useState<
+    NewContentType | undefined
+  >();
   const [newContent, setNewContent] = useState<NewContent>(undefined);
   const [newTagColor, setNewTagColor] = useState('#3b82f6');
 

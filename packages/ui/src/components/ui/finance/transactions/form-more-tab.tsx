@@ -76,7 +76,9 @@ export function FormMoreTab({
               }}
               disabled={loading || tagsLoading || !hasFormPermission}
             />
-            <FormDescription>{t('transaction-data-table.tags_description')}</FormDescription>
+            <FormDescription>
+              {t('transaction-data-table.tags_description')}
+            </FormDescription>
             <FormMessage />
           </FormItem>
         )}
@@ -147,7 +149,9 @@ export function FormMoreTab({
                   <div className="flex items-center gap-2">
                     <FileText className="h-4 w-4 text-muted-foreground" />
                     <FormLabel className="mt-0! font-normal text-sm">
-                      {t('workspace-finance-transactions.confidential-description')}
+                      {t(
+                        'workspace-finance-transactions.confidential-description'
+                      )}
                     </FormLabel>
                   </div>
                   <FormControl>
@@ -169,7 +173,9 @@ export function FormMoreTab({
                   <div className="flex items-center gap-2">
                     <FolderOpen className="h-4 w-4 text-muted-foreground" />
                     <FormLabel className="mt-0! font-normal text-sm">
-                      {t('workspace-finance-transactions.confidential-category')}
+                      {t(
+                        'workspace-finance-transactions.confidential-category'
+                      )}
                     </FormLabel>
                   </div>
                   <FormControl>

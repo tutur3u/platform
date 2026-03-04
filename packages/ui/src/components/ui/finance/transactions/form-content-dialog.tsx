@@ -90,7 +90,9 @@ export function FormContentDialog({
   return (
     <Dialog
       open={!!newContent}
-      onOpenChange={(open) => setNewContent(open ? newContent || { name: '' } : undefined)}
+      onOpenChange={(open) =>
+        setNewContent(open ? newContent || { name: '' } : undefined)
+      }
     >
       <DialogContent onOpenAutoFocus={(e) => e.preventDefault()}>
         <DialogHeader>
@@ -125,7 +127,9 @@ export function FormContentDialog({
               />
             </div>
             <div className="space-y-2">
-              <label className="font-medium text-sm">{t('ws-tags.color')}</label>
+              <label className="font-medium text-sm">
+                {t('ws-tags.color')}
+              </label>
               <div className="flex flex-wrap gap-2">
                 {PRESET_TAG_COLORS.map((color) => (
                   <button
@@ -133,7 +137,9 @@ export function FormContentDialog({
                     type="button"
                     className={cn(
                       'h-8 w-8 rounded-full border-2 transition-transform hover:scale-110',
-                      newTagColor === color ? 'border-foreground' : 'border-transparent'
+                      newTagColor === color
+                        ? 'border-foreground'
+                        : 'border-transparent'
                     )}
                     style={{ backgroundColor: color }}
                     onClick={() => setNewTagColor(color)}

@@ -9,14 +9,17 @@ import { CurrencyInput } from '@tuturuuu/ui/currency-input';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { getIconComponentByKey } from '@tuturuuu/ui/custom/icon-picker';
 import {
+  getCategoryIcon,
+  getWalletIcon,
+} from '@tuturuuu/ui/finance/transactions/form-utils';
+import { TransferFields } from '@tuturuuu/ui/finance/transactions/transfer-fields';
+import {
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
-import { getCategoryIcon, getWalletIcon } from '@tuturuuu/ui/finance/transactions/form-utils';
-import { TransferFields } from '@tuturuuu/ui/finance/transactions/transfer-fields';
 import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
@@ -109,7 +112,9 @@ export function FormBasicTab({
             name="destination_wallet_id"
             render={({ field }) => (
               <FormItem className="flex flex-col">
-                <FormLabel>{t('transaction-data-table.destination_wallet')}</FormLabel>
+                <FormLabel>
+                  {t('transaction-data-table.destination_wallet')}
+                </FormLabel>
                 <Combobox
                   t={t}
                   {...field}
@@ -126,7 +131,9 @@ export function FormBasicTab({
                       : []
                   }
                   label={walletsLoading ? 'Loading...' : undefined}
-                  placeholder={t('transaction-data-table.select_destination_wallet')}
+                  placeholder={t(
+                    'transaction-data-table.select_destination_wallet'
+                  )}
                   selected={field.value ?? ''}
                   onChange={field.onChange}
                   onCreate={(name) => {
@@ -155,7 +162,10 @@ export function FormBasicTab({
                       ? categories.map((category) => ({
                           value: category.id || '',
                           label: category.name || '',
-                          icon: getCategoryIcon(category, getIconComponentByKey),
+                          icon: getCategoryIcon(
+                            category,
+                            getIconComponentByKey
+                          ),
                           color: category.color
                             ? computeAccessibleLabelStyles(category.color)?.text
                             : undefined,
@@ -224,7 +234,9 @@ export function FormBasicTab({
             <FormLabel>{t('transaction-data-table.description')}</FormLabel>
             <FormControl>
               <Input
-                placeholder={t('transaction-data-table.description_placeholder')}
+                placeholder={t(
+                  'transaction-data-table.description_placeholder'
+                )}
                 {...field}
               />
             </FormControl>
@@ -248,9 +260,13 @@ export function FormBasicTab({
                     disabled={!hasFormPermission}
                   >
                     {field.value ? (
-                      format(field.value, locale === 'vi' ? 'dd/MM/yyyy, ppp' : 'PPP', {
-                        locale: locale === 'vi' ? vi : enUS,
-                      })
+                      format(
+                        field.value,
+                        locale === 'vi' ? 'dd/MM/yyyy, ppp' : 'PPP',
+                        {
+                          locale: locale === 'vi' ? vi : enUS,
+                        }
+                      )
                     ) : (
                       <span>{t('transaction-data-table.taken_at')}</span>
                     )}

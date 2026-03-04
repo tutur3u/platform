@@ -122,7 +122,7 @@ export function TransferFields({
                   onClick={onToggleDestinationOverride}
                   disabled={loading || !hasFormPermission}
                   className={cn(
-                    'flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium transition-colors',
+                    'flex items-center gap-1 rounded-md px-1.5 py-0.5 font-medium text-xs transition-colors',
                     isDestinationOverridden
                       ? 'bg-dynamic-orange/10 text-dynamic-orange hover:bg-dynamic-orange/20'
                       : 'bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
