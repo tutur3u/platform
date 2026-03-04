@@ -93,6 +93,7 @@ export function useChatAudioRecorder({
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const shouldDiscardRef = useRef(false);
+  const isStartingRef = useRef(false);
   const startedAtRef = useRef<number | null>(null);
   const submitOnReadyRef = useRef(false);
 
@@ -211,13 +212,20 @@ export function useChatAudioRecorder({
 
   const startRecording = useCallback(async () => {
     if (disabled || !onAudioReady) return;
-    if (!supportedFormat || recordingState !== 'idle') {
+    if (
+      isStartingRef.current ||
+      !supportedFormat ||
+      recordingState !== 'idle' ||
+      mediaRecorderRef.current ||
+      streamRef.current
+    ) {
       if (!supportedFormat) {
         toast.error(t('audio_recording_unavailable'));
       }
       return;
     }
 
+    isStartingRef.current = true;
     try {
       setRecordingState('requesting');
       shouldDiscardRef.current = false;
@@ -280,6 +288,8 @@ export function useChatAudioRecorder({
       }
 
       toast.error(t('audio_recording_failed'));
+    } finally {
+      isStartingRef.current = false;
     }
   }, [
     cancelRecording,

@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { findMatchingMessageIdForStoredFile } from '../mira-chat-persistence-utils';
+import {
+  findMatchingMessageIdForStoredFile,
+  mergeMessageAttachmentMaps,
+} from '../mira-chat-persistence-utils';
 
 describe('findMatchingMessageIdForStoredFile', () => {
   it('matches stored files by storage path instead of filename', () => {
@@ -67,5 +70,53 @@ describe('findMatchingMessageIdForStoredFile', () => {
     expect(result.get('ws/chats/ai/resources/chat-1/mira-audio.webm')).toBe(
       'message-1'
     );
+  });
+
+  it('preserves richer live attachment urls when restored chat state is weaker', () => {
+    const merged = mergeMessageAttachmentMaps(
+      new Map([
+        [
+          'message-1',
+          [
+            {
+              alias: null,
+              id: 'live-attachment',
+              name: 'clip.mov',
+              previewUrl: 'blob:video-preview',
+              signedUrl: 'https://example.com/live.mov',
+              size: 10,
+              storagePath: 'ws/chats/ai/resources/temp/user/clip.mov',
+              type: 'video/quicktime',
+            },
+          ],
+        ],
+      ]),
+      new Map([
+        [
+          'message-1',
+          [
+            {
+              alias: null,
+              id: 'restored-attachment',
+              name: 'clip.mov',
+              previewUrl: null,
+              signedUrl: null,
+              size: 10,
+              storagePath: 'ws/chats/ai/resources/temp/user/clip.mov',
+              type: 'video/quicktime',
+            },
+          ],
+        ],
+      ])
+    );
+
+    expect(merged.get('message-1')).toEqual([
+      expect.objectContaining({
+        previewUrl: 'blob:video-preview',
+        signedUrl: 'https://example.com/live.mov',
+        storagePath: 'ws/chats/ai/resources/temp/user/clip.mov',
+        type: 'video/quicktime',
+      }),
+    ]);
   });
 });

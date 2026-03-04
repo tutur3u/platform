@@ -190,14 +190,11 @@ export function getRenderableMessageAttachments(
   const attachmentsByKey = new Map<string, MessageFileAttachment>();
 
   for (const attachment of directAttachments) {
-    attachmentsByKey.set(
-      `${attachment.storagePath || attachment.name}|${attachment.type}`,
-      attachment
-    );
+    attachmentsByKey.set(attachment.storagePath || attachment.name, attachment);
   }
 
   for (const attachment of metadataAttachments) {
-    const key = `${attachment.storagePath || attachment.name}|${attachment.type}`;
+    const key = attachment.storagePath || attachment.name;
     const existing = attachmentsByKey.get(key);
     if (!existing) {
       attachmentsByKey.set(key, attachment);
@@ -207,6 +204,10 @@ export function getRenderableMessageAttachments(
     attachmentsByKey.set(key, {
       ...existing,
       alias: attachment.alias ?? existing.alias ?? null,
+      type:
+        existing.type !== 'application/octet-stream'
+          ? existing.type
+          : attachment.type,
     });
   }
 
@@ -219,7 +220,7 @@ function dedupeRenderableAttachments(
   const attachmentsByKey = new Map<string, MessageFileAttachment>();
 
   for (const attachment of attachments) {
-    const key = `${attachment.storagePath || attachment.name}|${attachment.type}`;
+    const key = attachment.storagePath || attachment.name;
     const existing = attachmentsByKey.get(key);
 
     if (!existing) {
@@ -233,6 +234,10 @@ function dedupeRenderableAttachments(
       previewUrl: existing.previewUrl ?? attachment.previewUrl,
       signedUrl: existing.signedUrl ?? attachment.signedUrl,
       storagePath: existing.storagePath ?? attachment.storagePath,
+      type:
+        existing.type !== 'application/octet-stream'
+          ? existing.type
+          : attachment.type,
     });
   }
 
