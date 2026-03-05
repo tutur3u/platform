@@ -327,7 +327,7 @@ class _TagPickerDialog extends StatelessWidget {
                       color: shad.Theme.of(context).colorScheme.mutedForeground,
                     ),
                     const shad.Gap(8),
-                    Expanded(
+                    const Expanded(
                       child: Text(
                         '-',
                         maxLines: 1,

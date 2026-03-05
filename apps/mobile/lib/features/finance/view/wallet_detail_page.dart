@@ -17,6 +17,7 @@ import 'package:mobile/features/finance/widgets/wallet_dialog.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/fab/extended_fab.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class WalletDetailPage extends StatelessWidget {
@@ -102,13 +103,6 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
                   : _onEditWallet,
               child: const Icon(Icons.edit_outlined, size: 16),
             ),
-            shad.PrimaryButton(
-              density: shad.ButtonDensity.icon,
-              onPressed: (_wallet == null || _isLoadingInitial)
-                  ? null
-                  : _onCreateTransaction,
-              child: const Icon(Icons.add, size: 16),
-            ),
           ],
         ),
       ],
@@ -116,7 +110,18 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
         listenWhen: (prev, curr) =>
             prev.currentWorkspace?.id != curr.currentWorkspace?.id,
         listener: (context, _) => unawaited(_loadInitial()),
-        child: _buildBody(context),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            _buildBody(context),
+            if (_wallet != null && !_isLoadingInitial)
+              ExtendedFab(
+                icon: Icons.add,
+                label: context.l10n.financeCreateTransaction,
+                onPressed: _onCreateTransaction,
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -167,7 +172,7 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
       onRefresh: _onRefresh,
       child: ListView(
         controller: _scrollController,
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 112),
         children: [
           WalletDetailMetadataCard(
             wallet: wallet,

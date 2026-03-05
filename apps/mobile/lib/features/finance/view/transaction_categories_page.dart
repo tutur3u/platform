@@ -15,6 +15,8 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
+import 'package:mobile/widgets/fab/fab_action.dart';
+import 'package:mobile/widgets/fab/speed_dial_fab.dart';
 import 'package:mobile/widgets/platform_icon_picker.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -80,53 +82,63 @@ class _TransactionCategoriesViewState
             ),
           ],
           title: Text(l10n.financeCategories),
-          trailing: [
-            shad.PrimaryButton(
-              onPressed: _onCreateCurrentTab,
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [Icon(Icons.add, size: 16)],
-              ),
-            ),
-          ],
         ),
       ],
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>
             prev.currentWorkspace?.id != curr.currentWorkspace?.id,
         listener: (context, state) => unawaited(_loadCurrentTab()),
-        child: Column(
+        child: Stack(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-              child: shad.Tabs(
-                index: _activeTab,
-                onChanged: (value) {
-                  setState(() {
-                    _activeTab = value;
-                    _error = null;
-                  });
-                  if (value == _tabCategories && _categories.isEmpty) {
-                    unawaited(_loadCategories());
-                    return;
-                  }
-                  if (value == _tabTags && _tags.isEmpty) {
-                    unawaited(_loadTags());
-                  }
-                },
-                children: [
-                  shad.TabItem(child: Text(l10n.financeCategories)),
-                  shad.TabItem(child: Text(l10n.financeTags)),
-                ],
-              ),
+            Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                  child: shad.Tabs(
+                    index: _activeTab,
+                    onChanged: (value) {
+                      setState(() {
+                        _activeTab = value;
+                        _error = null;
+                      });
+                      if (value == _tabCategories && _categories.isEmpty) {
+                        unawaited(_loadCategories());
+                        return;
+                      }
+                      if (value == _tabTags && _tags.isEmpty) {
+                        unawaited(_loadTags());
+                      }
+                    },
+                    children: [
+                      shad.TabItem(child: Text(l10n.financeCategories)),
+                      shad.TabItem(child: Text(l10n.financeTags)),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: _loadCurrentTab,
+                    child: _activeTab == _tabCategories
+                        ? _buildCategoriesContent(theme, l10n)
+                        : _buildTagsContent(theme, l10n),
+                  ),
+                ),
+              ],
             ),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: _loadCurrentTab,
-                child: _activeTab == _tabCategories
-                    ? _buildCategoriesContent(theme, l10n)
-                    : _buildTagsContent(theme, l10n),
-              ),
+            SpeedDialFab(
+              icon: Icons.add,
+              actions: [
+                FabAction(
+                  icon: Icons.category_outlined,
+                  label: l10n.financeCreateCategory,
+                  onPressed: _onCreateCategory,
+                ),
+                FabAction(
+                  icon: Icons.label_outline,
+                  label: l10n.financeCreateTag,
+                  onPressed: _onCreateTag,
+                ),
+              ],
             ),
           ],
         ),
@@ -244,14 +256,6 @@ class _TransactionCategoriesViewState
         );
       },
     );
-  }
-
-  Future<void> _onCreateCurrentTab() async {
-    if (_activeTab == _tabTags) {
-      await _onCreateTag();
-      return;
-    }
-    await _onCreateCategory();
   }
 
   Future<void> _onCreateCategory() async {

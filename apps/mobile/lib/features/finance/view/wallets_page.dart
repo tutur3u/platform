@@ -14,6 +14,7 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
+import 'package:mobile/widgets/fab/extended_fab.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class WalletsPage extends StatelessWidget {
@@ -70,71 +71,84 @@ class _WalletsViewState extends State<_WalletsView> {
             ),
           ],
           title: Text(l10n.financeWallets),
-          trailing: [
-            shad.PrimaryButton(
-              onPressed: _onCreate,
-              child: const Icon(Icons.add, size: 16),
-            ),
-          ],
         ),
       ],
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>
             prev.currentWorkspace?.id != curr.currentWorkspace?.id,
         listener: (context, _) => unawaited(_loadWallets()),
-        child: RefreshIndicator(
-          onRefresh: _loadWallets,
-          child: _isLoading
-              ? const Center(child: shad.CircularProgressIndicator())
-              : _error != null
-              ? ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  children: [
-                    const SizedBox(height: 120),
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Text(
-                          _error!,
-                          textAlign: TextAlign.center,
-                          style: theme.typography.textMuted,
-                        ),
-                      ),
-                    ),
-                  ],
-                )
-              : _wallets.isEmpty
-              ? ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  children: [
-                    const SizedBox(height: 120),
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Text(
-                          l10n.financeNoWallets,
-                          textAlign: TextAlign.center,
-                          style: theme.typography.textMuted,
-                        ),
-                      ),
-                    ),
-                  ],
-                )
-              : ListView.separated(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                  itemCount: _wallets.length,
-                  separatorBuilder: (_, _) => const shad.Gap(8),
-                  itemBuilder: (context, index) {
-                    final wallet = _wallets[index];
-                    return _WalletCard(
-                      wallet: wallet,
-                      onTap: () => _openWallet(wallet),
-                      onEdit: () => _onEdit(wallet),
-                      onDelete: () => _onDelete(wallet),
-                    );
-                  },
+        child: Stack(
+          children: [
+            Column(
+              children: [
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: _loadWallets,
+                    child: _isLoading
+                        ? const Center(child: shad.CircularProgressIndicator())
+                        : _error != null
+                        ? ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: [
+                              const SizedBox(height: 120),
+                              Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                  ),
+                                  child: Text(
+                                    _error!,
+                                    textAlign: TextAlign.center,
+                                    style: theme.typography.textMuted,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : _wallets.isEmpty
+                        ? ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: [
+                              const SizedBox(height: 120),
+                              Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                  ),
+                                  child: Text(
+                                    l10n.financeNoWallets,
+                                    textAlign: TextAlign.center,
+                                    style: theme.typography.textMuted,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : ListView.separated(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                            itemCount: _wallets.length,
+                            separatorBuilder: (_, _) => const shad.Gap(8),
+                            itemBuilder: (context, index) {
+                              final wallet = _wallets[index];
+                              return _WalletCard(
+                                wallet: wallet,
+                                onTap: () => _openWallet(wallet),
+                                onEdit: () => _onEdit(wallet),
+                                onDelete: () => _onDelete(wallet),
+                              );
+                            },
+                          ),
+                  ),
                 ),
+              ],
+            ),
+            ExtendedFab(
+              icon: Icons.add,
+              label: l10n.financeCreateWallet,
+              onPressed: _onCreate,
+            ),
+          ],
         ),
       ),
     );
