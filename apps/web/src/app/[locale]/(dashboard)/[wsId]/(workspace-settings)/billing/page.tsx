@@ -123,9 +123,7 @@ export default async function BillingPage({
 
             <BillingDetailsCard
               wsId={wsId}
-              hasManageSubscriptionPermission={
-                hasManageSubscriptionPermission
-              }
+              hasManageSubscriptionPermission={hasManageSubscriptionPermission}
             />
 
             <PaymentMethodsCard
