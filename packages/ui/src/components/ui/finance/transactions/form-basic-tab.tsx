@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarIcon } from '@tuturuuu/icons';
+import { CalendarIcon, PlusIcon } from '@tuturuuu/icons';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import type { Wallet as WalletType } from '@tuturuuu/types/primitives/Wallet';
 import { Button } from '@tuturuuu/ui/button';
@@ -95,10 +95,17 @@ export function FormBasicTab({
                 placeholder={t('transaction-data-table.select_wallet')}
                 selected={field.value ?? ''}
                 onChange={field.onChange}
-                onCreate={(name) => {
-                  setNewContentType('wallet');
-                  setNewContent({ name });
-                }}
+                actions={[
+                  {
+                    key: 'add-wallet',
+                    label: t('common.add'),
+                    icon: <PlusIcon className="h-4 w-4 shrink-0" />,
+                    onSelect: () => {
+                      setNewContentType('wallet');
+                      setNewContent({ name: '' });
+                    },
+                  },
+                ]}
                 disabled={loading || walletsLoading || !hasFormPermission}
               />
               <FormMessage />
@@ -136,10 +143,17 @@ export function FormBasicTab({
                   )}
                   selected={field.value ?? ''}
                   onChange={field.onChange}
-                  onCreate={(name) => {
-                    setNewContentType('wallet');
-                    setNewContent({ name });
-                  }}
+                  actions={[
+                    {
+                      key: 'add-destination-wallet',
+                      icon: <PlusIcon className="h-4 w-4 shrink-0" />,
+                      label: t('common.add'),
+                      onSelect: () => {
+                        setNewContentType('wallet');
+                        setNewContent({ name: '' });
+                      },
+                    },
+                  ]}
                   disabled={loading || walletsLoading || !hasFormPermission}
                 />
                 <FormMessage />
@@ -176,10 +190,17 @@ export function FormBasicTab({
                   placeholder={t('transaction-data-table.select_category')}
                   selected={field.value ?? ''}
                   onChange={field.onChange}
-                  onCreate={(name) => {
-                    setNewContentType('transaction-category');
-                    setNewContent({ name });
-                  }}
+                  actions={[
+                    {
+                      key: 'add-category',
+                      icon: <PlusIcon className="h-4 w-4 shrink-0" />,
+                      label: t('common.add'),
+                      onSelect: () => {
+                        setNewContentType('transaction-category');
+                        setNewContent({ name: '' });
+                      },
+                    },
+                  ]}
                   disabled={loading || categoriesLoading || !hasFormPermission}
                 />
                 <FormMessage />
