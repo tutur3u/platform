@@ -151,6 +151,12 @@ class _PersonalStatsViewState extends State<_PersonalStatsView> {
           _goalsLoadRequestedWsId = null;
         }
 
+        if (!state.isGoalsLoading &&
+            !state.hasLoadedGoals &&
+            _goalsLoadRequestedWsId == currentWsId) {
+          _goalsLoadRequestedWsId = null;
+        }
+
         _requestGoalsLoadIfNeeded(wsId: currentWsId, state: state);
       },
       builder: (context, state) {
@@ -195,6 +201,17 @@ class _PersonalStatsViewState extends State<_PersonalStatsView> {
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Text(
                               l10n.commonSomethingWentWrong,
+                              style: theme.typography.textSmall.copyWith(
+                                color: theme.colorScheme.mutedForeground,
+                              ),
+                            ),
+                          )
+                        else if (workspaceState.status ==
+                            WorkspaceStatus.loaded)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Text(
+                              l10n.workspaceSelectEmpty,
                               style: theme.typography.textSmall.copyWith(
                                 color: theme.colorScheme.mutedForeground,
                               ),

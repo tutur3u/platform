@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/data/models/time_tracking/goal.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
 import 'package:mobile/features/time_tracker/widgets/time_tracker_goals/goal_card.dart';
@@ -24,6 +27,7 @@ class TimeTrackerGoalsSection extends StatefulWidget {
 
 class _TimeTrackerGoalsSectionState extends State<TimeTrackerGoalsSection> {
   bool _isSubmitting = false;
+  bool _isLoadingRemainingHistory = false;
 
   @override
   Widget build(BuildContext context) {
@@ -32,6 +36,7 @@ class _TimeTrackerGoalsSectionState extends State<TimeTrackerGoalsSection> {
 
     return BlocBuilder<TimeTrackerCubit, TimeTrackerState>(
       builder: (context, state) {
+        _ensureCompleteHistoryLoaded(state);
         final goals = state.goals;
         final activeGoals = goals.where((goal) => goal.isActive).toList();
         final shouldShowLoading = state.isGoalsLoading && !state.hasLoadedGoals;
@@ -232,6 +237,7 @@ class _TimeTrackerGoalsSectionState extends State<TimeTrackerGoalsSection> {
         widget.wsId,
         goal.id,
         categoryId: result.categoryId,
+        includeCategoryId: true,
         dailyGoalMinutes: result.dailyGoalMinutes,
         weeklyGoalMinutes: result.weeklyGoalMinutes,
         isActive: result.isActive,
@@ -240,6 +246,40 @@ class _TimeTrackerGoalsSectionState extends State<TimeTrackerGoalsSection> {
       toastContext: toastContext,
       successMessage: l10n.timerGoalsUpdateSuccess,
     );
+  }
+
+  void _ensureCompleteHistoryLoaded(TimeTrackerState state) {
+    if (_isLoadingRemainingHistory ||
+        state.isHistoryLoading ||
+        state.isHistoryLoadingMore ||
+        !state.historyHasMore) {
+      return;
+    }
+
+    final userId = supabase.auth.currentUser?.id;
+    if (userId == null || userId.isEmpty) {
+      return;
+    }
+
+    _isLoadingRemainingHistory = true;
+    final cubit = context.read<TimeTrackerCubit>();
+    final wsId = widget.wsId;
+
+    unawaited(() async {
+      try {
+        while (mounted &&
+            widget.wsId == wsId &&
+            cubit.state.historyHasMore &&
+            !cubit.state.isHistoryLoading &&
+            !cubit.state.isHistoryLoadingMore) {
+          await cubit.loadHistoryMore(wsId, userId, throwOnError: true);
+        }
+      } on Exception {
+        // Let the cubit own error state and user-facing messaging.
+      } finally {
+        _isLoadingRemainingHistory = false;
+      }
+    }());
   }
 
   Future<void> _runGoalAction({

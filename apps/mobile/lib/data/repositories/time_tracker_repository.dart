@@ -119,6 +119,7 @@ abstract class ITimeTrackerRepository {
     String wsId,
     String goalId, {
     String? categoryId,
+    bool includeCategoryId = false,
     int? dailyGoalMinutes,
     int? weeklyGoalMinutes,
     bool? isActive,
@@ -666,12 +667,13 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
     String wsId,
     String goalId, {
     String? categoryId,
+    bool includeCategoryId = false,
     int? dailyGoalMinutes,
     int? weeklyGoalMinutes,
     bool? isActive,
   }) async {
     final body = <String, dynamic>{
-      if (categoryId != null) 'categoryId': categoryId,
+      if (includeCategoryId || categoryId != null) 'categoryId': categoryId,
       if (dailyGoalMinutes != null) 'dailyGoalMinutes': dailyGoalMinutes,
       if (weeklyGoalMinutes != null) 'weeklyGoalMinutes': weeklyGoalMinutes,
       if (isActive != null) 'isActive': isActive,

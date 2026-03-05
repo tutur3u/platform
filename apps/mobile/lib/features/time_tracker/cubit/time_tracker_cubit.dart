@@ -695,6 +695,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     String wsId,
     String goalId, {
     String? categoryId,
+    bool includeCategoryId = false,
     int? dailyGoalMinutes,
     int? weeklyGoalMinutes,
     bool? isActive,
@@ -705,6 +706,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
         wsId,
         goalId,
         categoryId: categoryId,
+        includeCategoryId: includeCategoryId,
         dailyGoalMinutes: dailyGoalMinutes,
         weeklyGoalMinutes: weeklyGoalMinutes,
         isActive: isActive,
