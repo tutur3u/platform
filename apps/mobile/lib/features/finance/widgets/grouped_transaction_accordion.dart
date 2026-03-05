@@ -51,6 +51,55 @@ class GroupedTransactionAccordion extends StatefulWidget {
 class _GroupedTransactionAccordionState
     extends State<GroupedTransactionAccordion> {
   final Map<String, bool> _expandedDays = {};
+  List<_DateGroup> _cachedGroups = const [];
+  List<Transaction>? _lastTransactions;
+  String? _lastWorkspaceCurrency;
+  List<ExchangeRate>? _lastExchangeRates;
+  Locale? _lastLocale;
+
+  @override
+  void initState() {
+    super.initState();
+    _lastTransactions = widget.transactions;
+    _lastWorkspaceCurrency = widget.workspaceCurrency;
+    _lastExchangeRates = widget.exchangeRates;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _recomputeGroupsIfNeeded();
+  }
+
+  @override
+  void didUpdateWidget(covariant GroupedTransactionAccordion oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _recomputeGroupsIfNeeded();
+  }
+
+  void _recomputeGroupsIfNeeded() {
+    final locale = Localizations.localeOf(context);
+    final shouldRecompute =
+        !identical(_lastTransactions, widget.transactions) ||
+        _lastWorkspaceCurrency != widget.workspaceCurrency ||
+        !identical(_lastExchangeRates, widget.exchangeRates) ||
+        _lastLocale != locale;
+
+    if (!shouldRecompute) {
+      return;
+    }
+
+    _cachedGroups = _groupByDate(
+      widget.transactions,
+      context.l10n,
+      widget.workspaceCurrency,
+      widget.exchangeRates,
+    );
+    _lastTransactions = widget.transactions;
+    _lastWorkspaceCurrency = widget.workspaceCurrency;
+    _lastExchangeRates = widget.exchangeRates;
+    _lastLocale = locale;
+  }
 
   bool _isDayExpanded(String key) => _expandedDays[key] ?? true;
 
@@ -62,12 +111,8 @@ class _GroupedTransactionAccordionState
 
   @override
   Widget build(BuildContext context) {
-    final groups = _groupByDate(
-      widget.transactions,
-      context.l10n,
-      widget.workspaceCurrency,
-      widget.exchangeRates,
-    );
+    _recomputeGroupsIfNeeded();
+    final groups = _cachedGroups;
 
     if (widget.lazy) {
       final itemCount = groups.length + (widget.showLoadingMore ? 1 : 0);

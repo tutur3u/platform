@@ -205,6 +205,7 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
               workspaceCurrency: _workspaceCurrency,
               exchangeRates: _exchangeRates,
               showLoadingMore: _isLoadingMore,
+              lazy: true,
               onTransactionTap: _openTransaction,
             ),
         ],
@@ -247,6 +248,18 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
         wsId: wsId,
         walletId: widget.walletId,
       );
+      final wallet = await walletFuture;
+      if (!mounted || requestToken != _requestToken) return;
+      if (wallet == null) {
+        setState(() {
+          _wallet = null;
+          _stats = null;
+          _transactions = const [];
+          _error = context.l10n.financeWalletNotFound;
+        });
+        return;
+      }
+
       final workspaceCurrencyFuture = repository
           .getWorkspaceDefaultCurrency(wsId)
           .catchError((_) => 'USD');
@@ -262,22 +275,12 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
         walletId: widget.walletId,
       );
 
-      final wallet = await walletFuture;
       final workspaceCurrency = await workspaceCurrencyFuture;
       final exchangeRates = await exchangeRatesFuture;
       final stats = await statsFuture;
       final firstPage = await transactionsFuture;
 
       if (!mounted || requestToken != _requestToken) return;
-      if (wallet == null) {
-        setState(() {
-          _wallet = null;
-          _stats = null;
-          _transactions = const [];
-          _error = context.l10n.financeWalletNotFound;
-        });
-        return;
-      }
 
       setState(() {
         _wallet = wallet;
@@ -291,7 +294,12 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
       });
     } on ApiException catch (e) {
       if (!mounted || requestToken != _requestToken) return;
-      setState(() => _error = e.message);
+      final commonSomethingWentWrong = context.l10n.commonSomethingWentWrong;
+      setState(
+        () => _error = e.message.isNotEmpty
+            ? e.message
+            : commonSomethingWentWrong,
+      );
     } on Exception {
       if (!mounted || requestToken != _requestToken) return;
       setState(() => _error = context.l10n.commonSomethingWentWrong);
