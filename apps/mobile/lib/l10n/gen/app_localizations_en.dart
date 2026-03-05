@@ -453,6 +453,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeNoCategories => 'No categories yet';
 
   @override
+  String get financeTags => 'Tags';
+
+  @override
+  String get financeNoTags => 'No tags yet';
+
+  @override
+  String get financeCreateTag => 'Create tag';
+
+  @override
+  String get financeEditTag => 'Edit tag';
+
+  @override
+  String get financeDeleteTag => 'Delete tag';
+
+  @override
+  String get financeDeleteTagConfirm => 'Delete this tag?';
+
+  @override
+  String get financeTagName => 'Tag name';
+
+  @override
+  String get financeTagNameRequired => 'Tag name is required';
+
+  @override
   String get financeIncome => 'Income';
 
   @override

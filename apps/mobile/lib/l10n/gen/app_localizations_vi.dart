@@ -453,6 +453,30 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeNoCategories => 'Chưa có danh mục';
 
   @override
+  String get financeTags => 'Thẻ';
+
+  @override
+  String get financeNoTags => 'Chưa có thẻ';
+
+  @override
+  String get financeCreateTag => 'Tạo thẻ';
+
+  @override
+  String get financeEditTag => 'Sửa thẻ';
+
+  @override
+  String get financeDeleteTag => 'Xóa thẻ';
+
+  @override
+  String get financeDeleteTagConfirm => 'Xóa thẻ này?';
+
+  @override
+  String get financeTagName => 'Tên thẻ';
+
+  @override
+  String get financeTagNameRequired => 'Vui lòng nhập tên thẻ';
+
+  @override
   String get financeIncome => 'Thu nhập';
 
   @override

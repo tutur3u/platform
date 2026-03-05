@@ -349,6 +349,89 @@ void main() {
       ).called(1);
     });
 
+    test('getTags maps list response', () async {
+      when(
+        () => apiClient.getJsonList('/api/workspaces/ws_1/tags'),
+      ).thenAnswer(
+        (_) async => [
+          {
+            'id': 'tag_1',
+            'name': 'Urgent',
+            'color': '#ff0000',
+            'description': 'High priority',
+            'ws_id': 'ws_1',
+          },
+        ],
+      );
+
+      final tags = await repository.getTags('ws_1');
+
+      expect(tags, hasLength(1));
+      expect(tags.first.id, 'tag_1');
+      expect(tags.first.name, 'Urgent');
+      expect(tags.first.color, '#ff0000');
+      expect(tags.first.description, 'High priority');
+      verify(
+        () => apiClient.getJsonList('/api/workspaces/ws_1/tags'),
+      ).called(1);
+    });
+
+    test('createTag posts payload to tags endpoint', () async {
+      when(
+        () => apiClient.postJson(any(), any()),
+      ).thenAnswer((_) async => {'message': 'success'});
+
+      await repository.createTag(
+        wsId: 'ws_1',
+        name: 'Recurring',
+        color: '#3B82F6',
+        description: 'Monthly recurring',
+      );
+
+      verify(
+        () => apiClient.postJson('/api/workspaces/ws_1/tags', {
+          'name': 'Recurring',
+          'color': '#3B82F6',
+          'description': 'Monthly recurring',
+        }),
+      ).called(1);
+    });
+
+    test('updateTag puts payload to tag endpoint', () async {
+      when(
+        () => apiClient.putJson(any(), any()),
+      ).thenAnswer((_) async => {'message': 'success'});
+
+      await repository.updateTag(
+        wsId: 'ws_1',
+        tagId: 'tag_1',
+        name: 'Edited',
+        color: '#00FF00',
+      );
+
+      verify(
+        () => apiClient.putJson('/api/workspaces/ws_1/tags/tag_1', {
+          'name': 'Edited',
+          'color': '#00FF00',
+          'description': null,
+        }),
+      ).called(1);
+    });
+
+    test('deleteTag calls tag delete endpoint', () async {
+      when(
+        () => apiClient.deleteJson(any()),
+      ).thenAnswer((_) async => {'message': 'success'});
+
+      await repository.deleteTag(wsId: 'ws_1', tagId: 'tag_1');
+
+      verify(
+        () => apiClient.deleteJson('/api/workspaces/ws_1/tags/tag_1'),
+      ).called(
+        1,
+      );
+    });
+
     test(
       'updateTransaction sends advanced payload and refetches transaction',
       () async {
