@@ -252,10 +252,11 @@ class _MetaRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          width: 100,
+        Flexible(
           child: Text(
             label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: theme.typography.textSmall.copyWith(
               color: theme.colorScheme.mutedForeground,
               fontWeight: FontWeight.w600,
@@ -264,6 +265,7 @@ class _MetaRow extends StatelessWidget {
         ),
         const shad.Gap(8),
         Expanded(
+          flex: 2,
           child: Text(
             value,
             style: theme.typography.textSmall,

@@ -12,6 +12,13 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 typedef TransactionTapCallback = Future<void> Function(Transaction transaction);
 
+Color _resolveIncomeColor(BuildContext context) {
+  final materialTheme = Theme.of(context);
+  return materialTheme.brightness == Brightness.dark
+      ? Colors.green.shade300
+      : Colors.green.shade700;
+}
+
 class GroupedTransactionAccordion extends StatefulWidget {
   const GroupedTransactionAccordion({
     required this.transactions,
@@ -253,6 +260,7 @@ class _DayGroup extends StatelessWidget {
     final theme = shad.Theme.of(context);
     final l10n = context.l10n;
     final colorScheme = theme.colorScheme;
+    final incomeColor = _resolveIncomeColor(context);
     final stats = group.stats;
     final approximatePrefix = stats.hasConvertedAmounts ? '≈ ' : '';
     final incomeFormatted = formatCurrency(stats.income, workspaceCurrency);
@@ -336,16 +344,16 @@ class _DayGroup extends StatelessWidget {
                                   Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Icon(
+                                      Icon(
                                         Icons.arrow_upward,
                                         size: 12,
-                                        color: Colors.green,
+                                        color: incomeColor,
                                       ),
                                       const SizedBox(width: 2),
                                       Text(
                                         incomeText,
                                         style: theme.typography.xSmall.copyWith(
-                                          color: Colors.green,
+                                          color: incomeColor,
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
@@ -466,6 +474,7 @@ class _TransactionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final incomeColor = _resolveIncomeColor(context);
     final amount = transaction.amount ?? 0;
     final isExpense = amount < 0;
     final currency = transaction.walletCurrency ?? workspaceCurrency;
@@ -491,6 +500,15 @@ class _TransactionTile extends StatelessWidget {
     final amountText = isExpense
         ? formatCurrency(amount, currency)
         : '+${formatCurrency(amount, currency)}';
+    final transactionDate = transaction.takenAt ?? transaction.createdAt;
+    final semanticsDate = transactionDate != null
+        ? DateFormat.yMMMd().format(transactionDate)
+        : '';
+    final semanticsLabel = [
+      title,
+      amountText,
+      semanticsDate,
+    ].where((part) => part.isNotEmpty).join(', ');
     final convertedAmountText = showConvertedAmount
         ? (convertedAmount >= 0
               ? '≈ +${formatCurrency(convertedAmount, workspaceCurrency)}'
@@ -505,157 +523,164 @@ class _TransactionTile extends StatelessWidget {
       borderWidth: 1,
       child: shad.GhostButton(
         onPressed: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: categoryColor.withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    categoryIcon,
-                    size: 17,
-                    color: categoryColor,
+        child: Semantics(
+          button: true,
+          onTap: onTap,
+          label: semanticsLabel,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: categoryColor.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      categoryIcon,
+                      size: 17,
+                      color: categoryColor,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.p.copyWith(
-                        fontWeight: FontWeight.w500,
-                        height: 1.3,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.p.copyWith(
+                          fontWeight: FontWeight.w500,
+                          height: 1.3,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 5),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 4,
-                      children: [
-                        if (transaction.categoryName != null)
-                          _Chip(
-                            label: transaction.categoryName!,
-                            icon: categoryIcon,
-                            color: categoryColor,
-                          ),
-                        if (transaction.walletName != null)
-                          _Chip(
-                            label: transaction.walletName!,
-                            leading: WalletVisualAvatar(
-                              icon: transaction.walletIcon,
-                              imageSrc: transaction.walletImageSrc,
-                              fallbackIcon: lucide.LucideIcons.walletCards,
-                              size: 14,
-                            ),
-                          ),
-                        if (transaction.isTransfer &&
-                            transaction.transfer != null)
-                          _Chip(
-                            label: transaction.transfer!.linkedWalletName,
-                            icon: lucide.LucideIcons.repeat2,
-                            color: colorScheme.ring,
-                          ),
-                      ],
-                    ),
-                    if (transaction.tags.isNotEmpty) ...[
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 5),
                       Wrap(
-                        spacing: 4,
-                        runSpacing: 2,
-                        children: transaction.tags.map((tag) {
-                          final tagColor = _parseHex(tag.color);
-                          return Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 1,
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: [
+                          if (transaction.categoryName != null)
+                            _Chip(
+                              label: transaction.categoryName!,
+                              icon: categoryIcon,
+                              color: categoryColor,
                             ),
-                            decoration: BoxDecoration(
-                              color: (tagColor ?? colorScheme.ring).withValues(
-                                alpha: 0.12,
+                          if (transaction.walletName != null)
+                            _Chip(
+                              label: transaction.walletName!,
+                              leading: WalletVisualAvatar(
+                                icon: transaction.walletIcon,
+                                imageSrc: transaction.walletImageSrc,
+                                fallbackIcon: lucide.LucideIcons.walletCards,
+                                size: 14,
                               ),
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(
+                            ),
+                          if (transaction.isTransfer &&
+                              transaction.transfer != null)
+                            _Chip(
+                              label: transaction.transfer!.linkedWalletName,
+                              icon: lucide.LucideIcons.repeat2,
+                              color: colorScheme.ring,
+                            ),
+                        ],
+                      ),
+                      if (transaction.tags.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Wrap(
+                          spacing: 4,
+                          runSpacing: 2,
+                          children: transaction.tags.map((tag) {
+                            final tagColor = _parseHex(tag.color);
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 1,
+                              ),
+                              decoration: BoxDecoration(
                                 color: (tagColor ?? colorScheme.ring)
                                     .withValues(
-                                      alpha: 0.3,
+                                      alpha: 0.12,
                                     ),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: (tagColor ?? colorScheme.ring)
+                                      .withValues(
+                                        alpha: 0.3,
+                                      ),
+                                ),
                               ),
-                            ),
-                            child: Text(
-                              tag.name,
-                              style: theme.typography.xSmall.copyWith(
-                                color: tagColor ?? colorScheme.mutedForeground,
-                                fontWeight: FontWeight.w500,
+                              child: Text(
+                                tag.name,
+                                style: theme.typography.xSmall.copyWith(
+                                  color:
+                                      tagColor ?? colorScheme.mutedForeground,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 110),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        amountText,
-                        maxLines: 1,
-                        style: theme.typography.p.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: isExpense
-                              ? colorScheme.destructive
-                              : Colors.green,
-                        ),
-                      ),
-                    ),
-                    if (transaction.isTransfer)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2),
+                const SizedBox(width: 8),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 110),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerRight,
                         child: Text(
-                          context.l10n.financeTransfer,
+                          amountText,
                           maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.typography.xSmall.copyWith(
-                            color: colorScheme.mutedForeground,
+                          style: theme.typography.p.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: isExpense
+                                ? colorScheme.destructive
+                                : incomeColor,
                           ),
                         ),
                       ),
-                    if (convertedAmountText != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: Text(
-                          convertedAmountText,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.typography.xSmall.copyWith(
-                            color: colorScheme.mutedForeground,
+                      if (transaction.isTransfer)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            context.l10n.financeTransfer,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.xSmall.copyWith(
+                              color: colorScheme.mutedForeground,
+                            ),
                           ),
                         ),
-                      ),
-                  ],
+                      if (convertedAmountText != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            convertedAmountText,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.xSmall.copyWith(
+                              color: colorScheme.mutedForeground,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

@@ -9,6 +9,7 @@ import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/transaction_stats.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/view/transaction_detail_action.dart';
 import 'package:mobile/features/finance/view/wallet_detail_widgets.dart';
 import 'package:mobile/features/finance/widgets/grouped_transaction_accordion.dart';
@@ -236,6 +237,7 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
     if (showLoader) {
       setState(() {
         _isLoadingInitial = true;
+        _isLoadingMore = false;
         _error = null;
       });
     }
@@ -287,6 +289,9 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
         _nextCursor = firstPage.nextCursor;
         _error = null;
       });
+    } on ApiException catch (e) {
+      if (!mounted || requestToken != _requestToken) return;
+      setState(() => _error = e.message);
     } on Exception {
       if (!mounted || requestToken != _requestToken) return;
       setState(() => _error = context.l10n.commonSomethingWentWrong);
