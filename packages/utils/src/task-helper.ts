@@ -31,6 +31,26 @@ import type {
   TaskRelationshipType,
 } from '@tuturuuu/types/primitives/TaskRelationship';
 import { transformTaskRecord } from './task/transformers';
+
+interface TaskUserSchedulingSettingsRow {
+  task_id: string;
+  user_id: string;
+  total_duration: number | null;
+  is_splittable: boolean;
+  min_split_duration_minutes: number | null;
+  max_split_duration_minutes: number | null;
+  calendar_hours: Task['calendar_hours'];
+  auto_schedule: boolean;
+}
+
+interface TaskUserSchedulingSettingsClient {
+  from: (table: 'task_user_scheduling_settings') => {
+    upsert: (
+      values: TaskUserSchedulingSettingsRow,
+      options: { onConflict: 'task_id,user_id' }
+    ) => Promise<unknown>;
+  };
+}
 /**
  * Generate a human-readable ticket identifier from prefix and display number
  * @param prefix - Board's ticket prefix (e.g., "DEV", "BUG")
@@ -337,21 +357,41 @@ export async function createTask(
   }
 
   // Scheduling settings are now per-user (task_user_scheduling_settings).
+  // Only persist scheduling when the caller explicitly provides at least one
+  // scheduling field. This avoids creating implicit rows with surprising defaults.
+  const schedulingInput = task as Partial<{
+    total_duration: number | null;
+    is_splittable: boolean | null;
+    min_split_duration_minutes: number | null;
+    max_split_duration_minutes: number | null;
+    calendar_hours: Task['calendar_hours'];
+    auto_schedule: boolean | null;
+  }>;
+  const hasSchedulingInput =
+    schedulingInput.total_duration !== undefined ||
+    schedulingInput.is_splittable !== undefined ||
+    schedulingInput.min_split_duration_minutes !== undefined ||
+    schedulingInput.max_split_duration_minutes !== undefined ||
+    schedulingInput.calendar_hours !== undefined ||
+    schedulingInput.auto_schedule !== undefined;
+
   // This should not block task creation if it fails (RLS / rollout), so we best-effort it.
-  if (data?.id) {
+  if (data?.id && hasSchedulingInput) {
     try {
-      await (supabase as any).from('task_user_scheduling_settings').upsert(
+      const schedulingClient =
+        supabase as unknown as TaskUserSchedulingSettingsClient;
+      await schedulingClient.from('task_user_scheduling_settings').upsert(
         {
           task_id: data.id,
           user_id: user.id,
-          total_duration: (task as any).total_duration ?? null,
-          is_splittable: (task as any).is_splittable ?? true,
+          total_duration: schedulingInput.total_duration ?? null,
+          is_splittable: schedulingInput.is_splittable ?? false,
           min_split_duration_minutes:
-            (task as any).min_split_duration_minutes ?? null,
+            schedulingInput.min_split_duration_minutes ?? null,
           max_split_duration_minutes:
-            (task as any).max_split_duration_minutes ?? null,
-          calendar_hours: (task as any).calendar_hours ?? null,
-          auto_schedule: (task as any).auto_schedule ?? true,
+            schedulingInput.max_split_duration_minutes ?? null,
+          calendar_hours: schedulingInput.calendar_hours ?? null,
+          auto_schedule: schedulingInput.auto_schedule ?? false,
         },
         {
           onConflict: 'task_id,user_id',

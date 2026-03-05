@@ -4,11 +4,26 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react';
+import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBoardRealtime } from '../useBoardRealtime';
+
+type BroadcastMessage = { payload: Record<string, unknown> };
+type BroadcastListener = (msg: BroadcastMessage) => void;
+
+type MockSupabaseClient = {
+  channel: ReturnType<typeof vi.fn>;
+  removeChannel: ReturnType<typeof vi.fn>;
+  from: ReturnType<typeof vi.fn>;
+};
+
+type MockCreateClientFn = {
+  (): MockSupabaseClient;
+  mockReturnValue: (value: MockSupabaseClient) => void;
+};
 
 const { toastMock } = vi.hoisted(() => ({
   toastMock: vi.fn(),
@@ -34,10 +49,13 @@ vi.mock('next-intl', () => ({
 
 describe('useBoardRealtime', () => {
   let queryClient: QueryClient;
-  let mockChannel: any;
-  let mockRemoveChannel: any;
-  let mockCreateClient: any;
-  let broadcastListeners: Map<string, (msg: { payload: any }) => void>;
+  let mockChannel: {
+    on: ReturnType<typeof vi.fn>;
+    subscribe: ReturnType<typeof vi.fn>;
+    send: ReturnType<typeof vi.fn>;
+  };
+  let mockRemoveChannel: ReturnType<typeof vi.fn>;
+  let broadcastListeners: Map<string, BroadcastListener>;
   let subscribeCallback: ((status: string, err?: unknown) => void) | undefined;
 
   const mockTask: Task = {
@@ -78,12 +96,18 @@ describe('useBoardRealtime', () => {
     broadcastListeners = new Map();
 
     mockChannel = {
-      on: vi.fn((type: string, config: { event?: string }, callback: any) => {
-        if (type === 'broadcast' && config.event) {
-          broadcastListeners.set(config.event, callback);
+      on: vi.fn(
+        (
+          type: string,
+          config: { event?: string },
+          callback: BroadcastListener
+        ) => {
+          if (type === 'broadcast' && config.event) {
+            broadcastListeners.set(config.event, callback);
+          }
+          return mockChannel;
         }
-        return mockChannel;
-      }),
+      ),
       subscribe: vi.fn((callback?: (status: string, err?: unknown) => void) => {
         subscribeCallback = callback;
         return mockChannel;
@@ -93,8 +117,7 @@ describe('useBoardRealtime', () => {
 
     mockRemoveChannel = vi.fn();
 
-    const { createClient } = await import('@tuturuuu/supabase/next/client');
-    mockCreateClient = createClient as any;
+    const mockCreateClient = createClient as unknown as MockCreateClientFn;
 
     mockCreateClient.mockReturnValue({
       channel: vi.fn(() => mockChannel),
@@ -203,7 +226,9 @@ describe('useBoardRealtime', () => {
         wrapper,
       });
 
-      const supabaseInstance = mockCreateClient();
+      const supabaseInstance = (
+        createClient as unknown as MockCreateClientFn
+      )();
       expect(supabaseInstance.channel).toHaveBeenCalledWith(
         'board-realtime-board-1',
         { config: { broadcast: { self: false } } }
@@ -381,6 +406,47 @@ describe('useBoardRealtime', () => {
         'board-1',
       ]);
       expect(cachedTasks).toHaveLength(1);
+    });
+
+    it('should preserve relation payload on new task inserts', async () => {
+      queryClient.setQueryData(['tasks', 'board-1'], []);
+
+      renderHook(() => useBoardRealtime('board-1', { enabled: true }), {
+        wrapper,
+      });
+
+      const listener = broadcastListeners.get('task:upsert')!;
+      const taskWithRelations: Partial<Task> & { id: string } = {
+        id: 'task-2',
+        name: 'Task With Relations',
+        list_id: 'list-1',
+        assignees: [
+          { id: 'user-1', display_name: 'User 1', avatar_url: undefined },
+        ],
+        labels: [
+          {
+            id: 'label-1',
+            name: 'Bug',
+            color: 'red',
+            created_at: '2025-01-01',
+          },
+        ],
+        projects: [{ id: 'project-1', name: 'Project 1', status: 'active' }],
+      };
+
+      await act(async () => {
+        listener({ payload: { task: taskWithRelations } });
+      });
+
+      const cachedTasks = queryClient.getQueryData<Task[]>([
+        'tasks',
+        'board-1',
+      ]);
+      const inserted = cachedTasks?.find((task) => task.id === 'task-2');
+
+      expect(inserted?.assignees).toHaveLength(1);
+      expect(inserted?.labels).toHaveLength(1);
+      expect(inserted?.projects).toHaveLength(1);
     });
 
     it('should call onTaskChange with INSERT for new tasks', async () => {
@@ -693,7 +759,7 @@ describe('useBoardRealtime', () => {
       queryClient.setQueryData(['tasks', 'board-1'], [mockTaskWithRelations]);
 
       // Mock a fetch error
-      mockCreateClient.mockReturnValue({
+      (createClient as unknown as MockCreateClientFn).mockReturnValue({
         channel: vi.fn(() => mockChannel),
         removeChannel: mockRemoveChannel,
         from: vi.fn(() => ({

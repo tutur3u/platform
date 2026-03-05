@@ -8,6 +8,16 @@ import { useCallback, useEffect, useRef } from 'react';
 import type { BoardBroadcastFn } from '../components/ui/tu-do/shared/board-broadcast-context';
 import { toast } from './use-toast';
 
+type TaskRelationRow = {
+  id: string;
+  assignees?: Array<{ user: NonNullable<Task['assignees']>[number] | null }>;
+  labels?: Array<{ label: NonNullable<Task['labels']>[number] | null }>;
+  projects?: Array<{ project: NonNullable<Task['projects']>[number] | null }>;
+};
+
+const isDefined = <T>(value: T | null | undefined): value is T =>
+  value !== null && value !== undefined;
+
 export function useBoardRealtime(
   boardId: string,
   options?: {
@@ -118,9 +128,9 @@ export function useBoardRealtime(
             return [
               {
                 ...taskData,
-                assignees: [],
-                labels: [],
-                projects: [],
+                assignees: taskData.assignees ?? [],
+                labels: taskData.labels ?? [],
+                projects: taskData.projects ?? [],
               } as Task,
             ];
           }
@@ -136,9 +146,9 @@ export function useBoardRealtime(
             ...old,
             {
               ...taskData,
-              assignees: [],
-              labels: [],
-              projects: [],
+              assignees: taskData.assignees ?? [],
+              labels: taskData.labels ?? [],
+              projects: taskData.projects ?? [],
             } as Task,
           ];
         }
@@ -275,15 +285,17 @@ export function useBoardRealtime(
 
         const relationsMap = new Map<
           string,
-          { assignees: unknown[]; labels: unknown[]; projects: unknown[] }
+          {
+            assignees: NonNullable<Task['assignees']>;
+            labels: NonNullable<Task['labels']>;
+            projects: NonNullable<Task['projects']>;
+          }
         >();
-        for (const d of data as any[]) {
+        for (const d of data as TaskRelationRow[]) {
           relationsMap.set(d.id, {
-            assignees:
-              d.assignees?.map((a: any) => a.user).filter(Boolean) || [],
-            labels: d.labels?.map((l: any) => l.label).filter(Boolean) || [],
-            projects:
-              d.projects?.map((p: any) => p.project).filter(Boolean) || [],
+            assignees: d.assignees?.map((a) => a.user).filter(isDefined) || [],
+            labels: d.labels?.map((l) => l.label).filter(isDefined) || [],
+            projects: d.projects?.map((p) => p.project).filter(isDefined) || [],
           });
         }
 
