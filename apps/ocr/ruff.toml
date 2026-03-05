@@ -77,7 +77,7 @@ exclude = [
     "SLF001",  # Allow private member access in tests
     "PLR2004", # Allow magic values in tests
 ]
-"deployment.py" = [
+"app.py" = [
     "PLC0415",  # Allow imports inside functions (Modal lazy-loading requirement)
     "PLR0911",  # Allow many returns in main handler (Discord interaction router)
     "PLR0912",  # Allow many branches in main handler (Discord interaction types)
