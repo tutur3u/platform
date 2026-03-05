@@ -6,6 +6,7 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import type { CalendarHoursType, Task } from '@tuturuuu/types/primitives/Task';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import {
+  createTask,
   createTaskRelationship,
   useUpdateTask,
 } from '@tuturuuu/utils/task-helper';
@@ -23,28 +24,6 @@ import type {
   SchedulingSettings,
 } from './use-task-mutations';
 import { useUpdateSharedTask } from './use-update-shared-task';
-
-const supabase = createClient();
-
-interface TaskUserSchedulingSettingsRow {
-  task_id: string;
-  user_id: string;
-  total_duration: number | null;
-  is_splittable: boolean;
-  min_split_duration_minutes: number | null;
-  max_split_duration_minutes: number | null;
-  calendar_hours: CalendarHoursType | null;
-  auto_schedule: boolean;
-}
-
-interface TaskUserSchedulingSettingsClient {
-  from: (table: 'task_user_scheduling_settings') => {
-    upsert: (
-      values: TaskUserSchedulingSettingsRow,
-      options: { onConflict: 'task_id,user_id' }
-    ) => Promise<{ error: unknown | null }>;
-  };
-}
 
 export interface UseTaskSaveProps {
   // Core identifiers
@@ -161,6 +140,8 @@ export interface UseTaskSaveReturn {
   handleSave: () => Promise<void>;
   handleSaveRef: React.MutableRefObject<() => void>;
 }
+
+const supabase = createClient();
 
 export function useTaskSave({
   wsId,
@@ -739,7 +720,6 @@ async function handleCreateTask({
   >;
 }) {
   try {
-    const { createTask } = await import('@tuturuuu/utils/task-helper');
     const taskData: Partial<Task> = {
       name: name.trim(),
       description: descriptionString || '',
@@ -771,9 +751,7 @@ async function handleCreateTask({
         maxSplitDurationMinutes != null;
 
       if (hasAnySchedulingValue) {
-        const schedulingClient =
-          supabase as unknown as TaskUserSchedulingSettingsClient;
-        const { error: schedulingError } = await schedulingClient
+        const { error: schedulingError } = await supabase
           .from('task_user_scheduling_settings')
           .upsert(
             {
