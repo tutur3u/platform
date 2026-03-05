@@ -10,12 +10,11 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
+import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 import type { UseFormReturn } from 'react-hook-form';
-
 import type { TransactionFormValues } from './form-schema';
 import type { NewContent, NewContentType } from './form-types';
-import { Switch } from '@tuturuuu/ui/switch';
 
 interface FormMoreTabProps {
   form: UseFormReturn<TransactionFormValues>;
