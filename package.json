@@ -49,7 +49,7 @@
     "@biomejs/biome": "^2.4.5",
     "@ncthub/typescript-config": "workspace:*",
     "@vitest/coverage-v8": "^4.0.18",
-    "turbo": "^2.8.12",
+    "turbo": "^2.8.13",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
     "vitest": "^4.0.18"
@@ -70,8 +70,5 @@
     "sharp",
     "supabase",
     "unrs-resolver"
-  ],
-  "dependencies": {
-    "react-resizable-panels": "^4.7.0"
-  }
+  ]
 }
