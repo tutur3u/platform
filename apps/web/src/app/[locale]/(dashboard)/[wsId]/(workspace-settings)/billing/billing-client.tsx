@@ -31,10 +31,9 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { centToDollar } from '@/utils/price-helper';
 import type { SeatStatus } from '@/utils/seat-limits';
-import { AdjustSeatsDialog } from './adjust-seats-dialog';
-import { PaymentMethodsCard } from './payment-methods-card';
-import { PlanListDialog } from './plan-list-dialog';
-import { SubscriptionConfirmationDialog } from './subscription-confirmation-dialog';
+import AdjustSeatsDialog from './adjust-seats-dialog';
+import PlanListDialog from './plan-list-dialog';
+import SubscriptionConfirmationDialog from './subscription-confirmation-dialog';
 
 export interface Plan {
   id: string;
@@ -444,11 +443,6 @@ export function BillingClient({
           )}
         </div>
       </div>
-
-      <PaymentMethodsCard
-        wsId={wsId}
-        hasManageSubscriptionPermission={hasManageSubscriptionPermission}
-      />
 
       {/* Dialogs */}
       <PlanListDialog

@@ -21,7 +21,7 @@ interface SubscriptionConfirmationDialogProps {
   onConfirm: (subscriptionId: string) => Promise<void>;
 }
 
-export function SubscriptionConfirmationDialog({
+export default function SubscriptionConfirmationDialog({
   open,
   onOpenChange,
   currentPlan,

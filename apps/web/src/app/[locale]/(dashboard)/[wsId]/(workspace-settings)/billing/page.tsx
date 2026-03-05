@@ -22,6 +22,7 @@ import { AiCreditBillingCard } from './ai-credit-billing-card';
 import { BillingClient } from './billing-client';
 import BillingHistory from './billing-history';
 import { NoSubscriptionFound } from './no-subscription-found';
+import PaymentMethodsCard from './payment-methods-card';
 
 export const metadata: Metadata = {
   title: 'Billing',
@@ -117,6 +118,11 @@ export default async function BillingPage({
               currentPlan={currentPlan}
               products={products}
               seatStatus={seatStatus}
+            />
+
+            <PaymentMethodsCard
+              wsId={wsId}
+              hasManageSubscriptionPermission={hasManageSubscriptionPermission}
             />
 
             <AiCreditBillingCard

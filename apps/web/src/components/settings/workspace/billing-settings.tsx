@@ -5,9 +5,11 @@ import { Loader2 } from '@tuturuuu/icons';
 import { format } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
 import { useLocale, useTranslations } from 'next-intl';
+import { AiCreditBillingCard } from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/ai-credit-billing-card';
 import { BillingClient } from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/billing-client';
 import BillingHistory from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/billing-history';
 import { NoSubscriptionFound } from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/no-subscription-found';
+import PaymentMethodsCard from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/payment-methods-card';
 
 interface BillingSettingsProps {
   wsId: string;
@@ -61,6 +63,7 @@ export default function BillingSettings({ wsId }: BillingSettingsProps) {
     hasManagePermission,
     subscription,
     products,
+    creditPacks,
     orders,
     seatStatus,
   } = data;
@@ -88,8 +91,8 @@ export default function BillingSettings({ wsId }: BillingSettingsProps) {
       ? [subscription.product.description]
       : [t('premium-features')],
     // Seat-based pricing fields
-    pricingModel: subscription.pricingModel,
-    pricePerSeat: subscription.pricePerSeat,
+    pricingModel: subscription.product.pricing_model || 'free',
+    pricePerSeat: subscription.product.price_per_seat,
     seatCount: subscription.seatCount,
     seatList: subscription.seatList,
     maxSeats: subscription.product.max_seats,
@@ -104,6 +107,17 @@ export default function BillingSettings({ wsId }: BillingSettingsProps) {
         currentPlan={currentPlan}
         products={products}
         seatStatus={seatStatus}
+      />
+
+      <PaymentMethodsCard
+        wsId={wsId}
+        hasManageSubscriptionPermission={hasManagePermission}
+      />
+
+      <AiCreditBillingCard
+        wsId={wsId}
+        packs={creditPacks}
+        canPurchase={hasManagePermission}
       />
 
       <BillingHistory orders={orders} />

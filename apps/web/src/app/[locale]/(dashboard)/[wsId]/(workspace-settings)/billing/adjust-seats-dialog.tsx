@@ -29,7 +29,7 @@ interface AdjustSeatsDialogProps {
   billingCycle: string | null;
 }
 
-export function AdjustSeatsDialog({
+export default function AdjustSeatsDialog({
   open,
   onOpenChange,
   wsId,
