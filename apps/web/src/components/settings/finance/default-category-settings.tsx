@@ -66,9 +66,9 @@ export default function DefaultCategorySettings({ workspaceId }: Props) {
     const categoryExists = categories.some((c) => c.id === trimmed);
     const val = categoryExists ? trimmed : NONE_OPTION;
 
-    setInitialCategoryId(val);
+    setInitialCategoryId((previous) => (previous === val ? previous : val));
     if (!initialized) {
-      setSelectedCategoryId(val);
+      setSelectedCategoryId((previous) => (previous === val ? previous : val));
       setInitialized(true);
     }
   }, [isLoading, defaultConfig, categories, initialized]);

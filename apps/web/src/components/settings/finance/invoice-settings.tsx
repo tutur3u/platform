@@ -27,6 +27,42 @@ interface Props {
 export const safeTrim = (v: unknown): string =>
   typeof v === 'string' ? v.trim() : String(v ?? '').trim();
 
+const hasSameStringArray = (left: string[], right: string[]) =>
+  left.length === right.length &&
+  left.every((value, index) => value === right[index]);
+
+const hasSameInvoiceSettingsValues = (
+  left: {
+    allow_promotions: boolean;
+    use_attendance_based: boolean;
+    group_pending_by_user: boolean;
+    default_subscription_category_id: string | null;
+    blocked_creation_group_ids: string[];
+    blocked_pending_group_ids: string[];
+  },
+  right: {
+    allow_promotions: boolean;
+    use_attendance_based: boolean;
+    group_pending_by_user: boolean;
+    default_subscription_category_id: string | null;
+    blocked_creation_group_ids: string[];
+    blocked_pending_group_ids: string[];
+  }
+) =>
+  left.allow_promotions === right.allow_promotions &&
+  left.use_attendance_based === right.use_attendance_based &&
+  left.group_pending_by_user === right.group_pending_by_user &&
+  left.default_subscription_category_id ===
+    right.default_subscription_category_id &&
+  hasSameStringArray(
+    left.blocked_creation_group_ids,
+    right.blocked_creation_group_ids
+  ) &&
+  hasSameStringArray(
+    left.blocked_pending_group_ids,
+    right.blocked_pending_group_ids
+  );
+
 export default function InvoiceSettings({ workspaceId }: Props) {
   const t = useTranslations('ws-finance-settings');
   const queryClient = useQueryClient();
@@ -107,7 +143,9 @@ export default function InvoiceSettings({ workspaceId }: Props) {
       ).filter((id) => availableGroupIds.has(id)),
     };
 
-    setInitialValues(values);
+    setInitialValues((previous) =>
+      hasSameInvoiceSettingsValues(previous, values) ? previous : values
+    );
     if (!initialized) {
       setCurrentValues(values);
       setInitialized(true);
