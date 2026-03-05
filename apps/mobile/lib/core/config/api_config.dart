@@ -60,6 +60,9 @@ abstract final class FinanceEndpoints {
   static String infiniteTransactions(String wsId) =>
       '/api/workspaces/$wsId/transactions/infinite';
 
+  static String transactionStats(String wsId) =>
+      '/api/workspaces/$wsId/transactions/stats';
+
   static String workspaceConfig(String wsId, String configId) =>
       '/api/v1/workspaces/$wsId/settings/$configId';
 
