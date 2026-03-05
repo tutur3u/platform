@@ -10,6 +10,7 @@ import 'package:mobile/core/utils/currency_conversion.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
+import 'package:mobile/data/models/finance/tag.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
@@ -32,6 +33,7 @@ typedef TransactionSaveHandler =
       DateTime? takenAt,
       String? walletId,
       String? categoryId,
+      List<String>? tagIds,
       bool? reportOptIn,
       bool? isAmountConfidential,
       bool? isDescriptionConfidential,
@@ -45,6 +47,7 @@ typedef TransactionCreateHandler =
       DateTime? takenAt,
       String? walletId,
       String? categoryId,
+      List<String>? tagIds,
       bool? reportOptIn,
       bool? isAmountConfidential,
       bool? isDescriptionConfidential,
@@ -166,6 +169,9 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
       _transaction.categoryIcon,
       fallback: isExpense ? Icons.arrow_downward : Icons.arrow_upward,
     );
+    final firstTag = _transaction.tags.firstOrNull;
+    final tagColor =
+        _parseHexColor(firstTag?.color) ?? theme.colorScheme.primary;
 
     return Container(
       decoration: BoxDecoration(
@@ -267,6 +273,22 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
                   child: Icon(categoryIcon, size: 13, color: categoryColor),
                 ),
                 value: _transaction.categoryName ?? '-',
+              ),
+            ),
+            const shad.Gap(12),
+            _DetailRow(
+              label: l10n.financeTags,
+              valueChild: _DetailValueWithIcon(
+                leading: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: tagColor.withValues(alpha: 0.16),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.sell_outlined, size: 13, color: tagColor),
+                ),
+                value: firstTag?.name ?? '-',
               ),
             ),
             const shad.Gap(12),

@@ -470,6 +470,7 @@ void main() {
           description: 'Dinner',
           walletId: 'wallet_1',
           categoryId: 'cat_1',
+          tagIds: const ['tag_1'],
           reportOptIn: false,
           isAmountConfidential: true,
           isDescriptionConfidential: false,
@@ -480,6 +481,7 @@ void main() {
         expect(sentBody!['amount'], -120.5);
         expect(sentBody!['origin_wallet_id'], 'wallet_1');
         expect(sentBody!['category_id'], 'cat_1');
+        expect(sentBody!['tag_ids'], ['tag_1']);
         expect(sentBody!['report_opt_in'], false);
         expect(sentBody!['is_amount_confidential'], true);
         expect(sentBody!['is_description_confidential'], false);
@@ -503,6 +505,31 @@ void main() {
         ).called(1);
       },
     );
+
+    test('createTransaction includes tag_ids when provided', () async {
+      Map<String, dynamic>? sentBody;
+      when(
+        () => apiClient.postJson(any(), any()),
+      ).thenAnswer((invocation) async {
+        sentBody = invocation.positionalArguments[1] as Map<String, dynamic>;
+        return {'message': 'success'};
+      });
+
+      await repository.createTransaction(
+        wsId: 'ws_1',
+        amount: -45,
+        takenAt: DateTime.utc(2026, 1, 2, 3, 4),
+        walletId: 'wallet_1',
+        categoryId: 'cat_1',
+        tagIds: const ['tag_1'],
+      );
+
+      expect(sentBody, isNotNull);
+      expect(sentBody!['tag_ids'], ['tag_1']);
+      verify(
+        () => apiClient.postJson('/api/workspaces/ws_1/transactions', any()),
+      ).called(1);
+    });
 
     test(
       'updateTransfer sends transfer payload and refetches transaction',

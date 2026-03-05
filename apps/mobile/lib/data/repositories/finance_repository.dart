@@ -255,6 +255,7 @@ class FinanceRepository {
     DateTime? takenAt,
     String? walletId,
     String? categoryId,
+    List<String>? tagIds,
     bool? reportOptIn,
     bool? isAmountConfidential,
     bool? isDescriptionConfidential,
@@ -276,6 +277,10 @@ class FinanceRepository {
 
     if (categoryId != null) {
       body['category_id'] = categoryId;
+    }
+
+    if (tagIds != null) {
+      body['tag_ids'] = tagIds;
     }
 
     if (reportOptIn != null) {
@@ -310,6 +315,7 @@ class FinanceRepository {
     required String walletId,
     String? description,
     String? categoryId,
+    List<String>? tagIds,
     bool? reportOptIn,
     bool? isAmountConfidential,
     bool? isDescriptionConfidential,
@@ -327,6 +333,10 @@ class FinanceRepository {
 
     if (categoryId != null) {
       body['category_id'] = categoryId;
+    }
+
+    if (tagIds != null) {
+      body['tag_ids'] = tagIds;
     }
 
     if (reportOptIn != null) {
