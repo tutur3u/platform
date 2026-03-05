@@ -32,8 +32,6 @@ import type {
 } from '@tuturuuu/types/primitives/TaskRelationship';
 import { transformTaskRecord } from './task/transformers';
 
-type TaskUserSchedulingSettingsInsert =
-  Database['public']['Tables']['task_user_scheduling_settings']['Insert'];
 /**
  * Generate a human-readable ticket identifier from prefix and display number
  * @param prefix - Board's ticket prefix (e.g., "DEV", "BUG")
@@ -359,7 +357,7 @@ export async function createTask(
     schedulingInput.auto_schedule !== undefined;
 
   if (data?.id && hasSchedulingInput) {
-    const schedulingPayload: TaskUserSchedulingSettingsInsert = {
+    const schedulingPayload = {
       task_id: data.id,
       user_id: user.id,
       total_duration: schedulingInput.total_duration ?? null,
