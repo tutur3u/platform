@@ -401,13 +401,7 @@ export async function WorkspaceNavigationLinks({
           href: `/${personalOrWsId}/finance/transactions/categories`,
           icon: <Group className="h-5 w-5" />,
           disabled: withoutPermission('manage_finance'),
-        },
-        {
-          title: t('workspace-finance-tabs.tags'),
-          href: `/${personalOrWsId}/finance/tags`,
-          icon: <Tags className="h-5 w-5" />,
-          disabled: withoutPermission('manage_finance'),
-        },
+        }
       ],
       disabled: ENABLE_AI_ONLY,
     },

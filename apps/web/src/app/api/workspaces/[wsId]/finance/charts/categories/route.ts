@@ -53,11 +53,11 @@ export async function GET(
     const parsed = querySchema.safeParse({
       startDate: searchParams.get('startDate'),
       endDate: searchParams.get('endDate'),
-      includeConfidential: searchParams.get('includeConfidential'),
-      transactionType: searchParams.get('transactionType'),
-      interval: searchParams.get('interval'),
-      anchorToLatest: searchParams.get('anchorToLatest'),
-      timezone: searchParams.get('timezone'),
+      includeConfidential: searchParams.get('includeConfidential') ?? undefined,
+      transactionType: searchParams.get('transactionType') ?? undefined,
+      interval: searchParams.get('interval') ?? undefined,
+      anchorToLatest: searchParams.get('anchorToLatest') ?? undefined,
+      timezone: searchParams.get('timezone') ?? undefined,
     });
 
     if (!parsed.success) {
