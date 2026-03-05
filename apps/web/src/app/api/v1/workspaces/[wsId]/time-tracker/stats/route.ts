@@ -46,7 +46,8 @@ export async function GET(
 ) {
   try {
     const { wsId } = await params;
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
+    const supabase = await createClient(req);
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
     const searchParams = Object.fromEntries(req.nextUrl.searchParams);
     const result = querySchema.safeParse(searchParams);
 
@@ -59,18 +60,13 @@ export async function GET(
 
     const { userId, isPersonal, timezone, summaryOnly, daysBack } = result.data;
 
-    const supabase = await createClient();
-
     // Verify authentication
     const {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser();
 
-    if (
-      process.env.NODE_ENV !== 'development' &&
-      (authError || !user || user.id !== userId)
-    ) {
+    if (authError || !user || user.id !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

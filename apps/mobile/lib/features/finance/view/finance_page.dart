@@ -362,11 +362,13 @@ class _WalletCard extends StatelessWidget {
     required this.wallet,
     required this.workspaceCurrency,
     required this.exchangeRates,
+    required this.onTap,
   });
 
   final Wallet wallet;
   final String workspaceCurrency;
   final List<ExchangeRate> exchangeRates;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -392,55 +394,60 @@ class _WalletCard extends StatelessWidget {
         expanded: 220,
       ),
       child: shad.Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.account_balance_wallet_outlined,
-                    size: 18,
-                    color: colorScheme.primary,
-                  ),
-                  const shad.Gap(8),
-                  Expanded(
-                    child: Text(
-                      wallet.name ?? '',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.textSmall,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.account_balance_wallet_outlined,
+                      size: 18,
+                      color: colorScheme.primary,
                     ),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              Text(
-                formatCurrency(balance, currency),
-                style: theme.typography.p.copyWith(
-                  fontWeight: FontWeight.w600,
+                    const shad.Gap(8),
+                    Expanded(
+                      child: Text(
+                        wallet.name ?? '',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.textSmall,
+                      ),
+                    ),
+                  ],
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const shad.Gap(2),
-              Text(
-                currency,
-                style: theme.typography.textSmall.copyWith(
-                  color: colorScheme.mutedForeground,
-                ),
-              ),
-              if (showConverted)
+                const Spacer(),
                 Text(
-                  '≈ ${formatCurrency(converted, workspaceCurrency)}',
-                  style: theme.typography.xSmall.copyWith(
+                  formatCurrency(balance, currency),
+                  style: theme.typography.p.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  currency,
+                  style: theme.typography.textSmall.copyWith(
                     color: colorScheme.mutedForeground,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-            ],
+                if (showConverted)
+                  Text(
+                    '≈ ${formatCurrency(converted, workspaceCurrency)}',
+                    style: theme.typography.xSmall.copyWith(
+                      color: colorScheme.mutedForeground,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -527,6 +534,8 @@ class _WalletsSection extends StatelessWidget {
                 wallet: wallets[index],
                 workspaceCurrency: workspaceCurrency,
                 exchangeRates: exchangeRates,
+                onTap: () =>
+                    context.push(Routes.walletDetailPath(wallets[index].id)),
               ),
             ),
           ),

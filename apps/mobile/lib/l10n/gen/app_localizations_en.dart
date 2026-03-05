@@ -375,6 +375,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeWalletTypeCredit => 'Credit';
 
   @override
+  String get financeWalletMetadata => 'Wallet metadata';
+
+  @override
+  String get financeWalletBalance => 'Balance';
+
+  @override
   String get financeWalletCurrency => 'Currency';
 
   @override
@@ -538,6 +544,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeConfidentialCategory => 'Confidential category';
+
+  @override
+  String get financeStatisticsSummary => 'Statistics summary';
+
+  @override
+  String get financeTotalTransactions => 'Total transactions';
+
+  @override
+  String get financeWalletNotFound => 'Wallet not found';
 
   @override
   String get financeCreateCategory => 'Create category';
