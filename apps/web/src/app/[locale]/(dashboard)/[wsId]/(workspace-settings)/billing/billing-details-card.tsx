@@ -21,6 +21,7 @@ import {
   type UpdateWorkspaceBillingDetailsInput,
   updateWorkspaceBillingDetails,
 } from './actions';
+import billingCountryOptions from './billing-country-options.json';
 
 interface BillingDetailsCardProps {
   wsId: string;
@@ -29,20 +30,13 @@ interface BillingDetailsCardProps {
 
 const COUNTRY_OPTIONS: Array<{
   code: AddressInput['country'];
-  labelKey: string;
-}> = [
-  { code: 'VN', labelKey: 'country-vietnam' },
-  { code: 'US', labelKey: 'country-united-states' },
-  { code: 'SG', labelKey: 'country-singapore' },
-  { code: 'JP', labelKey: 'country-japan' },
-  { code: 'KR', labelKey: 'country-south-korea' },
-  { code: 'TH', labelKey: 'country-thailand' },
-  { code: 'GB', labelKey: 'country-united-kingdom' },
-  { code: 'AU', labelKey: 'country-australia' },
-  { code: 'CA', labelKey: 'country-canada' },
-  { code: 'DE', labelKey: 'country-germany' },
-  { code: 'FR', labelKey: 'country-france' },
-];
+  label: string;
+}> = Object.entries(billingCountryOptions)
+  .map(([code, label]) => ({
+    code: code as AddressInput['country'],
+    label,
+  }))
+  .sort((a, b) => a.label.localeCompare(b.label));
 
 const DEFAULT_FORM: UpdateWorkspaceBillingDetailsInput = {
   email: '',
@@ -316,7 +310,7 @@ export default function BillingDetailsCard({
               <SelectContent>
                 {COUNTRY_OPTIONS.map((country) => (
                   <SelectItem key={country.code} value={country.code}>
-                    {country.labelKey}
+                    {country.label}
                   </SelectItem>
                 ))}
               </SelectContent>
