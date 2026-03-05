@@ -1,5 +1,8 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions,normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -33,7 +36,10 @@ export async function PUT(req: Request, { params }: Params) {
 
   const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
-  const permissions = await getPermissions({ wsId: normalizedWsId, request: req });
+  const permissions = await getPermissions({
+    wsId: normalizedWsId,
+    request: req,
+  });
   if (!permissions) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
@@ -45,7 +51,6 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-
   const { data, error } = await supabase
     .from('transaction_tags')
     .update(parsed.data)
@@ -56,7 +61,10 @@ export async function PUT(req: Request, { params }: Params) {
 
   if (error) {
     console.log(error);
-    return NextResponse.json({ message: 'Error updating tag' }, { status: 500 });
+    return NextResponse.json(
+      { message: 'Error updating tag' },
+      { status: 500 }
+    );
   }
 
   if (!data) {
@@ -70,7 +78,10 @@ export async function DELETE(req: Request, { params }: Params) {
   const { tagId, wsId } = await params;
   const supabase = await createClient(req);
   const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  const permissions = await getPermissions({ wsId: normalizedWsId, request: req });
+  const permissions = await getPermissions({
+    wsId: normalizedWsId,
+    request: req,
+  });
   if (!permissions) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
@@ -92,7 +103,10 @@ export async function DELETE(req: Request, { params }: Params) {
 
   if (error) {
     console.log(error);
-    return NextResponse.json({ message: 'Error deleting tag' }, { status: 500 });
+    return NextResponse.json(
+      { message: 'Error deleting tag' },
+      { status: 500 }
+    );
   }
 
   if (!data) {

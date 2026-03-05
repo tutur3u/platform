@@ -1,5 +1,8 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions, normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -10,7 +13,10 @@ export async function GET(req: Request, { params }: Params) {
   const { wsId } = await params;
   const supabase = await createClient(req);
   const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  const permissions = await getPermissions({ wsId: normalizedWsId, request: req });
+  const permissions = await getPermissions({
+    wsId: normalizedWsId,
+    request: req,
+  });
 
   if (!permissions) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });

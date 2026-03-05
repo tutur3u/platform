@@ -131,7 +131,10 @@ export function TagManager({ wsId }: TagManagerProps) {
       });
       if (!response.ok) {
         throw new Error(
-          await getErrorMessage(response, 'Failed to fetch transaction tag stats')
+          await getErrorMessage(
+            response,
+            'Failed to fetch transaction tag stats'
+          )
         );
       }
       return (await response.json()) as Array<{

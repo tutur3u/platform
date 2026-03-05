@@ -1,12 +1,12 @@
 'use client';
 
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { CategoryBreakdownChart } from '@tuturuuu/ui/finance/shared/charts/category-breakdown-chart';
 import { TagManager } from '@tuturuuu/ui/finance/tags/tag-manager';
 import { AmountFilterWrapper } from '@tuturuuu/ui/finance/transactions/categories/amount-filter-wrapper';
 import { CategoriesDataTable } from '@tuturuuu/ui/finance/transactions/categories/categories-data-table';
 import { TransactionCategoryForm } from '@tuturuuu/ui/finance/transactions/categories/form';
 import { TypeFilterWrapper } from '@tuturuuu/ui/finance/transactions/categories/type-filter-wrapper';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
@@ -40,7 +40,9 @@ export default function CategoriesTagsTabs({ wsId, currency }: Props) {
         <TabsTrigger value="categories">
           {t('ws-transaction-categories.plural')}
         </TabsTrigger>
-        <TabsTrigger value="tags">{t('ws-transaction-tags.plural')}</TabsTrigger>
+        <TabsTrigger value="tags">
+          {t('ws-transaction-tags.plural')}
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="categories" className="space-y-4">

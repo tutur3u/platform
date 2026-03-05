@@ -40,7 +40,7 @@ export const FINANCE_ROUTE_OPTIONS = [
     value: '/transactions/categories',
     labelKey: 'categories',
     routeSuffix: '/transactions/categories',
-  }
+  },
 ] as const;
 
 export type FinanceRouteOption =
