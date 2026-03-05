@@ -35,6 +35,11 @@ export interface UseTaskMutationsProps {
   onUpdate: () => void;
 }
 
+export interface SaveSchedulingSettingsOptions {
+  silent?: boolean;
+  skipRefresh?: boolean;
+}
+
 export interface UseTaskMutationsReturn {
   updateEstimation: (points: number | null) => Promise<void>;
   updatePriority: (newPriority: TaskPriority | null) => Promise<void>;
@@ -42,7 +47,10 @@ export interface UseTaskMutationsReturn {
   updateEndDate: (newDate: Date | undefined) => Promise<void>;
   updateList: (newListId: string) => Promise<void>;
   saveNameToDatabase: (newName: string) => Promise<void>;
-  saveSchedulingSettings: (settings: SchedulingSettings) => Promise<boolean>;
+  saveSchedulingSettings: (
+    settings: SchedulingSettings,
+    options?: SaveSchedulingSettingsOptions
+  ) => Promise<boolean>;
   estimationSaving: boolean;
   schedulingSaving: boolean;
 }
@@ -435,7 +443,12 @@ export function useTaskMutations({
   );
 
   const saveSchedulingSettings = useCallback(
-    async (settings: SchedulingSettings): Promise<boolean> => {
+    async (
+      settings: SchedulingSettings,
+      options: SaveSchedulingSettingsOptions = {}
+    ): Promise<boolean> => {
+      const { silent = false, skipRefresh = false } = options;
+
       if (isCreateMode || !taskId || taskId === 'new') {
         // In create mode, settings will be saved when the task is created
         return true;
@@ -480,15 +493,19 @@ export function useTaskMutations({
           queryKey: ['task-personal-schedule', taskId],
         });
 
-        toast({
-          title: 'Scheduling settings saved',
-          description:
-            'Saved to your personal scheduling profile for this task.',
-        });
+        if (!silent) {
+          toast({
+            title: 'Scheduling settings saved',
+            description:
+              'Saved to your personal scheduling profile for this task.',
+          });
+        }
 
         // Notify parent components (e.g., server component refresh)
         // Skip in collaboration mode where realtime sync handles updates
-        triggerRefresh();
+        if (!skipRefresh) {
+          triggerRefresh();
+        }
         return true;
       } catch (e: any) {
         console.error('Failed updating scheduling settings', e);

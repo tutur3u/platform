@@ -6,6 +6,7 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import type { CalendarHoursType, Task } from '@tuturuuu/types/primitives/Task';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import {
+  createTask,
   createTaskRelationship,
   useUpdateTask,
 } from '@tuturuuu/utils/task-helper';
@@ -18,9 +19,11 @@ import {
 } from '../../board-broadcast-context';
 import type { PendingRelationship } from '../types/pending-relationship';
 import { clearDraft } from '../utils';
+import type {
+  SaveSchedulingSettingsOptions,
+  SchedulingSettings,
+} from './use-task-mutations';
 import { useUpdateSharedTask } from './use-update-shared-task';
-
-const supabase = createClient();
 
 export interface UseTaskSaveProps {
   // Core identifiers
@@ -48,9 +51,19 @@ export interface UseTaskSaveProps {
   endDate: Date | undefined;
   selectedListId: string;
   estimationPoints: number | null | undefined;
-  selectedLabels: Array<{ id: string }>;
-  selectedAssignees: Array<{ id: string; user_id?: string | null }>;
-  selectedProjects: Array<{ id: string }>;
+  selectedLabels: Array<{
+    id: string;
+    name?: string;
+    color?: string;
+    created_at?: string;
+  }>;
+  selectedAssignees: Array<{
+    id: string;
+    user_id?: string | null;
+    display_name?: string | null;
+    avatar_url?: string | null;
+  }>;
+  selectedProjects: Array<{ id: string; name?: string; status?: string }>;
 
   // Scheduling fields
   totalDuration: number | null;
@@ -59,6 +72,11 @@ export interface UseTaskSaveProps {
   maxSplitDurationMinutes: number | null;
   calendarHours: CalendarHoursType | null;
   autoSchedule: boolean;
+  saveSchedulingSettings?: (
+    settings: SchedulingSettings,
+    options?: SaveSchedulingSettingsOptions
+  ) => Promise<boolean>;
+  hasUnsavedSchedulingChanges?: boolean;
 
   // User settings
   user: {
@@ -123,6 +141,8 @@ export interface UseTaskSaveReturn {
   handleSaveRef: React.MutableRefObject<() => void>;
 }
 
+const supabase = createClient();
+
 export function useTaskSave({
   wsId,
   boardId,
@@ -153,6 +173,8 @@ export function useTaskSave({
   maxSplitDurationMinutes,
   calendarHours,
   autoSchedule,
+  saveSchedulingSettings,
+  hasUnsavedSchedulingChanges,
   user,
   userTaskSettings,
   createMultiple,
@@ -255,6 +277,34 @@ export function useTaskSave({
         setSelectedProjects,
       });
       return;
+    }
+
+    const schedulingSettings: SchedulingSettings = {
+      totalDuration,
+      isSplittable,
+      minSplitDurationMinutes,
+      maxSplitDurationMinutes,
+      calendarHours,
+      autoSchedule,
+    };
+
+    if (
+      !isCreateMode &&
+      hasUnsavedSchedulingChanges &&
+      saveSchedulingSettings &&
+      taskId &&
+      taskId !== 'new'
+    ) {
+      const schedulingSaved = await saveSchedulingSettings(schedulingSettings, {
+        silent: true,
+        skipRefresh: true,
+      });
+
+      if (!schedulingSaved) {
+        setIsLoading(false);
+        setIsSaving(false);
+        return;
+      }
     }
 
     if (isCreateMode) {
@@ -365,6 +415,8 @@ export function useTaskSave({
     maxSplitDurationMinutes,
     calendarHours,
     autoSchedule,
+    hasUnsavedSchedulingChanges,
+    saveSchedulingSettings,
     parentTaskId,
     pendingRelationship,
     isPersonalWorkspace,
@@ -430,9 +482,19 @@ async function handleSaveAsDraft({
   endDate: Date | undefined;
   selectedListId: string;
   estimationPoints: number | null | undefined;
-  selectedLabels: Array<{ id: string }>;
-  selectedAssignees: Array<{ id: string; user_id?: string | null }>;
-  selectedProjects: Array<{ id: string }>;
+  selectedLabels: Array<{
+    id: string;
+    name?: string;
+    color?: string;
+    created_at?: string;
+  }>;
+  selectedAssignees: Array<{
+    id: string;
+    user_id?: string | null;
+    display_name?: string | null;
+    avatar_url?: string | null;
+  }>;
+  selectedProjects: Array<{ id: string; name?: string; status?: string }>;
   createMultiple: boolean;
   queryClient: QueryClient;
   toast: ReturnType<typeof useToast>['toast'];
@@ -591,9 +653,19 @@ async function handleCreateTask({
   endDate: Date | undefined;
   selectedListId: string;
   estimationPoints: number | null | undefined;
-  selectedLabels: Array<{ id: string }>;
-  selectedAssignees: Array<{ id: string; user_id?: string | null }>;
-  selectedProjects: Array<{ id: string }>;
+  selectedLabels: Array<{
+    id: string;
+    name?: string;
+    color?: string;
+    created_at?: string;
+  }>;
+  selectedAssignees: Array<{
+    id: string;
+    user_id?: string | null;
+    display_name?: string | null;
+    avatar_url?: string | null;
+  }>;
+  selectedProjects: Array<{ id: string; name?: string; status?: string }>;
   totalDuration: number | null;
   isSplittable: boolean;
   minSplitDurationMinutes: number | null;
@@ -648,7 +720,6 @@ async function handleCreateTask({
   >;
 }) {
   try {
-    const { createTask } = await import('@tuturuuu/utils/task-helper');
     const taskData: Partial<Task> = {
       name: name.trim(),
       description: descriptionString || '',
@@ -661,8 +732,16 @@ async function handleCreateTask({
     };
     const newTask = await createTask(supabase, selectedListId, taskData);
 
+    let resolvedUserId = user?.id;
+    if (!resolvedUserId) {
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
+      resolvedUserId = authUser?.id;
+    }
+
     // Save per-user scheduling settings for the creator (if any were provided)
-    if (user?.id) {
+    if (resolvedUserId) {
       const hasAnySchedulingValue =
         totalDuration != null ||
         calendarHours != null ||
@@ -672,12 +751,12 @@ async function handleCreateTask({
         maxSplitDurationMinutes != null;
 
       if (hasAnySchedulingValue) {
-        const { error: schedulingError } = await (supabase as any)
+        const { error: schedulingError } = await supabase
           .from('task_user_scheduling_settings')
           .upsert(
             {
               task_id: newTask.id,
-              user_id: user.id,
+              user_id: resolvedUserId,
               total_duration: totalDuration,
               is_splittable: isSplittable,
               min_split_duration_minutes: minSplitDurationMinutes,
@@ -726,32 +805,49 @@ async function handleCreateTask({
     }
 
     // Handle labels
+    let nextLabels: Task['labels'] = [];
     if (selectedLabels.length > 0) {
       const { error: labelsError } = await supabase
         .from('task_labels')
         .insert(
           selectedLabels.map((l) => ({ task_id: newTask.id, label_id: l.id }))
         );
-      if (labelsError) console.error('Error adding labels:', labelsError);
+      if (labelsError) {
+        console.error('Error adding labels:', labelsError);
+      } else {
+        nextLabels = selectedLabels.flatMap((label) =>
+          label.name && label.color && label.created_at
+            ? [
+                {
+                  id: label.id,
+                  name: label.name,
+                  color: label.color,
+                  created_at: label.created_at,
+                },
+              ]
+            : []
+        );
+      }
     }
 
     // Handle assignees
-    let finalAssignees = [...selectedAssignees];
+    let finalAssignees: typeof selectedAssignees = [];
+    let desiredAssignees = [...selectedAssignees];
     if (
-      finalAssignees.length === 0 &&
+      desiredAssignees.length === 0 &&
       userTaskSettings?.task_auto_assign_to_self &&
-      user?.id &&
+      resolvedUserId &&
       !isPersonalWorkspace
     ) {
-      finalAssignees = [
+      desiredAssignees = [
         {
-          id: user.id,
-          user_id: user.id,
+          id: resolvedUserId,
+          user_id: resolvedUserId,
         },
       ];
     }
-    if (finalAssignees.length > 0) {
-      const assigneesToInsert = finalAssignees
+    if (desiredAssignees.length > 0) {
+      const assigneesToInsert = desiredAssignees
         .map((a) => ({ task_id: newTask.id, user_id: a.user_id || a.id }))
         .filter((a) => a.user_id);
       if (assigneesToInsert.length > 0) {
@@ -765,11 +861,14 @@ async function handleCreateTask({
             description: 'Task created but some assignees could not be added',
             variant: 'destructive',
           });
+        } else {
+          finalAssignees = desiredAssignees;
         }
       }
     }
 
     // Handle projects
+    let nextProjects: Task['projects'] = [];
     if (selectedProjects.length > 0) {
       const { error: projectsError } = await supabase
         .from('task_project_tasks')
@@ -779,23 +878,48 @@ async function handleCreateTask({
             project_id: p.id,
           }))
         );
-      if (projectsError) console.error('Error adding projects:', projectsError);
+      if (projectsError) {
+        console.error('Error adding projects:', projectsError);
+      } else {
+        nextProjects = selectedProjects.flatMap((project) =>
+          project.name && project.status
+            ? [
+                {
+                  id: project.id,
+                  name: project.name,
+                  status: project.status,
+                },
+              ]
+            : []
+        );
+      }
     }
+
+    const createdTaskWithRelations: Task = {
+      ...(newTask as Task),
+      labels: nextLabels,
+      assignees: finalAssignees.map((assignee) => ({
+        id: assignee.user_id || assignee.id,
+        display_name: assignee.display_name ?? undefined,
+        avatar_url: assignee.avatar_url ?? undefined,
+      })),
+      projects: nextProjects,
+    };
 
     // Update cache
     queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) => {
-      if (!old) return [newTask];
+      if (!old) return [createdTaskWithRelations];
       if (old.some((t) => t.id === newTask.id)) return old;
-      return [...old, newTask];
+      return [...old, createdTaskWithRelations];
     });
     await queryClient.invalidateQueries({ queryKey: ['time-tracking-data'] });
 
     // Broadcast the new task to other clients
-    broadcast?.('task:upsert', { task: newTask });
+    broadcast?.('task:upsert', { task: createdTaskWithRelations });
     const hasRelations =
-      selectedLabels.length > 0 ||
+      nextLabels.length > 0 ||
       finalAssignees.length > 0 ||
-      selectedProjects.length > 0;
+      nextProjects.length > 0;
     if (hasRelations) {
       broadcast?.('task:relations-changed', { taskId: newTask.id });
     }
