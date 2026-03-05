@@ -316,17 +316,27 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
             cursor: nextCursor,
           );
 
-      if (!mounted || requestToken != _requestToken) return;
+      if (!mounted || requestToken != _requestToken) {
+        if (mounted && _isLoadingMore) {
+          setState(() => _isLoadingMore = false);
+        }
+        return;
+      }
       setState(() {
         _transactions = [..._transactions, ...page.data];
         _hasMore = page.hasMore;
         _nextCursor = page.nextCursor;
       });
     } on Exception {
-      if (!mounted || requestToken != _requestToken) return;
+      if (!mounted || requestToken != _requestToken) {
+        if (mounted && _isLoadingMore) {
+          setState(() => _isLoadingMore = false);
+        }
+        return;
+      }
       setState(() => _hasMore = false);
     } finally {
-      if (mounted && requestToken == _requestToken) {
+      if (mounted && _isLoadingMore) {
         setState(() => _isLoadingMore = false);
       }
     }

@@ -411,25 +411,22 @@ class _DayGroup extends StatelessWidget {
                 duration: const Duration(milliseconds: 180),
                 curve: Curves.easeInOut,
                 child: isExpanded
-                    ? Column(
-                        children: [
-                          for (
-                            var i = 0;
-                            i < group.transactions.length;
-                            i++
-                          ) ...[
-                            _TransactionTile(
-                              transaction: group.transactions[i],
-                              workspaceCurrency: workspaceCurrency,
-                              exchangeRates: exchangeRates,
-                              onTap: () =>
-                                  onTransactionTap(group.transactions[i]),
-                            ),
-                            if (i < group.transactions.length - 1)
-                              const SizedBox(height: 8),
-                          ],
-                          const SizedBox(height: 4),
-                        ],
+                    ? ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: group.transactions.length,
+                        padding: const EdgeInsets.only(bottom: 4),
+                        itemBuilder: (context, index) {
+                          final transaction = group.transactions[index];
+                          return _TransactionTile(
+                            transaction: transaction,
+                            workspaceCurrency: workspaceCurrency,
+                            exchangeRates: exchangeRates,
+                            onTap: () => onTransactionTap(transaction),
+                          );
+                        },
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 8),
                       )
                     : const SizedBox.shrink(),
               ),

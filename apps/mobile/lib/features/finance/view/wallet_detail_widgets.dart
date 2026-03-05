@@ -127,6 +127,10 @@ class WalletDetailStatsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = shad.Theme.of(context);
+    final materialTheme = Theme.of(context);
+    final incomeColor = materialTheme.brightness == Brightness.dark
+        ? Colors.green.shade300
+        : Colors.green.shade700;
     final currentStats =
         stats ??
         const TransactionStats(
@@ -211,7 +215,7 @@ class WalletDetailStatsCard extends StatelessWidget {
             label: l10n.financeIncome,
             value: incomeText,
             secondaryValue: convertedIncomeText,
-            valueColor: Colors.green,
+            valueColor: incomeColor,
           ),
           const shad.Gap(6),
           _StatRow(
