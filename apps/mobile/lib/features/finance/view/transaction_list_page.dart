@@ -283,37 +283,34 @@ class _TransactionListViewState extends State<_TransactionListView> {
                   final repository = context.read<FinanceRepository>();
                   return RefreshIndicator(
                     onRefresh: _onRefresh,
-                    child: ListView(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.only(top: 8, bottom: 40),
-                      children: [
-                        GroupedTransactionAccordion(
-                          transactions: state.transactions,
+                    child: GroupedTransactionAccordion(
+                      lazy: true,
+                      scrollController: _scrollController,
+                      listPadding: const EdgeInsets.only(top: 8, bottom: 40),
+                      transactions: state.transactions,
+                      workspaceCurrency: state.workspaceCurrency,
+                      exchangeRates: state.exchangeRates,
+                      showLoadingMore: state.isLoadingMore,
+                      onTransactionTap: (transaction) async {
+                        final wsId = context
+                            .read<WorkspaceCubit>()
+                            .state
+                            .currentWorkspace
+                            ?.id;
+                        if (wsId == null) return;
+
+                        final changed = await openTransactionDetailSheet(
+                          context,
+                          wsId: wsId,
+                          transaction: transaction,
+                          repository: repository,
                           workspaceCurrency: state.workspaceCurrency,
                           exchangeRates: state.exchangeRates,
-                          showLoadingMore: state.isLoadingMore,
-                          onTransactionTap: (transaction) async {
-                            final wsId = context
-                                .read<WorkspaceCubit>()
-                                .state
-                                .currentWorkspace
-                                ?.id;
-                            if (wsId == null) return;
+                        );
 
-                            final changed = await openTransactionDetailSheet(
-                              context,
-                              wsId: wsId,
-                              transaction: transaction,
-                              repository: repository,
-                              workspaceCurrency: state.workspaceCurrency,
-                              exchangeRates: state.exchangeRates,
-                            );
-
-                            if (!context.mounted || !changed) return;
-                            await _onRefresh();
-                          },
-                        ),
-                      ],
+                        if (!context.mounted || !changed) return;
+                        await _onRefresh();
+                      },
                     ),
                   );
                 },

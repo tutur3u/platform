@@ -19,6 +19,10 @@ class GroupedTransactionAccordion extends StatefulWidget {
     required this.exchangeRates,
     required this.onTransactionTap,
     this.showLoadingMore = false,
+    this.lazy = false,
+    this.scrollController,
+    this.listPadding,
+    this.scrollPhysics,
     super.key,
   });
 
@@ -27,6 +31,10 @@ class GroupedTransactionAccordion extends StatefulWidget {
   final List<ExchangeRate> exchangeRates;
   final TransactionTapCallback onTransactionTap;
   final bool showLoadingMore;
+  final bool lazy;
+  final ScrollController? scrollController;
+  final EdgeInsetsGeometry? listPadding;
+  final ScrollPhysics? scrollPhysics;
 
   @override
   State<GroupedTransactionAccordion> createState() =>
@@ -53,6 +61,36 @@ class _GroupedTransactionAccordionState
       widget.workspaceCurrency,
       widget.exchangeRates,
     );
+
+    if (widget.lazy) {
+      final itemCount = groups.length + (widget.showLoadingMore ? 1 : 0);
+      return ListView.builder(
+        controller: widget.scrollController,
+        padding: widget.listPadding,
+        physics: widget.scrollPhysics ?? const AlwaysScrollableScrollPhysics(),
+        itemCount: itemCount,
+        itemBuilder: (context, index) {
+          if (index >= groups.length) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Center(
+                child: shad.CircularProgressIndicator(),
+              ),
+            );
+          }
+
+          final group = groups[index];
+          return _DayGroup(
+            group: group,
+            isExpanded: _isDayExpanded(group.key),
+            onToggle: () => _toggleDay(group.key),
+            workspaceCurrency: widget.workspaceCurrency,
+            exchangeRates: widget.exchangeRates,
+            onTransactionTap: widget.onTransactionTap,
+          );
+        },
+      );
+    }
 
     return Column(
       children: [
@@ -163,16 +201,14 @@ List<_DateGroup> _groupByDate(
         exchangeRates,
       );
 
-      if (!isWorkspaceCurrency && converted == null) {
-        hasConvertedAmounts = true;
-      }
-
-      final convertedAmount = isWorkspaceCurrency
-          ? amount
-          : (converted ?? amount);
       if (!isWorkspaceCurrency) {
         hasConvertedAmounts = true;
+        if (converted == null) {
+          // Do not mix source currency amounts into workspace-currency totals.
+          continue;
+        }
       }
+      final convertedAmount = isWorkspaceCurrency ? amount : converted!;
 
       if (convertedAmount >= 0) {
         income += convertedAmount;

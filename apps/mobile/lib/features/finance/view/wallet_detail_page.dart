@@ -300,7 +300,10 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
   Future<void> _loadMore() async {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     final nextCursor = _nextCursor;
-    if (wsId == null || nextCursor == null || !_hasMore) return;
+    final requestToken = _requestToken;
+    if (wsId == null || nextCursor == null || !_hasMore || _isLoadingInitial) {
+      return;
+    }
 
     setState(() => _isLoadingMore = true);
 
@@ -313,17 +316,17 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
             cursor: nextCursor,
           );
 
-      if (!mounted) return;
+      if (!mounted || requestToken != _requestToken) return;
       setState(() {
         _transactions = [..._transactions, ...page.data];
         _hasMore = page.hasMore;
         _nextCursor = page.nextCursor;
       });
     } on Exception {
-      if (!mounted) return;
+      if (!mounted || requestToken != _requestToken) return;
       setState(() => _hasMore = false);
     } finally {
-      if (mounted) {
+      if (mounted && requestToken == _requestToken) {
         setState(() => _isLoadingMore = false);
       }
     }
