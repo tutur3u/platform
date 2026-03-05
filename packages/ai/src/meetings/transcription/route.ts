@@ -1,8 +1,9 @@
+import { google } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { gateway, generateObject } from 'ai';
+import { generateObject } from 'ai';
 import { z } from 'zod';
 
-const DEFAULT_MODEL_NAME = 'gemini-2.0-flash';
+const DEFAULT_MODEL_NAME = 'gemini-3.1-flash-lite-preview';
 
 const transcriptSchema = z.object({
   text: z.string().describe('The full transcript text'),
@@ -52,7 +53,7 @@ export function createPOST() {
       const audioUint8Array = new Uint8Array(audioBuffer);
 
       const result = await generateObject({
-        model: gateway(`google/${DEFAULT_MODEL_NAME}`),
+        model: google(DEFAULT_MODEL_NAME),
         schema: transcriptSchema,
         system: systemInstruction,
         messages: [
