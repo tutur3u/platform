@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
@@ -10,7 +11,9 @@ export async function GET(
 ) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
+
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Get authenticated user
     const {
@@ -26,7 +29,7 @@ export async function GET(
     const { data: memberCheck } = await supabase
       .from('workspace_members')
       .select('id:user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -46,7 +49,7 @@ export async function GET(
       const { data: targetUserCheck } = await supabase
         .from('workspace_members')
         .select('id:user_id')
-        .eq('ws_id', wsId)
+        .eq('ws_id', normalizedWsId)
         .eq('user_id', targetUserId)
         .single();
 
@@ -67,7 +70,7 @@ export async function GET(
         category:time_tracking_categories(*)
       `
       )
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', queryUserId)
       .order('created_at', { ascending: false });
 
@@ -89,7 +92,8 @@ export async function POST(
 ) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Get authenticated user
     const {
@@ -105,7 +109,7 @@ export async function POST(
     const { data: memberCheck } = await supabase
       .from('workspace_members')
       .select('id:user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -132,7 +136,7 @@ export async function POST(
         .from('time_tracking_categories')
         .select('id')
         .eq('id', categoryId)
-        .eq('ws_id', wsId)
+        .eq('ws_id', normalizedWsId)
         .single();
 
       if (!categoryCheck) {
@@ -149,7 +153,7 @@ export async function POST(
     const { data, error } = await sbAdmin
       .from('time_tracking_goals')
       .insert({
-        ws_id: wsId,
+        ws_id: normalizedWsId,
         user_id: user.id,
         category_id: categoryId || null,
         daily_goal_minutes: dailyGoalMinutes,

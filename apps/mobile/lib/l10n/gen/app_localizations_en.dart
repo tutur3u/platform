@@ -1043,6 +1043,107 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerActiveUsers => 'Active users';
 
   @override
+  String get timerGoalsTitle => 'Goals';
+
+  @override
+  String get timerGoalsSubtitle => 'Track your daily and weekly focus targets';
+
+  @override
+  String get timerGoalsAdd => 'Add goal';
+
+  @override
+  String get timerGoalsCreate => 'Create goal';
+
+  @override
+  String get timerGoalsCreateTitle => 'Create goal';
+
+  @override
+  String get timerGoalsCreateSuccess => 'Goal created';
+
+  @override
+  String get timerGoalsEdit => 'Edit';
+
+  @override
+  String get timerGoalsEditTitle => 'Edit goal';
+
+  @override
+  String get timerGoalsSave => 'Save goal';
+
+  @override
+  String get timerGoalsUpdateSuccess => 'Goal updated';
+
+  @override
+  String get timerGoalsDelete => 'Delete';
+
+  @override
+  String get timerGoalsDeleteTitle => 'Delete goal?';
+
+  @override
+  String get timerGoalsDeleteDescription => 'This action cannot be undone.';
+
+  @override
+  String get timerGoalsDeleteSuccess => 'Goal deleted';
+
+  @override
+  String get timerGoalsOperationFailed => 'Could not save your goal changes.';
+
+  @override
+  String get timerGoalsEmptyTitle => 'No goals yet';
+
+  @override
+  String get timerGoalsEmptyDescription => 'Create your first goal to measure daily and weekly progress.';
+
+  @override
+  String get timerGoalsCategory => 'Category';
+
+  @override
+  String get timerGoalsGeneral => 'General';
+
+  @override
+  String get timerGoalsDailyMinutes => 'Daily target (minutes)';
+
+  @override
+  String get timerGoalsWeeklyMinutesOptional => 'Weekly target (minutes, optional)';
+
+  @override
+  String get timerGoalsDailyValidation => 'Daily target must be greater than 0.';
+
+  @override
+  String get timerGoalsWeeklyValidation => 'Weekly target must be greater than 0.';
+
+  @override
+  String get timerGoalsActive => 'Active';
+
+  @override
+  String get timerGoalsInactive => 'Inactive';
+
+  @override
+  String get timerGoalsActiveLabel => 'Goal is active';
+
+  @override
+  String get timerGoalsDailyProgress => 'Daily progress';
+
+  @override
+  String get timerGoalsWeeklyProgress => 'Weekly progress';
+
+  @override
+  String get timerGoalsDailyTarget => 'Daily target';
+
+  @override
+  String get timerGoalsWeeklyTarget => 'Weekly target';
+
+  @override
+  String timerGoalsActiveCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '# active goals',
+      one: '# active goal',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String timerDays(int count) {
     return '$count days';
   }

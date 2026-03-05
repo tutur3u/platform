@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function PATCH(
@@ -10,7 +11,8 @@ export async function PATCH(
 ) {
   try {
     const { wsId, goalId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Get authenticated user
     const {
@@ -26,7 +28,7 @@ export async function PATCH(
     const { data: memberCheck } = await supabase
       .from('workspace_members')
       .select('id:user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -42,7 +44,7 @@ export async function PATCH(
       .from('time_tracking_goals')
       .select('*')
       .eq('id', goalId)
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -69,7 +71,7 @@ export async function PATCH(
         .from('time_tracking_categories')
         .select('id')
         .eq('id', categoryId)
-        .eq('ws_id', wsId)
+        .eq('ws_id', normalizedWsId)
         .single();
 
       if (!categoryCheck) {
@@ -126,12 +128,13 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ wsId: string; goalId: string }> }
 ) {
   try {
     const { wsId, goalId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Get authenticated user
     const {
@@ -147,7 +150,7 @@ export async function DELETE(
     const { data: memberCheck } = await supabase
       .from('workspace_members')
       .select('id:user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -163,7 +166,7 @@ export async function DELETE(
       .from('time_tracking_goals')
       .select('id')
       .eq('id', goalId)
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 

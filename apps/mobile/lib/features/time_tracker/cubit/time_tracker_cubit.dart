@@ -99,6 +99,9 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
           isHistoryLoading: false,
           isHistoryLoadingMore: false,
           categories: categories,
+          clearGoals: true,
+          clearGoalsLoaded: true,
+          isGoalsLoading: false,
           stats: stats,
           pomodoroSettings: pomodoroSettings,
           thresholdDays: workspaceSettings?.missedEntryDateThreshold,
@@ -653,6 +656,133 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
       emit(state.copyWith(categories: categories));
     } on Exception catch (e) {
       emit(state.copyWith(error: e.toString()));
+    }
+  }
+
+  Future<void> createGoal(
+    String wsId, {
+    required int dailyGoalMinutes,
+    String? categoryId,
+    int? weeklyGoalMinutes,
+    bool isActive = true,
+    bool throwOnError = false,
+  }) async {
+    try {
+      final goal = await _repo.createGoal(
+        wsId,
+        categoryId: categoryId,
+        dailyGoalMinutes: dailyGoalMinutes,
+        weeklyGoalMinutes: weeklyGoalMinutes,
+        isActive: isActive,
+      );
+      emit(
+        state.copyWith(
+          goals: [goal, ...state.goals],
+          hasLoadedGoals: true,
+          isGoalsLoading: false,
+          clearError: true,
+        ),
+      );
+    } on Exception catch (e) {
+      emit(state.copyWith(error: e.toString()));
+      if (throwOnError) {
+        rethrow;
+      }
+    }
+  }
+
+  Future<void> updateGoal(
+    String wsId,
+    String goalId, {
+    String? categoryId,
+    int? dailyGoalMinutes,
+    int? weeklyGoalMinutes,
+    bool? isActive,
+    bool throwOnError = false,
+  }) async {
+    try {
+      final goal = await _repo.updateGoal(
+        wsId,
+        goalId,
+        categoryId: categoryId,
+        dailyGoalMinutes: dailyGoalMinutes,
+        weeklyGoalMinutes: weeklyGoalMinutes,
+        isActive: isActive,
+      );
+
+      final updatedGoals = state.goals
+          .map(
+            (existingGoal) => existingGoal.id == goal.id ? goal : existingGoal,
+          )
+          .toList();
+      emit(
+        state.copyWith(
+          goals: updatedGoals,
+          hasLoadedGoals: true,
+          isGoalsLoading: false,
+          clearError: true,
+        ),
+      );
+    } on Exception catch (e) {
+      emit(state.copyWith(error: e.toString()));
+      if (throwOnError) {
+        rethrow;
+      }
+    }
+  }
+
+  Future<void> deleteGoal(
+    String wsId,
+    String goalId, {
+    bool throwOnError = false,
+  }) async {
+    try {
+      await _repo.deleteGoal(wsId, goalId);
+      emit(
+        state.copyWith(
+          goals: state.goals.where((goal) => goal.id != goalId).toList(),
+          hasLoadedGoals: true,
+          isGoalsLoading: false,
+          clearError: true,
+        ),
+      );
+    } on Exception catch (e) {
+      emit(state.copyWith(error: e.toString()));
+      if (throwOnError) {
+        rethrow;
+      }
+    }
+  }
+
+  Future<void> loadGoals(
+    String wsId, {
+    String? userId,
+    bool force = false,
+    bool throwOnError = false,
+  }) async {
+    if (wsId.isEmpty) {
+      return;
+    }
+    if (!force && (state.hasLoadedGoals || state.isGoalsLoading)) {
+      return;
+    }
+
+    emit(state.copyWith(isGoalsLoading: true, clearError: true));
+    try {
+      final goals = await _repo.getGoals(wsId, userId: userId);
+      emit(
+        state.copyWith(
+          goals: goals,
+          hasLoadedGoals: true,
+          isGoalsLoading: false,
+          clearError: true,
+        ),
+      );
+    } on Exception catch (e) {
+      emit(state.copyWith(isGoalsLoading: false, error: e.toString()));
+      if (throwOnError) {
+        rethrow;
+      }
     }
   }
 

@@ -1037,6 +1037,107 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerActiveUsers => 'Người dùng hoạt động';
 
   @override
+  String get timerGoalsTitle => 'Mục tiêu';
+
+  @override
+  String get timerGoalsSubtitle => 'Theo dõi mục tiêu tập trung theo ngày và tuần';
+
+  @override
+  String get timerGoalsAdd => 'Thêm mục tiêu';
+
+  @override
+  String get timerGoalsCreate => 'Tạo mục tiêu';
+
+  @override
+  String get timerGoalsCreateTitle => 'Tạo mục tiêu';
+
+  @override
+  String get timerGoalsCreateSuccess => 'Đã tạo mục tiêu';
+
+  @override
+  String get timerGoalsEdit => 'Sửa';
+
+  @override
+  String get timerGoalsEditTitle => 'Sửa mục tiêu';
+
+  @override
+  String get timerGoalsSave => 'Lưu mục tiêu';
+
+  @override
+  String get timerGoalsUpdateSuccess => 'Đã cập nhật mục tiêu';
+
+  @override
+  String get timerGoalsDelete => 'Xóa';
+
+  @override
+  String get timerGoalsDeleteTitle => 'Xóa mục tiêu?';
+
+  @override
+  String get timerGoalsDeleteDescription => 'Hành động này không thể hoàn tác.';
+
+  @override
+  String get timerGoalsDeleteSuccess => 'Đã xóa mục tiêu';
+
+  @override
+  String get timerGoalsOperationFailed => 'Không thể lưu thay đổi mục tiêu.';
+
+  @override
+  String get timerGoalsEmptyTitle => 'Chưa có mục tiêu';
+
+  @override
+  String get timerGoalsEmptyDescription => 'Tạo mục tiêu đầu tiên để theo dõi tiến độ theo ngày và tuần.';
+
+  @override
+  String get timerGoalsCategory => 'Danh mục';
+
+  @override
+  String get timerGoalsGeneral => 'Tổng quát';
+
+  @override
+  String get timerGoalsDailyMinutes => 'Mục tiêu mỗi ngày (phút)';
+
+  @override
+  String get timerGoalsWeeklyMinutesOptional => 'Mục tiêu mỗi tuần (phút, không bắt buộc)';
+
+  @override
+  String get timerGoalsDailyValidation => 'Mục tiêu mỗi ngày phải lớn hơn 0.';
+
+  @override
+  String get timerGoalsWeeklyValidation => 'Mục tiêu mỗi tuần phải lớn hơn 0.';
+
+  @override
+  String get timerGoalsActive => 'Đang bật';
+
+  @override
+  String get timerGoalsInactive => 'Đã tắt';
+
+  @override
+  String get timerGoalsActiveLabel => 'Mục tiêu đang hoạt động';
+
+  @override
+  String get timerGoalsDailyProgress => 'Tiến độ ngày';
+
+  @override
+  String get timerGoalsWeeklyProgress => 'Tiến độ tuần';
+
+  @override
+  String get timerGoalsDailyTarget => 'Mục tiêu ngày';
+
+  @override
+  String get timerGoalsWeeklyTarget => 'Mục tiêu tuần';
+
+  @override
+  String timerGoalsActiveCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '# mục tiêu đang bật',
+      one: '# mục tiêu đang bật',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String timerDays(int count) {
     return '$count ngày';
   }
