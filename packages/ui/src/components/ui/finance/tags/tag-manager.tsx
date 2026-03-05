@@ -12,7 +12,6 @@ import {
   Tag,
   Trash2,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -90,6 +89,15 @@ const PRESET_COLORS = [
   '#ec4899', // pink
 ];
 
+const getErrorMessage = async (response: Response, fallback: string) => {
+  try {
+    const data = (await response.json()) as { message?: string };
+    return data.message || fallback;
+  } catch {
+    return fallback;
+  }
+};
+
 export function TagManager({ wsId }: TagManagerProps) {
   const t = useTranslations();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -97,34 +105,39 @@ export function TagManager({ wsId }: TagManagerProps) {
   const [tagToDelete, setTagToDelete] = useState<TransactionTag | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const queryClient = useQueryClient();
-  const supabase = createClient();
   const router = useRouter();
   const financeHref = useFinanceHref();
 
   const { data: tags, isLoading } = useQuery({
     queryKey: ['transaction_tags', wsId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('transaction_tags')
-        .select('*')
-        .eq('ws_id', wsId)
-        .order('name');
-
-      if (error) throw error;
-      return data as TransactionTag[];
+      const response = await fetch(`/api/workspaces/${wsId}/tags`, {
+        cache: 'no-store',
+      });
+      if (!response.ok) {
+        throw new Error(
+          await getErrorMessage(response, 'Failed to fetch transaction tags')
+        );
+      }
+      return (await response.json()) as TransactionTag[];
     },
   });
 
   const { data: tagStats } = useQuery({
     queryKey: ['transaction_tag_stats', wsId],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc(
-        'get_transaction_count_by_tag',
-        { _ws_id: wsId }
-      );
-
-      if (error) throw error;
-      return data as Array<{
+      const response = await fetch(`/api/workspaces/${wsId}/tags/stats`, {
+        cache: 'no-store',
+      });
+      if (!response.ok) {
+        throw new Error(
+          await getErrorMessage(
+            response,
+            'Failed to fetch transaction tag stats'
+          )
+        );
+      }
+      return (await response.json()) as Array<{
         tag_id: string;
         tag_name: string;
         tag_color: string;
@@ -155,15 +168,20 @@ export function TagManager({ wsId }: TagManagerProps) {
 
   const createMutation = useMutation({
     mutationFn: async (data: TagFormValues) => {
-      const { error } = await supabase.from('transaction_tags').insert([
-        {
-          ws_id: wsId,
+      const response = await fetch(`/api/workspaces/${wsId}/tags`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           name: data.name,
           color: data.color,
           description: data.description || null,
-        },
-      ]);
-      if (error) throw error;
+        }),
+      });
+      if (!response.ok) {
+        throw new Error(
+          await getErrorMessage(response, 'Failed to create transaction tag')
+        );
+      }
     },
     onSuccess: () => {
       toast.success(t('ws-transaction-tags.create_success'));
@@ -174,22 +192,27 @@ export function TagManager({ wsId }: TagManagerProps) {
       form.reset();
       setIsDialogOpen(false);
     },
-    onError: () => {
-      toast.error(t('ws-transaction-tags.create_error'));
+    onError: (error: Error) => {
+      toast.error(error.message || t('ws-transaction-tags.create_error'));
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: TagFormValues }) => {
-      const { error } = await supabase
-        .from('transaction_tags')
-        .update({
+      const response = await fetch(`/api/workspaces/${wsId}/tags/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           name: data.name,
           color: data.color,
           description: data.description || null,
-        })
-        .eq('id', id);
-      if (error) throw error;
+        }),
+      });
+      if (!response.ok) {
+        throw new Error(
+          await getErrorMessage(response, 'Failed to update transaction tag')
+        );
+      }
     },
     onSuccess: () => {
       toast.success(t('ws-transaction-tags.update_success'));
@@ -201,18 +224,21 @@ export function TagManager({ wsId }: TagManagerProps) {
       setIsDialogOpen(false);
       form.reset();
     },
-    onError: () => {
-      toast.error(t('ws-transaction-tags.update_error'));
+    onError: (error: Error) => {
+      toast.error(error.message || t('ws-transaction-tags.update_error'));
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (tagId: string) => {
-      const { error } = await supabase
-        .from('transaction_tags')
-        .delete()
-        .eq('id', tagId);
-      if (error) throw error;
+      const response = await fetch(`/api/workspaces/${wsId}/tags/${tagId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error(
+          await getErrorMessage(response, 'Failed to delete transaction tag')
+        );
+      }
     },
     onSuccess: () => {
       toast.success(t('ws-transaction-tags.delete_success'));
@@ -222,8 +248,8 @@ export function TagManager({ wsId }: TagManagerProps) {
       });
       setTagToDelete(null);
     },
-    onError: () => {
-      toast.error(t('ws-transaction-tags.delete_error'));
+    onError: (error: Error) => {
+      toast.error(error.message || t('ws-transaction-tags.delete_error'));
     },
   });
 

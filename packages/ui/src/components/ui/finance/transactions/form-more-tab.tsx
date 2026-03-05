@@ -1,7 +1,6 @@
 'use client';
 
-import { Coins, FileText, FolderOpen, Lock } from '@tuturuuu/icons';
-import { Checkbox } from '@tuturuuu/ui/checkbox';
+import { Coins, FileText, FolderOpen, Lock, PlusIcon } from '@tuturuuu/icons';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import {
   FormControl,
@@ -11,9 +10,9 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
+import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 import type { UseFormReturn } from 'react-hook-form';
-
 import type { TransactionFormValues } from './form-schema';
 import type { NewContent, NewContentType } from './form-types';
 
@@ -70,10 +69,18 @@ export function FormMoreTab({
               }
               selected={field.value || []}
               onChange={field.onChange}
-              onCreate={(name) => {
-                setNewContentType('tag');
-                setNewContent({ name });
-              }}
+              actions={[
+                {
+                  key: 'add-tag',
+                  label: t('common.add'),
+                  icon: <PlusIcon className="h-4 w-4 shrink-0" />,
+                  onSelect: () => {
+                    setNewContentType('tag');
+                    setNewContent({ name: '' });
+                  },
+                },
+              ]}
+              actionsPosition="top"
               disabled={loading || tagsLoading || !hasFormPermission}
             />
             <FormDescription>
@@ -98,7 +105,7 @@ export function FormMoreTab({
               </FormDescription>
             </div>
             <FormControl>
-              <Checkbox
+              <Switch
                 checked={field.value}
                 onCheckedChange={field.onChange}
                 disabled={!hasFormPermission}
@@ -131,7 +138,7 @@ export function FormMoreTab({
                     </FormLabel>
                   </div>
                   <FormControl>
-                    <Checkbox
+                    <Switch
                       checked={field.value || false}
                       onCheckedChange={field.onChange}
                       disabled={loading}
@@ -155,7 +162,7 @@ export function FormMoreTab({
                     </FormLabel>
                   </div>
                   <FormControl>
-                    <Checkbox
+                    <Switch
                       checked={field.value || false}
                       onCheckedChange={field.onChange}
                       disabled={loading}
@@ -179,7 +186,7 @@ export function FormMoreTab({
                     </FormLabel>
                   </div>
                   <FormControl>
-                    <Checkbox
+                    <Switch
                       checked={field.value || false}
                       onCheckedChange={field.onChange}
                       disabled={loading}

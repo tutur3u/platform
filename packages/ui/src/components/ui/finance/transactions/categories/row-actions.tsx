@@ -1,6 +1,6 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis } from '@tuturuuu/icons';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
@@ -38,37 +38,38 @@ export function TransactionCategoryRowActions(props: Props) {
   const queryClient = useQueryClient();
 
   const data = props.row.original;
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  const deleteCategory = async () => {
-    setIsDeleting(true);
-    try {
-      const res = await fetch(
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(
         `/api/workspaces/${data.ws_id}/transactions/categories/${data.id}`,
         {
           method: 'DELETE',
         }
       );
 
-      if (res.ok) {
-        toast.success(t('ws-transaction-categories.category_deleted'));
-        // Invalidate the transaction categories query to refresh the list
-        await queryClient.invalidateQueries({
-          queryKey: ['transaction-categories', data.ws_id],
-        });
-      } else {
-        const errorData = await res.json();
-        toast.error(
-          errorData.message ||
-            t('ws-transaction-categories.failed_to_delete_category')
-        );
+      if (!response.ok) {
+        let message = t('ws-transaction-categories.failed_to_delete_category');
+        try {
+          const errorData = (await response.json()) as { message?: string };
+          if (errorData.message) {
+            message = errorData.message;
+          }
+        } catch {
+          // Keep fallback error message.
+        }
+        throw new Error(message);
       }
-    } catch {
-      toast.error(t('ws-transaction-categories.failed_to_delete_category'));
-    } finally {
-      setIsDeleting(false);
-    }
-  };
+    },
+    onSuccess: async () => {
+      toast.success(t('ws-transaction-categories.category_deleted'));
+      await queryClient.invalidateQueries({
+        queryKey: ['transaction-categories', data.ws_id],
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
 
   const [showEditDialog, setShowEditDialog] = useState(false);
 
@@ -98,7 +99,7 @@ export function TransactionCategoryRowActions(props: Props) {
             <AlertDialogTrigger asChild>
               <DropdownMenuItem
                 onSelect={(e) => e.preventDefault()}
-                disabled={isDeleting}
+                disabled={deleteMutation.isPending}
               >
                 {t('common.delete')}
               </DropdownMenuItem>
@@ -115,11 +116,13 @@ export function TransactionCategoryRowActions(props: Props) {
               <AlertDialogFooter>
                 <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                 <AlertDialogAction
-                  onClick={deleteCategory}
+                  onClick={() => deleteMutation.mutate()}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  disabled={isDeleting}
+                  disabled={deleteMutation.isPending}
                 >
-                  {isDeleting ? t('common.deleting') : t('common.delete')}
+                  {deleteMutation.isPending
+                    ? t('common.deleting')
+                    : t('common.delete')}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

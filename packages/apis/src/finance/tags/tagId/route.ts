@@ -7,82 +7,24 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 interface Params {
-  params: Promise<{ wsId: string }>;
+  params: Promise<{
+    tagId: string;
+    wsId: string;
+  }>;
 }
 
-export async function GET(req: Request, { params }: Params) {
-  const supabase = await createClient(req);
-  const { wsId } = await params;
-  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  const permissions = await getPermissions({
-    wsId: normalizedWsId,
-    request: req,
-  });
-
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { withoutPermission } = permissions;
-
-  // TODO: Migrate to another permission
-  if (withoutPermission('manage_finance')) {
-    return NextResponse.json(
-      { message: 'Insufficient permissions' },
-      { status: 403 }
-    );
-  }
-
-  const { data, error } = await supabase
-    .from('transaction_tags')
-    .select('*')
-    .eq('ws_id', normalizedWsId)
-    .order('name');
-
-  if (error) {
-    console.log(error);
-    return NextResponse.json(
-      { message: 'Error fetching tags' },
-      { status: 500 }
-    );
-  }
-
-  return NextResponse.json(data);
-}
-
-const TagSchema = z.object({
-  name: z.string().min(1).max(50),
+const TagUpdateSchema = z.object({
+  name: z.string().min(1).max(50).optional(),
   color: z
     .string()
     .regex(/^#[0-9A-Fa-f]{6}$/)
-    .default('#3b82f6'),
+    .optional(),
   description: z.string().nullable().optional(),
 });
 
-export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient(req);
-  const { wsId } = await params;
-  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  const permissions = await getPermissions({
-    wsId: normalizedWsId,
-    request: req,
-  });
-
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { withoutPermission } = permissions;
-
-  // TODO: Migrate to another permission
-  if (withoutPermission('manage_finance')) {
-    return NextResponse.json(
-      { message: 'Insufficient permissions' },
-      { status: 403 }
-    );
-  }
-
-  const parsed = TagSchema.safeParse(await req.json());
+export async function PUT(req: Request, { params }: Params) {
+  const { tagId, wsId } = await params;
+  const parsed = TagUpdateSchema.safeParse(await req.json());
 
   if (!parsed.success) {
     return NextResponse.json(
@@ -90,27 +32,86 @@ export async function POST(req: Request, { params }: Params) {
       { status: 400 }
     );
   }
+  const supabase = await createClient(req);
 
-  const { name, color, description } = parsed.data;
+  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+
+  const permissions = await getPermissions({
+    wsId: normalizedWsId,
+    request: req,
+  });
+  if (!permissions) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (permissions.withoutPermission('manage_finance')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions' },
+      { status: 403 }
+    );
+  }
 
   const { data, error } = await supabase
     .from('transaction_tags')
-    .insert({
-      ws_id: normalizedWsId,
-      name,
-      color,
-      description: description || null,
-    })
-    .select()
-    .single();
+    .update(parsed.data)
+    .eq('id', tagId)
+    .eq('ws_id', normalizedWsId)
+    .select('*')
+    .maybeSingle();
 
   if (error) {
     console.log(error);
     return NextResponse.json(
-      { message: 'Error creating tag' },
+      { message: 'Error updating tag' },
       { status: 500 }
     );
   }
 
+  if (!data) {
+    return NextResponse.json({ message: 'Tag not found' }, { status: 404 });
+  }
+
   return NextResponse.json(data);
+}
+
+export async function DELETE(req: Request, { params }: Params) {
+  const { tagId, wsId } = await params;
+  const supabase = await createClient(req);
+  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+  const permissions = await getPermissions({
+    wsId: normalizedWsId,
+    request: req,
+  });
+  if (!permissions) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (permissions.withoutPermission('manage_finance')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions' },
+      { status: 403 }
+    );
+  }
+
+  const { data, error } = await supabase
+    .from('transaction_tags')
+    .delete()
+    .eq('id', tagId)
+    .eq('ws_id', normalizedWsId)
+    .select('id')
+    .maybeSingle();
+
+  if (error) {
+    console.log(error);
+    return NextResponse.json(
+      { message: 'Error deleting tag' },
+      { status: 500 }
+    );
+  }
+
+  if (!data) {
+    return NextResponse.json({ message: 'Tag not found' }, { status: 404 });
+  }
+
+  return NextResponse.json({ message: 'success' });
 }
