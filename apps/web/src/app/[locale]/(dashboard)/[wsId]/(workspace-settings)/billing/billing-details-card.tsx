@@ -63,9 +63,8 @@ export default function BillingDetailsCard({
 }: BillingDetailsCardProps) {
   const t = useTranslations('billing');
   const queryClient = useQueryClient();
-  const [formData, setFormData] = useState<UpdateWorkspaceBillingDetailsInput>(
-    DEFAULT_FORM
-  );
+  const [formData, setFormData] =
+    useState<UpdateWorkspaceBillingDetailsInput>(DEFAULT_FORM);
   const [initialData, setInitialData] =
     useState<UpdateWorkspaceBillingDetailsInput>(DEFAULT_FORM);
 
@@ -264,78 +263,65 @@ export default function BillingDetailsCard({
 
         <div className="space-y-2">
           <Label htmlFor="billing-line1">{t('billing-address-line-1')}</Label>
-          <Input
-            id="billing-line1"
-            value={formData.billingAddress.line1}
-            onChange={(event) =>
-              handleAddressFieldChange('line1', event.target.value)
-            }
-            disabled={isFormDisabled}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="billing-line2">{t('billing-address-line-2')}</Label>
-          <Input
-            id="billing-line2"
-            value={formData.billingAddress.line2}
-            onChange={(event) =>
-              handleAddressFieldChange('line2', event.target.value)
-            }
-            placeholder={t('billing-address-line-2-placeholder')}
-            disabled={isFormDisabled}
-          />
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="billing-postal-code">{t('postal-code')}</Label>
             <Input
-              id="billing-postal-code"
-              value={formData.billingAddress.postalCode}
+              id="billing-line1"
+              value={formData.billingAddress.line1}
               onChange={(event) =>
-                handleAddressFieldChange('postalCode', event.target.value)
+                handleAddressFieldChange('line1', event.target.value)
               }
               disabled={isFormDisabled}
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="billing-city">{t('city')}</Label>
             <Input
-              id="billing-city"
-              value={formData.billingAddress.city}
+              id="billing-line2"
+              value={formData.billingAddress.line2}
               onChange={(event) =>
-                handleAddressFieldChange('city', event.target.value)
+                handleAddressFieldChange('line2', event.target.value)
               }
+              placeholder={t('billing-address-line-2-placeholder')}
               disabled={isFormDisabled}
             />
-          </div>
-        </div>
+            <div className="grid gap-2 md:grid-cols-2">
+              <Input
+                id="billing-postal-code"
+                value={formData.billingAddress.postalCode}
+                onChange={(event) =>
+                  handleAddressFieldChange('postalCode', event.target.value)
+                }
+                disabled={isFormDisabled}
+              />
 
-        <div className="space-y-2">
-          <Label htmlFor="billing-country">{t('country')}</Label>
-          <Select
-            value={formData.billingAddress.country}
-            onValueChange={(value) =>
-              handleAddressFieldChange(
-                'country',
-                value as UpdateWorkspaceBillingDetailsInput['billingAddress']['country']
-              )
-            }
-            disabled={isFormDisabled}
-          >
-            <SelectTrigger id="billing-country">
-              <SelectValue placeholder={t('country')} />
-            </SelectTrigger>
-            <SelectContent>
-              {COUNTRY_OPTIONS.map((country) => (
-                <SelectItem key={country.code} value={country.code}>
-                  {t(country.labelKey)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              <Input
+                id="billing-city"
+                value={formData.billingAddress.city}
+                onChange={(event) =>
+                  handleAddressFieldChange('city', event.target.value)
+                }
+                disabled={isFormDisabled}
+              />
+            </div>
+            <Select
+              value={formData.billingAddress.country}
+              onValueChange={(value) =>
+                handleAddressFieldChange(
+                  'country',
+                  value as UpdateWorkspaceBillingDetailsInput['billingAddress']['country']
+                )
+              }
+              disabled={isFormDisabled}
+            >
+              <SelectTrigger id="billing-country">
+                <SelectValue placeholder={t('country')} />
+              </SelectTrigger>
+              <SelectContent>
+                {COUNTRY_OPTIONS.map((country) => (
+                  <SelectItem key={country.code} value={country.code}>
+                    {country.labelKey}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div className="space-y-2">
