@@ -7,6 +7,7 @@ import { enUS, vi } from 'date-fns/locale';
 import { useLocale, useTranslations } from 'next-intl';
 import { AiCreditBillingCard } from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/ai-credit-billing-card';
 import { BillingClient } from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/billing-client';
+import BillingDetailsCard from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/billing-details-card';
 import BillingHistory from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/billing-history';
 import { NoSubscriptionFound } from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/no-subscription-found';
 import PaymentMethodsCard from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/payment-methods-card';
@@ -107,6 +108,11 @@ export default function BillingSettings({ wsId }: BillingSettingsProps) {
         currentPlan={currentPlan}
         products={products}
         seatStatus={seatStatus}
+      />
+
+      <BillingDetailsCard
+        wsId={wsId}
+        hasManageSubscriptionPermission={hasManagePermission}
       />
 
       <PaymentMethodsCard
