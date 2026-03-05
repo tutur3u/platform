@@ -24,7 +24,7 @@
     "ui:diff": "bunx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@deepgram/sdk": "^4.11.3",
+    "@deepgram/sdk": "^5.0.0",
     "@emotion/react": "^11.14.0",
     "@emotion/server": "^11.11.0",
     "@formatjs/intl-localematcher": "^0.8.1",

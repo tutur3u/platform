@@ -140,6 +140,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 ### 6.5 Type Safety & Platform Details
 
 - **Dart Part Imports**: For Dart `part` files, add library imports only in the parent file (the one declaring `part ...`).
+- **Dart Placeholder Params**: In Dart callbacks, avoid multiple underscore placeholders in the same signature (for example `(_, __)`), because analyzer flags `unnecessary_underscores`; use descriptive parameter names such as `(context, index)` instead. These are descriptive positional parameter names, not Dart named parameters (the `{}` syntax).
 - **API Route UUID Params**: In API routes, validate UUID path params with shared `zod` schemas (`z.uuid()` + `safeParse`) instead of ad-hoc null/regex checks.
 - **Supabase Helper Extraction**: When moving Supabase DB writes into shared helper modules, prefer structural interfaces (or thin generic adapters) over concrete `createAdminClient` return types to avoid cross-package generic incompatibilities during type-check.
 - **Type-Safe Group Iteration**: In strict TS files with discriminated unions and `noUncheckedIndexedAccess`, avoid `array[index]` iteration for render groups. Prefer `for (const [i, item] of array.entries())` plus `switch (item.kind)` to preserve narrowing and prevent `"possibly undefined"` regressions.

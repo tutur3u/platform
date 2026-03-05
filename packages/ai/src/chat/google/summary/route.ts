@@ -1,13 +1,9 @@
+import { google } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import {
-  convertToModelMessages,
-  gateway,
-  generateText,
-  type UIMessage,
-} from 'ai';
+import { convertToModelMessages, generateText, type UIMessage } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 
-const model = 'gemini-2.5-flash-lite';
+const model = 'gemini-3.1-flash-lite-preview';
 
 export function createPATCH() {
   return async function handler(req: NextRequest) {
@@ -56,7 +52,7 @@ export function createPATCH() {
       const aiMessages = await convertToModelMessages(messages);
 
       const result = await generateText({
-        model: gateway(`google/${model}`),
+        model: google(model),
         messages: aiMessages,
         system: systemInstruction,
         providerOptions: {

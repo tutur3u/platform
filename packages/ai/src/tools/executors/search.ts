@@ -1,9 +1,9 @@
 import { google } from '@ai-sdk/google';
-import { gateway, generateText, stepCountIs } from 'ai';
+import { generateText, stepCountIs } from 'ai';
 import { z } from 'zod';
 import type { MiraToolContext } from '../mira-tools';
 
-const SEARCH_WRAPPER_MODEL = 'google/gemini-2.5-flash-lite';
+const SEARCH_WRAPPER_MODEL = 'gemini-3.1-flash-lite-preview';
 
 type SearchSource = {
   sourceId?: string;
@@ -70,7 +70,7 @@ async function runGoogleSearchWrapper(query: string, forceTool: boolean) {
     : `Search the web for the query below and provide an accurate, concise answer with key points and cited sources.\n\nQuery: ${query}`;
 
   return generateText({
-    model: gateway(SEARCH_WRAPPER_MODEL),
+    model: google(SEARCH_WRAPPER_MODEL),
     tools: {
       google_search: google.tools.googleSearch({}),
     },

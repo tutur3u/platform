@@ -1,12 +1,13 @@
+import { google } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { gateway, generateText, type UIMessage } from 'ai';
+import { generateText, type UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
 
 const HUMAN_PROMPT = '\n\nHuman:';
 const AI_PROMPT = '\n\nAssistant:';
 
 /** Always use a lightweight model for title generation */
-const TITLE_MODEL = 'google/gemini-2.5-flash-lite';
+const TITLE_MODEL = 'gemini-3.1-flash-lite-preview';
 
 export function createPOST(
   _options: {
@@ -44,7 +45,7 @@ export function createPOST(
 
       // Always use TITLE_MODEL for generating chat titles (cheap + fast)
       const result = await generateText({
-        model: gateway(TITLE_MODEL),
+        model: google(TITLE_MODEL),
         prompt,
         providerOptions: {
           google: {

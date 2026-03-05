@@ -9,6 +9,7 @@ import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/transaction_stats.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/view/transaction_detail_action.dart';
 import 'package:mobile/features/finance/view/wallet_detail_widgets.dart';
 import 'package:mobile/features/finance/widgets/grouped_transaction_accordion.dart';
@@ -204,6 +205,7 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
               workspaceCurrency: _workspaceCurrency,
               exchangeRates: _exchangeRates,
               showLoadingMore: _isLoadingMore,
+              lazy: true,
               onTransactionTap: _openTransaction,
             ),
         ],
@@ -236,6 +238,7 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
     if (showLoader) {
       setState(() {
         _isLoadingInitial = true;
+        _isLoadingMore = false;
         _error = null;
       });
     }
@@ -245,6 +248,18 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
         wsId: wsId,
         walletId: widget.walletId,
       );
+      final wallet = await walletFuture;
+      if (!mounted || requestToken != _requestToken) return;
+      if (wallet == null) {
+        setState(() {
+          _wallet = null;
+          _stats = null;
+          _transactions = const [];
+          _error = context.l10n.financeWalletNotFound;
+        });
+        return;
+      }
+
       final workspaceCurrencyFuture = repository
           .getWorkspaceDefaultCurrency(wsId)
           .catchError((_) => 'USD');
@@ -260,22 +275,12 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
         walletId: widget.walletId,
       );
 
-      final wallet = await walletFuture;
       final workspaceCurrency = await workspaceCurrencyFuture;
       final exchangeRates = await exchangeRatesFuture;
       final stats = await statsFuture;
       final firstPage = await transactionsFuture;
 
       if (!mounted || requestToken != _requestToken) return;
-      if (wallet == null) {
-        setState(() {
-          _wallet = null;
-          _stats = null;
-          _transactions = const [];
-          _error = context.l10n.financeWalletNotFound;
-        });
-        return;
-      }
 
       setState(() {
         _wallet = wallet;
@@ -287,6 +292,14 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
         _nextCursor = firstPage.nextCursor;
         _error = null;
       });
+    } on ApiException catch (e) {
+      if (!mounted || requestToken != _requestToken) return;
+      final commonSomethingWentWrong = context.l10n.commonSomethingWentWrong;
+      setState(
+        () => _error = e.message.isNotEmpty
+            ? e.message
+            : commonSomethingWentWrong,
+      );
     } on Exception {
       if (!mounted || requestToken != _requestToken) return;
       setState(() => _error = context.l10n.commonSomethingWentWrong);
@@ -316,17 +329,27 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
             cursor: nextCursor,
           );
 
-      if (!mounted || requestToken != _requestToken) return;
+      if (!mounted || requestToken != _requestToken) {
+        if (mounted && _isLoadingMore) {
+          setState(() => _isLoadingMore = false);
+        }
+        return;
+      }
       setState(() {
         _transactions = [..._transactions, ...page.data];
         _hasMore = page.hasMore;
         _nextCursor = page.nextCursor;
       });
     } on Exception {
-      if (!mounted || requestToken != _requestToken) return;
+      if (!mounted || requestToken != _requestToken) {
+        if (mounted && _isLoadingMore) {
+          setState(() => _isLoadingMore = false);
+        }
+        return;
+      }
       setState(() => _hasMore = false);
     } finally {
-      if (mounted && requestToken == _requestToken) {
+      if (mounted && _isLoadingMore) {
         setState(() => _isLoadingMore = false);
       }
     }

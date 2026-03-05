@@ -1,4 +1,8 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import {
@@ -26,22 +30,29 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const sbAdmin = await createAdminClient();
+
+    const hasManagePermission = await checkManageSubscriptionPermission(
+      sbAdmin,
+      wsId,
+      user.id
+    );
+
+    if (!hasManagePermission) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const polar = createPolarClient();
+
     // Fetch all billing data in parallel
-    const [
-      isPersonal,
-      hasManagePermission,
-      subscriptionResult,
-      products,
-      seatStatus,
-      orders,
-    ] = await Promise.all([
-      isPersonalWorkspace(wsId),
-      checkManageSubscriptionPermission(wsId, user.id),
-      ensureSubscription(wsId),
-      fetchProducts(),
-      getSeatStatus(supabase, wsId),
-      fetchWorkspaceOrders(wsId),
-    ]);
+    const [isPersonal, subscriptionResult, products, seatStatus, orders] =
+      await Promise.all([
+        isPersonalWorkspace(wsId),
+        ensureSubscription(polar, sbAdmin, wsId),
+        fetchProducts(polar),
+        getSeatStatus(sbAdmin, wsId),
+        fetchWorkspaceOrders(sbAdmin, wsId),
+      ]);
 
     // Handle subscription creation failure
     if (!subscriptionResult.subscription) {

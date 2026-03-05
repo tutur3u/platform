@@ -1,4 +1,8 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { format } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
@@ -40,6 +44,9 @@ export default async function BillingPage({
 
         if (!user) return notFound();
 
+        const polar = createPolarClient();
+        const sbAdmin = await createAdminClient();
+
         const [
           isPersonal,
           hasManageSubscriptionPermission,
@@ -52,12 +59,12 @@ export default async function BillingPage({
           t,
         ] = await Promise.all([
           isPersonalWorkspace(wsId),
-          checkManageSubscriptionPermission(wsId, user.id),
-          ensureSubscription(wsId), // Try to ensure subscription exists
-          fetchProducts(),
-          fetchCreditPacks(),
-          getSeatStatus(supabase, wsId),
-          fetchWorkspaceOrders(wsId),
+          checkManageSubscriptionPermission(sbAdmin, wsId, user.id),
+          ensureSubscription(polar, sbAdmin, wsId), // Try to ensure subscription exists
+          fetchProducts(polar),
+          fetchCreditPacks(sbAdmin),
+          getSeatStatus(sbAdmin, wsId),
+          fetchWorkspaceOrders(sbAdmin, wsId),
           getLocale(),
           getTranslations('billing'),
         ]);

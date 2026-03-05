@@ -1,8 +1,9 @@
+import { google } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import { gateway, streamText } from 'ai';
+import { streamText } from 'ai';
 
 export async function POST(req: Request) {
   try {
@@ -91,7 +92,7 @@ ${JSON.stringify(viMessages || {}, null, 2)}
 Return ONLY a valid JSON object (not wrapped in any markdown or code blocks) with the complete Vietnamese translations, maintaining the exact same structure as the English JSON.`;
 
     const result = streamText({
-      model: gateway('google/gemini-2.5-flash-lite'),
+      model: google('gemini-3.1-flash-lite-preview'),
       prompt,
       temperature: 0.3, // Lower temperature for more consistent translations
     });
