@@ -42,14 +42,14 @@ function createSupabaseMock() {
   const schedulingUpsert = vi.fn(async () => ({ error: null }));
 
   const listQuery: ListQuery = {
-    eq: vi.fn((_, __) => listQuery),
+    eq: vi.fn(() => listQuery),
     single: vi.fn(async () => ({ data: { id: 'list-1', name: 'Backlog' } })),
   };
 
   const taskSortQuery: TaskSortQuery = {
-    eq: vi.fn((_, __) => taskSortQuery),
-    is: vi.fn((_, __) => taskSortQuery),
-    order: vi.fn((_, __) => taskSortQuery),
+    eq: vi.fn(() => taskSortQuery),
+    is: vi.fn(() => taskSortQuery),
+    order: vi.fn(() => taskSortQuery),
     limit: vi.fn(async () => ({ data: [], error: null })),
   };
 

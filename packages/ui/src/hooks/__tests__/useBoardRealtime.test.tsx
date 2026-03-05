@@ -758,17 +758,15 @@ describe('useBoardRealtime', () => {
     it('should handle DB fetch errors gracefully', async () => {
       queryClient.setQueryData(['tasks', 'board-1'], [mockTaskWithRelations]);
 
-      // Mock a fetch error
+      // Mock a batched fetch error from the .in(...) branch.
       (createClient as unknown as MockCreateClientFn).mockReturnValue({
         channel: vi.fn(() => mockChannel),
         removeChannel: mockRemoveChannel,
         from: vi.fn(() => ({
           select: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              single: vi.fn(() =>
-                Promise.resolve({ data: null, error: { message: 'Not found' } })
-              ),
-            })),
+            in: vi.fn(() =>
+              Promise.resolve({ data: null, error: { message: 'Not found' } })
+            ),
           })),
         })),
       });
@@ -779,9 +777,14 @@ describe('useBoardRealtime', () => {
 
       const listener = broadcastListeners.get('task:relations-changed')!;
 
-      // Should not throw
       await act(async () => {
-        await listener({ payload: { taskId: 'task-1' } });
+        listener({ payload: { taskId: 'task-1' } });
+      });
+
+      await act(async () => {
+        vi.advanceTimersByTime(150);
+        await Promise.resolve();
+        await Promise.resolve();
       });
 
       // Cache should remain unchanged

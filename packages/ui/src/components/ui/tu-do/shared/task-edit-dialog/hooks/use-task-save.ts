@@ -827,32 +827,49 @@ async function handleCreateTask({
     }
 
     // Handle labels
+    let nextLabels: Task['labels'] = [];
     if (selectedLabels.length > 0) {
       const { error: labelsError } = await supabase
         .from('task_labels')
         .insert(
           selectedLabels.map((l) => ({ task_id: newTask.id, label_id: l.id }))
         );
-      if (labelsError) console.error('Error adding labels:', labelsError);
+      if (labelsError) {
+        console.error('Error adding labels:', labelsError);
+      } else {
+        nextLabels = selectedLabels.flatMap((label) =>
+          label.name && label.color && label.created_at
+            ? [
+                {
+                  id: label.id,
+                  name: label.name,
+                  color: label.color,
+                  created_at: label.created_at,
+                },
+              ]
+            : []
+        );
+      }
     }
 
     // Handle assignees
-    let finalAssignees = [...selectedAssignees];
+    let finalAssignees: typeof selectedAssignees = [];
+    let desiredAssignees = [...selectedAssignees];
     if (
-      finalAssignees.length === 0 &&
+      desiredAssignees.length === 0 &&
       userTaskSettings?.task_auto_assign_to_self &&
       resolvedUserId &&
       !isPersonalWorkspace
     ) {
-      finalAssignees = [
+      desiredAssignees = [
         {
           id: resolvedUserId,
           user_id: resolvedUserId,
         },
       ];
     }
-    if (finalAssignees.length > 0) {
-      const assigneesToInsert = finalAssignees
+    if (desiredAssignees.length > 0) {
+      const assigneesToInsert = desiredAssignees
         .map((a) => ({ task_id: newTask.id, user_id: a.user_id || a.id }))
         .filter((a) => a.user_id);
       if (assigneesToInsert.length > 0) {
@@ -866,11 +883,14 @@ async function handleCreateTask({
             description: 'Task created but some assignees could not be added',
             variant: 'destructive',
           });
+        } else {
+          finalAssignees = desiredAssignees;
         }
       }
     }
 
     // Handle projects
+    let nextProjects: Task['projects'] = [];
     if (selectedProjects.length > 0) {
       const { error: projectsError } = await supabase
         .from('task_project_tasks')
@@ -880,34 +900,22 @@ async function handleCreateTask({
             project_id: p.id,
           }))
         );
-      if (projectsError) console.error('Error adding projects:', projectsError);
+      if (projectsError) {
+        console.error('Error adding projects:', projectsError);
+      } else {
+        nextProjects = selectedProjects.flatMap((project) =>
+          project.name && project.status
+            ? [
+                {
+                  id: project.id,
+                  name: project.name,
+                  status: project.status,
+                },
+              ]
+            : []
+        );
+      }
     }
-
-    const nextLabels: Task['labels'] = selectedLabels.flatMap((label) =>
-      label.name && label.color && label.created_at
-        ? [
-            {
-              id: label.id,
-              name: label.name,
-              color: label.color,
-              created_at: label.created_at,
-            },
-          ]
-        : []
-    );
-
-    const nextProjects: Task['projects'] = selectedProjects.flatMap(
-      (project) =>
-        project.name && project.status
-          ? [
-              {
-                id: project.id,
-                name: project.name,
-                status: project.status,
-              },
-            ]
-          : []
-    );
 
     const createdTaskWithRelations: Task = {
       ...(newTask as Task),
@@ -931,9 +939,9 @@ async function handleCreateTask({
     // Broadcast the new task to other clients
     broadcast?.('task:upsert', { task: createdTaskWithRelations });
     const hasRelations =
-      selectedLabels.length > 0 ||
+      nextLabels.length > 0 ||
       finalAssignees.length > 0 ||
-      selectedProjects.length > 0;
+      nextProjects.length > 0;
     if (hasRelations) {
       broadcast?.('task:relations-changed', { taskId: newTask.id });
     }

@@ -32,25 +32,8 @@ import type {
 } from '@tuturuuu/types/primitives/TaskRelationship';
 import { transformTaskRecord } from './task/transformers';
 
-interface TaskUserSchedulingSettingsRow {
-  task_id: string;
-  user_id: string;
-  total_duration: number | null;
-  is_splittable: boolean;
-  min_split_duration_minutes: number | null;
-  max_split_duration_minutes: number | null;
-  calendar_hours: Task['calendar_hours'];
-  auto_schedule: boolean;
-}
-
-interface TaskUserSchedulingSettingsClient {
-  from: (table: 'task_user_scheduling_settings') => {
-    upsert: (
-      values: TaskUserSchedulingSettingsRow,
-      options: { onConflict: 'task_id,user_id' }
-    ) => Promise<unknown>;
-  };
-}
+type TaskUserSchedulingSettingsInsert =
+  Database['public']['Tables']['task_user_scheduling_settings']['Insert'];
 /**
  * Generate a human-readable ticket identifier from prefix and display number
  * @param prefix - Board's ticket prefix (e.g., "DEV", "BUG")
@@ -375,33 +358,28 @@ export async function createTask(
     schedulingInput.calendar_hours !== undefined ||
     schedulingInput.auto_schedule !== undefined;
 
-  // This should not block task creation if it fails (RLS / rollout), so we best-effort it.
   if (data?.id && hasSchedulingInput) {
-    try {
-      const schedulingClient =
-        supabase as unknown as TaskUserSchedulingSettingsClient;
-      await schedulingClient.from('task_user_scheduling_settings').upsert(
-        {
-          task_id: data.id,
-          user_id: user.id,
-          total_duration: schedulingInput.total_duration ?? null,
-          is_splittable: schedulingInput.is_splittable ?? false,
-          min_split_duration_minutes:
-            schedulingInput.min_split_duration_minutes ?? null,
-          max_split_duration_minutes:
-            schedulingInput.max_split_duration_minutes ?? null,
-          calendar_hours: schedulingInput.calendar_hours ?? null,
-          auto_schedule: schedulingInput.auto_schedule ?? false,
-        },
-        {
-          onConflict: 'task_id,user_id',
-        }
-      );
-    } catch (settingsError) {
-      console.warn(
-        'Task created but failed to upsert task_user_scheduling_settings:',
-        settingsError
-      );
+    const schedulingPayload: TaskUserSchedulingSettingsInsert = {
+      task_id: data.id,
+      user_id: user.id,
+      total_duration: schedulingInput.total_duration ?? null,
+      is_splittable: schedulingInput.is_splittable ?? false,
+      min_split_duration_minutes:
+        schedulingInput.min_split_duration_minutes ?? null,
+      max_split_duration_minutes:
+        schedulingInput.max_split_duration_minutes ?? null,
+      calendar_hours: schedulingInput.calendar_hours ?? null,
+      auto_schedule: schedulingInput.auto_schedule ?? false,
+    };
+
+    const { error: schedulingError } = await supabase
+      .from('task_user_scheduling_settings')
+      .upsert(schedulingPayload, {
+        onConflict: 'task_id,user_id',
+      });
+
+    if (schedulingError) {
+      throw schedulingError;
     }
   }
 
