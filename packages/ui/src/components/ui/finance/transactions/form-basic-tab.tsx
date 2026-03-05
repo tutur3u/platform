@@ -106,6 +106,7 @@ export function FormBasicTab({
                     },
                   },
                 ]}
+                actionsPosition='top'
                 disabled={loading || walletsLoading || !hasFormPermission}
               />
               <FormMessage />
@@ -154,6 +155,7 @@ export function FormBasicTab({
                       },
                     },
                   ]}
+                  actionsPosition='top'
                   disabled={loading || walletsLoading || !hasFormPermission}
                 />
                 <FormMessage />
@@ -201,6 +203,7 @@ export function FormBasicTab({
                       },
                     },
                   ]}
+                  actionsPosition='top'
                   disabled={loading || categoriesLoading || !hasFormPermission}
                 />
                 <FormMessage />
