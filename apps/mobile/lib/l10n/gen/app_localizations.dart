@@ -811,6 +811,18 @@ abstract class AppLocalizations {
   /// **'Credit'**
   String get financeWalletTypeCredit;
 
+  /// No description provided for @financeWalletMetadata.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet metadata'**
+  String get financeWalletMetadata;
+
+  /// No description provided for @financeWalletBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance'**
+  String get financeWalletBalance;
+
   /// No description provided for @financeWalletCurrency.
   ///
   /// In en, this message translates to:
@@ -1122,6 +1134,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Confidential category'**
   String get financeConfidentialCategory;
+
+  /// No description provided for @financeStatisticsSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Statistics summary'**
+  String get financeStatisticsSummary;
+
+  /// No description provided for @financeTotalTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'Total transactions'**
+  String get financeTotalTransactions;
+
+  /// No description provided for @financeWalletNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet not found'**
+  String get financeWalletNotFound;
 
   /// No description provided for @financeCreateCategory.
   ///

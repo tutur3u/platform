@@ -8,6 +8,7 @@ class _TransactionFormDialog extends StatefulWidget {
     this.onSave,
     this.onCreate,
     this.exchangeRates,
+    this.initialWalletId,
   }) : assert(
          transaction == null ? onCreate != null : onSave != null,
          'Create mode requires onCreate; edit mode requires onSave.',
@@ -19,6 +20,7 @@ class _TransactionFormDialog extends StatefulWidget {
   final TransactionSaveHandler? onSave;
   final TransactionCreateHandler? onCreate;
   final List<ExchangeRate>? exchangeRates;
+  final String? initialWalletId;
 
   @override
   State<_TransactionFormDialog> createState() => _TransactionFormDialogState();
@@ -294,7 +296,7 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
         widget.transaction?.takenAt ??
         widget.transaction?.createdAt ??
         DateTime.now();
-    _walletId = widget.transaction?.walletId;
+    _walletId = widget.transaction?.walletId ?? widget.initialWalletId;
     _destinationWalletId = widget.transaction?.transfer?.linkedWalletId;
     _categoryId = widget.transaction?.categoryId;
     _isTransfer = widget.transaction?.isTransfer ?? false;

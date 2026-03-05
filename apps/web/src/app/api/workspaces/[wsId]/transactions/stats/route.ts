@@ -34,7 +34,7 @@ export async function GET(
 ): Promise<NextResponse> {
   try {
     const { wsId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(req);
     const { searchParams } = new URL(req.url);
 
     // Validate query parameters
@@ -80,10 +80,11 @@ export async function GET(
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
     // Normalize workspace ID (resolve special tokens like 'personal' to UUID)
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     const permissions = await getPermissions({
       wsId: normalizedWsId,
+      request: req,
     });
     if (!permissions) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });

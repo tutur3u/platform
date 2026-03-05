@@ -16,6 +16,7 @@ import 'package:mobile/features/auth/view/signup_page.dart';
 import 'package:mobile/features/dashboard/view/dashboard_page.dart';
 import 'package:mobile/features/finance/view/transaction_categories_page.dart';
 import 'package:mobile/features/finance/view/transaction_list_page.dart';
+import 'package:mobile/features/finance/view/wallet_detail_page.dart';
 import 'package:mobile/features/finance/view/wallets_page.dart';
 import 'package:mobile/features/onboarding/view/onboarding_page.dart';
 import 'package:mobile/features/profile/view/profile_page.dart';
@@ -186,6 +187,16 @@ GoRouter createAppRouter(
           GoRoute(
             path: Routes.wallets,
             builder: (context, state) => const WalletsPage(),
+          ),
+          GoRoute(
+            path: Routes.walletDetail,
+            builder: (context, state) {
+              final walletId = state.pathParameters['walletId'];
+              if (walletId == null || walletId.isEmpty) {
+                return const WalletsPage();
+              }
+              return WalletDetailPage(walletId: walletId);
+            },
           ),
           GoRoute(
             path: Routes.settings,

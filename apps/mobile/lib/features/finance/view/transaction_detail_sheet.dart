@@ -94,6 +94,7 @@ Future<bool> showCreateTransactionSheet(
   required FinanceRepository repository,
   required TransactionCreateHandler onCreate,
   List<ExchangeRate>? exchangeRates,
+  String? initialWalletId,
 }) async {
   final result = await showAdaptiveSheet<bool>(
     context: context,
@@ -102,6 +103,7 @@ Future<bool> showCreateTransactionSheet(
       repository: repository,
       onCreate: onCreate,
       exchangeRates: exchangeRates,
+      initialWalletId: initialWalletId,
     ),
   );
 
