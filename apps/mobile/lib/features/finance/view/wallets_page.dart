@@ -129,6 +129,7 @@ class _WalletsViewState extends State<_WalletsView> {
                     final wallet = _wallets[index];
                     return _WalletCard(
                       wallet: wallet,
+                      onTap: () => _openWallet(wallet),
                       onEdit: () => _onEdit(wallet),
                       onDelete: () => _onDelete(wallet),
                     );
@@ -185,6 +186,12 @@ class _WalletsViewState extends State<_WalletsView> {
     await _loadWallets();
   }
 
+  Future<void> _openWallet(Wallet wallet) async {
+    await context.push(Routes.walletDetailPath(wallet.id));
+    if (!mounted) return;
+    await _loadWallets();
+  }
+
   Future<void> _loadWallets() async {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
@@ -229,11 +236,13 @@ class _WalletsViewState extends State<_WalletsView> {
 class _WalletCard extends StatelessWidget {
   const _WalletCard({
     required this.wallet,
+    required this.onTap,
     required this.onEdit,
     required this.onDelete,
   });
 
   final Wallet wallet;
+  final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -251,84 +260,88 @@ class _WalletCard extends StatelessWidget {
     );
 
     return shad.Card(
-      child: Row(
-        children: [
-          WalletVisualAvatar(
-            icon: wallet.icon,
-            imageSrc: wallet.imageSrc,
-            fallbackIcon: icon,
-            backgroundColor: accent.withValues(alpha: 0.14),
-          ),
-          const shad.Gap(12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  wallet.name ?? '-',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.p.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                if (wallet.description?.trim().isNotEmpty ?? false) ...[
-                  const shad.Gap(2),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onTap,
+        child: Row(
+          children: [
+            WalletVisualAvatar(
+              icon: wallet.icon,
+              imageSrc: wallet.imageSrc,
+              fallbackIcon: icon,
+              backgroundColor: accent.withValues(alpha: 0.14),
+            ),
+            const shad.Gap(12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    wallet.description!,
+                    wallet.name ?? '-',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.typography.textSmall.copyWith(
-                      color: colorScheme.mutedForeground,
+                    style: theme.typography.p.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                ],
-                const shad.Gap(4),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(999),
-                        color: accent.withValues(alpha: 0.12),
-                      ),
-                      child: Text(
-                        isCredit
-                            ? context.l10n.financeWalletTypeCredit
-                            : context.l10n.financeWalletTypeStandard,
-                        style: theme.typography.xSmall.copyWith(
-                          color: accent,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
+                  if (wallet.description?.trim().isNotEmpty ?? false) ...[
+                    const shad.Gap(2),
                     Text(
-                      formatCurrency(balance, currency),
-                      style: theme.typography.xSmall.copyWith(
-                        fontWeight: FontWeight.w600,
+                      wallet.description!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.textSmall.copyWith(
+                        color: colorScheme.mutedForeground,
                       ),
                     ),
                   ],
-                ),
-              ],
+                  const shad.Gap(4),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(999),
+                          color: accent.withValues(alpha: 0.12),
+                        ),
+                        child: Text(
+                          isCredit
+                              ? context.l10n.financeWalletTypeCredit
+                              : context.l10n.financeWalletTypeStandard,
+                          style: theme.typography.xSmall.copyWith(
+                            color: accent,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        formatCurrency(balance, currency),
+                        style: theme.typography.xSmall.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-          shad.GhostButton(
-            density: shad.ButtonDensity.icon,
-            onPressed: onEdit,
-            child: const Icon(Icons.edit_outlined, size: 16),
-          ),
-          shad.GhostButton(
-            density: shad.ButtonDensity.icon,
-            onPressed: onDelete,
-            child: const Icon(Icons.delete_outline, size: 16),
-          ),
-        ],
+            shad.GhostButton(
+              density: shad.ButtonDensity.icon,
+              onPressed: onEdit,
+              child: const Icon(Icons.edit_outlined, size: 16),
+            ),
+            shad.GhostButton(
+              density: shad.ButtonDensity.icon,
+              onPressed: onDelete,
+              child: const Icon(Icons.delete_outline, size: 16),
+            ),
+          ],
+        ),
       ),
     );
   }
