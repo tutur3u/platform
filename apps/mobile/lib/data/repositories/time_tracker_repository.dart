@@ -646,14 +646,16 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
     int? weeklyGoalMinutes,
     bool isActive = true,
   }) async {
+    final body = <String, dynamic>{
+      'dailyGoalMinutes': dailyGoalMinutes,
+      'weeklyGoalMinutes': weeklyGoalMinutes,
+      'isActive': isActive,
+      if (categoryId != null) 'categoryId': categoryId,
+    };
+
     final data = await _api.postJson(
       '/api/v1/workspaces/$wsId/time-tracking/goals',
-      {
-        'categoryId': categoryId,
-        'dailyGoalMinutes': dailyGoalMinutes,
-        'weeklyGoalMinutes': weeklyGoalMinutes,
-        'isActive': isActive,
-      },
+      body,
     );
 
     return TimeTrackingGoal.fromJson(data['goal'] as Map<String, dynamic>);

@@ -1144,6 +1144,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get timerHourUnitShort => 'h';
+
+  @override
+  String get timerMinuteUnitShort => 'm';
+
+  @override
   String timerDays(int count) {
     return '$count days';
   }

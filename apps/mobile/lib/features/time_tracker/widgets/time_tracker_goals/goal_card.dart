@@ -7,15 +7,15 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 class GoalCard extends StatelessWidget {
   const GoalCard({
     required this.goal,
-    required this.todaySeconds,
-    required this.weekSeconds,
+    required this.categoryTodaySeconds,
+    required this.categoryWeekSeconds,
     required this.onTap,
     super.key,
   });
 
   final TimeTrackingGoal goal;
-  final int todaySeconds;
-  final int weekSeconds;
+  final int categoryTodaySeconds;
+  final int categoryWeekSeconds;
   final VoidCallback? onTap;
 
   @override
@@ -29,13 +29,13 @@ class GoalCard extends StatelessWidget {
       fallback: theme.colorScheme.primary,
     );
     final dailyProgress = _calculateProgress(
-      todaySeconds,
+      categoryTodaySeconds,
       goal.dailyGoalMinutes,
     );
     final weeklyGoal = goal.weeklyGoalMinutes;
     final weeklyProgress = weeklyGoal == null
         ? null
-        : _calculateProgress(weekSeconds, weeklyGoal);
+        : _calculateProgress(categoryWeekSeconds, weeklyGoal);
 
     return Material(
       color: Colors.transparent,
@@ -97,7 +97,7 @@ class GoalCard extends StatelessWidget {
                   title: l10n.timerGoalsDailyProgress,
                   progressPercent: dailyProgress,
                   progressLabel:
-                      '${_formatSeconds(todaySeconds)} / ${_formatMinutes(goal.dailyGoalMinutes)}',
+                      '${_formatSeconds(context, categoryTodaySeconds)} / ${_formatMinutes(context, goal.dailyGoalMinutes)}',
                 ),
                 if (weeklyProgress != null) ...[
                   const shad.Gap(8),
@@ -105,7 +105,7 @@ class GoalCard extends StatelessWidget {
                     title: l10n.timerGoalsWeeklyProgress,
                     progressPercent: weeklyProgress,
                     progressLabel:
-                        '${_formatSeconds(weekSeconds)} / ${_formatMinutes(weeklyGoal!)}',
+                        '${_formatSeconds(context, categoryWeekSeconds)} / ${_formatMinutes(context, weeklyGoal!)}',
                   ),
                 ],
               ],
@@ -123,22 +123,26 @@ class GoalCard extends StatelessWidget {
     return ((seconds / (targetMinutes * 60)) * 100).clamp(0, 100);
   }
 
-  String _formatMinutes(int minutes) {
+  String _formatMinutes(BuildContext context, int minutes) {
+    final l10n = context.l10n;
     final hours = minutes ~/ 60;
     final remainingMinutes = minutes % 60;
     if (hours <= 0) {
-      return '${remainingMinutes}m';
+      return '$remainingMinutes${l10n.timerMinuteUnitShort}';
     }
-    return '${hours}h ${remainingMinutes}m';
+    return '$hours${l10n.timerHourUnitShort} '
+        '$remainingMinutes${l10n.timerMinuteUnitShort}';
   }
 
-  String _formatSeconds(int totalSeconds) {
+  String _formatSeconds(BuildContext context, int totalSeconds) {
+    final l10n = context.l10n;
     final hours = totalSeconds ~/ 3600;
     final minutes = (totalSeconds % 3600) ~/ 60;
     if (hours <= 0) {
-      return '${minutes}m';
+      return '$minutes${l10n.timerMinuteUnitShort}';
     }
-    return '${hours}h ${minutes}m';
+    return '$hours${l10n.timerHourUnitShort} '
+        '$minutes${l10n.timerMinuteUnitShort}';
   }
 }
 

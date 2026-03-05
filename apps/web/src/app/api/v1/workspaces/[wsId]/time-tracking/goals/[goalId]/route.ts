@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { Database } from '@tuturuuu/types/supabase';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -12,7 +13,6 @@ export async function PATCH(
   try {
     const { wsId, goalId } = await params;
     const supabase = await createClient(request);
-    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Get authenticated user
     const {
@@ -23,6 +23,8 @@ export async function PATCH(
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Verify workspace access
     const { data: memberCheck } = await supabase
@@ -83,7 +85,9 @@ export async function PATCH(
     }
 
     // Prepare update data
-    const updateData: any = {
+    const updateData: Partial<
+      Database['public']['Tables']['time_tracking_goals']['Update']
+    > = {
       updated_at: new Date().toISOString(),
     };
 
@@ -107,6 +111,7 @@ export async function PATCH(
       .from('time_tracking_goals')
       .update(updateData)
       .eq('id', goalId)
+      .eq('ws_id', normalizedWsId)
       .select(
         `
         *,
@@ -134,7 +139,6 @@ export async function DELETE(
   try {
     const { wsId, goalId } = await params;
     const supabase = await createClient(request);
-    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Get authenticated user
     const {
@@ -145,6 +149,8 @@ export async function DELETE(
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Verify workspace access
     const { data: memberCheck } = await supabase
@@ -176,12 +182,17 @@ export async function DELETE(
 
     // Delete the goal
     const sbAdmin = await createAdminClient();
-    const { error } = await sbAdmin
+    const { data: deletedGoals, error } = await sbAdmin
       .from('time_tracking_goals')
       .delete()
-      .eq('id', goalId);
+      .eq('id', goalId)
+      .eq('ws_id', normalizedWsId)
+      .select('id');
 
     if (error) throw error;
+    if (deletedGoals == null || deletedGoals.length === 0) {
+      return NextResponse.json({ error: 'Goal not found' }, { status: 404 });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

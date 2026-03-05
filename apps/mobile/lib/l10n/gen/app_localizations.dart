@@ -2287,6 +2287,18 @@ abstract class AppLocalizations {
   /// **'{count, plural, one{# active goal} other{# active goals}}'**
   String timerGoalsActiveCount(int count);
 
+  /// No description provided for @timerHourUnitShort.
+  ///
+  /// In en, this message translates to:
+  /// **'h'**
+  String get timerHourUnitShort;
+
+  /// No description provided for @timerMinuteUnitShort.
+  ///
+  /// In en, this message translates to:
+  /// **'m'**
+  String get timerMinuteUnitShort;
+
   /// No description provided for @timerDays.
   ///
   /// In en, this message translates to:

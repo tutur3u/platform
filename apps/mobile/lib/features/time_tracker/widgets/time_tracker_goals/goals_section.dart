@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/data/models/time_tracking/goal.dart';
+import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
@@ -86,17 +87,24 @@ class _TimeTrackerGoalsSectionState extends State<TimeTrackerGoalsSection> {
                     )
                   else
                     ...goals.map(
-                      (goal) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: GoalCard(
-                          goal: goal,
-                          todaySeconds: state.stats?.todayTime ?? 0,
-                          weekSeconds: state.stats?.weekTime ?? 0,
-                          onTap: _isSubmitting
-                              ? null
-                              : () => _openGoalDetailSheet(state, goal),
-                        ),
-                      ),
+                      (goal) {
+                        final progressSeconds = _resolveGoalProgressSeconds(
+                          state,
+                          goal,
+                        );
+
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: GoalCard(
+                            goal: goal,
+                            categoryTodaySeconds: progressSeconds.$1,
+                            categoryWeekSeconds: progressSeconds.$2,
+                            onTap: _isSubmitting
+                                ? null
+                                : () => _openGoalDetailSheet(state, goal),
+                          ),
+                        );
+                      },
                     ),
                   if (activeGoals.isNotEmpty && goals.length > 1)
                     Padding(
@@ -223,7 +231,7 @@ class _TimeTrackerGoalsSectionState extends State<TimeTrackerGoalsSection> {
       action: () => cubit.updateGoal(
         widget.wsId,
         goal.id,
-        categoryId: result.categoryId ?? 'general',
+        categoryId: result.categoryId,
         dailyGoalMinutes: result.dailyGoalMinutes,
         weeklyGoalMinutes: result.weeklyGoalMinutes,
         isActive: result.isActive,
@@ -253,11 +261,16 @@ class _TimeTrackerGoalsSectionState extends State<TimeTrackerGoalsSection> {
       }
     } on ApiException catch (error) {
       if (toastContext.mounted) {
+        final trimmedMessage = error.message.trim();
+        final displayMessage = trimmedMessage.isNotEmpty
+            ? trimmedMessage
+            : l10n.commonSomethingWentWrong;
+
         shad.showToast(
           context: toastContext,
           builder: (context, overlay) => shad.Alert.destructive(
             title: Text(context.l10n.commonSomethingWentWrong),
-            content: Text(error.message),
+            content: Text(displayMessage),
           ),
         );
       }
@@ -276,5 +289,65 @@ class _TimeTrackerGoalsSectionState extends State<TimeTrackerGoalsSection> {
         setState(() => _isSubmitting = false);
       }
     }
+  }
+
+  (int, int) _resolveGoalProgressSeconds(
+    TimeTrackerState state,
+    TimeTrackingGoal goal,
+  ) {
+    final sessions = state.historySessions;
+    if (sessions.isEmpty) {
+      return (0, 0);
+    }
+
+    final now = DateTime.now();
+    final startOfWeek = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(Duration(days: now.weekday - 1));
+    final endOfWeek = startOfWeek.add(const Duration(days: 7));
+
+    var todaySeconds = 0;
+    var weekSeconds = 0;
+
+    for (final session in sessions) {
+      if (!_matchesGoalCategory(goal, session)) {
+        continue;
+      }
+
+      final sessionDate = session.startTime ?? session.createdAt;
+      if (sessionDate == null) {
+        continue;
+      }
+
+      final seconds = session.duration.inSeconds;
+      if (seconds <= 0) {
+        continue;
+      }
+
+      if (DateUtils.isSameDay(sessionDate, now)) {
+        todaySeconds += seconds;
+      }
+
+      if (!sessionDate.isBefore(startOfWeek) &&
+          sessionDate.isBefore(endOfWeek)) {
+        weekSeconds += seconds;
+      }
+    }
+
+    return (todaySeconds, weekSeconds);
+  }
+
+  bool _matchesGoalCategory(
+    TimeTrackingGoal goal,
+    TimeTrackingSession session,
+  ) {
+    final goalCategoryId = goal.categoryId;
+    if (goalCategoryId == null) {
+      return session.categoryId == null;
+    }
+
+    return session.categoryId == goalCategoryId;
   }
 }

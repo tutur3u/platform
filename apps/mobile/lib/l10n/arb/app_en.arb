@@ -440,6 +440,8 @@
             }
         }
     },
+    "timerHourUnitShort": "h",
+    "timerMinuteUnitShort": "m",
     "timerDays": "{count} days",
     "@timerDays": {
         "placeholders": {

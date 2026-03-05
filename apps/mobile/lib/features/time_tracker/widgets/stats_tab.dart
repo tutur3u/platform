@@ -9,6 +9,7 @@ import 'package:mobile/features/time_tracker/widgets/stats_cards.dart';
 import 'package:mobile/features/time_tracker/widgets/time_tracker_goals_section.dart';
 import 'package:mobile/features/time_tracker/widgets/workspace_stats_tab.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
+import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -99,6 +100,7 @@ class _PersonalStatsView extends StatefulWidget {
 
 class _PersonalStatsViewState extends State<_PersonalStatsView> {
   int _tabIndex = 0;
+  String? _goalsLoadRequestedWsId;
 
   void _loadGoalsIfNeeded(String wsId) {
     if (wsId.isEmpty) {
@@ -107,28 +109,51 @@ class _PersonalStatsViewState extends State<_PersonalStatsView> {
     unawaited(context.read<TimeTrackerCubit>().loadGoals(wsId));
   }
 
+  void _requestGoalsLoadIfNeeded({
+    required String wsId,
+    required TimeTrackerState state,
+  }) {
+    if (_tabIndex != 1 || wsId.isEmpty) {
+      return;
+    }
+    if (state.hasLoadedGoals || state.isGoalsLoading) {
+      return;
+    }
+    if (_goalsLoadRequestedWsId == wsId) {
+      return;
+    }
+
+    _goalsLoadRequestedWsId = wsId;
+    _loadGoalsIfNeeded(wsId);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final wsId = context.select<WorkspaceCubit, String?>(
-      (c) => c.state.currentWorkspace?.id,
-    );
+    final workspaceState = context.watch<WorkspaceCubit>().state;
+    final wsId = workspaceState.currentWorkspace?.id;
     final theme = shad.Theme.of(context);
 
-    return BlocBuilder<TimeTrackerCubit, TimeTrackerState>(
-      builder: (context, state) {
-        if (_tabIndex == 1 &&
-            wsId != null &&
-            !state.hasLoadedGoals &&
-            !state.isGoalsLoading) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted) {
-              return;
-            }
-            _loadGoalsIfNeeded(wsId);
-          });
+    return BlocConsumer<TimeTrackerCubit, TimeTrackerState>(
+      listener: (context, state) {
+        final currentWsId = context
+            .read<WorkspaceCubit>()
+            .state
+            .currentWorkspace
+            ?.id;
+
+        if (currentWsId == null) {
+          _goalsLoadRequestedWsId = null;
+          return;
         }
 
+        if (state.hasLoadedGoals && _goalsLoadRequestedWsId == currentWsId) {
+          _goalsLoadRequestedWsId = null;
+        }
+
+        _requestGoalsLoadIfNeeded(wsId: currentWsId, state: state);
+      },
+      builder: (context, state) {
         return Column(
           children: [
             Padding(
@@ -138,7 +163,7 @@ class _PersonalStatsViewState extends State<_PersonalStatsView> {
                 onChanged: (value) {
                   setState(() => _tabIndex = value);
                   if (value == 1 && wsId != null) {
-                    _loadGoalsIfNeeded(wsId);
+                    _requestGoalsLoadIfNeeded(wsId: wsId, state: state);
                   }
                 },
                 children: [
@@ -165,7 +190,7 @@ class _PersonalStatsViewState extends State<_PersonalStatsView> {
                       children: [
                         if (wsId != null)
                           TimeTrackerGoalsSection(wsId: wsId)
-                        else
+                        else if (workspaceState.status == WorkspaceStatus.error)
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Text(
@@ -173,6 +198,13 @@ class _PersonalStatsViewState extends State<_PersonalStatsView> {
                               style: theme.typography.textSmall.copyWith(
                                 color: theme.colorScheme.mutedForeground,
                               ),
+                            ),
+                          )
+                        else
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 24),
+                            child: Center(
+                              child: shad.CircularProgressIndicator(),
                             ),
                           ),
                       ],

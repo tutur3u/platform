@@ -109,14 +109,14 @@ class GoalDetailSheet extends StatelessWidget {
               const shad.Gap(16),
               _InfoRow(
                 label: l10n.timerGoalsDailyTarget,
-                value: _formatMinutes(goal.dailyGoalMinutes),
+                value: _formatMinutes(context, goal.dailyGoalMinutes),
                 theme: theme,
               ),
               if (goal.weeklyGoalMinutes != null) ...[
                 const shad.Gap(6),
                 _InfoRow(
                   label: l10n.timerGoalsWeeklyTarget,
-                  value: _formatMinutes(goal.weeklyGoalMinutes!),
+                  value: _formatMinutes(context, goal.weeklyGoalMinutes!),
                   theme: theme,
                 ),
               ],
@@ -147,12 +147,14 @@ class GoalDetailSheet extends StatelessWidget {
     );
   }
 
-  String _formatMinutes(int minutes) {
+  String _formatMinutes(BuildContext context, int minutes) {
+    final l10n = context.l10n;
     final hours = minutes ~/ 60;
     final remaining = minutes % 60;
-    if (hours <= 0) return '${remaining}m';
-    if (remaining == 0) return '${hours}h';
-    return '${hours}h ${remaining}m';
+    if (hours <= 0) return '$remaining${l10n.timerMinuteUnitShort}';
+    if (remaining == 0) return '$hours${l10n.timerHourUnitShort}';
+    return '$hours${l10n.timerHourUnitShort} '
+        '$remaining${l10n.timerMinuteUnitShort}';
   }
 }
 

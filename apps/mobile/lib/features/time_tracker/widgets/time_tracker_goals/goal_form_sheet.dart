@@ -63,6 +63,13 @@ class _GoalFormSheetState extends State<GoalFormSheet> {
   late bool _isActive;
   String? _error;
 
+  void _clearErrorOnInputChange() {
+    if (_error == null) {
+      return;
+    }
+    setState(() => _error = null);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -73,12 +80,16 @@ class _GoalFormSheetState extends State<GoalFormSheet> {
     _weeklyController = TextEditingController(
       text: initialGoal?.weeklyGoalMinutes?.toString() ?? '',
     );
+    _dailyController.addListener(_clearErrorOnInputChange);
+    _weeklyController.addListener(_clearErrorOnInputChange);
     _selectedCategory = initialGoal?.categoryId ?? 'general';
     _isActive = initialGoal?.isActive ?? true;
   }
 
   @override
   void dispose() {
+    _dailyController.removeListener(_clearErrorOnInputChange);
+    _weeklyController.removeListener(_clearErrorOnInputChange);
     _dailyController.dispose();
     _weeklyController.dispose();
     super.dispose();

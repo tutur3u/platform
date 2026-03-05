@@ -1106,10 +1106,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerGoalsWeeklyValidation => 'Mục tiêu mỗi tuần phải lớn hơn 0.';
 
   @override
-  String get timerGoalsActive => 'Đang bật';
+  String get timerGoalsActive => 'Hoạt động';
 
   @override
-  String get timerGoalsInactive => 'Đã tắt';
+  String get timerGoalsInactive => 'Không hoạt động';
 
   @override
   String get timerGoalsActiveLabel => 'Mục tiêu đang hoạt động';
@@ -1136,6 +1136,12 @@ class AppLocalizationsVi extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get timerHourUnitShort => 'h';
+
+  @override
+  String get timerMinuteUnitShort => 'p';
 
   @override
   String timerDays(int count) {

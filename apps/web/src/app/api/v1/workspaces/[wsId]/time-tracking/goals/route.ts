@@ -4,6 +4,14 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+
+const GoalBodySchema = z.object({
+  categoryId: z.string().nullable().optional(),
+  dailyGoalMinutes: z.number().int().positive(),
+  weeklyGoalMinutes: z.number().int().positive().nullable().optional(),
+  isActive: z.boolean().optional(),
+});
 
 export async function GET(
   request: NextRequest,
@@ -12,8 +20,6 @@ export async function GET(
   try {
     const { wsId } = await params;
     const supabase = await createClient(request);
-
-    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Get authenticated user
     const {
@@ -24,6 +30,8 @@ export async function GET(
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Verify workspace access
     const { data: memberCheck } = await supabase
@@ -93,7 +101,6 @@ export async function POST(
   try {
     const { wsId } = await params;
     const supabase = await createClient(request);
-    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Get authenticated user
     const {
@@ -104,6 +111,8 @@ export async function POST(
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Verify workspace access
     const { data: memberCheck } = await supabase
@@ -121,14 +130,19 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { categoryId, dailyGoalMinutes, weeklyGoalMinutes, isActive } = body;
-
-    if (!dailyGoalMinutes || dailyGoalMinutes <= 0) {
+    const parsedBody = GoalBodySchema.safeParse(body);
+    if (!parsedBody.success) {
       return NextResponse.json(
-        { error: 'Daily goal minutes must be positive' },
+        {
+          error: 'Invalid request body',
+          details: parsedBody.error.issues.map((issue) => issue.message),
+        },
         { status: 400 }
       );
     }
+
+    const { categoryId, dailyGoalMinutes, weeklyGoalMinutes, isActive } =
+      parsedBody.data;
 
     // Verify category exists if provided
     if (categoryId) {

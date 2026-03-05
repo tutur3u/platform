@@ -428,8 +428,8 @@
     "timerGoalsWeeklyMinutesOptional": "Mục tiêu mỗi tuần (phút, không bắt buộc)",
     "timerGoalsDailyValidation": "Mục tiêu mỗi ngày phải lớn hơn 0.",
     "timerGoalsWeeklyValidation": "Mục tiêu mỗi tuần phải lớn hơn 0.",
-    "timerGoalsActive": "Đang bật",
-    "timerGoalsInactive": "Đã tắt",
+    "timerGoalsActive": "Hoạt động",
+    "timerGoalsInactive": "Không hoạt động",
     "timerGoalsActiveLabel": "Mục tiêu đang hoạt động",
     "timerGoalsDailyProgress": "Tiến độ ngày",
     "timerGoalsWeeklyProgress": "Tiến độ tuần",
@@ -451,6 +451,8 @@
             }
         }
     },
+    "timerHourUnitShort": "h",
+    "timerMinuteUnitShort": "p",
 
     "settingsTitle": "Cài đặt",
     "settingsProfile": "Hồ sơ",
