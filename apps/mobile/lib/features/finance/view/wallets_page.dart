@@ -37,6 +37,8 @@ class _WalletsView extends StatefulWidget {
 }
 
 class _WalletsViewState extends State<_WalletsView> {
+  static const double _fabContentBottomPadding = 96;
+
   List<Wallet> _wallets = const [];
   bool _isLoading = false;
   String? _error;
@@ -52,6 +54,8 @@ class _WalletsViewState extends State<_WalletsView> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = shad.Theme.of(context);
+    final listBottomPadding =
+        _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
 
     return shad.Scaffold(
       headers: [
@@ -126,7 +130,12 @@ class _WalletsViewState extends State<_WalletsView> {
                           )
                         : ListView.separated(
                             physics: const AlwaysScrollableScrollPhysics(),
-                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                            padding: EdgeInsets.fromLTRB(
+                              16,
+                              8,
+                              16,
+                              listBottomPadding,
+                            ),
                             itemCount: _wallets.length,
                             separatorBuilder: (_, _) => const shad.Gap(8),
                             itemBuilder: (context, index) {

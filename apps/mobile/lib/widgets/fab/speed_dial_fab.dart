@@ -38,6 +38,7 @@ class _SpeedDialFabState extends State<SpeedDialFab> {
 
   void _onActionTap(FabAction action) {
     action.onPressed();
+    if (!mounted) return;
     setState(() => _expanded = false);
   }
 

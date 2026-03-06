@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
-/// Pill-shaped Extended FAB with icon and label (e.g. "Add Wallet").
+/// Circular FAB with icon (e.g. "Add Wallet").
 ///
 /// Fixed bottom-right positioning. Use inside a [Stack] as a positioned child
-/// above scrollable content.
+/// above scrollable content. The [label] is used for accessibility semantics only.
 class ExtendedFab extends StatelessWidget {
   const ExtendedFab({
     required this.icon,
@@ -25,32 +25,34 @@ class ExtendedFab extends StatelessWidget {
   final double bottom;
   final double right;
 
+  static const double _fabSize = 56;
+
   @override
   Widget build(BuildContext context) {
     return Positioned(
       right: right,
       bottom: bottom,
-      child: IntrinsicWidth(
-        child: shad.PrimaryButton(
-          onPressed: enabled && !loading && onPressed != null
-              ? onPressed
-              : null,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-            child: loading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: shad.CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(icon, size: 20),
-                      const shad.Gap(8),
-                      Text(label),
-                    ],
-                  ),
+      child: Semantics(
+        label: label,
+        button: true,
+        child: SizedBox(
+          width: _fabSize,
+          height: _fabSize,
+          child: shad.PrimaryButton(
+            onPressed: enabled && !loading && onPressed != null
+                ? onPressed
+                : null,
+            shape: shad.ButtonShape.circle,
+            density: shad.ButtonDensity.icon,
+            child: Center(
+              child: loading
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: shad.CircularProgressIndicator(strokeWidth: 2.5),
+                    )
+                  : Icon(icon, size: 24),
+            ),
           ),
         ),
       ),

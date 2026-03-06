@@ -138,6 +138,8 @@ class _TransactionListView extends StatefulWidget {
 }
 
 class _TransactionListViewState extends State<_TransactionListView> {
+  static const double _fabContentBottomPadding = 96;
+
   final _scrollController = ScrollController();
   final _searchController = TextEditingController();
   Timer? _debounce;
@@ -210,6 +212,8 @@ class _TransactionListViewState extends State<_TransactionListView> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final listBottomPadding =
+        _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
 
     return shad.Scaffold(
       headers: [
@@ -279,9 +283,9 @@ class _TransactionListViewState extends State<_TransactionListView> {
                             child: GroupedTransactionAccordion(
                               lazy: true,
                               scrollController: _scrollController,
-                              listPadding: const EdgeInsets.only(
+                              listPadding: EdgeInsets.only(
                                 top: 8,
-                                bottom: 40,
+                                bottom: listBottomPadding,
                               ),
                               transactions: state.transactions,
                               workspaceCurrency: state.workspaceCurrency,
