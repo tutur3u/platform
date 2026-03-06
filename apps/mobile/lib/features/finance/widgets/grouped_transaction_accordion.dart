@@ -27,6 +27,8 @@ class GroupedTransactionAccordion extends StatefulWidget {
     required this.onTransactionTap,
     this.showLoadingMore = false,
     this.lazy = false,
+    this.headerChildren = const [],
+    this.emptyState,
     this.scrollController,
     this.listPadding,
     this.scrollPhysics,
@@ -39,6 +41,8 @@ class GroupedTransactionAccordion extends StatefulWidget {
   final TransactionTapCallback onTransactionTap;
   final bool showLoadingMore;
   final bool lazy;
+  final List<Widget> headerChildren;
+  final Widget? emptyState;
   final ScrollController? scrollController;
   final EdgeInsetsGeometry? listPadding;
   final ScrollPhysics? scrollPhysics;
@@ -113,16 +117,36 @@ class _GroupedTransactionAccordionState
   Widget build(BuildContext context) {
     _recomputeGroupsIfNeeded();
     final groups = _cachedGroups;
+    final headerCount = widget.headerChildren.length;
 
     if (widget.lazy) {
-      final itemCount = groups.length + (widget.showLoadingMore ? 1 : 0);
+      final bodyCount = groups.isEmpty
+          ? (widget.emptyState == null ? 0 : 1)
+          : groups.length;
+      final loadingCount = widget.showLoadingMore ? 1 : 0;
+      final itemCount = headerCount + bodyCount + loadingCount;
+
       return ListView.builder(
         controller: widget.scrollController,
         padding: widget.listPadding,
         physics: widget.scrollPhysics ?? const AlwaysScrollableScrollPhysics(),
         itemCount: itemCount,
         itemBuilder: (context, index) {
-          if (index >= groups.length) {
+          if (index < headerCount) {
+            return widget.headerChildren[index];
+          }
+
+          final bodyIndex = index - headerCount;
+
+          if (groups.isEmpty) {
+            if (widget.emptyState == null) {
+              return const SizedBox.shrink();
+            }
+
+            if (bodyIndex == 0) {
+              return widget.emptyState!;
+            }
+
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
               child: Center(
@@ -131,7 +155,16 @@ class _GroupedTransactionAccordionState
             );
           }
 
-          final group = groups[index];
+          if (bodyIndex >= groups.length) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Center(
+                child: shad.CircularProgressIndicator(),
+              ),
+            );
+          }
+
+          final group = groups[bodyIndex];
           return _DayGroup(
             group: group,
             isExpanded: _isDayExpanded(group.key),
@@ -146,6 +179,8 @@ class _GroupedTransactionAccordionState
 
     return Column(
       children: [
+        ...widget.headerChildren,
+        if (groups.isEmpty && widget.emptyState != null) widget.emptyState!,
         for (final group in groups)
           _DayGroup(
             group: group,

@@ -12,6 +12,7 @@ const double _actionSpacing = 10;
 /// Uses smooth scale/fade animations for open/close.
 class SpeedDialFab extends StatefulWidget {
   const SpeedDialFab({
+    required this.label,
     required this.icon,
     required this.actions,
     this.bottom = 16,
@@ -19,6 +20,7 @@ class SpeedDialFab extends StatefulWidget {
     super.key,
   });
 
+  final String label;
   final IconData icon;
   final List<FabAction> actions;
   final double bottom;
@@ -44,9 +46,13 @@ class _SpeedDialFabState extends State<SpeedDialFab> {
 
   @override
   Widget build(BuildContext context) {
+    final safeAreaPadding = MediaQuery.paddingOf(context);
+    final adjustedRight = widget.right + safeAreaPadding.right;
+    final adjustedBottom = widget.bottom + safeAreaPadding.bottom;
+
     return Positioned(
-      right: widget.right,
-      bottom: widget.bottom,
+      right: adjustedRight,
+      bottom: adjustedBottom,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -85,19 +91,23 @@ class _SpeedDialFabState extends State<SpeedDialFab> {
   }
 
   Widget _buildMainFab(BuildContext context) {
-    return SizedBox(
-      width: _mainFabSize,
-      height: _mainFabSize,
-      child: shad.PrimaryButton(
-        onPressed: _toggle,
-        shape: shad.ButtonShape.circle,
-        density: shad.ButtonDensity.icon,
-        child: Center(
-          child: AnimatedRotation(
-            turns: _expanded ? 0.125 : 0,
-            duration: _animationDuration,
-            curve: Curves.easeOutCubic,
-            child: Icon(widget.icon, size: 24),
+    return Semantics(
+      label: widget.label,
+      button: true,
+      child: SizedBox(
+        width: _mainFabSize,
+        height: _mainFabSize,
+        child: shad.PrimaryButton(
+          onPressed: _toggle,
+          shape: shad.ButtonShape.circle,
+          density: shad.ButtonDensity.icon,
+          child: Center(
+            child: AnimatedRotation(
+              turns: _expanded ? 0.125 : 0,
+              duration: _animationDuration,
+              curve: Curves.easeOutCubic,
+              child: Icon(widget.icon, size: 24),
+            ),
           ),
         ),
       ),
@@ -122,42 +132,44 @@ class _ActionItem extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Label chip — shadcn-styled, no Material widget
-        GestureDetector(
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: colorScheme.card,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: colorScheme.border),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Text(
-              action.label,
-              style: theme.typography.small.copyWith(
-                fontWeight: FontWeight.w500,
-                color: colorScheme.foreground,
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: colorScheme.card,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: colorScheme.border),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
               ),
+            ],
+          ),
+          child: Text(
+            action.label,
+            style: theme.typography.small.copyWith(
+              fontWeight: FontWeight.w500,
+              color: colorScheme.foreground,
             ),
           ),
         ),
         const SizedBox(width: 8),
-        // Action icon button
-        SizedBox(
-          width: _actionFabSize,
-          height: _actionFabSize,
-          child: shad.PrimaryButton(
-            onPressed: onTap,
-            shape: shad.ButtonShape.circle,
-            density: shad.ButtonDensity.icon,
-            child: Center(child: Icon(action.icon, size: 20)),
+        Tooltip(
+          message: action.label,
+          child: Semantics(
+            label: action.label,
+            button: true,
+            child: SizedBox(
+              width: _actionFabSize,
+              height: _actionFabSize,
+              child: shad.PrimaryButton(
+                onPressed: onTap,
+                shape: shad.ButtonShape.circle,
+                density: shad.ButtonDensity.icon,
+                child: Center(child: Icon(action.icon, size: 20)),
+              ),
+            ),
           ),
         ),
       ],

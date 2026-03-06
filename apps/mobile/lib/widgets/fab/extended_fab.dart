@@ -30,9 +30,11 @@ class ExtendedFab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final safeAreaPadding = MediaQuery.paddingOf(context);
+
     return Positioned(
-      right: right,
-      bottom: bottom,
+      right: right + safeAreaPadding.right,
+      bottom: bottom + safeAreaPadding.bottom,
       child: Semantics(
         label: label,
         button: true,

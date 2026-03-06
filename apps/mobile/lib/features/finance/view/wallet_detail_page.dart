@@ -80,6 +80,7 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
     final l10n = context.l10n;
     final listBottomPadding =
         _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
+    final wallet = _wallet;
 
     return shad.Scaffold(
       headers: [
@@ -121,7 +122,7 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
                 Expanded(
                   child: RefreshIndicator(
                     onRefresh: _onRefresh,
-                    child: _isLoadingInitial && _wallet == null
+                    child: _isLoadingInitial && wallet == null
                         ? const Center(
                             child: shad.CircularProgressIndicator(),
                           )
@@ -143,7 +144,7 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
                               ),
                             ],
                           )
-                        : _wallet == null
+                        : wallet == null
                         ? ListView(
                             physics: const AlwaysScrollableScrollPhysics(),
                             children: [
@@ -155,25 +156,29 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
                               ),
                             ],
                           )
-                        : ListView(
-                            controller: _scrollController,
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: EdgeInsets.fromLTRB(
+                        : GroupedTransactionAccordion(
+                            transactions: _transactions,
+                            workspaceCurrency: _workspaceCurrency,
+                            exchangeRates: _exchangeRates,
+                            showLoadingMore: _isLoadingMore,
+                            lazy: true,
+                            scrollController: _scrollController,
+                            listPadding: EdgeInsets.fromLTRB(
                               16,
                               8,
                               16,
                               listBottomPadding,
                             ),
-                            children: [
+                            headerChildren: [
                               WalletDetailMetadataCard(
-                                wallet: _wallet!,
+                                wallet: wallet,
                                 workspaceCurrency: _workspaceCurrency,
                                 exchangeRates: _exchangeRates,
                               ),
                               const shad.Gap(12),
                               WalletDetailStatsCard(
                                 stats: _stats,
-                                walletCurrency: _wallet!.currency,
+                                walletCurrency: wallet.currency,
                                 workspaceCurrency: _workspaceCurrency,
                                 exchangeRates: _exchangeRates,
                               ),
@@ -186,33 +191,25 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
                                     ),
                               ),
                               const shad.Gap(8),
-                              if (_transactions.isEmpty)
-                                shad.Card(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(16),
-                                    child: Text(
-                                      l10n.financeNoTransactions,
-                                      style: shad.Theme.of(
-                                        context,
-                                      ).typography.textMuted,
-                                    ),
-                                  ),
-                                )
-                              else
-                                GroupedTransactionAccordion(
-                                  transactions: _transactions,
-                                  workspaceCurrency: _workspaceCurrency,
-                                  exchangeRates: _exchangeRates,
-                                  showLoadingMore: _isLoadingMore,
-                                  onTransactionTap: _openTransaction,
-                                ),
                             ],
+                            emptyState: shad.Card(
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Text(
+                                  l10n.financeNoTransactions,
+                                  style: shad.Theme.of(
+                                    context,
+                                  ).typography.textMuted,
+                                ),
+                              ),
+                            ),
+                            onTransactionTap: _openTransaction,
                           ),
                   ),
                 ),
               ],
             ),
-            if (_wallet != null && !_isLoadingInitial)
+            if (wallet != null && !_isLoadingInitial)
               ExtendedFab(
                 icon: Icons.add,
                 label: context.l10n.financeCreateTransaction,
@@ -266,7 +263,10 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
           _wallet = null;
           _stats = null;
           _transactions = const [];
-          _error = context.l10n.financeWalletNotFound;
+          _exchangeRates = const [];
+          _nextCursor = null;
+          _hasMore = false;
+          _error = null;
         });
         return;
       }

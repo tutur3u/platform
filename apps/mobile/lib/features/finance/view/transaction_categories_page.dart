@@ -140,6 +140,7 @@ class _TransactionCategoriesViewState
               ],
             ),
             SpeedDialFab(
+              label: l10n.financeCreateCategory,
               icon: Icons.add,
               actions: [
                 FabAction(
