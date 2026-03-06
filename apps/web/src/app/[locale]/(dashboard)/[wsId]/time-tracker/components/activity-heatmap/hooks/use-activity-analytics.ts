@@ -10,9 +10,18 @@ import type {
 
 export function useActivityAnalytics(
   dailyActivity: ActivityDay[],
-  userTimezone: string
+  userTimezone: string,
+  options?: {
+    includeHeatmapSeries?: boolean;
+    includeCardAnalytics?: boolean;
+  }
 ) {
+  const includeHeatmapSeries = options?.includeHeatmapSeries ?? true;
+  const includeCardAnalytics = options?.includeCardAnalytics ?? true;
+
   const heatmapData = useMemo(() => {
+    if (!includeHeatmapSeries) return {};
+
     const dataObj: Record<string, number> = {};
 
     dailyActivity.forEach((activity) => {
@@ -21,9 +30,13 @@ export function useActivityAnalytics(
     });
 
     return dataObj;
-  }, [dailyActivity, userTimezone]);
+  }, [dailyActivity, includeHeatmapSeries, userTimezone]);
 
   const activityMap = useMemo(() => {
+    if (!includeHeatmapSeries) {
+      return new Map<string, { duration: number; sessions: number }>();
+    }
+
     const map = new Map<string, { duration: number; sessions: number }>();
 
     dailyActivity.forEach((activity) => {
@@ -32,7 +45,7 @@ export function useActivityAnalytics(
     });
 
     return map;
-  }, [dailyActivity, userTimezone]);
+  }, [dailyActivity, includeHeatmapSeries, userTimezone]);
 
   const totalDuration = useMemo(
     () => dailyActivity.reduce((sum, day) => sum + day.duration, 0),
@@ -40,6 +53,8 @@ export function useActivityAnalytics(
   );
 
   const monthlyData = useMemo(() => {
+    if (!includeCardAnalytics) return {} as Record<string, MonthlyAggregate>;
+
     const acc: Record<string, MonthlyAggregate> = {};
     const sortedActivity = [...dailyActivity].sort((a, b) =>
       a.date.localeCompare(b.date)
@@ -119,9 +134,30 @@ export function useActivityAnalytics(
     });
 
     return acc;
-  }, [dailyActivity, userTimezone]);
+  }, [dailyActivity, includeCardAnalytics, userTimezone]);
 
   const monthlyStats = useMemo(() => {
+    if (!includeCardAnalytics) {
+      return {
+        sortedMonths: [] as Array<[string, MonthlyAggregate]>,
+        monthsWithTrends: [] as Array<{
+          monthKey: string;
+          data: MonthlyAggregate;
+          trend: 'up' | 'down' | 'neutral';
+          trendValue: number;
+        }>,
+        overallStats: {
+          totalDuration: 0,
+          totalSessions: 0,
+          activeDays: 0,
+          avgDaily: 0,
+          avgSession: 0,
+          focusScore: 0,
+          monthCount: 0,
+        },
+      };
+    }
+
     const sortedMonths = Object.entries(monthlyData)
       .sort(([a], [b]) => b.localeCompare(a))
       .slice(0, 12);
@@ -184,9 +220,11 @@ export function useActivityAnalytics(
         monthCount: sortedMonths.length,
       },
     };
-  }, [monthlyData]);
+  }, [includeCardAnalytics, monthlyData]);
 
   const allCards = useMemo<CompactHeatmapCard[]>(() => {
+    if (!includeCardAnalytics) return [];
+
     const { sortedMonths, monthsWithTrends, overallStats } = monthlyStats;
     const cards: CompactHeatmapCard[] = [];
 
@@ -222,7 +260,7 @@ export function useActivityAnalytics(
     }
 
     return cards;
-  }, [monthlyStats]);
+  }, [includeCardAnalytics, monthlyStats]);
 
   return {
     heatmapData,

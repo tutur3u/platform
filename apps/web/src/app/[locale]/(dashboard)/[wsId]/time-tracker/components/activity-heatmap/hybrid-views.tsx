@@ -8,6 +8,7 @@ import { cn } from '@tuturuuu/utils/format';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
+import { useMemo } from 'react';
 import type { ActivityDay } from './types';
 import { getColorClass, getIntensity } from './utils';
 
@@ -26,33 +27,50 @@ export function YearOverview({
 }: YearOverviewProps) {
   const t = useTranslations('time-tracker.heatmap');
 
-  const monthlyData = Array.from({ length: 12 }, (_, monthIndex) => {
-    const monthStart = today.startOf('year').add(monthIndex, 'month');
-    const monthEnd = monthStart.endOf('month');
+  const monthlyData = useMemo(() => {
+    const monthAggregates = new Map<
+      string,
+      { totalDuration: number; totalSessions: number; activeDays: number }
+    >();
 
-    const monthActivity = dailyActivity.filter((day) => {
+    dailyActivity.forEach((day) => {
       const dayDate = dayjs.utc(day.date).tz(userTimezone);
-      return dayDate.isBetween(monthStart, monthEnd, 'day', '[]');
+      const monthKey = dayDate.format('YYYY-MM');
+      const existing = monthAggregates.get(monthKey) ?? {
+        totalDuration: 0,
+        totalSessions: 0,
+        activeDays: 0,
+      };
+
+      monthAggregates.set(monthKey, {
+        totalDuration: existing.totalDuration + day.duration,
+        totalSessions: existing.totalSessions + day.sessions,
+        activeDays: existing.activeDays + 1,
+      });
     });
 
-    const totalDuration = monthActivity.reduce(
-      (sum, day) => sum + day.duration,
-      0
-    );
-    const totalSessions = monthActivity.reduce(
-      (sum, day) => sum + day.sessions,
-      0
-    );
-    const avgDuration =
-      monthActivity.length > 0 ? totalDuration / monthActivity.length : 0;
+    return Array.from({ length: 12 }, (_, monthIndex) => {
+      const monthStart = today.startOf('year').add(monthIndex, 'month');
+      const monthKey = monthStart.format('YYYY-MM');
+      const aggregate = monthAggregates.get(monthKey) ?? {
+        totalDuration: 0,
+        totalSessions: 0,
+        activeDays: 0,
+      };
 
-    return {
-      month: monthStart,
-      duration: totalDuration,
-      sessions: totalSessions,
-      intensity: getIntensity(avgDuration),
-    };
-  });
+      const avgDuration =
+        aggregate.activeDays > 0
+          ? aggregate.totalDuration / aggregate.activeDays
+          : 0;
+
+      return {
+        month: monthStart,
+        duration: aggregate.totalDuration,
+        sessions: aggregate.totalSessions,
+        intensity: getIntensity(avgDuration),
+      };
+    });
+  }, [dailyActivity, today, userTimezone]);
 
   return (
     <div className="space-y-3">
@@ -124,6 +142,18 @@ export function MonthlyCalendarView({
 }: MonthlyCalendarViewProps) {
   const t = useTranslations('time-tracker.heatmap');
 
+  const activityByDate = useMemo(() => {
+    const map = new Map<string, ActivityDay>();
+    dailyActivity.forEach((activity) => {
+      const key = dayjs
+        .utc(activity.date)
+        .tz(userTimezone)
+        .format('YYYY-MM-DD');
+      map.set(key, activity);
+    });
+    return map;
+  }, [dailyActivity, userTimezone]);
+
   const monthStart = currentMonth.startOf('month');
   const monthEnd = currentMonth.endOf('month');
   const calendarStart = monthStart.startOf('isoWeek');
@@ -141,10 +171,7 @@ export function MonthlyCalendarView({
     currentDay.isBefore(calendarEnd) ||
     currentDay.isSame(calendarEnd, 'day')
   ) {
-    const dayActivity = dailyActivity.find((activity) => {
-      const activityDate = dayjs.utc(activity.date).tz(userTimezone);
-      return activityDate.isSame(currentDay, 'day');
-    });
+    const dayActivity = activityByDate.get(currentDay.format('YYYY-MM-DD'));
 
     days.push({
       date: currentDay,

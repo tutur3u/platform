@@ -63,6 +63,8 @@ export function ActivityHeatmap({ dailyActivity = [] }: ActivityHeatmapProps) {
   const userTimezone = dayjs.tz.guess();
   const today = dayjs().tz(userTimezone);
   const [currentMonth, setCurrentMonth] = useState(today);
+  const isOriginalView = settings.viewMode === 'original';
+  const isCompactCardsView = settings.viewMode === 'compact-cards';
 
   const historyPath = useMemo(
     () => `${pathname.replace(/\/$/, '')}/history`,
@@ -83,7 +85,10 @@ export function ActivityHeatmap({ dailyActivity = [] }: ActivityHeatmapProps) {
   );
 
   const { heatmapData, activityMap, totalDuration, allCards } =
-    useActivityAnalytics(dailyActivity, userTimezone);
+    useActivityAnalytics(dailyActivity, userTimezone, {
+      includeHeatmapSeries: isOriginalView,
+      includeCardAnalytics: isCompactCardsView,
+    });
 
   return (
     <div className="relative space-y-4 overflow-visible sm:space-y-5">

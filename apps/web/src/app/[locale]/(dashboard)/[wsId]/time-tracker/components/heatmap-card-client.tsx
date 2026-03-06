@@ -5,8 +5,15 @@ import { Card, CardContent } from '@tuturuuu/ui/card';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
+import dynamic from 'next/dynamic';
 import type { DailyActivity } from '@/lib/time-tracking-helper';
-import { ActivityHeatmap } from './activity-heatmap';
+
+const ActivityHeatmap = dynamic(
+  () => import('./activity-heatmap').then((mod) => mod.ActivityHeatmap),
+  {
+    ssr: false,
+  }
+);
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
