@@ -226,5 +226,38 @@ void main() {
         ),
       ).called(1);
     });
+
+    test('createGoal omits weeklyGoalMinutes when it is null', () async {
+      Map<String, dynamic>? createBody;
+
+      when(() => apiClient.postJson(any(), any())).thenAnswer((
+        invocation,
+      ) async {
+        createBody = invocation.positionalArguments[1] as Map<String, dynamic>;
+        return {
+          'goal': {
+            'id': 'goal-1',
+            'ws_id': 'ws_1',
+            'user_id': 'user-1',
+            'daily_goal_minutes': 45,
+            'weekly_goal_minutes': null,
+            'is_active': true,
+          },
+        };
+      });
+
+      await repository.createGoal('ws_1', dailyGoalMinutes: 45);
+
+      expect(createBody, isNotNull);
+      expect(createBody!['dailyGoalMinutes'], 45);
+      expect(createBody!['isActive'], isTrue);
+      expect(createBody!.containsKey('weeklyGoalMinutes'), isFalse);
+      verify(
+        () => apiClient.postJson(
+          '/api/v1/workspaces/ws_1/time-tracking/goals',
+          any(),
+        ),
+      ).called(1);
+    });
   });
 }

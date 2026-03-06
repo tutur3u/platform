@@ -650,9 +650,9 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
   }) async {
     final body = <String, dynamic>{
       'dailyGoalMinutes': dailyGoalMinutes,
-      'weeklyGoalMinutes': weeklyGoalMinutes,
       'isActive': isActive,
       if (categoryId != null) 'categoryId': categoryId,
+      if (weeklyGoalMinutes != null) 'weeklyGoalMinutes': weeklyGoalMinutes,
     };
 
     final data = await _api.postJson(

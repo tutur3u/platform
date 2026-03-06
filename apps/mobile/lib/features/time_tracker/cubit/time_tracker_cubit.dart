@@ -24,7 +24,8 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
       'time_tracker_history_stats_open';
   Future<void>? _historyPreferencesLoadFuture;
   int _historyFirstDayOfWeek = DateTime.monday;
-  int _goalsRequestVersion = 0;
+  int _goalsWorkspaceRequestToken = 0;
+  final Map<String, int> _goalsRequestVersionByWs = <String, int>{};
 
   Map<String, bool> _setGoalFlag(
     Map<String, bool> source,
@@ -40,7 +41,8 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
   }) async {
     final effectiveFirstDayOfWeek = firstDayOfWeek ?? _historyFirstDayOfWeek;
     _historyFirstDayOfWeek = effectiveFirstDayOfWeek;
-    _goalsRequestVersion++;
+    _goalsWorkspaceRequestToken++;
+    _goalsRequestVersionByWs.clear();
     emit(state.copyWith(status: TimeTrackerStatus.loading, clearError: true));
 
     try {
@@ -795,7 +797,9 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
       return;
     }
 
-    final requestVersion = ++_goalsRequestVersion;
+    final requestVersion = (_goalsRequestVersionByWs[wsId] ?? 0) + 1;
+    _goalsRequestVersionByWs[wsId] = requestVersion;
+    final workspaceRequestToken = ++_goalsWorkspaceRequestToken;
     emit(
       state.copyWith(
         goalsLoadingByWs: _setGoalFlag(state.goalsLoadingByWs, wsId, true),
@@ -804,7 +808,16 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     );
     try {
       final goals = await _repo.getGoals(wsId, userId: userId);
-      if (requestVersion != _goalsRequestVersion) {
+      final activeRequestVersion = _goalsRequestVersionByWs[wsId];
+      if (activeRequestVersion != requestVersion) {
+        return;
+      }
+      if (workspaceRequestToken != _goalsWorkspaceRequestToken) {
+        emit(
+          state.copyWith(
+            goalsLoadingByWs: _setGoalFlag(state.goalsLoadingByWs, wsId, false),
+          ),
+        );
         return;
       }
       emit(
@@ -817,7 +830,16 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
         ),
       );
     } on Exception catch (e) {
-      if (requestVersion != _goalsRequestVersion) {
+      final activeRequestVersion = _goalsRequestVersionByWs[wsId];
+      if (activeRequestVersion != requestVersion) {
+        return;
+      }
+      if (workspaceRequestToken != _goalsWorkspaceRequestToken) {
+        emit(
+          state.copyWith(
+            goalsLoadingByWs: _setGoalFlag(state.goalsLoadingByWs, wsId, false),
+          ),
+        );
         return;
       }
       emit(

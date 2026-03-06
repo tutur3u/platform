@@ -84,7 +84,19 @@ export async function PATCH(
       return NextResponse.json({ error: 'Goal not found' }, { status: 404 });
     }
 
-    const parsedBody = GoalPatchBodySchema.safeParse(await request.json());
+    let parsedJson: unknown;
+    try {
+      parsedJson = await request.json();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Malformed JSON payload';
+      return NextResponse.json(
+        { error: 'Invalid JSON body', details: [message] },
+        { status: 400 }
+      );
+    }
+
+    const parsedBody = GoalPatchBodySchema.safeParse(parsedJson);
     if (!parsedBody.success) {
       return NextResponse.json(
         {
@@ -149,12 +161,15 @@ export async function PATCH(
         *,
         category:time_tracking_categories(*)
       `
-      )
-      .single();
+      );
 
     if (error) throw error;
 
-    return NextResponse.json({ goal: data });
+    if (!data || data.length === 0) {
+      return NextResponse.json({ error: 'Goal not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ goal: data[0] });
   } catch (error) {
     console.error('Error updating time tracking goal:', error);
     return NextResponse.json(

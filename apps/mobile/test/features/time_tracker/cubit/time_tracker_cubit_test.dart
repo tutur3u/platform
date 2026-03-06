@@ -267,6 +267,7 @@ void main() {
 
         expect(cubit.state.goalsWorkspaceId, 'ws-2');
         expect(cubit.state.goals.single.id, 'goal-ws-2');
+        expect(cubit.state.isGoalsLoadingFor('ws-1'), isFalse);
         expect(cubit.state.hasLoadedGoalsFor('ws-1'), isFalse);
         expect(cubit.state.hasLoadedGoalsFor('ws-2'), isTrue);
       },
