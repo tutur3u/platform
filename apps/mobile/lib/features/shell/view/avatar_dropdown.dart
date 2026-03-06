@@ -21,6 +21,7 @@ class _AvatarProfileCache {
   static _ProfileResult? _cachedResult;
   static DateTime? _cachedAt;
   static Future<_ProfileResult>? _inFlight;
+  static int _requestVersion = 0;
 
   static Future<_ProfileResult> get({
     required String userId,
@@ -43,21 +44,27 @@ class _AvatarProfileCache {
       return _inFlight!;
     }
 
+    final requestVersion = _requestVersion;
     _inFlight = repository
         .getProfile()
         .then((result) {
-          _cachedResult = result;
-          _cachedAt = DateTime.now();
+          if (requestVersion == _requestVersion) {
+            _cachedResult = result;
+            _cachedAt = DateTime.now();
+          }
           return result;
         })
         .whenComplete(() {
-          _inFlight = null;
+          if (requestVersion == _requestVersion) {
+            _inFlight = null;
+          }
         });
 
     return _inFlight!;
   }
 
   static void clear() {
+    _requestVersion++;
     _userId = null;
     _cachedResult = null;
     _cachedAt = null;
@@ -93,11 +100,10 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
       return;
     }
 
-    if (_profileUserId == userId && _profileFuture != null) {
-      return;
+    if (_profileUserId != userId) {
+      _profileUserId = userId;
     }
 
-    _profileUserId = userId;
     _profileFuture = _AvatarProfileCache.get(
       userId: userId,
       repository: _profileRepository,
@@ -144,6 +150,13 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
     return FutureBuilder<_ProfileResult>(
       future: _profileFuture,
       builder: (context, snapshot) {
+        final loadError = snapshot.hasError
+            ? snapshot.error
+            : snapshot.data?.error;
+        if (loadError != null) {
+          debugPrint('AvatarDropdown profile load failed: $loadError');
+        }
+
         final profile = snapshot.data?.profile;
         final avatarUrl = _nonEmpty(profile?.avatarUrl) ?? fallbackAvatarUrl;
         final fullName = _nonEmpty(profile?.fullName) ?? fallbackFullName;
@@ -254,16 +267,19 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
           },
           child: CircleAvatar(
             radius: 16,
-            backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
-            backgroundColor: theme.colorScheme.muted,
-            child: avatarUrl == null
-                ? Text(
-                    _getInitials(name),
-                    style: theme.typography.large.copyWith(
-                      color: theme.colorScheme.foreground,
-                    ),
+            foregroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
+            onForegroundImageError: avatarUrl != null
+                ? (_, _) => debugPrint(
+                    'AvatarDropdown avatar image failed to load: $avatarUrl',
                   )
                 : null,
+            backgroundColor: theme.colorScheme.muted,
+            child: Text(
+              _getInitials(name),
+              style: theme.typography.large.copyWith(
+                color: theme.colorScheme.foreground,
+              ),
+            ),
           ),
         );
       },
