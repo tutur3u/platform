@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { MonthPicker } from './month-picker';
 
 interface Props {
@@ -16,12 +15,6 @@ export function MonthRangePicker({
   setEndMonth,
   className,
 }: Props) {
-  useEffect(() => {
-    if (startMonth && endMonth && startMonth > endMonth) {
-      setEndMonth(startMonth);
-    }
-  }, [startMonth, endMonth, setEndMonth]);
-
   return (
     <div className={className}>
       <div className="flex flex-col justify-end gap-2">
