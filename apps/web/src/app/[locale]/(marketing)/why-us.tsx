@@ -109,7 +109,6 @@ export default function WhyUs() {
           <span className="whitespace-nowrap border-[#FBC721] border-b-4 text-[#5FC6E5]">
             Us?
           </span>
-          {/* <span className="whitespace-nowrap text-[#5FC6E5]">?</span> */}
         </h2>
 
         <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
