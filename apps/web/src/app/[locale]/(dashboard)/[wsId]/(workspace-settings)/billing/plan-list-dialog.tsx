@@ -43,7 +43,7 @@ interface PlanListDialogProps {
 
 type BillingCycleTab = 'month' | 'year';
 
-export function PlanListDialog({
+export default function PlanListDialog({
   isPersonalWorkspace,
   currentPlan,
   products,
@@ -473,7 +473,7 @@ export function PlanListDialog({
                                 })}
                               </p>
                             </div>
-                            <p className="mt-0.5 pl-[18px] text-[10px] text-muted-foreground">
+                            <p className="mt-0.5 pl-5 text-[10px] text-muted-foreground">
                               {t('based-on-current-members')}
                             </p>
                           </div>
