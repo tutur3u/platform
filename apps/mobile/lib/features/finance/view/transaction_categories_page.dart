@@ -46,8 +46,10 @@ class _TransactionCategoriesViewState
   List<TransactionCategory> _categories = const [];
   List<FinanceTag> _tags = const [];
   int _activeTab = _tabCategories;
-  bool _isLoading = false;
-  String? _error;
+  bool _categoriesLoading = false;
+  bool _tagsLoading = false;
+  String? _categoriesError;
+  String? _tagsError;
   int _categoriesRequestId = 0;
   int _tagsRequestId = 0;
 
@@ -94,7 +96,8 @@ class _TransactionCategoriesViewState
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>
             prev.currentWorkspace?.id != curr.currentWorkspace?.id,
-        listener: (context, state) => unawaited(_loadCurrentTab()),
+        listener: (context, state) =>
+            unawaited(_handleWorkspaceChanged(state.currentWorkspace?.id)),
         child: Column(
           children: [
             Padding(
@@ -102,10 +105,7 @@ class _TransactionCategoriesViewState
               child: shad.Tabs(
                 index: _activeTab,
                 onChanged: (value) {
-                  setState(() {
-                    _activeTab = value;
-                    _error = null;
-                  });
+                  setState(() => _activeTab = value);
                   if (value == _tabCategories && _categories.isEmpty) {
                     unawaited(_loadCategories());
                     return;
@@ -135,10 +135,10 @@ class _TransactionCategoriesViewState
   }
 
   Widget _buildCategoriesContent(shad.ThemeData theme, AppLocalizations l10n) {
-    if (_isLoading) {
+    if (_categoriesLoading) {
       return const Center(child: shad.CircularProgressIndicator());
     }
-    if (_error != null) {
+    if (_categoriesError != null) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
@@ -147,7 +147,7 @@ class _TransactionCategoriesViewState
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Text(
-                _error!,
+                _categoriesError!,
                 textAlign: TextAlign.center,
                 style: theme.typography.textMuted,
               ),
@@ -191,10 +191,10 @@ class _TransactionCategoriesViewState
   }
 
   Widget _buildTagsContent(shad.ThemeData theme, AppLocalizations l10n) {
-    if (_isLoading) {
+    if (_tagsLoading) {
       return const Center(child: shad.CircularProgressIndicator());
     }
-    if (_error != null) {
+    if (_tagsError != null) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
@@ -203,7 +203,7 @@ class _TransactionCategoriesViewState
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Text(
-                _error!,
+                _tagsError!,
                 textAlign: TextAlign.center,
                 style: theme.typography.textMuted,
               ),
@@ -357,6 +357,32 @@ class _TransactionCategoriesViewState
     await _loadCategories();
   }
 
+  Future<void> _handleWorkspaceChanged(String? workspaceId) async {
+    _categoriesRequestId++;
+    _tagsRequestId++;
+
+    if (!mounted) return;
+
+    setState(() {
+      _categories = const [];
+      _tags = const [];
+      _categoriesLoading = false;
+      _tagsLoading = false;
+      _categoriesError = null;
+      _tagsError = null;
+    });
+
+    if (workspaceId == null) {
+      return;
+    }
+
+    await _loadCurrentTab();
+  }
+
+  bool _isWorkspaceRequestCurrent(String wsId) {
+    return context.read<WorkspaceCubit>().state.currentWorkspace?.id == wsId;
+  }
+
   Future<void> _loadCategories() async {
     final requestId = ++_categoriesRequestId;
 
@@ -365,8 +391,8 @@ class _TransactionCategoriesViewState
       if (!mounted || requestId != _categoriesRequestId) return;
       setState(() {
         _categories = const [];
-        _isLoading = false;
-        _error = null;
+        _categoriesLoading = false;
+        _categoriesError = null;
       });
       return;
     }
@@ -374,22 +400,30 @@ class _TransactionCategoriesViewState
     if (!mounted || requestId != _categoriesRequestId) return;
 
     setState(() {
-      _isLoading = true;
-      _error = null;
+      _categoriesLoading = true;
+      _categoriesError = null;
     });
 
     try {
       final categories = await context.read<FinanceRepository>().getCategories(
         wsId,
       );
-      if (!mounted || requestId != _categoriesRequestId) return;
+      if (!mounted ||
+          requestId != _categoriesRequestId ||
+          !_isWorkspaceRequestCurrent(wsId)) {
+        return;
+      }
       setState(() => _categories = categories);
     } on Exception {
-      if (!mounted || requestId != _categoriesRequestId) return;
-      setState(() => _error = context.l10n.commonSomethingWentWrong);
+      if (!mounted ||
+          requestId != _categoriesRequestId ||
+          !_isWorkspaceRequestCurrent(wsId)) {
+        return;
+      }
+      setState(() => _categoriesError = context.l10n.commonSomethingWentWrong);
     } finally {
       if (mounted && requestId == _categoriesRequestId) {
-        setState(() => _isLoading = false);
+        setState(() => _categoriesLoading = false);
       }
     }
   }
@@ -402,8 +436,8 @@ class _TransactionCategoriesViewState
       if (!mounted || requestId != _tagsRequestId) return;
       setState(() {
         _tags = const [];
-        _isLoading = false;
-        _error = null;
+        _tagsLoading = false;
+        _tagsError = null;
       });
       return;
     }
@@ -411,20 +445,28 @@ class _TransactionCategoriesViewState
     if (!mounted || requestId != _tagsRequestId) return;
 
     setState(() {
-      _isLoading = true;
-      _error = null;
+      _tagsLoading = true;
+      _tagsError = null;
     });
 
     try {
       final tags = await context.read<FinanceRepository>().getTags(wsId);
-      if (!mounted || requestId != _tagsRequestId) return;
+      if (!mounted ||
+          requestId != _tagsRequestId ||
+          !_isWorkspaceRequestCurrent(wsId)) {
+        return;
+      }
       setState(() => _tags = tags);
     } on Exception {
-      if (!mounted || requestId != _tagsRequestId) return;
-      setState(() => _error = context.l10n.commonSomethingWentWrong);
+      if (!mounted ||
+          requestId != _tagsRequestId ||
+          !_isWorkspaceRequestCurrent(wsId)) {
+        return;
+      }
+      setState(() => _tagsError = context.l10n.commonSomethingWentWrong);
     } finally {
       if (mounted && requestId == _tagsRequestId) {
-        setState(() => _isLoading = false);
+        setState(() => _tagsLoading = false);
       }
     }
   }
