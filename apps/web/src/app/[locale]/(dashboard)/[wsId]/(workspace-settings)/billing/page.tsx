@@ -20,8 +20,10 @@ import {
 import { getSeatStatus } from '@/utils/seat-limits';
 import { AiCreditBillingCard } from './ai-credit-billing-card';
 import { BillingClient } from './billing-client';
+import BillingDetailsCard from './billing-details-card';
 import BillingHistory from './billing-history';
 import { NoSubscriptionFound } from './no-subscription-found';
+import PaymentMethodsCard from './payment-methods-card';
 
 export const metadata: Metadata = {
   title: 'Billing',
@@ -117,6 +119,16 @@ export default async function BillingPage({
               currentPlan={currentPlan}
               products={products}
               seatStatus={seatStatus}
+            />
+
+            <BillingDetailsCard
+              wsId={wsId}
+              hasManageSubscriptionPermission={hasManageSubscriptionPermission}
+            />
+
+            <PaymentMethodsCard
+              wsId={wsId}
+              hasManageSubscriptionPermission={hasManageSubscriptionPermission}
             />
 
             <AiCreditBillingCard

@@ -271,7 +271,7 @@ export async function createWorkspaceFromOnboarding(
       // Get or create Polar customer
       await getOrCreatePolarCustomer({
         polar,
-        supabase: sbAdmin,
+        supabase,
         wsId: workspace.id,
       });
 

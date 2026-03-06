@@ -3,6 +3,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { BASE_URL } from '@/constants/common';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
+import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
 
 export async function POST(request: NextRequest) {
   const baseUrl = BASE_URL;
@@ -100,7 +101,16 @@ export async function POST(request: NextRequest) {
 
   try {
     const polar = createPolarClient();
+
+    // Get or create customer to fill in billing details
+    const polarCustomer = await getOrCreatePolarCustomer({
+      polar,
+      supabase,
+      wsId: normalizedWsId,
+    });
+
     const checkoutSession = await polar.checkouts.create({
+      customerId: polarCustomer.id,
       metadata: {
         wsId: normalizedWsId,
       },
