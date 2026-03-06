@@ -9,19 +9,18 @@ export default function OrganizersSection() {
     <section id="organizers" className="px-6 py-20 md:px-8 md:py-24">
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
-          <h2 className="mb-4 text-3xl md:text-4xl tracking-wide">
+          <h2 className="mb-4 text-3xl tracking-wide md:text-4xl">
             <span className="font-medium text-brand-teal italic">
               COMPETITION{' '}
             </span>
             <span className="relative inline-block font-black text-brand-teal">
               ORGANIZERS
-              <span className="absolute left-0 -bottom-1 h-1 w-full bg-yellow-400"></span>
+              <span className="absolute -bottom-1 left-0 h-1 w-full bg-yellow-400"></span>
             </span>
           </h2>
         </div>
 
         <div className="grid gap-8 md:grid-cols-3">
-          {/* RMIT SSET */}
           <AnimatedSection delay={0}>
             <div className="glass-card card-hover group relative overflow-hidden rounded-2xl p-8">
               <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-secondary/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
@@ -32,7 +31,7 @@ export default function OrganizersSection() {
                     height={100}
                     src="/rmit-sset.png"
                     alt="RMIT School of Science, Engineering & Technology"
-                    className="w-auto object-contain"
+                    className="max-h-24 w-auto object-contain"
                   />
                 </div>
                 <h3 className="mb-2 font-black text-lg">
@@ -56,7 +55,7 @@ export default function OrganizersSection() {
                     height={100}
                     src="/rmit-nct.png"
                     alt="NEO Culture Technology Club"
-                    className="w-auto object-contain"
+                    className="max-h-24 w-auto object-contain"
                   />
                 </div>
                 <h3 className="mb-2 font-black text-lg">
@@ -80,7 +79,7 @@ export default function OrganizersSection() {
                     height={100}
                     src="/rmit-student-club-program.png"
                     alt="RMIT Student Club Program"
-                    className="w-auto object-contain"
+                    className="max-h-24 w-auto object-contain"
                   />
                 </div>
                 <h3 className="mb-2 font-black text-lg">

@@ -3,7 +3,7 @@ import AnimationSection from './animated-section';
 
 export default function AboutClubSection() {
   return (
-    <section className="relative px-6 py-20 md:px-8 md:py-28">
+    <section id="about-nct" className="relative px-6 py-20 md:px-8 md:py-28">
       <div className="relative mx-auto max-w-7xl">
         <div className="mb-28 grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
           {/* Left Column */}
