@@ -100,9 +100,10 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
       return;
     }
 
-    if (_profileUserId != userId) {
-      _profileUserId = userId;
+    if (_profileUserId == userId && _profileFuture != null) {
+      return;
     }
+    _profileUserId = userId;
 
     _profileFuture = _AvatarProfileCache.get(
       userId: userId,
