@@ -12,7 +12,7 @@ import { createFreeSubscription } from '@/utils/subscription-helper';
 
 const CreateTeamWorkspaceSchema = z.object({
   name: z.string().min(1).max(MAX_WORKSPACE_NAME_LENGTH),
-  avatar_url: z.string().url().optional(),
+  avatar_url: z.url().optional(),
 });
 
 export async function POST(req: Request) {
@@ -64,6 +64,7 @@ export async function POST(req: Request) {
       name: body.name,
       avatar_url: body.avatar_url || null,
       personal: false,
+      creator_id: user.id,
     })
     .select('id, name')
     .single();
