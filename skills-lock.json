@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "generative-ui": {
+      "source": "tambo-ai/tambo",
+      "sourceType": "github",
+      "computedHash": "36979ff41641bae3d7917c4b5de4c0bcd062e5be2b3527a32883b7b7df74b784"
+    }
+  }
+}

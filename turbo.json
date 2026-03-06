@@ -57,7 +57,9 @@
       "cache": false,
       "persistent": true
     },
-    "test": {},
+    "test": {
+      "env": ["CHECK_DETAILS"]
+    },
     "test:e2e": {
       "cache": false
     },

@@ -3,13 +3,13 @@ import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { AuditLogTable } from './audit-log-table';
 import { DuplicateUsersDialog } from './components/duplicate-users-dialog';
+import { DatabaseTabs } from './database-tabs';
 import ExportDialogContent from './export-dialog-content';
 import UserForm from './form';
 import ImportDialogContent from './import-dialog-content';
@@ -19,6 +19,14 @@ export const metadata: Metadata = {
   title: 'Database',
   description: 'Manage Database in the Users area of your Tuturuuu workspace.',
 };
+
+function parseIntSearchParam(value?: string, fallback = 1) {
+  if (!value) return fallback;
+
+  const parsed = Number.parseInt(value, 10);
+
+  return Number.isNaN(parsed) ? fallback : parsed;
+}
 
 interface Props {
   params: Promise<{
@@ -34,6 +42,12 @@ interface Props {
     excludedGroups?: string | string[];
     status?: string;
     linkStatus?: string;
+    logPeriod?: string;
+    logMonth?: string;
+    logYear?: string;
+    logStatus?: string;
+    logPage?: string;
+    logPageSize?: string;
   }>;
 }
 
@@ -129,12 +143,9 @@ export default async function WorkspaceUsersPage({
         }
       />
       <Separator className="my-4" />
-      <Tabs defaultValue={sp.tab || 'users'} className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="users">{t('ws-users.plural')}</TabsTrigger>
-          <TabsTrigger value="audit-log">{t('ws-users.audit_log')}</TabsTrigger>
-        </TabsList>
-        <TabsContent value="users">
+      <DatabaseTabs
+        defaultTab={sp.tab === 'audit-log' ? 'audit-log' : 'users'}
+        usersContent={
           <WorkspaceUsersTable
             wsId={wsId}
             locale={locale}
@@ -162,11 +173,21 @@ export default async function WorkspaceUsersPage({
               )
             }
           />
-        </TabsContent>
-        <TabsContent value="audit-log">
-          <AuditLogTable wsId={wsId} />
-        </TabsContent>
-      </Tabs>
+        }
+        auditLogContent={
+          <AuditLogTable
+            wsId={wsId}
+            locale={locale}
+            period={sp.logPeriod}
+            month={sp.logMonth}
+            year={sp.logYear}
+            status={sp.logStatus}
+            page={parseIntSearchParam(sp.logPage, 1)}
+            pageSize={parseIntSearchParam(sp.logPageSize, 10)}
+            canExport={canExportUsers}
+          />
+        }
+      />
     </>
   );
 }

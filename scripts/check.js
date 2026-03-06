@@ -63,7 +63,9 @@ const checks = [
   {
     name: 'tests',
     command: 'bun',
-    args: ['test'],
+    args: showDetails
+      ? ['run', 'test']
+      : ['run', 'test', '--', '--output-logs=errors-only'],
     parseOutput: (stdout) => {
       const clean = stripAnsi(stdout);
       const testMatches = [...clean.matchAll(/Tests\s+(\d+)\s+passed/gi)];
@@ -80,7 +82,9 @@ const checks = [
   {
     name: 'type-check',
     command: 'bun',
-    args: ['type-check'],
+    args: showDetails
+      ? ['type-check']
+      : ['type-check', '--', '--output-logs=errors-only'],
     parseOutput: (stdout) => {
       const clean = stripAnsi(stdout);
       const tasksMatch = clean.match(
@@ -175,7 +179,11 @@ function runCheck(check) {
     const proc = spawn(check.command, check.args, {
       cwd: process.cwd(),
       shell: true,
-      env: { ...process.env, FORCE_COLOR: '1' },
+      env: {
+        ...process.env,
+        FORCE_COLOR: '1',
+        CHECK_DETAILS: showDetails ? '1' : '0',
+      },
     });
 
     proc.stdout.on('data', (data) => {
