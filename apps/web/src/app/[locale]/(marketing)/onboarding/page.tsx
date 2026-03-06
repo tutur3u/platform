@@ -59,7 +59,7 @@ async function ensurePersonalWorkspaceSubscription(
     const polar = createPolarClient();
     await getOrCreatePolarCustomer({
       polar,
-      supabase: sbAdmin,
+      supabase,
       wsId: workspace.id,
     });
     const subResult = await createFreeSubscription(

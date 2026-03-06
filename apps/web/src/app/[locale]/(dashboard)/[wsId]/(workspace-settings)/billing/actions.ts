@@ -2,6 +2,8 @@
 
 import type {
   AddressInput,
+  CountryAlpha2,
+  CountryAlpha2Input,
   CustomerPaymentMethod,
 } from '@tuturuuu/payment/polar';
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
@@ -26,7 +28,7 @@ export interface WorkspaceBillingDetails {
     line2: string;
     postalCode: string;
     city: string;
-    country: AddressInput['country'];
+    country: CountryAlpha2;
   };
   taxId: string;
 }
@@ -39,7 +41,7 @@ export interface UpdateWorkspaceBillingDetailsInput {
     line2: string;
     postalCode: string;
     city: string;
-    country: AddressInput['country'];
+    country: CountryAlpha2Input;
   };
   taxId: string;
 }
@@ -124,8 +126,7 @@ export async function getWorkspaceBillingDetails(
           line2: customer.billingAddress?.line2 ?? '',
           postalCode: customer.billingAddress?.postalCode ?? '',
           city: customer.billingAddress?.city ?? '',
-          country: (customer.billingAddress?.country ??
-            'VN') as AddressInput['country'],
+          country: customer.billingAddress?.country ?? 'US',
         },
         taxId: firstTaxId,
       },
@@ -134,10 +135,7 @@ export async function getWorkspaceBillingDetails(
     console.error('Failed to fetch workspace billing details:', error);
     return {
       success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : 'Failed to fetch workspace billing details',
+      error: 'Failed to fetch workspace billing details',
     };
   }
 }
@@ -190,18 +188,8 @@ export async function updateWorkspaceBillingDetails(
       wsId,
     });
 
-    // Customer portal update does not support email updates, so email is updated separately.
-    if (normalizedEmail !== polarCustomer.email) {
-      await polar.customers.update({
-        id: polarCustomer.id,
-        customerUpdate: {
-          email: normalizedEmail,
-        },
-      });
-    }
-
     const normalizedBillingAddress: AddressInput = {
-      country: payload.billingAddress.country,
+      country: payload.billingAddress.country ?? undefined,
       line1: payload.billingAddress.line1.trim() || null,
       line2: payload.billingAddress.line2.trim() || null,
       postalCode: payload.billingAddress.postalCode.trim() || null,
@@ -212,22 +200,15 @@ export async function updateWorkspaceBillingDetails(
     const normalizedBillingName = payload.billingName.trim();
     const normalizedTaxId = payload.taxId.trim();
 
-    const session = await createCustomerSession({
-      polar,
-      supabase,
-      wsId,
-    });
-
-    await polar.customerPortal.customers.update(
-      {
-        customerSession: session.token,
-      },
-      {
-        billingName: normalizedBillingName || null,
+    await polar.customers.update({
+      id: polarCustomer.id,
+      customerUpdate: {
+        email: normalizedEmail,
+        name: normalizedBillingName || null,
         billingAddress: normalizedBillingAddress,
-        taxId: normalizedTaxId || null,
-      }
-    );
+        taxId: [normalizedTaxId || null],
+      },
+    });
 
     return {
       success: true,
@@ -248,10 +229,7 @@ export async function updateWorkspaceBillingDetails(
     console.error('Failed to update workspace billing details:', error);
     return {
       success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : 'Failed to update workspace billing details',
+      error: 'Failed to update workspace billing details',
     };
   }
 }
@@ -319,10 +297,7 @@ export async function getWorkspacePaymentMethods(
     console.error('Failed to fetch workspace payment methods:', error);
     return {
       success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : 'Failed to fetch payment methods',
+      error: 'Failed to fetch payment methods',
     };
   }
 }
@@ -383,10 +358,7 @@ export async function deleteWorkspacePaymentMethod(
     console.error('Failed to delete workspace payment method:', error);
     return {
       success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : 'Failed to delete payment method',
+      error: 'Failed to delete payment method',
     };
   }
 }
@@ -451,10 +423,7 @@ export async function updateBillingAddress(
     console.error('Failed to update billing address:', error);
     return {
       success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : 'Failed to update billing address',
+      error: 'Failed to update billing address',
     };
   }
 }
@@ -507,10 +476,7 @@ export async function getWorkspaceCustomerPortalUrl(
     console.error('Failed to get customer portal URL:', error);
     return {
       success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : 'Failed to get customer portal URL',
+      error: 'Failed to get customer portal URL',
     };
   }
 }

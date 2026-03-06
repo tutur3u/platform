@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, Building2, Loader2, RefreshCw } from '@tuturuuu/icons';
-import type { AddressInput } from '@tuturuuu/payment/polar';
+import type { AddressInput, CountryAlpha2Input } from '@tuturuuu/payment/polar';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
@@ -46,7 +46,7 @@ const DEFAULT_FORM: UpdateWorkspaceBillingDetailsInput = {
     line2: '',
     postalCode: '',
     city: '',
-    country: 'VN',
+    country: 'US',
   },
   taxId: '',
 };
@@ -60,7 +60,7 @@ export default function BillingDetailsCard({
   const [formData, setFormData] =
     useState<UpdateWorkspaceBillingDetailsInput>(DEFAULT_FORM);
   const [initialData, setInitialData] =
-    useState<UpdateWorkspaceBillingDetailsInput>(DEFAULT_FORM);
+    useState<UpdateWorkspaceBillingDetailsInput | null>(null);
 
   const {
     data: billingDetails,
@@ -81,9 +81,7 @@ export default function BillingDetailsCard({
   });
 
   useEffect(() => {
-    if (!billingDetails) {
-      return;
-    }
+    if (!billingDetails) return;
 
     const nextFormData: UpdateWorkspaceBillingDetailsInput = {
       email: billingDetails.email,
@@ -93,14 +91,35 @@ export default function BillingDetailsCard({
         line2: billingDetails.billingAddress.line2,
         postalCode: billingDetails.billingAddress.postalCode,
         city: billingDetails.billingAddress.city,
-        country: billingDetails.billingAddress.country,
+        country: billingDetails.billingAddress.country as CountryAlpha2Input,
       },
       taxId: billingDetails.taxId,
     };
 
+    const formSerialized = JSON.stringify(formData);
+    const initialSerialized =
+      initialData !== null ? JSON.stringify(initialData) : null;
+    const isInitialLoad = initialData === null;
+    const isPristine =
+      initialSerialized !== null && formSerialized === initialSerialized;
+
+    if (!isInitialLoad && !isPristine) {
+      return;
+    }
+
+    const nextSerialized = JSON.stringify(nextFormData);
+
+    if (
+      initialSerialized !== null &&
+      nextSerialized === initialSerialized &&
+      formSerialized === initialSerialized
+    ) {
+      return;
+    }
+
     setFormData(nextFormData);
     setInitialData(nextFormData);
-  }, [billingDetails]);
+  }, [billingDetails, formData, initialData]);
 
   const updateMutation = useMutation({
     mutationFn: (payload: UpdateWorkspaceBillingDetailsInput) =>
@@ -119,7 +138,7 @@ export default function BillingDetailsCard({
           line2: result.data.billingAddress.line2,
           postalCode: result.data.billingAddress.postalCode,
           city: result.data.billingAddress.city,
-          country: result.data.billingAddress.country,
+          country: result.data.billingAddress.country as CountryAlpha2Input,
         },
         taxId: result.data.taxId,
       };
@@ -137,7 +156,8 @@ export default function BillingDetailsCard({
   });
 
   const hasChanges = useMemo(() => {
-    return JSON.stringify(formData) !== JSON.stringify(initialData);
+    const baseline = initialData ?? DEFAULT_FORM;
+    return JSON.stringify(formData) !== JSON.stringify(baseline);
   }, [formData, initialData]);
 
   if (!hasManageSubscriptionPermission) {
@@ -276,45 +296,54 @@ export default function BillingDetailsCard({
               disabled={isFormDisabled}
             />
             <div className="grid gap-2 md:grid-cols-2">
-              <Input
-                id="billing-postal-code"
-                value={formData.billingAddress.postalCode}
-                onChange={(event) =>
-                  handleAddressFieldChange('postalCode', event.target.value)
-                }
-                disabled={isFormDisabled}
-              />
+              <div className="space-y-1">
+                <Label htmlFor="billing-postal-code">{t('postal-code')}</Label>
+                <Input
+                  id="billing-postal-code"
+                  value={formData.billingAddress.postalCode}
+                  onChange={(event) =>
+                    handleAddressFieldChange('postalCode', event.target.value)
+                  }
+                  disabled={isFormDisabled}
+                />
+              </div>
 
-              <Input
-                id="billing-city"
-                value={formData.billingAddress.city}
-                onChange={(event) =>
-                  handleAddressFieldChange('city', event.target.value)
+              <div className="space-y-1">
+                <Label htmlFor="billing-city">{t('city')}</Label>
+                <Input
+                  id="billing-city"
+                  value={formData.billingAddress.city}
+                  onChange={(event) =>
+                    handleAddressFieldChange('city', event.target.value)
+                  }
+                  disabled={isFormDisabled}
+                />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="billing-country">{t('country')}</Label>
+              <Select
+                value={formData.billingAddress.country}
+                onValueChange={(value) =>
+                  handleAddressFieldChange(
+                    'country',
+                    value as UpdateWorkspaceBillingDetailsInput['billingAddress']['country']
+                  )
                 }
                 disabled={isFormDisabled}
-              />
+              >
+                <SelectTrigger id="billing-country">
+                  <SelectValue placeholder={t('country')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {COUNTRY_OPTIONS.map((country) => (
+                    <SelectItem key={country.code} value={country.code}>
+                      {country.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <Select
-              value={formData.billingAddress.country}
-              onValueChange={(value) =>
-                handleAddressFieldChange(
-                  'country',
-                  value as UpdateWorkspaceBillingDetailsInput['billingAddress']['country']
-                )
-              }
-              disabled={isFormDisabled}
-            >
-              <SelectTrigger id="billing-country">
-                <SelectValue placeholder={t('country')} />
-              </SelectTrigger>
-              <SelectContent>
-                {COUNTRY_OPTIONS.map((country) => (
-                  <SelectItem key={country.code} value={country.code}>
-                    {country.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
         </div>
 
