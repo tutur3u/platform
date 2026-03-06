@@ -1,6 +1,6 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowDownCircle,
   ArrowUpCircle,
@@ -90,8 +90,6 @@ export function TransactionCategoryForm({ wsId, data, onFinish }: Props) {
   const queryClient = useQueryClient();
   const financeHref = useFinanceHref();
 
-  const [loading, setLoading] = useState(false);
-
   // Local state for immediate UI updates
   const [localIcon, setLocalIcon] = useState<string | null>(data?.icon || null);
   const [localColor, setLocalColor] = useState<string | null>(
@@ -167,45 +165,60 @@ export function TransactionCategoryForm({ wsId, data, onFinish }: Props) {
     }`;
   }, [localColor, watchedType]);
 
-  async function onSubmit(formData: z.infer<typeof FormSchema>) {
-    setLoading(true);
+  const saveCategoryMutation = useMutation({
+    mutationFn: async (formData: z.infer<typeof FormSchema>) => {
+      const response = await fetch(
+        formData.id
+          ? `/api/workspaces/${wsId}/transactions/categories/${formData.id}`
+          : `/api/workspaces/${wsId}/transactions/categories`,
+        {
+          method: formData.id ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: formData.name,
+            is_expense: formData.type === 'EXPENSE',
+            icon: formData.icon || null,
+            color: formData.color || null,
+          }),
+        }
+      );
 
-    const res = await fetch(
-      formData?.id
-        ? `/api/workspaces/${wsId}/transactions/categories/${formData.id}`
-        : `/api/workspaces/${wsId}/transactions/categories`,
-      {
-        method: formData?.id ? 'PUT' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          is_expense: formData.type === 'EXPENSE',
-          icon: formData.icon || null,
-          color: formData.color || null,
-        }),
+      if (!response.ok) {
+        let message = 'An error occurred while saving the category';
+        try {
+          const errorData = (await response.json()) as { message?: string };
+          if (errorData.message) {
+            message = errorData.message;
+          }
+        } catch {
+          // Use fallback message when response body is not JSON.
+        }
+        throw new Error(message);
       }
-    );
-
-    if (res.ok) {
-      // Invalidate the transaction categories query to refresh the list
+    },
+    onSuccess: async (_, formData) => {
       await queryClient.invalidateQueries({
         queryKey: ['transaction-categories', wsId],
       });
       onFinish?.(formData);
-    } else {
-      setLoading(false);
-      toast.error('Error creating category', {
-        description: 'An error occurred while creating the category',
+    },
+    onError: (error: Error) => {
+      toast.error('Error saving category', {
+        description: error.message,
       });
-    }
+    },
+  });
+
+  async function onSubmit(formData: z.infer<typeof FormSchema>) {
+    saveCategoryMutation.mutate(formData);
   }
 
   const handleRandomizeColor = () => {
     const newColor = generateRandomColor();
     handleColorChange(newColor);
   };
+
+  const loading = saveCategoryMutation.isPending;
 
   return (
     <Form {...form}>
