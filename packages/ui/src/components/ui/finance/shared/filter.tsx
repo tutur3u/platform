@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@tuturuuu/utils/format';
-import { format } from 'date-fns';
+import { format, isValid, parse } from 'date-fns';
 import dayjs from 'dayjs';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -17,12 +17,24 @@ import { DateRangePicker } from './date-range-picker';
 import { MonthRangePicker } from './month-range-picker';
 import { YearRangePicker } from './year-range-picker';
 
+const toDateParam = (date: Date | undefined): string =>
+  date && isValid(date) ? format(date, 'yyyy-MM-dd') : '';
+
+const parseSafeDate = (
+  dateStr: string | null | undefined
+): Date | undefined => {
+  if (!dateStr) return undefined;
+  const parsed = parse(dateStr, 'yyyy-MM-dd', new Date());
+  return isValid(parsed) ? parsed : undefined;
+};
+
 export function Filter({ className }: { className: string }) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
+  const paramsKey = searchParams.toString();
 
-  const [view, setView] = useState('month');
+  const [view, setView] = useState('date');
 
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
@@ -34,27 +46,31 @@ export function Filter({ className }: { className: string }) {
   }, [startDate, endDate]);
 
   useEffect(() => {
-    const viewParam = searchParams.get('view');
-    const view =
+    const params = new URLSearchParams(paramsKey);
+    const viewParam = params.get('view');
+    const nextView =
       viewParam === 'date' || viewParam === 'month' || viewParam === 'year'
         ? viewParam
         : 'date';
 
-    setView(view);
-  }, [searchParams]);
+    setView((prev) => (prev === nextView ? prev : nextView));
 
-  useEffect(() => {
-    if (searchParams.toString() === '') return;
+    const startDateParam = params.get('startDate') || '';
+    const endDateParam = params.get('endDate') || '';
+    const nextStartDate = parseSafeDate(startDateParam);
+    const nextEndDate = parseSafeDate(endDateParam);
 
-    const startDateParam = searchParams.get('startDate');
-    const endDateParam = searchParams.get('endDate');
-
-    if (startDateParam !== dayjs(startDate).format('yyyy-MM-dd'))
-      setStartDate(startDateParam ? new Date(startDateParam) : undefined);
-
-    if (endDateParam !== dayjs(endDate).format('yyyy-MM-dd'))
-      setEndDate(endDateParam ? new Date(endDateParam) : undefined);
-  }, [searchParams, endDate, startDate]);
+    setStartDate((prev) =>
+      toDateParam(prev) === (nextStartDate ? startDateParam : '')
+        ? prev
+        : nextStartDate
+    );
+    setEndDate((prev) =>
+      toDateParam(prev) === (nextEndDate ? endDateParam : '')
+        ? prev
+        : nextEndDate
+    );
+  }, [paramsKey]);
 
   const resetFilter = () => {
     setView('date');
@@ -74,15 +90,13 @@ export function Filter({ className }: { className: string }) {
   };
 
   const isDirty = () => {
-    const startDateParam = searchParams.get('startDate');
-    const endDateParam = searchParams.get('endDate');
+    const startDateParam = searchParams.get('startDate') || '';
+    const endDateParam = searchParams.get('endDate') || '';
 
-    return (
-      (startDate && format(startDate, 'yyyy-MM-dd') !== startDateParam) ||
-      (endDate && format(endDate, 'yyyy-MM-dd') !== endDateParam) ||
-      (!startDate && startDateParam) ||
-      (!endDate && endDateParam)
-    );
+    const currentStart = toDateParam(startDate);
+    const currentEnd = toDateParam(endDate);
+
+    return currentStart !== startDateParam || currentEnd !== endDateParam;
   };
 
   return (
@@ -149,7 +163,7 @@ export function Filter({ className }: { className: string }) {
         variant="outline"
         className="w-full md:w-auto lg:min-w-24"
         onClick={resetFilter}
-        disabled={searchParams.toString() === ''}
+        disabled={paramsKey === ''}
       >
         Reset
       </Button>
