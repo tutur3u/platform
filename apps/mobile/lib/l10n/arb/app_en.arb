@@ -402,6 +402,46 @@
     "commonCancel": "Cancel",
     "timerTotalSessions": "Total sessions",
     "timerActiveUsers": "Active users",
+    "timerGoalsTitle": "Goals",
+    "timerGoalsSubtitle": "Track your daily and weekly focus targets",
+    "timerGoalsAdd": "Add goal",
+    "timerGoalsCreate": "Create goal",
+    "timerGoalsCreateTitle": "Create goal",
+    "timerGoalsCreateSuccess": "Goal created",
+    "timerGoalsEdit": "Edit",
+    "timerGoalsEditTitle": "Edit goal",
+    "timerGoalsSave": "Save goal",
+    "timerGoalsUpdateSuccess": "Goal updated",
+    "timerGoalsDelete": "Delete",
+    "timerGoalsDeleteTitle": "Delete goal?",
+    "timerGoalsDeleteDescription": "This action cannot be undone.",
+    "timerGoalsDeleteSuccess": "Goal deleted",
+    "timerGoalsOperationFailed": "Could not save your goal changes.",
+    "timerGoalsEmptyTitle": "No goals yet",
+    "timerGoalsEmptyDescription": "Create your first goal to measure daily and weekly progress.",
+    "timerGoalsCategory": "Category",
+    "timerGoalsGeneral": "General",
+    "timerGoalsDailyMinutes": "Daily target (minutes)",
+    "timerGoalsWeeklyMinutesOptional": "Weekly target (minutes, optional)",
+    "timerGoalsDailyValidation": "Daily target must be greater than 0.",
+    "timerGoalsWeeklyValidation": "Weekly target must be greater than 0.",
+    "timerGoalsActive": "Active",
+    "timerGoalsInactive": "Inactive",
+    "timerGoalsActiveLabel": "Goal is active",
+    "timerGoalsDailyProgress": "Daily progress",
+    "timerGoalsWeeklyProgress": "Weekly progress",
+    "timerGoalsDailyTarget": "Daily target",
+    "timerGoalsWeeklyTarget": "Weekly target",
+    "timerGoalsActiveCount": "{count, plural, one{# active goal} other{# active goals}}",
+    "@timerGoalsActiveCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "timerHourUnitShort": "h",
+    "timerMinuteUnitShort": "m",
     "timerDays": "{count} days",
     "@timerDays": {
         "placeholders": {

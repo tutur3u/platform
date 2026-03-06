@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:mobile/data/models/time_tracking/break_record.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
+import 'package:mobile/data/models/time_tracking/goal.dart';
 import 'package:mobile/data/models/time_tracking/period_stats.dart';
 import 'package:mobile/data/models/time_tracking/pomodoro_settings.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
@@ -20,6 +21,10 @@ class TimeTrackerState extends Equatable {
     this.elapsed = Duration.zero,
     this.recentSessions = const [],
     this.categories = const [],
+    this.goals = const [],
+    this.goalsWorkspaceId,
+    this.goalsLoadingByWs = const {},
+    this.goalsLoadedByWs = const {},
     this.stats,
     this.selectedCategoryId,
     this.sessionTitle,
@@ -46,6 +51,10 @@ class TimeTrackerState extends Equatable {
   final Duration elapsed;
   final List<TimeTrackingSession> recentSessions;
   final List<TimeTrackingCategory> categories;
+  final List<TimeTrackingGoal> goals;
+  final String? goalsWorkspaceId;
+  final Map<String, bool> goalsLoadingByWs;
+  final Map<String, bool> goalsLoadedByWs;
   final TimeTrackerStats? stats;
   final String? selectedCategoryId;
   final String? sessionTitle;
@@ -67,6 +76,17 @@ class TimeTrackerState extends Equatable {
 
   bool get isRunning => runningSession != null && !isPaused;
 
+  bool get isGoalsLoading =>
+      goalsWorkspaceId != null && isGoalsLoadingFor(goalsWorkspaceId!);
+
+  bool get hasLoadedGoals =>
+      goalsWorkspaceId != null && hasLoadedGoalsFor(goalsWorkspaceId!);
+
+  bool isGoalsLoadingFor(String wsId) => goalsLoadingByWs[wsId] ?? false;
+
+  bool hasLoadedGoalsFor(String wsId) =>
+      goalsWorkspaceId == wsId && (goalsLoadedByWs[wsId] ?? false);
+
   TimeTrackerState copyWith({
     TimeTrackerStatus? status,
     TimeTrackingSession? runningSession,
@@ -74,6 +94,10 @@ class TimeTrackerState extends Equatable {
     Duration? elapsed,
     List<TimeTrackingSession>? recentSessions,
     List<TimeTrackingCategory>? categories,
+    List<TimeTrackingGoal>? goals,
+    Object? goalsWorkspaceId = _sentinel,
+    Map<String, bool>? goalsLoadingByWs,
+    Map<String, bool>? goalsLoadedByWs,
     TimeTrackerStats? stats,
     String? selectedCategoryId,
     String? sessionTitle,
@@ -98,6 +122,8 @@ class TimeTrackerState extends Equatable {
     bool clearThresholdDays = false,
     bool clearHistoryPeriodStats = false,
     bool clearHistoryNextCursor = false,
+    bool clearGoals = false,
+    bool clearGoalsLoaded = false,
     bool clearError = false,
   }) => TimeTrackerState(
     status: status ?? this.status,
@@ -108,6 +134,16 @@ class TimeTrackerState extends Equatable {
     elapsed: elapsed ?? this.elapsed,
     recentSessions: recentSessions ?? this.recentSessions,
     categories: categories ?? this.categories,
+    goals: clearGoals ? const [] : (goals ?? this.goals),
+    goalsWorkspaceId: clearGoals
+        ? null
+        : (goalsWorkspaceId == _sentinel
+              ? this.goalsWorkspaceId
+              : goalsWorkspaceId as String?),
+    goalsLoadingByWs: goalsLoadingByWs ?? this.goalsLoadingByWs,
+    goalsLoadedByWs: clearGoalsLoaded
+        ? const {}
+        : (goalsLoadedByWs ?? this.goalsLoadedByWs),
     stats: stats ?? this.stats,
     selectedCategoryId: clearSelectedCategory
         ? null
@@ -151,6 +187,10 @@ class TimeTrackerState extends Equatable {
     elapsed,
     recentSessions,
     categories,
+    goals,
+    goalsWorkspaceId,
+    goalsLoadingByWs,
+    goalsLoadedByWs,
     stats,
     selectedCategoryId,
     sessionTitle,

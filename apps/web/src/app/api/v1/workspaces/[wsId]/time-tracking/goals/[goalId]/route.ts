@@ -2,15 +2,47 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { Database } from '@tuturuuu/types/supabase';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+
+const RouteParamsSchema = z.object({
+  wsId: z.string().min(1),
+  goalId: z.uuid(),
+});
+
+const PositiveIntSchema = z.coerce.number().int().positive();
+
+const GoalPatchBodySchema = z
+  .object({
+    categoryId: z
+      .preprocess(
+        (value) => (value === 'general' ? null : value),
+        z.uuid().nullable()
+      )
+      .optional(),
+    dailyGoalMinutes: PositiveIntSchema.optional(),
+    weeklyGoalMinutes: z.union([PositiveIntSchema, z.null()]).optional(),
+    isActive: z.boolean().optional(),
+  })
+  .strict();
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ wsId: string; goalId: string }> }
 ) {
   try {
-    const { wsId, goalId } = await params;
-    const supabase = await createClient();
+    const parsedParams = RouteParamsSchema.safeParse(await params);
+    if (!parsedParams.success) {
+      return NextResponse.json(
+        { error: 'Invalid route parameters' },
+        { status: 400 }
+      );
+    }
+
+    const { wsId, goalId } = parsedParams.data;
+    const supabase = await createClient(request);
 
     // Get authenticated user
     const {
@@ -22,11 +54,13 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+
     // Verify workspace access
     const { data: memberCheck } = await supabase
       .from('workspace_members')
       .select('id:user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -42,7 +76,7 @@ export async function PATCH(
       .from('time_tracking_goals')
       .select('*')
       .eq('id', goalId)
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -50,26 +84,39 @@ export async function PATCH(
       return NextResponse.json({ error: 'Goal not found' }, { status: 404 });
     }
 
-    const body = await request.json();
-    const { categoryId, dailyGoalMinutes, weeklyGoalMinutes, isActive } = body;
-
-    if (
-      dailyGoalMinutes !== undefined &&
-      (!dailyGoalMinutes || dailyGoalMinutes <= 0)
-    ) {
+    let parsedJson: unknown;
+    try {
+      parsedJson = await request.json();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Malformed JSON payload';
       return NextResponse.json(
-        { error: 'Daily goal minutes must be positive' },
+        { error: 'Invalid JSON body', details: [message] },
         { status: 400 }
       );
     }
 
+    const parsedBody = GoalPatchBodySchema.safeParse(parsedJson);
+    if (!parsedBody.success) {
+      return NextResponse.json(
+        {
+          error: 'Invalid request body',
+          details: parsedBody.error.issues.map((issue) => issue.message),
+        },
+        { status: 400 }
+      );
+    }
+
+    const { categoryId, dailyGoalMinutes, weeklyGoalMinutes, isActive } =
+      parsedBody.data;
+
     // Verify category exists if provided
-    if (categoryId && categoryId !== 'general') {
+    if (categoryId != null) {
       const { data: categoryCheck } = await supabase
         .from('time_tracking_categories')
         .select('id')
         .eq('id', categoryId)
-        .eq('ws_id', wsId)
+        .eq('ws_id', normalizedWsId)
         .single();
 
       if (!categoryCheck) {
@@ -81,18 +128,20 @@ export async function PATCH(
     }
 
     // Prepare update data
-    const updateData: any = {
+    const updateData: Partial<
+      Database['public']['Tables']['time_tracking_goals']['Update']
+    > = {
       updated_at: new Date().toISOString(),
     };
 
     if (categoryId !== undefined) {
-      updateData.category_id = categoryId === 'general' ? null : categoryId;
+      updateData.category_id = categoryId;
     }
     if (dailyGoalMinutes !== undefined) {
       updateData.daily_goal_minutes = dailyGoalMinutes;
     }
     if (weeklyGoalMinutes !== undefined) {
-      updateData.weekly_goal_minutes = weeklyGoalMinutes || null;
+      updateData.weekly_goal_minutes = weeklyGoalMinutes;
     }
     if (isActive !== undefined) {
       updateData.is_active = isActive;
@@ -105,17 +154,22 @@ export async function PATCH(
       .from('time_tracking_goals')
       .update(updateData)
       .eq('id', goalId)
+      .eq('ws_id', normalizedWsId)
+      .eq('user_id', user.id)
       .select(
         `
         *,
         category:time_tracking_categories(*)
       `
-      )
-      .single();
+      );
 
     if (error) throw error;
 
-    return NextResponse.json({ goal: data });
+    if (!data || data.length === 0) {
+      return NextResponse.json({ error: 'Goal not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ goal: data[0] });
   } catch (error) {
     console.error('Error updating time tracking goal:', error);
     return NextResponse.json(
@@ -126,12 +180,20 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ wsId: string; goalId: string }> }
 ) {
   try {
-    const { wsId, goalId } = await params;
-    const supabase = await createClient();
+    const parsedParams = RouteParamsSchema.safeParse(await params);
+    if (!parsedParams.success) {
+      return NextResponse.json(
+        { error: 'Invalid route parameters' },
+        { status: 400 }
+      );
+    }
+
+    const { wsId, goalId } = parsedParams.data;
+    const supabase = await createClient(request);
 
     // Get authenticated user
     const {
@@ -143,11 +205,13 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+
     // Verify workspace access
     const { data: memberCheck } = await supabase
       .from('workspace_members')
       .select('id:user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -163,7 +227,7 @@ export async function DELETE(
       .from('time_tracking_goals')
       .select('id')
       .eq('id', goalId)
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -173,12 +237,18 @@ export async function DELETE(
 
     // Delete the goal
     const sbAdmin = await createAdminClient();
-    const { error } = await sbAdmin
+    const { data: deletedGoals, error } = await sbAdmin
       .from('time_tracking_goals')
       .delete()
-      .eq('id', goalId);
+      .eq('id', goalId)
+      .eq('ws_id', normalizedWsId)
+      .eq('user_id', user.id)
+      .select('id');
 
     if (error) throw error;
+    if (deletedGoals == null || deletedGoals.length === 0) {
+      return NextResponse.json({ error: 'Goal not found' }, { status: 404 });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
