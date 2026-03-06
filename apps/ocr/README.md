@@ -3,7 +3,7 @@
 FastAPI microservice that extracts a student name and 7 digit ID from
 captured ID card images. It uses PaddleOCRVL running on CPU, cleans the
 recognized text, and exposes one `POST /capture` endpoint that frontend
-apps (for example `apps/web` via `src/app/api/capture/route.ts`) can call.
+apps (for example `apps/web` via `VideoCapture.tsx`) can call.
 
 ## Purpose
 
@@ -20,10 +20,9 @@ apps (for example `apps/web` via `src/app/api/capture/route.ts`) can call.
 
 Key files in `apps/ocr`:
 
-- `app.py` – FastAPI application and `/capture` endpoint.
+- `app.py` – FastAPI application and `/capture` endpoint + Modal deployment configuration.
 - `extraction.py` – regex-based extraction and cleaning of OCR text.
 - `parser.py` – helpers to parse raw PaddleOCR results into text.
-- `deployment.py` – Modal serverless deployment definition.
 - `pyproject.toml` – project metadata and dependencies (Python 3.12).
 - `uv.lock` – lockfile for deterministic installs when using `uv`.
 - `.venv/` – local virtual environment (not committed).
@@ -38,7 +37,7 @@ Key files in `apps/ocr`:
 | Image processing | OpenCV (`cv2`) + NumPy arrays created from base64 encoded frames sent by the client. |
 | Data cleaning | Regex based extraction that strips reserved keywords/months before matching a name + 7 digit ID (`extraction.py`, `parser.py`). |
 | Packaging | `pyproject.toml` + `uv.lock` define runtime and dev dependencies for Python 3.12. |
-| Deployment | Modal serverless with image defined in `deployment.py`, 2 CPU / 2 GB RAM, up to 100 concurrent invocations. |
+| Deployment | Modal serverless with image defined in `app.py`, 2 CPU / 2 GB RAM, up to 100 concurrent invocations. |
 
 ## API contract
 
@@ -60,15 +59,12 @@ Key files in `apps/ocr`:
 ```
 
 Errors are returned as FastAPI `HTTPException`s (400 for bad input,
-500 for unexpected failures). The Next.js proxy at
-`apps/web/src/app/api/capture/route.ts` simply forwards client payloads
-to this endpoint.
+500 for unexpected failures). The client should handle these gracefully, showing the error message or prompting the user to retake the capture.
 
 ## Local development
 
 ### Prerequisites
 
-- Python 3.12 (matches `pyproject.toml`).
 - uv (recommended for managing Python dependencies and virtual environments).
 
 ### Setup
@@ -79,13 +75,10 @@ to this endpoint.
 	 - `cd apps/ocr`
 3. Install Python packages:
 	 - `uv sync`
-4. Start the dev server:
-	 - `poe dev`
+4. Serve the FastAPI app with auto-reload in Modal:
+	 - `poe serve`
 
-The service listens on `http://127.0.0.1:5500`. Web clients should set
-`OCR_SERVICE_URL=http://127.0.0.1:5500` (see `.env` usage in
-`turbo.json` and the web app) so their proxy route forwards to the
-local server.
+The service listens on a hosted link (e.g, `https://username--ocr-service-fastapi-app-dev.modal.run`). Web clients should set `OCR_SERVICE_URL=https://username--ocr-service-fastapi-app-dev.modal.run` to correctly forward requests to it during development.
 
 ### Script Aliases (via Poe)
 
@@ -93,20 +86,19 @@ The project uses `poethepoet` ([Poe the Poet](https://poethepoet.natn.io/)) to m
 
 | Command | Description |
 | --- | --- |
-| `poe dev` | Start the FastAPI development server with reload. |
-| `poe start` | Start the FastAPI server without reload. |
 | `poe test` | Run unit tests with `pytest`. |
 | `poe test-coverage` | Run tests and generate a coverage report. |
+| `poe type-check` | Run static type checking with `mypy`. |
 | `poe lint` | Check for linting issues using `ruff`. |
 | `poe lint-fix` | Automatically fix linting issues. |
 | `poe format` | Check code formatting. |
 | `poe format-fix` | Fix code formatting. |
-| `poe type-check` | Run static type checking with `mypy`. |
-| `poe modal-deploy` | Deploy the service to Modal. |
+| `poe serve` | Serve the FastAPI app to Modal (with live reload). |
+| `poe deploy` | Deploy the service to Modal. |
 
 ## Modal deployment
 
-`deployment.py` defines the deployment image and app:
+`app.py` defines the deployment image and app:
 
 - Base image: Debian slim with `libgl1-mesa-glx` and `libglib2.0-0` added.
 - Installs everything from `pyproject.toml` using `pip_install_from_pyproject`.
@@ -116,16 +108,12 @@ The project uses `poethepoet` ([Poe the Poet](https://poethepoet.natn.io/)) to m
 Typical workflow (all commands run from `apps/ocr`):
 
 1. Ensure dependencies are installed locally (see setup above).
-2. `poe modal-run` – run one-off tasks or debugging.
-3. `poe modal-serve` – run the FastAPI app locally through
+2. `poe serve` – run the FastAPI app locally through
 	 Modal tunnels.
-4. `poe modal-deploy` – deploy the app to Modal’s cloud and
+3. `poe deploy` – deploy the app to Modal’s cloud and
 	 obtain the public URL.
 
-Ensure Modal credentials are available via `MODAL_TOKEN_ID` and
-`MODAL_TOKEN_SECRET` (listed in `turbo.json` `globalEnv`). After
-deployment, set `OCR_SERVICE_URL` to the Modal endpoint so consuming
-apps hit the hosted service.
+Ensure Modal credentials are available via `MODAL_TOKEN_ID` and `MODAL_TOKEN_SECRET`. After deployment, set `OCR_SERVICE_URL` to the dedicated client's environment (e.g., Next.js app) to hit the hosted service.
 
 ## Troubleshooting
 
@@ -138,7 +126,7 @@ apps hit the hosted service.
 	are already included.
 - **Modal auth**: run `modal token new` locally, then export
 	`MODAL_TOKEN_ID` and `MODAL_TOKEN_SECRET` before invoking
-	`modal run/serve/deploy`.
+	`modal serve/deploy`.
 
 With these steps you can iterate locally, proxy requests from the
 Next.js app during development, and deploy the OCR microservice to
