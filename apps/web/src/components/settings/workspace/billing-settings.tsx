@@ -47,13 +47,47 @@ export default function BillingSettings({ wsId }: BillingSettingsProps) {
   }
 
   if (error) {
-    const errorCode = error instanceof Error ? error.message : '';
+    const errorMessage = error instanceof Error ? error.message : '';  
 
-    if (errorCode === 'SUBSCRIPTION_NOT_FOUND') {
+    // Handle authorization errors
+    if (
+      errorMessage.includes('UNAUTHORIZED') ||
+      errorMessage.includes('FORBIDDEN')
+    ) {
+      return (
+        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+          <h3 className="mb-2 font-semibold text-destructive text-sm">
+            Access Denied
+          </h3>
+          <p className="text-muted-foreground text-sm">
+            You do not have billing permission to access this section.
+          </p>
+        </div>
+      );
+    }
+
+    if (errorMessage === 'SUBSCRIPTION_NOT_FOUND') {
       return <NoSubscriptionMessage wsId={wsId} />;
     }
 
-    return null;
+    // Show generic error for all other cases
+    return (
+      <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+        <h3 className="mb-2 font-semibold text-destructive text-sm">
+          Error
+        </h3>
+        <p className="mb-3 text-muted-foreground text-sm">
+          An error occured while loading billing information
+        </p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="text-primary text-sm hover:underline"
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
 
   const {

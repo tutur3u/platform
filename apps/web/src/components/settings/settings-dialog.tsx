@@ -36,7 +36,7 @@ import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useUserBooleanConfig } from '@/hooks/use-user-config';
 import WorkspaceAvatarSettings from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/avatar';
 import BasicInfo from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/basic-info';
@@ -166,7 +166,11 @@ export function SettingsDialog({
   // Use provided workspace or fetched workspace
   const workspace = workspaceProp || fetchedWorkspace || null;
 
-  const { data: hasBillingPermission } = useQuery({
+  const {
+    data: hasBillingPermission,
+    isLoading: isBillingPermissionLoading,
+    isFetching: isBillingPermissionFetching,
+  } = useQuery({
     queryKey: ['workspace-billing-permission', workspace?.id],
     queryFn: async () => {
       if (!workspace?.id) return false;
@@ -195,6 +199,24 @@ export function SettingsDialog({
     enabled: !!workspace?.id,
     staleTime: 5 * 60 * 1000,
   });
+
+  // Reset activeTab if billing permission is revoked or not available
+  useEffect(() => {
+    if (
+      !isBillingPermissionLoading &&
+      hasBillingPermission === false &&
+      activeTab === 'workspace_billing'
+    ) {
+      setActiveTab(defaultTab ?? 'general');
+    }
+  }, [hasBillingPermission, isBillingPermissionLoading, activeTab, defaultTab]);
+
+  // Reset activeTab when workspace changes
+  useEffect(() => {
+    if (activeTab === 'workspace_billing' && !workspace?.id) {
+      setActiveTab(defaultTab ?? 'general');
+    }
+  }, [workspace?.id, activeTab, defaultTab]);
 
   // Fetch calendar token when workspace is available (using TanStack Query)
   const { data: calendarToken } = useQuery({
@@ -427,6 +449,9 @@ export function SettingsDialog({
                       icon: CreditCard,
                       description: t('settings-account.billing-description'),
                       keywords: ['Billing', 'Plan', 'Subscription'],
+                      disabled:
+                        isBillingPermissionLoading ||
+                        isBillingPermissionFetching,
                     },
                   ]
                 : []),
