@@ -12,9 +12,9 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import {
   checkManageSubscriptionPermission,
-  ensureSubscription,
   fetchCreditPacks,
   fetchProducts,
+  fetchSubscription,
   fetchWorkspaceOrders,
 } from '@/utils/billing-helper';
 import { getSeatStatus } from '@/utils/seat-limits';
@@ -52,7 +52,7 @@ export default async function BillingPage({
         const [
           isPersonal,
           hasManageSubscriptionPermission,
-          subscriptionResult,
+          subscription,
           products,
           creditPacks,
           seatStatus,
@@ -62,7 +62,7 @@ export default async function BillingPage({
         ] = await Promise.all([
           isPersonalWorkspace(wsId),
           checkManageSubscriptionPermission(sbAdmin, wsId, user.id),
-          ensureSubscription(polar, sbAdmin, wsId), // Try to ensure subscription exists
+          fetchSubscription(polar, sbAdmin, wsId), // Try to ensure subscription exists
           fetchProducts(polar),
           fetchCreditPacks(sbAdmin),
           getSeatStatus(sbAdmin, wsId),
@@ -72,13 +72,9 @@ export default async function BillingPage({
         ]);
 
         // Handle subscription creation failure
-        if (!subscriptionResult.subscription) {
-          return (
-            <NoSubscriptionFound wsId={wsId} error={subscriptionResult.error} />
-          );
+        if (!subscription) {
+          return <NoSubscriptionFound wsId={wsId} />;
         }
-
-        const subscription = subscriptionResult.subscription;
 
         const dateLocale = locale === 'vi' ? vi : enUS;
         const formatDate = (date: string) =>

@@ -7,7 +7,7 @@ import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import {
   checkManageSubscriptionPermission,
-  ensureSubscription,
+  fetchSubscription,
   fetchCreditPacks,
   fetchProducts,
   fetchWorkspaceOrders,
@@ -48,14 +48,14 @@ export async function GET(
     // Fetch all billing data in parallel
     const [
       isPersonal,
-      subscriptionResult,
+      subscription,
       products,
       creditPacks,
       seatStatus,
       orders,
     ] = await Promise.all([
       isPersonalWorkspace(wsId),
-      ensureSubscription(polar, sbAdmin, wsId),
+      fetchSubscription(polar, sbAdmin, wsId),
       fetchProducts(polar),
       fetchCreditPacks(sbAdmin),
       getSeatStatus(sbAdmin, wsId),
@@ -63,14 +63,12 @@ export async function GET(
     ]);
 
     // Handle subscription creation failure
-    if (!subscriptionResult.subscription) {
+    if (!subscription) {
       return NextResponse.json(
-        { error: subscriptionResult.error || 'SUBSCRIPTION_NOT_FOUND' },
+        { error: 'SUBSCRIPTION_NOT_FOUND' },
         { status: 404 }
       );
     }
-
-    const subscription = subscriptionResult.subscription;
 
     return NextResponse.json({
       isPersonalWorkspace: isPersonal,

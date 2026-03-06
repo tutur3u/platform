@@ -47,16 +47,7 @@ export default function BillingSettings({ wsId }: BillingSettingsProps) {
   }
 
   if (error) {
-    return (
-      <NoSubscriptionFound
-        wsId={wsId}
-        error={error instanceof Error ? error.message : 'UNKNOWN_ERROR'}
-      />
-    );
-  }
-
-  if (!data?.subscription) {
-    return <NoSubscriptionFound wsId={wsId} error="SUBSCRIPTION_NOT_FOUND" />;
+    return <NoSubscriptionFound wsId={wsId} />;
   }
 
   const {
