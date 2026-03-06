@@ -22,8 +22,18 @@ const TagUpdateSchema = z.object({
   description: z.string().nullable().optional(),
 });
 
+const TagIdSchema = z.string().uuid();
+
 export async function PUT(req: Request, { params }: Params) {
   const { tagId, wsId } = await params;
+
+  if (!TagIdSchema.safeParse(tagId).success) {
+    return NextResponse.json(
+      { message: 'Invalid tagId: must be a valid UUID' },
+      { status: 400 }
+    );
+  }
+
   const parsed = TagUpdateSchema.safeParse(await req.json());
 
   if (!parsed.success) {
@@ -76,6 +86,14 @@ export async function PUT(req: Request, { params }: Params) {
 
 export async function DELETE(req: Request, { params }: Params) {
   const { tagId, wsId } = await params;
+
+  if (!TagIdSchema.safeParse(tagId).success) {
+    return NextResponse.json(
+      { message: 'Invalid tagId: must be a valid UUID' },
+      { status: 400 }
+    );
+  }
+
   const supabase = await createClient(req);
   const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
   const permissions = await getPermissions({
