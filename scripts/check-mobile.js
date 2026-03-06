@@ -88,7 +88,7 @@ const checks = [
   {
     name: 'flutter-test',
     command: 'flutter',
-    args: ['test'],
+    args: ['test', showDetails ? '' : '-r failures-only'],
     parseOutput: (stdout) => {
       const clean = stripAnsi(stdout);
       // Match "All tests passed!" or "+N: All tests passed!"
