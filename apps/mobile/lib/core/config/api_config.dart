@@ -51,6 +51,11 @@ abstract final class FinanceEndpoints {
   static String category(String wsId, String categoryId) =>
       '/api/workspaces/$wsId/transactions/categories/$categoryId';
 
+  static String tags(String wsId) => '/api/workspaces/$wsId/tags';
+
+  static String tag(String wsId, String tagId) =>
+      '/api/workspaces/$wsId/tags/$tagId';
+
   static String transaction(String wsId, String transactionId) =>
       '/api/workspaces/$wsId/transactions/$transactionId';
 

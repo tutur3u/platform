@@ -949,6 +949,54 @@ abstract class AppLocalizations {
   /// **'No categories yet'**
   String get financeNoCategories;
 
+  /// No description provided for @financeTags.
+  ///
+  /// In en, this message translates to:
+  /// **'Tags'**
+  String get financeTags;
+
+  /// No description provided for @financeNoTags.
+  ///
+  /// In en, this message translates to:
+  /// **'No tags yet'**
+  String get financeNoTags;
+
+  /// No description provided for @financeCreateTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Create tag'**
+  String get financeCreateTag;
+
+  /// No description provided for @financeEditTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit tag'**
+  String get financeEditTag;
+
+  /// No description provided for @financeDeleteTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete tag'**
+  String get financeDeleteTag;
+
+  /// No description provided for @financeDeleteTagConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this tag?'**
+  String get financeDeleteTagConfirm;
+
+  /// No description provided for @financeTagName.
+  ///
+  /// In en, this message translates to:
+  /// **'Tag name'**
+  String get financeTagName;
+
+  /// No description provided for @financeTagNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Tag name is required'**
+  String get financeTagNameRequired;
+
   /// No description provided for @financeIncome.
   ///
   /// In en, this message translates to:

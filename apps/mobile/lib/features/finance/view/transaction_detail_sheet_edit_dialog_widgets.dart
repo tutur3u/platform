@@ -101,6 +101,57 @@ class _CategorySelectorButton extends StatelessWidget {
   }
 }
 
+/// Outline button for selecting a tag.
+class _TagSelectorButton extends StatelessWidget {
+  const _TagSelectorButton({
+    required this.label,
+    required this.color,
+    required this.onPressed,
+    this.tagName,
+  });
+
+  final String label;
+  final String? tagName;
+  final Color color;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: shad.Theme.of(context).typography.small),
+        const shad.Gap(4),
+        shad.OutlineButton(
+          onPressed: onPressed,
+          child: Row(
+            children: [
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.16),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.sell_outlined, size: 13, color: color),
+              ),
+              const shad.Gap(8),
+              Expanded(
+                child: Text(
+                  tagName ?? '-',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const Icon(Icons.expand_more, size: 16),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 /// Wallet picker dialog. Optionally excludes a wallet (e.g. for destination).
 class _WalletPickerDialog extends StatelessWidget {
   const _WalletPickerDialog({
@@ -231,6 +282,91 @@ class _CategoryPickerDialog extends StatelessWidget {
                   ),
                 )
                 .toList(),
+          ),
+        ),
+      ),
+      actions: [
+        shad.OutlineButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(context.l10n.commonCancel),
+        ),
+      ],
+    );
+  }
+}
+
+/// Tag picker dialog with a clear option.
+class _TagPickerDialog extends StatelessWidget {
+  const _TagPickerDialog({
+    required this.tags,
+    required this.tagColor,
+    this.selectedTagId,
+  });
+
+  final List<FinanceTag> tags;
+  final String? selectedTagId;
+  final Color Function(FinanceTag) tagColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return shad.AlertDialog(
+      title: Text(context.l10n.financeTags),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              shad.GhostButton(
+                onPressed: () => Navigator.of(context).pop(''),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.block_outlined,
+                      size: 16,
+                      color: shad.Theme.of(context).colorScheme.mutedForeground,
+                    ),
+                    const shad.Gap(8),
+                    const Expanded(
+                      child: Text(
+                        '-',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (selectedTagId == null)
+                      const Icon(Icons.check, size: 16),
+                  ],
+                ),
+              ),
+              ...tags.map(
+                (tag) => shad.GhostButton(
+                  onPressed: () => Navigator.of(context).pop(tag.id),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 16,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: tagColor(tag),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const shad.Gap(8),
+                      Expanded(
+                        child: Text(
+                          tag.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (tag.id == selectedTagId)
+                        const Icon(Icons.check, size: 16),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

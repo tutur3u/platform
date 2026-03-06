@@ -41,6 +41,7 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
     final selectedWallet = _selectedWallet;
     final selectedDestinationWallet = _selectedDestinationWallet;
     final selectedCategory = _selectedCategory;
+    final selectedTag = _selectedTag;
     final destPlaceholder = '${currencySymbol(_selectedDestinationCurrency)}0';
 
     return shad.AlertDialog(
@@ -122,6 +123,13 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
                         icon: _selectedCategoryIcon,
                         color: _selectedCategoryColor,
                         onPressed: _categories.isEmpty ? null : _pickCategory,
+                      ),
+                      const shad.Gap(16),
+                      _TagSelectorButton(
+                        label: l10n.financeTags,
+                        tagName: selectedTag?.name,
+                        color: _selectedTagColor,
+                        onPressed: _tags.isEmpty ? null : _pickTag,
                       ),
                       const shad.Gap(16),
                     ],
@@ -299,6 +307,7 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
     _walletId = widget.transaction?.walletId ?? widget.initialWalletId;
     _destinationWalletId = widget.transaction?.transfer?.linkedWalletId;
     _categoryId = widget.transaction?.categoryId;
+    _tagId = widget.transaction?.tags.firstOrNull?.id;
     _isTransfer = widget.transaction?.isTransfer ?? false;
     _reportOptIn = widget.transaction?.reportOptIn ?? true;
     _isAmountConfidential = widget.transaction?.isAmountConfidential ?? false;
