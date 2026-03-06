@@ -1131,8 +1131,8 @@ class AppLocalizationsVi extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '# mục tiêu đang bật',
-      one: '# mục tiêu đang bật',
+      other: '# mục tiêu hoạt động',
+      one: '# mục tiêu hoạt động',
     );
     return '$_temp0';
   }

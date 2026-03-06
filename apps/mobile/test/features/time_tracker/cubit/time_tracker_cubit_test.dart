@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/data/models/time_tracking/goal.dart';
 import 'package:mobile/data/models/time_tracking/period_stats.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/data/models/time_tracking/session_page.dart';
@@ -193,5 +196,80 @@ void main() {
         isTrue,
       );
     });
+  });
+
+  group('TimeTrackerCubit goal loading behavior', () {
+    late _MockTimeTrackerRepository repository;
+    late TimeTrackerCubit cubit;
+
+    TimeTrackingGoal buildGoal(String goalId, String wsId) => TimeTrackingGoal(
+      id: goalId,
+      wsId: wsId,
+      userId: 'user-1',
+      dailyGoalMinutes: 30,
+    );
+
+    setUp(() {
+      repository = _MockTimeTrackerRepository();
+      cubit = TimeTrackerCubit(repository: repository);
+    });
+
+    tearDown(() async {
+      await cubit.close();
+    });
+
+    test('loadGoals stays scoped to each workspace', () async {
+      when(
+        () => repository.getGoals(any(), userId: any(named: 'userId')),
+      ).thenAnswer((invocation) async {
+        final wsId = invocation.positionalArguments[0] as String;
+        return [buildGoal('goal-$wsId', wsId)];
+      });
+
+      await cubit.loadGoals('ws-1');
+
+      expect(cubit.state.hasLoadedGoalsFor('ws-1'), isTrue);
+      expect(cubit.state.hasLoadedGoalsFor('ws-2'), isFalse);
+
+      await cubit.loadGoals('ws-2');
+
+      expect(cubit.state.goalsWorkspaceId, 'ws-2');
+      expect(cubit.state.goals.single.id, 'goal-ws-2');
+      verify(
+        () => repository.getGoals('ws-1', userId: any(named: 'userId')),
+      ).called(1);
+      verify(
+        () => repository.getGoals('ws-2', userId: any(named: 'userId')),
+      ).called(1);
+    });
+
+    test(
+      'loadGoals ignores stale results from an older workspace request',
+      () async {
+        final ws1Completer = Completer<List<TimeTrackingGoal>>();
+        final ws2Completer = Completer<List<TimeTrackingGoal>>();
+
+        when(
+          () => repository.getGoals('ws-1', userId: any(named: 'userId')),
+        ).thenAnswer((_) => ws1Completer.future);
+        when(
+          () => repository.getGoals('ws-2', userId: any(named: 'userId')),
+        ).thenAnswer((_) => ws2Completer.future);
+
+        final firstLoad = cubit.loadGoals('ws-1');
+        final secondLoad = cubit.loadGoals('ws-2');
+
+        ws2Completer.complete([buildGoal('goal-ws-2', 'ws-2')]);
+        await secondLoad;
+
+        ws1Completer.complete([buildGoal('goal-ws-1', 'ws-1')]);
+        await firstLoad;
+
+        expect(cubit.state.goalsWorkspaceId, 'ws-2');
+        expect(cubit.state.goals.single.id, 'goal-ws-2');
+        expect(cubit.state.hasLoadedGoalsFor('ws-1'), isFalse);
+        expect(cubit.state.hasLoadedGoalsFor('ws-2'), isTrue);
+      },
+    );
   });
 }

@@ -435,7 +435,7 @@
     "timerGoalsWeeklyProgress": "Tiến độ tuần",
     "timerGoalsDailyTarget": "Mục tiêu ngày",
     "timerGoalsWeeklyTarget": "Mục tiêu tuần",
-    "timerGoalsActiveCount": "{count, plural, one{# mục tiêu đang bật} other{# mục tiêu đang bật}}",
+    "timerGoalsActiveCount": "{count, plural, one{# mục tiêu hoạt động} other{# mục tiêu hoạt động}}",
     "@timerGoalsActiveCount": {
         "placeholders": {
             "count": {

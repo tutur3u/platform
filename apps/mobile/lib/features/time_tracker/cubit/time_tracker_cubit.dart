@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 
 import 'package:bloc/bloc.dart';
 import 'package:mobile/data/models/time_tracking/break_record.dart';
+import 'package:mobile/data/models/time_tracking/goal.dart';
 import 'package:mobile/data/models/time_tracking/pomodoro_settings.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/data/models/time_tracking/stats.dart';
@@ -23,6 +24,13 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
       'time_tracker_history_stats_open';
   Future<void>? _historyPreferencesLoadFuture;
   int _historyFirstDayOfWeek = DateTime.monday;
+  int _goalsRequestVersion = 0;
+
+  Map<String, bool> _setGoalFlag(
+    Map<String, bool> source,
+    String wsId,
+    bool value,
+  ) => <String, bool>{...source, wsId: value};
 
   Future<void> loadData(
     String wsId,
@@ -32,6 +40,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
   }) async {
     final effectiveFirstDayOfWeek = firstDayOfWeek ?? _historyFirstDayOfWeek;
     _historyFirstDayOfWeek = effectiveFirstDayOfWeek;
+    _goalsRequestVersion++;
     emit(state.copyWith(status: TimeTrackerStatus.loading, clearError: true));
 
     try {
@@ -101,7 +110,9 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
           categories: categories,
           clearGoals: true,
           clearGoalsLoaded: true,
-          isGoalsLoading: false,
+          goalsWorkspaceId: null,
+          goalsLoadingByWs: const {},
+          goalsLoadedByWs: const {},
           stats: stats,
           pomodoroSettings: pomodoroSettings,
           thresholdDays: workspaceSettings?.missedEntryDateThreshold,
@@ -675,11 +686,15 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
         weeklyGoalMinutes: weeklyGoalMinutes,
         isActive: isActive,
       );
+      final existingGoals = state.goalsWorkspaceId == wsId
+          ? state.goals
+          : const <TimeTrackingGoal>[];
       emit(
         state.copyWith(
-          goals: [goal, ...state.goals],
-          hasLoadedGoals: true,
-          isGoalsLoading: false,
+          goals: [goal, ...existingGoals],
+          goalsWorkspaceId: wsId,
+          goalsLoadedByWs: _setGoalFlag(state.goalsLoadedByWs, wsId, true),
+          goalsLoadingByWs: _setGoalFlag(state.goalsLoadingByWs, wsId, false),
           clearError: true,
         ),
       );
@@ -696,6 +711,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     String goalId, {
     String? categoryId,
     bool includeCategoryId = false,
+    bool includeWeeklyGoalMinutes = false,
     int? dailyGoalMinutes,
     int? weeklyGoalMinutes,
     bool? isActive,
@@ -707,12 +723,16 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
         goalId,
         categoryId: categoryId,
         includeCategoryId: includeCategoryId,
+        includeWeeklyGoalMinutes: includeWeeklyGoalMinutes,
         dailyGoalMinutes: dailyGoalMinutes,
         weeklyGoalMinutes: weeklyGoalMinutes,
         isActive: isActive,
       );
 
-      final updatedGoals = state.goals
+      final existingGoals = state.goalsWorkspaceId == wsId
+          ? state.goals
+          : const <TimeTrackingGoal>[];
+      final updatedGoals = existingGoals
           .map(
             (existingGoal) => existingGoal.id == goal.id ? goal : existingGoal,
           )
@@ -720,8 +740,9 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
       emit(
         state.copyWith(
           goals: updatedGoals,
-          hasLoadedGoals: true,
-          isGoalsLoading: false,
+          goalsWorkspaceId: wsId,
+          goalsLoadedByWs: _setGoalFlag(state.goalsLoadedByWs, wsId, true),
+          goalsLoadingByWs: _setGoalFlag(state.goalsLoadingByWs, wsId, false),
           clearError: true,
         ),
       );
@@ -740,11 +761,15 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
   }) async {
     try {
       await _repo.deleteGoal(wsId, goalId);
+      final existingGoals = state.goalsWorkspaceId == wsId
+          ? state.goals
+          : const <TimeTrackingGoal>[];
       emit(
         state.copyWith(
-          goals: state.goals.where((goal) => goal.id != goalId).toList(),
-          hasLoadedGoals: true,
-          isGoalsLoading: false,
+          goals: existingGoals.where((goal) => goal.id != goalId).toList(),
+          goalsWorkspaceId: wsId,
+          goalsLoadedByWs: _setGoalFlag(state.goalsLoadedByWs, wsId, true),
+          goalsLoadingByWs: _setGoalFlag(state.goalsLoadingByWs, wsId, false),
           clearError: true,
         ),
       );
@@ -765,23 +790,42 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     if (wsId.isEmpty) {
       return;
     }
-    if (!force && (state.hasLoadedGoals || state.isGoalsLoading)) {
+    if (!force &&
+        (state.hasLoadedGoalsFor(wsId) || state.isGoalsLoadingFor(wsId))) {
       return;
     }
 
-    emit(state.copyWith(isGoalsLoading: true, clearError: true));
+    final requestVersion = ++_goalsRequestVersion;
+    emit(
+      state.copyWith(
+        goalsLoadingByWs: _setGoalFlag(state.goalsLoadingByWs, wsId, true),
+        clearError: true,
+      ),
+    );
     try {
       final goals = await _repo.getGoals(wsId, userId: userId);
+      if (requestVersion != _goalsRequestVersion) {
+        return;
+      }
       emit(
         state.copyWith(
           goals: goals,
-          hasLoadedGoals: true,
-          isGoalsLoading: false,
+          goalsWorkspaceId: wsId,
+          goalsLoadedByWs: _setGoalFlag(state.goalsLoadedByWs, wsId, true),
+          goalsLoadingByWs: _setGoalFlag(state.goalsLoadingByWs, wsId, false),
           clearError: true,
         ),
       );
     } on Exception catch (e) {
-      emit(state.copyWith(isGoalsLoading: false, error: e.toString()));
+      if (requestVersion != _goalsRequestVersion) {
+        return;
+      }
+      emit(
+        state.copyWith(
+          goalsLoadingByWs: _setGoalFlag(state.goalsLoadingByWs, wsId, false),
+          error: e.toString(),
+        ),
+      );
       if (throwOnError) {
         rethrow;
       }

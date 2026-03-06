@@ -5,13 +5,43 @@ import {
 import type { Database } from '@tuturuuu/types/supabase';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+
+const RouteParamsSchema = z.object({
+  wsId: z.string().min(1),
+  goalId: z.uuid(),
+});
+
+const PositiveIntSchema = z.coerce.number().int().positive();
+
+const GoalPatchBodySchema = z
+  .object({
+    categoryId: z
+      .preprocess(
+        (value) => (value === 'general' ? null : value),
+        z.uuid().nullable()
+      )
+      .optional(),
+    dailyGoalMinutes: PositiveIntSchema.optional(),
+    weeklyGoalMinutes: z.union([PositiveIntSchema, z.null()]).optional(),
+    isActive: z.boolean().optional(),
+  })
+  .strict();
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ wsId: string; goalId: string }> }
 ) {
   try {
-    const { wsId, goalId } = await params;
+    const parsedParams = RouteParamsSchema.safeParse(await params);
+    if (!parsedParams.success) {
+      return NextResponse.json(
+        { error: 'Invalid route parameters' },
+        { status: 400 }
+      );
+    }
+
+    const { wsId, goalId } = parsedParams.data;
     const supabase = await createClient(request);
 
     // Get authenticated user
@@ -54,21 +84,22 @@ export async function PATCH(
       return NextResponse.json({ error: 'Goal not found' }, { status: 404 });
     }
 
-    const body = await request.json();
-    const { categoryId, dailyGoalMinutes, weeklyGoalMinutes, isActive } = body;
-
-    if (
-      dailyGoalMinutes !== undefined &&
-      (!dailyGoalMinutes || dailyGoalMinutes <= 0)
-    ) {
+    const parsedBody = GoalPatchBodySchema.safeParse(await request.json());
+    if (!parsedBody.success) {
       return NextResponse.json(
-        { error: 'Daily goal minutes must be positive' },
+        {
+          error: 'Invalid request body',
+          details: parsedBody.error.issues.map((issue) => issue.message),
+        },
         { status: 400 }
       );
     }
 
+    const { categoryId, dailyGoalMinutes, weeklyGoalMinutes, isActive } =
+      parsedBody.data;
+
     // Verify category exists if provided
-    if (categoryId && categoryId !== 'general') {
+    if (categoryId != null) {
       const { data: categoryCheck } = await supabase
         .from('time_tracking_categories')
         .select('id')
@@ -92,13 +123,13 @@ export async function PATCH(
     };
 
     if (categoryId !== undefined) {
-      updateData.category_id = categoryId === 'general' ? null : categoryId;
+      updateData.category_id = categoryId;
     }
     if (dailyGoalMinutes !== undefined) {
       updateData.daily_goal_minutes = dailyGoalMinutes;
     }
     if (weeklyGoalMinutes !== undefined) {
-      updateData.weekly_goal_minutes = weeklyGoalMinutes || null;
+      updateData.weekly_goal_minutes = weeklyGoalMinutes;
     }
     if (isActive !== undefined) {
       updateData.is_active = isActive;
@@ -112,6 +143,7 @@ export async function PATCH(
       .update(updateData)
       .eq('id', goalId)
       .eq('ws_id', normalizedWsId)
+      .eq('user_id', user.id)
       .select(
         `
         *,
@@ -137,7 +169,15 @@ export async function DELETE(
   { params }: { params: Promise<{ wsId: string; goalId: string }> }
 ) {
   try {
-    const { wsId, goalId } = await params;
+    const parsedParams = RouteParamsSchema.safeParse(await params);
+    if (!parsedParams.success) {
+      return NextResponse.json(
+        { error: 'Invalid route parameters' },
+        { status: 400 }
+      );
+    }
+
+    const { wsId, goalId } = parsedParams.data;
     const supabase = await createClient(request);
 
     // Get authenticated user
@@ -187,6 +227,7 @@ export async function DELETE(
       .delete()
       .eq('id', goalId)
       .eq('ws_id', normalizedWsId)
+      .eq('user_id', user.id)
       .select('id');
 
     if (error) throw error;

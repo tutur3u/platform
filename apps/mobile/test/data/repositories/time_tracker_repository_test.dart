@@ -188,5 +188,43 @@ void main() {
         ),
       ).called(1);
     });
+
+    test('updateGoal can send an explicit null weekly goal', () async {
+      Map<String, dynamic>? updateBody;
+
+      when(() => apiClient.patchJson(any(), any())).thenAnswer((
+        invocation,
+      ) async {
+        updateBody = invocation.positionalArguments[1] as Map<String, dynamic>;
+        return {
+          'goal': {
+            'id': 'goal-1',
+            'ws_id': 'ws_1',
+            'user_id': 'user-1',
+            'daily_goal_minutes': 45,
+            'weekly_goal_minutes': null,
+            'is_active': true,
+          },
+        };
+      });
+
+      await repository.updateGoal(
+        'ws_1',
+        'goal-1',
+        dailyGoalMinutes: 45,
+        includeWeeklyGoalMinutes: true,
+      );
+
+      expect(updateBody, isNotNull);
+      expect(updateBody!['dailyGoalMinutes'], 45);
+      expect(updateBody!.containsKey('weeklyGoalMinutes'), isTrue);
+      expect(updateBody!['weeklyGoalMinutes'], isNull);
+      verify(
+        () => apiClient.patchJson(
+          '/api/v1/workspaces/ws_1/time-tracking/goals/goal-1',
+          any(),
+        ),
+      ).called(1);
+    });
   });
 }

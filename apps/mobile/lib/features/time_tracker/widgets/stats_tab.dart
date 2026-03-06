@@ -116,7 +116,7 @@ class _PersonalStatsViewState extends State<_PersonalStatsView> {
     if (_tabIndex != 1 || wsId.isEmpty) {
       return;
     }
-    if (state.hasLoadedGoals || state.isGoalsLoading) {
+    if (state.hasLoadedGoalsFor(wsId) || state.isGoalsLoadingFor(wsId)) {
       return;
     }
     if (_goalsLoadRequestedWsId == wsId) {
@@ -147,12 +147,12 @@ class _PersonalStatsViewState extends State<_PersonalStatsView> {
           return;
         }
 
-        if (state.hasLoadedGoals && _goalsLoadRequestedWsId == currentWsId) {
+        if (_goalsLoadRequestedWsId != null &&
+            _goalsLoadRequestedWsId != currentWsId) {
           _goalsLoadRequestedWsId = null;
         }
 
-        if (!state.isGoalsLoading &&
-            !state.hasLoadedGoals &&
+        if (state.hasLoadedGoalsFor(currentWsId) &&
             _goalsLoadRequestedWsId == currentWsId) {
           _goalsLoadRequestedWsId = null;
         }
@@ -167,7 +167,12 @@ class _PersonalStatsViewState extends State<_PersonalStatsView> {
               child: shad.Tabs(
                 index: _tabIndex,
                 onChanged: (value) {
-                  setState(() => _tabIndex = value);
+                  setState(() {
+                    _tabIndex = value;
+                    if (value != 1) {
+                      _goalsLoadRequestedWsId = null;
+                    }
+                  });
                   if (value == 1 && wsId != null) {
                     _requestGoalsLoadIfNeeded(wsId: wsId, state: state);
                   }

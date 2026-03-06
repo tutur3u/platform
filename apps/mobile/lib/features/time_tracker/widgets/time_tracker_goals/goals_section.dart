@@ -37,9 +37,13 @@ class _TimeTrackerGoalsSectionState extends State<TimeTrackerGoalsSection> {
     return BlocBuilder<TimeTrackerCubit, TimeTrackerState>(
       builder: (context, state) {
         _ensureCompleteHistoryLoaded(state);
-        final goals = state.goals;
+        final goals = state.goalsWorkspaceId == widget.wsId
+            ? state.goals
+            : const <TimeTrackingGoal>[];
         final activeGoals = goals.where((goal) => goal.isActive).toList();
-        final shouldShowLoading = state.isGoalsLoading && !state.hasLoadedGoals;
+        final shouldShowLoading =
+            state.isGoalsLoadingFor(widget.wsId) &&
+            !state.hasLoadedGoalsFor(widget.wsId);
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -238,6 +242,7 @@ class _TimeTrackerGoalsSectionState extends State<TimeTrackerGoalsSection> {
         goal.id,
         categoryId: result.categoryId,
         includeCategoryId: true,
+        includeWeeklyGoalMinutes: true,
         dailyGoalMinutes: result.dailyGoalMinutes,
         weeklyGoalMinutes: result.weeklyGoalMinutes,
         isActive: result.isActive,
