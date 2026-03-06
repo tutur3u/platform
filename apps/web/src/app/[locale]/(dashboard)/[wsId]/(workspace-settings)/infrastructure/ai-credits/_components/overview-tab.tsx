@@ -121,8 +121,77 @@ export default function OverviewTab() {
         />
       </div>
 
+      <div className="grid gap-4 xl:grid-cols-[1.3fr_0.7fr]">
+        <Card className="border-border/70 bg-linear-to-br from-background to-muted/20 shadow-sm">
+          <CardContent className="flex h-full flex-col justify-between gap-4 pt-6">
+            <div>
+              <Badge variant="outline" className="mb-3">
+                {t('recent_transactions')}
+              </Badge>
+              <h3 className="font-semibold text-xl tracking-tight">
+                {t('overview_highlight_title')}
+              </h3>
+              <p className="mt-2 max-w-xl text-muted-foreground text-sm">
+                {t('overview_highlight_description')}
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl border border-border/60 bg-background/80 p-3">
+                <p className="text-[11px] text-muted-foreground uppercase tracking-[0.16em]">
+                  {t('overview_highlight_consumption')}
+                </p>
+                <p className="mt-1 font-medium">{usagePct.toFixed(1)}%</p>
+              </div>
+              <div className="rounded-2xl border border-border/60 bg-background/80 p-3">
+                <p className="text-[11px] text-muted-foreground uppercase tracking-[0.16em]">
+                  {t('overview_highlight_bonus')}
+                </p>
+                <p className="mt-1 font-medium">
+                  {formatCredits(Number(overview?.total_bonus_credits ?? 0))}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-border/60 bg-background/80 p-3">
+                <p className="text-[11px] text-muted-foreground uppercase tracking-[0.16em]">
+                  {t('overview_highlight_entities')}
+                </p>
+                <p className="mt-1 font-medium">
+                  {(overview?.total_workspaces_with_balance ?? 0) +
+                    (overview?.total_users_with_balance ?? 0)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70 bg-background/80 shadow-sm">
+          <CardContent className="pt-6">
+            <p className="text-[11px] text-muted-foreground uppercase tracking-[0.16em]">
+              {t('overview_pressure_title')}
+            </p>
+            <div className="mt-4 h-3 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-linear-to-r from-dynamic-primary via-dynamic-secondary to-dynamic-purple"
+                style={{ width: `${Math.min(usagePct, 100)}%` }}
+              />
+            </div>
+            <div className="mt-3 flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">
+                {t('stat_consumed')}
+              </span>
+              <span className="font-medium">{formatCredits(consumed)}</span>
+            </div>
+            <div className="mt-2 flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">
+                {t('stat_allocated')}
+              </span>
+              <span className="font-medium">{formatCredits(allocated)}</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
+        <Card className="border-border/70 shadow-sm">
           <CardHeader>
             <CardTitle className="text-base">
               {t('top_workspace_consumers')}
@@ -171,7 +240,7 @@ export default function OverviewTab() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-border/70 shadow-sm">
           <CardHeader>
             <CardTitle className="text-base">
               {t('top_user_consumers')}
@@ -221,7 +290,7 @@ export default function OverviewTab() {
         </Card>
       </div>
 
-      <Card>
+      <Card className="border-border/70 shadow-sm">
         <CardHeader>
           <CardTitle className="text-base">
             {t('recent_transactions')}

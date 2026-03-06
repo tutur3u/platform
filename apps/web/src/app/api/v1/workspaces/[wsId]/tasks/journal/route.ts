@@ -4,6 +4,10 @@ import {
   checkAiCredits,
   deductAiCredits,
 } from '@tuturuuu/ai/credits/check-credits';
+import {
+  PlanModelResolutionError,
+  resolvePlanModel,
+} from '@tuturuuu/ai/credits/resolve-plan-model';
 import type { CreditCheckResult } from '@tuturuuu/ai/credits/types';
 import { quickJournalTaskSchema } from '@tuturuuu/ai/object/types';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
@@ -360,13 +364,14 @@ function normalizeProvidedTasks(
 
 // Helper: generate AI tasks
 async function generateAiTasks(
+  modelId: string,
   systemPrompt: string,
   trimmedEntry: string,
   maxOutputTokens?: number | null
 ) {
   const prompt = `${systemPrompt}\n\nJournal note:\n"""\n${trimmedEntry}\n"""`;
   const { object, usage } = await generateObject({
-    model: google('gemini-3.1-flash-lite-preview'),
+    model: google(modelId.split('/').slice(-1)[0]!),
     schema: quickJournalTaskSchema,
     prompt,
     ...(maxOutputTokens ? { maxOutputTokens } : {}),
@@ -569,15 +574,40 @@ export async function POST(
       return NextResponse.json(wsAccess.body, { status: wsAccess.status });
     }
 
+    let resolvedModelId: string;
+    try {
+      const resolvedModel = await resolvePlanModel({
+        capability: 'language',
+        wsId,
+      });
+      resolvedModelId = resolvedModel.modelId;
+    } catch (error) {
+      if (error instanceof PlanModelResolutionError) {
+        const status = error.code === 'NO_ALLOCATION' ? 503 : 500;
+        return NextResponse.json(
+          { error: error.message, code: error.code },
+          { status }
+        );
+      }
+
+      console.error('Failed to resolve task journal model:', error);
+      return NextResponse.json(
+        { error: 'Failed to resolve AI model for task journal.' },
+        { status: 500 }
+      );
+    }
+
     // Pre-flight AI credit check
     let creditCheck: CreditCheckResult | null = null;
     const shouldInvokeAIEarly = !tasks?.length || previewOnly;
     if (shouldInvokeAIEarly) {
       const result = await checkAiCredits(
         wsId,
-        'gemini-2.5-flash-lite',
+        resolvedModelId,
         'task_journal',
-        { userId: user.id }
+        {
+          userId: user.id,
+        }
       );
       creditCheck = result;
       if (!result.allowed) {
@@ -634,7 +664,7 @@ export async function POST(
           const sbAdmin = await createAdminClient();
           cappedMaxOutput = await capMaxOutputTokensByCredits(
             sbAdmin,
-            'gemini-2.5-flash-lite',
+            resolvedModelId,
             creditCheck.maxOutputTokens,
             creditCheck.remainingCredits
           );
@@ -650,6 +680,7 @@ export async function POST(
         }
 
         const result = await generateAiTasks(
+          resolvedModelId,
           systemPrompt,
           trimmedEntry,
           cappedMaxOutput
@@ -661,7 +692,7 @@ export async function POST(
           deductAiCredits({
             wsId,
             userId: user.id,
-            modelId: 'gemini-2.5-flash-lite',
+            modelId: resolvedModelId,
             inputTokens: result.usage.inputTokens ?? 0,
             outputTokens: result.usage.outputTokens ?? 0,
             reasoningTokens:
@@ -683,7 +714,7 @@ export async function POST(
             deductAiCredits({
               wsId,
               userId: user.id,
-              modelId: 'gemini-2.5-flash-lite',
+              modelId: resolvedModelId,
               inputTokens: failedUsage.inputTokens ?? 0,
               outputTokens: failedUsage.outputTokens ?? 0,
               reasoningTokens: failedUsage.reasoningTokens ?? 0,

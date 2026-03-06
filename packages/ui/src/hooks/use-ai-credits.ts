@@ -7,6 +7,16 @@ import { useMemo } from 'react';
 const AI_CREDITS_QUERY_KEY = 'ai-credits';
 const STALE_TIME = 30_000; // 30 seconds
 
+function matchesAllowedModel(modelName: string, allowedModels: string[]) {
+  if (allowedModels.length === 0) return true;
+
+  return allowedModels.some((allowedModel) =>
+    allowedModel.includes('/')
+      ? allowedModel === modelName
+      : modelName === allowedModel || modelName.endsWith(`/${allowedModel}`)
+  );
+}
+
 /**
  * Fetches AI credit status for a workspace.
  * Uses TanStack Query with 30s staleTime to avoid excessive re-fetching.
@@ -55,7 +65,7 @@ export function useCanUseAiFeature(
     if (
       modelId &&
       credits.allowedModels.length > 0 &&
-      !credits.allowedModels.includes(modelId)
+      !matchesAllowedModel(modelId, credits.allowedModels)
     ) {
       return false;
     }

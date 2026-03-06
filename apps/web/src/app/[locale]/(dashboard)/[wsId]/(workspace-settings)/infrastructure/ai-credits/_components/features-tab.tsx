@@ -60,53 +60,69 @@ export default function FeaturesTab() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t('feature_matrix')}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b">
-                <th className="pb-2 text-left font-medium">{t('feature')}</th>
-                {TIERS.map((tier) => (
-                  <th key={tier} className="pb-2 text-center font-medium">
-                    {tier}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {featureNames.map((featureName) => (
-                <tr key={featureName} className="border-b last:border-0">
-                  <td className="py-3 font-mono text-xs">{featureName}</td>
-                  {TIERS.map((tier) => {
-                    const fa = getFeatureForTier(featureName, tier);
-                    return (
-                      <td key={tier} className="py-3 text-center">
-                        {fa ? (
-                          <Switch
-                            checked={fa.enabled}
-                            onCheckedChange={(checked) =>
-                              toggleMutation.mutate({
-                                id: fa.id,
-                                enabled: checked,
-                              })
-                            }
-                          />
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </td>
-                    );
-                  })}
+    <div className="space-y-4">
+      <Card className="border-border/70 bg-linear-to-br from-background to-muted/20 shadow-sm">
+        <CardContent className="pt-6">
+          <p className="text-[11px] text-muted-foreground uppercase tracking-[0.16em]">
+            {t('features_eyebrow')}
+          </p>
+          <h3 className="mt-1 font-semibold text-xl tracking-tight">
+            {t('features_headline')}
+          </h3>
+          <p className="mt-1 text-muted-foreground text-sm">
+            {t('features_subcopy')}
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/70 shadow-sm">
+        <CardHeader>
+          <CardTitle>{t('feature_matrix')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="pb-2 text-left font-medium">{t('feature')}</th>
+                  {TIERS.map((tier) => (
+                    <th key={tier} className="pb-2 text-center font-medium">
+                      {tier}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </CardContent>
-    </Card>
+              </thead>
+              <tbody>
+                {featureNames.map((featureName) => (
+                  <tr key={featureName} className="border-b last:border-0">
+                    <td className="py-3 font-mono text-xs">{featureName}</td>
+                    {TIERS.map((tier) => {
+                      const fa = getFeatureForTier(featureName, tier);
+                      return (
+                        <td key={tier} className="py-3 text-center">
+                          {fa ? (
+                            <Switch
+                              checked={fa.enabled}
+                              onCheckedChange={(checked) =>
+                                toggleMutation.mutate({
+                                  id: fa.id,
+                                  enabled: checked,
+                                })
+                              }
+                            />
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

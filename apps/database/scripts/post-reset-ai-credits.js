@@ -267,7 +267,21 @@ async function enableAllGatewayModels(baseUrl, serviceRoleKey) {
   );
 }
 
-async function normalizeAllocations(baseUrl, serviceRoleKey) {
+function pickExistingModelId(availableModelIds, preferredIds) {
+  for (const preferredId of preferredIds) {
+    if (availableModelIds.has(preferredId)) {
+      return preferredId;
+    }
+  }
+
+  return null;
+}
+
+async function normalizeAllocations(
+  baseUrl,
+  serviceRoleKey,
+  availableModelIds
+) {
   await adminFetch(
     baseUrl,
     serviceRoleKey,
@@ -285,6 +299,60 @@ async function normalizeAllocations(baseUrl, serviceRoleKey) {
       }),
     }
   );
+
+  const defaultsByTier = {
+    FREE: {
+      default_language_model: pickExistingModelId(availableModelIds, [
+        'gemini-3.1-flash-lite-preview',
+      ]),
+      default_image_model: pickExistingModelId(availableModelIds, [
+        'google/imagen-4.0-fast-generate-001',
+        'google/imagen-4.0-generate-001',
+      ]),
+    },
+    PLUS: {
+      default_language_model: pickExistingModelId(availableModelIds, [
+        'gemini-3.1-flash-lite-preview',
+      ]),
+      default_image_model: pickExistingModelId(availableModelIds, [
+        'google/imagen-4.0-generate-001',
+        'google/imagen-4.0-fast-generate-001',
+      ]),
+    },
+    PRO: {
+      default_language_model: pickExistingModelId(availableModelIds, [
+        'gemini-3.1-flash-lite-preview',
+      ]),
+      default_image_model: pickExistingModelId(availableModelIds, [
+        'google/imagen-4.0-generate-001',
+        'google/imagen-4.0-fast-generate-001',
+      ]),
+    },
+    ENTERPRISE: {
+      default_language_model: pickExistingModelId(availableModelIds, [
+        'gemini-3.1-flash-lite-preview',
+      ]),
+      default_image_model: pickExistingModelId(availableModelIds, [
+        'google/imagen-4.0-generate-001',
+        'google/imagen-4.0-fast-generate-001',
+      ]),
+    },
+  };
+
+  for (const [tier, defaults] of Object.entries(defaultsByTier)) {
+    await adminFetch(
+      baseUrl,
+      serviceRoleKey,
+      `/rest/v1/ai_credit_plan_allocations?tier=eq.${tier}`,
+      {
+        method: 'PATCH',
+        headers: {
+          Prefer: 'return=minimal',
+        },
+        body: JSON.stringify(defaults),
+      }
+    );
+  }
 }
 
 async function main() {
@@ -301,13 +369,18 @@ async function main() {
     serviceRoleKey,
     rows
   );
+  const availableModelIds = new Set(rows.map((row) => row.id));
   await enableAllGatewayModels(supabaseBaseUrl, serviceRoleKey);
-  await normalizeAllocations(supabaseBaseUrl, serviceRoleKey);
+  await normalizeAllocations(
+    supabaseBaseUrl,
+    serviceRoleKey,
+    availableModelIds
+  );
 
   console.log(`✅ Synced ${syncedCount} gateway models`);
   console.log('✅ Enabled all gateway models');
   console.log(
-    `✅ Normalized all plan allocations: monthly=${ONE_MILLION_CREDITS}, daily=${ONE_MILLION_CREDITS}, max_output_tokens=${MIN_MAX_OUTPUT_TOKENS}, allowed_models=ALL`
+    `✅ Normalized all plan allocations: monthly=${ONE_MILLION_CREDITS}, daily=${ONE_MILLION_CREDITS}, max_output_tokens=${MIN_MAX_OUTPUT_TOKENS}, allowed_models=ALL, default models refreshed`
   );
   console.log('\n✅ Post-reset AI credits bootstrap complete.\n');
 }

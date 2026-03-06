@@ -7,11 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: '14.1';
-  };
   public: {
     Tables: {
       abuse_events: {
@@ -260,6 +255,8 @@ export type Database = {
           created_at: string;
           credits_per_seat: number | null;
           daily_limit: number | null;
+          default_image_model: string | null;
+          default_language_model: string | null;
           id: string;
           is_active: boolean;
           markup_multiplier: number;
@@ -277,6 +274,8 @@ export type Database = {
           created_at?: string;
           credits_per_seat?: number | null;
           daily_limit?: number | null;
+          default_image_model?: string | null;
+          default_language_model?: string | null;
           id?: string;
           is_active?: boolean;
           markup_multiplier?: number;
@@ -294,6 +293,8 @@ export type Database = {
           created_at?: string;
           credits_per_seat?: number | null;
           daily_limit?: number | null;
+          default_image_model?: string | null;
+          default_language_model?: string | null;
           id?: string;
           is_active?: boolean;
           markup_multiplier?: number;
@@ -305,7 +306,22 @@ export type Database = {
           updated_at?: string;
           weekly_limit?: number | null;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'ai_credit_plan_allocations_default_image_model_fkey';
+            columns: ['default_image_model'];
+            isOneToOne: false;
+            referencedRelation: 'ai_gateway_models';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ai_credit_plan_allocations_default_language_model_fkey';
+            columns: ['default_language_model'];
+            isOneToOne: false;
+            referencedRelation: 'ai_gateway_models';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       ai_credit_reservations: {
         Row: {
@@ -17765,7 +17781,36 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       calendar_event_participants: {
         Row: {
@@ -19742,7 +19787,7 @@ export type Database = {
       get_auth_provider_stats: {
         Args: never;
         Returns: {
-          last_sign_in_avg: unknown;
+          last_sign_in_avg: string;
           percentage: number;
           provider: string;
           user_count: number;
@@ -21004,7 +21049,7 @@ export type Database = {
         Args: { user_id: string };
         Returns: {
           active_sessions: number;
-          current_session_age: unknown;
+          current_session_age: string;
           total_sessions: number;
         }[];
       };

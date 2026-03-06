@@ -1,7 +1,8 @@
+import {
+  PlanModelResolutionError,
+  resolvePlanModel,
+} from '../../credits/resolve-plan-model';
 import type { MiraToolContext } from '../mira-tools';
-
-const IMAGEN_4_FAST = 'google/imagen-4.0-fast-generate-001';
-const IMAGEN_4 = 'google/imagen-4.0-generate-001';
 
 export async function executeGenerateImage(
   args: Record<string, unknown>,
@@ -10,17 +11,26 @@ export async function executeGenerateImage(
   const billingWsId = ctx.creditWsId ?? ctx.wsId;
   const prompt = args.prompt as string;
   const aspectRatio = (args.aspectRatio as string) ?? '1:1';
+  let selectedModel: string;
 
-  const resolvedModel =
-    (args.model as string) ??
-    (await (async () => {
-      const { getWorkspaceTier } = await import(
-        '@tuturuuu/utils/workspace-helper'
-      );
-      const tier = await getWorkspaceTier(billingWsId, { useAdmin: true });
-      return tier === 'FREE' ? IMAGEN_4_FAST : IMAGEN_4;
-    })());
-  const selectedModel = resolvedModel;
+  try {
+    const resolvedModel = await resolvePlanModel({
+      capability: 'image',
+      requestedModel:
+        typeof args.model === 'string' ? (args.model as string) : undefined,
+      wsId: billingWsId,
+    });
+    selectedModel = resolvedModel.modelId;
+  } catch (error) {
+    if (error instanceof PlanModelResolutionError) {
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+
+    throw error;
+  }
 
   const { checkAiCredits } = await import('../../credits/check-credits');
   const {

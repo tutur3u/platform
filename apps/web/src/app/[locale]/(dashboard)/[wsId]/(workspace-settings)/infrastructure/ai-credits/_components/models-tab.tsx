@@ -82,7 +82,12 @@ export default function ModelsTab() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, is_enabled }),
       });
-      if (!res.ok) throw new Error('Failed to update');
+      if (!res.ok) {
+        const payload = (await res.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        throw new Error(payload?.error || 'Failed to update');
+      }
       return res.json();
     },
     onSuccess: () => {
@@ -91,7 +96,8 @@ export default function ModelsTab() {
       });
       toast.success(t('model_updated'));
     },
-    onError: () => toast.error(t('update_failed')),
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : t('update_failed')),
   });
 
   const syncMutation = useMutation({
@@ -163,79 +169,104 @@ export default function ModelsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative">
-          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder={t('search_models')}
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            className="w-64 pl-9"
-          />
-        </div>
-        <Select
-          value={providerFilter}
-          onValueChange={(v) => {
-            setProviderFilter(v);
-            setPage(1);
-          }}
-        >
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder={t('filter_by_provider')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('all_providers')}</SelectItem>
-            {providers.map((p) => (
-              <SelectItem key={p} value={p} className="capitalize">
-                {p}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <Card className="border-border/70 bg-linear-to-br from-background to-muted/20 shadow-sm">
+        <CardContent className="space-y-4 pt-6">
+          <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-[11px] text-muted-foreground uppercase tracking-[0.16em]">
+                {t('models_eyebrow')}
+              </p>
+              <h3 className="mt-1 font-semibold text-xl tracking-tight">
+                {t('models_headline')}
+              </h3>
+              <p className="mt-1 text-muted-foreground text-sm">
+                {t('models_subcopy')}
+              </p>
+            </div>
+            <Button
+              onClick={() => syncMutation.mutate()}
+              disabled={syncMutation.isPending}
+              variant="outline"
+            >
+              {syncMutation.isPending ? t('syncing') : t('sync_from_gateway')}
+            </Button>
+          </div>
 
-        <Select
-          value={typeFilter}
-          onValueChange={(v) => {
-            setTypeFilter(v);
-            setPage(1);
-          }}
-        >
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder={t('all_types')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('all_types')}</SelectItem>
-            {types.map((type) => (
-              <SelectItem key={type} value={type} className="capitalize">
-                {type}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative">
+              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder={t('search_models')}
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                className="w-64 bg-background/80 pl-9"
+              />
+            </div>
+            <Select
+              value={providerFilter}
+              onValueChange={(v) => {
+                setProviderFilter(v);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="w-40 bg-background/80">
+                <SelectValue placeholder={t('filter_by_provider')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('all_providers')}</SelectItem>
+                {providers.map((p) => (
+                  <SelectItem key={p} value={p} className="capitalize">
+                    {p}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-        <Select
-          value={tagFilter}
-          onValueChange={(v) => {
-            setTagFilter(v);
-            setPage(1);
-          }}
-        >
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder={t('filter_by_tag')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('all_tags')}</SelectItem>
-            {tags.map((tag) => (
-              <SelectItem key={tag} value={tag}>
-                {tag}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+            <Select
+              value={typeFilter}
+              onValueChange={(v) => {
+                setTypeFilter(v);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="w-40 bg-background/80">
+                <SelectValue placeholder={t('all_types')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('all_types')}</SelectItem>
+                {types.map((type) => (
+                  <SelectItem key={type} value={type} className="capitalize">
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={tagFilter}
+              onValueChange={(v) => {
+                setTagFilter(v);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="w-40 bg-background/80">
+                <SelectValue placeholder={t('filter_by_tag')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('all_tags')}</SelectItem>
+                {tags.map((tag) => (
+                  <SelectItem key={tag} value={tag}>
+                    {tag}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -267,13 +298,6 @@ export default function ModelsTab() {
             </ToggleGroupItem>
           </ToggleGroup>
         </div>
-        <Button
-          onClick={() => syncMutation.mutate()}
-          disabled={syncMutation.isPending}
-          variant="outline"
-        >
-          {syncMutation.isPending ? t('syncing') : t('sync_from_gateway')}
-        </Button>
       </div>
 
       {isLoading ? (

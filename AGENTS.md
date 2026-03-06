@@ -143,6 +143,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Discord Service Logging**: In `apps/discord`, use module-level `logging` (`logger.exception` / `logger.error(..., exc_info=True)`) for error paths. Avoid ad-hoc `print()` for operational failures.
 - **Global Check Baseline Drift**: If `bun check` fails solely because repo-wide tool versions drift (for example Biome schema/CLI mismatch), do not modify unrelated workspace configs in feature PRs; complete scoped verification (for example `bun check:mobile` for mobile-only work) and report the pre-existing global failure explicitly.
 - **Broken Bun CLI Binaries**: If a `bun run` script reports a repo-local CLI as missing but the package is installed, inspect the resolved `node_modules/.bun/*` package payload and the `.bin` symlink target before changing PATH or shell setup. If the published version is missing its built CLI files, pin to a known-good package version with `bun add` instead of adding script-level workarounds.
+- **Workspace Subpath Imports**: Before importing a workspace package subpath like `@tuturuuu/pkg/foo`, verify that the target is actually covered by that package’s `exports`. Do not assume a directory `index.ts` is reachable via the bare directory subpath; prefer an explicitly exported file path or a relative import within the same package.
 
 ### 6.5 Type Safety & Platform Details
 

@@ -62,6 +62,7 @@ export default function MiraChatInputToolbar({
     <div className="flex min-w-0 flex-wrap items-center gap-1.5">
       {/* Model picker */}
       <MiraModelSelector
+        creditsWsId={creditWsId}
         wsId={wsId}
         model={model}
         onChange={onModelChange}

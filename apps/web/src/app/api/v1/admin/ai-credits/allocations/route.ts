@@ -1,3 +1,4 @@
+import { matchesAllowedModel } from '@tuturuuu/ai/credits/model-mapping';
 import {
   createAdminClient,
   createClient,
@@ -5,6 +6,38 @@ import {
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+
+const PLAN_DEFAULT_MODELS = {
+  ENTERPRISE: {
+    default_image_model: 'google/imagen-4.0-generate-001',
+    default_language_model: 'google/gemini-2.5-flash-lite',
+  },
+  FREE: {
+    default_image_model: 'google/imagen-4.0-fast-generate-001',
+    default_language_model: 'google/gemini-2.5-flash-lite',
+  },
+  PLUS: {
+    default_image_model: 'google/imagen-4.0-generate-001',
+    default_language_model: 'google/gemini-2.5-flash-lite',
+  },
+  PRO: {
+    default_image_model: 'google/imagen-4.0-generate-001',
+    default_language_model: 'google/gemini-2.5-flash-lite',
+  },
+} as const;
+
+type PlanTier = keyof typeof PLAN_DEFAULT_MODELS;
+type AllocationWithOptionalDefaults = {
+  default_image_model?: string | null;
+  default_language_model?: string | null;
+  tier: string;
+} & Record<string, unknown>;
+
+function getPlanDefaults(tier: string) {
+  return PLAN_DEFAULT_MODELS[
+    (tier in PLAN_DEFAULT_MODELS ? tier : 'FREE') as PlanTier
+  ];
+}
 
 async function requireRootAdmin() {
   const supabase = await createClient();
@@ -56,7 +89,21 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json(
+      (data ?? []).map((row) => {
+        const allocation = row as AllocationWithOptionalDefaults;
+        const defaults = getPlanDefaults(allocation.tier);
+
+        return {
+          ...allocation,
+          default_image_model:
+            allocation.default_image_model ?? defaults.default_image_model,
+          default_language_model:
+            allocation.default_language_model ??
+            defaults.default_language_model,
+        };
+      })
+    );
   } catch (error) {
     console.error('Error in allocations GET:', error);
     return NextResponse.json(
@@ -70,6 +117,8 @@ const updateSchema = z.object({
   id: z.string().uuid(),
   monthly_credits: z.number().optional(),
   credits_per_seat: z.number().nullable().optional(),
+  default_image_model: z.string().min(1).optional(),
+  default_language_model: z.string().min(1).optional(),
   daily_limit: z.number().nullable().optional(),
   max_output_tokens_per_request: z.number().nullable().optional(),
   markup_multiplier: z.number().optional(),
@@ -78,6 +127,77 @@ const updateSchema = z.object({
   max_requests_per_day: z.number().nullable().optional(),
   is_active: z.boolean().optional(),
 });
+
+async function validateDefaultModels(args: {
+  allowedModels: string[];
+  defaultImageModel: string;
+  defaultLanguageModel: string;
+  sbAdmin: any;
+}) {
+  const { allowedModels, defaultImageModel, defaultLanguageModel, sbAdmin } =
+    args;
+
+  const { data: models, error } = await sbAdmin
+    .from('ai_gateway_models')
+    .select('id, type, is_enabled')
+    .in('id', [defaultLanguageModel, defaultImageModel]);
+
+  if (error) {
+    return NextResponse.json(
+      { error: 'Failed to validate default models' },
+      { status: 500 }
+    );
+  }
+
+  const byId = new Map(
+    (
+      (models ?? []) as Array<{
+        id: string;
+        is_enabled: boolean;
+        type: string;
+      }>
+    ).map((model) => [model.id, model])
+  );
+  const languageModel = byId.get(defaultLanguageModel);
+  const imageModel = byId.get(defaultImageModel);
+
+  if (
+    !languageModel ||
+    languageModel.type !== 'language' ||
+    !languageModel.is_enabled
+  ) {
+    return NextResponse.json(
+      {
+        error:
+          'Default language model must reference an enabled language model.',
+      },
+      { status: 400 }
+    );
+  }
+
+  if (!imageModel || imageModel.type !== 'image' || !imageModel.is_enabled) {
+    return NextResponse.json(
+      { error: 'Default image model must reference an enabled image model.' },
+      { status: 400 }
+    );
+  }
+
+  if (
+    allowedModels.length > 0 &&
+    (!matchesAllowedModel(defaultLanguageModel, allowedModels) ||
+      !matchesAllowedModel(defaultImageModel, allowedModels))
+  ) {
+    return NextResponse.json(
+      {
+        error:
+          'Default models must be included in the allowed models allowlist.',
+      },
+      { status: 400 }
+    );
+  }
+
+  return null;
+}
 
 export async function PUT(req: Request) {
   try {
@@ -97,11 +217,48 @@ export async function PUT(req: Request) {
     const sbAdmin = await createAdminClient();
 
     // Fetch the allocation before update to know the tier
-    const { data: existing } = await sbAdmin
+    const { data: existingData } = await sbAdmin
       .from('ai_credit_plan_allocations')
-      .select('tier, monthly_credits')
+      .select('*')
       .eq('id', id)
       .single();
+
+    const existing = existingData as {
+      allowed_models: string[];
+      default_image_model?: string | null;
+      default_language_model?: string | null;
+      monthly_credits: number;
+      tier: string;
+    } | null;
+
+    if (!existing) {
+      return NextResponse.json(
+        { error: 'Allocation not found' },
+        { status: 404 }
+      );
+    }
+
+    const tierDefaults = getPlanDefaults(existing.tier);
+    const defaultLanguageModel =
+      updates.default_language_model ??
+      existing.default_language_model ??
+      tierDefaults.default_language_model;
+    const defaultImageModel =
+      updates.default_image_model ??
+      existing.default_image_model ??
+      tierDefaults.default_image_model;
+    const allowedModels = updates.allowed_models ?? existing.allowed_models;
+
+    const validationError = await validateDefaultModels({
+      allowedModels,
+      defaultImageModel,
+      defaultLanguageModel,
+      sbAdmin,
+    });
+
+    if (validationError) {
+      return validationError;
+    }
 
     const { data, error } = await sbAdmin
       .from('ai_credit_plan_allocations')

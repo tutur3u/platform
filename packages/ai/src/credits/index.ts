@@ -11,6 +11,7 @@ export {
   type CreditErrorCode,
 } from './constants';
 export {
+  matchesAllowedModel,
   resolveGatewayModelId,
   toBareModelName,
   toGatewayModelId,
@@ -20,6 +21,13 @@ export {
   releaseFixedAiCreditReservation,
   reserveFixedAiCredits,
 } from './reservations';
+export {
+  type EffectivePlanModel,
+  type PlanModelCapability,
+  PlanModelResolutionError,
+  resolvePlanModel,
+  selectEffectivePlanModel,
+} from './resolve-plan-model';
 export { syncGatewayModels } from './sync-gateway-models';
 export type {
   AiCreditStatus,
