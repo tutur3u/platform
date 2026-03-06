@@ -1128,6 +1128,7 @@
     "billing-details-updated": "Cập nhật thông tin thanh toán thành công",
     "billing-email": "Email",
     "billing-info": "Quản lý thông tin thanh toán của bạn",
+    "billing-loading-error": "Đã xảy ra lỗi khi tải thông tin thanh toán.",
     "billing-name": "Tên thanh toán",
     "buy-credit-packs": "Mua gói tín dụng",
     "buy-now": "Mua ngay",

@@ -1128,6 +1128,7 @@
     "billing-details-updated": "Billing details updated successfully",
     "billing-email": "Email",
     "billing-info": "Manage your billing information and subscriptions here.",
+    "billing-loading-error": "An error occurred while loading billing information.",
     "billing-name": "Billing Name",
     "buy-credit-packs": "Buy Credit Packs",
     "buy-now": "Buy Now",

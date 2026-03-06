@@ -49,23 +49,6 @@ export default function BillingSettings({ wsId }: BillingSettingsProps) {
   if (error) {
     const errorMessage = error instanceof Error ? error.message : '';
 
-    // Handle authorization errors
-    if (
-      errorMessage.includes('UNAUTHORIZED') ||
-      errorMessage.includes('FORBIDDEN')
-    ) {
-      return (
-        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
-          <h3 className="mb-2 font-semibold text-destructive text-sm">
-            Access Denied
-          </h3>
-          <p className="text-muted-foreground text-sm">
-            You do not have billing permission to access this section.
-          </p>
-        </div>
-      );
-    }
-
     if (errorMessage === 'SUBSCRIPTION_NOT_FOUND') {
       return <NoSubscriptionMessage wsId={wsId} />;
     }
@@ -73,16 +56,18 @@ export default function BillingSettings({ wsId }: BillingSettingsProps) {
     // Show generic error for all other cases
     return (
       <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
-        <h3 className="mb-2 font-semibold text-destructive text-sm">Error</h3>
+        <h3 className="mb-2 font-semibold text-destructive text-sm">
+          {t('ai-credits-error')}
+        </h3>
         <p className="mb-3 text-muted-foreground text-sm">
-          An error occured while loading billing information
+          {t('billing-loading-error')}
         </p>
         <button
           type="button"
           onClick={() => window.location.reload()}
           className="text-primary text-sm hover:underline"
         >
-          Retry
+          {t('retry')}
         </button>
       </div>
     );

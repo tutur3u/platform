@@ -207,16 +207,13 @@ export function SettingsDialog({
       hasBillingPermission === false &&
       activeTab === 'workspace_billing'
     ) {
-      setActiveTab(defaultTab ?? 'general');
+      const safeFallback =
+        defaultTab === 'workspace_billing'
+          ? 'profile'
+          : (defaultTab ?? 'profile');
+      setActiveTab(safeFallback);
     }
   }, [hasBillingPermission, isBillingPermissionLoading, activeTab, defaultTab]);
-
-  // Reset activeTab when workspace changes
-  useEffect(() => {
-    if (activeTab === 'workspace_billing' && !workspace?.id) {
-      setActiveTab(defaultTab ?? 'general');
-    }
-  }, [workspace?.id, activeTab, defaultTab]);
 
   // Fetch calendar token when workspace is available (using TanStack Query)
   const { data: calendarToken } = useQuery({
