@@ -8,13 +8,13 @@ import { useTransition } from 'react';
 type DatabaseTab = 'users' | 'audit-log';
 
 interface Props {
-  defaultTab: DatabaseTab;
-  usersContent: React.ReactNode;
-  auditLogContent: React.ReactNode;
+  activeTab: DatabaseTab;
+  usersContent?: React.ReactNode;
+  auditLogContent?: React.ReactNode;
 }
 
 export function DatabaseTabs({
-  defaultTab,
+  activeTab,
   usersContent,
   auditLogContent,
 }: Props) {
@@ -26,7 +26,7 @@ export function DatabaseTabs({
 
   const handleTabChange = (value: string) => {
     if (value !== 'users' && value !== 'audit-log') return;
-    if (value === defaultTab) return;
+    if (value === activeTab) return;
 
     const params = new URLSearchParams(searchParams.toString());
 
@@ -46,7 +46,7 @@ export function DatabaseTabs({
   };
 
   return (
-    <Tabs value={defaultTab} onValueChange={handleTabChange} className="w-full">
+    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
       <TabsList className="mb-6 grid h-auto w-full max-w-sm grid-cols-2 rounded-2xl border bg-muted/50 p-1">
         <TabsTrigger
           value="users"
@@ -63,12 +63,15 @@ export function DatabaseTabs({
           {t('ws-users.audit_log')}
         </TabsTrigger>
       </TabsList>
-      <TabsContent value="users" className="mt-0">
-        {usersContent}
-      </TabsContent>
-      <TabsContent value="audit-log" className="mt-0">
-        {auditLogContent}
-      </TabsContent>
+      {activeTab === 'users' ? (
+        <TabsContent value="users" className="mt-0">
+          {usersContent}
+        </TabsContent>
+      ) : (
+        <TabsContent value="audit-log" className="mt-0">
+          {auditLogContent}
+        </TabsContent>
+      )}
     </Tabs>
   );
 }

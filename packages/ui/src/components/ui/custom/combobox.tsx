@@ -19,9 +19,12 @@ import { Separator } from '../separator';
 export type ComboboxOption = {
   value: string;
   label: string;
+  description?: React.ReactNode;
+  badge?: React.ReactNode;
   icon?: React.ReactNode;
   /** Optional color for styling */
   color?: string;
+  muted?: boolean;
 };
 
 export type ComboboxAction = {
@@ -59,7 +62,7 @@ interface ComboboxProps {
   /** Text to display when creating a new item (used with onCreate) */
   createText?: string;
   /** Override label shown on the trigger button */
-  label?: string;
+  label?: React.ReactNode;
   /** Additional class name for the container */
   className?: string;
   /** Whether the combobox is disabled */
@@ -217,15 +220,27 @@ export function Combobox({
                     : selectedOption.icon}
                 </span>
               )}
-              <span
-                className="truncate"
-                style={
-                  selectedOption?.color
-                    ? { color: selectedOption.color }
-                    : undefined
-                }
-              >
-                {label ?? selectedLabel ?? placeholder}
+              <span className="min-w-0 flex-1">
+                {label ? (
+                  label
+                ) : (
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span
+                      className={cn(
+                        'truncate',
+                        selectedOption?.muted && 'text-muted-foreground'
+                      )}
+                      style={
+                        selectedOption?.color
+                          ? { color: selectedOption.color }
+                          : undefined
+                      }
+                    >
+                      {selectedLabel ?? placeholder}
+                    </span>
+                    {selectedOption?.badge}
+                  </span>
+                )}
               </span>
             </span>
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -298,6 +313,7 @@ export function Combobox({
                   <CommandItem
                     key={option.value}
                     value={option.label}
+                    className={cn(option.muted && 'bg-muted/30')}
                     onSelect={() => {
                       if (onChange) {
                         if (mode === 'multiple' && Array.isArray(selected)) {
@@ -343,13 +359,26 @@ export function Combobox({
                             : option.icon}
                         </span>
                       )}
-                      <span
-                        className="truncate"
-                        style={
-                          option.color ? { color: option.color } : undefined
-                        }
-                      >
-                        {option.label}
+                      <span className="min-w-0 flex-1">
+                        <span className="flex min-w-0 items-start justify-between gap-2">
+                          <span
+                            className={cn(
+                              'truncate',
+                              option.muted && 'text-muted-foreground'
+                            )}
+                            style={
+                              option.color ? { color: option.color } : undefined
+                            }
+                          >
+                            {option.label}
+                          </span>
+                          {option.badge}
+                        </span>
+                        {option.description ? (
+                          <span className="mt-0.5 block truncate text-muted-foreground text-xs">
+                            {option.description}
+                          </span>
+                        ) : null}
                       </span>
                     </span>
                     <Check

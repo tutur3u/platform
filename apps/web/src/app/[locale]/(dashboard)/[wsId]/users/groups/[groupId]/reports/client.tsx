@@ -12,6 +12,7 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUserReport } from '@tuturuuu/types';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
 import {
@@ -30,7 +31,8 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useLocale, useTranslations } from 'next-intl';
+import { cn } from '@tuturuuu/utils/format';
+import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { parseAsString, useQueryStates } from 'nuqs';
 import { useEffect, useMemo, useState } from 'react';
@@ -40,15 +42,22 @@ import {
   type ReportStatusCounts,
   ReportStatusIndicator,
 } from '../../../reports/components/report-status-indicator';
+import {
+  getWorkspaceUserArchiveState,
+  sortWorkspaceUsersByArchive,
+} from '../../../reports/user-archive';
 import { BulkReportExporter } from './components/bulk-report-exporter';
 
 // Feature flag for experimental factor functionality
 const ENABLE_FACTOR_CALCULATION = false;
 
 type ReportWithNames = WorkspaceUserReport & {
-  group_name: string;
+  group_name?: string | null;
   creator_name?: string | null;
   user_name?: string | null;
+  user_archived?: boolean;
+  user_archived_until?: string | null;
+  user_note?: string | null;
 };
 
 interface Props {
@@ -74,6 +83,7 @@ export default function GroupReportsClient({
 }: Props) {
   const t = useTranslations();
   const locale = useLocale();
+  const { dateTime } = useFormatter();
   const { resolvedTheme } = useTheme();
 
   const [bulkExportOpen, setBulkExportOpen] = useState(false);
@@ -135,11 +145,12 @@ export default function GroupReportsClient({
           included_groups: [groupId],
           excluded_groups: [],
           search_query: '',
+          include_archived: true,
         })
-        .select('id, full_name')
+        .select('id, full_name, archived, archived_until, note')
         .order('full_name', { ascending: true, nullsFirst: false });
       if (error) throw error;
-      return (data ?? []) as WorkspaceUser[];
+      return sortWorkspaceUsersByArchive((data ?? []) as WorkspaceUser[]);
     },
   });
 
@@ -205,19 +216,58 @@ export default function GroupReportsClient({
 
   const filteredUsers = useMemo(() => {
     if (!usersQuery.data) return [];
-    return usersQuery.data.filter((u) => !managerUserIds.has(u.id));
+    return sortWorkspaceUsersByArchive(
+      usersQuery.data.filter((u) => !managerUserIds.has(u.id))
+    );
   }, [usersQuery.data, managerUserIds]);
 
   const userOptions: ComboboxOption[] = useMemo(
     () =>
-      filteredUsers.map((u) => ({
-        value: u.id,
-        label: u.full_name || 'No name',
-        icon: <ReportStatusIndicator counts={userStatusMap.get(u.id)} />,
-      })) ?? [],
-    [filteredUsers, userStatusMap]
+      filteredUsers.map((u) => {
+        const archiveState = getWorkspaceUserArchiveState(u);
+        const badgeLabel =
+          archiveState === 'active'
+            ? t('ws-users.status_active')
+            : archiveState === 'temporary-archived'
+              ? t('ws-users.status_archived_until')
+              : t('ws-users.status_archived');
+
+        return {
+          value: u.id,
+          label: u.full_name || 'No name',
+          description:
+            archiveState === 'temporary-archived' && u.archived_until
+              ? dateTime(new Date(u.archived_until), {
+                  dateStyle: 'medium',
+                })
+              : undefined,
+          badge: (
+            <Badge
+              variant="outline"
+              className={cn(
+                'h-5 shrink-0 rounded-full px-1.5 text-[10px] leading-none',
+                archiveState === 'active' &&
+                  'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green',
+                archiveState === 'temporary-archived' &&
+                  'border-dynamic-yellow/30 bg-dynamic-yellow/10 text-dynamic-yellow',
+                archiveState === 'archived' &&
+                  'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red'
+              )}
+            >
+              {badgeLabel}
+            </Badge>
+          ),
+          icon: <ReportStatusIndicator counts={userStatusMap.get(u.id)} />,
+          muted: archiveState !== 'active',
+        };
+      }) ?? [],
+    [dateTime, filteredUsers, t, userStatusMap]
   );
 
+  const selectedUserOption = useMemo(
+    () => userOptions.find((option) => option.value === userId),
+    [userId, userOptions]
+  );
   const currentUserIndex = useMemo(() => {
     if (!userId) return -1;
     return filteredUsers.findIndex((u) => u.id === userId);
@@ -239,7 +289,7 @@ export default function GroupReportsClient({
       const { data, error } = await supabase
         .from('external_user_monthly_reports')
         .select(
-          '*, user:workspace_users!user_id!inner(full_name, ws_id), creator:workspace_users!creator_id(full_name)',
+          '*, user:workspace_users!user_id!inner(full_name, ws_id, archived, archived_until, note), creator:workspace_users!creator_id(full_name)',
           {
             count: 'exact',
           }
@@ -250,11 +300,22 @@ export default function GroupReportsClient({
         .order('created_at', { ascending: false });
       if (error) throw error;
       const mapped = (data ?? []).map((raw) => ({
-        user_name: raw.user?.full_name,
+        user_name: Array.isArray(raw.user)
+          ? raw.user?.[0]?.full_name
+          : raw.user?.full_name,
+        user_archived: Array.isArray(raw.user)
+          ? raw.user?.[0]?.archived
+          : raw.user?.archived,
+        user_archived_until: Array.isArray(raw.user)
+          ? raw.user?.[0]?.archived_until
+          : raw.user?.archived_until,
+        user_note: Array.isArray(raw.user)
+          ? raw.user?.[0]?.note
+          : raw.user?.note,
         creator_name: raw.creator?.full_name,
         ...raw,
       }));
-      return mapped as WorkspaceUserReport[];
+      return mapped as ReportWithNames[];
     },
   });
 
@@ -314,7 +375,7 @@ export default function GroupReportsClient({
       const { data, error } = await supabase
         .from('external_user_monthly_reports')
         .select(
-          '*, user:workspace_users!user_id!inner(full_name, ws_id), creator:workspace_users!creator_id(full_name), ...workspace_user_groups(group_name:name)',
+          '*, user:workspace_users!user_id!inner(full_name, ws_id, archived, archived_until, note), creator:workspace_users!creator_id(full_name), ...workspace_user_groups(group_name:name)',
           {
             count: 'exact',
           }
@@ -331,6 +392,15 @@ export default function GroupReportsClient({
         user_name: Array.isArray(data.user)
           ? data.user?.[0]?.full_name
           : (data.user?.full_name ?? undefined),
+        user_archived: Array.isArray(data.user)
+          ? data.user?.[0]?.archived
+          : (data.user?.archived ?? undefined),
+        user_archived_until: Array.isArray(data.user)
+          ? data.user?.[0]?.archived_until
+          : (data.user?.archived_until ?? undefined),
+        user_note: Array.isArray(data.user)
+          ? data.user?.[0]?.note
+          : (data.user?.note ?? undefined),
         creator_name: Array.isArray(data.creator)
           ? data.creator?.[0]?.full_name
           : (data.creator?.full_name ?? undefined),
@@ -511,14 +581,17 @@ export default function GroupReportsClient({
               : scores.reduce((sum, score) => sum + score, 0) / scores.length
             : null;
 
-        const userFullName =
-          usersQuery.data?.find((u) => u.id === userId)?.full_name ?? undefined;
+        const selectedUserData = usersQuery.data?.find((u) => u.id === userId);
+        const userFullName = selectedUserData?.full_name ?? undefined;
 
         return {
           user_id: userId,
           group_id: groupId,
           group_name: groupQuery.data?.name ?? groupNameFallback,
           user_name: userFullName,
+          user_archived: selectedUserData?.archived ?? undefined,
+          user_archived_until: selectedUserData?.archived_until ?? undefined,
+          user_note: selectedUserData?.note ?? undefined,
           // creator_name will be overridden below via selectedManagerName when passed to preview
           created_at: new Date().toISOString(),
           scores: scores.length > 0 ? scores : [],
@@ -635,9 +708,23 @@ export default function GroupReportsClient({
               options={userOptions}
               selected={userId ?? ''}
               label={
-                currentUserIndex >= 0 && totalUsers > 0
-                  ? `${userOptions[currentUserIndex]?.label} (${currentUserIndex + 1}/${totalUsers})`
-                  : undefined
+                currentUserIndex >= 0 &&
+                totalUsers > 0 &&
+                selectedUserOption ? (
+                  <div className="flex min-w-0 items-center gap-2 text-left">
+                    <span className="flex min-w-0 flex-1 items-center gap-2">
+                      <span className="truncate">
+                        {selectedUserOption.label}
+                      </span>
+                      <span className="shrink-0">
+                        {selectedUserOption.badge}
+                      </span>
+                    </span>
+                    <span className="shrink-0 rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 font-medium text-[11px] text-muted-foreground leading-none">
+                      {currentUserIndex + 1}/{totalUsers}
+                    </span>
+                  </div>
+                ) : undefined
               }
               placeholder={t('user-data-table.user')}
               disabled={usersQuery.isLoading}

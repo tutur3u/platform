@@ -1,13 +1,16 @@
 'use client';
 
 import {
+  Archive,
   ChevronDown,
   Loader2,
   Shield as ShieldIcon,
+  TriangleAlert,
   Undo,
 } from '@tuturuuu/icons';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Collapsible,
@@ -20,7 +23,8 @@ import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { useLocale, useTranslations } from 'next-intl';
+import { cn } from '@tuturuuu/utils/format';
+import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useEffect, useMemo, useState } from 'react';
 import * as z from 'zod';
@@ -28,6 +32,7 @@ import { useConfigMap } from '@/hooks/use-config-map';
 import { RejectDialog } from '../../approvals/components/reject-dialog';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import UserFeedbackSection from '../../groups/[groupId]/reports/user-feedback-section';
+import { getWorkspaceUserArchiveState } from '../user-archive';
 import { DeleteReportDialog } from './components/delete-report-dialog';
 import { ReportActions } from './components/report-actions';
 import { ReportHistory } from './components/report-history';
@@ -95,6 +100,7 @@ export default function EditableReportPreview({
   canDeleteFeedback?: boolean;
 }) {
   const locale = useLocale();
+  const { dateTime } = useFormatter();
   const t = useTranslations();
   const { resolvedTheme } = useTheme();
 
@@ -270,169 +276,176 @@ export default function EditableReportPreview({
 
   const isPendingApproval =
     report.report_approval_status === 'PENDING' && !canApproveReports;
+  const userArchiveState = getWorkspaceUserArchiveState({
+    id: report.user_id || 'unknown-user',
+    full_name: report.user_name,
+    archived: report.user_archived,
+    archived_until: report.user_archived_until,
+  });
+  const isArchivedUser = userArchiveState !== 'active';
+  const archivedUntilText =
+    userArchiveState === 'temporary-archived' && report.user_archived_until
+      ? dateTime(new Date(report.user_archived_until), {
+          dateStyle: 'medium',
+          timeStyle: 'short',
+        })
+      : null;
 
   return (
-    <div className="grid h-fit gap-4 xl:grid-cols-3">
-      <div className="grid h-fit gap-4">
-        <Collapsible
-          open={scoresOpen}
-          onOpenChange={setScoresOpen}
-          className="rounded-lg border"
+    <div className="space-y-4">
+      {report.user_id && (
+        <div
+          className={cn(
+            'rounded-2xl border p-4',
+            isArchivedUser
+              ? 'border-dynamic-orange/30 bg-linear-to-r from-dynamic-orange/12 via-background to-background'
+              : 'border-border/60 bg-muted/20'
+          )}
         >
-          <CollapsibleTrigger asChild>
-            <Button
-              variant="ghost"
-              className="flex w-full items-center justify-between p-4"
-            >
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-sm">
-                  {t('ws-reports.scores')}
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-muted-foreground text-xs uppercase tracking-[0.2em]">
+                  {t('ws-reports.selected_user')}
                 </span>
-                {currentScores.length > 0 && (
-                  <span className="rounded-full bg-muted px-2 py-0.5 text-muted-foreground text-xs tabular-nums">
-                    {currentScores.length}
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    'rounded-full px-2 py-0.5',
+                    userArchiveState === 'active' &&
+                      'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green',
+                    userArchiveState === 'temporary-archived' &&
+                      'border-dynamic-yellow/30 bg-dynamic-yellow/10 text-dynamic-yellow',
+                    userArchiveState === 'archived' &&
+                      'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red'
+                  )}
+                >
+                  {userArchiveState === 'active'
+                    ? t('ws-users.status_active')
+                    : userArchiveState === 'temporary-archived'
+                      ? t('ws-users.status_archived_until')
+                      : t('ws-users.status_archived')}
+                </Badge>
+              </div>
+              <div className="font-semibold text-lg">
+                {report.user_name || 'No name'}
+              </div>
+              <p className="max-w-2xl text-muted-foreground text-sm">
+                {isArchivedUser
+                  ? userArchiveState === 'temporary-archived' &&
+                    archivedUntilText
+                    ? t('ws-reports.archived_until_user_notice_description', {
+                        date: archivedUntilText,
+                      })
+                    : t('ws-reports.archived_user_notice_description')
+                  : t('ws-reports.selected_user_description')}
+              </p>
+              {report.user_note ? (
+                <div className="rounded-xl border border-border/60 bg-background/80 px-3 py-2 text-sm">
+                  <span className="font-medium">{t('ws-users.note')}:</span>{' '}
+                  <span className="text-muted-foreground">
+                    {report.user_note}
                   </span>
-                )}
-              </div>
-              <ChevronDown
-                className={`h-4 w-4 text-muted-foreground transition-transform ${scoresOpen ? 'rotate-180' : ''}`}
-              />
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="px-4 pb-4">
-            <div className="flex flex-col gap-2">
-              <div className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-                {t('ws-reports.score_calculation_method')}
-              </div>
-              <Tabs
-                value={scoreCalculationMethod}
-                onValueChange={(val) =>
-                  setScoreCalculationMethod(val as 'AVERAGE' | 'LATEST')
-                }
-                className="w-full"
-              >
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="AVERAGE">
-                    {t('ws-reports.average')}
-                  </TabsTrigger>
-                  <TabsTrigger value="LATEST">
-                    {t('ws-reports.latest')}
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
+                </div>
+              ) : null}
             </div>
 
-            <Separator className="my-2" />
-
-            <ScoreDisplay
-              healthcareVitals={healthcareVitals}
-              healthcareVitalsLoading={healthcareVitalsLoading}
-              isNew={isNew}
-              scores={
-                selectedLog ? (selectedLog.scores ?? null) : report.scores
-              }
-              reportId={report.id}
-              onFetchNewScores={
-                !isNew && !selectedLog
-                  ? (options) => updateScoresMutation.mutateAsync(options)
-                  : undefined
-              }
-              isFetchingNewScores={updateScoresMutation.isPending}
-              factorEnabled={factorEnabled}
-              scoreCalculationMethod={scoreCalculationMethod}
-            />
-          </CollapsibleContent>
-        </Collapsible>
-
-        <Collapsible
-          open={formOpen}
-          onOpenChange={setFormOpen}
-          className="rounded-lg border"
-        >
-          <CollapsibleTrigger asChild>
-            <Button
-              variant="ghost"
-              className="flex w-full items-center justify-between p-4"
-            >
-              <span className="font-semibold text-sm">
-                {t('ws-reports.basic_info')}
-              </span>
-              <ChevronDown
-                className={`h-4 w-4 text-muted-foreground transition-transform ${formOpen ? 'rotate-180' : ''}`}
-              />
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="px-4 pb-4">
-            {isLoadingRejectedBase ? (
-              <div className="flex h-48 flex-col items-center justify-center gap-2">
-                <Loader2 className="h-6 w-6 animate-spin text-dynamic-blue" />
-                <div className="text-muted-foreground text-sm">
-                  {t('ws-reports.loading_approved_version')}
-                </div>
+            <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-background/80 px-4 py-3">
+              {isArchivedUser ? (
+                <TriangleAlert className="h-5 w-5 text-dynamic-orange" />
+              ) : (
+                <Archive className="h-5 w-5 text-muted-foreground" />
+              )}
+              <div className="space-y-1">
+                <p className="text-muted-foreground text-xs uppercase tracking-[0.16em]">
+                  {t('ws-reports.reports')}
+                </p>
+                <p className="font-medium text-sm">
+                  {isArchivedUser
+                    ? t('ws-reports.archived_user_notice')
+                    : t('ws-reports.selected_user_ready')}
+                </p>
               </div>
-            ) : (
-              <UserReportForm
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="grid h-fit gap-4 xl:grid-cols-3">
+        <div className="grid h-fit gap-4">
+          <Collapsible
+            open={scoresOpen}
+            onOpenChange={setScoresOpen}
+            className="rounded-lg border"
+          >
+            <CollapsibleTrigger asChild>
+              <Button
+                variant="ghost"
+                className="flex w-full items-center justify-between p-4"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-sm">
+                    {t('ws-reports.scores')}
+                  </span>
+                  {currentScores.length > 0 && (
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-muted-foreground text-xs tabular-nums">
+                      {currentScores.length}
+                    </span>
+                  )}
+                </div>
+                <ChevronDown
+                  className={`h-4 w-4 text-muted-foreground transition-transform ${scoresOpen ? 'rotate-180' : ''}`}
+                />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="px-4 pb-4">
+              <div className="flex flex-col gap-2">
+                <div className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+                  {t('ws-reports.score_calculation_method')}
+                </div>
+                <Tabs
+                  value={scoreCalculationMethod}
+                  onValueChange={(val) =>
+                    setScoreCalculationMethod(val as 'AVERAGE' | 'LATEST')
+                  }
+                  className="w-full"
+                >
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="AVERAGE">
+                      {t('ws-reports.average')}
+                    </TabsTrigger>
+                    <TabsTrigger value="LATEST">
+                      {t('ws-reports.latest')}
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+
+              <Separator className="my-2" />
+
+              <ScoreDisplay
+                healthcareVitals={healthcareVitals}
+                healthcareVitalsLoading={healthcareVitalsLoading}
                 isNew={isNew}
-                form={form}
-                submitLabel={isNew ? t('common.create') : t('common.save')}
-                onSubmit={(values) => {
-                  if (isNew) createMutation.mutate(values);
-                  else
-                    updateMutation.mutate({
-                      ...values,
-                      score: representativeScoreValue,
-                    });
-                }}
-                onDelete={
-                  !isNew && canDeleteReports
-                    ? () => setShowDeleteDialog(true)
+                scores={
+                  selectedLog ? (selectedLog.scores ?? null) : report.scores
+                }
+                reportId={report.id}
+                onFetchNewScores={
+                  !isNew && !selectedLog
+                    ? (options) => updateScoresMutation.mutateAsync(options)
                     : undefined
                 }
-                managerOptions={managerOptions}
-                selectedManagerName={selectedManagerName ?? report.creator_name}
-                onChangeManager={(name) => onChangeManagerAction?.(name)}
-                canUpdate={canUpdateReports}
-                canDelete={canDeleteReports}
-                isSubmitting={
-                  createMutation.isPending || updateMutation.isPending
-                }
+                isFetchingNewScores={updateScoresMutation.isPending}
+                factorEnabled={factorEnabled}
+                scoreCalculationMethod={scoreCalculationMethod}
               />
-            )}
-          </CollapsibleContent>
-        </Collapsible>
+            </CollapsibleContent>
+          </Collapsible>
 
-        <DeleteReportDialog
-          open={showDeleteDialog}
-          onOpenChange={setShowDeleteDialog}
-          onConfirm={() => deleteMutation.mutate()}
-        />
-
-        {canApproveReports && (
-          <RejectDialog
-            open={showRejectDialog}
-            title={report.title ?? ''}
-            reason={rejectReason}
-            onReasonChange={setRejectReason}
-            onOpenChange={(open) => {
-              setShowRejectDialog(open);
-              if (!open) setRejectReason('');
-            }}
-            onConfirm={() => {
-              rejectMutation.mutate(rejectReason, {
-                onSuccess: () => {
-                  setShowRejectDialog(false);
-                  setRejectReason('');
-                },
-              });
-            }}
-            isSubmitting={rejectMutation.isPending}
-          />
-        )}
-
-        {report.user_id && canCheckUserAttendance && (
           <Collapsible
-            open={attendanceOpen}
-            onOpenChange={setAttendanceOpen}
+            open={formOpen}
+            onOpenChange={setFormOpen}
             className="rounded-lg border"
           >
             <CollapsibleTrigger asChild>
@@ -441,116 +454,206 @@ export default function EditableReportPreview({
                 className="flex w-full items-center justify-between p-4"
               >
                 <span className="font-semibold text-sm">
-                  {t('ws-reports.attendance')}
+                  {t('ws-reports.basic_info')}
                 </span>
                 <ChevronDown
-                  className={`h-4 w-4 text-muted-foreground transition-transform ${attendanceOpen ? 'rotate-180' : ''}`}
+                  className={`h-4 w-4 text-muted-foreground transition-transform ${formOpen ? 'rotate-180' : ''}`}
                 />
               </Button>
             </CollapsibleTrigger>
             <CollapsibleContent className="px-4 pb-4">
-              <UserMonthAttendance
-                wsId={wsId}
-                user={{
-                  id: report.user_id,
-                  full_name: report.user_name,
-                  href: `/${wsId}/users/database/${report.user_id}`,
-                  archived: report.user_archived,
-                  archived_until: report.user_archived_until,
-                  note: report.user_note,
-                }}
-                defaultIncludedGroups={[groupId || report.group_id!]}
-              />
+              {isLoadingRejectedBase ? (
+                <div className="flex h-48 flex-col items-center justify-center gap-2">
+                  <Loader2 className="h-6 w-6 animate-spin text-dynamic-blue" />
+                  <div className="text-muted-foreground text-sm">
+                    {t('ws-reports.loading_approved_version')}
+                  </div>
+                </div>
+              ) : (
+                <UserReportForm
+                  isNew={isNew}
+                  form={form}
+                  submitLabel={isNew ? t('common.create') : t('common.save')}
+                  onSubmit={(values) => {
+                    if (isNew) createMutation.mutate(values);
+                    else
+                      updateMutation.mutate({
+                        ...values,
+                        score: representativeScoreValue,
+                      });
+                  }}
+                  onDelete={
+                    !isNew && canDeleteReports
+                      ? () => setShowDeleteDialog(true)
+                      : undefined
+                  }
+                  managerOptions={managerOptions}
+                  selectedManagerName={
+                    selectedManagerName ?? report.creator_name
+                  }
+                  onChangeManager={(name) => onChangeManagerAction?.(name)}
+                  canUpdate={canUpdateReports}
+                  canDelete={canDeleteReports}
+                  isSubmitting={
+                    createMutation.isPending || updateMutation.isPending
+                  }
+                  showHeading={false}
+                />
+              )}
             </CollapsibleContent>
           </Collapsible>
-        )}
 
-        {feedbackUser && feedbackGroupName && (
-          <UserFeedbackSection
-            user={feedbackUser}
-            groupName={feedbackGroupName}
-            wsId={wsId}
-            groupId={groupId || report.group_id || ''}
-            canEditFeedback={canEditFeedback}
-            canDeleteFeedback={canDeleteFeedback}
+          <DeleteReportDialog
+            open={showDeleteDialog}
+            onOpenChange={setShowDeleteDialog}
+            onConfirm={() => deleteMutation.mutate()}
           />
-        )}
-      </div>
 
-      <div className="grid h-fit gap-4 xl:col-span-2">
-        {!isNew && (
-          <ReportHistory
-            logsQuery={logsQuery}
-            selectedLog={selectedLog}
-            setSelectedLog={setSelectedLog}
-            formatRelativeTime={formatRelativeTime}
-          />
-        )}
+          {canApproveReports && (
+            <RejectDialog
+              open={showRejectDialog}
+              title={report.title ?? ''}
+              reason={rejectReason}
+              onReasonChange={setRejectReason}
+              onOpenChange={(open) => {
+                setShowRejectDialog(open);
+                if (!open) setRejectReason('');
+              }}
+              onConfirm={() => {
+                rejectMutation.mutate(rejectReason, {
+                  onSuccess: () => {
+                    setShowRejectDialog(false);
+                    setRejectReason('');
+                  },
+                });
+              }}
+              isSubmitting={rejectMutation.isPending}
+            />
+          )}
 
-        {selectedLog && (
-          <div className="-mt-2 rounded-lg border bg-card p-3 text-sm print:hidden">
-            <div className="flex items-center justify-between">
-              <div>{t('ws-reports.viewing_history_snapshot')}</div>
-              <Button
-                variant="default"
-                className="bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20"
-                onClick={() => setSelectedLog(null)}
-              >
-                <Undo className="h-4 w-4" />
-                {t('ws-reports.reset_to_current')}
-              </Button>
+          {report.user_id && canCheckUserAttendance && (
+            <Collapsible
+              open={attendanceOpen}
+              onOpenChange={setAttendanceOpen}
+              className="rounded-lg border"
+            >
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="flex w-full items-center justify-between p-4"
+                >
+                  <span className="font-semibold text-sm">
+                    {t('ws-reports.attendance')}
+                  </span>
+                  <ChevronDown
+                    className={`h-4 w-4 text-muted-foreground transition-transform ${attendanceOpen ? 'rotate-180' : ''}`}
+                  />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="px-4 pb-4">
+                <UserMonthAttendance
+                  wsId={wsId}
+                  user={{
+                    id: report.user_id,
+                    full_name: report.user_name,
+                    href: `/${wsId}/users/database/${report.user_id}`,
+                    archived: report.user_archived,
+                    archived_until: report.user_archived_until,
+                    note: report.user_note,
+                  }}
+                  defaultIncludedGroups={[groupId || report.group_id!]}
+                />
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+
+          {feedbackUser && feedbackGroupName && (
+            <UserFeedbackSection
+              user={feedbackUser}
+              groupName={feedbackGroupName}
+              wsId={wsId}
+              groupId={groupId || report.group_id || ''}
+              canEditFeedback={canEditFeedback}
+              canDeleteFeedback={canDeleteFeedback}
+            />
+          )}
+        </div>
+
+        <div className="grid h-fit gap-4 xl:col-span-2">
+          {!isNew && (
+            <ReportHistory
+              logsQuery={logsQuery}
+              selectedLog={selectedLog}
+              setSelectedLog={setSelectedLog}
+              formatRelativeTime={formatRelativeTime}
+            />
+          )}
+
+          {selectedLog && (
+            <div className="-mt-2 rounded-lg border bg-card p-3 text-sm print:hidden">
+              <div className="flex items-center justify-between">
+                <div>{t('ws-reports.viewing_history_snapshot')}</div>
+                <Button
+                  variant="default"
+                  className="bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20"
+                  onClick={() => setSelectedLog(null)}
+                >
+                  <Undo className="h-4 w-4" />
+                  {t('ws-reports.reset_to_current')}
+                </Button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <ReportActions
-          isPendingApproval={isPendingApproval}
-          isExporting={isExporting}
-          handlePrintExport={handlePrintExport}
-          handlePngExport={handlePngExport}
-          reportTheme={reportTheme}
-          setReportTheme={setReportTheme}
-          canApproveReports={canApproveReports}
-          isNew={isNew}
-          approvalStatus={report.report_approval_status}
-          onApprove={() => approveMutation.mutate()}
-          onReject={() => setShowRejectDialog(true)}
-          isApproving={approveMutation.isPending}
-          isRejecting={rejectMutation.isPending}
-          defaultExportType={defaultExportType}
-          setDefaultExportType={setDefaultExportType}
-        />
+          <ReportActions
+            isPendingApproval={isPendingApproval}
+            isExporting={isExporting}
+            handlePrintExport={handlePrintExport}
+            handlePngExport={handlePngExport}
+            reportTheme={reportTheme}
+            setReportTheme={setReportTheme}
+            canApproveReports={canApproveReports}
+            isNew={isNew}
+            approvalStatus={report.report_approval_status}
+            onApprove={() => approveMutation.mutate()}
+            onReject={() => setShowRejectDialog(true)}
+            isApproving={approveMutation.isPending}
+            isRejecting={rejectMutation.isPending}
+            defaultExportType={defaultExportType}
+            setDefaultExportType={setDefaultExportType}
+          />
 
-        <ReportPreview
-          t={t}
-          lang={locale}
-          parseDynamicText={parseDynamicText}
-          getConfig={getConfig}
-          theme={resolvedReportTheme}
-          data={{
-            title: previewTitle,
-            content: previewContent,
-            score: previewScore,
-            feedback: previewFeedback,
-          }}
-          notice={
-            isPendingApproval ? (
-              <div className="mb-4 rounded-lg border border-dynamic-orange/30 bg-dynamic-orange/10 p-4">
-                <div className="flex items-start gap-3">
-                  <ShieldIcon className="mt-0.5 h-5 w-5 text-dynamic-orange" />
-                  <div className="flex-1">
-                    <div className="font-semibold text-dynamic-orange">
-                      {t('ws-reports.needs_approval')}
-                    </div>
-                    <div className="mt-1 text-dynamic-orange/80 text-sm">
-                      {t('ws-reports.needs_approval_description')}
+          <ReportPreview
+            t={t}
+            lang={locale}
+            parseDynamicText={parseDynamicText}
+            getConfig={getConfig}
+            theme={resolvedReportTheme}
+            data={{
+              title: previewTitle,
+              content: previewContent,
+              score: previewScore,
+              feedback: previewFeedback,
+            }}
+            notice={
+              isPendingApproval ? (
+                <div className="mb-4 rounded-lg border border-dynamic-orange/30 bg-dynamic-orange/10 p-4">
+                  <div className="flex items-start gap-3">
+                    <ShieldIcon className="mt-0.5 h-5 w-5 text-dynamic-orange" />
+                    <div className="flex-1">
+                      <div className="font-semibold text-dynamic-orange">
+                        {t('ws-reports.needs_approval')}
+                      </div>
+                      <div className="mt-1 text-dynamic-orange/80 text-sm">
+                        {t('ws-reports.needs_approval_description')}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ) : undefined
-          }
-        />
+              ) : undefined
+            }
+          />
+        </div>
       </div>
     </div>
   );

@@ -28,6 +28,10 @@ function parseIntSearchParam(value?: string, fallback = 1) {
   return Number.isNaN(parsed) ? fallback : parsed;
 }
 
+function resolveDatabaseTab(tab?: string): 'users' | 'audit-log' {
+  return tab === 'audit-log' ? 'audit-log' : 'users';
+}
+
 interface Props {
   params: Promise<{
     locale: string;
@@ -58,6 +62,7 @@ export default async function WorkspaceUsersPage({
   const t = await getTranslations();
   const { locale, wsId: id } = await params;
   const sp = await searchParams;
+  const activeTab = resolveDatabaseTab(sp.tab);
 
   const workspace = await getWorkspace(id);
   if (!workspace) notFound();
@@ -80,41 +85,6 @@ export default async function WorkspaceUsersPage({
     notFound();
   }
 
-  // Fetch initial data for hydration (first page only)
-  const { data: initialUsers, count } = await getInitialData(
-    wsId,
-    {
-      hasPrivateInfo,
-      hasPublicInfo,
-      canCheckUserAttendance,
-    },
-    {
-      q: sp.q,
-      page: sp.page ? parseInt(sp.page, 10) : 1,
-      pageSize: sp.pageSize ? parseInt(sp.pageSize, 10) : 10,
-      includedGroups: Array.isArray(sp.includedGroups)
-        ? sp.includedGroups
-        : sp.includedGroups
-          ? sp.includedGroups.split(',')
-          : [],
-      excludedGroups: Array.isArray(sp.excludedGroups)
-        ? sp.excludedGroups
-        : sp.excludedGroups
-          ? sp.excludedGroups.split(',')
-          : [],
-      status: sp.status as 'active' | 'archived' | 'archived_until' | 'all',
-      linkStatus: sp.linkStatus as 'all' | 'linked' | 'virtual',
-    }
-  );
-
-  const { data: extraFields } = await getUserFields(wsId);
-
-  // Add href for navigation
-  const users = initialUsers.map((u) => ({
-    ...u,
-    href: `/${wsId}/users/database/${u.id}`,
-  }));
-
   const permissions = {
     hasPrivateInfo,
     hasPublicInfo,
@@ -123,6 +93,94 @@ export default async function WorkspaceUsersPage({
     canDeleteUsers,
     canCheckUserAttendance,
   };
+
+  let usersContent: React.ReactNode;
+  let auditLogContent: React.ReactNode;
+
+  if (activeTab === 'users') {
+    const [{ data: initialUsers, count }, { data: extraFields }] =
+      await Promise.all([
+        getInitialData(
+          wsId,
+          {
+            hasPrivateInfo,
+            hasPublicInfo,
+            canCheckUserAttendance,
+          },
+          {
+            q: sp.q,
+            page: sp.page ? parseInt(sp.page, 10) : 1,
+            pageSize: sp.pageSize ? parseInt(sp.pageSize, 10) : 10,
+            includedGroups: Array.isArray(sp.includedGroups)
+              ? sp.includedGroups
+              : sp.includedGroups
+                ? sp.includedGroups.split(',')
+                : [],
+            excludedGroups: Array.isArray(sp.excludedGroups)
+              ? sp.excludedGroups
+              : sp.excludedGroups
+                ? sp.excludedGroups.split(',')
+                : [],
+            status: sp.status as
+              | 'active'
+              | 'archived'
+              | 'archived_until'
+              | 'all',
+            linkStatus: sp.linkStatus as 'all' | 'linked' | 'virtual',
+          }
+        ),
+        getUserFields(wsId),
+      ]);
+
+    const users = initialUsers.map((u) => ({
+      ...u,
+      href: `/${wsId}/users/database/${u.id}`,
+    }));
+
+    usersContent = (
+      <WorkspaceUsersTable
+        wsId={wsId}
+        locale={locale}
+        extraFields={extraFields}
+        permissions={permissions}
+        initialData={{
+          data: users,
+          count: count,
+        }}
+        toolbarActions={
+          canDeleteUsers && canUpdateUsers && hasPrivateInfo ? (
+            <DuplicateUsersDialog wsId={wsId} />
+          ) : undefined
+        }
+        toolbarImportContent={
+          canExportUsers ? <ImportDialogContent wsId={wsId} /> : undefined
+        }
+        toolbarExportContent={
+          canExportUsers && (
+            <ExportDialogContent
+              wsId={wsId}
+              exportType="users"
+              showDataTypeSelector
+            />
+          )
+        }
+      />
+    );
+  } else {
+    auditLogContent = (
+      <AuditLogTable
+        wsId={wsId}
+        locale={locale}
+        period={sp.logPeriod}
+        month={sp.logMonth}
+        year={sp.logYear}
+        status={sp.logStatus}
+        page={parseIntSearchParam(sp.logPage, 1)}
+        pageSize={parseIntSearchParam(sp.logPageSize, 10)}
+        canExport={canExportUsers}
+      />
+    );
+  }
 
   return (
     <>
@@ -144,49 +202,9 @@ export default async function WorkspaceUsersPage({
       />
       <Separator className="my-4" />
       <DatabaseTabs
-        defaultTab={sp.tab === 'audit-log' ? 'audit-log' : 'users'}
-        usersContent={
-          <WorkspaceUsersTable
-            wsId={wsId}
-            locale={locale}
-            extraFields={extraFields}
-            permissions={permissions}
-            initialData={{
-              data: users,
-              count: count,
-            }}
-            toolbarActions={
-              canDeleteUsers && canUpdateUsers && hasPrivateInfo ? (
-                <DuplicateUsersDialog wsId={wsId} />
-              ) : undefined
-            }
-            toolbarImportContent={
-              canExportUsers ? <ImportDialogContent wsId={wsId} /> : undefined
-            }
-            toolbarExportContent={
-              canExportUsers && (
-                <ExportDialogContent
-                  wsId={wsId}
-                  exportType="users"
-                  showDataTypeSelector
-                />
-              )
-            }
-          />
-        }
-        auditLogContent={
-          <AuditLogTable
-            wsId={wsId}
-            locale={locale}
-            period={sp.logPeriod}
-            month={sp.logMonth}
-            year={sp.logYear}
-            status={sp.logStatus}
-            page={parseIntSearchParam(sp.logPage, 1)}
-            pageSize={parseIntSearchParam(sp.logPageSize, 10)}
-            canExport={canExportUsers}
-          />
-        }
+        activeTab={activeTab}
+        usersContent={usersContent}
+        auditLogContent={auditLogContent}
       />
     </>
   );
