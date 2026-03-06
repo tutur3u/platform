@@ -99,14 +99,6 @@ export default function BillingDetailsCard({
     const formSerialized = JSON.stringify(formData);
     const initialSerialized =
       initialData !== null ? JSON.stringify(initialData) : null;
-    const isInitialLoad = initialData === null;
-    const isPristine =
-      initialSerialized !== null && formSerialized === initialSerialized;
-
-    if (!isInitialLoad && !isPristine) {
-      return;
-    }
-
     const nextSerialized = JSON.stringify(nextFormData);
 
     if (
