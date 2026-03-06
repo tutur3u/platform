@@ -563,11 +563,14 @@ export function normalizeRecentSidebarEntries(
     wsId?: string;
   }
 ): RecentSidebarEntry[] {
-  return entries.reduce<RecentSidebarEntry[]>((acc, entry) => {
-    const normalizedHref = normalizeRecentSidebarHref(entry.href, options);
-    return upsertRecentSidebarEntry(acc, {
+  const normalizedEntries = entries
+    .map((entry) => ({
       ...entry,
-      href: normalizedHref,
-    });
+      href: normalizeRecentSidebarHref(entry.href, options),
+    }))
+    .sort((a, b) => b.visitedAt.localeCompare(a.visitedAt));
+
+  return normalizedEntries.reduceRight<RecentSidebarEntry[]>((acc, entry) => {
+    return upsertRecentSidebarEntry(acc, entry);
   }, []);
 }

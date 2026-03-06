@@ -30,6 +30,7 @@ import {
   type ReactNode,
   useCallback,
   useEffect,
+  useId,
   useState,
 } from 'react';
 import {
@@ -53,6 +54,7 @@ interface RecentSidebarItemsProps {
 
 interface RecentSidebarEventDetail {
   storageKey: string;
+  sourceId?: string;
 }
 
 function getStorageKey(wsId: string): string {
@@ -78,11 +80,30 @@ function readEntries(storageKey: string): RecentSidebarEntry[] {
   }
 }
 
-function writeEntries(storageKey: string, entries: RecentSidebarEntry[]) {
+function areEntriesEqual(
+  currentEntries: RecentSidebarEntry[],
+  nextEntries: RecentSidebarEntry[]
+): boolean {
+  return JSON.stringify(currentEntries) === JSON.stringify(nextEntries);
+}
+
+function writeEntries(
+  storageKey: string,
+  entries: RecentSidebarEntry[],
+  options?: {
+    broadcast?: boolean;
+    sourceId?: string;
+  }
+) {
   window.localStorage.setItem(storageKey, JSON.stringify(entries));
+  if (options?.broadcast === false) return;
+
   window.dispatchEvent(
     new CustomEvent<RecentSidebarEventDetail>(RECENT_SIDEBAR_ITEMS_EVENT, {
-      detail: { storageKey },
+      detail: {
+        storageKey,
+        sourceId: options?.sourceId,
+      },
     })
   );
 }
@@ -122,6 +143,7 @@ export function RecentSidebarItems({
   const t = useTranslations();
   const [entries, setEntries] = useState<RecentSidebarEntry[]>([]);
   const [showAll, setShowAll] = useState(false);
+  const eventSourceId = useId();
   const storageKey = getStorageKey(wsId);
 
   const debtItemLabel = t('sidebar_recent_items.debt_item');
@@ -146,8 +168,10 @@ export function RecentSidebarItems({
 
     setEntries(normalizedEntries);
 
-    if (JSON.stringify(storedEntries) !== JSON.stringify(normalizedEntries)) {
-      writeEntries(storageKey, normalizedEntries);
+    if (!areEntriesEqual(storedEntries, normalizedEntries)) {
+      writeEntries(storageKey, normalizedEntries, {
+        broadcast: false,
+      });
     }
   }, [pathname, storageKey, wsId]);
 
@@ -192,7 +216,13 @@ export function RecentSidebarItems({
 
     const handleRecentItemsUpdate = (event: Event) => {
       const customEvent = event as CustomEvent<RecentSidebarEventDetail>;
-      if (customEvent.detail?.storageKey !== storageKey) return;
+      if (
+        customEvent.detail?.storageKey !== storageKey ||
+        customEvent.detail?.sourceId === eventSourceId
+      ) {
+        return;
+      }
+
       loadEntries();
     };
 
@@ -202,7 +232,8 @@ export function RecentSidebarItems({
         return;
       }
 
-      const nextEntries = upsertRecentSidebarEntry(readEntries(storageKey), {
+      const currentEntries = readEntries(storageKey);
+      const nextEntries = upsertRecentSidebarEntry(currentEntries, {
         href: normalizeRecentSidebarHref(customEvent.detail.href, {
           currentPathname: pathname,
           wsId,
@@ -211,8 +242,14 @@ export function RecentSidebarItems({
         visitedAt: new Date().toISOString(),
       });
 
+      if (areEntriesEqual(currentEntries, nextEntries)) {
+        return;
+      }
+
       setEntries(nextEntries);
-      writeEntries(storageKey, nextEntries);
+      writeEntries(storageKey, nextEntries, {
+        sourceId: eventSourceId,
+      });
     };
 
     window.addEventListener('storage', handleStorage);
@@ -236,7 +273,7 @@ export function RecentSidebarItems({
         handleRecentVisit as EventListener
       );
     };
-  }, [loadEntries, pathname, storageKey, wsId]);
+  }, [eventSourceId, loadEntries, pathname, storageKey, wsId]);
 
   useEffect(() => {
     const resolvedItem = resolveItem(pathname);
@@ -258,13 +295,13 @@ export function RecentSidebarItems({
       new Date().toISOString()
     );
 
-    const serializedCurrent = JSON.stringify(currentEntries);
-    const serializedNext = JSON.stringify(nextEntries);
-    if (serializedCurrent === serializedNext) return;
+    if (areEntriesEqual(currentEntries, nextEntries)) return;
 
     setEntries(nextEntries);
-    writeEntries(storageKey, nextEntries);
-  }, [pathname, resolveItem, storageKey, wsId]);
+    writeEntries(storageKey, nextEntries, {
+      sourceId: eventSourceId,
+    });
+  }, [eventSourceId, pathname, resolveItem, storageKey, wsId]);
 
   const resolvedItems = entries
     .map((entry) =>
@@ -308,13 +345,22 @@ export function RecentSidebarItems({
   const clearAll = () => {
     setShowAll(false);
     setEntries([]);
-    writeEntries(storageKey, []);
+    if (readEntries(storageKey).length === 0) return;
+
+    writeEntries(storageKey, [], {
+      sourceId: eventSourceId,
+    });
   };
 
   const removeItem = (href: string) => {
-    const nextEntries = removeRecentSidebarEntry(readEntries(storageKey), href);
+    const currentEntries = readEntries(storageKey);
+    const nextEntries = removeRecentSidebarEntry(currentEntries, href);
+    if (areEntriesEqual(currentEntries, nextEntries)) return;
+
     setEntries(nextEntries);
-    writeEntries(storageKey, nextEntries);
+    writeEntries(storageKey, nextEntries, {
+      sourceId: eventSourceId,
+    });
   };
 
   if (isCollapsed) {

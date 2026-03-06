@@ -15,6 +15,7 @@ import {
 import { TransferFields } from '@tuturuuu/ui/finance/transactions/transfer-fields';
 import {
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -48,6 +49,14 @@ interface FormBasicTabProps {
   setIsDestinationOverridden: (value: boolean) => void;
   setNewContentType: (value: NewContentType) => void;
   setNewContent: (value: NewContent) => void;
+  walletPrefillMeta?: {
+    value: string;
+    sourceLabel: string;
+  } | null;
+  categoryPrefillMeta?: {
+    value: string;
+    sourceLabel: string;
+  } | null;
 }
 
 export function FormBasicTab({
@@ -67,6 +76,8 @@ export function FormBasicTab({
   setIsDestinationOverridden,
   setNewContentType,
   setNewContent,
+  walletPrefillMeta,
+  categoryPrefillMeta,
 }: FormBasicTabProps) {
   const t = useTranslations();
   return (
@@ -109,6 +120,15 @@ export function FormBasicTab({
                 actionsPosition="top"
                 disabled={loading || walletsLoading || !hasFormPermission}
               />
+              {walletPrefillMeta &&
+                field.value === walletPrefillMeta.value &&
+                walletPrefillMeta.sourceLabel && (
+                  <FormDescription className="text-xs">
+                    {t('transaction-data-table.prefill_hint', {
+                      source: walletPrefillMeta.sourceLabel,
+                    })}
+                  </FormDescription>
+                )}
               <FormMessage />
             </FormItem>
           )}
@@ -206,6 +226,15 @@ export function FormBasicTab({
                   actionsPosition="top"
                   disabled={loading || categoriesLoading || !hasFormPermission}
                 />
+                {categoryPrefillMeta &&
+                  field.value === categoryPrefillMeta.value &&
+                  categoryPrefillMeta.sourceLabel && (
+                    <FormDescription className="text-xs">
+                      {t('transaction-data-table.prefill_hint', {
+                        source: categoryPrefillMeta.sourceLabel,
+                      })}
+                    </FormDescription>
+                  )}
                 <FormMessage />
               </FormItem>
             )}

@@ -27,7 +27,6 @@ import {
   Ticket,
   User,
   Users,
-  Wallet,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Workspace } from '@tuturuuu/types';
@@ -51,13 +50,12 @@ import AttendanceDisplaySettings from './attendance/attendance-display-settings'
 import { CalendarSettingsContent } from './calendar/calendar-settings-content';
 import { CalendarSettingsWrapper } from './calendar/calendar-settings-wrapper';
 import DebtLoanSettings from './finance/debt-loan-settings';
-import DefaultCategorySettings from './finance/default-category-settings';
 import DefaultCurrencySettings from './finance/default-currency-settings';
-import DefaultWalletSettings from './finance/default-wallet-settings';
 import ExperimentalFinanceSettings from './finance/experimental-finance-settings';
 import FinanceNavigationSettings from './finance/finance-navigation-settings';
 import InvoiceSettings from './finance/invoice-settings';
 import InvoiceVisibilitySettings from './finance/invoice-visibility-settings';
+import TransactionDefaultsSettings from './finance/transaction-defaults-settings';
 import ReferralSettings from './inventory/referral-settings';
 import { MiraMemorySettings } from './mira/mira-memory-settings';
 import { MiraPersonalitySettings } from './mira/mira-personality-settings';
@@ -512,18 +510,19 @@ export function SettingsDialog({
                 keywords: ['Finance', 'Invoice', 'Visibility', 'Show', 'Hide'],
               },
               {
-                name: 'default_wallet',
-                label: t('settings.finance.default_wallet'),
-                icon: Wallet,
-                description: t('settings.finance.default_wallet_description'),
-                keywords: ['Finance', 'Wallet'],
-              },
-              {
-                name: 'default_category',
-                label: t('settings.finance.default_category'),
+                name: 'transaction_defaults',
+                label: t('settings.finance.transaction_defaults'),
                 icon: LayoutGrid,
-                description: t('settings.finance.default_category_description'),
-                keywords: ['Finance', 'Category', 'Transaction'],
+                description: t(
+                  'settings.finance.transaction_defaults_description'
+                ),
+                keywords: [
+                  'Finance',
+                  'Wallet',
+                  'Category',
+                  'Transaction',
+                  'Defaults',
+                ],
               },
               {
                 name: 'default_currency',
@@ -801,12 +800,8 @@ export function SettingsDialog({
           />
         )}
 
-        {activeTab === 'default_wallet' && workspace?.id && (
-          <DefaultWalletSettings workspaceId={workspace.id} />
-        )}
-
-        {activeTab === 'default_category' && workspace?.id && (
-          <DefaultCategorySettings workspaceId={workspace.id} />
+        {activeTab === 'transaction_defaults' && workspace?.id && (
+          <TransactionDefaultsSettings workspaceId={workspace.id} />
         )}
 
         {activeTab === 'default_currency' && workspace?.id && (

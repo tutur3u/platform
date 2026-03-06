@@ -238,8 +238,66 @@ describe('recent-sidebar-items utils', () => {
     ).toEqual([
       {
         href: '/internal/tasks/task-123',
+        snapshot: undefined,
         visitedAt: '2026-03-03T01:00:00.000Z',
       },
     ]);
+  });
+
+  it('preserves recency order when normalizing multiple entries', () => {
+    const entries = [
+      {
+        href: '/personal/tasks',
+        visitedAt: '2026-03-03T02:00:00.000Z',
+      },
+      {
+        href: '/00000000-0000-0000-0000-000000000000/finance/wallets',
+        visitedAt: '2026-03-03T01:00:00.000Z',
+      },
+    ];
+
+    expect(
+      normalizeRecentSidebarEntries(entries, {
+        currentPathname: '/internal/dashboard',
+        wsId: '00000000-0000-0000-0000-000000000000',
+      })
+    ).toEqual([
+      {
+        href: '/internal/tasks',
+        snapshot: undefined,
+        visitedAt: '2026-03-03T02:00:00.000Z',
+      },
+      {
+        href: '/internal/finance/wallets',
+        snapshot: undefined,
+        visitedAt: '2026-03-03T01:00:00.000Z',
+      },
+    ]);
+  });
+
+  it('is idempotent after href normalization', () => {
+    const normalizedEntries = normalizeRecentSidebarEntries(
+      [
+        {
+          href: '/00000000-0000-0000-0000-000000000000/tasks',
+          visitedAt: '2026-03-03T02:00:00.000Z',
+        },
+        {
+          href: '/00000000-0000-0000-0000-000000000000/finance/wallets',
+          visitedAt: '2026-03-03T01:00:00.000Z',
+        },
+      ],
+      {
+        currentPathname: '/internal/dashboard',
+        wsId: '00000000-0000-0000-0000-000000000000',
+      }
+    );
+
+    expect(
+      normalizeRecentSidebarEntries(normalizedEntries, {
+        currentPathname: '/internal/dashboard',
+        wsId: '00000000-0000-0000-0000-000000000000',
+      })
+    ).toEqual(normalizedEntries);
   });
 });
