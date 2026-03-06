@@ -111,9 +111,103 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
             prev.currentWorkspace?.id != curr.currentWorkspace?.id,
         listener: (context, _) => unawaited(_loadInitial()),
         child: Stack(
-          fit: StackFit.expand,
           children: [
-            _buildBody(context),
+            Column(
+              children: [
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: _onRefresh,
+                    child: _isLoadingInitial && _wallet == null
+                        ? const Center(
+                            child: shad.CircularProgressIndicator(),
+                          )
+                        : _error != null
+                        ? ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: [
+                              const SizedBox(height: 120),
+                              Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                  ),
+                                  child: Text(
+                                    _error!,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : _wallet == null
+                        ? ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: [
+                              const SizedBox(height: 120),
+                              Center(
+                                child: Text(
+                                  l10n.financeWalletNotFound,
+                                ),
+                              ),
+                            ],
+                          )
+                        : ListView(
+                            controller: _scrollController,
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.fromLTRB(
+                              16,
+                              8,
+                              16,
+                              112,
+                            ),
+                            children: [
+                              WalletDetailMetadataCard(
+                                wallet: _wallet!,
+                                workspaceCurrency: _workspaceCurrency,
+                                exchangeRates: _exchangeRates,
+                              ),
+                              const shad.Gap(12),
+                              WalletDetailStatsCard(
+                                stats: _stats,
+                                walletCurrency: _wallet!.currency,
+                                workspaceCurrency: _workspaceCurrency,
+                                exchangeRates: _exchangeRates,
+                              ),
+                              const shad.Gap(16),
+                              Text(
+                                l10n.financeTransactions,
+                                style: shad.Theme.of(context).typography.small
+                                    .copyWith(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                              ),
+                              const shad.Gap(8),
+                              if (_transactions.isEmpty)
+                                shad.Card(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Text(
+                                      l10n.financeNoTransactions,
+                                      style: shad.Theme.of(
+                                        context,
+                                      ).typography.textMuted,
+                                    ),
+                                  ),
+                                )
+                              else
+                                GroupedTransactionAccordion(
+                                  transactions: _transactions,
+                                  workspaceCurrency: _workspaceCurrency,
+                                  exchangeRates: _exchangeRates,
+                                  showLoadingMore: _isLoadingMore,
+                                  onTransactionTap: _openTransaction,
+                                ),
+                            ],
+                          ),
+                  ),
+                ),
+              ],
+            ),
             if (_wallet != null && !_isLoadingInitial)
               ExtendedFab(
                 icon: Icons.add,
@@ -122,98 +216,6 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
               ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildBody(BuildContext context) {
-    final l10n = context.l10n;
-
-    if (_isLoadingInitial && _wallet == null) {
-      return const Center(child: shad.CircularProgressIndicator());
-    }
-
-    if (_error != null) {
-      return RefreshIndicator(
-        onRefresh: _onRefresh,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: [
-            const SizedBox(height: 120),
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Text(
-                  _error!,
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    final wallet = _wallet;
-    if (wallet == null) {
-      return RefreshIndicator(
-        onRefresh: _onRefresh,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: [
-            const SizedBox(height: 120),
-            Center(child: Text(l10n.financeWalletNotFound)),
-          ],
-        ),
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: _onRefresh,
-      child: ListView(
-        controller: _scrollController,
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 112),
-        children: [
-          WalletDetailMetadataCard(
-            wallet: wallet,
-            workspaceCurrency: _workspaceCurrency,
-            exchangeRates: _exchangeRates,
-          ),
-          const shad.Gap(12),
-          WalletDetailStatsCard(
-            stats: _stats,
-            walletCurrency: wallet.currency,
-            workspaceCurrency: _workspaceCurrency,
-            exchangeRates: _exchangeRates,
-          ),
-          const shad.Gap(16),
-          Text(
-            l10n.financeTransactions,
-            style: shad.Theme.of(context).typography.small.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const shad.Gap(8),
-          if (_transactions.isEmpty)
-            shad.Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  l10n.financeNoTransactions,
-                  style: shad.Theme.of(context).typography.textMuted,
-                ),
-              ),
-            )
-          else
-            GroupedTransactionAccordion(
-              transactions: _transactions,
-              workspaceCurrency: _workspaceCurrency,
-              exchangeRates: _exchangeRates,
-              showLoadingMore: _isLoadingMore,
-              lazy: true,
-              onTransactionTap: _openTransaction,
-            ),
-        ],
       ),
     );
   }
