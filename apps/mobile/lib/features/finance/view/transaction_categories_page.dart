@@ -208,7 +208,7 @@ class _TransactionCategoriesViewState
       physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.fromLTRB(16, 8, 16, listBottomPadding),
       itemCount: _categories.length,
-      separatorBuilder: (_, _) => const shad.Gap(8),
+      separatorBuilder: (context, index) => const shad.Gap(8),
       itemBuilder: (context, index) {
         final category = _categories[index];
         return _CategoryCard(
@@ -268,7 +268,7 @@ class _TransactionCategoriesViewState
       physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.fromLTRB(16, 8, 16, listBottomPadding),
       itemCount: _tags.length,
-      separatorBuilder: (_, _) => const shad.Gap(8),
+      separatorBuilder: (context, index) => const shad.Gap(8),
       itemBuilder: (context, index) {
         final tag = _tags[index];
         return _TagCard(
@@ -295,7 +295,7 @@ class _TransactionCategoriesViewState
 
     final repository = context.read<FinanceRepository>();
     final l10n = context.l10n;
-    final toastContext = context;
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
 
     final deleted =
         await shad.showDialog<bool>(
@@ -344,7 +344,7 @@ class _TransactionCategoriesViewState
 
     final repository = context.read<FinanceRepository>();
     final l10n = context.l10n;
-    final toastContext = context;
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
 
     final deleted =
         await shad.showDialog<bool>(

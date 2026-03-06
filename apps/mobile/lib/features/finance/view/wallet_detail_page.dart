@@ -44,6 +44,8 @@ class _WalletDetailView extends StatefulWidget {
 }
 
 class _WalletDetailViewState extends State<_WalletDetailView> {
+  static const double _fabContentBottomPadding = 96;
+
   final ScrollController _scrollController = ScrollController();
 
   Wallet? _wallet;
@@ -76,6 +78,8 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final listBottomPadding =
+        _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
 
     return shad.Scaffold(
       headers: [
@@ -154,11 +158,11 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
                         : ListView(
                             controller: _scrollController,
                             physics: const AlwaysScrollableScrollPhysics(),
-                            padding: const EdgeInsets.fromLTRB(
+                            padding: EdgeInsets.fromLTRB(
                               16,
                               8,
                               16,
-                              112,
+                              listBottomPadding,
                             ),
                             children: [
                               WalletDetailMetadataCard(

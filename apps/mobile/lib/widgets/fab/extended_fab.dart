@@ -4,7 +4,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 /// Circular FAB with icon (e.g. "Add Wallet").
 ///
 /// Fixed bottom-right positioning. Use inside a [Stack] as a positioned child
-/// above scrollable content. 
+/// above scrollable content.
 /// The [label] is used for accessibility semantics only.
 class ExtendedFab extends StatelessWidget {
   const ExtendedFab({

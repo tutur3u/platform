@@ -137,7 +137,8 @@ class _WalletsViewState extends State<_WalletsView> {
                               listBottomPadding,
                             ),
                             itemCount: _wallets.length,
-                            separatorBuilder: (_, _) => const shad.Gap(8),
+                            separatorBuilder: (context, index) =>
+                                const shad.Gap(8),
                             itemBuilder: (context, index) {
                               final wallet = _wallets[index];
                               return _WalletCard(
