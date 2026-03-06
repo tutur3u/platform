@@ -102,7 +102,8 @@ interface TaskDialogContextValue {
     boardId: string,
     listId: string,
     availableLists?: TaskList[],
-    filters?: TaskFilters
+    filters?: TaskFilters,
+    initialTaskValues?: Partial<Task>
   ) => void;
 
   // Open dialog for creating a subtask (child of existing task)
@@ -335,20 +336,29 @@ export function TaskDialogProvider({
       boardId: string,
       listId: string,
       availableLists?: TaskList[],
-      filters?: TaskFilters
+      filters?: TaskFilters,
+      initialTaskValues?: Partial<Task>
     ) => {
-      setState({
-        isOpen: true,
-        task: {
+      const task = Object.assign(
+        {
           id: 'new',
           name: '',
-          list_id: listId,
           display_number: 1,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           deleted: false,
           archived: false,
-        } as Task,
+        },
+        initialTaskValues,
+        {
+          id: 'new',
+          list_id: listId,
+        }
+      ) as Task;
+
+      setState({
+        isOpen: true,
+        task,
         boardId,
         mode: 'create',
         availableLists,

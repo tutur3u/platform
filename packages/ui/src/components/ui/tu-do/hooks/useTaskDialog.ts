@@ -17,7 +17,7 @@ import {
  * openTask(task, boardId, availableLists);
  *
  * // Create new task
- * createTask(boardId, listId, availableLists, filters);
+ * createTask(boardId, listId, availableLists, filters, initialTaskValues);
  *
  * // Create subtask (child of existing task)
  * createSubtask(parentTaskId, boardId, listId, availableLists);
@@ -55,7 +55,8 @@ export function useTaskDialog(): {
     boardId: string,
     listId: string,
     availableLists?: TaskList[],
-    filters?: TaskFilters
+    filters?: TaskFilters,
+    initialTaskValues?: Partial<Task>
   ) => void;
   createSubtask: (
     parentTaskId: string,

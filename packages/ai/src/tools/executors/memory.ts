@@ -1,3 +1,4 @@
+import { google } from '@ai-sdk/google';
 import type { TablesInsert, TablesUpdate } from '@tuturuuu/types';
 import { embed } from 'ai';
 import {
@@ -55,7 +56,7 @@ type MemoryEmbeddingBackfillOptions = {
 async function generateEmbedding(text: string, taskType: EmbeddingTaskType) {
   try {
     const { embedding } = await embed({
-      model: 'google/gemini-embedding-001',
+      model: google.embedding('gemini-embedding-001'),
       value: text,
       providerOptions: {
         google: {

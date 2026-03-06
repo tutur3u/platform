@@ -1,5 +1,10 @@
 'use client';
 
+import {
+  formatHotkeySequence,
+  useHotkey,
+  useHotkeySequence,
+} from '@tanstack/react-hotkeys';
 import type {
   Workspace,
   WorkspaceProductTier,
@@ -21,6 +26,11 @@ import { useProgressiveLoader } from '../shared/progressive-loader-context';
 import { RecycleBinPanel } from '../shared/recycle-bin-panel';
 
 export type ViewType = 'kanban' | 'list' | 'timeline';
+
+const HOTKEY_CREATE_TASK = 'C';
+const HOTKEY_GO_TO_KANBAN: ['G', 'K'] = ['G', 'K'];
+const HOTKEY_GO_TO_LIST: ['G', 'L'] = ['G', 'L'];
+const HOTKEY_GO_TO_TIMELINE: ['G', 'T'] = ['G', 'T'];
 
 interface Props {
   workspace: Workspace;
@@ -63,6 +73,14 @@ export function BoardViews({
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const { createTask } = useTaskDialog();
   const { pagination, loadListPage } = useProgressiveLoader();
+  const viewHotkeyLabels = useMemo(
+    () => ({
+      kanban: formatHotkeySequence(HOTKEY_GO_TO_KANBAN),
+      list: formatHotkeySequence(HOTKEY_GO_TO_LIST),
+      timeline: formatHotkeySequence(HOTKEY_GO_TO_TIMELINE),
+    }),
+    []
+  );
 
   // Detect whether any filter is active (requires all data to be loaded)
   const hasActiveFilters = useMemo(
@@ -234,6 +252,8 @@ export function BoardViews({
       });
     }
 
+    tasks = tasks.filter((task) => !task.deleted_at);
+
     // Apply sorting - but NEVER sort done/closed tasks (they always sort by timestamps)
     if (filters.sortBy) {
       // Create a map of list_id to status
@@ -384,37 +404,52 @@ export function BoardViews({
     // all tasks to flicker (disappear then reappear).
   };
 
-  // Global keyboard shortcuts for all views
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Ignore shortcuts when typing in input fields
-      const target = event.target as HTMLElement;
-      const isInputField =
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable;
+  useHotkey(
+    HOTKEY_CREATE_TASK,
+    () => {
+      const firstList = filteredLists[0];
+      if (!firstList) return;
+      createTask(board.id, firstList.id, filteredLists, filters);
+    },
+    {
+      enabled: filteredLists.length > 0,
+      ignoreInputs: true,
+      preventDefault: true,
+    }
+  );
 
-      // C to create a new task (in the first list)
-      if (
-        event.key.toLowerCase() === 'c' &&
-        !event.ctrlKey &&
-        !event.metaKey &&
-        !event.shiftKey &&
-        !event.altKey &&
-        !isInputField
-      ) {
-        event.preventDefault();
-        event.stopPropagation();
-        const firstList = filteredLists[0];
-        if (firstList) {
-          createTask(board.id, firstList.id, filteredLists, filters);
-        }
-      }
-    };
+  useHotkeySequence(
+    HOTKEY_GO_TO_KANBAN,
+    () => {
+      setCurrentView('kanban');
+    },
+    {
+      ignoreInputs: true,
+      preventDefault: true,
+    }
+  );
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [board.id, createTask, filteredLists, filters]);
+  useHotkeySequence(
+    HOTKEY_GO_TO_LIST,
+    () => {
+      setCurrentView('list');
+    },
+    {
+      ignoreInputs: true,
+      preventDefault: true,
+    }
+  );
+
+  useHotkeySequence(
+    HOTKEY_GO_TO_TIMELINE,
+    () => {
+      setCurrentView('timeline');
+    },
+    {
+      ignoreInputs: true,
+      preventDefault: true,
+    }
+  );
 
   const renderView = () => {
     switch (currentView) {
@@ -447,6 +482,7 @@ export function BoardViews({
       case 'timeline':
         return (
           <TimelineBoard
+            boardId={board.id}
             tasks={effectiveTasks}
             lists={filteredLists}
             onTaskPartialUpdate={handleTaskPartialUpdate}
@@ -478,6 +514,7 @@ export function BoardViews({
         currentUserId={currentUserId}
         currentView={currentView}
         onViewChange={setCurrentView}
+        viewHotkeyLabels={viewHotkeyLabels}
         filters={filters}
         onFiltersChange={setFilters}
         listStatusFilter={listStatusFilter}

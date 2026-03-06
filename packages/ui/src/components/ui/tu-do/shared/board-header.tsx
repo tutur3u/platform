@@ -58,6 +58,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuShortcut,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
@@ -184,6 +185,7 @@ interface Props {
   currentUserId?: string;
   currentView: ViewType;
   onViewChange: (view: ViewType) => void;
+  viewHotkeyLabels?: Partial<Record<ViewType, string>>;
   filters: TaskFilters;
   onFiltersChange: (filters: TaskFilters) => void;
   listStatusFilter: ListStatusFilter;
@@ -204,6 +206,7 @@ export function BoardHeader({
   currentUserId,
   currentView,
   onViewChange,
+  viewHotkeyLabels,
   filters,
   onFiltersChange,
   listStatusFilter,
@@ -620,15 +623,20 @@ export function BoardHeader({
                       onViewChange(view as ViewType);
                       setViewMenuOpen(false);
                     }}
-                    className="gap-2"
+                    className="gap-3"
                   >
                     <Icon className="h-4 w-4" />
-                    <div className="flex flex-col">
+                    <div className="flex flex-1 flex-col">
                       <span className="font-medium">{config.label}</span>
                       <span className="text-muted-foreground text-xs">
                         {config.description}
                       </span>
                     </div>
+                    {viewHotkeyLabels?.[view as ViewType] && (
+                      <DropdownMenuShortcut className="self-start pt-0.5">
+                        {viewHotkeyLabels[view as ViewType]}
+                      </DropdownMenuShortcut>
+                    )}
                   </DropdownMenuItem>
                 );
               })}

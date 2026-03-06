@@ -1,3 +1,4 @@
+import { google } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   PERSONAL_WORKSPACE_SLUG,
@@ -408,7 +409,7 @@ async function searchTasks(
 
   // Generate embedding for the query
   const { embedding } = await embed({
-    model: 'google/gemini-embedding-001',
+    model: google.embedding('gemini-embedding-001'),
     value: expandedQuery,
     providerOptions: {
       google: {

@@ -95,6 +95,7 @@ export function TasksTab({
       case 'timeline':
         return (
           <TimelineBoard
+            boardId={projectBoardId}
             tasks={tasks}
             lists={lists}
             onTaskPartialUpdate={onTaskPartialUpdate}

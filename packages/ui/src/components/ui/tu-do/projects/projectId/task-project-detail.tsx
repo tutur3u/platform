@@ -162,11 +162,14 @@ export function TaskProjectDetail({
 
   // Apply optimistic overrides
   const effectiveTasks = useMemo(() => {
-    if (!Object.keys(taskOverrides).length) return filteredTasks;
-    return filteredTasks.map((t) => {
-      const o = taskOverrides[t.id];
-      return o ? ({ ...t, ...o } as Task) : t;
-    });
+    const tasks = !Object.keys(taskOverrides).length
+      ? filteredTasks
+      : filteredTasks.map((t) => {
+          const o = taskOverrides[t.id];
+          return o ? ({ ...t, ...o } as Task) : t;
+        });
+
+    return tasks.filter((task) => !task.deleted_at);
   }, [filteredTasks, taskOverrides]);
 
   const handleTaskPartialUpdate = (taskId: string, partial: Partial<Task>) => {

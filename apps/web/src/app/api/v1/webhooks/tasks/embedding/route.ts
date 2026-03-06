@@ -1,3 +1,4 @@
+import { google } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { embed } from 'ai';
 import { NextResponse } from 'next/server';
@@ -94,7 +95,7 @@ export async function POST(req: Request) {
 
     // Generate embedding using Google Gemini
     const { embedding } = await embed({
-      model: 'google/gemini-embedding-001',
+      model: google.embedding('gemini-embedding-001'),
       value: textForEmbedding,
       providerOptions: {
         google: {

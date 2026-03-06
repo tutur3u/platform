@@ -1,3 +1,4 @@
+import { google } from '@ai-sdk/google';
 import {
   createAdminClient,
   createClient,
@@ -207,7 +208,7 @@ export async function POST(req: Request) {
 
               // Generate embedding
               const { embedding } = await embed({
-                model: 'google/gemini-embedding-001',
+                model: google.embedding('gemini-embedding-001'),
                 value: textForEmbedding,
                 providerOptions: {
                   google: {
