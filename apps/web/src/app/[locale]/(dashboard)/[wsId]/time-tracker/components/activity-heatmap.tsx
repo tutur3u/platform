@@ -33,6 +33,7 @@ import { ScrollArea } from '@mantine/core';
 import { formatDuration } from '@tuturuuu/hooks/utils/time-format';
 import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
 import { useIsMobile } from '@tuturuuu/ui/hooks/use-mobile';
+import { usePathname, useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -41,6 +42,7 @@ import {
   type HeatmapViewMode,
 } from '@/components/settings/time-tracker/heatmap-display-settings';
 import classes from '@/style/mantine-heatmap.module.css';
+import { formatSessionHistoryDate } from './session-history/search-params';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -80,6 +82,8 @@ const getColorClass = (intensity: number): string => {
 export function ActivityHeatmap({ dailyActivity = [] }: ActivityHeatmapProps) {
   const t = useTranslations('time-tracker.heatmap');
   const locale = useLocale();
+  const router = useRouter();
+  const pathname = usePathname();
   dayjs.locale(locale);
 
   const [settings, setSettings] = useLocalStorage<HeatmapSettings>(
@@ -288,6 +292,23 @@ export function ActivityHeatmap({ dailyActivity = [] }: ActivityHeatmapProps) {
 
   const userTimezone = dayjs.tz.guess();
   const today = dayjs().tz(userTimezone);
+  const historyPath = useMemo(
+    () => `${pathname.replace(/\/$/, '')}/history`,
+    [pathname]
+  );
+
+  const navigateToHistoryDay = useCallback(
+    (value: string | dayjs.Dayjs) => {
+      const date = typeof value === 'string' ? dayjs(value) : value;
+      const params = new URLSearchParams({
+        period: 'day',
+        date: formatSessionHistoryDate(date),
+      });
+
+      router.push(`${historyPath}?${params.toString()}`);
+    },
+    [historyPath, router]
+  );
 
   // Transform data for Mantine Heatmap - convert array to object with date keys
   const heatmapData = useMemo(() => {
@@ -502,6 +523,7 @@ export function ActivityHeatmap({ dailyActivity = [] }: ActivityHeatmapProps) {
                   <TooltipTrigger asChild>
                     <button
                       type="button"
+                      onClick={() => navigateToHistoryDay(day.date)}
                       className={cn(
                         'relative h-8 w-full rounded-md font-medium text-xs transition-all focus:outline-none',
                         'hover:z-10 hover:scale-105 focus:z-10 focus:scale-105',
@@ -554,6 +576,7 @@ export function ActivityHeatmap({ dailyActivity = [] }: ActivityHeatmapProps) {
     today,
     settings.timeReference,
     t,
+    navigateToHistoryDay,
   ]);
 
   // Optimized monthly data processing - single-pass algorithm with inline streak calculation
@@ -1293,6 +1316,19 @@ export function ActivityHeatmap({ dailyActivity = [] }: ActivityHeatmapProps) {
 
             return parts.join(' ');
           }}
+          getRectProps={({ date }) => ({
+            onClick: () => navigateToHistoryDay(date),
+            onKeyDown: (event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                navigateToHistoryDay(date);
+              }
+            },
+            role: 'link',
+            tabIndex: 0,
+            style: { cursor: 'pointer' },
+            'aria-label': dayjs(date).format('dddd, MMMM D, YYYY'),
+          })}
           tooltipProps={{
             multiline: true,
             w: 200,
@@ -1310,7 +1346,15 @@ export function ActivityHeatmap({ dailyActivity = [] }: ActivityHeatmapProps) {
         />
       );
     },
-    [heatmapData, activityMap, settings.timeReference, today, t, heatmapSize]
+    [
+      heatmapData,
+      activityMap,
+      settings.timeReference,
+      today,
+      t,
+      heatmapSize,
+      navigateToHistoryDay,
+    ]
   );
 
   // Render mobile heatmaps - split into 3 separate 2-month ranges
