@@ -35,7 +35,7 @@ import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useUserBooleanConfig } from '@/hooks/use-user-config';
 import WorkspaceAvatarSettings from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/avatar';
 import BasicInfo from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/basic-info';
@@ -163,6 +163,55 @@ export function SettingsDialog({
 
   // Use provided workspace or fetched workspace
   const workspace = workspaceProp || fetchedWorkspace || null;
+
+  const {
+    data: hasBillingPermission,
+    isLoading: isBillingPermissionLoading,
+    isFetching: isBillingPermissionFetching,
+  } = useQuery({
+    queryKey: ['workspace-billing-permission', workspace?.id],
+    queryFn: async () => {
+      if (!workspace?.id) return false;
+
+      const supabase = createClient();
+
+      const {
+        data: { user: currentUser },
+      } = await supabase.auth.getUser();
+
+      if (!currentUser) return false;
+
+      const { data, error } = await supabase.rpc('has_workspace_permission', {
+        p_ws_id: workspace.id,
+        p_user_id: currentUser.id,
+        p_permission: 'manage_subscription',
+      });
+
+      if (error) {
+        console.error('Error checking manage_subscription permission:', error);
+        return false;
+      }
+
+      return data ?? false;
+    },
+    enabled: !!workspace?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Reset activeTab if billing permission is revoked or not available
+  useEffect(() => {
+    if (
+      !isBillingPermissionLoading &&
+      hasBillingPermission === false &&
+      activeTab === 'workspace_billing'
+    ) {
+      const safeFallback =
+        defaultTab === 'workspace_billing'
+          ? 'profile'
+          : (defaultTab ?? 'profile');
+      setActiveTab(safeFallback);
+    }
+  }, [hasBillingPermission, isBillingPermissionLoading, activeTab, defaultTab]);
 
   // Fetch calendar token when workspace is available (using TanStack Query)
   const { data: calendarToken } = useQuery({
@@ -387,13 +436,20 @@ export function SettingsDialog({
                 description: t('ws-settings.members-description'),
                 keywords: ['Members', 'Team'],
               },
-              {
-                name: 'workspace_billing',
-                label: t('billing.billing'),
-                icon: CreditCard,
-                description: t('settings-account.billing-description'),
-                keywords: ['Billing', 'Plan', 'Subscription'],
-              },
+              ...(hasBillingPermission
+                ? [
+                    {
+                      name: 'workspace_billing',
+                      label: t('billing.billing'),
+                      icon: CreditCard,
+                      description: t('settings-account.billing-description'),
+                      keywords: ['Billing', 'Plan', 'Subscription'],
+                      disabled:
+                        isBillingPermissionLoading ||
+                        isBillingPermissionFetching,
+                    },
+                  ]
+                : []),
               {
                 name: 'user_status',
                 label: t('settings.workspaces.user_status'),
@@ -755,7 +811,7 @@ export function SettingsDialog({
           </div>
         )}
 
-        {activeTab === 'workspace_billing' && wsId && (
+        {activeTab === 'workspace_billing' && wsId && hasBillingPermission && (
           <div className="h-full">
             <BillingSettings wsId={wsId} />
           </div>

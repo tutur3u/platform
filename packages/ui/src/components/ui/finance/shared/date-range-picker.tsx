@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { DatePicker } from './date-picker';
 
 interface Props {
@@ -16,12 +15,6 @@ export function DateRangePicker({
   setEndDate,
   className,
 }: Props) {
-  useEffect(() => {
-    if (startDate && endDate && startDate > endDate) {
-      setEndDate(startDate);
-    }
-  }, [startDate, endDate, setEndDate]);
-
   return (
     <div className={className}>
       <div className="flex flex-col gap-2">

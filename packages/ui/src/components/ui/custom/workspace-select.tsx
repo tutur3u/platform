@@ -142,7 +142,7 @@ export function WorkspaceSelect({
     setLoading(true);
 
     try {
-      const res = await fetch(`/api/v1/workspaces`, {
+      const res = await fetch(`/api/v1/workspaces/team`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

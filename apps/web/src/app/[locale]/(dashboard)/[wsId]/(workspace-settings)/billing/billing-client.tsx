@@ -58,7 +58,6 @@ export interface Plan {
 interface BillingClientProps {
   wsId: string;
   isPersonalWorkspace: boolean;
-  hasManageSubscriptionPermission: boolean;
   currentPlan: Plan;
   products: Product[];
   seatStatus?: SeatStatus;
@@ -75,7 +74,6 @@ function getSimplePlanName(name: string): string {
 export function BillingClient({
   wsId,
   isPersonalWorkspace,
-  hasManageSubscriptionPermission,
   currentPlan,
   products,
   seatStatus,
@@ -233,16 +231,14 @@ export function BillingClient({
                         {t('seat-usage')}
                       </span>
                     </div>
-                    {hasManageSubscriptionPermission && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setShowAdjustSeatsDialog(true)}
-                      >
-                        <Plus className="mr-1 h-3 w-3" />
-                        {t('adjust-seats')}
-                      </Button>
-                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setShowAdjustSeatsDialog(true)}
+                    >
+                      <Plus className="mr-1 h-3 w-3" />
+                      {t('adjust-seats')}
+                    </Button>
                   </div>
                   <div className="mb-2 flex justify-between text-sm">
                     <span className="text-muted-foreground">
@@ -362,39 +358,28 @@ export function BillingClient({
 
               {/* Actions */}
               <div className="flex flex-wrap gap-3 pt-2">
-                {hasManageSubscriptionPermission ? (
-                  <>
-                    <Button
-                      onClick={() => setShowUpgradeOptions(true)}
-                      size="lg"
-                    >
-                      {t('upgrade-plan')}
-                    </Button>
-                    {hasManageSubscriptionPermission && isPaidPlan && (
-                      <Button
-                        variant="ghost"
-                        size="lg"
-                        className={`text-muted-foreground ${currentPlan.cancelAtPeriodEnd ? 'hover:text-dynamic-green' : 'hover:text-dynamic-red'}`}
-                        onClick={() => setShowConfirmationDialog(true)}
-                      >
-                        {currentPlan.cancelAtPeriodEnd ? (
-                          <>
-                            <CheckCircle className="mr-2 h-4 w-4" />
-                            {t('continue-subscription')}
-                          </>
-                        ) : (
-                          <>
-                            <X className="mr-2 h-4 w-4" />
-                            {t('cancel-subscription')}
-                          </>
-                        )}
-                      </Button>
+                <Button onClick={() => setShowUpgradeOptions(true)} size="lg">
+                  {t('upgrade-plan')}
+                </Button>
+                {isPaidPlan && (
+                  <Button
+                    variant="ghost"
+                    size="lg"
+                    className={`text-muted-foreground ${currentPlan.cancelAtPeriodEnd ? 'hover:text-dynamic-green' : 'hover:text-dynamic-red'}`}
+                    onClick={() => setShowConfirmationDialog(true)}
+                  >
+                    {currentPlan.cancelAtPeriodEnd ? (
+                      <>
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        {t('continue-subscription')}
+                      </>
+                    ) : (
+                      <>
+                        <X className="mr-2 h-4 w-4" />
+                        {t('cancel-subscription')}
+                      </>
                     )}
-                  </>
-                ) : (
-                  <p className="text-muted-foreground text-sm">
-                    {t('subscription-management-restricted')}
-                  </p>
+                  </Button>
                 )}
               </div>
             </div>
@@ -470,7 +455,7 @@ export function BillingClient({
       />
 
       {/* Add Seats Dialog - Only for seat-based subscriptions */}
-      {hasManageSubscriptionPermission && isSeatBased && seatStatus && (
+      {isSeatBased && seatStatus && (
         <AdjustSeatsDialog
           open={showAdjustSeatsDialog}
           onOpenChange={setShowAdjustSeatsDialog}

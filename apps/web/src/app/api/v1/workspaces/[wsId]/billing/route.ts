@@ -7,9 +7,9 @@ import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import {
   checkManageSubscriptionPermission,
-  ensureSubscription,
   fetchCreditPacks,
   fetchProducts,
+  fetchSubscription,
   fetchWorkspaceOrders,
 } from '@/utils/billing-helper';
 import { getSeatStatus } from '@/utils/seat-limits';
@@ -28,7 +28,7 @@ export async function GET(
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
     }
 
     const sbAdmin = await createAdminClient();
@@ -40,7 +40,7 @@ export async function GET(
     );
 
     if (!hasManagePermission) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
     }
 
     const polar = createPolarClient();
@@ -48,14 +48,14 @@ export async function GET(
     // Fetch all billing data in parallel
     const [
       isPersonal,
-      subscriptionResult,
+      subscription,
       products,
       creditPacks,
       seatStatus,
       orders,
     ] = await Promise.all([
       isPersonalWorkspace(wsId),
-      ensureSubscription(polar, sbAdmin, wsId),
+      fetchSubscription(polar, sbAdmin, wsId),
       fetchProducts(polar),
       fetchCreditPacks(sbAdmin),
       getSeatStatus(sbAdmin, wsId),
@@ -63,18 +63,15 @@ export async function GET(
     ]);
 
     // Handle subscription creation failure
-    if (!subscriptionResult.subscription) {
+    if (!subscription) {
       return NextResponse.json(
-        { error: subscriptionResult.error || 'SUBSCRIPTION_NOT_FOUND' },
+        { error: 'SUBSCRIPTION_NOT_FOUND' },
         { status: 404 }
       );
     }
 
-    const subscription = subscriptionResult.subscription;
-
     return NextResponse.json({
       isPersonalWorkspace: isPersonal,
-      hasManagePermission,
       subscription,
       products,
       creditPacks,

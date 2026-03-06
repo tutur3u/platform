@@ -1164,6 +1164,7 @@
     "billing-details-updated": "Cập nhật thông tin thanh toán thành công",
     "billing-email": "Email",
     "billing-info": "Quản lý thông tin thanh toán của bạn",
+    "billing-loading-error": "Đã xảy ra lỗi khi tải thông tin thanh toán.",
     "billing-name": "Tên thanh toán",
     "buy-credit-packs": "Mua gói tín dụng",
     "buy-now": "Mua ngay",
@@ -1329,7 +1330,6 @@
     "subscription-ending-soon": "Đăng ký sắp kết thúc",
     "subscription-ending-warning": "Bạn sẽ mất quyền truy cập các tính năng cao cấp sau ngày này.",
     "subscription-ends-on": "Đăng ký của bạn sẽ kết thúc vào",
-    "subscription-management-restricted": "Chỉ chủ sở hữu không gian làm việc hoặc thành viên có quyền quản lý đăng ký mới có thể quản lý thanh toán.",
     "subscription-update": "Thay đổi gói",
     "success": {
       "active-plan": "Gói của bạn sẽ được kích hoạt ngay lập tức và sẽ tự động gia hạn hàng tháng hoặc hàng năm, tùy thuộc vào gói bạn chọn.",

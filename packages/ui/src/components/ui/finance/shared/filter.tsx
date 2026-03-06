@@ -4,7 +4,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { format, isValid, parse } from 'date-fns';
 import dayjs from 'dayjs';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '../../../ui/button';
 import {
   Select,
@@ -28,76 +28,137 @@ const parseSafeDate = (
   return isValid(parsed) ? parsed : undefined;
 };
 
+type FilterView = 'date' | 'month' | 'year';
+
+interface FilterDraft {
+  view: FilterView;
+  startDate?: Date;
+  endDate?: Date;
+}
+
+const DEFAULT_VIEW: FilterView = 'date';
+
+const parseView = (value: string | null): FilterView => {
+  if (value === 'date' || value === 'month' || value === 'year') {
+    return value;
+  }
+
+  return DEFAULT_VIEW;
+};
+
+const normalizeDateForView = (
+  view: FilterView,
+  date: Date | undefined
+): Date | undefined => {
+  if (!date) return undefined;
+
+  if (view === 'month') return dayjs(date).startOf('month').toDate();
+  if (view === 'year') return dayjs(date).startOf('year').toDate();
+
+  return date;
+};
+
+const normalizeDraft = (
+  view: FilterView,
+  startDate: Date | undefined,
+  endDate: Date | undefined
+): FilterDraft => {
+  const normalizedStartDate = normalizeDateForView(view, startDate);
+  let normalizedEndDate = normalizeDateForView(view, endDate);
+
+  if (normalizedStartDate && !normalizedEndDate) {
+    normalizedEndDate = normalizedStartDate;
+  }
+
+  if (
+    normalizedStartDate &&
+    normalizedEndDate &&
+    normalizedStartDate > normalizedEndDate
+  ) {
+    normalizedEndDate = normalizedStartDate;
+  }
+
+  return {
+    view,
+    startDate: normalizedStartDate,
+    endDate: normalizedEndDate,
+  };
+};
+
+const parseDraftFromParams = (params: URLSearchParams): FilterDraft => {
+  const view = parseView(params.get('view'));
+  const startDate = parseSafeDate(params.get('startDate'));
+  const endDate = parseSafeDate(params.get('endDate'));
+
+  return normalizeDraft(view, startDate, endDate);
+};
+
+const isSameDraft = (left: FilterDraft, right: FilterDraft): boolean =>
+  left.view === right.view &&
+  toDateParam(left.startDate) === toDateParam(right.startDate) &&
+  toDateParam(left.endDate) === toDateParam(right.endDate);
+
 export function Filter({ className }: { className: string }) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
   const paramsKey = searchParams.toString();
 
-  const [view, setView] = useState('date');
+  const currentDraft = useMemo(
+    () => parseDraftFromParams(new URLSearchParams(paramsKey)),
+    [paramsKey]
+  );
 
-  const [startDate, setStartDate] = useState<Date | undefined>();
-  const [endDate, setEndDate] = useState<Date | undefined>();
-
-  useEffect(() => {
-    // If choosing start date but end date is not chosen
-    // set end date to the same date as start date
-    if (startDate && !endDate) setEndDate(startDate);
-  }, [startDate, endDate]);
+  const [draft, setDraft] = useState<FilterDraft>(currentDraft);
 
   useEffect(() => {
-    const params = new URLSearchParams(paramsKey);
-    const viewParam = params.get('view');
-    const nextView =
-      viewParam === 'date' || viewParam === 'month' || viewParam === 'year'
-        ? viewParam
-        : 'date';
-
-    setView((prev) => (prev === nextView ? prev : nextView));
-
-    const startDateParam = params.get('startDate') || '';
-    const endDateParam = params.get('endDate') || '';
-    const nextStartDate = parseSafeDate(startDateParam);
-    const nextEndDate = parseSafeDate(endDateParam);
-
-    setStartDate((prev) =>
-      toDateParam(prev) === (nextStartDate ? startDateParam : '')
-        ? prev
-        : nextStartDate
+    setDraft((previousDraft) =>
+      isSameDraft(previousDraft, currentDraft) ? previousDraft : currentDraft
     );
-    setEndDate((prev) =>
-      toDateParam(prev) === (nextEndDate ? endDateParam : '')
-        ? prev
-        : nextEndDate
-    );
-  }, [paramsKey]);
+  }, [currentDraft]);
+
+  const updateDraft = (
+    nextView: FilterView,
+    nextStartDate: Date | undefined,
+    nextEndDate: Date | undefined
+  ) => {
+    setDraft(normalizeDraft(nextView, nextStartDate, nextEndDate));
+  };
+
+  const handleViewChange = (value: string) => {
+    const nextView = parseView(value);
+    updateDraft(nextView, draft.startDate, draft.endDate);
+  };
+
+  const handleStartDateChange = (nextStartDate?: Date) => {
+    updateDraft(draft.view, nextStartDate, draft.endDate);
+  };
+
+  const handleEndDateChange = (nextEndDate?: Date) => {
+    updateDraft(draft.view, draft.startDate, nextEndDate);
+  };
 
   const resetFilter = () => {
-    setView('date');
-    setStartDate(undefined);
-    setEndDate(undefined);
+    setDraft(normalizeDraft(DEFAULT_VIEW, undefined, undefined));
     router.push(pathname);
   };
 
   const applyFilter = () => {
     const params = new URLSearchParams();
-    params.set('view', view);
+    params.set('view', draft.view);
 
-    if (startDate) params.set('startDate', format(startDate, 'yyyy-MM-dd'));
-    if (endDate) params.set('endDate', format(endDate, 'yyyy-MM-dd'));
+    if (draft.startDate) {
+      params.set('startDate', format(draft.startDate, 'yyyy-MM-dd'));
+    }
+
+    if (draft.endDate) {
+      params.set('endDate', format(draft.endDate, 'yyyy-MM-dd'));
+    }
 
     router.push(`${pathname}?${params.toString()}`);
   };
 
-  const isDirty = () => {
-    const startDateParam = searchParams.get('startDate') || '';
-    const endDateParam = searchParams.get('endDate') || '';
-
-    const currentStart = toDateParam(startDate);
-    const currentEnd = toDateParam(endDate);
-
-    return currentStart !== startDateParam || currentEnd !== endDateParam;
-  };
+  const isDirty = () => !isSameDraft(draft, currentDraft);
 
   return (
     <div
@@ -108,7 +169,7 @@ export function Filter({ className }: { className: string }) {
     >
       <div className="flex flex-col gap-2">
         <h2 className="font-semibold text-lg">Filter by</h2>
-        <Select value={view} onValueChange={(value) => setView(value)}>
+        <Select value={draft.view} onValueChange={handleViewChange}>
           <SelectTrigger className="w-full lg:min-w-48">
             <SelectValue placeholder="Filter by" />
           </SelectTrigger>
@@ -120,41 +181,49 @@ export function Filter({ className }: { className: string }) {
         </Select>
       </div>
 
-      {view === 'date' && (
+      {draft.view === 'date' && (
         <DateRangePicker
-          startDate={startDate}
-          endDate={endDate}
-          setStartDate={setStartDate}
-          setEndDate={setEndDate}
+          startDate={draft.startDate}
+          endDate={draft.endDate}
+          setStartDate={handleStartDateChange}
+          setEndDate={handleEndDateChange}
           className="flex w-full flex-col gap-4 md:w-auto md:flex-row"
         />
       )}
 
-      {view === 'month' && (
+      {draft.view === 'month' && (
         <MonthRangePicker
           // date that is the first day of the month
           startMonth={
-            startDate ? dayjs(startDate).startOf('month').toDate() : undefined
+            draft.startDate
+              ? dayjs(draft.startDate).startOf('month').toDate()
+              : undefined
           }
           endMonth={
-            endDate ? dayjs(endDate).startOf('month').toDate() : undefined
+            draft.endDate
+              ? dayjs(draft.endDate).startOf('month').toDate()
+              : undefined
           }
-          setStartMonth={setStartDate}
-          setEndMonth={setEndDate}
+          setStartMonth={handleStartDateChange}
+          setEndMonth={handleEndDateChange}
           className="flex w-full flex-col gap-4 md:w-auto md:flex-row"
         />
       )}
 
-      {view === 'year' && (
+      {draft.view === 'year' && (
         <YearRangePicker
           startYear={
-            startDate ? dayjs(startDate).startOf('year').toDate() : undefined
+            draft.startDate
+              ? dayjs(draft.startDate).startOf('year').toDate()
+              : undefined
           }
           endYear={
-            endDate ? dayjs(endDate).startOf('year').toDate() : undefined
+            draft.endDate
+              ? dayjs(draft.endDate).startOf('year').toDate()
+              : undefined
           }
-          setStartYear={setStartDate}
-          setEndYear={setEndDate}
+          setStartYear={handleStartDateChange}
+          setEndYear={handleEndDateChange}
           className="flex w-full flex-col gap-4 md:w-auto md:flex-row"
         />
       )}
