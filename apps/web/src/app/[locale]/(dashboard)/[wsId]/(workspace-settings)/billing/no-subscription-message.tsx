@@ -13,7 +13,9 @@ interface NoSubscriptionFoundProps {
 
 const isDevelopment = DEV_MODE === true;
 
-export function NoSubscriptionFound({ wsId }: NoSubscriptionFoundProps) {
+export default function NoSubscriptionMessage({
+  wsId,
+}: NoSubscriptionFoundProps) {
   const t = useTranslations('billing.no-subscription');
 
   return (

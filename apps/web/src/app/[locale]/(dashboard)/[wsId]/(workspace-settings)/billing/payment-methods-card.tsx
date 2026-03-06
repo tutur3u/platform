@@ -41,7 +41,6 @@ import {
 
 interface PaymentMethodsCardProps {
   wsId: string;
-  hasManageSubscriptionPermission: boolean;
 }
 
 // Payment method type - flexible to handle different Polar SDK structures
@@ -98,10 +97,7 @@ function getCardBrandDisplay(brand: string | null | undefined) {
   return brandMap[normalizedBrand] ?? 'Card';
 }
 
-export default function PaymentMethodsCard({
-  wsId,
-  hasManageSubscriptionPermission,
-}: PaymentMethodsCardProps) {
+export default function PaymentMethodsCard({ wsId }: PaymentMethodsCardProps) {
   const t = useTranslations('billing');
   const queryClient = useQueryClient();
   const [deletePaymentMethodId, setDeletePaymentMethodId] = useState<
@@ -123,7 +119,7 @@ export default function PaymentMethodsCard({
       }
       return result.data ?? [];
     },
-    enabled: hasManageSubscriptionPermission,
+    enabled: true,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
@@ -161,10 +157,6 @@ export default function PaymentMethodsCard({
       toast.error(t('failed-to-open-customer-portal'));
     }
   };
-
-  if (!hasManageSubscriptionPermission) {
-    return null;
-  }
 
   // Render loading state
   if (isLoading) {

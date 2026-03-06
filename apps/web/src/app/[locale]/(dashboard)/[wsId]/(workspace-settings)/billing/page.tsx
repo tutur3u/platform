@@ -22,7 +22,7 @@ import { AiCreditBillingCard } from './ai-credit-billing-card';
 import { BillingClient } from './billing-client';
 import BillingDetailsCard from './billing-details-card';
 import BillingHistory from './billing-history';
-import { NoSubscriptionFound } from './no-subscription-found';
+import NoSubscriptionMessage from './no-subscription-message';
 import PaymentMethodsCard from './payment-methods-card';
 
 export const metadata: Metadata = {
@@ -46,12 +46,17 @@ export default async function BillingPage({
 
         if (!user) return notFound();
 
-        const polar = createPolarClient();
         const sbAdmin = await createAdminClient();
+
+        const hasManageSubscriptionPermission =
+          await checkManageSubscriptionPermission(sbAdmin, wsId, user.id);
+
+        if (!hasManageSubscriptionPermission) return notFound();
+
+        const polar = createPolarClient();
 
         const [
           isPersonal,
-          hasManageSubscriptionPermission,
           subscription,
           products,
           creditPacks,
@@ -61,7 +66,6 @@ export default async function BillingPage({
           t,
         ] = await Promise.all([
           isPersonalWorkspace(wsId),
-          checkManageSubscriptionPermission(sbAdmin, wsId, user.id),
           fetchSubscription(polar, sbAdmin, wsId), // Try to ensure subscription exists
           fetchProducts(polar),
           fetchCreditPacks(sbAdmin),
@@ -73,7 +77,7 @@ export default async function BillingPage({
 
         // Handle subscription creation failure
         if (!subscription) {
-          return <NoSubscriptionFound wsId={wsId} />;
+          return <NoSubscriptionMessage wsId={wsId} />;
         }
 
         const dateLocale = locale === 'vi' ? vi : enUS;
@@ -111,28 +115,14 @@ export default async function BillingPage({
             <BillingClient
               wsId={wsId}
               isPersonalWorkspace={isPersonal}
-              hasManageSubscriptionPermission={hasManageSubscriptionPermission}
               currentPlan={currentPlan}
               products={products}
               seatStatus={seatStatus}
             />
 
-            <BillingDetailsCard
-              wsId={wsId}
-              hasManageSubscriptionPermission={hasManageSubscriptionPermission}
-            />
-
-            <PaymentMethodsCard
-              wsId={wsId}
-              hasManageSubscriptionPermission={hasManageSubscriptionPermission}
-            />
-
-            <AiCreditBillingCard
-              wsId={wsId}
-              packs={creditPacks}
-              canPurchase={hasManageSubscriptionPermission}
-            />
-
+            <BillingDetailsCard wsId={wsId} />
+            <PaymentMethodsCard wsId={wsId} />
+            <AiCreditBillingCard wsId={wsId} packs={creditPacks} />
             <BillingHistory orders={orders} />
           </div>
         );

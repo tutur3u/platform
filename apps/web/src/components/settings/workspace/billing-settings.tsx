@@ -9,7 +9,7 @@ import { AiCreditBillingCard } from '@/app/[locale]/(dashboard)/[wsId]/(workspac
 import { BillingClient } from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/billing-client';
 import BillingDetailsCard from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/billing-details-card';
 import BillingHistory from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/billing-history';
-import { NoSubscriptionFound } from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/no-subscription-found';
+import NoSubscriptionMessage from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/no-subscription-message';
 import PaymentMethodsCard from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/payment-methods-card';
 
 interface BillingSettingsProps {
@@ -47,12 +47,17 @@ export default function BillingSettings({ wsId }: BillingSettingsProps) {
   }
 
   if (error) {
-    return <NoSubscriptionFound wsId={wsId} />;
+    const errorCode = error instanceof Error ? error.message : '';
+
+    if (errorCode === 'SUBSCRIPTION_NOT_FOUND') {
+      return <NoSubscriptionMessage wsId={wsId} />;
+    }
+
+    return null;
   }
 
   const {
     isPersonalWorkspace,
-    hasManagePermission,
     subscription,
     products,
     creditPacks,
@@ -95,28 +100,14 @@ export default function BillingSettings({ wsId }: BillingSettingsProps) {
       <BillingClient
         wsId={wsId}
         isPersonalWorkspace={isPersonalWorkspace}
-        hasManageSubscriptionPermission={hasManagePermission}
         currentPlan={currentPlan}
         products={products}
         seatStatus={seatStatus}
       />
 
-      <BillingDetailsCard
-        wsId={wsId}
-        hasManageSubscriptionPermission={hasManagePermission}
-      />
-
-      <PaymentMethodsCard
-        wsId={wsId}
-        hasManageSubscriptionPermission={hasManagePermission}
-      />
-
-      <AiCreditBillingCard
-        wsId={wsId}
-        packs={creditPacks}
-        canPurchase={hasManagePermission}
-      />
-
+      <BillingDetailsCard wsId={wsId} />
+      <PaymentMethodsCard wsId={wsId} />
+      <AiCreditBillingCard wsId={wsId} packs={creditPacks} />
       <BillingHistory orders={orders} />
     </div>
   );

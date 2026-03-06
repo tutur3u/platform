@@ -1,11 +1,9 @@
 import type { CustomerSeat, Polar } from '@tuturuuu/payment/polar';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
-import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
 import {
   isAiCreditPackProduct,
   parseWorkspaceProductTier,
 } from '@/utils/polar-product-metadata';
-import { createFreeSubscription } from '@/utils/subscription-helper';
 
 export async function fetchProducts(polar: Polar) {
   try {
@@ -121,59 +119,6 @@ export async function checkManageSubscriptionPermission(
   return data ?? false;
 }
 
-export async function ensureSubscription(
-  polar: Polar,
-  supabase: TypedSupabaseClient,
-  wsId: string
-) {
-  // Check for existing subscription first
-  const existing = await fetchSubscription(polar, supabase, wsId);
-  if (existing) return { subscription: existing, error: null };
-
-  // No subscription found - attempt to create one
-  try {
-    // Get or create Polar customer
-    await getOrCreatePolarCustomer({ polar, supabase, wsId });
-
-    // Create free tier subscription
-    const result = await createFreeSubscription(polar, supabase, wsId);
-
-    if (result.status !== 'created') {
-      return {
-        subscription: null,
-        error:
-          result.status === 'already_active'
-            ? 'SUBSCRIPTION_ALREADY_ACTIVE'
-            : 'SUBSCRIPTION_CREATE_FAILED',
-      };
-    }
-
-    // Poll database until webhook processes (max 30 seconds)
-    const newSubscription = await waitForSubscriptionSync(
-      polar,
-      supabase,
-      wsId,
-      10,
-      3000
-    );
-
-    if (!newSubscription) {
-      return {
-        subscription: null,
-        error: 'SUBSCRIPTION_SYNC_TIMEOUT',
-      };
-    }
-
-    return { subscription: newSubscription, error: null };
-  } catch (error) {
-    console.error('Error ensuring subscription:', error);
-    return {
-      subscription: null,
-      error: error instanceof Error ? error.message : 'UNKNOWN_ERROR',
-    };
-  }
-}
-
 export async function fetchSubscription(
   polar: Polar,
   supabase: TypedSupabaseClient,
@@ -234,32 +179,4 @@ export async function fetchSubscription(
     seatCount: dbSub.seat_count,
     seatList,
   };
-}
-
-export async function waitForSubscriptionSync(
-  polar: Polar,
-  supabase: TypedSupabaseClient,
-  wsId: string,
-  maxAttempts: number = 10,
-  delayMs: number = 500
-) {
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    const subscription = await fetchSubscription(polar, supabase, wsId);
-
-    if (subscription) {
-      console.log(
-        `Subscription sync: Found subscription after ${attempt} attempt(s) (${attempt * delayMs}ms)`
-      );
-      return subscription;
-    }
-
-    if (attempt < maxAttempts) {
-      await new Promise((resolve) => setTimeout(resolve, delayMs));
-    }
-  }
-
-  console.warn(
-    `Subscription sync: Timeout after ${maxAttempts} attempts (${maxAttempts * delayMs}ms)`
-  );
-  return null;
 }

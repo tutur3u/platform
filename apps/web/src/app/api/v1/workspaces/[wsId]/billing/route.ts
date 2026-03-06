@@ -7,9 +7,9 @@ import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import {
   checkManageSubscriptionPermission,
-  fetchSubscription,
   fetchCreditPacks,
   fetchProducts,
+  fetchSubscription,
   fetchWorkspaceOrders,
 } from '@/utils/billing-helper';
 import { getSeatStatus } from '@/utils/seat-limits';
@@ -28,7 +28,7 @@ export async function GET(
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
     }
 
     const sbAdmin = await createAdminClient();
@@ -40,7 +40,7 @@ export async function GET(
     );
 
     if (!hasManagePermission) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
     }
 
     const polar = createPolarClient();
@@ -72,7 +72,6 @@ export async function GET(
 
     return NextResponse.json({
       isPersonalWorkspace: isPersonal,
-      hasManagePermission,
       subscription,
       products,
       creditPacks,

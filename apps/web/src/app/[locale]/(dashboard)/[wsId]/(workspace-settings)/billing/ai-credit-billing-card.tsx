@@ -37,7 +37,6 @@ interface CreditStatusResponse {
 interface AiCreditBillingCardProps {
   wsId: string;
   packs: CreditPackListItem[];
-  canPurchase: boolean;
 }
 
 function barWidth(used: number, total: number): number {
@@ -52,11 +51,7 @@ function formatPrice(currency: string, cents: number): string {
   return `${currency.toUpperCase()} ${centToDollar(cents)}`;
 }
 
-export function AiCreditBillingCard({
-  wsId,
-  packs,
-  canPurchase,
-}: AiCreditBillingCardProps) {
+export function AiCreditBillingCard({ wsId, packs }: AiCreditBillingCardProps) {
   const t = useTranslations('billing');
   const locale = useLocale();
   const { resolvedTheme } = useTheme();
@@ -301,7 +296,7 @@ export function AiCreditBillingCard({
                 <Button
                   size="sm"
                   className={cn('w-full')}
-                  disabled={!canPurchase || purchaseMutation.isPending}
+                  disabled={purchaseMutation.isPending}
                   onClick={() => purchaseMutation.mutate(pack.id)}
                 >
                   {purchaseMutation.isPending && processingPackId === pack.id
@@ -311,12 +306,6 @@ export function AiCreditBillingCard({
               </div>
             ))}
           </div>
-
-          {!canPurchase && (
-            <p className="mt-3 text-muted-foreground text-xs">
-              {t('subscription-management-restricted')}
-            </p>
-          )}
         </div>
       )}
     </div>

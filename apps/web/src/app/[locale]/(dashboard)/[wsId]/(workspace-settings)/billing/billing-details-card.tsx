@@ -25,7 +25,6 @@ import billingCountryOptions from './billing-country-options.json';
 
 interface BillingDetailsCardProps {
   wsId: string;
-  hasManageSubscriptionPermission: boolean;
 }
 
 const COUNTRY_OPTIONS: Array<{
@@ -51,10 +50,7 @@ const DEFAULT_FORM: UpdateWorkspaceBillingDetailsInput = {
   taxId: '',
 };
 
-export default function BillingDetailsCard({
-  wsId,
-  hasManageSubscriptionPermission,
-}: BillingDetailsCardProps) {
+export default function BillingDetailsCard({ wsId }: BillingDetailsCardProps) {
   const t = useTranslations('billing');
   const queryClient = useQueryClient();
   const [formData, setFormData] =
@@ -76,7 +72,7 @@ export default function BillingDetailsCard({
       }
       return result.data;
     },
-    enabled: hasManageSubscriptionPermission,
+    enabled: true,
     staleTime: 1000 * 60 * 5,
   });
 
@@ -151,10 +147,6 @@ export default function BillingDetailsCard({
     const baseline = initialData ?? DEFAULT_FORM;
     return JSON.stringify(formData) !== JSON.stringify(baseline);
   }, [formData, initialData]);
-
-  if (!hasManageSubscriptionPermission) {
-    return null;
-  }
 
   const isFormDisabled = isLoading || updateMutation.isPending;
 

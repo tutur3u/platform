@@ -166,6 +166,36 @@ export function SettingsDialog({
   // Use provided workspace or fetched workspace
   const workspace = workspaceProp || fetchedWorkspace || null;
 
+  const { data: hasBillingPermission } = useQuery({
+    queryKey: ['workspace-billing-permission', workspace?.id],
+    queryFn: async () => {
+      if (!workspace?.id) return false;
+
+      const supabase = createClient();
+
+      const {
+        data: { user: currentUser },
+      } = await supabase.auth.getUser();
+
+      if (!currentUser) return false;
+
+      const { data, error } = await supabase.rpc('has_workspace_permission', {
+        p_ws_id: workspace.id,
+        p_user_id: currentUser.id,
+        p_permission: 'manage_subscription',
+      });
+
+      if (error) {
+        console.error('Error checking manage_subscription permission:', error);
+        return false;
+      }
+
+      return data ?? false;
+    },
+    enabled: !!workspace?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+
   // Fetch calendar token when workspace is available (using TanStack Query)
   const { data: calendarToken } = useQuery({
     queryKey: ['calendar-token', workspace?.id],
@@ -389,13 +419,17 @@ export function SettingsDialog({
                 description: t('ws-settings.members-description'),
                 keywords: ['Members', 'Team'],
               },
-              {
-                name: 'workspace_billing',
-                label: t('billing.billing'),
-                icon: CreditCard,
-                description: t('settings-account.billing-description'),
-                keywords: ['Billing', 'Plan', 'Subscription'],
-              },
+              ...(hasBillingPermission
+                ? [
+                    {
+                      name: 'workspace_billing',
+                      label: t('billing.billing'),
+                      icon: CreditCard,
+                      description: t('settings-account.billing-description'),
+                      keywords: ['Billing', 'Plan', 'Subscription'],
+                    },
+                  ]
+                : []),
               {
                 name: 'user_status',
                 label: t('settings.workspaces.user_status'),
@@ -756,7 +790,7 @@ export function SettingsDialog({
           </div>
         )}
 
-        {activeTab === 'workspace_billing' && wsId && (
+        {activeTab === 'workspace_billing' && wsId && hasBillingPermission && (
           <div className="h-full">
             <BillingSettings wsId={wsId} />
           </div>
