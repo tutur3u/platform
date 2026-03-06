@@ -2,7 +2,16 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+
+const GoalBodySchema = z.object({
+  categoryId: z.string().nullable().optional(),
+  dailyGoalMinutes: z.number().int().positive(),
+  weeklyGoalMinutes: z.number().int().positive().nullable().optional(),
+  isActive: z.boolean().optional(),
+});
 
 export async function GET(
   request: NextRequest,
@@ -10,7 +19,7 @@ export async function GET(
 ) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     // Get authenticated user
     const {
@@ -22,11 +31,13 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+
     // Verify workspace access
     const { data: memberCheck } = await supabase
       .from('workspace_members')
       .select('id:user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -46,7 +57,7 @@ export async function GET(
       const { data: targetUserCheck } = await supabase
         .from('workspace_members')
         .select('id:user_id')
-        .eq('ws_id', wsId)
+        .eq('ws_id', normalizedWsId)
         .eq('user_id', targetUserId)
         .single();
 
@@ -67,7 +78,7 @@ export async function GET(
         category:time_tracking_categories(*)
       `
       )
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', queryUserId)
       .order('created_at', { ascending: false });
 
@@ -89,7 +100,7 @@ export async function POST(
 ) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     // Get authenticated user
     const {
@@ -101,11 +112,13 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+
     // Verify workspace access
     const { data: memberCheck } = await supabase
       .from('workspace_members')
       .select('id:user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -117,14 +130,19 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { categoryId, dailyGoalMinutes, weeklyGoalMinutes, isActive } = body;
-
-    if (!dailyGoalMinutes || dailyGoalMinutes <= 0) {
+    const parsedBody = GoalBodySchema.safeParse(body);
+    if (!parsedBody.success) {
       return NextResponse.json(
-        { error: 'Daily goal minutes must be positive' },
+        {
+          error: 'Invalid request body',
+          details: parsedBody.error.issues.map((issue) => issue.message),
+        },
         { status: 400 }
       );
     }
+
+    const { categoryId, dailyGoalMinutes, weeklyGoalMinutes, isActive } =
+      parsedBody.data;
 
     // Verify category exists if provided
     if (categoryId) {
@@ -132,7 +150,7 @@ export async function POST(
         .from('time_tracking_categories')
         .select('id')
         .eq('id', categoryId)
-        .eq('ws_id', wsId)
+        .eq('ws_id', normalizedWsId)
         .single();
 
       if (!categoryCheck) {
@@ -149,7 +167,7 @@ export async function POST(
     const { data, error } = await sbAdmin
       .from('time_tracking_goals')
       .insert({
-        ws_id: wsId,
+        ws_id: normalizedWsId,
         user_id: user.id,
         category_id: categoryId || null,
         daily_goal_minutes: dailyGoalMinutes,

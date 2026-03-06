@@ -8,6 +8,7 @@ import { NextResponse } from 'next/server';
 import {
   checkManageSubscriptionPermission,
   ensureSubscription,
+  fetchCreditPacks,
   fetchProducts,
   fetchWorkspaceOrders,
 } from '@/utils/billing-helper';
@@ -45,14 +46,21 @@ export async function GET(
     const polar = createPolarClient();
 
     // Fetch all billing data in parallel
-    const [isPersonal, subscriptionResult, products, seatStatus, orders] =
-      await Promise.all([
-        isPersonalWorkspace(wsId),
-        ensureSubscription(polar, sbAdmin, wsId),
-        fetchProducts(polar),
-        getSeatStatus(sbAdmin, wsId),
-        fetchWorkspaceOrders(sbAdmin, wsId),
-      ]);
+    const [
+      isPersonal,
+      subscriptionResult,
+      products,
+      creditPacks,
+      seatStatus,
+      orders,
+    ] = await Promise.all([
+      isPersonalWorkspace(wsId),
+      ensureSubscription(polar, sbAdmin, wsId),
+      fetchProducts(polar),
+      fetchCreditPacks(sbAdmin),
+      getSeatStatus(sbAdmin, wsId),
+      fetchWorkspaceOrders(sbAdmin, wsId),
+    ]);
 
     // Handle subscription creation failure
     if (!subscriptionResult.subscription) {
@@ -69,6 +77,7 @@ export async function GET(
       hasManagePermission,
       subscription,
       products,
+      creditPacks,
       orders,
       seatList: subscription.seatList,
       seatStatus,

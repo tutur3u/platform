@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
 import 'package:mobile/data/models/time_tracking/break_record.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
+import 'package:mobile/data/models/time_tracking/goal.dart';
 import 'package:mobile/data/models/time_tracking/period_stats.dart';
 import 'package:mobile/data/models/time_tracking/pomodoro_settings.dart';
 import 'package:mobile/data/models/time_tracking/request.dart';
@@ -103,6 +104,29 @@ abstract class ITimeTrackerRepository {
     required DateTime dateTo,
     String? userId,
   });
+
+  Future<List<TimeTrackingGoal>> getGoals(String wsId, {String? userId});
+
+  Future<TimeTrackingGoal> createGoal(
+    String wsId, {
+    required int dailyGoalMinutes,
+    String? categoryId,
+    int? weeklyGoalMinutes,
+    bool isActive = true,
+  });
+
+  Future<TimeTrackingGoal> updateGoal(
+    String wsId,
+    String goalId, {
+    String? categoryId,
+    bool includeCategoryId = false,
+    bool includeWeeklyGoalMinutes = false,
+    int? dailyGoalMinutes,
+    int? weeklyGoalMinutes,
+    bool? isActive,
+  });
+
+  Future<void> deleteGoal(String wsId, String goalId);
 
   Future<List<TimeTrackingRequest>> getRequests(
     String wsId, {
@@ -600,6 +624,77 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
       }),
     );
     return TimeTrackingPeriodStats.fromJson(data);
+  }
+
+  @override
+  Future<List<TimeTrackingGoal>> getGoals(String wsId, {String? userId}) async {
+    final data = await _api.getJson(
+      _withQuery('/api/v1/workspaces/$wsId/time-tracking/goals', {
+        if (userId != null && userId.isNotEmpty) 'userId': userId,
+      }),
+    );
+
+    final goals = data['goals'] as List<dynamic>? ?? [];
+    return goals
+        .map((e) => TimeTrackingGoal.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<TimeTrackingGoal> createGoal(
+    String wsId, {
+    required int dailyGoalMinutes,
+    String? categoryId,
+    int? weeklyGoalMinutes,
+    bool isActive = true,
+  }) async {
+    final body = <String, dynamic>{
+      'dailyGoalMinutes': dailyGoalMinutes,
+      'isActive': isActive,
+      if (categoryId != null) 'categoryId': categoryId,
+      if (weeklyGoalMinutes != null) 'weeklyGoalMinutes': weeklyGoalMinutes,
+    };
+
+    final data = await _api.postJson(
+      '/api/v1/workspaces/$wsId/time-tracking/goals',
+      body,
+    );
+
+    return TimeTrackingGoal.fromJson(data['goal'] as Map<String, dynamic>);
+  }
+
+  @override
+  Future<TimeTrackingGoal> updateGoal(
+    String wsId,
+    String goalId, {
+    String? categoryId,
+    bool includeCategoryId = false,
+    bool includeWeeklyGoalMinutes = false,
+    int? dailyGoalMinutes,
+    int? weeklyGoalMinutes,
+    bool? isActive,
+  }) async {
+    final body = <String, dynamic>{
+      if (includeCategoryId || categoryId != null) 'categoryId': categoryId,
+      if (dailyGoalMinutes != null) 'dailyGoalMinutes': dailyGoalMinutes,
+      if (includeWeeklyGoalMinutes || weeklyGoalMinutes != null)
+        'weeklyGoalMinutes': weeklyGoalMinutes,
+      if (isActive != null) 'isActive': isActive,
+    };
+
+    final data = await _api.patchJson(
+      '/api/v1/workspaces/$wsId/time-tracking/goals/$goalId',
+      body,
+    );
+
+    return TimeTrackingGoal.fromJson(data['goal'] as Map<String, dynamic>);
+  }
+
+  @override
+  Future<void> deleteGoal(String wsId, String goalId) async {
+    await _api.deleteJson(
+      '/api/v1/workspaces/$wsId/time-tracking/goals/$goalId',
+    );
   }
 
   @override

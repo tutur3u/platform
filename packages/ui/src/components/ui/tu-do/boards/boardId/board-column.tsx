@@ -86,6 +86,18 @@ export function BoardColumn({
   const { pagination, loadListPage } = useProgressiveLoader();
   const listState = pagination[column.id];
   const isInitialLoad = !listState || listState.isInitialLoad;
+  const hasActiveFilters =
+    !!filters &&
+    (filters.labels.length > 0 ||
+      filters.assignees.length > 0 ||
+      filters.projects.length > 0 ||
+      filters.priorities.length > 0 ||
+      !!filters.dueDateRange?.from ||
+      !!filters.searchQuery?.trim() ||
+      filters.includeMyTasks ||
+      filters.includeUnassigned ||
+      !!filters.sortBy);
+  const recoveryRequestedRef = useRef(false);
 
   // Viewport detection — trigger first page load when column becomes visible
   const columnRef = useRef<HTMLDivElement>(null);
@@ -104,6 +116,31 @@ export function BoardColumn({
     observer.observe(el);
     return () => observer.disconnect();
   }, [column.id, listState, loadListPage]);
+
+  // Recovery path: if the list metadata says tasks exist but the shared tasks
+  // cache was cleared, refetch page 0 for this list so cards reappear.
+  useEffect(() => {
+    if (!listState || listState.isLoading || hasActiveFilters) return;
+
+    if (listState.totalCount > 0 && tasks.length === 0) {
+      if (recoveryRequestedRef.current) return;
+      recoveryRequestedRef.current = true;
+      loadListPage(column.id, 0).finally(() => {
+        recoveryRequestedRef.current = false;
+      });
+      return;
+    }
+
+    recoveryRequestedRef.current = false;
+  }, [
+    column.id,
+    hasActiveFilters,
+    listState,
+    listState?.isLoading,
+    listState?.totalCount,
+    loadListPage,
+    tasks.length,
+  ]);
 
   // Load more pages (infinite scroll callback)
   const handleLoadMore = useCallback(() => {

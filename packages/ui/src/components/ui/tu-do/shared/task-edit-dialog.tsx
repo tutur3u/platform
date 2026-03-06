@@ -485,6 +485,42 @@ export function TaskEditDialog({
     setAutoSchedule,
   ]);
 
+  const hasUnsavedSchedulingChanges = useMemo(() => {
+    if (isCreateMode) return false;
+
+    const saved = personalScheduleData?.task;
+    if (!saved) {
+      return (
+        formState.totalDuration !== null ||
+        formState.isSplittable ||
+        formState.minSplitDurationMinutes !== null ||
+        formState.maxSplitDurationMinutes !== null ||
+        formState.calendarHours !== null ||
+        formState.autoSchedule
+      );
+    }
+
+    return (
+      formState.totalDuration !== (saved.total_duration ?? null) ||
+      formState.isSplittable !== !!saved.is_splittable ||
+      formState.minSplitDurationMinutes !==
+        (saved.min_split_duration_minutes ?? null) ||
+      formState.maxSplitDurationMinutes !==
+        (saved.max_split_duration_minutes ?? null) ||
+      formState.calendarHours !== (saved.calendar_hours ?? null) ||
+      formState.autoSchedule !== !!saved.auto_schedule
+    );
+  }, [
+    isCreateMode,
+    personalScheduleData?.task,
+    formState.totalDuration,
+    formState.isSplittable,
+    formState.minSplitDurationMinutes,
+    formState.maxSplitDurationMinutes,
+    formState.calendarHours,
+    formState.autoSchedule,
+  ]);
+
   const draftStorageKey = getDraftStorageKey(boardId);
 
   // Suggestion menus
@@ -909,6 +945,8 @@ export function TaskEditDialog({
     maxSplitDurationMinutes: formState.maxSplitDurationMinutes,
     calendarHours: formState.calendarHours,
     autoSchedule: formState.autoSchedule,
+    saveSchedulingSettings,
+    hasUnsavedSchedulingChanges,
     user: userForSave,
     userTaskSettings,
     createMultiple,

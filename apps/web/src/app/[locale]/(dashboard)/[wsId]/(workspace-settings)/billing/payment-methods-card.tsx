@@ -98,7 +98,7 @@ function getCardBrandDisplay(brand: string | null | undefined) {
   return brandMap[normalizedBrand] ?? 'Card';
 }
 
-export function PaymentMethodsCard({
+export default function PaymentMethodsCard({
   wsId,
   hasManageSubscriptionPermission,
 }: PaymentMethodsCardProps) {

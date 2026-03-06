@@ -257,9 +257,17 @@ export function TransactionEditDialog({
 
   // Update selected tags when data loads
   useEffect(() => {
-    if (existingTags.length > 0) {
-      setSelectedTagIds(existingTags.map((t) => t.tag_id));
-    }
+    const nextTagIds = existingTags.map((tag) => tag.tag_id);
+    setSelectedTagIds((prev) => {
+      if (
+        prev.length === nextTagIds.length &&
+        prev.every((id, index) => id === nextTagIds[index])
+      ) {
+        return prev;
+      }
+
+      return nextTagIds;
+    });
   }, [existingTags]);
 
   // Reset form when dialog opens or transaction changes

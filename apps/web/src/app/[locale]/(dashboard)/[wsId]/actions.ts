@@ -42,8 +42,8 @@ export async function setupWorkspace(wsId: string) {
 
   await getOrCreatePolarCustomer({
     polar,
-    supabase: sbAdmin,
-    wsId: wsId,
+    supabase,
+    wsId,
   });
 
   const result = await createFreeSubscription(polar, sbAdmin, wsId);
