@@ -1,95 +1,95 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { z } from 'zod';
-import { CustomDataTable } from '@/components/custom-data-table';
-import { getAuditLogColumns } from './audit-log-columns';
-
-interface AuditLogEntry {
-  id: string;
-  user_id: string;
-  ws_id: string;
-  archived: boolean;
-  archived_until: string | null;
-  creator_id: string;
-  created_at: string;
-  user_full_name?: string | null;
-  creator_full_name?: string | null;
-}
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@tuturuuu/ui/card';
+import { getTranslations } from 'next-intl/server';
+import {
+  getAuditLogInsights,
+  getAuditLogPage,
+  getRecentAuditLogTimeOptions,
+} from './audit-log-data';
+import { AuditLogDataTable } from './audit-log-data-table';
+import { AuditLogInsights } from './audit-log-insights';
+import { resolveAuditLogPeriod } from './audit-log-time';
 
 interface Props {
   wsId: string;
+  locale: string;
+  period?: string;
+  month?: string;
+  year?: string;
+  status?: string;
   page?: number;
   pageSize?: number;
+  canExport?: boolean;
 }
 
-const AuditLogSearchParamsSchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce.number().int().min(1).max(100).default(10),
-});
+export async function AuditLogTable({
+  wsId,
+  locale,
+  period,
+  month,
+  year,
+  status,
+  page = 1,
+  pageSize = 10,
+  canExport = false,
+}: Props) {
+  const t = await getTranslations('audit-log-insights');
+  const [pageData, insights] = await Promise.all([
+    getAuditLogPage({
+      wsId,
+      period,
+      month,
+      year,
+      status,
+      page,
+      pageSize,
+    }),
+    getAuditLogInsights({
+      wsId,
+      locale,
+      period,
+      month,
+      year,
+    }),
+  ]);
 
-export async function AuditLogTable({ wsId, page = 1, pageSize = 10 }: Props) {
-  const supabase = await createClient();
-
-  // Validate pagination params
-  const validatedParams = AuditLogSearchParamsSchema.parse({ page, pageSize });
-
-  const start = (validatedParams.page - 1) * validatedParams.pageSize;
-  const end = validatedParams.page * validatedParams.pageSize;
-
-  const {
-    data: rawData,
-    count,
-    error,
-  } = await supabase
-    .from('workspace_user_status_changes')
-    .select(
-      `
-      id,
-      user_id,
-      ws_id,
-      archived,
-      archived_until,
-      creator_id,
-      created_at,
-      user:user_id (full_name, display_name),
-      creator:creator_id (full_name, display_name)
-    `,
-      {
-        count: 'exact',
-      }
-    )
-    .eq('ws_id', wsId)
-    .order('created_at', { ascending: false })
-    .range(start, end - 1);
-
-  if (error) {
-    console.error('Error fetching audit log:', error);
-    return <div>Error loading audit log</div>;
-  }
-
-  const data: AuditLogEntry[] = (rawData || []).map((entry: any) => ({
-    id: entry.id,
-    user_id: entry.user_id,
-    ws_id: entry.ws_id,
-    archived: entry.archived,
-    archived_until: entry.archived_until,
-    creator_id: entry.creator_id,
-    created_at: entry.created_at,
-    user_full_name: entry.user?.full_name || entry.user?.display_name,
-    creator_full_name: entry.creator?.full_name || entry.creator?.display_name,
-  }));
+  const resolvedPeriod = resolveAuditLogPeriod(period);
+  const timeOptions = getRecentAuditLogTimeOptions(locale, resolvedPeriod);
 
   return (
-    <CustomDataTable
-      data={data}
-      columnGenerator={getAuditLogColumns}
-      namespace="audit-log-table"
-      count={count || 0}
-      defaultVisibility={{
-        id: false,
-        user_id: false,
-        creator_id: false,
-        ws_id: false,
-      }}
-    />
+    <div className="space-y-6">
+      <AuditLogInsights
+        wsId={wsId}
+        locale={locale}
+        selectedPeriod={insights.period}
+        selectedValue={insights.timeValue}
+        timeOptions={timeOptions}
+        summary={insights.summary}
+        chartStats={insights.chartStats}
+        status={pageData.status}
+        canExport={canExport}
+      />
+
+      <Card className="border-border/60 shadow-sm">
+        <CardHeader>
+          <CardTitle>{t('table_title')}</CardTitle>
+          <CardDescription>{t('table_description')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AuditLogDataTable
+            data={pageData.data}
+            count={pageData.count}
+            page={pageData.page}
+            pageSize={pageData.pageSize}
+            status={pageData.status}
+          />
+        </CardContent>
+      </Card>
+    </div>
   );
 }
