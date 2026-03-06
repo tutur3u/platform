@@ -116,8 +116,6 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Special Tag Prompt Rules**: Custom tags like `@<FOLLOWUP>` must not contain internal whitespace, but blank lines between distinct prompt sections are required.
 - **Flutter Toast Overlay Context**: In `shadcn_flutter`, call `showToast` with a context captured from `Navigator.of(context, rootNavigator: true).context` (captured before async gaps). Dialog/sheet-local contexts can sit below overlays and trigger `InheritedTheme.capture` ancestor assertions.
 - **Module Boundaries**: When file grows beyond roughly 500 LOC, split it by concern and keep the original entrypoint as a thin barrel re-export so dispatcher imports remain stable.
-- **Accordion/List Lazy Rendering**: For large grouped datasets in Flutter, do not wrap a fully expanded `Column`-based accordion as a single child inside a parent `ListView`; keep the top-level scrollable on a builder-backed list so groups are created lazily.
-- **Stale Pagination Response Guard**: In stateful Flutter pages that support refresh/workspace switching, capture the current request token before pagination calls and ignore `_loadMore` responses when the token no longer matches.
 
 ### 6.3 Security & Validation
 
@@ -142,7 +140,6 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 ### 6.5 Type Safety & Platform Details
 
 - **Dart Part Imports**: For Dart `part` files, add library imports only in the parent file (the one declaring `part ...`).
-- **Dart Placeholder Params**: In Dart callbacks, avoid multiple underscore placeholders in the same signature (for example `(_, __)`), because analyzer flags `unnecessary_underscores`; use descriptive parameter names such as `(context, index)` instead. These are descriptive positional parameter names, not Dart named parameters (the `{}` syntax).
 - **API Route UUID Params**: In API routes, validate UUID path params with shared `zod` schemas (`z.uuid()` + `safeParse`) instead of ad-hoc null/regex checks.
 - **Supabase Helper Extraction**: When moving Supabase DB writes into shared helper modules, prefer structural interfaces (or thin generic adapters) over concrete `createAdminClient` return types to avoid cross-package generic incompatibilities during type-check.
 - **Type-Safe Group Iteration**: In strict TS files with discriminated unions and `noUncheckedIndexedAccess`, avoid `array[index]` iteration for render groups. Prefer `for (const [i, item] of array.entries())` plus `switch (item.kind)` to preserve narrowing and prevent `"possibly undefined"` regressions.

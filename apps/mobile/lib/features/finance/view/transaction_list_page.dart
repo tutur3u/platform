@@ -11,6 +11,7 @@ import 'package:mobile/features/finance/widgets/grouped_transaction_accordion.da
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/fab/extended_fab.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 // ------------------------------------------------------------------
@@ -137,6 +138,8 @@ class _TransactionListView extends StatefulWidget {
 }
 
 class _TransactionListViewState extends State<_TransactionListView> {
+  static const double _fabContentBottomPadding = 96;
+
   final _scrollController = ScrollController();
   final _searchController = TextEditingController();
   Timer? _debounce;
@@ -209,6 +212,8 @@ class _TransactionListViewState extends State<_TransactionListView> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final listBottomPadding =
+        _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
 
     return shad.Scaffold(
       headers: [
@@ -228,93 +233,97 @@ class _TransactionListViewState extends State<_TransactionListView> {
             ),
           ],
           title: Text(l10n.financeTransactions),
-          trailing: [
-            shad.PrimaryButton(
-              onPressed: _onCreateTransaction,
-              child: Semantics(
-                label: l10n.financeCreateTransaction,
-                button: true,
-                child: Tooltip(
-                  message: l10n.financeCreateTransaction,
-                  child: const Icon(Icons.add, size: 16),
-                ),
-              ),
-            ),
-          ],
         ),
       ],
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>
             prev.currentWorkspace?.id != curr.currentWorkspace?.id,
         listener: (context, _) => unawaited(_onRefresh()),
-        child: Column(
+        child: Stack(
           children: [
-            // Search bar
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: shad.TextField(
-                controller: _searchController,
-                hintText: l10n.financeSearchTransactions,
-                onChanged: _onSearchChanged,
-                features: const [
-                  shad.InputFeature.leading(Icon(Icons.search, size: 18)),
-                ],
-              ),
+            Column(
+              children: [
+                // Search bar
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  child: shad.TextField(
+                    controller: _searchController,
+                    hintText: l10n.financeSearchTransactions,
+                    onChanged: _onSearchChanged,
+                    features: const [
+                      shad.InputFeature.leading(Icon(Icons.search, size: 18)),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child:
+                      BlocBuilder<TransactionListCubit, TransactionListState>(
+                        builder: (context, state) {
+                          if (state.status == TransactionListStatus.loading &&
+                              state.transactions.isEmpty) {
+                            return const Center(
+                              child: shad.CircularProgressIndicator(),
+                            );
+                          }
+
+                          if (state.status == TransactionListStatus.error &&
+                              state.transactions.isEmpty) {
+                            return _ErrorView(error: state.error);
+                          }
+
+                          if (state.transactions.isEmpty) {
+                            return _EmptyView(
+                              hasSearch: state.search.isNotEmpty,
+                            );
+                          }
+
+                          final repository = context.read<FinanceRepository>();
+                          return RefreshIndicator(
+                            onRefresh: _onRefresh,
+                            child: GroupedTransactionAccordion(
+                              lazy: true,
+                              scrollController: _scrollController,
+                              listPadding: EdgeInsets.only(
+                                top: 8,
+                                bottom: listBottomPadding,
+                              ),
+                              transactions: state.transactions,
+                              workspaceCurrency: state.workspaceCurrency,
+                              exchangeRates: state.exchangeRates,
+                              showLoadingMore: state.isLoadingMore,
+                              onTransactionTap: (transaction) async {
+                                final wsId = context
+                                    .read<WorkspaceCubit>()
+                                    .state
+                                    .currentWorkspace
+                                    ?.id;
+                                if (wsId == null) return;
+
+                                final changed =
+                                    await openTransactionDetailSheet(
+                                      context,
+                                      wsId: wsId,
+                                      transaction: transaction,
+                                      repository: repository,
+                                      workspaceCurrency:
+                                          state.workspaceCurrency,
+                                      exchangeRates: state.exchangeRates,
+                                    );
+
+                                if (!context.mounted || !changed) return;
+                                await _onRefresh();
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                ),
+              ],
             ),
-            Expanded(
-              child: BlocBuilder<TransactionListCubit, TransactionListState>(
-                builder: (context, state) {
-                  if (state.status == TransactionListStatus.loading &&
-                      state.transactions.isEmpty) {
-                    return const Center(
-                      child: shad.CircularProgressIndicator(),
-                    );
-                  }
-
-                  if (state.status == TransactionListStatus.error &&
-                      state.transactions.isEmpty) {
-                    return _ErrorView(error: state.error);
-                  }
-
-                  if (state.transactions.isEmpty) {
-                    return _EmptyView(hasSearch: state.search.isNotEmpty);
-                  }
-
-                  final repository = context.read<FinanceRepository>();
-                  return RefreshIndicator(
-                    onRefresh: _onRefresh,
-                    child: GroupedTransactionAccordion(
-                      lazy: true,
-                      scrollController: _scrollController,
-                      listPadding: const EdgeInsets.only(top: 8, bottom: 40),
-                      transactions: state.transactions,
-                      workspaceCurrency: state.workspaceCurrency,
-                      exchangeRates: state.exchangeRates,
-                      showLoadingMore: state.isLoadingMore,
-                      onTransactionTap: (transaction) async {
-                        final wsId = context
-                            .read<WorkspaceCubit>()
-                            .state
-                            .currentWorkspace
-                            ?.id;
-                        if (wsId == null) return;
-
-                        final changed = await openTransactionDetailSheet(
-                          context,
-                          wsId: wsId,
-                          transaction: transaction,
-                          repository: repository,
-                          workspaceCurrency: state.workspaceCurrency,
-                          exchangeRates: state.exchangeRates,
-                        );
-
-                        if (!context.mounted || !changed) return;
-                        await _onRefresh();
-                      },
-                    ),
-                  );
-                },
-              ),
+            ExtendedFab(
+              icon: Icons.add,
+              label: l10n.financeCreateTransaction,
+              onPressed: _onCreateTransaction,
             ),
           ],
         ),
