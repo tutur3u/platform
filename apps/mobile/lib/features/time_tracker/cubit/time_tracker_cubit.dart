@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 
 import 'package:bloc/bloc.dart';
 import 'package:mobile/data/models/time_tracking/break_record.dart';
+import 'package:mobile/data/models/time_tracking/goal.dart';
 import 'package:mobile/data/models/time_tracking/pomodoro_settings.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/data/models/time_tracking/stats.dart';
@@ -23,6 +24,14 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
       'time_tracker_history_stats_open';
   Future<void>? _historyPreferencesLoadFuture;
   int _historyFirstDayOfWeek = DateTime.monday;
+  int _goalsWorkspaceRequestToken = 0;
+  final Map<String, int> _goalsRequestVersionByWs = <String, int>{};
+
+  Map<String, bool> _setGoalFlag(
+    Map<String, bool> source,
+    String wsId,
+    bool value,
+  ) => <String, bool>{...source, wsId: value};
 
   Future<void> loadData(
     String wsId,
@@ -32,6 +41,8 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
   }) async {
     final effectiveFirstDayOfWeek = firstDayOfWeek ?? _historyFirstDayOfWeek;
     _historyFirstDayOfWeek = effectiveFirstDayOfWeek;
+    _goalsWorkspaceRequestToken++;
+    _goalsRequestVersionByWs.clear();
     emit(state.copyWith(status: TimeTrackerStatus.loading, clearError: true));
 
     try {
@@ -99,6 +110,11 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
           isHistoryLoading: false,
           isHistoryLoadingMore: false,
           categories: categories,
+          clearGoals: true,
+          clearGoalsLoaded: true,
+          goalsWorkspaceId: null,
+          goalsLoadingByWs: const {},
+          goalsLoadedByWs: const {},
           stats: stats,
           pomodoroSettings: pomodoroSettings,
           thresholdDays: workspaceSettings?.missedEntryDateThreshold,
@@ -653,6 +669,188 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
       emit(state.copyWith(categories: categories));
     } on Exception catch (e) {
       emit(state.copyWith(error: e.toString()));
+    }
+  }
+
+  Future<void> createGoal(
+    String wsId, {
+    required int dailyGoalMinutes,
+    String? categoryId,
+    int? weeklyGoalMinutes,
+    bool isActive = true,
+    bool throwOnError = false,
+  }) async {
+    try {
+      final goal = await _repo.createGoal(
+        wsId,
+        categoryId: categoryId,
+        dailyGoalMinutes: dailyGoalMinutes,
+        weeklyGoalMinutes: weeklyGoalMinutes,
+        isActive: isActive,
+      );
+      final existingGoals = state.goalsWorkspaceId == wsId
+          ? state.goals
+          : const <TimeTrackingGoal>[];
+      emit(
+        state.copyWith(
+          goals: [goal, ...existingGoals],
+          goalsWorkspaceId: wsId,
+          goalsLoadedByWs: _setGoalFlag(state.goalsLoadedByWs, wsId, true),
+          goalsLoadingByWs: _setGoalFlag(state.goalsLoadingByWs, wsId, false),
+          clearError: true,
+        ),
+      );
+    } on Exception catch (e) {
+      emit(state.copyWith(error: e.toString()));
+      if (throwOnError) {
+        rethrow;
+      }
+    }
+  }
+
+  Future<void> updateGoal(
+    String wsId,
+    String goalId, {
+    String? categoryId,
+    bool includeCategoryId = false,
+    bool includeWeeklyGoalMinutes = false,
+    int? dailyGoalMinutes,
+    int? weeklyGoalMinutes,
+    bool? isActive,
+    bool throwOnError = false,
+  }) async {
+    try {
+      final goal = await _repo.updateGoal(
+        wsId,
+        goalId,
+        categoryId: categoryId,
+        includeCategoryId: includeCategoryId,
+        includeWeeklyGoalMinutes: includeWeeklyGoalMinutes,
+        dailyGoalMinutes: dailyGoalMinutes,
+        weeklyGoalMinutes: weeklyGoalMinutes,
+        isActive: isActive,
+      );
+
+      final existingGoals = state.goalsWorkspaceId == wsId
+          ? state.goals
+          : const <TimeTrackingGoal>[];
+      final updatedGoals = existingGoals
+          .map(
+            (existingGoal) => existingGoal.id == goal.id ? goal : existingGoal,
+          )
+          .toList();
+      emit(
+        state.copyWith(
+          goals: updatedGoals,
+          goalsWorkspaceId: wsId,
+          goalsLoadedByWs: _setGoalFlag(state.goalsLoadedByWs, wsId, true),
+          goalsLoadingByWs: _setGoalFlag(state.goalsLoadingByWs, wsId, false),
+          clearError: true,
+        ),
+      );
+    } on Exception catch (e) {
+      emit(state.copyWith(error: e.toString()));
+      if (throwOnError) {
+        rethrow;
+      }
+    }
+  }
+
+  Future<void> deleteGoal(
+    String wsId,
+    String goalId, {
+    bool throwOnError = false,
+  }) async {
+    try {
+      await _repo.deleteGoal(wsId, goalId);
+      final existingGoals = state.goalsWorkspaceId == wsId
+          ? state.goals
+          : const <TimeTrackingGoal>[];
+      emit(
+        state.copyWith(
+          goals: existingGoals.where((goal) => goal.id != goalId).toList(),
+          goalsWorkspaceId: wsId,
+          goalsLoadedByWs: _setGoalFlag(state.goalsLoadedByWs, wsId, true),
+          goalsLoadingByWs: _setGoalFlag(state.goalsLoadingByWs, wsId, false),
+          clearError: true,
+        ),
+      );
+    } on Exception catch (e) {
+      emit(state.copyWith(error: e.toString()));
+      if (throwOnError) {
+        rethrow;
+      }
+    }
+  }
+
+  Future<void> loadGoals(
+    String wsId, {
+    String? userId,
+    bool force = false,
+    bool throwOnError = false,
+  }) async {
+    if (wsId.isEmpty) {
+      return;
+    }
+    if (!force &&
+        (state.hasLoadedGoalsFor(wsId) || state.isGoalsLoadingFor(wsId))) {
+      return;
+    }
+
+    final requestVersion = (_goalsRequestVersionByWs[wsId] ?? 0) + 1;
+    _goalsRequestVersionByWs[wsId] = requestVersion;
+    final workspaceRequestToken = ++_goalsWorkspaceRequestToken;
+    emit(
+      state.copyWith(
+        goalsLoadingByWs: _setGoalFlag(state.goalsLoadingByWs, wsId, true),
+        clearError: true,
+      ),
+    );
+    try {
+      final goals = await _repo.getGoals(wsId, userId: userId);
+      final activeRequestVersion = _goalsRequestVersionByWs[wsId];
+      if (activeRequestVersion != requestVersion) {
+        return;
+      }
+      if (workspaceRequestToken != _goalsWorkspaceRequestToken) {
+        emit(
+          state.copyWith(
+            goalsLoadingByWs: _setGoalFlag(state.goalsLoadingByWs, wsId, false),
+          ),
+        );
+        return;
+      }
+      emit(
+        state.copyWith(
+          goals: goals,
+          goalsWorkspaceId: wsId,
+          goalsLoadedByWs: _setGoalFlag(state.goalsLoadedByWs, wsId, true),
+          goalsLoadingByWs: _setGoalFlag(state.goalsLoadingByWs, wsId, false),
+          clearError: true,
+        ),
+      );
+    } on Exception catch (e) {
+      final activeRequestVersion = _goalsRequestVersionByWs[wsId];
+      if (activeRequestVersion != requestVersion) {
+        return;
+      }
+      if (workspaceRequestToken != _goalsWorkspaceRequestToken) {
+        emit(
+          state.copyWith(
+            goalsLoadingByWs: _setGoalFlag(state.goalsLoadingByWs, wsId, false),
+          ),
+        );
+        return;
+      }
+      emit(
+        state.copyWith(
+          goalsLoadingByWs: _setGoalFlag(state.goalsLoadingByWs, wsId, false),
+          error: e.toString(),
+        ),
+      );
+      if (throwOnError) {
+        rethrow;
+      }
     }
   }
 

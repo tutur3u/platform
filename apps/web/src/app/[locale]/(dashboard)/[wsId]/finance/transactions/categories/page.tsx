@@ -1,12 +1,12 @@
-import TransactionCategoriesPage from '@tuturuuu/ui/finance/transactions/categories/transactions-categories-page';
 import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import CategoriesTagsTabs from './categories-tags-tabs';
 
 export const metadata: Metadata = {
-  title: 'Categories',
+  title: 'Categories & Tags',
   description:
-    'Manage Categories in the Transactions area of your Tuturuuu workspace.',
+    'Manage categories and tags in the Finance area of your Tuturuuu workspace.',
 };
 
 interface Props {
@@ -22,9 +22,7 @@ export default async function WorkspaceTransactionCategoriesPage({
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
         const currency = await getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY');
-        return (
-          <TransactionCategoriesPage wsId={wsId} currency={currency ?? 'USD'} />
-        );
+        return <CategoriesTagsTabs wsId={wsId} currency={currency ?? 'USD'} />;
       }}
     </WorkspaceWrapper>
   );

@@ -9,9 +9,11 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
 
   List<Wallet> _wallets = const [];
   List<TransactionCategory> _categories = const [];
+  List<FinanceTag> _tags = const [];
   String? _walletId;
   String? _destinationWalletId;
   String? _categoryId;
+  String? _tagId;
   bool _isTransfer = false;
   bool _reportOptIn = true;
   bool _isAmountConfidential = false;
@@ -70,11 +72,13 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
     try {
       final wallets = await widget.repository.getWallets(widget.wsId);
       final categories = await widget.repository.getCategories(widget.wsId);
+      final tags = await widget.repository.getTags(widget.wsId);
 
       if (!mounted) return;
       setState(() {
         _wallets = wallets;
         _categories = categories;
+        _tags = tags;
         _reconcileSelectedIds();
       });
     } on Exception {
@@ -187,6 +191,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
           takenAt: _takenAt,
           walletId: _walletId,
           categoryId: _categoryId,
+          tagIds: _tagId == null ? null : [_tagId!],
           reportOptIn: _reportOptIn,
           isAmountConfidential: _isAmountConfidential,
           isDescriptionConfidential: _isDescriptionConfidential,
@@ -252,6 +257,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
         takenAt: _takenAt,
         walletId: _walletId,
         categoryId: _categoryId,
+        tagIds: _tagId == null ? const <String>[] : [_tagId!],
         reportOptIn: _reportOptIn,
         isAmountConfidential: _isAmountConfidential,
         isDescriptionConfidential: _isDescriptionConfidential,
@@ -339,6 +345,20 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
     setState(() => _categoryId = selectedCategoryId);
   }
 
+  Future<void> _pickTag() async {
+    final selectedTagId = await shad.showDialog<String?>(
+      context: context,
+      builder: (_) => _TagPickerDialog(
+        tags: _tags,
+        selectedTagId: _tagId,
+        tagColor: _tagColor,
+      ),
+    );
+
+    if (selectedTagId == null || !mounted) return;
+    setState(() => _tagId = selectedTagId.isEmpty ? null : selectedTagId);
+  }
+
   Future<void> _pickDateTime(BuildContext context) async {
     final date = await showDatePicker(
       context: context,
@@ -378,6 +398,10 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
     return _categories.where((c) => c.id == _categoryId).firstOrNull;
   }
 
+  FinanceTag? get _selectedTag {
+    return _tags.where((tag) => tag.id == _tagId).firstOrNull;
+  }
+
   String get _selectedCurrency => _selectedWallet?.currency ?? 'USD';
 
   String get _selectedDestinationCurrency =>
@@ -405,6 +429,14 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
       return shad.Theme.of(context).colorScheme.mutedForeground;
     }
     return _categoryColor(category);
+  }
+
+  Color get _selectedTagColor {
+    final tag = _selectedTag;
+    if (tag == null) {
+      return shad.Theme.of(context).colorScheme.mutedForeground;
+    }
+    return _tagColor(tag);
   }
 
   String get _amountPreview {
@@ -498,6 +530,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
     final hasCategory =
         _categoryId != null &&
         _categories.any((category) => category.id == _categoryId);
+    final hasTag = _tagId != null && _tags.any((tag) => tag.id == _tagId);
 
     _walletId = hasWallet
         ? _walletId
@@ -508,6 +541,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
         _destinationWalletId = null;
       }
       _categoryId = null;
+      _tagId = null;
       return;
     }
 
@@ -517,6 +551,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
         : (_isCreate
               ? null
               : (_categories.isNotEmpty ? _categories.first.id : null));
+    _tagId = hasTag ? _tagId : null;
   }
 
   NumberSymbols get _localeNumberSymbols {
@@ -552,5 +587,11 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
     final isExpense = category.isExpense != false;
     final colorScheme = shad.Theme.of(context).colorScheme;
     return isExpense ? colorScheme.destructive : colorScheme.primary;
+  }
+
+  Color _tagColor(FinanceTag tag) {
+    final parsed = _parseHexColor(tag.color);
+    if (parsed != null) return parsed;
+    return shad.Theme.of(context).colorScheme.primary;
   }
 }

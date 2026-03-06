@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/finance/category.dart';
+import 'package:mobile/data/models/finance/tag.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
@@ -20,6 +21,11 @@ class _FakeFinanceRepository extends FinanceRepository {
   @override
   Future<List<TransactionCategory>> getCategories(String wsId) async {
     return const [TransactionCategory(id: 'cat_1', name: 'Income')];
+  }
+
+  @override
+  Future<List<FinanceTag>> getTags(String wsId) async {
+    return const [FinanceTag(id: 'tag_1', name: 'Work')];
   }
 }
 
@@ -71,6 +77,7 @@ void main() {
                             takenAt,
                             walletId,
                             categoryId,
+                            tagIds,
                             reportOptIn,
                             isAmountConfidential,
                             isDescriptionConfidential,
@@ -121,7 +128,9 @@ void main() {
       expect(didSave, isFalse);
 
       await tester.enterText(find.byType(EditableText).first, '42.5');
-      await tester.tap(find.text('Settings'));
+      final settingsTab = find.text('Settings').last;
+      await tester.ensureVisible(settingsTab);
+      await tester.tap(settingsTab);
       await tester.pumpAndSettle();
 
       var switches = tester

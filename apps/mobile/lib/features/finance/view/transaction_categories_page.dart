@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/icons/platform_icon.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/finance/category.dart';
+import 'package:mobile/data/models/finance/tag.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -39,15 +40,23 @@ class _TransactionCategoriesView extends StatefulWidget {
 
 class _TransactionCategoriesViewState
     extends State<_TransactionCategoriesView> {
+  static const _tabCategories = 0;
+  static const _tabTags = 1;
+
   List<TransactionCategory> _categories = const [];
-  bool _isLoading = false;
-  String? _error;
+  List<FinanceTag> _tags = const [];
+  int _activeTab = _tabCategories;
+  bool _categoriesLoading = false;
+  bool _tagsLoading = false;
+  String? _categoriesError;
+  String? _tagsError;
   int _categoriesRequestId = 0;
+  int _tagsRequestId = 0;
 
   @override
   void initState() {
     super.initState();
-    unawaited(_loadCategories());
+    unawaited(_loadCurrentTab());
   }
 
   @override
@@ -75,7 +84,7 @@ class _TransactionCategoriesViewState
           title: Text(l10n.financeCategories),
           trailing: [
             shad.PrimaryButton(
-              onPressed: _onCreate,
+              onPressed: _onCreateCurrentTab,
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [Icon(Icons.add, size: 16)],
@@ -87,65 +96,165 @@ class _TransactionCategoriesViewState
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>
             prev.currentWorkspace?.id != curr.currentWorkspace?.id,
-        listener: (context, state) => unawaited(_loadCategories()),
-        child: RefreshIndicator(
-          onRefresh: _loadCategories,
-          child: _isLoading
-              ? const Center(child: shad.CircularProgressIndicator())
-              : _error != null
-              ? ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  children: [
-                    const SizedBox(height: 120),
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Text(
-                          _error!,
-                          textAlign: TextAlign.center,
-                          style: theme.typography.textMuted,
-                        ),
-                      ),
-                    ),
-                  ],
-                )
-              : _categories.isEmpty
-              ? ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  children: [
-                    const SizedBox(height: 120),
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Text(
-                          l10n.financeNoCategories,
-                          textAlign: TextAlign.center,
-                          style: theme.typography.textMuted,
-                        ),
-                      ),
-                    ),
-                  ],
-                )
-              : ListView.separated(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                  itemCount: _categories.length,
-                  separatorBuilder: (_, _) => const shad.Gap(8),
-                  itemBuilder: (context, index) {
-                    final category = _categories[index];
-                    return _CategoryCard(
-                      category: category,
-                      onEdit: () => _onEdit(category),
-                      onDelete: () => _onDelete(category),
-                    );
-                  },
-                ),
+        listener: (context, state) =>
+            unawaited(_handleWorkspaceChanged(state.currentWorkspace?.id)),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              child: shad.Tabs(
+                index: _activeTab,
+                onChanged: (value) {
+                  setState(() => _activeTab = value);
+                  if (value == _tabCategories && _categories.isEmpty) {
+                    unawaited(_loadCategories());
+                    return;
+                  }
+                  if (value == _tabTags && _tags.isEmpty) {
+                    unawaited(_loadTags());
+                  }
+                },
+                children: [
+                  shad.TabItem(child: Text(l10n.financeCategories)),
+                  shad.TabItem(child: Text(l10n.financeTags)),
+                ],
+              ),
+            ),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _loadCurrentTab,
+                child: _activeTab == _tabCategories
+                    ? _buildCategoriesContent(theme, l10n)
+                    : _buildTagsContent(theme, l10n),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Future<void> _onCreate() async {
+  Widget _buildCategoriesContent(shad.ThemeData theme, AppLocalizations l10n) {
+    if (_categoriesLoading) {
+      return const Center(child: shad.CircularProgressIndicator());
+    }
+    if (_categoriesError != null) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          const SizedBox(height: 120),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Text(
+                _categoriesError!,
+                textAlign: TextAlign.center,
+                style: theme.typography.textMuted,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+    if (_categories.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          const SizedBox(height: 120),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Text(
+                l10n.financeNoCategories,
+                textAlign: TextAlign.center,
+                style: theme.typography.textMuted,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+    return ListView.separated(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      itemCount: _categories.length,
+      separatorBuilder: (_, _) => const shad.Gap(8),
+      itemBuilder: (context, index) {
+        final category = _categories[index];
+        return _CategoryCard(
+          category: category,
+          onEdit: () => _onEdit(category),
+          onDelete: () => _onDelete(category),
+        );
+      },
+    );
+  }
+
+  Widget _buildTagsContent(shad.ThemeData theme, AppLocalizations l10n) {
+    if (_tagsLoading) {
+      return const Center(child: shad.CircularProgressIndicator());
+    }
+    if (_tagsError != null) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          const SizedBox(height: 120),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Text(
+                _tagsError!,
+                textAlign: TextAlign.center,
+                style: theme.typography.textMuted,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+    if (_tags.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          const SizedBox(height: 120),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Text(
+                l10n.financeNoTags,
+                textAlign: TextAlign.center,
+                style: theme.typography.textMuted,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+    return ListView.separated(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      itemCount: _tags.length,
+      separatorBuilder: (_, _) => const shad.Gap(8),
+      itemBuilder: (context, index) {
+        final tag = _tags[index];
+        return _TagCard(
+          tag: tag,
+          onEdit: () => _onEditTag(tag),
+          onDelete: () => _onDeleteTag(tag),
+        );
+      },
+    );
+  }
+
+  Future<void> _onCreateCurrentTab() async {
+    if (_activeTab == _tabTags) {
+      await _onCreateTag();
+      return;
+    }
+    await _onCreateCategory();
+  }
+
+  Future<void> _onCreateCategory() async {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
     final changed = await _showCategoryDialog(wsId: wsId);
@@ -194,6 +303,86 @@ class _TransactionCategoriesViewState
     }
   }
 
+  Future<void> _onCreateTag() async {
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    if (wsId == null) return;
+    final changed = await _showTagDialog(wsId: wsId);
+    if (changed) {
+      await _loadTags();
+    }
+  }
+
+  Future<void> _onDeleteTag(FinanceTag tag) async {
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    if (wsId == null) return;
+
+    final repository = context.read<FinanceRepository>();
+    final l10n = context.l10n;
+    final toastContext = context;
+
+    final deleted =
+        await shad.showDialog<bool>(
+          context: context,
+          builder: (_) => AsyncDeleteConfirmationDialog(
+            title: l10n.financeDeleteTag,
+            message: l10n.financeDeleteTagConfirm,
+            cancelLabel: l10n.commonCancel,
+            confirmLabel: l10n.financeDeleteTag,
+            toastContext: toastContext,
+            onConfirm: () async {
+              await repository.deleteTag(wsId: wsId, tagId: tag.id);
+            },
+          ),
+        ) ??
+        false;
+
+    if (!mounted || !deleted) return;
+    await _loadTags();
+  }
+
+  Future<void> _onEditTag(FinanceTag tag) async {
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    if (wsId == null) return;
+    final changed = await _showTagDialog(wsId: wsId, tag: tag);
+    if (changed) {
+      await _loadTags();
+    }
+  }
+
+  Future<void> _loadCurrentTab() async {
+    if (_activeTab == _tabTags) {
+      await _loadTags();
+      return;
+    }
+    await _loadCategories();
+  }
+
+  Future<void> _handleWorkspaceChanged(String? workspaceId) async {
+    _categoriesRequestId++;
+    _tagsRequestId++;
+
+    if (!mounted) return;
+
+    setState(() {
+      _categories = const [];
+      _tags = const [];
+      _categoriesLoading = false;
+      _tagsLoading = false;
+      _categoriesError = null;
+      _tagsError = null;
+    });
+
+    if (workspaceId == null) {
+      return;
+    }
+
+    await _loadCurrentTab();
+  }
+
+  bool _isWorkspaceRequestCurrent(String wsId) {
+    return context.read<WorkspaceCubit>().state.currentWorkspace?.id == wsId;
+  }
+
   Future<void> _loadCategories() async {
     final requestId = ++_categoriesRequestId;
 
@@ -202,8 +391,8 @@ class _TransactionCategoriesViewState
       if (!mounted || requestId != _categoriesRequestId) return;
       setState(() {
         _categories = const [];
-        _isLoading = false;
-        _error = null;
+        _categoriesLoading = false;
+        _categoriesError = null;
       });
       return;
     }
@@ -211,22 +400,73 @@ class _TransactionCategoriesViewState
     if (!mounted || requestId != _categoriesRequestId) return;
 
     setState(() {
-      _isLoading = true;
-      _error = null;
+      _categoriesLoading = true;
+      _categoriesError = null;
     });
 
     try {
       final categories = await context.read<FinanceRepository>().getCategories(
         wsId,
       );
-      if (!mounted || requestId != _categoriesRequestId) return;
+      if (!mounted ||
+          requestId != _categoriesRequestId ||
+          !_isWorkspaceRequestCurrent(wsId)) {
+        return;
+      }
       setState(() => _categories = categories);
     } on Exception {
-      if (!mounted || requestId != _categoriesRequestId) return;
-      setState(() => _error = context.l10n.commonSomethingWentWrong);
+      if (!mounted ||
+          requestId != _categoriesRequestId ||
+          !_isWorkspaceRequestCurrent(wsId)) {
+        return;
+      }
+      setState(() => _categoriesError = context.l10n.commonSomethingWentWrong);
     } finally {
       if (mounted && requestId == _categoriesRequestId) {
-        setState(() => _isLoading = false);
+        setState(() => _categoriesLoading = false);
+      }
+    }
+  }
+
+  Future<void> _loadTags() async {
+    final requestId = ++_tagsRequestId;
+
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    if (wsId == null) {
+      if (!mounted || requestId != _tagsRequestId) return;
+      setState(() {
+        _tags = const [];
+        _tagsLoading = false;
+        _tagsError = null;
+      });
+      return;
+    }
+
+    if (!mounted || requestId != _tagsRequestId) return;
+
+    setState(() {
+      _tagsLoading = true;
+      _tagsError = null;
+    });
+
+    try {
+      final tags = await context.read<FinanceRepository>().getTags(wsId);
+      if (!mounted ||
+          requestId != _tagsRequestId ||
+          !_isWorkspaceRequestCurrent(wsId)) {
+        return;
+      }
+      setState(() => _tags = tags);
+    } on Exception {
+      if (!mounted ||
+          requestId != _tagsRequestId ||
+          !_isWorkspaceRequestCurrent(wsId)) {
+        return;
+      }
+      setState(() => _tagsError = context.l10n.commonSomethingWentWrong);
+    } finally {
+      if (mounted && requestId == _tagsRequestId) {
+        setState(() => _tagsLoading = false);
       }
     }
   }
@@ -243,6 +483,16 @@ class _TransactionCategoriesViewState
         category: category,
         repository: repository,
       ),
+    );
+
+    return createdOrUpdated ?? false;
+  }
+
+  Future<bool> _showTagDialog({required String wsId, FinanceTag? tag}) async {
+    final repository = context.read<FinanceRepository>();
+    final createdOrUpdated = await shad.showDialog<bool>(
+      context: context,
+      builder: (_) => _TagDialog(wsId: wsId, tag: tag, repository: repository),
     );
 
     return createdOrUpdated ?? false;
@@ -642,6 +892,306 @@ class _CategoryDialogState extends State<_CategoryDialog> {
   }
 }
 
+class _TagDialog extends StatefulWidget {
+  const _TagDialog({
+    required this.wsId,
+    required this.repository,
+    this.tag,
+  });
+
+  final String wsId;
+  final FinanceRepository repository;
+  final FinanceTag? tag;
+
+  @override
+  State<_TagDialog> createState() => _TagDialogState();
+}
+
+class _TagDialogState extends State<_TagDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _nameController;
+  late final TextEditingController _descriptionController;
+  String? _colorHex;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.tag?.name ?? '');
+    _descriptionController = TextEditingController(
+      text: widget.tag?.description ?? '',
+    );
+    _colorHex = _normalizeHex(widget.tag?.color ?? '') ?? '#3B82F6';
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final previewColor = _parseHexColor(_colorHex) ?? const Color(0xFF3B82F6);
+
+    return shad.AlertDialog(
+      title: Text(
+        widget.tag == null
+            ? context.l10n.financeCreateTag
+            : context.l10n.financeEditTag,
+      ),
+      content: Form(
+        key: _formKey,
+        child: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(context.l10n.financeTagName),
+              const shad.Gap(4),
+              TextFormField(
+                controller: _nameController,
+                autofocus: true,
+                decoration: const InputDecoration(border: OutlineInputBorder()),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return context.l10n.financeTagNameRequired;
+                  }
+                  return null;
+                },
+              ),
+              const shad.Gap(12),
+              Text(context.l10n.financeDescription),
+              const shad.Gap(4),
+              TextFormField(
+                controller: _descriptionController,
+                decoration: const InputDecoration(border: OutlineInputBorder()),
+                minLines: 2,
+                maxLines: 3,
+              ),
+              const shad.Gap(12),
+              Text(context.l10n.calendarEventColor),
+              const shad.Gap(4),
+              Row(
+                children: [
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: previewColor,
+                    ),
+                  ),
+                  const shad.Gap(8),
+                  Expanded(
+                    child: Text(
+                      _colorHex ?? '#3B82F6',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: shad.Theme.of(context).typography.small.copyWith(
+                        color: shad.Theme.of(
+                          context,
+                        ).colorScheme.mutedForeground,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const shad.Gap(8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  shad.OutlineButton(
+                    onPressed: _openColorPicker,
+                    child: Text(context.l10n.financePickColor),
+                  ),
+                  shad.OutlineButton(
+                    onPressed: () =>
+                        setState(() => _colorHex = _randomHexColor()),
+                    child: Text(context.l10n.financeRandomizeColor),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        shad.OutlineButton(
+          onPressed: _isSaving ? null : () => Navigator.of(context).pop(false),
+          child: Text(context.l10n.commonCancel),
+        ),
+        shad.PrimaryButton(
+          onPressed: _isSaving ? null : _saveTag,
+          child: _isSaving
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: shad.CircularProgressIndicator(),
+                )
+              : Text(
+                  widget.tag == null
+                      ? context.l10n.financeCreateTag
+                      : context.l10n.timerSave,
+                ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _saveTag() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    final rootNav = Navigator.of(context, rootNavigator: true);
+    final toastContext = rootNav.context;
+
+    setState(() => _isSaving = true);
+    try {
+      final repository = widget.repository;
+      final description = _descriptionController.text.trim();
+      if (widget.tag == null) {
+        await repository.createTag(
+          wsId: widget.wsId,
+          name: _nameController.text.trim(),
+          color: _colorHex ?? '#3B82F6',
+          description: description.isEmpty ? null : description,
+        );
+      } else {
+        await repository.updateTag(
+          wsId: widget.wsId,
+          tagId: widget.tag!.id,
+          name: _nameController.text.trim(),
+          color: _colorHex ?? '#3B82F6',
+          description: description.isEmpty ? null : description,
+        );
+      }
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } on ApiException catch (e) {
+      final message = e.message.trim();
+      final details = message.isEmpty || message == 'Request failed'
+          ? context.l10n.commonSomethingWentWrong
+          : message;
+
+      if (toastContext.mounted) {
+        shad.showToast(
+          context: toastContext,
+          builder: (ctx, _) => shad.Alert.destructive(
+            title: Text(ctx.l10n.commonSomethingWentWrong),
+            content: Text(details),
+          ),
+        );
+      }
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    } on Exception {
+      if (toastContext.mounted) {
+        shad.showToast(
+          context: toastContext,
+          builder: (ctx, _) => shad.Alert.destructive(
+            content: Text(ctx.l10n.commonSomethingWentWrong),
+          ),
+        );
+      }
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
+  }
+
+  String _randomHexColor() {
+    final rng = Random();
+    final hue = rng.nextInt(360).toDouble();
+    final saturation = (55 + rng.nextInt(36)).toDouble() / 100;
+    final lightness = (42 + rng.nextInt(24)).toDouble() / 100;
+    final color = HSLColor.fromAHSL(1, hue, saturation, lightness).toColor();
+    return _toHex(color);
+  }
+
+  Future<void> _openColorPicker() async {
+    var selected = _parseHexColor(_colorHex) ?? const Color(0xFF3B82F6);
+
+    final result = await shad.showDialog<Color>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return shad.AlertDialog(
+              title: Text(context.l10n.financePickColor),
+              content: SizedBox(
+                width: 320,
+                child: ColorPicker(
+                  pickerColor: selected,
+                  onColorChanged: (color) =>
+                      setDialogState(() => selected = color),
+                  enableAlpha: false,
+                  portraitOnly: true,
+                  labelTypes: const [ColorLabelType.hex],
+                  pickerAreaHeightPercent: 0.72,
+                  displayThumbColor: true,
+                  hexInputBar: true,
+                ),
+              ),
+              actions: [
+                shad.OutlineButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: Text(context.l10n.commonCancel),
+                ),
+                shad.PrimaryButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(selected),
+                  child: Text(context.l10n.timerSave),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (result != null && mounted) {
+      setState(() => _colorHex = _toHex(result));
+    }
+  }
+
+  String _toHex(Color color) {
+    final r = (color.r * 255).round().toRadixString(16).padLeft(2, '0');
+    final g = (color.g * 255).round().toRadixString(16).padLeft(2, '0');
+    final b = (color.b * 255).round().toRadixString(16).padLeft(2, '0');
+    return '#$r$g$b'.toUpperCase();
+  }
+
+  String? _normalizeHex(String raw) {
+    if (raw.trim().isEmpty) return null;
+    final value = raw.trim().replaceFirst('#', '');
+    if (value.length != 6 && value.length != 8) {
+      return null;
+    }
+    final parsed = int.tryParse(value, radix: 16);
+    if (parsed == null) {
+      return null;
+    }
+    if (value.length == 8) {
+      return '#${value.substring(2)}'.toUpperCase();
+    }
+    return '#${value.toUpperCase()}';
+  }
+
+  Color? _parseHexColor(String? hex) {
+    if (hex == null || hex.trim().isEmpty) return null;
+    final cleaned = hex.trim().replaceFirst('#', '');
+    if (cleaned.length != 6 && cleaned.length != 8) return null;
+    final value = int.tryParse(
+      cleaned.length == 6 ? 'FF$cleaned' : cleaned,
+      radix: 16,
+    );
+    return value != null ? Color(value) : null;
+  }
+}
+
 class _CategoryCard extends StatelessWidget {
   const _CategoryCard({
     required this.category,
@@ -725,6 +1275,83 @@ class _CategoryCard extends StatelessWidget {
                     ],
                   ],
                 ),
+              ],
+            ),
+          ),
+          shad.GhostButton(
+            density: shad.ButtonDensity.icon,
+            onPressed: onEdit,
+            child: const Icon(Icons.edit_outlined, size: 16),
+          ),
+          shad.GhostButton(
+            density: shad.ButtonDensity.icon,
+            onPressed: onDelete,
+            child: const Icon(Icons.delete_outline, size: 16),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color? _parseHex(String? hex) {
+    if (hex == null) return null;
+    final cleaned = hex.replaceFirst('#', '');
+    if (cleaned.length != 6 && cleaned.length != 8) return null;
+    final value = int.tryParse(
+      cleaned.length == 6 ? 'FF$cleaned' : cleaned,
+      radix: 16,
+    );
+    return value != null ? Color(value) : null;
+  }
+}
+
+class _TagCard extends StatelessWidget {
+  const _TagCard({
+    required this.tag,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final FinanceTag tag;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final color = _parseHex(tag.color) ?? theme.colorScheme.primary;
+
+    return shad.Card(
+      child: Row(
+        children: [
+          Container(
+            width: 14,
+            height: 14,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const shad.Gap(12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  tag.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.p.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (tag.description != null &&
+                    tag.description!.trim().isNotEmpty)
+                  Text(
+                    tag.description!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.textSmall.copyWith(
+                      color: theme.colorScheme.mutedForeground,
+                    ),
+                  ),
               ],
             ),
           ),

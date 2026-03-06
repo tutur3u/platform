@@ -949,6 +949,54 @@ abstract class AppLocalizations {
   /// **'No categories yet'**
   String get financeNoCategories;
 
+  /// No description provided for @financeTags.
+  ///
+  /// In en, this message translates to:
+  /// **'Tags'**
+  String get financeTags;
+
+  /// No description provided for @financeNoTags.
+  ///
+  /// In en, this message translates to:
+  /// **'No tags yet'**
+  String get financeNoTags;
+
+  /// No description provided for @financeCreateTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Create tag'**
+  String get financeCreateTag;
+
+  /// No description provided for @financeEditTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit tag'**
+  String get financeEditTag;
+
+  /// No description provided for @financeDeleteTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete tag'**
+  String get financeDeleteTag;
+
+  /// No description provided for @financeDeleteTagConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this tag?'**
+  String get financeDeleteTagConfirm;
+
+  /// No description provided for @financeTagName.
+  ///
+  /// In en, this message translates to:
+  /// **'Tag name'**
+  String get financeTagName;
+
+  /// No description provided for @financeTagNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Tag name is required'**
+  String get financeTagNameRequired;
+
   /// No description provided for @financeIncome.
   ///
   /// In en, this message translates to:
@@ -2100,6 +2148,204 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Active users'**
   String get timerActiveUsers;
+
+  /// No description provided for @timerGoalsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Goals'**
+  String get timerGoalsTitle;
+
+  /// No description provided for @timerGoalsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Track your daily and weekly focus targets'**
+  String get timerGoalsSubtitle;
+
+  /// No description provided for @timerGoalsAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add goal'**
+  String get timerGoalsAdd;
+
+  /// No description provided for @timerGoalsCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create goal'**
+  String get timerGoalsCreate;
+
+  /// No description provided for @timerGoalsCreateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create goal'**
+  String get timerGoalsCreateTitle;
+
+  /// No description provided for @timerGoalsCreateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal created'**
+  String get timerGoalsCreateSuccess;
+
+  /// No description provided for @timerGoalsEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get timerGoalsEdit;
+
+  /// No description provided for @timerGoalsEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit goal'**
+  String get timerGoalsEditTitle;
+
+  /// No description provided for @timerGoalsSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save goal'**
+  String get timerGoalsSave;
+
+  /// No description provided for @timerGoalsUpdateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal updated'**
+  String get timerGoalsUpdateSuccess;
+
+  /// No description provided for @timerGoalsDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get timerGoalsDelete;
+
+  /// No description provided for @timerGoalsDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete goal?'**
+  String get timerGoalsDeleteTitle;
+
+  /// No description provided for @timerGoalsDeleteDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'This action cannot be undone.'**
+  String get timerGoalsDeleteDescription;
+
+  /// No description provided for @timerGoalsDeleteSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal deleted'**
+  String get timerGoalsDeleteSuccess;
+
+  /// No description provided for @timerGoalsOperationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save your goal changes.'**
+  String get timerGoalsOperationFailed;
+
+  /// No description provided for @timerGoalsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No goals yet'**
+  String get timerGoalsEmptyTitle;
+
+  /// No description provided for @timerGoalsEmptyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your first goal to measure daily and weekly progress.'**
+  String get timerGoalsEmptyDescription;
+
+  /// No description provided for @timerGoalsCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get timerGoalsCategory;
+
+  /// No description provided for @timerGoalsGeneral.
+  ///
+  /// In en, this message translates to:
+  /// **'General'**
+  String get timerGoalsGeneral;
+
+  /// No description provided for @timerGoalsDailyMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily target (minutes)'**
+  String get timerGoalsDailyMinutes;
+
+  /// No description provided for @timerGoalsWeeklyMinutesOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly target (minutes, optional)'**
+  String get timerGoalsWeeklyMinutesOptional;
+
+  /// No description provided for @timerGoalsDailyValidation.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily target must be greater than 0.'**
+  String get timerGoalsDailyValidation;
+
+  /// No description provided for @timerGoalsWeeklyValidation.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly target must be greater than 0.'**
+  String get timerGoalsWeeklyValidation;
+
+  /// No description provided for @timerGoalsActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get timerGoalsActive;
+
+  /// No description provided for @timerGoalsInactive.
+  ///
+  /// In en, this message translates to:
+  /// **'Inactive'**
+  String get timerGoalsInactive;
+
+  /// No description provided for @timerGoalsActiveLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal is active'**
+  String get timerGoalsActiveLabel;
+
+  /// No description provided for @timerGoalsDailyProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily progress'**
+  String get timerGoalsDailyProgress;
+
+  /// No description provided for @timerGoalsWeeklyProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly progress'**
+  String get timerGoalsWeeklyProgress;
+
+  /// No description provided for @timerGoalsDailyTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily target'**
+  String get timerGoalsDailyTarget;
+
+  /// No description provided for @timerGoalsWeeklyTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly target'**
+  String get timerGoalsWeeklyTarget;
+
+  /// No description provided for @timerGoalsActiveCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{# active goal} other{# active goals}}'**
+  String timerGoalsActiveCount(int count);
+
+  /// No description provided for @timerHourUnitShort.
+  ///
+  /// In en, this message translates to:
+  /// **'h'**
+  String get timerHourUnitShort;
+
+  /// No description provided for @timerMinuteUnitShort.
+  ///
+  /// In en, this message translates to:
+  /// **'m'**
+  String get timerMinuteUnitShort;
 
   /// No description provided for @timerDays.
   ///

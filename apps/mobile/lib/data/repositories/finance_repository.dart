@@ -1,6 +1,7 @@
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
+import 'package:mobile/data/models/finance/tag.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/transaction_stats.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
@@ -254,6 +255,7 @@ class FinanceRepository {
     DateTime? takenAt,
     String? walletId,
     String? categoryId,
+    List<String>? tagIds,
     bool? reportOptIn,
     bool? isAmountConfidential,
     bool? isDescriptionConfidential,
@@ -275,6 +277,10 @@ class FinanceRepository {
 
     if (categoryId != null) {
       body['category_id'] = categoryId;
+    }
+
+    if (tagIds != null) {
+      body['tag_ids'] = tagIds;
     }
 
     if (reportOptIn != null) {
@@ -309,6 +315,7 @@ class FinanceRepository {
     required String walletId,
     String? description,
     String? categoryId,
+    List<String>? tagIds,
     bool? reportOptIn,
     bool? isAmountConfidential,
     bool? isDescriptionConfidential,
@@ -326,6 +333,10 @@ class FinanceRepository {
 
     if (categoryId != null) {
       body['category_id'] = categoryId;
+    }
+
+    if (tagIds != null) {
+      body['tag_ids'] = tagIds;
     }
 
     if (reportOptIn != null) {
@@ -477,5 +488,46 @@ class FinanceRepository {
     required String categoryId,
   }) async {
     await _api.deleteJson(FinanceEndpoints.category(wsId, categoryId));
+  }
+
+  // ── Tags ────────────────────────────────────────
+
+  Future<List<FinanceTag>> getTags(String wsId) async {
+    final response = await _api.getJsonList(FinanceEndpoints.tags(wsId));
+
+    return response
+        .map((e) => FinanceTag.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> createTag({
+    required String wsId,
+    required String name,
+    required String color,
+    String? description,
+  }) async {
+    await _api.postJson(FinanceEndpoints.tags(wsId), {
+      'name': name,
+      'color': color,
+      'description': description,
+    });
+  }
+
+  Future<void> updateTag({
+    required String wsId,
+    required String tagId,
+    required String name,
+    required String color,
+    String? description,
+  }) async {
+    await _api.putJson(FinanceEndpoints.tag(wsId, tagId), {
+      'name': name,
+      'color': color,
+      'description': description,
+    });
+  }
+
+  Future<void> deleteTag({required String wsId, required String tagId}) async {
+    await _api.deleteJson(FinanceEndpoints.tag(wsId, tagId));
   }
 }

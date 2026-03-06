@@ -1,5 +1,8 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -7,11 +10,13 @@ interface Params {
   params: Promise<{ wsId: string }>;
 }
 
-export async function GET(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function GET(req: Request, { params }: Params) {
+  const supabase = await createClient(req);
   const { wsId } = await params;
+  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
   const permissions = await getPermissions({
-    wsId,
+    wsId: normalizedWsId,
+    request: req,
   });
 
   if (!permissions) {
@@ -31,7 +36,7 @@ export async function GET(_: Request, { params }: Params) {
   const { data, error } = await supabase
     .from('transaction_tags')
     .select('*')
-    .eq('ws_id', wsId)
+    .eq('ws_id', normalizedWsId)
     .order('name');
 
   if (error) {
@@ -51,14 +56,16 @@ const TagSchema = z.object({
     .string()
     .regex(/^#[0-9A-Fa-f]{6}$/)
     .default('#3b82f6'),
-  description: z.string().optional(),
+  description: z.string().nullable().optional(),
 });
 
 export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient();
+  const supabase = await createClient(req);
   const { wsId } = await params;
+  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
   const permissions = await getPermissions({
-    wsId,
+    wsId: normalizedWsId,
+    request: req,
   });
 
   if (!permissions) {
@@ -89,7 +96,7 @@ export async function POST(req: Request, { params }: Params) {
   const { data, error } = await supabase
     .from('transaction_tags')
     .insert({
-      ws_id: wsId,
+      ws_id: normalizedWsId,
       name,
       color,
       description: description || null,

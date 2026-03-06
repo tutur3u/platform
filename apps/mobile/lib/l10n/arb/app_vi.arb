@@ -179,6 +179,14 @@
     "financeWalletClearImage": "Xóa hình ảnh",
     "financeNoTransactions": "Chưa có giao dịch",
     "financeNoCategories": "Chưa có danh mục",
+    "financeTags": "Thẻ",
+    "financeNoTags": "Chưa có thẻ",
+    "financeCreateTag": "Tạo thẻ",
+    "financeEditTag": "Sửa thẻ",
+    "financeDeleteTag": "Xóa thẻ",
+    "financeDeleteTagConfirm": "Xóa thẻ này?",
+    "financeTagName": "Tên thẻ",
+    "financeTagNameRequired": "Vui lòng nhập tên thẻ",
     "financeIncome": "Thu nhập",
     "financeExpense": "Chi tiêu",
     "financeViewAll": "Xem tất cả",
@@ -405,6 +413,44 @@
     "commonCancel": "Hủy",
     "timerTotalSessions": "Tổng số phiên",
     "timerActiveUsers": "Người dùng hoạt động",
+    "timerGoalsTitle": "Mục tiêu",
+    "timerGoalsSubtitle": "Theo dõi mục tiêu tập trung theo ngày và tuần",
+    "timerGoalsAdd": "Thêm mục tiêu",
+    "timerGoalsCreate": "Tạo mục tiêu",
+    "timerGoalsCreateTitle": "Tạo mục tiêu",
+    "timerGoalsCreateSuccess": "Đã tạo mục tiêu",
+    "timerGoalsEdit": "Sửa",
+    "timerGoalsEditTitle": "Sửa mục tiêu",
+    "timerGoalsSave": "Lưu mục tiêu",
+    "timerGoalsUpdateSuccess": "Đã cập nhật mục tiêu",
+    "timerGoalsDelete": "Xóa",
+    "timerGoalsDeleteTitle": "Xóa mục tiêu?",
+    "timerGoalsDeleteDescription": "Hành động này không thể hoàn tác.",
+    "timerGoalsDeleteSuccess": "Đã xóa mục tiêu",
+    "timerGoalsOperationFailed": "Không thể lưu thay đổi mục tiêu.",
+    "timerGoalsEmptyTitle": "Chưa có mục tiêu",
+    "timerGoalsEmptyDescription": "Tạo mục tiêu đầu tiên để theo dõi tiến độ theo ngày và tuần.",
+    "timerGoalsCategory": "Danh mục",
+    "timerGoalsGeneral": "Tổng quát",
+    "timerGoalsDailyMinutes": "Mục tiêu mỗi ngày (phút)",
+    "timerGoalsWeeklyMinutesOptional": "Mục tiêu mỗi tuần (phút, không bắt buộc)",
+    "timerGoalsDailyValidation": "Mục tiêu mỗi ngày phải lớn hơn 0.",
+    "timerGoalsWeeklyValidation": "Mục tiêu mỗi tuần phải lớn hơn 0.",
+    "timerGoalsActive": "Hoạt động",
+    "timerGoalsInactive": "Không hoạt động",
+    "timerGoalsActiveLabel": "Mục tiêu đang hoạt động",
+    "timerGoalsDailyProgress": "Tiến độ ngày",
+    "timerGoalsWeeklyProgress": "Tiến độ tuần",
+    "timerGoalsDailyTarget": "Mục tiêu ngày",
+    "timerGoalsWeeklyTarget": "Mục tiêu tuần",
+    "timerGoalsActiveCount": "{count, plural, one{# mục tiêu hoạt động} other{# mục tiêu hoạt động}}",
+    "@timerGoalsActiveCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "timerDays": "{count} ngày",
     "@timerDays": {
         "placeholders": {
@@ -413,6 +459,8 @@
             }
         }
     },
+    "timerHourUnitShort": "h",
+    "timerMinuteUnitShort": "p",
 
     "settingsTitle": "Cài đặt",
     "settingsProfile": "Hồ sơ",
