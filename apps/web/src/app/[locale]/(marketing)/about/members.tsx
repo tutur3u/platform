@@ -1,9 +1,7 @@
 'use client';
 
-import { DepartmentName, members } from './data';
-import MemberCard from './member-card';
 import { Badge } from '@ncthub/ui/badge';
-import { Crown } from '@ncthub/ui/icons';
+import { Award, Crown } from '@ncthub/ui/icons';
 import {
   Select,
   SelectContent,
@@ -13,6 +11,13 @@ import {
 } from '@ncthub/ui/select';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useState } from 'react';
+import {
+  type coreDepartmemt,
+  type DepartmentName,
+  deparments,
+  members,
+} from './data';
+import MemberCard, { DepartmentCard } from './member-card';
 
 const cardVariants = {
   hidden: { y: 20, opacity: 0 },
@@ -27,6 +32,11 @@ const departments: { name: DepartmentName; color: string }[] = [
   { name: 'Technology', color: 'text-dynamic-blue' },
   { name: 'Human Resources', color: 'text-dynamic-purple' },
   { name: 'Marketing', color: 'text-dynamic-orange' },
+];
+const coreDepartments: { name: coreDepartmemt; color: string }[] = [
+  { name: 'Technology', color: 'text-dynamic-blue' },
+  { name: 'Human Resources', color: 'text-dynamic-purple' },
+  { name: 'Marketing', color: 'text-dynamic-yellow' },
 ];
 
 export default function Members() {
@@ -57,15 +67,27 @@ export default function Members() {
     }
   };
 
+  const resolveDepartmentImage = (imagePath: string) => {
+    if (imagePath === '/departments/test.jpg') {
+      return '/members/departments/test1.jpg';
+    }
+
+    if (imagePath.startsWith('/departments/')) {
+      return imagePath.replace('/departments/', '/members/departments/');
+    }
+
+    return imagePath;
+  };
+
   return (
     <div className="flex flex-col items-center px-2 py-4">
       <motion.h1
-        className="mb-8 mt-4 text-center text-6xl font-extrabold"
+        className="mt-4 mb-8 text-center font-extrabold text-6xl"
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <span className="border-b-4 border-[#5FC6E5] pb-2">Meet Our Team</span>
+        <span className="border-[#5FC6E5] border-b-4 pb-2">Meet Our Team</span>
         <motion.div
           className="ml-3 inline-block"
           initial={{ rotate: 0 }}
@@ -76,7 +98,7 @@ export default function Members() {
         </motion.div>
       </motion.h1>
 
-      <div className="border-border bg-card text-foreground/80 relative mx-auto mb-8 mt-4 max-w-4xl rounded-lg border p-4 text-center text-base tracking-wide md:p-6 md:text-lg">
+      <div className="relative mx-auto mt-4 mb-8 max-w-4xl rounded-lg border border-border bg-card p-4 text-center text-base text-foreground/80 tracking-wide md:p-6 md:text-lg">
         {selectedGeneration === 7 ? (
           <>
             RMIT Neo Culture Tech Club mostly operates technical events,
@@ -96,7 +118,7 @@ export default function Members() {
       </div>
 
       <div className="my-4">
-        <div className="text-muted-foreground w-full px-2 text-center text-base font-medium md:px-40 md:text-lg">
+        <div className="w-full px-2 text-center font-medium text-base text-muted-foreground md:px-40 md:text-lg">
           Our club has 4 core teams:{' '}
           {departments.map((department, index) => (
             <span key={department.name}>
@@ -117,7 +139,7 @@ export default function Members() {
           ))}
           , with a dedicated{' '}
           <span
-            className={`text-dynamic-pink cursor-pointer font-semibold transition-all duration-200 hover:underline ${
+            className={`cursor-pointer font-semibold text-dynamic-pink transition-all duration-200 hover:underline ${
               lockedDepartment === 'Executive Board'
                 ? 'rounded px-1 underline ring-2 ring-current'
                 : ''
@@ -271,10 +293,10 @@ export default function Members() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="mb-4 mt-6 flex flex-col items-center gap-3"
+          className="mt-6 mb-4 flex flex-col items-center gap-3"
         >
           <div className="flex items-center gap-3">
-            <span className="text-muted-foreground text-sm font-medium">
+            <span className="font-medium text-muted-foreground text-sm">
               Generation:
             </span>
             <Select
@@ -283,7 +305,7 @@ export default function Members() {
                 setSelectedGeneration(Number(value) as 6 | 7)
               }
             >
-              <SelectTrigger className="border-border bg-card hover:bg-muted h-10 w-52 transition-colors">
+              <SelectTrigger className="h-10 w-52 border-border bg-card transition-colors hover:bg-muted">
                 <SelectValue placeholder="Select generation..." />
               </SelectTrigger>
               <SelectContent>
@@ -292,7 +314,7 @@ export default function Members() {
                     <span className="font-medium">Generation 7</span>
                     <Badge
                       variant="outline"
-                      className="ml-auto border-[#5FC6E5] text-xs text-[#5FC6E5]"
+                      className="ml-auto border-[#5FC6E5] text-[#5FC6E5] text-xs"
                     >
                       Current
                     </Badge>
@@ -303,7 +325,7 @@ export default function Members() {
                     <span className="font-medium">Generation 6</span>
                     <Badge
                       variant="outline"
-                      className="ml-auto border-[#FBC721] text-xs text-[#FBC721]"
+                      className="ml-auto border-[#FBC721] text-[#FBC721] text-xs"
                     >
                       Legacy
                     </Badge>
@@ -314,6 +336,99 @@ export default function Members() {
           </div>
         </motion.div>
       </AnimatePresence>
+
+      <motion.h1
+        className="mt-4 mb-8 text-center font-extrabold text-6xl"
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
+        Meet Our{' '}
+        <span className="relative">
+          <span className="border-[#FBC721] border-b-4 text-[#5FC6E5]">
+            Department
+          </span>
+          <motion.div
+            className="absolute -top-2 -right-2"
+            animate={{
+              rotate: [0, 10, -10, 0],
+              scale: [1, 1.1, 1],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              repeatDelay: 3,
+            }}
+          >
+            <Award className="h-5 w-5 text-[#FBC721] md:h-6 md:w-6" />
+          </motion.div>
+        </span>
+        <motion.div
+          className="ml-3 inline-block"
+          initial={{ rotate: 0 }}
+          whileInView={{ rotate: 360 }}
+          transition={{ duration: 0.8, delay: 0.3 }}
+        ></motion.div>
+      </motion.h1>
+
+      <div className="relative mx-auto mt-4 mb-8 max-w-4xl rounded-lg border border-border bg-card p-4 text-center text-base text-foreground/80 tracking-wide md:p-6 md:text-lg">
+        Behind every successful club initiative is a dedicated team of
+        specialists. From driving innovation and building our community to
+        amplifying our message, get to know the diverse departments that turn
+        our vision into reality.
+      </div>
+
+      <div className="w-full px-2 text-center font-medium text-base text-muted-foreground md:px-40 md:text-lg">
+        Our club has 3 core departments:{' '}
+        {coreDepartments.map((core, index) => (
+          <span key={core.name}>
+            <span
+              className={`font-semibold ${core.color} cursor-pointer transition-all duration-200 hover:underline ${
+                lockedDepartment === core.name
+                  ? 'rounded px-1 underline ring-2 ring-current'
+                  : ''
+              }`}
+              onMouseEnter={() => setHoveredDepartment(core.name)}
+              onMouseLeave={() => setHoveredDepartment(null)}
+              onClick={() => handleDepartmentClick(core.name)}
+            >
+              {core.name}
+            </span>
+            {index < coreDepartments.length - 1 && ', '}
+          </span>
+        ))}
+        , each playing a core role in building our community.
+      </div>
+      <motion.div
+        key="departments"
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -50 }}
+        transition={{ duration: 0.5 }}
+        className="mt-8 grid w-full grid-cols-1 justify-items-center gap-8 px-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3"
+      >
+        {deparments.map((department) => (
+          <motion.div
+            key={department.name}
+            className={`relative flex justify-center transition-all duration-300 ${
+              isHidden([department.name as DepartmentName])
+                ? 'scale-95 opacity-20'
+                : 'scale-100 opacity-100'
+            }`}
+            variants={cardVariants}
+          >
+            {isHidden([department.name as DepartmentName]) && (
+              <div className="absolute inset-0 z-10 rounded-lg bg-black/20 backdrop-blur-[1px]" />
+            )}
+            <DepartmentCard
+              name={department.name}
+              image={resolveDepartmentImage(department.image)}
+              bio={department.bio}
+              quote="Together we create meaningful impact."
+            />
+          </motion.div>
+        ))}
+      </motion.div>
     </div>
   );
 }

@@ -4,7 +4,7 @@ export type DepartmentName =
   | 'Human Resources'
   | 'Marketing'
   | 'Executive Board';
-
+export type coreDepartmemt = 'Technology' | 'Human Resources' | 'Marketing';
 export const timelineData: {
   year: string;
   title: string;
@@ -45,6 +45,27 @@ export const timelineData: {
     title: 'NEO League Success',
     description:
       "Made history with NEO League - Prompt the Future 2025, our first competition! This groundbreaking event attracted over 170 competitors, showcasing our growth from a small club to a major force in Vietnam's tech competition scene.",
+  },
+];
+export const deparments: {
+  name: string;
+  image: string;
+  bio: string;
+}[] = [
+  {
+    name: 'Technology',
+    image: '/departments/test.jpg',
+    bio: 'The Technology department is responsible for all technical aspects of the club, including web development, app development, and hardware projects.',
+  },
+  {
+    name: 'Human Resources',
+    image: '/departments/TEST2.webp',
+    bio: 'The Human Resources department focuses on building a strong, inclusive community within the club. They organize team-building activities, provide support for members, and ensure a positive environment for everyone.',
+  },
+  {
+    name: 'Marketing',
+    image: '/departments/test3.jpg',
+    bio: 'The Marketing department is responsible for promoting the club and its events to the wider community. They handle branding, communications, and outreach initiatives.',
   },
 ];
 
