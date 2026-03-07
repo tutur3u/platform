@@ -80,6 +80,19 @@ const checks = [
     },
   },
   {
+    name: 'script-tests',
+    command: 'bun',
+    args: ['run', 'test:scripts'],
+    parseOutput: (stdout) => {
+      const clean = stripAnsi(stdout);
+      const match = clean.match(/# tests (\d+)/i);
+      if (match) {
+        return `${match[1]} tests passed`;
+      }
+      return 'Passed';
+    },
+  },
+  {
     name: 'type-check',
     command: 'bun',
     args: showDetails
