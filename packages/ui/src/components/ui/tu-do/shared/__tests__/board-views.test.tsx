@@ -1,15 +1,24 @@
 import '@testing-library/jest-dom';
 import { formatHotkeySequence, HotkeysProvider } from '@tanstack/react-hotkeys';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { WorkspaceLabel } from '@tuturuuu/utils/task-helper';
 import type React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { getBoardConfigKey } from '../board-config-storage';
 import { BoardViews } from '../board-views';
 
 const createTaskMock = vi.fn();
 const loadListPageMock = vi.fn();
+const getTasksMock = vi.fn();
 let boardHeaderProps:
   | React.ComponentProps<typeof import('../board-header')['BoardHeader']>
   | undefined;
@@ -30,6 +39,14 @@ vi.mock('../../hooks/useTaskDialog', () => ({
   useTaskDialog: () => ({
     createTask: createTaskMock,
   }),
+}));
+
+vi.mock('@tuturuuu/supabase/next/client', () => ({
+  createClient: () => ({}),
+}));
+
+vi.mock('@tuturuuu/utils/task-helper', () => ({
+  getTasks: (...args: unknown[]) => getTasksMock(...args),
 }));
 
 vi.mock('../progressive-loader-context', () => ({
@@ -125,17 +142,27 @@ const mockTasks: Task[] = [
 const mockWorkspaceLabels: WorkspaceLabel[] = [];
 
 function renderBoardViews() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
+
   return render(
-    <HotkeysProvider>
-      <BoardViews
-        board={mockBoard as any}
-        currentUserId="user-1"
-        lists={mockLists}
-        tasks={mockTasks}
-        workspace={mockWorkspace as any}
-        workspaceLabels={mockWorkspaceLabels}
-      />
-    </HotkeysProvider>
+    <QueryClientProvider client={queryClient}>
+      <HotkeysProvider>
+        <BoardViews
+          board={mockBoard as any}
+          currentUserId="user-1"
+          lists={mockLists}
+          tasks={mockTasks}
+          workspace={mockWorkspace as any}
+          workspaceLabels={mockWorkspaceLabels}
+        />
+      </HotkeysProvider>
+    </QueryClientProvider>
   );
 }
 
@@ -144,6 +171,9 @@ describe('BoardViews', () => {
     boardHeaderProps = undefined;
     createTaskMock.mockReset();
     loadListPageMock.mockReset();
+    getTasksMock.mockReset();
+    getTasksMock.mockResolvedValue(mockTasks);
+    window.localStorage.clear();
   });
 
   it('registers visible hotkey labels for each board view', () => {
@@ -204,6 +234,62 @@ describe('BoardViews', () => {
         projects: [],
       }
     );
+  });
+
+  it('eagerly fetches the full board task set when switching to list view', async () => {
+    renderBoardViews();
+
+    expect(getTasksMock).not.toHaveBeenCalled();
+
+    await act(async () => {
+      boardHeaderProps?.onViewChange('list');
+    });
+
+    await waitFor(() => {
+      expect(getTasksMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('eagerly fetches the full board task set when switching to timeline view', async () => {
+    renderBoardViews();
+
+    await act(async () => {
+      boardHeaderProps?.onViewChange('timeline');
+    });
+
+    await waitFor(() => {
+      expect(getTasksMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('restores a persisted timeline view before interaction and primes the full task cache', async () => {
+    window.localStorage.setItem(
+      getBoardConfigKey(mockBoard.id),
+      JSON.stringify({
+        currentView: 'timeline',
+        filters: {
+          assignees: [],
+          dueDateRange: null,
+          estimationRange: null,
+          includeMyTasks: false,
+          includeUnassigned: false,
+          labels: [],
+          priorities: [],
+          projects: [],
+        },
+        listStatusFilter: 'all',
+      })
+    );
+
+    renderBoardViews();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('timeline-view')).toBeInTheDocument();
+    });
+
+    await waitFor(() => {
+      expect(getTasksMock).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('ignores board hotkeys while typing in an input', async () => {

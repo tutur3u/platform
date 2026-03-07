@@ -16,10 +16,15 @@ export interface TimelineItem {
   isFuture: boolean;
 }
 
+export interface TimelineLaneItem extends TimelineItem {
+  rowIndex: number;
+}
+
 export interface TimelineGroup {
   id: string;
   list: TaskList | null;
-  items: TimelineItem[];
+  items: TimelineLaneItem[];
+  rowCount: number;
 }
 
 export interface MonthSegment {
@@ -57,6 +62,12 @@ const DEFAULT_PAST_PADDING_DAYS = 3;
 const DEFAULT_FUTURE_PADDING_DAYS = 6;
 const EMPTY_PAST_PADDING_DAYS = 7;
 const EMPTY_FUTURE_PADDING_DAYS = 14;
+const TIMELINE_LIST_STATUS_ORDER: Record<string, number> = {
+  not_started: 0,
+  active: 1,
+  done: 2,
+  closed: 3,
+};
 
 function normalizeTaskRange(task: Task, todayMid: dayjs.Dayjs) {
   if (!task.start_date && !task.end_date) {
@@ -113,6 +124,39 @@ export function buildMonthSegments(days: Date[]) {
   }
 
   return segments;
+}
+
+function withLaneRows(
+  items: Array<Omit<TimelineItem, 'offsetDays'>>,
+  rangeStart: Date
+): { items: TimelineLaneItem[]; rowCount: number } {
+  const rowEnds: Date[] = [];
+
+  const packedItems = items.map((item) => {
+    let rowIndex = rowEnds.findIndex(
+      (rowEnd) => rowEnd.getTime() < item.start.getTime()
+    );
+
+    if (rowIndex === -1) {
+      rowIndex = rowEnds.length;
+      rowEnds.push(item.end);
+    } else {
+      rowEnds[rowIndex] = item.end;
+    }
+
+    return {
+      ...item,
+      rowIndex,
+      offsetDays: Math.floor(
+        (item.start.getTime() - rangeStart.getTime()) / DAY_MS
+      ),
+    };
+  });
+
+  return {
+    items: packedItems,
+    rowCount: Math.max(1, rowEnds.length),
+  };
 }
 
 export function computeTimelineSpans(
@@ -201,8 +245,26 @@ export function buildTimelineModel(
   tasks: Task[],
   lists: TaskList[]
 ): TimelineModel {
+  const sortedLists = lists
+    .map((list, index) => ({ list, index }))
+    .sort((left, right) => {
+      const leftRank =
+        TIMELINE_LIST_STATUS_ORDER[left.list.status ?? ''] ??
+        Number.MAX_SAFE_INTEGER;
+      const rightRank =
+        TIMELINE_LIST_STATUS_ORDER[right.list.status ?? ''] ??
+        Number.MAX_SAFE_INTEGER;
+
+      if (leftRank !== rightRank) {
+        return leftRank - rightRank;
+      }
+
+      return left.index - right.index;
+    })
+    .map(({ list }) => list);
+
   const listById = new Map(
-    lists.map((list) => [String(list.id), list] as const)
+    sortedLists.map((list) => [String(list.id), list] as const)
   );
   const todayMid = dayjs().startOf('day');
   const scheduled: Array<Omit<TimelineItem, 'offsetDays'>> = [];
@@ -261,8 +323,8 @@ export function buildTimelineModel(
     (todayMid.toDate().getTime() - rangeStart.getTime()) / DAY_MS
   );
 
-  const groups: TimelineGroup[] = lists.map((list) => {
-    const items = scheduled
+  const groups: TimelineGroup[] = sortedLists.map((list) => {
+    const scheduledItems = scheduled
       .filter((item) => item.task.list_id === list.id)
       .sort((left, right) => {
         const startDiff = left.start.getTime() - right.start.getTime();
@@ -272,36 +334,33 @@ export function buildTimelineModel(
         if (durationDiff !== 0) return durationDiff;
 
         return left.task.name.localeCompare(right.task.name);
-      })
-      .map((item) => ({
-        ...item,
-        offsetDays: Math.floor(
-          (item.start.getTime() - rangeStart.getTime()) / DAY_MS
-        ),
-      }));
+      });
+
+    const { items, rowCount } = withLaneRows(scheduledItems, rangeStart);
 
     return {
       id: String(list.id),
       list,
       items,
+      rowCount,
     };
   });
 
-  const orphanItems = scheduled
+  const orphanScheduledItems = scheduled
     .filter((item) => !listById.has(String(item.task.list_id)))
-    .sort((left, right) => left.start.getTime() - right.start.getTime())
-    .map((item) => ({
-      ...item,
-      offsetDays: Math.floor(
-        (item.start.getTime() - rangeStart.getTime()) / DAY_MS
-      ),
-    }));
+    .sort((left, right) => left.start.getTime() - right.start.getTime());
+
+  const { items: orphanItems, rowCount: orphanRowCount } = withLaneRows(
+    orphanScheduledItems,
+    rangeStart
+  );
 
   if (orphanItems.length > 0) {
     groups.push({
       id: 'unknown-list',
       list: null,
       items: orphanItems,
+      rowCount: orphanRowCount,
     });
   }
 
