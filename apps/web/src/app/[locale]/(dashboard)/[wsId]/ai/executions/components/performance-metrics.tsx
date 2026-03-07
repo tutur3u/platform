@@ -35,6 +35,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { formatTooltipValue, getTooltipName } from '@/lib/recharts-tooltip';
 import type {
   AIExecutionDailyStats,
   AIExecutionModelStats,
@@ -531,15 +532,21 @@ export function PerformanceMetrics({
                             border: `1px solid ${colors.tooltip.border}`,
                             color: colors.tooltip.text,
                           }}
-                          formatter={(
-                            value: number | undefined,
-                            name: string | undefined
-                          ) => [
-                            (name ?? '') === 'Cost'
-                              ? formatCost(value ?? 0)
-                              : (value ?? 0),
-                            name ?? '',
-                          ]}
+                          formatter={(value, name) => {
+                            const metricName = getTooltipName(name);
+
+                            return [
+                              metricName === 'Cost'
+                                ? formatTooltipValue(value, (numericValue) =>
+                                    formatCost(numericValue)
+                                  )
+                                : formatTooltipValue(
+                                    value,
+                                    (numericValue) => numericValue
+                                  ),
+                              metricName,
+                            ];
+                          }}
                           labelFormatter={(value) =>
                             new Date(value).toLocaleDateString()
                           }
@@ -675,15 +682,21 @@ export function PerformanceMetrics({
                           border: `1px solid ${colors.tooltip.border}`,
                           color: colors.tooltip.text,
                         }}
-                        formatter={(
-                          value: number | undefined,
-                          name: string | undefined
-                        ) => [
-                          (name ?? '') === 'Avg Cost per Execution'
-                            ? formatCost(value ?? 0)
-                            : (value ?? 0),
-                          name ?? '',
-                        ]}
+                        formatter={(value, name) => {
+                          const metricName = getTooltipName(name);
+
+                          return [
+                            metricName === 'Avg Cost per Execution'
+                              ? formatTooltipValue(value, (numericValue) =>
+                                  formatCost(numericValue)
+                                )
+                              : formatTooltipValue(
+                                  value,
+                                  (numericValue) => numericValue
+                                ),
+                            metricName,
+                          ];
+                        }}
                         labelFormatter={(value) =>
                           new Date(value).toLocaleDateString()
                         }
@@ -763,15 +776,21 @@ export function PerformanceMetrics({
                           border: `1px solid ${colors.tooltip.border}`,
                           color: colors.tooltip.text,
                         }}
-                        formatter={(
-                          value: number | undefined,
-                          name: string | undefined
-                        ) => [
-                          (name ?? '') === 'Total Cost'
-                            ? formatCost(value ?? 0)
-                            : (value ?? 0),
-                          name ?? '',
-                        ]}
+                        formatter={(value, name) => {
+                          const metricName = getTooltipName(name);
+
+                          return [
+                            metricName === 'Total Cost'
+                              ? formatTooltipValue(value, (numericValue) =>
+                                  formatCost(numericValue)
+                                )
+                              : formatTooltipValue(
+                                  value,
+                                  (numericValue) => numericValue
+                                ),
+                            metricName,
+                          ];
+                        }}
                       />
                       <Legend />
                       <Bar

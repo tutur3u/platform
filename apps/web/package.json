@@ -13,7 +13,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "type-check": "tsgo --build",
+    "type-check": "node ../../scripts/run-tsgo-build.js --build",
     "stop": "cd ../database && bun sb:stop",
     "sb:status": "cd ../database && bun sb:status",
     "sb:start": "cd ../database && bun sb:start",

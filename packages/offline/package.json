@@ -8,7 +8,7 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "type-check": "tsgo --build"
+    "type-check": "node ../../scripts/run-tsgo-build.js --build"
   },
   "dependencies": {
     "@serwist/next": "^10.0.0-preview.14",

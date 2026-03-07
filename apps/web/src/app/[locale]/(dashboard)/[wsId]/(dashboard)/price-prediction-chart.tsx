@@ -23,6 +23,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { formatTooltipValue } from '@/lib/recharts-tooltip';
 
 const COLORS = {
   light: {
@@ -311,8 +312,10 @@ const PricePredictionChart = ({ data }: { data: AuroraForecast }) => {
                   borderRadius: '6px',
                   padding: '8px 12px',
                 }}
-                formatter={(value: number | undefined) => [
-                  formatCurrency(value ?? 0),
+                formatter={(value) => [
+                  formatTooltipValue(value, (numericValue) =>
+                    formatCurrency(numericValue)
+                  ),
                 ]}
                 labelStyle={{ color: colors.tooltip.text }}
               />

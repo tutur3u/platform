@@ -16,7 +16,7 @@
   },
   "license": "MIT",
   "scripts": {
-    "type-check": "tsgo --build",
+    "type-check": "node ../../scripts/run-tsgo-build.js --build",
     "test": "vitest run",
     "test:watch": "vitest"
   },

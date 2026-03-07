@@ -10,7 +10,7 @@
     "./calendar": "./src/calendar/index.ts"
   },
   "scripts": {
-    "type-check": "tsgo --build"
+    "type-check": "node ../../scripts/run-tsgo-build.js --build"
   },
   "dependencies": {
     "@azure/msal-node": "^5.0.6",

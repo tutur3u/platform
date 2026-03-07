@@ -6,7 +6,7 @@
     "access": "public"
   },
   "scripts": {
-    "type-check": "tsgo --build",
+    "type-check": "node ../../scripts/run-tsgo-build.js --build",
     "ui": "bunx shadcn-ui@latest"
   },
   "dependencies": {

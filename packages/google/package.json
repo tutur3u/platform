@@ -9,7 +9,7 @@
     ".": "./src/core/index.ts"
   },
   "scripts": {
-    "type-check": "tsgo --build"
+    "type-check": "node ../../scripts/run-tsgo-build.js --build"
   },
   "dependencies": {
     "googleapis": "^171.4.0",
