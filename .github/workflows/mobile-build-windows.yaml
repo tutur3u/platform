@@ -1,0 +1,73 @@
+name: Mobile Build Windows
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+on:
+    push:
+        branches:
+            - main
+        paths:
+            - "apps/mobile/**"
+            - ".github/workflows/mobile-build-windows.yaml"
+    pull_request:
+        branches:
+            - main
+        paths:
+            - "apps/mobile/**"
+            - ".github/workflows/mobile-build-windows.yaml"
+
+jobs:
+    check-ci:
+        uses: ./.github/workflows/ci-check.yml
+        with:
+            workflow_name: mobile-build-windows.yaml
+
+    build-windows:
+        name: Build Windows (Development)
+        needs: [check-ci]
+        if: needs.check-ci.outputs.should_run == 'true'
+        runs-on: windows-latest
+        defaults:
+            run:
+                working-directory: apps/mobile
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v6
+
+            - name: Setup Flutter
+              uses: subosito/flutter-action@v2
+              with:
+                  flutter-version: "3.41.x"
+                  channel: stable
+                  cache: true
+
+            - name: Enable Windows desktop
+              run: flutter config --enable-windows-desktop
+
+            - name: Install dependencies
+              if: steps.cache-build.outputs.cache-hit != 'true'
+              run: flutter pub get
+
+            - name: Cache Build
+              id: cache-build
+              uses: actions/cache@v4
+              with:
+                  path: |
+                      apps/mobile/build
+                      apps/mobile/.dart_tool
+                  key: ${{ runner.os }}-flutter-windows-${{ hashFiles('apps/mobile/**') }}
+                  restore-keys: |
+                      ${{ runner.os }}-flutter-windows-
+
+            - name: Build Windows
+              if: steps.cache-build.outputs.cache-hit != 'true'
+              run: flutter build windows
+
+            - name: Upload Windows app artifact
+              uses: actions/upload-artifact@v7
+              with:
+                  name: windows-dev-app
+                  path: apps/mobile/build/windows/x64/runner/Release/
+                  retention-days: 7
