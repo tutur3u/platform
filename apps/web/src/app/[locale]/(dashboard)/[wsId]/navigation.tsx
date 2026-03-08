@@ -55,6 +55,7 @@ import {
   Package,
   PencilRuler,
   Play,
+  Plus,
   QrCodeIcon,
   Radio,
   ReceiptText,
@@ -467,6 +468,41 @@ export async function WorkspaceNavigationLinks({
       ],
       disabled: ENABLE_AI_ONLY,
     },
+    {
+      title: t('sidebar_tabs.drive'),
+      href: `/${personalOrWsId}/drive`,
+      icon: <HardDrive className="h-5 w-5" />,
+      requiredWorkspaceTier: createTierRequirement('drive', {
+        alwaysShow: true,
+      }),
+      disabled: withoutPermission('manage_drive'),
+      experimental: 'beta',
+    },
+    null,
+    {
+      title: t('sidebar_tabs.forms'),
+      href: `/${personalOrWsId}/forms`,
+      icon: <ClipboardList className="h-5 w-5" />,
+      aliases: [`/${personalOrWsId}/forms`, `/${personalOrWsId}/forms/new`],
+      disabled:
+        withoutPermission('manage_forms') &&
+        withoutPermission('view_form_analytics'),
+      children: [
+        {
+          title: t('sidebar_tabs.forms'),
+          href: `/${personalOrWsId}/forms`,
+          icon: <ClipboardList className="h-5 w-5" />,
+          matchExact: true,
+        },
+        null,
+        {
+          title: t('forms.studio.create_form'),
+          href: `/${personalOrWsId}/forms/new`,
+          icon: <Plus className="h-5 w-5" />,
+          disabled: withoutPermission('manage_forms'),
+        },
+      ],
+    },
     null,
     // ── Vertical 5: More (collapsed features) ──
     {
@@ -496,16 +532,6 @@ export async function WorkspaceNavigationLinks({
           experimental: 'beta',
           requireRootMember: true,
           requireRootWorkspace: true,
-        },
-        {
-          title: t('sidebar_tabs.drive'),
-          href: `/${personalOrWsId}/drive`,
-          icon: <HardDrive className="h-5 w-5" />,
-          requiredWorkspaceTier: createTierRequirement('drive', {
-            alwaysShow: true,
-          }),
-          disabled: withoutPermission('manage_drive'),
-          experimental: 'beta',
         },
         {
           title: t('sidebar_tabs.qr_generator'),

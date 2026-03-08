@@ -267,11 +267,14 @@ export default function EditableReportPreview({
     '';
 
   const {
+    handlePdfExport,
     handlePrintExport,
     handlePngExport,
     isExporting,
     defaultExportType,
     setDefaultExportType,
+    printAfterExport,
+    setPrintAfterExport,
   } = useReportExport({
     previewTitle,
     isDarkPreview: resolvedReportTheme === 'dark',
@@ -621,6 +624,7 @@ export default function EditableReportPreview({
             isExporting={isExporting}
             isPaginationReady={isPaginationReady}
             paginationPageCount={previewPageCount}
+            handlePdfExport={handlePdfExport}
             handlePrintExport={handlePrintExport}
             handlePngExport={handlePngExport}
             reportTheme={reportTheme}
@@ -634,6 +638,8 @@ export default function EditableReportPreview({
             isRejecting={rejectMutation.isPending}
             defaultExportType={defaultExportType}
             setDefaultExportType={setDefaultExportType}
+            printAfterExport={printAfterExport}
+            setPrintAfterExport={setPrintAfterExport}
           />
 
           {previewPageCount > 1 || !isPaginationReady ? (

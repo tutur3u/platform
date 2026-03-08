@@ -20805,6 +20805,37 @@ export type Database = {
         }[];
       };
       get_finance_invoices_count: { Args: { ws_id: string }; Returns: number };
+      get_form_analytics_overview: {
+        Args: { p_form_id: string };
+        Returns: Json;
+      };
+      get_form_matched_response_ids: {
+        Args: { p_form_id: string; p_query?: string };
+        Returns: {
+          response_id: string;
+        }[];
+      };
+      get_form_response_page: {
+        Args: {
+          p_form_id: string;
+          p_page?: number;
+          p_page_size?: number;
+          p_query?: string;
+        };
+        Returns: {
+          created_at: string;
+          id: string;
+          respondent_email: string;
+          respondent_user_id: string;
+          session_id: string;
+          submitted_at: string;
+          total_count: number;
+        }[];
+      };
+      get_form_response_rollups: {
+        Args: { p_form_id: string; p_query?: string };
+        Returns: Json;
+      };
       get_form_workspace_id: { Args: { p_form_id: string }; Returns: string };
       get_group_report_status_summary: {
         Args: { _ws_id: string };

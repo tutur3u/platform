@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { buildReportPrintContent } from './report-print-template';
 
-export type ExportType = 'print' | 'image';
+export type ExportType = 'pdf' | 'image';
 
 export interface ReportExportMetadata {
   title?: string | null;
@@ -19,6 +19,10 @@ interface ExportReportPngOptions {
   elementId: string;
   isDarkPreview: boolean;
   metadata: ReportExportMetadata;
+}
+
+interface ExportReportPdfOptions extends ExportReportPngOptions {
+  onAfterDownload?: () => void;
 }
 
 interface UseBulkReportExportOptions<TReport> {
@@ -51,6 +55,20 @@ function buildPngFilename({
   ].filter(Boolean);
 
   return `${parts.join('_')}.png`;
+}
+
+function buildPdfFilename({
+  title,
+  userName,
+  groupName,
+}: ReportExportMetadata): string {
+  const parts = [
+    userName && sanitizeFilename(userName),
+    groupName && sanitizeFilename(groupName),
+    title ? sanitizeFilename(title) : 'report',
+  ].filter(Boolean);
+
+  return `${parts.join('_')}.pdf`;
 }
 
 function buildPagedPngFilename(
@@ -99,6 +117,33 @@ async function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   });
 }
 
+async function renderReportPageCanvases({
+  elementId,
+  isDarkPreview,
+}: Pick<ExportReportPngOptions, 'elementId' | 'isDarkPreview'>): Promise<
+  HTMLCanvasElement[]
+> {
+  const html2canvas = (await import('html2canvas-pro')).default;
+  const pages = getRenderablePages(elementId);
+  const canvases: HTMLCanvasElement[] = [];
+
+  for (const page of pages) {
+    const canvas = await html2canvas(page, {
+      backgroundColor: isDarkPreview ? '#020617' : '#ffffff',
+      height: page.offsetHeight,
+      scale: 2,
+      useCORS: true,
+      width: page.offsetWidth,
+      windowHeight: page.scrollHeight,
+      windowWidth: page.scrollWidth,
+    });
+
+    canvases.push(canvas);
+  }
+
+  return canvases;
+}
+
 async function downloadBlob(blob: Blob, filename: string): Promise<void> {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -122,28 +167,138 @@ export async function exportReportAsPng({
   isDarkPreview,
   metadata,
 }: ExportReportPngOptions): Promise<number> {
-  const html2canvas = (await import('html2canvas-pro')).default;
-  const pages = getRenderablePages(elementId);
+  const canvases = await renderReportPageCanvases({
+    elementId,
+    isDarkPreview,
+  });
 
-  for (const [index, page] of pages.entries()) {
-    const canvas = await html2canvas(page, {
-      backgroundColor: isDarkPreview ? '#020617' : '#ffffff',
-      height: page.offsetHeight,
-      scale: 2,
-      useCORS: true,
-      width: page.offsetWidth,
-      windowHeight: page.scrollHeight,
-      windowWidth: page.scrollWidth,
-    });
+  for (const [index, canvas] of canvases.entries()) {
     const blob = await canvasToBlob(canvas);
 
     await downloadBlob(
       blob,
-      buildPagedPngFilename(metadata, index + 1, pages.length)
+      buildPagedPngFilename(metadata, index + 1, canvases.length)
     );
   }
 
-  return pages.length;
+  return canvases.length;
+}
+
+export async function exportReportAsPdf({
+  elementId,
+  isDarkPreview,
+  metadata,
+  onAfterDownload,
+}: ExportReportPdfOptions): Promise<number> {
+  const [{ jsPDF }, canvases] = await Promise.all([
+    import('jspdf'),
+    renderReportPageCanvases({
+      elementId,
+      isDarkPreview,
+    }),
+  ]);
+
+  const pdf = new jsPDF({
+    compress: true,
+    format: 'a4',
+    orientation: 'portrait',
+    unit: 'mm',
+  });
+
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+
+  for (const [index, canvas] of canvases.entries()) {
+    if (index > 0) {
+      pdf.addPage('a4', 'portrait');
+    }
+
+    const imageRatio = canvas.width / canvas.height;
+    let renderWidth = pageWidth;
+    let renderHeight = renderWidth / imageRatio;
+
+    if (renderHeight > pageHeight) {
+      renderHeight = pageHeight;
+      renderWidth = renderHeight * imageRatio;
+    }
+
+    const offsetX = (pageWidth - renderWidth) / 2;
+    const offsetY = (pageHeight - renderHeight) / 2;
+
+    pdf.addImage(
+      canvas.toDataURL('image/png', 1),
+      'PNG',
+      offsetX,
+      offsetY,
+      renderWidth,
+      renderHeight,
+      undefined,
+      'FAST'
+    );
+  }
+
+  await downloadBlob(pdf.output('blob'), buildPdfFilename(metadata));
+  onAfterDownload?.();
+
+  return canvases.length;
+}
+
+function collectDocumentStylesheets(): string {
+  return Array.from(document.styleSheets)
+    .map((styleSheet) => {
+      try {
+        if (styleSheet.href) {
+          return `<link rel="stylesheet" href="${styleSheet.href}">`;
+        }
+
+        if (styleSheet.ownerNode) {
+          const styleElement = styleSheet.ownerNode as HTMLStyleElement;
+          return `<style>${styleElement.innerHTML}</style>`;
+        }
+      } catch (_e) {
+        if (styleSheet.href) {
+          return `<link rel="stylesheet" href="${styleSheet.href}">`;
+        }
+      }
+
+      return '';
+    })
+    .join('\n');
+}
+
+function openReportPrintPreview({
+  previewTitle,
+  t,
+  targetWindow,
+}: {
+  previewTitle: string;
+  t: ReturnType<typeof useTranslations>;
+  targetWindow?: Window | null;
+}): boolean {
+  const printableArea = document.getElementById('printable-area');
+  if (!printableArea) {
+    toast.error(t('ws-reports.report_export_not_found'));
+    return false;
+  }
+
+  const printWindow = targetWindow ?? window.open('', '_blank');
+  if (!printWindow) {
+    toast.error(t('ws-reports.failed_open_print'));
+    return false;
+  }
+
+  const escapedTitle = escapeString(previewTitle || t('common.untitled'));
+  const printContent = buildReportPrintContent({
+    printableAreaHtml: printableArea.outerHTML,
+    documentTitle: `${t('ws-reports.report')} - ${escapedTitle}`,
+    stylesheets: collectDocumentStylesheets(),
+  });
+
+  printWindow.document.open();
+  printWindow.document.write(printContent);
+  printWindow.document.close();
+
+  return true;
 }
 
 export function useReportExport({
@@ -159,6 +314,7 @@ export function useReportExport({
   groupName?: string;
   isPaginationReady: boolean;
 }): {
+  handlePdfExport: () => Promise<void>;
   handlePrintExport: () => void;
   handlePngExport: () => Promise<void>;
   isExporting: boolean;
@@ -166,13 +322,37 @@ export function useReportExport({
   setDefaultExportType: (
     value: ExportType | ((val: ExportType) => ExportType)
   ) => void;
+  printAfterExport: boolean;
+  setPrintAfterExport: (value: boolean | ((val: boolean) => boolean)) => void;
 } {
   const t = useTranslations();
   const [isExporting, setIsExporting] = useState(false);
-  const [defaultExportType, setDefaultExportType] = useLocalStorage<ExportType>(
-    'report-export-type',
-    'image'
+  const [storedDefaultExportType, setStoredDefaultExportType] = useLocalStorage<
+    ExportType | 'print'
+  >('report-export-type', 'pdf');
+  const [printAfterExport, setPrintAfterExport] = useLocalStorage<boolean>(
+    'report-print-after-export',
+    false
   );
+
+  const defaultExportType: ExportType =
+    storedDefaultExportType === 'image' ? 'image' : 'pdf';
+
+  const setDefaultExportType = useCallback(
+    (value: ExportType | ((val: ExportType) => ExportType)) => {
+      setStoredDefaultExportType((prev) => {
+        const normalizedPrev: ExportType = prev === 'image' ? 'image' : 'pdf';
+        return value instanceof Function ? value(normalizedPrev) : value;
+      });
+    },
+    [setStoredDefaultExportType]
+  );
+
+  useEffect(() => {
+    if (storedDefaultExportType === 'print') {
+      setStoredDefaultExportType('pdf');
+    }
+  }, [setStoredDefaultExportType, storedDefaultExportType]);
 
   const handlePrintExport = () => {
     if (!isPaginationReady) {
@@ -180,53 +360,58 @@ export function useReportExport({
       return;
     }
 
-    const printableArea = document.getElementById('printable-area');
-    if (!printableArea) {
-      toast.error(t('ws-reports.report_export_not_found'));
+    openReportPrintPreview({
+      previewTitle,
+      t,
+    });
+  };
+
+  const handlePdfExport = async () => {
+    if (!isPaginationReady) {
+      toast.error(t('ws-reports.export_waiting_for_layout'));
       return;
     }
 
-    const stylesheets = Array.from(document.styleSheets)
-      .map((styleSheet) => {
-        try {
-          if (styleSheet.href) {
-            return `<link rel="stylesheet" href="${styleSheet.href}">`;
-          } else if (styleSheet.ownerNode) {
-            const styleElement = styleSheet.ownerNode as HTMLStyleElement;
-            return `<style>${styleElement.innerHTML}</style>`;
+    let printWindow: Window | null = null;
+    if (printAfterExport) {
+      printWindow = window.open('', '_blank');
+    }
+
+    setIsExporting(true);
+    try {
+      await exportReportAsPdf({
+        elementId: 'printable-area',
+        isDarkPreview,
+        metadata: {
+          title: previewTitle,
+          userName,
+          groupName,
+        },
+        onAfterDownload: () => {
+          if (!printAfterExport) {
+            return;
           }
-        } catch (_e) {
-          if (styleSheet.href) {
-            return `<link rel="stylesheet" href="${styleSheet.href}">`;
+
+          const didOpen = openReportPrintPreview({
+            previewTitle,
+            t,
+            targetWindow: printWindow,
+          });
+
+          if (!didOpen && printWindow && !printWindow.closed) {
+            printWindow.close();
           }
-        }
-        return '';
-      })
-      .join('\n');
-
-    const escapedTitle = escapeString(previewTitle || t('common.untitled'));
-
-    const printContent = buildReportPrintContent({
-      printableAreaHtml: printableArea.outerHTML,
-      documentTitle: `${t('ws-reports.report')} - ${escapedTitle}`,
-      stylesheets,
-    });
-
-    const blob = new Blob([printContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const printWindow = window.open(url, '_blank', 'noopener,noreferrer');
-    if (printWindow) {
-      const revoke = () => {
-        try {
-          URL.revokeObjectURL(url);
-        } catch (_) {
-          // no-op
-        }
-      };
-      printWindow.addEventListener('beforeunload', revoke, { once: true });
-      setTimeout(revoke, 60_000);
-    } else {
-      URL.revokeObjectURL(url);
+        },
+      });
+      toast.success(t('ws-reports.export_pdf_success'));
+    } catch (error) {
+      if (printWindow && !printWindow.closed) {
+        printWindow.close();
+      }
+      console.error('PDF export failed:', error);
+      toast.error(t('ws-reports.failed_export_pdf'));
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -263,11 +448,14 @@ export function useReportExport({
   };
 
   return {
+    handlePdfExport,
     handlePrintExport,
     handlePngExport,
     isExporting,
     defaultExportType,
     setDefaultExportType,
+    printAfterExport,
+    setPrintAfterExport,
   };
 }
 

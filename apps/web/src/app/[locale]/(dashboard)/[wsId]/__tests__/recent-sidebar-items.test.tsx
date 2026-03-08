@@ -124,7 +124,9 @@ describe('RecentSidebarItems', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('link', { name: /tasks/i })).toBeTruthy();
-      expect(screen.getByRole('link', { name: /wallets/i })).toBeTruthy();
+      expect(
+        screen.getByRole('button', { name: 'sidebar_recent_items.show_more:1' })
+      ).toBeTruthy();
     });
 
     expect(readStoredEntries()).toEqual([

@@ -9,7 +9,6 @@ import {
   LayoutDashboard,
   PencilRuler,
   ReceiptText,
-  Trash2,
   Wallet,
   X,
 } from '@tuturuuu/icons';
@@ -44,6 +43,7 @@ import {
 } from './recent-sidebar-items.utils';
 
 const RECENT_SIDEBAR_ITEMS_EVENT = 'tuturuuu:sidebar-recent-items-updated';
+const DEFAULT_VISIBLE_RECENT_SIDEBAR_ITEMS = 1;
 
 interface RecentSidebarItemsProps {
   isCollapsed: boolean;
@@ -327,12 +327,14 @@ export function RecentSidebarItems({
           ? [{ label: boardBadgeLabel, tone: 'default' as const }]
           : item.badges,
     }));
-  const hasOverflow = resolvedItems.length > 3;
+  const shownItems = DEFAULT_VISIBLE_RECENT_SIDEBAR_ITEMS;
+
+  const hasOverflow = resolvedItems.length > shownItems;
   const expandedCount = Math.min(resolvedItems.length, 10);
   const visibleItems = showAll
     ? resolvedItems.slice(0, 10)
-    : resolvedItems.slice(0, 3);
-  const hiddenCount = Math.max(expandedCount - 3, 0);
+    : resolvedItems.slice(0, shownItems);
+  const hiddenCount = Math.max(expandedCount - shownItems, 0);
 
   useEffect(() => {
     if (!hasOverflow && showAll) {
@@ -364,10 +366,11 @@ export function RecentSidebarItems({
   };
 
   if (isCollapsed) {
+    if (!resolvedItems.length) return null;
     return (
       <div className="px-2 pt-1 pb-2">
         <div className="flex flex-col items-center gap-1 border-border/50 border-t pt-2">
-          {resolvedItems.slice(0, 3).map((item) => (
+          {resolvedItems.slice(0, shownItems).map((item) => (
             <Tooltip key={item.href} delayDuration={0}>
               <TooltipTrigger asChild>
                 <Link
@@ -411,23 +414,6 @@ export function RecentSidebarItems({
               </TooltipContent>
             </Tooltip>
           ))}
-
-          <Tooltip delayDuration={0}>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
-                onClick={clearAll}
-              >
-                <Trash2 className="h-4 w-4" />
-                <span className="sr-only">{t('common.clear_all')}</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">
-              <span>{t('common.clear_all')}</span>
-            </TooltipContent>
-          </Tooltip>
         </div>
       </div>
     );

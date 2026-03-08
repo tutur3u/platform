@@ -21,7 +21,7 @@ export default async function SharedTaskPage({ params }: PageProps) {
 
   if (!user) {
     // Redirect to login with return URL
-    redirect(`/login?next=/shared/task/${shareCode}`);
+    redirect(`/login?nextUrl=/shared/task/${shareCode}`);
   }
 
   // Fetch user profile for TaskEditDialog

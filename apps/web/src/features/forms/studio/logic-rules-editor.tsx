@@ -1,0 +1,555 @@
+'use client';
+
+import { ChevronDown, Plus, Trash } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
+import { Card, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@tuturuuu/ui/collapsible';
+import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
+import { useFieldArray, useWatch } from '@tuturuuu/ui/hooks/use-form';
+import { Input } from '@tuturuuu/ui/input';
+import { Label } from '@tuturuuu/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
+import { toast } from '@tuturuuu/ui/sonner';
+import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
+import { useEffect, useMemo, useState } from 'react';
+
+import type { FormLogicRuleInput, FormQuestionInput } from '../schema';
+import type { getFormToneClasses } from '../theme';
+import { createClientId, type StudioForm } from './studio-utils';
+
+const TIME_OPTIONS = Array.from({ length: 96 }, (_, index) => {
+  const hour = Math.floor(index / 4)
+    .toString()
+    .padStart(2, '0');
+  const minute = ['00', '15', '30', '45'][index % 4] ?? '00';
+
+  return `${hour}:${minute}`;
+});
+
+function parseDateValue(value: string | undefined) {
+  if (!value) {
+    return undefined;
+  }
+
+  const parsed = new Date(`${value}T12:00:00`);
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+}
+
+function formatDateValue(date: Date | undefined) {
+  if (!date) {
+    return '';
+  }
+
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+function getOperatorOptions(questionType?: FormQuestionInput['type']) {
+  if (questionType === 'short_text' || questionType === 'long_text') {
+    return ['equals', 'not_equals', 'contains'] as const;
+  }
+
+  if (questionType === 'multiple_choice') {
+    return ['contains', 'equals', 'not_equals'] as const;
+  }
+
+  return ['equals', 'not_equals'] as const;
+}
+
+function normalizeComparisonValue(
+  question:
+    | {
+        type: FormQuestionInput['type'];
+        options: Array<{ label: string; value: string }>;
+      }
+    | undefined,
+  comparisonValue: string | undefined
+) {
+  if (!question || !comparisonValue?.trim()) {
+    return comparisonValue ?? '';
+  }
+
+  if (
+    question.type !== 'single_choice' &&
+    question.type !== 'multiple_choice' &&
+    question.type !== 'dropdown'
+  ) {
+    return comparisonValue;
+  }
+
+  const normalizedComparisonValue = comparisonValue.trim().toLowerCase();
+  const matchedOption = question.options.find(
+    (option) =>
+      option.value.trim().toLowerCase() === normalizedComparisonValue ||
+      option.label.trim().toLowerCase() === normalizedComparisonValue
+  );
+
+  return matchedOption?.value ?? comparisonValue;
+}
+
+export function LogicRulesEditor({
+  form,
+  toneClasses,
+}: {
+  form: StudioForm;
+  toneClasses: ReturnType<typeof getFormToneClasses>;
+}) {
+  const t = useTranslations('forms');
+  const [open, setOpen] = useState(false);
+  const rulesArray = useFieldArray({
+    control: form.control,
+    name: 'logicRules',
+  });
+  const sections = useWatch({ control: form.control, name: 'sections' }) ?? [];
+  const logicRules =
+    useWatch({ control: form.control, name: 'logicRules' }) ?? [];
+
+  const answerableQuestions = useMemo(
+    () =>
+      sections.flatMap((section, sectionIndex) =>
+        section.questions
+          .filter((question) => question.type !== 'section_break')
+          .map((question, questionIndex) => ({
+            id: question.id ?? '',
+            sectionId: section.id ?? '',
+            sectionIndex,
+            questionIndex,
+            title: question.title,
+            type: question.type,
+            settings: question.settings,
+            options: question.options,
+            label: `${section.title || t('studio.untitled_section')} / ${question.title}`,
+          }))
+      ),
+    [sections, t]
+  );
+
+  const questionChoices = answerableQuestions.map((question) => ({
+    value: question.id,
+    label: question.label,
+  }));
+
+  useEffect(() => {
+    logicRules.forEach((rule, index) => {
+      const sourceQuestion = answerableQuestions.find(
+        (item) => item.id === rule.sourceQuestionId
+      );
+      const normalizedValue = normalizeComparisonValue(
+        sourceQuestion,
+        rule.comparisonValue
+      );
+
+      if (normalizedValue !== rule.comparisonValue) {
+        form.setValue(`logicRules.${index}.comparisonValue`, normalizedValue, {
+          shouldDirty: true,
+        });
+      }
+    });
+  }, [answerableQuestions, form, logicRules]);
+
+  const getComparisonChoices = (questionId: string) => {
+    const question = answerableQuestions.find((item) => item.id === questionId);
+
+    if (!question) {
+      return [];
+    }
+
+    if (
+      question.type === 'single_choice' ||
+      question.type === 'multiple_choice' ||
+      question.type === 'dropdown'
+    ) {
+      return question.options.map((option) => ({
+        value: option.value,
+        label: option.label,
+      }));
+    }
+
+    if (question.type === 'linear_scale' || question.type === 'rating') {
+      const min = question.settings.scaleMin ?? 1;
+      const max =
+        question.type === 'rating'
+          ? (question.settings.ratingMax ?? 5)
+          : (question.settings.scaleMax ?? 5);
+
+      return Array.from({ length: max - min + 1 }, (_, index) => {
+        const value = String(min + index);
+        return { value, label: value };
+      });
+    }
+
+    if (question.type === 'time') {
+      return TIME_OPTIONS.map((time) => ({
+        value: time,
+        label: time,
+      }));
+    }
+
+    return [];
+  };
+
+  const appendRule = () => {
+    const firstQuestion = answerableQuestions[0];
+
+    if (!firstQuestion) {
+      toast.error(t('toast.logic_rule_question_required'));
+      return;
+    }
+
+    const comparisonChoices = firstQuestion
+      ? getComparisonChoices(firstQuestion.id)
+      : [];
+    const nextSectionId =
+      sections.find(
+        (section) => section.id && section.id !== firstQuestion?.sectionId
+      )?.id ??
+      sections[0]?.id ??
+      null;
+
+    setOpen(true);
+    rulesArray.append({
+      id: createClientId(),
+      sourceQuestionId: firstQuestion?.id ?? '',
+      operator: getOperatorOptions(firstQuestion?.type)[0] ?? 'equals',
+      comparisonValue: comparisonChoices[0]?.value ?? '',
+      actionType: 'go_to_section',
+      targetSectionId: nextSectionId,
+    });
+  };
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <Card className="overflow-hidden border-border/60 bg-card/80 shadow-sm">
+        <CardHeader className="flex flex-row items-center justify-between gap-3">
+          <CollapsibleTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-auto flex-1 justify-start px-0 hover:bg-transparent"
+            >
+              <div className="flex flex-1 items-center justify-between gap-3">
+                <div className="text-left">
+                  <CardTitle className="text-base">
+                    {t('studio.branching_rules')}
+                  </CardTitle>
+                  <p className="mt-1 text-muted-foreground text-xs">
+                    {rulesArray.fields.length === 0
+                      ? t('studio.branching_description')
+                      : t('studio.rule_count', {
+                          count: rulesArray.fields.length,
+                        })}
+                  </p>
+                </div>
+                <ChevronDown
+                  className={cn(
+                    'h-4 w-4 transition-transform',
+                    open && 'rotate-180'
+                  )}
+                />
+              </div>
+            </Button>
+          </CollapsibleTrigger>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className={toneClasses.secondaryButtonClassName}
+            onClick={appendRule}
+            disabled={answerableQuestions.length === 0}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            {t('studio.add_rule')}
+          </Button>
+        </CardHeader>
+        <CollapsibleContent className="overflow-hidden border-border/60 border-t data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+          <div className="space-y-4 px-6 py-4">
+            {rulesArray.fields.length === 0 ? (
+              <p className="text-muted-foreground text-sm">
+                {t('studio.branching_description')}
+              </p>
+            ) : null}
+
+            {rulesArray.fields.map((field, index) => {
+              const rule = logicRules[index];
+              const sourceQuestion = answerableQuestions.find(
+                (item) => item.id === rule?.sourceQuestionId
+              );
+              const comparisonChoices = sourceQuestion
+                ? getComparisonChoices(sourceQuestion.id)
+                : [];
+              const comparisonValue = normalizeComparisonValue(
+                sourceQuestion,
+                rule?.comparisonValue
+              );
+              const operatorOptions = getOperatorOptions(sourceQuestion?.type);
+
+              return (
+                <div
+                  key={field.id}
+                  className="space-y-4 rounded-[1.35rem] border border-border/60 bg-background/50 p-4"
+                >
+                  <div className="grid gap-3 lg:grid-cols-[minmax(0,1.3fr)_220px_220px_auto]">
+                    <div className="space-y-1.5">
+                      <Label>{t('studio.question')}</Label>
+                      <Select
+                        value={rule?.sourceQuestionId ?? ''}
+                        onValueChange={(value) => {
+                          const nextQuestion = answerableQuestions.find(
+                            (item) => item.id === value
+                          );
+                          const nextComparisonChoices = nextQuestion
+                            ? getComparisonChoices(nextQuestion.id)
+                            : [];
+                          const nextOperator =
+                            getOperatorOptions(nextQuestion?.type)[0] ??
+                            'equals';
+                          const nextTargetSectionId =
+                            sections.find(
+                              (section) =>
+                                section.id &&
+                                section.id !== nextQuestion?.sectionId
+                            )?.id ??
+                            sections[0]?.id ??
+                            null;
+
+                          form.setValue(
+                            `logicRules.${index}.sourceQuestionId`,
+                            value,
+                            {
+                              shouldDirty: true,
+                            }
+                          );
+                          form.setValue(
+                            `logicRules.${index}.operator`,
+                            nextOperator as FormLogicRuleInput['operator'],
+                            {
+                              shouldDirty: true,
+                            }
+                          );
+                          form.setValue(
+                            `logicRules.${index}.comparisonValue`,
+                            nextComparisonChoices[0]?.value ?? '',
+                            {
+                              shouldDirty: true,
+                            }
+                          );
+                          if (
+                            form.getValues(`logicRules.${index}.actionType`) ===
+                            'go_to_section'
+                          ) {
+                            form.setValue(
+                              `logicRules.${index}.targetSectionId`,
+                              nextTargetSectionId,
+                              {
+                                shouldDirty: true,
+                              }
+                            );
+                          }
+                        }}
+                      >
+                        <SelectTrigger className={toneClasses.fieldClassName}>
+                          <SelectValue placeholder={t('studio.question')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {questionChoices.map((choice) => (
+                            <SelectItem key={choice.value} value={choice.value}>
+                              {choice.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label>{t('studio.match_operator')}</Label>
+                      <Select
+                        value={rule?.operator ?? operatorOptions[0]}
+                        onValueChange={(value) =>
+                          form.setValue(
+                            `logicRules.${index}.operator`,
+                            value as FormLogicRuleInput['operator'],
+                            {
+                              shouldDirty: true,
+                            }
+                          )
+                        }
+                      >
+                        <SelectTrigger className={toneClasses.fieldClassName}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {operatorOptions.map((operator) => (
+                            <SelectItem key={operator} value={operator}>
+                              {t(`logic_operator.${operator}`)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label>{t('studio.comparison_value')}</Label>
+                      {sourceQuestion?.type === 'date' ? (
+                        <DateTimePicker
+                          date={parseDateValue(rule?.comparisonValue)}
+                          setDate={(date) =>
+                            form.setValue(
+                              `logicRules.${index}.comparisonValue`,
+                              formatDateValue(date),
+                              {
+                                shouldDirty: true,
+                              }
+                            )
+                          }
+                          showTimeSelect={false}
+                        />
+                      ) : comparisonChoices.length > 0 ? (
+                        <Select
+                          value={comparisonValue}
+                          onValueChange={(value) =>
+                            form.setValue(
+                              `logicRules.${index}.comparisonValue`,
+                              value,
+                              {
+                                shouldDirty: true,
+                              }
+                            )
+                          }
+                        >
+                          <SelectTrigger className={toneClasses.fieldClassName}>
+                            <SelectValue
+                              placeholder={t('studio.comparison_value')}
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {comparisonChoices.map((choice) => (
+                              <SelectItem
+                                key={choice.value}
+                                value={choice.value}
+                              >
+                                {choice.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          value={rule?.comparisonValue ?? ''}
+                          className={toneClasses.fieldClassName}
+                          placeholder={t('studio.comparison_value')}
+                          onChange={(event) =>
+                            form.setValue(
+                              `logicRules.${index}.comparisonValue`,
+                              event.target.value,
+                              {
+                                shouldDirty: true,
+                              }
+                            )
+                          }
+                        />
+                      )}
+                    </div>
+
+                    <div className="flex items-end">
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="rounded-xl"
+                        onClick={() => rulesArray.remove(index)}
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 lg:grid-cols-[240px_minmax(0,1fr)]">
+                    <div className="space-y-1.5">
+                      <Label>{t('studio.rule_action')}</Label>
+                      <Select
+                        value={rule?.actionType ?? 'go_to_section'}
+                        onValueChange={(value) =>
+                          form.setValue(
+                            `logicRules.${index}.actionType`,
+                            value as FormLogicRuleInput['actionType'],
+                            {
+                              shouldDirty: true,
+                            }
+                          )
+                        }
+                      >
+                        <SelectTrigger className={toneClasses.fieldClassName}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="go_to_section">
+                            {t('logic_action.go_to_section')}
+                          </SelectItem>
+                          <SelectItem value="submit">
+                            {t('logic_action.submit')}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {rule?.actionType === 'go_to_section' ? (
+                      <div className="space-y-1.5">
+                        <Label>{t('studio.target_section')}</Label>
+                        <Select
+                          value={rule.targetSectionId ?? ''}
+                          onValueChange={(value) =>
+                            form.setValue(
+                              `logicRules.${index}.targetSectionId`,
+                              value,
+                              {
+                                shouldDirty: true,
+                              }
+                            )
+                          }
+                        >
+                          <SelectTrigger className={toneClasses.fieldClassName}>
+                            <SelectValue
+                              placeholder={t('studio.target_section')}
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {sections.map((section) => (
+                              <SelectItem
+                                key={section.id}
+                                value={section.id ?? ''}
+                              >
+                                {section.title || t('studio.untitled_section')}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : (
+                      <div className="flex items-center rounded-2xl border border-border/60 bg-background/60 px-4 text-muted-foreground text-sm">
+                        {t('studio.branching_description')}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
+  );
+}

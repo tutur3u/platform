@@ -1,0 +1,751 @@
+'use client';
+
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+  CircleCheckBig,
+  ClipboardList,
+  Clock3,
+  FileText,
+  Flag,
+  GripVertical,
+  ListChecks,
+  MessageSquare,
+  Plus,
+  Star,
+  Trash,
+} from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import { Checkbox } from '@tuturuuu/ui/checkbox';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@tuturuuu/ui/collapsible';
+import { useFieldArray, useWatch } from '@tuturuuu/ui/hooks/use-form';
+import { Input } from '@tuturuuu/ui/input';
+import { Label } from '@tuturuuu/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
+import { Separator } from '@tuturuuu/ui/separator';
+import { Textarea } from '@tuturuuu/ui/textarea';
+import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
+
+import { deriveUniqueOptionValue } from '../answer-utils';
+import { FieldLabel, QuestionTypeIcon } from '../form-icons';
+import { FORM_QUESTION_TYPE_VALUES, type FormQuestionInput } from '../schema';
+import type { getFormToneClasses } from '../theme';
+import { DestructiveActionDialog } from './destructive-action-dialog';
+import { createClientId, type StudioForm } from './studio-utils';
+
+const TITLE_PLACEHOLDER_MAP: Record<string, string> = {
+  short_text: 'placeholder_title_text',
+  long_text: 'placeholder_title_text',
+  single_choice: 'placeholder_title_choice',
+  multiple_choice: 'placeholder_title_choice',
+  dropdown: 'placeholder_title_choice',
+  linear_scale: 'placeholder_title_scale',
+  rating: 'placeholder_title_scale',
+  date: 'placeholder_title_date',
+  time: 'placeholder_title_time',
+  section_break: 'placeholder_title_section_break',
+};
+
+export function QuestionEditor({
+  questionId,
+  sectionIndex,
+  questionIndex,
+  form,
+  onMoveUp,
+  onMoveDown,
+  onRemove,
+  toneClasses,
+}: {
+  questionId: string;
+  sectionIndex: number;
+  questionIndex: number;
+  form: StudioForm;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onRemove: () => void;
+  toneClasses: ReturnType<typeof getFormToneClasses>;
+}) {
+  const t = useTranslations('forms');
+  const [open, setOpen] = useState(questionIndex === 0);
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: questionId });
+  const typePath =
+    `sections.${sectionIndex}.questions.${questionIndex}.type` as const;
+  const questionType = useWatch({
+    control: form.control,
+    name: typePath,
+  });
+
+  const optionsArray = useFieldArray({
+    control: form.control,
+    name: `sections.${sectionIndex}.questions.${questionIndex}.options`,
+  });
+
+  const questionTitle = useWatch({
+    control: form.control,
+    name: `sections.${sectionIndex}.questions.${questionIndex}.title`,
+  });
+  const required = useWatch({
+    control: form.control,
+    name: `sections.${sectionIndex}.questions.${questionIndex}.required`,
+  });
+  const placeholder = useWatch({
+    control: form.control,
+    name: `sections.${sectionIndex}.questions.${questionIndex}.settings.placeholder`,
+  });
+  const scaleMin = useWatch({
+    control: form.control,
+    name: `sections.${sectionIndex}.questions.${questionIndex}.settings.scaleMin`,
+  });
+  const scaleMax = useWatch({
+    control: form.control,
+    name: `sections.${sectionIndex}.questions.${questionIndex}.settings.scaleMax`,
+  });
+  const ratingMax = useWatch({
+    control: form.control,
+    name: `sections.${sectionIndex}.questions.${questionIndex}.settings.ratingMax`,
+  });
+  const minLabel = useWatch({
+    control: form.control,
+    name: `sections.${sectionIndex}.questions.${questionIndex}.settings.minLabel`,
+  });
+  const maxLabel = useWatch({
+    control: form.control,
+    name: `sections.${sectionIndex}.questions.${questionIndex}.settings.maxLabel`,
+  });
+  const watchedOptions = useWatch({
+    control: form.control,
+    name: `sections.${sectionIndex}.questions.${questionIndex}.options`,
+  });
+
+  const addOption = () => {
+    const nextLabel = t('studio.new_option');
+    const existingValues =
+      form
+        .getValues(
+          `sections.${sectionIndex}.questions.${questionIndex}.options`
+        )
+        ?.map((option) => option.value) ?? [];
+
+    optionsArray.append({
+      id: createClientId(),
+      label: nextLabel,
+      value: deriveUniqueOptionValue(nextLabel, existingValues),
+    });
+  };
+
+  const titlePlaceholderKey =
+    TITLE_PLACEHOLDER_MAP[questionType] ?? 'placeholder_title_default';
+  const titlePlaceholder = t(
+    `studio.${titlePlaceholderKey}` as Parameters<typeof t>[0]
+  );
+
+  const hasChoices = ['single_choice', 'multiple_choice', 'dropdown'].includes(
+    questionType
+  );
+  const hasScale = ['linear_scale', 'rating'].includes(questionType);
+  const isRating = questionType === 'rating';
+  const isDateOrTime = questionType === 'date' || questionType === 'time';
+  const isSectionBreak = questionType === 'section_break';
+
+  useEffect(() => {
+    if (!hasScale) {
+      return;
+    }
+
+    const minimum = isRating ? 1 : Math.max(0, scaleMin ?? 1);
+    const maximum = isRating
+      ? Math.max(2, ratingMax ?? 5)
+      : Math.max(minimum, scaleMax ?? 5);
+    const optionsPath =
+      `sections.${sectionIndex}.questions.${questionIndex}.options` as const;
+    const existingOptions = form.getValues(optionsPath) ?? [];
+    const nextOptions = Array.from(
+      { length: maximum - minimum + 1 },
+      (_, index) => {
+        const score = String(minimum + index);
+        const existingOption = existingOptions.find(
+          (option) => option.value === score
+        );
+
+        return {
+          id: existingOption?.id ?? createClientId(),
+          value: score,
+          label: existingOption?.label ?? score,
+        };
+      }
+    );
+
+    const currentSnapshot = JSON.stringify(
+      existingOptions.map((option) => ({
+        value: option.value,
+        label: option.label,
+      }))
+    );
+    const nextSnapshot = JSON.stringify(
+      nextOptions.map((option) => ({
+        value: option.value,
+        label: option.label,
+      }))
+    );
+
+    if (currentSnapshot !== nextSnapshot) {
+      optionsArray.replace(nextOptions);
+    }
+  }, [
+    form,
+    hasScale,
+    isRating,
+    optionsArray,
+    questionIndex,
+    ratingMax,
+    scaleMax,
+    scaleMin,
+    sectionIndex,
+  ]);
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <div
+        ref={setNodeRef}
+        style={style}
+        className={cn(
+          'rounded-3xl border border-border/70 bg-background/80 shadow-sm transition-shadow',
+          isDragging && 'z-10 opacity-70 shadow-lg'
+        )}
+      >
+        <div className="flex items-start gap-2 px-4 py-3">
+          <Button
+            ref={setActivatorNodeRef}
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="mt-0.5 shrink-0 cursor-grab rounded-xl text-muted-foreground hover:text-foreground active:cursor-grabbing"
+            aria-label={t('studio.reorder_questions')}
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical className="h-4 w-4" />
+          </Button>
+          <CollapsibleTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-auto flex-1 justify-start px-0 hover:bg-transparent"
+            >
+              <div className="flex min-w-0 flex-1 items-start gap-3">
+                <div
+                  className={cn(
+                    'flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border font-semibold text-xs',
+                    toneClasses.selectedOptionClassName
+                  )}
+                >
+                  {questionIndex + 1}
+                </div>
+                <div className="min-w-0 flex-1 space-y-2">
+                  {isSectionBreak ? (
+                    <div className="flex min-h-9 items-center">
+                      <Separator className="bg-border/60" />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-background/80 text-muted-foreground">
+                          <QuestionTypeIcon
+                            type={questionType}
+                            className="h-3.5 w-3.5"
+                          />
+                        </span>
+                        <p className="truncate text-left font-semibold text-sm">
+                          {questionTitle ||
+                            t('studio.question_number', {
+                              count: questionIndex + 1,
+                            })}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge
+                          variant="outline"
+                          className="rounded-full px-2 py-0.5 text-[11px]"
+                        >
+                          {t(`question_type.${questionType}`)}
+                        </Badge>
+                        {required ? (
+                          <Badge
+                            variant="outline"
+                            className="rounded-full px-2 py-0.5 text-[11px]"
+                          >
+                            {t('runtime.required')}
+                          </Badge>
+                        ) : null}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+              <ChevronDown
+                className={cn(
+                  'h-4 w-4 transition-transform',
+                  open && 'rotate-180'
+                )}
+              />
+            </Button>
+          </CollapsibleTrigger>
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={onMoveUp}
+              className="rounded-xl"
+            >
+              <ChevronUp className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={onMoveDown}
+              className="rounded-xl"
+            >
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+            <DestructiveActionDialog
+              actionLabel={t('studio.delete_question')}
+              cancelLabel={t('studio.keep_question')}
+              description={t('studio.delete_question_confirmation')}
+              onConfirm={onRemove}
+              title={t('studio.delete_question_title')}
+              trigger={
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="rounded-xl text-muted-foreground hover:text-destructive"
+                >
+                  <Trash className="h-4 w-4" />
+                </Button>
+              }
+            />
+          </div>
+        </div>
+
+        <CollapsibleContent className="overflow-hidden border-border/60 border-t data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+          <div className="space-y-3 px-4 py-4">
+            <div className="grid gap-3 md:grid-cols-2">
+              {!isSectionBreak ? (
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label>
+                    <FieldLabel icon={FileText}>
+                      {t('studio.question_title')}
+                    </FieldLabel>
+                  </Label>
+                  <Input
+                    {...form.register(
+                      `sections.${sectionIndex}.questions.${questionIndex}.title`
+                    )}
+                    placeholder={titlePlaceholder}
+                    className={toneClasses.fieldClassName}
+                  />
+                </div>
+              ) : (
+                <div className="rounded-[1.35rem] border border-border/60 bg-muted/20 px-4 py-5 md:col-span-2">
+                  <Separator className="bg-border/60" />
+                </div>
+              )}
+              <div className="space-y-1.5">
+                <Label>
+                  <FieldLabel icon={ClipboardList}>
+                    {t('studio.type')}
+                  </FieldLabel>
+                </Label>
+                <Select
+                  value={questionType}
+                  onValueChange={(value) =>
+                    form.setValue(
+                      typePath,
+                      value as FormQuestionInput['type'],
+                      {
+                        shouldDirty: true,
+                      }
+                    )
+                  }
+                >
+                  <SelectTrigger className={toneClasses.fieldClassName}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FORM_QUESTION_TYPE_VALUES.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        <div className="flex items-center gap-2">
+                          <QuestionTypeIcon type={type} className="h-4 w-4" />
+                          <span>{t(`question_type.${type}`)}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {!isSectionBreak ? (
+                <>
+                  <div className="space-y-1.5">
+                    <Label>
+                      <FieldLabel icon={CircleCheckBig}>
+                        {t('studio.required')}
+                      </FieldLabel>
+                    </Label>
+                    <label
+                      className={cn(
+                        'flex items-center gap-3 rounded-2xl border px-4 py-2.5',
+                        toneClasses.optionCardClassName
+                      )}
+                    >
+                      <Checkbox
+                        className={toneClasses.checkboxClassName}
+                        checked={!!required}
+                        onCheckedChange={(checked) =>
+                          form.setValue(
+                            `sections.${sectionIndex}.questions.${questionIndex}.required`,
+                            checked === true,
+                            { shouldDirty: true }
+                          )
+                        }
+                      />
+                      <span className="text-sm">
+                        {t('studio.require_before_continue')}
+                      </span>
+                    </label>
+                  </div>
+                  <div className="space-y-1.5 md:col-span-2">
+                    <Label>
+                      <FieldLabel icon={MessageSquare}>
+                        {t('studio.description')}
+                      </FieldLabel>
+                    </Label>
+                    <Textarea
+                      {...form.register(
+                        `sections.${sectionIndex}.questions.${questionIndex}.description`
+                      )}
+                      placeholder={t('studio.description_placeholder')}
+                      className={cn('min-h-20', toneClasses.fieldClassName)}
+                    />
+                  </div>
+                </>
+              ) : null}
+              {!isSectionBreak ? (
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label>
+                    <FieldLabel icon={ClipboardList}>
+                      {t('studio.placeholder_helper')}
+                    </FieldLabel>
+                  </Label>
+                  <Input
+                    value={placeholder || ''}
+                    placeholder={t('studio.placeholder_hint')}
+                    className={toneClasses.fieldClassName}
+                    onChange={(event) =>
+                      form.setValue(
+                        `sections.${sectionIndex}.questions.${questionIndex}.settings.placeholder`,
+                        event.target.value,
+                        { shouldDirty: true }
+                      )
+                    }
+                  />
+                </div>
+              ) : null}
+            </div>
+
+            {/* Choice-type options */}
+            {hasChoices ? (
+              <div className="space-y-2 rounded-[1.35rem] border border-border/60 bg-muted/20 p-3">
+                <div className="flex items-center justify-between">
+                  <Label>
+                    <FieldLabel icon={ListChecks}>
+                      {t('studio.options')}
+                    </FieldLabel>
+                  </Label>
+                </div>
+                {optionsArray.fields.map((field, optionIndex) => (
+                  <div
+                    key={field.id}
+                    className="grid gap-2 rounded-2xl border border-border/50 bg-background/60 p-2 md:grid-cols-[minmax(0,1fr)_auto]"
+                  >
+                    <Input
+                      value={watchedOptions?.[optionIndex]?.label || ''}
+                      className={cn(
+                        toneClasses.fieldClassName,
+                        'border-transparent'
+                      )}
+                      placeholder={t('studio.label')}
+                      onChange={(event) => {
+                        const labelPath =
+                          `sections.${sectionIndex}.questions.${questionIndex}.options.${optionIndex}.label` as const;
+                        const valuePath =
+                          `sections.${sectionIndex}.questions.${questionIndex}.options.${optionIndex}.value` as const;
+                        const currentValue = form.getValues(valuePath) || '';
+                        const currentLabel = form.getValues(labelPath) || '';
+                        const siblingValues =
+                          (
+                            form.getValues(
+                              `sections.${sectionIndex}.questions.${questionIndex}.options`
+                            ) ?? []
+                          )
+                            .map((option) => option.value)
+                            .filter((_, index) => index !== optionIndex) ?? [];
+                        const nextLabel = event.target.value;
+                        const nextValue = deriveUniqueOptionValue(
+                          nextLabel,
+                          siblingValues,
+                          currentValue
+                        );
+
+                        form.setValue(labelPath, nextLabel, {
+                          shouldDirty: true,
+                        });
+
+                        if (
+                          !currentValue ||
+                          currentValue ===
+                            deriveUniqueOptionValue(
+                              currentLabel,
+                              siblingValues,
+                              currentValue
+                            )
+                        ) {
+                          form.setValue(valuePath, nextValue, {
+                            shouldDirty: true,
+                          });
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-xl"
+                      onClick={() => optionsArray.remove(optionIndex)}
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={cn(
+                    'w-full rounded-xl',
+                    toneClasses.secondaryButtonClassName
+                  )}
+                  onClick={addOption}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  {t('studio.add_option')}
+                </Button>
+              </div>
+            ) : null}
+
+            {/* Scale settings */}
+            {hasScale ? (
+              <div className="grid gap-3 rounded-[1.35rem] border border-border/60 bg-muted/20 p-3 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label>
+                    <FieldLabel icon={Flag}>
+                      {t('studio.minimum_label')}
+                    </FieldLabel>
+                  </Label>
+                  <Input
+                    value={minLabel || ''}
+                    placeholder={t('studio.minimum_label')}
+                    className={toneClasses.fieldClassName}
+                    onChange={(event) =>
+                      form.setValue(
+                        `sections.${sectionIndex}.questions.${questionIndex}.settings.minLabel`,
+                        event.target.value,
+                        { shouldDirty: true }
+                      )
+                    }
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>
+                    <FieldLabel icon={Star}>
+                      {t('studio.maximum_label')}
+                    </FieldLabel>
+                  </Label>
+                  <Input
+                    value={maxLabel || ''}
+                    placeholder={t('studio.maximum_label')}
+                    className={toneClasses.fieldClassName}
+                    onChange={(event) =>
+                      form.setValue(
+                        `sections.${sectionIndex}.questions.${questionIndex}.settings.maxLabel`,
+                        event.target.value,
+                        { shouldDirty: true }
+                      )
+                    }
+                  />
+                </div>
+                {!isRating ? (
+                  <>
+                    <div className="space-y-1.5">
+                      <Label>
+                        <FieldLabel icon={Flag}>
+                          {t('studio.scale_min')}
+                        </FieldLabel>
+                      </Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={10}
+                        value={scaleMin ?? 1}
+                        className={toneClasses.fieldClassName}
+                        onChange={(event) =>
+                          form.setValue(
+                            `sections.${sectionIndex}.questions.${questionIndex}.settings.scaleMin`,
+                            Number(event.target.value),
+                            { shouldDirty: true }
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>
+                        <FieldLabel icon={Star}>
+                          {t('studio.scale_max')}
+                        </FieldLabel>
+                      </Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={10}
+                        value={scaleMax ?? 5}
+                        className={toneClasses.fieldClassName}
+                        onChange={(event) =>
+                          form.setValue(
+                            `sections.${sectionIndex}.questions.${questionIndex}.settings.scaleMax`,
+                            Number(event.target.value),
+                            { shouldDirty: true }
+                          )
+                        }
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <div className="space-y-1.5 md:col-span-2">
+                    <Label>
+                      <FieldLabel icon={Star}>
+                        {t('studio.rating_max')}
+                      </FieldLabel>
+                    </Label>
+                    <Input
+                      type="number"
+                      min={2}
+                      max={10}
+                      value={ratingMax ?? 5}
+                      className={toneClasses.fieldClassName}
+                      onChange={(event) =>
+                        form.setValue(
+                          `sections.${sectionIndex}.questions.${questionIndex}.settings.ratingMax`,
+                          Number(event.target.value),
+                          { shouldDirty: true }
+                        )
+                      }
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-2 md:col-span-2">
+                  <div className="flex items-center justify-between">
+                    <Label>
+                      <FieldLabel icon={ListChecks}>
+                        {t('studio.options')}
+                      </FieldLabel>
+                    </Label>
+                    <span className="text-muted-foreground text-xs">
+                      {t('studio.scale_labels_hint')}
+                    </span>
+                  </div>
+                  <div className="grid gap-2">
+                    {optionsArray.fields.map((field, optionIndex) => {
+                      const optionValue =
+                        watchedOptions?.[optionIndex]?.value || '';
+                      const optionLabel =
+                        watchedOptions?.[optionIndex]?.label || '';
+
+                      return (
+                        <div
+                          key={field.id}
+                          className="grid gap-2 rounded-2xl border border-border/50 bg-background/60 p-2 sm:grid-cols-[auto_minmax(0,1fr)]"
+                        >
+                          <div className="flex min-h-10 min-w-12 items-center justify-center rounded-xl border border-border/60 bg-background/80 px-3 font-semibold text-sm">
+                            {optionValue}
+                          </div>
+                          <Input
+                            value={optionLabel}
+                            className={toneClasses.fieldClassName}
+                            placeholder={t('studio.label')}
+                            onChange={(event) =>
+                              form.setValue(
+                                `sections.${sectionIndex}.questions.${questionIndex}.options.${optionIndex}.label`,
+                                event.target.value,
+                                {
+                                  shouldDirty: true,
+                                }
+                              )
+                            }
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {/* Date / Time hint */}
+            {isDateOrTime ? (
+              <div className="flex items-center gap-2 rounded-[1.35rem] border border-border/60 bg-muted/20 px-4 py-3 text-muted-foreground text-sm">
+                {questionType === 'date' ? (
+                  <Calendar className="h-4 w-4 shrink-0" />
+                ) : (
+                  <Clock3 className="h-4 w-4 shrink-0" />
+                )}
+                {questionType === 'date'
+                  ? t('studio.hint_date')
+                  : t('studio.hint_time')}
+              </div>
+            ) : null}
+          </div>
+        </CollapsibleContent>
+      </div>
+    </Collapsible>
+  );
+}

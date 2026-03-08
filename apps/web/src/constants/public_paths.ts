@@ -29,6 +29,7 @@ export const APP_PUBLIC_PATHS = [
   '/ai/chats',
   '/qr-generator',
   '/documents',
+  '/shared/forms',
   '/meet',
   '/meet-together',
   '/women-in-tech',

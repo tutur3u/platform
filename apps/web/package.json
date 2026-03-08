@@ -108,6 +108,7 @@
     "html2canvas-pro": "^2.0.2",
     "isomorphic-dompurify": "^3.0.0",
     "jotai": "^2.18.0",
+    "jspdf": "^4.2.0",
     "juice": "^11.1.1",
     "katex": "^0.16.37",
     "lodash": "^4.17.23",
