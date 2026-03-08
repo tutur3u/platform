@@ -1,79 +1,79 @@
 name: Mobile Build macOS
 
 concurrency:
-    group: ${{ github.workflow }}-${{ github.ref }}
-    cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 on:
-    push:
-        branches:
-            - main
-        paths:
-            - "apps/mobile/**"
-            - ".github/workflows/mobile-build-macos.yaml"
-    pull_request:
-        branches:
-            - main
-        paths:
-            - "apps/mobile/**"
-            - ".github/workflows/mobile-build-macos.yaml"
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/mobile/**"
+      - ".github/workflows/mobile-build-macos.yaml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "apps/mobile/**"
+      - ".github/workflows/mobile-build-macos.yaml"
 
 jobs:
-    check-ci:
-        uses: ./.github/workflows/ci-check.yml
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: mobile-build-macos.yaml
+
+  build-macos:
+    name: Build macOS (Development)
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
         with:
-            workflow_name: mobile-build-macos.yaml
+          flutter-version: "3.41.x"
+          channel: stable
+          cache: true
 
-    build-macos:
-        name: Build macOS (Development)
-        needs: [check-ci]
-        if: needs.check-ci.outputs.should_run == 'true'
-        runs-on: macos-latest
-        defaults:
-            run:
-                working-directory: apps/mobile
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v6
+      - name: Enable macOS desktop
+        run: flutter config --enable-macos-desktop
 
-            - name: Setup Flutter
-              uses: subosito/flutter-action@v2
-              with:
-                  flutter-version: "3.41.x"
-                  channel: stable
-                  cache: true
+      - name: Install dependencies
+        if: steps.cache-build.outputs.cache-hit != 'true'
+        run: flutter pub get
 
-            - name: Enable macOS desktop
-              run: flutter config --enable-macos-desktop
+      - name: Cache Build
+        id: cache-build
+        uses: actions/cache@v4
+        with:
+          path: |
+            apps/mobile/build
+            apps/mobile/.dart_tool
+            apps/mobile/macos/Pods
+          key: ${{ runner.os }}-flutter-macos-${{ hashFiles('apps/mobile/**') }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-macos-
 
-            - name: Install dependencies
-              if: steps.cache-build.outputs.cache-hit != 'true'
-              run: flutter pub get
+      - name: Update CocoaPods Repos
+        if: steps.cache-build.outputs.cache-hit != 'true'
+        run: cd macos && pod repo update
+        shell: bash
 
-            - name: Cache Build
-              id: cache-build
-              uses: actions/cache@v4
-              with:
-                  path: |
-                      apps/mobile/build
-                      apps/mobile/.dart_tool
-                      apps/mobile/macos/Pods
-                  key: ${{ runner.os }}-flutter-macos-${{ hashFiles('apps/mobile/**') }}
-                  restore-keys: |
-                      ${{ runner.os }}-flutter-macos-
+      - name: Build macOS
+        if: steps.cache-build.outputs.cache-hit != 'true'
+        run: flutter build macos --target lib/main_development.dart
 
-            - name: Update CocoaPods Repos
-              if: steps.cache-build.outputs.cache-hit != 'true'
-              run: cd macos && pod repo update
-              shell: bash
-
-            - name: Build macOS
-              if: steps.cache-build.outputs.cache-hit != 'true'
-              run: flutter build macos
-
-            - name: Upload macOS app artifact
-              uses: actions/upload-artifact@v7
-              with:
-                  name: macos-dev-app
-                  path: apps/mobile/build/macos/Build/Products/Release/
-                  retention-days: 7
+      - name: Upload macOS app artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: macos-dev-app
+          path: apps/mobile/build/macos/Build/Products/Release/
+          retention-days: 7
