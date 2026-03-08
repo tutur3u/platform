@@ -104,7 +104,7 @@ export function BulkReportExporter({
       </AlertDialog>
 
       {/* Hidden container for rendering reports */}
-      <div className="fixed top-0 left-0 -z-50 h-0 w-0 overflow-hidden opacity-0">
+      <div className="pointer-events-none fixed top-0 -left-[99999px] z-[-1]">
         {currentReport && (
           <div id="bulk-export-container">
             <div

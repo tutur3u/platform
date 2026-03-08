@@ -31,6 +31,8 @@ type ReportTheme = 'auto' | 'light' | 'dark';
 interface ReportActionsProps {
   isPendingApproval: boolean;
   isExporting: boolean;
+  isPaginationReady: boolean;
+  paginationPageCount: number;
   handlePrintExport: () => void;
   handlePngExport: () => void;
   reportTheme: ReportTheme;
@@ -49,6 +51,8 @@ interface ReportActionsProps {
 export function ReportActions({
   isPendingApproval,
   isExporting,
+  isPaginationReady,
+  paginationPageCount,
   handlePrintExport,
   handlePngExport,
   reportTheme,
@@ -76,9 +80,9 @@ export function ReportActions({
   };
 
   return (
-    <div className="-mb-2 flex items-center justify-between gap-2">
-      {showApprovalActions ? (
-        <div className="flex items-center gap-2">
+    <div className="rounded-2xl border bg-card/80 p-3 shadow-sm">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
           {approvalStatus === 'APPROVED' && (
             <Badge
               variant="outline"
@@ -105,7 +109,7 @@ export function ReportActions({
               {t('ws-reports.pending')}
             </Badge>
           )}
-          {approvalStatus !== 'APPROVED' && (
+          {showApprovalActions && approvalStatus !== 'APPROVED' && (
             <Button
               size="sm"
               variant="outline"
@@ -121,7 +125,7 @@ export function ReportActions({
               {t('ws-reports.approve')}
             </Button>
           )}
-          {approvalStatus !== 'REJECTED' && (
+          {showApprovalActions && approvalStatus !== 'REJECTED' && (
             <Button
               size="sm"
               variant="outline"
@@ -138,21 +142,35 @@ export function ReportActions({
             </Button>
           )}
         </div>
-      ) : (
-        <div />
-      )}
-      <div className="flex items-center gap-2">
-        <div className="flex items-center rounded-md border bg-background shadow-sm">
+
+        <div className="space-y-1 lg:text-right">
+          <div className="font-medium text-sm">
+            {t('ws-reports.report_export_panel_title')}
+          </div>
+          <p className="text-muted-foreground text-xs">
+            {isPaginationReady
+              ? t('ws-reports.report_export_panel_ready', {
+                  count: paginationPageCount,
+                })
+              : t('ws-reports.pagination_updating')}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+        <div className="flex items-center rounded-xl border bg-background shadow-sm">
           <Button
             size="sm"
             variant="ghost"
-            className="gap-2 rounded-none rounded-l-md border-r px-3 hover:bg-accent hover:text-accent-foreground"
-            disabled={isPendingApproval || isExporting}
+            className="gap-2 rounded-none rounded-l-xl border-r px-3 hover:bg-accent hover:text-accent-foreground"
+            disabled={isPendingApproval || isExporting || !isPaginationReady}
             onClick={handleDefaultExport}
             title={
               isPendingApproval
                 ? t('ws-reports.export_blocked_not_approved')
-                : undefined
+                : !isPaginationReady
+                  ? t('ws-reports.export_waiting_for_layout')
+                  : undefined
             }
           >
             {isExporting ? (
@@ -163,7 +181,7 @@ export function ReportActions({
               <ImageIcon className="h-4 w-4" />
             )}
             {defaultExportType === 'print'
-              ? t('ws-reports.print')
+              ? t('ws-reports.pdf')
               : t('ws-reports.png')}
           </Button>
           <DropdownMenu>
@@ -171,8 +189,8 @@ export function ReportActions({
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-9 rounded-none rounded-r-md px-2 hover:bg-accent hover:text-accent-foreground"
-                disabled={isPendingApproval}
+                className="h-9 rounded-none rounded-r-xl px-2 hover:bg-accent hover:text-accent-foreground"
+                disabled={isPendingApproval || !isPaginationReady}
               >
                 <ChevronDown className="h-4 w-4 opacity-50" />
               </Button>
@@ -183,7 +201,7 @@ export function ReportActions({
                 className="gap-2"
               >
                 <Printer className="h-4 w-4" />
-                {t('ws-reports.set_default_print')}
+                {t('ws-reports.set_default_pdf')}
                 {defaultExportType === 'print' && (
                   <Check className="ml-auto h-3.5 w-3.5" />
                 )}
@@ -199,12 +217,16 @@ export function ReportActions({
                 )}
               </DropdownMenuItem>
               <div className="my-1 h-px bg-muted" />
-              <DropdownMenuItem onClick={handlePrintExport} className="gap-2">
+              <DropdownMenuItem
+                disabled={!isPaginationReady}
+                onClick={handlePrintExport}
+                className="gap-2"
+              >
                 <Download className="h-4 w-4" />
-                {t('ws-reports.export_as_print')}
+                {t('ws-reports.export_as_pdf')}
               </DropdownMenuItem>
               <DropdownMenuItem
-                disabled={isExporting}
+                disabled={isExporting || !isPaginationReady}
                 onClick={handlePngExport}
                 className="gap-2"
               >
@@ -217,7 +239,7 @@ export function ReportActions({
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button size="sm" variant="outline" className="gap-2">
+            <Button size="sm" variant="outline" className="gap-2 rounded-xl">
               <Palette className="h-4 w-4" />
               {t('common.theme')}
             </Button>

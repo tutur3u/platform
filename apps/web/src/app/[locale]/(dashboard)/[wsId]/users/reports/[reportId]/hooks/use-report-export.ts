@@ -53,27 +53,37 @@ function buildPngFilename({
   return `${parts.join('_')}.png`;
 }
 
-export async function exportReportAsPng({
-  elementId,
-  isDarkPreview,
-  metadata,
-}: ExportReportPngOptions): Promise<void> {
-  const html2canvas = (await import('html2canvas-pro')).default;
+function buildPagedPngFilename(
+  metadata: ReportExportMetadata,
+  pageNumber: number,
+  totalPages: number
+): string {
+  if (totalPages <= 1) {
+    return buildPngFilename(metadata);
+  }
+
+  const baseName = buildPngFilename(metadata).replace(/\.png$/i, '');
+  const paddedPageNumber = String(pageNumber).padStart(2, '0');
+
+  return `${baseName}_page_${paddedPageNumber}.png`;
+}
+
+function getRenderablePages(elementId: string): HTMLElement[] {
   const printableArea = document.getElementById(elementId);
 
   if (!printableArea) {
     throw new Error('Preview area not found');
   }
 
-  const canvas = await html2canvas(printableArea, {
-    scale: 2,
-    useCORS: true,
-    backgroundColor: isDarkPreview ? '#1a1a1a' : '#ffffff',
-    width: printableArea.offsetWidth,
-    height: printableArea.offsetHeight,
-  });
+  const pages = Array.from(
+    printableArea.querySelectorAll<HTMLElement>('[data-report-page]')
+  );
 
-  await new Promise<void>((resolve, reject) => {
+  return pages.length > 0 ? pages : [printableArea];
+}
+
+async function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
+  return await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
       (blob) => {
         if (!blob) {
@@ -81,20 +91,7 @@ export async function exportReportAsPng({
           return;
         }
 
-        try {
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = buildPngFilename(metadata);
-
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-          resolve();
-        } catch (error) {
-          reject(error);
-        }
+        resolve(blob);
       },
       'image/png',
       1.0
@@ -102,16 +99,65 @@ export async function exportReportAsPng({
   });
 }
 
+async function downloadBlob(blob: Blob, filename: string): Promise<void> {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+
+  try {
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Give browsers a moment between page downloads.
+    await new Promise((resolve) => setTimeout(resolve, 120));
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+export async function exportReportAsPng({
+  elementId,
+  isDarkPreview,
+  metadata,
+}: ExportReportPngOptions): Promise<number> {
+  const html2canvas = (await import('html2canvas-pro')).default;
+  const pages = getRenderablePages(elementId);
+
+  for (const [index, page] of pages.entries()) {
+    const canvas = await html2canvas(page, {
+      backgroundColor: isDarkPreview ? '#020617' : '#ffffff',
+      height: page.offsetHeight,
+      scale: 2,
+      useCORS: true,
+      width: page.offsetWidth,
+      windowHeight: page.scrollHeight,
+      windowWidth: page.scrollWidth,
+    });
+    const blob = await canvasToBlob(canvas);
+
+    await downloadBlob(
+      blob,
+      buildPagedPngFilename(metadata, index + 1, pages.length)
+    );
+  }
+
+  return pages.length;
+}
+
 export function useReportExport({
   previewTitle,
   isDarkPreview,
   userName,
   groupName,
+  isPaginationReady,
 }: {
   previewTitle: string;
   isDarkPreview: boolean;
   userName?: string;
   groupName?: string;
+  isPaginationReady: boolean;
 }): {
   handlePrintExport: () => void;
   handlePngExport: () => Promise<void>;
@@ -129,6 +175,11 @@ export function useReportExport({
   );
 
   const handlePrintExport = () => {
+    if (!isPaginationReady) {
+      toast.error(t('ws-reports.export_waiting_for_layout'));
+      return;
+    }
+
     const printableArea = document.getElementById('printable-area');
     if (!printableArea) {
       toast.error(t('ws-reports.report_export_not_found'));
@@ -180,9 +231,14 @@ export function useReportExport({
   };
 
   const handlePngExport = async () => {
+    if (!isPaginationReady) {
+      toast.error(t('ws-reports.export_waiting_for_layout'));
+      return;
+    }
+
     setIsExporting(true);
     try {
-      await exportReportAsPng({
+      const pageCount = await exportReportAsPng({
         elementId: 'printable-area',
         isDarkPreview,
         metadata: {
@@ -191,7 +247,13 @@ export function useReportExport({
           groupName,
         },
       });
-      toast.success(t('ws-reports.export_png_success'));
+      toast.success(
+        pageCount > 1
+          ? t('ws-reports.export_png_success_multi', {
+              count: pageCount,
+            })
+          : t('ws-reports.export_png_success')
+      );
     } catch (error) {
       console.error('PNG export failed:', error);
       toast.error(t('ws-reports.failed_export_png'));

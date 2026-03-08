@@ -3,6 +3,8 @@
 import {
   Archive,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Loader2,
   Shield as ShieldIcon,
   TriangleAlert,
@@ -225,6 +227,9 @@ export default function EditableReportPreview({
   const [rejectReason, setRejectReason] = useState('');
   const [formOpen, setFormOpen] = useState(true);
   const [attendanceOpen, setAttendanceOpen] = useState(true);
+  const [previewPageCount, setPreviewPageCount] = useState(1);
+  const [isPaginationReady, setIsPaginationReady] = useState(false);
+  const [activePreviewPage, setActivePreviewPage] = useState(0);
 
   const currentScores = useMemo(() => {
     if (selectedLog) return selectedLog.scores ?? [];
@@ -272,6 +277,7 @@ export default function EditableReportPreview({
     isDarkPreview: resolvedReportTheme === 'dark',
     userName: report.user_name,
     groupName: report.group_name,
+    isPaginationReady,
   });
 
   const isPendingApproval =
@@ -290,6 +296,11 @@ export default function EditableReportPreview({
           timeStyle: 'short',
         })
       : null;
+  useEffect(() => {
+    setActivePreviewPage((currentPage) =>
+      Math.min(currentPage, Math.max(0, previewPageCount - 1))
+    );
+  }, [previewPageCount]);
 
   return (
     <div className="space-y-4">
@@ -608,6 +619,8 @@ export default function EditableReportPreview({
           <ReportActions
             isPendingApproval={isPendingApproval}
             isExporting={isExporting}
+            isPaginationReady={isPaginationReady}
+            paginationPageCount={previewPageCount}
             handlePrintExport={handlePrintExport}
             handlePngExport={handlePngExport}
             reportTheme={reportTheme}
@@ -623,36 +636,118 @@ export default function EditableReportPreview({
             setDefaultExportType={setDefaultExportType}
           />
 
-          <ReportPreview
-            t={t}
-            lang={locale}
-            parseDynamicText={parseDynamicText}
-            getConfig={getConfig}
-            theme={resolvedReportTheme}
-            data={{
-              title: previewTitle,
-              content: previewContent,
-              score: previewScore,
-              feedback: previewFeedback,
-            }}
-            notice={
-              isPendingApproval ? (
-                <div className="mb-4 rounded-lg border border-dynamic-orange/30 bg-dynamic-orange/10 p-4">
-                  <div className="flex items-start gap-3">
-                    <ShieldIcon className="mt-0.5 h-5 w-5 text-dynamic-orange" />
-                    <div className="flex-1">
-                      <div className="font-semibold text-dynamic-orange">
-                        {t('ws-reports.needs_approval')}
-                      </div>
-                      <div className="mt-1 text-dynamic-orange/80 text-sm">
-                        {t('ws-reports.needs_approval_description')}
+          {previewPageCount > 1 || !isPaginationReady ? (
+            <div className="mx-auto w-full max-w-[210mm] rounded-[26px] border bg-card/90 p-4 shadow-sm print:hidden">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div className="space-y-1">
+                  <div className="font-medium text-sm">
+                    {t('ws-reports.preview_pages')}
+                  </div>
+                  <p className="text-muted-foreground text-xs">
+                    {isPaginationReady
+                      ? t('ws-reports.preview_pages_description')
+                      : t('ws-reports.pagination_updating')}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-2 rounded-full"
+                    disabled={!isPaginationReady || activePreviewPage === 0}
+                    onClick={() =>
+                      setActivePreviewPage(Math.max(0, activePreviewPage - 1))
+                    }
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    {t('ws-reports.previous_page')}
+                  </Button>
+
+                  <div className="rounded-full border bg-background px-3 py-1.5 font-medium text-sm tabular-nums">
+                    {isPaginationReady ? activePreviewPage + 1 : 1} /{' '}
+                    {previewPageCount}
+                  </div>
+
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-2 rounded-full"
+                    disabled={
+                      !isPaginationReady ||
+                      activePreviewPage >= previewPageCount - 1
+                    }
+                    onClick={() =>
+                      setActivePreviewPage(
+                        Math.min(previewPageCount - 1, activePreviewPage + 1)
+                      )
+                    }
+                  >
+                    {t('ws-reports.next_page')}
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                {Array.from({ length: previewPageCount }, (_, index) => (
+                  <Button
+                    key={`preview-page-${index + 1}`}
+                    size="sm"
+                    variant={index === activePreviewPage ? 'default' : 'ghost'}
+                    className={cn(
+                      'min-w-10 rounded-full px-3',
+                      index === activePreviewPage &&
+                        'bg-dynamic-blue text-white hover:bg-dynamic-blue/90'
+                    )}
+                    disabled={!isPaginationReady}
+                    onClick={() => setActivePreviewPage(index)}
+                  >
+                    {index + 1}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          <div className="mx-auto w-[210mm] min-w-[210mm]">
+            <ReportPreview
+              t={t}
+              lang={locale}
+              parseDynamicText={parseDynamicText}
+              getConfig={getConfig}
+              theme={resolvedReportTheme}
+              data={{
+                title: previewTitle,
+                content: previewContent,
+                score: previewScore,
+                feedback: previewFeedback,
+              }}
+              previewPageIndex={activePreviewPage}
+              singlePagePreview
+              onPaginationStateChange={({ ready, pageCount }) => {
+                setIsPaginationReady(ready);
+                setPreviewPageCount(Math.max(1, pageCount));
+              }}
+              notice={
+                isPendingApproval ? (
+                  <div className="mb-4 rounded-lg border border-dynamic-orange/30 bg-dynamic-orange/10 p-4">
+                    <div className="flex items-start gap-3">
+                      <ShieldIcon className="mt-0.5 h-5 w-5 text-dynamic-orange" />
+                      <div className="flex-1">
+                        <div className="font-semibold text-dynamic-orange">
+                          {t('ws-reports.needs_approval')}
+                        </div>
+                        <div className="mt-1 text-dynamic-orange/80 text-sm">
+                          {t('ws-reports.needs_approval_description')}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ) : undefined
-            }
-          />
+                ) : undefined
+              }
+            />
+          </div>
         </div>
       </div>
     </div>
