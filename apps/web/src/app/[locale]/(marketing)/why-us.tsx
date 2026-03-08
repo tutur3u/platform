@@ -240,7 +240,6 @@ export default function WhyUs() {
           <span className="whitespace-nowrap border-[#FBC721] border-b-4 text-[#5FC6E5]">
             Departments?
           </span>
-          
         </h2>
         <p className="mb-10 max-w-3xl text-center text-lg text-muted-foreground">
           Three core teams keep the club moving - people care, product
@@ -256,7 +255,7 @@ export default function WhyUs() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: index * 0.15 }}
             viewport={{ once: true }}
-            whileHover={{ scale: 1.02 }} 
+            whileHover={{ scale: 1.02 }}
             className="group"
           >
             <Card className="relative h-full overflow-hidden border-2 bg-card shadow-lg backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-xl">
@@ -289,10 +288,7 @@ export default function WhyUs() {
                   <Star className="h-4 w-4 fill-current text-yellow-400" />
                   <span>{department.focus}</span>
                 </div>
-                <Link
-                  href={department.link}
-                  aria-label={department.buttonText}
-                >
+                <Link href={department.link} aria-label={department.buttonText}>
                   <Button
                     variant="outline"
                     className="mt-4 w-full transition-all duration-300 group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-lg"
