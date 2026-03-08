@@ -107,9 +107,8 @@ export default function WhyUs() {
         <h2 className="mb-4 pb-4 font-bold text-4xl md:text-6xl lg:text-8xl">
           Why{' '}
           <span className="whitespace-nowrap border-[#FBC721] border-b-4 text-[#5FC6E5]">
-            Us
+            Us?
           </span>
-          <span>?</span>
         </h2>
 
         <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
