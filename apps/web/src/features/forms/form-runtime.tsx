@@ -15,6 +15,7 @@ import {
   Mail,
   MessageSquare,
   Star,
+  ZoomIn,
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -43,6 +44,7 @@ import { getNextSectionTarget } from './branching';
 import { normalizeMarkdownToText } from './content';
 import { FORM_FONT_VARIABLES, getFormFontStyle } from './fonts';
 import { QuestionTypeIcon } from './form-icons';
+import { FormsImageDialog } from './forms-image-dialog';
 import { FormsMarkdown } from './forms-markdown';
 import { getRuntimeProgressStats } from './runtime-progress';
 import { getFormToneClasses } from './theme';
@@ -127,11 +129,63 @@ function hasOptionImage(option: FormDefinitionQuestion['options'][number]) {
   return Boolean(option.image?.url || option.image?.storagePath);
 }
 
+function ExpandableDescriptionPanel({
+  content,
+  className,
+}: {
+  content: string;
+  className?: string;
+}) {
+  const t = useTranslations('forms');
+  const [expanded, setExpanded] = useState(false);
+  const plainText = normalizeMarkdownToText(content);
+  const shouldCollapse =
+    plainText.length > 180 || plainText.split(/\s+/).length > 30;
+
+  if (!plainText) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-3">
+      {expanded || !shouldCollapse ? (
+        <FormsMarkdown
+          content={content}
+          className={cn('text-base text-muted-foreground', className)}
+        />
+      ) : (
+        <p
+          className={cn(
+            'line-clamp-3 whitespace-pre-wrap text-base text-muted-foreground leading-7',
+            className
+          )}
+        >
+          {plainText}
+        </p>
+      )}
+      {shouldCollapse ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-9 rounded-xl px-3 text-muted-foreground hover:text-foreground"
+          onClick={() => setExpanded((current) => !current)}
+        >
+          {expanded
+            ? t('runtime.show_less_description')
+            : t('runtime.show_more_description')}
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
 function QuestionBlock({
   question,
   value,
   onChange,
   onProgress,
+  onImagePreview,
   disabled = false,
   toneClasses,
 }: {
@@ -139,6 +193,7 @@ function QuestionBlock({
   value: FormAnswerValue | undefined;
   onChange: (value: FormAnswerValue) => void;
   onProgress: () => void;
+  onImagePreview: (image: { src: string; alt: string }) => void;
   disabled?: boolean;
   toneClasses: ReturnType<typeof getFormToneClasses>;
 }) {
@@ -221,7 +276,7 @@ function QuestionBlock({
         {question.description ? (
           <FormsMarkdown
             content={question.description}
-            className="max-w-3xl text-muted-foreground text-sm [&_p]:leading-6"
+            className="text-muted-foreground text-sm [&_p]:leading-6"
           />
         ) : null}
       </div>
@@ -282,7 +337,7 @@ function QuestionBlock({
                 />
                 <div className="min-w-0 flex-1 space-y-3">
                   {hasOptionImage(option) ? (
-                    <div className="relative aspect-[16/10] overflow-hidden rounded-[1.15rem] border border-border/60 bg-background/70">
+                    <div className="relative aspect-16/10 overflow-hidden rounded-[1.15rem] border border-border/60 bg-background/70">
                       <Image
                         src={option.image.url}
                         alt={
@@ -294,6 +349,28 @@ function QuestionBlock({
                         unoptimized
                         className="object-cover"
                       />
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="secondary"
+                        className="absolute top-3 right-3 h-9 w-9 rounded-full bg-background/85 shadow-sm backdrop-blur-sm"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          onImagePreview({
+                            src: option.image.url,
+                            alt:
+                              option.image.alt ||
+                              normalizeMarkdownToText(option.label) ||
+                              option.value,
+                          });
+                        }}
+                      >
+                        <ZoomIn className="h-4 w-4" />
+                        <span className="sr-only">
+                          {t('runtime.view_image_fullscreen')}
+                        </span>
+                      </Button>
                     </div>
                   ) : null}
                   <div className="flex items-start gap-2">
@@ -350,7 +427,7 @@ function QuestionBlock({
                   />
                   <div className="min-w-0 flex-1 space-y-3">
                     {hasOptionImage(option) ? (
-                      <div className="relative aspect-[16/10] overflow-hidden rounded-[1.15rem] border border-border/60 bg-background/70">
+                      <div className="relative aspect-16/10 overflow-hidden rounded-[1.15rem] border border-border/60 bg-background/70">
                         <Image
                           src={option.image.url}
                           alt={
@@ -362,6 +439,28 @@ function QuestionBlock({
                           unoptimized
                           className="object-cover"
                         />
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="secondary"
+                          className="absolute top-3 right-3 h-9 w-9 rounded-full bg-background/85 shadow-sm backdrop-blur-sm"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            onImagePreview({
+                              src: option.image.url,
+                              alt:
+                                option.image.alt ||
+                                normalizeMarkdownToText(option.label) ||
+                                option.value,
+                            });
+                          }}
+                        >
+                          <ZoomIn className="h-4 w-4" />
+                          <span className="sr-only">
+                            {t('runtime.view_image_fullscreen')}
+                          </span>
+                        </Button>
                       </div>
                     ) : null}
                     <div className="flex items-start gap-2">
@@ -692,8 +791,14 @@ export function FormRuntime({
   const [submitted, setSubmitted] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string>();
   const [captchaError, setCaptchaError] = useState<string>();
+  const [previewImage, setPreviewImage] = useState<{
+    src: string;
+    alt: string;
+  } | null>(null);
   const [, startTransition] = useTransition();
   const captchaRef = useRef<TurnstileInstance>(null);
+  const sectionCardRef = useRef<HTMLDivElement | null>(null);
+  const previousSectionIdRef = useRef(currentSectionId);
 
   const toneClasses = getFormToneClasses(form.theme.accentColor);
   const bodyFontStyle = getFormFontStyle(form.theme.bodyFontId);
@@ -783,12 +888,38 @@ export function FormRuntime({
       ),
     [answerIssues, questionIdSet]
   );
+  const shouldShowTurnstile =
+    requiresTurnstile && !readOnly && advanceTarget.type === 'submit';
 
   useEffect(() => {
     const nextAnswers = initialAnswers ?? {};
     answersRef.current = nextAnswers;
     setAnswers(nextAnswers);
   }, [initialAnswers]);
+
+  useEffect(() => {
+    if (shouldShowTurnstile) {
+      return;
+    }
+
+    setCaptchaToken(undefined);
+    setCaptchaError(undefined);
+    captchaRef.current?.reset();
+  }, [shouldShowTurnstile]);
+
+  useEffect(() => {
+    if (previousSectionIdRef.current === currentSectionId) {
+      return;
+    }
+
+    previousSectionIdRef.current = currentSectionId;
+    requestAnimationFrame(() => {
+      sectionCardRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    });
+  }, [currentSectionId]);
 
   if (!currentSection) {
     return null;
@@ -934,10 +1065,7 @@ export function FormRuntime({
         style={bodyFontStyle}
       >
         <Card
-          className={cn(
-            'mx-auto w-full max-w-3xl border-0',
-            toneClasses.cardClassName
-          )}
+          className={cn('mx-auto w-full border-0', toneClasses.cardClassName)}
         >
           <CardContent className="space-y-4 p-8 text-center">
             <div
@@ -975,7 +1103,7 @@ export function FormRuntime({
           className={cn('overflow-hidden border-0', toneClasses.heroClassName)}
         >
           {form.theme.coverImage.url ? (
-            <div className="relative aspect-16/6 w-full overflow-hidden">
+            <div className="relative aspect-video w-full overflow-hidden md:aspect-16/6">
               <Image
                 src={form.theme.coverImage.url}
                 alt={
@@ -987,20 +1115,34 @@ export function FormRuntime({
                 className="object-cover"
               />
               <div className="absolute inset-0 bg-linear-to-t from-background via-background/35 to-transparent" />
+              <Button
+                type="button"
+                size="icon"
+                variant="secondary"
+                className="absolute top-4 right-4 h-10 w-10 rounded-full bg-background/85 shadow-sm backdrop-blur-sm"
+                onClick={() =>
+                  setPreviewImage({
+                    src: form.theme.coverImage.url,
+                    alt:
+                      form.theme.coverImage.alt ||
+                      normalizeMarkdownToText(form.title),
+                  })
+                }
+              >
+                <ZoomIn className="h-4 w-4" />
+                <span className="sr-only">
+                  {t('runtime.view_image_fullscreen')}
+                </span>
+              </Button>
               <div className="absolute inset-x-0 bottom-0 p-6 lg:p-8">
                 <div className="space-y-3">
-                  {form.theme.coverKicker ? (
-                    <p className="font-medium text-[11px] text-white/75 uppercase tracking-[0.3em]">
-                      {form.theme.coverKicker}
-                    </p>
-                  ) : null}
                   <div
-                    className="max-w-4xl font-semibold text-4xl text-white leading-tight sm:text-5xl"
+                    className="max-w-4xl font-semibold text-4xl text-primary-foreground leading-tight sm:text-5xl"
                     style={headlineFontStyle}
                   >
                     <FormsMarkdown
                       content={form.theme.coverHeadline || form.title}
-                      className="[&_a]:text-white [&_p]:m-0 [&_p]:leading-tight"
+                      className="[&_a]:text-primary-foreground [&_p]:m-0 [&_p]:leading-tight"
                     />
                   </div>
                 </div>
@@ -1011,13 +1153,8 @@ export function FormRuntime({
             {!form.theme.coverImage.url ? (
               <div className="space-y-5">
                 <div className="space-y-3">
-                  {form.theme.coverKicker ? (
-                    <p className="font-medium text-[11px] text-muted-foreground uppercase tracking-[0.3em]">
-                      {form.theme.coverKicker}
-                    </p>
-                  ) : null}
                   <div
-                    className="max-w-3xl font-semibold text-4xl leading-tight sm:text-5xl"
+                    className="font-semibold text-4xl leading-tight sm:text-5xl"
                     style={headlineFontStyle}
                   >
                     <FormsMarkdown
@@ -1029,11 +1166,8 @@ export function FormRuntime({
               </div>
             ) : null}
             {form.description ? (
-              <div className="max-w-3xl rounded-[1.65rem] border border-border/60 bg-background/45 p-5 sm:p-6">
-                <FormsMarkdown
-                  content={form.description}
-                  className="text-base text-muted-foreground"
-                />
+              <div className="rounded-[1.65rem] border border-border/60 bg-background/45 p-5 sm:p-6">
+                <ExpandableDescriptionPanel content={form.description} />
               </div>
             ) : null}
             {form.settings.showProgressBar ? (
@@ -1116,6 +1250,7 @@ export function FormRuntime({
         ) : null}
 
         <Card
+          ref={sectionCardRef}
           className={cn('mx-auto w-full border-0', toneClasses.cardClassName)}
         >
           <CardHeader className={density.cardPadding}>
@@ -1146,15 +1281,35 @@ export function FormRuntime({
                   unoptimized
                   className="object-cover"
                 />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="secondary"
+                  className="absolute top-4 right-4 h-10 w-10 rounded-full bg-background/85 shadow-sm backdrop-blur-sm"
+                  onClick={() =>
+                    setPreviewImage({
+                      src: currentSection.image.url,
+                      alt:
+                        currentSection.image.alt ||
+                        normalizeMarkdownToText(currentSection.title) ||
+                        normalizeMarkdownToText(visibleSectionTitle),
+                    })
+                  }
+                >
+                  <ZoomIn className="h-4 w-4" />
+                  <span className="sr-only">
+                    {t('runtime.view_image_fullscreen')}
+                  </span>
+                </Button>
               </div>
             ) : null}
           </CardHeader>
           <CardContent className={cn(density.cardPadding, density.sectionGap)}>
             {currentSection.description ? (
-              <div className="max-w-3xl rounded-[1.45rem] border border-border/60 bg-background/45 p-4 sm:p-5">
-                <FormsMarkdown
+              <div className="rounded-[1.45rem] border border-border/60 bg-background/45 p-4 sm:p-5">
+                <ExpandableDescriptionPanel
                   content={currentSection.description}
-                  className="text-muted-foreground text-sm"
+                  className="text-sm"
                 />
               </div>
             ) : null}
@@ -1170,6 +1325,7 @@ export function FormRuntime({
                       ? emitProgress({ lastQuestionId: question.id })
                       : undefined
                   }
+                  onImagePreview={(image) => setPreviewImage(image)}
                   disabled={isSubmitting || readOnly}
                   toneClasses={toneClasses}
                 />
@@ -1214,7 +1370,7 @@ export function FormRuntime({
               </div>
             ) : null}
 
-            {requiresTurnstile ? (
+            {shouldShowTurnstile ? (
               <div className="space-y-3 rounded-[1.4rem] border border-border/60 bg-background/60 p-4">
                 <div className="space-y-1">
                   <p className="font-medium text-sm">
@@ -1311,6 +1467,18 @@ export function FormRuntime({
             </div>
           </CardContent>
         </Card>
+        {previewImage ? (
+          <FormsImageDialog
+            open={!!previewImage}
+            onOpenChange={(open) => {
+              if (!open) {
+                setPreviewImage(null);
+              }
+            }}
+            src={previewImage.src}
+            alt={previewImage.alt}
+          />
+        ) : null}
       </div>
     </div>
   );

@@ -6,6 +6,9 @@ import type { FormDefinition } from '../types';
 
 export type StudioForm = UseFormReturn<FormStudioInput, any, FormStudioInput>;
 export type FormFontId = FormStudioInput['theme']['headlineFontId'];
+export type StudioSectionInput = FormStudioInput['sections'][number];
+export type StudioQuestionInput = StudioSectionInput['questions'][number];
+export type StudioOptionInput = StudioQuestionInput['options'][number];
 
 export function getOffsetOptionId<T extends { id: string }>(
   options: readonly T[],
@@ -95,6 +98,50 @@ export function createClientId() {
   fallbackBytes[8] = (fallbackVariantByte & 0x3f) | 0x80;
 
   return formatUuid(fallbackBytes);
+}
+
+function duplicateOptionInput(
+  option: StudioOptionInput
+): StudioOptionInput & { id: string } {
+  return {
+    ...option,
+    id: createClientId(),
+    image: {
+      storagePath: option.image?.storagePath ?? '',
+      url: option.image?.url ?? '',
+      alt: option.image?.alt ?? '',
+    },
+  };
+}
+
+export function duplicateQuestionInput(
+  question: StudioQuestionInput
+): StudioQuestionInput & { id: string } {
+  return {
+    ...question,
+    id: createClientId(),
+    settings: {
+      ...question.settings,
+    },
+    options: question.options.map((option) => duplicateOptionInput(option)),
+  };
+}
+
+export function duplicateSectionInput(
+  section: StudioSectionInput
+): StudioSectionInput & { id: string } {
+  return {
+    ...section,
+    id: createClientId(),
+    image: {
+      storagePath: section.image?.storagePath ?? '',
+      url: section.image?.url ?? '',
+      alt: section.image?.alt ?? '',
+    },
+    questions: section.questions.map((question) =>
+      duplicateQuestionInput(question)
+    ),
+  };
 }
 
 export function ensureIdentifiers(input: FormStudioInput): FormStudioInput {

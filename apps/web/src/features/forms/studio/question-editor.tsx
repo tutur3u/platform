@@ -9,6 +9,7 @@ import {
   CircleCheckBig,
   ClipboardList,
   Clock3,
+  Copy,
   FileText,
   Flag,
   GripVertical,
@@ -37,14 +38,14 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Separator } from '@tuturuuu/ui/separator';
-import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 import { deriveUniqueOptionValue } from '../answer-utils';
 import { FieldLabel, QuestionTypeIcon } from '../form-icons';
 import { FormsMarkdown } from '../forms-markdown';
+import { FormsRichTextEditor } from '../forms-rich-text-editor';
 import { FORM_QUESTION_TYPE_VALUES, type FormQuestionInput } from '../schema';
 import type { getFormToneClasses } from '../theme';
 import { DestructiveActionDialog } from './destructive-action-dialog';
@@ -70,8 +71,11 @@ export function QuestionEditor({
   sectionIndex,
   questionIndex,
   form,
+  open,
+  onOpenChange,
   onMoveUp,
   onMoveDown,
+  onDuplicate,
   onRemove,
   toneClasses,
 }: {
@@ -80,13 +84,15 @@ export function QuestionEditor({
   sectionIndex: number;
   questionIndex: number;
   form: StudioForm;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
+  onDuplicate: () => void;
   onRemove: () => void;
   toneClasses: ReturnType<typeof getFormToneClasses>;
 }) {
   const t = useTranslations('forms');
-  const [open, setOpen] = useState(questionIndex === 0);
   const {
     attributes,
     listeners,
@@ -111,6 +117,10 @@ export function QuestionEditor({
   const questionTitle = useWatch({
     control: form.control,
     name: `sections.${sectionIndex}.questions.${questionIndex}.title`,
+  });
+  const questionDescription = useWatch({
+    control: form.control,
+    name: `sections.${sectionIndex}.questions.${questionIndex}.description`,
   });
   const required = useWatch({
     control: form.control,
@@ -254,7 +264,7 @@ export function QuestionEditor({
   };
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen}>
+    <Collapsible open={open} onOpenChange={onOpenChange}>
       <div
         ref={setNodeRef}
         style={style}
@@ -365,6 +375,16 @@ export function QuestionEditor({
             >
               <ChevronDown className="h-4 w-4" />
             </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={onDuplicate}
+              className="rounded-xl"
+              aria-label={t('studio.duplicate_question')}
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
             <DestructiveActionDialog
               actionLabel={t('studio.delete_question')}
               cancelLabel={t('studio.keep_question')}
@@ -395,15 +415,18 @@ export function QuestionEditor({
                       {t('studio.question_title')}
                     </FieldLabel>
                   </Label>
-                  <Textarea
-                    {...form.register(
-                      `sections.${sectionIndex}.questions.${questionIndex}.title`
-                    )}
+                  <FormsRichTextEditor
+                    value={questionTitle || ''}
+                    onChange={(nextValue) =>
+                      form.setValue(
+                        `sections.${sectionIndex}.questions.${questionIndex}.title`,
+                        nextValue,
+                        { shouldDirty: true }
+                      )
+                    }
                     placeholder={titlePlaceholder}
-                    className={cn(
-                      'min-h-20 resize-y',
-                      toneClasses.fieldClassName
-                    )}
+                    toneClasses={toneClasses}
+                    compact
                   />
                 </div>
               ) : (
@@ -480,12 +503,17 @@ export function QuestionEditor({
                         {t('studio.description')}
                       </FieldLabel>
                     </Label>
-                    <Textarea
-                      {...form.register(
-                        `sections.${sectionIndex}.questions.${questionIndex}.description`
-                      )}
+                    <FormsRichTextEditor
+                      value={questionDescription || ''}
+                      onChange={(nextValue) =>
+                        form.setValue(
+                          `sections.${sectionIndex}.questions.${questionIndex}.description`,
+                          nextValue,
+                          { shouldDirty: true }
+                        )
+                      }
                       placeholder={t('studio.description_placeholder')}
-                      className={cn('min-h-20', toneClasses.fieldClassName)}
+                      toneClasses={toneClasses}
                     />
                   </div>
                 </>
@@ -560,14 +588,11 @@ export function QuestionEditor({
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1 space-y-1.5">
                         <Label>{t('studio.label')}</Label>
-                        <Textarea
+                        <FormsRichTextEditor
                           value={watchedOptions?.[optionIndex]?.label || ''}
-                          className={cn(
-                            'min-h-20 resize-y',
-                            toneClasses.fieldClassName
-                          )}
+                          toneClasses={toneClasses}
                           placeholder={t('studio.label')}
-                          onChange={(event) => {
+                          onChange={(nextLabel) => {
                             const labelPath =
                               `sections.${sectionIndex}.questions.${questionIndex}.options.${optionIndex}.label` as const;
                             const valuePath =
@@ -585,7 +610,6 @@ export function QuestionEditor({
                                 .map((option) => option.value)
                                 .filter((_, index) => index !== optionIndex) ??
                               [];
-                            const nextLabel = event.target.value;
                             const nextValue = deriveUniqueOptionValue(
                               nextLabel,
                               siblingValues,
@@ -610,6 +634,7 @@ export function QuestionEditor({
                               });
                             }
                           }}
+                          compact
                         />
                       </div>
                       <Button
@@ -807,19 +832,20 @@ export function QuestionEditor({
                           <div className="flex min-h-10 min-w-12 items-center justify-center rounded-xl border border-border/60 bg-background/80 px-3 font-semibold text-sm">
                             {optionValue}
                           </div>
-                          <Input
+                          <FormsRichTextEditor
                             value={optionLabel}
-                            className={toneClasses.fieldClassName}
+                            toneClasses={toneClasses}
                             placeholder={t('studio.label')}
-                            onChange={(event) =>
+                            onChange={(nextValue) =>
                               form.setValue(
                                 `sections.${sectionIndex}.questions.${questionIndex}.options.${optionIndex}.label`,
-                                event.target.value,
+                                nextValue,
                                 {
                                   shouldDirty: true,
                                 }
                               )
                             }
+                            compact
                           />
                         </div>
                       );

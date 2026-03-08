@@ -35,7 +35,6 @@ import { Label } from '@tuturuuu/ui/label';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { Textarea } from '@tuturuuu/ui/textarea';
 import {
   Tooltip,
   TooltipContent,
@@ -51,6 +50,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { FORM_FONT_VARIABLES, getFormFontStyle } from '../fonts';
 import { FormRuntime } from '../form-runtime';
 import { FormsMarkdown } from '../forms-markdown';
+import { FormsRichTextEditor } from '../forms-rich-text-editor';
 import {
   useFormAnalyticsQuery,
   useFormResponsesQuery,
@@ -76,6 +76,7 @@ import { SectionEditor } from './section-editor';
 import { SettingsPanel } from './settings-panel';
 import {
   createClientId,
+  duplicateSectionInput,
   ensureIdentifiers,
   toPreviewDefinition,
   toStudioInput,
@@ -163,6 +164,9 @@ export function FormStudio({
   );
   const [hasCopied, setHasCopied] = useState(false);
   const [activeSectionId, setActiveSectionId] = useState('');
+  const [activeQuestionIdsBySection, setActiveQuestionIdsBySection] = useState<
+    Record<string, string>
+  >({});
   const [isFormDetailsOpen, setIsFormDetailsOpen] = useState(false);
   const [showFloatingSave, setShowFloatingSave] = useState(false);
   const primarySaveButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -277,6 +281,37 @@ export function FormStudio({
   const resolvedActiveSectionId =
     values.sections.find((section) => section.id === activeSectionId)?.id ?? '';
 
+  const scrollToSection = (sectionId: string) => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      document.getElementById(`form-section-${sectionId}`)?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    });
+  };
+
+  const openSection = (sectionId: string) => {
+    setActiveSectionId(sectionId);
+    setActiveQuestionIdsBySection((current) => ({
+      ...current,
+      [sectionId]: '',
+    }));
+  };
+
+  const setActiveQuestionForSection = (
+    sectionId: string,
+    questionId: string
+  ) => {
+    setActiveQuestionIdsBySection((current) => ({
+      ...current,
+      [sectionId]: questionId,
+    }));
+  };
+
   const handleCopyLink = () => {
     if (!shareQuery?.shareLink?.code) return;
     const url = `${window.location.origin}/shared/forms/${shareQuery.shareLink.code}`;
@@ -313,7 +348,8 @@ export function FormStudio({
         },
       ],
     });
-    setActiveSectionId(sectionId);
+    openSection(sectionId);
+    scrollToSection(sectionId);
   };
 
   const handleTabChange = (nextTab: string) => {
@@ -327,6 +363,43 @@ export function FormStudio({
       void analyticsQuery.refetch();
     }
   };
+
+  useEffect(() => {
+    if (
+      activeSectionId &&
+      !values.sections.some((section) => section.id === activeSectionId)
+    ) {
+      setActiveSectionId('');
+    }
+
+    setActiveQuestionIdsBySection((current) => {
+      const nextEntries = values.sections.map((section, sectionIndex) => {
+        const sectionId = section.id ?? `section-${sectionIndex}`;
+        const currentQuestionId = current[sectionId] ?? '';
+        const resolvedQuestionId = section.questions.some(
+          (question) => question.id === currentQuestionId
+        )
+          ? currentQuestionId
+          : '';
+
+        return [sectionId, resolvedQuestionId] as const;
+      });
+      const next: Record<string, string> = Object.fromEntries(nextEntries);
+
+      if (
+        Object.keys(next).length === Object.keys(current).length &&
+        values.sections.every((section, sectionIndex) => {
+          const sectionId = section.id ?? `section-${sectionIndex}`;
+
+          return (current[sectionId] ?? '') === (next[sectionId] ?? '');
+        })
+      ) {
+        return current;
+      }
+
+      return next;
+    });
+  }, [activeSectionId, values.sections]);
 
   const getSaveValidationMessage = (
     error: ReturnType<typeof findFirstValidationError>
@@ -425,10 +498,14 @@ export function FormStudio({
     }
 
     const oldIndex = sectionsArray.fields.findIndex(
-      (field) => field.id === active.id
+      (_field, sectionIndex) =>
+        (values.sections[sectionIndex]?.id ??
+          sectionsArray.fields[sectionIndex]?.id) === active.id
     );
     const newIndex = sectionsArray.fields.findIndex(
-      (field) => field.id === over.id
+      (_field, sectionIndex) =>
+        (values.sections[sectionIndex]?.id ??
+          sectionsArray.fields[sectionIndex]?.id) === over.id
     );
 
     if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) {
@@ -684,13 +761,8 @@ export function FormStudio({
                 activeSectionId={resolvedActiveSectionId}
                 onAddSection={addSection}
                 onSelectSection={(sectionId) => {
-                  setActiveSectionId(sectionId);
-                  document
-                    .getElementById(`form-section-${sectionId}`)
-                    ?.scrollIntoView({
-                      behavior: 'smooth',
-                      block: 'start',
-                    });
+                  openSection(sectionId);
+                  scrollToSection(sectionId);
                 }}
                 toneClasses={studioToneClasses}
               />
@@ -762,26 +834,31 @@ export function FormStudio({
                         </div>
                         <div className="space-y-2">
                           <Label>{t('studio.form_title')}</Label>
-                          <Textarea
-                            {...form.register('title')}
+                          <FormsRichTextEditor
+                            value={values.title}
+                            onChange={(nextValue) =>
+                              form.setValue('title', nextValue, {
+                                shouldDirty: true,
+                              })
+                            }
                             placeholder={t('studio.form_title_placeholder')}
-                            className={cn(
-                              'min-h-20 resize-y',
-                              studioToneClasses.fieldClassName
-                            )}
+                            toneClasses={studioToneClasses}
+                            compact
                           />
                         </div>
                         <div className="space-y-2">
                           <Label>{t('studio.description')}</Label>
-                          <Textarea
-                            {...form.register('description')}
+                          <FormsRichTextEditor
+                            value={values.description}
+                            onChange={(nextValue) =>
+                              form.setValue('description', nextValue, {
+                                shouldDirty: true,
+                              })
+                            }
                             placeholder={t(
                               'studio.form_description_placeholder'
                             )}
-                            className={cn(
-                              'min-h-24',
-                              studioToneClasses.fieldClassName
-                            )}
+                            toneClasses={studioToneClasses}
                           />
                         </div>
                         <FormMediaField
@@ -808,29 +885,75 @@ export function FormStudio({
                   onDragEnd={handleSectionDragEnd}
                 >
                   <SortableContext
-                    items={sectionsArray.fields.map((field) => field.id)}
+                    items={sectionsArray.fields.map(
+                      (field, sectionIndex) =>
+                        values.sections[sectionIndex]?.id ?? field.id
+                    )}
                     strategy={verticalListSortingStrategy}
                   >
-                    {sectionsArray.fields.map((field, sectionIndex) => (
-                      <SectionEditor
-                        key={field.id}
-                        index={sectionIndex}
-                        wsId={wsId}
-                        sectionId={field.id}
-                        isHighlighted={resolvedActiveSectionId === field.id}
-                        form={form}
-                        toneClasses={studioToneClasses}
-                        onRemove={() => sectionsArray.remove(sectionIndex)}
-                        onMoveUp={() =>
-                          sectionIndex > 0 &&
-                          sectionsArray.move(sectionIndex, sectionIndex - 1)
-                        }
-                        onMoveDown={() =>
-                          sectionIndex < sectionsArray.fields.length - 1 &&
-                          sectionsArray.move(sectionIndex, sectionIndex + 1)
-                        }
-                      />
-                    ))}
+                    {sectionsArray.fields.map((field, sectionIndex) => {
+                      const sectionFormId =
+                        values.sections[sectionIndex]?.id ?? field.id;
+
+                      return (
+                        <SectionEditor
+                          key={field.id}
+                          index={sectionIndex}
+                          wsId={wsId}
+                          sectionId={sectionFormId}
+                          form={form}
+                          open={resolvedActiveSectionId === sectionFormId}
+                          onOpenChange={(nextOpen) => {
+                            if (nextOpen) {
+                              openSection(sectionFormId);
+                              return;
+                            }
+
+                            if (resolvedActiveSectionId === sectionFormId) {
+                              setActiveSectionId('');
+                            }
+                          }}
+                          activeQuestionId={
+                            activeQuestionIdsBySection[sectionFormId]
+                          }
+                          onActiveQuestionChange={(questionId) =>
+                            setActiveQuestionForSection(
+                              sectionFormId,
+                              questionId
+                            )
+                          }
+                          onDuplicate={() => {
+                            const section = form.getValues(
+                              `sections.${sectionIndex}`
+                            );
+
+                            if (!section) {
+                              return;
+                            }
+
+                            const nextSection = duplicateSectionInput(section);
+                            sectionsArray.insert(sectionIndex + 1, nextSection);
+                            openSection(nextSection.id);
+                            scrollToSection(nextSection.id);
+                          }}
+                          toneClasses={studioToneClasses}
+                          onRemove={() => {
+                            sectionsArray.remove(sectionIndex);
+                            if (resolvedActiveSectionId === sectionFormId) {
+                              setActiveSectionId('');
+                            }
+                          }}
+                          onMoveUp={() =>
+                            sectionIndex > 0 &&
+                            sectionsArray.move(sectionIndex, sectionIndex - 1)
+                          }
+                          onMoveDown={() =>
+                            sectionIndex < sectionsArray.fields.length - 1 &&
+                            sectionsArray.move(sectionIndex, sectionIndex + 1)
+                          }
+                        />
+                      );
+                    })}
                   </SortableContext>
                 </DndContext>
 

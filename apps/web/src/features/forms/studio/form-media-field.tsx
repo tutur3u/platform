@@ -6,6 +6,7 @@ import {
   Loader2,
   Trash2,
   Upload,
+  ZoomIn,
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -20,6 +21,7 @@ import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 
+import { FormsImageDialog } from '../forms-image-dialog';
 import { useFormMediaUploadMutation } from '../hooks';
 import type { FormStudioInput } from '../schema';
 import type { getFormToneClasses } from '../theme';
@@ -46,6 +48,7 @@ export function FormMediaField({
   const t = useTranslations('forms');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(scope === 'cover');
+  const [previewOpen, setPreviewOpen] = useState(false);
   const uploadMutation = useFormMediaUploadMutation({ wsId });
   const hasImage = Boolean(value.url || value.storagePath);
   const isCompactSectionMedia = scope === 'section' || scope === 'option';
@@ -61,10 +64,10 @@ export function FormMediaField({
         className={cn(
           'relative',
           scope === 'option'
-            ? 'aspect-[16/9]'
+            ? 'aspect-video'
             : isCompactSectionMedia
-              ? 'aspect-[16/5]'
-              : 'aspect-[16/8]'
+              ? 'aspect-16/5'
+              : 'aspect-16/8'
         )}
       >
         {value.url ? (
@@ -94,6 +97,18 @@ export function FormMediaField({
           <div className="absolute inset-0 flex items-center justify-center bg-background/75 backdrop-blur-sm">
             <Loader2 className="h-6 w-6 animate-spin" />
           </div>
+        ) : null}
+        {hasImage ? (
+          <Button
+            type="button"
+            size="icon"
+            variant="secondary"
+            className="absolute top-3 right-3 h-9 w-9 rounded-full bg-background/85 shadow-sm backdrop-blur-sm"
+            onClick={() => setPreviewOpen(true)}
+          >
+            <ZoomIn className="h-4 w-4" />
+            <span className="sr-only">{t('studio.view_image_fullscreen')}</span>
+          </Button>
         ) : null}
       </div>
     </div>
@@ -238,6 +253,14 @@ export function FormMediaField({
           event.target.value = '';
         }}
       />
+      {hasImage && value.url ? (
+        <FormsImageDialog
+          open={previewOpen}
+          onOpenChange={setPreviewOpen}
+          src={value.url}
+          alt={value.alt || label}
+        />
+      ) : null}
     </div>
   );
 }

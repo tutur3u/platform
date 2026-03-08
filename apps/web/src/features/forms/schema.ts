@@ -81,7 +81,7 @@ const defaultFormMediaValue = {
 
 export const formOptionSchema = z.object({
   id: formStudioIdentifierSchema.optional(),
-  label: z.string().trim().min(1).max(120),
+  label: z.string().trim().min(1).max(2000),
   value: z.string().trim().min(1).max(120),
   image: formMediaSchema.default(defaultFormMediaValue),
 });
@@ -99,8 +99,8 @@ export const formQuestionSettingsSchema = z.object({
 export const formQuestionSchema = z.object({
   id: formStudioIdentifierSchema.optional(),
   type: z.enum(FORM_QUESTION_TYPE_VALUES),
-  title: z.string().trim().min(1).max(200),
-  description: z.string().max(1000).optional().default(''),
+  title: z.string().trim().min(1).max(4000),
+  description: z.string().max(12000).optional().default(''),
   required: z.boolean().default(false),
   settings: formQuestionSettingsSchema.default({}),
   options: z.array(formOptionSchema).default([]),
@@ -108,8 +108,8 @@ export const formQuestionSchema = z.object({
 
 export const formSectionSchema = z.object({
   id: formStudioIdentifierSchema.optional(),
-  title: z.string().trim().max(160).default(''),
-  description: z.string().max(800).optional().default(''),
+  title: z.string().trim().max(2000).default(''),
+  description: z.string().max(8000).optional().default(''),
   image: formMediaSchema.default(defaultFormMediaValue),
   questions: z.array(formQuestionSchema).min(1),
 });
@@ -165,8 +165,8 @@ export const formSettingsSchema = z.object({
 });
 
 export const formStudioSchema = z.object({
-  title: z.string().trim().min(1).max(200),
-  description: z.string().max(2000).default(''),
+  title: z.string().trim().min(1).max(4000),
+  description: z.string().max(16000).default(''),
   status: z.enum(FORM_STATUS_VALUES).default('draft'),
   accessMode: z.enum(FORM_ACCESS_MODE_VALUES).default('anonymous'),
   openAt: z.string().datetime().nullable().optional(),

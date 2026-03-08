@@ -3965,6 +3965,8 @@
       "required_before_continue": "\"{title}\" là câu hỏi bắt buộc trước khi tiếp tục.",
       "response_recorded_at": "Đã ghi nhận lúc {time}",
       "section_break": "Ngắt phần",
+      "show_less_description": "Thu gọn",
+      "show_more_description": "Xem thêm",
       "some_answers_need_review": "Một số câu trả lời đã lưu không còn khớp hoàn toàn sau khi biểu mẫu thay đổi.",
       "submit_response": "Gửi phản hồi",
       "turnstile_description": "Hoàn thành bước xác minh trước khi gửi phản hồi.",
@@ -3973,7 +3975,8 @@
       "turnstile_required": "Vui lòng hoàn thành bước xác minh trước khi gửi.",
       "turnstile_title": "Bảo vệ chống bot",
       "type_your_answer": "Nhập câu trả lời của bạn",
-      "unmatched_answer_hint": "Chúng tôi vẫn giữ câu trả lời gốc của bạn, nhưng nó không còn khớp hoàn toàn với biểu mẫu hiện tại: {value}"
+      "unmatched_answer_hint": "Chúng tôi vẫn giữ câu trả lời gốc của bạn, nhưng nó không còn khớp hoàn toàn với biểu mẫu hiện tại: {value}",
+      "view_image_fullscreen": "Xem ảnh toàn màn hình"
     },
     "settings": {
       "active": "Đang dùng",
@@ -4034,6 +4037,10 @@
       "unlimited": "Không giới hạn"
     },
     "shared": {
+      "metadata_fallback_description": "Mở biểu mẫu chia sẻ này để xem các câu hỏi và gửi phản hồi.",
+      "metadata_fallback_title": "Biểu mẫu chia sẻ",
+      "metadata_protected_description": "Biểu mẫu chia sẻ này đang được bảo vệ. Hãy đăng nhập hoặc dùng đường truy cập phù hợp để tiếp tục.",
+      "open_graph_alt": "Ảnh xem trước cho {title}",
       "unavailable_description": "Biểu mẫu này có thể đã bị gỡ xuất bản, đã đóng, hoặc đã bị xóa.",
       "unavailable_title": "Không thể truy cập biểu mẫu"
     },
@@ -4069,6 +4076,8 @@
       "delete_section_title": "Xóa phần này?",
       "description": "Mô tả",
       "description_placeholder": "Gợi ý hiển thị bên dưới câu hỏi (tuỳ chọn)",
+      "duplicate_question": "Nhân đôi câu hỏi",
+      "duplicate_section": "Nhân đôi phần",
       "expanded": "Mở rộng",
       "first_impression": "Ấn tượng đầu tiên",
       "first_impression_hint": "Tinh chỉnh phần mở đầu và cấu trúc tại đây trước khi đi sâu vào từng câu hỏi.",
@@ -4153,7 +4162,8 @@
       "type": "Loại",
       "untitled_section": "Phần chưa có tên",
       "upload_image": "Tải ảnh lên",
-      "value": "Giá trị"
+      "value": "Giá trị",
+      "view_image_fullscreen": "Xem ảnh toàn màn hình"
     },
     "tabs": {
       "analytics": "Analytics",

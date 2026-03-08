@@ -3965,6 +3965,8 @@
       "required_before_continue": "\"{title}\" is required before you continue.",
       "response_recorded_at": "Recorded {time}",
       "section_break": "Section break",
+      "show_less_description": "Show less",
+      "show_more_description": "Show more",
       "some_answers_need_review": "Some saved answers could not be matched cleanly after the form changed.",
       "submit_response": "Submit response",
       "turnstile_description": "Complete the verification challenge before sending your response.",
@@ -3973,7 +3975,8 @@
       "turnstile_required": "Please complete the verification challenge before submitting.",
       "turnstile_title": "Bot protection",
       "type_your_answer": "Type your answer",
-      "unmatched_answer_hint": "We kept your original answer, but it no longer maps cleanly to the current form: {value}"
+      "unmatched_answer_hint": "We kept your original answer, but it no longer maps cleanly to the current form: {value}",
+      "view_image_fullscreen": "View image fullscreen"
     },
     "settings": {
       "active": "Active",
@@ -4034,6 +4037,10 @@
       "unlimited": "Unlimited"
     },
     "shared": {
+      "metadata_fallback_description": "Open this shared form to review the questions and submit a response.",
+      "metadata_fallback_title": "Shared form",
+      "metadata_protected_description": "This shared form is protected. Sign in or use the provided access path to continue.",
+      "open_graph_alt": "Preview image for {title}",
       "unavailable_description": "This form may have been unpublished, closed, or removed.",
       "unavailable_title": "Form unavailable"
     },
@@ -4069,6 +4076,8 @@
       "delete_section_title": "Delete this section?",
       "description": "Description",
       "description_placeholder": "Optional helper text shown below the question",
+      "duplicate_question": "Duplicate question",
+      "duplicate_section": "Duplicate section",
       "expanded": "Expanded",
       "first_impression": "First impression",
       "first_impression_hint": "Tighten the opening copy and structure here before you move into question details.",
@@ -4153,7 +4162,8 @@
       "type": "Type",
       "untitled_section": "Untitled section",
       "upload_image": "Upload image",
-      "value": "Value"
+      "value": "Value",
+      "view_image_fullscreen": "View image fullscreen"
     },
     "tabs": {
       "analytics": "Analytics",

@@ -16,6 +16,7 @@ vi.mock('@tuturuuu/icons', () => ({
   CircleCheckBig: (props: any) => <svg {...props} />,
   ClipboardList: (props: any) => <svg {...props} />,
   Clock3: (props: any) => <svg {...props} />,
+  Copy: (props: any) => <svg {...props} />,
   FileText: (props: any) => <svg {...props} />,
   Flag: (props: any) => <svg {...props} />,
   GripVertical: (props: any) => <svg {...props} />,
@@ -104,6 +105,16 @@ vi.mock('@tuturuuu/ui/textarea', () => ({
 
 vi.mock('../forms-markdown', () => ({
   FormsMarkdown: ({ content }: any) => <div>{content}</div>,
+}));
+
+vi.mock('../forms-rich-text-editor', () => ({
+  FormsRichTextEditor: ({ value, onChange, placeholder }: any) => (
+    <textarea
+      value={value}
+      placeholder={placeholder}
+      onChange={(event) => onChange(event.target.value)}
+    />
+  ),
 }));
 
 vi.mock('./destructive-action-dialog', () => ({
@@ -210,8 +221,11 @@ function TestHarness() {
       sectionIndex={0}
       questionIndex={0}
       form={form as StudioForm}
+      open
+      onOpenChange={() => {}}
       onMoveUp={() => {}}
       onMoveDown={() => {}}
+      onDuplicate={() => {}}
       onRemove={() => {}}
       toneClasses={
         {

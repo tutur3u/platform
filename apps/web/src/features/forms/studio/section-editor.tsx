@@ -18,6 +18,7 @@ import {
   ChevronDown,
   ChevronUp,
   ClipboardList,
+  Copy,
   FileText,
   GripVertical,
   MessageSquare,
@@ -41,25 +42,34 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { useFieldArray, useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { Label } from '@tuturuuu/ui/label';
-import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { FieldLabel } from '../form-icons';
 import { FormsMarkdown } from '../forms-markdown';
+import { FormsRichTextEditor } from '../forms-rich-text-editor';
 import type { getFormToneClasses } from '../theme';
 import { DestructiveActionDialog } from './destructive-action-dialog';
 import { FormMediaField } from './form-media-field';
 import { QuestionEditor } from './question-editor';
-import { createClientId, type StudioForm } from './studio-utils';
+import {
+  createClientId,
+  duplicateQuestionInput,
+  type StudioForm,
+  type StudioQuestionInput,
+} from './studio-utils';
 
 export function SectionEditor({
   index,
   wsId,
   sectionId,
-  isHighlighted,
   form,
+  open,
+  onOpenChange,
+  activeQuestionId,
+  onActiveQuestionChange,
+  onDuplicate,
   onRemove,
   onMoveUp,
   onMoveDown,
@@ -68,15 +78,18 @@ export function SectionEditor({
   index: number;
   wsId: string;
   sectionId?: string;
-  isHighlighted?: boolean;
   form: StudioForm;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  activeQuestionId?: string;
+  onActiveQuestionChange: (questionId: string) => void;
+  onDuplicate: () => void;
   onRemove: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
   toneClasses: ReturnType<typeof getFormToneClasses>;
 }) {
   const t = useTranslations('forms');
-  const [open, setOpen] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const questionSensors = useSensors(
@@ -113,12 +126,10 @@ export function SectionEditor({
     control: form.control,
     name: `sections.${index}.image`,
   });
-
-  useEffect(() => {
-    if (isHighlighted) {
-      setOpen(true);
-    }
-  }, [isHighlighted]);
+  const watchedQuestions = useWatch({
+    control: form.control,
+    name: `sections.${index}.questions`,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -126,8 +137,9 @@ export function SectionEditor({
   };
 
   const addQuestion = () => {
-    questionsArray.append({
-      id: createClientId(),
+    const nextQuestionId = createClientId();
+    const nextQuestion: StudioQuestionInput = {
+      id: nextQuestionId,
       type: 'short_text',
       title: t('studio.new_question'),
       description: '',
@@ -137,7 +149,10 @@ export function SectionEditor({
         optionLayout: 'list',
       },
       options: [],
-    });
+    };
+
+    questionsArray.append(nextQuestion);
+    onActiveQuestionChange(nextQuestionId);
   };
 
   const handleQuestionDragEnd = ({ active, over }: DragEndEvent) => {
@@ -146,10 +161,14 @@ export function SectionEditor({
     }
 
     const oldIndex = questionsArray.fields.findIndex(
-      (field) => field.id === active.id
+      (_field, questionIndex) =>
+        (watchedQuestions?.[questionIndex]?.id ??
+          questionsArray.fields[questionIndex]?.id) === active.id
     );
     const newIndex = questionsArray.fields.findIndex(
-      (field) => field.id === over.id
+      (_field, questionIndex) =>
+        (watchedQuestions?.[questionIndex]?.id ??
+          questionsArray.fields[questionIndex]?.id) === over.id
     );
 
     if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) {
@@ -160,7 +179,7 @@ export function SectionEditor({
   };
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen}>
+    <Collapsible open={open} onOpenChange={onOpenChange}>
       <Card
         ref={setNodeRef}
         style={style}
@@ -279,6 +298,15 @@ export function SectionEditor({
                     <ChevronDown className="h-4 w-4" />
                     {t('studio.move_section_down')}
                   </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      onDuplicate();
+                      setActionsOpen(false);
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                    {t('studio.duplicate_section')}
+                  </DropdownMenuItem>
                   <DestructiveActionDialog
                     actionLabel={t('studio.delete_section')}
                     cancelLabel={t('studio.keep_section')}
@@ -315,12 +343,15 @@ export function SectionEditor({
                     {t('studio.section_title')}
                   </FieldLabel>
                 </Label>
-                <Textarea
-                  {...form.register(`sections.${index}.title`)}
-                  className={cn(
-                    'min-h-20 resize-y font-semibold',
-                    toneClasses.fieldClassName
-                  )}
+                <FormsRichTextEditor
+                  value={sectionTitle || ''}
+                  onChange={(nextValue) =>
+                    form.setValue(`sections.${index}.title`, nextValue, {
+                      shouldDirty: true,
+                    })
+                  }
+                  toneClasses={toneClasses}
+                  compact
                 />
               </div>
               <div className="space-y-1.5">
@@ -329,10 +360,15 @@ export function SectionEditor({
                     {t('studio.section_description')}
                   </FieldLabel>
                 </Label>
-                <Textarea
-                  {...form.register(`sections.${index}.description`)}
-                  className={cn('min-h-20', toneClasses.fieldClassName)}
+                <FormsRichTextEditor
+                  value={sectionDescription || ''}
+                  onChange={(nextValue) =>
+                    form.setValue(`sections.${index}.description`, nextValue, {
+                      shouldDirty: true,
+                    })
+                  }
                   placeholder={t('studio.section_description_hint')}
+                  toneClasses={toneClasses}
                 />
               </div>
               <div>
@@ -365,29 +401,63 @@ export function SectionEditor({
                 onDragEnd={handleQuestionDragEnd}
               >
                 <SortableContext
-                  items={questionsArray.fields.map((field) => field.id)}
+                  items={questionsArray.fields.map(
+                    (field, questionIndex) =>
+                      watchedQuestions?.[questionIndex]?.id ?? field.id
+                  )}
                   strategy={verticalListSortingStrategy}
                 >
-                  {questionsArray.fields.map((field, questionIndex) => (
-                    <QuestionEditor
-                      key={field.id}
-                      wsId={wsId}
-                      questionId={field.id}
-                      sectionIndex={index}
-                      questionIndex={questionIndex}
-                      form={form}
-                      toneClasses={toneClasses}
-                      onMoveUp={() =>
-                        questionIndex > 0 &&
-                        questionsArray.move(questionIndex, questionIndex - 1)
-                      }
-                      onMoveDown={() =>
-                        questionIndex < questionsArray.fields.length - 1 &&
-                        questionsArray.move(questionIndex, questionIndex + 1)
-                      }
-                      onRemove={() => questionsArray.remove(questionIndex)}
-                    />
-                  ))}
+                  {questionsArray.fields.map((field, questionIndex) => {
+                    const questionFormId =
+                      watchedQuestions?.[questionIndex]?.id ?? field.id;
+
+                    return (
+                      <QuestionEditor
+                        key={field.id}
+                        wsId={wsId}
+                        questionId={questionFormId}
+                        sectionIndex={index}
+                        questionIndex={questionIndex}
+                        form={form}
+                        open={activeQuestionId === questionFormId}
+                        onOpenChange={(nextOpen) =>
+                          onActiveQuestionChange(nextOpen ? questionFormId : '')
+                        }
+                        toneClasses={toneClasses}
+                        onMoveUp={() =>
+                          questionIndex > 0 &&
+                          questionsArray.move(questionIndex, questionIndex - 1)
+                        }
+                        onMoveDown={() =>
+                          questionIndex < questionsArray.fields.length - 1 &&
+                          questionsArray.move(questionIndex, questionIndex + 1)
+                        }
+                        onDuplicate={() => {
+                          const question = form.getValues(
+                            `sections.${index}.questions.${questionIndex}`
+                          );
+
+                          if (!question) {
+                            return;
+                          }
+
+                          const nextQuestion = duplicateQuestionInput(question);
+
+                          questionsArray.insert(
+                            questionIndex + 1,
+                            nextQuestion
+                          );
+                          onActiveQuestionChange(nextQuestion.id);
+                        }}
+                        onRemove={() => {
+                          questionsArray.remove(questionIndex);
+                          if (activeQuestionId === questionFormId) {
+                            onActiveQuestionChange('');
+                          }
+                        }}
+                      />
+                    );
+                  })}
                 </SortableContext>
               </DndContext>
 
