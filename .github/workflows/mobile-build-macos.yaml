@@ -62,6 +62,47 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-flutter-macos-
 
+      - name: Create dummy GoogleService-Info.plist
+        if: steps.cache-build.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p macos/Runner
+          cat << 'EOF' > macos/Runner/GoogleService-Info.plist
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CLIENT_ID</key>
+            <string>dummy</string>
+            <key>REVERSED_CLIENT_ID</key>
+            <string>dummy</string>
+            <key>API_KEY</key>
+            <string>dummy</string>
+            <key>GCM_SENDER_ID</key>
+            <string>dummy</string>
+            <key>PLIST_VERSION</key>
+            <string>1</string>
+            <key>BUNDLE_ID</key>
+            <string>dummy</string>
+            <key>PROJECT_ID</key>
+            <string>dummy</string>
+            <key>STORAGE_BUCKET</key>
+            <string>dummy</string>
+            <key>IS_ADS_ENABLED</key>
+            <false/>
+            <key>IS_ANALYTICS_ENABLED</key>
+            <false/>
+            <key>IS_APPINVITE_ENABLED</key>
+            <true/>
+            <key>IS_GCM_ENABLED</key>
+            <true/>
+            <key>IS_SIGNIN_ENABLED</key>
+            <true/>
+            <key>GOOGLE_APP_ID</key>
+            <string>1:dummy:ios:dummy</string>
+          </dict>
+          </plist>
+          EOF
+
       - name: Update CocoaPods Repos
         if: steps.cache-build.outputs.cache-hit != 'true'
         run: cd macos && pod repo update
@@ -69,7 +110,7 @@ jobs:
 
       - name: Build macOS
         if: steps.cache-build.outputs.cache-hit != 'true'
-        run: flutter build macos --flavor development --target lib/main_development.dart
+        run: flutter build macos --target lib/main_development.dart
 
       - name: Upload macOS app artifact
         uses: actions/upload-artifact@v7
