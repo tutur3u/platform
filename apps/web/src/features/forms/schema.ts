@@ -8,6 +8,7 @@ export const FORM_ACCESS_MODE_VALUES = [
 ] as const;
 export const FORM_DENSITY_VALUES = ['airy', 'balanced', 'compact'] as const;
 export const FORM_SURFACE_STYLE_VALUES = ['paper', 'glass', 'panel'] as const;
+export const FORM_OPTION_LAYOUT_VALUES = ['list', 'grid'] as const;
 export const FORM_THEME_ACCENT_VALUES = [
   'dynamic-green',
   'dynamic-orange',
@@ -82,6 +83,7 @@ export const formOptionSchema = z.object({
   id: formStudioIdentifierSchema.optional(),
   label: z.string().trim().min(1).max(120),
   value: z.string().trim().min(1).max(120),
+  image: formMediaSchema.default(defaultFormMediaValue),
 });
 
 export const formQuestionSettingsSchema = z.object({
@@ -91,6 +93,7 @@ export const formQuestionSettingsSchema = z.object({
   scaleMin: z.number().int().min(0).max(10).optional(),
   scaleMax: z.number().int().min(1).max(10).optional(),
   ratingMax: z.number().int().min(2).max(10).optional(),
+  optionLayout: z.enum(FORM_OPTION_LAYOUT_VALUES).optional(),
 });
 
 export const formQuestionSchema = z.object({
@@ -252,6 +255,7 @@ export function createDefaultFormStudioInput(): FormStudioInput {
             required: true,
             settings: {
               placeholder: 'Write your answer here',
+              optionLayout: 'list',
             },
             options: [],
           },

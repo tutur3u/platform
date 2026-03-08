@@ -109,6 +109,11 @@ export function ensureIdentifiers(input: FormStudioInput): FormStudioInput {
         options: question.options.map((option) => ({
           ...option,
           id: option.id ?? createClientId(),
+          image: option.image ?? {
+            storagePath: '',
+            url: '',
+            alt: '',
+          },
         })),
       })),
     })),
@@ -150,6 +155,7 @@ export function toStudioInput(form?: FormDefinition): FormStudioInput {
           id: option.id,
           label: option.label,
           value: option.value,
+          image: option.image,
         })),
       })),
     })),
@@ -205,6 +211,7 @@ export function toPreviewDefinition(
           id: option.id ?? createClientId(),
           label: option.label,
           value: option.value,
+          image: option.image,
         })),
       })),
     })),

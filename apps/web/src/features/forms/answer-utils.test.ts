@@ -1,20 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { createStoredAnswerQuestionResolver } from './answer-utils';
-import type { FormDefinition, FormResponseAnswerRow } from './types';
 
-const form: FormDefinition = {
-  id: '50000000-0000-0000-0000-000000000001',
-  wsId: '50000000-0000-0000-0000-000000000002',
-  creatorId: '50000000-0000-0000-0000-000000000003',
-  title: 'Resolver form',
+import { deriveOptionValue, findMatchingOption } from './answer-utils';
+import { getNextSectionTarget } from './branching';
+import type { FormDefinition } from './types';
+
+const baseForm: FormDefinition = {
+  id: 'form-1',
+  wsId: 'ws-1',
+  creatorId: 'user-1',
+  title: 'Form',
   description: '',
-  status: 'published',
+  status: 'draft',
   accessMode: 'anonymous',
   openAt: null,
   closeAt: null,
   maxResponses: null,
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
+  createdAt: '2026-03-09T00:00:00.000Z',
+  updatedAt: '2026-03-09T00:00:00.000Z',
+  shareCode: null,
   theme: {
     presetId: 'editorial-moss',
     density: 'balanced',
@@ -24,75 +27,84 @@ const form: FormDefinition = {
     surfaceStyle: 'paper',
     coverHeadline: '',
     coverKicker: '',
-    coverImage: {
-      storagePath: '',
-      url: '',
-      alt: '',
-    },
+    coverImage: { storagePath: '', url: '', alt: '' },
     sectionImages: {},
   },
   settings: {
     showProgressBar: true,
     allowMultipleSubmissions: true,
     oneResponsePerUser: false,
-    requireTurnstile: false,
+    requireTurnstile: true,
     confirmationTitle: 'Thanks',
     confirmationMessage: 'Done',
   },
   sections: [
     {
-      id: '50000000-0000-0000-0000-000000000010',
-      title: 'Section',
+      id: 'section-1',
+      title: 'Section 1',
       description: '',
-      image: {
-        storagePath: '',
-        url: '',
-        alt: '',
-      },
+      image: { storagePath: '', url: '', alt: '' },
       questions: [
         {
-          id: '50000000-0000-0000-0000-000000000011',
-          sectionId: '50000000-0000-0000-0000-000000000010',
-          type: 'multiple_choice',
-          title: 'Which parts of the product feel most valuable?',
+          id: 'question-1',
+          sectionId: 'section-1',
+          type: 'single_choice',
+          title: 'Choose one',
           description: '',
           required: false,
-          settings: {},
+          settings: { optionLayout: 'list' },
           options: [
             {
-              id: '50000000-0000-0000-0000-000000000012',
-              label: 'Speed',
-              value: 'speed',
-            },
-            {
-              id: '50000000-0000-0000-0000-000000000013',
-              label: 'Clarity',
-              value: 'clarity',
+              id: 'option-1',
+              label: '**Hello** world',
+              value: 'hello-world',
+              image: { storagePath: '', url: '', alt: '' },
             },
           ],
         },
       ],
     },
+    {
+      id: 'section-2',
+      title: 'Section 2',
+      description: '',
+      image: { storagePath: '', url: '', alt: '' },
+      questions: [],
+    },
   ],
-  logicRules: [],
+  logicRules: [
+    {
+      id: 'rule-1',
+      sourceQuestionId: 'question-1',
+      operator: 'equals',
+      comparisonValue: 'Hello world',
+      actionType: 'go_to_section',
+      targetSectionId: 'section-2',
+    },
+  ],
 };
 
-describe('createStoredAnswerQuestionResolver', () => {
-  it('falls back to question title and type when a stored question id no longer matches', () => {
-    const resolveQuestion = createStoredAnswerQuestionResolver(form);
-    const answer = {
-      id: '50000000-0000-0000-0000-000000000101',
-      response_id: '50000000-0000-0000-0000-000000000201',
-      question_id: '50000000-0000-0000-0000-000000009999',
-      question_title: 'Which parts of the product feel most valuable?',
-      question_type: 'multiple_choice',
-      answer_text: null,
-      answer_json: ['clarity'],
-      created_at: new Date().toISOString(),
-    } satisfies FormResponseAnswerRow;
+describe('form markdown option helpers', () => {
+  it('derives stable option values from markdown labels', () => {
+    expect(deriveOptionValue('**Hello** world')).toBe('hello-world');
+  });
 
-    expect(resolveQuestion(answer)?.id).toBe(
-      '50000000-0000-0000-0000-000000000011'
+  it('matches plain text answers against markdown labels', () => {
+    const question = baseForm.sections[0]?.questions[0];
+
+    expect(findMatchingOption(question, 'Hello world')?.value).toBe(
+      'hello-world'
     );
+  });
+
+  it('keeps branching working when comparison labels contain markdown-free text', () => {
+    expect(
+      getNextSectionTarget(baseForm, 'section-1', {
+        'question-1': 'hello-world',
+      })
+    ).toEqual({
+      type: 'section',
+      targetSectionId: 'section-2',
+    });
   });
 });

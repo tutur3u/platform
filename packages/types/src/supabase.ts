@@ -3709,6 +3709,7 @@ export type Database = {
       form_question_options: {
         Row: {
           id: string;
+          image: Json | null;
           label: string;
           position: number;
           question_id: string;
@@ -3716,6 +3717,7 @@ export type Database = {
         };
         Insert: {
           id?: string;
+          image?: Json | null;
           label: string;
           position?: number;
           question_id: string;
@@ -3723,6 +3725,7 @@ export type Database = {
         };
         Update: {
           id?: string;
+          image?: Json | null;
           label?: string;
           position?: number;
           question_id?: string;

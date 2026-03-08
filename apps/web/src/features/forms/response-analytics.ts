@@ -2,6 +2,7 @@ import {
   createStoredAnswerQuestionResolver,
   restoreAnswerForQuestion,
 } from './answer-utils';
+import { normalizeMarkdownToText } from './content';
 import type {
   FormAnswerValue,
   FormDefinition,
@@ -291,7 +292,7 @@ export function buildQuestionAnalytics(
     const analytics = questionMap.get(question.id);
     const parsed: FormResponsesQuestionAnalytics = {
       questionId: question.id,
-      title: question.title,
+      title: normalizeMarkdownToText(question.title),
       type: question.type,
       totalAnswers: analytics?.totalAnswers ?? 0,
     };
@@ -305,7 +306,7 @@ export function buildQuestionAnalytics(
         const count = analytics?.counts.get(option.value) ?? 0;
 
         return {
-          label: option.label,
+          label: normalizeMarkdownToText(option.label),
           value: option.value,
           count,
           percentage: toPercentage(count, analytics?.totalAnswers ?? 0),
@@ -319,7 +320,7 @@ export function buildQuestionAnalytics(
 
         return {
           score: option.value,
-          label: option.label,
+          label: normalizeMarkdownToText(option.label),
           count,
           percentage: toPercentage(count, analytics?.totalAnswers ?? 0),
         };

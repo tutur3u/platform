@@ -63,11 +63,13 @@ const form: FormDefinition = {
               id: '50000000-0000-0000-0000-000000000012',
               label: 'Skip to final',
               value: 'skip',
+              image: { storagePath: '', url: '', alt: '' },
             },
             {
               id: '50000000-0000-0000-0000-000000000013',
               label: 'Continue linearly',
               value: 'linear',
+              image: { storagePath: '', url: '', alt: '' },
             },
           ],
         },

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 
+import { FormsMarkdown } from '../forms-markdown';
 import type { FormStudioInput } from '../schema';
 import type { getFormToneClasses } from '../theme';
 
@@ -62,9 +63,14 @@ export function BuilderSidebar({
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="truncate font-semibold text-sm">
-                    {index + 1}. {section.title || t('studio.untitled_section')}
-                  </p>
+                  <div className="truncate font-semibold text-sm">
+                    <span className="mr-1">{index + 1}.</span>
+                    <FormsMarkdown
+                      content={section.title || t('studio.untitled_section')}
+                      variant="inline"
+                      className="inline"
+                    />
+                  </div>
                   <p className="text-[11px] text-muted-foreground">
                     {t('studio.question_count', {
                       count: section.questions.length,

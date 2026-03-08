@@ -70,11 +70,13 @@ const form: FormDefinition = {
               id: '50000000-0000-0000-0000-000000000012',
               label: 'Speed',
               value: 'speed',
+              image: { storagePath: '', url: '', alt: '' },
             },
             {
               id: '50000000-0000-0000-0000-000000000013',
               label: 'Clarity',
               value: 'clarity',
+              image: { storagePath: '', url: '', alt: '' },
             },
           ],
         },

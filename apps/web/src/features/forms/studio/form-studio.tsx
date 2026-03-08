@@ -31,7 +31,6 @@ import {
   CollapsibleTrigger,
 } from '@tuturuuu/ui/collapsible';
 import { useFieldArray, useForm, useWatch } from '@tuturuuu/ui/hooks/use-form';
-import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -51,6 +50,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { FORM_FONT_VARIABLES, getFormFontStyle } from '../fonts';
 import { FormRuntime } from '../form-runtime';
+import { FormsMarkdown } from '../forms-markdown';
 import {
   useFormAnalyticsQuery,
   useFormResponsesQuery,
@@ -307,6 +307,7 @@ export function FormStudio({
           required: false,
           settings: {
             placeholder: t('runtime.type_your_answer'),
+            optionLayout: 'list',
           },
           options: [],
         },
@@ -729,10 +730,16 @@ export function FormStudio({
                                   : t('studio.collapsed')}
                               </Badge>
                             </div>
-                            <p className="line-clamp-2 text-muted-foreground text-sm">
-                              {values.description?.trim() ||
-                                t('studio.first_impression_hint')}
-                            </p>
+                            <div className="line-clamp-2 text-muted-foreground text-sm">
+                              <FormsMarkdown
+                                content={
+                                  values.description?.trim() ||
+                                  t('studio.first_impression_hint')
+                                }
+                                variant="inline"
+                                className="line-clamp-2"
+                              />
+                            </div>
                           </div>
                           <ChevronDown
                             className={cn(
@@ -755,10 +762,13 @@ export function FormStudio({
                         </div>
                         <div className="space-y-2">
                           <Label>{t('studio.form_title')}</Label>
-                          <Input
+                          <Textarea
                             {...form.register('title')}
                             placeholder={t('studio.form_title_placeholder')}
-                            className={studioToneClasses.fieldClassName}
+                            className={cn(
+                              'min-h-20 resize-y',
+                              studioToneClasses.fieldClassName
+                            )}
                           />
                         </div>
                         <div className="space-y-2">

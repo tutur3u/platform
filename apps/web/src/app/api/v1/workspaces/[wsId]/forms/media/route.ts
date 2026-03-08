@@ -7,7 +7,7 @@ import { getWorkspaceRouteContext } from '@/features/forms/route-utils';
 
 const requestSchema = z.object({
   filename: z.string().min(1).max(255),
-  scope: z.enum(['cover', 'section']).default('section'),
+  scope: z.enum(['cover', 'section', 'option']).default('section'),
 });
 
 export async function POST(

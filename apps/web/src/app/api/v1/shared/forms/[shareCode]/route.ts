@@ -5,6 +5,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { DEV_MODE } from '@/constants/common';
+import { normalizeMarkdownToText } from '@/features/forms/content';
 import {
   FORM_ACCESS_MODE_VALUES,
   formSubmitSchema,
@@ -393,7 +394,8 @@ export async function POST(
         return {
           response_id: response.id,
           question_id: question?.id ?? null,
-          question_title: question?.title ?? 'Untitled question',
+          question_title:
+            normalizeMarkdownToText(question?.title) || 'Untitled question',
           question_type: question?.type ?? 'short_text',
           answer_text: serialized.answer_text,
           answer_json: serialized.answer_json,

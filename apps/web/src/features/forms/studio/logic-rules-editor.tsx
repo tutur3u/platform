@@ -24,6 +24,10 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 
+import {
+  normalizeMarkdownForComparison,
+  normalizeMarkdownToText,
+} from '../content';
 import type { FormLogicRuleInput, FormQuestionInput } from '../schema';
 import type { getFormToneClasses } from '../theme';
 import { createClientId, type StudioForm } from './studio-utils';
@@ -91,11 +95,12 @@ function normalizeComparisonValue(
     return comparisonValue;
   }
 
-  const normalizedComparisonValue = comparisonValue.trim().toLowerCase();
+  const normalizedComparisonValue =
+    normalizeMarkdownForComparison(comparisonValue);
   const matchedOption = question.options.find(
     (option) =>
       option.value.trim().toLowerCase() === normalizedComparisonValue ||
-      option.label.trim().toLowerCase() === normalizedComparisonValue
+      normalizeMarkdownForComparison(option.label) === normalizedComparisonValue
   );
 
   return matchedOption?.value ?? comparisonValue;
@@ -132,7 +137,7 @@ export function LogicRulesEditor({
             type: question.type,
             settings: question.settings,
             options: question.options,
-            label: `${section.title || t('studio.untitled_section')} / ${question.title}`,
+            label: `${normalizeMarkdownToText(section.title) || t('studio.untitled_section')} / ${normalizeMarkdownToText(question.title)}`,
           }))
       ),
     [sections, t]
@@ -175,7 +180,7 @@ export function LogicRulesEditor({
     ) {
       return question.options.map((option) => ({
         value: option.value,
-        label: option.label,
+        label: normalizeMarkdownToText(option.label),
       }));
     }
 

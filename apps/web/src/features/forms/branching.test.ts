@@ -67,11 +67,13 @@ const baseForm: FormDefinition = {
               id: 'a0bba3b1-8861-4f5f-b174-746f75949012',
               label: 'Yes',
               value: 'yes',
+              image: { storagePath: '', url: '', alt: '' },
             },
             {
               id: 'a0bba3b1-8861-4f5f-b174-746f75949013',
               label: 'No',
               value: 'no',
+              image: { storagePath: '', url: '', alt: '' },
             },
           ],
         },

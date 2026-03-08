@@ -18,7 +18,7 @@ import {
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { Card, CardContent, CardHeader } from '@tuturuuu/ui/card';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import { Input } from '@tuturuuu/ui/input';
@@ -40,8 +40,10 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { DEV_MODE } from '@/constants/common';
 import { getNextSectionTarget } from './branching';
+import { normalizeMarkdownToText } from './content';
 import { FORM_FONT_VARIABLES, getFormFontStyle } from './fonts';
 import { QuestionTypeIcon } from './form-icons';
+import { FormsMarkdown } from './forms-markdown';
 import { getRuntimeProgressStats } from './runtime-progress';
 import { getFormToneClasses } from './theme';
 import type {
@@ -121,6 +123,10 @@ function formatDateAnswer(date: Date | undefined) {
   return `${year}-${month}-${day}`;
 }
 
+function hasOptionImage(option: FormDefinitionQuestion['options'][number]) {
+  return Boolean(option.image?.url || option.image?.storagePath);
+}
+
 function QuestionBlock({
   question,
   value,
@@ -188,6 +194,9 @@ function QuestionBlock({
     scaleMinLabel.trim() !== String(scaleMin) ||
     scaleMaxLabel.trim() !== String(scaleMax);
   const questionTypeLabel = t(`question_type.${question.type}`);
+  const optionLayout = settings.optionLayout === 'grid' ? 'grid' : 'list';
+  const choiceLayoutClassName =
+    optionLayout === 'grid' ? 'grid gap-3 sm:grid-cols-2' : 'space-y-2';
 
   return (
     <div className="space-y-3">
@@ -206,13 +215,14 @@ function QuestionBlock({
             </Badge>
           ) : null}
         </div>
-        <h3 className="font-semibold text-base leading-snug">
-          {question.title}
-        </h3>
+        <div className="font-semibold text-base leading-snug">
+          <FormsMarkdown content={question.title} className="[&_p]:m-0" />
+        </div>
         {question.description ? (
-          <p className="text-muted-foreground text-sm">
-            {question.description}
-          </p>
+          <FormsMarkdown
+            content={question.description}
+            className="max-w-3xl text-muted-foreground text-sm [&_p]:leading-6"
+          />
         ) : null}
       </div>
 
@@ -252,31 +262,56 @@ function QuestionBlock({
             onChange(nextValue);
             onProgress();
           }}
+          className={choiceLayoutClassName}
         >
           {question.options.map((option) => (
             <label
               key={option.id}
               className={cn(
-                'flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-2 transition',
+                'flex h-full cursor-pointer rounded-2xl border p-3.5 transition',
                 value === option.value
                   ? toneClasses.selectedOptionClassName
                   : toneClasses.optionCardClassName
               )}
             >
-              <RadioGroupItem
-                value={option.value}
-                id={option.id}
-                className={toneClasses.radioClassName}
-              />
-              <CircleCheckBig className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium text-sm">{option.label}</span>
+              <div className="flex w-full items-start gap-3">
+                <RadioGroupItem
+                  value={option.value}
+                  id={option.id}
+                  className={cn('mt-1 shrink-0', toneClasses.radioClassName)}
+                />
+                <div className="min-w-0 flex-1 space-y-3">
+                  {hasOptionImage(option) ? (
+                    <div className="relative aspect-[16/10] overflow-hidden rounded-[1.15rem] border border-border/60 bg-background/70">
+                      <Image
+                        src={option.image.url}
+                        alt={
+                          option.image.alt ||
+                          normalizeMarkdownToText(option.label) ||
+                          option.value
+                        }
+                        fill
+                        unoptimized
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : null}
+                  <div className="flex items-start gap-2">
+                    <CircleCheckBig className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                    <FormsMarkdown
+                      content={option.label}
+                      className="min-w-0 font-medium text-sm [&_p]:m-0 [&_p]:leading-6"
+                    />
+                  </div>
+                </div>
+              </div>
             </label>
           ))}
         </RadioGroup>
       ) : null}
 
       {question.type === 'multiple_choice' ? (
-        <div className="space-y-2">
+        <div className={choiceLayoutClassName}>
           {question.options.map((option) => {
             const checked = Array.isArray(value)
               ? value.includes(option.value)
@@ -286,31 +321,58 @@ function QuestionBlock({
               <label
                 key={option.id}
                 className={cn(
-                  'flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-2.5 transition',
+                  'flex h-full cursor-pointer rounded-2xl border p-3.5 transition',
                   checked
                     ? toneClasses.selectedOptionClassName
                     : toneClasses.optionCardClassName
                 )}
               >
-                <Checkbox
-                  checked={checked}
-                  className={toneClasses.checkboxClassName}
-                  disabled={disabled}
-                  onCheckedChange={(nextChecked) => {
-                    const nextValue = new Set(
-                      Array.isArray(value) ? value : []
-                    );
-                    if (nextChecked) {
-                      nextValue.add(option.value);
-                    } else {
-                      nextValue.delete(option.value);
-                    }
-                    onChange([...nextValue]);
-                    onProgress();
-                  }}
-                />
-                <ListChecks className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium text-sm">{option.label}</span>
+                <div className="flex w-full items-start gap-3">
+                  <Checkbox
+                    checked={checked}
+                    className={cn(
+                      'mt-1 shrink-0',
+                      toneClasses.checkboxClassName
+                    )}
+                    disabled={disabled}
+                    onCheckedChange={(nextChecked) => {
+                      const nextValue = new Set(
+                        Array.isArray(value) ? value : []
+                      );
+                      if (nextChecked) {
+                        nextValue.add(option.value);
+                      } else {
+                        nextValue.delete(option.value);
+                      }
+                      onChange([...nextValue]);
+                      onProgress();
+                    }}
+                  />
+                  <div className="min-w-0 flex-1 space-y-3">
+                    {hasOptionImage(option) ? (
+                      <div className="relative aspect-[16/10] overflow-hidden rounded-[1.15rem] border border-border/60 bg-background/70">
+                        <Image
+                          src={option.image.url}
+                          alt={
+                            option.image.alt ||
+                            normalizeMarkdownToText(option.label) ||
+                            option.value
+                          }
+                          fill
+                          unoptimized
+                          className="object-cover"
+                        />
+                      </div>
+                    ) : null}
+                    <div className="flex items-start gap-2">
+                      <ListChecks className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                      <FormsMarkdown
+                        content={option.label}
+                        className="min-w-0 font-medium text-sm [&_p]:m-0 [&_p]:leading-6"
+                      />
+                    </div>
+                  </div>
+                </div>
               </label>
             );
           })}
@@ -327,14 +389,35 @@ function QuestionBlock({
           }}
         >
           <SelectTrigger className={toneClasses.fieldClassName}>
-            <SelectValue placeholder={t('runtime.choose_option')} />
+            {typeof value === 'string' && value ? (
+              <div className="flex min-w-0 items-center gap-2">
+                <ClipboardList className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <FormsMarkdown
+                  content={
+                    question.options.find((option) => option.value === value)
+                      ?.label ?? value
+                  }
+                  variant="inline"
+                  className="min-w-0 truncate text-left text-sm"
+                />
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <ClipboardList className="h-4 w-4" />
+                <span>{t('runtime.choose_option')}</span>
+              </div>
+            )}
           </SelectTrigger>
           <SelectContent>
             {question.options.map((option) => (
               <SelectItem key={option.id} value={option.value}>
                 <div className="flex items-center gap-2">
                   <ClipboardList className="h-4 w-4 text-muted-foreground" />
-                  <span>{option.label}</span>
+                  <FormsMarkdown
+                    content={option.label}
+                    variant="inline"
+                    className="min-w-0 text-sm"
+                  />
                 </div>
               </SelectItem>
             ))}
@@ -410,7 +493,11 @@ function QuestionBlock({
               <div className="mt-3 grid gap-2 sm:grid-cols-5">
                 {displayScaleOptions.map((option) => {
                   const active = String(value ?? '') === option.value;
-                  const showLabel = option.label.trim() !== option.value.trim();
+                  const plainOptionLabel = normalizeMarkdownToText(
+                    option.label
+                  );
+                  const showLabel =
+                    plainOptionLabel.trim() !== option.value.trim();
 
                   return (
                     <button
@@ -438,7 +525,7 @@ function QuestionBlock({
                               'hover:border-foreground/20 hover:bg-background/80'
                             )
                       )}
-                      aria-label={showLabel ? option.label : option.value}
+                      aria-label={showLabel ? plainOptionLabel : option.value}
                       aria-pressed={active}
                     >
                       <div className="flex items-center justify-between gap-3">
@@ -448,9 +535,10 @@ function QuestionBlock({
                         {active ? <Check className="h-4 w-4" /> : null}
                       </div>
                       {showLabel ? (
-                        <p className="mt-1.5 line-clamp-2 text-muted-foreground text-xs leading-4">
-                          {option.label}
-                        </p>
+                        <FormsMarkdown
+                          content={option.label}
+                          className="mt-1.5 line-clamp-2 text-muted-foreground text-xs leading-4 [&_p]:m-0"
+                        />
                       ) : null}
                     </button>
                   );
@@ -498,7 +586,7 @@ function QuestionBlock({
                               'hover:bg-background/80'
                             )
                       )}
-                      aria-label={option.label}
+                      aria-label={normalizeMarkdownToText(option.label)}
                       aria-pressed={selected}
                     >
                       <Star
@@ -518,9 +606,10 @@ function QuestionBlock({
               {hasCustomScaleLabels &&
               selectedScaleOption &&
               selectedScaleOption.label !== selectedScaleOption.value ? (
-                <p className="mt-3 text-center text-muted-foreground text-sm">
-                  {selectedScaleOption.label}
-                </p>
+                <FormsMarkdown
+                  content={selectedScaleOption.label}
+                  className="mt-3 text-center text-muted-foreground text-sm [&_p]:m-0"
+                />
               ) : null}
             </div>
           )}
@@ -653,11 +742,13 @@ export function FormRuntime({
     : { type: 'submit' as const };
   const advanceSectionTitle =
     advanceTarget.type === 'section'
-      ? form.sections.find(
-          (section) => section.id === advanceTarget.targetSectionId
-        )?.title
+      ? normalizeMarkdownToText(
+          form.sections.find(
+            (section) => section.id === advanceTarget.targetSectionId
+          )?.title
+        )
       : advanceTarget.type === 'next'
-        ? form.sections[currentSectionIndex + 1]?.title
+        ? normalizeMarkdownToText(form.sections[currentSectionIndex + 1]?.title)
         : null;
   const questionIdSet = useMemo(
     () =>
@@ -747,7 +838,7 @@ export function FormRuntime({
     if (firstMissingRequired) {
       setError(
         t('runtime.required_before_continue', {
-          title: firstMissingRequired.title,
+          title: normalizeMarkdownToText(firstMissingRequired.title),
         })
       );
       return false;
@@ -887,26 +978,30 @@ export function FormRuntime({
             <div className="relative aspect-16/6 w-full overflow-hidden">
               <Image
                 src={form.theme.coverImage.url}
-                alt={form.theme.coverImage.alt || form.title}
+                alt={
+                  form.theme.coverImage.alt ||
+                  normalizeMarkdownToText(form.title)
+                }
                 fill
                 unoptimized
                 className="object-cover"
               />
               <div className="absolute inset-0 bg-linear-to-t from-background via-background/35 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 p-6 lg:p-8">
-                <div className="space-y-4">
-                  <div className="space-y-3">
-                    <h1
-                      className="max-w-4xl font-semibold text-4xl leading-tight sm:text-5xl"
-                      style={headlineFontStyle}
-                    >
-                      {form.theme.coverHeadline || form.title}
-                    </h1>
-                    {form.description ? (
-                      <p className="max-w-3xl text-lg text-muted-foreground">
-                        {form.description}
-                      </p>
-                    ) : null}
+                <div className="space-y-3">
+                  {form.theme.coverKicker ? (
+                    <p className="font-medium text-[11px] text-white/75 uppercase tracking-[0.3em]">
+                      {form.theme.coverKicker}
+                    </p>
+                  ) : null}
+                  <div
+                    className="max-w-4xl font-semibold text-4xl text-white leading-tight sm:text-5xl"
+                    style={headlineFontStyle}
+                  >
+                    <FormsMarkdown
+                      content={form.theme.coverHeadline || form.title}
+                      className="[&_a]:text-white [&_p]:m-0 [&_p]:leading-tight"
+                    />
                   </div>
                 </div>
               </div>
@@ -916,18 +1011,29 @@ export function FormRuntime({
             {!form.theme.coverImage.url ? (
               <div className="space-y-5">
                 <div className="space-y-3">
-                  <h1
+                  {form.theme.coverKicker ? (
+                    <p className="font-medium text-[11px] text-muted-foreground uppercase tracking-[0.3em]">
+                      {form.theme.coverKicker}
+                    </p>
+                  ) : null}
+                  <div
                     className="max-w-3xl font-semibold text-4xl leading-tight sm:text-5xl"
                     style={headlineFontStyle}
                   >
-                    {form.theme.coverHeadline || form.title}
-                  </h1>
-                  {form.description ? (
-                    <p className="max-w-3xl text-lg text-muted-foreground">
-                      {form.description}
-                    </p>
-                  ) : null}
+                    <FormsMarkdown
+                      content={form.theme.coverHeadline || form.title}
+                      className="[&_p]:m-0 [&_p]:leading-tight"
+                    />
+                  </div>
                 </div>
+              </div>
+            ) : null}
+            {form.description ? (
+              <div className="max-w-3xl rounded-[1.65rem] border border-border/60 bg-background/45 p-5 sm:p-6">
+                <FormsMarkdown
+                  content={form.description}
+                  className="text-base text-muted-foreground"
+                />
               </div>
             ) : null}
             {form.settings.showProgressBar ? (
@@ -1015,14 +1121,12 @@ export function FormRuntime({
           <CardHeader className={density.cardPadding}>
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="space-y-1">
-                <CardTitle className="text-2xl">
-                  {visibleSectionTitle}
-                </CardTitle>
-                {currentSection.description ? (
-                  <p className="text-muted-foreground text-sm">
-                    {currentSection.description}
-                  </p>
-                ) : null}
+                <div className="font-semibold text-2xl">
+                  <FormsMarkdown
+                    content={visibleSectionTitle}
+                    className="[&_p]:m-0 [&_p]:leading-tight"
+                  />
+                </div>
               </div>
               <Badge variant="outline" className="rounded-full px-3 py-1">
                 <Flag className="mr-1 h-3.5 w-3.5" />
@@ -1035,8 +1139,8 @@ export function FormRuntime({
                   src={currentSection.image.url}
                   alt={
                     currentSection.image.alt ||
-                    currentSection.title ||
-                    visibleSectionTitle
+                    normalizeMarkdownToText(currentSection.title) ||
+                    normalizeMarkdownToText(visibleSectionTitle)
                   }
                   fill
                   unoptimized
@@ -1046,6 +1150,14 @@ export function FormRuntime({
             ) : null}
           </CardHeader>
           <CardContent className={cn(density.cardPadding, density.sectionGap)}>
+            {currentSection.description ? (
+              <div className="max-w-3xl rounded-[1.45rem] border border-border/60 bg-background/45 p-4 sm:p-5">
+                <FormsMarkdown
+                  content={currentSection.description}
+                  className="text-muted-foreground text-sm"
+                />
+              </div>
+            ) : null}
             <div className={density.questionGap}>
               {currentSection.questions.map((question) => (
                 <QuestionBlock

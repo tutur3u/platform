@@ -27,6 +27,7 @@ export interface FormDefinitionQuestion
     id: string;
     label: string;
     value: string;
+    image: FormQuestionInput['options'][number]['image'];
   }>;
 }
 

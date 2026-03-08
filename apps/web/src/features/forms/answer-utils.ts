@@ -1,3 +1,7 @@
+import {
+  normalizeMarkdownForComparison,
+  normalizeMarkdownToText,
+} from './content';
 import type {
   FormAnswerValue,
   FormDefinition,
@@ -6,12 +10,11 @@ import type {
 } from './types';
 
 function normalizeText(value: string) {
-  return value.trim().toLowerCase();
+  return normalizeMarkdownForComparison(value);
 }
 
 export function deriveOptionValue(label: string) {
-  const normalized = label
-    .trim()
+  const normalized = normalizeMarkdownToText(label)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
@@ -99,14 +102,16 @@ function formatMatchedOptionLabel(
   question: FormDefinitionQuestion,
   option: { label: string; value: string }
 ) {
+  const plainTextLabel = normalizeMarkdownToText(option.label);
+
   if (
     (question.type === 'linear_scale' || question.type === 'rating') &&
-    option.label.trim() !== option.value.trim()
+    plainTextLabel.trim() !== option.value.trim()
   ) {
-    return `${option.label} (${option.value})`;
+    return `${plainTextLabel} (${option.value})`;
   }
 
-  return option.label;
+  return plainTextLabel;
 }
 
 function stringifyFallback(value: string | number) {
@@ -242,7 +247,7 @@ export function restoreAnswerForQuestion(
 }
 
 function normalizeStoredQuestionTitle(title: string | null | undefined) {
-  return title?.trim().toLowerCase() ?? '';
+  return normalizeMarkdownForComparison(title);
 }
 
 export function createStoredAnswerQuestionResolver(form: FormDefinition) {

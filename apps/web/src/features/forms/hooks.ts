@@ -111,7 +111,7 @@ export function useFormMediaUploadMutation({ wsId }: { wsId: string }) {
       scope,
     }: {
       file: File;
-      scope: 'cover' | 'section';
+      scope: 'cover' | 'section' | 'option';
     }) => {
       const upload = await apiFetch<{
         signedUrl: string;

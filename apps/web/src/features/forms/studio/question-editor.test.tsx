@@ -102,8 +102,16 @@ vi.mock('@tuturuuu/ui/textarea', () => ({
   Textarea: (props: any) => <textarea {...props} />,
 }));
 
+vi.mock('../forms-markdown', () => ({
+  FormsMarkdown: ({ content }: any) => <div>{content}</div>,
+}));
+
 vi.mock('./destructive-action-dialog', () => ({
   DestructiveActionDialog: ({ trigger }: any) => trigger,
+}));
+
+vi.mock('./form-media-field', () => ({
+  FormMediaField: () => <div>media-field</div>,
 }));
 
 function TestHarness() {
@@ -156,11 +164,36 @@ function TestHarness() {
                 scaleMax: 5,
               },
               options: [
-                { id: 'o1', label: '1', value: '1' },
-                { id: 'o2', label: '2', value: '2' },
-                { id: 'o3', label: '3', value: '3' },
-                { id: 'o4', label: '4', value: '4' },
-                { id: 'o5', label: '5', value: '5' },
+                {
+                  id: 'o1',
+                  label: '1',
+                  value: '1',
+                  image: { storagePath: '', url: '', alt: '' },
+                },
+                {
+                  id: 'o2',
+                  label: '2',
+                  value: '2',
+                  image: { storagePath: '', url: '', alt: '' },
+                },
+                {
+                  id: 'o3',
+                  label: '3',
+                  value: '3',
+                  image: { storagePath: '', url: '', alt: '' },
+                },
+                {
+                  id: 'o4',
+                  label: '4',
+                  value: '4',
+                  image: { storagePath: '', url: '', alt: '' },
+                },
+                {
+                  id: 'o5',
+                  label: '5',
+                  value: '5',
+                  image: { storagePath: '', url: '', alt: '' },
+                },
               ],
             },
           ],
@@ -172,6 +205,7 @@ function TestHarness() {
 
   return (
     <QuestionEditor
+      wsId="ws-1"
       questionId="question-1"
       sectionIndex={0}
       questionIndex={0}

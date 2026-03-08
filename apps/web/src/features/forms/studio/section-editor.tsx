@@ -40,7 +40,6 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useFieldArray, useWatch } from '@tuturuuu/ui/hooks/use-form';
-import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
@@ -48,6 +47,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 import { FieldLabel } from '../form-icons';
+import { FormsMarkdown } from '../forms-markdown';
 import type { getFormToneClasses } from '../theme';
 import { DestructiveActionDialog } from './destructive-action-dialog';
 import { FormMediaField } from './form-media-field';
@@ -134,6 +134,7 @@ export function SectionEditor({
       required: false,
       settings: {
         placeholder: t('runtime.type_your_answer'),
+        optionLayout: 'list',
       },
       options: [],
     });
@@ -207,9 +208,15 @@ export function SectionEditor({
                         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-background/80 text-muted-foreground">
                           <ClipboardList className="h-4 w-4" />
                         </span>
-                        <p className="truncate font-semibold text-lg">
-                          {sectionTitle || t('studio.untitled_section')}
-                        </p>
+                        <div className="truncate font-semibold text-lg">
+                          <FormsMarkdown
+                            content={
+                              sectionTitle || t('studio.untitled_section')
+                            }
+                            variant="inline"
+                            className="truncate"
+                          />
+                        </div>
                       </div>
                       <Badge
                         variant="outline"
@@ -220,10 +227,16 @@ export function SectionEditor({
                         })}
                       </Badge>
                     </div>
-                    <p className="line-clamp-2 text-muted-foreground text-sm">
-                      {sectionDescription?.trim() ||
-                        t('studio.section_description_hint')}
-                    </p>
+                    <div className="line-clamp-2 text-muted-foreground text-sm">
+                      <FormsMarkdown
+                        content={
+                          sectionDescription?.trim() ||
+                          t('studio.section_description_hint')
+                        }
+                        variant="inline"
+                        className="line-clamp-2"
+                      />
+                    </div>
                   </div>
                 </div>
                 <ChevronDown
@@ -302,10 +315,10 @@ export function SectionEditor({
                     {t('studio.section_title')}
                   </FieldLabel>
                 </Label>
-                <Input
+                <Textarea
                   {...form.register(`sections.${index}.title`)}
                   className={cn(
-                    'h-10 font-semibold',
+                    'min-h-20 resize-y font-semibold',
                     toneClasses.fieldClassName
                   )}
                 />
@@ -358,6 +371,7 @@ export function SectionEditor({
                   {questionsArray.fields.map((field, questionIndex) => (
                     <QuestionEditor
                       key={field.id}
+                      wsId={wsId}
                       questionId={field.id}
                       sectionIndex={index}
                       questionIndex={questionIndex}

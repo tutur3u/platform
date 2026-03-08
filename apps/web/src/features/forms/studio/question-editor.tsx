@@ -44,9 +44,11 @@ import { useEffect, useState } from 'react';
 
 import { deriveUniqueOptionValue } from '../answer-utils';
 import { FieldLabel, QuestionTypeIcon } from '../form-icons';
+import { FormsMarkdown } from '../forms-markdown';
 import { FORM_QUESTION_TYPE_VALUES, type FormQuestionInput } from '../schema';
 import type { getFormToneClasses } from '../theme';
 import { DestructiveActionDialog } from './destructive-action-dialog';
+import { FormMediaField } from './form-media-field';
 import { createClientId, type StudioForm } from './studio-utils';
 
 const TITLE_PLACEHOLDER_MAP: Record<string, string> = {
@@ -63,6 +65,7 @@ const TITLE_PLACEHOLDER_MAP: Record<string, string> = {
 };
 
 export function QuestionEditor({
+  wsId,
   questionId,
   sectionIndex,
   questionIndex,
@@ -72,6 +75,7 @@ export function QuestionEditor({
   onRemove,
   toneClasses,
 }: {
+  wsId: string;
   questionId: string;
   sectionIndex: number;
   questionIndex: number;
@@ -140,6 +144,10 @@ export function QuestionEditor({
     control: form.control,
     name: `sections.${sectionIndex}.questions.${questionIndex}.options`,
   });
+  const optionLayout = useWatch({
+    control: form.control,
+    name: `sections.${sectionIndex}.questions.${questionIndex}.settings.optionLayout`,
+  });
 
   const addOption = () => {
     const nextLabel = t('studio.new_option');
@@ -154,6 +162,11 @@ export function QuestionEditor({
       id: createClientId(),
       label: nextLabel,
       value: deriveUniqueOptionValue(nextLabel, existingValues),
+      image: {
+        storagePath: '',
+        url: '',
+        alt: '',
+      },
     });
   };
 
@@ -164,6 +177,9 @@ export function QuestionEditor({
   );
 
   const hasChoices = ['single_choice', 'multiple_choice', 'dropdown'].includes(
+    questionType
+  );
+  const hasCardChoiceLayout = ['single_choice', 'multiple_choice'].includes(
     questionType
   );
   const hasScale = ['linear_scale', 'rating'].includes(questionType);
@@ -195,6 +211,11 @@ export function QuestionEditor({
           id: existingOption?.id ?? createClientId(),
           value: score,
           label: existingOption?.label ?? score,
+          image: existingOption?.image ?? {
+            storagePath: '',
+            url: '',
+            alt: '',
+          },
         };
       }
     );
@@ -284,12 +305,18 @@ export function QuestionEditor({
                             className="h-3.5 w-3.5"
                           />
                         </span>
-                        <p className="truncate text-left font-semibold text-sm">
-                          {questionTitle ||
-                            t('studio.question_number', {
-                              count: questionIndex + 1,
-                            })}
-                        </p>
+                        <div className="min-w-0 flex-1 truncate text-left font-semibold text-sm">
+                          <FormsMarkdown
+                            content={
+                              questionTitle ||
+                              t('studio.question_number', {
+                                count: questionIndex + 1,
+                              })
+                            }
+                            variant="inline"
+                            className="truncate"
+                          />
+                        </div>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge
@@ -368,12 +395,15 @@ export function QuestionEditor({
                       {t('studio.question_title')}
                     </FieldLabel>
                   </Label>
-                  <Input
+                  <Textarea
                     {...form.register(
                       `sections.${sectionIndex}.questions.${questionIndex}.title`
                     )}
                     placeholder={titlePlaceholder}
-                    className={toneClasses.fieldClassName}
+                    className={cn(
+                      'min-h-20 resize-y',
+                      toneClasses.fieldClassName
+                    )}
                   />
                 </div>
               ) : (
@@ -493,68 +523,137 @@ export function QuestionEditor({
                     </FieldLabel>
                   </Label>
                 </div>
+                {hasCardChoiceLayout ? (
+                  <div className="space-y-1.5">
+                    <Label>{t('studio.option_layout')}</Label>
+                    <Select
+                      value={optionLayout || 'list'}
+                      onValueChange={(value) =>
+                        form.setValue(
+                          `sections.${sectionIndex}.questions.${questionIndex}.settings.optionLayout`,
+                          value as NonNullable<
+                            FormQuestionInput['settings']['optionLayout']
+                          >,
+                          { shouldDirty: true }
+                        )
+                      }
+                    >
+                      <SelectTrigger className={toneClasses.fieldClassName}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="list">
+                          {t('studio.option_layout_list')}
+                        </SelectItem>
+                        <SelectItem value="grid">
+                          {t('studio.option_layout_grid')}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : null}
                 {optionsArray.fields.map((field, optionIndex) => (
                   <div
                     key={field.id}
-                    className="grid gap-2 rounded-2xl border border-border/50 bg-background/60 p-2 md:grid-cols-[minmax(0,1fr)_auto]"
+                    className="space-y-3 rounded-2xl border border-border/50 bg-background/60 p-3"
                   >
-                    <Input
-                      value={watchedOptions?.[optionIndex]?.label || ''}
-                      className={cn(
-                        toneClasses.fieldClassName,
-                        'border-transparent'
-                      )}
-                      placeholder={t('studio.label')}
-                      onChange={(event) => {
-                        const labelPath =
-                          `sections.${sectionIndex}.questions.${questionIndex}.options.${optionIndex}.label` as const;
-                        const valuePath =
-                          `sections.${sectionIndex}.questions.${questionIndex}.options.${optionIndex}.value` as const;
-                        const currentValue = form.getValues(valuePath) || '';
-                        const currentLabel = form.getValues(labelPath) || '';
-                        const siblingValues =
-                          (
-                            form.getValues(
-                              `sections.${sectionIndex}.questions.${questionIndex}.options`
-                            ) ?? []
-                          )
-                            .map((option) => option.value)
-                            .filter((_, index) => index !== optionIndex) ?? [];
-                        const nextLabel = event.target.value;
-                        const nextValue = deriveUniqueOptionValue(
-                          nextLabel,
-                          siblingValues,
-                          currentValue
-                        );
-
-                        form.setValue(labelPath, nextLabel, {
-                          shouldDirty: true,
-                        });
-
-                        if (
-                          !currentValue ||
-                          currentValue ===
-                            deriveUniqueOptionValue(
-                              currentLabel,
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1 space-y-1.5">
+                        <Label>{t('studio.label')}</Label>
+                        <Textarea
+                          value={watchedOptions?.[optionIndex]?.label || ''}
+                          className={cn(
+                            'min-h-20 resize-y',
+                            toneClasses.fieldClassName
+                          )}
+                          placeholder={t('studio.label')}
+                          onChange={(event) => {
+                            const labelPath =
+                              `sections.${sectionIndex}.questions.${questionIndex}.options.${optionIndex}.label` as const;
+                            const valuePath =
+                              `sections.${sectionIndex}.questions.${questionIndex}.options.${optionIndex}.value` as const;
+                            const currentValue =
+                              form.getValues(valuePath) || '';
+                            const currentLabel =
+                              form.getValues(labelPath) || '';
+                            const siblingValues =
+                              (
+                                form.getValues(
+                                  `sections.${sectionIndex}.questions.${questionIndex}.options`
+                                ) ?? []
+                              )
+                                .map((option) => option.value)
+                                .filter((_, index) => index !== optionIndex) ??
+                              [];
+                            const nextLabel = event.target.value;
+                            const nextValue = deriveUniqueOptionValue(
+                              nextLabel,
                               siblingValues,
                               currentValue
-                            )
-                        ) {
-                          form.setValue(valuePath, nextValue, {
-                            shouldDirty: true,
-                          });
+                            );
+
+                            form.setValue(labelPath, nextLabel, {
+                              shouldDirty: true,
+                            });
+
+                            if (
+                              !currentValue ||
+                              currentValue ===
+                                deriveUniqueOptionValue(
+                                  currentLabel,
+                                  siblingValues,
+                                  currentValue
+                                )
+                            ) {
+                              form.setValue(valuePath, nextValue, {
+                                shouldDirty: true,
+                              });
+                            }
+                          }}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="mt-7 rounded-xl"
+                        onClick={() => optionsArray.remove(optionIndex)}
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="rounded-2xl border border-border/50 bg-background/55 p-3">
+                      <FormsMarkdown
+                        content={
+                          watchedOptions?.[optionIndex]?.label ||
+                          t('studio.label')
                         }
-                      }}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="rounded-xl"
-                      onClick={() => optionsArray.remove(optionIndex)}
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
+                        className="text-sm [&_p]:leading-6"
+                      />
+                    </div>
+                    {hasCardChoiceLayout ? (
+                      <FormMediaField
+                        wsId={wsId}
+                        scope="option"
+                        value={
+                          watchedOptions?.[optionIndex]?.image ?? {
+                            storagePath: '',
+                            url: '',
+                            alt: '',
+                          }
+                        }
+                        onChange={(value) =>
+                          form.setValue(
+                            `sections.${sectionIndex}.questions.${questionIndex}.options.${optionIndex}.image`,
+                            value,
+                            { shouldDirty: true }
+                          )
+                        }
+                        toneClasses={toneClasses}
+                        label={t('studio.option_image')}
+                        hint={t('studio.option_image_hint')}
+                      />
+                    ) : null}
                   </div>
                 ))}
                 <Button

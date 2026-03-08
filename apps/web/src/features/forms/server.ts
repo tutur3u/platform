@@ -6,6 +6,7 @@ import {
   formatAnswerForQuestion,
   restoreAnswerForQuestion,
 } from './answer-utils';
+import { normalizeMarkdownToText } from './content';
 import {
   buildQuestionAnalytics,
   buildResponseSummary,
@@ -96,7 +97,11 @@ function sanitizeFormMediaForStorage(
         alt?: string | null;
       }
     | undefined
-) {
+): {
+  storagePath: string;
+  url: string;
+  alt: string;
+} {
   return {
     storagePath: media?.storagePath ?? '',
     url: media?.storagePath ? '' : (media?.url ?? ''),
@@ -113,7 +118,11 @@ async function resolveFormMedia(
         alt?: string | null;
       }
     | undefined
-) {
+): Promise<{
+  storagePath: string;
+  url: string;
+  alt: string;
+}> {
   const normalized = {
     storagePath: media?.storagePath ?? DEFAULT_FORM_MEDIA.storagePath,
     url: media?.url ?? DEFAULT_FORM_MEDIA.url,
@@ -209,6 +218,15 @@ export function buildFormDefinition({
                 id: option.id,
                 label: option.label,
                 value: option.value,
+                image: option.image
+                  ? sanitizeFormMediaForStorage(
+                      option.image as {
+                        storagePath?: string | null;
+                        url?: string | null;
+                        alt?: string | null;
+                      }
+                    )
+                  : DEFAULT_FORM_MEDIA,
               })),
           })),
       })),
@@ -241,8 +259,19 @@ async function resolveFormDefinitionMedia(
       await resolveFormMedia(supabase, section.image),
     ])
   );
+  const optionMediaEntries = await Promise.all(
+    definition.sections.flatMap((section) =>
+      section.questions.flatMap((question) =>
+        question.options.map(
+          async (option) =>
+            [option.id, await resolveFormMedia(supabase, option.image)] as const
+        )
+      )
+    )
+  );
   const resolvedSectionImages: FormDefinition['theme']['sectionImages'] =
     Object.fromEntries(sectionMediaEntries);
+  const resolvedOptionImages = new Map(optionMediaEntries);
 
   return {
     ...definition,
@@ -254,6 +283,13 @@ async function resolveFormDefinitionMedia(
     sections: definition.sections.map((section) => ({
       ...section,
       image: resolvedSectionImages[section.id] ?? DEFAULT_FORM_MEDIA,
+      questions: section.questions.map((question) => ({
+        ...question,
+        options: question.options.map((option) => ({
+          ...option,
+          image: resolvedOptionImages.get(option.id) ?? DEFAULT_FORM_MEDIA,
+        })),
+      })),
     })),
   };
 }
@@ -273,7 +309,7 @@ async function fetchFormQuestionOptions(
 
     const { data } = await supabase
       .from('form_question_options')
-      .select('id, question_id, label, value, position')
+      .select('id, question_id, label, value, image, position')
       .in('question_id', chunk);
 
     options.push(...(data ?? []));
@@ -506,6 +542,7 @@ export async function saveFormDefinition({
             question_id: questionId,
             label: option.label,
             value: option.value,
+            image: sanitizeFormMediaForStorage(option.image),
             position: optionIndex,
           }))
         : [];
@@ -1003,7 +1040,8 @@ export async function listFormResponses(
         const formatted = formatAnswerForQuestion(question, rawValue);
 
         return [
-          question?.title || answer.question_title || 'Untitled question',
+          normalizeMarkdownToText(question?.title || answer.question_title) ||
+            'Untitled question',
           formatted,
         ];
       })
@@ -1059,7 +1097,9 @@ export async function getReadOnlyAnswersForResponder(
       if (!question) {
         accumulator.issues.push({
           questionId: answer.question_id,
-          questionTitle: answer.question_title || 'Untitled question',
+          questionTitle:
+            normalizeMarkdownToText(answer.question_title) ||
+            'Untitled question',
           originalAnswer: formatAnswerForDisplay(answer),
         });
         return accumulator;
@@ -1073,7 +1113,7 @@ export async function getReadOnlyAnswersForResponder(
       for (const unresolvedValue of restored.unresolvedValues) {
         accumulator.issues.push({
           questionId: question.id,
-          questionTitle: question.title,
+          questionTitle: normalizeMarkdownToText(question.title),
           originalAnswer: unresolvedValue,
         });
       }

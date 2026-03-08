@@ -1,4 +1,5 @@
 import { getReachableQuestionIds } from './branching';
+import { normalizeMarkdownToText } from './content';
 import type { FormDefinition } from './types';
 
 export function validateSubmittedAnswers(
@@ -19,7 +20,7 @@ export function validateSubmittedAnswers(
 
         return value == null || value === '';
       })
-      .map((question) => question.title)
+      .map((question) => normalizeMarkdownToText(question.title))
   );
 
   return {

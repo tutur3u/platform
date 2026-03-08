@@ -36,7 +36,7 @@ export function FormMediaField({
   hint,
 }: {
   wsId: string;
-  scope: 'cover' | 'section';
+  scope: 'cover' | 'section' | 'option';
   value: FormMediaValue;
   onChange: (value: FormMediaValue) => void;
   toneClasses: ReturnType<typeof getFormToneClasses>;
@@ -45,10 +45,10 @@ export function FormMediaField({
 }) {
   const t = useTranslations('forms');
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [open, setOpen] = useState(scope !== 'section');
+  const [open, setOpen] = useState(scope === 'cover');
   const uploadMutation = useFormMediaUploadMutation({ wsId });
   const hasImage = Boolean(value.url || value.storagePath);
-  const isCompactSectionMedia = scope === 'section';
+  const isCompactSectionMedia = scope === 'section' || scope === 'option';
 
   const mediaPreview = (
     <div
@@ -60,7 +60,11 @@ export function FormMediaField({
       <div
         className={cn(
           'relative',
-          isCompactSectionMedia ? 'aspect-[16/5]' : 'aspect-[16/8]'
+          scope === 'option'
+            ? 'aspect-[16/9]'
+            : isCompactSectionMedia
+              ? 'aspect-[16/5]'
+              : 'aspect-[16/8]'
         )}
       >
         {value.url ? (

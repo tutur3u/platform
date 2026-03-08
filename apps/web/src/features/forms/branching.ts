@@ -1,3 +1,4 @@
+import { normalizeMarkdownForComparison } from './content';
 import type { FormDefinition, FormDefinitionSection } from './types';
 
 export function normalizeAnswer(value: unknown): string[] {
@@ -82,8 +83,8 @@ export function getNextSectionTarget(
       if (sourceQuestion) {
         const matchedOption = sourceQuestion.options.find(
           (option) =>
-            option.label.trim().toLowerCase() ===
-            rule.comparisonValue.trim().toLowerCase()
+            normalizeMarkdownForComparison(option.label) ===
+            normalizeMarkdownForComparison(rule.comparisonValue)
         );
 
         if (matchedOption?.value) {
