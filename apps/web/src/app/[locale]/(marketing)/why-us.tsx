@@ -261,7 +261,7 @@ export default function WhyUs() {
           >
             <Card className="relative h-full overflow-hidden border-2 bg-card shadow-lg backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-xl">
               <div
-                className={`absolute inset-0 bg-linear-to-br ${department.accent} opacity-20 transition-opacity duration-300 group-hover:opacity-30`}
+                className={`absolute inset-0 bg-linear-to-br opacity-20 transition-opacity duration-300 group-hover:opacity-30`}
               />
               <CardHeader className="relative pb-3">
                 <CardTitle className="text-2xl font-bold">
