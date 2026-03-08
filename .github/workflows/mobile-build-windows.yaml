@@ -63,7 +63,7 @@ jobs:
 
             - name: Build Windows
               if: steps.cache-build.outputs.cache-hit != 'true'
-              run: flutter build windows --target lib/main_development.dart
+              run: flutter build windows --flavor development --target lib/main_development.dart
 
             - name: Upload Windows app artifact
               uses: actions/upload-artifact@v7
