@@ -337,39 +337,41 @@ export default function Members() {
         </motion.div>
       </AnimatePresence>
 
-      <motion.h1
-        className="mt-4 mb-8 text-center font-extrabold text-6xl"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-      >
-        Meet Our{' '}
-        <span className="relative">
-          <span className="border-[#FBC721] border-b-4 text-[#5FC6E5]">
-            Department
+      <section id="about-departments" className="w-full">
+        <motion.h1
+          className="mt-4 mb-8 text-center font-extrabold text-6xl"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          Meet Our{' '}
+          <span className="relative">
+            <span className="border-[#FBC721] border-b-4 text-[#5FC6E5]">
+              Department
+            </span>
+            <motion.div
+              className="absolute -top-2 -right-2"
+              animate={{
+                rotate: [0, 10, -10, 0],
+                scale: [1, 1.1, 1],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                repeatDelay: 3,
+              }}
+            >
+              <Award className="h-5 w-5 text-[#FBC721] md:h-6 md:w-6" />
+            </motion.div>
           </span>
           <motion.div
-            className="absolute -top-2 -right-2"
-            animate={{
-              rotate: [0, 10, -10, 0],
-              scale: [1, 1.1, 1],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              repeatDelay: 3,
-            }}
-          >
-            <Award className="h-5 w-5 text-[#FBC721] md:h-6 md:w-6" />
-          </motion.div>
-        </span>
-        <motion.div
-          className="ml-3 inline-block"
-          initial={{ rotate: 0 }}
-          whileInView={{ rotate: 360 }}
-          transition={{ duration: 0.8, delay: 0.3 }}
-        ></motion.div>
-      </motion.h1>
+            className="ml-3 inline-block"
+            initial={{ rotate: 0 }}
+            whileInView={{ rotate: 360 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+          ></motion.div>
+        </motion.h1>
+      </section>
 
       <div className="relative mx-auto mt-4 mb-8 max-w-4xl rounded-lg border border-border bg-card p-4 text-center text-base text-foreground/80 tracking-wide md:p-6 md:text-lg">
         Behind every successful club initiative is a dedicated team of
