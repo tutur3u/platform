@@ -1,0 +1,37 @@
+[project]
+name = "ocr-service"
+version = "0.1.0"
+description = "OCR service for extracting student information from ID cards"
+readme = "README.md"
+requires-python = "==3.12.0"
+dependencies = [
+  "fastapi[standard]==0.116.1",
+  "modal==1.3.5",
+  "numpy==2.4.2",
+  "opencv-python-headless==4.13.0.92",
+  "paddleocr[all]==3.4.0",
+  "paddlepaddle==3.3.0",
+]
+
+[dependency-groups]
+dev = [
+  "poethepoet",
+  "pytest",
+  "pytest-asyncio",
+  "pytest-cov",
+  "ruff",
+  "mypy",
+  "types-requests",
+  "types-pytz",
+]
+
+[tool.poe.tasks]
+test = "pytest"
+test-coverage = "pytest --cov"
+type-check = "mypy ."
+format = "ruff format --check ."
+format-fix = "ruff format ."
+lint = "ruff lint --check ."
+lint-fix = "ruff lint ."
+serve = "modal serve app.py"
+deploy = "modal deploy app.py"

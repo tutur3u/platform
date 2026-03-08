@@ -172,7 +172,8 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
 
         const imageData = canvasRef.current.toDataURL('image/webp', 0.8);
         try {
-          const response = await fetch(`/api/capture`, {
+          const ocrURL = process.env.OCR_SERVICE_URL || 'http://localhost:5000';
+          const response = await fetch(`${ocrURL}/capture`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -383,7 +384,7 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
           disabled={!cameraOn || capturing || !isReady}
           className={cn(
             'h-14 flex-1 text-base font-medium transition-all duration-200',
-            'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg hover:from-purple-600 hover:to-indigo-700'
+            'bg-linear-to-r from-purple-500 to-indigo-600 text-white shadow-lg hover:from-purple-600 hover:to-indigo-700'
           )}
         >
           {capturing ? (
