@@ -110,7 +110,7 @@ jobs:
 
       - name: Build macOS
         if: steps.cache-build.outputs.cache-hit != 'true'
-        run: flutter build macos --target lib/main_development.dart
+        run: flutter build macos --flavor development --target lib/main_development.dart
 
       - name: Upload macOS app artifact
         uses: actions/upload-artifact@v7
