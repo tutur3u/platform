@@ -26,6 +26,22 @@ export interface HeatmapSettings {
   showOnboardingTips: boolean;
 }
 
+export function deriveTimeReferenceFallback(
+  nextValue: HeatmapSettings['timeReference'],
+  prevReference: HeatmapSettings['timeReference'],
+  prevFallback?: HeatmapSettings['timeReferenceFallback']
+): HeatmapSettings['timeReferenceFallback'] {
+  if (nextValue === 'smart') {
+    if (prevReference === 'absolute' || prevReference === 'relative') {
+      return prevReference;
+    }
+
+    return prevFallback ?? 'relative';
+  }
+
+  return nextValue;
+}
+
 export const DEFAULT_SETTINGS: HeatmapSettings = {
   viewMode: 'hybrid',
   timeReference: 'smart',
@@ -121,13 +137,11 @@ export function HeatmapDisplaySettings() {
               setHeatmapSettings((prev) => ({
                 ...prev,
                 timeReference: value,
-                timeReferenceFallback:
-                  value === 'smart'
-                    ? prev.timeReference === 'absolute' ||
-                      prev.timeReference === 'relative'
-                      ? prev.timeReference
-                      : prev.timeReferenceFallback
-                    : value,
+                timeReferenceFallback: deriveTimeReferenceFallback(
+                  value,
+                  prev.timeReference,
+                  prev.timeReferenceFallback
+                ),
               }));
             }}
           >

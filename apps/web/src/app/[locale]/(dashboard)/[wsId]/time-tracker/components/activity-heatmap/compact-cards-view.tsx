@@ -2,7 +2,12 @@
 
 import '@/lib/dayjs-setup';
 import { formatDuration } from '@tuturuuu/hooks/utils/time-format';
-import { ChevronLeft, ChevronRight } from '@tuturuuu/icons';
+import {
+  ArrowDownRight,
+  ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
+} from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import { useLocale, useTranslations } from 'next-intl';
@@ -121,20 +126,24 @@ function MonthlyCard({
           <h4 className="font-semibold text-dynamic-foreground text-sm">
             {formatMonthLabel(monthKey, locale)}
           </h4>
-          <div className="flex items-center gap-1">
-            <div className="h-1.5 w-1.5 rounded-full" style={heatmapDotStyle} />
-            {trend !== 'neutral' && (
-              <span
-                className={cn(
-                  'font-medium text-xs',
-                  trend === 'up' ? 'text-dynamic-green' : 'text-dynamic-red'
-                )}
-              >
-                {trend === 'up' ? '↗' : '↘'}
-                {Math.abs(trendValue).toFixed(0)}%
-              </span>
-            )}
-          </div>
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="h-1.5 w-1.5 rounded-full" style={heatmapDotStyle} />
+          {trend !== 'neutral' && (
+            <span
+              className={cn(
+                'inline-flex items-center gap-0.5 font-medium text-xs',
+                trend === 'up' ? 'text-dynamic-green' : 'text-dynamic-red'
+              )}
+            >
+              {trend === 'up' ? (
+                <ArrowUpRight className="h-3 w-3" aria-hidden="true" />
+              ) : (
+                <ArrowDownRight className="h-3 w-3" aria-hidden="true" />
+              )}
+              <span>{Math.abs(trendValue).toFixed(0)}%</span>
+            </span>
+          )}
         </div>
       </div>
 

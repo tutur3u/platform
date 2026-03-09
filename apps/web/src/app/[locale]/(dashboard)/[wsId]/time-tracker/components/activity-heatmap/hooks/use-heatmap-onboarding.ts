@@ -1,7 +1,7 @@
 'use client';
 
 import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   HeatmapSettings,
   HeatmapViewMode,
@@ -17,6 +17,7 @@ interface UseHeatmapOnboardingResult {
 export function useHeatmapOnboarding(
   settings: HeatmapSettings
 ): UseHeatmapOnboardingResult {
+  const VIEW_CHANGE_TIP_TIMEOUT_MS = 12_000;
   const currentViewMode = settings.viewMode ?? ('original' as HeatmapViewMode);
 
   const [onboardingState, setOnboardingState, isOnboardingStateInitialized] =
@@ -28,14 +29,15 @@ export function useHeatmapOnboarding(
     });
 
   const autoHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const prevViewModeRef = useRef(onboardingState.lastViewMode);
+  const viewChangeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevViewModeRef = useRef(currentViewMode);
+  const [justChangedView, setJustChangedView] = useState(false);
 
   const shouldShowOnboardingTips = useMemo<boolean>(() => {
     if (!isOnboardingStateInitialized) return false;
     if (!settings.showOnboardingTips) return false;
 
     const isNewUser = onboardingState.viewCount < 3;
-    const changedViewMode = onboardingState.lastViewMode !== settings.viewMode;
 
     let isPeriodicReminder = false;
     if (onboardingState.viewCount >= 10 && onboardingState.dismissedAt) {
@@ -54,28 +56,32 @@ export function useHeatmapOnboarding(
       return false;
     }
 
-    return Boolean(isNewUser || changedViewMode);
+    return Boolean(isNewUser || justChangedView);
   }, [
     isOnboardingStateInitialized,
     settings.showOnboardingTips,
-    settings.viewMode,
+    justChangedView,
     onboardingState.showTips,
     onboardingState.viewCount,
-    onboardingState.lastViewMode,
     onboardingState.dismissedAt,
   ]);
-
-  useEffect(() => {
-    if (isOnboardingStateInitialized) {
-      prevViewModeRef.current = onboardingState.lastViewMode;
-    }
-  }, [isOnboardingStateInitialized, onboardingState.lastViewMode]);
 
   useEffect(() => {
     if (!isOnboardingStateInitialized) return;
 
     if (settings.viewMode !== prevViewModeRef.current) {
       prevViewModeRef.current = settings.viewMode;
+      setJustChangedView(true);
+
+      if (viewChangeTimerRef.current) {
+        clearTimeout(viewChangeTimerRef.current);
+      }
+
+      viewChangeTimerRef.current = setTimeout(() => {
+        setJustChangedView(false);
+        viewChangeTimerRef.current = null;
+      }, VIEW_CHANGE_TIP_TIMEOUT_MS);
+
       setOnboardingState((prev) => ({
         ...prev,
         viewCount: prev.viewCount + 1,
@@ -87,6 +93,7 @@ export function useHeatmapOnboarding(
   }, [isOnboardingStateInitialized, settings.viewMode, setOnboardingState]);
 
   const handleDismissTips = useCallback(() => {
+    setJustChangedView(false);
     setOnboardingState((prev) => ({
       ...prev,
       showTips: false,
@@ -96,6 +103,11 @@ export function useHeatmapOnboarding(
     if (autoHideTimerRef.current) {
       clearTimeout(autoHideTimerRef.current);
       autoHideTimerRef.current = null;
+    }
+
+    if (viewChangeTimerRef.current) {
+      clearTimeout(viewChangeTimerRef.current);
+      viewChangeTimerRef.current = null;
     }
   }, [setOnboardingState]);
 
@@ -129,6 +141,10 @@ export function useHeatmapOnboarding(
     () => () => {
       if (autoHideTimerRef.current) {
         clearTimeout(autoHideTimerRef.current);
+      }
+
+      if (viewChangeTimerRef.current) {
+        clearTimeout(viewChangeTimerRef.current);
       }
     },
     []

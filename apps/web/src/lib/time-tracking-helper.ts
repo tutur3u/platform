@@ -89,7 +89,6 @@ export interface DailyActivity {
   date: string;
   duration: number;
   sessions: number;
-  users: number;
 }
 
 // Get paginated grouped sessions using database RPC

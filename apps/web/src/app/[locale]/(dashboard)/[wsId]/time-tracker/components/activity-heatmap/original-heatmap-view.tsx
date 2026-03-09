@@ -3,19 +3,12 @@
 import '@/lib/dayjs-setup';
 import { Heatmap } from '@mantine/charts';
 import { ScrollArea } from '@mantine/core';
-import { formatDuration } from '@tuturuuu/hooks/utils/time-format';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import timezone from 'dayjs/plugin/timezone';
-import utc from 'dayjs/plugin/utc';
 import { useTranslations } from 'next-intl';
 import { useCallback } from 'react';
 import type { DateRangeConfig, HeatmapSize } from './types';
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
-dayjs.extend(relativeTime);
+import { getActivityTooltipLabel, parseActivityDate } from './utils';
 
 interface OriginalHeatmapViewProps {
   classes: Record<string, string>;
@@ -26,6 +19,7 @@ interface OriginalHeatmapViewProps {
   activityMap: Map<string, { duration: number; sessions: number }>;
   timeReference: 'relative' | 'absolute' | 'smart';
   today: dayjs.Dayjs;
+  userTimezone: string;
   navigateToHistoryDay: (value: string | dayjs.Dayjs) => void;
 }
 
@@ -38,6 +32,7 @@ export function OriginalHeatmapView({
   activityMap,
   timeReference,
   today,
+  userTimezone,
   navigateToHistoryDay,
 }: OriginalHeatmapViewProps) {
   const t = useTranslations('time-tracker.heatmap');
@@ -77,30 +72,20 @@ export function OriginalHeatmapView({
           '',
         ]}
         getTooltipLabel={({ date, value }) => {
-          const activity = activityMap.get(date);
-          const dateObj = dayjs(date);
-
-          if (!activity || value === null || value === 0) {
-            return `${dateObj.format('ddd, DD/MM/YYYY')} – ${t('noActivityRecorded')}`;
-          }
-
-          const parts: string[] = [dateObj.format('ddd, DD/MM/YYYY')];
-
-          if (timeReference === 'smart') {
-            parts.push(dateObj.fromNow());
-          }
-
-          parts.push(`${formatDuration(activity.duration)} ${t('tracked')}`);
-
-          if (activity.sessions > 0) {
-            parts.push(t('sessions', { count: activity.sessions }));
-          }
-
-          if (dateObj.isSame(today, 'day')) {
-            parts.push(`(${t('today')})`);
-          }
-
-          return parts.join(' ');
+          return getActivityTooltipLabel({
+            activity:
+              value === null || value === 0 ? null : activityMap.get(date),
+            date,
+            timeReference,
+            today,
+            userTimezone,
+            translations: {
+              noActivityRecorded: t('noActivityRecorded'),
+              tracked: t('tracked'),
+              today: t('today'),
+              sessions: (count) => t('sessions', { count }),
+            },
+          });
         }}
         getRectProps={({ date }) => ({
           onClick: () => navigateToHistoryDay(date),
@@ -113,7 +98,9 @@ export function OriginalHeatmapView({
           role: 'link',
           tabIndex: 0,
           style: { cursor: 'pointer' },
-          'aria-label': dayjs(date).format('dddd, MMMM D, YYYY'),
+          'aria-label': parseActivityDate(date, userTimezone).format(
+            'dddd, MMMM D, YYYY'
+          ),
         })}
         tooltipProps={{ multiline: true, w: 200 }}
         colors={[
@@ -139,6 +126,7 @@ export function OriginalHeatmapView({
       t,
       timeReference,
       today,
+      userTimezone,
     ]
   );
 

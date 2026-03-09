@@ -1,10 +1,35 @@
 import '@/lib/dayjs-setup';
+import { formatDuration } from '@tuturuuu/hooks/utils/time-format';
 import dayjs from 'dayjs';
 
 let hasWarnedAboutMillisecondDuration = false;
 
+export type HeatmapTimeReference = 'relative' | 'absolute' | 'smart';
+
+interface ActivityTooltipTranslations {
+  noActivityRecorded: string;
+  tracked: string;
+  today: string;
+  sessions: (count: number) => string;
+}
+
+interface ActivityTooltipOptions {
+  activity?: { duration: number; sessions: number } | null;
+  date: string | dayjs.Dayjs;
+  timeReference: HeatmapTimeReference;
+  today: dayjs.Dayjs;
+  userTimezone: string;
+  translations: ActivityTooltipTranslations;
+}
+
+interface ActivityTooltipContent {
+  headline: string;
+  supportingLabel?: string;
+  detail: string;
+}
+
 const normalizeDurationSeconds = (duration: number): number => {
-  if (duration > 100_000) {
+  if (duration > 604_800) {
     if (
       process.env.NODE_ENV !== 'production' &&
       !hasWarnedAboutMillisecondDuration
@@ -50,7 +75,66 @@ export const normalizeActivityDateKey = (
 };
 
 export const parseActivityDate = (value: string, userTimezone: string) =>
-  dayjs(normalizeActivityDateKey(value, userTimezone));
+  dayjs.tz(
+    `${normalizeActivityDateKey(value, userTimezone)}T00:00:00`,
+    userTimezone
+  );
+
+export const getActivityTooltipContent = ({
+  activity,
+  date,
+  timeReference,
+  today,
+  userTimezone,
+  translations,
+}: ActivityTooltipOptions): ActivityTooltipContent => {
+  const dateObj =
+    typeof date === 'string' ? parseActivityDate(date, userTimezone) : date;
+  const normalizedDate = dateObj.tz(userTimezone);
+  const absoluteLabel = normalizedDate.format('ddd, DD/MM/YYYY');
+  const relativeLabel = normalizedDate.isSame(today, 'day')
+    ? translations.today
+    : normalizedDate.fromNow();
+  const hasActivity = (activity?.duration ?? 0) > 0;
+
+  let headline = absoluteLabel;
+  let supportingLabel: string | undefined;
+
+  if (timeReference === 'relative') {
+    headline = relativeLabel;
+    supportingLabel = absoluteLabel;
+  } else if (timeReference === 'absolute') {
+    supportingLabel = normalizedDate.isSame(today, 'day')
+      ? translations.today
+      : undefined;
+  } else {
+    supportingLabel = relativeLabel;
+  }
+
+  return {
+    headline,
+    supportingLabel,
+    detail: hasActivity
+      ? [
+          `${formatDuration(activity?.duration ?? 0)} ${translations.tracked}`,
+          activity && activity.sessions > 0
+            ? translations.sessions(activity.sessions)
+            : null,
+        ]
+          .filter(Boolean)
+          .join(' • ')
+      : translations.noActivityRecorded,
+  };
+};
+
+export const getActivityTooltipLabel = (
+  options: ActivityTooltipOptions
+): string => {
+  const { detail, headline, supportingLabel } =
+    getActivityTooltipContent(options);
+
+  return [headline, supportingLabel, detail].filter(Boolean).join(' • ');
+};
 
 export const getColorClass = (intensity: number): string => {
   const colors = [

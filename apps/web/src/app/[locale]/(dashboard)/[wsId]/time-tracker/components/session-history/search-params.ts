@@ -1,12 +1,6 @@
+import '@/lib/dayjs-setup';
 import dayjs from 'dayjs';
-import customParseFormat from 'dayjs/plugin/customParseFormat';
-import timezone from 'dayjs/plugin/timezone';
-import utc from 'dayjs/plugin/utc';
 import { parseAsString, parseAsStringLiteral } from 'nuqs';
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
-dayjs.extend(customParseFormat);
 
 export const SESSION_HISTORY_DATE_FORMAT = 'YYYY-MM-DD';
 

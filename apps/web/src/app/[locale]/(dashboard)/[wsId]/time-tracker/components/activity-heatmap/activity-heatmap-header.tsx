@@ -1,20 +1,15 @@
 'use client';
 
 import { formatDuration } from '@tuturuuu/hooks/utils/time-format';
-import {
-  Calendar,
-  Check,
-  Grid3X3,
-  LayoutDashboard,
-  Settings,
-} from '@tuturuuu/icons';
+import { Calendar, Grid3X3, LayoutDashboard, Settings } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
@@ -77,49 +72,44 @@ export function ActivityHeatmapHeader({
               {t('settings.displayMode')}
             </DropdownMenuLabel>
 
-            <DropdownMenuItem
-              className="text-xs hover:cursor-pointer"
-              onClick={() => onViewModeChange('original')}
+            <DropdownMenuRadioGroup
+              value={settings.viewMode}
+              onValueChange={(value) =>
+                onViewModeChange(value as HeatmapViewMode)
+              }
             >
-              <Grid3X3 className="mr-2 h-3 w-3" />
-              {t('settings.originalGrid')}
-              {settings.viewMode === 'original' && (
-                <Check className="ml-auto h-3.5 w-3.5" />
-              )}
-            </DropdownMenuItem>
+              <DropdownMenuRadioItem
+                value="original"
+                className="text-xs hover:cursor-pointer"
+              >
+                <Grid3X3 className="mr-2 h-3 w-3" />
+                {t('settings.originalGrid')}
+              </DropdownMenuRadioItem>
 
-            <DropdownMenuItem
-              className="text-xs hover:cursor-pointer"
-              onClick={() => onViewModeChange('hybrid')}
-            >
-              <Calendar className="mr-2 h-3 w-3" />
-              {t('settings.hybridView')}
-              {settings.viewMode === 'hybrid' && (
-                <Check className="ml-auto h-3.5 w-3.5" />
-              )}
-            </DropdownMenuItem>
+              <DropdownMenuRadioItem
+                value="hybrid"
+                className="text-xs hover:cursor-pointer"
+              >
+                <Calendar className="mr-2 h-3 w-3" />
+                {t('settings.hybridView')}
+              </DropdownMenuRadioItem>
 
-            <DropdownMenuItem
-              className="text-xs hover:cursor-pointer"
-              onClick={() => onViewModeChange('calendar-only')}
-            >
-              <Calendar className="mr-2 h-3 w-3" />
-              {t('settings.calendarOnly')}
-              {settings.viewMode === 'calendar-only' && (
-                <Check className="ml-auto h-3.5 w-3.5" />
-              )}
-            </DropdownMenuItem>
+              <DropdownMenuRadioItem
+                value="calendar-only"
+                className="text-xs hover:cursor-pointer"
+              >
+                <Calendar className="mr-2 h-3 w-3" />
+                {t('settings.calendarOnly')}
+              </DropdownMenuRadioItem>
 
-            <DropdownMenuItem
-              className="text-xs hover:cursor-pointer"
-              onClick={() => onViewModeChange('compact-cards')}
-            >
-              <LayoutDashboard className="mr-2 h-3 w-3" />
-              {t('settings.compactCards')}
-              {settings.viewMode === 'compact-cards' && (
-                <Check className="ml-auto h-3.5 w-3.5" />
-              )}
-            </DropdownMenuItem>
+              <DropdownMenuRadioItem
+                value="compact-cards"
+                className="text-xs hover:cursor-pointer"
+              >
+                <LayoutDashboard className="mr-2 h-3 w-3" />
+                {t('settings.compactCards')}
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
 
             <DropdownMenuSeparator />
             <DropdownMenuLabel className="text-xs">

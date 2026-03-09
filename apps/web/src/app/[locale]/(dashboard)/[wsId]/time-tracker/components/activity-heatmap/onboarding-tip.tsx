@@ -1,6 +1,6 @@
 'use client';
 
-import { Info, X } from '@tuturuuu/icons';
+import { Info, Lightbulb, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import type { HeatmapViewMode } from '@/components/settings/time-tracker/heatmap-display-settings';
@@ -50,9 +50,15 @@ export function OnboardingTip({
           </p>
 
           {viewCount >= 3 && (
-            <p className="text-dynamic-muted-foreground text-xs opacity-80">
-              {t('onboarding.tip')}
-            </p>
+            <div className="flex items-center gap-1">
+              <Lightbulb
+                className="h-4 w-4 text-dynamic-yellow"
+                aria-hidden="true"
+              />
+              <p className="text-dynamic-muted-foreground text-xs opacity-80">
+                {t('onboarding.tip')}
+              </p>
+            </div>
           )}
         </div>
 

@@ -11,6 +11,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import type { ActivityDay } from './types';
 import {
+  getActivityTooltipContent,
   getColorClass,
   getIntensity,
   normalizeActivityDateKey,
@@ -98,13 +99,22 @@ export function YearOverview({
   }, [dailyActivity, today, userTimezone]);
 
   const shortMonthFormatter = useMemo(
-    () => new Intl.DateTimeFormat(locale, { month: 'short' }),
-    [locale]
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        month: 'short',
+        timeZone: userTimezone,
+      }),
+    [locale, userTimezone]
   );
 
   const longMonthFormatter = useMemo(
-    () => new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }),
-    [locale]
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        month: 'long',
+        year: 'numeric',
+        timeZone: userTimezone,
+      }),
+    [locale, userTimezone]
   );
 
   return (
@@ -188,8 +198,13 @@ export function MonthlyCalendarView({
   }, [dailyActivity, userTimezone]);
 
   const monthFormatter = useMemo(
-    () => new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }),
-    [locale]
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        month: 'long',
+        year: 'numeric',
+        timeZone: userTimezone,
+      }),
+    [locale, userTimezone]
   );
 
   const fullDateFormatter = useMemo(
@@ -199,8 +214,9 @@ export function MonthlyCalendarView({
         month: 'long',
         day: 'numeric',
         year: 'numeric',
+        timeZone: userTimezone,
       }),
-    [locale]
+    [locale, userTimezone]
   );
 
   const monthStart = currentMonth.startOf('month');
@@ -233,12 +249,14 @@ export function MonthlyCalendarView({
   }
 
   const monthlyStats = {
-    activeDays: days.filter((day) => day.activity && day.isCurrentMonth).length,
+    activeDays: days.filter(
+      (day) => day.isCurrentMonth && (day.activity?.duration ?? 0) > 0
+    ).length,
     totalDuration: days
-      .filter((day) => day.isCurrentMonth && day.activity)
+      .filter((day) => day.isCurrentMonth && (day.activity?.duration ?? 0) > 0)
       .reduce((sum, day) => sum + (day.activity?.duration ?? 0), 0),
     totalSessions: days
-      .filter((day) => day.isCurrentMonth && day.activity)
+      .filter((day) => day.isCurrentMonth && (day.activity?.duration ?? 0) > 0)
       .reduce((sum, day) => sum + (day.activity?.sessions ?? 0), 0),
   };
 
@@ -310,7 +328,21 @@ export function MonthlyCalendarView({
 
         <div className="grid grid-cols-7 gap-1.5">
           {days.map((day) => {
+            const hasActivity = (day.activity?.duration ?? 0) > 0;
             const intensity = getIntensity(day.activity?.duration ?? 0);
+            const tooltipContent = getActivityTooltipContent({
+              activity: day.activity,
+              date: day.date,
+              timeReference,
+              today,
+              userTimezone,
+              translations: {
+                noActivityRecorded: t('noActivityRecorded'),
+                tracked: t('tracked'),
+                today: t('today'),
+                sessions: (count) => t('sessions', { count }),
+              },
+            });
 
             return (
               <Tooltip key={day.date.format('YYYY-MM-DD')}>
@@ -324,7 +356,7 @@ export function MonthlyCalendarView({
                       day.isCurrentMonth
                         ? 'text-dynamic-foreground'
                         : 'text-dynamic-muted-foreground/60',
-                      day.activity
+                      hasActivity
                         ? getColorClass(intensity)
                         : `${getColorClass(0)} hover:opacity-90`,
                       day.isToday &&
@@ -338,21 +370,20 @@ export function MonthlyCalendarView({
                 <TooltipContent side="top" sideOffset={4}>
                   <div className="space-y-1">
                     <div className="font-medium">
-                      {day.date.format('dddd, DD/MM/YYYY')}
-                      {timeReference === 'smart' && (
+                      {tooltipContent.headline}
+                      {tooltipContent.supportingLabel && (
                         <div className="text-dynamic-muted-foreground text-xs">
-                          {day.date.fromNow()}
+                          {tooltipContent.supportingLabel}
                         </div>
                       )}
                     </div>
-                    {day.activity ? (
+                    {hasActivity ? (
                       <div className="text-dynamic-foreground text-sm">
-                        {formatDuration(day.activity.duration)} •{' '}
-                        {t('sessions', { count: day.activity.sessions })}
+                        {tooltipContent.detail}
                       </div>
                     ) : (
                       <div className="text-dynamic-muted-foreground text-sm">
-                        {t('noActivityRecorded')}
+                        {tooltipContent.detail}
                       </div>
                     )}
                   </div>

@@ -10,6 +10,7 @@ import { useLocale } from 'next-intl';
 import { useCallback, useMemo, useState } from 'react';
 import {
   DEFAULT_SETTINGS,
+  deriveTimeReferenceFallback,
   type HeatmapSettings,
   type HeatmapViewMode,
 } from '@/components/settings/time-tracker/heatmap-display-settings';
@@ -93,26 +94,24 @@ export function ActivityHeatmap({ dailyActivity = [] }: ActivityHeatmapProps) {
         }}
         onSmartTimeToggle={(checked) => {
           setSettings((prev) => {
-            const previousNonSmartReference =
-              prev.timeReference === 'absolute' ||
-              prev.timeReference === 'relative'
-                ? prev.timeReference
-                : prev.timeReferenceFallback;
+            const nextFallback = deriveTimeReferenceFallback(
+              'smart',
+              prev.timeReference,
+              prev.timeReferenceFallback
+            );
 
             if (checked) {
               return {
                 ...prev,
                 timeReference: 'smart',
-                timeReferenceFallback: previousNonSmartReference ?? 'relative',
+                timeReferenceFallback: nextFallback,
               };
             }
 
             return {
               ...prev,
-              timeReference:
-                prev.timeReferenceFallback === 'absolute'
-                  ? 'absolute'
-                  : 'relative',
+              timeReference: nextFallback ?? 'relative',
+              timeReferenceFallback: nextFallback,
             };
           });
         }}
@@ -143,6 +142,7 @@ export function ActivityHeatmap({ dailyActivity = [] }: ActivityHeatmapProps) {
             activityMap={activityMap}
             timeReference={settings.timeReference}
             today={today}
+            userTimezone={userTimezone}
             navigateToHistoryDay={navigateToHistoryDay}
           />
         ) : (
