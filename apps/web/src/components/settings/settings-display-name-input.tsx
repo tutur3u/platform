@@ -25,7 +25,7 @@ interface Props {
 }
 
 const FormSchema = z.object({
-  name: z.string().min(0).max(MAX_DISPLAY_NAME_LENGTH).optional(),
+  name: z.string().min(1).max(MAX_DISPLAY_NAME_LENGTH).optional(),
 });
 
 export default function DisplayNameInput({

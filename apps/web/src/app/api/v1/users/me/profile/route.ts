@@ -9,7 +9,7 @@ import { withSessionAuth } from '@/lib/api-auth';
 const PatchProfileSchema = z.object({
   display_name: z.string().min(1).max(MAX_DISPLAY_NAME_LENGTH).optional(),
   bio: z.string().max(MAX_BIO_LENGTH).nullable().optional(),
-  avatar_url: z.string().url().nullable().optional(),
+  avatar_url: z.url().nullable().optional(),
 });
 
 export const GET = withSessionAuth(

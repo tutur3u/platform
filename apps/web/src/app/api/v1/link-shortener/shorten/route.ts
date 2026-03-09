@@ -13,7 +13,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const ShortenRequestSchema = z.object({
-  url: z.string().url(),
+  url: z.url(),
   customSlug: z
     .string()
     .regex(/^[a-zA-Z0-9\-_]+$/)
