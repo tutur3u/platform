@@ -68,8 +68,8 @@ export function TaskItemCheckboxContent({
     });
   }, [editor, getPos, node.attrs, checkboxState]);
 
-  const handleCheckboxClick = useCallback(
-    (event: React.MouseEvent) => {
+  const handleCheckboxMouseDown = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
       event.preventDefault();
       event.stopPropagation();
       if (!editor.isEditable) return;
@@ -81,10 +81,7 @@ export function TaskItemCheckboxContent({
   return (
     <div className="flex items-start gap-2">
       <div
-        className={cn(
-          'task-list-checkbox-label flex shrink-0 select-none pt-2.5',
-          !editor.isEditable && 'pointer-events-none'
-        )}
+        className="task-list-checkbox-label flex shrink-0 select-none pt-2.5"
         contentEditable={false}
       >
         <button
@@ -96,8 +93,8 @@ export function TaskItemCheckboxContent({
                 ? 'Indeterminate'
                 : 'Unchecked'
           }
-          disabled={!editor.isEditable}
-          onClick={handleCheckboxClick}
+          aria-disabled={!editor.isEditable}
+          onMouseDown={handleCheckboxMouseDown}
           className={cn(
             'task-list-checkbox flex h-4.5 w-4.5 items-center justify-center',
             'cursor-pointer rounded-lg border-2 bg-background',
