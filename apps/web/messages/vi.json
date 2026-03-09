@@ -5442,7 +5442,8 @@
             "Đồng bộ lịch (có giới hạn)",
             "Chat AI cơ bản",
             "Tạo mã QR",
-            "CRM & Kho hàng (beta)"
+            "CRM & Kho hàng (beta)",
+            "Lưu trữ Drive 100MB"
           ],
           "name": "Miễn Phí",
           "period": "miễn phí mãi",
@@ -5455,7 +5456,7 @@
           "features": [
             "Mọi thứ của Free +",
             "Whiteboard không giới hạn",
-            "Lưu trữ Drive",
+            "Lưu trữ Drive 20GB",
             "Chấm công & Yêu cầu",
             "Phân quyền chi tiết",
             "Tuwrite & Tuchat (sắp ra mắt)",
@@ -5480,7 +5481,8 @@
             "AI không giới hạn",
             "Hỗ trợ ưu tiên",
             "Báo cáo & Analytics",
-            "Tích hợp tùy chỉnh"
+            "Tích hợp tùy chỉnh",
+            "Lưu trữ Drive 100GB"
           ],
           "name": "Pro",
           "period": {

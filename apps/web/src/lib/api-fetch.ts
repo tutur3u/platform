@@ -62,3 +62,74 @@ export async function apiFetch<T = unknown>(
 export function isRateLimitError(error: unknown): error is HttpError {
   return error instanceof HttpError && error.status === 429;
 }
+
+/**
+ * Uploads a file to a signed storage URL, handling storage capacity errors centrally.
+ * This ensures that standard error messages (e.g. out of storage limit, Sonner toasts)
+ * are consistent throughout the entire application.
+ */
+export async function uploadToStorageUrl(
+  signedUrl: string,
+  file: File | Blob,
+  token?: string
+): Promise<void> {
+  let finalFile = file;
+
+  if (
+    typeof window !== 'undefined' &&
+    file.type.startsWith('image/') &&
+    !file.type.includes('svg')
+  ) {
+    try {
+      const imageCompression = (await import('browser-image-compression'))
+        .default;
+      finalFile = await imageCompression(file as File, {
+        maxSizeMB: 20, // Allow high resolution uploads, just optimize the raw file
+        maxWidthOrHeight: 7680, // Up to 8K resolution
+        useWebWorker: true,
+        initialQuality: 0.8,
+      });
+    } catch (e) {
+      console.warn('Image compression failed, using original file', e);
+    }
+  }
+
+  const headers: Record<string, string> = {
+    'Content-Type': finalFile.type || 'application/octet-stream',
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(signedUrl, {
+    method: 'PUT',
+    headers,
+    body: finalFile,
+  });
+
+  if (!response.ok) {
+    let errorMsg = `Upload failed (${response.status})`;
+    try {
+      const text = await response.text();
+      if (text.includes('Storage limit exceeded')) {
+        throw new Error(
+          'Workspace storage limit exceeded. Please free up space or upgrade your plan.'
+        );
+      }
+
+      try {
+        const body = JSON.parse(text);
+        errorMsg = body.error || body.message || errorMsg;
+      } catch {
+        errorMsg = text || errorMsg;
+      }
+    } catch (e) {
+      if (e instanceof Error && e.message.includes('Storage limit exceeded')) {
+        throw e;
+      }
+      // text() might fail, fallback to generic errorMsg
+    }
+    throw new Error(errorMsg);
+  }
+}

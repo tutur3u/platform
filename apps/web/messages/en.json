@@ -5442,7 +5442,8 @@
             "Calendar sync (limited)",
             "AI chat (limited tokens)",
             "QR Generator",
-            "CRM & Inventory (beta)"
+            "CRM & Inventory (beta)",
+            "100MB Drive storage"
           ],
           "name": "Free",
           "period": "forever",
@@ -5455,7 +5456,7 @@
           "features": [
             "Everything in Free +",
             "Unlimited Whiteboards",
-            "Drive storage",
+            "20GB Drive storage",
             "Time Tracker & Requests",
             "Granular permissions",
             "Tuwrite & Tuchat (coming soon)",
@@ -5480,7 +5481,8 @@
             "Unlimited AI",
             "Priority support",
             "Reports & Analytics",
-            "Custom integrations"
+            "Custom integrations",
+            "100GB Drive storage"
           ],
           "name": "Pro",
           "period": {
