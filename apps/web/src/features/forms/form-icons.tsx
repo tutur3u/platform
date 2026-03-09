@@ -5,8 +5,11 @@ import {
   Clock3,
   FileText,
   Flag,
+  ImagePlus,
   ListChecks,
   MessageSquare,
+  Minus,
+  Play,
   Star,
 } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
@@ -28,6 +31,10 @@ const QUESTION_TYPE_ICONS: Record<QuestionType, IconComponent> = {
   date: Calendar,
   time: Clock3,
   section_break: ClipboardList,
+  rich_text: FileText,
+  image: ImagePlus,
+  youtube: Play,
+  divider: Minus,
 };
 
 export function QuestionTypeIcon({

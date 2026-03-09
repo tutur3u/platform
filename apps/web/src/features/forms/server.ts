@@ -211,6 +211,15 @@ export function buildFormDefinition({
             title: question.title,
             description: question.description ?? '',
             required: question.required,
+            image: question.image
+              ? sanitizeFormMediaForStorage(
+                  question.image as {
+                    storagePath?: string | null;
+                    url?: string | null;
+                    alt?: string | null;
+                  }
+                )
+              : DEFAULT_FORM_MEDIA,
             settings: parseQuestionSettings(question.settings),
             options: (optionsByQuestion.get(question.id) ?? [])
               .sort((left, right) => left.position - right.position)
@@ -269,9 +278,21 @@ async function resolveFormDefinitionMedia(
       )
     )
   );
+  const questionMediaEntries = await Promise.all(
+    definition.sections.flatMap((section) =>
+      section.questions.map(
+        async (question) =>
+          [
+            question.id,
+            await resolveFormMedia(supabase, question.image),
+          ] as const
+      )
+    )
+  );
   const resolvedSectionImages: FormDefinition['theme']['sectionImages'] =
     Object.fromEntries(sectionMediaEntries);
   const resolvedOptionImages = new Map(optionMediaEntries);
+  const resolvedQuestionImages = new Map(questionMediaEntries);
 
   return {
     ...definition,
@@ -285,6 +306,7 @@ async function resolveFormDefinitionMedia(
       image: resolvedSectionImages[section.id] ?? DEFAULT_FORM_MEDIA,
       questions: section.questions.map((question) => ({
         ...question,
+        image: resolvedQuestionImages.get(question.id) ?? DEFAULT_FORM_MEDIA,
         options: question.options.map((option) => ({
           ...option,
           image: resolvedOptionImages.get(option.id) ?? DEFAULT_FORM_MEDIA,
@@ -505,6 +527,7 @@ export async function saveFormDefinition({
         description: question.description,
         required: question.required,
         position: questionIndex,
+        image: sanitizeFormMediaForStorage(question.image),
         settings: question.settings,
       };
     })

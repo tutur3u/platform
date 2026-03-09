@@ -25,13 +25,17 @@ const baseForm: FormDefinition = {
     bodyFontId: 'be-vietnam-pro',
     surfaceStyle: 'paper',
     coverHeadline: '',
-    coverKicker: '',
     coverImage: {
       storagePath: '',
       url: '',
       alt: '',
     },
     sectionImages: {},
+    typography: {
+      displaySize: 'md',
+      headingSize: 'md',
+      bodySize: 'md',
+    },
   },
   settings: {
     showProgressBar: true,
@@ -61,6 +65,7 @@ const baseForm: FormDefinition = {
           title: 'Are you a manager?',
           description: '',
           required: true,
+          image: { storagePath: '', url: '', alt: '' },
           settings: {},
           options: [
             {

@@ -26,9 +26,13 @@ const baseForm: FormDefinition = {
     bodyFontId: 'be-vietnam-pro',
     surfaceStyle: 'paper',
     coverHeadline: '',
-    coverKicker: '',
     coverImage: { storagePath: '', url: '', alt: '' },
     sectionImages: {},
+    typography: {
+      displaySize: 'md',
+      headingSize: 'md',
+      bodySize: 'md',
+    },
   },
   settings: {
     showProgressBar: true,
@@ -52,6 +56,7 @@ const baseForm: FormDefinition = {
           title: 'Choose one',
           description: '',
           required: false,
+          image: { storagePath: '', url: '', alt: '' },
           settings: { optionLayout: 'list' },
           options: [
             {

@@ -66,8 +66,14 @@ import type {
   FormResponseSummary,
   FormResponsesQuestionAnalytics,
 } from '../types';
+import {
+  getBodyTypographyClassName,
+  getDisplayTypographyClassName,
+} from '../typography';
 import { AnalyticsPanel } from './analytics-panel';
+import { createQuestionInput } from './block-catalog';
 import { BuilderSidebar } from './builder-sidebar';
+import { FloatingBlockToolbar } from './floating-block-toolbar';
 import { FontPreviewPanel } from './font-preview-panel';
 import { FormMediaField } from './form-media-field';
 import { LogicRulesEditor } from './logic-rules-editor';
@@ -181,6 +187,12 @@ export function FormStudio({
   const questionCount = values.sections.reduce(
     (total, section) => total + section.questions.length,
     0
+  );
+  const displayTypographyClassName = getDisplayTypographyClassName(
+    values.theme.typography.displaySize
+  );
+  const bodyTypographyClassName = getBodyTypographyClassName(
+    values.theme.typography.bodySize
   );
   const previewDefinition = useMemo(
     () =>
@@ -320,12 +332,15 @@ export function FormStudio({
     setTimeout(() => setHasCopied(false), 2000);
   };
 
-  const addSection = () => {
+  const createSectionInput = (
+    count: number,
+    initialType: Parameters<typeof createQuestionInput>[0] = 'short_text'
+  ) => {
     const sectionId = createClientId();
-    sectionsArray.append({
+    return {
       id: sectionId,
       title: t('studio.section_number', {
-        count: sectionsArray.fields.length + 1,
+        count,
       }),
       description: '',
       image: {
@@ -333,23 +348,59 @@ export function FormStudio({
         url: '',
         alt: '',
       },
-      questions: [
-        {
-          id: createClientId(),
-          type: 'short_text',
-          title: t('studio.new_question'),
-          description: '',
-          required: false,
-          settings: {
-            placeholder: t('runtime.type_your_answer'),
-            optionLayout: 'list',
-          },
-          options: [],
-        },
-      ],
-    });
-    openSection(sectionId);
-    scrollToSection(sectionId);
+      questions: [createQuestionInput(initialType, t)],
+    };
+  };
+
+  const addSection = () => {
+    const nextSection = createSectionInput(sectionsArray.fields.length + 1);
+
+    sectionsArray.append(nextSection);
+    openSection(nextSection.id);
+    setActiveQuestionForSection(
+      nextSection.id,
+      nextSection.questions[0]?.id ?? ''
+    );
+    scrollToSection(nextSection.id);
+  };
+
+  const addBlockToActiveSection = (
+    type: Parameters<typeof createQuestionInput>[0]
+  ) => {
+    if (sectionsArray.fields.length === 0) {
+      const nextSection = createSectionInput(1, type);
+
+      sectionsArray.append(nextSection);
+      openSection(nextSection.id);
+      setActiveQuestionForSection(
+        nextSection.id,
+        nextSection.questions[0]?.id ?? ''
+      );
+      scrollToSection(nextSection.id);
+      return;
+    }
+
+    const targetSectionIndex = Math.max(
+      0,
+      values.sections.findIndex(
+        (section) => section.id === resolvedActiveSectionId
+      )
+    );
+    const targetSectionId =
+      values.sections[targetSectionIndex]?.id ?? values.sections[0]?.id ?? '';
+    const nextQuestion = createQuestionInput(type, t);
+    const targetSection = form.getValues(`sections.${targetSectionIndex}`);
+
+    if (sectionsArray.fields[targetSectionIndex] && targetSection) {
+      sectionsArray.update(targetSectionIndex, {
+        ...targetSection,
+        questions: [...(targetSection.questions ?? []), nextQuestion],
+      });
+    }
+
+    openSection(targetSectionId);
+    setActiveQuestionForSection(targetSectionId, nextQuestion.id);
+    scrollToSection(targetSectionId);
   };
 
   const handleTabChange = (nextTab: string) => {
@@ -592,14 +643,22 @@ export function FormStudio({
               </div>
               <div className="space-y-2">
                 <h1
-                  className="max-w-4xl font-semibold text-4xl tracking-tight"
+                  className={cn(
+                    'max-w-4xl font-semibold tracking-tight',
+                    displayTypographyClassName
+                  )}
                   style={studioHeadlineFontStyle}
                 >
                   {mode === 'create'
                     ? t('studio.create_new_form')
                     : values.title || t('studio.form_studio')}
                 </h1>
-                <p className="max-w-3xl text-muted-foreground">
+                <p
+                  className={cn(
+                    'max-w-3xl text-muted-foreground',
+                    bodyTypographyClassName
+                  )}
+                >
                   {t('studio.header_description')}
                 </p>
               </div>
@@ -755,7 +814,12 @@ export function FormStudio({
           </div>
 
           <TabsContent value="build" className="mt-0">
-            <div className="grid items-start gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+            <div className="grid items-start gap-6 lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[72px_280px_minmax(0,1fr)]">
+              <FloatingBlockToolbar
+                toneClasses={studioToneClasses}
+                onAddSection={addSection}
+                onAddBlock={addBlockToActiveSection}
+              />
               <BuilderSidebar
                 values={values}
                 activeSectionId={resolvedActiveSectionId}

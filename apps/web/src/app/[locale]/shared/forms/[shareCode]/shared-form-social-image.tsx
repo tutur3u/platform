@@ -1,4 +1,5 @@
 import { ImageResponse } from 'next/og';
+import { siteConfig } from '@/constants/configs';
 import type { FormDefinition } from '@/features/forms/types';
 import type { SharedFormMetadataStrings } from './shared-form-data';
 import { getSharedFormPresentation } from './shared-form-data';
@@ -96,13 +97,17 @@ export function createSharedFormSocialImage({
   form,
   strings,
   status = 200,
+  coverImageUrl,
 }: {
   form: FormDefinition | null | undefined;
   strings: SharedFormMetadataStrings;
   status?: number;
+  coverImageUrl?: string;
 }) {
   const presentation = getSharedFormPresentation(form, strings, status);
   const palette = ACCENT_PALETTES[presentation.accentColor];
+  const resolvedCoverImageUrl = coverImageUrl || presentation.coverImageUrl;
+  const logoUrl = `${siteConfig.url}/media/logos/transparent.png`;
 
   return new ImageResponse(
     <div
@@ -116,26 +121,11 @@ export function createSharedFormSocialImage({
         color: '#fafafa',
       }}
     >
-      {presentation.coverImageUrl ? (
-        // biome-ignore lint/performance/noImgElement: ImageResponse requires standard img elements for generated OG images.
-        <img
-          src={presentation.coverImageUrl}
-          alt=""
-          style={{
-            position: 'absolute',
-            inset: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            opacity: 0.24,
-          }}
-        />
-      ) : null}
       <div
         style={{
           position: 'absolute',
           inset: 0,
-          background: `linear-gradient(135deg, ${palette.primary}dd 0%, rgba(9,9,11,0.9) 48%, rgba(9,9,11,0.96) 100%)`,
+          background: `linear-gradient(135deg, ${palette.primary}f0 0%, rgba(9,9,11,0.96) 46%, rgba(9,9,11,1) 100%)`,
         }}
       />
       <div
@@ -172,46 +162,31 @@ export function createSharedFormSocialImage({
               gap: '16px',
             }}
           >
+            {/* biome-ignore lint/performance/noImgElement: ImageResponse requires standard img elements for generated OG images. */}
+            <img
+              src={logoUrl}
+              alt=""
+              style={{
+                width: '54px',
+                height: '54px',
+                objectFit: 'contain',
+              }}
+            />
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                width: '56px',
-                height: '56px',
-                borderRadius: '18px',
-                border: `1px solid ${palette.border}`,
-                background: `${palette.primary}aa`,
-                fontSize: '24px',
-                fontWeight: 700,
-              }}
-            >
-              T
-            </div>
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '4px',
+                gap: '12px',
               }}
             >
               <span
                 style={{
-                  fontSize: '16px',
-                  letterSpacing: '0.28em',
-                  textTransform: 'uppercase',
-                  color: '#d4d4d8',
+                  fontSize: '28px',
+                  fontWeight: 700,
+                  color: '#f4f4f5',
                 }}
               >
-                {strings.brand}
-              </span>
-              <span
-                style={{
-                  fontSize: '20px',
-                  color: '#a1a1aa',
-                }}
-              >
-                {presentation.kicker}
+                Forms
               </span>
             </div>
           </div>
@@ -248,7 +223,7 @@ export function createSharedFormSocialImage({
                 fontWeight: 600,
               }}
             >
-              {presentation.questionCount} questions
+              {presentation.itemCount} items
             </div>
           </div>
         </div>
@@ -256,40 +231,119 @@ export function createSharedFormSocialImage({
         <div
           style={{
             display: 'flex',
-            flexDirection: 'column',
-            gap: '20px',
-            maxWidth: '940px',
+            alignItems: 'stretch',
+            gap: '32px',
+            width: '100%',
+            flex: 1,
+            marginTop: '32px',
           }}
         >
           <div
             style={{
-              fontSize: presentation.title.length > 72 ? '56px' : '68px',
-              lineHeight: 1.1,
-              fontWeight: 700,
-              display: '-webkit-box',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              WebkitLineClamp: 3,
-              WebkitBoxOrient: 'vertical',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              gap: '20px',
+              flex: 1,
+              maxWidth: resolvedCoverImageUrl ? '54%' : '100%',
             }}
           >
-            {presentation.title}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '20px',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: presentation.title.length > 72 ? '54px' : '66px',
+                  lineHeight: 1.08,
+                  fontWeight: 700,
+                  display: '-webkit-box',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  WebkitLineClamp: 3,
+                  WebkitBoxOrient: 'vertical',
+                }}
+              >
+                {presentation.title}
+              </div>
+              <div
+                style={{
+                  fontSize: '28px',
+                  lineHeight: 1.42,
+                  color: '#d4d4d8',
+                  display: '-webkit-box',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  WebkitLineClamp: 4,
+                  WebkitBoxOrient: 'vertical',
+                  maxWidth: '100%',
+                }}
+              >
+                {presentation.description}
+              </div>
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                gap: '12px',
+                alignItems: 'center',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  width: '12px',
+                  height: '12px',
+                  borderRadius: '999px',
+                  background: palette.secondary,
+                }}
+              />
+              <div
+                style={{
+                  fontSize: '18px',
+                  color: '#d4d4d8',
+                }}
+              >
+                {strings.brand}
+              </div>
+            </div>
           </div>
-          <div
-            style={{
-              fontSize: '28px',
-              lineHeight: 1.45,
-              color: '#d4d4d8',
-              display: '-webkit-box',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              WebkitLineClamp: 3,
-              WebkitBoxOrient: 'vertical',
-              maxWidth: '880px',
-            }}
-          >
-            {presentation.description}
-          </div>
+          {resolvedCoverImageUrl ? (
+            <div
+              style={{
+                position: 'relative',
+                display: 'flex',
+                flex: 1,
+                overflow: 'hidden',
+                borderRadius: '28px',
+                border: `1px solid ${palette.border}`,
+                background: 'rgba(255,255,255,0.04)',
+                boxShadow: '0 18px 48px rgba(0,0,0,0.28)',
+              }}
+            >
+              {/* biome-ignore lint/performance/noImgElement: ImageResponse requires standard img elements for generated OG images. */}
+              <img
+                src={resolvedCoverImageUrl}
+                alt=""
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background:
+                    'linear-gradient(180deg, rgba(0,0,0,0.06) 0%, rgba(0,0,0,0.3) 100%)',
+                }}
+              />
+            </div>
+          ) : null}
         </div>
       </div>
     </div>,

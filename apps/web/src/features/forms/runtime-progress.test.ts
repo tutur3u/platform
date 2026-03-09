@@ -23,13 +23,17 @@ const form: FormDefinition = {
     bodyFontId: 'be-vietnam-pro',
     surfaceStyle: 'paper',
     coverHeadline: '',
-    coverKicker: '',
     coverImage: {
       storagePath: '',
       url: '',
       alt: '',
     },
     sectionImages: {},
+    typography: {
+      displaySize: 'md',
+      headingSize: 'md',
+      bodySize: 'md',
+    },
   },
   settings: {
     showProgressBar: true,
@@ -57,6 +61,7 @@ const form: FormDefinition = {
           title: 'Path',
           description: '',
           required: true,
+          image: { storagePath: '', url: '', alt: '' },
           settings: {},
           options: [
             {
@@ -80,6 +85,7 @@ const form: FormDefinition = {
           title: 'Optional context',
           description: '',
           required: false,
+          image: { storagePath: '', url: '', alt: '' },
           settings: {},
           options: [],
         },
@@ -102,6 +108,7 @@ const form: FormDefinition = {
           title: 'Divider',
           description: '',
           required: false,
+          image: { storagePath: '', url: '', alt: '' },
           settings: {},
           options: [],
         },
@@ -112,6 +119,7 @@ const form: FormDefinition = {
           title: 'Skipped prompt',
           description: '',
           required: false,
+          image: { storagePath: '', url: '', alt: '' },
           settings: {},
           options: [],
         },
@@ -134,6 +142,7 @@ const form: FormDefinition = {
           title: 'Final answer',
           description: '',
           required: false,
+          image: { storagePath: '', url: '', alt: '' },
           settings: {},
           options: [],
         },
@@ -167,11 +176,17 @@ describe('getRuntimeProgressStats', () => {
     );
 
     expect(progress).toEqual({
-      totalQuestions: 4,
+      routeSectionIds: [
+        '50000000-0000-0000-0000-000000000010',
+        '50000000-0000-0000-0000-000000000030',
+      ],
+      currentSectionNumber: 2,
+      routeSectionCount: 2,
+      totalQuestions: 3,
       answeredCount: 1,
-      skippedCount: 2,
-      completedCount: 3,
-      progressValue: 75,
+      skippedCount: 1,
+      completedCount: 2,
+      progressValue: 66.66666666666666,
     });
   });
 });

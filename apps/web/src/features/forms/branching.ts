@@ -1,3 +1,4 @@
+import { isAnswerableQuestionType } from './block-utils';
 import { normalizeMarkdownForComparison } from './content';
 import type { FormDefinition, FormDefinitionSection } from './types';
 
@@ -158,5 +159,48 @@ export function getReachableQuestionIds(
 
   return form.sections
     .filter((section) => reachableSections.has(section.id))
-    .flatMap((section) => section.questions.map((question) => question.id));
+    .flatMap((section) =>
+      section.questions
+        .filter((question) => isAnswerableQuestionType(question.type))
+        .map((question) => question.id)
+    );
+}
+
+export function getPlannedSectionIds(
+  form: FormDefinition,
+  currentSectionId: string,
+  answers: Record<string, unknown>,
+  visitedSectionIds: string[]
+): string[] {
+  const sections = getOrderedSections(form);
+  const route = visitedSectionIds.filter((sectionId, index, current) => {
+    return current.indexOf(sectionId) === index;
+  });
+  const currentIndex = route.indexOf(currentSectionId);
+
+  if (currentIndex === -1 && currentSectionId) {
+    route.push(currentSectionId);
+  }
+
+  let cursorSectionId =
+    currentSectionId || route.at(-1) || sections[0]?.id || '';
+  const seen = new Set(route);
+  let safety = 0;
+
+  while (cursorSectionId && safety < sections.length + 8) {
+    const target = getNextSectionTarget(form, cursorSectionId, answers);
+    if (target.type === 'submit' || !target.targetSectionId) {
+      break;
+    }
+
+    if (!seen.has(target.targetSectionId)) {
+      route.push(target.targetSectionId);
+      seen.add(target.targetSectionId);
+    }
+
+    cursorSectionId = target.targetSectionId;
+    safety += 1;
+  }
+
+  return route;
 }

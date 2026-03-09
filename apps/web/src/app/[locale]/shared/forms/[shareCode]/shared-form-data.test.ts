@@ -63,13 +63,17 @@ describe('shared-form-data', () => {
           bodyFontId: 'be-vietnam-pro',
           surfaceStyle: 'paper',
           coverHeadline: '',
-          coverKicker: 'Measured, warm, thoughtful',
           coverImage: {
             storagePath: '',
             url: 'https://example.com/cover.png',
             alt: 'Cover',
           },
           sectionImages: {},
+          typography: {
+            displaySize: 'md',
+            headingSize: 'md',
+            bodySize: 'md',
+          },
         },
         settings: {
           showProgressBar: true,
@@ -93,6 +97,7 @@ describe('shared-form-data', () => {
                 title: 'Question',
                 description: '',
                 required: false,
+                image: { storagePath: '', url: '', alt: '' },
                 settings: {},
                 options: [],
               },
@@ -107,6 +112,6 @@ describe('shared-form-data', () => {
     expect(presentation.title).toBe('Quarterly feedback');
     expect(presentation.description).toBe('Help us improve the next release.');
     expect(presentation.coverImageUrl).toBe('https://example.com/cover.png');
-    expect(presentation.questionCount).toBe(1);
+    expect(presentation.itemCount).toBe(1);
   });
 });

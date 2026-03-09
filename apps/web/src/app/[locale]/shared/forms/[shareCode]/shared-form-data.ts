@@ -64,6 +64,16 @@ function buildSharedFormUrl(locale: string, shareCode: string) {
   return `${siteConfig.url}/${locale}/shared/forms/${shareCode}`;
 }
 
+function clampSocialText(value: string, maxLength: number) {
+  const normalized = value.replace(/\s+/g, ' ').trim();
+
+  if (normalized.length <= maxLength) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, Math.max(0, maxLength - 1)).trimEnd()}…`;
+}
+
 export function getSharedFormPresentation(
   form: FormDefinition | null | undefined,
   strings: SharedFormMetadataStrings,
@@ -79,32 +89,39 @@ export function getSharedFormPresentation(
 
     return {
       title: strings.fallbackTitle,
-      description,
-      kicker: strings.brand,
+      description: clampSocialText(description, 160),
       coverImageUrl: '',
+      coverImagePath: '',
       accentColor: 'dynamic-green' as const,
       sectionCount: 0,
-      questionCount: 0,
+      itemCount: 0,
     };
   }
 
   const title =
     normalizeMarkdownToText(form.theme.coverHeadline || form.title) ||
     strings.fallbackTitle;
+  const firstSectionDescription =
+    form.sections
+      .map((section) => normalizeMarkdownToText(section.description))
+      .find((value) => value.trim().length > 0) ?? '';
   const description =
     normalizeMarkdownToText(form.description) ||
-    normalizeMarkdownToText(form.sections[0]?.description) ||
+    firstSectionDescription ||
     strings.fallbackDescription;
 
   return {
-    title,
-    description,
-    kicker: form.theme.coverKicker || strings.brand,
+    title: clampSocialText(title, 90),
+    description: clampSocialText(description, 160),
     coverImageUrl: form.theme.coverImage.url || '',
+    coverImagePath: form.theme.coverImage.storagePath || '',
     accentColor: form.theme.accentColor,
     sectionCount: form.sections.length,
-    questionCount: form.sections.reduce(
-      (count, section) => count + section.questions.length,
+    itemCount: form.sections.reduce(
+      (count, section) =>
+        count +
+        section.questions.filter((question) => question.type !== 'divider')
+          .length,
       0
     ),
   };

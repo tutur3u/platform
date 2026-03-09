@@ -3747,6 +3747,7 @@ export type Database = {
           description: string | null;
           form_id: string;
           id: string;
+          image: Json | null;
           position: number;
           required: boolean;
           section_id: string;
@@ -3759,6 +3760,7 @@ export type Database = {
           description?: string | null;
           form_id: string;
           id?: string;
+          image?: Json | null;
           position?: number;
           required?: boolean;
           section_id: string;
@@ -3771,6 +3773,7 @@ export type Database = {
           description?: string | null;
           form_id?: string;
           id?: string;
+          image?: Json | null;
           position?: number;
           required?: boolean;
           section_id?: string;

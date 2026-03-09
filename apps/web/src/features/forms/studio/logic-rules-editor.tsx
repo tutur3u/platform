@@ -24,6 +24,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 
+import { isAnswerableQuestionType } from '../block-utils';
 import {
   normalizeMarkdownForComparison,
   normalizeMarkdownToText,
@@ -127,7 +128,7 @@ export function LogicRulesEditor({
     () =>
       sections.flatMap((section, sectionIndex) =>
         section.questions
-          .filter((question) => question.type !== 'section_break')
+          .filter((question) => isAnswerableQuestionType(question.type))
           .map((question, questionIndex) => ({
             id: question.id ?? '',
             sectionId: section.id ?? '',
