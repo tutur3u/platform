@@ -1,15 +1,6 @@
-'use client';
-
 import { Button } from '@ncthub/ui/button';
 import { MenuIcon, X } from '@ncthub/ui/icons';
 import { Navbar as SharedNavbar } from '@ncthub/ui/navbar';
-import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  navigationMenuTriggerStyle,
-} from '@ncthub/ui/navigation-menu';
 import { Separator } from '@ncthub/ui/separator';
 import {
   Sheet,
@@ -20,48 +11,11 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@ncthub/ui/sheet';
-import { cn } from '@ncthub/utils/format';
 import Image from 'next/image';
 import Link from 'next/link';
 import { navigationItems } from '@/config/navigation';
 import NavbarSeparator from './navbar-separator';
-
-function handleSmoothScroll(
-  e: React.MouseEvent<HTMLAnchorElement>,
-  href: string
-) {
-  e.preventDefault();
-  const targetId = href.replace('#', '');
-  const element = document.querySelector(`#${targetId}`);
-  if (element) {
-    element.scrollIntoView({ behavior: 'smooth' });
-  }
-}
-
-function DesktopNavLinks() {
-  return (
-    <div className="flex w-full items-center justify-center">
-      <NavigationMenu className="scrollbar-none flex w-4/5 max-w-none flex-none justify-between overflow-x-auto">
-        <NavigationMenuList>
-          {navigationItems.map((item) => (
-            <NavigationMenuItem key={item.href}>
-              <NavigationMenuLink
-                href={item.href}
-                onClick={(e) => handleSmoothScroll(e, item.href)}
-                className={cn(
-                  navigationMenuTriggerStyle(),
-                  'bg-transparent px-4 transition-all duration-300 hover:bg-foreground/5'
-                )}
-              >
-                {item.label}
-              </NavigationMenuLink>
-            </NavigationMenuItem>
-          ))}
-        </NavigationMenuList>
-      </NavigationMenu>
-    </div>
-  );
-}
+import MainNavigationMenu from './navigation-menu';
 
 function DesktopActions() {
   return (
@@ -85,12 +39,7 @@ function DesktopActions() {
         className="bg-transparent transition-all duration-300 hover:bg-foreground/5"
         variant="ghost"
       >
-        <Link
-          href="#contact"
-          onClick={(e) => handleSmoothScroll(e, '#contact')}
-        >
-          Contact Us
-        </Link>
+        <Link href="#contact">Contact Us</Link>
       </Button>
 
       <Button asChild className="btn-primary">
@@ -156,12 +105,7 @@ function MobileActions() {
                     className="justify-start font-semibold text-base hover:bg-foreground/5"
                     asChild
                   >
-                    <Link
-                      href={item.href}
-                      onClick={(e) => handleSmoothScroll(e, item.href)}
-                    >
-                      {item.label}
-                    </Link>
+                    <Link href={item.href}>{item.label}</Link>
                   </Button>
                 </SheetClose>
               ))}
@@ -186,17 +130,7 @@ function MobileActions() {
                   className="justify-start text-base hover:bg-foreground/5"
                   asChild
                 >
-                  <Link
-                    href="#contact"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      document
-                        .querySelector('#contact')
-                        ?.scrollIntoView({ behavior: 'smooth' });
-                    }}
-                  >
-                    Contact Us
-                  </Link>
+                  <Link href="#contact">Contact Us</Link>
                 </Button>
               </SheetClose>
             </SheetFooter>
@@ -214,13 +148,6 @@ export default function Navbar() {
         <Link
           href="/"
           scroll={false}
-          onClick={(e) => {
-            e.preventDefault();
-            window.scrollTo({
-              top: 0,
-              behavior: 'smooth',
-            });
-          }}
           className="flex flex-none items-center gap-2"
         >
           <Image
@@ -232,7 +159,7 @@ export default function Navbar() {
           />
         </Link>
       }
-      navigationMenu={<DesktopNavLinks />}
+      navigationMenu={<MainNavigationMenu />}
       separator={<NavbarSeparator />}
       actions={
         <div className="flex items-center gap-2">
