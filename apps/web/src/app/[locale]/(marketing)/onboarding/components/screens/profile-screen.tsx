@@ -35,7 +35,7 @@ const FormSchema = z.object({
     .min(1, 'Display name is required')
     .max(MAX_DISPLAY_NAME_LENGTH),
   bio: z.string().max(MAX_BIO_LENGTH).optional(),
-  avatarUrl: z.string().url().optional().or(z.literal('')),
+  avatarUrl: z.url().optional().or(z.literal('')),
 });
 
 interface ProfileScreenProps {

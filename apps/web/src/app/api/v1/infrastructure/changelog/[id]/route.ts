@@ -29,7 +29,7 @@ const UpdateChangelogSchema = z.object({
     ])
     .optional(),
   version: z.string().max(MAX_COLOR_LENGTH).optional().nullable(),
-  cover_image_url: z.string().url().optional().nullable(),
+  cover_image_url: z.url().optional().nullable(),
 });
 
 interface Params {

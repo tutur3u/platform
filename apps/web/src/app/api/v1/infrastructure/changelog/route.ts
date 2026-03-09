@@ -25,7 +25,7 @@ const CreateChangelogSchema = z.object({
     'performance',
   ]),
   version: z.string().max(MAX_COLOR_LENGTH).optional(),
-  cover_image_url: z.string().url().optional().nullable(),
+  cover_image_url: z.url().optional().nullable(),
 });
 
 export async function GET(req: Request) {

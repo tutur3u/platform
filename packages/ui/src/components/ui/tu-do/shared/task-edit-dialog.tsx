@@ -231,16 +231,18 @@ export function TaskEditDialog({
   // from causing the SupabaseProvider to be destroyed and recreated every render
   const userId = user?.id;
   const userDisplayName = user?.display_name;
+  const userEmail = user?.email;
+
   const yjsUser = useMemo(
     () =>
       userId
         ? {
             id: userId || '',
-            name: userDisplayName || '',
+            name: userDisplayName || userEmail?.split('@')[0] || 'Anonymous',
             color: userColor || '',
           }
         : null,
-    [userId, userDisplayName, userColor]
+    [userId, userDisplayName, userEmail, userColor]
   );
 
   // User task settings
@@ -1507,7 +1509,7 @@ export function TaskEditDialog({
                   collaborationUser={
                     user
                       ? {
-                          name: user.display_name || '',
+                          name: userDisplayName || userEmail?.split('@')[0] || 'Anonymous',
                           color: userColor || '',
                         }
                       : null

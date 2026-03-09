@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
 // POST /api/v1/workspaces
 const createWorkspaceSchema = z.object({
   name: z.string().min(1).max(100),
-  logo_url: z.string().url().optional(),
+  logo_url: z.url().optional(),
 });
 
 export async function POST(request: NextRequest) {
