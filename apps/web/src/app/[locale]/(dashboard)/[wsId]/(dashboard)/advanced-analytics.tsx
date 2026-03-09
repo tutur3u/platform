@@ -18,6 +18,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { formatTooltipValue, getTooltipName } from '@/lib/recharts-tooltip';
 
 const COLORS = {
   light: {
@@ -464,22 +465,25 @@ const MetricsChart = ({
                 borderRadius: '8px',
                 padding: '12px 16px',
               }}
-              formatter={(
-                value: number | undefined,
-                name: string | undefined
-              ) => [
-                (name ?? '') === 'directionalAccuracy' ||
-                (name ?? '') === 'turningPointAccuracy'
-                  ? ((value ?? 0) * 100).toFixed(3)
-                  : (value ?? 0).toFixed(3),
-                (name ?? '')
-                  ? 'RMSE'
-                  : name === 'directionalAccuracy'
-                    ? t('aurora.directional_accuracy')
-                    : name === 'turningPointAccuracy'
-                      ? t('aurora.turning_point_accuracy')
-                      : t('aurora.weighted_score'),
-              ]}
+              formatter={(value, name) => {
+                const metricName = getTooltipName(name);
+
+                return [
+                  formatTooltipValue(value, (numericValue) =>
+                    metricName === 'directionalAccuracy' ||
+                    metricName === 'turningPointAccuracy'
+                      ? (numericValue * 100).toFixed(3)
+                      : numericValue.toFixed(3)
+                  ),
+                  metricName
+                    ? 'RMSE'
+                    : metricName === 'directionalAccuracy'
+                      ? t('aurora.directional_accuracy')
+                      : metricName === 'turningPointAccuracy'
+                        ? t('aurora.turning_point_accuracy')
+                        : t('aurora.weighted_score'),
+                ];
+              }}
               labelStyle={{
                 color: colors.tooltip.text,
                 fontWeight: 'bold',

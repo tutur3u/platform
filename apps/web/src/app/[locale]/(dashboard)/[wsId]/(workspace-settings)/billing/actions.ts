@@ -206,7 +206,7 @@ export async function updateWorkspaceBillingDetails(
         email: normalizedEmail,
         name: normalizedBillingName || null,
         billingAddress: normalizedBillingAddress,
-        taxId: [normalizedTaxId || null],
+        taxId: normalizedTaxId || null,
       },
     });
 

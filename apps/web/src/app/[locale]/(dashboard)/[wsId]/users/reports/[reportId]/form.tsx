@@ -35,6 +35,7 @@ export default function UserReportForm({
   canUpdate = true,
   canDelete = false,
   isSubmitting = false,
+  showHeading = true,
 }: {
   isNew: boolean;
   form: UseFormReturn<z.infer<typeof UserReportFormSchema>>;
@@ -48,12 +49,19 @@ export default function UserReportForm({
   canUpdate?: boolean;
   canDelete?: boolean;
   isSubmitting?: boolean;
+  showHeading?: boolean;
 }) {
   const t = useTranslations();
   return (
     <div className="grid h-fit gap-2 rounded-lg border p-4">
-      <div className="font-semibold text-lg">{t('ws-settings.basic_info')}</div>
-      <Separator />
+      {showHeading ? (
+        <>
+          <div className="font-semibold text-lg">
+            {t('ws-settings.basic_info')}
+          </div>
+          <Separator />
+        </>
+      ) : null}
       <Form {...form}>
         <form
           onSubmit={(e) => {

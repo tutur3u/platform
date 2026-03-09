@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { YearPicker } from './year-picker';
 
 interface Props {
@@ -16,12 +15,6 @@ export function YearRangePicker({
   setEndYear,
   className,
 }: Props) {
-  useEffect(() => {
-    if (startYear && endYear && startYear > endYear) {
-      setEndYear(startYear);
-    }
-  }, [startYear, endYear, setEndYear]);
-
   return (
     <div className={className}>
       <div className="flex flex-col gap-2">

@@ -47,18 +47,18 @@ export const FEATURE_TIERS: Record<FeatureId, WorkspaceProductTier> = {
   users: 'FREE',
   inventory: 'FREE',
   whiteboards: 'FREE',
+  drive: 'FREE',
+  realtime_cursors: 'FREE',
+  documents: 'FREE',
+  time_tracker: 'FREE',
 
   // PLUS tier features
-  realtime_cursors: 'PLUS',
-  documents: 'PLUS',
   chat: 'PLUS',
-  time_tracker: 'PLUS',
-  workforce: 'PLUS',
+  voice_assistant: 'PLUS',
 
   // PRO tier features
-  drive: 'PRO',
+  workforce: 'PRO',
   ai_lab: 'PRO',
-  voice_assistant: 'PRO',
   mira: 'PRO',
 };
 

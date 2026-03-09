@@ -35,7 +35,10 @@ function TabFallback() {
   return (
     <div className="space-y-4">
       {Array.from({ length: 3 }).map((_, i) => (
-        <div key={i} className="h-24 animate-pulse rounded-lg bg-muted" />
+        <div
+          key={i}
+          className="h-24 animate-pulse rounded-2xl border border-border/60 bg-muted/40"
+        />
       ))}
     </div>
   );
@@ -64,37 +67,90 @@ function AiCreditsPageContent() {
   );
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="font-bold text-2xl">{t('overview_title')}</h1>
-        <p className="text-muted-foreground">{t('overview_description')}</p>
+    <div className="space-y-6 pb-8">
+      <div className="relative overflow-hidden rounded-[28px] border border-border/70 bg-linear-to-br from-background via-background to-muted/30 p-6 shadow-sm">
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_top_right,rgba(88,168,255,0.18),transparent_55%)]" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-border to-transparent" />
+        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl space-y-2">
+            <div className="inline-flex items-center rounded-full border border-border/70 bg-background/80 px-3 py-1 font-medium text-[11px] text-muted-foreground uppercase tracking-[0.22em]">
+              {t('hero_eyebrow')}
+            </div>
+            <div>
+              <h1 className="font-semibold text-3xl tracking-tight">
+                {t('overview_title')}
+              </h1>
+              <p className="mt-2 max-w-xl text-muted-foreground">
+                {t('overview_description')}
+              </p>
+            </div>
+          </div>
+          <div className="grid gap-2 text-muted-foreground text-sm sm:grid-cols-3">
+            <div className="rounded-2xl border border-border/60 bg-background/80 px-4 py-3">
+              <p className="text-[11px] uppercase tracking-[0.18em]">
+                {t('hero_policy_title')}
+              </p>
+              <p className="mt-1 text-foreground">{t('hero_policy_body')}</p>
+            </div>
+            <div className="rounded-2xl border border-border/60 bg-background/80 px-4 py-3">
+              <p className="text-[11px] uppercase tracking-[0.18em]">
+                {t('hero_runtime_title')}
+              </p>
+              <p className="mt-1 text-foreground">{t('hero_runtime_body')}</p>
+            </div>
+            <div className="rounded-2xl border border-border/60 bg-background/80 px-4 py-3">
+              <p className="text-[11px] uppercase tracking-[0.18em]">
+                {t('hero_audit_title')}
+              </p>
+              <p className="mt-1 text-foreground">{t('hero_audit_body')}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <Separator />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="flex w-full flex-wrap justify-start">
-          <TabsTrigger value="overview" className="gap-1.5">
+        <TabsList className="h-auto w-full flex-wrap justify-start gap-2 rounded-2xl border border-border/60 bg-muted/30 p-2">
+          <TabsTrigger
+            value="overview"
+            className="gap-1.5 rounded-xl px-3 py-2 data-[state=active]:shadow-sm"
+          >
             <BarChart3 className="h-4 w-4" />
             <span className="hidden sm:inline">{t('tab_overview')}</span>
           </TabsTrigger>
-          <TabsTrigger value="transactions" className="gap-1.5">
+          <TabsTrigger
+            value="transactions"
+            className="gap-1.5 rounded-xl px-3 py-2 data-[state=active]:shadow-sm"
+          >
             <List className="h-4 w-4" />
             <span className="hidden sm:inline">{t('tab_transactions')}</span>
           </TabsTrigger>
-          <TabsTrigger value="balances" className="gap-1.5">
+          <TabsTrigger
+            value="balances"
+            className="gap-1.5 rounded-xl px-3 py-2 data-[state=active]:shadow-sm"
+          >
             <Wallet className="h-4 w-4" />
             <span className="hidden sm:inline">{t('tab_balances')}</span>
           </TabsTrigger>
-          <TabsTrigger value="allocations" className="gap-1.5">
+          <TabsTrigger
+            value="allocations"
+            className="gap-1.5 rounded-xl px-3 py-2 data-[state=active]:shadow-sm"
+          >
             <CreditCard className="h-4 w-4" />
             <span className="hidden sm:inline">{t('tab_allocations')}</span>
           </TabsTrigger>
-          <TabsTrigger value="models" className="gap-1.5">
+          <TabsTrigger
+            value="models"
+            className="gap-1.5 rounded-xl px-3 py-2 data-[state=active]:shadow-sm"
+          >
             <Layers className="h-4 w-4" />
             <span className="hidden sm:inline">{t('tab_models')}</span>
           </TabsTrigger>
-          <TabsTrigger value="features" className="gap-1.5">
+          <TabsTrigger
+            value="features"
+            className="gap-1.5 rounded-xl px-3 py-2 data-[state=active]:shadow-sm"
+          >
             <Coins className="h-4 w-4" />
             <span className="hidden sm:inline">{t('tab_features')}</span>
           </TabsTrigger>

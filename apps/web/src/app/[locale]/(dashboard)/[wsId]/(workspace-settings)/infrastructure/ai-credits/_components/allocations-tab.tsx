@@ -18,6 +18,13 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
@@ -30,6 +37,8 @@ interface Allocation {
   monthly_credits: number;
   credits_per_seat: number | null;
   daily_limit: number | null;
+  default_image_model?: string | null;
+  default_language_model?: string | null;
   max_output_tokens_per_request: number | null;
   markup_multiplier: number;
   allowed_models: string[];
@@ -42,6 +51,7 @@ interface GatewayModel {
   id: string;
   name: string;
   provider: string;
+  type: string;
   is_enabled: boolean;
 }
 
@@ -49,6 +59,14 @@ function formatCredits(value: number): string {
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
   if (value >= 1_000) return `${(value / 1_000).toFixed(1)}k`;
   return value.toFixed(1);
+}
+
+function formatModelLabel(modelId?: string | null) {
+  if (!modelId) return '-';
+
+  return modelId.includes('/')
+    ? modelId.split('/').slice(1).join('/')
+    : modelId;
 }
 
 function tierBadgeVariant(tier: string) {
@@ -142,13 +160,18 @@ export default function AllocationsTab() {
 
   return (
     <>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 xl:grid-cols-2">
         {(allocations ?? []).map((alloc) => (
-          <Card key={alloc.id}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
+          <Card
+            key={alloc.id}
+            className="overflow-hidden border-border/70 bg-linear-to-br from-background via-background to-muted/20 shadow-sm"
+          >
+            <CardHeader className="border-border/60 border-b bg-muted/20 pb-4">
+              <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-2">
-                  <CardTitle>{alloc.tier}</CardTitle>
+                  <CardTitle className="text-xl tracking-tight">
+                    {alloc.tier}
+                  </CardTitle>
                   <Badge variant={tierBadgeVariant(alloc.tier)}>
                     {alloc.is_active ? t('active') : t('inactive')}
                   </Badge>
@@ -178,53 +201,101 @@ export default function AllocationsTab() {
                   : `${formatCredits(alloc.monthly_credits)} ${t('monthly_credits')}`}
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <dl className="grid grid-cols-2 gap-2 text-sm">
-                <dt className="text-muted-foreground">
-                  {t('monthly_credits')}
-                </dt>
-                <dd className="font-medium">
-                  {formatCredits(alloc.monthly_credits)}
-                </dd>
+            <CardContent className="space-y-5 pt-5">
+              <dl className="grid gap-3 text-sm sm:grid-cols-2">
+                <div className="rounded-xl border border-border/60 bg-background/70 p-3">
+                  <dt className="text-muted-foreground text-xs uppercase tracking-[0.16em]">
+                    {t('default_language_model')}
+                  </dt>
+                  <dd className="mt-1 truncate font-medium font-mono text-xs">
+                    {formatModelLabel(alloc.default_language_model)}
+                  </dd>
+                </div>
+                <div className="rounded-xl border border-border/60 bg-background/70 p-3">
+                  <dt className="text-muted-foreground text-xs uppercase tracking-[0.16em]">
+                    {t('default_image_model')}
+                  </dt>
+                  <dd className="mt-1 truncate font-medium font-mono text-xs">
+                    {formatModelLabel(alloc.default_image_model)}
+                  </dd>
+                </div>
 
-                <dt className="text-muted-foreground">
-                  {t('credits_per_seat')}
-                </dt>
-                <dd className="font-medium">
-                  {alloc.credits_per_seat != null
-                    ? formatCredits(alloc.credits_per_seat)
-                    : '-'}
-                </dd>
+                <div className="rounded-xl border border-border/60 bg-background/70 p-3">
+                  <dt className="text-muted-foreground text-xs uppercase tracking-[0.16em]">
+                    {t('monthly_credits')}
+                  </dt>
+                  <dd className="mt-1 font-medium">
+                    {formatCredits(alloc.monthly_credits)}
+                  </dd>
+                </div>
 
-                <dt className="text-muted-foreground">{t('daily_limit')}</dt>
-                <dd className="font-medium">
-                  {alloc.daily_limit != null
-                    ? formatCredits(alloc.daily_limit)
-                    : t('unlimited')}
-                </dd>
+                <div className="rounded-xl border border-border/60 bg-background/70 p-3">
+                  <dt className="text-muted-foreground text-xs uppercase tracking-[0.16em]">
+                    {t('credits_per_seat')}
+                  </dt>
+                  <dd className="mt-1 font-medium">
+                    {alloc.credits_per_seat != null
+                      ? formatCredits(alloc.credits_per_seat)
+                      : '-'}
+                  </dd>
+                </div>
 
-                <dt className="text-muted-foreground">
-                  {t('max_output_tokens')}
-                </dt>
-                <dd className="font-medium">
-                  {alloc.max_output_tokens_per_request?.toLocaleString() ??
-                    t('unlimited')}
-                </dd>
+                <div className="rounded-xl border border-border/60 bg-background/70 p-3">
+                  <dt className="text-muted-foreground text-xs uppercase tracking-[0.16em]">
+                    {t('daily_limit')}
+                  </dt>
+                  <dd className="mt-1 font-medium">
+                    {alloc.daily_limit != null
+                      ? formatCredits(alloc.daily_limit)
+                      : t('unlimited')}
+                  </dd>
+                </div>
 
-                <dt className="text-muted-foreground">{t('markup')}</dt>
-                <dd className="font-medium">{alloc.markup_multiplier}x</dd>
+                <div className="rounded-xl border border-border/60 bg-background/70 p-3">
+                  <dt className="text-muted-foreground text-xs uppercase tracking-[0.16em]">
+                    {t('max_output_tokens')}
+                  </dt>
+                  <dd className="mt-1 font-medium">
+                    {alloc.max_output_tokens_per_request?.toLocaleString() ??
+                      t('unlimited')}
+                  </dd>
+                </div>
 
-                <dt className="text-muted-foreground">{t('allowed_models')}</dt>
-                <dd className="font-medium">
-                  {alloc.allowed_models.length === 0 ? (
-                    <Badge variant="outline">{t('all_models')}</Badge>
-                  ) : (
-                    <Badge variant="secondary">
-                      {alloc.allowed_models.length}
-                    </Badge>
-                  )}
-                </dd>
+                <div className="rounded-xl border border-border/60 bg-background/70 p-3">
+                  <dt className="text-muted-foreground text-xs uppercase tracking-[0.16em]">
+                    {t('markup')}
+                  </dt>
+                  <dd className="mt-1 font-medium">
+                    {alloc.markup_multiplier}x
+                  </dd>
+                </div>
               </dl>
+
+              <div className="rounded-xl border border-border/70 border-dashed bg-muted/15 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="font-medium text-sm">{t('allowed_models')}</p>
+                    <p className="text-muted-foreground text-xs">
+                      {alloc.allowed_models.length === 0
+                        ? t('alloc_allowlist_all_description')
+                        : t('alloc_allowlist_limited_description', {
+                            count: alloc.allowed_models.length,
+                          })}
+                    </p>
+                  </div>
+                  <Badge
+                    variant={
+                      alloc.allowed_models.length === 0
+                        ? 'outline'
+                        : 'secondary'
+                    }
+                  >
+                    {alloc.allowed_models.length === 0
+                      ? t('all_models')
+                      : alloc.allowed_models.length}
+                  </Badge>
+                </div>
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -270,6 +341,12 @@ function EditAllocationDialog({
   const [dailyLimit, setDailyLimit] = useState<number | null>(
     allocation.daily_limit
   );
+  const [defaultImageModel, setDefaultImageModel] = useState(
+    allocation.default_image_model ?? ''
+  );
+  const [defaultLanguageModel, setDefaultLanguageModel] = useState(
+    allocation.default_language_model ?? ''
+  );
   const [maxOutputTokens, setMaxOutputTokens] = useState<number | null>(
     allocation.max_output_tokens_per_request
   );
@@ -285,10 +362,17 @@ function EditAllocationDialog({
     setMonthlyCredits(allocation.monthly_credits);
     setCreditsPerSeat(allocation.credits_per_seat);
     setDailyLimit(allocation.daily_limit);
+    setDefaultImageModel(allocation.default_image_model ?? '');
+    setDefaultLanguageModel(allocation.default_language_model ?? '');
     setMaxOutputTokens(allocation.max_output_tokens_per_request);
     setMarkupMultiplier(allocation.markup_multiplier);
     setSelectedModels(allocation.allowed_models);
   }, [allocation]);
+
+  const languageModels = availableModels.filter(
+    (model) => model.type === 'language'
+  );
+  const imageModels = availableModels.filter((model) => model.type === 'image');
 
   const filteredModels = availableModels.filter(
     (m) =>
@@ -297,13 +381,26 @@ function EditAllocationDialog({
   );
 
   const handleSave = () => {
+    const nextAllowedModels =
+      selectedModels.length === 0
+        ? selectedModels
+        : Array.from(
+            new Set([
+              ...selectedModels,
+              defaultLanguageModel,
+              defaultImageModel,
+            ])
+          );
+
     onSave({
       monthly_credits: monthlyCredits,
       credits_per_seat: creditsPerSeat,
       daily_limit: dailyLimit,
+      default_image_model: defaultImageModel,
+      default_language_model: defaultLanguageModel,
       max_output_tokens_per_request: maxOutputTokens,
       markup_multiplier: markupMultiplier,
-      allowed_models: selectedModels,
+      allowed_models: nextAllowedModels,
     });
   };
 
@@ -315,9 +412,11 @@ function EditAllocationDialog({
     );
   };
 
+  const canSave = Boolean(defaultLanguageModel && defaultImageModel);
+
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>
             {t('edit')} {allocation.tier}
@@ -376,6 +475,63 @@ function EditAllocationDialog({
             </div>
           </div>
 
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>{t('default_language_model')}</Label>
+              <Select
+                value={defaultLanguageModel}
+                onValueChange={(value) => {
+                  setDefaultLanguageModel(value);
+                  if (
+                    selectedModels.length > 0 &&
+                    !selectedModels.includes(value)
+                  ) {
+                    setSelectedModels((prev) => [...prev, value]);
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={t('select_default_language_model')}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {languageModels.map((model) => (
+                    <SelectItem key={model.id} value={model.id}>
+                      {formatModelLabel(model.id)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>{t('default_image_model')}</Label>
+              <Select
+                value={defaultImageModel}
+                onValueChange={(value) => {
+                  setDefaultImageModel(value);
+                  if (
+                    selectedModels.length > 0 &&
+                    !selectedModels.includes(value)
+                  ) {
+                    setSelectedModels((prev) => [...prev, value]);
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t('select_default_image_model')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {imageModels.map((model) => (
+                    <SelectItem key={model.id} value={model.id}>
+                      {formatModelLabel(model.id)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label>{t('markup')}</Label>
             <Input
@@ -413,6 +569,9 @@ function EditAllocationDialog({
               value={modelSearch}
               onChange={(e) => setModelSearch(e.target.value)}
             />
+            <p className="text-muted-foreground text-xs">
+              {t('alloc_defaults_pinned_description')}
+            </p>
             <div className="max-h-48 space-y-1 overflow-y-auto rounded-md border p-2">
               {filteredModels.length === 0 ? (
                 <p className="py-2 text-center text-muted-foreground text-sm">
@@ -433,6 +592,17 @@ function EditAllocationDialog({
                     <span className="min-w-0 truncate font-mono text-xs">
                       {model.id}
                     </span>
+                    {(model.id === defaultLanguageModel ||
+                      model.id === defaultImageModel) && (
+                      <Badge variant="outline" className="ml-auto text-[10px]">
+                        {model.id === defaultLanguageModel &&
+                        model.id === defaultImageModel
+                          ? t('default_model')
+                          : model.id === defaultLanguageModel
+                            ? t('default_language_short')
+                            : t('default_image_short')}
+                      </Badge>
+                    )}
                   </label>
                 ))
               )}
@@ -443,7 +613,7 @@ function EditAllocationDialog({
             <Button variant="outline" onClick={onClose} disabled={isPending}>
               {t('cancel')}
             </Button>
-            <Button onClick={handleSave} disabled={isPending}>
+            <Button onClick={handleSave} disabled={isPending || !canSave}>
               {t('save')}
             </Button>
           </div>

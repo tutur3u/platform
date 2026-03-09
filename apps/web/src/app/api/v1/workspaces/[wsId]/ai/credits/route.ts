@@ -5,6 +5,27 @@ import {
 import { NextResponse } from 'next/server';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
+type ProductTier = 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
+
+type AllocationDefaults = {
+  allowed_features: string[];
+  allowed_models: string[];
+  daily_limit: number | null;
+  default_image_model?: string | null;
+  default_language_model?: string | null;
+  max_output_tokens_per_request: number | null;
+};
+
+function getFallbackDefaultModels(tier: ProductTier) {
+  return {
+    defaultImageModel:
+      tier === 'FREE'
+        ? 'google/imagen-4.0-fast-generate-001'
+        : 'google/imagen-4.0-generate-001',
+    defaultLanguageModel: 'google/gemini-2.5-flash-lite',
+  };
+}
+
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ wsId: string }> }
@@ -52,7 +73,6 @@ export async function GET(
       .eq('id', normalizedWsId)
       .maybeSingle();
 
-    type ProductTier = 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
     let tier: ProductTier = 'FREE';
     const subs = tierData?.workspace_subscriptions;
     if (Array.isArray(subs)) {
@@ -133,12 +153,15 @@ export async function GET(
     const percentUsed = totalPool > 0 ? (totalUsed / totalPool) * 100 : 0;
 
     // Get tier allocation
-    const { data: allocation } = await sbAdmin
+    const { data: allocationData } = await sbAdmin
       .from('ai_credit_plan_allocations')
       .select('*')
       .eq('tier', tier)
       .eq('is_active', true)
       .maybeSingle();
+
+    const allocation = allocationData as AllocationDefaults | null;
+    const fallbackDefaults = getFallbackDefaultModels(tier);
 
     // Get daily usage (scoped to the balance)
     const todayStart = new Date();
@@ -194,6 +217,11 @@ export async function GET(
       tier,
       allowedModels: allocation?.allowed_models ?? [],
       allowedFeatures: allocation?.allowed_features ?? [],
+      defaultImageModel:
+        allocation?.default_image_model ?? fallbackDefaults.defaultImageModel,
+      defaultLanguageModel:
+        allocation?.default_language_model ??
+        fallbackDefaults.defaultLanguageModel,
       dailyLimit: allocation?.daily_limit
         ? Number(allocation.daily_limit)
         : null,

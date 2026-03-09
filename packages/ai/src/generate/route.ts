@@ -4,12 +4,15 @@ import {
   checkAiCredits,
   deductAiCredits,
 } from '@tuturuuu/ai/credits/check-credits';
+import { toBareModelName } from '@tuturuuu/ai/credits/model-mapping';
+import {
+  PlanModelResolutionError,
+  resolvePlanModel,
+} from '@tuturuuu/ai/credits/resolve-plan-model';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { type FinishReason, streamText } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
-
-const DEFAULT_MODEL_NAME = 'gemini-2.0-flash-lite';
 
 const ALLOWED_MODELS = [
   {
@@ -75,7 +78,7 @@ export function createPOST(
       accessKey,
       configs = {
         wsId: ROOT_WORKSPACE_ID,
-        model: DEFAULT_MODEL_NAME,
+        model: 'gemini-2.0-flash-lite',
         systemPrompt: '',
         thinkingBudget: 0,
         includeThoughts: false,
@@ -99,9 +102,6 @@ export function createPOST(
 
     if (!configs?.wsId) {
       configs.wsId = ROOT_WORKSPACE_ID;
-    }
-    if (!configs?.model) {
-      configs.model = DEFAULT_MODEL_NAME;
     }
 
     if (!configs?.systemPrompt) {
@@ -127,10 +127,33 @@ export function createPOST(
         return new Response('Missing prompt', { status: 400 });
       }
 
+      let effectiveModel = configs.model;
+      try {
+        const resolvedModel = await resolvePlanModel({
+          capability: 'language',
+          requestedModel: configs.model,
+          wsId: configs.wsId,
+        });
+        effectiveModel = toBareModelName(
+          resolvedModel.modelId
+        ) as (typeof ALLOWED_MODELS)[number]['name'];
+        configs.model = effectiveModel;
+      } catch (error) {
+        if (error instanceof PlanModelResolutionError) {
+          const status = error.code === 'NO_ALLOCATION' ? 503 : 500;
+          return NextResponse.json(
+            { error: error.message, code: error.code },
+            { status }
+          );
+        }
+
+        throw error;
+      }
+
       // Pre-flight AI credit check (no userId available for API key auth)
       const creditCheck = await checkAiCredits(
         configs.wsId,
-        configs.model,
+        effectiveModel,
         'generate'
       );
       if (!creditCheck.allowed) {
@@ -143,15 +166,15 @@ export function createPOST(
         );
       }
 
-      if (!configs?.model) {
+      if (!effectiveModel) {
         console.error('Missing model');
         return new Response('Missing model', { status: 400 });
       }
 
-      if (!ALLOWED_MODELS.some((model) => model.name === configs.model)) {
+      if (!ALLOWED_MODELS.some((model) => model.name === effectiveModel)) {
         console.error('Invalid model');
         return new Response(
-          `Invalid model: ${configs.model}\nAllowed models: ${ALLOWED_MODELS.join(', ')}`,
+          `Invalid model: ${effectiveModel}\nAllowed models: ${ALLOWED_MODELS.map((model) => model.name).join(', ')}`,
           { status: 400 }
         );
       }
@@ -174,10 +197,10 @@ export function createPOST(
         return new Response('Invalid accessId or accessKey', { status: 400 });
       }
 
-      if (!apiKeyData.scopes.includes(configs.model)) {
+      if (!apiKeyData.scopes.includes(effectiveModel)) {
         console.error('Invalid model');
         return new Response(
-          `Invalid model: ${configs.model}\nAllowed models: ${apiKeyData.scopes.join(', ')}`,
+          `Invalid model: ${effectiveModel}\nAllowed models: ${apiKeyData.scopes.join(', ')}`,
           { status: 400 }
         );
       }
@@ -199,7 +222,7 @@ export function createPOST(
       // Apply credit-budget cap on maxOutputTokens (defense-in-depth)
       const cappedMaxOutput = await capMaxOutputTokensByCredits(
         sbAdmin,
-        configs.model,
+        effectiveModel,
         creditCheck.maxOutputTokens,
         creditCheck.remainingCredits
       );
@@ -211,7 +234,7 @@ export function createPOST(
       }
 
       const stream = streamText({
-        model: google(configs.model),
+        model: google(effectiveModel),
         prompt,
         system: configs.systemPrompt,
         ...(cappedMaxOutput ? { maxOutputTokens: cappedMaxOutput } : {}),
@@ -231,7 +254,7 @@ export function createPOST(
           const insertData = {
             ws_id: configs.wsId,
             api_key_id: apiKeyId,
-            model_id: configs.model,
+            model_id: effectiveModel,
             input: prompt,
             output: text,
             finish_reason: String(finishReason),
@@ -256,7 +279,7 @@ export function createPOST(
           // Deduct AI credits (no userId for API key auth)
           deductAiCredits({
             wsId: configs.wsId,
-            modelId: configs.model,
+            modelId: effectiveModel,
             inputTokens: usage.inputTokens ?? 0,
             outputTokens: usage.outputTokens ?? 0,
             reasoningTokens:
@@ -285,7 +308,7 @@ export function createPOST(
 
       // Calculate the cost of the request
       const model = ALLOWED_MODELS.find(
-        (model) => model.name === configs.model
+        (model) => model.name === effectiveModel
       );
       if (!model) {
         console.error('Invalid model');

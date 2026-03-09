@@ -1,5 +1,12 @@
 'use client';
 
+import {
+  formatHotkeySequence,
+  useHotkey,
+  useHotkeySequence,
+} from '@tanstack/react-hotkeys';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { createClient } from '@tuturuuu/supabase/next/client';
 import type {
   Workspace,
   WorkspaceProductTier,
@@ -8,9 +15,16 @@ import type {
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useSemanticTaskSearch } from '@tuturuuu/ui/hooks/use-semantic-task-search';
-import type { WorkspaceLabel } from '@tuturuuu/utils/task-helper';
+import { getTasks, type WorkspaceLabel } from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { KanbanBoard } from '../boards/boardId/kanban';
 import type { TaskFilters } from '../boards/boardId/task-filter';
 import { TimelineBoard } from '../boards/boardId/timeline-board';
@@ -19,8 +33,24 @@ import { BoardHeader, type ListStatusFilter } from '../shared/board-header';
 import { ListView } from '../shared/list-view';
 import { useProgressiveLoader } from '../shared/progressive-loader-context';
 import { RecycleBinPanel } from '../shared/recycle-bin-panel';
+import { loadBoardConfig } from './board-config-storage';
 
 export type ViewType = 'kanban' | 'list' | 'timeline';
+
+const HOTKEY_CREATE_TASK = 'C';
+const HOTKEY_GO_TO_KANBAN: ['G', 'K'] = ['G', 'K'];
+const HOTKEY_GO_TO_LIST: ['G', 'L'] = ['G', 'L'];
+const HOTKEY_GO_TO_TIMELINE: ['G', 'T'] = ['G', 'T'];
+const DEFAULT_TASK_FILTERS: TaskFilters = {
+  labels: [],
+  assignees: [],
+  projects: [],
+  priorities: [],
+  dueDateRange: null,
+  estimationRange: null,
+  includeMyTasks: false,
+  includeUnassigned: false,
+};
 
 interface Props {
   workspace: Workspace;
@@ -42,17 +72,9 @@ export function BoardViews({
 }: Props) {
   const t = useTranslations('common');
   const tBoards = useTranslations('ws-task-boards');
+  const queryClient = useQueryClient();
   const [currentView, setCurrentView] = useState<ViewType>('kanban');
-  const [filters, setFilters] = useState<TaskFilters>({
-    labels: [],
-    assignees: [],
-    projects: [],
-    priorities: [],
-    dueDateRange: null,
-    estimationRange: null,
-    includeMyTasks: false,
-    includeUnassigned: false,
-  });
+  const [filters, setFilters] = useState<TaskFilters>(DEFAULT_TASK_FILTERS);
   const [listStatusFilter, setListStatusFilter] =
     useState<ListStatusFilter>('all');
   // Local per-session optimistic overrides (e.g., timeline resize) so switching views preserves changes
@@ -63,6 +85,68 @@ export function BoardViews({
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const { createTask } = useTaskDialog();
   const { pagination, loadListPage } = useProgressiveLoader();
+  const viewHotkeyLabels = useMemo(
+    () => ({
+      kanban: formatHotkeySequence(HOTKEY_GO_TO_KANBAN),
+      list: formatHotkeySequence(HOTKEY_GO_TO_LIST),
+      timeline: formatHotkeySequence(HOTKEY_GO_TO_TIMELINE),
+    }),
+    []
+  );
+  const shouldEagerLoadTasks =
+    currentView === 'list' || currentView === 'timeline';
+  const fetchBoardTasks = useCallback(async () => {
+    const supabase = createClient();
+    return getTasks(supabase, board.id);
+  }, [board.id]);
+
+  const primeFullTaskCache = useCallback(
+    (nextView: ViewType) => {
+      if (nextView !== 'list' && nextView !== 'timeline') return;
+
+      void queryClient.prefetchQuery({
+        queryKey: ['tasks', board.id],
+        queryFn: fetchBoardTasks,
+        staleTime: 0,
+      });
+    },
+    [board.id, fetchBoardTasks, queryClient]
+  );
+
+  const handleViewChange = useCallback(
+    (nextView: ViewType) => {
+      setCurrentView(nextView);
+      primeFullTaskCache(nextView);
+    },
+    [primeFullTaskCache]
+  );
+
+  useQuery({
+    queryKey: ['tasks', board.id],
+    enabled: shouldEagerLoadTasks,
+    queryFn: fetchBoardTasks,
+    refetchOnMount: 'always',
+    staleTime: 0,
+  });
+
+  useLayoutEffect(() => {
+    const savedConfig = loadBoardConfig(board.id);
+
+    if (!savedConfig) {
+      setCurrentView('kanban');
+      setFilters(DEFAULT_TASK_FILTERS);
+      setListStatusFilter('all');
+      return;
+    }
+
+    setCurrentView(savedConfig.currentView);
+    setFilters({
+      ...DEFAULT_TASK_FILTERS,
+      ...savedConfig.filters,
+    });
+    setListStatusFilter(savedConfig.listStatusFilter);
+    primeFullTaskCache(savedConfig.currentView);
+  }, [board.id, primeFullTaskCache]);
 
   // Detect whether any filter is active (requires all data to be loaded)
   const hasActiveFilters = useMemo(
@@ -83,7 +167,8 @@ export function BoardViews({
   // client-side filtering/sorting operates on complete data.
   const autoLoadingRef = useRef(false);
   useEffect(() => {
-    if (!hasActiveFilters || autoLoadingRef.current) return;
+    if (currentView !== 'kanban' || !hasActiveFilters || autoLoadingRef.current)
+      return;
 
     // Find the first list that still has more pages and isn't loading
     for (const list of lists) {
@@ -96,7 +181,7 @@ export function BoardViews({
         return; // Process one at a time; the next run picks up the next list
       }
     }
-  }, [hasActiveFilters, pagination, lists, loadListPage]);
+  }, [currentView, hasActiveFilters, pagination, lists, loadListPage]);
 
   // Semantic search hook
   const {
@@ -233,6 +318,8 @@ export function BoardViews({
         return o ? ({ ...t, ...o } as Task) : t;
       });
     }
+
+    tasks = tasks.filter((task) => !task.deleted_at);
 
     // Apply sorting - but NEVER sort done/closed tasks (they always sort by timestamps)
     if (filters.sortBy) {
@@ -384,37 +471,52 @@ export function BoardViews({
     // all tasks to flicker (disappear then reappear).
   };
 
-  // Global keyboard shortcuts for all views
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Ignore shortcuts when typing in input fields
-      const target = event.target as HTMLElement;
-      const isInputField =
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable;
+  useHotkey(
+    HOTKEY_CREATE_TASK,
+    () => {
+      const firstList = filteredLists[0];
+      if (!firstList) return;
+      createTask(board.id, firstList.id, filteredLists, filters);
+    },
+    {
+      enabled: filteredLists.length > 0,
+      ignoreInputs: true,
+      preventDefault: true,
+    }
+  );
 
-      // C to create a new task (in the first list)
-      if (
-        event.key.toLowerCase() === 'c' &&
-        !event.ctrlKey &&
-        !event.metaKey &&
-        !event.shiftKey &&
-        !event.altKey &&
-        !isInputField
-      ) {
-        event.preventDefault();
-        event.stopPropagation();
-        const firstList = filteredLists[0];
-        if (firstList) {
-          createTask(board.id, firstList.id, filteredLists, filters);
-        }
-      }
-    };
+  useHotkeySequence(
+    HOTKEY_GO_TO_KANBAN,
+    () => {
+      handleViewChange('kanban');
+    },
+    {
+      ignoreInputs: true,
+      preventDefault: true,
+    }
+  );
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [board.id, createTask, filteredLists, filters]);
+  useHotkeySequence(
+    HOTKEY_GO_TO_LIST,
+    () => {
+      handleViewChange('list');
+    },
+    {
+      ignoreInputs: true,
+      preventDefault: true,
+    }
+  );
+
+  useHotkeySequence(
+    HOTKEY_GO_TO_TIMELINE,
+    () => {
+      handleViewChange('timeline');
+    },
+    {
+      ignoreInputs: true,
+      preventDefault: true,
+    }
+  );
 
   const renderView = () => {
     switch (currentView) {
@@ -447,6 +549,7 @@ export function BoardViews({
       case 'timeline':
         return (
           <TimelineBoard
+            boardId={board.id}
             tasks={effectiveTasks}
             lists={filteredLists}
             onTaskPartialUpdate={handleTaskPartialUpdate}
@@ -477,7 +580,8 @@ export function BoardViews({
         board={board}
         currentUserId={currentUserId}
         currentView={currentView}
-        onViewChange={setCurrentView}
+        onViewChange={handleViewChange}
+        viewHotkeyLabels={viewHotkeyLabels}
         filters={filters}
         onFiltersChange={setFilters}
         listStatusFilter={listStatusFilter}

@@ -2913,3 +2913,551 @@ VALUES
     ('00000000-0000-0000-0000-000000000003', ARRAY['welcome','use_case','profile','celebration'], 'celebration', true, false, NOW(), 'small_team', 'team', ARRAY[]::text[], true),
     ('00000000-0000-0000-0000-000000000004', ARRAY['welcome','use_case','profile','celebration'], 'celebration', true, false, NOW(), 'small_team', 'team', ARRAY[]::text[], true),
     ('00000000-0000-0000-0000-000000000005', ARRAY['welcome','use_case','profile','celebration'], 'celebration', true, false, NOW(), 'small_team', 'team', ARRAY[]::text[], true);
+
+-- Populate forms demo data
+INSERT INTO public.forms (
+    id,
+    ws_id,
+    creator_id,
+    title,
+    description,
+    status,
+    access_mode,
+    published_at,
+    settings,
+    theme,
+    created_at,
+    updated_at
+)
+VALUES
+    (
+        '50000000-0000-0000-0000-000000000001',
+        '00000000-0000-0000-0000-000000000000',
+        '00000000-0000-0000-0000-000000000001',
+        'Product feedback pulse',
+        'A seeded demo form with responses, drop-off analytics, and a share link for local testing.',
+        'published',
+        'anonymous',
+        NOW() - INTERVAL '10 days',
+        '{"showProgressBar": true, "allowMultipleSubmissions": true, "oneResponsePerUser": false, "requireTurnstile": true, "confirmationTitle": "Thanks for your feedback", "confirmationMessage": "Your response helps us shape the next release."}'::jsonb,
+        '{"presetId": "editorial-moss", "density": "balanced", "accentColor": "dynamic-green", "headlineFontId": "noto-serif", "bodyFontId": "be-vietnam-pro", "surfaceStyle": "paper", "coverHeadline": "Product feedback pulse", "coverKicker": "Fast weekly insight collection", "coverImage": {"storagePath": "", "url": "", "alt": ""}, "sectionImages": {}}'::jsonb,
+        NOW() - INTERVAL '14 days',
+        NOW() - INTERVAL '2 days'
+    ),
+    (
+        '50000000-0000-0000-0000-000000000002',
+        '00000000-0000-0000-0000-000000000000',
+        '00000000-0000-0000-0000-000000000002',
+        'Quarterly onboarding check-in',
+        'A draft form seeded for builder and branching experiments.',
+        'draft',
+        'authenticated',
+        NULL,
+        '{"showProgressBar": true, "allowMultipleSubmissions": false, "oneResponsePerUser": true, "requireTurnstile": true, "confirmationTitle": "Check-in saved", "confirmationMessage": "We will use this to improve the onboarding journey."}'::jsonb,
+        '{"presetId": "editorial-moss", "density": "compact", "accentColor": "dynamic-blue", "headlineFontId": "noto-serif", "bodyFontId": "be-vietnam-pro", "surfaceStyle": "glass", "coverHeadline": "Quarterly onboarding check-in", "coverKicker": "Internal pulse for the core team", "coverImage": {"storagePath": "", "url": "", "alt": ""}, "sectionImages": {}}'::jsonb,
+        NOW() - INTERVAL '5 days',
+        NOW() - INTERVAL '1 day'
+    );
+
+INSERT INTO public.form_sections (
+    id,
+    form_id,
+    title,
+    description,
+    position,
+    created_at
+)
+VALUES
+    (
+        '50000000-0000-0000-0000-000000000101',
+        '50000000-0000-0000-0000-000000000001',
+        'Experience snapshot',
+        'Quick quantitative signals from respondents.',
+        0,
+        NOW() - INTERVAL '14 days'
+    ),
+    (
+        '50000000-0000-0000-0000-000000000102',
+        '50000000-0000-0000-0000-000000000001',
+        'Follow-up context',
+        'Adds segmentation and open feedback for richer review.',
+        1,
+        NOW() - INTERVAL '14 days'
+    ),
+    (
+        '50000000-0000-0000-0000-000000000103',
+        '50000000-0000-0000-0000-000000000002',
+        'Team onboarding',
+        'Draft section for internal workflow experiments.',
+        0,
+        NOW() - INTERVAL '5 days'
+    );
+
+INSERT INTO public.form_questions (
+    id,
+    form_id,
+    section_id,
+    type,
+    title,
+    description,
+    required,
+    position,
+    settings,
+    created_at
+)
+VALUES
+    (
+        '50000000-0000-0000-0000-000000000201',
+        '50000000-0000-0000-0000-000000000001',
+        '50000000-0000-0000-0000-000000000101',
+        'rating',
+        'How satisfied are you with your overall experience?',
+        'Use the stars to capture your first impression.',
+        true,
+        0,
+        '{"minLabel": "Very dissatisfied", "maxLabel": "Very satisfied", "ratingMax": 5}'::jsonb,
+        NOW() - INTERVAL '14 days'
+    ),
+    (
+        '50000000-0000-0000-0000-000000000202',
+        '50000000-0000-0000-0000-000000000001',
+        '50000000-0000-0000-0000-000000000101',
+        'linear_scale',
+        'How likely are you to recommend Tuturuuu to a teammate?',
+        'A simple recommendation score helps benchmark sentiment.',
+        true,
+        1,
+        '{"minLabel": "Not likely", "maxLabel": "Highly likely", "scaleMin": 1, "scaleMax": 5}'::jsonb,
+        NOW() - INTERVAL '14 days'
+    ),
+    (
+        '50000000-0000-0000-0000-000000000203',
+        '50000000-0000-0000-0000-000000000001',
+        '50000000-0000-0000-0000-000000000102',
+        'single_choice',
+        'Which area do you use most often?',
+        'Pick the one workflow you return to the most.',
+        true,
+        0,
+        '{}'::jsonb,
+        NOW() - INTERVAL '14 days'
+    ),
+    (
+        '50000000-0000-0000-0000-000000000204',
+        '50000000-0000-0000-0000-000000000001',
+        '50000000-0000-0000-0000-000000000102',
+        'multiple_choice',
+        'Which parts of the product feel most valuable?',
+        'Choose all that apply.',
+        false,
+        1,
+        '{}'::jsonb,
+        NOW() - INTERVAL '14 days'
+    ),
+    (
+        '50000000-0000-0000-0000-000000000205',
+        '50000000-0000-0000-0000-000000000001',
+        '50000000-0000-0000-0000-000000000102',
+        'long_text',
+        'What should we improve next?',
+        'Optional open feedback for design, performance, or workflow gaps.',
+        false,
+        2,
+        '{"placeholder": "Share the one thing that would make this better for you..."}'::jsonb,
+        NOW() - INTERVAL '14 days'
+    ),
+    (
+        '50000000-0000-0000-0000-000000000206',
+        '50000000-0000-0000-0000-000000000002',
+        '50000000-0000-0000-0000-000000000103',
+        'short_text',
+        'What slowed you down during onboarding?',
+        '',
+        true,
+        0,
+        '{"placeholder": "Write a short summary"}'::jsonb,
+        NOW() - INTERVAL '5 days'
+    ),
+    (
+        '50000000-0000-0000-0000-000000000207',
+        '50000000-0000-0000-0000-000000000002',
+        '50000000-0000-0000-0000-000000000103',
+        'dropdown',
+        'Which onboarding path fits best?',
+        '',
+        true,
+        1,
+        '{}'::jsonb,
+        NOW() - INTERVAL '5 days'
+    );
+
+INSERT INTO public.form_question_options (
+    id,
+    question_id,
+    label,
+    value,
+    position
+)
+VALUES
+    ('50000000-0000-0000-0000-000000000301', '50000000-0000-0000-0000-000000000201', '1', '1', 0),
+    ('50000000-0000-0000-0000-000000000302', '50000000-0000-0000-0000-000000000201', '2', '2', 1),
+    ('50000000-0000-0000-0000-000000000303', '50000000-0000-0000-0000-000000000201', '3', '3', 2),
+    ('50000000-0000-0000-0000-000000000304', '50000000-0000-0000-0000-000000000201', '4', '4', 3),
+    ('50000000-0000-0000-0000-000000000305', '50000000-0000-0000-0000-000000000201', '5', '5', 4),
+    ('50000000-0000-0000-0000-000000000306', '50000000-0000-0000-0000-000000000202', '1', '1', 0),
+    ('50000000-0000-0000-0000-000000000307', '50000000-0000-0000-0000-000000000202', '2', '2', 1),
+    ('50000000-0000-0000-0000-000000000308', '50000000-0000-0000-0000-000000000202', '3', '3', 2),
+    ('50000000-0000-0000-0000-000000000309', '50000000-0000-0000-0000-000000000202', '4', '4', 3),
+    ('50000000-0000-0000-0000-000000000310', '50000000-0000-0000-0000-000000000202', '5', '5', 4),
+    ('50000000-0000-0000-0000-000000000311', '50000000-0000-0000-0000-000000000203', 'Tasks', 'tasks', 0),
+    ('50000000-0000-0000-0000-000000000312', '50000000-0000-0000-0000-000000000203', 'Reports', 'reports', 1),
+    ('50000000-0000-0000-0000-000000000313', '50000000-0000-0000-0000-000000000203', 'Automation', 'automation', 2),
+    ('50000000-0000-0000-0000-000000000314', '50000000-0000-0000-0000-000000000204', 'Speed', 'speed', 0),
+    ('50000000-0000-0000-0000-000000000315', '50000000-0000-0000-0000-000000000204', 'Clarity', 'clarity', 1),
+    ('50000000-0000-0000-0000-000000000316', '50000000-0000-0000-0000-000000000204', 'Customization', 'customization', 2),
+    ('50000000-0000-0000-0000-000000000317', '50000000-0000-0000-0000-000000000204', 'Analytics', 'analytics', 3),
+    ('50000000-0000-0000-0000-000000000318', '50000000-0000-0000-0000-000000000207', 'New hire', 'new_hire', 0),
+    ('50000000-0000-0000-0000-000000000319', '50000000-0000-0000-0000-000000000207', 'Manager', 'manager', 1),
+    ('50000000-0000-0000-0000-000000000320', '50000000-0000-0000-0000-000000000207', 'Cross-functional contributor', 'cross_functional', 2);
+
+INSERT INTO public.form_share_links (
+    id,
+    form_id,
+    code,
+    active,
+    created_by_user_id,
+    created_at
+)
+VALUES
+    (
+        '50000000-0000-0000-0000-000000000401',
+        '50000000-0000-0000-0000-000000000001',
+        'SP9x5Wnz9gyK',
+        true,
+        '00000000-0000-0000-0000-000000000001',
+        NOW() - INTERVAL '10 days'
+    );
+
+INSERT INTO public.form_sessions (
+    id,
+    form_id,
+    share_link_id,
+    session_token,
+    respondent_user_id,
+    respondent_email,
+    viewed_at,
+    started_at,
+    submitted_at,
+    last_question_id,
+    last_section_id,
+    referrer_domain,
+    device_type,
+    browser,
+    os,
+    country,
+    city,
+    metadata
+)
+VALUES
+    (
+        '50000000-0000-0000-0000-000000000501',
+        '50000000-0000-0000-0000-000000000001',
+        '50000000-0000-0000-0000-000000000401',
+        'seed-form-session-1',
+        '00000000-0000-0000-0000-000000000002',
+        NULL,
+        NOW() - INTERVAL '9 days' - INTERVAL '2 hours',
+        NOW() - INTERVAL '9 days' - INTERVAL '115 minutes',
+        NOW() - INTERVAL '9 days' - INTERVAL '108 minutes',
+        '50000000-0000-0000-0000-000000000205',
+        '50000000-0000-0000-0000-000000000102',
+        'app.tuturuuu.com',
+        'desktop',
+        'Chrome',
+        'macOS',
+        'Vietnam',
+        'Ho Chi Minh City',
+        '{}'::jsonb
+    ),
+    (
+        '50000000-0000-0000-0000-000000000502',
+        '50000000-0000-0000-0000-000000000001',
+        '50000000-0000-0000-0000-000000000401',
+        'seed-form-session-2',
+        NULL,
+        'beta@example.com',
+        NOW() - INTERVAL '6 days' - INTERVAL '1 hour',
+        NOW() - INTERVAL '6 days' - INTERVAL '56 minutes',
+        NOW() - INTERVAL '6 days' - INTERVAL '49 minutes',
+        '50000000-0000-0000-0000-000000000205',
+        '50000000-0000-0000-0000-000000000102',
+        'news.ycombinator.com',
+        'mobile',
+        'Safari',
+        'iOS',
+        'Singapore',
+        'Singapore',
+        '{}'::jsonb
+    ),
+    (
+        '50000000-0000-0000-0000-000000000503',
+        '50000000-0000-0000-0000-000000000001',
+        '50000000-0000-0000-0000-000000000401',
+        'seed-form-session-3',
+        '00000000-0000-0000-0000-000000000003',
+        'user2@tuturuuu.com',
+        NOW() - INTERVAL '3 days' - INTERVAL '4 hours',
+        NOW() - INTERVAL '3 days' - INTERVAL '230 minutes',
+        NOW() - INTERVAL '3 days' - INTERVAL '220 minutes',
+        '50000000-0000-0000-0000-000000000205',
+        '50000000-0000-0000-0000-000000000102',
+        'docs.tuturuuu.com',
+        'desktop',
+        'Firefox',
+        'Windows',
+        'Japan',
+        'Tokyo',
+        '{}'::jsonb
+    ),
+    (
+        '50000000-0000-0000-0000-000000000504',
+        '50000000-0000-0000-0000-000000000001',
+        '50000000-0000-0000-0000-000000000401',
+        'seed-form-session-4',
+        NULL,
+        NULL,
+        NOW() - INTERVAL '2 days' - INTERVAL '3 hours',
+        NOW() - INTERVAL '2 days' - INTERVAL '175 minutes',
+        NULL,
+        '50000000-0000-0000-0000-000000000203',
+        '50000000-0000-0000-0000-000000000102',
+        'google.com',
+        'mobile',
+        'Chrome',
+        'Android',
+        'Vietnam',
+        'Da Nang',
+        '{}'::jsonb
+    ),
+    (
+        '50000000-0000-0000-0000-000000000505',
+        '50000000-0000-0000-0000-000000000001',
+        '50000000-0000-0000-0000-000000000401',
+        'seed-form-session-5',
+        NULL,
+        NULL,
+        NOW() - INTERVAL '18 hours',
+        NOW() - INTERVAL '17 hours' - INTERVAL '40 minutes',
+        NULL,
+        '50000000-0000-0000-0000-000000000202',
+        '50000000-0000-0000-0000-000000000101',
+        'x.com',
+        'desktop',
+        'Edge',
+        'Windows',
+        'United States',
+        'Seattle',
+        '{}'::jsonb
+    );
+
+INSERT INTO public.form_responses (
+    id,
+    form_id,
+    share_link_id,
+    session_id,
+    respondent_user_id,
+    respondent_email,
+    completion_state,
+    duration_seconds,
+    created_at,
+    submitted_at
+)
+VALUES
+    (
+        '50000000-0000-0000-0000-000000000601',
+        '50000000-0000-0000-0000-000000000001',
+        '50000000-0000-0000-0000-000000000401',
+        '50000000-0000-0000-0000-000000000501',
+        '00000000-0000-0000-0000-000000000002',
+        NULL,
+        'submitted',
+        420,
+        NOW() - INTERVAL '9 days' - INTERVAL '109 minutes',
+        NOW() - INTERVAL '9 days' - INTERVAL '108 minutes'
+    ),
+    (
+        '50000000-0000-0000-0000-000000000602',
+        '50000000-0000-0000-0000-000000000001',
+        '50000000-0000-0000-0000-000000000401',
+        '50000000-0000-0000-0000-000000000502',
+        NULL,
+        'beta@example.com',
+        'submitted',
+        395,
+        NOW() - INTERVAL '6 days' - INTERVAL '50 minutes',
+        NOW() - INTERVAL '6 days' - INTERVAL '49 minutes'
+    ),
+    (
+        '50000000-0000-0000-0000-000000000603',
+        '50000000-0000-0000-0000-000000000001',
+        '50000000-0000-0000-0000-000000000401',
+        '50000000-0000-0000-0000-000000000503',
+        '00000000-0000-0000-0000-000000000003',
+        'user2@tuturuuu.com',
+        'submitted',
+        610,
+        NOW() - INTERVAL '3 days' - INTERVAL '221 minutes',
+        NOW() - INTERVAL '3 days' - INTERVAL '220 minutes'
+    );
+
+INSERT INTO public.form_response_answers (
+    id,
+    response_id,
+    question_id,
+    question_title,
+    question_type,
+    answer_text,
+    answer_json,
+    created_at
+)
+VALUES
+    (
+        '50000000-0000-0000-0000-000000000701',
+        '50000000-0000-0000-0000-000000000601',
+        '50000000-0000-0000-0000-000000000201',
+        'How satisfied are you with your overall experience?',
+        'rating',
+        '4',
+        NULL,
+        NOW() - INTERVAL '9 days' - INTERVAL '108 minutes'
+    ),
+    (
+        '50000000-0000-0000-0000-000000000702',
+        '50000000-0000-0000-0000-000000000601',
+        '50000000-0000-0000-0000-000000000202',
+        'How likely are you to recommend Tuturuuu to a teammate?',
+        'linear_scale',
+        '5',
+        NULL,
+        NOW() - INTERVAL '9 days' - INTERVAL '108 minutes'
+    ),
+    (
+        '50000000-0000-0000-0000-000000000703',
+        '50000000-0000-0000-0000-000000000601',
+        '50000000-0000-0000-0000-000000000203',
+        'Which area do you use most often?',
+        'single_choice',
+        'tasks',
+        NULL,
+        NOW() - INTERVAL '9 days' - INTERVAL '108 minutes'
+    ),
+    (
+        '50000000-0000-0000-0000-000000000704',
+        '50000000-0000-0000-0000-000000000601',
+        '50000000-0000-0000-0000-000000000204',
+        'Which parts of the product feel most valuable?',
+        'multiple_choice',
+        NULL,
+        '["speed", "analytics"]'::jsonb,
+        NOW() - INTERVAL '9 days' - INTERVAL '108 minutes'
+    ),
+    (
+        '50000000-0000-0000-0000-000000000705',
+        '50000000-0000-0000-0000-000000000601',
+        '50000000-0000-0000-0000-000000000205',
+        'What should we improve next?',
+        'long_text',
+        'The reporting flow is strong, but I would love a faster way to reuse question blocks across forms.',
+        NULL,
+        NOW() - INTERVAL '9 days' - INTERVAL '108 minutes'
+    ),
+    (
+        '50000000-0000-0000-0000-000000000706',
+        '50000000-0000-0000-0000-000000000602',
+        '50000000-0000-0000-0000-000000000201',
+        'How satisfied are you with your overall experience?',
+        'rating',
+        '3',
+        NULL,
+        NOW() - INTERVAL '6 days' - INTERVAL '49 minutes'
+    ),
+    (
+        '50000000-0000-0000-0000-000000000707',
+        '50000000-0000-0000-0000-000000000602',
+        '50000000-0000-0000-0000-000000000202',
+        'How likely are you to recommend Tuturuuu to a teammate?',
+        'linear_scale',
+        '4',
+        NULL,
+        NOW() - INTERVAL '6 days' - INTERVAL '49 minutes'
+    ),
+    (
+        '50000000-0000-0000-0000-000000000708',
+        '50000000-0000-0000-0000-000000000602',
+        '50000000-0000-0000-0000-000000000203',
+        'Which area do you use most often?',
+        'single_choice',
+        'reports',
+        NULL,
+        NOW() - INTERVAL '6 days' - INTERVAL '49 minutes'
+    ),
+    (
+        '50000000-0000-0000-0000-000000000709',
+        '50000000-0000-0000-0000-000000000602',
+        '50000000-0000-0000-0000-000000000204',
+        'Which parts of the product feel most valuable?',
+        'multiple_choice',
+        NULL,
+        '["clarity"]'::jsonb,
+        NOW() - INTERVAL '6 days' - INTERVAL '49 minutes'
+    ),
+    (
+        '50000000-0000-0000-0000-000000000710',
+        '50000000-0000-0000-0000-000000000603',
+        '50000000-0000-0000-0000-000000000201',
+        'How satisfied are you with your overall experience?',
+        'rating',
+        '5',
+        NULL,
+        NOW() - INTERVAL '3 days' - INTERVAL '220 minutes'
+    ),
+    (
+        '50000000-0000-0000-0000-000000000711',
+        '50000000-0000-0000-0000-000000000603',
+        '50000000-0000-0000-0000-000000000202',
+        'How likely are you to recommend Tuturuuu to a teammate?',
+        'linear_scale',
+        '5',
+        NULL,
+        NOW() - INTERVAL '3 days' - INTERVAL '220 minutes'
+    ),
+    (
+        '50000000-0000-0000-0000-000000000712',
+        '50000000-0000-0000-0000-000000000603',
+        '50000000-0000-0000-0000-000000000203',
+        'Which area do you use most often?',
+        'single_choice',
+        'automation',
+        NULL,
+        NOW() - INTERVAL '3 days' - INTERVAL '220 minutes'
+    ),
+    (
+        '50000000-0000-0000-0000-000000000713',
+        '50000000-0000-0000-0000-000000000603',
+        '50000000-0000-0000-0000-000000000204',
+        'Which parts of the product feel most valuable?',
+        'multiple_choice',
+        NULL,
+        '["speed", "clarity", "customization"]'::jsonb,
+        NOW() - INTERVAL '3 days' - INTERVAL '220 minutes'
+    ),
+    (
+        '50000000-0000-0000-0000-000000000714',
+        '50000000-0000-0000-0000-000000000603',
+        '50000000-0000-0000-0000-000000000205',
+        'What should we improve next?',
+        'long_text',
+        'Builder performance is solid, but analytics should highlight skipped questions sooner and surface more actionable summaries.',
+        NULL,
+        NOW() - INTERVAL '3 days' - INTERVAL '220 minutes'
+    );

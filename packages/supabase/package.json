@@ -68,7 +68,7 @@
   "scripts": {
     "build": "tsc --build",
     "dev": "tsc --build --watch",
-    "type-check": "tsgo --build",
+    "type-check": "node ../../scripts/run-tsgo-build.js --build",
     "clean": "rm -rf dist .turbo",
     "prepublishOnly": "bun run clean && bun run build",
     "test": "vitest run",
@@ -85,7 +85,7 @@
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.3.3",
+    "@types/node": "^25.3.5",
     "@types/react": "^19.2.14",
     "next": "^16.1.6",
     "react": "^19.2.4",

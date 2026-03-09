@@ -58,6 +58,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuShortcut,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
@@ -82,6 +83,7 @@ import { CopyBoardDialog } from '../boards/copy-board-dialog';
 import { TaskBoardForm } from '../boards/form';
 import { useTasksHref } from '../tasks-route-context';
 import { SaveAsTemplateDialog } from '../templates/save-as-template-dialog';
+import { saveBoardConfig } from './board-config-storage';
 import { BoardLayoutSettings } from './board-layout-settings';
 import { BoardSwitcher } from './board-switcher';
 import { BoardUserPresenceAvatarsComponent } from './board-user-presence-avatars';
@@ -89,90 +91,6 @@ import type { ViewType } from './board-views';
 import type { BoardFiltersMetadata } from './task-filter.types';
 
 export type ListStatusFilter = 'all' | 'active' | 'not_started';
-
-interface BoardViewConfig {
-  currentView: ViewType;
-  filters: TaskFilters;
-  listStatusFilter: ListStatusFilter;
-}
-
-function getBoardConfigKey(boardId: string): string {
-  return `board_config_${boardId}`;
-}
-
-function loadBoardConfig(boardId: string): BoardViewConfig | null {
-  if (typeof window === 'undefined') return null;
-
-  try {
-    const stored = localStorage.getItem(getBoardConfigKey(boardId));
-    if (!stored) return null;
-
-    const parsed = JSON.parse(stored);
-
-    // Validate the structure before using it
-    if (
-      typeof parsed !== 'object' ||
-      parsed === null ||
-      typeof parsed.currentView !== 'string' ||
-      typeof parsed.filters !== 'object' ||
-      typeof parsed.listStatusFilter !== 'string'
-    ) {
-      console.warn('Invalid board config structure, ignoring');
-      return null;
-    }
-
-    // Convert date strings back to Date objects in dueDateRange if present
-    if (
-      parsed.filters.dueDateRange &&
-      typeof parsed.filters.dueDateRange === 'object'
-    ) {
-      const { from, to } = parsed.filters.dueDateRange;
-      const newRange: { from?: Date; to?: Date } = {};
-
-      // Validate and convert 'from' date independently
-      if (typeof from === 'string') {
-        const fromDate = new Date(from);
-        if (!Number.isNaN(fromDate.getTime())) {
-          newRange.from = fromDate;
-        }
-      } else if (from instanceof Date && !Number.isNaN(from.getTime())) {
-        newRange.from = from;
-      }
-
-      // Validate and convert 'to' date independently
-      if (typeof to === 'string') {
-        const toDate = new Date(to);
-        if (!Number.isNaN(toDate.getTime())) {
-          newRange.to = toDate;
-        }
-      } else if (to instanceof Date && !Number.isNaN(to.getTime())) {
-        newRange.to = to;
-      }
-
-      // Only keep dueDateRange if at least one valid date exists
-      if (newRange.from || newRange.to) {
-        parsed.filters.dueDateRange = newRange;
-      } else {
-        delete parsed.filters.dueDateRange;
-      }
-    }
-
-    return parsed as BoardViewConfig;
-  } catch (error) {
-    console.error('Failed to load board config from localStorage:', error);
-    return null;
-  }
-}
-
-function saveBoardConfig(boardId: string, config: BoardViewConfig): void {
-  if (typeof window === 'undefined') return;
-
-  try {
-    localStorage.setItem(getBoardConfigKey(boardId), JSON.stringify(config));
-  } catch (error) {
-    console.error('Failed to save board config to localStorage:', error);
-  }
-}
 
 interface Props {
   board: Pick<
@@ -184,6 +102,7 @@ interface Props {
   currentUserId?: string;
   currentView: ViewType;
   onViewChange: (view: ViewType) => void;
+  viewHotkeyLabels?: Partial<Record<ViewType, string>>;
   filters: TaskFilters;
   onFiltersChange: (filters: TaskFilters) => void;
   listStatusFilter: ListStatusFilter;
@@ -204,6 +123,7 @@ export function BoardHeader({
   currentUserId,
   currentView,
   onViewChange,
+  viewHotkeyLabels,
   filters,
   onFiltersChange,
   listStatusFilter,
@@ -239,14 +159,10 @@ export function BoardHeader({
   const router = useRouter();
   const tasksHref = useTasksHref();
 
-  // Track which board we've loaded config for to prevent re-loading
-  const loadedBoardRef = useRef<string | null>(null);
-
   // Stable refs for callbacks and values to avoid effect re-runs
   const onFiltersChangeRef = useRef(onFiltersChange);
   const onListStatusFilterChangeRef = useRef(onListStatusFilterChange);
   const onViewChangeRef = useRef(onViewChange);
-  const searchQueryRef = useRef(filters.searchQuery);
   const filtersRef = useRef(filters);
 
   // Update refs on each render
@@ -254,7 +170,6 @@ export function BoardHeader({
     onFiltersChangeRef.current = onFiltersChange;
     onListStatusFilterChangeRef.current = onListStatusFilterChange;
     onViewChangeRef.current = onViewChange;
-    searchQueryRef.current = filters.searchQuery;
     filtersRef.current = filters;
   });
 
@@ -287,26 +202,6 @@ export function BoardHeader({
 
     return () => clearTimeout(timeoutId);
   }, [localSearchQuery, currentView]);
-
-  // Load board configuration from localStorage on mount or board change
-  useEffect(() => {
-    // Only load if we haven't loaded for this board yet
-    if (loadedBoardRef.current === board.id) return;
-
-    const savedConfig = loadBoardConfig(board.id);
-    if (savedConfig) {
-      // Restore saved config but preserve current search query
-      onViewChangeRef.current(savedConfig.currentView);
-      onFiltersChangeRef.current({
-        ...savedConfig.filters,
-        searchQuery: searchQueryRef.current,
-      });
-      onListStatusFilterChangeRef.current(savedConfig.listStatusFilter);
-    }
-
-    // Mark this board as loaded
-    loadedBoardRef.current = board.id;
-  }, [board.id]);
 
   // Save board configuration to localStorage when it changes (excluding search)
   useEffect(() => {
@@ -620,15 +515,20 @@ export function BoardHeader({
                       onViewChange(view as ViewType);
                       setViewMenuOpen(false);
                     }}
-                    className="gap-2"
+                    className="gap-3"
                   >
                     <Icon className="h-4 w-4" />
-                    <div className="flex flex-col">
+                    <div className="flex flex-1 flex-col">
                       <span className="font-medium">{config.label}</span>
                       <span className="text-muted-foreground text-xs">
                         {config.description}
                       </span>
                     </div>
+                    {viewHotkeyLabels?.[view as ViewType] && (
+                      <DropdownMenuShortcut className="self-start pt-0.5">
+                        {viewHotkeyLabels[view as ViewType]}
+                      </DropdownMenuShortcut>
+                    )}
                   </DropdownMenuItem>
                 );
               })}

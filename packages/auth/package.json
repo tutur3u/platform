@@ -16,7 +16,7 @@
   },
   "license": "MIT",
   "scripts": {
-    "type-check": "tsgo --build",
+    "type-check": "node ../../scripts/run-tsgo-build.js --build",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -31,7 +31,7 @@
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.3.3",
+    "@types/node": "^25.3.5",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "typescript": "^5.9.3",

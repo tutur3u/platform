@@ -1,3 +1,4 @@
+import { google } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { embed } from 'ai';
 import { NextResponse } from 'next/server';
@@ -93,7 +94,7 @@ export async function POST(req: Request, { params }: Params) {
     // Generate embedding for search query using Google Gemini
     // Use RETRIEVAL_QUERY task type to match RETRIEVAL_DOCUMENT
     const { embedding } = await embed({
-      model: 'google/gemini-embedding-001',
+      model: google.embedding('gemini-embedding-001'),
       value: enhancedQuery,
       providerOptions: {
         google: {

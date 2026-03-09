@@ -113,37 +113,56 @@ export default function BalancesTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <Input
-          placeholder={String(t('search_by_id'))}
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
-          className="max-w-xs"
-        />
-        <div className="flex gap-1">
-          {(['all', 'user', 'workspace'] as const).map((scope) => (
-            <Button
-              key={scope}
-              variant={scopeFilter === scope ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => {
-                setScopeFilter(scope);
+      <Card className="border-border/70 bg-linear-to-br from-background to-muted/20 shadow-sm">
+        <CardContent className="space-y-4 pt-6">
+          <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-[11px] text-muted-foreground uppercase tracking-[0.16em]">
+                {t('balances_eyebrow')}
+              </p>
+              <h3 className="mt-1 font-semibold text-xl tracking-tight">
+                {t('balances_headline')}
+              </h3>
+              <p className="mt-1 text-muted-foreground text-sm">
+                {t('balances_subcopy')}
+              </p>
+            </div>
+            {pagination && (
+              <Badge variant="outline" className="w-fit">
+                {pagination.total} {t('results')}
+              </Badge>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Input
+              placeholder={String(t('search_by_id'))}
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
                 setPage(1);
               }}
-            >
-              {t(`scope_${scope}`)}
-            </Button>
-          ))}
-        </div>
-        {pagination && (
-          <Badge variant="outline" className="ml-auto">
-            {pagination.total} {t('results')}
-          </Badge>
-        )}
-      </div>
+              className="max-w-xs bg-background/80"
+            />
+            <div className="flex flex-wrap gap-1">
+              {(['all', 'user', 'workspace'] as const).map((scope) => (
+                <Button
+                  key={scope}
+                  variant={scopeFilter === scope ? 'default' : 'outline'}
+                  size="sm"
+                  className="rounded-full"
+                  onClick={() => {
+                    setScopeFilter(scope);
+                    setPage(1);
+                  }}
+                >
+                  {t(`scope_${scope}`)}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {isLoading ? (
         <div className="space-y-2">
@@ -153,7 +172,7 @@ export default function BalancesTab() {
         </div>
       ) : (
         <>
-          <Card>
+          <Card className="border-border/70 shadow-sm">
             <CardContent className="pt-6">
               {balances.length === 0 ? (
                 <p className="py-8 text-center text-muted-foreground">
@@ -244,7 +263,7 @@ function BalanceRow({
   const pct = total > 0 ? (used / total) * 100 : 0;
 
   return (
-    <div className="rounded-lg border p-3">
+    <div className="rounded-2xl border border-border/70 bg-background/80 p-4 shadow-sm">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -305,7 +324,7 @@ function BalanceRow({
                 type="number"
                 value={bonusAmount}
                 onChange={(e) => onBonusAmountChange(e.target.value)}
-                placeholder="Amount"
+                placeholder={String(t('bonus_amount_placeholder'))}
                 className="h-8 w-24"
               />
               <Button

@@ -1,0 +1,120 @@
+name: Mobile Build macOS
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/mobile/**"
+      - ".github/workflows/mobile-build-macos.yaml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "apps/mobile/**"
+      - ".github/workflows/mobile-build-macos.yaml"
+
+jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: mobile-build-macos.yaml
+
+  build-macos:
+    name: Build macOS (Development)
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.41.x"
+          channel: stable
+          cache: true
+
+      - name: Enable macOS desktop
+        run: flutter config --enable-macos-desktop
+
+      - name: Install dependencies
+        if: steps.cache-build.outputs.cache-hit != 'true'
+        run: flutter pub get
+
+      - name: Cache Build
+        id: cache-build
+        uses: actions/cache@v4
+        with:
+          path: |
+            apps/mobile/build
+            apps/mobile/.dart_tool
+            apps/mobile/macos/Pods
+          key: ${{ runner.os }}-flutter-macos-${{ hashFiles('apps/mobile/**') }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-macos-
+
+      - name: Create dummy GoogleService-Info.plist
+        if: steps.cache-build.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p macos/Runner
+          cat << 'EOF' > macos/Runner/GoogleService-Info.plist
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CLIENT_ID</key>
+            <string>dummy</string>
+            <key>REVERSED_CLIENT_ID</key>
+            <string>dummy</string>
+            <key>API_KEY</key>
+            <string>dummy</string>
+            <key>GCM_SENDER_ID</key>
+            <string>dummy</string>
+            <key>PLIST_VERSION</key>
+            <string>1</string>
+            <key>BUNDLE_ID</key>
+            <string>dummy</string>
+            <key>PROJECT_ID</key>
+            <string>dummy</string>
+            <key>STORAGE_BUCKET</key>
+            <string>dummy</string>
+            <key>IS_ADS_ENABLED</key>
+            <false/>
+            <key>IS_ANALYTICS_ENABLED</key>
+            <false/>
+            <key>IS_APPINVITE_ENABLED</key>
+            <true/>
+            <key>IS_GCM_ENABLED</key>
+            <true/>
+            <key>IS_SIGNIN_ENABLED</key>
+            <true/>
+            <key>GOOGLE_APP_ID</key>
+            <string>1:dummy:ios:dummy</string>
+          </dict>
+          </plist>
+          EOF
+
+      - name: Update CocoaPods Repos
+        if: steps.cache-build.outputs.cache-hit != 'true'
+        run: cd macos && pod repo update
+        shell: bash
+
+      - name: Build macOS
+        if: steps.cache-build.outputs.cache-hit != 'true'
+        run: flutter build macos --flavor development --target lib/main_development.dart
+
+      - name: Upload macOS app artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: macos-dev-app
+          path: apps/mobile/build/macos/Build/Products/Release/
+          retention-days: 7

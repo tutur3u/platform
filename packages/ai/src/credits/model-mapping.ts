@@ -23,6 +23,28 @@ export function resolveGatewayModelId(
 }
 
 /**
+ * Checks whether a model is allowed by an allocation list.
+ * Empty lists mean "all models".
+ */
+export function matchesAllowedModel(
+  modelName: string,
+  allowedModels: string[]
+): boolean {
+  if (allowedModels.length === 0) return true;
+
+  const gatewayModelId = resolveGatewayModelId(modelName);
+  const bareModelName = toBareModelName(gatewayModelId);
+
+  return allowedModels.some((allowedModel) => {
+    const normalizedAllowedModel = resolveGatewayModelId(allowedModel);
+    return (
+      normalizedAllowedModel === gatewayModelId ||
+      toBareModelName(normalizedAllowedModel) === bareModelName
+    );
+  });
+}
+
+/**
  * Extract the bare model name from a gateway model ID.
  * e.g., 'google/gemini-2.5-flash' → 'gemini-2.5-flash'
  */

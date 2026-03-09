@@ -15,6 +15,8 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
+import 'package:mobile/widgets/fab/fab_action.dart';
+import 'package:mobile/widgets/fab/speed_dial_fab.dart';
 import 'package:mobile/widgets/platform_icon_picker.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -40,6 +42,7 @@ class _TransactionCategoriesView extends StatefulWidget {
 
 class _TransactionCategoriesViewState
     extends State<_TransactionCategoriesView> {
+  static const double _fabContentBottomPadding = 96;
   static const _tabCategories = 0;
   static const _tabTags = 1;
 
@@ -63,6 +66,8 @@ class _TransactionCategoriesViewState
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = shad.Theme.of(context);
+    final listBottomPadding =
+        _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
 
     return shad.Scaffold(
       headers: [
@@ -82,15 +87,6 @@ class _TransactionCategoriesViewState
             ),
           ],
           title: Text(l10n.financeCategories),
-          trailing: [
-            shad.PrimaryButton(
-              onPressed: _onCreateCurrentTab,
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [Icon(Icons.add, size: 16)],
-              ),
-            ),
-          ],
         ),
       ],
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
@@ -98,35 +94,66 @@ class _TransactionCategoriesViewState
             prev.currentWorkspace?.id != curr.currentWorkspace?.id,
         listener: (context, state) =>
             unawaited(_handleWorkspaceChanged(state.currentWorkspace?.id)),
-        child: Column(
+        child: Stack(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-              child: shad.Tabs(
-                index: _activeTab,
-                onChanged: (value) {
-                  setState(() => _activeTab = value);
-                  if (value == _tabCategories && _categories.isEmpty) {
-                    unawaited(_loadCategories());
-                    return;
-                  }
-                  if (value == _tabTags && _tags.isEmpty) {
-                    unawaited(_loadTags());
-                  }
-                },
-                children: [
-                  shad.TabItem(child: Text(l10n.financeCategories)),
-                  shad.TabItem(child: Text(l10n.financeTags)),
-                ],
-              ),
+            Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                  child: shad.Tabs(
+                    index: _activeTab,
+                    onChanged: (value) {
+                      setState(() {
+                        _activeTab = value;
+                        if (value == _tabCategories) {
+                          _categoriesError = null;
+                        } else {
+                          _tagsError = null;
+                        }
+                      });
+                      if (value == _tabCategories && _categories.isEmpty) {
+                        unawaited(_loadCategories());
+                        return;
+                      }
+                      if (value == _tabTags && _tags.isEmpty) {
+                        unawaited(_loadTags());
+                      }
+                    },
+                    children: [
+                      shad.TabItem(child: Text(l10n.financeCategories)),
+                      shad.TabItem(child: Text(l10n.financeTags)),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: _loadCurrentTab,
+                    child: _activeTab == _tabCategories
+                        ? _buildCategoriesContent(
+                            theme,
+                            l10n,
+                            listBottomPadding,
+                          )
+                        : _buildTagsContent(theme, l10n, listBottomPadding),
+                  ),
+                ),
+              ],
             ),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: _loadCurrentTab,
-                child: _activeTab == _tabCategories
-                    ? _buildCategoriesContent(theme, l10n)
-                    : _buildTagsContent(theme, l10n),
-              ),
+            SpeedDialFab(
+              label: l10n.financeCreateCategory,
+              icon: Icons.add,
+              actions: [
+                FabAction(
+                  icon: Icons.category_outlined,
+                  label: l10n.financeCreateCategory,
+                  onPressed: _onCreateCategory,
+                ),
+                FabAction(
+                  icon: Icons.label_outline,
+                  label: l10n.financeCreateTag,
+                  onPressed: _onCreateTag,
+                ),
+              ],
             ),
           ],
         ),
@@ -134,7 +161,11 @@ class _TransactionCategoriesViewState
     );
   }
 
-  Widget _buildCategoriesContent(shad.ThemeData theme, AppLocalizations l10n) {
+  Widget _buildCategoriesContent(
+    shad.ThemeData theme,
+    AppLocalizations l10n,
+    double listBottomPadding,
+  ) {
     if (_categoriesLoading) {
       return const Center(child: shad.CircularProgressIndicator());
     }
@@ -176,9 +207,9 @@ class _TransactionCategoriesViewState
     }
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      padding: EdgeInsets.fromLTRB(16, 8, 16, listBottomPadding),
       itemCount: _categories.length,
-      separatorBuilder: (_, _) => const shad.Gap(8),
+      separatorBuilder: (context, index) => const shad.Gap(8),
       itemBuilder: (context, index) {
         final category = _categories[index];
         return _CategoryCard(
@@ -190,7 +221,11 @@ class _TransactionCategoriesViewState
     );
   }
 
-  Widget _buildTagsContent(shad.ThemeData theme, AppLocalizations l10n) {
+  Widget _buildTagsContent(
+    shad.ThemeData theme,
+    AppLocalizations l10n,
+    double listBottomPadding,
+  ) {
     if (_tagsLoading) {
       return const Center(child: shad.CircularProgressIndicator());
     }
@@ -232,9 +267,9 @@ class _TransactionCategoriesViewState
     }
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      padding: EdgeInsets.fromLTRB(16, 8, 16, listBottomPadding),
       itemCount: _tags.length,
-      separatorBuilder: (_, _) => const shad.Gap(8),
+      separatorBuilder: (context, index) => const shad.Gap(8),
       itemBuilder: (context, index) {
         final tag = _tags[index];
         return _TagCard(
@@ -244,14 +279,6 @@ class _TransactionCategoriesViewState
         );
       },
     );
-  }
-
-  Future<void> _onCreateCurrentTab() async {
-    if (_activeTab == _tabTags) {
-      await _onCreateTag();
-      return;
-    }
-    await _onCreateCategory();
   }
 
   Future<void> _onCreateCategory() async {
@@ -269,7 +296,7 @@ class _TransactionCategoriesViewState
 
     final repository = context.read<FinanceRepository>();
     final l10n = context.l10n;
-    final toastContext = context;
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
 
     final deleted =
         await shad.showDialog<bool>(
@@ -318,7 +345,7 @@ class _TransactionCategoriesViewState
 
     final repository = context.read<FinanceRepository>();
     final l10n = context.l10n;
-    final toastContext = context;
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
 
     final deleted =
         await shad.showDialog<bool>(

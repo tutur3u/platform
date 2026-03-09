@@ -44,9 +44,23 @@ jobs:
           cache: true
 
       - name: Install dependencies
+        if: steps.cache-build.outputs.cache-hit != 'true'
         run: flutter pub get
 
+      - name: Cache Build
+        id: cache-build
+        uses: actions/cache@v4
+        with:
+          path: |
+            apps/mobile/build
+            apps/mobile/.dart_tool
+            apps/mobile/ios/Pods
+          key: ${{ runner.os }}-flutter-ios-${{ hashFiles('apps/mobile/**') }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-ios-
+
       - name: Create dummy GoogleService-Info.plist
+        if: steps.cache-build.outputs.cache-hit != 'true'
         run: |
           mkdir -p ios/Runner
           cat << 'EOF' > ios/Runner/GoogleService-Info.plist
@@ -87,6 +101,7 @@ jobs:
           EOF
 
       - name: Boot iOS simulator (required for xcodebuild destination on CI)
+        if: steps.cache-build.outputs.cache-hit != 'true'
         run: |
           DEVICE=$(xcrun simctl list devices available -j | python3 -c "
           import json, sys
@@ -103,11 +118,12 @@ jobs:
           echo "SIMULATOR_UDID=$DEVICE" >> $GITHUB_ENV
 
       - name: Update CocoaPods Repos
+        if: steps.cache-build.outputs.cache-hit != 'true'
         run: cd ios && pod repo update
         shell: bash
 
       - name: Build iOS (development flavor, simulator)
-
+        if: steps.cache-build.outputs.cache-hit != 'true'
         run: flutter build ios --flavor development --target lib/main_development.dart --simulator -d ${{ env.SIMULATOR_UDID }}
 
       - name: Upload iOS app artifact

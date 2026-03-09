@@ -32,8 +32,11 @@ interface FilterProps {
     value: string;
     count?: number;
     icon?: ReactNode;
+    badge?: string;
+    badgeClassName?: string;
     checked?: boolean;
     disabled?: boolean;
+    indicatorClassName?: string;
   }[];
   href?: string;
   align?: 'start' | 'center' | 'end';
@@ -210,12 +213,30 @@ export function Filter({
                                 {getInitials(displayName)}
                               </AvatarFallback>
                             </Avatar>
-                            <div className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-background" />
+                            <div
+                              className={cn(
+                                'absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-background',
+                                option.indicatorClassName ?? 'bg-green-500'
+                              )}
+                            />
                           </div>
                           <div className="flex min-w-0 flex-col">
-                            <span className="max-w-30 truncate font-semibold text-secondary-foreground leading-none">
-                              {displayName}
-                            </span>
+                            <div className="flex min-w-0 items-center gap-1.5">
+                              <span className="max-w-30 truncate font-semibold text-secondary-foreground leading-none">
+                                {displayName}
+                              </span>
+                              {option.badge ? (
+                                <Badge
+                                  variant="outline"
+                                  className={cn(
+                                    'h-5 rounded-full px-1.5 text-[10px] leading-none',
+                                    option.badgeClassName
+                                  )}
+                                >
+                                  {option.badge}
+                                </Badge>
+                              ) : null}
+                            </div>
                             {email && (
                               <span className="mt-0.5 max-w-30 truncate text-muted-foreground text-xs leading-none">
                                 {email}
@@ -346,9 +367,24 @@ export function Filter({
                           <Check className={cn('h-4 w-4')} />
                         </div>
                         {option.icon}
-                        <div>
-                          <span>{option.label}</span>
-                          <div className="opacity-50">{option.description}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span className="truncate">{option.label}</span>
+                            {option.badge ? (
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  'h-5 rounded-full px-1.5 text-[10px] leading-none',
+                                  option.badgeClassName
+                                )}
+                              >
+                                {option.badge}
+                              </Badge>
+                            ) : null}
+                          </div>
+                          <div className="truncate opacity-50">
+                            {option.description}
+                          </div>
                         </div>
                         {option.count !== undefined && (
                           <span className="ml-auto flex h-4 w-4 items-center justify-center font-mono text-xs">

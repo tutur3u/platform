@@ -12,7 +12,7 @@
     "./emails/vercel-invite-user": "./emails/vercel-invite-user.tsx"
   },
   "scripts": {
-    "type-check": "tsgo --build",
+    "type-check": "node ../../scripts/run-tsgo-build.js --build",
     "dev": "email dev -p 7001",
     "export": "email export",
     "test": "vitest run",
@@ -27,7 +27,7 @@
     "@react-email/preview-server": "^5.2.9",
     "@react-email/render": "^2.0.4",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.3.3",
+    "@types/node": "^25.3.5",
     "@types/react": "^19.2.14",
     "vitest": "^4.0.18"
   },

@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { matchesAllowedModel } from '@tuturuuu/ai/credits/model-mapping';
 import {
   ArrowBigUpDash,
   Check,
@@ -50,6 +51,10 @@ import {
   useRef,
   useState,
 } from 'react';
+import {
+  fetchGatewayModels,
+  MIRA_GATEWAY_MODELS_QUERY_KEY,
+} from './mira-gateway-models';
 import { ProviderLogo, toProviderId } from './provider-logo';
 
 const EMPTY_FAVORITES = new Set<string>();
@@ -85,56 +90,13 @@ async function checkProviderLogo(provider: string): Promise<boolean> {
 }
 
 interface MiraModelSelectorProps {
+  creditsWsId?: string;
   wsId: string;
   model: AIModelUI;
   onChange: (model: AIModelUI) => void;
   disabled?: boolean;
   hotkeySignal?: number;
   shortcutLabel?: string;
-}
-
-/** Fetches enabled models from the ai_gateway_models table */
-async function fetchGatewayModels(): Promise<AIModelUI[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('ai_gateway_models')
-    .select(
-      'id, name, provider, description, context_window, max_tokens, type, tags, is_enabled, input_price_per_token, output_price_per_token'
-    )
-    .eq('type', 'language')
-    .order('provider')
-    .order('name');
-
-  if (error || !data?.length) return [];
-
-  return data.map((m) => {
-    const inputPricePerToken = Number(m.input_price_per_token ?? 0);
-    const outputPricePerToken = Number(m.output_price_per_token ?? 0);
-
-    return {
-      value: m.id,
-      label: m.name,
-      provider: m.provider,
-      description: m.description ?? undefined,
-      context: m.context_window ?? undefined,
-      maxTokens: m.max_tokens ?? undefined,
-      tags: m.tags ?? undefined,
-      disabled: !m.is_enabled,
-      inputPricePerToken:
-        Number.isFinite(inputPricePerToken) && inputPricePerToken > 0
-          ? inputPricePerToken
-          : undefined,
-      outputPricePerToken:
-        Number.isFinite(outputPricePerToken) && outputPricePerToken > 0
-          ? outputPricePerToken
-          : undefined,
-    } as AIModelUI & {
-      maxTokens?: number;
-      tags?: string[];
-      inputPricePerToken?: number;
-      outputPricePerToken?: number;
-    };
-  });
 }
 
 async function fetchFavorites(wsId: string): Promise<Set<string>> {
@@ -205,6 +167,7 @@ function modelMatchesSearch(m: AIModelUI, search: string): boolean {
 }
 
 export default function MiraModelSelector({
+  creditsWsId,
   wsId,
   model,
   onChange,
@@ -225,7 +188,7 @@ export default function MiraModelSelector({
   const hasAppliedInitialFavoritesView = useRef(false);
 
   const { data: gatewayModels, isLoading: modelsLoading } = useQuery({
-    queryKey: ['ai-gateway-models', 'enabled'],
+    queryKey: MIRA_GATEWAY_MODELS_QUERY_KEY,
     queryFn: fetchGatewayModels,
     staleTime: 5 * 60 * 1000,
   });
@@ -328,40 +291,22 @@ export default function MiraModelSelector({
     staleTime: Infinity,
   });
 
-  const { data: credits } = useAiCredits(wsId);
+  const { data: credits } = useAiCredits(creditsWsId ?? wsId);
   const showUpgradeCta = credits?.tier === 'FREE';
-
-  const allowedModelIds = useMemo(() => {
-    if (!credits?.allowedModels?.length) return null;
-    return new Set(credits.allowedModels);
-  }, [credits?.allowedModels]);
+  const defaultModelId = credits?.defaultLanguageModel ?? null;
 
   const modelById = useMemo(() => {
     return new Map(availableModels.map((m) => [m.value, m] as const));
   }, [availableModels]);
-
-  const allowedModelLookup = useMemo(() => {
-    if (!allowedModelIds) return null;
-    const lookup = new Set<string>();
-    for (const id of allowedModelIds) {
-      lookup.add(id);
-      const bare = id.includes('/') ? id.split('/').pop() : id;
-      if (bare) lookup.add(bare);
-    }
-    return lookup;
-  }, [allowedModelIds]);
 
   const isModelAllowed = useCallback(
     (modelId: string) => {
       const m = modelById.get(modelId);
       if (m?.disabled) return false;
 
-      if (!allowedModelLookup) return true;
-      if (allowedModelLookup.has(modelId)) return true;
-      const bare = modelId.includes('/') ? modelId.split('/').pop() : modelId;
-      return bare ? allowedModelLookup.has(bare) : false;
+      return matchesAllowedModel(modelId, credits?.allowedModels ?? []);
     },
-    [allowedModelLookup, modelById]
+    [credits?.allowedModels, modelById]
   );
 
   const groupedModels = useMemo(() => {
@@ -381,6 +326,10 @@ export default function MiraModelSelector({
 
         if (aAllowed !== bAllowed) return aAllowed ? -1 : 1;
 
+        const aDefault = a.value === defaultModelId;
+        const bDefault = b.value === defaultModelId;
+        if (aDefault !== bDefault) return aDefault ? -1 : 1;
+
         const aFav = isFavorited(a.value);
         const bFav = isFavorited(b.value);
         if (aFav !== bFav) return aFav ? -1 : 1;
@@ -390,7 +339,13 @@ export default function MiraModelSelector({
     }
 
     return groups;
-  }, [availableModels, deferredOpen, isModelAllowed, isFavorited]);
+  }, [
+    availableModels,
+    defaultModelId,
+    deferredOpen,
+    isModelAllowed,
+    isFavorited,
+  ]);
 
   const providerList = useMemo(() => {
     return Object.keys(groupedModels).sort((a, b) => {
@@ -524,6 +479,11 @@ export default function MiraModelSelector({
             >
               <ProviderLogo provider={model.provider} size={16} />
               <span className="min-w-0 truncate">{model.label}</span>
+              {defaultModelId === model.value && (
+                <span className="rounded-full bg-dynamic-primary/12 px-2 py-0.5 font-sans text-[10px] text-dynamic-primary uppercase tracking-[0.18em]">
+                  {t('model_default_badge')}
+                </span>
+              )}
               <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
@@ -732,6 +692,8 @@ export default function MiraModelSelector({
                                   {models.map((m) => {
                                     const allowed = isModelAllowed(m.value);
                                     const favorited = isFavorited(m.value);
+                                    const isPlanDefault =
+                                      m.value === defaultModelId;
                                     const item = (
                                       <CommandItem
                                         key={m.value}
@@ -770,6 +732,11 @@ export default function MiraModelSelector({
                                             <span className="font-medium font-mono text-xs">
                                               {m.label}
                                             </span>
+                                            {isPlanDefault && (
+                                              <span className="rounded-full border border-dynamic-primary/25 bg-dynamic-primary/10 px-1.5 py-0.5 font-sans text-[8px] text-dynamic-primary uppercase tracking-[0.16em]">
+                                                {t('model_default_badge')}
+                                              </span>
+                                            )}
                                             <button
                                               type="button"
                                               className="group ml-auto flex shrink-0 rounded p-0.5 hover:bg-muted"

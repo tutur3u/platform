@@ -18,21 +18,40 @@ export function buildReportPrintContent({
         <meta name="viewport" content="width=device-width, initial-scale=1">
         ${stylesheets}
         <style>
+          @page {
+            size: A4;
+            margin: 0;
+          }
           body {
             margin: 0;
-            padding: 20px;
+            padding: 24px;
             font-family: system-ui, -apple-system, sans-serif;
-            background: white;
+            background: #e2e8f0;
             color: black;
+          }
+          #printable-area {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+          }
+          [data-report-page] {
+            break-after: page;
+            page-break-after: always;
+          }
+          [data-report-page]:last-child {
+            break-after: auto;
+            page-break-after: auto;
           }
           @media print {
             body {
               margin: 0;
               padding: 0;
+              background: white;
             }
             #printable-area {
+              display: block !important;
+              gap: 0 !important;
               height: auto !important;
-              width: auto !important;
               max-width: none !important;
               border: none !important;
               border-radius: 0 !important;
@@ -40,6 +59,13 @@ export function buildReportPrintContent({
               margin: 0 !important;
               background: white !important;
               color: black !important;
+              width: auto !important;
+            }
+            [data-report-page] {
+              box-shadow: none !important;
+              margin: 0 !important;
+              min-height: 297mm !important;
+              width: 210mm !important;
             }
             .print\\:hidden {
               display: none !important;
@@ -85,6 +111,14 @@ export function buildReportPrintContent({
             }
             .print\\:opacity-50 {
               opacity: 0.5 !important;
+            }
+            .print\\:break-after-page {
+              break-after: page !important;
+              page-break-after: always !important;
+            }
+            .print\\:break-after-auto {
+              break-after: auto !important;
+              page-break-after: auto !important;
             }
           }
         </style>

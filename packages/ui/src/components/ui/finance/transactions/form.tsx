@@ -6,6 +6,7 @@ import type { Wallet as WalletType } from '@tuturuuu/types/primitives/Wallet';
 import { Button } from '@tuturuuu/ui/button';
 import { Form } from '@tuturuuu/ui/form';
 import { useExchangeRates } from '@tuturuuu/ui/hooks/use-exchange-rates';
+import { useFinanceTransactionPreferences } from '@tuturuuu/ui/hooks/use-finance-transaction-preferences';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { Label } from '@tuturuuu/ui/label';
@@ -53,31 +54,58 @@ export function TransactionForm({
   const [isDestinationOverridden, setIsDestinationOverridden] = useState(
     !!data?.transfer
   );
+  const [walletPrefillMeta, setWalletPrefillMeta] = useState<{
+    value: string;
+    sourceLabel: string;
+  } | null>(null);
+  const [categoryPrefillMeta, setCategoryPrefillMeta] = useState<{
+    value: string;
+    sourceLabel: string;
+  } | null>(null);
   const router = useRouter();
+
+  const {
+    rememberLastSelections,
+    isLoadingRememberLastSelections,
+    lastSelections,
+    isLastSelectionsInitialized,
+    saveLastSelections,
+  } = useFinanceTransactionPreferences(wsId);
 
   const { data: categories, isLoading: categoriesLoading } = useQuery<
     TransactionCategory[]
   >({
     queryKey: [`/api/workspaces/${wsId}/transactions/categories`],
-    queryFn: () => fetcher(`/api/workspaces/${wsId}/transactions/categories`),
+    queryFn: () =>
+      fetcher(`/api/workspaces/${wsId}/transactions/categories`, {
+        cache: 'no-store',
+      }),
   });
 
   const { data: wallets, isLoading: walletsLoading } = useQuery<WalletType[]>({
     queryKey: [`/api/workspaces/${wsId}/wallets`],
-    queryFn: () => fetcher(`/api/workspaces/${wsId}/wallets`),
+    queryFn: () =>
+      fetcher(`/api/workspaces/${wsId}/wallets`, {
+        cache: 'no-store',
+      }),
   });
 
   const { data: tags, isLoading: tagsLoading } = useQuery<
     Array<{ id: string; name: string; color: string }>
   >({
     queryKey: [`/api/workspaces/${wsId}/tags`],
-    queryFn: () => fetcher(`/api/workspaces/${wsId}/tags`),
+    queryFn: () =>
+      fetcher(`/api/workspaces/${wsId}/tags`, {
+        cache: 'no-store',
+      }),
   });
 
   const { data: existingTags } = useQuery<Array<{ tag_id: string }>>({
     queryKey: [`/api/workspaces/${wsId}/transactions/${data?.id}/tags`],
     queryFn: () =>
-      fetcher(`/api/workspaces/${wsId}/transactions/${data?.id}/tags`),
+      fetcher(`/api/workspaces/${wsId}/transactions/${data?.id}/tags`, {
+        cache: 'no-store',
+      }),
     enabled: !!data?.id,
   });
 
@@ -99,7 +127,7 @@ export function TransactionForm({
       id: data?.id,
       description: data?.description || '',
       amount: data?.amount ? Math.abs(data.amount) : undefined,
-      origin_wallet_id: data?.wallet_id || wallets?.[0]?.id || '',
+      origin_wallet_id: data?.wallet_id || '',
       destination_wallet_id: data?.transfer?.linked_wallet_id || '',
       destination_amount: data?.transfer?.linked_amount
         ? Math.abs(data.transfer.linked_amount)
@@ -142,35 +170,127 @@ export function TransactionForm({
     const isUserEdited =
       originWalletState.isDirty || originWalletState.isTouched;
     const currentWalletId = form.getValues('origin_wallet_id');
+    const contextualWalletId = data?.wallet_id || '';
 
-    if (data?.id || isUserEdited || currentWalletId) return;
+    if (data?.id || isUserEdited) return;
     if (!wallets || wallets.length === 0) return;
+    if (isLoadingRememberLastSelections) return;
+    if (rememberLastSelections && !isLastSelectionsInitialized) return;
 
-    const targetWalletId =
-      defaultWalletId && wallets.some((w) => w.id === defaultWalletId)
+    const rememberedWalletId =
+      rememberLastSelections &&
+      lastSelections.walletId &&
+      wallets.some((wallet) => wallet.id === lastSelections.walletId)
+        ? lastSelections.walletId
+        : '';
+    const nextWalletSelection =
+      rememberedWalletId ||
+      (contextualWalletId &&
+      wallets.some((wallet) => wallet.id === contextualWalletId)
+        ? contextualWalletId
+        : '') ||
+      (defaultWalletId &&
+      wallets.some((wallet) => wallet.id === defaultWalletId)
         ? defaultWalletId
-        : wallets[0]?.id;
+        : '') ||
+      wallets[0]?.id ||
+      '';
+    const sourceLabel = rememberedWalletId
+      ? t('transaction-data-table.prefill_source_last_used')
+      : contextualWalletId && nextWalletSelection === contextualWalletId
+        ? t('transaction-data-table.prefill_source_current_context')
+        : defaultWalletId && nextWalletSelection === defaultWalletId
+          ? t('transaction-data-table.prefill_source_workspace_default')
+          : '';
 
-    if (targetWalletId && targetWalletId !== currentWalletId) {
-      form.setValue('origin_wallet_id', targetWalletId);
+    if (!nextWalletSelection) return;
+
+    if (nextWalletSelection !== currentWalletId) {
+      form.setValue('origin_wallet_id', nextWalletSelection);
     }
-  }, [defaultWalletId, data?.id, form, wallets]);
+
+    setWalletPrefillMeta(
+      sourceLabel
+        ? {
+            value: nextWalletSelection,
+            sourceLabel,
+          }
+        : null
+    );
+  }, [
+    data?.id,
+    data?.wallet_id,
+    defaultWalletId,
+    form,
+    isLastSelectionsInitialized,
+    isLoadingRememberLastSelections,
+    lastSelections.walletId,
+    rememberLastSelections,
+    t,
+    wallets,
+  ]);
 
   useEffect(() => {
     const categoryState = form.getFieldState('category_id');
     const isUserEdited = categoryState.isDirty || categoryState.isTouched;
     const currentCategoryId = form.getValues('category_id');
+    const contextualCategoryId = data?.category_id || '';
 
-    if (data?.id || isUserEdited || currentCategoryId) return;
-    if (!categories || categories.length === 0 || !defaultCategoryId) return;
+    if (data?.id || isUserEdited) return;
+    if (!categories || categories.length === 0) return;
+    if (isLoadingRememberLastSelections) return;
+    if (rememberLastSelections && !isLastSelectionsInitialized) return;
 
-    if (
-      categories.some((c) => c.id === defaultCategoryId) &&
-      defaultCategoryId !== currentCategoryId
-    ) {
-      form.setValue('category_id', defaultCategoryId);
+    const rememberedCategoryId =
+      rememberLastSelections &&
+      lastSelections.categoryId &&
+      categories.some((category) => category.id === lastSelections.categoryId)
+        ? lastSelections.categoryId
+        : '';
+    const nextCategorySelection =
+      rememberedCategoryId ||
+      (contextualCategoryId &&
+      categories.some((category) => category.id === contextualCategoryId)
+        ? contextualCategoryId
+        : '') ||
+      (defaultCategoryId &&
+      categories.some((category) => category.id === defaultCategoryId)
+        ? defaultCategoryId
+        : '');
+    const sourceLabel = rememberedCategoryId
+      ? t('transaction-data-table.prefill_source_last_used')
+      : contextualCategoryId && nextCategorySelection === contextualCategoryId
+        ? t('transaction-data-table.prefill_source_current_context')
+        : defaultCategoryId && nextCategorySelection === defaultCategoryId
+          ? t('transaction-data-table.prefill_source_workspace_default')
+          : '';
+
+    if (!nextCategorySelection) return;
+
+    if (nextCategorySelection !== currentCategoryId) {
+      form.setValue('category_id', nextCategorySelection);
     }
-  }, [defaultCategoryId, data?.id, form, categories]);
+
+    setCategoryPrefillMeta(
+      sourceLabel
+        ? {
+            value: nextCategorySelection,
+            sourceLabel,
+          }
+        : null
+    );
+  }, [
+    categories,
+    data?.category_id,
+    data?.id,
+    defaultCategoryId,
+    form,
+    isLastSelectionsInitialized,
+    isLoadingRememberLastSelections,
+    lastSelections.categoryId,
+    rememberLastSelections,
+    t,
+  ]);
 
   const hasCreatePermission = canCreateTransactions && !data?.id;
   const hasUpdatePermission = canUpdateTransactions && data?.id;
@@ -465,6 +585,15 @@ export function TransactionForm({
         await refreshTransactions();
       }
 
+      if (!data?.id && rememberLastSelections) {
+        saveLastSelections({
+          walletId: formData.origin_wallet_id,
+          categoryId: isTransfer
+            ? lastSelections.categoryId
+            : formData.category_id || undefined,
+        });
+      }
+
       onFinish?.(formData);
     } catch (error) {
       toast.error(
@@ -553,6 +682,8 @@ export function TransactionForm({
                 setIsDestinationOverridden={setIsDestinationOverridden}
                 setNewContentType={setNewContentType}
                 setNewContent={setNewContent}
+                walletPrefillMeta={walletPrefillMeta}
+                categoryPrefillMeta={categoryPrefillMeta}
               />
             </TabsContent>
 

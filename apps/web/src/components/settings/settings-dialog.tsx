@@ -27,7 +27,6 @@ import {
   Ticket,
   User,
   Users,
-  Wallet,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Workspace } from '@tuturuuu/types';
@@ -36,7 +35,7 @@ import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useUserBooleanConfig } from '@/hooks/use-user-config';
 import WorkspaceAvatarSettings from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/avatar';
 import BasicInfo from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/basic-info';
@@ -51,13 +50,12 @@ import AttendanceDisplaySettings from './attendance/attendance-display-settings'
 import { CalendarSettingsContent } from './calendar/calendar-settings-content';
 import { CalendarSettingsWrapper } from './calendar/calendar-settings-wrapper';
 import DebtLoanSettings from './finance/debt-loan-settings';
-import DefaultCategorySettings from './finance/default-category-settings';
 import DefaultCurrencySettings from './finance/default-currency-settings';
-import DefaultWalletSettings from './finance/default-wallet-settings';
 import ExperimentalFinanceSettings from './finance/experimental-finance-settings';
 import FinanceNavigationSettings from './finance/finance-navigation-settings';
 import InvoiceSettings from './finance/invoice-settings';
 import InvoiceVisibilitySettings from './finance/invoice-visibility-settings';
+import TransactionDefaultsSettings from './finance/transaction-defaults-settings';
 import ReferralSettings from './inventory/referral-settings';
 import { MiraMemorySettings } from './mira/mira-memory-settings';
 import { MiraPersonalitySettings } from './mira/mira-personality-settings';
@@ -165,6 +163,55 @@ export function SettingsDialog({
 
   // Use provided workspace or fetched workspace
   const workspace = workspaceProp || fetchedWorkspace || null;
+
+  const {
+    data: hasBillingPermission,
+    isLoading: isBillingPermissionLoading,
+    isFetching: isBillingPermissionFetching,
+  } = useQuery({
+    queryKey: ['workspace-billing-permission', workspace?.id],
+    queryFn: async () => {
+      if (!workspace?.id) return false;
+
+      const supabase = createClient();
+
+      const {
+        data: { user: currentUser },
+      } = await supabase.auth.getUser();
+
+      if (!currentUser) return false;
+
+      const { data, error } = await supabase.rpc('has_workspace_permission', {
+        p_ws_id: workspace.id,
+        p_user_id: currentUser.id,
+        p_permission: 'manage_subscription',
+      });
+
+      if (error) {
+        console.error('Error checking manage_subscription permission:', error);
+        return false;
+      }
+
+      return data ?? false;
+    },
+    enabled: !!workspace?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Reset activeTab if billing permission is revoked or not available
+  useEffect(() => {
+    if (
+      !isBillingPermissionLoading &&
+      hasBillingPermission === false &&
+      activeTab === 'workspace_billing'
+    ) {
+      const safeFallback =
+        defaultTab === 'workspace_billing'
+          ? 'profile'
+          : (defaultTab ?? 'profile');
+      setActiveTab(safeFallback);
+    }
+  }, [hasBillingPermission, isBillingPermissionLoading, activeTab, defaultTab]);
 
   // Fetch calendar token when workspace is available (using TanStack Query)
   const { data: calendarToken } = useQuery({
@@ -389,13 +436,20 @@ export function SettingsDialog({
                 description: t('ws-settings.members-description'),
                 keywords: ['Members', 'Team'],
               },
-              {
-                name: 'workspace_billing',
-                label: t('billing.billing'),
-                icon: CreditCard,
-                description: t('settings-account.billing-description'),
-                keywords: ['Billing', 'Plan', 'Subscription'],
-              },
+              ...(hasBillingPermission
+                ? [
+                    {
+                      name: 'workspace_billing',
+                      label: t('billing.billing'),
+                      icon: CreditCard,
+                      description: t('settings-account.billing-description'),
+                      keywords: ['Billing', 'Plan', 'Subscription'],
+                      disabled:
+                        isBillingPermissionLoading ||
+                        isBillingPermissionFetching,
+                    },
+                  ]
+                : []),
               {
                 name: 'user_status',
                 label: t('settings.workspaces.user_status'),
@@ -512,18 +566,19 @@ export function SettingsDialog({
                 keywords: ['Finance', 'Invoice', 'Visibility', 'Show', 'Hide'],
               },
               {
-                name: 'default_wallet',
-                label: t('settings.finance.default_wallet'),
-                icon: Wallet,
-                description: t('settings.finance.default_wallet_description'),
-                keywords: ['Finance', 'Wallet'],
-              },
-              {
-                name: 'default_category',
-                label: t('settings.finance.default_category'),
+                name: 'transaction_defaults',
+                label: t('settings.finance.transaction_defaults'),
                 icon: LayoutGrid,
-                description: t('settings.finance.default_category_description'),
-                keywords: ['Finance', 'Category', 'Transaction'],
+                description: t(
+                  'settings.finance.transaction_defaults_description'
+                ),
+                keywords: [
+                  'Finance',
+                  'Wallet',
+                  'Category',
+                  'Transaction',
+                  'Defaults',
+                ],
               },
               {
                 name: 'default_currency',
@@ -756,7 +811,7 @@ export function SettingsDialog({
           </div>
         )}
 
-        {activeTab === 'workspace_billing' && wsId && (
+        {activeTab === 'workspace_billing' && wsId && hasBillingPermission && (
           <div className="h-full">
             <BillingSettings wsId={wsId} />
           </div>
@@ -801,12 +856,8 @@ export function SettingsDialog({
           />
         )}
 
-        {activeTab === 'default_wallet' && workspace?.id && (
-          <DefaultWalletSettings workspaceId={workspace.id} />
-        )}
-
-        {activeTab === 'default_category' && workspace?.id && (
-          <DefaultCategorySettings workspaceId={workspace.id} />
+        {activeTab === 'transaction_defaults' && workspace?.id && (
+          <TransactionDefaultsSettings workspaceId={workspace.id} />
         )}
 
         {activeTab === 'default_currency' && workspace?.id && (

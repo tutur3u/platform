@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "type-check": "tsgo --build",
+    "type-check": "node ../../scripts/run-tsgo-build.js --build",
     "dev": "next dev -p 7810 --turbopack",
     "devx": "bun sb:stop && bun sb:start && bun dev",
     "devrs": "bun sb:stop && bun sb:start && bun sb:reset && bun dev",
@@ -50,7 +50,7 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-hook-form": "^7.71.2",
-    "recharts": "^3.7.0",
+    "recharts": "^3.8.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -59,7 +59,7 @@
     "@testing-library/react": "^16.3.2",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/negotiator": "^0.6.4",
-    "@types/node": "^25.3.3",
+    "@types/node": "^25.3.5",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.4",

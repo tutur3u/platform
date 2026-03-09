@@ -22,6 +22,8 @@ test.describe('AI Credits API', () => {
       expect(data).toHaveProperty('tier');
       expect(data).toHaveProperty('allowedModels');
       expect(data).toHaveProperty('allowedFeatures');
+      expect(data).toHaveProperty('defaultLanguageModel');
+      expect(data).toHaveProperty('defaultImageModel');
       expect(data).toHaveProperty('balanceScope');
       expect(data).toHaveProperty('seatCount');
       expect(typeof data.totalAllocated).toBe('number');
@@ -77,6 +79,8 @@ test.describe('AI Credits API', () => {
       expect(data).toHaveProperty('tier');
       expect(data).toHaveProperty('allowedModels');
       expect(data).toHaveProperty('allowedFeatures');
+      expect(data).toHaveProperty('defaultLanguageModel');
+      expect(data).toHaveProperty('defaultImageModel');
       expect(data).toHaveProperty('maxOutputTokens');
       expect(Array.isArray(data.allowedModels)).toBe(true);
       expect(Array.isArray(data.allowedFeatures)).toBe(true);
@@ -233,6 +237,8 @@ test.describe('Admin API - Allocations', () => {
         expect(data[0]).toHaveProperty('markup_multiplier');
         expect(data[0]).toHaveProperty('allowed_models');
         expect(data[0]).toHaveProperty('allowed_features');
+        expect(data[0]).toHaveProperty('default_language_model');
+        expect(data[0]).toHaveProperty('default_image_model');
         expect(data[0]).toHaveProperty('is_active');
       }
     } else {
@@ -616,6 +622,8 @@ test.describe('Credit Overflow Enforcement', () => {
           tier: 'FREE',
           allowedModels: [],
           allowedFeatures: [],
+          defaultLanguageModel: 'google/gemini-3.1-flash-lite-preview',
+          defaultImageModel: 'google/imagen-4.0-fast-generate-001',
           maxOutputTokens: null,
           balanceScope: 'user',
           seatCount: null,
@@ -656,6 +664,8 @@ test.describe('Credit Overflow Enforcement', () => {
           tier: 'FREE',
           allowedModels: [],
           allowedFeatures: [],
+          defaultLanguageModel: 'google/gemini-3.1-flash-lite-preview',
+          defaultImageModel: 'google/imagen-4.0-fast-generate-001',
           maxOutputTokens: null,
           balanceScope: 'user',
           seatCount: null,
@@ -694,6 +704,8 @@ test.describe('Credit Overflow Enforcement', () => {
           tier: 'FREE',
           allowedModels: [],
           allowedFeatures: [],
+          defaultLanguageModel: 'google/gemini-3.1-flash-lite-preview',
+          defaultImageModel: 'google/imagen-4.0-fast-generate-001',
           maxOutputTokens: null,
           balanceScope: 'user',
           seatCount: null,

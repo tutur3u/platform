@@ -1,3 +1,4 @@
+import { google } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { embedMany } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -109,7 +110,7 @@ export async function GET(req: NextRequest) {
     try {
       // Generate embeddings for all tasks in parallel
       const { embeddings } = await embedMany({
-        model: 'google/gemini-embedding-001',
+        model: google.embedding('gemini-embedding-001'),
         values: taskData.map((t) => t.text),
         maxParallelCalls: 10,
         providerOptions: {

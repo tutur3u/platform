@@ -40,6 +40,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { formatTooltipValue, getTooltipName } from '@/lib/recharts-tooltip';
 import type {
   AIExecutionDailyStats,
   AIExecutionModelStats,
@@ -598,15 +599,21 @@ export function EnhancedExecutionCharts({
                             border: `1px solid ${colors.tooltip.border}`,
                             color: colors.tooltip.text,
                           }}
-                          formatter={(
-                            value: number | undefined,
-                            name: string | undefined
-                          ) => [
-                            (name ?? '') === 'cost'
-                              ? formatCost(value ?? 0)
-                              : (value ?? 0),
-                            name ?? '',
-                          ]}
+                          formatter={(value, name) => {
+                            const metricName = getTooltipName(name);
+
+                            return [
+                              metricName === 'cost'
+                                ? formatTooltipValue(value, (numericValue) =>
+                                    formatCost(numericValue)
+                                  )
+                                : formatTooltipValue(
+                                    value,
+                                    (numericValue) => numericValue
+                                  ),
+                              metricName,
+                            ];
+                          }}
                           labelFormatter={(value) =>
                             new Date(value).toLocaleDateString()
                           }
@@ -751,15 +758,18 @@ export function EnhancedExecutionCharts({
                           border: `1px solid ${colors.tooltip.border}`,
                           color: colors.tooltip.text,
                         }}
-                        formatter={(
-                          value: number | undefined,
-                          name: string | undefined
-                        ) => [
-                          formatCost(value ?? 0),
-                          (name ?? '') === 'cost'
-                            ? t('total_cost')
-                            : t('avg_cost_per_execution'),
-                        ]}
+                        formatter={(value, name) => {
+                          const metricName = getTooltipName(name);
+
+                          return [
+                            formatTooltipValue(value, (numericValue) =>
+                              formatCost(numericValue)
+                            ),
+                            metricName === 'cost'
+                              ? t('total_cost')
+                              : t('avg_cost_per_execution'),
+                          ];
+                        }}
                         labelFormatter={(value) =>
                           new Date(value).toLocaleDateString()
                         }
@@ -920,17 +930,23 @@ export function EnhancedExecutionCharts({
                           border: `1px solid ${colors.tooltip.border}`,
                           color: colors.tooltip.text,
                         }}
-                        formatter={(
-                          value: number | undefined,
-                          name: string | undefined
-                        ) => [
-                          (name ?? '') === 'totalCost'
-                            ? formatCost(value ?? 0)
-                            : (value ?? 0),
-                          (name ?? '') === 'totalCost'
-                            ? t('total_cost')
-                            : t('executions'),
-                        ]}
+                        formatter={(value, name) => {
+                          const metricName = getTooltipName(name);
+
+                          return [
+                            metricName === 'totalCost'
+                              ? formatTooltipValue(value, (numericValue) =>
+                                  formatCost(numericValue)
+                                )
+                              : formatTooltipValue(
+                                  value,
+                                  (numericValue) => numericValue
+                                ),
+                            metricName === 'totalCost'
+                              ? t('total_cost')
+                              : t('executions'),
+                          ];
+                        }}
                       />
                       <Legend />
                       <Bar

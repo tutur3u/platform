@@ -13,6 +13,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { formatTooltipValue } from '@/lib/recharts-tooltip';
 
 // LineChart Component
 interface LineChartProps {
@@ -150,7 +151,14 @@ export const PieChart = ({
           ))}
         </Pie>
         <Tooltip
-          formatter={(value: number | undefined) => [`${value} races`, 'Count']}
+          formatter={(value) => [
+            formatTooltipValue(
+              value,
+              (numericValue) => `${numericValue} races`,
+              (displayValue) => `${displayValue} races`
+            ),
+            'Count',
+          ]}
         />
         <Legend />
       </RechartsPieChart>

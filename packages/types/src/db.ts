@@ -37,6 +37,15 @@ export type WorkspacePromotion = Tables<'workspace_promotions'>;
 export type WorkspaceFlashcard = Tables<'workspace_flashcards'>;
 export type WorkspaceQuiz = Tables<'workspace_quizzes'>;
 export type WorkspaceWhiteboard = Tables<'workspace_whiteboards'>;
+export type WorkspaceForm = Tables<'forms'>;
+export type WorkspaceFormSection = Tables<'form_sections'>;
+export type WorkspaceFormQuestion = Tables<'form_questions'>;
+export type WorkspaceFormQuestionOption = Tables<'form_question_options'>;
+export type WorkspaceFormLogicRule = Tables<'form_logic_rules'>;
+export type WorkspaceFormShareLink = Tables<'form_share_links'>;
+export type WorkspaceFormSession = Tables<'form_sessions'>;
+export type WorkspaceFormResponse = Tables<'form_responses'>;
+export type WorkspaceFormResponseAnswer = Tables<'form_response_answers'>;
 export type WorkspaceTaskBoard = Tables<'workspace_boards'> & {
   href?: string;
   lists?: Partial<WorkspaceTaskList>[];

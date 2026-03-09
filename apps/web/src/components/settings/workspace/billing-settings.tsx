@@ -9,7 +9,7 @@ import { AiCreditBillingCard } from '@/app/[locale]/(dashboard)/[wsId]/(workspac
 import { BillingClient } from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/billing-client';
 import BillingDetailsCard from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/billing-details-card';
 import BillingHistory from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/billing-history';
-import { NoSubscriptionFound } from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/no-subscription-found';
+import NoSubscriptionMessage from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/no-subscription-message';
 import PaymentMethodsCard from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/payment-methods-card';
 
 interface BillingSettingsProps {
@@ -47,21 +47,34 @@ export default function BillingSettings({ wsId }: BillingSettingsProps) {
   }
 
   if (error) {
-    return (
-      <NoSubscriptionFound
-        wsId={wsId}
-        error={error instanceof Error ? error.message : 'UNKNOWN_ERROR'}
-      />
-    );
-  }
+    const errorMessage = error instanceof Error ? error.message : '';
 
-  if (!data?.subscription) {
-    return <NoSubscriptionFound wsId={wsId} error="SUBSCRIPTION_NOT_FOUND" />;
+    if (errorMessage === 'SUBSCRIPTION_NOT_FOUND') {
+      return <NoSubscriptionMessage wsId={wsId} />;
+    }
+
+    // Show generic error for all other cases
+    return (
+      <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+        <h3 className="mb-2 font-semibold text-destructive text-sm">
+          {t('ai-credits-error')}
+        </h3>
+        <p className="mb-3 text-muted-foreground text-sm">
+          {t('billing-loading-error')}
+        </p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="text-primary text-sm hover:underline"
+        >
+          {t('retry')}
+        </button>
+      </div>
+    );
   }
 
   const {
     isPersonalWorkspace,
-    hasManagePermission,
     subscription,
     products,
     creditPacks,
@@ -104,28 +117,14 @@ export default function BillingSettings({ wsId }: BillingSettingsProps) {
       <BillingClient
         wsId={wsId}
         isPersonalWorkspace={isPersonalWorkspace}
-        hasManageSubscriptionPermission={hasManagePermission}
         currentPlan={currentPlan}
         products={products}
         seatStatus={seatStatus}
       />
 
-      <BillingDetailsCard
-        wsId={wsId}
-        hasManageSubscriptionPermission={hasManagePermission}
-      />
-
-      <PaymentMethodsCard
-        wsId={wsId}
-        hasManageSubscriptionPermission={hasManagePermission}
-      />
-
-      <AiCreditBillingCard
-        wsId={wsId}
-        packs={creditPacks}
-        canPurchase={hasManagePermission}
-      />
-
+      <BillingDetailsCard wsId={wsId} />
+      <PaymentMethodsCard wsId={wsId} />
+      <AiCreditBillingCard wsId={wsId} packs={creditPacks} />
       <BillingHistory orders={orders} />
     </div>
   );

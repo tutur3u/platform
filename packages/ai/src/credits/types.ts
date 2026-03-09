@@ -49,6 +49,8 @@ export interface AiCreditStatus {
   tier: string;
   allowedModels: string[];
   allowedFeatures: string[];
+  defaultImageModel: string;
+  defaultLanguageModel: string;
   dailyLimit: number | null;
   dailyUsed: number;
   maxOutputTokens: number | null;
@@ -66,6 +68,8 @@ export interface CreditAllocation {
   markupMultiplier: number;
   allowedModels: string[];
   allowedFeatures: string[];
+  defaultImageModel: string;
+  defaultLanguageModel: string;
   maxRequestsPerDay: number | null;
   isActive: boolean;
 }

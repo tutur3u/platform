@@ -43,4 +43,6 @@ export const ci = {
   'vercel-production-track.yaml': true,
   'mobile-build-ios.yaml': true,
   'mobile-build-android.yaml': true,
+  'mobile-build-windows.yaml': true,
+  'mobile-build-macos.yaml': true,
 };

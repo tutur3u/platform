@@ -3,6 +3,7 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
+import type { TaskFilters } from '../../boards/boardId/task-filter';
 import {
   TaskDialogProvider,
   useTaskDialogContext,
@@ -204,5 +205,47 @@ describe('TaskDialogProvider', () => {
     expect(newTask?.list_id).toBe('list-1');
     expect(newTask?.created_at).toBeDefined();
     // expect(newTask?.updated_at).toBeDefined();
+  });
+
+  it('should preserve list-scoped creation while applying initial task values', () => {
+    const { result } = renderHook(() => useTaskDialogContext(), { wrapper });
+
+    act(() => {
+      result.current.createTask('board-1', 'list-1', [mockList], undefined, {
+        end_date: '2026-03-07T16:59:59.999Z',
+        list_id: 'other-list',
+        name: 'Prefilled timeline task',
+        start_date: '2026-03-07T00:00:00.000Z',
+      });
+    });
+
+    expect(result.current.state.task).toMatchObject({
+      end_date: '2026-03-07T16:59:59.999Z',
+      list_id: 'list-1',
+      name: 'Prefilled timeline task',
+      start_date: '2026-03-07T00:00:00.000Z',
+    });
+  });
+
+  it('should store filters when createTask is called with board filters', () => {
+    const { result } = renderHook(() => useTaskDialogContext(), { wrapper });
+    const filters: TaskFilters = {
+      assignees: [],
+      dueDateRange: null,
+      estimationRange: null,
+      includeMyTasks: true,
+      includeUnassigned: false,
+      labels: [],
+      priorities: ['high'],
+      projects: [],
+      searchQuery: 'launch',
+      sortBy: 'priority-high' as const,
+    };
+
+    act(() => {
+      result.current.createTask('board-1', 'list-1', [mockList], filters);
+    });
+
+    expect(result.current.state.filters).toEqual(filters);
   });
 });

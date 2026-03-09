@@ -115,6 +115,35 @@ export async function PATCH(req: Request) {
     }
 
     const sbAdmin = await createAdminClient();
+
+    if (!parsed.data.is_enabled) {
+      const { data: allocationReference, error: allocationReferenceError } =
+        await sbAdmin
+          .from('ai_credit_plan_allocations')
+          .select('tier')
+          .or(
+            `default_language_model.eq.${parsed.data.id},default_image_model.eq.${parsed.data.id}`
+          )
+          .limit(1)
+          .maybeSingle();
+
+      if (allocationReferenceError) {
+        return NextResponse.json(
+          { error: 'Failed to validate model usage' },
+          { status: 500 }
+        );
+      }
+
+      if (allocationReference?.tier) {
+        return NextResponse.json(
+          {
+            error: `Cannot disable ${parsed.data.id} because it is configured as a default model for the ${allocationReference.tier} plan.`,
+          },
+          { status: 409 }
+        );
+      }
+    }
+
     const { data, error } = await sbAdmin
       .from('ai_gateway_models')
       .update({ is_enabled: parsed.data.is_enabled })
@@ -123,6 +152,9 @@ export async function PATCH(req: Request) {
       .single();
 
     if (error) {
+      if (error.message.includes('default model')) {
+        return NextResponse.json({ error: error.message }, { status: 409 });
+      }
       return NextResponse.json(
         { error: 'Failed to update model' },
         { status: 500 }

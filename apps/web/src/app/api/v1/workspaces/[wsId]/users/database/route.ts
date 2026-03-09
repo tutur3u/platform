@@ -8,6 +8,15 @@ import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
+function normalizeListParam(value: string | string[]) {
+  const rawValues = Array.isArray(value) ? value : [value];
+
+  return rawValues
+    .flatMap((entry) => entry.split(','))
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
 const SearchParamsSchema = z.object({
   q: z.string().max(MAX_SEARCH_LENGTH).default(''),
   page: z.coerce.number().int().min(1).default(1),
@@ -19,11 +28,11 @@ const SearchParamsSchema = z.object({
     .default(10),
   includedGroups: z
     .union([z.string(), z.array(z.string())])
-    .transform((val) => (Array.isArray(val) ? val : val ? [val] : []))
+    .transform((val) => normalizeListParam(val))
     .default([]),
   excludedGroups: z
     .union([z.string(), z.array(z.string())])
-    .transform((val) => (Array.isArray(val) ? val : val ? [val] : []))
+    .transform((val) => normalizeListParam(val))
     .default([]),
   status: z
     .enum(['active', 'archived', 'archived_until', 'all'])

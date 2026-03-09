@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { DefaultChatTransport } from '@tuturuuu/ai/core';
+import { matchesAllowedModel } from '@tuturuuu/ai/credits/model-mapping';
 import type { AIModelUI } from '@tuturuuu/types';
 import { useAiCredits } from '@tuturuuu/ui/hooks/use-ai-credits';
 import { normalizeWorkspaceContextId } from '@tuturuuu/utils/constants';
@@ -17,25 +18,37 @@ import {
   WORKSPACE_CONTEXT_EVENT,
   WORKSPACE_CONTEXT_STORAGE_KEY_PREFIX,
 } from './mira-chat-constants';
+import {
+  fetchGatewayModels,
+  MIRA_GATEWAY_MODELS_QUERY_KEY,
+  modelSupportsFileInput,
+} from './mira-gateway-models';
 
 interface UseMiraChatConfigParams {
   wsId: string;
 }
 
+function toModelUi(modelId: string): AIModelUI {
+  const provider = modelId.includes('/')
+    ? (modelId.split('/')[0] ?? 'google')
+    : 'google';
+  const label = modelId.includes('/')
+    ? modelId.split('/').slice(1).join('/')
+    : modelId;
+
+  return {
+    value: modelId,
+    provider,
+    label,
+  };
+}
+
 export function useMiraChatConfig({ wsId }: UseMiraChatConfigParams) {
-  const [model, setModel] = useState<AIModelUI>(INITIAL_MODEL);
+  const [selectedModel, setSelectedModel] = useState<AIModelUI>(INITIAL_MODEL);
   const [thinkingMode, setThinkingMode] = useState<ThinkingMode>('fast');
   const [creditSource, setCreditSource] = useState<CreditSource>('workspace');
   const [workspaceContextId, setWorkspaceContextId] =
     useState<string>('personal');
-
-  const supportsFileInput = useMemo(() => {
-    const tags = model.tags;
-    return Array.isArray(tags) && tags.includes('file-input');
-  }, [model]);
-
-  // model.value is already the gateway ID (e.g. "google/gemini-2.5-flash")
-  const gatewayModelId = model.value;
 
   const { data: userCalendarSettings } = useQuery({
     queryKey: ['users', 'calendar-settings'],
@@ -71,7 +84,7 @@ export function useMiraChatConfig({ wsId }: UseMiraChatConfigParams) {
     [userCalendarSettings, workspaceCalendarSettings]
   );
 
-  const { data: contextCredits } = useAiCredits(wsId);
+  const { data: workspaceCredits } = useAiCredits(wsId);
 
   const { data: personalWorkspaceId } = useQuery<string | null>({
     queryKey: ['personal-workspace-id'],
@@ -93,7 +106,7 @@ export function useMiraChatConfig({ wsId }: UseMiraChatConfigParams) {
   const isPersonalDashboardWorkspace =
     !!personalWorkspaceId && personalWorkspaceId === wsId;
   const workspaceCreditLocked =
-    isPersonalDashboardWorkspace || contextCredits?.tier === 'FREE';
+    isPersonalDashboardWorkspace || workspaceCredits?.tier === 'FREE';
 
   const activeCreditSource: CreditSource = workspaceCreditLocked
     ? 'personal'
@@ -102,6 +115,32 @@ export function useMiraChatConfig({ wsId }: UseMiraChatConfigParams) {
     activeCreditSource === 'personal'
       ? (personalWorkspaceId ?? undefined)
       : wsId;
+
+  const { data: creditCredits } = useAiCredits(creditWsId);
+  const defaultLanguageModelId =
+    creditCredits?.defaultLanguageModel ?? INITIAL_MODEL.value;
+
+  const { data: gatewayModels } = useQuery({
+    queryKey: MIRA_GATEWAY_MODELS_QUERY_KEY,
+    queryFn: fetchGatewayModels,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const model = useMemo(() => {
+    const catalogModel = gatewayModels?.find(
+      (gatewayModel) => gatewayModel.value === selectedModel.value
+    );
+
+    return catalogModel ?? selectedModel;
+  }, [gatewayModels, selectedModel]);
+
+  const supportsFileInput = useMemo(
+    () => modelSupportsFileInput(model),
+    [model]
+  );
+
+  // model.value is already the gateway ID (e.g. "google/gemini-2.5-flash")
+  const gatewayModelId = model.value;
 
   const chatRequestBody = useMemo(
     () => ({
@@ -143,7 +182,7 @@ export function useMiraChatConfig({ wsId }: UseMiraChatConfigParams) {
     const key = `${MODEL_STORAGE_KEY_PREFIX}${wsId}`;
     const stored = localStorage.getItem(key);
     if (!stored) {
-      setModel(INITIAL_MODEL);
+      setSelectedModel(toModelUi(defaultLanguageModelId));
       skipNextPersistenceRef.current = true;
       return;
     }
@@ -154,21 +193,44 @@ export function useMiraChatConfig({ wsId }: UseMiraChatConfigParams) {
         label?: string;
       };
       if (parsed.value && parsed.provider) {
-        setModel({
+        setSelectedModel({
           value: parsed.value,
           provider: parsed.provider,
           label: parsed.label ?? parsed.value.split('/').pop() ?? parsed.value,
         });
       } else {
-        setModel(INITIAL_MODEL);
+        setSelectedModel(toModelUi(defaultLanguageModelId));
       }
       skipNextPersistenceRef.current = true;
     } catch {
       // Corrupt data — ignore and use default
-      setModel(INITIAL_MODEL);
+      setSelectedModel(toModelUi(defaultLanguageModelId));
       skipNextPersistenceRef.current = true;
     }
-  }, [wsId]);
+  }, [defaultLanguageModelId, wsId]);
+
+  useEffect(() => {
+    if (!creditCredits) return;
+
+    const nextDefaultModel = toModelUi(defaultLanguageModelId);
+    const isCurrentModelAllowed = matchesAllowedModel(
+      model.value,
+      creditCredits.allowedModels
+    );
+
+    if (!model.value || !isCurrentModelAllowed) {
+      setSelectedModel(nextDefaultModel);
+      return;
+    }
+
+    if (
+      creditCredits.allowedModels.length === 0 &&
+      model.value === INITIAL_MODEL.value &&
+      defaultLanguageModelId !== INITIAL_MODEL.value
+    ) {
+      setSelectedModel(nextDefaultModel);
+    }
+  }, [creditCredits, defaultLanguageModelId, model.value]);
 
   // Persist model to localStorage on change
   useEffect(() => {
@@ -180,7 +242,7 @@ export function useMiraChatConfig({ wsId }: UseMiraChatConfigParams) {
       `${MODEL_STORAGE_KEY_PREFIX}${wsId}`,
       JSON.stringify({ value: model.value, provider: model.provider })
     );
-  }, [model, wsId]);
+  }, [model.provider, model.value, wsId]);
 
   useEffect(() => {
     const key = `${THINKING_MODE_STORAGE_KEY_PREFIX}${wsId}`;
@@ -274,7 +336,7 @@ export function useMiraChatConfig({ wsId }: UseMiraChatConfigParams) {
     model,
     personalWorkspaceId,
     setCreditSource,
-    setModel,
+    setModel: setSelectedModel,
     supportsFileInput,
     thinkingMode,
     setThinkingMode,

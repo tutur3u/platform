@@ -9,7 +9,6 @@ import {
   LayoutDashboard,
   PencilRuler,
   ReceiptText,
-  Trash2,
   Wallet,
   X,
 } from '@tuturuuu/icons';
@@ -30,6 +29,7 @@ import {
   type ReactNode,
   useCallback,
   useEffect,
+  useId,
   useState,
 } from 'react';
 import {
@@ -43,6 +43,7 @@ import {
 } from './recent-sidebar-items.utils';
 
 const RECENT_SIDEBAR_ITEMS_EVENT = 'tuturuuu:sidebar-recent-items-updated';
+const DEFAULT_VISIBLE_RECENT_SIDEBAR_ITEMS = 1;
 
 interface RecentSidebarItemsProps {
   isCollapsed: boolean;
@@ -53,6 +54,7 @@ interface RecentSidebarItemsProps {
 
 interface RecentSidebarEventDetail {
   storageKey: string;
+  sourceId?: string;
 }
 
 function getStorageKey(wsId: string): string {
@@ -78,11 +80,30 @@ function readEntries(storageKey: string): RecentSidebarEntry[] {
   }
 }
 
-function writeEntries(storageKey: string, entries: RecentSidebarEntry[]) {
+function areEntriesEqual(
+  currentEntries: RecentSidebarEntry[],
+  nextEntries: RecentSidebarEntry[]
+): boolean {
+  return JSON.stringify(currentEntries) === JSON.stringify(nextEntries);
+}
+
+function writeEntries(
+  storageKey: string,
+  entries: RecentSidebarEntry[],
+  options?: {
+    broadcast?: boolean;
+    sourceId?: string;
+  }
+) {
   window.localStorage.setItem(storageKey, JSON.stringify(entries));
+  if (options?.broadcast === false) return;
+
   window.dispatchEvent(
     new CustomEvent<RecentSidebarEventDetail>(RECENT_SIDEBAR_ITEMS_EVENT, {
-      detail: { storageKey },
+      detail: {
+        storageKey,
+        sourceId: options?.sourceId,
+      },
     })
   );
 }
@@ -122,6 +143,7 @@ export function RecentSidebarItems({
   const t = useTranslations();
   const [entries, setEntries] = useState<RecentSidebarEntry[]>([]);
   const [showAll, setShowAll] = useState(false);
+  const eventSourceId = useId();
   const storageKey = getStorageKey(wsId);
 
   const debtItemLabel = t('sidebar_recent_items.debt_item');
@@ -146,8 +168,10 @@ export function RecentSidebarItems({
 
     setEntries(normalizedEntries);
 
-    if (JSON.stringify(storedEntries) !== JSON.stringify(normalizedEntries)) {
-      writeEntries(storageKey, normalizedEntries);
+    if (!areEntriesEqual(storedEntries, normalizedEntries)) {
+      writeEntries(storageKey, normalizedEntries, {
+        broadcast: false,
+      });
     }
   }, [pathname, storageKey, wsId]);
 
@@ -192,7 +216,13 @@ export function RecentSidebarItems({
 
     const handleRecentItemsUpdate = (event: Event) => {
       const customEvent = event as CustomEvent<RecentSidebarEventDetail>;
-      if (customEvent.detail?.storageKey !== storageKey) return;
+      if (
+        customEvent.detail?.storageKey !== storageKey ||
+        customEvent.detail?.sourceId === eventSourceId
+      ) {
+        return;
+      }
+
       loadEntries();
     };
 
@@ -202,7 +232,8 @@ export function RecentSidebarItems({
         return;
       }
 
-      const nextEntries = upsertRecentSidebarEntry(readEntries(storageKey), {
+      const currentEntries = readEntries(storageKey);
+      const nextEntries = upsertRecentSidebarEntry(currentEntries, {
         href: normalizeRecentSidebarHref(customEvent.detail.href, {
           currentPathname: pathname,
           wsId,
@@ -211,8 +242,14 @@ export function RecentSidebarItems({
         visitedAt: new Date().toISOString(),
       });
 
+      if (areEntriesEqual(currentEntries, nextEntries)) {
+        return;
+      }
+
       setEntries(nextEntries);
-      writeEntries(storageKey, nextEntries);
+      writeEntries(storageKey, nextEntries, {
+        sourceId: eventSourceId,
+      });
     };
 
     window.addEventListener('storage', handleStorage);
@@ -236,7 +273,7 @@ export function RecentSidebarItems({
         handleRecentVisit as EventListener
       );
     };
-  }, [loadEntries, pathname, storageKey, wsId]);
+  }, [eventSourceId, loadEntries, pathname, storageKey, wsId]);
 
   useEffect(() => {
     const resolvedItem = resolveItem(pathname);
@@ -258,13 +295,13 @@ export function RecentSidebarItems({
       new Date().toISOString()
     );
 
-    const serializedCurrent = JSON.stringify(currentEntries);
-    const serializedNext = JSON.stringify(nextEntries);
-    if (serializedCurrent === serializedNext) return;
+    if (areEntriesEqual(currentEntries, nextEntries)) return;
 
     setEntries(nextEntries);
-    writeEntries(storageKey, nextEntries);
-  }, [pathname, resolveItem, storageKey, wsId]);
+    writeEntries(storageKey, nextEntries, {
+      sourceId: eventSourceId,
+    });
+  }, [eventSourceId, pathname, resolveItem, storageKey, wsId]);
 
   const resolvedItems = entries
     .map((entry) =>
@@ -290,12 +327,14 @@ export function RecentSidebarItems({
           ? [{ label: boardBadgeLabel, tone: 'default' as const }]
           : item.badges,
     }));
-  const hasOverflow = resolvedItems.length > 3;
+  const shownItems = DEFAULT_VISIBLE_RECENT_SIDEBAR_ITEMS;
+
+  const hasOverflow = resolvedItems.length > shownItems;
   const expandedCount = Math.min(resolvedItems.length, 10);
   const visibleItems = showAll
     ? resolvedItems.slice(0, 10)
-    : resolvedItems.slice(0, 3);
-  const hiddenCount = Math.max(expandedCount - 3, 0);
+    : resolvedItems.slice(0, shownItems);
+  const hiddenCount = Math.max(expandedCount - shownItems, 0);
 
   useEffect(() => {
     if (!hasOverflow && showAll) {
@@ -308,20 +347,30 @@ export function RecentSidebarItems({
   const clearAll = () => {
     setShowAll(false);
     setEntries([]);
-    writeEntries(storageKey, []);
+    if (readEntries(storageKey).length === 0) return;
+
+    writeEntries(storageKey, [], {
+      sourceId: eventSourceId,
+    });
   };
 
   const removeItem = (href: string) => {
-    const nextEntries = removeRecentSidebarEntry(readEntries(storageKey), href);
+    const currentEntries = readEntries(storageKey);
+    const nextEntries = removeRecentSidebarEntry(currentEntries, href);
+    if (areEntriesEqual(currentEntries, nextEntries)) return;
+
     setEntries(nextEntries);
-    writeEntries(storageKey, nextEntries);
+    writeEntries(storageKey, nextEntries, {
+      sourceId: eventSourceId,
+    });
   };
 
   if (isCollapsed) {
+    if (!resolvedItems.length) return null;
     return (
       <div className="px-2 pt-1 pb-2">
         <div className="flex flex-col items-center gap-1 border-border/50 border-t pt-2">
-          {resolvedItems.slice(0, 3).map((item) => (
+          {resolvedItems.slice(0, shownItems).map((item) => (
             <Tooltip key={item.href} delayDuration={0}>
               <TooltipTrigger asChild>
                 <Link
@@ -365,23 +414,6 @@ export function RecentSidebarItems({
               </TooltipContent>
             </Tooltip>
           ))}
-
-          <Tooltip delayDuration={0}>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
-                onClick={clearAll}
-              >
-                <Trash2 className="h-4 w-4" />
-                <span className="sr-only">{t('common.clear_all')}</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">
-              <span>{t('common.clear_all')}</span>
-            </TooltipContent>
-          </Tooltip>
         </div>
       </div>
     );

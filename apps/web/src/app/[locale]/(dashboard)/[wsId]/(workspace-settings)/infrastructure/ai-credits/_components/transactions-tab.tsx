@@ -156,69 +156,90 @@ export default function TransactionsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <Select
-          value={scopeFilter}
-          onValueChange={(v) => {
-            setScopeFilter(v);
-            setPage(1);
-          }}
-        >
-          <SelectTrigger className="w-36">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('scope_all')}</SelectItem>
-            <SelectItem value="user">{t('scope_user')}</SelectItem>
-            <SelectItem value="workspace">{t('scope_workspace')}</SelectItem>
-          </SelectContent>
-        </Select>
+      <Card className="border-border/70 bg-linear-to-br from-background to-muted/20 shadow-sm">
+        <CardContent className="space-y-4 pt-6">
+          <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-[11px] text-muted-foreground uppercase tracking-[0.16em]">
+                {t('transactions_eyebrow')}
+              </p>
+              <h3 className="mt-1 font-semibold text-xl tracking-tight">
+                {t('transactions_headline')}
+              </h3>
+              <p className="mt-1 text-muted-foreground text-sm">
+                {t('transactions_subcopy')}
+              </p>
+            </div>
+            {pagination && (
+              <Badge variant="outline" className="w-fit">
+                {pagination.total} {t('results')}
+              </Badge>
+            )}
+          </div>
 
-        <Select
-          value={typeFilter}
-          onValueChange={(v) => {
-            setTypeFilter(v);
-            setPage(1);
-          }}
-        >
-          <SelectTrigger className="w-40">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('all_types')}</SelectItem>
-            <SelectItem value="deduction">{t('type_deduction')}</SelectItem>
-            <SelectItem value="allocation">{t('type_allocation')}</SelectItem>
-            <SelectItem value="bonus">{t('type_bonus')}</SelectItem>
-            <SelectItem value="refund">{t('type_refund')}</SelectItem>
-          </SelectContent>
-        </Select>
+          <div className="flex flex-wrap items-center gap-3">
+            <Select
+              value={scopeFilter}
+              onValueChange={(v) => {
+                setScopeFilter(v);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="w-36 bg-background/80">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('scope_all')}</SelectItem>
+                <SelectItem value="user">{t('scope_user')}</SelectItem>
+                <SelectItem value="workspace">
+                  {t('scope_workspace')}
+                </SelectItem>
+              </SelectContent>
+            </Select>
 
-        <Input
-          placeholder={String(t('filter_feature'))}
-          value={featureFilter}
-          onChange={(e) => {
-            setFeatureFilter(e.target.value);
-            setPage(1);
-          }}
-          className="w-36"
-        />
+            <Select
+              value={typeFilter}
+              onValueChange={(v) => {
+                setTypeFilter(v);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="w-40 bg-background/80">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('all_types')}</SelectItem>
+                <SelectItem value="deduction">{t('type_deduction')}</SelectItem>
+                <SelectItem value="allocation">
+                  {t('type_allocation')}
+                </SelectItem>
+                <SelectItem value="bonus">{t('type_bonus')}</SelectItem>
+                <SelectItem value="refund">{t('type_refund')}</SelectItem>
+              </SelectContent>
+            </Select>
 
-        <Input
-          placeholder={String(t('filter_model'))}
-          value={modelFilter}
-          onChange={(e) => {
-            setModelFilter(e.target.value);
-            setPage(1);
-          }}
-          className="w-48"
-        />
+            <Input
+              placeholder={String(t('filter_feature'))}
+              value={featureFilter}
+              onChange={(e) => {
+                setFeatureFilter(e.target.value);
+                setPage(1);
+              }}
+              className="w-36 bg-background/80"
+            />
 
-        {pagination && (
-          <Badge variant="outline" className="ml-auto">
-            {pagination.total} {t('results')}
-          </Badge>
-        )}
-      </div>
+            <Input
+              placeholder={String(t('filter_model'))}
+              value={modelFilter}
+              onChange={(e) => {
+                setModelFilter(e.target.value);
+                setPage(1);
+              }}
+              className="w-48 bg-background/80"
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {isLoading ? (
         <div className="space-y-2">
@@ -228,7 +249,7 @@ export default function TransactionsTab() {
         </div>
       ) : (
         <>
-          <Card>
+          <Card className="border-border/70 shadow-sm">
             <CardContent className="pt-6">
               {transactions.length === 0 ? (
                 <p className="py-8 text-center text-muted-foreground">

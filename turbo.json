@@ -68,7 +68,12 @@
     },
     "type-check": {
       "dependsOn": ["^build", "^type-check"],
-      "inputs": ["$TURBO_DEFAULT$", "**/messages/*.json"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "**/messages/*.json",
+        "bun.lock",
+        "package.json"
+      ],
       "outputs": [
         "tsconfig.tsbuildinfo",
         "tsconfig.build.tsbuildinfo",

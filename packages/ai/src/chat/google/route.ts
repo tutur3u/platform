@@ -7,6 +7,10 @@ import {
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { consumeStream, smoothStream, stepCountIs, streamText } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
+import {
+  PlanModelResolutionError,
+  resolvePlanModel,
+} from '../../credits/resolve-plan-model';
 import type { CreditSource as SharedCreditSource } from '../credit-source';
 import {
   shouldForceGoogleSearchForLatestUserMessage,
@@ -30,7 +34,6 @@ import {
 import { prepareMiraRuntime } from './route-mira-runtime';
 import { persistAssistantResponse } from './stream-finish-persistence';
 
-const DEFAULT_MODEL_NAME = 'google/gemini-2.5-flash';
 type ThinkingMode = 'fast' | 'thinking';
 export function createPOST(
   _options: {
@@ -72,7 +75,7 @@ export function createPOST(
 
       const {
         id,
-        model = DEFAULT_MODEL_NAME,
+        model,
         messages,
         wsId,
         workspaceContextId,
@@ -84,43 +87,6 @@ export function createPOST(
       } = parsedBody.data;
       const thinkingMode: ThinkingMode =
         rawThinkingMode === 'thinking' ? 'thinking' : 'fast';
-
-      // Normalize to gateway format for validation
-      const gatewayModel = model.includes('/')
-        ? model
-        : `${defaultProvider}/${model}`;
-
-      // Validate model exists in gateway models table
-      const { data: gatewayModelRow, error: gatewayModelError } = await sbAdmin
-        .from('ai_gateway_models')
-        .select('id')
-        .eq('id', gatewayModel)
-        .eq('is_enabled', true)
-        .maybeSingle();
-
-      if (gatewayModelError) {
-        console.error(
-          '[AI Chat] Error checking gateway model:',
-          gatewayModelError.message
-        );
-        return NextResponse.json(
-          { error: 'Internal error validating model' },
-          { status: 500 }
-        );
-      }
-
-      if (!gatewayModelRow) {
-        console.warn(
-          `[AI Chat] Rejected unknown model: "${model}" (resolved: "${gatewayModel}")`
-        );
-        return NextResponse.json(
-          {
-            error: 'Invalid model',
-            message: `Model "${model}" is not available.`,
-          },
-          { status: 400 }
-        );
-      }
 
       if (!messages) {
         console.error('Missing messages');
@@ -280,6 +246,48 @@ export function createPOST(
         }
       }
 
+      let resolvedModelId: string;
+      try {
+        if (billingWsId) {
+          const resolvedPlanModel = await resolvePlanModel({
+            capability: 'language',
+            requestedModel: model,
+            wsId: billingWsId,
+          });
+          resolvedModelId = resolvedPlanModel.modelId;
+        } else if (model) {
+          resolvedModelId = model.includes('/')
+            ? model
+            : `${defaultProvider}/${model}`;
+        } else {
+          return NextResponse.json(
+            {
+              error: 'Model is required when billing workspace is unavailable.',
+            },
+            { status: 400 }
+          );
+        }
+      } catch (error) {
+        if (error instanceof PlanModelResolutionError) {
+          const status =
+            error.code === 'WORKSPACE_ID_REQUIRED'
+              ? 400
+              : error.code === 'NO_ALLOCATION'
+                ? 503
+                : 500;
+          return NextResponse.json(
+            { error: error.message, code: error.code },
+            { status }
+          );
+        }
+
+        console.error('Failed to resolve chat model:', error);
+        return NextResponse.json(
+          { error: 'Failed to resolve chat model' },
+          { status: 500 }
+        );
+      }
+
       const resolvedChatId = await resolveChatIdForUser(id, () =>
         sbAdmin
           .from('ai_chats')
@@ -334,7 +342,7 @@ export function createPOST(
 
       const creditPreflight = await performCreditPreflight({
         wsId: billingWsId ?? normalizedWsId ?? undefined,
-        model,
+        model: resolvedModelId,
         userId: user.id,
         sbAdmin,
       });
@@ -362,12 +370,12 @@ export function createPOST(
 
       const effectiveSource = isMiraMode ? 'Mira' : 'Rewise';
 
-      const resolvedGatewayModel = model.includes('/')
-        ? google(model.split('/')[1]!)
-        : google(model);
+      const resolvedGatewayModel = google(
+        resolvedModelId.split('/').slice(-1)[0]!
+      );
 
       // Reasoning mode: default to fast unless the client explicitly requests thinking.
-      const modelLower = model.toLowerCase();
+      const modelLower = resolvedModelId.toLowerCase();
       const supportsThinking =
         modelLower.includes('gemini-2.5') || modelLower.includes('gemini-3');
       const thinkingConfig = supportsThinking
@@ -489,7 +497,7 @@ export function createPOST(
             sbAdmin,
             chatId,
             userId: user.id,
-            model,
+            model: resolvedModelId,
             effectiveSource,
             wsId: billingWsId ?? normalizedWsId ?? undefined,
           }),

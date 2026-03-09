@@ -9,7 +9,7 @@
     ".": "./src/core/index.ts"
   },
   "scripts": {
-    "type-check": "tsgo --build"
+    "type-check": "node ../../scripts/run-tsgo-build.js --build"
   },
   "dependencies": {
     "@vercel/analytics": "^1.6.1",
@@ -18,7 +18,7 @@
   "devDependencies": {
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.3.3",
+    "@types/node": "^25.3.5",
     "@types/react": "^19.2.14",
     "@vitejs/plugin-react": "^5.1.4",
     "typescript": "^5.9.3",

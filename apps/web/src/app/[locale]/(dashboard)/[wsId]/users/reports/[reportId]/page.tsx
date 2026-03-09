@@ -6,9 +6,13 @@ import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { availableConfigs } from '@/constants/configs/reports';
 import { Filter } from '../../filters';
+import {
+  getWorkspaceUserArchiveState,
+  sortWorkspaceUsersByArchive,
+} from '../user-archive';
 import EditableReportPreview from './editable-report-preview';
 
 export const metadata: Metadata = {
@@ -37,6 +41,8 @@ export default async function WorkspaceUserDetailsPage({
   searchParams,
 }: Props) {
   const t = await getTranslations('user-data-table');
+  const tAll = await getTranslations();
+  const locale = await getLocale();
   const { wsId, reportId } = await params;
   const { groupId, userId } = await searchParams;
 
@@ -56,6 +62,10 @@ export default async function WorkspaceUserDetailsPage({
     groupId || report.group_id
       ? await getUsers(wsId, groupId || report.group_id!)
       : { data: [] };
+
+  const userFormatter = new Intl.DateTimeFormat(locale, {
+    dateStyle: 'medium',
+  });
 
   const { data: reports } =
     (report.user_id && !groupId && !userId) ||
@@ -104,10 +114,39 @@ export default async function WorkspaceUserDetailsPage({
                   ? [report.user_id]
                   : []
           }
-          options={users.map((user) => ({
-            label: user.full_name || 'No name',
-            value: user.id,
-          }))}
+          options={users.map((user) => {
+            const archiveState = getWorkspaceUserArchiveState(user);
+            const badgeLabel =
+              archiveState === 'active'
+                ? tAll('ws-users.status_active')
+                : archiveState === 'temporary-archived'
+                  ? tAll('ws-users.status_archived_until')
+                  : tAll('ws-users.status_archived');
+
+            return {
+              label: user.full_name || 'No name',
+              value: user.id,
+              badge: badgeLabel,
+              badgeClassName:
+                archiveState === 'active'
+                  ? 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green'
+                  : archiveState === 'temporary-archived'
+                    ? 'border-dynamic-yellow/30 bg-dynamic-yellow/10 text-dynamic-yellow'
+                    : archiveState === 'archived'
+                      ? 'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red'
+                      : undefined,
+              description:
+                archiveState === 'temporary-archived' && user.archived_until
+                  ? userFormatter.format(new Date(user.archived_until))
+                  : undefined,
+              indicatorClassName:
+                archiveState === 'temporary-archived'
+                  ? 'bg-dynamic-yellow'
+                  : archiveState === 'archived'
+                    ? 'bg-dynamic-red'
+                    : 'bg-green-500',
+            };
+          })}
           disabled={!groupId && !report.group_id}
           resetSignals={['groupId']}
           sortCheckedFirst={false}
@@ -242,18 +281,22 @@ async function getUsers(wsId: string, groupId: string) {
         included_groups: [groupId],
         excluded_groups: [],
         search_query: '',
+        include_archived: true,
       },
       {
         count: 'exact',
       }
     )
-    .select('id, full_name')
+    .select('id, full_name, archived, archived_until')
     .order('full_name', { ascending: true, nullsFirst: false });
 
   const { data, error, count } = await queryBuilder;
   if (error) throw error;
 
-  return { data, count } as { data: WorkspaceUser[]; count: number };
+  return {
+    data: sortWorkspaceUsersByArchive((data ?? []) as WorkspaceUser[]),
+    count,
+  } as { data: WorkspaceUser[]; count: number };
 }
 
 async function getReports(
