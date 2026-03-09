@@ -241,16 +241,26 @@ export function buildFormDefinition({
       })),
     logicRules: logicRules
       .sort((left, right) => left.priority - right.priority)
-      .map((rule) => ({
-        id: rule.id,
-        sourceQuestionId: rule.source_question_id,
-        operator:
-          rule.operator as FormDefinition['logicRules'][number]['operator'],
-        comparisonValue: rule.comparison_value ?? '',
-        actionType:
-          rule.action_type as FormDefinition['logicRules'][number]['actionType'],
-        targetSectionId: rule.target_section_id,
-      })),
+      .map((rule) => {
+        const triggerType =
+          (rule.trigger_type as FormDefinition['logicRules'][number]['triggerType']) ??
+          'question';
+        const sourceSectionId = rule.source_section_id ?? null;
+        const sourceQuestionId = rule.source_question_id ?? null;
+
+        return {
+          id: rule.id,
+          triggerType,
+          sourceSectionId,
+          sourceQuestionId,
+          operator:
+            rule.operator as FormDefinition['logicRules'][number]['operator'],
+          comparisonValue: rule.comparison_value ?? '',
+          actionType:
+            rule.action_type as FormDefinition['logicRules'][number]['actionType'],
+          targetSectionId: rule.target_section_id,
+        };
+      }),
   };
 }
 
@@ -581,20 +591,44 @@ export async function saveFormDefinition({
     }
   }
 
-  const logicRules = input.logicRules.map((rule, index) => ({
-    id: rule.id ?? createClientUuid(),
-    form_id: resolvedFormId,
-    source_question_id:
-      questionIdMap.get(rule.sourceQuestionId) ?? rule.sourceQuestionId,
-    operator: rule.operator,
-    comparison_value: rule.comparisonValue,
-    action_type: rule.actionType,
-    target_section_id:
-      rule.targetSectionId == null
-        ? null
-        : (sectionIdMap.get(rule.targetSectionId) ?? rule.targetSectionId),
-    priority: index,
-  }));
+  const logicRules = input.logicRules.map((rule, index) => {
+    const triggerType = rule.triggerType ?? 'question';
+    const sourceQuestionId = rule.sourceQuestionId?.trim()
+      ? (questionIdMap.get(rule.sourceQuestionId) ?? rule.sourceQuestionId)
+      : null;
+    const sourceSectionId = rule.sourceSectionId?.trim()
+      ? (sectionIdMap.get(rule.sourceSectionId) ?? rule.sourceSectionId)
+      : null;
+
+    let resolvedSourceSectionId = sourceSectionId;
+    if (triggerType === 'question' && rule.sourceQuestionId?.trim()) {
+      const sectionForQuestion = input.sections.find((s) =>
+        s.questions.some(
+          (q) => (q.id ?? '').trim() === (rule.sourceQuestionId ?? '').trim()
+        )
+      );
+      if (sectionForQuestion?.id) {
+        resolvedSourceSectionId =
+          sectionIdMap.get(sectionForQuestion.id) ?? sectionForQuestion.id;
+      }
+    }
+
+    return {
+      id: rule.id ?? createClientUuid(),
+      form_id: resolvedFormId,
+      trigger_type: triggerType,
+      source_question_id: sourceQuestionId,
+      source_section_id: resolvedSourceSectionId ?? sourceSectionId,
+      operator: rule.operator,
+      comparison_value: rule.comparisonValue ?? '',
+      action_type: rule.actionType,
+      target_section_id:
+        rule.targetSectionId == null
+          ? null
+          : (sectionIdMap.get(rule.targetSectionId) ?? rule.targetSectionId),
+      priority: index,
+    };
+  });
 
   if (logicRules.length > 0) {
     const { error: logicError } = await supabase

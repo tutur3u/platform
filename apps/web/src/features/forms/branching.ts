@@ -53,6 +53,45 @@ export function getOrderedSections(
   return form.sections;
 }
 
+function ruleMatches(
+  rule: FormDefinition['logicRules'][number],
+  answers: Record<string, unknown>,
+  questionMap: Map<
+    string,
+    FormDefinition['sections'][number]['questions'][number]
+  >
+): boolean {
+  const sourceQuestionId = rule.sourceQuestionId ?? null;
+  const comparisonValue = (rule.comparisonValue ?? '').trim();
+
+  if (!sourceQuestionId?.trim()) {
+    return true;
+  }
+
+  const sourceQuestion = questionMap.get(sourceQuestionId);
+  const comparisons = new Set(comparisonValue ? [comparisonValue] : []);
+
+  if (sourceQuestion) {
+    const matchedOption = sourceQuestion.options.find(
+      (option) =>
+        normalizeMarkdownForComparison(option.label) ===
+        normalizeMarkdownForComparison(rule.comparisonValue ?? '')
+    );
+
+    if (matchedOption?.value) {
+      comparisons.add(matchedOption.value);
+    }
+  }
+
+  if (comparisons.size === 0) {
+    return false;
+  }
+
+  return [...comparisons].some((cv) =>
+    matchesRule(rule.operator, cv, answers[sourceQuestionId])
+  );
+}
+
 export function getNextSectionTarget(
   form: FormDefinition,
   currentSectionId: string,
@@ -75,40 +114,49 @@ export function getNextSectionTarget(
       section.questions.map((question) => [question.id, question] as const)
     )
   );
-  const matchingRule = form.logicRules
-    .filter((rule) => questionIds.has(rule.sourceQuestionId))
-    .find((rule) => {
-      const sourceQuestion = questionMap.get(rule.sourceQuestionId);
-      const comparisons = new Set([rule.comparisonValue.trim()]);
 
-      if (sourceQuestion) {
-        const matchedOption = sourceQuestion.options.find(
-          (option) =>
-            normalizeMarkdownForComparison(option.label) ===
-            normalizeMarkdownForComparison(rule.comparisonValue)
-        );
+  const sectionEndRules = form.logicRules.filter(
+    (rule) =>
+      (rule.triggerType ?? 'question') === 'section_end' &&
+      (rule.sourceSectionId ?? '').trim() === currentSectionId
+  );
+  const matchingSectionEndRule = sectionEndRules.find((rule) =>
+    ruleMatches(rule, answers, questionMap)
+  );
 
-        if (matchedOption?.value) {
-          comparisons.add(matchedOption.value);
-        }
-      }
-
-      return [...comparisons].some((comparisonValue) =>
-        matchesRule(
-          rule.operator,
-          comparisonValue,
-          answers[rule.sourceQuestionId]
-        )
-      );
-    });
-
-  if (matchingRule) {
-    if (matchingRule.actionType === 'submit') {
+  if (matchingSectionEndRule) {
+    if (matchingSectionEndRule.actionType === 'submit') {
       return { type: 'submit' };
     }
 
-    if (matchingRule.targetSectionId) {
-      return { type: 'section', targetSectionId: matchingRule.targetSectionId };
+    if (matchingSectionEndRule.targetSectionId) {
+      return {
+        type: 'section',
+        targetSectionId: matchingSectionEndRule.targetSectionId,
+      };
+    }
+  }
+
+  const questionBasedRules = form.logicRules.filter(
+    (rule) =>
+      (rule.triggerType ?? 'question') === 'question' &&
+      rule.sourceQuestionId &&
+      questionIds.has(rule.sourceQuestionId)
+  );
+  const matchingQuestionRule = questionBasedRules.find((rule) =>
+    ruleMatches(rule, answers, questionMap)
+  );
+
+  if (matchingQuestionRule) {
+    if (matchingQuestionRule.actionType === 'submit') {
+      return { type: 'submit' };
+    }
+
+    if (matchingQuestionRule.targetSectionId) {
+      return {
+        type: 'section',
+        targetSectionId: matchingQuestionRule.targetSectionId,
+      };
     }
   }
 

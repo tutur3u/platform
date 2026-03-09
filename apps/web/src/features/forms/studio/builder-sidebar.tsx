@@ -11,7 +11,7 @@ import type { FormStudioInput } from '../schema';
 import type { getFormToneClasses } from '../theme';
 import {
   getBodyTypographyClassName,
-  getHeadingTypographyClassName,
+  getStudioTitleTypographyClassName,
 } from '../typography';
 
 export function BuilderSidebar({
@@ -32,7 +32,7 @@ export function BuilderSidebar({
     (total, section) => total + section.questions.length,
     0
   );
-  const headingClassName = getHeadingTypographyClassName(
+  const studioTitleClassName = getStudioTitleTypographyClassName(
     values.theme.typography.headingSize
   );
   const bodyClassName = getBodyTypographyClassName(
@@ -72,9 +72,7 @@ export function BuilderSidebar({
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <div
-                    className={cn('truncate font-semibold', headingClassName)}
-                  >
+                  <div className={cn('truncate', studioTitleClassName)}>
                     <span className="mr-1">{index + 1}.</span>
                     <FormsMarkdown
                       content={section.title || t('studio.untitled_section')}

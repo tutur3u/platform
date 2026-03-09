@@ -51,7 +51,7 @@ import { FormsRichTextEditor } from '../forms-rich-text-editor';
 import type { getFormToneClasses } from '../theme';
 import {
   getBodyTypographyClassName,
-  getHeadingTypographyClassName,
+  getStudioTitleTypographyClassName,
 } from '../typography';
 import { createQuestionInput } from './block-catalog';
 import { BlockInserter } from './block-inserter';
@@ -134,7 +134,7 @@ export function SectionEditor({
     control: form.control,
     name: 'theme.typography',
   });
-  const headingClassName = getHeadingTypographyClassName(
+  const studioTitleClassName = getStudioTitleTypographyClassName(
     typography?.headingSize ?? 'md'
   );
   const bodyClassName = getBodyTypographyClassName(
@@ -235,12 +235,7 @@ export function SectionEditor({
                         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-background/80 text-muted-foreground">
                           <ClipboardList className="h-4 w-4" />
                         </span>
-                        <div
-                          className={cn(
-                            'truncate font-semibold',
-                            headingClassName
-                          )}
-                        >
+                        <div className={cn('truncate', studioTitleClassName)}>
                           <FormsMarkdown
                             content={
                               sectionTitle || t('studio.untitled_section')

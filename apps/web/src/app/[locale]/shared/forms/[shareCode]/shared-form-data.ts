@@ -43,11 +43,19 @@ export async function fetchSharedFormData(
         cookie: options.cookieHeader,
       }
     : undefined;
+
   const revalidateSeconds = options?.revalidateSeconds;
+
   const response = await fetch(`${API_URL}/v1/shared/forms/${shareCode}`, {
-    cache: revalidateSeconds ? 'force-cache' : 'no-store',
+    cache:
+      revalidateSeconds !== undefined && revalidateSeconds > 0
+        ? 'force-cache'
+        : 'no-store',
     headers,
-    next: revalidateSeconds ? { revalidate: revalidateSeconds } : undefined,
+    next:
+      revalidateSeconds !== undefined
+        ? { revalidate: revalidateSeconds }
+        : undefined,
   });
 
   if (!response.ok) {
@@ -104,14 +112,24 @@ export function getSharedFormPresentation(
   const title =
     normalizeMarkdownToText(form.theme.coverHeadline || form.title) ||
     strings.fallbackTitle;
+
   const firstSectionDescription =
     form.sections
       .map((section) => normalizeMarkdownToText(section.description))
       .find((value) => value.trim().length > 0) ?? '';
+
   const description =
     normalizeMarkdownToText(form.description) ||
     firstSectionDescription ||
     strings.fallbackDescription;
+
+  const itemCount = form.sections.reduce(
+    (count, section) =>
+      count +
+      section.questions.filter((question) => question.type !== 'divider')
+        .length,
+    0
+  );
 
   return {
     title: clampSocialText(title, 90),
@@ -120,13 +138,7 @@ export function getSharedFormPresentation(
     coverImagePath: form.theme.coverImage.storagePath || '',
     accentColor: form.theme.accentColor,
     sectionCount: form.sections.length,
-    itemCount: form.sections.reduce(
-      (count, section) =>
-        count +
-        section.questions.filter((question) => question.type !== 'divider')
-          .length,
-      0
-    ),
+    itemCount,
   };
 }
 
@@ -147,7 +159,11 @@ export function buildSharedFormMetadata({
   const imageUrl = `${pageUrl}/opengraph-image`;
   const twitterImageUrl = `${pageUrl}/twitter-image`;
   const presentation = getSharedFormPresentation(form, strings, status);
-  const title = `${presentation.title} | ${strings.brand}`;
+
+  const title =
+    presentation.itemCount > 0
+      ? `${presentation.title} (${presentation.itemCount} items) | ${strings.brand}`
+      : `${presentation.title} | ${strings.brand}`;
 
   return {
     title,

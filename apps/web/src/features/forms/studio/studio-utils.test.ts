@@ -111,6 +111,76 @@ describe('studio-utils export/import', () => {
     }
   });
 
+  it('export/import preserves validation settings (integer, real, regex, email)', () => {
+    const input = createDefaultFormStudioInput();
+    input.sections[0]!.questions[0] = {
+      id: 'q1',
+      type: 'short_text',
+      title: 'Age',
+      description: '',
+      required: true,
+      image: { storagePath: '', url: '', alt: '' },
+      settings: {
+        validationMode: 'integer',
+        validationMin: 0,
+        validationMax: 120,
+        validationMessage: 'Enter a valid age.',
+      },
+      options: [],
+    };
+    input.sections[0]!.questions.push({
+      id: 'q2',
+      type: 'short_text',
+      title: 'Weight (kg)',
+      description: '',
+      required: false,
+      image: { storagePath: '', url: '', alt: '' },
+      settings: {
+        validationMode: 'real',
+        validationMin: 20,
+        validationMax: 300,
+        validationMessage: 'Enter weight between 20 and 300.',
+      },
+      options: [],
+    });
+    input.sections[0]!.questions.push({
+      id: 'q3',
+      type: 'short_text',
+      title: 'Email',
+      description: '',
+      required: false,
+      image: { storagePath: '', url: '', alt: '' },
+      settings: {
+        validationMode: 'email',
+        validationMessage: 'Invalid email.',
+      },
+      options: [],
+    });
+
+    const envelope = exportFormStudioPayload(input);
+    const json = JSON.stringify(envelope);
+    const result = importFormStudioPayload(json);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const q1 = result.data.sections[0]?.questions[0];
+      const q2 = result.data.sections[0]?.questions[1];
+      const q3 = result.data.sections[0]?.questions[2];
+      expect(q1?.settings?.validationMode).toBe('integer');
+      expect(q1?.settings?.validationMin).toBe(0);
+      expect(q1?.settings?.validationMax).toBe(120);
+      expect(q1?.settings?.validationMessage).toBe('Enter a valid age.');
+      expect(q2?.settings?.validationMode).toBe('real');
+      expect(q2?.settings?.validationMin).toBe(20);
+      expect(q2?.settings?.validationMax).toBe(300);
+      expect(q2?.settings?.validationMessage).toBe(
+        'Enter weight between 20 and 300.'
+      );
+      expect(q3?.settings?.validationMode).toBe('email');
+      expect(q3?.settings?.validationMessage).toBe('Invalid email.');
+    }
+  });
+
   it('importFormStudioPayload returns error for invalid JSON', () => {
     const result = importFormStudioPayload('not json');
     expect(result.ok).toBe(false);
@@ -154,6 +224,7 @@ describe('studio-utils export/import', () => {
     input.logicRules = [
       {
         id: 'rule-1',
+        triggerType: 'question',
         sourceQuestionId: questionA,
         operator: 'equals',
         comparisonValue: 'yes',

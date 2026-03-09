@@ -66,7 +66,7 @@ export function FormsImportButton({
       }
 
       toast.success(t('studio.import_success'));
-      router.push(`/${workspaceSlug}/forms/${payload.id}`);
+      router.refresh();
     } catch {
       toast.error(
         t('studio.import_failed', { error: 'Failed to read import file' })

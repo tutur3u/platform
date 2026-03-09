@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createDefaultFormStudioInput,
   formExportEnvelopeSchema,
+  formLogicRuleSchema,
   formProgressSchema,
   formSubmitSchema,
 } from './schema';
@@ -59,6 +60,72 @@ describe('formExportEnvelopeSchema', () => {
       formatVersion: '1',
       exportedAt: new Date().toISOString(),
       form: { title: '', sections: [] },
+    });
+
+    expect(parsed.success).toBe(false);
+  });
+});
+
+describe('formLogicRuleSchema', () => {
+  it('accepts question-based rule with all required fields', () => {
+    const parsed = formLogicRuleSchema.safeParse({
+      triggerType: 'question',
+      sourceQuestionId: 'q1',
+      operator: 'equals',
+      comparisonValue: 'yes',
+      actionType: 'go_to_section',
+      targetSectionId: 's2',
+    });
+
+    expect(parsed.success).toBe(true);
+  });
+
+  it('accepts section-end completion-only rule', () => {
+    const parsed = formLogicRuleSchema.safeParse({
+      triggerType: 'section_end',
+      sourceSectionId: 's1',
+      sourceQuestionId: null,
+      operator: 'equals',
+      comparisonValue: '',
+      actionType: 'submit',
+    });
+
+    expect(parsed.success).toBe(true);
+  });
+
+  it('accepts section-end question-based rule', () => {
+    const parsed = formLogicRuleSchema.safeParse({
+      triggerType: 'section_end',
+      sourceSectionId: 's1',
+      sourceQuestionId: 'q1',
+      operator: 'equals',
+      comparisonValue: 'yes',
+      actionType: 'go_to_section',
+      targetSectionId: 's2',
+    });
+
+    expect(parsed.success).toBe(true);
+  });
+
+  it('rejects section-end rule without sourceSectionId', () => {
+    const parsed = formLogicRuleSchema.safeParse({
+      triggerType: 'section_end',
+      sourceSectionId: '',
+      sourceQuestionId: null,
+      actionType: 'submit',
+    });
+
+    expect(parsed.success).toBe(false);
+  });
+
+  it('rejects question-based rule without sourceQuestionId', () => {
+    const parsed = formLogicRuleSchema.safeParse({
+      triggerType: 'question',
+      sourceQuestionId: '',
+      operator: 'equals',
+      comparisonValue: 'yes',
+      actionType: 'go_to_section',
+      targetSectionId: 's2',
     });
 
     expect(parsed.success).toBe(false);

@@ -110,6 +110,7 @@ const baseForm: FormDefinition = {
   logicRules: [
     {
       id: 'a0bba3b1-8861-4f5f-b174-746f75949040',
+      triggerType: 'question',
       sourceQuestionId: 'a0bba3b1-8861-4f5f-b174-746f75949011',
       operator: 'equals',
       comparisonValue: 'yes',
@@ -188,5 +189,58 @@ describe('forms branching', () => {
       'a0bba3b1-8861-4f5f-b174-746f75949020',
       'a0bba3b1-8861-4f5f-b174-746f75949030',
     ]);
+  });
+
+  it('section-end completion-only rule submits when leaving section', () => {
+    const firstSection = baseForm.sections[0];
+    const formWithSectionEnd: FormDefinition = {
+      ...baseForm,
+      logicRules: [
+        {
+          id: 'rule-section-end',
+          triggerType: 'section_end',
+          sourceSectionId: firstSection!.id,
+          sourceQuestionId: null,
+          operator: 'equals',
+          comparisonValue: '',
+          actionType: 'submit',
+        },
+      ],
+    };
+
+    const next = getNextSectionTarget(formWithSectionEnd, firstSection!.id, {
+      [baseForm.sections[0]!.questions[0]!.id]: 'yes',
+    });
+
+    expect(next).toEqual({ type: 'submit' });
+  });
+
+  it('section-end question-based rule branches when condition matches', () => {
+    const firstSection = baseForm.sections[0];
+    const firstQuestion = firstSection?.questions[0];
+    const formWithSectionEnd: FormDefinition = {
+      ...baseForm,
+      logicRules: [
+        {
+          id: 'rule-section-end',
+          triggerType: 'section_end',
+          sourceSectionId: firstSection!.id,
+          sourceQuestionId: firstQuestion!.id,
+          operator: 'equals',
+          comparisonValue: 'yes',
+          actionType: 'go_to_section',
+          targetSectionId: 'a0bba3b1-8861-4f5f-b174-746f75949030',
+        },
+      ],
+    };
+
+    const next = getNextSectionTarget(formWithSectionEnd, firstSection!.id, {
+      [firstQuestion!.id]: 'yes',
+    });
+
+    expect(next).toEqual({
+      type: 'section',
+      targetSectionId: 'a0bba3b1-8861-4f5f-b174-746f75949030',
+    });
   });
 });

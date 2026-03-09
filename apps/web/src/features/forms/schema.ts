@@ -65,6 +65,7 @@ export const FORM_LOGIC_OPERATOR_VALUES = [
   'contains',
 ] as const;
 export const FORM_LOGIC_ACTION_VALUES = ['go_to_section', 'submit'] as const;
+export const FORM_LOGIC_TRIGGER_VALUES = ['question', 'section_end'] as const;
 
 export const formMediaSchema = z.object({
   storagePath: z.string().max(500).optional().default(''),
@@ -91,6 +92,15 @@ export const formOptionSchema = z.object({
   image: formMediaSchema.default(defaultFormMediaValue),
 });
 
+export const FORM_VALIDATION_MODE_VALUES = [
+  'none',
+  'integer',
+  'real',
+  'numeric',
+  'regex',
+  'email',
+] as const;
+
 export const formQuestionSettingsSchema = z.object({
   placeholder: z.string().max(240).optional(),
   minLabel: z.string().max(80).optional(),
@@ -102,6 +112,11 @@ export const formQuestionSettingsSchema = z.object({
   youtubeUrl: z.string().max(2000).optional(),
   youtubeVideoId: z.string().max(32).optional(),
   youtubeStartSeconds: z.number().int().min(0).max(86400).optional(),
+  validationMode: z.enum(FORM_VALIDATION_MODE_VALUES).optional(),
+  validationMin: z.number().optional(),
+  validationMax: z.number().optional(),
+  validationPattern: z.string().max(500).optional(),
+  validationMessage: z.string().max(200).optional(),
 });
 
 export const formQuestionSchema = z.object({
@@ -126,27 +141,64 @@ export const formSectionSchema = z.object({
 export const formLogicRuleSchema = z
   .object({
     id: formStudioIdentifierSchema.optional(),
-    sourceQuestionId: formStudioIdentifierSchema.min(
-      1,
-      'Select a question for each branching rule.'
-    ),
-    operator: z.enum(FORM_LOGIC_OPERATOR_VALUES),
-    comparisonValue: z.string().trim().min(1),
+    triggerType: z.enum(FORM_LOGIC_TRIGGER_VALUES).default('question'),
+    sourceSectionId: formStudioIdentifierSchema.nullable().optional(),
+    sourceQuestionId: formStudioIdentifierSchema.nullable().optional(),
+    operator: z.enum(FORM_LOGIC_OPERATOR_VALUES).default('equals'),
+    comparisonValue: z.string().trim().default(''),
     actionType: z.enum(FORM_LOGIC_ACTION_VALUES),
     targetSectionId: formStudioIdentifierSchema
       .min(1, 'Select a target section for each branching rule.')
       .nullable()
       .optional(),
   })
-  .refine(
-    (value) =>
-      value.actionType === 'submit' ||
-      (value.actionType === 'go_to_section' && value.targetSectionId),
-    {
-      message: 'Branching rules that navigate must target a section.',
-      path: ['targetSectionId'],
+  .superRefine((value, ctx) => {
+    if (
+      value.actionType !== 'submit' &&
+      (value.actionType !== 'go_to_section' || !value.targetSectionId)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Branching rules that navigate must target a section.',
+        path: ['targetSectionId'],
+      });
     }
-  );
+
+    if (value.triggerType === 'question') {
+      if (!value.sourceQuestionId?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Select a question for each branching rule.',
+          path: ['sourceQuestionId'],
+        });
+      }
+      if (!value.comparisonValue?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Comparison value is required for question-based rules.',
+          path: ['comparisonValue'],
+        });
+      }
+    }
+
+    if (value.triggerType === 'section_end') {
+      if (!value.sourceSectionId?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Select a section for section-end rules.',
+          path: ['sourceSectionId'],
+        });
+      }
+      if (value.sourceQuestionId?.trim() && !value.comparisonValue?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message:
+            'Comparison value is required when a question is selected for section-end rules.',
+          path: ['comparisonValue'],
+        });
+      }
+    }
+  });
 
 export const formThemeSchema = z.object({
   presetId: z.string().trim().min(1).max(40),

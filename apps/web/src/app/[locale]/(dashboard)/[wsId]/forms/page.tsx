@@ -1,10 +1,11 @@
-import { Plus } from '@tuturuuu/icons';
+import { Plus, Search } from '@tuturuuu/icons';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { Input } from '@tuturuuu/ui/input';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
@@ -177,72 +178,101 @@ export default async function FormsPage({ params, searchParams }: PageProps) {
               </div>
 
               <Card className="border-border/60 bg-card/80">
-                <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Button
-                      variant={
-                        statusFilter === 'active' ? 'default' : 'outline'
-                      }
-                      asChild
-                    >
-                      <Link href={buildFormsHref({ status: 'active' })}>
-                        {t('pages.filter_active')}
-                      </Link>
+                <CardContent className="flex flex-col gap-4 pt-6">
+                  <form
+                    action={`/${resolvedParams.wsId}/forms`}
+                    method="get"
+                    className="flex w-full max-w-sm items-center gap-2"
+                  >
+                    {viewMode !== 'grid' ? (
+                      <input type="hidden" name="view" value={viewMode} />
+                    ) : null}
+                    {statusFilter !== 'active' ? (
+                      <input type="hidden" name="status" value={statusFilter} />
+                    ) : null}
+                    <div className="relative flex-1">
+                      <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        type="search"
+                        name="q"
+                        defaultValue={resolvedSearchParams.q}
+                        placeholder={t('pages.search_placeholder')}
+                        className="h-9 pl-9"
+                      />
+                    </div>
+                    <Button type="submit" size="sm" variant="secondary">
+                      {t('pages.search')}
                     </Button>
-                    <Button
-                      variant={statusFilter === 'all' ? 'default' : 'outline'}
-                      asChild
-                    >
-                      <Link href={buildFormsHref({ status: 'all' })}>
-                        {t('pages.filter_all')}
-                      </Link>
-                    </Button>
-                    <Button
-                      variant={statusFilter === 'draft' ? 'default' : 'outline'}
-                      asChild
-                    >
-                      <Link href={buildFormsHref({ status: 'draft' })}>
-                        {t('status.draft')}
-                      </Link>
-                    </Button>
-                    <Button
-                      variant={
-                        statusFilter === 'published' ? 'default' : 'outline'
-                      }
-                      asChild
-                    >
-                      <Link href={buildFormsHref({ status: 'published' })}>
-                        {t('status.published')}
-                      </Link>
-                    </Button>
-                    <Button
-                      variant={
-                        statusFilter === 'archived' ? 'default' : 'outline'
-                      }
-                      asChild
-                    >
-                      <Link href={buildFormsHref({ status: 'archived' })}>
-                        {t('pages.filter_archived')}
-                      </Link>
-                    </Button>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant={viewMode === 'grid' ? 'default' : 'outline'}
-                      asChild
-                    >
-                      <Link href={buildFormsHref({ view: 'grid' })}>
-                        {t('pages.view_grid')}
-                      </Link>
-                    </Button>
-                    <Button
-                      variant={viewMode === 'list' ? 'default' : 'outline'}
-                      asChild
-                    >
-                      <Link href={buildFormsHref({ view: 'list' })}>
-                        {t('pages.view_list')}
-                      </Link>
-                    </Button>
+                  </form>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        variant={
+                          statusFilter === 'active' ? 'default' : 'outline'
+                        }
+                        asChild
+                      >
+                        <Link href={buildFormsHref({ status: 'active' })}>
+                          {t('pages.filter_active')}
+                        </Link>
+                      </Button>
+                      <Button
+                        variant={statusFilter === 'all' ? 'default' : 'outline'}
+                        asChild
+                      >
+                        <Link href={buildFormsHref({ status: 'all' })}>
+                          {t('pages.filter_all')}
+                        </Link>
+                      </Button>
+                      <Button
+                        variant={
+                          statusFilter === 'draft' ? 'default' : 'outline'
+                        }
+                        asChild
+                      >
+                        <Link href={buildFormsHref({ status: 'draft' })}>
+                          {t('status.draft')}
+                        </Link>
+                      </Button>
+                      <Button
+                        variant={
+                          statusFilter === 'published' ? 'default' : 'outline'
+                        }
+                        asChild
+                      >
+                        <Link href={buildFormsHref({ status: 'published' })}>
+                          {t('status.published')}
+                        </Link>
+                      </Button>
+                      <Button
+                        variant={
+                          statusFilter === 'archived' ? 'default' : 'outline'
+                        }
+                        asChild
+                      >
+                        <Link href={buildFormsHref({ status: 'archived' })}>
+                          {t('pages.filter_archived')}
+                        </Link>
+                      </Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant={viewMode === 'grid' ? 'default' : 'outline'}
+                        asChild
+                      >
+                        <Link href={buildFormsHref({ view: 'grid' })}>
+                          {t('pages.view_grid')}
+                        </Link>
+                      </Button>
+                      <Button
+                        variant={viewMode === 'list' ? 'default' : 'outline'}
+                        asChild
+                      >
+                        <Link href={buildFormsHref({ view: 'list' })}>
+                          {t('pages.view_list')}
+                        </Link>
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

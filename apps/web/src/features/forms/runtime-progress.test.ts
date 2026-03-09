@@ -152,6 +152,7 @@ const form: FormDefinition = {
   logicRules: [
     {
       id: '50000000-0000-0000-0000-000000000040',
+      triggerType: 'question',
       sourceQuestionId: '50000000-0000-0000-0000-000000000011',
       operator: 'equals',
       comparisonValue: 'skip',

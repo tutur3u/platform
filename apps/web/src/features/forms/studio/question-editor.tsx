@@ -16,6 +16,7 @@ import {
   ListChecks,
   MessageSquare,
   Plus,
+  Shield,
   Star,
   Trash,
 } from '@tuturuuu/icons';
@@ -47,11 +48,15 @@ import { isAnswerableQuestionType } from '../block-utils';
 import { FieldLabel, QuestionTypeIcon } from '../form-icons';
 import { FormsMarkdown } from '../forms-markdown';
 import { FormsRichTextEditor } from '../forms-rich-text-editor';
-import { FORM_QUESTION_TYPE_VALUES, type FormQuestionInput } from '../schema';
+import {
+  FORM_QUESTION_TYPE_VALUES,
+  FORM_VALIDATION_MODE_VALUES,
+  type FormQuestionInput,
+} from '../schema';
 import type { getFormToneClasses } from '../theme';
 import {
   getBodyTypographyClassName,
-  getHeadingTypographyClassName,
+  getStudioTitleTypographyClassName,
 } from '../typography';
 import { parseYouTubeUrl } from '../youtube';
 import { createQuestionInput } from './block-catalog';
@@ -178,11 +183,31 @@ export function QuestionEditor({
     control: form.control,
     name: `sections.${sectionIndex}.questions.${questionIndex}.settings.optionLayout`,
   });
+  const validationMode = useWatch({
+    control: form.control,
+    name: `sections.${sectionIndex}.questions.${questionIndex}.settings.validationMode`,
+  });
+  const validationMin = useWatch({
+    control: form.control,
+    name: `sections.${sectionIndex}.questions.${questionIndex}.settings.validationMin`,
+  });
+  const validationMax = useWatch({
+    control: form.control,
+    name: `sections.${sectionIndex}.questions.${questionIndex}.settings.validationMax`,
+  });
+  const validationPattern = useWatch({
+    control: form.control,
+    name: `sections.${sectionIndex}.questions.${questionIndex}.settings.validationPattern`,
+  });
+  const validationMessage = useWatch({
+    control: form.control,
+    name: `sections.${sectionIndex}.questions.${questionIndex}.settings.validationMessage`,
+  });
   const typography = useWatch({
     control: form.control,
     name: 'theme.typography',
   });
-  const headingClassName = getHeadingTypographyClassName(
+  const studioTitleClassName = getStudioTitleTypographyClassName(
     typography?.headingSize ?? 'md'
   );
   const bodyClassName = getBodyTypographyClassName(
@@ -354,8 +379,8 @@ export function QuestionEditor({
                         </span>
                         <div
                           className={cn(
-                            'min-w-0 flex-1 truncate text-left font-semibold',
-                            headingClassName
+                            'min-w-0 flex-1 truncate text-left',
+                            studioTitleClassName
                           )}
                         >
                           <FormsMarkdown
@@ -619,6 +644,118 @@ export function QuestionEditor({
                       )
                     }
                   />
+                </div>
+              ) : null}
+              {questionType === 'short_text' || questionType === 'long_text' ? (
+                <div className="space-y-3 rounded-[1.35rem] border border-border/60 bg-muted/20 p-3 md:col-span-2">
+                  <Label>
+                    <FieldLabel icon={Shield}>
+                      {t('studio.validation_mode')}
+                    </FieldLabel>
+                  </Label>
+                  <Select
+                    value={validationMode ?? 'none'}
+                    onValueChange={(value) =>
+                      form.setValue(
+                        `sections.${sectionIndex}.questions.${questionIndex}.settings.validationMode`,
+                        value as (typeof FORM_VALIDATION_MODE_VALUES)[number],
+                        { shouldDirty: true }
+                      )
+                    }
+                  >
+                    <SelectTrigger className={toneClasses.fieldClassName}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FORM_VALIDATION_MODE_VALUES.map((mode) => (
+                        <SelectItem key={mode} value={mode}>
+                          {t(
+                            `studio.validation_mode_${mode}` as Parameters<
+                              typeof t
+                            >[0]
+                          )}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {validationMode === 'integer' ||
+                  validationMode === 'numeric' ||
+                  validationMode === 'real' ? (
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <Label>{t('studio.validation_min')}</Label>
+                        <Input
+                          type="number"
+                          value={validationMin ?? ''}
+                          placeholder="-"
+                          className={toneClasses.fieldClassName}
+                          onChange={(event) => {
+                            const v = event.target.value;
+                            form.setValue(
+                              `sections.${sectionIndex}.questions.${questionIndex}.settings.validationMin`,
+                              v === '' ? undefined : Number(v),
+                              { shouldDirty: true }
+                            );
+                          }}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>{t('studio.validation_max')}</Label>
+                        <Input
+                          type="number"
+                          value={validationMax ?? ''}
+                          placeholder="-"
+                          className={toneClasses.fieldClassName}
+                          onChange={(event) => {
+                            const v = event.target.value;
+                            form.setValue(
+                              `sections.${sectionIndex}.questions.${questionIndex}.settings.validationMax`,
+                              v === '' ? undefined : Number(v),
+                              { shouldDirty: true }
+                            );
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ) : null}
+                  {validationMode === 'regex' ? (
+                    <div className="space-y-1.5">
+                      <Label>{t('studio.validation_pattern')}</Label>
+                      <Input
+                        value={validationPattern ?? ''}
+                        placeholder="e.g. ^[A-Za-z]+$"
+                        className={toneClasses.fieldClassName}
+                        onChange={(event) =>
+                          form.setValue(
+                            `sections.${sectionIndex}.questions.${questionIndex}.settings.validationPattern`,
+                            event.target.value,
+                            { shouldDirty: true }
+                          )
+                        }
+                      />
+                    </div>
+                  ) : null}
+                  {validationMode === 'integer' ||
+                  validationMode === 'numeric' ||
+                  validationMode === 'real' ||
+                  validationMode === 'regex' ||
+                  validationMode === 'email' ? (
+                    <div className="space-y-1.5">
+                      <Label>{t('studio.validation_message')}</Label>
+                      <Input
+                        value={validationMessage ?? ''}
+                        placeholder={t('studio.validation_message_placeholder')}
+                        className={toneClasses.fieldClassName}
+                        onChange={(event) =>
+                          form.setValue(
+                            `sections.${sectionIndex}.questions.${questionIndex}.settings.validationMessage`,
+                            event.target.value,
+                            { shouldDirty: true }
+                          )
+                        }
+                      />
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
               {isAnswerable || isImageBlock ? (

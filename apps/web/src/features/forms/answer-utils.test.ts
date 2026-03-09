@@ -80,6 +80,7 @@ const baseForm: FormDefinition = {
   logicRules: [
     {
       id: 'rule-1',
+      triggerType: 'question',
       sourceQuestionId: 'question-1',
       operator: 'equals',
       comparisonValue: 'Hello world',

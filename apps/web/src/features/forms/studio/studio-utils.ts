@@ -234,8 +234,12 @@ export function remapFormStudioIds(input: FormStudioInput): FormStudioInput {
   });
 
   const remappedLogicRules = input.logicRules.map((rule) => {
-    const newSourceQuestionId =
-      questionIdMap.get(rule.sourceQuestionId) ?? rule.sourceQuestionId;
+    const newSourceQuestionId = rule.sourceQuestionId?.trim()
+      ? (questionIdMap.get(rule.sourceQuestionId) ?? rule.sourceQuestionId)
+      : null;
+    const newSourceSectionId = rule.sourceSectionId?.trim()
+      ? (sectionIdMap.get(rule.sourceSectionId) ?? rule.sourceSectionId)
+      : null;
     const newTargetSectionId =
       rule.targetSectionId != null
         ? (sectionIdMap.get(rule.targetSectionId) ?? rule.targetSectionId)
@@ -244,6 +248,8 @@ export function remapFormStudioIds(input: FormStudioInput): FormStudioInput {
     return {
       ...rule,
       id: createClientId(),
+      triggerType: rule.triggerType ?? 'question',
+      sourceSectionId: newSourceSectionId,
       sourceQuestionId: newSourceQuestionId,
       targetSectionId: newTargetSectionId,
     };
@@ -329,9 +335,11 @@ export function toStudioInput(form?: FormDefinition): FormStudioInput {
     })),
     logicRules: form.logicRules.map((rule) => ({
       id: rule.id,
-      sourceQuestionId: rule.sourceQuestionId,
+      triggerType: rule.triggerType ?? 'question',
+      sourceSectionId: rule.sourceSectionId ?? null,
+      sourceQuestionId: rule.sourceQuestionId ?? null,
       operator: rule.operator,
-      comparisonValue: rule.comparisonValue,
+      comparisonValue: rule.comparisonValue ?? '',
       actionType: rule.actionType,
       targetSectionId: rule.targetSectionId,
     })),

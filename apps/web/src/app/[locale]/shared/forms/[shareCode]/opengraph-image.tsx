@@ -41,7 +41,7 @@ export default async function Image({ params }: Props) {
     strings: {
       ...strings,
       openGraphAlt: t('shared.open_graph_alt', {
-        title: presentation.title,
+        title: presentation.title || strings.fallbackTitle,
       }),
     },
   });
