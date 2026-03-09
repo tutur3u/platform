@@ -8770,7 +8770,9 @@
         "activityFor": "Hoạt động cho {date}: {duration}",
         "goToPage": "Đi đến trang {page}",
         "nextCards": "Thẻ tiếp theo",
-        "previousCards": "Thẻ trước"
+        "nextMonth": "Tháng tiếp theo: {month}",
+        "previousCards": "Thẻ trước",
+        "previousMonth": "Tháng trước: {month}"
       },
       "cards": {
         "beginJourney": "Bắt đầu hành trình của bạn",
@@ -8846,7 +8848,7 @@
         "hybridTitle": "Chế độ xem kết hợp",
         "originalDescription": "Đây là bản đồ nhiệt kiểu GitHub cổ điển hiển thị hoạt động của bạn trong năm qua. Mỗi ô vuông đại diện cho một ngày, với màu sắc đậm hơn cho thấy hoạt động nhiều hơn.",
         "originalTitle": "Chế độ xem lưới gốc",
-        "tip": "💡 Mẹo: Bạn có thể chuyển đổi giữa các chế độ xem bất cứ lúc nào bằng menu cài đặt",
+        "tip": "Mẹo: Bạn có thể chuyển đổi giữa các chế độ xem bất cứ lúc nào bằng menu cài đặt",
         "viewNumber": "Lần xem #{count}"
       },
       "sessions": "{count, plural, =0 {Không có phiên} =1 {1 phiên} other {# phiên}}",
@@ -8865,7 +8867,7 @@
       "today": "Hôm nay",
       "tracked": "Đã ghi nhận",
       "trackedDuration": "Đã ghi nhận: {duration}",
-      "trackedThisYear": "{duration} đã được ghi nhận trong năm nay 🔥",
+      "trackedThisYear": "{duration} đã được ghi nhận trong năm nay",
       "view": "Chế độ xem",
       "yearActivityPattern": "Mẫu hoạt động năm {year}"
     },
