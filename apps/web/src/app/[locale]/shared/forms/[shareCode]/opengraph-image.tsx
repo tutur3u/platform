@@ -1,3 +1,4 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { cookies } from 'next/headers';
 import { getTranslations } from 'next-intl/server';
 import {
@@ -22,6 +23,7 @@ export default async function Image({ params }: Props) {
   const { shareCode } = await params;
   const t = await getTranslations('forms');
   const cookieStore = await cookies();
+  const supabase = await createAdminClient();
   const { status, data } = await fetchSharedFormData(shareCode, {
     cookieHeader: cookieStore.toString(),
   });
@@ -34,10 +36,24 @@ export default async function Image({ params }: Props) {
     openGraphAlt: '',
   };
   const presentation = getSharedFormPresentation(data?.form, strings, status);
+  const transformedCoverUrl =
+    presentation.coverImagePath &&
+    (await supabase.storage
+      .from('workspaces')
+      .createSignedUrl(presentation.coverImagePath, 60 * 60, {
+        transform: {
+          width: size.width,
+          height: size.height,
+          resize: 'cover',
+          quality: 80,
+        },
+      })
+      .then((result) => result.data?.signedUrl ?? ''));
 
   return createSharedFormSocialImage({
     form: data?.form,
     status,
+    coverImageUrl: transformedCoverUrl,
     strings: {
       ...strings,
       openGraphAlt: t('shared.open_graph_alt', {

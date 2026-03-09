@@ -13,6 +13,14 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@tuturuuu/ui/collapsible';
+import { Label } from '@tuturuuu/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -28,6 +36,11 @@ import {
   type getFormToneClasses,
   getThemePreset,
 } from '../theme';
+import {
+  getBodyTypographyClassName,
+  getDisplayTypographyClassName,
+  getHeadingTypographyClassName,
+} from '../typography';
 import {
   type FormFontId,
   getOffsetOptionId,
@@ -56,6 +69,33 @@ export function FontPreviewPanel({
   const bodyFont =
     FORM_FONT_OPTIONS.find((font) => font.id === values.theme.bodyFontId) ??
     FORM_FONT_OPTIONS[0];
+  const displayTypographyClassName = getDisplayTypographyClassName(
+    values.theme.typography.displaySize
+  );
+  const headingTypographyClassName = getHeadingTypographyClassName(
+    values.theme.typography.headingSize
+  );
+  const bodyTypographyClassName = getBodyTypographyClassName(
+    values.theme.typography.bodySize
+  );
+
+  const typographyControls: Array<{
+    key: 'displaySize' | 'headingSize' | 'bodySize';
+    label: string;
+  }> = [
+    {
+      key: 'displaySize',
+      label: t('settings.display_size'),
+    },
+    {
+      key: 'headingSize',
+      label: t('settings.heading_size'),
+    },
+    {
+      key: 'bodySize',
+      label: t('settings.body_size'),
+    },
+  ];
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
@@ -227,14 +267,20 @@ export function FontPreviewPanel({
                   {t('settings.pair_preview')}
                 </p>
                 <p
-                  className="mt-3 line-clamp-2 text-3xl leading-[0.95]"
+                  className={cn(
+                    'mt-3 line-clamp-2 leading-[0.95]',
+                    displayTypographyClassName
+                  )}
                   style={headlineFontStyle}
                 >
                   {values.theme.coverHeadline ||
                     t('settings.headline_sample_text')}
                 </p>
                 <p
-                  className="mt-3 text-muted-foreground text-sm leading-6"
+                  className={cn(
+                    'mt-3 text-muted-foreground leading-6',
+                    bodyTypographyClassName
+                  )}
                   style={bodyFontStyle}
                 >
                   {values.description || t('settings.body_sample_text')}
@@ -249,6 +295,80 @@ export function FontPreviewPanel({
                   <span className="text-muted-foreground text-xs">
                     {selectedPreset.name}
                   </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+              <div className="rounded-3xl border border-border/60 bg-background/70 p-4">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-[0.22em]">
+                  {t('settings.typography_scale')}
+                </p>
+                <div className="mt-4 grid gap-3 md:grid-cols-3">
+                  {typographyControls.map(({ key, label }) => (
+                    <div key={key} className="space-y-2">
+                      <Label>{label}</Label>
+                      <Select
+                        value={values.theme.typography[key]}
+                        onValueChange={(value) =>
+                          form.setValue(
+                            `theme.typography.${key}`,
+                            value as FormStudioInput['theme']['typography'][typeof key],
+                            { shouldDirty: true }
+                          )
+                        }
+                      >
+                        <SelectTrigger
+                          className={cn(
+                            'h-11 rounded-2xl',
+                            toneClasses.fieldClassName
+                          )}
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="sm">
+                            {t('settings.size_small')}
+                          </SelectItem>
+                          <SelectItem value="md">
+                            {t('settings.size_medium')}
+                          </SelectItem>
+                          <SelectItem value="lg">
+                            {t('settings.size_large')}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-border/60 bg-background/70 p-4">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-[0.22em]">
+                  {t('settings.scale_preview')}
+                </p>
+                <div className="mt-4 space-y-3">
+                  <p
+                    className={cn('font-semibold', displayTypographyClassName)}
+                    style={headlineFontStyle}
+                  >
+                    {t('settings.headline_sample_text')}
+                  </p>
+                  <p
+                    className={cn('font-semibold', headingTypographyClassName)}
+                    style={headlineFontStyle}
+                  >
+                    {t('studio.question_title')}
+                  </p>
+                  <p
+                    className={cn(
+                      'text-muted-foreground',
+                      bodyTypographyClassName
+                    )}
+                    style={bodyFontStyle}
+                  >
+                    {t('settings.body_sample_text')}
+                  </p>
                 </div>
               </div>
             </div>

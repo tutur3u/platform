@@ -43,11 +43,18 @@ import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 
 import { deriveUniqueOptionValue } from '../answer-utils';
+import { isAnswerableQuestionType } from '../block-utils';
 import { FieldLabel, QuestionTypeIcon } from '../form-icons';
 import { FormsMarkdown } from '../forms-markdown';
 import { FormsRichTextEditor } from '../forms-rich-text-editor';
 import { FORM_QUESTION_TYPE_VALUES, type FormQuestionInput } from '../schema';
 import type { getFormToneClasses } from '../theme';
+import {
+  getBodyTypographyClassName,
+  getHeadingTypographyClassName,
+} from '../typography';
+import { parseYouTubeUrl } from '../youtube';
+import { createQuestionInput } from './block-catalog';
 import { DestructiveActionDialog } from './destructive-action-dialog';
 import { FormMediaField } from './form-media-field';
 import { createClientId, type StudioForm } from './studio-utils';
@@ -63,6 +70,10 @@ const TITLE_PLACEHOLDER_MAP: Record<string, string> = {
   date: 'placeholder_title_date',
   time: 'placeholder_title_time',
   section_break: 'placeholder_title_section_break',
+  rich_text: 'placeholder_title_rich_text',
+  image: 'placeholder_title_image',
+  youtube: 'placeholder_title_youtube',
+  divider: 'placeholder_title_divider',
 };
 
 export function QuestionEditor({
@@ -122,6 +133,15 @@ export function QuestionEditor({
     control: form.control,
     name: `sections.${sectionIndex}.questions.${questionIndex}.description`,
   });
+  const settings =
+    useWatch({
+      control: form.control,
+      name: `sections.${sectionIndex}.questions.${questionIndex}.settings`,
+    }) ?? {};
+  const questionImage = useWatch({
+    control: form.control,
+    name: `sections.${sectionIndex}.questions.${questionIndex}.image`,
+  });
   const required = useWatch({
     control: form.control,
     name: `sections.${sectionIndex}.questions.${questionIndex}.required`,
@@ -158,6 +178,16 @@ export function QuestionEditor({
     control: form.control,
     name: `sections.${sectionIndex}.questions.${questionIndex}.settings.optionLayout`,
   });
+  const typography = useWatch({
+    control: form.control,
+    name: 'theme.typography',
+  });
+  const headingClassName = getHeadingTypographyClassName(
+    typography?.headingSize ?? 'md'
+  );
+  const bodyClassName = getBodyTypographyClassName(
+    typography?.bodySize ?? 'md'
+  );
 
   const addOption = () => {
     const nextLabel = t('studio.new_option');
@@ -196,6 +226,13 @@ export function QuestionEditor({
   const isRating = questionType === 'rating';
   const isDateOrTime = questionType === 'date' || questionType === 'time';
   const isSectionBreak = questionType === 'section_break';
+  const isRichText = questionType === 'rich_text';
+  const isImageBlock = questionType === 'image';
+  const isYoutubeBlock = questionType === 'youtube';
+  const isDividerBlock = questionType === 'divider';
+  const isAnswerable = isAnswerableQuestionType(questionType);
+  const showsDescriptionEditor =
+    isAnswerable || isRichText || isImageBlock || isYoutubeBlock;
 
   useEffect(() => {
     if (!hasScale) {
@@ -315,7 +352,12 @@ export function QuestionEditor({
                             className="h-3.5 w-3.5"
                           />
                         </span>
-                        <div className="min-w-0 flex-1 truncate text-left font-semibold text-sm">
+                        <div
+                          className={cn(
+                            'min-w-0 flex-1 truncate text-left font-semibold',
+                            headingClassName
+                          )}
+                        >
                           <FormsMarkdown
                             content={
                               questionTitle ||
@@ -408,7 +450,7 @@ export function QuestionEditor({
         <CollapsibleContent className="overflow-hidden border-border/60 border-t data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
           <div className="space-y-3 px-4 py-4">
             <div className="grid gap-3 md:grid-cols-2">
-              {!isSectionBreak ? (
+              {!isDividerBlock ? (
                 <div className="space-y-1.5 md:col-span-2">
                   <Label>
                     <FieldLabel icon={FileText}>
@@ -442,15 +484,53 @@ export function QuestionEditor({
                 </Label>
                 <Select
                   value={questionType}
-                  onValueChange={(value) =>
+                  onValueChange={(value) => {
+                    const nextType = value as FormQuestionInput['type'];
+                    const nextTemplate = createQuestionInput(nextType, t);
+                    const currentQuestion = form.getValues(
+                      `sections.${sectionIndex}.questions.${questionIndex}`
+                    );
+
+                    form.setValue(typePath, nextType, {
+                      shouldDirty: true,
+                    });
                     form.setValue(
-                      typePath,
-                      value as FormQuestionInput['type'],
-                      {
-                        shouldDirty: true,
-                      }
-                    )
-                  }
+                      `sections.${sectionIndex}.questions.${questionIndex}.settings`,
+                      nextTemplate.settings,
+                      { shouldDirty: true }
+                    );
+                    form.setValue(
+                      `sections.${sectionIndex}.questions.${questionIndex}.options`,
+                      nextTemplate.options,
+                      { shouldDirty: true }
+                    );
+                    form.setValue(
+                      `sections.${sectionIndex}.questions.${questionIndex}.image`,
+                      currentQuestion?.image ?? nextTemplate.image,
+                      { shouldDirty: true }
+                    );
+                    if (!currentQuestion?.title?.trim()) {
+                      form.setValue(
+                        `sections.${sectionIndex}.questions.${questionIndex}.title`,
+                        nextTemplate.title,
+                        { shouldDirty: true }
+                      );
+                    }
+                    if (!currentQuestion?.description?.trim()) {
+                      form.setValue(
+                        `sections.${sectionIndex}.questions.${questionIndex}.description`,
+                        nextTemplate.description,
+                        { shouldDirty: true }
+                      );
+                    }
+                    if (!isAnswerableQuestionType(nextType)) {
+                      form.setValue(
+                        `sections.${sectionIndex}.questions.${questionIndex}.required`,
+                        false,
+                        { shouldDirty: true }
+                      );
+                    }
+                  }}
                 >
                   <SelectTrigger className={toneClasses.fieldClassName}>
                     <SelectValue />
@@ -467,36 +547,38 @@ export function QuestionEditor({
                   </SelectContent>
                 </Select>
               </div>
-              {!isSectionBreak ? (
+              {showsDescriptionEditor ? (
                 <>
-                  <div className="space-y-1.5">
-                    <Label>
-                      <FieldLabel icon={CircleCheckBig}>
-                        {t('studio.required')}
-                      </FieldLabel>
-                    </Label>
-                    <label
-                      className={cn(
-                        'flex items-center gap-3 rounded-2xl border px-4 py-2.5',
-                        toneClasses.optionCardClassName
-                      )}
-                    >
-                      <Checkbox
-                        className={toneClasses.checkboxClassName}
-                        checked={!!required}
-                        onCheckedChange={(checked) =>
-                          form.setValue(
-                            `sections.${sectionIndex}.questions.${questionIndex}.required`,
-                            checked === true,
-                            { shouldDirty: true }
-                          )
-                        }
-                      />
-                      <span className="text-sm">
-                        {t('studio.require_before_continue')}
-                      </span>
-                    </label>
-                  </div>
+                  {isAnswerable ? (
+                    <div className="space-y-1.5">
+                      <Label>
+                        <FieldLabel icon={CircleCheckBig}>
+                          {t('studio.required')}
+                        </FieldLabel>
+                      </Label>
+                      <label
+                        className={cn(
+                          'flex items-center gap-3 rounded-2xl border px-4 py-2.5',
+                          toneClasses.optionCardClassName
+                        )}
+                      >
+                        <Checkbox
+                          className={toneClasses.checkboxClassName}
+                          checked={!!required}
+                          onCheckedChange={(checked) =>
+                            form.setValue(
+                              `sections.${sectionIndex}.questions.${questionIndex}.required`,
+                              checked === true,
+                              { shouldDirty: true }
+                            )
+                          }
+                        />
+                        <span className="text-sm">
+                          {t('studio.require_before_continue')}
+                        </span>
+                      </label>
+                    </div>
+                  ) : null}
                   <div className="space-y-1.5 md:col-span-2">
                     <Label>
                       <FieldLabel icon={MessageSquare}>
@@ -518,7 +600,7 @@ export function QuestionEditor({
                   </div>
                 </>
               ) : null}
-              {!isSectionBreak ? (
+              {isAnswerable ? (
                 <div className="space-y-1.5 md:col-span-2">
                   <Label>
                     <FieldLabel icon={ClipboardList}>
@@ -538,6 +620,68 @@ export function QuestionEditor({
                     }
                   />
                 </div>
+              ) : null}
+              {isAnswerable || isImageBlock ? (
+                <div className="md:col-span-2">
+                  <FormMediaField
+                    wsId={wsId}
+                    scope={isImageBlock ? 'cover' : 'section'}
+                    value={
+                      questionImage ?? {
+                        storagePath: '',
+                        url: '',
+                        alt: '',
+                      }
+                    }
+                    onChange={(value) =>
+                      form.setValue(
+                        `sections.${sectionIndex}.questions.${questionIndex}.image`,
+                        value,
+                        { shouldDirty: true }
+                      )
+                    }
+                    toneClasses={toneClasses}
+                    label={t('studio.question_image')}
+                    hint={t('studio.question_image_hint')}
+                  />
+                </div>
+              ) : null}
+              {isYoutubeBlock ? (
+                <>
+                  <div className="space-y-1.5 md:col-span-2">
+                    <Label>{t('studio.youtube_url')}</Label>
+                    <Input
+                      value={settings.youtubeUrl || ''}
+                      placeholder="https://www.youtube.com/watch?v=..."
+                      className={toneClasses.fieldClassName}
+                      onChange={(event) => {
+                        const nextUrl = event.target.value;
+                        const parsed = parseYouTubeUrl(nextUrl);
+
+                        form.setValue(
+                          `sections.${sectionIndex}.questions.${questionIndex}.settings.youtubeUrl`,
+                          nextUrl,
+                          { shouldDirty: true }
+                        );
+                        form.setValue(
+                          `sections.${sectionIndex}.questions.${questionIndex}.settings.youtubeVideoId`,
+                          parsed?.videoId ?? '',
+                          { shouldDirty: true }
+                        );
+                        form.setValue(
+                          `sections.${sectionIndex}.questions.${questionIndex}.settings.youtubeStartSeconds`,
+                          parsed?.startSeconds ?? 0,
+                          { shouldDirty: true }
+                        );
+                      }}
+                    />
+                  </div>
+                  {!settings.youtubeVideoId && settings.youtubeUrl ? (
+                    <div className="rounded-2xl border border-dynamic-orange/20 bg-dynamic-orange/8 px-4 py-3 text-dynamic-orange text-sm md:col-span-2">
+                      {t('studio.invalid_youtube_link')}
+                    </div>
+                  ) : null}
+                </>
               ) : null}
             </div>
 
@@ -653,10 +797,10 @@ export function QuestionEditor({
                           watchedOptions?.[optionIndex]?.label ||
                           t('studio.label')
                         }
-                        className="text-sm [&_p]:leading-6"
+                        className={cn(bodyClassName, '[&_p]:leading-6')}
                       />
                     </div>
-                    {hasCardChoiceLayout ? (
+                    {hasChoices ? (
                       <FormMediaField
                         wsId={wsId}
                         scope="option"

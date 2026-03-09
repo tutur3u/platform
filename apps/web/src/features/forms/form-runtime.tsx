@@ -40,6 +40,7 @@ import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { DEV_MODE } from '@/constants/common';
+import { isAnswerableQuestionType } from './block-utils';
 import { getNextSectionTarget } from './branching';
 import { normalizeMarkdownToText } from './content';
 import { FORM_FONT_VARIABLES, getFormFontStyle } from './fonts';
@@ -54,6 +55,11 @@ import type {
   FormDefinitionQuestion,
   FormReadOnlyAnswerIssue,
 } from './types';
+import {
+  getBodyTypographyClassName,
+  getDisplayTypographyClassName,
+  getHeadingTypographyClassName,
+} from './typography';
 import { validateSubmittedAnswers } from './validation';
 
 interface FormRuntimeProps {
@@ -188,6 +194,7 @@ function QuestionBlock({
   onImagePreview,
   disabled = false,
   toneClasses,
+  typography,
 }: {
   question: FormDefinitionQuestion;
   value: FormAnswerValue | undefined;
@@ -196,14 +203,136 @@ function QuestionBlock({
   onImagePreview: (image: { src: string; alt: string }) => void;
   disabled?: boolean;
   toneClasses: ReturnType<typeof getFormToneClasses>;
+  typography: FormDefinition['theme']['typography'];
 }) {
   const t = useTranslations('forms');
   const settings = question.settings ?? {};
+  const headingClassName = getHeadingTypographyClassName(
+    typography.headingSize
+  );
+  const bodyClassName = getBodyTypographyClassName(typography.bodySize);
 
   if (question.type === 'section_break') {
     return (
       <div className="py-2">
         <Separator className="bg-border/60" />
+      </div>
+    );
+  }
+
+  if (question.type === 'divider') {
+    return (
+      <div className="py-3">
+        <Separator className="bg-border/60" />
+      </div>
+    );
+  }
+
+  if (question.type === 'rich_text') {
+    return (
+      <div className="space-y-3 rounded-[1.6rem] border border-border/60 bg-background/45 p-5 sm:p-6">
+        {question.title ? (
+          <div className={cn('font-semibold leading-tight', headingClassName)}>
+            <FormsMarkdown content={question.title} className="[&_p]:m-0" />
+          </div>
+        ) : null}
+        {question.description ? (
+          <FormsMarkdown
+            content={question.description}
+            className={cn('text-muted-foreground', bodyClassName)}
+          />
+        ) : null}
+      </div>
+    );
+  }
+
+  if (question.type === 'image') {
+    return (
+      <div className="space-y-4 rounded-[1.6rem] border border-border/60 bg-background/45 p-5 sm:p-6">
+        {question.title ? (
+          <div className={cn('font-semibold leading-tight', headingClassName)}>
+            <FormsMarkdown content={question.title} className="[&_p]:m-0" />
+          </div>
+        ) : null}
+        {question.image?.url ? (
+          <div className="relative aspect-16/9 overflow-hidden rounded-[1.35rem] border border-border/60 bg-background/70">
+            <Image
+              src={question.image.url}
+              alt={
+                question.image.alt ||
+                normalizeMarkdownToText(question.title) ||
+                t('studio.question_image')
+              }
+              fill
+              unoptimized
+              className="object-cover"
+            />
+            <Button
+              type="button"
+              size="icon"
+              variant="secondary"
+              className="absolute top-4 right-4 h-10 w-10 rounded-full bg-background/85 shadow-sm backdrop-blur-sm"
+              onClick={() =>
+                onImagePreview({
+                  src: question.image.url,
+                  alt:
+                    question.image.alt ||
+                    normalizeMarkdownToText(question.title) ||
+                    t('studio.question_image'),
+                })
+              }
+            >
+              <ZoomIn className="h-4 w-4" />
+              <span className="sr-only">
+                {t('runtime.view_image_fullscreen')}
+              </span>
+            </Button>
+          </div>
+        ) : null}
+        {question.description ? (
+          <FormsMarkdown
+            content={question.description}
+            className={cn('text-muted-foreground', bodyClassName)}
+          />
+        ) : null}
+      </div>
+    );
+  }
+
+  if (question.type === 'youtube') {
+    const videoId = settings.youtubeVideoId;
+    const startSeconds = settings.youtubeStartSeconds ?? 0;
+    const embedUrl = videoId
+      ? `https://www.youtube.com/embed/${videoId}${startSeconds > 0 ? `?start=${startSeconds}` : ''}`
+      : '';
+
+    return (
+      <div className="space-y-4 rounded-[1.6rem] border border-border/60 bg-background/45 p-5 sm:p-6">
+        {question.title ? (
+          <div className={cn('font-semibold leading-tight', headingClassName)}>
+            <FormsMarkdown content={question.title} className="[&_p]:m-0" />
+          </div>
+        ) : null}
+        {embedUrl ? (
+          <div className="overflow-hidden rounded-[1.35rem] border border-border/60 bg-background/70 shadow-sm">
+            <div className="aspect-video">
+              <iframe
+                src={embedUrl}
+                title={normalizeMarkdownToText(question.title) || 'YouTube'}
+                className="h-full w-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
+              />
+            </div>
+          </div>
+        ) : null}
+        {question.description ? (
+          <FormsMarkdown
+            content={question.description}
+            className={cn('text-muted-foreground', bodyClassName)}
+          />
+        ) : null}
       </div>
     );
   }
@@ -252,6 +381,10 @@ function QuestionBlock({
   const optionLayout = settings.optionLayout === 'grid' ? 'grid' : 'list';
   const choiceLayoutClassName =
     optionLayout === 'grid' ? 'grid gap-3 sm:grid-cols-2' : 'space-y-2';
+  const selectedDropdownOption =
+    question.type === 'dropdown' && typeof value === 'string'
+      ? (question.options.find((option) => option.value === value) ?? null)
+      : null;
 
   return (
     <div className="space-y-3">
@@ -270,13 +403,51 @@ function QuestionBlock({
             </Badge>
           ) : null}
         </div>
-        <div className="font-semibold text-base leading-snug">
+        <div className={cn('font-semibold leading-snug', headingClassName)}>
           <FormsMarkdown content={question.title} className="[&_p]:m-0" />
         </div>
+        {question.image?.url ? (
+          <div className="relative mt-3 aspect-16/8 overflow-hidden rounded-[1.25rem] border border-border/60 bg-background/70">
+            <Image
+              src={question.image.url}
+              alt={
+                question.image.alt ||
+                normalizeMarkdownToText(question.title) ||
+                t('studio.question_image')
+              }
+              fill
+              unoptimized
+              className="object-cover"
+            />
+            <Button
+              type="button"
+              size="icon"
+              variant="secondary"
+              className="absolute top-3 right-3 h-9 w-9 rounded-full bg-background/85 shadow-sm backdrop-blur-sm"
+              onClick={() =>
+                onImagePreview({
+                  src: question.image.url,
+                  alt:
+                    question.image.alt ||
+                    normalizeMarkdownToText(question.title) ||
+                    t('studio.question_image'),
+                })
+              }
+            >
+              <ZoomIn className="h-4 w-4" />
+              <span className="sr-only">
+                {t('runtime.view_image_fullscreen')}
+              </span>
+            </Button>
+          </div>
+        ) : null}
         {question.description ? (
           <FormsMarkdown
             content={question.description}
-            className="text-muted-foreground text-sm [&_p]:leading-6"
+            className={cn(
+              'text-muted-foreground [&_p]:leading-6',
+              bodyClassName
+            )}
           />
         ) : null}
       </div>
@@ -490,12 +661,26 @@ function QuestionBlock({
           <SelectTrigger className={toneClasses.fieldClassName}>
             {typeof value === 'string' && value ? (
               <div className="flex min-w-0 items-center gap-2">
-                <ClipboardList className="h-4 w-4 shrink-0 text-muted-foreground" />
+                {selectedDropdownOption &&
+                hasOptionImage(selectedDropdownOption) ? (
+                  <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-xl border border-border/60 bg-background/70">
+                    <Image
+                      src={selectedDropdownOption.image.url}
+                      alt={
+                        selectedDropdownOption.image.alt ||
+                        selectedDropdownOption.value ||
+                        t('runtime.choose_option')
+                      }
+                      fill
+                      unoptimized
+                      className="object-cover"
+                    />
+                  </div>
+                ) : (
+                  <ClipboardList className="h-4 w-4 shrink-0 text-muted-foreground" />
+                )}
                 <FormsMarkdown
-                  content={
-                    question.options.find((option) => option.value === value)
-                      ?.label ?? value
-                  }
+                  content={selectedDropdownOption?.label ?? value}
                   variant="inline"
                   className="min-w-0 truncate text-left text-sm"
                 />
@@ -511,7 +696,23 @@ function QuestionBlock({
             {question.options.map((option) => (
               <SelectItem key={option.id} value={option.value}>
                 <div className="flex items-center gap-2">
-                  <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                  {hasOptionImage(option) ? (
+                    <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-xl border border-border/60 bg-background/70">
+                      <Image
+                        src={option.image.url}
+                        alt={
+                          option.image.alt ||
+                          normalizeMarkdownToText(option.label) ||
+                          option.value
+                        }
+                        fill
+                        unoptimized
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                  )}
                   <FormsMarkdown
                     content={option.label}
                     variant="inline"
@@ -803,6 +1004,15 @@ export function FormRuntime({
   const toneClasses = getFormToneClasses(form.theme.accentColor);
   const bodyFontStyle = getFormFontStyle(form.theme.bodyFontId);
   const headlineFontStyle = getFormFontStyle(form.theme.headlineFontId);
+  const displayTypographyClassName = getDisplayTypographyClassName(
+    form.theme.typography.displaySize
+  );
+  const headingTypographyClassName = getHeadingTypographyClassName(
+    form.theme.typography.headingSize
+  );
+  const bodyTypographyClassName = getBodyTypographyClassName(
+    form.theme.typography.bodySize
+  );
   const density = densityClasses[form.theme.density];
   const turnstileSiteKey =
     process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? undefined;
@@ -830,7 +1040,10 @@ export function FormRuntime({
     () =>
       new Set(
         currentSection?.questions
-          .filter((question) => question.required)
+          .filter(
+            (question) =>
+              question.required && isAnswerableQuestionType(question.type)
+          )
           .map((question) => question.id)
       ),
     [currentSection]
@@ -1076,10 +1289,21 @@ export function FormRuntime({
             >
               <CircleCheckBig className="h-8 w-8" />
             </div>
-            <h2 className="font-semibold text-3xl" style={headlineFontStyle}>
+            <h2
+              className={cn(
+                'font-semibold leading-tight',
+                headingTypographyClassName
+              )}
+              style={headlineFontStyle}
+            >
               {form.settings.confirmationTitle}
             </h2>
-            <p className="mx-auto max-w-xl text-muted-foreground">
+            <p
+              className={cn(
+                'mx-auto max-w-xl text-muted-foreground',
+                bodyTypographyClassName
+              )}
+            >
               {form.settings.confirmationMessage}
             </p>
           </CardContent>
@@ -1137,7 +1361,10 @@ export function FormRuntime({
               <div className="absolute inset-x-0 bottom-0 p-6 lg:p-8">
                 <div className="space-y-3">
                   <div
-                    className="max-w-4xl font-semibold text-4xl text-primary-foreground leading-tight sm:text-5xl"
+                    className={cn(
+                      'max-w-4xl font-semibold text-primary-foreground leading-tight',
+                      displayTypographyClassName
+                    )}
                     style={headlineFontStyle}
                   >
                     <FormsMarkdown
@@ -1154,7 +1381,10 @@ export function FormRuntime({
               <div className="space-y-5">
                 <div className="space-y-3">
                   <div
-                    className="font-semibold text-4xl leading-tight sm:text-5xl"
+                    className={cn(
+                      'font-semibold leading-tight',
+                      displayTypographyClassName
+                    )}
                     style={headlineFontStyle}
                   >
                     <FormsMarkdown
@@ -1256,7 +1486,12 @@ export function FormRuntime({
           <CardHeader className={density.cardPadding}>
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="space-y-1">
-                <div className="font-semibold text-2xl">
+                <div
+                  className={cn(
+                    'font-semibold leading-tight',
+                    headingTypographyClassName
+                  )}
+                >
                   <FormsMarkdown
                     content={visibleSectionTitle}
                     className="[&_p]:m-0 [&_p]:leading-tight"
@@ -1265,7 +1500,8 @@ export function FormRuntime({
               </div>
               <Badge variant="outline" className="rounded-full px-3 py-1">
                 <Flag className="mr-1 h-3.5 w-3.5" />
-                {currentSectionIndex + 1} / {form.sections.length}
+                {progressStats.currentSectionNumber} /{' '}
+                {progressStats.routeSectionCount}
               </Badge>
             </div>
             {currentSection.image.url ? (
@@ -1309,7 +1545,7 @@ export function FormRuntime({
               <div className="rounded-[1.45rem] border border-border/60 bg-background/45 p-4 sm:p-5">
                 <ExpandableDescriptionPanel
                   content={currentSection.description}
-                  className="text-sm"
+                  className={bodyTypographyClassName}
                 />
               </div>
             ) : null}
@@ -1328,6 +1564,7 @@ export function FormRuntime({
                   onImagePreview={(image) => setPreviewImage(image)}
                   disabled={isSubmitting || readOnly}
                   toneClasses={toneClasses}
+                  typography={form.theme.typography}
                 />
               ))}
               {readOnly &&

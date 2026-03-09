@@ -57,9 +57,6 @@ export function applyThemePreset(form: StudioForm, presetId: string) {
   form.setValue('theme.surfaceStyle', preset.surfaceStyle, {
     shouldDirty: true,
   });
-  form.setValue('theme.coverKicker', preset.kicker, {
-    shouldDirty: true,
-  });
 }
 
 export function createClientId() {
@@ -120,6 +117,11 @@ export function duplicateQuestionInput(
   return {
     ...question,
     id: createClientId(),
+    image: {
+      storagePath: question.image?.storagePath ?? '',
+      url: question.image?.url ?? '',
+      alt: question.image?.alt ?? '',
+    },
     settings: {
       ...question.settings,
     },
@@ -153,6 +155,11 @@ export function ensureIdentifiers(input: FormStudioInput): FormStudioInput {
       questions: section.questions.map((question) => ({
         ...question,
         id: question.id ?? createClientId(),
+        image: question.image ?? {
+          storagePath: '',
+          url: '',
+          alt: '',
+        },
         options: question.options.map((option) => ({
           ...option,
           id: option.id ?? createClientId(),
@@ -197,6 +204,7 @@ export function toStudioInput(form?: FormDefinition): FormStudioInput {
         title: question.title,
         description: question.description,
         required: question.required,
+        image: question.image,
         settings: question.settings,
         options: question.options.map((option) => ({
           id: option.id,
@@ -254,6 +262,7 @@ export function toPreviewDefinition(
         ...question,
         id: question.id ?? createClientId(),
         sectionId: section.id ?? createClientId(),
+        image: question.image,
         options: question.options.map((option) => ({
           id: option.id ?? createClientId(),
           label: option.label,

@@ -9,6 +9,11 @@ describe('studio-utils duplication helpers', () => {
       title: '<p><strong>Favorite fruit</strong></p>',
       description: '<p>Pick one option.</p>',
       required: true,
+      image: {
+        storagePath: 'workspaces/ws/forms/question.png',
+        url: 'https://example.com/question.png',
+        alt: 'Question',
+      },
       settings: {
         optionLayout: 'grid',
         placeholder: 'Choose',
@@ -31,6 +36,7 @@ describe('studio-utils duplication helpers', () => {
     expect(duplicated.options[0]?.id).not.toBe('option-1');
     expect(duplicated.title).toBe('<p><strong>Favorite fruit</strong></p>');
     expect(duplicated.options[0]?.value).toBe('apple');
+    expect(duplicated.image.url).toBe('https://example.com/question.png');
     expect(duplicated.options[0]?.image.url).toBe(
       'https://example.com/apple.png'
     );
@@ -53,6 +59,7 @@ describe('studio-utils duplication helpers', () => {
           title: '<p>Question</p>',
           description: '',
           required: false,
+          image: { storagePath: '', url: '', alt: '' },
           settings: {
             placeholder: 'Answer',
           },

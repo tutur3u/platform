@@ -2,6 +2,7 @@ import {
   createStoredAnswerQuestionResolver,
   restoreAnswerForQuestion,
 } from './answer-utils';
+import { isAnswerableQuestionType } from './block-utils';
 import { normalizeMarkdownToText } from './content';
 import type {
   FormAnswerValue,
@@ -173,7 +174,9 @@ export function buildQuestionAnalytics(
   answerRows: FormResponseAnswerRow[]
 ): FormResponsesQuestionAnalytics[] {
   const questions = form.sections.flatMap((section) =>
-    section.questions.filter((question) => question.type !== 'section_break')
+    section.questions.filter((question) =>
+      isAnswerableQuestionType(question.type)
+    )
   );
   const questionMap = new Map(
     questions.map((question) => [
