@@ -3872,16 +3872,31 @@
     },
     "pages": {
       "access": "Access",
+      "archive_form": "Archive",
+      "archive_form_confirm_description": "This will move the form to archived status. You can restore it later.",
+      "archive_form_confirm_title": "Archive this form?",
       "completion_rate": "{rate}% completion",
+      "delete_form": "Delete",
+      "delete_form_confirm_description": "This will permanently delete the form and related records. This action cannot be undone.",
+      "delete_form_confirm_title": "Delete this form?",
+      "empty_filtered": "No forms match the current filters.",
+      "filter_active": "Active",
+      "filter_all": "All",
+      "filter_archived": "Archived",
       "home_description": "Google Forms-like collection with better typography, richer branding, and workspace analytics that separate viewers from responders.",
       "home_title": "Forms",
       "no_description": "No description yet.",
+      "restore_form": "Restore",
+      "restore_form_confirm_description": "This will move the form back to draft status.",
+      "restore_form_confirm_title": "Restore this form?",
       "stats": {
         "forms": "Forms",
         "responses": "Responses",
         "views": "Views",
         "workspace": "Workspace"
-      }
+      },
+      "view_grid": "Grid",
+      "view_list": "List"
     },
     "question_type": {
       "date": "Date",
@@ -4226,7 +4241,10 @@
       "failed_to_submit_response": "Failed to submit response",
       "failed_to_upload_image": "Failed to upload image",
       "fix_validation_errors": "Fix the highlighted form errors before saving.",
+      "form_archived": "Form archived",
       "form_created": "Form created",
+      "form_deleted": "Form deleted",
+      "form_restored": "Form restored",
       "form_title_required": "Form title is required.",
       "form_updated": "Form updated",
       "invalid_form_id": "Invalid form ID.",

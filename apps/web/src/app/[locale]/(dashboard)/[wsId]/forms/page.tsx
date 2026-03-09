@@ -1,4 +1,4 @@
-import { Plus, Upload } from '@tuturuuu/icons';
+import { Plus } from '@tuturuuu/icons';
 import {
   createAdminClient,
   createClient,
@@ -10,10 +10,12 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { listForms } from '@/features/forms/server';
+import { FormCardActions } from './form-card-actions';
+import { FormsImportButton } from './forms-import-button';
 
 interface PageProps {
   params: Promise<{ wsId: string }>;
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; view?: string; status?: string }>;
 }
 
 export default async function FormsPage({ params, searchParams }: PageProps) {
@@ -58,6 +60,40 @@ export default async function FormsPage({ params, searchParams }: PageProps) {
           resolvedParams.wsId,
           resolvedSearchParams.q
         );
+        const viewMode = resolvedSearchParams.view === 'list' ? 'list' : 'grid';
+        const statusFilter =
+          resolvedSearchParams.status === 'all' ||
+          resolvedSearchParams.status === 'draft' ||
+          resolvedSearchParams.status === 'published' ||
+          resolvedSearchParams.status === 'archived'
+            ? resolvedSearchParams.status
+            : 'active';
+        const filteredForms = forms.filter((form) => {
+          if (statusFilter === 'all') return true;
+          if (statusFilter === 'active') return form.status !== 'closed';
+          if (statusFilter === 'archived') return form.status === 'closed';
+          return form.status === statusFilter;
+        });
+        const buildFormsHref = (
+          overrides: Partial<Record<'view' | 'status', string>>
+        ) => {
+          const query = new URLSearchParams();
+          if (resolvedSearchParams.q) {
+            query.set('q', resolvedSearchParams.q);
+          }
+          const nextView = overrides.view ?? viewMode;
+          const nextStatus = overrides.status ?? statusFilter;
+          if (nextView !== 'grid') {
+            query.set('view', nextView);
+          }
+          if (nextStatus !== 'active') {
+            query.set('status', nextStatus);
+          }
+          const queryString = query.toString();
+          return queryString
+            ? `/${resolvedParams.wsId}/forms?${queryString}`
+            : `/${resolvedParams.wsId}/forms`;
+        };
         const statusLabels = {
           closed: t('status.closed'),
           draft: t('status.draft'),
@@ -72,38 +108,33 @@ export default async function FormsPage({ params, searchParams }: PageProps) {
         return (
           <div>
             <div className="mx-auto max-w-7xl space-y-8 px-4 py-8">
-              <div className="flex flex-wrap items-end justify-between gap-4">
-                <div className="space-y-3">
-                  <p className="inline-flex items-center rounded-full border border-border/60 bg-background/70 px-3 py-1 font-medium text-[11px] text-muted-foreground uppercase tracking-[0.35em]">
-                    {t('brand')}
-                  </p>
-                  <div className="space-y-2">
-                    <h1 className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-4xl font-semibold tracking-tight text-transparent md:text-5xl">
-                      {t('pages.home_title')}
-                    </h1>
-                    <p className="max-w-3xl text-base text-muted-foreground md:text-lg">
-                      {t('pages.home_description')}
+              <div className="rounded-3xl border border-border/60 bg-card/80 p-6 shadow-sm md:p-8">
+                <div className="flex flex-wrap items-end justify-between gap-4">
+                  <div className="space-y-3">
+                    <p className="inline-flex items-center rounded-full border border-border/60 bg-background/70 px-3 py-1 font-medium text-[11px] text-muted-foreground uppercase tracking-[0.35em]">
+                      {t('brand')}
                     </p>
+                    <div className="space-y-2">
+                      <h1 className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text font-semibold text-4xl text-transparent tracking-tight md:text-5xl">
+                        {t('pages.home_title')}
+                      </h1>
+                      <p className="max-w-3xl text-base text-muted-foreground md:text-lg">
+                        {t('pages.home_description')}
+                      </p>
+                    </div>
                   </div>
+                  {canManageForms ? (
+                    <div className="flex flex-wrap items-center gap-3">
+                      <FormsImportButton workspaceSlug={resolvedParams.wsId} />
+                      <Button asChild>
+                        <Link href={`/${resolvedParams.wsId}/forms/new`}>
+                          <Plus className="mr-2 h-4 w-4" />
+                          {t('studio.create_form')}
+                        </Link>
+                      </Button>
+                    </div>
+                  ) : null}
                 </div>
-                {canManageForms ? (
-                  <div className="flex flex-wrap items-center gap-3">
-                    <Button variant="outline" asChild>
-                      <Link
-                        href={`/${resolvedParams.wsId}/forms/new?tab=settings`}
-                      >
-                        <Upload className="mr-2 h-4 w-4" />
-                        {t('settings.import_form')}
-                      </Link>
-                    </Button>
-                    <Button asChild>
-                      <Link href={`/${resolvedParams.wsId}/forms/new`}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        {t('studio.create_form')}
-                      </Link>
-                    </Button>
-                  </div>
-                ) : null}
               </div>
 
               <div className="grid gap-4 md:grid-cols-4">
@@ -145,62 +176,158 @@ export default async function FormsPage({ params, searchParams }: PageProps) {
                 </Card>
               </div>
 
-              <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
-                {forms.map((form) => (
-                  <Link key={form.id} href={form.href}>
-                    <Card className="h-full border-border/60 bg-card/80 transition hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow-lg">
-                      <CardHeader className="space-y-3">
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="rounded-full border border-border/60 px-3 py-1 font-medium text-[11px] text-muted-foreground uppercase tracking-[0.22em]">
+              <Card className="border-border/60 bg-card/80">
+                <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      variant={
+                        statusFilter === 'active' ? 'default' : 'outline'
+                      }
+                      asChild
+                    >
+                      <Link href={buildFormsHref({ status: 'active' })}>
+                        {t('pages.filter_active')}
+                      </Link>
+                    </Button>
+                    <Button
+                      variant={statusFilter === 'all' ? 'default' : 'outline'}
+                      asChild
+                    >
+                      <Link href={buildFormsHref({ status: 'all' })}>
+                        {t('pages.filter_all')}
+                      </Link>
+                    </Button>
+                    <Button
+                      variant={statusFilter === 'draft' ? 'default' : 'outline'}
+                      asChild
+                    >
+                      <Link href={buildFormsHref({ status: 'draft' })}>
+                        {t('status.draft')}
+                      </Link>
+                    </Button>
+                    <Button
+                      variant={
+                        statusFilter === 'published' ? 'default' : 'outline'
+                      }
+                      asChild
+                    >
+                      <Link href={buildFormsHref({ status: 'published' })}>
+                        {t('status.published')}
+                      </Link>
+                    </Button>
+                    <Button
+                      variant={
+                        statusFilter === 'archived' ? 'default' : 'outline'
+                      }
+                      asChild
+                    >
+                      <Link href={buildFormsHref({ status: 'archived' })}>
+                        {t('pages.filter_archived')}
+                      </Link>
+                    </Button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant={viewMode === 'grid' ? 'default' : 'outline'}
+                      asChild
+                    >
+                      <Link href={buildFormsHref({ view: 'grid' })}>
+                        {t('pages.view_grid')}
+                      </Link>
+                    </Button>
+                    <Button
+                      variant={viewMode === 'list' ? 'default' : 'outline'}
+                      asChild
+                    >
+                      <Link href={buildFormsHref({ view: 'list' })}>
+                        {t('pages.view_list')}
+                      </Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {filteredForms.length === 0 ? (
+                <Card className="border-border/60 bg-card/80">
+                  <CardContent className="py-12 text-center text-muted-foreground">
+                    {t('pages.empty_filtered')}
+                  </CardContent>
+                </Card>
+              ) : null}
+
+              <div
+                className={
+                  viewMode === 'grid'
+                    ? 'grid gap-5 lg:grid-cols-2 xl:grid-cols-3'
+                    : 'space-y-4'
+                }
+              >
+                {filteredForms.map((form) => (
+                  <Card
+                    key={form.id}
+                    className="h-full border-border/60 bg-card/80 transition hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow-lg"
+                  >
+                    <CardHeader className="space-y-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="rounded-full border border-border/60 px-3 py-1 font-medium text-[11px] text-muted-foreground uppercase tracking-[0.22em]">
+                          {
+                            statusLabels[
+                              form.status as keyof typeof statusLabels
+                            ]
+                          }
+                        </span>
+                        <span className="text-muted-foreground text-xs">
+                          {t('pages.completion_rate', {
+                            rate: form.completionRate,
+                          })}
+                        </span>
+                      </div>
+                      <CardTitle className="line-clamp-2 text-2xl">
+                        {form.title}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <p className="line-clamp-3 text-muted-foreground text-sm">
+                        {form.description || t('pages.no_description')}
+                      </p>
+                      <div className="grid grid-cols-3 gap-3 rounded-2xl border border-border/50 bg-muted/20 p-4 text-sm">
+                        <div>
+                          <p className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
+                            {t('pages.stats.views')}
+                          </p>
+                          <p className="font-semibold">{form.viewCount}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
+                            {t('pages.stats.responses')}
+                          </p>
+                          <p className="font-semibold">{form.responseCount}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
+                            {t('pages.access')}
+                          </p>
+                          <p className="font-semibold">
                             {
-                              statusLabels[
-                                form.status as keyof typeof statusLabels
+                              accessLabels[
+                                form.accessMode as keyof typeof accessLabels
                               ]
                             }
-                          </span>
-                          <span className="text-muted-foreground text-xs">
-                            {t('pages.completion_rate', {
-                              rate: form.completionRate,
-                            })}
-                          </span>
+                          </p>
                         </div>
-                        <CardTitle className="text-2xl">{form.title}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <p className="line-clamp-3 text-muted-foreground text-sm">
-                          {form.description || t('pages.no_description')}
-                        </p>
-                        <div className="grid grid-cols-3 gap-3 rounded-2xl border border-border/50 bg-muted/20 p-4 text-sm">
-                          <div>
-                            <p className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                              {t('pages.stats.views')}
-                            </p>
-                            <p className="font-semibold">{form.viewCount}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                              {t('pages.stats.responses')}
-                            </p>
-                            <p className="font-semibold">
-                              {form.responseCount}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                              {t('pages.access')}
-                            </p>
-                            <p className="font-semibold">
-                              {
-                                accessLabels[
-                                  form.accessMode as keyof typeof accessLabels
-                                ]
-                              }
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
+                      </div>
+                      <p className="text-muted-foreground text-xs">
+                        {new Date(form.updatedAt).toLocaleString()}
+                      </p>
+                      <FormCardActions
+                        formId={form.id}
+                        href={form.href}
+                        workspaceSlug={resolvedParams.wsId}
+                        isArchived={form.status === 'closed'}
+                        canManageForms={!!canManageForms}
+                      />
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             </div>
