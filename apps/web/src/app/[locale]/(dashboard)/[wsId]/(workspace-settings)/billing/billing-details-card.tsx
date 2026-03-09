@@ -39,7 +39,7 @@ const COUNTRY_OPTIONS: Array<{
 
 const DEFAULT_FORM: UpdateWorkspaceBillingDetailsInput = {
   email: '',
-  billingName: '',
+  name: '',
   billingAddress: {
     line1: '',
     line2: '',
@@ -81,7 +81,7 @@ export default function BillingDetailsCard({ wsId }: BillingDetailsCardProps) {
 
     const nextFormData: UpdateWorkspaceBillingDetailsInput = {
       email: billingDetails.email,
-      billingName: billingDetails.billingName,
+      name: billingDetails.name,
       billingAddress: {
         line1: billingDetails.billingAddress.line1,
         line2: billingDetails.billingAddress.line2,
@@ -120,7 +120,7 @@ export default function BillingDetailsCard({ wsId }: BillingDetailsCardProps) {
 
       const updatedData: UpdateWorkspaceBillingDetailsInput = {
         email: result.data.email,
-        billingName: result.data.billingName,
+        name: result.data.name,
         billingAddress: {
           line1: result.data.billingAddress.line1,
           line2: result.data.billingAddress.line2,
@@ -251,10 +251,8 @@ export default function BillingDetailsCard({ wsId }: BillingDetailsCardProps) {
           <Label htmlFor="billing-name">{t('billing-name')}</Label>
           <Input
             id="billing-name"
-            value={formData.billingName}
-            onChange={(event) =>
-              handleFieldChange('billingName', event.target.value)
-            }
+            value={formData.name}
+            onChange={(event) => handleFieldChange('name', event.target.value)}
             disabled={isFormDisabled}
           />
         </div>
