@@ -35,9 +35,9 @@ export interface TaskDescriptionEditorProps {
   editorRef: React.RefObject<HTMLDivElement | null>;
   richTextEditorRef: React.RefObject<HTMLDivElement | null>;
   titleInputRef: React.RefObject<HTMLInputElement | null>;
-  lastCursorPositionRef: React.MutableRefObject<number | null>;
-  targetEditorCursorRef: React.MutableRefObject<number | null>;
-  flushEditorPendingRef: React.MutableRefObject<
+  lastCursorPositionRef: React.RefObject<number | null>;
+  targetEditorCursorRef: React.RefObject<number | null>;
+  flushEditorPendingRef: React.RefObject<
     (() => JSONContent | null) | undefined
   >;
 
@@ -45,7 +45,7 @@ export interface TaskDescriptionEditorProps {
   yjsDoc: Y.Doc | null;
   yjsProvider: HocuspocusProvider;
   /** User info for collaboration cursor labels. */
-  collaborationUser?: { name: string; color: string } | null;
+  collaborationUser: { name: string; color: string } | null;
 
   // Callbacks
   onImageUpload: (file: File) => Promise<string>;

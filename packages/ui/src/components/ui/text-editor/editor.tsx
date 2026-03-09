@@ -58,10 +58,10 @@ interface RichTextEditorProps {
   editorRef?: { current: Editor | null };
   initialCursorOffset?: number | null;
   onEditorReady?: (editor: Editor) => void;
-  yjsDoc?: Y.Doc | null;
-  yjsProvider?: SupabaseProvider | null;
+  yjsDoc: Y.Doc | null;
+  yjsProvider: SupabaseProvider | null;
   /** User info for collaboration cursor labels. */
-  collaborationUser?: { name: string; color: string } | null;
+  collaborationUser: { name: string; color: string } | null;
   boardId?: string;
   availableLists?: TaskList[];
   queryClient?: QueryClient;
@@ -266,10 +266,9 @@ export function RichTextEditor({
     extensions: getEditorExtensions({
       titlePlaceholder,
       writePlaceholder,
-      doc: allowCollaboration && yjsDoc ? yjsDoc : undefined,
-      provider: allowCollaboration && yjsProvider ? yjsProvider : undefined,
-      collaborationUser:
-        allowCollaboration && collaborationUser ? collaborationUser : undefined,
+      doc: allowCollaboration ? yjsDoc : null,
+      provider: allowCollaboration ? yjsProvider : null,
+      collaborationUser: allowCollaboration ? collaborationUser : null,
       onImageUpload: onImageUploadRef.current,
       onVideoUpload: onImageUploadRef.current,
       mentionTranslations,
@@ -487,9 +486,9 @@ export function RichTextEditor({
         extensions: getEditorExtensions({
           titlePlaceholder,
           writePlaceholder,
-          doc: yjsDoc ?? undefined,
-          provider: yjsProvider ?? undefined,
-          collaborationUser: collaborationUser ?? undefined,
+          doc: yjsDoc,
+          provider: yjsProvider,
+          collaborationUser: collaborationUser,
           onImageUpload: onImageUploadRef.current,
           onVideoUpload: onImageUploadRef.current,
           mentionTranslations,
