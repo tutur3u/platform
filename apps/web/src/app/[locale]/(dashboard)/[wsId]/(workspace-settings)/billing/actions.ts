@@ -466,7 +466,7 @@ export async function getWorkspaceCustomerPortalUrl(
     return {
       success: true,
       data: {
-        url: session.customerPortalUrl ?? '',
+        url: session.customerPortalUrl,
       },
     };
   } catch (error) {

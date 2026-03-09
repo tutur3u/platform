@@ -1273,6 +1273,7 @@
       },
       "retry": "Retry Setup"
     },
+    "open-customer-portal": "Open Customer Portal",
     "order-history": "Order History",
     "order-history-desc": "No subscription history available.",
     "order-history-limit": "Showing up to 10 recent orders",

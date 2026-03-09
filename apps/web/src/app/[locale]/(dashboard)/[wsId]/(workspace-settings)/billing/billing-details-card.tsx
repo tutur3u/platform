@@ -1,11 +1,24 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertCircle, Building2, Loader2, RefreshCw } from '@tuturuuu/icons';
+import {
+  AlertCircle,
+  Building2,
+  ExternalLink,
+  Loader2,
+  RefreshCw,
+} from '@tuturuuu/icons';
 import type { AddressInput, CountryAlpha2Input } from '@tuturuuu/payment/polar';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@tuturuuu/ui/form';
 import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
   SelectContent,
@@ -15,9 +28,11 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 import {
   getWorkspaceBillingDetails,
+  getWorkspaceCustomerPortalUrl,
   type UpdateWorkspaceBillingDetailsInput,
   updateWorkspaceBillingDetails,
 } from './actions';
@@ -37,26 +52,24 @@ const COUNTRY_OPTIONS: Array<{
   }))
   .sort((a, b) => a.label.localeCompare(b.label));
 
-const DEFAULT_FORM: UpdateWorkspaceBillingDetailsInput = {
-  email: '',
-  name: '',
-  billingAddress: {
-    line1: '',
-    line2: '',
-    postalCode: '',
-    city: '',
-    country: 'US',
-  },
-  taxId: '',
-};
-
 export default function BillingDetailsCard({ wsId }: BillingDetailsCardProps) {
   const t = useTranslations('billing');
   const queryClient = useQueryClient();
-  const [formData, setFormData] =
-    useState<UpdateWorkspaceBillingDetailsInput>(DEFAULT_FORM);
-  const [initialData, setInitialData] =
-    useState<UpdateWorkspaceBillingDetailsInput | null>(null);
+
+  const form = useForm<UpdateWorkspaceBillingDetailsInput>({
+    defaultValues: {
+      email: '',
+      name: '',
+      billingAddress: {
+        line1: '',
+        line2: '',
+        postalCode: '',
+        city: '',
+        country: 'US',
+      },
+      taxId: '',
+    },
+  });
 
   const {
     data: billingDetails,
@@ -79,7 +92,7 @@ export default function BillingDetailsCard({ wsId }: BillingDetailsCardProps) {
   useEffect(() => {
     if (!billingDetails) return;
 
-    const nextFormData: UpdateWorkspaceBillingDetailsInput = {
+    form.reset({
       email: billingDetails.email,
       name: billingDetails.name,
       billingAddress: {
@@ -90,24 +103,8 @@ export default function BillingDetailsCard({ wsId }: BillingDetailsCardProps) {
         country: billingDetails.billingAddress.country as CountryAlpha2Input,
       },
       taxId: billingDetails.taxId,
-    };
-
-    const formSerialized = JSON.stringify(formData);
-    const initialSerialized =
-      initialData !== null ? JSON.stringify(initialData) : null;
-    const nextSerialized = JSON.stringify(nextFormData);
-
-    if (
-      initialSerialized !== null &&
-      nextSerialized === initialSerialized &&
-      formSerialized === initialSerialized
-    ) {
-      return;
-    }
-
-    setFormData(nextFormData);
-    setInitialData(nextFormData);
-  }, [billingDetails, formData, initialData]);
+    });
+  }, [billingDetails, form]);
 
   const updateMutation = useMutation({
     mutationFn: (payload: UpdateWorkspaceBillingDetailsInput) =>
@@ -118,7 +115,7 @@ export default function BillingDetailsCard({ wsId }: BillingDetailsCardProps) {
         return;
       }
 
-      const updatedData: UpdateWorkspaceBillingDetailsInput = {
+      form.reset({
         email: result.data.email,
         name: result.data.name,
         billingAddress: {
@@ -129,10 +126,8 @@ export default function BillingDetailsCard({ wsId }: BillingDetailsCardProps) {
           country: result.data.billingAddress.country as CountryAlpha2Input,
         },
         taxId: result.data.taxId,
-      };
+      });
 
-      setFormData(updatedData);
-      setInitialData(updatedData);
       toast.success(t('billing-details-updated'));
       queryClient.invalidateQueries({
         queryKey: ['workspace-billing-details', wsId],
@@ -143,40 +138,26 @@ export default function BillingDetailsCard({ wsId }: BillingDetailsCardProps) {
     },
   });
 
-  const hasChanges = useMemo(() => {
-    const baseline = initialData ?? DEFAULT_FORM;
-    return JSON.stringify(formData) !== JSON.stringify(baseline);
-  }, [formData, initialData]);
+  const portalMutation = useMutation({
+    mutationFn: () => getWorkspaceCustomerPortalUrl(wsId),
+    onSuccess: (result) => {
+      if (!result.success || !result.data?.url) {
+        toast.error(result.error ?? t('failed-to-open-customer-portal'));
+        return;
+      }
 
-  const isFormDisabled = isLoading || updateMutation.isPending;
+      window.open(result.data.url, '_blank');
+    },
+    onError: () => {
+      toast.error(t('failed-to-open-customer-portal'));
+    },
+  });
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const isFormDisabled =
+    isLoading || updateMutation.isPending || portalMutation.isPending;
 
-    updateMutation.mutate(formData);
-  };
-
-  const handleFieldChange = (
-    field: keyof UpdateWorkspaceBillingDetailsInput,
-    value: string
-  ) => {
-    setFormData((previous) => ({
-      ...previous,
-      [field]: value,
-    }));
-  };
-
-  const handleAddressFieldChange = (
-    field: keyof UpdateWorkspaceBillingDetailsInput['billingAddress'],
-    value: string
-  ) => {
-    setFormData((previous) => ({
-      ...previous,
-      billingAddress: {
-        ...previous.billingAddress,
-        [field]: value,
-      },
-    }));
+  const onSubmit = (data: UpdateWorkspaceBillingDetailsInput) => {
+    updateMutation.mutate(data);
   };
 
   if (isLoading) {
@@ -235,125 +216,181 @@ export default function BillingDetailsCard({ wsId }: BillingDetailsCardProps) {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="billing-email">{t('billing-email')}</Label>
-          <Input
-            id="billing-email"
-            type="email"
-            value={formData.email}
-            onChange={(event) => handleFieldChange('email', event.target.value)}
-            disabled={isFormDisabled}
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('billing-email')}</FormLabel>
+                <FormControl>
+                  <Input {...field} type="email" disabled={isFormDisabled} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="billing-name">{t('billing-name')}</Label>
-          <Input
-            id="billing-name"
-            value={formData.name}
-            onChange={(event) => handleFieldChange('name', event.target.value)}
-            disabled={isFormDisabled}
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('billing-name')}</FormLabel>
+                <FormControl>
+                  <Input {...field} disabled={isFormDisabled} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="billing-line1">{t('billing-address-line-1')}</Label>
           <div className="space-y-2">
-            <Input
-              id="billing-line1"
-              value={formData.billingAddress.line1}
-              onChange={(event) =>
-                handleAddressFieldChange('line1', event.target.value)
-              }
-              disabled={isFormDisabled}
-            />
-            <Input
-              id="billing-line2"
-              value={formData.billingAddress.line2}
-              onChange={(event) =>
-                handleAddressFieldChange('line2', event.target.value)
-              }
-              placeholder={t('billing-address-line-2-placeholder')}
-              disabled={isFormDisabled}
-            />
-            <div className="grid gap-2 md:grid-cols-2">
-              <div className="space-y-1">
-                <Label htmlFor="billing-postal-code">{t('postal-code')}</Label>
-                <Input
-                  id="billing-postal-code"
-                  value={formData.billingAddress.postalCode}
-                  onChange={(event) =>
-                    handleAddressFieldChange('postalCode', event.target.value)
-                  }
-                  disabled={isFormDisabled}
+            <FormLabel>{t('billing-address-line-1')}</FormLabel>
+            <div className="space-y-2">
+              <FormField
+                control={form.control}
+                name="billingAddress.line1"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input {...field} disabled={isFormDisabled} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="billingAddress.line2"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder={t('billing-address-line-2-placeholder')}
+                        disabled={isFormDisabled}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid gap-2 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="billingAddress.postalCode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('postal-code')}</FormLabel>
+                      <FormControl>
+                        <Input {...field} disabled={isFormDisabled} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="billingAddress.city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('city')}</FormLabel>
+                      <FormControl>
+                        <Input {...field} disabled={isFormDisabled} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
 
-              <div className="space-y-1">
-                <Label htmlFor="billing-city">{t('city')}</Label>
-                <Input
-                  id="billing-city"
-                  value={formData.billingAddress.city}
-                  onChange={(event) =>
-                    handleAddressFieldChange('city', event.target.value)
-                  }
-                  disabled={isFormDisabled}
-                />
-              </div>
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="billing-country">{t('country')}</Label>
-              <Select
-                value={formData.billingAddress.country}
-                onValueChange={(value) =>
-                  handleAddressFieldChange(
-                    'country',
-                    value as UpdateWorkspaceBillingDetailsInput['billingAddress']['country']
-                  )
-                }
-                disabled={isFormDisabled}
-              >
-                <SelectTrigger id="billing-country">
-                  <SelectValue placeholder={t('country')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {COUNTRY_OPTIONS.map((country) => (
-                    <SelectItem key={country.code} value={country.code}>
-                      {country.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FormField
+                control={form.control}
+                name="billingAddress.country"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('country')}</FormLabel>
+                    <FormControl>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={isFormDisabled}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('country')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {COUNTRY_OPTIONS.map((country) => (
+                            <SelectItem key={country.code} value={country.code}>
+                              {country.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
           </div>
-        </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="billing-tax-id">{t('tax-id')}</Label>
-          <Input
-            id="billing-tax-id"
-            value={formData.taxId}
-            onChange={(event) => handleFieldChange('taxId', event.target.value)}
-            disabled={isFormDisabled}
+          <FormField
+            control={form.control}
+            name="taxId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('tax-id')}</FormLabel>
+                <FormControl>
+                  <Input {...field} disabled={isFormDisabled} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
 
-        <Button
-          type="submit"
-          disabled={isFormDisabled || !hasChanges}
-          className="min-w-48"
-        >
-          {updateMutation.isPending ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              {t('processing')}
-            </>
-          ) : (
-            t('update-billing-details')
-          )}
-        </Button>
-      </form>
+          <div className="flex gap-4">
+            <Button
+              type="submit"
+              disabled={isFormDisabled || !form.formState.isDirty}
+              className="min-w-48"
+            >
+              {updateMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {t('processing')}
+                </>
+              ) : (
+                t('update-billing-details')
+              )}
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isFormDisabled}
+              onClick={() => portalMutation.mutate()}
+            >
+              {portalMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {t('processing')}
+                </>
+              ) : (
+                <>
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  {t('open-customer-portal')}
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
+      </Form>
     </div>
   );
 }
