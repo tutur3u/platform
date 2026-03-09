@@ -1,7 +1,13 @@
 'use client';
 
 import { formatDuration } from '@tuturuuu/hooks/utils/time-format';
-import { Calendar, Grid3X3, LayoutDashboard, Settings } from '@tuturuuu/icons';
+import {
+  Calendar,
+  Check,
+  Grid3X3,
+  LayoutDashboard,
+  Settings,
+} from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
@@ -78,7 +84,7 @@ export function ActivityHeatmapHeader({
               <Grid3X3 className="mr-2 h-3 w-3" />
               {t('settings.originalGrid')}
               {settings.viewMode === 'original' && (
-                <span className="ml-auto">✓</span>
+                <Check className="ml-auto h-3.5 w-3.5" />
               )}
             </DropdownMenuItem>
 
@@ -89,7 +95,7 @@ export function ActivityHeatmapHeader({
               <Calendar className="mr-2 h-3 w-3" />
               {t('settings.hybridView')}
               {settings.viewMode === 'hybrid' && (
-                <span className="ml-auto">✓</span>
+                <Check className="ml-auto h-3.5 w-3.5" />
               )}
             </DropdownMenuItem>
 
@@ -100,7 +106,7 @@ export function ActivityHeatmapHeader({
               <Calendar className="mr-2 h-3 w-3" />
               {t('settings.calendarOnly')}
               {settings.viewMode === 'calendar-only' && (
-                <span className="ml-auto">✓</span>
+                <Check className="ml-auto h-3.5 w-3.5" />
               )}
             </DropdownMenuItem>
 
@@ -111,7 +117,7 @@ export function ActivityHeatmapHeader({
               <LayoutDashboard className="mr-2 h-3 w-3" />
               {t('settings.compactCards')}
               {settings.viewMode === 'compact-cards' && (
-                <span className="ml-auto">✓</span>
+                <Check className="ml-auto h-3.5 w-3.5" />
               )}
             </DropdownMenuItem>
 

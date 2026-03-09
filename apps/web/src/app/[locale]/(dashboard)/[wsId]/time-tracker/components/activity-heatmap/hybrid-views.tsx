@@ -1,16 +1,21 @@
 'use client';
 
+import '@/lib/dayjs-setup';
 import { formatDuration } from '@tuturuuu/hooks/utils/time-format';
 import { ChevronLeft, ChevronRight } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import type { Dayjs } from 'dayjs';
-import dayjs from 'dayjs';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import type { ActivityDay } from './types';
-import { getColorClass, getIntensity } from './utils';
+import {
+  getColorClass,
+  getIntensity,
+  normalizeActivityDateKey,
+  parseActivityDate,
+} from './utils';
 
 interface YearOverviewProps {
   dailyActivity: ActivityDay[];
@@ -26,15 +31,28 @@ export function YearOverview({
   onSelectMonth,
 }: YearOverviewProps) {
   const t = useTranslations('time-tracker.heatmap');
+  const locale = useLocale();
 
-  const monthlyData = useMemo(() => {
+  const { activeDayCount, monthlyData } = useMemo(() => {
     const monthAggregates = new Map<
       string,
       { totalDuration: number; totalSessions: number; activeDays: number }
     >();
+    const yearStart = today.startOf('year');
+    const yearEnd = yearStart.endOf('year');
+    let yearActiveDays = 0;
 
     dailyActivity.forEach((day) => {
-      const dayDate = dayjs.utc(day.date).tz(userTimezone);
+      const dayDate = parseActivityDate(day.date, userTimezone);
+
+      if (
+        dayDate.isBefore(yearStart, 'day') ||
+        dayDate.isAfter(yearEnd, 'day')
+      ) {
+        return;
+      }
+
+      const isActiveDay = day.duration > 0;
       const monthKey = dayDate.format('YYYY-MM');
       const existing = monthAggregates.get(monthKey) ?? {
         totalDuration: 0,
@@ -45,41 +63,58 @@ export function YearOverview({
       monthAggregates.set(monthKey, {
         totalDuration: existing.totalDuration + day.duration,
         totalSessions: existing.totalSessions + day.sessions,
-        activeDays: existing.activeDays + 1,
+        activeDays: existing.activeDays + (isActiveDay ? 1 : 0),
       });
+
+      if (isActiveDay) {
+        yearActiveDays += 1;
+      }
     });
 
-    return Array.from({ length: 12 }, (_, monthIndex) => {
-      const monthStart = today.startOf('year').add(monthIndex, 'month');
-      const monthKey = monthStart.format('YYYY-MM');
-      const aggregate = monthAggregates.get(monthKey) ?? {
-        totalDuration: 0,
-        totalSessions: 0,
-        activeDays: 0,
-      };
+    return {
+      activeDayCount: yearActiveDays,
+      monthlyData: Array.from({ length: 12 }, (_, monthIndex) => {
+        const monthStart = today.startOf('year').add(monthIndex, 'month');
+        const monthKey = monthStart.format('YYYY-MM');
+        const aggregate = monthAggregates.get(monthKey) ?? {
+          totalDuration: 0,
+          totalSessions: 0,
+          activeDays: 0,
+        };
 
-      const avgDuration =
-        aggregate.activeDays > 0
-          ? aggregate.totalDuration / aggregate.activeDays
-          : 0;
+        const avgDuration =
+          aggregate.activeDays > 0
+            ? aggregate.totalDuration / aggregate.activeDays
+            : 0;
 
-      return {
-        month: monthStart,
-        duration: aggregate.totalDuration,
-        sessions: aggregate.totalSessions,
-        intensity: getIntensity(avgDuration),
-      };
-    });
+        return {
+          month: monthStart,
+          duration: aggregate.totalDuration,
+          sessions: aggregate.totalSessions,
+          intensity: getIntensity(avgDuration),
+        };
+      }),
+    };
   }, [dailyActivity, today, userTimezone]);
+
+  const shortMonthFormatter = useMemo(
+    () => new Intl.DateTimeFormat(locale, { month: 'short' }),
+    [locale]
+  );
+
+  const longMonthFormatter = useMemo(
+    () => new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }),
+    [locale]
+  );
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h4 className="font-medium text-gray-700 text-sm dark:text-gray-300">
+        <h4 className="font-medium text-dynamic-foreground text-sm">
           {t('yearActivityPattern', { year: today.format('YYYY') })}
         </h4>
-        <span className="text-gray-500 text-xs dark:text-gray-400">
-          {t('activeDays', { count: dailyActivity.length })}
+        <span className="text-dynamic-muted-foreground text-xs">
+          {t('activeDays', { count: activeDayCount })}
         </span>
       </div>
 
@@ -90,23 +125,24 @@ export function YearOverview({
               <button
                 type="button"
                 className={cn(
-                  'h-12 rounded-md transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-emerald-400/50',
+                  'flex h-12 flex-col items-center justify-center rounded-md font-medium text-xs transition-all hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-accent/50',
                   getColorClass(month.intensity),
-                  'flex flex-col items-center justify-center font-medium text-xs'
+                  'text-dynamic-foreground'
                 )}
                 onClick={() => onSelectMonth(month.month)}
+                aria-label={longMonthFormatter.format(month.month.toDate())}
               >
                 <span className="text-[10px] opacity-60">
-                  {month.month.format('MMM')}
+                  {shortMonthFormatter.format(month.month.toDate())}
                 </span>
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" sideOffset={4}>
               <div className="text-center">
                 <div className="font-medium">
-                  {month.month.format('MMMM YYYY')}
+                  {longMonthFormatter.format(month.month.toDate())}
                 </div>
-                <div className="text-gray-500 text-sm dark:text-gray-400">
+                <div className="text-dynamic-muted-foreground text-sm">
                   {formatDuration(month.duration)} •{' '}
                   {t('sessions', { count: month.sessions })}
                 </div>
@@ -141,18 +177,31 @@ export function MonthlyCalendarView({
   navigateToHistoryDay,
 }: MonthlyCalendarViewProps) {
   const t = useTranslations('time-tracker.heatmap');
+  const locale = useLocale();
 
   const activityByDate = useMemo(() => {
     const map = new Map<string, ActivityDay>();
     dailyActivity.forEach((activity) => {
-      const key = dayjs
-        .utc(activity.date)
-        .tz(userTimezone)
-        .format('YYYY-MM-DD');
-      map.set(key, activity);
+      map.set(normalizeActivityDateKey(activity.date, userTimezone), activity);
     });
     return map;
   }, [dailyActivity, userTimezone]);
+
+  const monthFormatter = useMemo(
+    () => new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }),
+    [locale]
+  );
+
+  const fullDateFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      }),
+    [locale]
+  );
 
   const monthStart = currentMonth.startOf('month');
   const monthEnd = currentMonth.endOf('month');
@@ -197,10 +246,10 @@ export function MonthlyCalendarView({
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h4 className="font-semibold text-base text-gray-900 dark:text-gray-100">
-            {currentMonth.format('MMMM YYYY')}
+          <h4 className="font-semibold text-base text-dynamic-foreground">
+            {monthFormatter.format(currentMonth.toDate())}
           </h4>
-          <div className="flex items-center gap-3 text-gray-600 text-xs dark:text-gray-400">
+          <div className="flex items-center gap-3 text-dynamic-muted-foreground text-xs">
             <span>{t('activeDays', { count: monthlyStats.activeDays })}</span>
             <span>
               {t('trackedDuration', {
@@ -217,8 +266,13 @@ export function MonthlyCalendarView({
             type="button"
             onClick={onPrevMonth}
             className="h-7 w-7"
+            aria-label={t('aria.previousMonth', {
+              month: monthFormatter.format(
+                currentMonth.subtract(1, 'month').toDate()
+              ),
+            })}
           >
-            <ChevronLeft className="h-3.5 w-3.5" />
+            <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
           </Button>
           <Button
             variant="ghost"
@@ -226,14 +280,19 @@ export function MonthlyCalendarView({
             type="button"
             onClick={onNextMonth}
             className="h-7 w-7"
+            aria-label={t('aria.nextMonth', {
+              month: monthFormatter.format(
+                currentMonth.add(1, 'month').toDate()
+              ),
+            })}
           >
-            <ChevronRight className="h-3.5 w-3.5" />
+            <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
           </Button>
         </div>
       </div>
 
       <div className="space-y-2">
-        <div className="grid grid-cols-7 gap-1.5 text-center font-medium text-gray-500 text-xs dark:text-gray-400">
+        <div className="grid grid-cols-7 gap-1.5 text-center font-medium text-dynamic-muted-foreground text-xs">
           {[
             t('days.mon'),
             t('days.tue'),
@@ -260,17 +319,18 @@ export function MonthlyCalendarView({
                     type="button"
                     onClick={() => navigateToHistoryDay(day.date)}
                     className={cn(
-                      'relative h-8 w-full rounded-md font-medium text-xs transition-all focus:outline-none',
-                      'hover:z-10 hover:scale-105 focus:z-10 focus:scale-105',
+                      'relative flex h-8 w-full items-center justify-center rounded-md font-medium text-xs transition-all focus-visible:outline-none',
+                      'hover:z-10 hover:scale-105 focus-visible:z-10 focus-visible:scale-105 focus-visible:ring-2 focus-visible:ring-dynamic-accent/50',
                       day.isCurrentMonth
-                        ? 'text-gray-900 dark:text-gray-100'
-                        : 'text-gray-400 dark:text-gray-600',
+                        ? 'text-dynamic-foreground'
+                        : 'text-dynamic-muted-foreground/60',
                       day.activity
                         ? getColorClass(intensity)
-                        : 'bg-gray-100/50 hover:bg-gray-100 dark:bg-gray-800/50 dark:hover:bg-gray-800',
-                      day.isToday && 'ring-2 ring-blue-500 ring-offset-1',
-                      'flex items-center justify-center'
+                        : `${getColorClass(0)} hover:opacity-90`,
+                      day.isToday &&
+                        'ring-(--heatmap-level-4) ring-2 ring-offset-1 ring-offset-background'
                     )}
+                    aria-label={fullDateFormatter.format(day.date.toDate())}
                   >
                     {day.date.format('D')}
                   </button>
@@ -280,18 +340,18 @@ export function MonthlyCalendarView({
                     <div className="font-medium">
                       {day.date.format('dddd, DD/MM/YYYY')}
                       {timeReference === 'smart' && (
-                        <div className="text-gray-500 text-xs dark:text-gray-400">
+                        <div className="text-dynamic-muted-foreground text-xs">
                           {day.date.fromNow()}
                         </div>
                       )}
                     </div>
                     {day.activity ? (
-                      <div className="text-emerald-600 text-sm dark:text-emerald-400">
+                      <div className="text-dynamic-foreground text-sm">
                         {formatDuration(day.activity.duration)} •{' '}
                         {t('sessions', { count: day.activity.sessions })}
                       </div>
                     ) : (
-                      <div className="text-gray-500 text-sm dark:text-gray-400">
+                      <div className="text-dynamic-muted-foreground text-sm">
                         {t('noActivityRecorded')}
                       </div>
                     )}

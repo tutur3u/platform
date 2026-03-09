@@ -96,28 +96,35 @@ export function SessionHistory({
     }
   );
 
-  const viewMode = historyParams.period ?? 'week';
+  const viewMode = historyParams.historyPeriod ?? 'week';
 
   const currentDate = useMemo(
-    () => parseSessionHistoryDate(historyParams.date, userTimezone),
-    [historyParams.date, userTimezone]
+    () => parseSessionHistoryDate(historyParams.historyDate, userTimezone),
+    [historyParams.historyDate, userTimezone]
   );
 
   useEffect(() => {
     const normalizedDate = formatSessionHistoryDate(currentDate);
+    const nextParams: Partial<typeof historyParams> = {};
 
-    if (historyParams.date === normalizedDate) return;
+    if (historyParams.historyDate !== normalizedDate) {
+      nextParams.historyDate = normalizedDate;
+    }
 
-    void setHistoryParams({ date: normalizedDate });
-  }, [currentDate, historyParams.date, setHistoryParams]);
+    if (historyParams.historyPeriod !== viewMode) {
+      nextParams.historyPeriod = viewMode;
+    }
 
-  useEffect(() => {
-    if (historyParams.period === viewMode) return;
+    if (Object.keys(nextParams).length === 0) return;
 
-    void setHistoryParams({
-      period: viewMode,
-    });
-  }, [historyParams.period, setHistoryParams, viewMode]);
+    void setHistoryParams(nextParams);
+  }, [
+    currentDate,
+    historyParams.historyDate,
+    historyParams.historyPeriod,
+    setHistoryParams,
+    viewMode,
+  ]);
 
   // Week overview collapsible state — persisted to localStorage
   const [overviewOpen, setOverviewOpen] = useState(() => {
@@ -244,7 +251,7 @@ export function SessionHistory({
   const handleViewModeChange = useCallback(
     (mode: ViewMode) => {
       void setHistoryParams({
-        period: mode,
+        historyPeriod: mode,
       });
     },
     [setHistoryParams]
@@ -252,19 +259,19 @@ export function SessionHistory({
 
   const goToPrevious = useCallback(() => {
     void setHistoryParams({
-      date: formatSessionHistoryDate(currentDate.subtract(1, viewMode)),
+      historyDate: formatSessionHistoryDate(currentDate.subtract(1, viewMode)),
     });
   }, [currentDate, setHistoryParams, viewMode]);
 
   const goToNext = useCallback(() => {
     void setHistoryParams({
-      date: formatSessionHistoryDate(currentDate.add(1, viewMode)),
+      historyDate: formatSessionHistoryDate(currentDate.add(1, viewMode)),
     });
   }, [currentDate, setHistoryParams, viewMode]);
 
   const goToToday = useCallback(() => {
     void setHistoryParams({
-      date: formatSessionHistoryDate(dayjs().tz(userTimezone)),
+      historyDate: formatSessionHistoryDate(dayjs().tz(userTimezone)),
     });
   }, [setHistoryParams, userTimezone]);
 

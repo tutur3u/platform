@@ -1,5 +1,6 @@
 'use client';
 
+import '@/lib/dayjs-setup';
 import dayjs from 'dayjs';
 import { useMemo } from 'react';
 import type {
@@ -7,6 +8,7 @@ import type {
   CompactHeatmapCard,
   MonthlyAggregate,
 } from '../types';
+import { normalizeActivityDateKey, parseActivityDate } from '../utils';
 
 export function useActivityAnalytics(
   dailyActivity: ActivityDay[],
@@ -25,8 +27,8 @@ export function useActivityAnalytics(
     const dataObj: Record<string, number> = {};
 
     dailyActivity.forEach((activity) => {
-      const activityDate = dayjs.utc(activity.date).tz(userTimezone);
-      dataObj[activityDate.format('YYYY-MM-DD')] = activity.duration;
+      dataObj[normalizeActivityDateKey(activity.date, userTimezone)] =
+        activity.duration;
     });
 
     return dataObj;
@@ -40,8 +42,7 @@ export function useActivityAnalytics(
     const map = new Map<string, { duration: number; sessions: number }>();
 
     dailyActivity.forEach((activity) => {
-      const activityDate = dayjs.utc(activity.date).tz(userTimezone);
-      map.set(activityDate.format('YYYY-MM-DD'), activity);
+      map.set(normalizeActivityDateKey(activity.date, userTimezone), activity);
     });
 
     return map;
@@ -61,13 +62,12 @@ export function useActivityAnalytics(
     );
 
     sortedActivity.forEach((activity, index) => {
-      const date = dayjs.utc(activity.date).tz(userTimezone);
+      const dateKey = normalizeActivityDateKey(activity.date, userTimezone);
+      const date = parseActivityDate(activity.date, userTimezone);
       const monthKey = date.format('YYYY-MM');
-      const monthName = date.format('MMM YYYY');
 
       if (!acc[monthKey]) {
         acc[monthKey] = {
-          name: monthName,
           totalDuration: 0,
           activeDays: 0,
           totalSessions: 0,
@@ -83,8 +83,11 @@ export function useActivityAnalytics(
       const monthData = acc[monthKey]!;
       monthData.totalDuration += activity.duration;
       monthData.totalSessions += activity.sessions;
-      monthData.activeDays += 1;
-      monthData.dates.push({ date, activity });
+
+      if (activity.duration > 0) {
+        monthData.activeDays += 1;
+        monthData.dates.push({ date: dateKey, activity });
+      }
 
       if (date.day() === 0 || date.day() === 6) {
         monthData.weekends += 1;
@@ -95,14 +98,14 @@ export function useActivityAnalytics(
       if (activity.duration > monthData.bestDay.duration) {
         monthData.bestDay = {
           duration: activity.duration,
-          date: date.format('MMM D'),
+          date: dateKey,
         };
       }
 
       if (index > 0) {
         const prevActivity = sortedActivity[index - 1];
         if (prevActivity) {
-          const prevDate = dayjs.utc(prevActivity.date).tz(userTimezone);
+          const prevDate = parseActivityDate(prevActivity.date, userTimezone);
           const prevMonthKey = prevDate.format('YYYY-MM');
 
           if (prevMonthKey === monthKey) {
@@ -251,7 +254,6 @@ export function useActivityAnalytics(
       cards.push({
         type: 'upcoming',
         monthKey: nextMonth.format('YYYY-MM'),
-        name: nextMonth.format('MMM YYYY'),
         isSubtle: true,
       });
     }

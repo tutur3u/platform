@@ -1,13 +1,21 @@
 'use client';
 
+import '@/lib/dayjs-setup';
 import { Heatmap } from '@mantine/charts';
 import { ScrollArea } from '@mantine/core';
 import { formatDuration } from '@tuturuuu/hooks/utils/time-format';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import { useTranslations } from 'next-intl';
 import { useCallback } from 'react';
 import type { DateRangeConfig, HeatmapSize } from './types';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.extend(relativeTime);
 
 interface OriginalHeatmapViewProps {
   classes: Record<string, string>;

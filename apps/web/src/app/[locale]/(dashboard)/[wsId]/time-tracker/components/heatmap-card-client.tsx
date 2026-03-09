@@ -1,10 +1,9 @@
 'use client';
 
+import '@/lib/dayjs-setup';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import dayjs from 'dayjs';
-import timezone from 'dayjs/plugin/timezone';
-import utc from 'dayjs/plugin/utc';
 import dynamic from 'next/dynamic';
 import type { DailyActivity } from '@/lib/time-tracking-helper';
 
@@ -14,9 +13,6 @@ const ActivityHeatmap = dynamic(
     ssr: false,
   }
 );
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
 
 type HeatmapCardClientProps = {
   wsId: string;

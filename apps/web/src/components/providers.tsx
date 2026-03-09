@@ -1,3 +1,4 @@
+import '@/lib/dayjs-setup';
 import { NextIntlClientProvider } from 'next-intl';
 import { ThemeProvider } from 'next-themes';
 import type { ReactNode } from 'react';

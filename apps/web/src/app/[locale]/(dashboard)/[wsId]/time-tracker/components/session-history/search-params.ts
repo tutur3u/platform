@@ -13,8 +13,8 @@ export const SESSION_HISTORY_DATE_FORMAT = 'YYYY-MM-DD';
 export const sessionHistoryViewModes = ['day', 'week', 'month'] as const;
 
 export const sessionHistorySearchParamParsers = {
-  period: parseAsStringLiteral(sessionHistoryViewModes),
-  date: parseAsString,
+  historyPeriod: parseAsStringLiteral(sessionHistoryViewModes),
+  historyDate: parseAsString,
 };
 
 export function parseSessionHistoryDate(

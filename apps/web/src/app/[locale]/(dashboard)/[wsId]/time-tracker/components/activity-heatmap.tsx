@@ -1,14 +1,10 @@
 'use client';
 
-import dayjs from 'dayjs';
-import isBetween from 'dayjs/plugin/isBetween';
-import isoWeek from 'dayjs/plugin/isoWeek';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import timezone from 'dayjs/plugin/timezone';
-import utc from 'dayjs/plugin/utc';
-import 'dayjs/locale/vi';
+import '@/lib/dayjs-setup';
 import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
 import { useIsMobile } from '@tuturuuu/ui/hooks/use-mobile';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
+import dayjs from 'dayjs';
 import { usePathname, useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { useCallback, useMemo, useState } from 'react';
@@ -31,12 +27,6 @@ import { OnboardingTip } from './activity-heatmap/onboarding-tip';
 import { OriginalHeatmapView } from './activity-heatmap/original-heatmap-view';
 import type { ActivityDay } from './activity-heatmap/types';
 import { formatSessionHistoryDate } from './session-history/search-params';
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
-dayjs.extend(isoWeek);
-dayjs.extend(relativeTime);
-dayjs.extend(isBetween);
 
 interface ActivityHeatmapProps {
   dailyActivity?: ActivityDay[];
@@ -75,8 +65,8 @@ export function ActivityHeatmap({ dailyActivity = [] }: ActivityHeatmapProps) {
     (value: string | dayjs.Dayjs) => {
       const date = typeof value === 'string' ? dayjs(value) : value;
       const params = new URLSearchParams({
-        period: 'day',
-        date: formatSessionHistoryDate(date),
+        historyPeriod: 'day',
+        historyDate: formatSessionHistoryDate(date),
       });
 
       router.push(`${historyPath}?${params.toString()}`);
@@ -91,7 +81,9 @@ export function ActivityHeatmap({ dailyActivity = [] }: ActivityHeatmapProps) {
     });
 
   return (
-    <div className="relative space-y-4 overflow-visible sm:space-y-5">
+    <div
+      className={`${classes.heatmapColors} relative space-y-4 overflow-visible sm:space-y-5`}
+    >
       <ActivityHeatmapHeader
         totalDuration={totalDuration}
         settings={settings}
@@ -100,12 +92,28 @@ export function ActivityHeatmap({ dailyActivity = [] }: ActivityHeatmapProps) {
           setSettings({ ...settings, viewMode });
         }}
         onSmartTimeToggle={(checked) => {
-          setSettings({
-            ...settings,
-            timeReference:
-              checked || settings.timeReference !== 'smart'
-                ? 'smart'
-                : 'relative',
+          setSettings((prev) => {
+            const previousNonSmartReference =
+              prev.timeReference === 'absolute' ||
+              prev.timeReference === 'relative'
+                ? prev.timeReference
+                : prev.timeReferenceFallback;
+
+            if (checked) {
+              return {
+                ...prev,
+                timeReference: 'smart',
+                timeReferenceFallback: previousNonSmartReference ?? 'relative',
+              };
+            }
+
+            return {
+              ...prev,
+              timeReference:
+                prev.timeReferenceFallback === 'absolute'
+                  ? 'absolute'
+                  : 'relative',
+            };
           });
         }}
         onOnboardingTipsToggle={(checked) => {
@@ -124,23 +132,26 @@ export function ActivityHeatmap({ dailyActivity = [] }: ActivityHeatmapProps) {
         />
       )}
 
-      {settings.viewMode === 'original' && (
-        <OriginalHeatmapView
-          classes={classes}
-          isMobile={isMobile}
-          dateRangeConfig={dateRangeConfig}
-          heatmapSize={heatmapSize}
-          heatmapData={heatmapData}
-          activityMap={activityMap}
-          timeReference={settings.timeReference}
-          today={today}
-          navigateToHistoryDay={navigateToHistoryDay}
-        />
-      )}
+      {settings.viewMode === 'original' &&
+        (dateRangeConfig && heatmapSize ? (
+          <OriginalHeatmapView
+            classes={classes}
+            isMobile={isMobile}
+            dateRangeConfig={dateRangeConfig}
+            heatmapSize={heatmapSize}
+            heatmapData={heatmapData}
+            activityMap={activityMap}
+            timeReference={settings.timeReference}
+            today={today}
+            navigateToHistoryDay={navigateToHistoryDay}
+          />
+        ) : (
+          <OriginalHeatmapLoadingState />
+        ))}
 
       {settings.viewMode === 'hybrid' && (
         <div className="space-y-4">
-          <div className="rounded-lg border bg-gray-50/50 p-3 dark:border-gray-700/60 dark:bg-gray-800/30">
+          <div className="rounded-lg border border-dynamic-border/60 bg-dynamic-surface/60 p-3">
             <YearOverview
               dailyActivity={dailyActivity}
               today={today}
@@ -149,7 +160,7 @@ export function ActivityHeatmap({ dailyActivity = [] }: ActivityHeatmapProps) {
             />
           </div>
 
-          <div className="rounded-lg border bg-white/50 p-3 dark:border-gray-700/60 dark:bg-gray-900/30">
+          <div className="rounded-lg border border-dynamic-border/60 bg-dynamic-surface/70 p-3">
             <MonthlyCalendarView
               currentMonth={currentMonth}
               onPrevMonth={() =>
@@ -167,7 +178,7 @@ export function ActivityHeatmap({ dailyActivity = [] }: ActivityHeatmapProps) {
       )}
 
       {settings.viewMode === 'calendar-only' && (
-        <div className="rounded-lg border bg-white/50 p-3 dark:border-gray-700/60 dark:bg-gray-900/30">
+        <div className="rounded-lg border border-dynamic-border/60 bg-dynamic-surface/70 p-3">
           <MonthlyCalendarView
             currentMonth={currentMonth}
             onPrevMonth={() =>
@@ -186,6 +197,19 @@ export function ActivityHeatmap({ dailyActivity = [] }: ActivityHeatmapProps) {
       {settings.viewMode === 'compact-cards' && (
         <CompactCardsView cards={allCards} />
       )}
+    </div>
+  );
+}
+
+function OriginalHeatmapLoadingState() {
+  return (
+    <div className="rounded-lg border border-dynamic-border/60 bg-dynamic-surface/50 p-4">
+      <div className="mb-4 flex flex-wrap gap-2">
+        <Skeleton className="h-4 w-16 rounded-md" />
+        <Skeleton className="h-4 w-20 rounded-md" />
+        <Skeleton className="h-4 w-14 rounded-md" />
+      </div>
+      <Skeleton className="h-64 w-full rounded-md" />
     </div>
   );
 }

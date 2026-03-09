@@ -22,12 +22,14 @@ export type HeatmapViewMode =
 export interface HeatmapSettings {
   viewMode: HeatmapViewMode;
   timeReference: 'relative' | 'absolute' | 'smart';
+  timeReferenceFallback?: 'relative' | 'absolute';
   showOnboardingTips: boolean;
 }
 
 export const DEFAULT_SETTINGS: HeatmapSettings = {
   viewMode: 'hybrid',
   timeReference: 'smart',
+  timeReferenceFallback: 'relative',
   showOnboardingTips: true,
 };
 
@@ -38,10 +40,10 @@ export function HeatmapDisplaySettings() {
     useLocalStorage<HeatmapSettings>('heatmap-settings', DEFAULT_SETTINGS);
 
   const updateSettings = (updates: Partial<HeatmapSettings>) => {
-    setHeatmapSettings({
-      ...heatmapSettings,
+    setHeatmapSettings((prev) => ({
+      ...prev,
       ...updates,
-    });
+    }));
   };
 
   return (
@@ -116,7 +118,17 @@ export function HeatmapDisplaySettings() {
           <Select
             value={heatmapSettings.timeReference}
             onValueChange={(value: 'relative' | 'absolute' | 'smart') => {
-              updateSettings({ timeReference: value });
+              setHeatmapSettings((prev) => ({
+                ...prev,
+                timeReference: value,
+                timeReferenceFallback:
+                  value === 'smart'
+                    ? prev.timeReference === 'absolute' ||
+                      prev.timeReference === 'relative'
+                      ? prev.timeReference
+                      : prev.timeReferenceFallback
+                    : value,
+              }));
             }}
           >
             <SelectTrigger id="time-reference">

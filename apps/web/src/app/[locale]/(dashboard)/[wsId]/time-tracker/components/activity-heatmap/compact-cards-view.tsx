@@ -1,12 +1,12 @@
 'use client';
 
+import '@/lib/dayjs-setup';
 import { formatDuration } from '@tuturuuu/hooks/utils/time-format';
 import { ChevronLeft, ChevronRight } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
-import isoWeek from 'dayjs/plugin/isoWeek';
-import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
 import type {
   CompactHeatmapCard,
   MonthlyAggregate,
@@ -14,7 +14,30 @@ import type {
 } from './types';
 import { getColorClass, getIntensity } from './utils';
 
-dayjs.extend(isoWeek);
+const cardClassName =
+  'group relative overflow-hidden rounded-lg border border-dynamic-border/60 bg-dynamic-surface/70 p-3 shadow-sm transition-all hover:shadow-md';
+const metricLabelClassName = 'text-dynamic-muted-foreground';
+const metricValueClassName = 'font-medium text-dynamic-foreground';
+const heatmapBadgeStyle = {
+  backgroundColor: 'var(--heatmap-level-1)',
+  borderColor: 'var(--heatmap-level-2)',
+  color: 'var(--heatmap-level-4)',
+};
+const heatmapDotStyle = {
+  backgroundColor: 'var(--heatmap-level-3)',
+};
+const MAX_VISIBLE_CARDS = 4;
+
+function formatMonthLabel(
+  monthKey: string,
+  locale: string,
+  month: 'short' | 'long' = 'short'
+) {
+  return new Intl.DateTimeFormat(locale, {
+    month,
+    year: 'numeric',
+  }).format(dayjs(`${monthKey}-01`).toDate());
+}
 
 function getMonthGridDays(monthKey: string) {
   const monthStart = dayjs(`${monthKey}-01`);
@@ -31,53 +54,44 @@ function SummaryCard({ data }: { data: OverallStats }) {
   const t = useTranslations('time-tracker.heatmap');
 
   return (
-    <div className="group relative overflow-hidden rounded-lg border bg-linear-to-br from-blue-50 to-indigo-50 p-3 shadow-sm transition-all hover:shadow-md dark:border-blue-800/30 dark:from-blue-950/20 dark:to-indigo-950/20">
+    <div className={cardClassName}>
       <div className="mb-2 flex items-center justify-between">
         <div>
-          <h4 className="font-semibold text-blue-900 text-sm dark:text-blue-100">
+          <h4 className="font-semibold text-dynamic-foreground text-sm">
             {t('cards.overall')}
           </h4>
-          <span className="text-blue-600 text-xs dark:text-blue-300">
+          <span className="text-dynamic-muted-foreground text-xs">
             {t('monthsCount', { count: data.monthCount })}
           </span>
         </div>
-        <div className="rounded-full bg-blue-100 px-2 py-1 font-medium text-blue-700 text-xs dark:bg-blue-900/50 dark:text-blue-300">
+        <div
+          className="rounded-full border px-2 py-1 font-medium text-xs"
+          style={heatmapBadgeStyle}
+        >
           {data.focusScore}%
         </div>
       </div>
 
       <div className="mb-2 grid grid-cols-2 gap-2 text-xs">
         <div>
-          <div className="text-blue-600 dark:text-blue-400">
-            {t('cards.total')}
-          </div>
-          <div className="font-medium text-blue-900 dark:text-blue-100">
+          <div className={metricLabelClassName}>{t('cards.total')}</div>
+          <div className={metricValueClassName}>
             {formatDuration(data.totalDuration)}
           </div>
         </div>
         <div>
-          <div className="text-blue-600 dark:text-blue-400">
-            {t('cards.daily')}
-          </div>
-          <div className="font-medium text-blue-900 dark:text-blue-100">
+          <div className={metricLabelClassName}>{t('cards.daily')}</div>
+          <div className={metricValueClassName}>
             {formatDuration(Math.round(data.avgDaily))}
           </div>
         </div>
         <div>
-          <div className="text-blue-600 dark:text-blue-400">
-            {t('cards.sessions')}
-          </div>
-          <div className="font-medium text-blue-900 dark:text-blue-100">
-            {data.totalSessions}
-          </div>
+          <div className={metricLabelClassName}>{t('cards.sessions')}</div>
+          <div className={metricValueClassName}>{data.totalSessions}</div>
         </div>
         <div>
-          <div className="text-blue-600 dark:text-blue-400">
-            {t('cards.days')}
-          </div>
-          <div className="font-medium text-blue-900 dark:text-blue-100">
-            {data.activeDays}
-          </div>
+          <div className={metricLabelClassName}>{t('cards.days')}</div>
+          <div className={metricValueClassName}>{data.activeDays}</div>
         </div>
       </div>
     </div>
@@ -96,25 +110,24 @@ function MonthlyCard({
   trendValue: number;
 }) {
   const t = useTranslations('time-tracker.heatmap');
+  const locale = useLocale();
   const avgDailyDuration =
     data.activeDays > 0 ? data.totalDuration / data.activeDays : 0;
 
   return (
-    <div className="group relative overflow-hidden rounded-lg border bg-linear-to-br from-green-50 to-emerald-50 p-3 shadow-sm transition-all hover:shadow-md dark:border-green-800/30 dark:from-green-950/20 dark:to-emerald-950/20">
+    <div className={cardClassName}>
       <div className="mb-2 flex items-center justify-between">
         <div>
-          <h4 className="font-semibold text-green-900 text-sm dark:text-green-100">
-            {data.name}
+          <h4 className="font-semibold text-dynamic-foreground text-sm">
+            {formatMonthLabel(monthKey, locale)}
           </h4>
           <div className="flex items-center gap-1">
-            <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
+            <div className="h-1.5 w-1.5 rounded-full" style={heatmapDotStyle} />
             {trend !== 'neutral' && (
               <span
                 className={cn(
                   'font-medium text-xs',
-                  trend === 'up'
-                    ? 'text-green-600 dark:text-green-400'
-                    : 'text-red-600 dark:text-red-400'
+                  trend === 'up' ? 'text-dynamic-green' : 'text-dynamic-red'
                 )}
               >
                 {trend === 'up' ? '↗' : '↘'}
@@ -127,36 +140,24 @@ function MonthlyCard({
 
       <div className="mb-2 grid grid-cols-2 gap-2 text-xs">
         <div>
-          <div className="text-green-600 dark:text-green-400">
-            {t('cards.total')}
-          </div>
-          <div className="font-medium text-green-900 dark:text-green-100">
+          <div className={metricLabelClassName}>{t('cards.total')}</div>
+          <div className={metricValueClassName}>
             {formatDuration(data.totalDuration)}
           </div>
         </div>
         <div>
-          <div className="text-green-600 dark:text-green-400">
-            {t('cards.daily')}
-          </div>
-          <div className="font-medium text-green-900 dark:text-green-100">
+          <div className={metricLabelClassName}>{t('cards.daily')}</div>
+          <div className={metricValueClassName}>
             {formatDuration(Math.round(avgDailyDuration))}
           </div>
         </div>
         <div>
-          <div className="text-green-600 dark:text-green-400">
-            {t('cards.sessions')}
-          </div>
-          <div className="font-medium text-green-900 dark:text-green-100">
-            {data.totalSessions}
-          </div>
+          <div className={metricLabelClassName}>{t('cards.sessions')}</div>
+          <div className={metricValueClassName}>{data.totalSessions}</div>
         </div>
         <div>
-          <div className="text-green-600 dark:text-green-400">
-            {t('cards.days')}
-          </div>
-          <div className="font-medium text-green-900 dark:text-green-100">
-            {data.activeDays}
-          </div>
+          <div className={metricLabelClassName}>{t('cards.days')}</div>
+          <div className={metricValueClassName}>{data.activeDays}</div>
         </div>
       </div>
 
@@ -166,8 +167,7 @@ function MonthlyCard({
             const monthStart = dayjs(`${monthKey}-01`);
 
             const dayActivity = data.dates.find(
-              (d) =>
-                d.date.format('YYYY-MM-DD') === currentDay.format('YYYY-MM-DD')
+              (d) => d.date === currentDay.format('YYYY-MM-DD')
             );
 
             const isCurrentMonth = currentDay.month() === monthStart.month();
@@ -183,7 +183,7 @@ function MonthlyCard({
                   isCurrentMonth
                     ? dayActivity?.activity
                       ? getColorClass(dayIntensity)
-                      : 'bg-green-100 dark:bg-green-900/30'
+                      : getColorClass(0)
                     : 'bg-transparent'
                 )}
               />
@@ -195,15 +195,16 @@ function MonthlyCard({
   );
 }
 
-function UpcomingCard({ monthKey, name }: { monthKey: string; name: string }) {
+function UpcomingCard({ monthKey }: { monthKey: string }) {
   const t = useTranslations('time-tracker.heatmap');
+  const locale = useLocale();
 
   return (
     <div className="group relative overflow-hidden rounded-lg border border-muted/40 bg-linear-to-br from-muted/20 to-muted/10 p-3 opacity-60 backdrop-blur-sm transition-all hover:from-muted/30 hover:to-muted/20 hover:opacity-80">
       <div className="mb-2 flex items-center justify-between">
         <div>
           <h4 className="font-semibold text-muted-foreground/80 text-sm">
-            {name}
+            {formatMonthLabel(monthKey, locale)}
           </h4>
           <span className="text-muted-foreground/60 text-xs">
             {t('cards.nextMonth')}
@@ -265,44 +266,44 @@ function GettingStartedCard() {
   const t = useTranslations('time-tracker.heatmap');
 
   return (
-    <div className="group relative overflow-hidden rounded-lg border bg-linear-to-br from-purple-50 to-violet-50 p-3 shadow-sm transition-all hover:shadow-md dark:border-purple-800/30 dark:from-purple-950/20 dark:to-violet-950/20">
+    <div className={cardClassName}>
       <div className="mb-2 flex items-center justify-between">
         <div>
-          <h4 className="font-semibold text-purple-900 text-sm dark:text-purple-100">
+          <h4 className="font-semibold text-dynamic-foreground text-sm">
             {t('cards.getStarted')}
           </h4>
-          <span className="text-purple-600 text-xs dark:text-purple-300">
+          <span className="text-dynamic-muted-foreground text-xs">
             {t('cards.beginJourney')}
           </span>
         </div>
-        <div className="rounded-full bg-purple-100 px-2 py-1 font-medium text-purple-700 text-xs dark:bg-purple-900/50 dark:text-purple-300">
+        <div className="rounded-full border border-dynamic-border/50 bg-dynamic-accent/40 px-2 py-1 font-medium text-dynamic-foreground text-xs">
           {t('cards.new')}
         </div>
       </div>
 
       <div className="space-y-2 text-xs">
         <div className="flex items-center gap-2">
-          <div className="h-1 w-1 rounded-full bg-purple-500" />
-          <span className="text-purple-700 dark:text-purple-300">
+          <div className="h-1 w-1 rounded-full bg-dynamic-accent" />
+          <span className="text-dynamic-foreground">
             {t('cards.startTimerSession')}
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="h-1 w-1 rounded-full bg-purple-500" />
-          <span className="text-purple-700 dark:text-purple-300">
+          <div className="h-1 w-1 rounded-full bg-dynamic-accent" />
+          <span className="text-dynamic-foreground">
             {t('cards.buildDailyHabits')}
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="h-1 w-1 rounded-full bg-purple-500" />
-          <span className="text-purple-700 dark:text-purple-300">
+          <div className="h-1 w-1 rounded-full bg-dynamic-accent" />
+          <span className="text-dynamic-foreground">
             {t('cards.trackProgress')}
           </span>
         </div>
       </div>
 
-      <div className="mt-3 border-purple-200 border-t pt-2 dark:border-purple-800">
-        <p className="text-purple-700 text-xs dark:text-purple-300">
+      <div className="mt-3 border-dynamic-border/50 border-t pt-2">
+        <p className="text-dynamic-muted-foreground text-xs">
           {t('cards.pomodoroTip')}
         </p>
       </div>
@@ -323,12 +324,24 @@ function CompactCardsContainer({
 }) {
   const t = useTranslations('time-tracker.heatmap');
   const totalCards = cards.length;
-  const canScrollLeft = currentIndex > 0;
-  const canScrollRight = currentIndex < totalCards - maxVisibleCards;
+  const maxStartIndex = Math.max(0, totalCards - maxVisibleCards);
+  const clampedIndex = Math.max(
+    0,
+    Math.min(currentIndex, Math.max(0, totalCards - maxVisibleCards))
+  );
+  const totalPages = Math.ceil(totalCards / maxVisibleCards);
+  const currentPage =
+    totalPages > 1 &&
+    clampedIndex === maxStartIndex &&
+    totalCards % maxVisibleCards !== 0
+      ? totalPages - 1
+      : Math.floor(clampedIndex / maxVisibleCards);
+  const canScrollLeft = clampedIndex > 0;
+  const canScrollRight = clampedIndex < maxStartIndex;
 
   const visibleCards = cards.slice(
-    currentIndex,
-    currentIndex + maxVisibleCards
+    clampedIndex,
+    clampedIndex + maxVisibleCards
   );
 
   return (
@@ -339,7 +352,12 @@ function CompactCardsContainer({
             type="button"
             onClick={() => {
               if (canScrollLeft) {
-                setCurrentIndex(Math.max(0, currentIndex - 1));
+                setCurrentIndex(
+                  Math.max(
+                    0,
+                    Math.min((currentPage - 1) * maxVisibleCards, maxStartIndex)
+                  )
+                );
               }
             }}
             disabled={!canScrollLeft}
@@ -359,7 +377,10 @@ function CompactCardsContainer({
             onClick={() => {
               if (canScrollRight) {
                 setCurrentIndex(
-                  Math.min(totalCards - maxVisibleCards, currentIndex + 1)
+                  Math.max(
+                    0,
+                    Math.min((currentPage + 1) * maxVisibleCards, maxStartIndex)
+                  )
                 );
               }
             }}
@@ -406,7 +427,6 @@ function CompactCardsContainer({
                 <UpcomingCard
                   key={`upcoming-${card.monthKey}`}
                   monthKey={card.monthKey}
-                  name={card.name}
                 />
               );
             }
@@ -418,23 +438,24 @@ function CompactCardsContainer({
 
       {totalCards > maxVisibleCards && (
         <div className="mt-3 flex justify-center gap-1">
-          {Array.from(
-            { length: Math.ceil(totalCards / maxVisibleCards) },
-            (_, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setCurrentIndex(i * maxVisibleCards)}
-                className={cn(
-                  'h-2 w-2 rounded-full transition-all',
-                  Math.floor(currentIndex / maxVisibleCards) === i
-                    ? 'bg-primary'
-                    : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
-                )}
-                aria-label={t('aria.goToPage', { page: i + 1 })}
-              />
-            )
-          )}
+          {Array.from({ length: totalPages }, (_, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() =>
+                setCurrentIndex(
+                  Math.max(0, Math.min(i * maxVisibleCards, maxStartIndex))
+                )
+              }
+              className={cn(
+                'h-2 w-2 rounded-full transition-all',
+                currentPage === i
+                  ? 'bg-primary'
+                  : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
+              )}
+              aria-label={t('aria.goToPage', { page: i + 1 })}
+            />
+          ))}
         </div>
       )}
     </div>
@@ -447,13 +468,21 @@ interface CompactCardsViewProps {
 
 export function CompactCardsView({ cards }: CompactCardsViewProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const maxStartIndex = Math.max(0, cards.length - MAX_VISIBLE_CARDS);
+  const clampedIndex = Math.max(0, Math.min(currentIndex, maxStartIndex));
+
+  useEffect(() => {
+    if (currentIndex !== clampedIndex) {
+      setCurrentIndex(clampedIndex);
+    }
+  }, [clampedIndex, currentIndex]);
 
   return (
     <CompactCardsContainer
       cards={cards}
       currentIndex={currentIndex}
       setCurrentIndex={setCurrentIndex}
-      maxVisibleCards={4}
+      maxVisibleCards={MAX_VISIBLE_CARDS}
     />
   );
 }

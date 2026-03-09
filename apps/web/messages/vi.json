@@ -8268,7 +8268,9 @@
         "activityFor": "Hoạt động cho {date}: {duration}",
         "goToPage": "Đi đến trang {page}",
         "nextCards": "Thẻ tiếp theo",
-        "previousCards": "Thẻ trước"
+        "nextMonth": "Tháng tiếp theo: {month}",
+        "previousCards": "Thẻ trước",
+        "previousMonth": "Tháng trước: {month}"
       },
       "cards": {
         "beginJourney": "Bắt đầu hành trình của bạn",
@@ -8363,7 +8365,7 @@
       "today": "Hôm nay",
       "tracked": "Đã ghi nhận",
       "trackedDuration": "Đã ghi nhận: {duration}",
-      "trackedThisYear": "{duration} đã được ghi nhận trong năm nay 🔥",
+      "trackedThisYear": "{duration} đã được ghi nhận trong năm nay",
       "view": "Chế độ xem",
       "yearActivityPattern": "Mẫu hoạt động năm {year}"
     },

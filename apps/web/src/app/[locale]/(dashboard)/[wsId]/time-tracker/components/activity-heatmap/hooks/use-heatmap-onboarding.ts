@@ -17,17 +17,21 @@ interface UseHeatmapOnboardingResult {
 export function useHeatmapOnboarding(
   settings: HeatmapSettings
 ): UseHeatmapOnboardingResult {
-  const [onboardingState, setOnboardingState] =
+  const currentViewMode = settings.viewMode ?? ('original' as HeatmapViewMode);
+
+  const [onboardingState, setOnboardingState, isOnboardingStateInitialized] =
     useLocalStorage<OnboardingState>('time-tracker-onboarding', {
       showTips: true,
       dismissedAt: null,
       viewCount: 0,
-      lastViewMode: 'original' as HeatmapViewMode,
+      lastViewMode: currentViewMode,
     });
 
   const autoHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevViewModeRef = useRef(onboardingState.lastViewMode);
 
   const shouldShowOnboardingTips = useMemo<boolean>(() => {
+    if (!isOnboardingStateInitialized) return false;
     if (!settings.showOnboardingTips) return false;
 
     const isNewUser = onboardingState.viewCount < 3;
@@ -52,6 +56,7 @@ export function useHeatmapOnboarding(
 
     return Boolean(isNewUser || changedViewMode);
   }, [
+    isOnboardingStateInitialized,
     settings.showOnboardingTips,
     settings.viewMode,
     onboardingState.showTips,
@@ -61,7 +66,16 @@ export function useHeatmapOnboarding(
   ]);
 
   useEffect(() => {
-    if (settings.viewMode !== onboardingState.lastViewMode) {
+    if (isOnboardingStateInitialized) {
+      prevViewModeRef.current = onboardingState.lastViewMode;
+    }
+  }, [isOnboardingStateInitialized, onboardingState.lastViewMode]);
+
+  useEffect(() => {
+    if (!isOnboardingStateInitialized) return;
+
+    if (settings.viewMode !== prevViewModeRef.current) {
+      prevViewModeRef.current = settings.viewMode;
       setOnboardingState((prev) => ({
         ...prev,
         viewCount: prev.viewCount + 1,
@@ -70,7 +84,7 @@ export function useHeatmapOnboarding(
         dismissedAt: null,
       }));
     }
-  }, [settings.viewMode, onboardingState.lastViewMode, setOnboardingState]);
+  }, [isOnboardingStateInitialized, settings.viewMode, setOnboardingState]);
 
   const handleDismissTips = useCallback(() => {
     setOnboardingState((prev) => ({
@@ -86,7 +100,11 @@ export function useHeatmapOnboarding(
   }, [setOnboardingState]);
 
   useEffect(() => {
-    if (shouldShowOnboardingTips && onboardingState.viewCount >= 5) {
+    if (
+      isOnboardingStateInitialized &&
+      shouldShowOnboardingTips &&
+      onboardingState.viewCount >= 5
+    ) {
       autoHideTimerRef.current = setTimeout(() => {
         handleDismissTips();
       }, 45000);
@@ -100,7 +118,12 @@ export function useHeatmapOnboarding(
     }
 
     return;
-  }, [shouldShowOnboardingTips, onboardingState.viewCount, handleDismissTips]);
+  }, [
+    isOnboardingStateInitialized,
+    shouldShowOnboardingTips,
+    onboardingState.viewCount,
+    handleDismissTips,
+  ]);
 
   useEffect(
     () => () => {

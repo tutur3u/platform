@@ -1,5 +1,6 @@
 'use client';
 
+import '@/lib/dayjs-setup';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 import type { DateRangeConfig, HeatmapSize } from '../types';
@@ -72,17 +73,10 @@ function buildConfig(width: number) {
 }
 
 export function useResponsiveHeatmapConfig() {
-  const [heatmapSize, setHeatmapSize] = useState<HeatmapSize>({
-    rectSize: 14,
-    rectRadius: 2,
-    gap: 3,
-  });
+  const [heatmapSize, setHeatmapSize] = useState<HeatmapSize | null>(null);
 
-  const [dateRangeConfig, setDateRangeConfig] = useState<DateRangeConfig>({
-    startDate: dayjs().subtract(364, 'day').format('YYYY-MM-DD'),
-    endDate: dayjs().format('YYYY-MM-DD'),
-    withOutsideDates: true,
-  });
+  const [dateRangeConfig, setDateRangeConfig] =
+    useState<DateRangeConfig | null>(null);
 
   useEffect(() => {
     const updateSize = () => {

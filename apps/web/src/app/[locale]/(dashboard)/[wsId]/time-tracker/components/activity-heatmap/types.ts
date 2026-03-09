@@ -1,8 +1,8 @@
-import type dayjs from 'dayjs';
 import type { HeatmapViewMode } from '@/components/settings/time-tracker/heatmap-display-settings';
 
 export interface ActivityDay {
   date: string;
+  /** Duration in seconds. */
   duration: number;
   sessions: number;
 }
@@ -27,12 +27,11 @@ export interface OnboardingState {
 }
 
 export interface MonthlyActivityDate {
-  date: dayjs.Dayjs;
+  date: string;
   activity: { duration: number; sessions: number };
 }
 
 export interface MonthlyAggregate {
-  name: string;
   totalDuration: number;
   activeDays: number;
   totalSessions: number;
@@ -65,5 +64,5 @@ export type CompactHeatmapCard =
       trend: MonthlyTrend;
       trendValue: number;
     }
-  | { type: 'upcoming'; monthKey: string; name: string; isSubtle?: boolean }
+  | { type: 'upcoming'; monthKey: string; isSubtle?: boolean }
   | { type: 'getting-started' };
