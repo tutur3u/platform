@@ -24,9 +24,11 @@ vi.mock('@tuturuuu/icons', () => ({
   ImagePlus: (props: any) => <svg {...props} />,
   ListChecks: (props: any) => <svg {...props} />,
   MessageSquare: (props: any) => <svg {...props} />,
+  MoreHorizontal: (props: any) => <svg {...props} />,
   Minus: (props: any) => <svg {...props} />,
   Play: (props: any) => <svg {...props} />,
   Plus: (props: any) => <svg {...props} />,
+  Shield: (props: any) => <svg {...props} />,
   Star: (props: any) => <svg {...props} />,
   Trash: (props: any) => <svg {...props} />,
 }));
@@ -78,6 +80,30 @@ vi.mock('@tuturuuu/ui/collapsible', () => ({
     <div {...props}>{children}</div>
   ),
   CollapsibleTrigger: ({ children }: any) => <>{children}</>,
+}));
+
+vi.mock('@tuturuuu/ui/dropdown-menu', () => ({
+  DropdownMenu: ({ children }: any) => <div>{children}</div>,
+  DropdownMenuTrigger: ({ children }: any) => <div>{children}</div>,
+  DropdownMenuContent: ({ children }: any) => <div>{children}</div>,
+  DropdownMenuItem: ({ children, onClick, onSelect }: any) => (
+    <div
+      onClick={(e) => {
+        if (onClick) onClick(e);
+        if (onSelect) onSelect(e);
+      }}
+      role="menuitem"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          if (onClick) onClick(e as any);
+          if (onSelect) onSelect(e as any);
+        }
+      }}
+    >
+      {children}
+    </div>
+  ),
 }));
 
 vi.mock('@tuturuuu/ui/input', () => ({

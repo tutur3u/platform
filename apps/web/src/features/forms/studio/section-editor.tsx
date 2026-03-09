@@ -34,6 +34,13 @@ import {
   CollapsibleTrigger,
 } from '@tuturuuu/ui/collapsible';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@tuturuuu/ui/dialog';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -92,6 +99,8 @@ export function SectionEditor({
   const t = useTranslations('forms');
   const [actionsOpen, setActionsOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [sectionInfoExpanded, setSectionInfoExpanded] = useState(true);
+
   const questionSensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -148,7 +157,7 @@ export function SectionEditor({
 
   const addQuestion = (type: Parameters<typeof createQuestionInput>[0]) => {
     const nextQuestion = createQuestionInput(type, t);
-
+    setSectionInfoExpanded(false);
     questionsArray.append(nextQuestion);
     onActiveQuestionChange(nextQuestion.id);
   };
@@ -187,7 +196,7 @@ export function SectionEditor({
   };
 
   return (
-    <Collapsible open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <Card
         ref={setNodeRef}
         style={style}
@@ -214,7 +223,7 @@ export function SectionEditor({
             >
               <GripVertical className="h-4 w-4" />
             </Button>
-            <CollapsibleTrigger asChild>
+            <DialogTrigger asChild>
               <Button
                 type="button"
                 variant="ghost"
@@ -271,14 +280,8 @@ export function SectionEditor({
                     </div>
                   </div>
                 </div>
-                <ChevronDown
-                  className={cn(
-                    'h-4 w-4 transition-transform',
-                    open && 'rotate-180'
-                  )}
-                />
               </Button>
-            </CollapsibleTrigger>
+            </DialogTrigger>
             <div className="flex items-center gap-1">
               <DropdownMenu open={actionsOpen} onOpenChange={setActionsOpen}>
                 <DropdownMenuTrigger asChild>
@@ -347,157 +350,235 @@ export function SectionEditor({
           onConfirm={onRemove}
           title={t('studio.delete_section_title')}
         />
-        <CollapsibleContent className="overflow-hidden border-border/60 border-t data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
-          <div className="space-y-5 px-5 py-4">
-            <div className="grid gap-4">
-              <div className="space-y-1.5">
-                <Label>
-                  <FieldLabel icon={FileText}>
-                    {t('studio.section_title')}
-                  </FieldLabel>
-                </Label>
-                <FormsRichTextEditor
-                  value={sectionTitle || ''}
-                  onChange={(nextValue) =>
-                    form.setValue(`sections.${index}.title`, nextValue, {
-                      shouldDirty: true,
-                    })
-                  }
-                  toneClasses={toneClasses}
-                  compact
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>
-                  <FieldLabel icon={MessageSquare}>
-                    {t('studio.section_description')}
-                  </FieldLabel>
-                </Label>
-                <FormsRichTextEditor
-                  value={sectionDescription || ''}
-                  onChange={(nextValue) =>
-                    form.setValue(`sections.${index}.description`, nextValue, {
-                      shouldDirty: true,
-                    })
-                  }
-                  placeholder={t('studio.section_description_hint')}
-                  toneClasses={toneClasses}
-                />
-              </div>
-              <div>
-                <FormMediaField
-                  wsId={wsId}
-                  scope="section"
-                  value={
-                    sectionImage ?? {
-                      storagePath: '',
-                      url: '',
-                      alt: '',
-                    }
-                  }
-                  onChange={(value) =>
-                    form.setValue(`sections.${index}.image`, value, {
-                      shouldDirty: true,
-                    })
-                  }
-                  toneClasses={toneClasses}
-                  label={t('studio.section_image')}
-                  hint={t('studio.section_image_hint')}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <DndContext
-                sensors={questionSensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleQuestionDragEnd}
+        <DialogContent className="flex max-h-dvh max-w-[100vw] flex-col gap-0 overflow-hidden p-0 sm:max-h-[90vh] sm:max-w-5xl sm:rounded-3xl">
+          <DialogHeader className="border-border/60 border-b px-5 py-4">
+            <DialogTitle className={cn('truncate', studioTitleClassName)}>
+              {sectionTitle || t('studio.untitled_section')}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto">
+            <div className="space-y-5 px-5 py-6">
+              <div
+                className={cn(
+                  'overflow-hidden rounded-2xl border transition-all duration-300',
+                  sectionInfoExpanded
+                    ? 'border-foreground/20 bg-background/95 shadow-md'
+                    : 'border-border/60 bg-muted/30 hover:bg-muted/40'
+                )}
               >
-                <SortableContext
-                  items={questionsArray.fields.map(
-                    (field, questionIndex) =>
-                      watchedQuestions?.[questionIndex]?.id ?? field.id
-                  )}
-                  strategy={verticalListSortingStrategy}
+                <Collapsible
+                  open={sectionInfoExpanded}
+                  onOpenChange={(nextOpen) => {
+                    setSectionInfoExpanded(nextOpen);
+                    if (nextOpen) {
+                      onActiveQuestionChange('');
+                    }
+                  }}
                 >
-                  {questionsArray.fields.map((field, questionIndex) => {
-                    const questionFormId =
-                      watchedQuestions?.[questionIndex]?.id ?? field.id;
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="h-auto w-full justify-start rounded-none px-4 py-3 hover:bg-transparent"
+                    >
+                      <div className="flex w-full items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={cn(
+                              'flex h-9 w-9 items-center justify-center rounded-xl border bg-background/50',
+                              toneClasses.selectedOptionClassName
+                            )}
+                          >
+                            <ClipboardList className="h-4 w-4" />
+                          </div>
+                          <div className="text-left">
+                            <h4 className="font-semibold text-base tracking-tight">
+                              {t('studio.section_details')}
+                            </h4>
+                            <p className="text-muted-foreground text-xs">
+                              {t('studio.first_impression_hint')}
+                            </p>
+                          </div>
+                        </div>
+                        <ChevronDown
+                          className={cn(
+                            'h-4 w-4 text-muted-foreground transition-transform duration-300',
+                            sectionInfoExpanded ? 'rotate-180' : 'rotate-0'
+                          )}
+                        />
+                      </div>
+                    </Button>
+                  </CollapsibleTrigger>
 
-                    return (
-                      <div key={field.id} className="space-y-3">
-                        <QuestionEditor
-                          wsId={wsId}
-                          questionId={questionFormId}
-                          sectionIndex={index}
-                          questionIndex={questionIndex}
-                          form={form}
-                          open={activeQuestionId === questionFormId}
-                          onOpenChange={(nextOpen) =>
-                            onActiveQuestionChange(
-                              nextOpen ? questionFormId : ''
+                  <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+                    <div className="grid gap-5 border-border/60 border-t px-4 pt-4 pb-5">
+                      <div className="space-y-1.5">
+                        <Label className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+                          <FieldLabel icon={FileText}>
+                            {t('studio.section_title')}
+                          </FieldLabel>
+                        </Label>
+                        <FormsRichTextEditor
+                          value={sectionTitle || ''}
+                          onChange={(nextValue) =>
+                            form.setValue(
+                              `sections.${index}.title`,
+                              nextValue,
+                              {
+                                shouldDirty: true,
+                              }
                             )
                           }
                           toneClasses={toneClasses}
-                          onMoveUp={() =>
-                            questionIndex > 0 &&
-                            questionsArray.move(
-                              questionIndex,
-                              questionIndex - 1
-                            )
-                          }
-                          onMoveDown={() =>
-                            questionIndex < questionsArray.fields.length - 1 &&
-                            questionsArray.move(
-                              questionIndex,
-                              questionIndex + 1
-                            )
-                          }
-                          onDuplicate={() => {
-                            const question = form.getValues(
-                              `sections.${index}.questions.${questionIndex}`
-                            );
-
-                            if (!question) {
-                              return;
-                            }
-
-                            const nextQuestion =
-                              duplicateQuestionInput(question);
-
-                            questionsArray.insert(
-                              questionIndex + 1,
-                              nextQuestion
-                            );
-                            onActiveQuestionChange(nextQuestion.id);
-                          }}
-                          onRemove={() => {
-                            questionsArray.remove(questionIndex);
-                            if (activeQuestionId === questionFormId) {
-                              onActiveQuestionChange('');
-                            }
-                          }}
+                          compact
                         />
-                        <div className="flex justify-center">
-                          <BlockInserter
-                            compact
-                            toneClasses={toneClasses}
-                            onSelect={(type) =>
-                              insertQuestionAt(questionIndex + 1, type)
-                            }
-                          />
-                        </div>
                       </div>
-                    );
-                  })}
-                </SortableContext>
-              </DndContext>
+                      <div className="space-y-1.5">
+                        <Label className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+                          <FieldLabel icon={MessageSquare}>
+                            {t('studio.section_description')}
+                          </FieldLabel>
+                        </Label>
+                        <FormsRichTextEditor
+                          value={sectionDescription || ''}
+                          onChange={(nextValue) =>
+                            form.setValue(
+                              `sections.${index}.description`,
+                              nextValue,
+                              {
+                                shouldDirty: true,
+                              }
+                            )
+                          }
+                          placeholder={t('studio.section_description_hint')}
+                          toneClasses={toneClasses}
+                        />
+                      </div>
+                      <div className="mt-2">
+                        <FormMediaField
+                          wsId={wsId}
+                          scope="section"
+                          value={
+                            sectionImage ?? {
+                              storagePath: '',
+                              url: '',
+                              alt: '',
+                            }
+                          }
+                          onChange={(value) =>
+                            form.setValue(`sections.${index}.image`, value, {
+                              shouldDirty: true,
+                            })
+                          }
+                          toneClasses={toneClasses}
+                          label={t('studio.section_image')}
+                          hint={t('studio.section_image_hint')}
+                        />
+                      </div>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              </div>
 
-              <BlockInserter toneClasses={toneClasses} onSelect={addQuestion} />
+              <div className="space-y-3">
+                <DndContext
+                  sensors={questionSensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleQuestionDragEnd}
+                >
+                  <SortableContext
+                    items={questionsArray.fields.map(
+                      (field, questionIndex) =>
+                        watchedQuestions?.[questionIndex]?.id ?? field.id
+                    )}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {questionsArray.fields.map((field, questionIndex) => {
+                      const questionFormId =
+                        watchedQuestions?.[questionIndex]?.id ?? field.id;
+
+                      return (
+                        <div key={field.id} className="space-y-3">
+                          <QuestionEditor
+                            wsId={wsId}
+                            questionId={questionFormId}
+                            sectionIndex={index}
+                            questionIndex={questionIndex}
+                            form={form}
+                            open={activeQuestionId === questionFormId}
+                            onOpenChange={(nextOpen) => {
+                              if (nextOpen) {
+                                setSectionInfoExpanded(false);
+                              }
+                              onActiveQuestionChange(
+                                nextOpen ? questionFormId : ''
+                              );
+                            }}
+                            toneClasses={toneClasses}
+                            onMoveUp={() =>
+                              questionIndex > 0 &&
+                              questionsArray.move(
+                                questionIndex,
+                                questionIndex - 1
+                              )
+                            }
+                            onMoveDown={() =>
+                              questionIndex <
+                                questionsArray.fields.length - 1 &&
+                              questionsArray.move(
+                                questionIndex,
+                                questionIndex + 1
+                              )
+                            }
+                            onDuplicate={() => {
+                              const question = form.getValues(
+                                `sections.${index}.questions.${questionIndex}`
+                              );
+
+                              if (!question) {
+                                return;
+                              }
+
+                              const nextQuestion =
+                                duplicateQuestionInput(question);
+
+                              questionsArray.insert(
+                                questionIndex + 1,
+                                nextQuestion
+                              );
+                              onActiveQuestionChange(nextQuestion.id);
+                            }}
+                            onRemove={() => {
+                              questionsArray.remove(questionIndex);
+                              if (activeQuestionId === questionFormId) {
+                                onActiveQuestionChange('');
+                              }
+                            }}
+                          />
+                          <div className="flex justify-center">
+                            <BlockInserter
+                              compact
+                              toneClasses={toneClasses}
+                              onSelect={(type) =>
+                                insertQuestionAt(questionIndex + 1, type)
+                              }
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </SortableContext>
+                </DndContext>
+
+                <BlockInserter
+                  toneClasses={toneClasses}
+                  onSelect={addQuestion}
+                />
+              </div>
             </div>
           </div>
-        </CollapsibleContent>
+        </DialogContent>
       </Card>
-    </Collapsible>
+    </Dialog>
   );
 }

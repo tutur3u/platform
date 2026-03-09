@@ -5,9 +5,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
-  CircleCheckBig,
   Flag,
-  ListChecks,
   Mail,
   Star,
   ZoomIn,
@@ -39,7 +37,6 @@ import { isAnswerableQuestionType } from './block-utils';
 import { getNextSectionTarget } from './branching';
 import { normalizeMarkdownToText } from './content';
 import { FORM_FONT_VARIABLES, getFormFontStyle } from './fonts';
-import { QuestionTypeIcon } from './form-icons';
 import { FormsImageDialog } from './forms-image-dialog';
 import { FormsMarkdown } from './forms-markdown';
 import { getRuntimeProgressStats } from './runtime-progress';
@@ -409,7 +406,6 @@ function QuestionBlock({
                 : ''
             )}
           >
-            <QuestionTypeIcon type={question.type} className="h-3.5 w-3.5" />
             <span>{questionTypeLabel}</span>
           </Badge>
           {question.required ? (
@@ -623,14 +619,6 @@ function QuestionBlock({
                     </div>
                   ) : null}
                   <div className="flex items-start gap-2">
-                    <CircleCheckBig
-                      className={cn(
-                        'mt-0.5 h-4 w-4 shrink-0',
-                        validationError && value !== option.value
-                          ? 'text-dynamic-red/60'
-                          : 'text-muted-foreground'
-                      )}
-                    />
                     <FormsMarkdown
                       content={option.label}
                       className={cn(
@@ -737,14 +725,6 @@ function QuestionBlock({
                       </div>
                     ) : null}
                     <div className="flex items-start gap-2">
-                      <ListChecks
-                        className={cn(
-                          'mt-0.5 h-4 w-4 shrink-0',
-                          validationError && !checked
-                            ? 'text-dynamic-red/60'
-                            : 'text-muted-foreground'
-                        )}
-                      />
                       <FormsMarkdown
                         content={option.label}
                         className={cn(
@@ -865,16 +845,6 @@ function QuestionBlock({
         >
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex items-start gap-3">
-              <span
-                className={cn(
-                  'flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border bg-background/70 shadow-sm',
-                  validationError
-                    ? '!border-dynamic-red/30 text-dynamic-red'
-                    : 'border-border/60 text-muted-foreground'
-                )}
-              >
-                <QuestionTypeIcon type={question.type} className="h-4 w-4" />
-              </span>
               <div className="space-y-1">
                 <p
                   className={cn(
