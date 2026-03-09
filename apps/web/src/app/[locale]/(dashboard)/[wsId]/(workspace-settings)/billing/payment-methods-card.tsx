@@ -143,20 +143,23 @@ export default function PaymentMethodsCard({ wsId }: PaymentMethodsCardProps) {
     },
   });
 
-  // Handle add payment method - redirect to Polar portal
-  const handleAddPaymentMethod = async () => {
-    try {
-      const result = await getWorkspaceCustomerPortalUrl(wsId);
-      if (result.success && result.data?.url) {
-        window.open(result.data.url, '_blank', 'noopener,noreferrer');
-      } else {
+  // Add payment method mutation
+  const addPaymentMethodMutation = useMutation({
+    mutationFn: () => getWorkspaceCustomerPortalUrl(wsId),
+    onSuccess: (result) => {
+      if (!result.success || !result.data?.url) {
         toast.error(result.error ?? t('failed-to-open-customer-portal'));
+        return;
       }
-    } catch (error) {
-      console.error(error);
+
+      const url = new URL(result.data.url);
+      url.pathname += '/settings';
+      window.open(url.toString(), '_blank', 'noopener,noreferrer');
+    },
+    onError: () => {
       toast.error(t('failed-to-open-customer-portal'));
-    }
-  };
+    },
+  });
 
   // Render loading state
   if (isLoading) {
@@ -230,9 +233,23 @@ export default function PaymentMethodsCard({ wsId }: PaymentMethodsCardProps) {
 
       <div className="space-y-4">
         <div className="flex items-center justify-end">
-          <Button variant="outline" size="sm" onClick={handleAddPaymentMethod}>
-            <CreditCard className="mr-2 h-4 w-4" />
-            {t('add-payment-method')}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => addPaymentMethodMutation.mutate()}
+            disabled={addPaymentMethodMutation.isPending}
+          >
+            {addPaymentMethodMutation.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {t('processing')}
+              </>
+            ) : (
+              <>
+                <CreditCard className="mr-2 h-4 w-4" />
+                {t('add-payment-method')}
+              </>
+            )}
           </Button>
         </div>
 
@@ -291,10 +308,20 @@ export default function PaymentMethodsCard({ wsId }: PaymentMethodsCardProps) {
             <Button
               variant="outline"
               size="sm"
-              onClick={handleAddPaymentMethod}
+              onClick={() => addPaymentMethodMutation.mutate()}
+              disabled={addPaymentMethodMutation.isPending}
             >
-              <ExternalLink className="mr-2 h-4 w-4" />
-              {t('add-payment-method')}
+              {addPaymentMethodMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {t('processing')}
+                </>
+              ) : (
+                <>
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  {t('add-payment-method')}
+                </>
+              )}
             </Button>
           </div>
         )}
