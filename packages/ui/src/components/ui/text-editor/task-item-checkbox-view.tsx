@@ -68,7 +68,7 @@ export function TaskItemCheckboxContent({
     });
   }, [editor, getPos, node.attrs, checkboxState]);
 
-  const handleCheckboxMouseDown = useCallback(
+  const handleCheckboxClick = useCallback(
     (event: React.MouseEvent<HTMLButtonElement>) => {
       event.preventDefault();
       event.stopPropagation();
@@ -94,7 +94,7 @@ export function TaskItemCheckboxContent({
                 : 'Unchecked'
           }
           aria-disabled={!editor.isEditable}
-          onMouseDown={handleCheckboxMouseDown}
+          onClick={handleCheckboxClick}
           className={cn(
             'task-list-checkbox flex h-4.5 w-4.5 items-center justify-center',
             'cursor-pointer rounded-lg border-2 bg-background',
