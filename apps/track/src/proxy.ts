@@ -4,6 +4,7 @@ import {
   propagateAuthCookies,
 } from '@tuturuuu/auth/proxy';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
 import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
@@ -45,6 +46,14 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
   // Skip locale handling for API routes
   if (req.nextUrl.pathname.startsWith('/api')) {
+    const guardResponse = await guardApiProxyRequest(req, {
+      prefixBase: 'proxy:track:api',
+    });
+    if (guardResponse) {
+      propagateAuthCookies(authRes, guardResponse);
+      return guardResponse;
+    }
+
     return authRes;
   }
 

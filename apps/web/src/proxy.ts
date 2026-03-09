@@ -9,6 +9,7 @@ import {
   isIPBlockedEdge,
 } from '@tuturuuu/utils/abuse-protection/edge';
 import { MAX_PAYLOAD_SIZE, ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { validateRequestEmojiLimit } from '@tuturuuu/utils/request-emoji-limit';
 import { getUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
 import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { Ratelimit } from '@upstash/ratelimit';
@@ -254,82 +255,87 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
   // Rate-limit API routes at the edge BEFORE any serverless execution
   if (req.nextUrl.pathname.startsWith('/api')) {
-    if (isDev) return NextResponse.next(); // Skip rate limiting in development for easier testing
+    if (!isDev) {
+      initRateLimiters();
+      const ip = extractIPFromRequest(req.headers);
 
-    initRateLimiters();
-    const ip = extractIPFromRequest(req.headers);
-
-    if (ip !== 'unknown') {
-      // Check persistent IP block (Redis cache only — fast)
-      const blockInfo = await isIPBlockedEdge(ip);
-      if (blockInfo) {
-        const retryAfter = Math.max(
-          1,
-          Math.ceil((blockInfo.expiresAt.getTime() - Date.now()) / 1000)
-        );
-        if (isDev) {
-          console.warn(
-            `[RateLimit] IP BLOCKED — IP: ${ip} | reason: ${blockInfo.reason} | level: ${blockInfo.blockLevel} | expires in: ${retryAfter}s`
-          );
-        }
-        return NextResponse.json(
-          { error: 'Too Many Requests', message: 'Rate limit exceeded' },
-          {
-            status: 429,
-            headers: { 'Retry-After': `${retryAfter}` },
-          }
-        );
-      }
-
-      // Sliding window rate limit by IP — split by method category
-      const isUsersMeRoute =
-        req.nextUrl.pathname.startsWith('/api/v1/users/me');
-      const isRead = req.method === 'GET' || req.method === 'HEAD';
-      const limiter = isUsersMeRoute
-        ? isRead
-          ? usersMeGetLimiter
-          : usersMeMutateLimiter
-        : isRead
-          ? apiGetLimiter
-          : apiMutateLimiter;
-
-      if (limiter) {
-        const { success, limit, remaining, reset } = await limiter.limit(ip);
-
-        // Development logging: show consumed/total per request
-        if (isDev) {
-          const consumed = limit - remaining;
-          const tier = isUsersMeRoute ? 'users-me' : 'api';
-          const kind = isRead ? 'read' : 'mutate';
-          console.log(
-            `[RateLimit] ${consumed}/${limit} consumed | remaining: ${remaining} | IP: ${ip} | tier: ${tier}:${kind} | path: ${req.nextUrl.pathname}`
-          );
-        }
-
-        if (!success) {
+      if (ip !== 'unknown') {
+        // Check persistent IP block (Redis cache only — fast)
+        const blockInfo = await isIPBlockedEdge(ip);
+        if (blockInfo) {
           const retryAfter = Math.max(
             1,
-            Math.ceil((reset - Date.now()) / 1000)
+            Math.ceil((blockInfo.expiresAt.getTime() - Date.now()) / 1000)
           );
           if (isDev) {
             console.warn(
-              `[RateLimit] BLOCKED — IP: ${ip} | path: ${req.nextUrl.pathname} | retry in: ${retryAfter}s`
+              `[RateLimit] IP BLOCKED — IP: ${ip} | reason: ${blockInfo.reason} | level: ${blockInfo.blockLevel} | expires in: ${retryAfter}s`
             );
           }
           return NextResponse.json(
             { error: 'Too Many Requests', message: 'Rate limit exceeded' },
             {
               status: 429,
-              headers: {
-                'Retry-After': `${retryAfter}`,
-                'X-RateLimit-Limit': `${limit}`,
-                'X-RateLimit-Remaining': `${remaining}`,
-                'X-RateLimit-Reset': `${Math.ceil(reset / 1000)}`,
-              },
+              headers: { 'Retry-After': `${retryAfter}` },
             }
           );
         }
+
+        // Sliding window rate limit by IP — split by method category
+        const isUsersMeRoute =
+          req.nextUrl.pathname.startsWith('/api/v1/users/me');
+        const isRead = req.method === 'GET' || req.method === 'HEAD';
+        const limiter = isUsersMeRoute
+          ? isRead
+            ? usersMeGetLimiter
+            : usersMeMutateLimiter
+          : isRead
+            ? apiGetLimiter
+            : apiMutateLimiter;
+
+        if (limiter) {
+          const { success, limit, remaining, reset } = await limiter.limit(ip);
+
+          // Development logging: show consumed/total per request
+          if (isDev) {
+            const consumed = limit - remaining;
+            const tier = isUsersMeRoute ? 'users-me' : 'api';
+            const kind = isRead ? 'read' : 'mutate';
+            console.log(
+              `[RateLimit] ${consumed}/${limit} consumed | remaining: ${remaining} | IP: ${ip} | tier: ${tier}:${kind} | path: ${req.nextUrl.pathname}`
+            );
+          }
+
+          if (!success) {
+            const retryAfter = Math.max(
+              1,
+              Math.ceil((reset - Date.now()) / 1000)
+            );
+            if (isDev) {
+              console.warn(
+                `[RateLimit] BLOCKED — IP: ${ip} | path: ${req.nextUrl.pathname} | retry in: ${retryAfter}s`
+              );
+            }
+            return NextResponse.json(
+              { error: 'Too Many Requests', message: 'Rate limit exceeded' },
+              {
+                status: 429,
+                headers: {
+                  'Retry-After': `${retryAfter}`,
+                  'X-RateLimit-Limit': `${limit}`,
+                  'X-RateLimit-Remaining': `${remaining}`,
+                  'X-RateLimit-Reset': `${Math.ceil(reset / 1000)}`,
+                },
+              }
+            );
+          }
+        }
       }
+    }
+
+    const emojiLimitResponse = await validateRequestEmojiLimit(req);
+    if (emojiLimitResponse) {
+      return emojiLimitResponse;
     }
 
     // API routes skip auth proxy and locale handling

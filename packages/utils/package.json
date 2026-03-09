@@ -20,6 +20,7 @@
     "@tuturuuu/google": "workspace:*",
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
+    "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.36.3",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",

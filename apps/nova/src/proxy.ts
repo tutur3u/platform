@@ -3,6 +3,7 @@ import {
   createCentralizedAuthProxy,
   propagateAuthCookies,
 } from '@tuturuuu/auth/proxy';
+import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import Negotiator from 'negotiator';
 import type { NextRequest, NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
@@ -39,6 +40,14 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
   // Skip locale handling for API routes
   if (req.nextUrl.pathname.startsWith('/api')) {
+    const guardResponse = await guardApiProxyRequest(req, {
+      prefixBase: 'proxy:nova:api',
+    });
+    if (guardResponse) {
+      propagateAuthCookies(authRes, guardResponse);
+      return guardResponse;
+    }
+
     return authRes;
   }
 

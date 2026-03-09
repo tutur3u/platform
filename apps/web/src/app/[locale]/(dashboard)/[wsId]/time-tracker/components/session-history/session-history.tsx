@@ -36,6 +36,7 @@ import isoWeek from 'dayjs/plugin/isoWeek';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useTranslations } from 'next-intl';
+import { useQueryStates } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { SessionWithRelations } from '../../types';
 import MissedEntryDialog from '../missed-entry-dialog';
@@ -44,6 +45,11 @@ import { EditSessionDialog } from './edit-session-dialog';
 import { MonthView } from './month-view';
 import { PendingRequestsBanner } from './pending-requests-banner';
 import { PeriodNavigation } from './period-navigation';
+import {
+  formatSessionHistoryDate,
+  parseSessionHistoryDate,
+  sessionHistorySearchParamParsers,
+} from './search-params';
 import { SessionFilters } from './session-filters';
 import { SessionStats } from './session-stats';
 import type {
@@ -80,11 +86,45 @@ export function SessionHistory({
   const { data: thresholdData, isLoading: isLoadingThreshold } =
     useWorkspaceTimeThreshold(wsId);
 
-  // View state - moved before query so it can be used in query key
-  const [viewMode, setViewMode] = useState<ViewMode>('week');
-  const [currentDate, setCurrentDate] = useState(dayjs());
-
   const userTimezone = dayjs.tz.guess();
+
+  const [historyParams, setHistoryParams] = useQueryStates(
+    sessionHistorySearchParamParsers,
+    {
+      history: 'replace',
+      shallow: true,
+    }
+  );
+
+  const viewMode = historyParams.historyPeriod ?? 'week';
+
+  const currentDate = useMemo(
+    () => parseSessionHistoryDate(historyParams.historyDate, userTimezone),
+    [historyParams.historyDate, userTimezone]
+  );
+
+  useEffect(() => {
+    const normalizedDate = formatSessionHistoryDate(currentDate);
+    const nextParams: Partial<typeof historyParams> = {};
+
+    if (historyParams.historyDate !== normalizedDate) {
+      nextParams.historyDate = normalizedDate;
+    }
+
+    if (historyParams.historyPeriod !== viewMode) {
+      nextParams.historyPeriod = viewMode;
+    }
+
+    if (Object.keys(nextParams).length === 0) return;
+
+    void setHistoryParams(nextParams);
+  }, [
+    currentDate,
+    historyParams.historyDate,
+    historyParams.historyPeriod,
+    setHistoryParams,
+    viewMode,
+  ]);
 
   // Week overview collapsible state — persisted to localStorage
   const [overviewOpen, setOverviewOpen] = useState(() => {
@@ -208,17 +248,32 @@ export function SessionHistory({
   }, []);
 
   // Navigation handlers
+  const handleViewModeChange = useCallback(
+    (mode: ViewMode) => {
+      void setHistoryParams({
+        historyPeriod: mode,
+      });
+    },
+    [setHistoryParams]
+  );
+
   const goToPrevious = useCallback(() => {
-    setCurrentDate(currentDate.subtract(1, viewMode));
-  }, [currentDate, viewMode]);
+    void setHistoryParams({
+      historyDate: formatSessionHistoryDate(currentDate.subtract(1, viewMode)),
+    });
+  }, [currentDate, setHistoryParams, viewMode]);
 
   const goToNext = useCallback(() => {
-    setCurrentDate(currentDate.add(1, viewMode));
-  }, [currentDate, viewMode]);
+    void setHistoryParams({
+      historyDate: formatSessionHistoryDate(currentDate.add(1, viewMode)),
+    });
+  }, [currentDate, setHistoryParams, viewMode]);
 
   const goToToday = useCallback(() => {
-    setCurrentDate(dayjs());
-  }, []);
+    void setHistoryParams({
+      historyDate: formatSessionHistoryDate(dayjs().tz(userTimezone)),
+    });
+  }, [setHistoryParams, userTimezone]);
 
   // Note: startOfPeriod and endOfPeriod are already calculated at the top for the query
 
@@ -339,7 +394,7 @@ export function SessionHistory({
           <PeriodNavigation
             viewMode={viewMode}
             currentDate={currentDate}
-            onViewModeChange={setViewMode}
+            onViewModeChange={handleViewModeChange}
             onPrevious={goToPrevious}
             onNext={goToNext}
             onToday={goToToday}
