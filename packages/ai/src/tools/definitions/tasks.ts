@@ -117,10 +117,7 @@ export const taskToolDefinitions = {
           .max(7)
           .optional()
           .describe('Estimation point index (0-7)'),
-        listId: z
-          .uuid()
-          .optional()
-          .describe('Move to a different list'),
+        listId: z.uuid().optional().describe('Move to a different list'),
       })
       .refine(
         (data) =>
@@ -270,10 +267,7 @@ export const taskToolDefinitions = {
     description: 'Assign one or more labels to a task.',
     inputSchema: z.object({
       taskId: z.uuid().describe('Task UUID'),
-      labelIds: z
-        .array(z.uuid())
-        .min(1)
-        .describe('Label UUIDs to add'),
+      labelIds: z.array(z.uuid()).min(1).describe('Label UUIDs to add'),
     }),
   }),
 
@@ -281,10 +275,7 @@ export const taskToolDefinitions = {
     description: 'Remove one or more labels from a task.',
     inputSchema: z.object({
       taskId: z.uuid().describe('Task UUID'),
-      labelIds: z
-        .array(z.uuid())
-        .min(1)
-        .describe('Label UUIDs to remove'),
+      labelIds: z.array(z.uuid()).min(1).describe('Label UUIDs to remove'),
     }),
   }),
 

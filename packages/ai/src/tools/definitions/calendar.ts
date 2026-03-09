@@ -57,13 +57,11 @@ export const calendarToolDefinitions = {
       .object({
         eventId: z.uuid().describe('Event UUID'),
         title: z.string().optional().describe('Updated event title'),
-        startAt: z
-          .iso
+        startAt: z.iso
           .datetime({ offset: true })
           .optional()
           .describe('Updated start time ISO 8601'),
-        endAt: z
-          .iso
+        endAt: z.iso
           .datetime({ offset: true })
           .optional()
           .describe('Updated end time ISO 8601'),

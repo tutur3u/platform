@@ -802,11 +802,7 @@ export const dashboardCatalog = defineCatalog(schema, {
             .nullable()
             .optional()
             .describe('Category UUID or null'),
-          taskId: z
-            .uuid()
-            .nullable()
-            .optional()
-            .describe('Task UUID or null'),
+          taskId: z.uuid().nullable().optional().describe('Task UUID or null'),
           date: z
             .string()
             .optional()

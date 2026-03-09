@@ -65,10 +65,7 @@ export const financeToolDefinitions = {
     description: 'List transactions with optional filters.',
     inputSchema: z.object({
       walletId: z.uuid().optional().describe('Filter by wallet UUID'),
-      categoryId: z
-        .uuid()
-        .optional()
-        .describe('Filter by category UUID'),
+      categoryId: z.uuid().optional().describe('Filter by category UUID'),
       days: z
         .number()
         .int()
