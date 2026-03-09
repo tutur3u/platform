@@ -4,6 +4,7 @@ import { formatDuration } from '@tuturuuu/hooks/utils/time-format';
 import { ChevronLeft, ChevronRight } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
+import isoWeek from 'dayjs/plugin/isoWeek';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import type {
@@ -12,6 +13,19 @@ import type {
   OverallStats,
 } from './types';
 import { getColorClass, getIntensity } from './utils';
+
+dayjs.extend(isoWeek);
+
+function getMonthGridDays(monthKey: string) {
+  const monthStart = dayjs(`${monthKey}-01`);
+  const calendarStart = monthStart.startOf('isoWeek');
+  const calendarEnd = monthStart.endOf('month').endOf('isoWeek');
+  const totalDays = calendarEnd.diff(calendarStart, 'day') + 1;
+
+  return Array.from({ length: totalDays }, (_, index) =>
+    calendarStart.add(index, 'day')
+  );
+}
 
 function SummaryCard({ data }: { data: OverallStats }) {
   const t = useTranslations('time-tracker.heatmap');
@@ -148,10 +162,8 @@ function MonthlyCard({
 
       <div className="mb-2">
         <div className="grid grid-cols-7 gap-px">
-          {Array.from({ length: 7 * 4 }, (_, i) => {
+          {getMonthGridDays(monthKey).map((currentDay) => {
             const monthStart = dayjs(`${monthKey}-01`);
-            const dayOffset = i - monthStart.day();
-            const currentDay = monthStart.add(dayOffset, 'day');
 
             const dayActivity = data.dates.find(
               (d) =>
@@ -165,7 +177,7 @@ function MonthlyCard({
 
             return (
               <div
-                key={`${monthKey}-${i}`}
+                key={`${monthKey}-${currentDay.format('YYYY-MM-DD')}`}
                 className={cn(
                   'aspect-square rounded-[1px] transition-all',
                   isCurrentMonth
@@ -183,7 +195,7 @@ function MonthlyCard({
   );
 }
 
-function UpcomingCard({ name }: { monthKey: string; name: string }) {
+function UpcomingCard({ monthKey, name }: { monthKey: string; name: string }) {
   const t = useTranslations('time-tracker.heatmap');
 
   return (
@@ -231,8 +243,11 @@ function UpcomingCard({ name }: { monthKey: string; name: string }) {
 
       <div className="mb-2 opacity-30">
         <div className="grid grid-cols-7 gap-px">
-          {Array.from({ length: 7 * 4 }, (_, i) => (
-            <div key={i} className="aspect-square rounded-[1px] bg-muted/50" />
+          {getMonthGridDays(monthKey).map((day) => (
+            <div
+              key={day.format('YYYY-MM-DD')}
+              className="aspect-square rounded-[1px] bg-muted/50"
+            />
           ))}
         </div>
       </div>

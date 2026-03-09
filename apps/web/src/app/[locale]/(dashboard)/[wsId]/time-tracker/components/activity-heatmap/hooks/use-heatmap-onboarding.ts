@@ -29,7 +29,6 @@ export function useHeatmapOnboarding(
 
   const shouldShowOnboardingTips = useMemo<boolean>(() => {
     if (!settings.showOnboardingTips) return false;
-    if (!onboardingState.showTips) return false;
 
     const isNewUser = onboardingState.viewCount < 3;
     const changedViewMode = onboardingState.lastViewMode !== settings.viewMode;
@@ -43,7 +42,15 @@ export function useHeatmapOnboarding(
         ) >= 14;
     }
 
-    return Boolean(isNewUser || changedViewMode || isPeriodicReminder);
+    if (isPeriodicReminder) {
+      return true;
+    }
+
+    if (!onboardingState.showTips) {
+      return false;
+    }
+
+    return Boolean(isNewUser || changedViewMode);
   }, [
     settings.showOnboardingTips,
     settings.viewMode,

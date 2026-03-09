@@ -227,15 +227,16 @@ export function useActivityAnalytics(
 
     const { sortedMonths, monthsWithTrends, overallStats } = monthlyStats;
     const cards: CompactHeatmapCard[] = [];
+    const currentTime = dayjs().tz(userTimezone);
 
     const isEstablishedUser =
       overallStats.activeDays >= 7 &&
       overallStats.totalSessions >= 10 &&
       sortedMonths.length >= 1;
-    const hasRecentActivity =
+    const isEarlyInCurrentMonth =
       sortedMonths.length > 0 &&
-      dayjs().diff(dayjs().startOf('month'), 'day') < 15;
-    const shouldShowUpcoming = isEstablishedUser && hasRecentActivity;
+      currentTime.diff(currentTime.startOf('month'), 'day') < 15;
+    const shouldShowUpcoming = isEstablishedUser && isEarlyInCurrentMonth;
 
     if (sortedMonths.length > 0 && overallStats.activeDays >= 3) {
       cards.push({ type: 'summary', data: overallStats });
@@ -246,7 +247,7 @@ export function useActivityAnalytics(
     });
 
     if (shouldShowUpcoming && cards.length < 4) {
-      const nextMonth = dayjs().add(1, 'month');
+      const nextMonth = currentTime.add(1, 'month');
       cards.push({
         type: 'upcoming',
         monthKey: nextMonth.format('YYYY-MM'),
@@ -260,7 +261,7 @@ export function useActivityAnalytics(
     }
 
     return cards;
-  }, [includeCardAnalytics, monthlyStats]);
+  }, [includeCardAnalytics, monthlyStats, userTimezone]);
 
   return {
     heatmapData,
