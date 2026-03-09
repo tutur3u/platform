@@ -35,6 +35,7 @@ export async function fetchSharedFormData(
   shareCode: string,
   options?: {
     cookieHeader?: string;
+    revalidateSeconds?: number;
   }
 ): Promise<SharedFormFetchResult> {
   const headers = options?.cookieHeader
@@ -42,9 +43,11 @@ export async function fetchSharedFormData(
         cookie: options.cookieHeader,
       }
     : undefined;
+  const revalidateSeconds = options?.revalidateSeconds;
   const response = await fetch(`${API_URL}/v1/shared/forms/${shareCode}`, {
-    cache: 'no-store',
+    cache: revalidateSeconds ? 'force-cache' : 'no-store',
     headers,
+    next: revalidateSeconds ? { revalidate: revalidateSeconds } : undefined,
   });
 
   if (!response.ok) {

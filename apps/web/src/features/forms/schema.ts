@@ -216,6 +216,17 @@ export const formSubmitSchema = z.object({
   answers: z.record(canonicalUuidSchema, formAnswerValueSchema),
 });
 
+/** Current format version for portable form export/import. Bump when breaking changes occur. */
+export const FORM_EXPORT_FORMAT_VERSION = '1';
+
+export const formExportEnvelopeSchema = z.object({
+  formatVersion: z.literal(FORM_EXPORT_FORMAT_VERSION),
+  exportedAt: z.string().datetime(),
+  form: formStudioSchema,
+});
+
+export type FormExportEnvelope = z.infer<typeof formExportEnvelopeSchema>;
+
 export type FormStudioInput = z.infer<typeof formStudioSchema>;
 export type FormSectionInput = z.infer<typeof formSectionSchema>;
 export type FormQuestionInput = z.infer<typeof formQuestionSchema>;

@@ -112,36 +112,28 @@ function createAmbientShapes(
 ) {
   return [
     {
-      top: '-18%',
-      left: '-10%',
-      width: 520,
-      height: 520,
-      background: `radial-gradient(circle, ${palette.secondary}66 0%, transparent 72%)`,
-      opacity: 0.82,
+      top: '-14%',
+      left: '-8%',
+      width: 440,
+      height: 440,
+      background: `radial-gradient(circle, ${palette.secondary}5e 0%, transparent 70%)`,
+      opacity: 0.76,
     },
     {
-      top: '48%',
-      left: '52%',
-      width: 400,
-      height: 400,
-      background: `radial-gradient(circle, ${palette.primary}99 0%, transparent 74%)`,
-      opacity: 0.72,
+      top: '50%',
+      left: '54%',
+      width: 340,
+      height: 340,
+      background: `radial-gradient(circle, ${palette.primary}7a 0%, transparent 74%)`,
+      opacity: 0.68,
     },
     {
-      top: '0%',
+      top: '6%',
       left: '72%',
-      width: 320,
-      height: 320,
+      width: 280,
+      height: 280,
       background: `radial-gradient(circle, ${palette.tertiary}40 0%, transparent 74%)`,
-      opacity: 0.74,
-    },
-    {
-      top: '68%',
-      left: '74%',
-      width: 260,
-      height: 260,
-      background: `radial-gradient(circle, ${palette.secondary}22 0%, transparent 78%)`,
-      opacity: 0.9,
+      opacity: 0.66,
     },
   ];
 }
@@ -166,7 +158,7 @@ export async function createSharedFormSocialImage({
   const palette = ACCENT_PALETTES[presentation.accentColor];
   const ambientShapes = createAmbientShapes(palette);
   const previewRows = Array.from({
-    length: Math.max(3, Math.min(4, presentation.itemCount || 3)),
+    length: Math.max(2, Math.min(3, presentation.itemCount || 3)),
   });
   const titleFontSize =
     presentation.title.length > 80
@@ -200,16 +192,6 @@ export async function createSharedFormSocialImage({
         style={{
           position: 'absolute',
           inset: 0,
-          backgroundImage:
-            'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)',
-          backgroundSize: '54px 54px',
-          opacity: 0.12,
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
           background:
             'linear-gradient(180deg, rgba(5,8,22,0.06) 0%, rgba(5,8,22,0.18) 100%)',
         }}
@@ -220,7 +202,6 @@ export async function createSharedFormSocialImage({
           style={{
             position: 'absolute',
             borderRadius: '999px',
-            filter: 'blur(26px)',
             ...shape,
           }}
         />

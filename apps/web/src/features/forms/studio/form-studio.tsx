@@ -84,6 +84,7 @@ import {
   createClientId,
   duplicateSectionInput,
   ensureIdentifiers,
+  exportFormStudioPayload,
   toPreviewDefinition,
   toStudioInput,
 } from './studio-utils';
@@ -330,6 +331,46 @@ export function FormStudio({
     navigator.clipboard.writeText(url);
     setHasCopied(true);
     setTimeout(() => setHasCopied(false), 2000);
+  };
+
+  const handleExport = () => {
+    try {
+      const envelope = exportFormStudioPayload(values);
+      const blob = new Blob([JSON.stringify(envelope, null, 2)], {
+        type: 'application/json',
+      });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      const safeTitle = (values.title || 'form').replace(
+        /[^a-zA-Z0-9\s_-]/g,
+        ''
+      );
+      const safeSlug = safeTitle.slice(0, 40).replace(/\s+/g, '-') || 'form';
+      anchor.href = url;
+      anchor.download = `${safeSlug}-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+      toast.success(t('studio.export_success'));
+    } catch {
+      toast.error(t('studio.export_failed'));
+    }
+  };
+
+  const handleImport = (data: FormStudioInput) => {
+    form.reset(data);
+    setActiveSectionId('');
+    setActiveQuestionIdsBySection({});
+    const firstSectionId = data.sections[0]?.id ?? '';
+    if (firstSectionId) {
+      setActiveSectionId(firstSectionId);
+      const firstQuestionId = data.sections[0]?.questions[0]?.id ?? '';
+      if (firstQuestionId) {
+        setActiveQuestionIdsBySection({ [firstSectionId]: firstQuestionId });
+      }
+    }
+    toast.success(t('studio.import_success'));
   };
 
   const createSectionInput = (
@@ -1088,6 +1129,8 @@ export function FormStudio({
               shareCode={shareQuery?.shareLink?.code}
               toneClasses={studioToneClasses}
               onOpenPreview={() => setActiveTab('preview')}
+              onExport={handleExport}
+              onImport={handleImport}
               isDirty={isDirty}
               responseSummary={responseSummary}
             />

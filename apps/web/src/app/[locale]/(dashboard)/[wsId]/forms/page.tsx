@@ -1,4 +1,4 @@
-import { Plus } from '@tuturuuu/icons';
+import { Plus, Upload } from '@tuturuuu/icons';
 import {
   createAdminClient,
   createClient,
@@ -73,24 +73,36 @@ export default async function FormsPage({ params, searchParams }: PageProps) {
           <div>
             <div className="mx-auto max-w-7xl space-y-8 px-4 py-8">
               <div className="flex flex-wrap items-end justify-between gap-4">
-                <div className="space-y-2">
-                  <p className="font-medium text-[11px] text-muted-foreground uppercase tracking-[0.35em]">
+                <div className="space-y-3">
+                  <p className="inline-flex items-center rounded-full border border-border/60 bg-background/70 px-3 py-1 font-medium text-[11px] text-muted-foreground uppercase tracking-[0.35em]">
                     {t('brand')}
                   </p>
-                  <h1 className="font-semibold text-5xl">
-                    {t('pages.home_title')}
-                  </h1>
-                  <p className="max-w-3xl text-lg text-muted-foreground">
-                    {t('pages.home_description')}
-                  </p>
+                  <div className="space-y-2">
+                    <h1 className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-4xl font-semibold tracking-tight text-transparent md:text-5xl">
+                      {t('pages.home_title')}
+                    </h1>
+                    <p className="max-w-3xl text-base text-muted-foreground md:text-lg">
+                      {t('pages.home_description')}
+                    </p>
+                  </div>
                 </div>
                 {canManageForms ? (
-                  <Button asChild>
-                    <Link href={`/${resolvedParams.wsId}/forms/new`}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      {t('studio.create_form')}
-                    </Link>
-                  </Button>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Button variant="outline" asChild>
+                      <Link
+                        href={`/${resolvedParams.wsId}/forms/new?tab=settings`}
+                      >
+                        <Upload className="mr-2 h-4 w-4" />
+                        {t('settings.import_form')}
+                      </Link>
+                    </Button>
+                    <Button asChild>
+                      <Link href={`/${resolvedParams.wsId}/forms/new`}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        {t('studio.create_form')}
+                      </Link>
+                    </Button>
+                  </div>
                 ) : null}
               </div>
 

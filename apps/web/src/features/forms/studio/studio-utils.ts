@@ -1,6 +1,12 @@
 import type { UseFormReturn } from '@tuturuuu/ui/hooks/use-form';
 
-import { createDefaultFormStudioInput, type FormStudioInput } from '../schema';
+import {
+  createDefaultFormStudioInput,
+  FORM_EXPORT_FORMAT_VERSION,
+  type FormExportEnvelope,
+  type FormStudioInput,
+  formExportEnvelopeSchema,
+} from '../schema';
 import { getThemePreset } from '../theme';
 import type { FormDefinition } from '../types';
 
@@ -176,6 +182,113 @@ export function ensureIdentifiers(input: FormStudioInput): FormStudioInput {
       id: rule.id ?? createClientId(),
     })),
   };
+}
+
+/** Regenerates all section/question/option/logic-rule IDs and remaps logic-rule references. */
+export function remapFormStudioIds(input: FormStudioInput): FormStudioInput {
+  const sectionIdMap = new Map<string, string>();
+  const questionIdMap = new Map<string, string>();
+
+  const remappedSections = input.sections.map((section) => {
+    const newSectionId = createClientId();
+    if (section.id) {
+      sectionIdMap.set(section.id, newSectionId);
+    }
+
+    const remappedQuestions = section.questions.map((question) => {
+      const newQuestionId = createClientId();
+      if (question.id) {
+        questionIdMap.set(question.id, newQuestionId);
+      }
+
+      return {
+        ...question,
+        id: newQuestionId,
+        image: question.image ?? {
+          storagePath: '',
+          url: '',
+          alt: '',
+        },
+        options: question.options.map((option) => ({
+          ...option,
+          id: createClientId(),
+          image: option.image ?? {
+            storagePath: '',
+            url: '',
+            alt: '',
+          },
+        })),
+      };
+    });
+
+    return {
+      ...section,
+      id: newSectionId,
+      image: section.image ?? {
+        storagePath: '',
+        url: '',
+        alt: '',
+      },
+      questions: remappedQuestions,
+    };
+  });
+
+  const remappedLogicRules = input.logicRules.map((rule) => {
+    const newSourceQuestionId =
+      questionIdMap.get(rule.sourceQuestionId) ?? rule.sourceQuestionId;
+    const newTargetSectionId =
+      rule.targetSectionId != null
+        ? (sectionIdMap.get(rule.targetSectionId) ?? rule.targetSectionId)
+        : null;
+
+    return {
+      ...rule,
+      id: createClientId(),
+      sourceQuestionId: newSourceQuestionId,
+      targetSectionId: newTargetSectionId,
+    };
+  });
+
+  return {
+    ...input,
+    sections: remappedSections,
+    logicRules: remappedLogicRules,
+  };
+}
+
+export function exportFormStudioPayload(
+  values: FormStudioInput
+): FormExportEnvelope {
+  const normalized = ensureIdentifiers(values);
+  return {
+    formatVersion: FORM_EXPORT_FORMAT_VERSION,
+    exportedAt: new Date().toISOString(),
+    form: normalized,
+  };
+}
+
+export type ImportFormStudioResult =
+  | { ok: true; data: FormStudioInput }
+  | { ok: false; error: string };
+
+export function importFormStudioPayload(json: string): ImportFormStudioResult {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(json) as unknown;
+  } catch {
+    return { ok: false, error: 'Invalid JSON' };
+  }
+
+  const envelopeResult = formExportEnvelopeSchema.safeParse(parsed);
+  if (!envelopeResult.success) {
+    const firstIssue = envelopeResult.error.issues[0];
+    const path = firstIssue?.path?.join('.') ?? 'form';
+    const msg = firstIssue?.message ?? 'Validation failed';
+    return { ok: false, error: `${path}: ${msg}` };
+  }
+
+  const remapped = remapFormStudioIds(envelopeResult.data.form);
+  return { ok: true, data: remapped };
 }
 
 export function toStudioInput(form?: FormDefinition): FormStudioInput {

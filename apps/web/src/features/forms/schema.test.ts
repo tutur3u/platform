@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { formProgressSchema, formSubmitSchema } from './schema';
+import {
+  createDefaultFormStudioInput,
+  formExportEnvelopeSchema,
+  formProgressSchema,
+  formSubmitSchema,
+} from './schema';
 
 describe('formSubmitSchema', () => {
   it('accepts canonical Postgres UUID answer keys used by seeded forms', () => {
@@ -23,5 +28,39 @@ describe('formProgressSchema', () => {
     });
 
     expect(parsed.success).toBe(true);
+  });
+});
+
+describe('formExportEnvelopeSchema', () => {
+  it('accepts valid envelope with formatVersion 1', () => {
+    const form = createDefaultFormStudioInput();
+    const parsed = formExportEnvelopeSchema.safeParse({
+      formatVersion: '1',
+      exportedAt: new Date().toISOString(),
+      form,
+    });
+
+    expect(parsed.success).toBe(true);
+  });
+
+  it('rejects envelope with wrong formatVersion', () => {
+    const form = createDefaultFormStudioInput();
+    const parsed = formExportEnvelopeSchema.safeParse({
+      formatVersion: '2',
+      exportedAt: new Date().toISOString(),
+      form,
+    });
+
+    expect(parsed.success).toBe(false);
+  });
+
+  it('rejects envelope with invalid form structure', () => {
+    const parsed = formExportEnvelopeSchema.safeParse({
+      formatVersion: '1',
+      exportedAt: new Date().toISOString(),
+      form: { title: '', sections: [] },
+    });
+
+    expect(parsed.success).toBe(false);
   });
 });
