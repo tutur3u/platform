@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   {
     params,
   }: {
@@ -12,7 +12,7 @@ export async function DELETE(
 ) {
   try {
     const { wsId, initiativeId, projectId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     const {
       data: { user },

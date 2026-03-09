@@ -157,7 +157,9 @@
     "taskPortfolioProjectDescriptionHint": "Mô tả mục tiêu của dự án",
     "taskPortfolioProjectStatus": "Trạng thái dự án",
     "taskPortfolioProjectPriority": "Mức ưu tiên",
+    "taskPortfolioProjectHealth": "Tình trạng tiến độ",
     "taskPortfolioProjectLead": "Người phụ trách",
+    "taskPortfolioProjectNoHealth": "Chưa có tình trạng",
     "taskPortfolioProjectNoLead": "Chưa có người phụ trách",
     "taskPortfolioProjectStartDate": "Ngày bắt đầu",
     "taskPortfolioProjectEndDate": "Ngày kết thúc",
@@ -195,6 +197,16 @@
     "taskPortfolioManageProjects": "Quản lý dự án",
     "taskPortfolioLinkedProjects": "Dự án đã liên kết",
     "taskPortfolioNoLinkedProjects": "Chưa có dự án nào được liên kết",
+    "taskPortfolioProjectHealthOnTrack": "Đúng tiến độ",
+    "taskPortfolioProjectHealthAtRisk": "Có rủi ro",
+    "taskPortfolioProjectHealthOffTrack": "Chệch tiến độ",
+    "taskPortfolioProjectTasksProgress": "{completed}/{total} nhiệm vụ",
+    "@taskPortfolioProjectTasksProgress": {
+        "placeholders": {
+            "completed": {"type": "int"},
+            "total": {"type": "int"}
+        }
+    },
     "taskPortfolioLinkProject": "Liên kết dự án",
     "taskPortfolioNoAvailableProjects": "Chọn dự án",
     "taskPortfolioAllProjectsLinked": "Tất cả dự án trong không gian làm việc đã được liên kết.",

@@ -853,11 +853,23 @@ abstract class AppLocalizations {
   /// **'Priority'**
   String get taskPortfolioProjectPriority;
 
+  /// No description provided for @taskPortfolioProjectHealth.
+  ///
+  /// In en, this message translates to:
+  /// **'Health status'**
+  String get taskPortfolioProjectHealth;
+
   /// No description provided for @taskPortfolioProjectLead.
   ///
   /// In en, this message translates to:
   /// **'Project lead'**
   String get taskPortfolioProjectLead;
+
+  /// No description provided for @taskPortfolioProjectNoHealth.
+  ///
+  /// In en, this message translates to:
+  /// **'No health status'**
+  String get taskPortfolioProjectNoHealth;
 
   /// No description provided for @taskPortfolioProjectNoLead.
   ///
@@ -1080,6 +1092,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No linked projects yet'**
   String get taskPortfolioNoLinkedProjects;
+
+  /// No description provided for @taskPortfolioProjectHealthOnTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'On track'**
+  String get taskPortfolioProjectHealthOnTrack;
+
+  /// No description provided for @taskPortfolioProjectHealthAtRisk.
+  ///
+  /// In en, this message translates to:
+  /// **'At risk'**
+  String get taskPortfolioProjectHealthAtRisk;
+
+  /// No description provided for @taskPortfolioProjectHealthOffTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Off track'**
+  String get taskPortfolioProjectHealthOffTrack;
+
+  /// No description provided for @taskPortfolioProjectTasksProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{completed} of {total} tasks'**
+  String taskPortfolioProjectTasksProgress(int completed, int total);
 
   /// No description provided for @taskPortfolioLinkProject.
   ///

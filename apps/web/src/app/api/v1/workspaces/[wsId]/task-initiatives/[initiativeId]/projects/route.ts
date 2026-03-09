@@ -13,7 +13,7 @@ export async function POST(
 ) {
   try {
     const { wsId, initiativeId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     const {
       data: { user },

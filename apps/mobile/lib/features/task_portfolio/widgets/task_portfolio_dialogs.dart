@@ -12,6 +12,7 @@ class TaskProjectFormValue {
     required this.description,
     this.status,
     this.priority,
+    this.healthStatus,
     this.leadId,
     this.startDate,
     this.endDate,
@@ -22,6 +23,7 @@ class TaskProjectFormValue {
   final String? description;
   final String? status;
   final String? priority;
+  final String? healthStatus;
   final String? leadId;
   final DateTime? startDate;
   final DateTime? endDate;
@@ -59,6 +61,7 @@ class _TaskProjectDialogState extends State<TaskProjectDialog> {
   late final TextEditingController _descriptionController;
   late String _status;
   late String _priority;
+  late String? _healthStatus;
   late String? _leadId;
   late DateTime? _startDate;
   late DateTime? _endDate;
@@ -73,6 +76,7 @@ class _TaskProjectDialogState extends State<TaskProjectDialog> {
     );
     _status = widget.project?.status ?? 'active';
     _priority = widget.project?.priority ?? 'normal';
+    _healthStatus = widget.project?.healthStatus;
     _leadId = widget.project?.leadId;
     if (_leadId != null &&
         !widget.workspaceUsers.any((user) => user.id == _leadId)) {
@@ -163,6 +167,27 @@ class _TaskProjectDialogState extends State<TaskProjectDialog> {
                       }
                     },
                   ),
+                  const shad.Gap(12),
+                  _FieldLabel(context.l10n.taskPortfolioProjectHealth),
+                  const shad.Gap(4),
+                  _DropdownSelectField(
+                    value: _healthStatus,
+                    values: _projectHealthStatuses,
+                    placeholder: context.l10n.taskPortfolioProjectNoHealth,
+                    labelBuilder: (value) =>
+                        _projectHealthStatusLabel(context, value),
+                    onChanged: (value) => setState(() => _healthStatus = value),
+                  ),
+                  if (_healthStatus != null) ...[
+                    const shad.Gap(6),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: shad.GhostButton(
+                        onPressed: () => setState(() => _healthStatus = null),
+                        child: Text(context.l10n.taskPortfolioClearSelection),
+                      ),
+                    ),
+                  ],
                   const shad.Gap(12),
                   _FieldLabel(context.l10n.taskPortfolioProjectLead),
                   const shad.Gap(4),
@@ -295,6 +320,7 @@ class _TaskProjectDialogState extends State<TaskProjectDialog> {
         description: _normalizeDescription(_descriptionController.text),
         status: widget.project == null ? null : _status,
         priority: widget.project == null ? null : _priority,
+        healthStatus: widget.project == null ? null : _healthStatus,
         leadId: widget.project == null ? null : _leadId,
         startDate: widget.project == null ? null : _startDate,
         endDate: widget.project == null ? null : _endDate,
@@ -566,6 +592,11 @@ const List<String> _projectStatuses = [
 ];
 
 const List<String> _projectPriorities = ['critical', 'high', 'normal', 'low'];
+const List<String> _projectHealthStatuses = [
+  'on_track',
+  'at_risk',
+  'off_track',
+];
 const List<String> _initiativeStatuses = [
   'active',
   'completed',
@@ -598,6 +629,14 @@ String _projectPriorityLabel(BuildContext context, String value) {
     'high' => context.l10n.taskPortfolioProjectPriorityHigh,
     'low' => context.l10n.taskPortfolioProjectPriorityLow,
     _ => context.l10n.taskPortfolioProjectPriorityNormal,
+  };
+}
+
+String _projectHealthStatusLabel(BuildContext context, String value) {
+  return switch (value) {
+    'at_risk' => context.l10n.taskPortfolioProjectHealthAtRisk,
+    'off_track' => context.l10n.taskPortfolioProjectHealthOffTrack,
+    _ => context.l10n.taskPortfolioProjectHealthOnTrack,
   };
 }
 

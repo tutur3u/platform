@@ -396,7 +396,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskPortfolioProjectPriority => 'Mức ưu tiên';
 
   @override
+  String get taskPortfolioProjectHealth => 'Tình trạng tiến độ';
+
+  @override
   String get taskPortfolioProjectLead => 'Người phụ trách';
+
+  @override
+  String get taskPortfolioProjectNoHealth => 'Chưa có tình trạng';
 
   @override
   String get taskPortfolioProjectNoLead => 'Chưa có người phụ trách';
@@ -508,6 +514,20 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskPortfolioNoLinkedProjects => 'Chưa có dự án nào được liên kết';
+
+  @override
+  String get taskPortfolioProjectHealthOnTrack => 'Đúng tiến độ';
+
+  @override
+  String get taskPortfolioProjectHealthAtRisk => 'Có rủi ro';
+
+  @override
+  String get taskPortfolioProjectHealthOffTrack => 'Chệch tiến độ';
+
+  @override
+  String taskPortfolioProjectTasksProgress(int completed, int total) {
+    return '$completed/$total nhiệm vụ';
+  }
 
   @override
   String get taskPortfolioLinkProject => 'Liên kết dự án';

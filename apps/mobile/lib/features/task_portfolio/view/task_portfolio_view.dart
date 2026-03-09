@@ -26,7 +26,16 @@ import 'package:mobile/widgets/fab/speed_dial_fab.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TaskPortfolioView extends StatefulWidget {
-  const TaskPortfolioView({super.key});
+  TaskPortfolioView({
+    WorkspacePermissionsRepository? permissionsRepository,
+    TaskRepository? taskRepository,
+    super.key,
+  }) : permissionsRepository =
+           permissionsRepository ?? WorkspacePermissionsRepository(),
+       taskRepository = taskRepository ?? TaskRepository();
+
+  final WorkspacePermissionsRepository permissionsRepository;
+  final TaskRepository taskRepository;
 
   @override
   State<TaskPortfolioView> createState() => _TaskPortfolioViewState();
@@ -35,10 +44,6 @@ class TaskPortfolioView extends StatefulWidget {
 class _TaskPortfolioViewState extends State<TaskPortfolioView> {
   static const _tabProjects = 0;
   static const double _fabContentBottomPadding = 96;
-
-  final WorkspacePermissionsRepository _permissionsRepository =
-      WorkspacePermissionsRepository();
-  final TaskRepository _taskRepository = TaskRepository();
 
   int _activeTab = _tabProjects;
   String? _permissionsWorkspaceId;
@@ -260,7 +265,7 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
     }
 
     try {
-      final permissions = await _permissionsRepository.getPermissions(
+      final permissions = await widget.permissionsRepository.getPermissions(
         wsId: wsId,
       );
       if (!mounted) return;
@@ -309,7 +314,7 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
 
     List<WorkspaceUserOption> workspaceUsers;
     try {
-      workspaceUsers = await _taskRepository.getWorkspaceUsers(wsId);
+      workspaceUsers = await widget.taskRepository.getWorkspaceUsers(wsId);
     } on ApiException catch (error) {
       if (mounted) {
         _showErrorToast(
@@ -343,6 +348,7 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
         description: result.description,
         status: result.status,
         priority: result.priority,
+        healthStatus: result.healthStatus,
         leadId: result.leadId,
         startDate: result.startDate,
         endDate: result.endDate,
@@ -458,46 +464,52 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
   ) async {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
+    final taskPortfolioCubit = context.read<TaskPortfolioCubit>();
 
     await shad.showDialog<void>(
       context: context,
-      builder: (_) => BlocBuilder<TaskPortfolioCubit, TaskPortfolioState>(
-        builder: (context, state) {
-          final refreshed = state.initiatives.firstWhere(
-            (item) => item.id == initiative.id,
-            orElse: () => initiative,
-          );
-          final linkedIds = refreshed.linkedProjects
-              .map((item) => item.id)
-              .toSet();
-          final availableProjects = state.projects
-              .where((project) => !linkedIds.contains(project.id))
-              .toList(growable: false);
+      builder: (_) => BlocProvider.value(
+        value: taskPortfolioCubit,
+        child: BlocBuilder<TaskPortfolioCubit, TaskPortfolioState>(
+          builder: (dialogContext, state) {
+            final refreshed = state.initiatives.firstWhere(
+              (item) => item.id == initiative.id,
+              orElse: () => initiative,
+            );
+            final linkedIds = refreshed.linkedProjects
+                .map((item) => item.id)
+                .toSet();
+            final availableProjects = state.projects
+                .where((project) => !linkedIds.contains(project.id))
+                .toList(growable: false);
 
-          return ManageInitiativeProjectsDialog(
-            initiative: refreshed,
-            availableProjects: availableProjects,
-            isMutating: state.isMutating,
-            onLink: (projectId) => _runAction(
-              () => context.read<TaskPortfolioCubit>().linkProjectToInitiative(
-                wsId: wsId,
-                initiativeId: initiative.id,
-                projectId: projectId,
+            return ManageInitiativeProjectsDialog(
+              initiative: refreshed,
+              availableProjects: availableProjects,
+              isMutating: state.isMutating,
+              onLink: (projectId) => _runAction(
+                () => dialogContext
+                    .read<TaskPortfolioCubit>()
+                    .linkProjectToInitiative(
+                      wsId: wsId,
+                      initiativeId: initiative.id,
+                      projectId: projectId,
+                    ),
+                successMessage: context.l10n.taskPortfolioProjectLinked,
               ),
-              successMessage: context.l10n.taskPortfolioProjectLinked,
-            ),
-            onUnlink: (projectId) => _runAction(
-              () => context
-                  .read<TaskPortfolioCubit>()
-                  .unlinkProjectFromInitiative(
-                    wsId: wsId,
-                    initiativeId: initiative.id,
-                    projectId: projectId,
-                  ),
-              successMessage: context.l10n.taskPortfolioProjectUnlinked,
-            ),
-          );
-        },
+              onUnlink: (projectId) => _runAction(
+                () => dialogContext
+                    .read<TaskPortfolioCubit>()
+                    .unlinkProjectFromInitiative(
+                      wsId: wsId,
+                      initiativeId: initiative.id,
+                      projectId: projectId,
+                    ),
+                successMessage: context.l10n.taskPortfolioProjectUnlinked,
+              ),
+            );
+          },
+        ),
       ),
     );
   }

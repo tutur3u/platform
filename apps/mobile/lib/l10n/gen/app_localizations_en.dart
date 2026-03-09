@@ -396,7 +396,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskPortfolioProjectPriority => 'Priority';
 
   @override
+  String get taskPortfolioProjectHealth => 'Health status';
+
+  @override
   String get taskPortfolioProjectLead => 'Project lead';
+
+  @override
+  String get taskPortfolioProjectNoHealth => 'No health status';
 
   @override
   String get taskPortfolioProjectNoLead => 'No lead assigned';
@@ -508,6 +514,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskPortfolioNoLinkedProjects => 'No linked projects yet';
+
+  @override
+  String get taskPortfolioProjectHealthOnTrack => 'On track';
+
+  @override
+  String get taskPortfolioProjectHealthAtRisk => 'At risk';
+
+  @override
+  String get taskPortfolioProjectHealthOffTrack => 'Off track';
+
+  @override
+  String taskPortfolioProjectTasksProgress(int completed, int total) {
+    return '$completed of $total tasks';
+  }
 
   @override
   String get taskPortfolioLinkProject => 'Link project';

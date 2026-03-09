@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart' hide Card;
+import 'package:intl/intl.dart';
 import 'package:mobile/data/models/task_initiative_summary.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -52,6 +53,8 @@ class TaskProjectCard extends StatelessWidget {
                               project.priority,
                             ),
                           ),
+                        if (project.healthStatus != null)
+                          _HealthBadge(healthStatus: project.healthStatus!),
                       ],
                     ),
                   ],
@@ -79,23 +82,18 @@ class TaskProjectCard extends StatelessWidget {
             ),
           ),
           const shad.Gap(12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _InfoPill(
-                icon: Icons.task_alt_outlined,
-                label:
-                    '${project.tasksCount} '
-                    '${context.l10n.taskPortfolioProjectTasksLinked}',
-              ),
-              _InfoPill(
-                icon: Icons.check_circle_outline,
-                label:
-                    '${project.completedTasksCount} '
-                    '${context.l10n.taskPortfolioProjectCompletedTasks}',
-              ),
-            ],
+          // Timeline row (only when at least one date is set)
+          if (project.startDate != null || project.endDate != null) ...[
+            _TimelineRow(
+              startDate: project.startDate,
+              endDate: project.endDate,
+            ),
+            const shad.Gap(8),
+          ],
+          // Progress / task count row
+          _TaskProgressRow(
+            completed: project.completedTasksCount,
+            total: project.tasksCount,
           ),
           if (project.linkedTasks.isNotEmpty) ...[
             const shad.Gap(12),
@@ -235,6 +233,147 @@ class _MetaBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return shad.OutlineBadge(child: Text(label));
+  }
+}
+
+class _HealthBadge extends StatelessWidget {
+  const _HealthBadge({required this.healthStatus});
+
+  final String healthStatus;
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, color) = switch (healthStatus) {
+      'on_track' => (
+        context.l10n.taskPortfolioProjectHealthOnTrack,
+        Colors.green,
+      ),
+      'at_risk' => (
+        context.l10n.taskPortfolioProjectHealthAtRisk,
+        Colors.amber.shade700,
+      ),
+      'off_track' => (
+        context.l10n.taskPortfolioProjectHealthOffTrack,
+        Colors.red,
+      ),
+      _ => (healthStatus, Colors.grey),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.6)),
+        color: color.withValues(alpha: 0.12),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+          color: color,
+        ),
+      ),
+    );
+  }
+}
+
+class _TimelineRow extends StatelessWidget {
+  const _TimelineRow({this.startDate, this.endDate});
+
+  final DateTime? startDate;
+  final DateTime? endDate;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final fmt = DateFormat.yMd();
+    final String label;
+    if (startDate != null && endDate != null) {
+      label = '${fmt.format(startDate!)} → ${fmt.format(endDate!)}';
+    } else if (startDate != null) {
+      label = '${fmt.format(startDate!)} →';
+    } else {
+      label = '→ ${fmt.format(endDate!)}';
+    }
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          Icons.calendar_today_outlined,
+          size: 13,
+          color: theme.colorScheme.mutedForeground,
+        ),
+        const shad.Gap(6),
+        Text(
+          label,
+          style: theme.typography.xSmall.copyWith(
+            color: theme.colorScheme.mutedForeground,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TaskProgressRow extends StatelessWidget {
+  const _TaskProgressRow({required this.completed, required this.total});
+
+  final int completed;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final progress = total > 0 ? completed / total : 0.0;
+    final pct = (progress * 100).round();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.task_alt_outlined,
+                  size: 13,
+                  color: theme.colorScheme.mutedForeground,
+                ),
+                const shad.Gap(6),
+                Text(
+                  context.l10n.taskPortfolioProjectTasksProgress(
+                    completed,
+                    total,
+                  ),
+                  style: theme.typography.xSmall.copyWith(
+                    color: theme.colorScheme.mutedForeground,
+                  ),
+                ),
+              ],
+            ),
+            Text(
+              '$pct%',
+              style: theme.typography.xSmall.copyWith(
+                color: theme.colorScheme.mutedForeground,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        const shad.Gap(6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(999),
+          child: LinearProgressIndicator(
+            value: progress,
+            minHeight: 4,
+            backgroundColor: theme.colorScheme.muted.withValues(alpha: 0.4),
+            valueColor: AlwaysStoppedAnimation<Color>(
+              pct == 100 ? Colors.green : theme.colorScheme.primary,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 

@@ -9,7 +9,7 @@ import '../../../helpers/helpers.dart';
 
 void main() {
   group('TaskProjectDialog', () {
-    testWidgets('updates status, priority, and lead while editing', (
+    testWidgets('updates status, priority, health, and lead while editing', (
       tester,
     ) async {
       TaskProjectFormValue? submittedValue;
@@ -76,7 +76,15 @@ void main() {
       await tester.tap(find.text('High').last);
       await tester.pumpAndSettle();
 
-      final leadField = find.byType(DropdownButtonFormField<String>).at(2);
+      final healthField = find.byType(DropdownButtonFormField<String>).at(2);
+      await tester.ensureVisible(healthField);
+      await tester.pumpAndSettle();
+      await tester.tap(healthField.hitTestable());
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('At risk').last);
+      await tester.pumpAndSettle();
+
+      final leadField = find.byType(DropdownButtonFormField<String>).at(3);
       await tester.ensureVisible(leadField);
       await tester.pumpAndSettle();
       await tester.tap(leadField.hitTestable());
@@ -90,6 +98,7 @@ void main() {
       expect(submittedValue, isNotNull);
       expect(submittedValue?.status, 'in_progress');
       expect(submittedValue?.priority, 'high');
+      expect(submittedValue?.healthStatus, 'at_risk');
       expect(submittedValue?.leadId, 'user-2');
     });
   });

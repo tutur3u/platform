@@ -157,7 +157,9 @@
     "taskPortfolioProjectDescriptionHint": "Describe the project goals",
     "taskPortfolioProjectStatus": "Project status",
     "taskPortfolioProjectPriority": "Priority",
+    "taskPortfolioProjectHealth": "Health status",
     "taskPortfolioProjectLead": "Project lead",
+    "taskPortfolioProjectNoHealth": "No health status",
     "taskPortfolioProjectNoLead": "No lead assigned",
     "taskPortfolioProjectStartDate": "Start date",
     "taskPortfolioProjectEndDate": "End date",
@@ -195,6 +197,16 @@
     "taskPortfolioManageProjects": "Manage projects",
     "taskPortfolioLinkedProjects": "Linked projects",
     "taskPortfolioNoLinkedProjects": "No linked projects yet",
+    "taskPortfolioProjectHealthOnTrack": "On track",
+    "taskPortfolioProjectHealthAtRisk": "At risk",
+    "taskPortfolioProjectHealthOffTrack": "Off track",
+    "taskPortfolioProjectTasksProgress": "{completed} of {total} tasks",
+    "@taskPortfolioProjectTasksProgress": {
+        "placeholders": {
+            "completed": {"type": "int"},
+            "total": {"type": "int"}
+        }
+    },
     "taskPortfolioLinkProject": "Link project",
     "taskPortfolioNoAvailableProjects": "Select project",
     "taskPortfolioAllProjectsLinked": "All workspace projects are already linked.",
