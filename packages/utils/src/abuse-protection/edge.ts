@@ -6,6 +6,7 @@
  * Vercel Edge Runtime or Next.js proxy/middleware.
  */
 
+import { getUpstashRestRedisClient } from '../upstash-rest';
 import { REDIS_KEYS } from './constants';
 import type { BlockInfo } from './types';
 
@@ -26,16 +27,7 @@ async function getEdgeRedisClient() {
   if (edgeRedisInitialized) return edgeRedisClient;
 
   try {
-    const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
-    const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
-
-    if (!redisUrl || !redisToken) {
-      edgeRedisInitialized = true;
-      return null;
-    }
-
-    const { Redis } = await import('@upstash/redis');
-    edgeRedisClient = Redis.fromEnv();
+    edgeRedisClient = await getUpstashRestRedisClient();
     edgeRedisInitialized = true;
     return edgeRedisClient;
   } catch {

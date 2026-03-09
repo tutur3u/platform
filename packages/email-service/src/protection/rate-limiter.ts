@@ -6,7 +6,10 @@
  */
 
 import { createHash } from 'node:crypto';
-
+import {
+  getUpstashRestRedisClient,
+  type UpstashRestRedisClient,
+} from '@tuturuuu/utils/upstash-rest';
 import {
   EMAIL_RATE_LIMITS,
   EMAIL_REDIS_KEYS,
@@ -23,13 +26,10 @@ import type {
 // Redis Client Types
 // =============================================================================
 
-interface RedisClient {
-  incr(key: string): Promise<number>;
-  expire(key: string, seconds: number): Promise<number>;
-  ttl(key: string): Promise<number>;
-  get<T>(key: string): Promise<T | null>;
-  del(...keys: string[]): Promise<number>;
-}
+type RedisClient = Pick<
+  UpstashRestRedisClient,
+  'incr' | 'expire' | 'ttl' | 'get' | 'del'
+>;
 
 // =============================================================================
 // In-Memory Fallback Store
@@ -61,10 +61,8 @@ async function getRedisClient(): Promise<RedisClient | null> {
   if (redisInitialized) return redisClient;
 
   try {
-    const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
-    const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
-
-    if (!redisUrl || !redisToken) {
+    const client = await getUpstashRestRedisClient();
+    if (!client) {
       console.warn(
         '[EmailRateLimiter] Redis not configured - falling back to memory'
       );
@@ -72,8 +70,7 @@ async function getRedisClient(): Promise<RedisClient | null> {
       return null;
     }
 
-    const { Redis } = await import('@upstash/redis');
-    redisClient = Redis.fromEnv() as unknown as RedisClient;
+    redisClient = client;
     redisInitialized = true;
     return redisClient;
   } catch (error) {

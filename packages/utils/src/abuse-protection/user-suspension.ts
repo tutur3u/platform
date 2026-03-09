@@ -3,6 +3,7 @@
  * Checks and manages user account suspensions.
  */
 
+import { getUpstashRestRedisClient } from '../upstash-rest';
 import type { RedisClient } from './types';
 
 // Extend REDIS_KEYS locally (avoids modifying shared constants for this feature)
@@ -24,16 +25,7 @@ async function getRedisClient(): Promise<RedisClient | null> {
   if (redisInitialized) return redisClient;
 
   try {
-    const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
-    const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
-
-    if (!redisUrl || !redisToken) {
-      redisInitialized = true;
-      return null;
-    }
-
-    const { Redis } = await import('@upstash/redis');
-    redisClient = Redis.fromEnv() as unknown as RedisClient;
+    redisClient = await getUpstashRestRedisClient();
     redisInitialized = true;
     return redisClient;
   } catch {

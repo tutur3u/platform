@@ -1,10 +1,13 @@
 import { Ratelimit } from '@upstash/ratelimit';
-import { Redis } from '@upstash/redis';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { extractIPFromRequest, isIPBlockedEdge } from './abuse-protection/edge';
 import { MAX_PAYLOAD_SIZE } from './constants';
 import { validateRequestEmojiLimit } from './request-emoji-limit';
+import {
+  getUpstashRatelimitRedisClient,
+  type UpstashRatelimitRedisClient,
+} from './upstash-rest';
 
 const isDev = process.env.NODE_ENV !== 'production';
 
@@ -12,42 +15,71 @@ type GuardOptions = {
   prefixBase: string;
 };
 
+type RateLimitWindow = 'minute' | 'hour' | 'day';
+
+type RateLimitBucket = {
+  limiter: Ratelimit | null;
+  window: RateLimitWindow;
+};
+
+type RateLimitConfig = {
+  duration: '1 m' | '1 h' | '1 d';
+  limit: number;
+  window: RateLimitWindow;
+};
+
 type Limiters = {
-  get: Ratelimit | null;
-  mutate: Ratelimit | null;
+  get: RateLimitBucket[];
+  mutate: RateLimitBucket[];
 };
 
 const limiterCache = new Map<string, Limiters>();
 
-function getRateLimiters(prefixBase: string): Limiters {
+function createRateLimitBuckets(
+  redis: UpstashRatelimitRedisClient,
+  prefixBase: string,
+  kind: 'get' | 'mutate'
+): RateLimitBucket[] {
+  const configs: RateLimitConfig[] =
+    kind === 'get'
+      ? [
+          { window: 'minute' as const, limit: 120, duration: '1 m' },
+          { window: 'hour' as const, limit: 2000, duration: '1 h' },
+          { window: 'day' as const, limit: 10000, duration: '1 d' },
+        ]
+      : [
+          { window: 'minute' as const, limit: 30, duration: '1 m' },
+          { window: 'hour' as const, limit: 300, duration: '1 h' },
+          { window: 'day' as const, limit: 1000, duration: '1 d' },
+        ];
+
+  return configs.map((config) => ({
+    window: config.window,
+    limiter: new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(config.limit, config.duration),
+      prefix: `${prefixBase}:${kind}:${config.window}`,
+      analytics: false,
+    }),
+  }));
+}
+
+async function getRateLimiters(prefixBase: string): Promise<Limiters> {
   const cached = limiterCache.get(prefixBase);
   if (cached) {
     return cached;
   }
 
-  const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
-  const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
-
-  if (!redisUrl || !redisToken) {
-    const disabled = { get: null, mutate: null };
+  const redis = await getUpstashRatelimitRedisClient();
+  if (!redis) {
+    const disabled = { get: [], mutate: [] };
     limiterCache.set(prefixBase, disabled);
     return disabled;
   }
 
-  const redis = new Redis({ url: redisUrl, token: redisToken });
   const limiters = {
-    get: new Ratelimit({
-      redis,
-      limiter: Ratelimit.slidingWindow(120, '1 m'),
-      prefix: `${prefixBase}:get`,
-      analytics: false,
-    }),
-    mutate: new Ratelimit({
-      redis,
-      limiter: Ratelimit.slidingWindow(30, '1 m'),
-      prefix: `${prefixBase}:mutate`,
-      analytics: false,
-    }),
+    get: createRateLimitBuckets(redis, prefixBase, 'get'),
+    mutate: createRateLimitBuckets(redis, prefixBase, 'mutate'),
   };
 
   limiterCache.set(prefixBase, limiters);
@@ -94,11 +126,14 @@ export async function guardApiProxyRequest(
       }
 
       const isRead = req.method === 'GET' || req.method === 'HEAD';
-      const limiter = isRead
-        ? getRateLimiters(options.prefixBase).get
-        : getRateLimiters(options.prefixBase).mutate;
+      const rateLimiters = await getRateLimiters(options.prefixBase);
+      const limiters = isRead ? rateLimiters.get : rateLimiters.mutate;
 
-      if (limiter) {
+      for (const { limiter, window } of limiters) {
+        if (!limiter) {
+          continue;
+        }
+
         const { success, limit, remaining, reset } = await limiter.limit(ip);
 
         if (!success) {
@@ -116,6 +151,7 @@ export async function guardApiProxyRequest(
                 'X-RateLimit-Limit': `${limit}`,
                 'X-RateLimit-Remaining': `${remaining}`,
                 'X-RateLimit-Reset': `${Math.ceil(reset / 1000)}`,
+                'X-RateLimit-Window': window,
               },
             }
           );
