@@ -146,7 +146,7 @@ export default function BillingDetailsCard({ wsId }: BillingDetailsCardProps) {
         return;
       }
 
-      window.open(result.data.url, '_blank');
+      window.open(result.data.url, '_blank', 'noopener,noreferrer');
     },
     onError: () => {
       toast.error(t('failed-to-open-customer-portal'));
