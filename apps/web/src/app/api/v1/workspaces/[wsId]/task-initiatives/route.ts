@@ -58,12 +58,12 @@ const serializeInitiatives = (rows: InitiativeRow[]) =>
   }));
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ wsId: string }> }
 ) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     const {
       data: { user },
@@ -137,7 +137,7 @@ export async function POST(
 ) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     const {
       data: { user },

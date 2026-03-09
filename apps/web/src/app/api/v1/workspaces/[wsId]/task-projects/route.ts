@@ -4,12 +4,12 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ wsId: string }> }
 ) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     // Get current user
     const {
@@ -123,7 +123,7 @@ export async function POST(
 ) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     // Get current user
     const {

@@ -31,9 +31,9 @@ const normalizeWorkspaceId = async (wsId: string) => {
   return resolveWorkspaceId(wsId);
 };
 
-export async function GET(_: NextRequest, { params }: Params) {
+export async function GET(req: NextRequest, { params }: Params) {
   const { wsId: id } = await params;
-  const supabase = await createClient();
+  const supabase = await createClient(req);
 
   const wsId = await normalizeWorkspaceId(id);
 

@@ -25,7 +25,7 @@ export async function PUT(
 ) {
   try {
     const { wsId, initiativeId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     const {
       data: { user },
@@ -116,12 +116,12 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ wsId: string; initiativeId: string }> }
 ) {
   try {
     const { wsId, initiativeId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     const {
       data: { user },

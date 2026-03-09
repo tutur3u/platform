@@ -66,7 +66,7 @@ async function updateProject(
 ) {
   try {
     const { wsId, projectId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     // Get current user
     const {
@@ -268,12 +268,12 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ wsId: string; projectId: string }> }
 ) {
   try {
     const { wsId, projectId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     // Get current user
     const {

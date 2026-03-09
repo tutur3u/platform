@@ -324,6 +324,207 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskEstimatesTypeTshirtExtended => 'Kích cỡ áo mở rộng: -, XS, S, M, L, XL, XXL, XXXL.';
 
   @override
+  String get taskPortfolioTitle => 'Dự án & sáng kiến';
+
+  @override
+  String get taskPortfolioProjectsTab => 'Dự án';
+
+  @override
+  String get taskPortfolioInitiativesTab => 'Sáng kiến';
+
+  @override
+  String get taskPortfolioAccessDeniedTitle => 'Quyền truy cập bị hạn chế';
+
+  @override
+  String get taskPortfolioAccessDeniedDescription => 'Bạn cần quyền quản lý dự án trong không gian làm việc này để quản lý dự án và sáng kiến.';
+
+  @override
+  String get taskPortfolioProjectsEmptyTitle => 'Chưa có dự án';
+
+  @override
+  String get taskPortfolioProjectsEmptyDescription => 'Tạo dự án đầu tiên để tổ chức công việc vượt ra ngoài từng tác vụ riêng lẻ.';
+
+  @override
+  String get taskPortfolioInitiativesEmptyTitle => 'Chưa có sáng kiến';
+
+  @override
+  String get taskPortfolioInitiativesEmptyDescription => 'Tạo một sáng kiến để nhóm các dự án liên quan dưới cùng một kết quả chung.';
+
+  @override
+  String get taskPortfolioNoDescription => 'Chưa có mô tả';
+
+  @override
+  String get taskPortfolioProjectTasksLinked => 'tác vụ liên kết';
+
+  @override
+  String get taskPortfolioProjectCompletedTasks => 'đã hoàn thành';
+
+  @override
+  String get taskPortfolioInitiativeProjectsLinked => 'dự án liên kết';
+
+  @override
+  String get taskPortfolioCreateProject => 'Tạo dự án';
+
+  @override
+  String get taskPortfolioEditProject => 'Sửa dự án';
+
+  @override
+  String get taskPortfolioDeleteProject => 'Xóa dự án';
+
+  @override
+  String get taskPortfolioDeleteProjectConfirm => 'Xóa dự án này?';
+
+  @override
+  String get taskPortfolioProjectCreated => 'Đã tạo dự án.';
+
+  @override
+  String get taskPortfolioProjectUpdated => 'Đã cập nhật dự án.';
+
+  @override
+  String get taskPortfolioProjectDeleted => 'Đã xóa dự án.';
+
+  @override
+  String get taskPortfolioProjectName => 'Tên dự án';
+
+  @override
+  String get taskPortfolioProjectDescriptionHint => 'Mô tả mục tiêu của dự án';
+
+  @override
+  String get taskPortfolioProjectStatus => 'Trạng thái dự án';
+
+  @override
+  String get taskPortfolioProjectPriority => 'Mức ưu tiên';
+
+  @override
+  String get taskPortfolioProjectLead => 'Người phụ trách';
+
+  @override
+  String get taskPortfolioProjectNoLead => 'Chưa có người phụ trách';
+
+  @override
+  String get taskPortfolioProjectStartDate => 'Ngày bắt đầu';
+
+  @override
+  String get taskPortfolioProjectEndDate => 'Ngày kết thúc';
+
+  @override
+  String get taskPortfolioProjectArchived => 'Đã lưu trữ';
+
+  @override
+  String get taskPortfolioProjectArchivedHint => 'Ẩn dự án này khỏi các chế độ xem lập kế hoạch đang hoạt động.';
+
+  @override
+  String get taskPortfolioPickDate => 'Chọn ngày';
+
+  @override
+  String get taskPortfolioClearSelection => 'Xóa';
+
+  @override
+  String get taskPortfolioProjectStatusActive => 'Đang hoạt động';
+
+  @override
+  String get taskPortfolioProjectStatusBacklog => 'Tồn đọng';
+
+  @override
+  String get taskPortfolioProjectStatusPlanned => 'Đã lên kế hoạch';
+
+  @override
+  String get taskPortfolioProjectStatusInProgress => 'Đang thực hiện';
+
+  @override
+  String get taskPortfolioProjectStatusInReview => 'Đang rà soát';
+
+  @override
+  String get taskPortfolioProjectStatusInTesting => 'Đang kiểm thử';
+
+  @override
+  String get taskPortfolioProjectStatusCompleted => 'Hoàn thành';
+
+  @override
+  String get taskPortfolioProjectStatusCancelled => 'Đã hủy';
+
+  @override
+  String get taskPortfolioProjectStatusOnHold => 'Tạm dừng';
+
+  @override
+  String get taskPortfolioProjectPriorityCritical => 'Nghiêm trọng';
+
+  @override
+  String get taskPortfolioProjectPriorityHigh => 'Cao';
+
+  @override
+  String get taskPortfolioProjectPriorityNormal => 'Bình thường';
+
+  @override
+  String get taskPortfolioProjectPriorityLow => 'Thấp';
+
+  @override
+  String get taskPortfolioCreateInitiative => 'Tạo sáng kiến';
+
+  @override
+  String get taskPortfolioEditInitiative => 'Sửa sáng kiến';
+
+  @override
+  String get taskPortfolioDeleteInitiative => 'Xóa sáng kiến';
+
+  @override
+  String get taskPortfolioDeleteInitiativeConfirm => 'Xóa sáng kiến này?';
+
+  @override
+  String get taskPortfolioInitiativeCreated => 'Đã tạo sáng kiến.';
+
+  @override
+  String get taskPortfolioInitiativeUpdated => 'Đã cập nhật sáng kiến.';
+
+  @override
+  String get taskPortfolioInitiativeDeleted => 'Đã xóa sáng kiến.';
+
+  @override
+  String get taskPortfolioInitiativeName => 'Tên sáng kiến';
+
+  @override
+  String get taskPortfolioInitiativeDescriptionHint => 'Mô tả kết quả của sáng kiến';
+
+  @override
+  String get taskPortfolioInitiativeStatus => 'Trạng thái sáng kiến';
+
+  @override
+  String get taskPortfolioInitiativeStatusActive => 'Đang hoạt động';
+
+  @override
+  String get taskPortfolioInitiativeStatusCompleted => 'Hoàn thành';
+
+  @override
+  String get taskPortfolioInitiativeStatusOnHold => 'Tạm dừng';
+
+  @override
+  String get taskPortfolioInitiativeStatusCancelled => 'Đã hủy';
+
+  @override
+  String get taskPortfolioManageProjects => 'Quản lý dự án';
+
+  @override
+  String get taskPortfolioLinkedProjects => 'Dự án đã liên kết';
+
+  @override
+  String get taskPortfolioNoLinkedProjects => 'Chưa có dự án nào được liên kết';
+
+  @override
+  String get taskPortfolioLinkProject => 'Liên kết dự án';
+
+  @override
+  String get taskPortfolioNoAvailableProjects => 'Chọn dự án';
+
+  @override
+  String get taskPortfolioAllProjectsLinked => 'Tất cả dự án trong không gian làm việc đã được liên kết.';
+
+  @override
+  String get taskPortfolioProjectLinked => 'Đã liên kết dự án.';
+
+  @override
+  String get taskPortfolioProjectUnlinked => 'Đã gỡ liên kết dự án.';
+
+  @override
   String get calendarTitle => 'Lịch';
 
   @override

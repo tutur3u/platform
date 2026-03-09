@@ -22,6 +22,7 @@ import 'package:mobile/features/onboarding/view/onboarding_page.dart';
 import 'package:mobile/features/profile/view/profile_page.dart';
 import 'package:mobile/features/settings/view/settings_page.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
+import 'package:mobile/features/task_portfolio/view/task_portfolio_page.dart';
 import 'package:mobile/features/tasks_estimates/view/task_estimates_page.dart';
 import 'package:mobile/features/time_tracker/view/time_tracker_page.dart';
 import 'package:mobile/features/time_tracker/view/time_tracker_requests_page.dart';
@@ -180,6 +181,10 @@ GoRouter createAppRouter(
           GoRoute(
             path: Routes.taskEstimates,
             builder: (context, state) => const TaskEstimatesPage(),
+          ),
+          GoRoute(
+            path: Routes.taskPortfolio,
+            builder: (context, state) => const TaskPortfolioPage(),
           ),
           GoRoute(
             path: Routes.transactions,
