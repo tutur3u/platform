@@ -24,7 +24,7 @@ export default function HeroSection() {
 
       <div className="relative mx-auto max-w-6xl px-6 text-center">
         <div className="flex flex-col items-center justify-center gap-8">
-          <div className="w-full max-w-2xl">
+          <div className="w-full max-w-3xl">
             <video autoPlay muted playsInline className="w-full">
               <source src="/intro.mov" type="video/quicktime" />
               <source src="/intro.webm" type="video/webm" />
