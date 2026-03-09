@@ -80,6 +80,59 @@
     "tasksPriorityHigh": "High",
     "tasksPriorityNormal": "Normal",
     "tasksPriorityLow": "Low",
+    "taskEstimatesTitle": "Task Estimation",
+    "taskEstimatesDescription": "Configure estimation methods for your task boards and review their current coverage.",
+    "taskEstimatesAccessDeniedTitle": "Access restricted",
+    "taskEstimatesAccessDeniedDescription": "You need project management permission in this workspace to change task board estimation settings.",
+    "taskEstimatesTotalBoards": "Total boards",
+    "taskEstimatesConfiguredBoards": "Configured",
+    "taskEstimatesExtendedRangeBoards": "Extended range",
+    "taskEstimatesDistributionTitle": "Estimation methods",
+    "taskEstimatesBoardConfigTitle": "Board estimation configuration",
+    "taskEstimatesNoBoardsTitle": "No boards found",
+    "taskEstimatesNoBoardsDescription": "Create a task board first, then come back here to configure its estimation method.",
+    "taskEstimatesExtendedBadge": "Extended",
+    "taskEstimatesDialogTitle": "Edit {boardName}",
+    "@taskEstimatesDialogTitle": {
+        "placeholders": {
+            "boardName": {
+                "type": "String"
+            }
+        }
+    },
+    "taskEstimatesDialogEstimationMethod": "Estimation method",
+    "taskEstimatesDialogRangeTitle": "{label} range",
+    "@taskEstimatesDialogRangeTitle": {
+        "placeholders": {
+            "label": {
+                "type": "String"
+            }
+        }
+    },
+    "taskEstimatesDialogEstimationOptions": "Estimation options",
+    "taskEstimatesDialogSelectedConfiguration": "Selected configuration",
+    "taskEstimatesDialogSave": "Update estimation",
+    "taskEstimatesRangeStandard": "Standard range",
+    "taskEstimatesRangeExtended": "Extended range",
+    "taskEstimatesAllowZeroEstimates": "Allow zero estimates",
+    "taskEstimatesAllowZeroEstimatesDescription": "When enabled, issues can be estimated with zero points.",
+    "taskEstimatesCountUnestimatedIssues": "Count unestimated issues",
+    "taskEstimatesCountUnestimatedIssuesDescription": "When enabled, unestimated issues count as one point. When disabled, they count as zero.",
+    "taskEstimatesUpdateSuccess": "Estimation updated successfully.",
+    "taskEstimatesTypeNoneLabel": "None",
+    "taskEstimatesTypeNoneDescription": "No estimation is configured for this board.",
+    "taskEstimatesTypeFibonacciLabel": "Fibonacci",
+    "taskEstimatesTypeFibonacciStandard": "Fibonacci sequence: 0, 1, 2, 3, 5, 8.",
+    "taskEstimatesTypeFibonacciExtended": "Extended Fibonacci sequence: 0, 1, 2, 3, 5, 8, 13, 21.",
+    "taskEstimatesTypeLinearLabel": "Linear",
+    "taskEstimatesTypeLinearStandard": "Linear sequence: 0, 1, 2, 3, 4, 5.",
+    "taskEstimatesTypeLinearExtended": "Extended linear sequence: 0, 1, 2, 3, 4, 5, 6, 7.",
+    "taskEstimatesTypeExponentialLabel": "Exponential",
+    "taskEstimatesTypeExponentialStandard": "Exponential sequence: 0, 1, 2, 4, 8, 16.",
+    "taskEstimatesTypeExponentialExtended": "Extended exponential sequence: 0, 1, 2, 4, 8, 16, 32, 64.",
+    "taskEstimatesTypeTshirtLabel": "T-shirt",
+    "taskEstimatesTypeTshirtStandard": "T-shirt sizes: -, XS, S, M, L, XL.",
+    "taskEstimatesTypeTshirtExtended": "Extended T-shirt sizes: -, XS, S, M, L, XL, XXL, XXXL.",
 
     "calendarTitle": "Calendar",
     "calendarEmpty": "No events",

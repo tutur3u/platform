@@ -33,6 +33,16 @@ void main() {
       expect(routes.length, greaterThanOrEqualTo(3));
     });
 
+    test('tasks module exposes estimates nav item', () {
+      final tasks = AppRegistry.moduleById('tasks');
+
+      expect(tasks, isNotNull);
+      final routes = tasks!.miniAppNavItems.map((item) => item.route).toList();
+
+      expect(routes, contains(Routes.tasks));
+      expect(routes, contains(Routes.taskEstimates));
+    });
+
     test('all modules define at least one mini nav item', () {
       for (final module in AppRegistry.allModules) {
         expect(module.miniAppNavItems, isNotEmpty, reason: module.id);

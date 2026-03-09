@@ -1,9 +1,16 @@
 import 'package:mobile/data/models/task.dart';
+import 'package:mobile/data/models/task_estimate_board.dart';
 import 'package:mobile/data/models/user_task.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 
 /// Repository for task operations.
 class TaskRepository {
+  TaskRepository({ApiClient? apiClient})
+    : _apiClient = apiClient ?? ApiClient();
+
+  final ApiClient _apiClient;
+
   /// Fetches user-accessible tasks via the same RPC the web app uses.
   ///
   /// When [isPersonal] is true, [wsId] is omitted so the RPC returns tasks
@@ -99,5 +106,41 @@ class TaskRepository {
 
   Future<void> deleteTask(String taskId) async {
     await supabase.from('workspace_tasks').delete().eq('id', taskId);
+  }
+
+  Future<List<TaskEstimateBoard>> getTaskEstimateBoards(String wsId) async {
+    final response = await _apiClient.getJson(
+      '/api/v1/workspaces/$wsId/boards/estimation',
+    );
+    final boardsData = response['boards'] as List<dynamic>? ?? const [];
+
+    return boardsData
+        .map(
+          (board) => TaskEstimateBoard.fromJson(
+            Map<String, dynamic>.from(board as Map),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  Future<TaskEstimateBoard> updateBoardEstimation({
+    required String wsId,
+    required String boardId,
+    required String? estimationType,
+    required bool extendedEstimation,
+    required bool allowZeroEstimates,
+    required bool countUnestimatedIssues,
+  }) async {
+    final response = await _apiClient.patchJson(
+      '/api/v1/workspaces/$wsId/boards/$boardId/estimation',
+      {
+        'estimation_type': estimationType,
+        'extended_estimation': extendedEstimation,
+        'allow_zero_estimates': allowZeroEstimates,
+        'count_unestimated_issues': countUnestimatedIssues,
+      },
+    );
+
+    return TaskEstimateBoard.fromJson(response);
   }
 }

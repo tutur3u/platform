@@ -203,6 +203,127 @@ class AppLocalizationsVi extends AppLocalizations {
   String get tasksPriorityLow => 'Thấp';
 
   @override
+  String get taskEstimatesTitle => 'Ước lượng công việc';
+
+  @override
+  String get taskEstimatesDescription => 'Cấu hình phương pháp ước lượng cho các bảng công việc và xem mức độ áp dụng hiện tại.';
+
+  @override
+  String get taskEstimatesAccessDeniedTitle => 'Quyền truy cập bị hạn chế';
+
+  @override
+  String get taskEstimatesAccessDeniedDescription => 'Bạn cần quyền quản lý dự án trong không gian làm việc này để thay đổi cài đặt ước lượng của bảng công việc.';
+
+  @override
+  String get taskEstimatesTotalBoards => 'Tổng số bảng';
+
+  @override
+  String get taskEstimatesConfiguredBoards => 'Đã cấu hình';
+
+  @override
+  String get taskEstimatesExtendedRangeBoards => 'Phạm vi mở rộng';
+
+  @override
+  String get taskEstimatesDistributionTitle => 'Phương pháp ước lượng';
+
+  @override
+  String get taskEstimatesBoardConfigTitle => 'Cấu hình ước lượng của bảng';
+
+  @override
+  String get taskEstimatesNoBoardsTitle => 'Không tìm thấy bảng nào';
+
+  @override
+  String get taskEstimatesNoBoardsDescription => 'Hãy tạo bảng công việc trước, sau đó quay lại đây để cấu hình phương pháp ước lượng.';
+
+  @override
+  String get taskEstimatesExtendedBadge => 'Mở rộng';
+
+  @override
+  String taskEstimatesDialogTitle(String boardName) {
+    return 'Chỉnh sửa $boardName';
+  }
+
+  @override
+  String get taskEstimatesDialogEstimationMethod => 'Phương pháp ước lượng';
+
+  @override
+  String taskEstimatesDialogRangeTitle(String label) {
+    return 'Phạm vi $label';
+  }
+
+  @override
+  String get taskEstimatesDialogEstimationOptions => 'Tùy chọn ước lượng';
+
+  @override
+  String get taskEstimatesDialogSelectedConfiguration => 'Cấu hình đã chọn';
+
+  @override
+  String get taskEstimatesDialogSave => 'Cập nhật ước lượng';
+
+  @override
+  String get taskEstimatesRangeStandard => 'Phạm vi tiêu chuẩn';
+
+  @override
+  String get taskEstimatesRangeExtended => 'Phạm vi mở rộng';
+
+  @override
+  String get taskEstimatesAllowZeroEstimates => 'Cho phép ước lượng bằng 0';
+
+  @override
+  String get taskEstimatesAllowZeroEstimatesDescription => 'Khi bật, các công việc có thể được ước lượng với 0 điểm.';
+
+  @override
+  String get taskEstimatesCountUnestimatedIssues => 'Đếm các công việc chưa ước lượng';
+
+  @override
+  String get taskEstimatesCountUnestimatedIssuesDescription => 'Khi bật, các công việc chưa ước lượng sẽ được tính là một điểm. Khi tắt, chúng được tính là 0.';
+
+  @override
+  String get taskEstimatesUpdateSuccess => 'Đã cập nhật ước lượng thành công.';
+
+  @override
+  String get taskEstimatesTypeNoneLabel => 'Không có';
+
+  @override
+  String get taskEstimatesTypeNoneDescription => 'Không có phương pháp ước lượng nào được cấu hình cho bảng này.';
+
+  @override
+  String get taskEstimatesTypeFibonacciLabel => 'Fibonacci';
+
+  @override
+  String get taskEstimatesTypeFibonacciStandard => 'Dãy Fibonacci: 0, 1, 2, 3, 5, 8.';
+
+  @override
+  String get taskEstimatesTypeFibonacciExtended => 'Dãy Fibonacci mở rộng: 0, 1, 2, 3, 5, 8, 13, 21.';
+
+  @override
+  String get taskEstimatesTypeLinearLabel => 'Tuyến tính';
+
+  @override
+  String get taskEstimatesTypeLinearStandard => 'Dãy tuyến tính: 0, 1, 2, 3, 4, 5.';
+
+  @override
+  String get taskEstimatesTypeLinearExtended => 'Dãy tuyến tính mở rộng: 0, 1, 2, 3, 4, 5, 6, 7.';
+
+  @override
+  String get taskEstimatesTypeExponentialLabel => 'Lũy thừa';
+
+  @override
+  String get taskEstimatesTypeExponentialStandard => 'Dãy lũy thừa: 0, 1, 2, 4, 8, 16.';
+
+  @override
+  String get taskEstimatesTypeExponentialExtended => 'Dãy lũy thừa mở rộng: 0, 1, 2, 4, 8, 16, 32, 64.';
+
+  @override
+  String get taskEstimatesTypeTshirtLabel => 'Áo thun';
+
+  @override
+  String get taskEstimatesTypeTshirtStandard => 'Kích cỡ áo: -, XS, S, M, L, XL.';
+
+  @override
+  String get taskEstimatesTypeTshirtExtended => 'Kích cỡ áo mở rộng: -, XS, S, M, L, XL, XXL, XXXL.';
+
+  @override
   String get calendarTitle => 'Lịch';
 
   @override

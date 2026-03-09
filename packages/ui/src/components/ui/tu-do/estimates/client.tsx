@@ -1,6 +1,6 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   BarChart3,
   Calculator,
@@ -29,21 +29,77 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface Props {
   wsId: string;
-  initialBoards: Partial<WorkspaceTaskBoard>[];
 }
 
-export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
+interface TaskEstimateBoardsResponse {
+  boards: Partial<WorkspaceTaskBoard>[];
+}
+
+const taskEstimateBoardKeys = {
+  all: ['task-estimate-boards'] as const,
+  list: (wsId: string) => [...taskEstimateBoardKeys.all, wsId] as const,
+};
+
+async function fetchTaskEstimateBoards(
+  wsId: string
+): Promise<TaskEstimateBoardsResponse> {
+  const response = await fetch(`/api/v1/workspaces/${wsId}/boards/estimation`, {
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch task estimate boards');
+  }
+
+  return response.json();
+}
+
+async function updateTaskEstimateBoard({
+  wsId,
+  boardId,
+  estimationType,
+  extendedEstimation,
+  allowZeroEstimates,
+  countUnestimatedIssues,
+}: {
+  wsId: string;
+  boardId: string;
+  estimationType: string | null;
+  extendedEstimation: boolean;
+  allowZeroEstimates: boolean;
+  countUnestimatedIssues: boolean;
+}) {
+  const response = await fetch(
+    `/api/v1/workspaces/${wsId}/boards/${boardId}/estimation`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        estimation_type: estimationType,
+        extended_estimation: extendedEstimation,
+        allow_zero_estimates: allowZeroEstimates,
+        count_unestimated_issues: countUnestimatedIssues,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to update estimation type');
+  }
+
+  return (await response.json()) as Partial<WorkspaceTaskBoard>;
+}
+
+export default function TaskEstimatesClient({ wsId }: Props) {
   const t = useTranslations('task-estimates');
-  const router = useRouter();
   const queryClient = useQueryClient();
-  const [boards, setBoards] =
-    useState<Partial<WorkspaceTaskBoard>[]>(initialBoards);
   const [editingBoard, setEditingBoard] =
     useState<Partial<WorkspaceTaskBoard> | null>(null);
   const [selectedEstimationType, setSelectedEstimationType] =
@@ -52,7 +108,52 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
   const [allowZeroEstimates, setAllowZeroEstimates] = useState<boolean>(true);
   const [countUnestimatedIssues, setCountUnestimatedIssues] =
     useState<boolean>(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: taskEstimateBoardKeys.list(wsId),
+    queryFn: () => fetchTaskEstimateBoards(wsId),
+    enabled: !!wsId,
+  });
+
+  const boards = data?.boards ?? [];
+
+  const updateMutation = useMutation({
+    mutationFn: ({
+      boardId,
+      estimationType,
+    }: {
+      boardId: string;
+      estimationType: string | null;
+    }) =>
+      updateTaskEstimateBoard({
+        wsId,
+        boardId,
+        estimationType,
+        extendedEstimation,
+        allowZeroEstimates,
+        countUnestimatedIssues,
+      }),
+    onSuccess: (updatedBoard) => {
+      queryClient.setQueryData<TaskEstimateBoardsResponse | undefined>(
+        taskEstimateBoardKeys.list(wsId),
+        (current) => ({
+          boards:
+            current?.boards.map((board) =>
+              board.id === updatedBoard.id
+                ? { ...board, ...updatedBoard }
+                : board
+            ) ?? [],
+        })
+      );
+
+      setEditingBoard(null);
+      toast.success(t('toast.update_success'));
+    },
+    onError: (mutationError) => {
+      console.error('Error updating estimation type:', mutationError);
+      toast.error(t('toast.update_error'));
+    },
+  });
 
   const estimationTypes = [
     {
@@ -217,62 +318,15 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
   };
 
   const handleUpdateEstimationType = async () => {
-    if (!editingBoard) return;
+    if (!editingBoard?.id) return;
 
-    setIsSubmitting(true);
-    try {
-      // Convert 'none' back to null for the API
-      const actualEstimationType =
-        selectedEstimationType === 'none' ? null : selectedEstimationType;
+    const actualEstimationType =
+      selectedEstimationType === 'none' ? null : selectedEstimationType;
 
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/boards/${editingBoard.id}/estimation`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            estimation_type: actualEstimationType,
-            extended_estimation: extendedEstimation,
-            allow_zero_estimates: allowZeroEstimates,
-            count_unestimated_issues: countUnestimatedIssues,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to update estimation type');
-      }
-
-      await queryClient.invalidateQueries({
-        queryKey: ['board-config', editingBoard.id],
-      });
-
-      // Update local state
-      setBoards((prev) =>
-        prev.map((board) =>
-          board.id === editingBoard.id
-            ? {
-                ...board,
-                estimation_type: actualEstimationType as any,
-                extended_estimation: extendedEstimation,
-                allow_zero_estimates: allowZeroEstimates,
-                count_unestimated_issues: countUnestimatedIssues,
-              }
-            : board
-        )
-      );
-
-      setEditingBoard(null);
-      toast.success(t('toast.update_success'));
-      router.refresh();
-    } catch (error) {
-      console.error('Error updating estimation type:', error);
-      toast.error(t('toast.update_error'));
-    } finally {
-      setIsSubmitting(false);
-    }
+    await updateMutation.mutateAsync({
+      boardId: editingBoard.id,
+      estimationType: actualEstimationType,
+    });
   };
 
   const openEditDialog = (board: Partial<WorkspaceTaskBoard>) => {
@@ -310,6 +364,34 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
       ).length,
     })),
   };
+
+  if (isLoading) {
+    return (
+      <Card className="border border-border/60 bg-background p-8 shadow-sm">
+        <div className="flex items-center justify-center gap-3 text-muted-foreground">
+          <Calculator className="h-5 w-5 animate-spin" />
+          <span>{t('dialog.updating')}</span>
+        </div>
+      </Card>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Card className="border border-dynamic-red/30 bg-dynamic-red/5 p-8 shadow-sm">
+        <div className="space-y-2 text-center">
+          <p className="font-medium text-dynamic-red">
+            {t('toast.update_error')}
+          </p>
+          <p className="text-muted-foreground text-sm">
+            {error instanceof Error
+              ? error.message
+              : 'Failed to fetch task estimate boards'}
+          </p>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -713,7 +795,7 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                 <Button
                   variant="outline"
                   onClick={closeDialog}
-                  disabled={isSubmitting}
+                  disabled={updateMutation.isPending}
                   className="sm:w-auto"
                 >
                   {t('dialog.cancel')}
@@ -721,12 +803,12 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                 <Button
                   onClick={handleUpdateEstimationType}
                   disabled={
-                    isSubmitting ||
+                    updateMutation.isPending ||
                     (!editingBoard?.estimation_type &&
                       selectedEstimationType === 'none')
                   }
                 >
-                  {isSubmitting ? (
+                  {updateMutation.isPending ? (
                     <>
                       <Calculator className="mr-2 h-4 w-4 animate-spin" />
                       {t('dialog.updating')}
