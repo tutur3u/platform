@@ -37,6 +37,75 @@ function getDisplayWidth(str) {
   return stripAnsi(str).length;
 }
 
+/**
+ * Filter node --test TAP output down to failures and summary lines
+ */
+function formatScriptTestErrors(stdout, stderr) {
+  const lines = stdout.split(/\r?\n/);
+  const failureBlocks = [];
+  const summaryLines = [];
+  let pendingSubtest = null;
+  let currentFailure = null;
+
+  function flushFailure() {
+    if (currentFailure && currentFailure.length > 0) {
+      failureBlocks.push(currentFailure.join('\n').trimEnd());
+    }
+    currentFailure = null;
+  }
+
+  for (const line of lines) {
+    if (currentFailure) {
+      if (/^(# Subtest: |ok \d+ - |not ok \d+ - |1\.\.)/.test(line)) {
+        flushFailure();
+      } else {
+        currentFailure.push(line);
+        continue;
+      }
+    }
+
+    if (line.startsWith('# Subtest: ')) {
+      pendingSubtest = line;
+      continue;
+    }
+
+    if (/^not ok \d+ - /.test(line)) {
+      currentFailure = pendingSubtest ? [pendingSubtest, line] : [line];
+      pendingSubtest = null;
+      continue;
+    }
+
+    if (/^ok \d+ - /.test(line)) {
+      pendingSubtest = null;
+      continue;
+    }
+
+    if (
+      /^1\.\./.test(line) ||
+      /^# (tests|suites|pass|fail|cancelled|skipped|todo|duration_ms)\b/.test(
+        line
+      )
+    ) {
+      summaryLines.push(line);
+    }
+  }
+
+  flushFailure();
+
+  const stderrLines = stderr.split(/\r?\n/).filter(Boolean);
+  const sections = [...failureBlocks];
+
+  if (summaryLines.length > 0) {
+    sections.push(summaryLines.join('\n'));
+  }
+
+  if (stderrLines.length > 0) {
+    sections.push(stderrLines.join('\n'));
+  }
+
+  return sections.join('\n\n');
+}
+
 // ANSI color codes
 const colors = {
   reset: '\x1b[0m',
@@ -83,6 +152,9 @@ const checks = [
     name: 'script-tests',
     command: 'bun',
     args: ['run', 'test:scripts'],
+    errorsOnly: true,
+    quietSuccessMessage: `${colors.dim}No script test errors${colors.reset}`,
+    formatFailureOutput: formatScriptTestErrors,
     parseOutput: (stdout) => {
       const clean = stripAnsi(stdout);
       const match = clean.match(/# tests (\d+)/i);
@@ -188,6 +260,7 @@ function runCheck(check) {
     const startTime = Date.now();
     let stdout = '';
     let stderr = '';
+    const streamOutput = showDetails || !check.errorsOnly;
 
     const proc = spawn(check.command, check.args, {
       cwd: process.cwd(),
@@ -202,17 +275,33 @@ function runCheck(check) {
     proc.stdout.on('data', (data) => {
       const str = data.toString();
       stdout += str;
-      process.stdout.write(str);
+      if (streamOutput) {
+        process.stdout.write(str);
+      }
     });
 
     proc.stderr.on('data', (data) => {
       const str = data.toString();
       stderr += str;
-      process.stderr.write(str);
+      if (streamOutput) {
+        process.stderr.write(str);
+      }
     });
 
     proc.on('close', (code) => {
       const duration = Date.now() - startTime;
+      if (!streamOutput && code !== 0) {
+        const failureOutput = check.formatFailureOutput
+          ? check.formatFailureOutput(stdout, stderr)
+          : `${stdout}${stderr}`;
+        if (failureOutput) {
+          process.stderr.write(
+            failureOutput.endsWith('\n') ? failureOutput : `${failureOutput}\n`
+          );
+        }
+      } else if (!streamOutput && code === 0 && check.quietSuccessMessage) {
+        console.log(check.quietSuccessMessage);
+      }
       resolve({
         name: check.name,
         success: code === 0,
