@@ -478,7 +478,7 @@ abstract class AppLocalizations {
   /// No description provided for @taskEstimatesTitle.
   ///
   /// In en, this message translates to:
-  /// **'Task Estimation'**
+  /// **'Estimations'**
   String get taskEstimatesTitle;
 
   /// No description provided for @taskEstimatesDescription.

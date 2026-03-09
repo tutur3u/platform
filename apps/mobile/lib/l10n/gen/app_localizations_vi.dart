@@ -203,7 +203,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get tasksPriorityLow => 'Thấp';
 
   @override
-  String get taskEstimatesTitle => 'Ước lượng công việc';
+  String get taskEstimatesTitle => 'Ước lượng';
 
   @override
   String get taskEstimatesDescription => 'Cấu hình phương pháp ước lượng cho các bảng công việc và xem mức độ áp dụng hiện tại.';

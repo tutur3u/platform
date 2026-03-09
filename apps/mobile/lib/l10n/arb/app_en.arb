@@ -80,7 +80,7 @@
     "tasksPriorityHigh": "High",
     "tasksPriorityNormal": "Normal",
     "tasksPriorityLow": "Low",
-    "taskEstimatesTitle": "Task Estimation",
+    "taskEstimatesTitle": "Estimations",
     "taskEstimatesDescription": "Configure estimation methods for your task boards and review their current coverage.",
     "taskEstimatesAccessDeniedTitle": "Access restricted",
     "taskEstimatesAccessDeniedDescription": "You need project management permission in this workspace to change task board estimation settings.",

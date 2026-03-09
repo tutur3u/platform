@@ -203,7 +203,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tasksPriorityLow => 'Low';
 
   @override
-  String get taskEstimatesTitle => 'Task Estimation';
+  String get taskEstimatesTitle => 'Estimations';
 
   @override
   String get taskEstimatesDescription => 'Configure estimation methods for your task boards and review their current coverage.';

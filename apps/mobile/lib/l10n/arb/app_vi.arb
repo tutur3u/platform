@@ -80,7 +80,7 @@
     "tasksPriorityHigh": "Cao",
     "tasksPriorityNormal": "Bình thường",
     "tasksPriorityLow": "Thấp",
-    "taskEstimatesTitle": "Ước lượng công việc",
+    "taskEstimatesTitle": "Ước lượng",
     "taskEstimatesDescription": "Cấu hình phương pháp ước lượng cho các bảng công việc và xem mức độ áp dụng hiện tại.",
     "taskEstimatesAccessDeniedTitle": "Quyền truy cập bị hạn chế",
     "taskEstimatesAccessDeniedDescription": "Bạn cần quyền quản lý dự án trong không gian làm việc này để thay đổi cài đặt ước lượng của bảng công việc.",

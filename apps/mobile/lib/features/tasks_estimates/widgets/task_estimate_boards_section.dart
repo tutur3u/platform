@@ -26,46 +26,23 @@ class TaskEstimateBoardsSection extends StatelessWidget {
     final l10n = context.l10n;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      child: shad.Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      l10n.taskEstimatesBoardConfigTitle,
-                      style: shad.Theme.of(context).typography.large,
-                    ),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: boards.isEmpty
+          ? TaskEstimatesEmptyState(
+              title: l10n.taskEstimatesNoBoardsTitle,
+              description: l10n.taskEstimatesNoBoardsDescription,
+            )
+          : Column(
+              children: [
+                for (var index = 0; index < boards.length; index++) ...[
+                  _TaskEstimateBoardTile(
+                    board: boards[index],
+                    enabled: !isUpdating,
                   ),
-                  shad.OutlineBadge(child: Text('${boards.length}')),
+                  if (index < boards.length - 1) const shad.Gap(8),
                 ],
-              ),
-              const shad.Gap(12),
-              if (boards.isEmpty)
-                TaskEstimatesEmptyState(
-                  title: l10n.taskEstimatesNoBoardsTitle,
-                  description: l10n.taskEstimatesNoBoardsDescription,
-                )
-              else
-                Column(
-                  children: [
-                    for (var index = 0; index < boards.length; index++) ...[
-                      _TaskEstimateBoardTile(
-                        board: boards[index],
-                        enabled: !isUpdating,
-                      ),
-                      if (index < boards.length - 1) const shad.Gap(8),
-                    ],
-                  ],
-                ),
-            ],
-          ),
-        ),
-      ),
+              ],
+            ),
     );
   }
 }

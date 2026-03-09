@@ -12,9 +12,6 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/tasks_estimates/cubit/task_estimates_cubit.dart';
 import 'package:mobile/features/tasks_estimates/widgets/task_estimate_boards_section.dart';
 import 'package:mobile/features/tasks_estimates/widgets/task_estimates_feedback.dart';
-import 'package:mobile/features/tasks_estimates/widgets/task_estimates_intro.dart';
-import 'package:mobile/features/tasks_estimates/widgets/task_estimates_stats.dart';
-import 'package:mobile/features/tasks_estimates/widgets/task_estimation_distribution.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -80,12 +77,12 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
             unawaited(context.read<TaskEstimatesCubit>().loadBoards(wsId));
           }
         },
-        child: _buildContent(context, l10n),
+        child: _buildContent(context),
       ),
     );
   }
 
-  Widget _buildContent(BuildContext context, AppLocalizations l10n) {
+  Widget _buildContent(BuildContext context) {
     if (_isCheckingPermissions) {
       return const Center(child: shad.CircularProgressIndicator());
     }
@@ -110,14 +107,8 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
           child: RefreshIndicator(
             onRefresh: () => _reload(context),
             child: ListView(
-              padding: const EdgeInsets.only(bottom: 32),
+              padding: const EdgeInsets.fromLTRB(0, 16, 0, 32),
               children: [
-                TaskEstimatesIntro(
-                  title: l10n.taskEstimatesTitle,
-                  description: l10n.taskEstimatesDescription,
-                ),
-                TaskEstimatesStats(state: state),
-                TaskEstimationDistribution(boards: state.boards),
                 TaskEstimateBoardsSection(
                   boards: state.boards,
                   isUpdating: state.status == TaskEstimatesStatus.updating,
