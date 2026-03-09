@@ -166,6 +166,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 
 ### 6.3 Security & Validation
 
+- **Proxy Guard Parity**: When adding proxy-level request protections (for example payload caps, rate limits, or body validation), apply them across every app `src/proxy.ts` that fronts API traffic, not just `apps/web`. Shared guard utilities are preferred so rate-limit thresholds, trusted-source bypasses, and rejection payloads do not drift between apps.
 - **Chat Attachment Type Parity**: When adding a new attachment type for Mira chat, update all three surfaces together: `chat-input-bar.tsx` accept list, `/api/ai/chat/upload-url` extension allowlist, and `/api/ai/chat/file-urls` extension→MIME mapping.
 - **Office/Binary Attachment Handling**: For chat uploads that may be rejected by storage MIME checks (for example `.xlsx`/`.docx`), use a safe upload MIME fallback (`application/octet-stream`) and retry once without explicit `Content-Type`. In AI provider routes, never pass unsupported binary MIME types as inline `file` parts; convert them into explicit text notices instead.
 - **Mira Workspace Context Sync**: When a Mira tool changes workspace context, update both the mutable server-side `MiraToolContext` used for later tool calls in the same response and the client-persisted chat config used for future turns; otherwise current-turn tools and later user requests will drift to different workspaces.
