@@ -1,5 +1,3 @@
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
 import { ImageResponse } from 'next/og';
 import type { FormDefinition } from '@/features/forms/types';
 import type { SharedFormMetadataStrings } from './shared-form-data';
@@ -109,67 +107,40 @@ const ACCENT_PALETTES: Record<
   },
 };
 
-let logoDataUrlPromise: Promise<string> | null = null;
-
-async function getLogoDataUrl() {
-  if (!logoDataUrlPromise) {
-    const candidatePaths = [
-      path.join(process.cwd(), 'public/media/logos/transparent.png'),
-      path.join(process.cwd(), 'apps/web/public/media/logos/transparent.png'),
-    ];
-
-    logoDataUrlPromise = (async () => {
-      for (const candidatePath of candidatePaths) {
-        try {
-          const buffer = await readFile(candidatePath);
-          return `data:image/png;base64,${buffer.toString('base64')}`;
-        } catch (error) {
-          if (
-            !(
-              error &&
-              typeof error === 'object' &&
-              'code' in error &&
-              error.code === 'ENOENT'
-            )
-          ) {
-            throw error;
-          }
-        }
-      }
-
-      throw new Error('Unable to locate OG logo asset.');
-    })();
-  }
-
-  return logoDataUrlPromise;
-}
-
 function createAmbientShapes(
   palette: (typeof ACCENT_PALETTES)[keyof typeof ACCENT_PALETTES]
 ) {
   return [
     {
-      top: '-12%',
-      left: '-4%',
-      width: 420,
-      height: 420,
+      top: '-18%',
+      left: '-10%',
+      width: 520,
+      height: 520,
       background: `radial-gradient(circle, ${palette.secondary}66 0%, transparent 72%)`,
-      opacity: 0.9,
+      opacity: 0.82,
     },
     {
-      top: '44%',
-      left: '56%',
-      width: 360,
-      height: 360,
+      top: '48%',
+      left: '52%',
+      width: 400,
+      height: 400,
       background: `radial-gradient(circle, ${palette.primary}99 0%, transparent 74%)`,
-      opacity: 0.85,
+      opacity: 0.72,
     },
     {
-      top: '4%',
-      left: '70%',
+      top: '0%',
+      left: '72%',
+      width: 320,
+      height: 320,
+      background: `radial-gradient(circle, ${palette.tertiary}40 0%, transparent 74%)`,
+      opacity: 0.74,
+    },
+    {
+      top: '68%',
+      left: '74%',
       width: 260,
       height: 260,
-      background: `radial-gradient(circle, ${palette.tertiary}40 0%, transparent 74%)`,
+      background: `radial-gradient(circle, ${palette.secondary}22 0%, transparent 78%)`,
       opacity: 0.9,
     },
   ];
@@ -193,8 +164,16 @@ export async function createSharedFormSocialImage({
 }) {
   const presentation = getSharedFormPresentation(form, strings, status);
   const palette = ACCENT_PALETTES[presentation.accentColor];
-  const logoUrl = await getLogoDataUrl();
   const ambientShapes = createAmbientShapes(palette);
+  const previewRows = Array.from({
+    length: Math.max(3, Math.min(4, presentation.itemCount || 3)),
+  });
+  const titleFontSize =
+    presentation.title.length > 80
+      ? 54
+      : presentation.title.length > 54
+        ? 62
+        : 72;
 
   return new ImageResponse(
     <div
@@ -214,7 +193,7 @@ export async function createSharedFormSocialImage({
           position: 'absolute',
           inset: 0,
           background:
-            'linear-gradient(115deg, rgba(255,255,255,0.04) 0%, transparent 28%, transparent 72%, rgba(255,255,255,0.03) 100%)',
+            'linear-gradient(125deg, rgba(255,255,255,0.05) 0%, transparent 26%, transparent 68%, rgba(255,255,255,0.03) 100%)',
         }}
       />
       <div
@@ -222,9 +201,17 @@ export async function createSharedFormSocialImage({
           position: 'absolute',
           inset: 0,
           backgroundImage:
-            'linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)',
-          backgroundSize: '48px 48px',
-          opacity: 0.22,
+            'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)',
+          backgroundSize: '54px 54px',
+          opacity: 0.12,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background:
+            'linear-gradient(180deg, rgba(5,8,22,0.06) 0%, rgba(5,8,22,0.18) 100%)',
         }}
       />
       {ambientShapes.map((shape, index) => (
@@ -245,231 +232,72 @@ export async function createSharedFormSocialImage({
           display: 'flex',
           width: '100%',
           height: '100%',
-          padding: '52px 56px',
+          padding: '44px 48px',
+          gap: '48px',
         }}
       >
         <div
           style={{
-            position: 'absolute',
-            top: '72px',
-            right: '68px',
-            width: '300px',
-            height: '460px',
-            borderRadius: '44px',
-            border: '1px solid rgba(255,255,255,0.08)',
-            background:
-              'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%)',
-            boxShadow: '0 24px 64px rgba(0,0,0,0.22)',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            top: '96px',
-            right: '92px',
-            width: '252px',
-            height: '412px',
-            borderRadius: '36px',
-            border: `1px solid ${palette.border}33`,
-            background:
-              'linear-gradient(165deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.01) 100%)',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            top: '126px',
-            right: '120px',
-            width: '196px',
-            height: '352px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '18px',
+            justifyContent: 'center',
+            width: '720px',
+            minWidth: '720px',
+            paddingTop: '8px',
           }}
         >
           <div
             style={{
               display: 'flex',
               flexDirection: 'column',
-              gap: '10px',
-              padding: '20px',
-              borderRadius: '24px',
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.08)',
-            }}
-          >
-            <div
-              style={{
-                width: '96px',
-                height: '10px',
-                borderRadius: '999px',
-                background: 'rgba(255,255,255,0.9)',
-              }}
-            />
-            <div
-              style={{
-                width: '132px',
-                height: '8px',
-                borderRadius: '999px',
-                background: 'rgba(255,255,255,0.16)',
-              }}
-            />
-            <div
-              style={{
-                display: 'flex',
-                marginTop: '4px',
-                width: '100%',
-                height: '12px',
-                borderRadius: '999px',
-                background: 'rgba(255,255,255,0.08)',
-                overflow: 'hidden',
-              }}
-            >
-              <div
-                style={{
-                  width: '58%',
-                  height: '100%',
-                  borderRadius: '999px',
-                  background: `linear-gradient(90deg, ${palette.primary} 0%, ${palette.secondary} 100%)`,
-                }}
-              />
-            </div>
-          </div>
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px',
-              padding: '18px',
-              borderRadius: '22px',
-              background: 'rgba(255,255,255,0.035)',
-              border: '1px solid rgba(255,255,255,0.08)',
-            }}
-          >
-            <div
-              style={{
-                width: '86px',
-                height: '8px',
-                borderRadius: '999px',
-                background: 'rgba(255,255,255,0.2)',
-              }}
-            />
-            <div
-              style={{
-                width: '100%',
-                height: '44px',
-                borderRadius: '16px',
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.08)',
-              }}
-            />
-          </div>
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px',
-              padding: '18px',
-              borderRadius: '22px',
-              background: `${palette.secondary}12`,
-              border: `1px solid ${palette.border}44`,
-            }}
-          >
-            {[0, 1, 2].map((index) => (
-              <div
-                key={index}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                }}
-              >
-                <div
-                  style={{
-                    width: '18px',
-                    height: '18px',
-                    borderRadius: '999px',
-                    border: `2px solid ${index === 1 ? palette.tertiary : 'rgba(255,255,255,0.24)'}`,
-                    background:
-                      index === 1 ? `${palette.tertiary}22` : 'transparent',
-                  }}
-                />
-                <div
-                  style={{
-                    width:
-                      index === 0 ? '88px' : index === 1 ? '120px' : '96px',
-                    height: '8px',
-                    borderRadius: '999px',
-                    background:
-                      index === 1
-                        ? 'rgba(255,255,255,0.88)'
-                        : 'rgba(255,255,255,0.18)',
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-          <div
-            style={{
-              marginTop: 'auto',
-              width: '100%',
-              height: '46px',
-              borderRadius: '16px',
-              background: `linear-gradient(135deg, ${palette.primary} 0%, ${palette.secondary} 100%)`,
-              boxShadow: `0 12px 28px ${palette.primary}55`,
-            }}
-          />
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            width: '100%',
-            minWidth: '100%',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '40px',
-              width: '760px',
-              marginTop: '8px',
+              gap: '30px',
             }}
           >
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '14px',
               }}
             >
-              {/* biome-ignore lint/performance/noImgElement: ImageResponse requires standard img elements. */}
-              <img
-                src={logoUrl}
-                alt=""
+              <div
                 style={{
-                  width: '54px',
-                  height: '54px',
-                  objectFit: 'contain',
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '12px 18px',
+                  borderRadius: '999px',
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  boxShadow: '0 18px 36px rgba(0,0,0,0.18)',
                 }}
-              />
+              >
+                <div
+                  style={{
+                    fontSize: '18px',
+                    fontWeight: 700,
+                    letterSpacing: '0.14em',
+                    textTransform: 'uppercase',
+                    color: 'rgba(250,250,250,0.92)',
+                  }}
+                >
+                  {strings.brand}
+                </div>
+              </div>
             </div>
 
             <div
               style={{
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '28px',
+                gap: '26px',
+                maxWidth: '680px',
               }}
             >
               <div
                 style={{
-                  fontSize: presentation.title.length > 68 ? '56px' : '68px',
-                  lineHeight: 0.98,
-                  fontWeight: 700,
-                  letterSpacing: '-0.055em',
+                  fontSize: `${titleFontSize}px`,
+                  lineHeight: 0.94,
+                  fontWeight: 800,
+                  letterSpacing: '-0.06em',
                   display: '-webkit-box',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
@@ -479,30 +307,39 @@ export async function createSharedFormSocialImage({
               >
                 {presentation.title}
               </div>
+
               {presentation.description ? (
                 <div
                   style={{
                     display: 'flex',
-                    flexDirection: 'column',
-                    gap: '12px',
+                    width: '100%',
+                    maxWidth: '650px',
                     padding: '22px 24px',
-                    maxWidth: '700px',
                     borderRadius: '28px',
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    boxShadow: '0 18px 44px rgba(0,0,0,0.16)',
+                    background: 'rgba(255,255,255,0.055)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    boxShadow: '0 24px 64px rgba(0,0,0,0.18)',
                   }}
                 >
                   <div
                     style={{
-                      fontSize: '24px',
-                      lineHeight: 1.42,
-                      color: '#d4d4d8',
+                      display: 'flex',
+                      width: '4px',
+                      borderRadius: '999px',
+                      marginRight: '18px',
+                      background: 'rgba(255,255,255,0.18)',
+                    }}
+                  />
+                  <div
+                    style={{
                       display: '-webkit-box',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       WebkitLineClamp: 4,
                       WebkitBoxOrient: 'vertical',
+                      fontSize: '24px',
+                      lineHeight: 1.4,
+                      color: '#d4d4d8',
                     }}
                   >
                     {presentation.description}
@@ -511,48 +348,227 @@ export async function createSharedFormSocialImage({
               ) : null}
             </div>
           </div>
+        </div>
 
+        <div
+          style={{
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flex: 1,
+          }}
+        >
           <div
             style={{
+              position: 'absolute',
+              top: '56px',
+              right: '18px',
+              width: '316px',
+              height: '420px',
+              borderRadius: '34px',
+              background:
+                'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.015) 100%)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              boxShadow: '0 28px 80px rgba(0,0,0,0.22)',
+            }}
+          />
+          <div
+            style={{
+              position: 'relative',
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '18px',
+              flexDirection: 'column',
+              width: '304px',
+              height: '404px',
+              borderRadius: '30px',
+              padding: '20px',
+              background: palette.panelBg,
+              border: `1px solid ${palette.border}33`,
+              boxShadow: '0 24px 72px rgba(0,0,0,0.28)',
+              overflow: 'hidden',
             }}
           >
             <div
               style={{
+                position: 'absolute',
+                inset: 0,
+                background:
+                  'linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 28%, transparent 72%, rgba(255,255,255,0.03) 100%)',
+              }}
+            />
+            <div
+              style={{
+                position: 'relative',
                 display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
+                flexDirection: 'column',
+                gap: '16px',
+                height: '100%',
               }}
             >
               <div
                 style={{
-                  width: '10px',
-                  height: '10px',
-                  borderRadius: '999px',
-                  background: palette.secondary,
-                  boxShadow: `0 0 24px ${palette.secondary}`,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '16px',
+                  padding: '18px',
+                  borderRadius: '24px',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'rgba(255,255,255,0.04)',
                 }}
-              />
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '10px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '104px',
+                        height: '10px',
+                        borderRadius: '999px',
+                        background: 'rgba(255,255,255,0.9)',
+                      }}
+                    />
+                    <div
+                      style={{
+                        width: '72px',
+                        height: '8px',
+                        borderRadius: '999px',
+                        background: 'rgba(255,255,255,0.2)',
+                      }}
+                    />
+                  </div>
+                  <div
+                    style={{
+                      width: '46px',
+                      height: '46px',
+                      borderRadius: '16px',
+                      background: `linear-gradient(145deg, ${palette.primary} 0%, ${palette.secondary} 100%)`,
+                      boxShadow: `0 12px 28px ${palette.primary}44`,
+                    }}
+                  />
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    width: '100%',
+                    height: '10px',
+                    borderRadius: '999px',
+                    background: 'rgba(255,255,255,0.08)',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '62%',
+                      height: '100%',
+                      borderRadius: '999px',
+                      background: 'rgba(255,255,255,0.28)',
+                    }}
+                  />
+                </div>
+              </div>
+
               <div
                 style={{
                   display: 'flex',
-                  width: '84px',
-                  height: '2px',
-                  background: 'rgba(255,255,255,0.12)',
+                  flexDirection: 'column',
+                  gap: '12px',
+                  padding: '18px',
+                  borderRadius: '24px',
+                  background: 'rgba(255,255,255,0.045)',
+                  border: '1px solid rgba(255,255,255,0.1)',
                 }}
-              />
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    width: '92px',
+                    height: '8px',
+                    borderRadius: '999px',
+                    background: 'rgba(255,255,255,0.2)',
+                  }}
+                />
+                {previewRows.map((_, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '14px 14px',
+                      borderRadius: '18px',
+                      background:
+                        index === 1
+                          ? `${palette.secondary}14`
+                          : 'rgba(255,255,255,0.04)',
+                      border:
+                        index === 1
+                          ? `1px solid ${palette.border}30`
+                          : '1px solid rgba(255,255,255,0.06)',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '18px',
+                        height: '18px',
+                        borderRadius: '999px',
+                        border: `2px solid ${index === 1 ? palette.tertiary : 'rgba(255,255,255,0.22)'}`,
+                        background:
+                          index === 1 ? `${palette.tertiary}22` : 'transparent',
+                      }}
+                    />
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px',
+                        flex: 1,
+                      }}
+                    >
+                      <div
+                        style={{
+                          width:
+                            index % 3 === 0
+                              ? '72%'
+                              : index % 3 === 1
+                                ? '88%'
+                                : '64%',
+                          height: '8px',
+                          borderRadius: '999px',
+                          background:
+                            index === 1
+                              ? 'rgba(255,255,255,0.92)'
+                              : 'rgba(255,255,255,0.24)',
+                        }}
+                      />
+                      <div
+                        style={{
+                          width:
+                            index % 2 === 0
+                              ? '42%'
+                              : index === 1
+                                ? '52%'
+                                : '36%',
+                          height: '6px',
+                          borderRadius: '999px',
+                          background: 'rgba(255,255,255,0.14)',
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div
-              style={{
-                display: 'flex',
-                width: '220px',
-                height: '2px',
-                background: 'rgba(255,255,255,0.08)',
-              }}
-            />
           </div>
         </div>
       </div>
