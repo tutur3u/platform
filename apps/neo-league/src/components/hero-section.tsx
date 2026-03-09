@@ -1,12 +1,8 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
 
 export default function HeroSection() {
-  const [videoEnded, setVideoEnded] = useState(false);
-
   const handleScrollClick = () => {
     if (typeof window === 'undefined') {
       return;
@@ -17,7 +13,6 @@ export default function HeroSection() {
 
   return (
     <section className="relative flex min-h-screen items-center justify-center pb-9">
-      {/* Animated Blobs */}
       <div
         className="blob absolute -top-20 -right-20 h-64 w-64 animate-float"
         style={{ animationDelay: '2s' }}
@@ -29,28 +24,11 @@ export default function HeroSection() {
 
       <div className="relative mx-auto max-w-6xl px-6 text-center">
         <div className="flex flex-col items-center justify-center gap-8">
-          <div className="w-full max-w-lg">
-            {!videoEnded ? (
-              <video
-                autoPlay
-                muted
-                playsInline
-                onEnded={() => setVideoEnded(true)}
-                onError={() => setVideoEnded(true)}
-                className="w-full"
-              >
-                <source src="/intro.mov" type="video/quicktime" />
-                <source src="/intro.webm" type="video/webm" />
-              </video>
-            ) : (
-              <Image
-                src="/logo.png"
-                alt="RMIT NEO League 2026 — Innovation Humanity Challenge"
-                width={1920}
-                height={1080}
-                className="w-full animate-fade-in"
-              />
-            )}
+          <div className="w-full max-w-2xl">
+            <video autoPlay muted playsInline className="w-full">
+              <source src="/intro.mov" type="video/quicktime" />
+              <source src="/intro.webm" type="video/webm" />
+            </video>
           </div>
 
           <h1 className="sr-only">
