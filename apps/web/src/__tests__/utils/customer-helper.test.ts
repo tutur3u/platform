@@ -91,6 +91,7 @@ describe('customer-helper', () => {
       expect(result).toEqual(mockSession);
       expect(mockPolar.customerSessions.create).toHaveBeenCalledWith({
         customerId: 'cust-123',
+        memberId: 'cust-123',
       });
     });
 
@@ -155,6 +156,7 @@ describe('customer-helper', () => {
       expect(result).toEqual(mockSession);
       expect(mockPolar.customerSessions.create).toHaveBeenCalledWith({
         customerId: 'cust-456',
+        memberId: 'cust-456',
       });
     });
   });
