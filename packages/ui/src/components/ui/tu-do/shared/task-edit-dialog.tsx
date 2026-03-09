@@ -223,26 +223,27 @@ export function TaskEditDialog({
       '#f59e0b',
       '#6366f1',
     ];
-    const userId = user?.id || 'anonymous';
+    const userId = user?.id || 'unknown';
     return colors[Math.abs(hashCode(userId)) % colors.length] || colors[0];
   }, [user?.id]);
 
   // Memoize the user object for Yjs collaboration to prevent unstable references
   // from causing the SupabaseProvider to be destroyed and recreated every render
   const userId = user?.id;
-  const userDisplayName = user?.display_name;
   const userEmail = user?.email;
+  const userDisplayName =
+    user?.display_name || userEmail?.split('@')[0] || 'Unknown User';
 
   const yjsUser = useMemo(
     () =>
       userId
         ? {
             id: userId || '',
-            name: userDisplayName || userEmail?.split('@')[0] || 'Anonymous',
+            name: userDisplayName,
             color: userColor || '',
           }
         : null,
-    [userId, userDisplayName, userEmail, userColor]
+    [userId, userDisplayName, userColor]
   );
 
   // User task settings
@@ -1509,7 +1510,7 @@ export function TaskEditDialog({
                   collaborationUser={
                     user
                       ? {
-                          name: userDisplayName || userEmail?.split('@')[0] || 'Anonymous',
+                          name: userDisplayName,
                           color: userColor || '',
                         }
                       : null
