@@ -85,7 +85,7 @@ export function getEditorExtensions({
       ? [
           CollaborationCaret.configure({
             provider,
-            user: collaborationUser ?? undefined,
+            user: collaborationUser,
           }),
         ]
       : []),
