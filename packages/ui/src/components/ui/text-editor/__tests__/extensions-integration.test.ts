@@ -88,8 +88,8 @@ describe('Editor Extensions Integration', () => {
 
     it('should work without collaboration config', () => {
       const extensions = getEditorExtensions({
-        doc: null,
-        provider: null,
+        doc: undefined,
+        provider: undefined,
       });
       expect(extensions).toBeDefined();
     });

@@ -1506,7 +1506,7 @@ export function TaskEditDialog({
                   targetEditorCursorRef={targetEditorCursorRef}
                   flushEditorPendingRef={flushEditorPendingRef}
                   yjsDoc={doc}
-                  yjsProvider={provider}
+                  yjsProvider={provider ?? undefined}
                   collaborationUser={
                     user
                       ? {

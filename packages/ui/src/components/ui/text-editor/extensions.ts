@@ -31,10 +31,10 @@ import { Video } from './video-extension';
 interface EditorExtensionsOptions {
   titlePlaceholder?: string;
   writePlaceholder?: string;
-  doc?: Y.Doc | null;
-  provider?: SupabaseProvider | null;
+  doc?: Y.Doc;
+  provider?: SupabaseProvider;
   /** User info for CollaborationCaret labels (name shown on remote cursors). */
-  collaborationUser?: { name: string; color: string } | null;
+  collaborationUser?: { name: string; color: string };
   onImageUpload?: (file: File) => Promise<string>;
   onVideoUpload?: (file: File) => Promise<string>;
   /** Translations for mention chip dialogs */
@@ -64,9 +64,9 @@ interface EditorExtensionsOptions {
 export function getEditorExtensions({
   titlePlaceholder = 'What is the title?',
   writePlaceholder = 'Write something...',
-  doc = null,
-  provider = null,
-  collaborationUser = null,
+  doc,
+  provider,
+  collaborationUser,
   onImageUpload,
   onVideoUpload,
   mentionTranslations,
@@ -84,7 +84,7 @@ export function getEditorExtensions({
     ...(provider
       ? [
           CollaborationCaret.configure({
-            provider: provider,
+            provider,
             user: collaborationUser ?? undefined,
           }),
         ]

@@ -305,10 +305,12 @@ export function TaskDescriptionEditor({
               titleInputRef.current.setSelectionRange(length, length);
             }
           }}
-          yjsDoc={allowYjsSync ? yjsDoc : null}
-          yjsProvider={allowYjsSync ? yjsProvider : null}
+          yjsDoc={allowYjsSync && yjsDoc ? yjsDoc : undefined}
+          yjsProvider={allowYjsSync && yjsProvider ? yjsProvider : undefined}
           collaborationUser={
-            showCollaborationCursors ? collaborationUser : null
+            showCollaborationCursors && collaborationUser
+              ? collaborationUser
+              : undefined
           }
           allowCollaboration={allowYjsSync}
           readOnly={isYjsSyncing || disabled}

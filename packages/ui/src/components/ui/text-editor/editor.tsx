@@ -58,10 +58,10 @@ interface RichTextEditorProps {
   editorRef?: { current: Editor | null };
   initialCursorOffset?: number | null;
   onEditorReady?: (editor: Editor) => void;
-  yjsDoc: Y.Doc | null;
-  yjsProvider: SupabaseProvider | null;
+  yjsDoc?: Y.Doc;
+  yjsProvider?: SupabaseProvider;
   /** User info for collaboration cursor labels. */
-  collaborationUser: { name: string; color: string } | null;
+  collaborationUser?: { name: string; color: string };
   boardId?: string;
   availableLists?: TaskList[];
   queryClient?: QueryClient;
@@ -109,9 +109,9 @@ export function RichTextEditor({
   boardId,
   availableLists,
   queryClient,
-  yjsDoc = null,
-  yjsProvider = null,
-  collaborationUser = null,
+  yjsDoc,
+  yjsProvider,
+  collaborationUser,
   allowCollaboration = false,
   mentionTranslations,
 }: RichTextEditorProps) {
@@ -266,9 +266,9 @@ export function RichTextEditor({
     extensions: getEditorExtensions({
       titlePlaceholder,
       writePlaceholder,
-      doc: allowCollaboration ? yjsDoc : null,
-      provider: allowCollaboration ? yjsProvider : null,
-      collaborationUser: allowCollaboration ? collaborationUser : null,
+      doc: allowCollaboration ? yjsDoc : undefined,
+      provider: allowCollaboration ? yjsProvider : undefined,
+      collaborationUser: allowCollaboration ? collaborationUser : undefined,
       onImageUpload: onImageUploadRef.current,
       onVideoUpload: onImageUploadRef.current,
       mentionTranslations,
