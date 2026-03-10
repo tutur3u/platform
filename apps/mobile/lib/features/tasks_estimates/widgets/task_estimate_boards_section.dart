@@ -121,7 +121,10 @@ class _TaskEstimateBoardTile extends StatelessWidget {
               ),
               const shad.Gap(8),
               Text(
-                type.description(isExtended: board.extendedEstimation),
+                type.description(
+                  isExtended: board.extendedEstimation,
+                  allowZeroEstimates: board.allowZeroEstimates,
+                ),
                 style: theme.typography.textMuted,
               ),
               if (board.createdAt != null) ...[

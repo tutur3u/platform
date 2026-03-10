@@ -6,18 +6,34 @@ class EstimationTypeMeta {
     required this.value,
     required this.label,
     required this.rangeLabel,
-    required this.standardDescription,
-    required this.extendedDescription,
+    required this.standardDescriptionZeroEnabled,
+    required this.standardDescriptionZeroDisabled,
+    required this.extendedDescriptionZeroEnabled,
+    required this.extendedDescriptionZeroDisabled,
   });
 
   final String value;
   final String label;
   final String rangeLabel;
-  final String standardDescription;
-  final String extendedDescription;
+  final String standardDescriptionZeroEnabled;
+  final String standardDescriptionZeroDisabled;
+  final String extendedDescriptionZeroEnabled;
+  final String extendedDescriptionZeroDisabled;
 
-  String description({required bool isExtended}) =>
-      isExtended ? extendedDescription : standardDescription;
+  String description({
+    required bool isExtended,
+    required bool allowZeroEstimates,
+  }) {
+    if (isExtended) {
+      return allowZeroEstimates
+          ? extendedDescriptionZeroEnabled
+          : extendedDescriptionZeroDisabled;
+    }
+
+    return allowZeroEstimates
+        ? standardDescriptionZeroEnabled
+        : standardDescriptionZeroDisabled;
+  }
 }
 
 List<EstimationTypeMeta> estimationTypes(
@@ -31,36 +47,62 @@ List<EstimationTypeMeta> estimationTypes(
         value: 'none',
         label: l10n.taskEstimatesTypeNoneLabel,
         rangeLabel: l10n.taskEstimatesTypeNoneLabel,
-        standardDescription: l10n.taskEstimatesTypeNoneDescription,
-        extendedDescription: l10n.taskEstimatesTypeNoneDescription,
+        standardDescriptionZeroEnabled: l10n.taskEstimatesTypeNoneDescription,
+        standardDescriptionZeroDisabled: l10n.taskEstimatesTypeNoneDescription,
+        extendedDescriptionZeroEnabled: l10n.taskEstimatesTypeNoneDescription,
+        extendedDescriptionZeroDisabled: l10n.taskEstimatesTypeNoneDescription,
       ),
     EstimationTypeMeta(
       value: 'fibonacci',
       label: l10n.taskEstimatesTypeFibonacciLabel,
       rangeLabel: l10n.taskEstimatesTypeFibonacciLabel,
-      standardDescription: l10n.taskEstimatesTypeFibonacciStandard,
-      extendedDescription: l10n.taskEstimatesTypeFibonacciExtended,
+      standardDescriptionZeroEnabled:
+          l10n.taskEstimatesTypeFibonacciStandardZeroEnabled,
+      standardDescriptionZeroDisabled:
+          l10n.taskEstimatesTypeFibonacciStandardZeroDisabled,
+      extendedDescriptionZeroEnabled:
+          l10n.taskEstimatesTypeFibonacciExtendedZeroEnabled,
+      extendedDescriptionZeroDisabled:
+          l10n.taskEstimatesTypeFibonacciExtendedZeroDisabled,
     ),
     EstimationTypeMeta(
       value: 'linear',
       label: l10n.taskEstimatesTypeLinearLabel,
       rangeLabel: l10n.taskEstimatesTypeLinearLabel,
-      standardDescription: l10n.taskEstimatesTypeLinearStandard,
-      extendedDescription: l10n.taskEstimatesTypeLinearExtended,
+      standardDescriptionZeroEnabled:
+          l10n.taskEstimatesTypeLinearStandardZeroEnabled,
+      standardDescriptionZeroDisabled:
+          l10n.taskEstimatesTypeLinearStandardZeroDisabled,
+      extendedDescriptionZeroEnabled:
+          l10n.taskEstimatesTypeLinearExtendedZeroEnabled,
+      extendedDescriptionZeroDisabled:
+          l10n.taskEstimatesTypeLinearExtendedZeroDisabled,
     ),
     EstimationTypeMeta(
       value: 'exponential',
       label: l10n.taskEstimatesTypeExponentialLabel,
       rangeLabel: l10n.taskEstimatesTypeExponentialLabel,
-      standardDescription: l10n.taskEstimatesTypeExponentialStandard,
-      extendedDescription: l10n.taskEstimatesTypeExponentialExtended,
+      standardDescriptionZeroEnabled:
+          l10n.taskEstimatesTypeExponentialStandardZeroEnabled,
+      standardDescriptionZeroDisabled:
+          l10n.taskEstimatesTypeExponentialStandardZeroDisabled,
+      extendedDescriptionZeroEnabled:
+          l10n.taskEstimatesTypeExponentialExtendedZeroEnabled,
+      extendedDescriptionZeroDisabled:
+          l10n.taskEstimatesTypeExponentialExtendedZeroDisabled,
     ),
     EstimationTypeMeta(
       value: 't-shirt',
       label: l10n.taskEstimatesTypeTshirtLabel,
       rangeLabel: l10n.taskEstimatesTypeTshirtLabel,
-      standardDescription: l10n.taskEstimatesTypeTshirtStandard,
-      extendedDescription: l10n.taskEstimatesTypeTshirtExtended,
+      standardDescriptionZeroEnabled:
+          l10n.taskEstimatesTypeTshirtStandardZeroEnabled,
+      standardDescriptionZeroDisabled:
+          l10n.taskEstimatesTypeTshirtStandardZeroDisabled,
+      extendedDescriptionZeroEnabled:
+          l10n.taskEstimatesTypeTshirtExtendedZeroEnabled,
+      extendedDescriptionZeroDisabled:
+          l10n.taskEstimatesTypeTshirtExtendedZeroDisabled,
     ),
   ];
 }

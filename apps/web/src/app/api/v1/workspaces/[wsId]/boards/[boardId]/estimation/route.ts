@@ -27,7 +27,24 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const { wsId: rawWsId, boardId: rawBoardId } = await params;
     const supabase = await createClient(request);
-    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+
+    let wsId: string;
+    try {
+      wsId = await normalizeWorkspaceId(rawWsId, supabase);
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.toLowerCase().includes('user not authenticated')
+      ) {
+        return NextResponse.json(
+          { error: 'User not authenticated' },
+          { status: 401 }
+        );
+      }
+
+      throw error;
+    }
+
     const parsedBoardId = boardIdSchema.safeParse(rawBoardId);
 
     if (!parsedBoardId.success) {

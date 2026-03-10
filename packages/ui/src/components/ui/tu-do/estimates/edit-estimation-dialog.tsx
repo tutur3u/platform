@@ -16,7 +16,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from '@tuturuuu/ui/select';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
@@ -62,12 +61,15 @@ export function EditEstimationDialog({
   onUpdate,
 }: EditEstimationDialogProps) {
   const t = useTranslations('task-estimates');
+  const tBoardGallery = useTranslations('ws-board-templates.gallery');
   const [selectedEstimationType, setSelectedEstimationType] =
     useState<string>('none');
   const [extendedEstimation, setExtendedEstimation] = useState(false);
   const [allowZeroEstimates, setAllowZeroEstimates] = useState(true);
   const [countUnestimatedIssues, setCountUnestimatedIssues] = useState(false);
   const rangeGroupId = useId();
+  const allowZeroEstimatesLabelId = useId();
+  const countUnestimatedIssuesLabelId = useId();
 
   useEffect(() => {
     if (!board || !open) {
@@ -88,9 +90,14 @@ export function EditEstimationDialog({
     return null;
   }
 
-  const boardName = board.name?.trim() ? board.name : t('unnamed_board');
+  const boardName = board.name?.trim()
+    ? board.name
+    : tBoardGallery('unnamed_board');
   const rangeInfo = getRangeInfo(selectedEstimationType);
   const isStandardSelected = !extendedEstimation;
+  const selectedEstimationOption =
+    estimationTypes.find((type) => type.value === selectedEstimationType) ??
+    estimationTypes[0];
 
   const handleUpdateEstimationType = async () => {
     if (!board.id) {
@@ -137,9 +144,20 @@ export function EditEstimationDialog({
                 id="estimation-method"
                 className="flex h-full w-full items-center justify-between text-left text-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 [&>svg]:rotate-180 data-[state=open]:[&>svg]:rotate-0"
               >
-                <SelectValue
-                  placeholder={t('dialog.select_estimation_method')}
-                />
+                {selectedEstimationOption ? (
+                  <div className="py-1">
+                    <div className="font-medium">
+                      {selectedEstimationOption.label}
+                    </div>
+                    <div className="mt-1 text-muted-foreground text-sm">
+                      {selectedEstimationOption.description}
+                    </div>
+                  </div>
+                ) : (
+                  <span className="text-muted-foreground">
+                    {t('dialog.select_estimation_method')}
+                  </span>
+                )}
               </SelectTrigger>
               <SelectContent
                 align="end"
@@ -204,7 +222,7 @@ export function EditEstimationDialog({
                       }`}
                     >
                       {isStandardSelected && (
-                        <div className="h-full w-full scale-50 rounded-full bg-white" />
+                        <div className="h-full w-full scale-50 rounded-full bg-primary-foreground" />
                       )}
                     </div>
                   </Label>
@@ -236,7 +254,7 @@ export function EditEstimationDialog({
                       }`}
                     >
                       {extendedEstimation && (
-                        <div className="h-full w-full scale-50 rounded-full bg-white" />
+                        <div className="h-full w-full scale-50 rounded-full bg-primary-foreground" />
                       )}
                     </div>
                   </Label>
@@ -256,7 +274,10 @@ export function EditEstimationDialog({
 
               <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-background p-3.5 transition-all hover:border-primary/30">
                 <div className="min-w-0 flex-1 space-y-0.5">
-                  <div className="font-medium text-sm">
+                  <div
+                    id={allowZeroEstimatesLabelId}
+                    className="font-medium text-sm"
+                  >
                     {t('dialog.allow_zero_estimates')}
                   </div>
                   <div className="text-muted-foreground text-xs leading-snug">
@@ -266,13 +287,17 @@ export function EditEstimationDialog({
                 <Switch
                   checked={allowZeroEstimates}
                   onCheckedChange={setAllowZeroEstimates}
+                  aria-labelledby={allowZeroEstimatesLabelId}
                   className="shrink-0"
                 />
               </div>
 
               <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-background p-3.5 transition-all hover:border-primary/30">
                 <div className="min-w-0 flex-1 space-y-0.5">
-                  <div className="font-medium text-sm">
+                  <div
+                    id={countUnestimatedIssuesLabelId}
+                    className="font-medium text-sm"
+                  >
                     {t('dialog.count_unestimated_issues')}
                   </div>
                   <div className="text-muted-foreground text-xs leading-snug">
@@ -282,6 +307,7 @@ export function EditEstimationDialog({
                 <Switch
                   checked={countUnestimatedIssues}
                   onCheckedChange={setCountUnestimatedIssues}
+                  aria-labelledby={countUnestimatedIssuesLabelId}
                   className="shrink-0"
                 />
               </div>
@@ -292,7 +318,7 @@ export function EditEstimationDialog({
             <div className="rounded-lg border border-dynamic-orange/30 bg-dynamic-orange/5 p-3.5 ring-1 ring-dynamic-orange/10">
               <div className="flex items-start gap-2.5">
                 <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-dynamic-orange">
-                  <div className="h-2 w-2 rounded-full bg-white" />
+                  <div className="h-2 w-2 rounded-full bg-background" />
                 </div>
                 <div className="min-w-0 flex-1 space-y-0.5">
                   <p className="font-semibold text-dynamic-orange text-sm">

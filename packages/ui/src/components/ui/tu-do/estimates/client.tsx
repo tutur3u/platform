@@ -25,6 +25,7 @@ interface Props {
 
 export default function TaskEstimatesClient({ wsId }: Props) {
   const t = useTranslations('task-estimates');
+  const tBoardGallery = useTranslations('ws-board-templates.gallery');
   const [editingBoard, setEditingBoard] =
     useState<Partial<WorkspaceTaskBoard> | null>(null);
   const {
@@ -45,7 +46,7 @@ export default function TaskEstimatesClient({ wsId }: Props) {
   const stats = getTaskEstimateStats(boards, estimationTypes);
 
   const getBoardName = (board: Partial<WorkspaceTaskBoard>) =>
-    board.name?.trim() ? board.name : t('unnamed_board');
+    board.name?.trim() ? board.name : tBoardGallery('unnamed_board');
 
   const handleUpdate = async (input: UpdateTaskEstimateBoardInput) => {
     try {
@@ -55,7 +56,6 @@ export default function TaskEstimatesClient({ wsId }: Props) {
     } catch (mutationError) {
       console.error('Error updating estimation type:', mutationError);
       toast.error(t('toast.update_error'));
-      throw mutationError;
     }
   };
 
@@ -64,7 +64,7 @@ export default function TaskEstimatesClient({ wsId }: Props) {
       <Card className="border border-border/60 bg-background p-8 shadow-sm">
         <div className="flex items-center justify-center gap-3 text-muted-foreground">
           <Calculator className="h-5 w-5 animate-spin" />
-          <span>{t('dialog.updating')}</span>
+          <span>{t('loading_estimates')}</span>
         </div>
       </Card>
     );
@@ -78,9 +78,7 @@ export default function TaskEstimatesClient({ wsId }: Props) {
             {t('toast.update_error')}
           </p>
           <p className="text-muted-foreground text-sm">
-            {error instanceof Error
-              ? error.message
-              : 'Failed to fetch task estimate boards'}
+            {error instanceof Error ? error.message : t('toast.fetch_error')}
           </p>
         </div>
       </Card>
@@ -218,6 +216,10 @@ export default function TaskEstimatesClient({ wsId }: Props) {
                   board.estimation_type ?? null
                 );
                 const boardName = getBoardName(board);
+
+                if (!estimationInfo) {
+                  return null;
+                }
 
                 return (
                   <button

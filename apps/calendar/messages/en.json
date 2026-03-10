@@ -6833,6 +6833,7 @@
       }
     },
     "extended_badge": "Extended",
+    "loading_estimates": "Loading estimates...",
     "no_boards_description": "Create some task boards to configure estimation methods",
     "no_boards_found": "No boards found",
     "page_description": "Configure estimation methods for your task boards and view analytics",
@@ -6843,6 +6844,7 @@
       "total_boards": "Total Boards"
     },
     "toast": {
+      "fetch_error": "Failed to fetch task estimate boards",
       "update_error": "Failed to update estimation type",
       "update_success": "Estimation type updated successfully"
     },

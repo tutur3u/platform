@@ -273,13 +273,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskEstimatesAllowZeroEstimates => 'Cho phép ước lượng bằng 0';
 
   @override
-  String get taskEstimatesAllowZeroEstimatesDescription => 'Khi bật, các công việc có thể được ước lượng bằng một giá trị tương đương số không.';
+  String get taskEstimatesAllowZeroEstimatesDescription => 'Khi bật, các công việc có thể được ước lượng bằng giá trị 0 và sẽ đóng góp 0 vào tổng ước lượng.';
 
   @override
   String get taskEstimatesCountUnestimatedIssues => 'Đếm các công việc chưa ước lượng';
 
   @override
-  String get taskEstimatesCountUnestimatedIssuesDescription => 'Khi bật, các công việc chưa ước lượng sẽ được tính là một đơn vị ước lượng. Khi tắt, chúng sẽ không được tính.';
+  String get taskEstimatesCountUnestimatedIssuesDescription => 'Khi bật, các công việc chưa ước lượng sẽ được tính là 1 đơn vị vào tổng ước lượng. Khi tắt, chúng sẽ được tính là 0.';
 
   @override
   String get taskEstimatesUpdateSuccess => 'Đã cập nhật ước lượng thành công.';
@@ -294,37 +294,61 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskEstimatesTypeFibonacciLabel => 'Fibonacci';
 
   @override
-  String get taskEstimatesTypeFibonacciStandard => 'Dãy Fibonacci: 0, 1, 2, 3, 5, 8.';
+  String get taskEstimatesTypeFibonacciStandardZeroEnabled => 'Dãy Fibonacci: 0, 1, 2, 3, 5, 8.';
 
   @override
-  String get taskEstimatesTypeFibonacciExtended => 'Dãy Fibonacci mở rộng: 0, 1, 2, 3, 5, 8, 13, 21.';
+  String get taskEstimatesTypeFibonacciStandardZeroDisabled => 'Dãy Fibonacci: 1, 2, 3, 5, 8.';
+
+  @override
+  String get taskEstimatesTypeFibonacciExtendedZeroEnabled => 'Dãy Fibonacci mở rộng: 0, 1, 2, 3, 5, 8, 13, 21.';
+
+  @override
+  String get taskEstimatesTypeFibonacciExtendedZeroDisabled => 'Dãy Fibonacci mở rộng: 1, 2, 3, 5, 8, 13, 21.';
 
   @override
   String get taskEstimatesTypeLinearLabel => 'Tuyến tính';
 
   @override
-  String get taskEstimatesTypeLinearStandard => 'Dãy tuyến tính: 0, 1, 2, 3, 4, 5.';
+  String get taskEstimatesTypeLinearStandardZeroEnabled => 'Dãy tuyến tính: 0, 1, 2, 3, 4, 5.';
 
   @override
-  String get taskEstimatesTypeLinearExtended => 'Dãy tuyến tính mở rộng: 0, 1, 2, 3, 4, 5, 6, 7.';
+  String get taskEstimatesTypeLinearStandardZeroDisabled => 'Dãy tuyến tính: 1, 2, 3, 4, 5.';
+
+  @override
+  String get taskEstimatesTypeLinearExtendedZeroEnabled => 'Dãy tuyến tính mở rộng: 0, 1, 2, 3, 4, 5, 6, 7.';
+
+  @override
+  String get taskEstimatesTypeLinearExtendedZeroDisabled => 'Dãy tuyến tính mở rộng: 1, 2, 3, 4, 5, 6, 7.';
 
   @override
   String get taskEstimatesTypeExponentialLabel => 'Lũy thừa';
 
   @override
-  String get taskEstimatesTypeExponentialStandard => 'Dãy lũy thừa: 0, 1, 2, 4, 8, 16.';
+  String get taskEstimatesTypeExponentialStandardZeroEnabled => 'Dãy lũy thừa: 0, 1, 2, 4, 8, 16.';
 
   @override
-  String get taskEstimatesTypeExponentialExtended => 'Dãy lũy thừa mở rộng: 0, 1, 2, 4, 8, 16, 32, 64.';
+  String get taskEstimatesTypeExponentialStandardZeroDisabled => 'Dãy lũy thừa: 1, 2, 4, 8, 16.';
+
+  @override
+  String get taskEstimatesTypeExponentialExtendedZeroEnabled => 'Dãy lũy thừa mở rộng: 0, 1, 2, 4, 8, 16, 32, 64.';
+
+  @override
+  String get taskEstimatesTypeExponentialExtendedZeroDisabled => 'Dãy lũy thừa mở rộng: 1, 2, 4, 8, 16, 32, 64.';
 
   @override
   String get taskEstimatesTypeTshirtLabel => 'Áo thun';
 
   @override
-  String get taskEstimatesTypeTshirtStandard => 'Kích cỡ áo: -, XS, S, M, L, XL.';
+  String get taskEstimatesTypeTshirtStandardZeroEnabled => 'Kích cỡ áo: -, XS, S, M, L, XL.';
 
   @override
-  String get taskEstimatesTypeTshirtExtended => 'Kích cỡ áo mở rộng: -, XS, S, M, L, XL, XXL, XXXL.';
+  String get taskEstimatesTypeTshirtStandardZeroDisabled => 'Kích cỡ áo: XS, S, M, L, XL.';
+
+  @override
+  String get taskEstimatesTypeTshirtExtendedZeroEnabled => 'Kích cỡ áo mở rộng: -, XS, S, M, L, XL, XXL, XXXL.';
+
+  @override
+  String get taskEstimatesTypeTshirtExtendedZeroDisabled => 'Kích cỡ áo mở rộng: XS, S, M, L, XL, XXL, XXXL.';
 
   @override
   String get calendarTitle => 'Lịch';

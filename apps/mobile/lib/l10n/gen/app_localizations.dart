@@ -610,7 +610,7 @@ abstract class AppLocalizations {
   /// No description provided for @taskEstimatesAllowZeroEstimatesDescription.
   ///
   /// In en, this message translates to:
-  /// **'When enabled, issues can be estimated with a zero-like value.'**
+  /// **'When enabled, tasks can be estimated as 0 and contribute 0 to totals.'**
   String get taskEstimatesAllowZeroEstimatesDescription;
 
   /// No description provided for @taskEstimatesCountUnestimatedIssues.
@@ -622,7 +622,7 @@ abstract class AppLocalizations {
   /// No description provided for @taskEstimatesCountUnestimatedIssuesDescription.
   ///
   /// In en, this message translates to:
-  /// **'When enabled, unestimated issues count as one estimate unit. When disabled, they count as no estimate.'**
+  /// **'When enabled, unestimated tasks contribute 1 estimate unit to totals. When disabled, they contribute 0.'**
   String get taskEstimatesCountUnestimatedIssuesDescription;
 
   /// No description provided for @taskEstimatesUpdateSuccess.
@@ -649,17 +649,29 @@ abstract class AppLocalizations {
   /// **'Fibonacci'**
   String get taskEstimatesTypeFibonacciLabel;
 
-  /// No description provided for @taskEstimatesTypeFibonacciStandard.
+  /// No description provided for @taskEstimatesTypeFibonacciStandardZeroEnabled.
   ///
   /// In en, this message translates to:
   /// **'Fibonacci sequence: 0, 1, 2, 3, 5, 8.'**
-  String get taskEstimatesTypeFibonacciStandard;
+  String get taskEstimatesTypeFibonacciStandardZeroEnabled;
 
-  /// No description provided for @taskEstimatesTypeFibonacciExtended.
+  /// No description provided for @taskEstimatesTypeFibonacciStandardZeroDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Fibonacci sequence: 1, 2, 3, 5, 8.'**
+  String get taskEstimatesTypeFibonacciStandardZeroDisabled;
+
+  /// No description provided for @taskEstimatesTypeFibonacciExtendedZeroEnabled.
   ///
   /// In en, this message translates to:
   /// **'Extended Fibonacci sequence: 0, 1, 2, 3, 5, 8, 13, 21.'**
-  String get taskEstimatesTypeFibonacciExtended;
+  String get taskEstimatesTypeFibonacciExtendedZeroEnabled;
+
+  /// No description provided for @taskEstimatesTypeFibonacciExtendedZeroDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Extended Fibonacci sequence: 1, 2, 3, 5, 8, 13, 21.'**
+  String get taskEstimatesTypeFibonacciExtendedZeroDisabled;
 
   /// No description provided for @taskEstimatesTypeLinearLabel.
   ///
@@ -667,17 +679,29 @@ abstract class AppLocalizations {
   /// **'Linear'**
   String get taskEstimatesTypeLinearLabel;
 
-  /// No description provided for @taskEstimatesTypeLinearStandard.
+  /// No description provided for @taskEstimatesTypeLinearStandardZeroEnabled.
   ///
   /// In en, this message translates to:
   /// **'Linear sequence: 0, 1, 2, 3, 4, 5.'**
-  String get taskEstimatesTypeLinearStandard;
+  String get taskEstimatesTypeLinearStandardZeroEnabled;
 
-  /// No description provided for @taskEstimatesTypeLinearExtended.
+  /// No description provided for @taskEstimatesTypeLinearStandardZeroDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Linear sequence: 1, 2, 3, 4, 5.'**
+  String get taskEstimatesTypeLinearStandardZeroDisabled;
+
+  /// No description provided for @taskEstimatesTypeLinearExtendedZeroEnabled.
   ///
   /// In en, this message translates to:
   /// **'Extended linear sequence: 0, 1, 2, 3, 4, 5, 6, 7.'**
-  String get taskEstimatesTypeLinearExtended;
+  String get taskEstimatesTypeLinearExtendedZeroEnabled;
+
+  /// No description provided for @taskEstimatesTypeLinearExtendedZeroDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Extended linear sequence: 1, 2, 3, 4, 5, 6, 7.'**
+  String get taskEstimatesTypeLinearExtendedZeroDisabled;
 
   /// No description provided for @taskEstimatesTypeExponentialLabel.
   ///
@@ -685,17 +709,29 @@ abstract class AppLocalizations {
   /// **'Exponential'**
   String get taskEstimatesTypeExponentialLabel;
 
-  /// No description provided for @taskEstimatesTypeExponentialStandard.
+  /// No description provided for @taskEstimatesTypeExponentialStandardZeroEnabled.
   ///
   /// In en, this message translates to:
   /// **'Exponential sequence: 0, 1, 2, 4, 8, 16.'**
-  String get taskEstimatesTypeExponentialStandard;
+  String get taskEstimatesTypeExponentialStandardZeroEnabled;
 
-  /// No description provided for @taskEstimatesTypeExponentialExtended.
+  /// No description provided for @taskEstimatesTypeExponentialStandardZeroDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Exponential sequence: 1, 2, 4, 8, 16.'**
+  String get taskEstimatesTypeExponentialStandardZeroDisabled;
+
+  /// No description provided for @taskEstimatesTypeExponentialExtendedZeroEnabled.
   ///
   /// In en, this message translates to:
   /// **'Extended exponential sequence: 0, 1, 2, 4, 8, 16, 32, 64.'**
-  String get taskEstimatesTypeExponentialExtended;
+  String get taskEstimatesTypeExponentialExtendedZeroEnabled;
+
+  /// No description provided for @taskEstimatesTypeExponentialExtendedZeroDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Extended exponential sequence: 1, 2, 4, 8, 16, 32, 64.'**
+  String get taskEstimatesTypeExponentialExtendedZeroDisabled;
 
   /// No description provided for @taskEstimatesTypeTshirtLabel.
   ///
@@ -703,17 +739,29 @@ abstract class AppLocalizations {
   /// **'T-shirt'**
   String get taskEstimatesTypeTshirtLabel;
 
-  /// No description provided for @taskEstimatesTypeTshirtStandard.
+  /// No description provided for @taskEstimatesTypeTshirtStandardZeroEnabled.
   ///
   /// In en, this message translates to:
   /// **'T-shirt sizes: -, XS, S, M, L, XL.'**
-  String get taskEstimatesTypeTshirtStandard;
+  String get taskEstimatesTypeTshirtStandardZeroEnabled;
 
-  /// No description provided for @taskEstimatesTypeTshirtExtended.
+  /// No description provided for @taskEstimatesTypeTshirtStandardZeroDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'T-shirt sizes: XS, S, M, L, XL.'**
+  String get taskEstimatesTypeTshirtStandardZeroDisabled;
+
+  /// No description provided for @taskEstimatesTypeTshirtExtendedZeroEnabled.
   ///
   /// In en, this message translates to:
   /// **'Extended T-shirt sizes: -, XS, S, M, L, XL, XXL, XXXL.'**
-  String get taskEstimatesTypeTshirtExtended;
+  String get taskEstimatesTypeTshirtExtendedZeroEnabled;
+
+  /// No description provided for @taskEstimatesTypeTshirtExtendedZeroDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Extended T-shirt sizes: XS, S, M, L, XL, XXL, XXXL.'**
+  String get taskEstimatesTypeTshirtExtendedZeroDisabled;
 
   /// No description provided for @calendarTitle.
   ///

@@ -273,13 +273,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskEstimatesAllowZeroEstimates => 'Allow zero estimates';
 
   @override
-  String get taskEstimatesAllowZeroEstimatesDescription => 'When enabled, issues can be estimated with a zero-like value.';
+  String get taskEstimatesAllowZeroEstimatesDescription => 'When enabled, tasks can be estimated as 0 and contribute 0 to totals.';
 
   @override
   String get taskEstimatesCountUnestimatedIssues => 'Count unestimated issues';
 
   @override
-  String get taskEstimatesCountUnestimatedIssuesDescription => 'When enabled, unestimated issues count as one estimate unit. When disabled, they count as no estimate.';
+  String get taskEstimatesCountUnestimatedIssuesDescription => 'When enabled, unestimated tasks contribute 1 estimate unit to totals. When disabled, they contribute 0.';
 
   @override
   String get taskEstimatesUpdateSuccess => 'Estimation updated successfully.';
@@ -294,37 +294,61 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskEstimatesTypeFibonacciLabel => 'Fibonacci';
 
   @override
-  String get taskEstimatesTypeFibonacciStandard => 'Fibonacci sequence: 0, 1, 2, 3, 5, 8.';
+  String get taskEstimatesTypeFibonacciStandardZeroEnabled => 'Fibonacci sequence: 0, 1, 2, 3, 5, 8.';
 
   @override
-  String get taskEstimatesTypeFibonacciExtended => 'Extended Fibonacci sequence: 0, 1, 2, 3, 5, 8, 13, 21.';
+  String get taskEstimatesTypeFibonacciStandardZeroDisabled => 'Fibonacci sequence: 1, 2, 3, 5, 8.';
+
+  @override
+  String get taskEstimatesTypeFibonacciExtendedZeroEnabled => 'Extended Fibonacci sequence: 0, 1, 2, 3, 5, 8, 13, 21.';
+
+  @override
+  String get taskEstimatesTypeFibonacciExtendedZeroDisabled => 'Extended Fibonacci sequence: 1, 2, 3, 5, 8, 13, 21.';
 
   @override
   String get taskEstimatesTypeLinearLabel => 'Linear';
 
   @override
-  String get taskEstimatesTypeLinearStandard => 'Linear sequence: 0, 1, 2, 3, 4, 5.';
+  String get taskEstimatesTypeLinearStandardZeroEnabled => 'Linear sequence: 0, 1, 2, 3, 4, 5.';
 
   @override
-  String get taskEstimatesTypeLinearExtended => 'Extended linear sequence: 0, 1, 2, 3, 4, 5, 6, 7.';
+  String get taskEstimatesTypeLinearStandardZeroDisabled => 'Linear sequence: 1, 2, 3, 4, 5.';
+
+  @override
+  String get taskEstimatesTypeLinearExtendedZeroEnabled => 'Extended linear sequence: 0, 1, 2, 3, 4, 5, 6, 7.';
+
+  @override
+  String get taskEstimatesTypeLinearExtendedZeroDisabled => 'Extended linear sequence: 1, 2, 3, 4, 5, 6, 7.';
 
   @override
   String get taskEstimatesTypeExponentialLabel => 'Exponential';
 
   @override
-  String get taskEstimatesTypeExponentialStandard => 'Exponential sequence: 0, 1, 2, 4, 8, 16.';
+  String get taskEstimatesTypeExponentialStandardZeroEnabled => 'Exponential sequence: 0, 1, 2, 4, 8, 16.';
 
   @override
-  String get taskEstimatesTypeExponentialExtended => 'Extended exponential sequence: 0, 1, 2, 4, 8, 16, 32, 64.';
+  String get taskEstimatesTypeExponentialStandardZeroDisabled => 'Exponential sequence: 1, 2, 4, 8, 16.';
+
+  @override
+  String get taskEstimatesTypeExponentialExtendedZeroEnabled => 'Extended exponential sequence: 0, 1, 2, 4, 8, 16, 32, 64.';
+
+  @override
+  String get taskEstimatesTypeExponentialExtendedZeroDisabled => 'Extended exponential sequence: 1, 2, 4, 8, 16, 32, 64.';
 
   @override
   String get taskEstimatesTypeTshirtLabel => 'T-shirt';
 
   @override
-  String get taskEstimatesTypeTshirtStandard => 'T-shirt sizes: -, XS, S, M, L, XL.';
+  String get taskEstimatesTypeTshirtStandardZeroEnabled => 'T-shirt sizes: -, XS, S, M, L, XL.';
 
   @override
-  String get taskEstimatesTypeTshirtExtended => 'Extended T-shirt sizes: -, XS, S, M, L, XL, XXL, XXXL.';
+  String get taskEstimatesTypeTshirtStandardZeroDisabled => 'T-shirt sizes: XS, S, M, L, XL.';
+
+  @override
+  String get taskEstimatesTypeTshirtExtendedZeroEnabled => 'Extended T-shirt sizes: -, XS, S, M, L, XL, XXL, XXXL.';
+
+  @override
+  String get taskEstimatesTypeTshirtExtendedZeroDisabled => 'Extended T-shirt sizes: XS, S, M, L, XL, XXL, XXXL.';
 
   @override
   String get calendarTitle => 'Calendar';
