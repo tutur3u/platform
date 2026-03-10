@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,6 +6,7 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/icons/platform_icon.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/utils/color_hex.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/tag.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
@@ -721,7 +721,7 @@ class _CategoryDialogState extends State<_CategoryDialog> {
                       ),
                       shad.OutlineButton(
                         onPressed: () =>
-                            setState(() => _colorHex = _randomHexColor()),
+                            setState(() => _colorHex = randomHexColor()),
                         child: Text(context.l10n.financeRandomizeColor),
                       ),
                       if (_colorHex != null)
@@ -842,15 +842,6 @@ class _CategoryDialogState extends State<_CategoryDialog> {
     return '#${value.toUpperCase()}';
   }
 
-  String _randomHexColor() {
-    final rng = Random();
-    final hue = rng.nextInt(360).toDouble();
-    final saturation = (55 + rng.nextInt(36)).toDouble() / 100;
-    final lightness = (42 + rng.nextInt(24)).toDouble() / 100;
-    final color = HSLColor.fromAHSL(1, hue, saturation, lightness).toColor();
-    return _toHex(color);
-  }
-
   Future<void> _openColorPicker() async {
     var selected =
         _parseHexColor(_colorHex) ??
@@ -896,15 +887,8 @@ class _CategoryDialogState extends State<_CategoryDialog> {
     );
 
     if (result != null && mounted) {
-      setState(() => _colorHex = _toHex(result));
+      setState(() => _colorHex = colorToHexString(result));
     }
-  }
-
-  String _toHex(Color color) {
-    final r = (color.r * 255).round().toRadixString(16).padLeft(2, '0');
-    final g = (color.g * 255).round().toRadixString(16).padLeft(2, '0');
-    final b = (color.b * 255).round().toRadixString(16).padLeft(2, '0');
-    return '#$r$g$b'.toUpperCase();
   }
 
   Color? _parseHexColor(String? hex) {
@@ -1037,7 +1021,7 @@ class _TagDialogState extends State<_TagDialog> {
                   ),
                   shad.OutlineButton(
                     onPressed: () =>
-                        setState(() => _colorHex = _randomHexColor()),
+                        setState(() => _colorHex = randomHexColor()),
                     child: Text(context.l10n.financeRandomizeColor),
                   ),
                 ],
@@ -1130,15 +1114,6 @@ class _TagDialogState extends State<_TagDialog> {
     }
   }
 
-  String _randomHexColor() {
-    final rng = Random();
-    final hue = rng.nextInt(360).toDouble();
-    final saturation = (55 + rng.nextInt(36)).toDouble() / 100;
-    final lightness = (42 + rng.nextInt(24)).toDouble() / 100;
-    final color = HSLColor.fromAHSL(1, hue, saturation, lightness).toColor();
-    return _toHex(color);
-  }
-
   Future<void> _openColorPicker() async {
     var selected = _parseHexColor(_colorHex) ?? const Color(0xFF3B82F6);
 
@@ -1180,15 +1155,8 @@ class _TagDialogState extends State<_TagDialog> {
     );
 
     if (result != null && mounted) {
-      setState(() => _colorHex = _toHex(result));
+      setState(() => _colorHex = colorToHexString(result));
     }
-  }
-
-  String _toHex(Color color) {
-    final r = (color.r * 255).round().toRadixString(16).padLeft(2, '0');
-    final g = (color.g * 255).round().toRadixString(16).padLeft(2, '0');
-    final b = (color.b * 255).round().toRadixString(16).padLeft(2, '0');
-    return '#$r$g$b'.toUpperCase();
   }
 
   String? _normalizeHex(String raw) {

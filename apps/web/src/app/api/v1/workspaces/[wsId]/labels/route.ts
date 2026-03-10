@@ -1,6 +1,10 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+
+import { isTaskLabelColorPreset, normalizeTaskLabelColor } from './label-color';
 
 interface RouteParams {
   params: Promise<{
@@ -8,11 +12,44 @@ interface RouteParams {
   }>;
 }
 
+const LabelSchema = z.object({
+  name: z.string().trim().min(1, 'Name is required'),
+  color: z
+    .string()
+    .trim()
+    .min(1, 'Color is required')
+    .transform((value) => normalizeTaskLabelColor(value))
+    .refine((value) => isTaskLabelColorPreset(value), {
+      message: 'Color must be one of the supported preset colors',
+    }),
+});
+
 // GET - Fetch all labels for a workspace
-export async function GET(_request: NextRequest, { params }: RouteParams) {
+export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const { wsId } = await params;
-    const supabase = await createClient();
+    const { wsId: id } = await params;
+    const supabase = await createClient(request);
+    const wsId = await normalizeWorkspaceId(id, supabase);
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Verify membership in the workspace
+    const { data: workspaceMember } = await supabase
+      .from('workspace_members')
+      .select('user_id')
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (!workspaceMember) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+    }
 
     const { data: labels, error } = await supabase
       .from('workspace_task_labels')
@@ -41,18 +78,21 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 // POST - Create a new label
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
-    const { wsId } = await params;
+    const { wsId: id } = await params;
+    const supabase = await createClient(request);
+    const wsId = await normalizeWorkspaceId(id, supabase);
     const body = await request.json();
-    const { name, color } = body;
+    const data = LabelSchema.safeParse(body);
 
-    if (!name || !color) {
+    if (!data.success) {
+      console.error('Validation error:', data.error);
       return NextResponse.json(
-        { error: 'Name and color are required' },
+        { error: 'Invalid label data' },
         { status: 400 }
       );
     }
 
-    const supabase = await createClient();
+    const { name, color } = data.data;
 
     // Get current user
     const {
@@ -80,7 +120,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       .from('workspace_task_labels')
       .insert({
         name: name.trim(),
-        color: color,
+        color,
         ws_id: wsId,
         creator_id: user.id,
       })

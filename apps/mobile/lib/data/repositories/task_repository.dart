@@ -1,6 +1,7 @@
 import 'package:mobile/data/models/task.dart';
 import 'package:mobile/data/models/task_estimate_board.dart';
 import 'package:mobile/data/models/task_initiative_summary.dart';
+import 'package:mobile/data/models/task_label.dart';
 import 'package:mobile/data/models/task_link_option.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
 import 'package:mobile/data/models/task_project_update.dart';
@@ -8,6 +9,7 @@ import 'package:mobile/data/models/user_task.dart';
 import 'package:mobile/data/models/workspace_user_option.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
+import 'package:mobile/features/tasks_estimates/utils/task_label_colors.dart';
 
 /// Repository for task operations.
 class TaskRepository {
@@ -147,6 +149,67 @@ class TaskRepository {
     );
 
     return TaskEstimateBoard.fromJson(response);
+  }
+
+  Future<List<TaskLabel>> getTaskLabels(String wsId) async {
+    final response = await _apiClient.getJsonList(
+      '/api/v1/workspaces/$wsId/labels',
+    );
+
+    return response
+        .whereType<Map<String, dynamic>>()
+        .map(TaskLabel.fromJson)
+        .toList(growable: false);
+  }
+
+  Future<TaskLabel> createTaskLabel({
+    required String wsId,
+    required String name,
+    required String color,
+  }) async {
+    final normalizedColor = normalizeTaskLabelColor(color);
+    if (normalizedColor == null || !isTaskLabelColorPreset(normalizedColor)) {
+      throw const FormatException('Invalid task label color preset');
+    }
+
+    final response = await _apiClient.postJson(
+      '/api/v1/workspaces/$wsId/labels',
+      {
+        'name': name,
+        'color': normalizedColor,
+      },
+    );
+
+    return TaskLabel.fromJson(response);
+  }
+
+  Future<TaskLabel> updateTaskLabel({
+    required String wsId,
+    required String labelId,
+    required String name,
+    required String color,
+  }) async {
+    final normalizedColor = normalizeTaskLabelColor(color);
+    if (normalizedColor == null || !isTaskLabelColorPreset(normalizedColor)) {
+      throw const FormatException('Invalid task label color preset');
+    }
+
+    final response = await _apiClient.patchJson(
+      '/api/v1/workspaces/$wsId/labels/$labelId',
+      {
+        'name': name,
+        'color': normalizedColor,
+      },
+    );
+
+    return TaskLabel.fromJson(response);
+  }
+
+  Future<void> deleteTaskLabel({
+    required String wsId,
+    required String labelId,
+  }) async {
+    await _apiClient.deleteJson('/api/v1/workspaces/$wsId/labels/$labelId');
   }
 
   Future<List<TaskProjectSummary>> getTaskProjects(String wsId) async {

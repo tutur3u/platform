@@ -175,7 +175,7 @@ class AppRegistry {
 
   static String _labelTasks(AppLocalizations l10n) => l10n.navTasks;
   static String _labelTaskEstimates(AppLocalizations l10n) =>
-      l10n.taskEstimatesTitle;
+      l10n.taskPlanningTitle;
   static String _labelTaskPortfolio(AppLocalizations l10n) =>
       l10n.taskPortfolioTitle;
   static String _labelCalendar(AppLocalizations l10n) => l10n.navCalendar;
