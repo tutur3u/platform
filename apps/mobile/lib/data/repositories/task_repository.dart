@@ -1,8 +1,15 @@
 import 'package:mobile/data/models/task.dart';
 import 'package:mobile/data/models/task_estimate_board.dart';
-import 'package:mobile/data/models/user_task.dart';
+import 'package:mobile/data/models/task_initiative_summary.dart';
+import 'package:mobile/data/models/task_label.dart';
+import 'package:mobile/data/models/task_link_option.dart';
+import 'package:mobile/data/models/task_project_summary.dart';
+import 'package:mobile/data/models/task_project_update.dart';
+import 'package:mobile/data/models/user_tasks_page.dart';
+import 'package:mobile/data/models/workspace_user_option.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
+import 'package:mobile/features/tasks_estimates/utils/task_label_colors.dart';
 
 /// Repository for task operations.
 class TaskRepository {
@@ -11,60 +18,26 @@ class TaskRepository {
 
   final ApiClient _apiClient;
 
-  /// Fetches user-accessible tasks via the same RPC the web app uses.
-  ///
-  /// When [isPersonal] is true, [wsId] is omitted so the RPC returns tasks
-  /// across all workspaces the user belongs to.
-  Future<List<UserTask>> getUserTasks({
-    required String userId,
+  /// Fetches the current user's task buckets from the shared web API.
+  Future<UserTasksPage> getMyTasks({
     required String wsId,
     required bool isPersonal,
+    int completedPage = 0,
+    int completedLimit = 20,
   }) async {
-    // 1. Call the RPC
-    final rpcResponse = await supabase.rpc<List<dynamic>>(
-      'get_user_accessible_tasks',
-      params: {
-        'p_user_id': userId,
-        if (!isPersonal) 'p_ws_id': wsId,
-        'p_include_deleted': false,
-        'p_list_statuses': ['not_started', 'active', 'done'],
-      },
-    );
+    final query = _encodeQueryParameters({
+      'wsId': wsId,
+      'isPersonal': isPersonal.toString(),
+      'completedPage': completedPage.toString(),
+      'completedLimit': completedLimit.toString(),
+    });
 
-    final tasks = rpcResponse
-        .map((e) => UserTask.fromRpcJson(e as Map<String, dynamic>))
-        .toList();
+    final response = await _apiClient.getJson('/api/v1/users/me/tasks?$query');
+    return UserTasksPage.fromJson(response);
+  }
 
-    // 2. Fetch list → board → workspace relations
-    final listIds = tasks
-        .map((t) => t.listId)
-        .where((id) => id != null)
-        .toSet()
-        .toList();
-
-    if (listIds.isEmpty) return tasks;
-
-    final listsResponse = await supabase
-        .from('task_lists')
-        .select('''
-          id, name, status,
-          board:workspace_boards!inner(
-            id, name, ws_id,
-            workspaces(id, name, personal)
-          )
-        ''')
-        .inFilter('id', listIds);
-
-    final listsData = (listsResponse as List<dynamic>?) ?? [];
-    final listsById = <String, TaskListInfo>{};
-    for (final raw in listsData) {
-      final json = raw as Map<String, dynamic>;
-      final info = TaskListInfo.fromJson(json);
-      listsById[info.id] = info;
-    }
-
-    // 3. Merge list info onto tasks
-    return tasks.map((t) => t.withList(listsById[t.listId])).toList();
+  String _encodeQueryParameters(Map<String, String> params) {
+    return Uri(queryParameters: params).query;
   }
 
   Future<List<Task>> getTasks(String wsId) async {
@@ -142,5 +115,296 @@ class TaskRepository {
     );
 
     return TaskEstimateBoard.fromJson(response);
+  }
+
+  Future<List<TaskLabel>> getTaskLabels(String wsId) async {
+    final response = await _apiClient.getJsonList(
+      '/api/v1/workspaces/$wsId/labels',
+    );
+
+    return response
+        .whereType<Map<String, dynamic>>()
+        .map(TaskLabel.fromJson)
+        .toList(growable: false);
+  }
+
+  Future<TaskLabel> createTaskLabel({
+    required String wsId,
+    required String name,
+    required String color,
+  }) async {
+    final normalizedColor = normalizeTaskLabelColor(color);
+    if (normalizedColor == null || !isTaskLabelColorPreset(normalizedColor)) {
+      throw const FormatException('Invalid task label color preset');
+    }
+
+    final response = await _apiClient.postJson(
+      '/api/v1/workspaces/$wsId/labels',
+      {
+        'name': name,
+        'color': normalizedColor,
+      },
+    );
+
+    return TaskLabel.fromJson(response);
+  }
+
+  Future<TaskLabel> updateTaskLabel({
+    required String wsId,
+    required String labelId,
+    required String name,
+    required String color,
+  }) async {
+    final normalizedColor = normalizeTaskLabelColor(color);
+    if (normalizedColor == null || !isTaskLabelColorPreset(normalizedColor)) {
+      throw const FormatException('Invalid task label color preset');
+    }
+
+    final response = await _apiClient.patchJson(
+      '/api/v1/workspaces/$wsId/labels/$labelId',
+      {
+        'name': name,
+        'color': normalizedColor,
+      },
+    );
+
+    return TaskLabel.fromJson(response);
+  }
+
+  Future<void> deleteTaskLabel({
+    required String wsId,
+    required String labelId,
+  }) async {
+    await _apiClient.deleteJson('/api/v1/workspaces/$wsId/labels/$labelId');
+  }
+
+  Future<List<TaskProjectSummary>> getTaskProjects(String wsId) async {
+    final response = await _apiClient.getJsonList(
+      '/api/v1/workspaces/$wsId/task-projects',
+    );
+
+    return response
+        .whereType<Map<String, dynamic>>()
+        .map(TaskProjectSummary.fromJson)
+        .toList(growable: false);
+  }
+
+  Future<List<TaskLinkOption>> getWorkspaceTasksForProjectLinking(
+    String wsId,
+  ) async {
+    final response = await _apiClient.getJson('/api/v1/workspaces/$wsId/tasks');
+    final tasks = response['tasks'] as List<dynamic>? ?? const [];
+
+    return tasks
+        .whereType<Map<String, dynamic>>()
+        .map(TaskLinkOption.fromJson)
+        .toList(growable: false);
+  }
+
+  Future<List<WorkspaceUserOption>> getWorkspaceUsers(String wsId) async {
+    final response = await _apiClient.getJson(
+      '/api/v1/workspaces/$wsId/members',
+    );
+    final members = response['members'] as List<dynamic>? ?? const [];
+
+    return members
+        .whereType<Map<String, dynamic>>()
+        .map(WorkspaceUserOption.fromJson)
+        .toList(growable: false);
+  }
+
+  Future<void> createTaskProject({
+    required String wsId,
+    required String name,
+    String? description,
+  }) async {
+    await _apiClient.postJson('/api/v1/workspaces/$wsId/task-projects', {
+      'name': name,
+      if (description != null) 'description': description,
+    });
+  }
+
+  Future<void> updateTaskProject({
+    required String wsId,
+    required String projectId,
+    required String name,
+    String? status,
+    String? priority,
+    String? healthStatus,
+    String? description,
+    String? leadId,
+    DateTime? startDate,
+    DateTime? endDate,
+    bool? archived,
+  }) async {
+    await _apiClient.putJson(
+      '/api/v1/workspaces/$wsId/task-projects/$projectId',
+      {
+        'name': name,
+        'description': description,
+        if (status != null) 'status': status,
+        if (priority != null) 'priority': priority,
+        'health_status': healthStatus,
+        'lead_id': leadId,
+        'start_date': startDate?.toUtc().toIso8601String(),
+        'end_date': endDate?.toUtc().toIso8601String(),
+        'archived': archived,
+      },
+    );
+  }
+
+  Future<void> deleteTaskProject({
+    required String wsId,
+    required String projectId,
+  }) async {
+    await _apiClient.deleteJson(
+      '/api/v1/workspaces/$wsId/task-projects/$projectId',
+    );
+  }
+
+  Future<List<TaskInitiativeSummary>> getTaskInitiatives(String wsId) async {
+    final response = await _apiClient.getJsonList(
+      '/api/v1/workspaces/$wsId/task-initiatives',
+    );
+
+    return response
+        .whereType<Map<String, dynamic>>()
+        .map(TaskInitiativeSummary.fromJson)
+        .toList(growable: false);
+  }
+
+  Future<void> createTaskInitiative({
+    required String wsId,
+    required String name,
+    required String status,
+    String? description,
+  }) async {
+    await _apiClient.postJson('/api/v1/workspaces/$wsId/task-initiatives', {
+      'name': name,
+      if (description != null) 'description': description,
+      'status': status,
+    });
+  }
+
+  Future<void> updateTaskInitiative({
+    required String wsId,
+    required String initiativeId,
+    required String name,
+    required String status,
+    String? description,
+  }) async {
+    await _apiClient.putJson(
+      '/api/v1/workspaces/$wsId/task-initiatives/$initiativeId',
+      {
+        'name': name,
+        if (description != null) 'description': description,
+        'status': status,
+      },
+    );
+  }
+
+  Future<void> deleteTaskInitiative({
+    required String wsId,
+    required String initiativeId,
+  }) async {
+    await _apiClient.deleteJson(
+      '/api/v1/workspaces/$wsId/task-initiatives/$initiativeId',
+    );
+  }
+
+  Future<void> linkProjectToInitiative({
+    required String wsId,
+    required String initiativeId,
+    required String projectId,
+  }) async {
+    await _apiClient.postJson(
+      '/api/v1/workspaces/$wsId/task-initiatives/$initiativeId/projects',
+      {'projectId': projectId},
+    );
+  }
+
+  Future<void> unlinkProjectFromInitiative({
+    required String wsId,
+    required String initiativeId,
+    required String projectId,
+  }) async {
+    await _apiClient.deleteJson(
+      '/api/v1/workspaces/$wsId/task-initiatives/$initiativeId/projects/$projectId',
+    );
+  }
+
+  Future<void> linkTaskToProject({
+    required String wsId,
+    required String projectId,
+    required String taskId,
+  }) async {
+    await _apiClient.postJson(
+      '/api/v1/workspaces/$wsId/task-projects/$projectId/tasks',
+      {'taskId': taskId},
+    );
+  }
+
+  Future<void> unlinkTaskFromProject({
+    required String wsId,
+    required String projectId,
+    required String taskId,
+  }) async {
+    await _apiClient.deleteJson(
+      '/api/v1/workspaces/$wsId/task-projects/$projectId/tasks/$taskId',
+    );
+  }
+
+  Future<List<TaskProjectUpdate>> getTaskProjectUpdates({
+    required String wsId,
+    required String projectId,
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    final response = await _apiClient.getJson(
+      '/api/v1/workspaces/$wsId/task-projects/$projectId/updates?limit=$limit&offset=$offset',
+    );
+    final updates = response['updates'] as List<dynamic>? ?? const [];
+
+    return updates
+        .whereType<Map<String, dynamic>>()
+        .map(TaskProjectUpdate.fromJson)
+        .toList(growable: false);
+  }
+
+  Future<TaskProjectUpdate> createTaskProjectUpdate({
+    required String wsId,
+    required String projectId,
+    required String content,
+  }) async {
+    final response = await _apiClient.postJson(
+      '/api/v1/workspaces/$wsId/task-projects/$projectId/updates',
+      {'content': content},
+    );
+
+    return TaskProjectUpdate.fromJson(response);
+  }
+
+  Future<TaskProjectUpdate> updateTaskProjectUpdate({
+    required String wsId,
+    required String projectId,
+    required String updateId,
+    required String content,
+  }) async {
+    final response = await _apiClient.patchJson(
+      '/api/v1/workspaces/$wsId/task-projects/$projectId/updates/$updateId',
+      {'content': content},
+    );
+
+    return TaskProjectUpdate.fromJson(response);
+  }
+
+  Future<void> deleteTaskProjectUpdate({
+    required String wsId,
+    required String projectId,
+    required String updateId,
+  }) async {
+    await _apiClient.deleteJson(
+      '/api/v1/workspaces/$wsId/task-projects/$projectId/updates/$updateId',
+    );
   }
 }

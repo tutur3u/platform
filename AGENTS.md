@@ -163,7 +163,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **next-intl ICU Syntax**: In `next-intl` message files, use ICU placeholders with single braces (`{count}`, `{name}`, plural/select blocks). Do not use Handlebars-style `{{...}}`, which renders as malformed arguments at runtime.
 - **Markdown Separator Validation**: When detecting Markdown table separator rows, do not use ambiguous regex character ranges like `[\s:-|]`. Escape or reposition `-`, or prefer explicit per-character validation, to avoid false positives and CodeQL `js/overly-large-range` alerts.
 - **Special Tag Prompt Rules**: Custom tags like `@<FOLLOWUP>` must not contain internal whitespace, but blank lines between distinct prompt sections are required.
-- **Flutter Toast Overlay Context**: In `shadcn_flutter`, call `showToast` with a context captured from `Navigator.of(context, rootNavigator: true).context` (captured before async gaps). Dialog/sheet-local contexts can sit below overlays and trigger `InheritedTheme.capture` ancestor assertions.
+- **Flutter Toast Overlay Context**: In `shadcn_flutter`, call `showToast` with a context captured from `Navigator.of(context, rootNavigator: true).context` (captured before async gaps). Dialog/sheet-local contexts can sit below overlays and trigger `InheritedTheme.capture` ancestor assertions. When this context is passed through a helper after an `await`, add an explicit `if (!toastContext.mounted) return;` guard at the call site as well; `flutter analyze` does not infer mounted checks hidden inside helper methods.
 - **Module Boundaries**: When file grows beyond roughly 500 LOC, split it by concern and keep the original entrypoint as a thin barrel re-export so dispatcher imports remain stable.
 
 ### 6.3 Security & Validation
@@ -196,6 +196,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 ### 6.5 Type Safety & Platform Details
 
 - **Dart Part Imports**: For Dart `part` files, add library imports only in the parent file (the one declaring `part ...`).
+- **Flutter View File Splits**: When a Flutter page/view exceeds the module boundary threshold, keep the original entry file as the library root and split into sibling `part` files by concern (for example `*_view.dart`, `*_cards.dart`, `*_states.dart`, `*_utils.dart`) so route imports stay stable while reducing file size.
 - **API Route UUID Params**: In API routes, validate UUID path params with shared `zod` schemas (`z.uuid()` + `safeParse`) instead of ad-hoc null/regex checks.
 - **Supabase Helper Extraction**: When moving Supabase DB writes into shared helper modules, prefer structural interfaces (or thin generic adapters) over concrete `createAdminClient` return types to avoid cross-package generic incompatibilities during type-check.
 - **Type-Safe Group Iteration**: In strict TS files with discriminated unions and `noUncheckedIndexedAccess`, avoid `array[index]` iteration for render groups. Prefer `for (const [i, item] of array.entries())` plus `switch (item.kind)` to preserve narrowing and prevent `"possibly undefined"` regressions.

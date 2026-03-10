@@ -3,6 +3,7 @@ import { MAX_LONG_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 // Type definitions for update responses
 interface User {
@@ -83,7 +84,8 @@ export async function POST(
 ) {
   try {
     const { wsId, projectId } = await params;
-    const supabase = await createClient();
+    const normalizedWsId = await normalizeWorkspaceId(wsId);
+    const supabase = await createClient(request);
 
     // Get current user
     const {
@@ -98,7 +100,7 @@ export async function POST(
     const { data: membership } = await supabase
       .from('workspace_members')
       .select('ws_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -111,7 +113,7 @@ export async function POST(
       .from('task_projects')
       .select('id')
       .eq('id', projectId)
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .single();
 
     if (!project) {
@@ -172,7 +174,8 @@ export async function GET(
 ) {
   try {
     const { wsId, projectId } = await params;
-    const supabase = await createClient();
+    const normalizedWsId = await normalizeWorkspaceId(wsId);
+    const supabase = await createClient(request);
 
     // Get current user
     const {
@@ -187,7 +190,7 @@ export async function GET(
     const { data: membership } = await supabase
       .from('workspace_members')
       .select('ws_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 

@@ -3,7 +3,8 @@
   "compilerOptions": {
     "strict": true,
     "jsx": "react-jsx",
-    "noEmit": true
+    "noEmit": true,
+    "types": ["node", "react"]
   },
   "include": ["emails", "react"],
   "exclude": ["node_modules", "dist", ".turbo"]

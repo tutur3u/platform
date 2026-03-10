@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,6 +6,7 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/icons/platform_icon.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/utils/color_hex.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/tag.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
@@ -555,7 +555,7 @@ class _CategoryDialogState extends State<_CategoryDialog> {
     _nameController = TextEditingController(text: widget.category?.name ?? '');
     _isExpense = widget.category?.isExpense ?? true;
     _icon = widget.category?.icon;
-    _colorHex = _normalizeHex(widget.category?.color ?? '');
+    _colorHex = normalizeHex(widget.category?.color ?? '');
   }
 
   @override
@@ -567,7 +567,7 @@ class _CategoryDialogState extends State<_CategoryDialog> {
   @override
   Widget build(BuildContext context) {
     final previewColor =
-        _parseHexColor(_colorHex) ??
+        parseHex(_colorHex) ??
         (_isExpense
             ? shad.Theme.of(context).colorScheme.destructive
             : shad.Theme.of(context).colorScheme.primary);
@@ -721,7 +721,7 @@ class _CategoryDialogState extends State<_CategoryDialog> {
                       ),
                       shad.OutlineButton(
                         onPressed: () =>
-                            setState(() => _colorHex = _randomHexColor()),
+                            setState(() => _colorHex = randomHexColor()),
                         child: Text(context.l10n.financeRandomizeColor),
                       ),
                       if (_colorHex != null)
@@ -826,34 +826,9 @@ class _CategoryDialogState extends State<_CategoryDialog> {
     }
   }
 
-  String? _normalizeHex(String raw) {
-    if (raw.trim().isEmpty) return null;
-    final value = raw.trim().replaceFirst('#', '');
-    if (value.length != 6 && value.length != 8) {
-      return null;
-    }
-    final parsed = int.tryParse(value, radix: 16);
-    if (parsed == null) {
-      return null;
-    }
-    if (value.length == 8) {
-      return '#${value.substring(2)}'.toUpperCase();
-    }
-    return '#${value.toUpperCase()}';
-  }
-
-  String _randomHexColor() {
-    final rng = Random();
-    final hue = rng.nextInt(360).toDouble();
-    final saturation = (55 + rng.nextInt(36)).toDouble() / 100;
-    final lightness = (42 + rng.nextInt(24)).toDouble() / 100;
-    final color = HSLColor.fromAHSL(1, hue, saturation, lightness).toColor();
-    return _toHex(color);
-  }
-
   Future<void> _openColorPicker() async {
     var selected =
-        _parseHexColor(_colorHex) ??
+        parseHex(_colorHex) ??
         (_isExpense
             ? shad.Theme.of(context).colorScheme.destructive
             : shad.Theme.of(context).colorScheme.primary);
@@ -896,26 +871,8 @@ class _CategoryDialogState extends State<_CategoryDialog> {
     );
 
     if (result != null && mounted) {
-      setState(() => _colorHex = _toHex(result));
+      setState(() => _colorHex = colorToHexString(result));
     }
-  }
-
-  String _toHex(Color color) {
-    final r = (color.r * 255).round().toRadixString(16).padLeft(2, '0');
-    final g = (color.g * 255).round().toRadixString(16).padLeft(2, '0');
-    final b = (color.b * 255).round().toRadixString(16).padLeft(2, '0');
-    return '#$r$g$b'.toUpperCase();
-  }
-
-  Color? _parseHexColor(String? hex) {
-    if (hex == null || hex.trim().isEmpty) return null;
-    final cleaned = hex.trim().replaceFirst('#', '');
-    if (cleaned.length != 6 && cleaned.length != 8) return null;
-    final value = int.tryParse(
-      cleaned.length == 6 ? 'FF$cleaned' : cleaned,
-      radix: 16,
-    );
-    return value != null ? Color(value) : null;
   }
 }
 
@@ -948,7 +905,7 @@ class _TagDialogState extends State<_TagDialog> {
     _descriptionController = TextEditingController(
       text: widget.tag?.description ?? '',
     );
-    _colorHex = _normalizeHex(widget.tag?.color ?? '') ?? '#3B82F6';
+    _colorHex = normalizeHex(widget.tag?.color ?? '') ?? '#3B82F6';
   }
 
   @override
@@ -960,7 +917,7 @@ class _TagDialogState extends State<_TagDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final previewColor = _parseHexColor(_colorHex) ?? const Color(0xFF3B82F6);
+    final previewColor = parseHex(_colorHex) ?? const Color(0xFF3B82F6);
 
     return shad.AlertDialog(
       title: Text(
@@ -1037,7 +994,7 @@ class _TagDialogState extends State<_TagDialog> {
                   ),
                   shad.OutlineButton(
                     onPressed: () =>
-                        setState(() => _colorHex = _randomHexColor()),
+                        setState(() => _colorHex = randomHexColor()),
                     child: Text(context.l10n.financeRandomizeColor),
                   ),
                 ],
@@ -1130,17 +1087,8 @@ class _TagDialogState extends State<_TagDialog> {
     }
   }
 
-  String _randomHexColor() {
-    final rng = Random();
-    final hue = rng.nextInt(360).toDouble();
-    final saturation = (55 + rng.nextInt(36)).toDouble() / 100;
-    final lightness = (42 + rng.nextInt(24)).toDouble() / 100;
-    final color = HSLColor.fromAHSL(1, hue, saturation, lightness).toColor();
-    return _toHex(color);
-  }
-
   Future<void> _openColorPicker() async {
-    var selected = _parseHexColor(_colorHex) ?? const Color(0xFF3B82F6);
+    var selected = parseHex(_colorHex) ?? const Color(0xFF3B82F6);
 
     final result = await shad.showDialog<Color>(
       context: context,
@@ -1180,42 +1128,8 @@ class _TagDialogState extends State<_TagDialog> {
     );
 
     if (result != null && mounted) {
-      setState(() => _colorHex = _toHex(result));
+      setState(() => _colorHex = colorToHexString(result));
     }
-  }
-
-  String _toHex(Color color) {
-    final r = (color.r * 255).round().toRadixString(16).padLeft(2, '0');
-    final g = (color.g * 255).round().toRadixString(16).padLeft(2, '0');
-    final b = (color.b * 255).round().toRadixString(16).padLeft(2, '0');
-    return '#$r$g$b'.toUpperCase();
-  }
-
-  String? _normalizeHex(String raw) {
-    if (raw.trim().isEmpty) return null;
-    final value = raw.trim().replaceFirst('#', '');
-    if (value.length != 6 && value.length != 8) {
-      return null;
-    }
-    final parsed = int.tryParse(value, radix: 16);
-    if (parsed == null) {
-      return null;
-    }
-    if (value.length == 8) {
-      return '#${value.substring(2)}'.toUpperCase();
-    }
-    return '#${value.toUpperCase()}';
-  }
-
-  Color? _parseHexColor(String? hex) {
-    if (hex == null || hex.trim().isEmpty) return null;
-    final cleaned = hex.trim().replaceFirst('#', '');
-    if (cleaned.length != 6 && cleaned.length != 8) return null;
-    final value = int.tryParse(
-      cleaned.length == 6 ? 'FF$cleaned' : cleaned,
-      radix: 16,
-    );
-    return value != null ? Color(value) : null;
   }
 }
 
@@ -1237,7 +1151,7 @@ class _CategoryCard extends StatelessWidget {
     final baseColor = isExpense
         ? theme.colorScheme.destructive
         : theme.colorScheme.primary;
-    final color = _parseHex(category.color) ?? baseColor;
+    final color = parseHex(category.color) ?? baseColor;
     final icon = resolvePlatformIcon(
       category.icon,
       fallback: isExpense ? Icons.arrow_downward : Icons.arrow_upward,
@@ -1319,17 +1233,6 @@ class _CategoryCard extends StatelessWidget {
       ),
     );
   }
-
-  Color? _parseHex(String? hex) {
-    if (hex == null) return null;
-    final cleaned = hex.replaceFirst('#', '');
-    if (cleaned.length != 6 && cleaned.length != 8) return null;
-    final value = int.tryParse(
-      cleaned.length == 6 ? 'FF$cleaned' : cleaned,
-      radix: 16,
-    );
-    return value != null ? Color(value) : null;
-  }
 }
 
 class _TagCard extends StatelessWidget {
@@ -1346,7 +1249,7 @@ class _TagCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
-    final color = _parseHex(tag.color) ?? theme.colorScheme.primary;
+    final color = parseHex(tag.color) ?? theme.colorScheme.primary;
 
     return shad.Card(
       child: Row(
@@ -1395,16 +1298,5 @@ class _TagCard extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Color? _parseHex(String? hex) {
-    if (hex == null) return null;
-    final cleaned = hex.replaceFirst('#', '');
-    if (cleaned.length != 6 && cleaned.length != 8) return null;
-    final value = int.tryParse(
-      cleaned.length == 6 ? 'FF$cleaned' : cleaned,
-      radix: 16,
-    );
-    return value != null ? Color(value) : null;
   }
 }
