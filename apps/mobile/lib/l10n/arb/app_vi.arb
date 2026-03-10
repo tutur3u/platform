@@ -80,6 +80,68 @@
     "tasksPriorityHigh": "Cao",
     "tasksPriorityNormal": "Bình thường",
     "tasksPriorityLow": "Thấp",
+    "taskEstimatesTitle": "Ước lượng",
+    "taskEstimatesDescription": "Cấu hình phương pháp ước lượng cho các bảng công việc và xem mức độ áp dụng hiện tại.",
+    "taskEstimatesAccessDeniedTitle": "Quyền truy cập bị hạn chế",
+    "taskEstimatesAccessDeniedDescription": "Bạn cần quyền quản lý dự án trong không gian làm việc này để thay đổi cài đặt ước lượng của bảng công việc.",
+    "taskEstimatesTotalBoards": "Tổng số bảng",
+    "taskEstimatesConfiguredBoards": "Đã cấu hình",
+    "taskEstimatesExtendedRangeBoards": "Phạm vi mở rộng",
+    "taskEstimatesDistributionTitle": "Phương pháp ước lượng",
+    "taskEstimatesBoardConfigTitle": "Cấu hình ước lượng của bảng",
+    "taskEstimatesNoBoardsTitle": "Không tìm thấy bảng nào",
+    "taskEstimatesNoBoardsDescription": "Hãy tạo bảng công việc trước, sau đó quay lại đây để cấu hình phương pháp ước lượng.",
+    "taskEstimatesExtendedBadge": "Mở rộng",
+    "taskEstimatesDialogTitle": "Chỉnh sửa {boardName}",
+    "@taskEstimatesDialogTitle": {
+        "placeholders": {
+            "boardName": {
+                "type": "String"
+            }
+        }
+    },
+    "taskEstimatesDialogEstimationMethod": "Phương pháp ước lượng",
+    "taskEstimatesDialogRangeTitle": "Phạm vi {label}",
+    "@taskEstimatesDialogRangeTitle": {
+        "placeholders": {
+            "label": {
+                "type": "String"
+            }
+        }
+    },
+    "taskEstimatesDialogEstimationOptions": "Tùy chọn ước lượng",
+    "taskEstimatesDialogSelectedConfiguration": "Cấu hình đã chọn",
+    "taskEstimatesDialogSave": "Cập nhật ước lượng",
+    "taskEstimatesRangeStandard": "Phạm vi tiêu chuẩn",
+    "taskEstimatesRangeExtended": "Phạm vi mở rộng",
+    "taskEstimatesUnnamedBoard": "Bảng chưa đặt tên",
+    "taskEstimatesAllowZeroEstimates": "Cho phép ước lượng bằng 0",
+    "taskEstimatesAllowZeroEstimatesDescription": "Khi bật, các công việc có thể được ước lượng bằng giá trị 0 và sẽ đóng góp 0 vào tổng ước lượng.",
+    "taskEstimatesCountUnestimatedIssues": "Đếm các công việc chưa ước lượng",
+    "taskEstimatesCountUnestimatedIssuesDescription": "Khi bật, các công việc chưa ước lượng sẽ được tính là 1 đơn vị vào tổng ước lượng. Khi tắt, chúng sẽ được tính là 0.",
+    "taskEstimatesUpdateSuccess": "Đã cập nhật ước lượng thành công.",
+    "taskEstimatesTypeNoneLabel": "Không có",
+    "taskEstimatesTypeNoneDescription": "Không có phương pháp ước lượng nào được cấu hình cho bảng này.",
+    "taskEstimatesTypeFibonacciLabel": "Fibonacci",
+    "taskEstimatesTypeFibonacciStandardZeroEnabled": "Dãy Fibonacci: 0, 1, 2, 3, 5, 8.",
+    "taskEstimatesTypeFibonacciStandardZeroDisabled": "Dãy Fibonacci: 1, 2, 3, 5, 8.",
+    "taskEstimatesTypeFibonacciExtendedZeroEnabled": "Dãy Fibonacci mở rộng: 0, 1, 2, 3, 5, 8, 13, 21.",
+    "taskEstimatesTypeFibonacciExtendedZeroDisabled": "Dãy Fibonacci mở rộng: 1, 2, 3, 5, 8, 13, 21.",
+    "taskEstimatesTypeLinearLabel": "Tuyến tính",
+    "taskEstimatesTypeLinearStandardZeroEnabled": "Dãy tuyến tính: 0, 1, 2, 3, 4, 5.",
+    "taskEstimatesTypeLinearStandardZeroDisabled": "Dãy tuyến tính: 1, 2, 3, 4, 5.",
+    "taskEstimatesTypeLinearExtendedZeroEnabled": "Dãy tuyến tính mở rộng: 0, 1, 2, 3, 4, 5, 6, 7.",
+    "taskEstimatesTypeLinearExtendedZeroDisabled": "Dãy tuyến tính mở rộng: 1, 2, 3, 4, 5, 6, 7.",
+    "taskEstimatesTypeExponentialLabel": "Lũy thừa",
+    "taskEstimatesTypeExponentialStandardZeroEnabled": "Dãy lũy thừa: 0, 1, 2, 4, 8, 16.",
+    "taskEstimatesTypeExponentialStandardZeroDisabled": "Dãy lũy thừa: 1, 2, 4, 8, 16.",
+    "taskEstimatesTypeExponentialExtendedZeroEnabled": "Dãy lũy thừa mở rộng: 0, 1, 2, 4, 8, 16, 32, 64.",
+    "taskEstimatesTypeExponentialExtendedZeroDisabled": "Dãy lũy thừa mở rộng: 1, 2, 4, 8, 16, 32, 64.",
+    "taskEstimatesTypeTshirtLabel": "Áo thun",
+    "taskEstimatesTypeTshirtStandardZeroEnabled": "Kích cỡ áo: -, XS, S, M, L, XL.",
+    "taskEstimatesTypeTshirtStandardZeroDisabled": "Kích cỡ áo: XS, S, M, L, XL.",
+    "taskEstimatesTypeTshirtExtendedZeroEnabled": "Kích cỡ áo mở rộng: -, XS, S, M, L, XL, XXL, XXXL.",
+    "taskEstimatesTypeTshirtExtendedZeroDisabled": "Kích cỡ áo mở rộng: XS, S, M, L, XL, XXL, XXXL.",
 
     "calendarTitle": "Lịch",
     "calendarEmpty": "Không có sự kiện",

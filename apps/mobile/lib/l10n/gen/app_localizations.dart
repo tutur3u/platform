@@ -475,6 +475,294 @@ abstract class AppLocalizations {
   /// **'Low'**
   String get tasksPriorityLow;
 
+  /// No description provided for @taskEstimatesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimations'**
+  String get taskEstimatesTitle;
+
+  /// No description provided for @taskEstimatesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure estimation methods for your task boards and review their current coverage.'**
+  String get taskEstimatesDescription;
+
+  /// No description provided for @taskEstimatesAccessDeniedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Access restricted'**
+  String get taskEstimatesAccessDeniedTitle;
+
+  /// No description provided for @taskEstimatesAccessDeniedDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'You need project management permission in this workspace to change task board estimation settings.'**
+  String get taskEstimatesAccessDeniedDescription;
+
+  /// No description provided for @taskEstimatesTotalBoards.
+  ///
+  /// In en, this message translates to:
+  /// **'Total boards'**
+  String get taskEstimatesTotalBoards;
+
+  /// No description provided for @taskEstimatesConfiguredBoards.
+  ///
+  /// In en, this message translates to:
+  /// **'Configured'**
+  String get taskEstimatesConfiguredBoards;
+
+  /// No description provided for @taskEstimatesExtendedRangeBoards.
+  ///
+  /// In en, this message translates to:
+  /// **'Extended range'**
+  String get taskEstimatesExtendedRangeBoards;
+
+  /// No description provided for @taskEstimatesDistributionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimation methods'**
+  String get taskEstimatesDistributionTitle;
+
+  /// No description provided for @taskEstimatesBoardConfigTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Board estimation configuration'**
+  String get taskEstimatesBoardConfigTitle;
+
+  /// No description provided for @taskEstimatesNoBoardsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No boards found'**
+  String get taskEstimatesNoBoardsTitle;
+
+  /// No description provided for @taskEstimatesNoBoardsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a task board first, then come back here to configure its estimation method.'**
+  String get taskEstimatesNoBoardsDescription;
+
+  /// No description provided for @taskEstimatesExtendedBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Extended'**
+  String get taskEstimatesExtendedBadge;
+
+  /// No description provided for @taskEstimatesDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit {boardName}'**
+  String taskEstimatesDialogTitle(String boardName);
+
+  /// No description provided for @taskEstimatesDialogEstimationMethod.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimation method'**
+  String get taskEstimatesDialogEstimationMethod;
+
+  /// No description provided for @taskEstimatesDialogRangeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{label} range'**
+  String taskEstimatesDialogRangeTitle(String label);
+
+  /// No description provided for @taskEstimatesDialogEstimationOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimation options'**
+  String get taskEstimatesDialogEstimationOptions;
+
+  /// No description provided for @taskEstimatesDialogSelectedConfiguration.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected configuration'**
+  String get taskEstimatesDialogSelectedConfiguration;
+
+  /// No description provided for @taskEstimatesDialogSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Update estimation'**
+  String get taskEstimatesDialogSave;
+
+  /// No description provided for @taskEstimatesRangeStandard.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard range'**
+  String get taskEstimatesRangeStandard;
+
+  /// No description provided for @taskEstimatesRangeExtended.
+  ///
+  /// In en, this message translates to:
+  /// **'Extended range'**
+  String get taskEstimatesRangeExtended;
+
+  /// No description provided for @taskEstimatesUnnamedBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled board'**
+  String get taskEstimatesUnnamedBoard;
+
+  /// No description provided for @taskEstimatesAllowZeroEstimates.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow zero estimates'**
+  String get taskEstimatesAllowZeroEstimates;
+
+  /// No description provided for @taskEstimatesAllowZeroEstimatesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'When enabled, tasks can be estimated as 0 and contribute 0 to totals.'**
+  String get taskEstimatesAllowZeroEstimatesDescription;
+
+  /// No description provided for @taskEstimatesCountUnestimatedIssues.
+  ///
+  /// In en, this message translates to:
+  /// **'Count unestimated issues'**
+  String get taskEstimatesCountUnestimatedIssues;
+
+  /// No description provided for @taskEstimatesCountUnestimatedIssuesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'When enabled, unestimated tasks contribute 1 estimate unit to totals. When disabled, they contribute 0.'**
+  String get taskEstimatesCountUnestimatedIssuesDescription;
+
+  /// No description provided for @taskEstimatesUpdateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimation updated successfully.'**
+  String get taskEstimatesUpdateSuccess;
+
+  /// No description provided for @taskEstimatesTypeNoneLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get taskEstimatesTypeNoneLabel;
+
+  /// No description provided for @taskEstimatesTypeNoneDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'No estimation is configured for this board.'**
+  String get taskEstimatesTypeNoneDescription;
+
+  /// No description provided for @taskEstimatesTypeFibonacciLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Fibonacci'**
+  String get taskEstimatesTypeFibonacciLabel;
+
+  /// No description provided for @taskEstimatesTypeFibonacciStandardZeroEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Fibonacci sequence: 0, 1, 2, 3, 5, 8.'**
+  String get taskEstimatesTypeFibonacciStandardZeroEnabled;
+
+  /// No description provided for @taskEstimatesTypeFibonacciStandardZeroDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Fibonacci sequence: 1, 2, 3, 5, 8.'**
+  String get taskEstimatesTypeFibonacciStandardZeroDisabled;
+
+  /// No description provided for @taskEstimatesTypeFibonacciExtendedZeroEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Extended Fibonacci sequence: 0, 1, 2, 3, 5, 8, 13, 21.'**
+  String get taskEstimatesTypeFibonacciExtendedZeroEnabled;
+
+  /// No description provided for @taskEstimatesTypeFibonacciExtendedZeroDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Extended Fibonacci sequence: 1, 2, 3, 5, 8, 13, 21.'**
+  String get taskEstimatesTypeFibonacciExtendedZeroDisabled;
+
+  /// No description provided for @taskEstimatesTypeLinearLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Linear'**
+  String get taskEstimatesTypeLinearLabel;
+
+  /// No description provided for @taskEstimatesTypeLinearStandardZeroEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Linear sequence: 0, 1, 2, 3, 4, 5.'**
+  String get taskEstimatesTypeLinearStandardZeroEnabled;
+
+  /// No description provided for @taskEstimatesTypeLinearStandardZeroDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Linear sequence: 1, 2, 3, 4, 5.'**
+  String get taskEstimatesTypeLinearStandardZeroDisabled;
+
+  /// No description provided for @taskEstimatesTypeLinearExtendedZeroEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Extended linear sequence: 0, 1, 2, 3, 4, 5, 6, 7.'**
+  String get taskEstimatesTypeLinearExtendedZeroEnabled;
+
+  /// No description provided for @taskEstimatesTypeLinearExtendedZeroDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Extended linear sequence: 1, 2, 3, 4, 5, 6, 7.'**
+  String get taskEstimatesTypeLinearExtendedZeroDisabled;
+
+  /// No description provided for @taskEstimatesTypeExponentialLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Exponential'**
+  String get taskEstimatesTypeExponentialLabel;
+
+  /// No description provided for @taskEstimatesTypeExponentialStandardZeroEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Exponential sequence: 0, 1, 2, 4, 8, 16.'**
+  String get taskEstimatesTypeExponentialStandardZeroEnabled;
+
+  /// No description provided for @taskEstimatesTypeExponentialStandardZeroDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Exponential sequence: 1, 2, 4, 8, 16.'**
+  String get taskEstimatesTypeExponentialStandardZeroDisabled;
+
+  /// No description provided for @taskEstimatesTypeExponentialExtendedZeroEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Extended exponential sequence: 0, 1, 2, 4, 8, 16, 32, 64.'**
+  String get taskEstimatesTypeExponentialExtendedZeroEnabled;
+
+  /// No description provided for @taskEstimatesTypeExponentialExtendedZeroDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Extended exponential sequence: 1, 2, 4, 8, 16, 32, 64.'**
+  String get taskEstimatesTypeExponentialExtendedZeroDisabled;
+
+  /// No description provided for @taskEstimatesTypeTshirtLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'T-shirt'**
+  String get taskEstimatesTypeTshirtLabel;
+
+  /// No description provided for @taskEstimatesTypeTshirtStandardZeroEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'T-shirt sizes: -, XS, S, M, L, XL.'**
+  String get taskEstimatesTypeTshirtStandardZeroEnabled;
+
+  /// No description provided for @taskEstimatesTypeTshirtStandardZeroDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'T-shirt sizes: XS, S, M, L, XL.'**
+  String get taskEstimatesTypeTshirtStandardZeroDisabled;
+
+  /// No description provided for @taskEstimatesTypeTshirtExtendedZeroEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Extended T-shirt sizes: -, XS, S, M, L, XL, XXL, XXXL.'**
+  String get taskEstimatesTypeTshirtExtendedZeroEnabled;
+
+  /// No description provided for @taskEstimatesTypeTshirtExtendedZeroDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Extended T-shirt sizes: XS, S, M, L, XL, XXL, XXXL.'**
+  String get taskEstimatesTypeTshirtExtendedZeroDisabled;
+
   /// No description provided for @calendarTitle.
   ///
   /// In en, this message translates to:

@@ -1,6 +1,4 @@
 import { Calculator } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import TaskEstimatesClient from '@tuturuuu/ui/tu-do/estimates/client';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
@@ -11,61 +9,6 @@ interface Props {
   params: Promise<{
     wsId: string;
   }>;
-}
-
-async function getTaskBoards(
-  wsId: string
-): Promise<{ boards: Partial<WorkspaceTaskBoard>[] }> {
-  const supabase = await createClient();
-
-  const { data: boards, error } = await supabase
-    .from('workspace_boards')
-    .select(
-      'id, name, estimation_type, extended_estimation, allow_zero_estimates, count_unestimated_issues, created_at'
-    )
-    .eq('ws_id', wsId)
-    .is('deleted_at', null)
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error('Error fetching task boards:', error);
-    return { boards: [] };
-  }
-
-  const boardsWithCounts = await Promise.all(
-    (boards || []).map(async (board) => {
-      const { data: taskLists } = await supabase
-        .from('task_lists')
-        .select('id')
-        .eq('board_id', board.id)
-        .eq('deleted', false);
-
-      if (!taskLists || taskLists.length === 0) {
-        return {
-          ...board,
-          name: board.name || 'Untitled Board',
-          task_count: 0,
-        };
-      }
-
-      const { count } = await supabase
-        .from('tasks')
-        .select('*', { count: 'exact', head: true })
-        .in(
-          'list_id',
-          taskLists.map((l) => l.id)
-        )
-        .is('deleted_at', null);
-
-      return {
-        ...board,
-        name: board.name || 'Untitled Board',
-        task_count: count || 0,
-      };
-    })
-  );
-
-  return { boards: boardsWithCounts };
 }
 
 /**
@@ -89,7 +32,6 @@ export default async function TaskEstimatesPage({ params }: Props) {
   const { withoutPermission } = permissions;
   if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
 
-  const { boards } = await getTaskBoards(wsId);
   const t = await getTranslations('task-estimates');
 
   return (
@@ -109,7 +51,7 @@ export default async function TaskEstimatesPage({ params }: Props) {
           </div>
         </div>
       </div>
-      <TaskEstimatesClient wsId={wsId} initialBoards={boards} />
+      <TaskEstimatesClient wsId={wsId} />
     </div>
   );
 }

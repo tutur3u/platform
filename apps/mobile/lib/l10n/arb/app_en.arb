@@ -80,6 +80,68 @@
     "tasksPriorityHigh": "High",
     "tasksPriorityNormal": "Normal",
     "tasksPriorityLow": "Low",
+    "taskEstimatesTitle": "Estimations",
+    "taskEstimatesDescription": "Configure estimation methods for your task boards and review their current coverage.",
+    "taskEstimatesAccessDeniedTitle": "Access restricted",
+    "taskEstimatesAccessDeniedDescription": "You need project management permission in this workspace to change task board estimation settings.",
+    "taskEstimatesTotalBoards": "Total boards",
+    "taskEstimatesConfiguredBoards": "Configured",
+    "taskEstimatesExtendedRangeBoards": "Extended range",
+    "taskEstimatesDistributionTitle": "Estimation methods",
+    "taskEstimatesBoardConfigTitle": "Board estimation configuration",
+    "taskEstimatesNoBoardsTitle": "No boards found",
+    "taskEstimatesNoBoardsDescription": "Create a task board first, then come back here to configure its estimation method.",
+    "taskEstimatesExtendedBadge": "Extended",
+    "taskEstimatesDialogTitle": "Edit {boardName}",
+    "@taskEstimatesDialogTitle": {
+        "placeholders": {
+            "boardName": {
+                "type": "String"
+            }
+        }
+    },
+    "taskEstimatesDialogEstimationMethod": "Estimation method",
+    "taskEstimatesDialogRangeTitle": "{label} range",
+    "@taskEstimatesDialogRangeTitle": {
+        "placeholders": {
+            "label": {
+                "type": "String"
+            }
+        }
+    },
+    "taskEstimatesDialogEstimationOptions": "Estimation options",
+    "taskEstimatesDialogSelectedConfiguration": "Selected configuration",
+    "taskEstimatesDialogSave": "Update estimation",
+    "taskEstimatesRangeStandard": "Standard range",
+    "taskEstimatesRangeExtended": "Extended range",
+    "taskEstimatesUnnamedBoard": "Untitled board",
+    "taskEstimatesAllowZeroEstimates": "Allow zero estimates",
+    "taskEstimatesAllowZeroEstimatesDescription": "When enabled, tasks can be estimated as 0 and contribute 0 to totals.",
+    "taskEstimatesCountUnestimatedIssues": "Count unestimated issues",
+    "taskEstimatesCountUnestimatedIssuesDescription": "When enabled, unestimated tasks contribute 1 estimate unit to totals. When disabled, they contribute 0.",
+    "taskEstimatesUpdateSuccess": "Estimation updated successfully.",
+    "taskEstimatesTypeNoneLabel": "None",
+    "taskEstimatesTypeNoneDescription": "No estimation is configured for this board.",
+    "taskEstimatesTypeFibonacciLabel": "Fibonacci",
+    "taskEstimatesTypeFibonacciStandardZeroEnabled": "Fibonacci sequence: 0, 1, 2, 3, 5, 8.",
+    "taskEstimatesTypeFibonacciStandardZeroDisabled": "Fibonacci sequence: 1, 2, 3, 5, 8.",
+    "taskEstimatesTypeFibonacciExtendedZeroEnabled": "Extended Fibonacci sequence: 0, 1, 2, 3, 5, 8, 13, 21.",
+    "taskEstimatesTypeFibonacciExtendedZeroDisabled": "Extended Fibonacci sequence: 1, 2, 3, 5, 8, 13, 21.",
+    "taskEstimatesTypeLinearLabel": "Linear",
+    "taskEstimatesTypeLinearStandardZeroEnabled": "Linear sequence: 0, 1, 2, 3, 4, 5.",
+    "taskEstimatesTypeLinearStandardZeroDisabled": "Linear sequence: 1, 2, 3, 4, 5.",
+    "taskEstimatesTypeLinearExtendedZeroEnabled": "Extended linear sequence: 0, 1, 2, 3, 4, 5, 6, 7.",
+    "taskEstimatesTypeLinearExtendedZeroDisabled": "Extended linear sequence: 1, 2, 3, 4, 5, 6, 7.",
+    "taskEstimatesTypeExponentialLabel": "Exponential",
+    "taskEstimatesTypeExponentialStandardZeroEnabled": "Exponential sequence: 0, 1, 2, 4, 8, 16.",
+    "taskEstimatesTypeExponentialStandardZeroDisabled": "Exponential sequence: 1, 2, 4, 8, 16.",
+    "taskEstimatesTypeExponentialExtendedZeroEnabled": "Extended exponential sequence: 0, 1, 2, 4, 8, 16, 32, 64.",
+    "taskEstimatesTypeExponentialExtendedZeroDisabled": "Extended exponential sequence: 1, 2, 4, 8, 16, 32, 64.",
+    "taskEstimatesTypeTshirtLabel": "T-shirt",
+    "taskEstimatesTypeTshirtStandardZeroEnabled": "T-shirt sizes: -, XS, S, M, L, XL.",
+    "taskEstimatesTypeTshirtStandardZeroDisabled": "T-shirt sizes: XS, S, M, L, XL.",
+    "taskEstimatesTypeTshirtExtendedZeroEnabled": "Extended T-shirt sizes: -, XS, S, M, L, XL, XXL, XXXL.",
+    "taskEstimatesTypeTshirtExtendedZeroDisabled": "Extended T-shirt sizes: XS, S, M, L, XL, XXL, XXXL.",
 
     "calendarTitle": "Calendar",
     "calendarEmpty": "No events",

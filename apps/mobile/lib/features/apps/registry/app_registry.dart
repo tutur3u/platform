@@ -56,6 +56,12 @@ class AppRegistry {
       icon: Icons.check_box_outlined,
       labelBuilder: _labelTasks,
     ),
+    MiniAppNavItem(
+      id: 'tasks_estimates',
+      route: Routes.taskEstimates,
+      icon: Icons.calculate_outlined,
+      labelBuilder: _labelTaskEstimates,
+    ),
   ];
 
   static const List<MiniAppNavItem> _calendarMiniNav = [
@@ -162,6 +168,8 @@ class AppRegistry {
   }
 
   static String _labelTasks(AppLocalizations l10n) => l10n.navTasks;
+  static String _labelTaskEstimates(AppLocalizations l10n) =>
+      l10n.taskEstimatesTitle;
   static String _labelCalendar(AppLocalizations l10n) => l10n.navCalendar;
   static String _labelFinance(AppLocalizations l10n) => l10n.navFinance;
   static String _labelWallets(AppLocalizations l10n) => l10n.financeWallets;

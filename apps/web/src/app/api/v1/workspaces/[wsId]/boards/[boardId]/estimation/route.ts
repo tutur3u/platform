@@ -1,6 +1,9 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { Database } from '@tuturuuu/types';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
 interface RouteParams {
   params: Promise<{
@@ -9,70 +12,60 @@ interface RouteParams {
   }>;
 }
 
+const estimationBodySchema = z.object({
+  estimation_type: z
+    .enum(['exponential', 'fibonacci', 'linear', 't-shirt'])
+    .nullable(),
+  extended_estimation: z.boolean().optional(),
+  allow_zero_estimates: z.boolean().optional(),
+  count_unestimated_issues: z.boolean().optional(),
+});
+const boardIdSchema = z.uuid();
+
 // PATCH - Update board estimation type
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
-    const { wsId, boardId } = await params;
-    const body = await request.json();
+    const { wsId: rawWsId, boardId: rawBoardId } = await params;
+    const supabase = await createClient(request);
+
+    let wsId: string;
+    try {
+      wsId = await normalizeWorkspaceId(rawWsId, supabase);
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.toLowerCase().includes('user not authenticated')
+      ) {
+        return NextResponse.json(
+          { error: 'User not authenticated' },
+          { status: 401 }
+        );
+      }
+
+      throw error;
+    }
+
+    const parsedBoardId = boardIdSchema.safeParse(rawBoardId);
+
+    if (!parsedBoardId.success) {
+      return NextResponse.json({ error: 'Invalid board ID' }, { status: 400 });
+    }
+
+    const boardId = parsedBoardId.data;
+    const body = estimationBodySchema.safeParse(await request.json());
+    if (!body.success) {
+      return NextResponse.json(
+        { error: 'Invalid request body' },
+        { status: 400 }
+      );
+    }
+
     const {
       estimation_type,
       extended_estimation,
       allow_zero_estimates,
       count_unestimated_issues,
-    } = body;
-
-    // Validate estimation type
-    const validEstimationTypes = [
-      'exponential',
-      'fibonacci',
-      'linear',
-      't-shirt',
-      null,
-    ];
-    if (
-      estimation_type !== null &&
-      !validEstimationTypes.includes(estimation_type)
-    ) {
-      return NextResponse.json(
-        { error: 'Invalid estimation type' },
-        { status: 400 }
-      );
-    }
-
-    // Validate extended_estimation (should be boolean or undefined)
-    if (
-      extended_estimation !== undefined &&
-      typeof extended_estimation !== 'boolean'
-    ) {
-      return NextResponse.json(
-        { error: 'Invalid extended_estimation value' },
-        { status: 400 }
-      );
-    }
-
-    // Validate allow_zero_estimates (should be boolean or undefined)
-    if (
-      allow_zero_estimates !== undefined &&
-      typeof allow_zero_estimates !== 'boolean'
-    ) {
-      return NextResponse.json(
-        { error: 'Invalid allow_zero_estimates value' },
-        { status: 400 }
-      );
-    }
-
-    // Validate count_unestimated_issues (should be boolean or undefined)
-    if (
-      count_unestimated_issues !== undefined &&
-      typeof count_unestimated_issues !== 'boolean'
-    ) {
-      return NextResponse.json(
-        { error: 'Invalid count_unestimated_issues value' },
-        { status: 400 }
-      );
-    }
-
-    const supabase = await createClient();
+    } = body.data;
 
     // Get current user
     const {
@@ -109,9 +102,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     // Update the board estimation type
-    const updateData: any = {
-      estimation_type: estimation_type,
-    };
+    const updateData: Database['public']['Tables']['workspace_boards']['Update'] =
+      {
+        estimation_type: estimation_type,
+      };
 
     // Only include extended_estimation if it's provided
     if (extended_estimation !== undefined) {

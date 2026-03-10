@@ -203,6 +203,154 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tasksPriorityLow => 'Low';
 
   @override
+  String get taskEstimatesTitle => 'Estimations';
+
+  @override
+  String get taskEstimatesDescription => 'Configure estimation methods for your task boards and review their current coverage.';
+
+  @override
+  String get taskEstimatesAccessDeniedTitle => 'Access restricted';
+
+  @override
+  String get taskEstimatesAccessDeniedDescription => 'You need project management permission in this workspace to change task board estimation settings.';
+
+  @override
+  String get taskEstimatesTotalBoards => 'Total boards';
+
+  @override
+  String get taskEstimatesConfiguredBoards => 'Configured';
+
+  @override
+  String get taskEstimatesExtendedRangeBoards => 'Extended range';
+
+  @override
+  String get taskEstimatesDistributionTitle => 'Estimation methods';
+
+  @override
+  String get taskEstimatesBoardConfigTitle => 'Board estimation configuration';
+
+  @override
+  String get taskEstimatesNoBoardsTitle => 'No boards found';
+
+  @override
+  String get taskEstimatesNoBoardsDescription => 'Create a task board first, then come back here to configure its estimation method.';
+
+  @override
+  String get taskEstimatesExtendedBadge => 'Extended';
+
+  @override
+  String taskEstimatesDialogTitle(String boardName) {
+    return 'Edit $boardName';
+  }
+
+  @override
+  String get taskEstimatesDialogEstimationMethod => 'Estimation method';
+
+  @override
+  String taskEstimatesDialogRangeTitle(String label) {
+    return '$label range';
+  }
+
+  @override
+  String get taskEstimatesDialogEstimationOptions => 'Estimation options';
+
+  @override
+  String get taskEstimatesDialogSelectedConfiguration => 'Selected configuration';
+
+  @override
+  String get taskEstimatesDialogSave => 'Update estimation';
+
+  @override
+  String get taskEstimatesRangeStandard => 'Standard range';
+
+  @override
+  String get taskEstimatesRangeExtended => 'Extended range';
+
+  @override
+  String get taskEstimatesUnnamedBoard => 'Untitled board';
+
+  @override
+  String get taskEstimatesAllowZeroEstimates => 'Allow zero estimates';
+
+  @override
+  String get taskEstimatesAllowZeroEstimatesDescription => 'When enabled, tasks can be estimated as 0 and contribute 0 to totals.';
+
+  @override
+  String get taskEstimatesCountUnestimatedIssues => 'Count unestimated issues';
+
+  @override
+  String get taskEstimatesCountUnestimatedIssuesDescription => 'When enabled, unestimated tasks contribute 1 estimate unit to totals. When disabled, they contribute 0.';
+
+  @override
+  String get taskEstimatesUpdateSuccess => 'Estimation updated successfully.';
+
+  @override
+  String get taskEstimatesTypeNoneLabel => 'None';
+
+  @override
+  String get taskEstimatesTypeNoneDescription => 'No estimation is configured for this board.';
+
+  @override
+  String get taskEstimatesTypeFibonacciLabel => 'Fibonacci';
+
+  @override
+  String get taskEstimatesTypeFibonacciStandardZeroEnabled => 'Fibonacci sequence: 0, 1, 2, 3, 5, 8.';
+
+  @override
+  String get taskEstimatesTypeFibonacciStandardZeroDisabled => 'Fibonacci sequence: 1, 2, 3, 5, 8.';
+
+  @override
+  String get taskEstimatesTypeFibonacciExtendedZeroEnabled => 'Extended Fibonacci sequence: 0, 1, 2, 3, 5, 8, 13, 21.';
+
+  @override
+  String get taskEstimatesTypeFibonacciExtendedZeroDisabled => 'Extended Fibonacci sequence: 1, 2, 3, 5, 8, 13, 21.';
+
+  @override
+  String get taskEstimatesTypeLinearLabel => 'Linear';
+
+  @override
+  String get taskEstimatesTypeLinearStandardZeroEnabled => 'Linear sequence: 0, 1, 2, 3, 4, 5.';
+
+  @override
+  String get taskEstimatesTypeLinearStandardZeroDisabled => 'Linear sequence: 1, 2, 3, 4, 5.';
+
+  @override
+  String get taskEstimatesTypeLinearExtendedZeroEnabled => 'Extended linear sequence: 0, 1, 2, 3, 4, 5, 6, 7.';
+
+  @override
+  String get taskEstimatesTypeLinearExtendedZeroDisabled => 'Extended linear sequence: 1, 2, 3, 4, 5, 6, 7.';
+
+  @override
+  String get taskEstimatesTypeExponentialLabel => 'Exponential';
+
+  @override
+  String get taskEstimatesTypeExponentialStandardZeroEnabled => 'Exponential sequence: 0, 1, 2, 4, 8, 16.';
+
+  @override
+  String get taskEstimatesTypeExponentialStandardZeroDisabled => 'Exponential sequence: 1, 2, 4, 8, 16.';
+
+  @override
+  String get taskEstimatesTypeExponentialExtendedZeroEnabled => 'Extended exponential sequence: 0, 1, 2, 4, 8, 16, 32, 64.';
+
+  @override
+  String get taskEstimatesTypeExponentialExtendedZeroDisabled => 'Extended exponential sequence: 1, 2, 4, 8, 16, 32, 64.';
+
+  @override
+  String get taskEstimatesTypeTshirtLabel => 'T-shirt';
+
+  @override
+  String get taskEstimatesTypeTshirtStandardZeroEnabled => 'T-shirt sizes: -, XS, S, M, L, XL.';
+
+  @override
+  String get taskEstimatesTypeTshirtStandardZeroDisabled => 'T-shirt sizes: XS, S, M, L, XL.';
+
+  @override
+  String get taskEstimatesTypeTshirtExtendedZeroEnabled => 'Extended T-shirt sizes: -, XS, S, M, L, XL, XXL, XXXL.';
+
+  @override
+  String get taskEstimatesTypeTshirtExtendedZeroDisabled => 'Extended T-shirt sizes: XS, S, M, L, XL, XXL, XXXL.';
+
+  @override
   String get calendarTitle => 'Calendar';
 
   @override
