@@ -98,6 +98,8 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
         listener: (context, state) {
           final wsId = state.currentWorkspace?.id;
           if (wsId != null) {
+            _permissionsWorkspaceId = wsId;
+            unawaited(_loadPermissions());
             unawaited(context.read<TaskEstimatesCubit>().loadBoards(wsId));
             unawaited(context.read<TaskLabelsCubit>().loadLabels(wsId));
           }

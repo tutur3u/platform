@@ -12,14 +12,27 @@ class TaskLabelsCubit extends Cubit<TaskLabelsState> {
 
   final TaskRepository _taskRepository;
   String? _lastLoadWsId;
+  int _currentRequestToken = 0;
 
   Future<void> loadLabels(String wsId) async {
+    final token = ++_currentRequestToken;
+    final shouldReplaceLabels = state.wsId != wsId;
     _lastLoadWsId = wsId;
-    emit(state.copyWith(status: TaskLabelsStatus.loading, error: null));
+    emit(
+      state.copyWith(
+        status: TaskLabelsStatus.loading,
+        error: null,
+        wsId: wsId,
+        requestToken: token,
+        labels: shouldReplaceLabels ? const <TaskLabel>[] : state.labels,
+      ),
+    );
 
     try {
       final labels = await _taskRepository.getTaskLabels(wsId);
-      if (_lastLoadWsId != wsId) {
+      if (_lastLoadWsId != wsId ||
+          state.wsId != wsId ||
+          state.requestToken != token) {
         return;
       }
 
@@ -28,16 +41,22 @@ class TaskLabelsCubit extends Cubit<TaskLabelsState> {
           status: TaskLabelsStatus.loaded,
           labels: labels,
           error: null,
+          wsId: wsId,
+          requestToken: token,
         ),
       );
     } on Exception catch (error) {
-      if (_lastLoadWsId != wsId) {
+      if (_lastLoadWsId != wsId ||
+          state.wsId != wsId ||
+          state.requestToken != token) {
         return;
       }
       emit(
         state.copyWith(
           status: TaskLabelsStatus.error,
           error: error.toString(),
+          wsId: wsId,
+          requestToken: token,
         ),
       );
     }
@@ -55,7 +74,7 @@ class TaskLabelsCubit extends Cubit<TaskLabelsState> {
         name: name,
         color: color,
       );
-      if (_lastLoadWsId != wsId) {
+      if (_lastLoadWsId != wsId || state.wsId != wsId) {
         return;
       }
       await loadLabels(wsId);
@@ -84,7 +103,7 @@ class TaskLabelsCubit extends Cubit<TaskLabelsState> {
         name: name,
         color: color,
       );
-      if (_lastLoadWsId != wsId) {
+      if (_lastLoadWsId != wsId || state.wsId != wsId) {
         return;
       }
       await loadLabels(wsId);
@@ -106,7 +125,7 @@ class TaskLabelsCubit extends Cubit<TaskLabelsState> {
     emit(state.copyWith(status: TaskLabelsStatus.saving, error: null));
     try {
       await _taskRepository.deleteTaskLabel(wsId: wsId, labelId: labelId);
-      if (_lastLoadWsId != wsId) {
+      if (_lastLoadWsId != wsId || state.wsId != wsId) {
         return;
       }
       final filtered = state.labels

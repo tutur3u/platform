@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/utils/color_hex.dart';
 import 'package:mobile/data/models/task_label.dart';
 import 'package:mobile/features/tasks_estimates/utils/task_label_colors.dart';
 import 'package:mobile/features/tasks_estimates/widgets/task_estimates_feedback.dart';
@@ -66,6 +67,9 @@ class _TaskLabelCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
     final color = parseTaskLabelColor(label.color) ?? theme.colorScheme.primary;
+    final colorText = label.color.isNotEmpty
+        ? label.color.toUpperCase()
+        : colorToHexString(theme.colorScheme.primary);
 
     return shad.Card(
       child: Row(
@@ -90,7 +94,7 @@ class _TaskLabelCard extends StatelessWidget {
                 ),
                 const shad.Gap(2),
                 Text(
-                  label.color.toUpperCase(),
+                  colorText,
                   style: theme.typography.textSmall.copyWith(
                     color: theme.colorScheme.mutedForeground,
                   ),
@@ -98,15 +102,23 @@ class _TaskLabelCard extends StatelessWidget {
               ],
             ),
           ),
-          shad.GhostButton(
-            density: shad.ButtonDensity.icon,
-            onPressed: disabled ? null : onEdit,
-            child: const Icon(Icons.edit_outlined, size: 16),
+          Semantics(
+            button: true,
+            label: context.l10n.taskLabelsEdit,
+            child: shad.GhostButton(
+              density: shad.ButtonDensity.icon,
+              onPressed: disabled ? null : onEdit,
+              child: const Icon(Icons.edit_outlined, size: 16),
+            ),
           ),
-          shad.GhostButton(
-            density: shad.ButtonDensity.icon,
-            onPressed: disabled ? null : onDelete,
-            child: const Icon(Icons.delete_outline, size: 16),
+          Semantics(
+            button: true,
+            label: context.l10n.taskLabelsDelete,
+            child: shad.GhostButton(
+              density: shad.ButtonDensity.icon,
+              onPressed: disabled ? null : onDelete,
+              child: const Icon(Icons.delete_outline, size: 16),
+            ),
           ),
         ],
       ),

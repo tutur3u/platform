@@ -28,10 +28,20 @@ const LabelSchema = z.object({
     }),
 });
 
+const LabelIdSchema = z.uuid();
+
 // PATCH - Update a label
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const { wsId: id, labelId } = await params;
+    const parsedLabelId = LabelIdSchema.safeParse(labelId);
+    if (!parsedLabelId.success) {
+      return NextResponse.json(
+        { error: 'Invalid labelId: must be a valid UUID' },
+        { status: 400 }
+      );
+    }
+
     const supabase = await createClient(request);
     const wsId = await normalizeWorkspaceId(id, supabase);
     const body = await request.json();
@@ -44,7 +54,6 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         { status: 400 }
       );
     }
-    const { name, color } = data.data;
 
     // Get current user
     const {
@@ -54,6 +63,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const validatedLabelId = parsedLabelId.data;
+    const { name, color } = data.data;
 
     // Check if user has access to the workspace
     const { data: workspaceMember } = await supabase
@@ -71,7 +83,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const { data: existingLabel } = await supabase
       .from('workspace_task_labels')
       .select('id, ws_id')
-      .eq('id', labelId)
+      .eq('id', validatedLabelId)
       .eq('ws_id', wsId)
       .single();
 
@@ -86,7 +98,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         name: name.trim(),
         color,
       })
-      .eq('id', labelId)
+      .eq('id', validatedLabelId)
       .eq('ws_id', wsId)
       .select()
       .single();
@@ -114,7 +126,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const { wsId: id, labelId } = await params;
     const supabase = await createClient(request);
-    const wsId = await normalizeWorkspaceId(id, supabase);
 
     // Get current user
     const {
@@ -124,6 +135,17 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const parsedLabelId = LabelIdSchema.safeParse(labelId);
+    if (!parsedLabelId.success) {
+      return NextResponse.json(
+        { error: 'Invalid labelId: must be a valid UUID' },
+        { status: 400 }
+      );
+    }
+    const validatedLabelId = parsedLabelId.data;
+
+    const wsId = await normalizeWorkspaceId(id, supabase);
 
     // Check if user has access to the workspace
     const { data: workspaceMember } = await supabase
@@ -141,7 +163,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const { data: existingLabel } = await supabase
       .from('workspace_task_labels')
       .select('id, ws_id')
-      .eq('id', labelId)
+      .eq('id', validatedLabelId)
       .eq('ws_id', wsId)
       .single();
 
@@ -153,7 +175,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const { error: deleteError } = await supabase
       .from('workspace_task_labels')
       .delete()
-      .eq('id', labelId)
+      .eq('id', validatedLabelId)
       .eq('ws_id', wsId);
 
     if (deleteError) {
