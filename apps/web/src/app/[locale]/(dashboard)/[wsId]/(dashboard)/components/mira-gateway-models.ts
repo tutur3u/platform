@@ -63,12 +63,13 @@ function applyGatewayModelSearch<
     (match) => `\\${match}`
   );
   const pattern = `%${escapedSearch}%`;
+  const encodedPattern = encodeURIComponent(pattern);
 
   return query.or(
     [
-      `name.ilike.${pattern}`,
-      `id.ilike.${pattern}`,
-      `description.ilike.${pattern}`,
+      `name.ilike.${encodedPattern}`,
+      `id.ilike.${encodedPattern}`,
+      `description.ilike.${encodedPattern}`,
     ].join(',')
   );
 }
@@ -97,8 +98,8 @@ function mapGatewayModel(model: GatewayModelRow): GatewayModelUi {
   };
 }
 
-export function sortModelsForDisplay(
-  models: AIModelUI[],
+export function sortModelsForDisplay<T extends AIModelUI>(
+  models: T[],
   {
     defaultModelId,
     isFavorited,
@@ -108,7 +109,7 @@ export function sortModelsForDisplay(
     isFavorited: (modelId: string) => boolean;
     isModelAllowed: (modelId: string) => boolean;
   }
-): AIModelUI[] {
+): T[] {
   return [...models].sort((a, b) => {
     const aAllowed = isModelAllowed(a.value);
     const bAllowed = isModelAllowed(b.value);
@@ -215,31 +216,28 @@ export async function fetchGatewayFavoriteModels(
   if (favoritesError || !favorites?.length) return [];
 
   const favoriteIds = favorites.map((favorite) => favorite.model_id);
-  const { data, error } = await supabase
-    .from('ai_gateway_models')
-    .select(
-      'id, name, provider, description, context_window, max_tokens, tags, is_enabled, input_price_per_token, output_price_per_token'
-    )
-    .in('id', favoriteIds)
-    .eq('type', 'language');
+  const BATCH_SIZE = 500;
+  const results: GatewayModelUi[] = [];
 
-  if (error || !data?.length) return [];
+  // Batch favoriteIds to avoid PostgREST 8KB limit
+  for (let i = 0; i < favoriteIds.length; i += BATCH_SIZE) {
+    const batch = favoriteIds.slice(i, i + BATCH_SIZE);
+    const { data, error } = await supabase
+      .from('ai_gateway_models')
+      .select(
+        'id, name, provider, description, context_window, max_tokens, tags, is_enabled, input_price_per_token, output_price_per_token'
+      )
+      .in('id', batch)
+      .eq('type', 'language');
 
-  return data.map((model) => mapGatewayModel(model as GatewayModelRow));
-}
+    if (!error && data?.length) {
+      results.push(
+        ...data.map((model) => mapGatewayModel(model as GatewayModelRow))
+      );
+    }
+  }
 
-export async function fetchGatewayModels(): Promise<GatewayModelUi[]> {
-  const providers = await fetchGatewayProviders();
-  const pages = await Promise.all(
-    providers.map((provider) =>
-      fetchGatewayModelsPage({
-        limit: Number.MAX_SAFE_INTEGER,
-        provider: provider.provider,
-      })
-    )
-  );
-
-  return pages.flatMap((page) => page.items);
+  return results;
 }
 
 export function modelSupportsFileInput(model?: Pick<AIModelUI, 'tags'> | null) {

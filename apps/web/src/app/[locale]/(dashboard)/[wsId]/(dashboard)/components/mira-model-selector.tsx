@@ -61,7 +61,6 @@ import {
   fetchGatewayModelsPage,
   fetchGatewayProviders,
   type GatewayModelProviderSummary,
-  type GatewayModelUi,
   MAX_PAGINATION_ITEMS,
   MIRA_GATEWAY_PROVIDER_MODELS_QUERY_KEY,
   MIRA_GATEWAY_PROVIDERS_QUERY_KEY,
@@ -95,6 +94,7 @@ type ModelListProps = {
 type ProviderModelsSectionProps = {
   defaultModelId: string | null;
   enabled: boolean;
+  hideLockedModels: boolean;
   isFavorited: (modelId: string) => boolean;
   isModelAllowed: (model: AIModelUI) => boolean;
   model: AIModelUI;
@@ -119,7 +119,7 @@ async function checkProviderLogo(provider: string): Promise<boolean> {
   const id = toProviderId(provider);
   const url = `https://models.dev/logos/${id}.svg`;
   try {
-    const res = await fetch(url, { cache: 'force-cache' });
+    const res = await fetch(url, { cache: 'no-store' });
     const text = await res.text();
     if (text.includes('M9.8132 15.9038')) return false;
     return true;
@@ -387,6 +387,7 @@ function ModelList({
 function ProviderModelsSection({
   defaultModelId,
   enabled,
+  hideLockedModels,
   isFavorited,
   isModelAllowed,
   model,
@@ -398,12 +399,13 @@ function ProviderModelsSection({
 }: ProviderModelsSectionProps) {
   const t = useTranslations('dashboard.mira_chat');
   const providerModelsQuery = useInfiniteQuery({
-    queryKey: [MIRA_GATEWAY_PROVIDER_MODELS_QUERY_KEY, { provider }],
+    queryKey: [MIRA_GATEWAY_PROVIDER_MODELS_QUERY_KEY, { provider, search }],
     queryFn: ({ pageParam }) =>
       fetchGatewayModelsPage({
         limit: MAX_PAGINATION_ITEMS,
         offset: typeof pageParam === 'number' ? pageParam : 0,
         provider,
+        search,
       }),
     enabled,
     initialPageParam: 0,
@@ -414,7 +416,10 @@ function ProviderModelsSection({
   const models = useMemo(() => {
     const items =
       providerModelsQuery.data?.pages.flatMap((page) => page.items) ?? [];
-    const filteredItems = items.filter((item) =>
+    const filteredByLocked = hideLockedModels
+      ? items.filter((item) => isModelAllowed(item))
+      : items;
+    const filteredItems = filteredByLocked.filter((item) =>
       modelMatchesSearch(item, search)
     );
     const modelsById = new Map(filteredItems.map((item) => [item.value, item]));
@@ -429,6 +434,7 @@ function ProviderModelsSection({
     });
   }, [
     defaultModelId,
+    hideLockedModels,
     isFavorited,
     isModelAllowed,
     providerModelsQuery.data,
@@ -575,13 +581,14 @@ export default function MiraModelSelector({
   const selectedProviderModelsQuery = useInfiniteQuery({
     queryKey: [
       MIRA_GATEWAY_PROVIDER_MODELS_QUERY_KEY,
-      { provider: selectedProvider },
+      { provider: selectedProvider, search },
     ],
     queryFn: ({ pageParam }) =>
       fetchGatewayModelsPage({
         limit: MAX_PAGINATION_ITEMS,
         offset: typeof pageParam === 'number' ? pageParam : 0,
         provider: selectedProvider ?? '',
+        search,
       }),
     enabled: deferredOpen && !!selectedProvider && !favoritesOnly,
     initialPageParam: 0,
@@ -723,7 +730,10 @@ export default function MiraModelSelector({
     const items =
       selectedProviderModelsQuery.data?.pages.flatMap((page) => page.items) ??
       [];
-    const filteredItems = items.filter((item) =>
+    const filteredByLocked = hideLockedModels
+      ? items.filter((item) => isModelAllowed(item))
+      : items;
+    const filteredItems = filteredByLocked.filter((item) =>
       modelMatchesSearch(item, search)
     );
     const modelsById = new Map(filteredItems.map((item) => [item.value, item]));
@@ -735,9 +745,10 @@ export default function MiraModelSelector({
         const selectedModel = modelsById.get(modelId);
         return selectedModel ? isModelAllowed(selectedModel) : false;
       },
-    }) as GatewayModelUi[];
+    });
   }, [
     defaultModelId,
+    hideLockedModels,
     isFavorited,
     isModelAllowed,
     search,
@@ -1023,6 +1034,7 @@ export default function MiraModelSelector({
                             key={provider}
                             defaultModelId={defaultModelId}
                             enabled={expandedProviders.includes(provider)}
+                            hideLockedModels={hideLockedModels}
                             isFavorited={isFavorited}
                             isModelAllowed={isModelAllowed}
                             model={model}
