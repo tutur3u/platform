@@ -267,16 +267,19 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskEstimatesRangeExtended => 'Phạm vi mở rộng';
 
   @override
+  String get taskEstimatesUnnamedBoard => 'Bảng chưa đặt tên';
+
+  @override
   String get taskEstimatesAllowZeroEstimates => 'Cho phép ước lượng bằng 0';
 
   @override
-  String get taskEstimatesAllowZeroEstimatesDescription => 'Khi bật, các công việc có thể được ước lượng với 0 điểm.';
+  String get taskEstimatesAllowZeroEstimatesDescription => 'Khi bật, các công việc có thể được ước lượng bằng một giá trị tương đương số không.';
 
   @override
   String get taskEstimatesCountUnestimatedIssues => 'Đếm các công việc chưa ước lượng';
 
   @override
-  String get taskEstimatesCountUnestimatedIssuesDescription => 'Khi bật, các công việc chưa ước lượng sẽ được tính là một điểm. Khi tắt, chúng được tính là 0.';
+  String get taskEstimatesCountUnestimatedIssuesDescription => 'Khi bật, các công việc chưa ước lượng sẽ được tính là một đơn vị ước lượng. Khi tắt, chúng sẽ không được tính.';
 
   @override
   String get taskEstimatesUpdateSuccess => 'Đã cập nhật ước lượng thành công.';

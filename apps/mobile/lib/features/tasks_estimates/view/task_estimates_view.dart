@@ -18,18 +18,29 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TaskEstimatesView extends StatefulWidget {
-  const TaskEstimatesView({super.key});
+  const TaskEstimatesView({
+    super.key,
+    this.permissionsRepository,
+  });
+
+  final WorkspacePermissionsRepository? permissionsRepository;
 
   @override
   State<TaskEstimatesView> createState() => _TaskEstimatesViewState();
 }
 
 class _TaskEstimatesViewState extends State<TaskEstimatesView> {
-  final WorkspacePermissionsRepository _permissionsRepository =
-      WorkspacePermissionsRepository();
+  late final WorkspacePermissionsRepository _permissionsRepository;
   String? _permissionsWorkspaceId;
   bool _canManageProjects = false;
   bool _isCheckingPermissions = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _permissionsRepository =
+        widget.permissionsRepository ?? WorkspacePermissionsRepository();
+  }
 
   @override
   void didChangeDependencies() {
@@ -123,6 +134,7 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
 
   Future<void> _loadPermissions() async {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    final capturedWsId = wsId;
     final currentUserId = context.read<AuthCubit>().state.user?.id;
 
     if (!mounted) {
@@ -131,7 +143,7 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
     setState(() => _isCheckingPermissions = true);
 
     if (wsId == null || currentUserId == null) {
-      if (!mounted) {
+      if (!_canUpdatePermissionsState(capturedWsId)) {
         return;
       }
       setState(() {
@@ -147,7 +159,7 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
         userId: currentUserId,
       );
 
-      if (!mounted) {
+      if (!_canUpdatePermissionsState(capturedWsId)) {
         return;
       }
       setState(() {
@@ -155,7 +167,7 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
         _isCheckingPermissions = false;
       });
     } on Exception {
-      if (!mounted) {
+      if (!_canUpdatePermissionsState(capturedWsId)) {
         return;
       }
       setState(() {
@@ -163,6 +175,19 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
         _isCheckingPermissions = false;
       });
     }
+  }
+
+  bool _canUpdatePermissionsState(String? capturedWsId) {
+    if (!mounted) {
+      return false;
+    }
+
+    final currentWsId = context
+        .read<WorkspaceCubit>()
+        .state
+        .currentWorkspace
+        ?.id;
+    return currentWsId == capturedWsId;
   }
 
   Future<void> _reload(BuildContext context) async {

@@ -1,6 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
-import { validate } from 'uuid';
 
 interface WorkspaceParams {
   wsId: string;
@@ -11,16 +11,9 @@ export async function GET(
   { params }: { params: Promise<WorkspaceParams> }
 ) {
   try {
-    const { wsId } = await params;
-
-    if (!validate(wsId)) {
-      return NextResponse.json(
-        { error: 'Invalid workspace ID' },
-        { status: 400 }
-      );
-    }
-
+    const { wsId: rawWsId } = await params;
     const supabase = await createClient(req);
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     const {
       data: { user },
@@ -64,10 +57,7 @@ export async function GET(
     }
 
     return NextResponse.json({
-      boards: boards.map((board) => ({
-        ...board,
-        name: board.name?.trim() ? board.name : 'Untitled Board',
-      })),
+      boards,
     });
   } catch (error) {
     console.error('Unexpected error fetching estimation boards:', error);

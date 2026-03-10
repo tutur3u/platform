@@ -1,4 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { Database } from '@tuturuuu/types';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -18,11 +20,21 @@ const estimationBodySchema = z.object({
   allow_zero_estimates: z.boolean().optional(),
   count_unestimated_issues: z.boolean().optional(),
 });
+const boardIdSchema = z.uuid();
 
 // PATCH - Update board estimation type
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
-    const { wsId, boardId } = await params;
+    const { wsId: rawWsId, boardId: rawBoardId } = await params;
+    const supabase = await createClient(request);
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+    const parsedBoardId = boardIdSchema.safeParse(rawBoardId);
+
+    if (!parsedBoardId.success) {
+      return NextResponse.json({ error: 'Invalid board ID' }, { status: 400 });
+    }
+
+    const boardId = parsedBoardId.data;
     const body = estimationBodySchema.safeParse(await request.json());
     if (!body.success) {
       return NextResponse.json(
@@ -37,8 +49,6 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       allow_zero_estimates,
       count_unestimated_issues,
     } = body.data;
-
-    const supabase = await createClient(request);
 
     // Get current user
     const {
@@ -75,9 +85,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     // Update the board estimation type
-    const updateData: any = {
-      estimation_type: estimation_type,
-    };
+    const updateData: Database['public']['Tables']['workspace_boards']['Update'] =
+      {
+        estimation_type: estimation_type,
+      };
 
     // Only include extended_estimation if it's provided
     if (extended_estimation !== undefined) {

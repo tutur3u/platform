@@ -595,6 +595,12 @@ abstract class AppLocalizations {
   /// **'Extended range'**
   String get taskEstimatesRangeExtended;
 
+  /// No description provided for @taskEstimatesUnnamedBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled board'**
+  String get taskEstimatesUnnamedBoard;
+
   /// No description provided for @taskEstimatesAllowZeroEstimates.
   ///
   /// In en, this message translates to:
@@ -604,7 +610,7 @@ abstract class AppLocalizations {
   /// No description provided for @taskEstimatesAllowZeroEstimatesDescription.
   ///
   /// In en, this message translates to:
-  /// **'When enabled, issues can be estimated with zero points.'**
+  /// **'When enabled, issues can be estimated with a zero-like value.'**
   String get taskEstimatesAllowZeroEstimatesDescription;
 
   /// No description provided for @taskEstimatesCountUnestimatedIssues.
@@ -616,7 +622,7 @@ abstract class AppLocalizations {
   /// No description provided for @taskEstimatesCountUnestimatedIssuesDescription.
   ///
   /// In en, this message translates to:
-  /// **'When enabled, unestimated issues count as one point. When disabled, they count as zero.'**
+  /// **'When enabled, unestimated issues count as one estimate unit. When disabled, they count as no estimate.'**
   String get taskEstimatesCountUnestimatedIssuesDescription;
 
   /// No description provided for @taskEstimatesUpdateSuccess.

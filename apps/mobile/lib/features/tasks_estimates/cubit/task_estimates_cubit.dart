@@ -11,12 +11,18 @@ class TaskEstimatesCubit extends Cubit<TaskEstimatesState> {
       super(const TaskEstimatesState());
 
   final TaskRepository _taskRepository;
+  String? _lastLoadWsId;
 
   Future<void> loadBoards(String wsId) async {
+    _lastLoadWsId = wsId;
     emit(state.copyWith(status: TaskEstimatesStatus.loading, error: null));
 
     try {
       final boards = await _taskRepository.getTaskEstimateBoards(wsId);
+      if (_lastLoadWsId != wsId) {
+        return;
+      }
+
       emit(
         state.copyWith(
           status: TaskEstimatesStatus.loaded,
@@ -25,6 +31,10 @@ class TaskEstimatesCubit extends Cubit<TaskEstimatesState> {
         ),
       );
     } on Exception catch (error) {
+      if (_lastLoadWsId != wsId) {
+        return;
+      }
+
       emit(
         state.copyWith(
           status: TaskEstimatesStatus.error,

@@ -5,8 +5,8 @@ const _sentinel = Object();
 class TaskEstimateBoard extends Equatable {
   const TaskEstimateBoard({
     required this.id,
-    required this.name,
     required this.createdAt,
+    this.name,
     this.estimationType,
     this.extendedEstimation = false,
     this.allowZeroEstimates = true,
@@ -17,8 +17,8 @@ class TaskEstimateBoard extends Equatable {
     return TaskEstimateBoard(
       id: json['id'] as String,
       name: (json['name'] as String?)?.trim().isNotEmpty == true
-          ? json['name'] as String
-          : 'Untitled Board',
+          ? (json['name'] as String).trim()
+          : null,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : null,
@@ -31,7 +31,7 @@ class TaskEstimateBoard extends Equatable {
   }
 
   final String id;
-  final String name;
+  final String? name;
   final DateTime? createdAt;
   final String? estimationType;
   final bool extendedEstimation;
@@ -40,7 +40,7 @@ class TaskEstimateBoard extends Equatable {
 
   TaskEstimateBoard copyWith({
     String? id,
-    String? name,
+    Object? name = _sentinel,
     Object? createdAt = _sentinel,
     Object? estimationType = _sentinel,
     bool? extendedEstimation,
@@ -49,7 +49,7 @@ class TaskEstimateBoard extends Equatable {
   }) {
     return TaskEstimateBoard(
       id: id ?? this.id,
-      name: name ?? this.name,
+      name: name == _sentinel ? this.name : name as String?,
       createdAt: createdAt == _sentinel
           ? this.createdAt
           : createdAt as DateTime?,

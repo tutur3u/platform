@@ -32,16 +32,15 @@ class TaskEstimateBoardsSection extends StatelessWidget {
               title: l10n.taskEstimatesNoBoardsTitle,
               description: l10n.taskEstimatesNoBoardsDescription,
             )
-          : Column(
-              children: [
-                for (var index = 0; index < boards.length; index++) ...[
-                  _TaskEstimateBoardTile(
-                    board: boards[index],
-                    enabled: !isUpdating,
-                  ),
-                  if (index < boards.length - 1) const shad.Gap(8),
-                ],
-              ],
+          : ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: boards.length,
+              itemBuilder: (context, index) => _TaskEstimateBoardTile(
+                board: boards[index],
+                enabled: !isUpdating,
+              ),
+              separatorBuilder: (context, index) => const shad.Gap(8),
             ),
     );
   }
@@ -62,6 +61,7 @@ class _TaskEstimateBoardTile extends StatelessWidget {
     final theme = shad.Theme.of(context);
     final type = estimationTypeMeta(context, board.estimationType);
     final locale = Localizations.localeOf(context).toString();
+    final boardName = board.name ?? l10n.taskEstimatesUnnamedBoard;
 
     return shad.Card(
       padding: EdgeInsets.zero,
@@ -94,7 +94,7 @@ class _TaskEstimateBoardTile extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          board.name,
+                          boardName,
                           style: theme.typography.p.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
