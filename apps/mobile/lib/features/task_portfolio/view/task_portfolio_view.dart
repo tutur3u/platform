@@ -9,33 +9,29 @@ import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/task_initiative_summary.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
-import 'package:mobile/data/models/workspace_user_option.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
-import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/task_portfolio/cubit/task_portfolio_cubit.dart';
+import 'package:mobile/features/task_portfolio/view/task_portfolio_actions.dart';
+import 'package:mobile/features/task_portfolio/view/task_portfolio_permissions_controller.dart';
 import 'package:mobile/features/task_portfolio/widgets/task_portfolio_cards.dart';
-import 'package:mobile/features/task_portfolio/widgets/task_portfolio_dialogs.dart';
 import 'package:mobile/features/task_portfolio/widgets/task_portfolio_feedback.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:mobile/widgets/fab/fab_action.dart';
 import 'package:mobile/widgets/fab/speed_dial_fab.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TaskPortfolioView extends StatefulWidget {
-  TaskPortfolioView({
-    WorkspacePermissionsRepository? permissionsRepository,
-    TaskRepository? taskRepository,
+  const TaskPortfolioView({
     super.key,
-  }) : permissionsRepository =
-           permissionsRepository ?? WorkspacePermissionsRepository(),
-       taskRepository = taskRepository ?? TaskRepository();
+    this.permissionsRepository,
+    this.taskRepository,
+  });
 
-  final WorkspacePermissionsRepository permissionsRepository;
-  final TaskRepository taskRepository;
+  final WorkspacePermissionsRepository? permissionsRepository;
+  final TaskRepository? taskRepository;
 
   @override
   State<TaskPortfolioView> createState() => _TaskPortfolioViewState();
@@ -46,17 +42,30 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
   static const double _fabContentBottomPadding = 96;
 
   int _activeTab = _tabProjects;
-  String? _permissionsWorkspaceId;
-  bool _canManageProjects = false;
-  bool _isCheckingPermissions = false;
+  late final TaskPortfolioPermissionsController _permissionsController;
+  late final TaskRepository _taskRepository;
+
+  TaskPortfolioActions get _actions => TaskPortfolioActions(
+    context: context,
+    taskRepository: _taskRepository,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _taskRepository = widget.taskRepository ?? TaskRepository();
+    _permissionsController = TaskPortfolioPermissionsController(
+      permissionsRepository:
+          widget.permissionsRepository ?? WorkspacePermissionsRepository(),
+    );
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == _permissionsWorkspaceId) return;
+    if (!_permissionsController.shouldReloadForWorkspace(wsId)) return;
 
-    _permissionsWorkspaceId = wsId;
     unawaited(_loadPermissions());
   }
 
@@ -94,7 +103,7 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
         child: Stack(
           children: [
             _buildContent(context),
-            if (_canManageProjects)
+            if (_permissionsController.canManageProjects)
               SpeedDialFab(
                 label: context.l10n.taskPortfolioTitle,
                 icon: Icons.add,
@@ -118,10 +127,10 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
   }
 
   Widget _buildContent(BuildContext context) {
-    if (_isCheckingPermissions) {
+    if (_permissionsController.isCheckingPermissions) {
       return const Center(child: shad.CircularProgressIndicator());
     }
-    if (!_canManageProjects) {
+    if (!_permissionsController.canManageProjects) {
       return const TaskPortfolioAccessDenied();
     }
 
@@ -254,32 +263,11 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (!mounted) return;
 
-    setState(() => _isCheckingPermissions = true);
-
-    if (wsId == null) {
-      setState(() {
-        _canManageProjects = false;
-        _isCheckingPermissions = false;
-      });
-      return;
-    }
-
-    try {
-      final permissions = await widget.permissionsRepository.getPermissions(
-        wsId: wsId,
-      );
-      if (!mounted) return;
-      setState(() {
-        _canManageProjects = permissions.containsPermission('manage_projects');
-        _isCheckingPermissions = false;
-      });
-    } on Exception {
-      if (!mounted) return;
-      setState(() {
-        _canManageProjects = false;
-        _isCheckingPermissions = false;
-      });
-    }
+    final loadFuture = _permissionsController.loadPermissions(wsId: wsId);
+    setState(() {});
+    await loadFuture;
+    if (!mounted) return;
+    setState(() {});
   }
 
   Future<void> _reload() async {
@@ -289,271 +277,32 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
   }
 
   Future<void> _openCreateProject() async {
-    final result = await shad.showDialog<TaskProjectFormValue>(
-      context: context,
-      builder: (_) => const TaskProjectDialog(),
-    );
-    if (result == null || !mounted) return;
-
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) return;
-
-    await _runAction(
-      () => context.read<TaskPortfolioCubit>().createProject(
-        wsId: wsId,
-        name: result.name,
-        description: result.description,
-      ),
-      successMessage: context.l10n.taskPortfolioProjectCreated,
-    );
+    await _actions.openCreateProject();
   }
 
   Future<void> _openEditProject(TaskProjectSummary project) async {
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) return;
-
-    List<WorkspaceUserOption> workspaceUsers;
-    try {
-      workspaceUsers = await widget.taskRepository.getWorkspaceUsers(wsId);
-    } on ApiException catch (error) {
-      if (mounted) {
-        _showErrorToast(
-          error.message.trim().isEmpty
-              ? context.l10n.commonSomethingWentWrong
-              : error.message,
-        );
-      }
-      return;
-    } on Exception {
-      if (mounted) {
-        _showErrorToast(context.l10n.commonSomethingWentWrong);
-      }
-      return;
-    }
-
-    if (!mounted) return;
-
-    final result = await shad.showDialog<TaskProjectFormValue>(
-      context: context,
-      builder: (_) =>
-          TaskProjectDialog(project: project, workspaceUsers: workspaceUsers),
-    );
-    if (result == null || !mounted) return;
-
-    await _runAction(
-      () => context.read<TaskPortfolioCubit>().updateProject(
-        wsId: wsId,
-        projectId: project.id,
-        name: result.name,
-        description: result.description,
-        status: result.status,
-        priority: result.priority,
-        healthStatus: result.healthStatus,
-        leadId: result.leadId,
-        startDate: result.startDate,
-        endDate: result.endDate,
-        archived: result.archived,
-      ),
-      successMessage: context.l10n.taskPortfolioProjectUpdated,
-    );
+    await _actions.openEditProject(project);
   }
 
   Future<void> _deleteProject(TaskProjectSummary project) async {
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) return;
-
-    final toastContext = Navigator.of(context, rootNavigator: true).context;
-    final deleted =
-        await shad.showDialog<bool>(
-          context: context,
-          builder: (_) => AsyncDeleteConfirmationDialog(
-            title: context.l10n.taskPortfolioDeleteProject,
-            message: context.l10n.taskPortfolioDeleteProjectConfirm,
-            cancelLabel: context.l10n.commonCancel,
-            confirmLabel: context.l10n.taskPortfolioDeleteProject,
-            toastContext: toastContext,
-            onConfirm: () async {
-              await context.read<TaskPortfolioCubit>().deleteProject(
-                wsId: wsId,
-                projectId: project.id,
-              );
-            },
-          ),
-        ) ??
-        false;
-
-    if (deleted && mounted) {
-      _showSuccessToast(context.l10n.taskPortfolioProjectDeleted);
-    }
+    await _actions.deleteProject(project);
   }
 
   Future<void> _openCreateInitiative() async {
-    final result = await shad.showDialog<TaskInitiativeFormValue>(
-      context: context,
-      builder: (_) => const TaskInitiativeDialog(),
-    );
-    if (result == null || !mounted) return;
-
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) return;
-
-    await _runAction(
-      () => context.read<TaskPortfolioCubit>().createInitiative(
-        wsId: wsId,
-        name: result.name,
-        description: result.description,
-        status: result.status,
-      ),
-      successMessage: context.l10n.taskPortfolioInitiativeCreated,
-    );
+    await _actions.openCreateInitiative();
   }
 
   Future<void> _openEditInitiative(TaskInitiativeSummary initiative) async {
-    final result = await shad.showDialog<TaskInitiativeFormValue>(
-      context: context,
-      builder: (_) => TaskInitiativeDialog(initiative: initiative),
-    );
-    if (result == null || !mounted) return;
-
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) return;
-
-    await _runAction(
-      () => context.read<TaskPortfolioCubit>().updateInitiative(
-        wsId: wsId,
-        initiativeId: initiative.id,
-        name: result.name,
-        description: result.description,
-        status: result.status,
-      ),
-      successMessage: context.l10n.taskPortfolioInitiativeUpdated,
-    );
+    await _actions.openEditInitiative(initiative);
   }
 
   Future<void> _deleteInitiative(TaskInitiativeSummary initiative) async {
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) return;
-
-    final toastContext = Navigator.of(context, rootNavigator: true).context;
-    final deleted =
-        await shad.showDialog<bool>(
-          context: context,
-          builder: (_) => AsyncDeleteConfirmationDialog(
-            title: context.l10n.taskPortfolioDeleteInitiative,
-            message: context.l10n.taskPortfolioDeleteInitiativeConfirm,
-            cancelLabel: context.l10n.commonCancel,
-            confirmLabel: context.l10n.taskPortfolioDeleteInitiative,
-            toastContext: toastContext,
-            onConfirm: () async {
-              await context.read<TaskPortfolioCubit>().deleteInitiative(
-                wsId: wsId,
-                initiativeId: initiative.id,
-              );
-            },
-          ),
-        ) ??
-        false;
-
-    if (deleted && mounted) {
-      _showSuccessToast(context.l10n.taskPortfolioInitiativeDeleted);
-    }
+    await _actions.deleteInitiative(initiative);
   }
 
   Future<void> _manageInitiativeProjects(
     TaskInitiativeSummary initiative,
   ) async {
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) return;
-    final taskPortfolioCubit = context.read<TaskPortfolioCubit>();
-
-    await shad.showDialog<void>(
-      context: context,
-      builder: (_) => BlocProvider.value(
-        value: taskPortfolioCubit,
-        child: BlocBuilder<TaskPortfolioCubit, TaskPortfolioState>(
-          builder: (dialogContext, state) {
-            final refreshed = state.initiatives.firstWhere(
-              (item) => item.id == initiative.id,
-              orElse: () => initiative,
-            );
-            final linkedIds = refreshed.linkedProjects
-                .map((item) => item.id)
-                .toSet();
-            final availableProjects = state.projects
-                .where((project) => !linkedIds.contains(project.id))
-                .toList(growable: false);
-
-            return ManageInitiativeProjectsDialog(
-              initiative: refreshed,
-              availableProjects: availableProjects,
-              isMutating: state.isMutating,
-              onLink: (projectId) => _runAction(
-                () => dialogContext
-                    .read<TaskPortfolioCubit>()
-                    .linkProjectToInitiative(
-                      wsId: wsId,
-                      initiativeId: initiative.id,
-                      projectId: projectId,
-                    ),
-                successMessage: context.l10n.taskPortfolioProjectLinked,
-              ),
-              onUnlink: (projectId) => _runAction(
-                () => dialogContext
-                    .read<TaskPortfolioCubit>()
-                    .unlinkProjectFromInitiative(
-                      wsId: wsId,
-                      initiativeId: initiative.id,
-                      projectId: projectId,
-                    ),
-                successMessage: context.l10n.taskPortfolioProjectUnlinked,
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Future<void> _runAction(
-    Future<void> Function() action, {
-    required String successMessage,
-  }) async {
-    try {
-      await action();
-      if (mounted) {
-        _showSuccessToast(successMessage);
-      }
-    } on ApiException catch (error) {
-      if (mounted) {
-        _showErrorToast(
-          error.message.trim().isEmpty
-              ? context.l10n.commonSomethingWentWrong
-              : error.message,
-        );
-      }
-    } on Exception {
-      if (mounted) {
-        _showErrorToast(context.l10n.commonSomethingWentWrong);
-      }
-    }
-  }
-
-  void _showSuccessToast(String message) {
-    final toastContext = Navigator.of(context, rootNavigator: true).context;
-    if (!toastContext.mounted) return;
-    shad.showToast(
-      context: toastContext,
-      builder: (context, overlay) => shad.Alert(content: Text(message)),
-    );
-  }
-
-  void _showErrorToast(String message) {
-    final toastContext = Navigator.of(context, rootNavigator: true).context;
-    if (!toastContext.mounted) return;
-    shad.showToast(
-      context: toastContext,
-      builder: (context, overlay) =>
-          shad.Alert.destructive(content: Text(message)),
-    );
+    await _actions.manageInitiativeProjects(initiative);
   }
 }

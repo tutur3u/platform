@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -24,8 +25,9 @@ export async function PUT(
   { params }: { params: Promise<{ wsId: string; initiativeId: string }> }
 ) {
   try {
-    const { wsId, initiativeId } = await params;
+    const { wsId: rawWsId, initiativeId } = await params;
     const supabase = await createClient(request);
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     const {
       data: { user },
@@ -120,8 +122,9 @@ export async function DELETE(
   { params }: { params: Promise<{ wsId: string; initiativeId: string }> }
 ) {
   try {
-    const { wsId, initiativeId } = await params;
+    const { wsId: rawWsId, initiativeId } = await params;
     const supabase = await createClient(request);
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     const {
       data: { user },
@@ -143,11 +146,13 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { error } = await supabase
+    const { data: deletedInitiative, error } = await supabase
       .from('task_initiatives')
       .delete()
       .eq('id', initiativeId)
-      .eq('ws_id', wsId);
+      .eq('ws_id', wsId)
+      .select('id')
+      .maybeSingle();
 
     if (error) {
       console.error('Error deleting initiative:', error);
@@ -155,6 +160,10 @@ export async function DELETE(
         { error: 'Failed to delete initiative' },
         { status: 500 }
       );
+    }
+
+    if (!deletedInitiative) {
+      return NextResponse.json({ error: 'Not Found' }, { status: 404 });
     }
 
     return NextResponse.json({ success: true });

@@ -718,7 +718,7 @@ abstract class AppLocalizations {
   /// No description provided for @taskPortfolioTitle.
   ///
   /// In en, this message translates to:
-  /// **'Projects & initiatives'**
+  /// **'Portfolio'**
   String get taskPortfolioTitle;
 
   /// No description provided for @taskPortfolioProjectsTab.
@@ -840,6 +840,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Project name'**
   String get taskPortfolioProjectName;
+
+  /// No description provided for @taskPortfolioProjectNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Project name is required'**
+  String get taskPortfolioProjectNameRequired;
 
   /// No description provided for @taskPortfolioProjectDescriptionHint.
   ///
@@ -1044,6 +1050,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Initiative name'**
   String get taskPortfolioInitiativeName;
+
+  /// No description provided for @taskPortfolioInitiativeNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Initiative name is required'**
+  String get taskPortfolioInitiativeNameRequired;
 
   /// No description provided for @taskPortfolioInitiativeDescriptionHint.
   ///

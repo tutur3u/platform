@@ -31,7 +31,7 @@ class TaskPortfolioPage extends StatelessWidget {
           }
           return cubit;
         },
-        child: TaskPortfolioView(),
+        child: const TaskPortfolioView(),
       ),
     );
   }

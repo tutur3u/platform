@@ -327,7 +327,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskEstimatesTypeTshirtExtended => 'Extended T-shirt sizes: -, XS, S, M, L, XL, XXL, XXXL.';
 
   @override
-  String get taskPortfolioTitle => 'Projects & initiatives';
+  String get taskPortfolioTitle => 'Portfolio';
 
   @override
   String get taskPortfolioProjectsTab => 'Projects';
@@ -388,6 +388,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskPortfolioProjectName => 'Project name';
+
+  @override
+  String get taskPortfolioProjectNameRequired => 'Project name is required';
 
   @override
   String get taskPortfolioProjectDescriptionHint => 'Describe the project goals';
@@ -490,6 +493,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskPortfolioInitiativeName => 'Initiative name';
+
+  @override
+  String get taskPortfolioInitiativeNameRequired => 'Initiative name is required';
 
   @override
   String get taskPortfolioInitiativeDescriptionHint => 'Describe the initiative outcome';

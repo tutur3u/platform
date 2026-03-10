@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
@@ -11,8 +12,9 @@ export async function DELETE(
   }
 ) {
   try {
-    const { wsId, initiativeId, projectId } = await params;
+    const { wsId: rawWsId, initiativeId, projectId } = await params;
     const supabase = await createClient(request);
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     const {
       data: { user },
@@ -34,11 +36,35 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { error } = await supabase
+    const { data: initiative } = await supabase
+      .from('task_initiatives')
+      .select('id')
+      .eq('id', initiativeId)
+      .eq('ws_id', wsId)
+      .maybeSingle();
+
+    if (!initiative) {
+      return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+    }
+
+    const { data: project } = await supabase
+      .from('task_projects')
+      .select('id')
+      .eq('id', projectId)
+      .eq('ws_id', wsId)
+      .maybeSingle();
+
+    if (!project) {
+      return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+    }
+
+    const { data: deletedLink, error } = await supabase
       .from('task_project_initiatives')
       .delete()
       .eq('initiative_id', initiativeId)
-      .eq('project_id', projectId);
+      .eq('project_id', projectId)
+      .select('initiative_id, project_id')
+      .maybeSingle();
 
     if (error) {
       console.error('Error unlinking project from initiative:', error);
@@ -46,6 +72,10 @@ export async function DELETE(
         { error: 'Failed to unlink project from initiative' },
         { status: 500 }
       );
+    }
+
+    if (!deletedLink) {
+      return NextResponse.json({ error: 'Not Found' }, { status: 404 });
     }
 
     return NextResponse.json({ success: true });

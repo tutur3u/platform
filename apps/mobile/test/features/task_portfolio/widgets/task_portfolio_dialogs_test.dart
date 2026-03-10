@@ -62,21 +62,17 @@ void main() {
       await tester.tap(find.text('Open dialog'));
       await tester.pumpAndSettle();
 
-      await tester.tap(
-        find.byType(DropdownButtonFormField<String>).at(0).hitTestable(),
-      );
+      await tester.tap(find.byKey(const Key('statusDropdown')).hitTestable());
       await tester.pumpAndSettle();
       await tester.tap(find.text('In progress').last);
       await tester.pumpAndSettle();
 
-      await tester.tap(
-        find.byType(DropdownButtonFormField<String>).at(1).hitTestable(),
-      );
+      await tester.tap(find.byKey(const Key('priorityDropdown')).hitTestable());
       await tester.pumpAndSettle();
       await tester.tap(find.text('High').last);
       await tester.pumpAndSettle();
 
-      final healthField = find.byType(DropdownButtonFormField<String>).at(2);
+      final healthField = find.byKey(const Key('healthDropdown'));
       await tester.ensureVisible(healthField);
       await tester.pumpAndSettle();
       await tester.tap(healthField.hitTestable());
@@ -84,7 +80,7 @@ void main() {
       await tester.tap(find.text('At risk').last);
       await tester.pumpAndSettle();
 
-      final leadField = find.byType(DropdownButtonFormField<String>).at(3);
+      final leadField = find.byKey(const Key('leadDropdown'));
       await tester.ensureVisible(leadField);
       await tester.pumpAndSettle();
       await tester.tap(leadField.hitTestable());

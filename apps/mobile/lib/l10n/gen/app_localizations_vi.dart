@@ -327,7 +327,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskEstimatesTypeTshirtExtended => 'Kích cỡ áo mở rộng: -, XS, S, M, L, XL, XXL, XXXL.';
 
   @override
-  String get taskPortfolioTitle => 'Dự án & sáng kiến';
+  String get taskPortfolioTitle => 'Danh mục';
 
   @override
   String get taskPortfolioProjectsTab => 'Dự án';
@@ -388,6 +388,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskPortfolioProjectName => 'Tên dự án';
+
+  @override
+  String get taskPortfolioProjectNameRequired => 'Tên dự án là bắt buộc';
 
   @override
   String get taskPortfolioProjectDescriptionHint => 'Mô tả mục tiêu của dự án';
@@ -490,6 +493,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskPortfolioInitiativeName => 'Tên sáng kiến';
+
+  @override
+  String get taskPortfolioInitiativeNameRequired => 'Tên sáng kiến là bắt buộc';
 
   @override
   String get taskPortfolioInitiativeDescriptionHint => 'Mô tả kết quả của sáng kiến';
