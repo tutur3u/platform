@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const linkTaskSchema = z.object({
-  taskId: z.string().uuid('Task id must be a valid UUID'),
+  taskId: z.uuid('Task id must be a valid UUID'),
 });
 
 export async function POST(
@@ -13,7 +13,7 @@ export async function POST(
 ) {
   try {
     const { wsId, projectId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     const {
       data: { user },

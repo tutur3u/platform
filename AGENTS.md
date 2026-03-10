@@ -195,6 +195,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 ### 6.5 Type Safety & Platform Details
 
 - **Dart Part Imports**: For Dart `part` files, add library imports only in the parent file (the one declaring `part ...`).
+- **Flutter View File Splits**: When a Flutter page/view exceeds the module boundary threshold, keep the original entry file as the library root and split into sibling `part` files by concern (for example `*_view.dart`, `*_cards.dart`, `*_states.dart`, `*_utils.dart`) so route imports stay stable while reducing file size.
 - **API Route UUID Params**: In API routes, validate UUID path params with shared `zod` schemas (`z.uuid()` + `safeParse`) instead of ad-hoc null/regex checks.
 - **Supabase Helper Extraction**: When moving Supabase DB writes into shared helper modules, prefer structural interfaces (or thin generic adapters) over concrete `createAdminClient` return types to avoid cross-package generic incompatibilities during type-check.
 - **Type-Safe Group Iteration**: In strict TS files with discriminated unions and `noUncheckedIndexedAccess`, avoid `array[index]` iteration for render groups. Prefer `for (const [i, item] of array.entries())` plus `switch (item.kind)` to preserve narrowing and prevent `"possibly undefined"` regressions.

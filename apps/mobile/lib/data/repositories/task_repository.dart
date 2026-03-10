@@ -1,7 +1,9 @@
 import 'package:mobile/data/models/task.dart';
 import 'package:mobile/data/models/task_estimate_board.dart';
 import 'package:mobile/data/models/task_initiative_summary.dart';
+import 'package:mobile/data/models/task_link_option.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
+import 'package:mobile/data/models/task_project_update.dart';
 import 'package:mobile/data/models/user_task.dart';
 import 'package:mobile/data/models/workspace_user_option.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -158,6 +160,18 @@ class TaskRepository {
         .toList(growable: false);
   }
 
+  Future<List<TaskLinkOption>> getWorkspaceTasksForProjectLinking(
+    String wsId,
+  ) async {
+    final response = await _apiClient.getJson('/api/v1/workspaces/$wsId/tasks');
+    final tasks = response['tasks'] as List<dynamic>? ?? const [];
+
+    return tasks
+        .whereType<Map<String, dynamic>>()
+        .map(TaskLinkOption.fromJson)
+        .toList(growable: false);
+  }
+
   Future<List<WorkspaceUserOption>> getWorkspaceUsers(String wsId) async {
     final response = await _apiClient.getJson(
       '/api/v1/workspaces/$wsId/members',
@@ -287,6 +301,81 @@ class TaskRepository {
   }) async {
     await _apiClient.deleteJson(
       '/api/v1/workspaces/$wsId/task-initiatives/$initiativeId/projects/$projectId',
+    );
+  }
+
+  Future<void> linkTaskToProject({
+    required String wsId,
+    required String projectId,
+    required String taskId,
+  }) async {
+    await _apiClient.postJson(
+      '/api/v1/workspaces/$wsId/task-projects/$projectId/tasks',
+      {'taskId': taskId},
+    );
+  }
+
+  Future<void> unlinkTaskFromProject({
+    required String wsId,
+    required String projectId,
+    required String taskId,
+  }) async {
+    await _apiClient.deleteJson(
+      '/api/v1/workspaces/$wsId/task-projects/$projectId/tasks/$taskId',
+    );
+  }
+
+  Future<List<TaskProjectUpdate>> getTaskProjectUpdates({
+    required String wsId,
+    required String projectId,
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    final response = await _apiClient.getJson(
+      '/api/v1/workspaces/$wsId/task-projects/$projectId/updates?limit=$limit&offset=$offset',
+    );
+    final updates = response['updates'] as List<dynamic>? ?? const [];
+
+    return updates
+        .whereType<Map<String, dynamic>>()
+        .map(TaskProjectUpdate.fromJson)
+        .toList(growable: false);
+  }
+
+  Future<TaskProjectUpdate> createTaskProjectUpdate({
+    required String wsId,
+    required String projectId,
+    required String content,
+  }) async {
+    final response = await _apiClient.postJson(
+      '/api/v1/workspaces/$wsId/task-projects/$projectId/updates',
+      {'content': content},
+    );
+
+    return TaskProjectUpdate.fromJson(response);
+  }
+
+  Future<TaskProjectUpdate> updateTaskProjectUpdate({
+    required String wsId,
+    required String projectId,
+    required String updateId,
+    required String content,
+  }) async {
+    final response = await _apiClient.patchJson(
+      '/api/v1/workspaces/$wsId/task-projects/$projectId/updates/$updateId',
+      {'content': content},
+    );
+
+    return TaskProjectUpdate.fromJson(response);
+  }
+
+  Future<void> deleteTaskProjectUpdate({
+    required String wsId,
+    required String projectId,
+    required String updateId,
+  }) async {
+    await _apiClient.deleteJson(
+      '/api/v1/workspaces/$wsId/task-projects/$projectId/updates/$updateId',
     );
   }
 }

@@ -18,6 +18,7 @@ abstract final class Routes {
   static const tasks = '/tasks';
   static const taskEstimates = '/tasks/estimates';
   static const taskPortfolio = '/tasks/portfolio';
+  static const taskPortfolioProject = '/tasks/portfolio/projects/:projectId';
   static const calendar = '/calendar';
   static const finance = '/finance';
   static const timer = '/timer';
@@ -39,4 +40,7 @@ abstract final class Routes {
 
   static String walletDetailPath(String walletId) =>
       '/finance/wallets/$walletId';
+
+  static String taskPortfolioProjectPath(String projectId) =>
+      '/tasks/portfolio/projects/$projectId';
 }

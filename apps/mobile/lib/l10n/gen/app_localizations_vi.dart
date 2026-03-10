@@ -572,6 +572,99 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskPortfolioProjectUnlinked => 'Đã gỡ liên kết dự án.';
 
   @override
+  String get taskPortfolioProjectDetailsTitle => 'Chi tiết dự án';
+
+  @override
+  String get taskPortfolioProjectNotFoundTitle => 'Không tìm thấy dự án';
+
+  @override
+  String get taskPortfolioProjectNotFoundDescription => 'Dự án này không còn khả dụng trong không gian làm việc hiện tại.';
+
+  @override
+  String get taskPortfolioProjectTimeline => 'Mốc thời gian';
+
+  @override
+  String get taskPortfolioProjectTasks => 'Nhiệm vụ';
+
+  @override
+  String get taskPortfolioLinkedTasks => 'Nhiệm vụ liên kết';
+
+  @override
+  String get taskPortfolioProjectStats => 'Thống kê dự án';
+
+  @override
+  String get taskPortfolioNoLinkedTasks => 'Chưa có nhiệm vụ nào được liên kết';
+
+  @override
+  String get taskPortfolioLinkTask => 'Liên kết nhiệm vụ';
+
+  @override
+  String get taskPortfolioSearchTasksHint => 'Tìm kiếm nhiệm vụ';
+
+  @override
+  String get taskPortfolioNoMatchingTasks => 'Không có nhiệm vụ nào khớp với từ khóa tìm kiếm.';
+
+  @override
+  String get taskPortfolioSelectTask => 'Chọn nhiệm vụ';
+
+  @override
+  String get taskPortfolioSelectTaskHint => 'Chọn một nhiệm vụ';
+
+  @override
+  String get taskPortfolioNoAvailableTasks => 'Tất cả nhiệm vụ khả dụng đã được liên kết với dự án này.';
+
+  @override
+  String get taskPortfolioProjectCompletion => 'Tiến độ hoàn thành';
+
+  @override
+  String get taskPortfolioTaskLinked => 'Đã liên kết nhiệm vụ.';
+
+  @override
+  String get taskPortfolioTaskUnlinked => 'Đã gỡ liên kết nhiệm vụ.';
+
+  @override
+  String get taskPortfolioProjectUpdates => 'Cập nhật dự án';
+
+  @override
+  String get taskPortfolioUpdatePlaceholder => 'Chia sẻ tiến độ mới nhất, trở ngại hoặc kết quả nổi bật...';
+
+  @override
+  String get taskPortfolioPostUpdate => 'Đăng cập nhật';
+
+  @override
+  String get taskPortfolioPostingUpdate => 'Đang đăng...';
+
+  @override
+  String get taskPortfolioNoProjectUpdates => 'Chưa có cập nhật nào';
+
+  @override
+  String get taskPortfolioUnknownUser => 'Người dùng không xác định';
+
+  @override
+  String get taskPortfolioUpdateEdited => 'Đã chỉnh sửa';
+
+  @override
+  String get taskPortfolioEditUpdate => 'Sửa cập nhật';
+
+  @override
+  String get taskPortfolioDeleteUpdate => 'Xóa cập nhật';
+
+  @override
+  String get taskPortfolioDeleteUpdateConfirm => 'Xóa cập nhật này?';
+
+  @override
+  String get taskPortfolioUpdateCannotBeEmpty => 'Nội dung cập nhật không được để trống';
+
+  @override
+  String get taskPortfolioUpdatePosted => 'Đã đăng cập nhật.';
+
+  @override
+  String get taskPortfolioUpdateSaved => 'Đã lưu cập nhật.';
+
+  @override
+  String get taskPortfolioUpdateDeleted => 'Đã xóa cập nhật.';
+
+  @override
   String get taskEstimatesTypeTshirtStandardZeroEnabled => 'Kích cỡ áo: -, XS, S, M, L, XL.';
 
   @override

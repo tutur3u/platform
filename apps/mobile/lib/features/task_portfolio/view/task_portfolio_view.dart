@@ -214,10 +214,16 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
       separatorBuilder: (_, _) => const shad.Gap(12),
       itemBuilder: (context, index) {
         final project = state.projects[index];
-        return TaskProjectCard(
-          project: project,
-          onEdit: () => _openEditProject(project),
-          onDelete: () => _deleteProject(project),
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => context.push(
+            Routes.taskPortfolioProjectPath(project.id),
+          ),
+          child: TaskProjectCard(
+            project: project,
+            onEdit: () => _openEditProject(project),
+            onDelete: () => _deleteProject(project),
+          ),
         );
       },
     );

@@ -189,6 +189,36 @@ class TaskPortfolioCubit extends Cubit<TaskPortfolioState> {
     );
   }
 
+  Future<void> linkTaskToProject({
+    required String wsId,
+    required String projectId,
+    required String taskId,
+  }) async {
+    await _runMutation(
+      wsId,
+      () => _taskRepository.linkTaskToProject(
+        wsId: wsId,
+        projectId: projectId,
+        taskId: taskId,
+      ),
+    );
+  }
+
+  Future<void> unlinkTaskFromProject({
+    required String wsId,
+    required String projectId,
+    required String taskId,
+  }) async {
+    await _runMutation(
+      wsId,
+      () => _taskRepository.unlinkTaskFromProject(
+        wsId: wsId,
+        projectId: projectId,
+        taskId: taskId,
+      ),
+    );
+  }
+
   Future<void> _runMutation(
     String wsId,
     Future<void> Function() action,

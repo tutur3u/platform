@@ -83,7 +83,7 @@ export async function POST(
 ) {
   try {
     const { wsId, projectId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     // Get current user
     const {
@@ -172,7 +172,7 @@ export async function GET(
 ) {
   try {
     const { wsId, projectId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     // Get current user
     const {
