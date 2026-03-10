@@ -4,6 +4,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { resolveTurnstileToken } from '@tuturuuu/turnstile/server';
 import {
   checkOTPSendLimit,
   checkOTPVerifyLimit,
@@ -88,6 +89,10 @@ export async function sendOtpAction(
     }
 
     const userId = await checkIfUserExists({ email: validatedEmail });
+    const turnstile = resolveTurnstileToken({
+      token: captchaToken,
+      requireConfiguration: true,
+    });
 
     const sbAdmin = await createAdminClient();
     const supabase = await createClient();
@@ -108,7 +113,10 @@ export async function sendOtpAction(
       // Send OTP for existing user
       const { error } = await supabase.auth.signInWithOtp({
         email: validatedEmail,
-        options: { data: { locale, origin: 'TUTURUUU' }, captchaToken },
+        options: {
+          data: { locale, origin: 'TUTURUUU' },
+          ...turnstile.captchaOptions,
+        },
       });
 
       if (error) {
@@ -123,7 +131,7 @@ export async function sendOtpAction(
         password: randomPassword,
         options: {
           data: { locale, origin: 'TUTURUUU' },
-          captchaToken,
+          ...turnstile.captchaOptions,
         },
       });
 
@@ -258,6 +266,10 @@ export async function passwordLoginAction(
     }
 
     const validatedEmail = await validateEmail(email);
+    const turnstile = resolveTurnstileToken({
+      token: captchaToken,
+      requireConfiguration: true,
+    });
 
     const sbAdmin = await createAdminClient();
     const supabase = await createClient();
@@ -266,7 +278,7 @@ export async function passwordLoginAction(
     const { data, error } = await supabase.auth.signInWithPassword({
       email: validatedEmail,
       password,
-      options: { captchaToken },
+      options: { ...turnstile.captchaOptions },
     });
 
     if (error) {

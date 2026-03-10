@@ -541,6 +541,7 @@
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/transactional": "workspace:*",
         "@tuturuuu/trigger": "workspace:*",
+        "@tuturuuu/turnstile": "workspace:*",
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/ui": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
@@ -1021,6 +1022,16 @@
       "devDependencies": {
         "@trigger.dev/build": "^4.4.2",
         "@tuturuuu/typescript-config": "workspace:*",
+        "vitest": "^4.0.18",
+      },
+    },
+    "packages/turnstile": {
+      "name": "@tuturuuu/turnstile",
+      "version": "0.1.0",
+      "devDependencies": {
+        "@tuturuuu/typescript-config": "workspace:*",
+        "@types/node": "^25.4.0",
+        "typescript": "^5.9.3",
         "vitest": "^4.0.18",
       },
     },
@@ -2652,6 +2663,8 @@
     "@tuturuuu/transactional": ["@tuturuuu/transactional@workspace:packages/transactional"],
 
     "@tuturuuu/trigger": ["@tuturuuu/trigger@workspace:packages/trigger"],
+
+    "@tuturuuu/turnstile": ["@tuturuuu/turnstile@workspace:packages/turnstile"],
 
     "@tuturuuu/types": ["@tuturuuu/types@workspace:packages/types"],
 

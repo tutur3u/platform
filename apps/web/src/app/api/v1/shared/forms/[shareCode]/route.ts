@@ -1,7 +1,10 @@
 import crypto from 'node:crypto';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  isTurnstileError,
+  verifyTurnstileToken,
+} from '@tuturuuu/turnstile/server';
 import { type NextRequest, NextResponse } from 'next/server';
-import { DEV_MODE } from '@/constants/common';
 import { normalizeMarkdownToText } from '@/features/forms/content';
 import {
   getAuthenticatedUserContext,
@@ -112,58 +115,6 @@ function resolveAccessMode(value: string) {
     : 'anonymous';
 }
 
-async function verifyTurnstileToken(
-  request: NextRequest,
-  token: string | undefined
-) {
-  if (DEV_MODE) {
-    return;
-  }
-
-  const secret = process.env.TURNSTILE_SECRET_KEY;
-
-  if (!secret) {
-    throw new Error('Turnstile is not configured');
-  }
-
-  if (!token) {
-    throw new Error('Turnstile verification is required');
-  }
-
-  const forwardedFor = request.headers.get('x-forwarded-for');
-  const remoteIp = forwardedFor?.split(',')[0]?.trim();
-  const formData = new URLSearchParams({
-    secret,
-    response: token,
-  });
-
-  if (remoteIp) {
-    formData.set('remoteip', remoteIp);
-  }
-
-  const response = await fetch(
-    'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: formData,
-      cache: 'no-store',
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error('Turnstile verification failed');
-  }
-
-  const result = (await response.json()) as { success?: boolean };
-
-  if (!result.success) {
-    throw new Error('Turnstile verification failed');
-  }
-}
-
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ shareCode: string }> }
@@ -272,7 +223,7 @@ export async function GET(
       return NextResponse.json({ error: message }, { status: 401 });
     }
 
-    if (message.includes('Turnstile')) {
+    if (isTurnstileError(error)) {
       return NextResponse.json({ error: message }, { status: 400 });
     }
 

@@ -67,10 +67,15 @@ export default function SharedFormContent({
           sendResponseCopy: sendResponseCopy ?? false,
         });
       }}
-      onRequestResponseCopy={({ responseId, sessionId: existingSessionId }) =>
+      onRequestResponseCopy={({
+        responseId,
+        sessionId: existingSessionId,
+        turnstileToken,
+      }) =>
         responseCopyMutation.mutateAsync({
           responseId,
           sessionId: existingSessionId,
+          turnstileToken,
         })
       }
       isSubmitting={submitMutation.isPending}
