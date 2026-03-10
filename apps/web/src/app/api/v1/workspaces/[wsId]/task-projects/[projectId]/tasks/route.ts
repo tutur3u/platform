@@ -14,7 +14,15 @@ export async function POST(
 ) {
   try {
     const { wsId, projectId } = await params;
-    const normalizedWorkspaceId = await normalizeWorkspaceId(wsId);
+    let normalizedWorkspaceId: string;
+    try {
+      normalizedWorkspaceId = await normalizeWorkspaceId(wsId);
+    } catch {
+      return NextResponse.json(
+        { error: 'Workspace not found' },
+        { status: 404 }
+      );
+    }
     const supabase = await createClient(request);
 
     const {
