@@ -1,3 +1,5 @@
+import type { UpstashRestRedisClient } from '../upstash-rest';
+
 /**
  * Types for OTP Abuse Protection System
  */
@@ -74,18 +76,10 @@ export interface AbuseEvent {
   created_at: string;
 }
 
-export interface RedisClient {
-  get<T>(key: string): Promise<T | null>;
-  set(
-    key: string,
-    value: string | number,
-    options?: { ex?: number }
-  ): Promise<unknown>;
-  incr(key: string): Promise<number>;
-  expire(key: string, seconds: number): Promise<number>;
-  ttl(key: string): Promise<number>;
-  del(...keys: string[]): Promise<number>;
-}
+export type RedisClient = Pick<
+  UpstashRestRedisClient,
+  'get' | 'set' | 'incr' | 'expire' | 'ttl' | 'del'
+>;
 
 export interface AbuseProtectionConfig {
   redis?: RedisClient;

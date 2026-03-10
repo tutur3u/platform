@@ -304,9 +304,15 @@ export async function POST(
     );
 
     if (!validation.valid) {
+      const errorMessage =
+        validation.missingRequired.length > 0
+          ? `Missing required answers: ${validation.missingRequired.join(', ')}`
+          : (validation.validationErrors[0] ?? 'Validation failed');
       return NextResponse.json(
         {
-          error: `Missing required answers: ${validation.missingRequired.join(', ')}`,
+          error: errorMessage,
+          validationErrors: validation.validationErrors,
+          validationErrorsByQuestionId: validation.validationErrorsByQuestionId,
         },
         { status: 400 }
       );

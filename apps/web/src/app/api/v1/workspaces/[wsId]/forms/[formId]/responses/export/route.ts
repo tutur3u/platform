@@ -1,4 +1,7 @@
+import { XLSX } from '@tuturuuu/ui/xlsx';
 import { type NextRequest, NextResponse } from 'next/server';
+import { isAnswerableQuestionType } from '@/features/forms/block-utils';
+import { normalizeMarkdownToText } from '@/features/forms/content';
 import {
   getWorkspaceRouteContext,
   parseFormIdParam,
@@ -39,18 +42,71 @@ export async function GET(
       page: 1,
       pageSize: 5000,
     });
+    const format = request.nextUrl.searchParams.get('format');
+    const resolvedFormat =
+      format === 'excel' || format === 'xlsx' ? 'xlsx' : 'csv';
 
-    const columns = Array.from(
+    const knownColumns = form.sections.flatMap((section) =>
+      section.questions
+        .filter((question) => isAnswerableQuestionType(question.type))
+        .map((question) => ({
+          key: question.id,
+          label: normalizeMarkdownToText(question.title).trim() || question.id,
+        }))
+    );
+    const extraAnswerKeys = Array.from(
       new Set(
         responses.records.flatMap((record) => Object.keys(record.answers))
       )
     );
-    const header = ['submitted_at', 'respondent', ...columns];
-    const rows = responses.records.map((record) => [
-      record.submittedAt,
-      record.respondentEmail || record.respondentUserId || 'Anonymous',
-      ...columns.map((column) => String(record.answers[column]?.value ?? '')),
-    ]);
+    const columns = [
+      ...knownColumns,
+      ...extraAnswerKeys
+        .filter(
+          (answerKey) =>
+            !knownColumns.some((column) => column.key === answerKey)
+        )
+        .map((answerKey) => ({
+          key: answerKey,
+          label: answerKey,
+        })),
+    ];
+    const header = [
+      'Submitted at',
+      'Responder',
+      ...columns.map((column) => column.label),
+    ];
+    const rows = responses.records.map((record) => {
+      const values = columns.map((column) =>
+        String(record.answers[column.key]?.value ?? '')
+      );
+
+      return [
+        record.submittedAt,
+        record.respondentEmail || record.respondentUserId || 'Anonymous',
+        ...values,
+      ];
+    });
+
+    if (resolvedFormat === 'xlsx') {
+      const worksheet = XLSX.utils.aoa_to_sheet([header, ...rows]);
+      const workbook = XLSX.utils.book_new();
+
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Responses');
+
+      const excelBuffer = XLSX.write(workbook, {
+        bookType: 'xlsx',
+        type: 'array',
+      });
+
+      return new NextResponse(excelBuffer, {
+        headers: {
+          'Content-Type':
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'Content-Disposition': `attachment; filename="form-${formId}-responses.xlsx"`,
+        },
+      });
+    }
 
     const csv = [header, ...rows]
       .map((row) =>

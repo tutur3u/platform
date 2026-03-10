@@ -13,6 +13,7 @@ import {
   WINDOW_MS,
 } from '@tuturuuu/utils/abuse-protection';
 import { MAX_IP_LENGTH, MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
+import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -246,13 +247,8 @@ export async function POST(req: Request) {
 
     // Update Redis cache if available
     try {
-      const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
-      const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
-
-      if (redisUrl && redisToken) {
-        const { Redis } = await import('@upstash/redis');
-        const redis = Redis.fromEnv();
-
+      const redis = await getUpstashRestRedisClient();
+      if (redis) {
         await Promise.all([
           redis.set(
             REDIS_KEYS.IP_BLOCKED(ip_address),

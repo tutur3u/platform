@@ -3657,8 +3657,10 @@ export type Database = {
           id: string;
           operator: string;
           priority: number;
-          source_question_id: string;
+          source_question_id: string | null;
+          source_section_id: string | null;
           target_section_id: string | null;
+          trigger_type: string;
         };
         Insert: {
           action_type?: string;
@@ -3668,8 +3670,10 @@ export type Database = {
           id?: string;
           operator?: string;
           priority?: number;
-          source_question_id: string;
+          source_question_id?: string | null;
+          source_section_id?: string | null;
           target_section_id?: string | null;
+          trigger_type?: string;
         };
         Update: {
           action_type?: string;
@@ -3679,8 +3683,10 @@ export type Database = {
           id?: string;
           operator?: string;
           priority?: number;
-          source_question_id?: string;
+          source_question_id?: string | null;
+          source_section_id?: string | null;
           target_section_id?: string | null;
+          trigger_type?: string;
         };
         Relationships: [
           {
@@ -3695,6 +3701,13 @@ export type Database = {
             columns: ['source_question_id'];
             isOneToOne: false;
             referencedRelation: 'form_questions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'form_logic_rules_source_section_id_fkey';
+            columns: ['source_section_id'];
+            isOneToOne: false;
+            referencedRelation: 'form_sections';
             referencedColumns: ['id'];
           },
           {
@@ -3747,6 +3760,7 @@ export type Database = {
           description: string | null;
           form_id: string;
           id: string;
+          image: Json | null;
           position: number;
           required: boolean;
           section_id: string;
@@ -3759,6 +3773,7 @@ export type Database = {
           description?: string | null;
           form_id: string;
           id?: string;
+          image?: Json | null;
           position?: number;
           required?: boolean;
           section_id: string;
@@ -3771,6 +3786,7 @@ export type Database = {
           description?: string | null;
           form_id?: string;
           id?: string;
+          image?: Json | null;
           position?: number;
           required?: boolean;
           section_id?: string;

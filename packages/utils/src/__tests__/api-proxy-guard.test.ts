@@ -25,6 +25,10 @@ vi.mock('@upstash/ratelimit', () => {
 
 vi.mock('@upstash/redis', () => ({
   Redis: class MockRedis {
+    static fromEnv() {
+      return mocks.redis();
+    }
+
     constructor(config: unknown) {
       mocks.redis(config);
     }
@@ -94,18 +98,26 @@ describe('guardApiProxyRequest', () => {
     expect(mocks.limit).not.toHaveBeenCalled();
   });
 
-  it('rate limits GET requests with the shared read bucket', async () => {
+  it('rate limits GET requests across minute, hourly, and daily buckets', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
     vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
     mocks.extractIp.mockReturnValue('1.2.3.4');
     mocks.isBlocked.mockResolvedValue(null);
-    mocks.limit.mockResolvedValue({
-      success: false,
-      limit: 120,
-      remaining: 0,
-      reset: Date.now() + 15_000,
-    });
+    mocks.limit
+      .mockResolvedValueOnce({
+        success: true,
+        limit: 120,
+        remaining: 119,
+        reset: Date.now() + 15_000,
+      })
+      .mockResolvedValueOnce({
+        success: false,
+        limit: 2000,
+        remaining: 0,
+        reset: Date.now() + 15_000,
+      });
 
     const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
       await import('../api-proxy-guard.js');
@@ -116,7 +128,8 @@ describe('guardApiProxyRequest', () => {
     });
 
     expect(response?.status).toBe(429);
-    expect(response?.headers.get('X-RateLimit-Limit')).toBe('120');
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('2000');
+    expect(response?.headers.get('X-RateLimit-Window')).toBe('hour');
     expect(mocks.validateEmoji).not.toHaveBeenCalled();
   });
 
@@ -124,14 +137,28 @@ describe('guardApiProxyRequest', () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
     vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
     mocks.extractIp.mockReturnValue('1.2.3.4');
     mocks.isBlocked.mockResolvedValue(null);
-    mocks.limit.mockResolvedValue({
-      success: true,
-      limit: 30,
-      remaining: 29,
-      reset: Date.now() + 60_000,
-    });
+    mocks.limit
+      .mockResolvedValueOnce({
+        success: true,
+        limit: 30,
+        remaining: 29,
+        reset: Date.now() + 60_000,
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        limit: 300,
+        remaining: 299,
+        reset: Date.now() + 60_000,
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        limit: 1000,
+        remaining: 999,
+        reset: Date.now() + 60_000,
+      });
 
     const emojiResponse = new Response(null, { status: 400 });
     mocks.validateEmoji.mockResolvedValue(emojiResponse);

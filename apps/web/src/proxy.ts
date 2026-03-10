@@ -10,10 +10,13 @@ import {
 } from '@tuturuuu/utils/abuse-protection/edge';
 import { MAX_PAYLOAD_SIZE, ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { validateRequestEmojiLimit } from '@tuturuuu/utils/request-emoji-limit';
+import {
+  getUpstashRatelimitRedisClient,
+  type UpstashRatelimitRedisClient,
+} from '@tuturuuu/utils/upstash-rest';
 import { getUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
 import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { Ratelimit } from '@upstash/ratelimit';
-import { Redis } from '@upstash/redis';
 import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -191,53 +194,73 @@ const authProxy = createCentralizedAuthProxy({
 
 // Edge-compatible rate limiters (lazy-initialized)
 // Split by HTTP method: GET (reads) are more generous, non-GET (mutations) are stricter.
-let apiGetLimiter: Ratelimit | null = null;
-let apiMutateLimiter: Ratelimit | null = null;
-let usersMeGetLimiter: Ratelimit | null = null;
-let usersMeMutateLimiter: Ratelimit | null = null;
+type ProxyRateLimitWindow = 'minute' | 'hour' | 'day';
+
+type ProxyRateLimitBucket = {
+  limiter: Ratelimit;
+  window: ProxyRateLimitWindow;
+};
+
+let apiGetLimiters: ProxyRateLimitBucket[] = [];
+let apiMutateLimiters: ProxyRateLimitBucket[] = [];
+let usersMeGetLimiters: ProxyRateLimitBucket[] = [];
+let usersMeMutateLimiters: ProxyRateLimitBucket[] = [];
 let rateLimiterInitialized = false;
 
-function initRateLimiters() {
+function createRateLimitBuckets(
+  redis: UpstashRatelimitRedisClient,
+  prefixBase: string,
+  configs: Array<{
+    limit: number;
+    window: ProxyRateLimitWindow;
+    windowSize: '1 m' | '1 h' | '1 d';
+  }>
+): ProxyRateLimitBucket[] {
+  return configs.map((config) => ({
+    window: config.window,
+    limiter: new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(config.limit, config.windowSize),
+      prefix: `${prefixBase}:${config.window}`,
+      analytics: false,
+    }),
+  }));
+}
+
+async function initRateLimiters() {
   if (rateLimiterInitialized) return;
   rateLimiterInitialized = true;
 
-  const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
-  const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!redisUrl || !redisToken) return;
+  const redis = await getUpstashRatelimitRedisClient();
+  if (!redis) return;
 
-  const redis = new Redis({ url: redisUrl, token: redisToken });
+  apiGetLimiters = createRateLimitBuckets(redis, 'proxy:api:get', [
+    { limit: 120, window: 'minute', windowSize: '1 m' },
+    { limit: 2000, window: 'hour', windowSize: '1 h' },
+    { limit: 10000, window: 'day', windowSize: '1 d' },
+  ]);
 
-  // General API GET: 120 req/min — reads are cheap and idempotent
-  apiGetLimiter = new Ratelimit({
+  apiMutateLimiters = createRateLimitBuckets(redis, 'proxy:api:mutate', [
+    { limit: 30, window: 'minute', windowSize: '1 m' },
+    { limit: 300, window: 'hour', windowSize: '1 h' },
+    { limit: 1000, window: 'day', windowSize: '1 d' },
+  ]);
+
+  usersMeGetLimiters = createRateLimitBuckets(redis, 'proxy:users-me:get', [
+    { limit: 60, window: 'minute', windowSize: '1 m' },
+    { limit: 600, window: 'hour', windowSize: '1 h' },
+    { limit: 2500, window: 'day', windowSize: '1 d' },
+  ]);
+
+  usersMeMutateLimiters = createRateLimitBuckets(
     redis,
-    limiter: Ratelimit.slidingWindow(120, '1 m'),
-    prefix: 'proxy:api:get',
-    analytics: false,
-  });
-
-  // General API mutations: 30 req/min — state-changing, more expensive
-  apiMutateLimiter = new Ratelimit({
-    redis,
-    limiter: Ratelimit.slidingWindow(30, '1 m'),
-    prefix: 'proxy:api:mutate',
-    analytics: false,
-  });
-
-  // /users/me GET: 60 req/min — high-value targets, moderate reads
-  usersMeGetLimiter = new Ratelimit({
-    redis,
-    limiter: Ratelimit.slidingWindow(60, '1 m'),
-    prefix: 'proxy:users-me:get',
-    analytics: false,
-  });
-
-  // /users/me mutations: 20 req/min — sensitive account actions
-  usersMeMutateLimiter = new Ratelimit({
-    redis,
-    limiter: Ratelimit.slidingWindow(20, '1 m'),
-    prefix: 'proxy:users-me:mutate',
-    analytics: false,
-  });
+    'proxy:users-me:mutate',
+    [
+      { limit: 20, window: 'minute', windowSize: '1 m' },
+      { limit: 180, window: 'hour', windowSize: '1 h' },
+      { limit: 600, window: 'day', windowSize: '1 d' },
+    ]
+  );
 }
 
 export async function proxy(req: NextRequest): Promise<NextResponse> {
@@ -285,15 +308,15 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
         const isUsersMeRoute =
           req.nextUrl.pathname.startsWith('/api/v1/users/me');
         const isRead = req.method === 'GET' || req.method === 'HEAD';
-        const limiter = isUsersMeRoute
+        const limiters = isUsersMeRoute
           ? isRead
-            ? usersMeGetLimiter
-            : usersMeMutateLimiter
+            ? usersMeGetLimiters
+            : usersMeMutateLimiters
           : isRead
-            ? apiGetLimiter
-            : apiMutateLimiter;
+            ? apiGetLimiters
+            : apiMutateLimiters;
 
-        if (limiter) {
+        for (const { limiter, window } of limiters) {
           const { success, limit, remaining, reset } = await limiter.limit(ip);
 
           // Development logging: show consumed/total per request
@@ -302,7 +325,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
             const tier = isUsersMeRoute ? 'users-me' : 'api';
             const kind = isRead ? 'read' : 'mutate';
             console.log(
-              `[RateLimit] ${consumed}/${limit} consumed | remaining: ${remaining} | IP: ${ip} | tier: ${tier}:${kind} | path: ${req.nextUrl.pathname}`
+              `[RateLimit] ${consumed}/${limit} consumed | remaining: ${remaining} | IP: ${ip} | tier: ${tier}:${kind}:${window} | path: ${req.nextUrl.pathname}`
             );
           }
 
@@ -325,6 +348,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
                   'X-RateLimit-Limit': `${limit}`,
                   'X-RateLimit-Remaining': `${remaining}`,
                   'X-RateLimit-Reset': `${Math.ceil(reset / 1000)}`,
+                  'X-RateLimit-Window': window,
                 },
               }
             );

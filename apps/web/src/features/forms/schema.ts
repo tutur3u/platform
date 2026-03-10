@@ -53,13 +53,19 @@ export const FORM_QUESTION_TYPE_VALUES = [
   'date',
   'time',
   'section_break',
+  'rich_text',
+  'image',
+  'youtube',
+  'divider',
 ] as const;
+export const FORM_TEXT_SIZE_VALUES = ['sm', 'md', 'lg'] as const;
 export const FORM_LOGIC_OPERATOR_VALUES = [
   'equals',
   'not_equals',
   'contains',
 ] as const;
 export const FORM_LOGIC_ACTION_VALUES = ['go_to_section', 'submit'] as const;
+export const FORM_LOGIC_TRIGGER_VALUES = ['question', 'section_end'] as const;
 
 export const formMediaSchema = z.object({
   storagePath: z.string().max(500).optional().default(''),
@@ -86,6 +92,15 @@ export const formOptionSchema = z.object({
   image: formMediaSchema.default(defaultFormMediaValue),
 });
 
+export const FORM_VALIDATION_MODE_VALUES = [
+  'none',
+  'integer',
+  'real',
+  'numeric',
+  'regex',
+  'email',
+] as const;
+
 export const formQuestionSettingsSchema = z.object({
   placeholder: z.string().max(240).optional(),
   minLabel: z.string().max(80).optional(),
@@ -94,6 +109,14 @@ export const formQuestionSettingsSchema = z.object({
   scaleMax: z.number().int().min(1).max(10).optional(),
   ratingMax: z.number().int().min(2).max(10).optional(),
   optionLayout: z.enum(FORM_OPTION_LAYOUT_VALUES).optional(),
+  youtubeUrl: z.string().max(2000).optional(),
+  youtubeVideoId: z.string().max(32).optional(),
+  youtubeStartSeconds: z.number().int().min(0).max(86400).optional(),
+  validationMode: z.enum(FORM_VALIDATION_MODE_VALUES).optional(),
+  validationMin: z.number().optional(),
+  validationMax: z.number().optional(),
+  validationPattern: z.string().max(500).optional(),
+  validationMessage: z.string().max(200).optional(),
 });
 
 export const formQuestionSchema = z.object({
@@ -102,6 +125,7 @@ export const formQuestionSchema = z.object({
   title: z.string().trim().min(1).max(4000),
   description: z.string().max(12000).optional().default(''),
   required: z.boolean().default(false),
+  image: formMediaSchema.default(defaultFormMediaValue),
   settings: formQuestionSettingsSchema.default({}),
   options: z.array(formOptionSchema).default([]),
 });
@@ -117,27 +141,64 @@ export const formSectionSchema = z.object({
 export const formLogicRuleSchema = z
   .object({
     id: formStudioIdentifierSchema.optional(),
-    sourceQuestionId: formStudioIdentifierSchema.min(
-      1,
-      'Select a question for each branching rule.'
-    ),
-    operator: z.enum(FORM_LOGIC_OPERATOR_VALUES),
-    comparisonValue: z.string().trim().min(1),
+    triggerType: z.enum(FORM_LOGIC_TRIGGER_VALUES).default('question'),
+    sourceSectionId: formStudioIdentifierSchema.nullable().optional(),
+    sourceQuestionId: formStudioIdentifierSchema.nullable().optional(),
+    operator: z.enum(FORM_LOGIC_OPERATOR_VALUES).default('equals'),
+    comparisonValue: z.string().trim().default(''),
     actionType: z.enum(FORM_LOGIC_ACTION_VALUES),
     targetSectionId: formStudioIdentifierSchema
       .min(1, 'Select a target section for each branching rule.')
       .nullable()
       .optional(),
   })
-  .refine(
-    (value) =>
-      value.actionType === 'submit' ||
-      (value.actionType === 'go_to_section' && value.targetSectionId),
-    {
-      message: 'Branching rules that navigate must target a section.',
-      path: ['targetSectionId'],
+  .superRefine((value, ctx) => {
+    if (
+      value.actionType !== 'submit' &&
+      (value.actionType !== 'go_to_section' || !value.targetSectionId)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Branching rules that navigate must target a section.',
+        path: ['targetSectionId'],
+      });
     }
-  );
+
+    if (value.triggerType === 'question') {
+      if (!value.sourceQuestionId?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Select a question for each branching rule.',
+          path: ['sourceQuestionId'],
+        });
+      }
+      if (!value.comparisonValue?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Comparison value is required for question-based rules.',
+          path: ['comparisonValue'],
+        });
+      }
+    }
+
+    if (value.triggerType === 'section_end') {
+      if (!value.sourceSectionId?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Select a section for section-end rules.',
+          path: ['sourceSectionId'],
+        });
+      }
+      if (value.sourceQuestionId?.trim() && !value.comparisonValue?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message:
+            'Comparison value is required when a question is selected for section-end rules.',
+          path: ['comparisonValue'],
+        });
+      }
+    }
+  });
 
 export const formThemeSchema = z.object({
   presetId: z.string().trim().min(1).max(40),
@@ -147,9 +208,19 @@ export const formThemeSchema = z.object({
   bodyFontId: z.enum(FORM_FONT_VALUES).default('be-vietnam-pro'),
   surfaceStyle: z.enum(FORM_SURFACE_STYLE_VALUES),
   coverHeadline: z.string().max(120).default(''),
-  coverKicker: z.string().max(120).default(''),
   coverImage: formMediaSchema.default(defaultFormMediaValue),
   sectionImages: z.record(z.string(), formMediaSchema).default({}),
+  typography: z
+    .object({
+      displaySize: z.enum(FORM_TEXT_SIZE_VALUES).default('md'),
+      headingSize: z.enum(FORM_TEXT_SIZE_VALUES).default('md'),
+      bodySize: z.enum(FORM_TEXT_SIZE_VALUES).default('md'),
+    })
+    .default({
+      displaySize: 'md',
+      headingSize: 'md',
+      bodySize: 'md',
+    }),
 });
 
 export const formSettingsSchema = z.object({
@@ -197,6 +268,17 @@ export const formSubmitSchema = z.object({
   answers: z.record(canonicalUuidSchema, formAnswerValueSchema),
 });
 
+/** Current format version for portable form export/import. Bump when breaking changes occur. */
+export const FORM_EXPORT_FORMAT_VERSION = '1';
+
+export const formExportEnvelopeSchema = z.object({
+  formatVersion: z.literal(FORM_EXPORT_FORMAT_VERSION),
+  exportedAt: z.string().datetime(),
+  form: formStudioSchema,
+});
+
+export type FormExportEnvelope = z.infer<typeof formExportEnvelopeSchema>;
+
 export type FormStudioInput = z.infer<typeof formStudioSchema>;
 export type FormSectionInput = z.infer<typeof formSectionSchema>;
 export type FormQuestionInput = z.infer<typeof formQuestionSchema>;
@@ -222,13 +304,17 @@ export function createDefaultFormStudioInput(): FormStudioInput {
       bodyFontId: 'be-vietnam-pro',
       surfaceStyle: 'paper',
       coverHeadline: '',
-      coverKicker: 'Measured, warm, thoughtful',
       coverImage: {
         storagePath: '',
         url: '',
         alt: '',
       },
       sectionImages: {},
+      typography: {
+        displaySize: 'md',
+        headingSize: 'md',
+        bodySize: 'md',
+      },
     },
     settings: {
       showProgressBar: true,
@@ -253,6 +339,11 @@ export function createDefaultFormStudioInput(): FormStudioInput {
             title: 'What should we know?',
             description: '',
             required: true,
+            image: {
+              storagePath: '',
+              url: '',
+              alt: '',
+            },
             settings: {
               placeholder: 'Write your answer here',
               optionLayout: 'list',

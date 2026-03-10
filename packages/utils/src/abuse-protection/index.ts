@@ -8,7 +8,7 @@
 import { createHash } from 'node:crypto';
 import type { SupabaseClient } from '@tuturuuu/supabase';
 import type { Database, Json } from '@tuturuuu/types';
-
+import { getUpstashRestRedisClient, hasUpstashRestEnv } from '../upstash-rest';
 import {
   ABUSE_THRESHOLDS,
   BLOCK_DURATIONS,
@@ -42,10 +42,7 @@ async function getRedisClient(): Promise<RedisClient | null> {
   if (redisInitialized) return redisClient;
 
   try {
-    const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
-    const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
-
-    if (!redisUrl || !redisToken) {
+    if (!hasUpstashRestEnv()) {
       console.warn(
         '[Abuse Protection] Redis not configured - falling back to memory'
       );
@@ -53,8 +50,7 @@ async function getRedisClient(): Promise<RedisClient | null> {
       return null;
     }
 
-    const { Redis } = await import('@upstash/redis');
-    redisClient = Redis.fromEnv() as unknown as RedisClient;
+    redisClient = await getUpstashRestRedisClient();
     redisInitialized = true;
     return redisClient;
   } catch (error) {

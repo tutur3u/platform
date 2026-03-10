@@ -24,7 +24,6 @@ export interface FormToneClasses {
 export interface FormThemePreset {
   id: string;
   name: string;
-  kicker: string;
   accentColor: FormAccentTone;
   headlineFontId: FormThemeInput['headlineFontId'];
   bodyFontId: FormThemeInput['bodyFontId'];
@@ -382,7 +381,6 @@ const TONE_CLASS_MAP: Record<FormAccentTone, FormToneClasses> = {
 const FALLBACK_THEME_PRESET: FormThemePreset = {
   id: 'editorial-moss',
   name: 'Editorial Moss',
-  kicker: 'Measured, warm, thoughtful',
   accentColor: 'dynamic-green',
   headlineFontId: 'noto-serif',
   bodyFontId: 'be-vietnam-pro',
@@ -394,7 +392,6 @@ export const FORM_THEME_PRESETS: FormThemePreset[] = [
   {
     id: 'signal-coral',
     name: 'Signal Coral',
-    kicker: 'Louder, faster, sharper',
     accentColor: 'dynamic-orange',
     headlineFontId: 'inter',
     bodyFontId: 'be-vietnam-pro',
@@ -403,7 +400,6 @@ export const FORM_THEME_PRESETS: FormThemePreset[] = [
   {
     id: 'night-ledger',
     name: 'Night Ledger',
-    kicker: 'Dense, cinematic, analytical',
     accentColor: 'dynamic-cyan',
     headlineFontId: 'merriweather',
     bodyFontId: 'noto-sans',
@@ -412,7 +408,6 @@ export const FORM_THEME_PRESETS: FormThemePreset[] = [
   {
     id: 'coastal-notes',
     name: 'Coastal Notes',
-    kicker: 'Open, airy, quietly optimistic',
     accentColor: 'dynamic-blue',
     headlineFontId: 'lora',
     bodyFontId: 'inter',
@@ -421,7 +416,6 @@ export const FORM_THEME_PRESETS: FormThemePreset[] = [
   {
     id: 'rose-ritual',
     name: 'Rose Ritual',
-    kicker: 'Personal, elegant, lightly romantic',
     accentColor: 'dynamic-pink',
     headlineFontId: 'noto-serif',
     bodyFontId: 'be-vietnam-pro',
@@ -430,7 +424,6 @@ export const FORM_THEME_PRESETS: FormThemePreset[] = [
   {
     id: 'indigo-brief',
     name: 'Indigo Brief',
-    kicker: 'Sharp, credible, boardroom-ready',
     accentColor: 'dynamic-indigo',
     headlineFontId: 'inter',
     bodyFontId: 'noto-sans',
@@ -439,7 +432,6 @@ export const FORM_THEME_PRESETS: FormThemePreset[] = [
   {
     id: 'amber-pulse',
     name: 'Amber Pulse',
-    kicker: 'Warm, energetic, feedback-first',
     accentColor: 'dynamic-yellow',
     headlineFontId: 'merriweather',
     bodyFontId: 'be-vietnam-pro',
@@ -448,7 +440,6 @@ export const FORM_THEME_PRESETS: FormThemePreset[] = [
   {
     id: 'velvet-signal',
     name: 'Velvet Signal',
-    kicker: 'Confident, expressive, launch-day ready',
     accentColor: 'dynamic-purple',
     headlineFontId: 'playfair-display',
     bodyFontId: 'plus-jakarta-sans',
@@ -457,7 +448,6 @@ export const FORM_THEME_PRESETS: FormThemePreset[] = [
   {
     id: 'graph-paper',
     name: 'Graph Paper',
-    kicker: 'Quiet grids, serious detail, strong legibility',
     accentColor: 'dynamic-gray',
     headlineFontId: 'spectral',
     bodyFontId: 'inter',
@@ -466,7 +456,6 @@ export const FORM_THEME_PRESETS: FormThemePreset[] = [
   {
     id: 'terracotta-ledger',
     name: 'Terracotta Ledger',
-    kicker: 'Warm confidence with a more human edge',
     accentColor: 'dynamic-red',
     headlineFontId: 'playfair-display',
     bodyFontId: 'be-vietnam-pro',
@@ -475,7 +464,6 @@ export const FORM_THEME_PRESETS: FormThemePreset[] = [
   {
     id: 'linen-story',
     name: 'Linen Story',
-    kicker: 'Soft editorial texture with lighter contrast',
     accentColor: 'dynamic-yellow',
     headlineFontId: 'newsreader',
     bodyFontId: 'source-sans-3',
@@ -484,7 +472,6 @@ export const FORM_THEME_PRESETS: FormThemePreset[] = [
   {
     id: 'fjord-grid',
     name: 'Fjord Grid',
-    kicker: 'Cool structure for denser ops-heavy forms',
     accentColor: 'dynamic-blue',
     headlineFontId: 'space-grotesk',
     bodyFontId: 'source-sans-3',
@@ -493,7 +480,6 @@ export const FORM_THEME_PRESETS: FormThemePreset[] = [
   {
     id: 'studio-sand',
     name: 'Studio Sand',
-    kicker: 'Calmer neutrals with softer review energy',
     accentColor: 'dynamic-gray',
     headlineFontId: 'fraunces',
     bodyFontId: 'manrope',
@@ -502,7 +488,6 @@ export const FORM_THEME_PRESETS: FormThemePreset[] = [
   {
     id: 'solar-metric',
     name: 'Solar Metric',
-    kicker: 'Bright operational clarity with fast scanning',
     accentColor: 'dynamic-orange',
     headlineFontId: 'barlow',
     bodyFontId: 'inter',
@@ -511,7 +496,6 @@ export const FORM_THEME_PRESETS: FormThemePreset[] = [
   {
     id: 'mint-terminal',
     name: 'Mint Terminal',
-    kicker: 'Sharper green tech tone for internal workflows',
     accentColor: 'dynamic-green',
     headlineFontId: 'fira-sans',
     bodyFontId: 'space-grotesk',
@@ -520,7 +504,6 @@ export const FORM_THEME_PRESETS: FormThemePreset[] = [
   {
     id: 'orchard-brief',
     name: 'Orchard Brief',
-    kicker: 'Human, optimistic, and still presentation-ready',
     accentColor: 'dynamic-green',
     headlineFontId: 'dm-serif-display',
     bodyFontId: 'nunito-sans',
@@ -536,7 +519,6 @@ export const DEFAULT_FORM_THEME = {
   bodyFontId: FALLBACK_THEME_PRESET.bodyFontId,
   surfaceStyle: FALLBACK_THEME_PRESET.surfaceStyle,
   coverHeadline: '',
-  coverKicker: FALLBACK_THEME_PRESET.kicker,
 } as const;
 
 export function getThemePreset(presetId: string) {

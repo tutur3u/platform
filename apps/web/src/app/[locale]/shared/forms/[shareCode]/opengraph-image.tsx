@@ -1,4 +1,3 @@
-import { cookies } from 'next/headers';
 import { getTranslations } from 'next-intl/server';
 import {
   fetchSharedFormData,
@@ -11,6 +10,8 @@ import {
 } from './shared-form-social-image';
 
 export { contentType, size };
+export const runtime = 'edge';
+export const revalidate = 3600;
 
 interface Props {
   params: Promise<{
@@ -21,9 +22,8 @@ interface Props {
 export default async function Image({ params }: Props) {
   const { shareCode } = await params;
   const t = await getTranslations('forms');
-  const cookieStore = await cookies();
   const { status, data } = await fetchSharedFormData(shareCode, {
-    cookieHeader: cookieStore.toString(),
+    revalidateSeconds: 3600,
   });
   const strings = {
     brand: t('brand'),
@@ -35,13 +35,13 @@ export default async function Image({ params }: Props) {
   };
   const presentation = getSharedFormPresentation(data?.form, strings, status);
 
-  return createSharedFormSocialImage({
+  return await createSharedFormSocialImage({
     form: data?.form,
     status,
     strings: {
       ...strings,
       openGraphAlt: t('shared.open_graph_alt', {
-        title: presentation.title,
+        title: presentation.title || strings.fallbackTitle,
       }),
     },
   });

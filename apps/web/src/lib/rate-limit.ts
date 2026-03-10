@@ -7,6 +7,11 @@
  */
 
 import type { ApiErrorResponse } from '@tuturuuu/types/sdk';
+import {
+  getUpstashRestRedisClient,
+  hasUpstashRestEnv,
+  type UpstashRestRedisClient,
+} from '@tuturuuu/utils/upstash-rest';
 import { NextResponse } from 'next/server';
 
 /**
@@ -92,9 +97,7 @@ const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 /**
  * Redis client type (lazy-loaded)
  */
-let redisClient: Awaited<
-  ReturnType<typeof import('@upstash/redis').Redis.fromEnv>
-> | null = null;
+let redisClient: UpstashRestRedisClient | null = null;
 let redisInitialized = false;
 
 /**
@@ -105,10 +108,7 @@ export async function getRedisClient() {
   if (redisInitialized) return redisClient;
 
   try {
-    const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
-    const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
-
-    if (!redisUrl || !redisToken) {
+    if (!hasUpstashRestEnv()) {
       console.warn(
         'Redis rate limiting disabled: UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN not configured'
       );
@@ -116,8 +116,7 @@ export async function getRedisClient() {
       return null;
     }
 
-    const { Redis } = await import('@upstash/redis');
-    redisClient = Redis.fromEnv();
+    redisClient = await getUpstashRestRedisClient();
     redisInitialized = true;
     console.log('Redis rate limiting enabled');
     return redisClient;
