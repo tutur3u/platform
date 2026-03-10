@@ -52,6 +52,7 @@ class TaskEstimatesCubit extends Cubit<TaskEstimatesState> {
     required bool allowZeroEstimates,
     required bool countUnestimatedIssues,
   }) async {
+    final currentWsId = _lastLoadWsId;
     emit(state.copyWith(status: TaskEstimatesStatus.updating, error: null));
 
     try {
@@ -63,6 +64,14 @@ class TaskEstimatesCubit extends Cubit<TaskEstimatesState> {
         allowZeroEstimates: allowZeroEstimates,
         countUnestimatedIssues: countUnestimatedIssues,
       );
+
+      if (_lastLoadWsId != currentWsId) {
+        return;
+      }
+
+      if (_lastLoadWsId != wsId) {
+        return;
+      }
 
       final boards = state.boards
           .map(

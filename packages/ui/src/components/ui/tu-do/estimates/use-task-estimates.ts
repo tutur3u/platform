@@ -58,6 +58,7 @@ async function updateTaskEstimateBoard(
   const response = await fetch(
     `/api/v1/workspaces/${wsId}/boards/${boardId}/estimation`,
     {
+      cache: 'no-store',
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -148,9 +149,9 @@ export function useTaskEstimates(wsId: string) {
   const getEstimationTypeInfo = (
     estimationTypes: EstimationOption[],
     type: WorkspaceTaskBoard['estimation_type'] | null
-  ): EstimationOption => {
+  ): EstimationOption | null => {
     if (estimationTypes.length === 0) {
-      throw new Error('Expected at least one estimation type');
+      return null;
     }
 
     const defaultEstimationType = estimationTypes[0]!;
@@ -242,7 +243,10 @@ export function useTaskEstimates(wsId: string) {
     }
 
     if (isExtended === undefined) {
-      return getEstimationTypeInfo(estimationTypes, type).description;
+      return (
+        getEstimationTypeInfo(estimationTypes, type)?.description ??
+        translate('estimation_types.none.description')
+      );
     }
 
     switch (type) {

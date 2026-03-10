@@ -13,7 +13,20 @@ export async function GET(
   try {
     const { wsId: rawWsId } = await params;
     const supabase = await createClient(req);
-    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+
+    let wsId: string;
+    try {
+      wsId = await normalizeWorkspaceId(rawWsId, supabase);
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.toLowerCase().includes('user not authenticated')
+      ) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+
+      throw error;
+    }
 
     const {
       data: { user },

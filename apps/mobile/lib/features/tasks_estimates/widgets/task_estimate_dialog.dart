@@ -79,7 +79,10 @@ class _TaskEstimateDialogState extends State<TaskEstimateDialog> {
                   const shad.Gap(8),
                   _RangeOptionTile(
                     title: l10n.taskEstimatesRangeStandard,
-                    description: type.description(isExtended: false),
+                    description: type.description(
+                      isExtended: false,
+                      allowZeroEstimates: _allowZeroEstimates,
+                    ),
                     selected: !_extendedEstimation,
                     onTap: isSaving
                         ? null
@@ -88,7 +91,10 @@ class _TaskEstimateDialogState extends State<TaskEstimateDialog> {
                   const shad.Gap(8),
                   _RangeOptionTile(
                     title: l10n.taskEstimatesRangeExtended,
-                    description: type.description(isExtended: true),
+                    description: type.description(
+                      isExtended: true,
+                      allowZeroEstimates: _allowZeroEstimates,
+                    ),
                     selected: _extendedEstimation,
                     onTap: isSaving
                         ? null
@@ -139,6 +145,7 @@ class _TaskEstimateDialogState extends State<TaskEstimateDialog> {
                           Text(
                             type.description(
                               isExtended: _extendedEstimation,
+                              allowZeroEstimates: _allowZeroEstimates,
                             ),
                             style: shad.Theme.of(context).typography.textMuted,
                           ),
@@ -196,7 +203,10 @@ class _TaskEstimateDialogState extends State<TaskEstimateDialog> {
                           Text(option.label),
                           const shad.Gap(4),
                           Text(
-                            option.description(isExtended: false),
+                            option.description(
+                              isExtended: false,
+                              allowZeroEstimates: _allowZeroEstimates,
+                            ),
                             style: shad.Theme.of(
                               dialogContext,
                             ).typography.textMuted,
