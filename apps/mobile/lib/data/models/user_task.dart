@@ -27,10 +27,20 @@ class TaskBoardInfo extends Equatable {
     id: json['id'] as String,
     name: json['name'] as String?,
     wsId: json['ws_id'] as String?,
-    workspace: json['workspaces'] != null
-        ? TaskWorkspaceInfo.fromJson(json['workspaces'] as Map<String, dynamic>)
-        : null,
+    workspace: _parseWorkspace(json),
   );
+
+  static TaskWorkspaceInfo? _parseWorkspace(Map<String, dynamic> json) {
+    final workspace = json['workspaces'];
+    if (workspace is Map<String, dynamic>) {
+      return TaskWorkspaceInfo.fromJson(workspace);
+    }
+    final legacyWorkspace = json['workspace'];
+    if (legacyWorkspace is Map<String, dynamic>) {
+      return TaskWorkspaceInfo.fromJson(legacyWorkspace);
+    }
+    return null;
+  }
 
   final String id;
   final String? name;
@@ -66,8 +76,6 @@ class TaskListInfo extends Equatable {
 }
 
 /// Enriched task model mirroring the web's `TaskWithRelations`.
-///
-/// Built from the `get_user_accessible_tasks` RPC joined with list/board data.
 class UserTask extends Equatable {
   const UserTask({
     required this.id,
@@ -81,23 +89,37 @@ class UserTask extends Equatable {
     this.list,
   });
 
-  /// Constructs a [UserTask] from the RPC row (fields prefixed with `task_`).
+  /// Constructs a [UserTask] from the legacy RPC row.
   factory UserTask.fromRpcJson(Map<String, dynamic> json) => UserTask(
     id: json['task_id'] as String,
     name: json['task_name'] as String?,
     description: json['task_description'] as String?,
     priority: json['task_priority'] as String?,
-    startDate: json['task_start_date'] != null
-        ? DateTime.parse(json['task_start_date'] as String)
-        : null,
-    endDate: json['task_end_date'] != null
-        ? DateTime.parse(json['task_end_date'] as String)
-        : null,
+    startDate: _parseDateTime(json['task_start_date']),
+    endDate: _parseDateTime(json['task_end_date']),
     listId: json['task_list_id'] as String?,
-    createdAt: json['task_created_at'] != null
-        ? DateTime.parse(json['task_created_at'] as String)
+    createdAt: _parseDateTime(json['task_created_at']),
+  );
+
+  /// Constructs a [UserTask] from the web API payload.
+  factory UserTask.fromJson(Map<String, dynamic> json) => UserTask(
+    id: json['id'] as String,
+    name: json['name'] as String?,
+    description: json['description'] as String?,
+    priority: json['priority'] as String?,
+    startDate: _parseDateTime(json['start_date']),
+    endDate: _parseDateTime(json['end_date']),
+    listId: json['list_id'] as String?,
+    createdAt: _parseDateTime(json['created_at']),
+    list: json['list'] is Map<String, dynamic>
+        ? TaskListInfo.fromJson(json['list'] as Map<String, dynamic>)
         : null,
   );
+
+  static DateTime? _parseDateTime(dynamic value) {
+    if (value is! String || value.isEmpty) return null;
+    return DateTime.tryParse(value)?.toLocal();
+  }
 
   final String id;
   final String? name;
@@ -110,7 +132,7 @@ class UserTask extends Equatable {
   final String? listId;
   final DateTime? createdAt;
 
-  /// Joined list → board → workspace chain.
+  /// Joined list -> board -> workspace chain.
   final TaskListInfo? list;
 
   /// Whether the task is in a "done" list.

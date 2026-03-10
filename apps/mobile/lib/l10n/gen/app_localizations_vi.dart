@@ -191,6 +191,35 @@ class AppLocalizationsVi extends AppLocalizations {
   String get tasksUpcoming => 'Sắp tới';
 
   @override
+  String get tasksGoodMorning => 'Chào buổi sáng';
+
+  @override
+  String get tasksGoodAfternoon => 'Chào buổi chiều';
+
+  @override
+  String get tasksGoodEvening => 'Chào buổi tối';
+
+  @override
+  String get tasksGoodNight => 'Chúc ngủ ngon';
+
+  @override
+  String get tasksRequiresAttention => 'Cần xử lý ngay';
+
+  @override
+  String get tasksCompleteByEndOfDay => 'Hoàn thành trước cuối ngày';
+
+  @override
+  String get tasksPlanAhead => 'Lên kế hoạch sớm';
+
+  @override
+  String get tasksCompleted => 'Đã hoàn thành';
+
+  @override
+  String tasksCompletedCount(int count) {
+    return 'Đã hoàn thành $count';
+  }
+
+  @override
   String get tasksPriorityCritical => 'Nghiêm trọng';
 
   @override

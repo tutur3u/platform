@@ -191,6 +191,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tasksUpcoming => 'Upcoming';
 
   @override
+  String get tasksGoodMorning => 'Good morning';
+
+  @override
+  String get tasksGoodAfternoon => 'Good afternoon';
+
+  @override
+  String get tasksGoodEvening => 'Good evening';
+
+  @override
+  String get tasksGoodNight => 'Good night';
+
+  @override
+  String get tasksRequiresAttention => 'Requires attention';
+
+  @override
+  String get tasksCompleteByEndOfDay => 'Complete by end of day';
+
+  @override
+  String get tasksPlanAhead => 'Plan ahead';
+
+  @override
+  String get tasksCompleted => 'Completed';
+
+  @override
+  String tasksCompletedCount(int count) {
+    return '$count completed';
+  }
+
+  @override
   String get tasksPriorityCritical => 'Critical';
 
   @override

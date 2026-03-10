@@ -5,7 +5,7 @@ import 'package:mobile/data/models/task_label.dart';
 import 'package:mobile/data/models/task_link_option.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
 import 'package:mobile/data/models/task_project_update.dart';
-import 'package:mobile/data/models/user_task.dart';
+import 'package:mobile/data/models/user_tasks_page.dart';
 import 'package:mobile/data/models/workspace_user_option.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
@@ -18,60 +18,35 @@ class TaskRepository {
 
   final ApiClient _apiClient;
 
-  /// Fetches user-accessible tasks via the same RPC the web app uses.
-  ///
-  /// When [isPersonal] is true, [wsId] is omitted so the RPC returns tasks
-  /// across all workspaces the user belongs to.
-  Future<List<UserTask>> getUserTasks({
-    required String userId,
+  /// Fetches the current user's task buckets from the shared web API.
+  Future<UserTasksPage> getMyTasks({
     required String wsId,
     required bool isPersonal,
+    int completedPage = 0,
+    int completedLimit = 20,
   }) async {
-    // 1. Call the RPC
-    final rpcResponse = await supabase.rpc<List<dynamic>>(
-      'get_user_accessible_tasks',
-      params: {
-        'p_user_id': userId,
-        if (!isPersonal) 'p_ws_id': wsId,
-        'p_include_deleted': false,
-        'p_list_statuses': ['not_started', 'active', 'done'],
-      },
-    );
+    final query = _encodeQueryParameters({
+      'wsId': [wsId],
+      'isPersonal': [isPersonal.toString()],
+      'completedPage': [completedPage.toString()],
+      'completedLimit': [completedLimit.toString()],
+    });
 
-    final tasks = rpcResponse
-        .map((e) => UserTask.fromRpcJson(e as Map<String, dynamic>))
-        .toList();
+    final response = await _apiClient.getJson('/api/v1/users/me/tasks?$query');
+    return UserTasksPage.fromJson(response);
+  }
 
-    // 2. Fetch list → board → workspace relations
-    final listIds = tasks
-        .map((t) => t.listId)
-        .where((id) => id != null)
-        .toSet()
-        .toList();
-
-    if (listIds.isEmpty) return tasks;
-
-    final listsResponse = await supabase
-        .from('task_lists')
-        .select('''
-          id, name, status,
-          board:workspace_boards!inner(
-            id, name, ws_id,
-            workspaces(id, name, personal)
-          )
-        ''')
-        .inFilter('id', listIds);
-
-    final listsData = (listsResponse as List<dynamic>?) ?? [];
-    final listsById = <String, TaskListInfo>{};
-    for (final raw in listsData) {
-      final json = raw as Map<String, dynamic>;
-      final info = TaskListInfo.fromJson(json);
-      listsById[info.id] = info;
+  String _encodeQueryParameters(Map<String, List<String>> params) {
+    final pairs = <String>[];
+    for (final entry in params.entries) {
+      for (final value in entry.value) {
+        pairs.add(
+          '${Uri.encodeQueryComponent(entry.key)}='
+          '${Uri.encodeQueryComponent(value)}',
+        );
+      }
     }
-
-    // 3. Merge list info onto tasks
-    return tasks.map((t) => t.withList(listsById[t.listId])).toList();
+    return pairs.join('&');
   }
 
   Future<List<Task>> getTasks(String wsId) async {
