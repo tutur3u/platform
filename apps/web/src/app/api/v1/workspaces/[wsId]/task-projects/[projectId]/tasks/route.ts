@@ -2,9 +2,10 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const linkTaskSchema = z.object({
-  taskId: z.string().uuid('Task id must be a valid UUID'),
+  taskId: z.uuid('Task id must be a valid UUID'),
 });
 
 export async function POST(
@@ -13,7 +14,16 @@ export async function POST(
 ) {
   try {
     const { wsId, projectId } = await params;
-    const supabase = await createClient();
+    let normalizedWorkspaceId: string;
+    try {
+      normalizedWorkspaceId = await normalizeWorkspaceId(wsId);
+    } catch {
+      return NextResponse.json(
+        { error: 'Workspace not found' },
+        { status: 404 }
+      );
+    }
+    const supabase = await createClient(request);
 
     const {
       data: { user },
@@ -27,7 +37,7 @@ export async function POST(
     const { data: membership } = await supabase
       .from('workspace_members')
       .select('ws_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWorkspaceId)
       .eq('user_id', user.id)
       .single();
 
@@ -45,7 +55,7 @@ export async function POST(
       .eq('id', projectId)
       .single();
 
-    if (!projectRecord || projectRecord.ws_id !== wsId) {
+    if (!projectRecord || projectRecord.ws_id !== normalizedWorkspaceId) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
@@ -68,7 +78,7 @@ export async function POST(
 
     if (
       !taskRecord ||
-      taskRecord.task_lists?.workspace_boards?.ws_id !== wsId
+      taskRecord.task_lists?.workspace_boards?.ws_id !== normalizedWorkspaceId
     ) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }

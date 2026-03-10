@@ -1201,6 +1201,198 @@ abstract class AppLocalizations {
   /// **'Project unlinked.'**
   String get taskPortfolioProjectUnlinked;
 
+  /// No description provided for @taskPortfolioProjectDetailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Project details'**
+  String get taskPortfolioProjectDetailsTitle;
+
+  /// No description provided for @taskPortfolioProjectNotFoundTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Project not found'**
+  String get taskPortfolioProjectNotFoundTitle;
+
+  /// No description provided for @taskPortfolioProjectNotFoundDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'This project is no longer available in the current workspace.'**
+  String get taskPortfolioProjectNotFoundDescription;
+
+  /// No description provided for @taskPortfolioProjectTimeline.
+  ///
+  /// In en, this message translates to:
+  /// **'Timeline'**
+  String get taskPortfolioProjectTimeline;
+
+  /// No description provided for @taskPortfolioProjectTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks'**
+  String get taskPortfolioProjectTasks;
+
+  /// No description provided for @taskPortfolioLinkedTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked tasks'**
+  String get taskPortfolioLinkedTasks;
+
+  /// No description provided for @taskPortfolioUnlinkTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlink task'**
+  String get taskPortfolioUnlinkTask;
+
+  /// No description provided for @taskPortfolioProjectStats.
+  ///
+  /// In en, this message translates to:
+  /// **'Project stats'**
+  String get taskPortfolioProjectStats;
+
+  /// No description provided for @taskPortfolioNoLinkedTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'No linked tasks yet'**
+  String get taskPortfolioNoLinkedTasks;
+
+  /// No description provided for @taskPortfolioLinkTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Link task'**
+  String get taskPortfolioLinkTask;
+
+  /// No description provided for @taskPortfolioSearchTasksHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search tasks'**
+  String get taskPortfolioSearchTasksHint;
+
+  /// No description provided for @taskPortfolioNoMatchingTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'No tasks match your search.'**
+  String get taskPortfolioNoMatchingTasks;
+
+  /// No description provided for @taskPortfolioSelectTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Select task'**
+  String get taskPortfolioSelectTask;
+
+  /// No description provided for @taskPortfolioSelectTaskHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a task'**
+  String get taskPortfolioSelectTaskHint;
+
+  /// No description provided for @taskPortfolioNoAvailableTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'All available tasks are already linked to this project.'**
+  String get taskPortfolioNoAvailableTasks;
+
+  /// No description provided for @taskPortfolioProjectCompletion.
+  ///
+  /// In en, this message translates to:
+  /// **'Completion'**
+  String get taskPortfolioProjectCompletion;
+
+  /// No description provided for @taskPortfolioTaskLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'Task linked.'**
+  String get taskPortfolioTaskLinked;
+
+  /// No description provided for @taskPortfolioTaskUnlinked.
+  ///
+  /// In en, this message translates to:
+  /// **'Task unlinked.'**
+  String get taskPortfolioTaskUnlinked;
+
+  /// No description provided for @taskPortfolioProjectUpdates.
+  ///
+  /// In en, this message translates to:
+  /// **'Project updates'**
+  String get taskPortfolioProjectUpdates;
+
+  /// No description provided for @taskPortfolioUpdatePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Share the latest progress, blockers, or wins...'**
+  String get taskPortfolioUpdatePlaceholder;
+
+  /// No description provided for @taskPortfolioPostUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Post update'**
+  String get taskPortfolioPostUpdate;
+
+  /// No description provided for @taskPortfolioPostingUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Posting...'**
+  String get taskPortfolioPostingUpdate;
+
+  /// No description provided for @taskPortfolioNoProjectUpdates.
+  ///
+  /// In en, this message translates to:
+  /// **'No updates yet'**
+  String get taskPortfolioNoProjectUpdates;
+
+  /// No description provided for @taskPortfolioUnknownUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown user'**
+  String get taskPortfolioUnknownUser;
+
+  /// No description provided for @taskPortfolioUpdateEdited.
+  ///
+  /// In en, this message translates to:
+  /// **'Edited'**
+  String get taskPortfolioUpdateEdited;
+
+  /// No description provided for @taskPortfolioEditUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit update'**
+  String get taskPortfolioEditUpdate;
+
+  /// No description provided for @taskPortfolioDeleteUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete update'**
+  String get taskPortfolioDeleteUpdate;
+
+  /// No description provided for @taskPortfolioDeleteUpdateConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this update?'**
+  String get taskPortfolioDeleteUpdateConfirm;
+
+  /// No description provided for @taskPortfolioUpdateCannotBeEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Update content cannot be empty'**
+  String get taskPortfolioUpdateCannotBeEmpty;
+
+  /// No description provided for @taskPortfolioUpdatePosted.
+  ///
+  /// In en, this message translates to:
+  /// **'Update posted.'**
+  String get taskPortfolioUpdatePosted;
+
+  /// No description provided for @taskPortfolioUpdateSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Update saved.'**
+  String get taskPortfolioUpdateSaved;
+
+  /// No description provided for @taskPortfolioUpdateDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Update deleted.'**
+  String get taskPortfolioUpdateDeleted;
+
   /// No description provided for @taskEstimatesTypeTshirtStandardZeroEnabled.
   ///
   /// In en, this message translates to:

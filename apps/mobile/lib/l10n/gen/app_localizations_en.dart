@@ -572,6 +572,102 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskPortfolioProjectUnlinked => 'Project unlinked.';
 
   @override
+  String get taskPortfolioProjectDetailsTitle => 'Project details';
+
+  @override
+  String get taskPortfolioProjectNotFoundTitle => 'Project not found';
+
+  @override
+  String get taskPortfolioProjectNotFoundDescription => 'This project is no longer available in the current workspace.';
+
+  @override
+  String get taskPortfolioProjectTimeline => 'Timeline';
+
+  @override
+  String get taskPortfolioProjectTasks => 'Tasks';
+
+  @override
+  String get taskPortfolioLinkedTasks => 'Linked tasks';
+
+  @override
+  String get taskPortfolioUnlinkTask => 'Unlink task';
+
+  @override
+  String get taskPortfolioProjectStats => 'Project stats';
+
+  @override
+  String get taskPortfolioNoLinkedTasks => 'No linked tasks yet';
+
+  @override
+  String get taskPortfolioLinkTask => 'Link task';
+
+  @override
+  String get taskPortfolioSearchTasksHint => 'Search tasks';
+
+  @override
+  String get taskPortfolioNoMatchingTasks => 'No tasks match your search.';
+
+  @override
+  String get taskPortfolioSelectTask => 'Select task';
+
+  @override
+  String get taskPortfolioSelectTaskHint => 'Choose a task';
+
+  @override
+  String get taskPortfolioNoAvailableTasks => 'All available tasks are already linked to this project.';
+
+  @override
+  String get taskPortfolioProjectCompletion => 'Completion';
+
+  @override
+  String get taskPortfolioTaskLinked => 'Task linked.';
+
+  @override
+  String get taskPortfolioTaskUnlinked => 'Task unlinked.';
+
+  @override
+  String get taskPortfolioProjectUpdates => 'Project updates';
+
+  @override
+  String get taskPortfolioUpdatePlaceholder => 'Share the latest progress, blockers, or wins...';
+
+  @override
+  String get taskPortfolioPostUpdate => 'Post update';
+
+  @override
+  String get taskPortfolioPostingUpdate => 'Posting...';
+
+  @override
+  String get taskPortfolioNoProjectUpdates => 'No updates yet';
+
+  @override
+  String get taskPortfolioUnknownUser => 'Unknown user';
+
+  @override
+  String get taskPortfolioUpdateEdited => 'Edited';
+
+  @override
+  String get taskPortfolioEditUpdate => 'Edit update';
+
+  @override
+  String get taskPortfolioDeleteUpdate => 'Delete update';
+
+  @override
+  String get taskPortfolioDeleteUpdateConfirm => 'Delete this update?';
+
+  @override
+  String get taskPortfolioUpdateCannotBeEmpty => 'Update content cannot be empty';
+
+  @override
+  String get taskPortfolioUpdatePosted => 'Update posted.';
+
+  @override
+  String get taskPortfolioUpdateSaved => 'Update saved.';
+
+  @override
+  String get taskPortfolioUpdateDeleted => 'Update deleted.';
+
+  @override
   String get taskEstimatesTypeTshirtStandardZeroEnabled => 'T-shirt sizes: -, XS, S, M, L, XL.';
 
   @override

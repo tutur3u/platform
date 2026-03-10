@@ -16,10 +16,15 @@ class TaskPortfolioCubit extends Cubit<TaskPortfolioState> {
 
   Future<void> load(String wsId) async {
     final requestToken = ++_loadRequestToken;
+    final workspaceChanged = state.workspaceId != wsId;
+
     emit(
       state.copyWith(
         status: TaskPortfolioStatus.loading,
         workspaceId: wsId,
+        projects: workspaceChanged ? const [] : state.projects,
+        initiatives: workspaceChanged ? const [] : state.initiatives,
+        isMutating: !workspaceChanged && state.isMutating,
         clearError: true,
       ),
     );
@@ -189,6 +194,36 @@ class TaskPortfolioCubit extends Cubit<TaskPortfolioState> {
     );
   }
 
+  Future<void> linkTaskToProject({
+    required String wsId,
+    required String projectId,
+    required String taskId,
+  }) async {
+    await _runMutation(
+      wsId,
+      () => _taskRepository.linkTaskToProject(
+        wsId: wsId,
+        projectId: projectId,
+        taskId: taskId,
+      ),
+    );
+  }
+
+  Future<void> unlinkTaskFromProject({
+    required String wsId,
+    required String projectId,
+    required String taskId,
+  }) async {
+    await _runMutation(
+      wsId,
+      () => _taskRepository.unlinkTaskFromProject(
+        wsId: wsId,
+        projectId: projectId,
+        taskId: taskId,
+      ),
+    );
+  }
+
   Future<void> _runMutation(
     String wsId,
     Future<void> Function() action,
@@ -196,10 +231,15 @@ class TaskPortfolioCubit extends Cubit<TaskPortfolioState> {
     emit(state.copyWith(isMutating: true, clearError: true));
     try {
       await action();
+      if (state.workspaceId != wsId) {
+        return;
+      }
       emit(state.copyWith(isMutating: false, clearError: true));
       await load(wsId);
     } catch (_) {
-      emit(state.copyWith(isMutating: false));
+      if (state.workspaceId == wsId) {
+        emit(state.copyWith(isMutating: false));
+      }
       rethrow;
     }
   }

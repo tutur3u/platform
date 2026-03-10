@@ -1,5 +1,33 @@
 import 'package:equatable/equatable.dart';
 
+class TaskProjectUserSummary extends Equatable {
+  const TaskProjectUserSummary({
+    required this.id,
+    required this.displayName,
+    this.avatarUrl,
+  });
+
+  factory TaskProjectUserSummary.fromJson(Map<String, dynamic> json) {
+    return TaskProjectUserSummary(
+      id: json['id'] as String,
+      displayName: json['display_name'] as String? ?? '',
+      avatarUrl: json['avatar_url'] as String?,
+    );
+  }
+
+  final String id;
+  final String displayName;
+  final String? avatarUrl;
+
+  String get label {
+    if (displayName.trim().isNotEmpty) return displayName.trim();
+    return id;
+  }
+
+  @override
+  List<Object?> get props => [id, displayName, avatarUrl];
+}
+
 class TaskProjectLinkedTask extends Equatable {
   const TaskProjectLinkedTask({
     required this.id,
@@ -43,6 +71,7 @@ class TaskProjectSummary extends Equatable {
     required this.linkedTasks,
     this.description,
     this.leadId,
+    this.lead,
     this.status,
     this.priority,
     this.healthStatus,
@@ -60,6 +89,11 @@ class TaskProjectSummary extends Equatable {
       wsId: json['ws_id'] as String? ?? '',
       creatorId: json['creator_id'] as String? ?? '',
       leadId: json['lead_id'] as String?,
+      lead: json['lead'] is Map<String, dynamic>
+          ? TaskProjectUserSummary.fromJson(
+              json['lead'] as Map<String, dynamic>,
+            )
+          : null,
       status: json['status'] as String?,
       priority: json['priority'] as String?,
       healthStatus: json['health_status'] as String?,
@@ -91,6 +125,7 @@ class TaskProjectSummary extends Equatable {
   final String wsId;
   final String creatorId;
   final String? leadId;
+  final TaskProjectUserSummary? lead;
   final String? status;
   final String? priority;
   final String? healthStatus;
@@ -111,6 +146,7 @@ class TaskProjectSummary extends Equatable {
     wsId,
     creatorId,
     leadId,
+    lead,
     status,
     priority,
     healthStatus,
