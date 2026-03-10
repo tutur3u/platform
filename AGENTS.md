@@ -191,6 +191,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Workflow Bun Parity**: Keep the Type Check workflow Bun version aligned with the repo `packageManager` pin so local `bun run type-check` and GitHub Actions resolve the same Bun runtime behavior.
 - **Root Script Test Coverage**: When adding or refactoring root-level `scripts/*.js` utilities that are not covered by workspace package tests, add a dedicated repo-root test entry (for example `node --test scripts/foo.test.js`) and wire it into `scripts/check.js` so regressions are caught by `bun check`.
 - **Workspace Subpath Imports**: Before importing a workspace package subpath like `@tuturuuu/pkg/foo`, verify that the target is actually covered by that package’s `exports`. Do not assume a directory `index.ts` is reachable via the bare directory subpath; prefer an explicitly exported file path or a relative import within the same package.
+- **Bearer-Aware API Clients**: For API routes that must serve web sessions and mobile Bearer tokens, initialize Supabase with `createClient(request)` in the route handler instead of cookie-only helpers/wrappers so Authorization headers are honored across clients.
 
 ### 6.5 Type Safety & Platform Details
 

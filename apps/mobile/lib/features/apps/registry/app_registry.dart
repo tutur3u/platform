@@ -58,6 +58,12 @@ class AppRegistry {
       labelBuilder: _labelTasks,
     ),
     MiniAppNavItem(
+      id: 'tasks_boards',
+      route: Routes.taskBoards,
+      icon: shad.LucideIcons.squareKanban,
+      labelBuilder: _labelTaskBoards,
+    ),
+    MiniAppNavItem(
       id: 'tasks_estimates',
       route: Routes.taskEstimates,
       icon: shad.LucideIcons.calculator,
@@ -177,6 +183,7 @@ class AppRegistry {
   static String _labelTasks(AppLocalizations l10n) => l10n.navTasks;
   static String _labelTaskEstimates(AppLocalizations l10n) =>
       l10n.taskPlanningTitle;
+  static String _labelTaskBoards(AppLocalizations l10n) => l10n.taskBoardsTitle;
   static String _labelTaskPortfolio(AppLocalizations l10n) =>
       l10n.taskPortfolioTitle;
   static String _labelCalendar(AppLocalizations l10n) => l10n.navCalendar;

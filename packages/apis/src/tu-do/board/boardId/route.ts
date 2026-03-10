@@ -4,13 +4,37 @@ import { NextResponse } from 'next/server';
 
 interface Params {
   params: Promise<{
+    wsId: string;
     boardId: string;
   }>;
 }
 
 export async function PUT(req: Request, { params }: Params) {
-  const supabase = await createClient();
-  const { boardId: id } = await params;
+  const supabase = await createClient(req);
+  const { wsId, boardId: id } = await params;
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { data: member } = await supabase
+    .from('workspace_members')
+    .select('user_id')
+    .eq('ws_id', wsId)
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (!member) {
+    return NextResponse.json(
+      { message: "You don't have access to this workspace" },
+      { status: 403 }
+    );
+  }
 
   const data = (await req.json()) as {
     name?: string;
@@ -33,7 +57,8 @@ export async function PUT(req: Request, { params }: Params) {
   const { error } = await supabase
     .from('workspace_boards')
     .update(updateData)
-    .eq('id', id);
+    .eq('id', id)
+    .eq('ws_id', wsId);
 
   if (error) {
     console.log(error);
@@ -46,14 +71,38 @@ export async function PUT(req: Request, { params }: Params) {
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(_: Request, { params }: Params) {
-  const supabase = await createClient();
-  const { boardId: id } = await params;
+export async function DELETE(req: Request, { params }: Params) {
+  const supabase = await createClient(req);
+  const { wsId, boardId: id } = await params;
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { data: member } = await supabase
+    .from('workspace_members')
+    .select('user_id')
+    .eq('ws_id', wsId)
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (!member) {
+    return NextResponse.json(
+      { message: "You don't have access to this workspace" },
+      { status: 403 }
+    );
+  }
 
   const { error } = await supabase
     .from('workspace_boards')
     .delete()
-    .eq('id', id);
+    .eq('id', id)
+    .eq('ws_id', wsId);
 
   if (error) {
     console.log(error);

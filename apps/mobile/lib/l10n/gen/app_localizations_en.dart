@@ -238,6 +238,138 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tasksUntitled => 'Untitled task';
 
   @override
+  String get taskBoardsTitle => 'Boards';
+
+  @override
+  String get taskBoardsCreate => 'Create board';
+
+  @override
+  String get taskBoardsEdit => 'Edit board';
+
+  @override
+  String get taskBoardsDelete => 'Delete board';
+
+  @override
+  String get taskBoardsDeleteForever => 'Delete forever';
+
+  @override
+  String get taskBoardsDuplicate => 'Duplicate board';
+
+  @override
+  String get taskBoardsArchive => 'Archive board';
+
+  @override
+  String get taskBoardsUnarchive => 'Unarchive board';
+
+  @override
+  String get taskBoardsRestore => 'Restore board';
+
+  @override
+  String get taskBoardsCreated => 'Board created.';
+
+  @override
+  String get taskBoardsUpdated => 'Board updated.';
+
+  @override
+  String get taskBoardsDeleted => 'Board moved to recently deleted.';
+
+  @override
+  String get taskBoardsDeletedForever => 'Board permanently deleted.';
+
+  @override
+  String get taskBoardsDuplicated => 'Board duplicated.';
+
+  @override
+  String get taskBoardsArchived => 'Board archived.';
+
+  @override
+  String get taskBoardsUnarchived => 'Board unarchived.';
+
+  @override
+  String get taskBoardsRestored => 'Board restored.';
+
+  @override
+  String get taskBoardsLoadError => 'Couldn\'t load boards right now';
+
+  @override
+  String get taskBoardsNameLabel => 'Board name';
+
+  @override
+  String get taskBoardsNamePlaceholder => 'Untitled board';
+
+  @override
+  String get taskBoardsNameRequired => 'Board name is required';
+
+  @override
+  String get taskBoardsIconLabel => 'Board icon';
+
+  @override
+  String get taskBoardsIconPlaceholder => 'Select icon';
+
+  @override
+  String get taskBoardsIconPickerTitle => 'Select board icon';
+
+  @override
+  String get taskBoardsIconPickerSearch => 'Search icons';
+
+  @override
+  String get taskBoardsIconPickerEmpty => 'No icons found';
+
+  @override
+  String get taskBoardsAccessDeniedTitle => 'Access restricted';
+
+  @override
+  String get taskBoardsAccessDeniedDescription => 'You need project management permission in this workspace to manage task boards.';
+
+  @override
+  String get taskBoardsFilterAll => 'All';
+
+  @override
+  String get taskBoardsFilterActive => 'Active';
+
+  @override
+  String get taskBoardsFilterArchived => 'Archived';
+
+  @override
+  String get taskBoardsFilterRecentlyDeleted => 'Recently deleted';
+
+  @override
+  String get taskBoardsListsCount => 'lists';
+
+  @override
+  String get taskBoardsTasksCount => 'tasks';
+
+  @override
+  String get taskBoardsCreatedAt => 'Created';
+
+  @override
+  String get taskBoardsRecentlyDeleted => 'Recently deleted';
+
+  @override
+  String get taskBoardsDeleteConfirm => 'Move this board to recently deleted?';
+
+  @override
+  String get taskBoardsDeleteForeverConfirm => 'Permanently delete this board? This action cannot be undone.';
+
+  @override
+  String get taskBoardsEmptyTitle => 'No boards yet';
+
+  @override
+  String get taskBoardsEmptyDescription => 'Create your first board to organize tasks.';
+
+  @override
+  String get taskBoardsEmptyArchivedTitle => 'No archived boards';
+
+  @override
+  String get taskBoardsEmptyArchivedDescription => 'Archived boards will appear here.';
+
+  @override
+  String get taskBoardsEmptyDeletedTitle => 'No recently deleted boards';
+
+  @override
+  String get taskBoardsEmptyDeletedDescription => 'Deleted boards will appear here before permanent removal.';
+
+  @override
   String get taskPlanningTitle => 'Planning';
 
   @override

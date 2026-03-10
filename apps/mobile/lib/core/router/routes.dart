@@ -16,6 +16,7 @@ abstract final class Routes {
   static const assistant = '/assistant';
   static const profileRoot = '/profile';
   static const tasks = '/tasks';
+  static const taskBoards = '/tasks/boards';
   static const taskEstimates = '/tasks/estimates';
   static const taskPortfolio = '/tasks/portfolio';
   static const taskPortfolioProject = '/tasks/portfolio/projects/:projectId';
