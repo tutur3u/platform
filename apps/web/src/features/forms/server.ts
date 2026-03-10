@@ -1124,7 +1124,7 @@ export async function getReadOnlyAnswersForResponder(
 ): Promise<FormReadOnlyAnswers> {
   const { data: response } = await supabase
     .from('form_responses')
-    .select('id, submitted_at')
+    .select('id, session_id, submitted_at')
     .eq('form_id', options.formId)
     .eq('respondent_user_id', options.respondentUserId)
     .order('submitted_at', { ascending: false })
@@ -1136,6 +1136,8 @@ export async function getReadOnlyAnswersForResponder(
       answers: {},
       issues: [],
       submittedAt: null,
+      responseId: null,
+      sessionId: null,
     };
   }
 
@@ -1181,6 +1183,8 @@ export async function getReadOnlyAnswersForResponder(
       answers: {},
       issues: [],
       submittedAt: response.submitted_at,
+      responseId: response.id,
+      sessionId: response.session_id,
     }
   );
 }
