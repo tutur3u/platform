@@ -1,7 +1,6 @@
 'use client';
 
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
@@ -17,12 +16,17 @@ const PDFViewer = dynamic(
 
 const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'];
 
+type ResourceFile = {
+  id?: string | null;
+  name?: string | null;
+};
+
 export function FileDisplay({
   path,
   file,
 }: {
   path: string;
-  file: StorageObject;
+  file: ResourceFile;
 }) {
   const t = useTranslations();
 

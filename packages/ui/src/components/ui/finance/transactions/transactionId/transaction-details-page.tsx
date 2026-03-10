@@ -83,7 +83,7 @@ async function getData(wsId: string, transactionId: string) {
   if (objectError) throw objectError;
 
   const imageObjects = objects.filter((object) =>
-    object.metadata.mimetype.includes('image')
+    (object.metadata?.mimetype ?? '').includes('image')
   );
 
   // batch signed to reduce network calls
@@ -105,7 +105,7 @@ async function getData(wsId: string, transactionId: string) {
     objects.map((object) => ({
       ...object,
       metadata: {
-        ...object.metadata,
+        ...(object.metadata ?? {}),
         preview: previews?.find(
           (preview) => preview?.path?.split('/').pop() === object.name
         ),
