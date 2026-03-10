@@ -241,6 +241,7 @@
     "taskPortfolioProjectTimeline": "Mốc thời gian",
     "taskPortfolioProjectTasks": "Nhiệm vụ",
     "taskPortfolioLinkedTasks": "Nhiệm vụ liên kết",
+    "taskPortfolioUnlinkTask": "Gỡ liên kết nhiệm vụ",
     "taskPortfolioProjectStats": "Thống kê dự án",
     "taskPortfolioNoLinkedTasks": "Chưa có nhiệm vụ nào được liên kết",
     "taskPortfolioLinkTask": "Liên kết nhiệm vụ",

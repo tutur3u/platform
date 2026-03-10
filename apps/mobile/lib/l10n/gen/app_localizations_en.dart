@@ -632,6 +632,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskPortfolioLinkedTasks => 'Linked tasks';
 
   @override
+  String get taskPortfolioUnlinkTask => 'Unlink task';
+
+  @override
   String get taskPortfolioProjectStats => 'Project stats';
 
   @override

@@ -17,6 +17,8 @@ class _ProjectDetailsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
     final timeline = _timelineLabel(project.startDate, project.endDate);
+    final editLabel = context.l10n.taskPortfolioEditProject;
+    final deleteLabel = context.l10n.taskPortfolioDeleteProject;
 
     return shad.Card(
       child: Column(
@@ -34,15 +36,29 @@ class _ProjectDetailsCard extends StatelessWidget {
                 ),
               ),
               const shad.Gap(8),
-              shad.GhostButton(
-                density: shad.ButtonDensity.icon,
-                onPressed: isMutating ? null : onEdit,
-                child: const Icon(Icons.edit_outlined, size: 18),
+              Semantics(
+                button: true,
+                label: editLabel,
+                child: Tooltip(
+                  message: editLabel,
+                  child: shad.GhostButton(
+                    density: shad.ButtonDensity.icon,
+                    onPressed: isMutating ? null : onEdit,
+                    child: const Icon(Icons.edit_outlined, size: 18),
+                  ),
+                ),
               ),
-              shad.GhostButton(
-                density: shad.ButtonDensity.icon,
-                onPressed: isMutating ? null : onDelete,
-                child: const Icon(Icons.delete_outline, size: 18),
+              Semantics(
+                button: true,
+                label: deleteLabel,
+                child: Tooltip(
+                  message: deleteLabel,
+                  child: shad.GhostButton(
+                    density: shad.ButtonDensity.icon,
+                    onPressed: isMutating ? null : onDelete,
+                    child: const Icon(Icons.delete_outline, size: 18),
+                  ),
+                ),
               ),
             ],
           ),
@@ -107,6 +123,7 @@ class _LinkedTasksCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
+    final unlinkLabel = context.l10n.taskPortfolioUnlinkTask;
 
     return shad.Card(
       child: Column(
@@ -172,12 +189,22 @@ class _LinkedTasksCard extends StatelessWidget {
                           ],
                         ),
                       ),
-                      shad.GhostButton(
-                        density: shad.ButtonDensity.icon,
-                        onPressed: isMutating
-                            ? null
-                            : () => unawaited(onUnlinkTask(task.id)),
-                        child: const Icon(Icons.link_off_outlined, size: 18),
+                      Semantics(
+                        button: true,
+                        label: unlinkLabel,
+                        child: Tooltip(
+                          message: unlinkLabel,
+                          child: shad.GhostButton(
+                            density: shad.ButtonDensity.icon,
+                            onPressed: isMutating
+                                ? null
+                                : () => unawaited(onUnlinkTask(task.id)),
+                            child: const Icon(
+                              Icons.link_off_outlined,
+                              size: 18,
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),

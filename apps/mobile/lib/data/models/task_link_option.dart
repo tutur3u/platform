@@ -13,7 +13,7 @@ class TaskLinkOption extends Equatable {
 
   factory TaskLinkOption.fromJson(Map<String, dynamic> json) {
     return TaskLinkOption(
-      id: json['id'] as String,
+      id: json['id'] as String? ?? '',
       name: json['name'] as String? ?? '',
       listName: json['list_name'] as String?,
       boardName: json['board_name'] as String?,

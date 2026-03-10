@@ -1321,6 +1321,12 @@ abstract class AppLocalizations {
   /// **'Linked tasks'**
   String get taskPortfolioLinkedTasks;
 
+  /// No description provided for @taskPortfolioUnlinkTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlink task'**
+  String get taskPortfolioUnlinkTask;
+
   /// No description provided for @taskPortfolioProjectStats.
   ///
   /// In en, this message translates to:

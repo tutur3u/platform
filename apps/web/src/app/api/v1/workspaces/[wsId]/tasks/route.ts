@@ -7,6 +7,7 @@ import {
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { generateTaskEmbedding } from '@/lib/embeddings/generate-task-embedding';
+import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const CreateTaskSchema = z.object({
   name: z.string().min(1).max(MAX_TASK_NAME_LENGTH),
@@ -45,6 +46,7 @@ export async function GET(
 ) {
   try {
     const { wsId } = await params;
+    const normalizedWorkspaceId = await normalizeWorkspaceId(wsId);
     const supabase = await createClient(request);
 
     // Get authenticated user
@@ -60,7 +62,7 @@ export async function GET(
     const { data: memberCheck } = await supabase
       .from('workspace_members')
       .select('user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWorkspaceId)
       .eq('user_id', user.id)
       .single();
 
@@ -129,7 +131,7 @@ export async function GET(
         )
       `
       )
-      .eq('task_lists.workspace_boards.ws_id', wsId)
+      .eq('task_lists.workspace_boards.ws_id', normalizedWorkspaceId)
       .is('deleted_at', null);
 
     // IMPORTANT: If this is for time tracking, apply the same filters as the server-side helper
@@ -245,6 +247,7 @@ export async function POST(
 ) {
   try {
     const { wsId } = await params;
+    const normalizedWorkspaceId = await normalizeWorkspaceId(wsId);
     const supabase = await createClient();
 
     // Get authenticated user
@@ -260,7 +263,7 @@ export async function POST(
     const { data: memberCheck } = await supabase
       .from('workspace_members')
       .select('user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWorkspaceId)
       .eq('user_id', user.id)
       .single();
 
@@ -291,7 +294,7 @@ export async function POST(
       .from('task_lists')
       .select('id, workspace_boards!inner(ws_id)')
       .eq('id', listId)
-      .eq('workspace_boards.ws_id', wsId)
+      .eq('workspace_boards.ws_id', normalizedWorkspaceId)
       .single();
 
     if (!listCheck) {
