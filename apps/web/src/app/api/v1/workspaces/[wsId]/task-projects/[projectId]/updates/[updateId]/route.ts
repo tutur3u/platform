@@ -3,6 +3,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { MAX_LONG_TEXT_LENGTH } from '@tuturuuu/utils/constants';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -15,6 +16,9 @@ const updateUpdateSchema = z.object({
     .min(1, 'Content cannot be empty'), // Plain text (TipTap handles JSONContent conversion)
 });
 
+const projectIdParamSchema = z.uuid('Project ID must be a valid UUID');
+const updateIdParamSchema = z.uuid('Update ID must be a valid UUID');
+
 export async function PATCH(
   request: NextRequest,
   {
@@ -24,8 +28,27 @@ export async function PATCH(
   }
 ) {
   try {
-    const { wsId, projectId, updateId } = await params;
-    const supabase = await createClient();
+    const { wsId: id, projectId, updateId } = await params;
+    const validatedProjectId = projectIdParamSchema.safeParse(projectId);
+
+    if (!validatedProjectId.success) {
+      console.error('Invalid project ID:', validatedProjectId.error);
+      return NextResponse.json(
+        { error: validatedProjectId.error.message },
+        { status: 400 }
+      );
+    }
+
+    const validatedUpdateId = updateIdParamSchema.safeParse(updateId);
+    if (!validatedUpdateId.success) {
+      console.error('Invalid update ID:', validatedUpdateId.error);
+      return NextResponse.json(
+        { error: validatedUpdateId.error.message },
+        { status: 400 }
+      );
+    }
+    const supabase = await createClient(request);
+    const wsId = await normalizeWorkspaceId(id, supabase);
 
     // Get current user
     const {
@@ -120,7 +143,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   {
     params,
   }: {
@@ -128,8 +151,27 @@ export async function DELETE(
   }
 ) {
   try {
-    const { wsId, projectId, updateId } = await params;
-    const supabase = await createClient();
+    const { wsId: id, projectId, updateId } = await params;
+    const validatedProjectId = projectIdParamSchema.safeParse(projectId);
+
+    if (!validatedProjectId.success) {
+      console.error('Invalid project ID:', validatedProjectId.error);
+      return NextResponse.json(
+        { error: validatedProjectId.error.message },
+        { status: 400 }
+      );
+    }
+
+    const validatedUpdateId = updateIdParamSchema.safeParse(updateId);
+    if (!validatedUpdateId.success) {
+      console.error('Invalid update ID:', validatedUpdateId.error);
+      return NextResponse.json(
+        { error: validatedUpdateId.error.message },
+        { status: 400 }
+      );
+    }
+    const supabase = await createClient(request);
+    const wsId = await normalizeWorkspaceId(id, supabase);
 
     // Get current user
     const {

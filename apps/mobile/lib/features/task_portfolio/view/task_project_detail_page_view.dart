@@ -24,7 +24,7 @@ class _TaskProjectDetailViewState extends State<_TaskProjectDetailView> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    final wsId = context.watch<WorkspaceCubit>().state.currentWorkspace?.id;
     final currentUserId = context.read<AuthCubit>().state.user?.id;
 
     return shad.Scaffold(
@@ -68,9 +68,14 @@ class _TaskProjectDetailViewState extends State<_TaskProjectDetailView> {
               return _ErrorState(message: state.error);
             }
 
-            final project = state.projects
-                .where((item) => item.id == widget.projectId)
-                .firstOrNull;
+            final project = wsId == null
+                ? null
+                : state.projects
+                      .where(
+                        (item) =>
+                            item.id == widget.projectId && item.wsId == wsId,
+                      )
+                      .firstOrNull;
 
             if (project == null) {
               return _NotFoundState(

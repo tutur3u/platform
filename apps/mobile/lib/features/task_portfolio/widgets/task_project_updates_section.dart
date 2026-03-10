@@ -38,13 +38,29 @@ class _TaskProjectUpdatesSectionState extends State<TaskProjectUpdatesSection> {
   bool _isSavingEdit = false;
   String? _editingId;
   String? _deletingId;
-  int _requestToken = 0;
+  int _ownerToken = 0;
+  int _loadToken = 0;
+  bool _didInitialLoad = false;
+
+  int _beginLoad() => ++_loadToken;
+
+  bool _isActiveOwner(int ownerToken) => mounted && ownerToken == _ownerToken;
+
+  bool _isActiveLoad(int ownerToken, int loadToken) =>
+      _isActiveOwner(ownerToken) && loadToken == _loadToken;
 
   @override
   void initState() {
     super.initState();
     _newUpdateController = TextEditingController();
     _editUpdateController = TextEditingController();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didInitialLoad) return;
+    _didInitialLoad = true;
     unawaited(_loadUpdates());
   }
 
@@ -53,7 +69,11 @@ class _TaskProjectUpdatesSectionState extends State<TaskProjectUpdatesSection> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.workspaceId != widget.workspaceId ||
         oldWidget.projectId != widget.projectId) {
+      _ownerToken++;
       _editingId = null;
+      _deletingId = null;
+      _isPosting = false;
+      _isSavingEdit = false;
       _editUpdateController.clear();
       _newUpdateController.clear();
       _updates = const [];
@@ -220,7 +240,10 @@ class _TaskProjectUpdatesSectionState extends State<TaskProjectUpdatesSection> {
   }
 
   Future<void> _loadUpdates() async {
-    final requestToken = ++_requestToken;
+    final ownerToken = _ownerToken;
+    final loadToken = _beginLoad();
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
+    final fallbackMessage = context.l10n.commonSomethingWentWrong;
     setState(() => _isLoading = true);
 
     try {
@@ -229,25 +252,31 @@ class _TaskProjectUpdatesSectionState extends State<TaskProjectUpdatesSection> {
         projectId: widget.projectId,
       );
 
-      if (!mounted || requestToken != _requestToken) return;
+      if (!_isActiveLoad(ownerToken, loadToken)) return;
       setState(() {
         _updates = updates;
         _isLoading = false;
       });
     } on Exception catch (error) {
-      if (!mounted || requestToken != _requestToken) return;
+      if (!_isActiveLoad(ownerToken, loadToken)) return;
       setState(() => _isLoading = false);
-      _showErrorToast(_resolveMessage(error));
+      if (!toastContext.mounted) return;
+      _showErrorToast(toastContext, _resolveMessage(error, fallbackMessage));
     }
   }
 
   Future<void> _createUpdate() async {
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
+    final fallbackMessage = context.l10n.commonSomethingWentWrong;
+    final emptyMessage = context.l10n.taskPortfolioUpdateCannotBeEmpty;
+    final successMessage = context.l10n.taskPortfolioUpdatePosted;
     final content = _newUpdateController.text.trim();
     if (content.isEmpty) {
-      _showErrorToast(context.l10n.taskPortfolioUpdateCannotBeEmpty);
+      _showErrorToast(toastContext, emptyMessage);
       return;
     }
 
+    final ownerToken = _ownerToken;
     setState(() => _isPosting = true);
     try {
       final created = await widget.taskRepository.createTaskProjectUpdate(
@@ -255,17 +284,19 @@ class _TaskProjectUpdatesSectionState extends State<TaskProjectUpdatesSection> {
         projectId: widget.projectId,
         content: content,
       );
-      if (!mounted) return;
+      if (!_isActiveOwner(ownerToken)) return;
       setState(() {
         _isPosting = false;
         _newUpdateController.clear();
         _updates = [created, ..._updates];
       });
-      _showSuccessToast(context.l10n.taskPortfolioUpdatePosted);
+      if (!toastContext.mounted) return;
+      _showSuccessToast(toastContext, successMessage);
     } on Exception catch (error) {
-      if (!mounted) return;
+      if (!_isActiveOwner(ownerToken)) return;
       setState(() => _isPosting = false);
-      _showErrorToast(_resolveMessage(error));
+      if (!toastContext.mounted) return;
+      _showErrorToast(toastContext, _resolveMessage(error, fallbackMessage));
     }
   }
 
@@ -285,12 +316,17 @@ class _TaskProjectUpdatesSectionState extends State<TaskProjectUpdatesSection> {
   }
 
   Future<void> _saveEdit(String updateId) async {
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
+    final fallbackMessage = context.l10n.commonSomethingWentWrong;
+    final emptyMessage = context.l10n.taskPortfolioUpdateCannotBeEmpty;
+    final successMessage = context.l10n.taskPortfolioUpdateSaved;
     final content = _editUpdateController.text.trim();
     if (content.isEmpty) {
-      _showErrorToast(context.l10n.taskPortfolioUpdateCannotBeEmpty);
+      _showErrorToast(toastContext, emptyMessage);
       return;
     }
 
+    final ownerToken = _ownerToken;
     setState(() => _isSavingEdit = true);
     try {
       final updated = await widget.taskRepository.updateTaskProjectUpdate(
@@ -299,7 +335,7 @@ class _TaskProjectUpdatesSectionState extends State<TaskProjectUpdatesSection> {
         updateId: updateId,
         content: content,
       );
-      if (!mounted) return;
+      if (!_isActiveOwner(ownerToken)) return;
       setState(() {
         _isSavingEdit = false;
         _editingId = null;
@@ -308,26 +344,34 @@ class _TaskProjectUpdatesSectionState extends State<TaskProjectUpdatesSection> {
             .map((item) => item.id == updateId ? updated : item)
             .toList(growable: false);
       });
-      _showSuccessToast(context.l10n.taskPortfolioUpdateSaved);
+      if (!toastContext.mounted) return;
+      _showSuccessToast(toastContext, successMessage);
     } on Exception catch (error) {
-      if (!mounted) return;
+      if (!_isActiveOwner(ownerToken)) return;
       setState(() => _isSavingEdit = false);
-      _showErrorToast(_resolveMessage(error));
+      if (!toastContext.mounted) return;
+      _showErrorToast(toastContext, _resolveMessage(error, fallbackMessage));
     }
   }
 
   Future<void> _deleteUpdate(String updateId) async {
     final toastContext = Navigator.of(context, rootNavigator: true).context;
+    final deleteTitle = context.l10n.taskPortfolioDeleteUpdate;
+    final deleteMessage = context.l10n.taskPortfolioDeleteUpdateConfirm;
+    final cancelLabel = context.l10n.commonCancel;
+    final successMessage = context.l10n.taskPortfolioUpdateDeleted;
+    final ownerToken = _ownerToken;
     final shouldDelete =
         await shad.showDialog<bool>(
           context: context,
           builder: (_) => AsyncDeleteConfirmationDialog(
-            title: context.l10n.taskPortfolioDeleteUpdate,
-            message: context.l10n.taskPortfolioDeleteUpdateConfirm,
-            cancelLabel: context.l10n.commonCancel,
-            confirmLabel: context.l10n.taskPortfolioDeleteUpdate,
+            title: deleteTitle,
+            message: deleteMessage,
+            cancelLabel: cancelLabel,
+            confirmLabel: deleteTitle,
             toastContext: toastContext,
             onConfirm: () async {
+              if (!_isActiveOwner(ownerToken)) return;
               setState(() => _deletingId = updateId);
               await widget.taskRepository.deleteTaskProjectUpdate(
                 wsId: widget.workspaceId,
@@ -339,7 +383,7 @@ class _TaskProjectUpdatesSectionState extends State<TaskProjectUpdatesSection> {
         ) ??
         false;
 
-    if (!mounted) return;
+    if (!_isActiveOwner(ownerToken)) return;
     if (!shouldDelete) {
       setState(() => _deletingId = null);
       return;
@@ -353,11 +397,11 @@ class _TaskProjectUpdatesSectionState extends State<TaskProjectUpdatesSection> {
         _editUpdateController.clear();
       }
     });
-    _showSuccessToast(context.l10n.taskPortfolioUpdateDeleted);
+    if (!toastContext.mounted) return;
+    _showSuccessToast(toastContext, successMessage);
   }
 
-  void _showSuccessToast(String message) {
-    final toastContext = Navigator.of(context, rootNavigator: true).context;
+  void _showSuccessToast(BuildContext toastContext, String message) {
     if (!toastContext.mounted) return;
     shad.showToast(
       context: toastContext,
@@ -365,8 +409,7 @@ class _TaskProjectUpdatesSectionState extends State<TaskProjectUpdatesSection> {
     );
   }
 
-  void _showErrorToast(String message) {
-    final toastContext = Navigator.of(context, rootNavigator: true).context;
+  void _showErrorToast(BuildContext toastContext, String message) {
     if (!toastContext.mounted) return;
     shad.showToast(
       context: toastContext,
@@ -375,13 +418,13 @@ class _TaskProjectUpdatesSectionState extends State<TaskProjectUpdatesSection> {
     );
   }
 
-  String _resolveMessage(Object error) {
+  String _resolveMessage(Object error, String fallbackMessage) {
     if (error is ApiException) {
       final message = error.message.trim();
       if (message.isNotEmpty) {
         return message;
       }
     }
-    return context.l10n.commonSomethingWentWrong;
+    return fallbackMessage;
   }
 }

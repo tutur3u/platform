@@ -227,6 +227,7 @@
     "taskPortfolioProjectTimeline": "Timeline",
     "taskPortfolioProjectTasks": "Tasks",
     "taskPortfolioLinkedTasks": "Linked tasks",
+    "taskPortfolioUnlinkTask": "Unlink task",
     "taskPortfolioProjectStats": "Project stats",
     "taskPortfolioNoLinkedTasks": "No linked tasks yet",
     "taskPortfolioLinkTask": "Link task",

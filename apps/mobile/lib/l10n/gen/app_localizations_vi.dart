@@ -590,6 +590,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskPortfolioLinkedTasks => 'Nhiệm vụ liên kết';
 
   @override
+  String get taskPortfolioUnlinkTask => 'Gỡ liên kết nhiệm vụ';
+
+  @override
   String get taskPortfolioProjectStats => 'Thống kê dự án';
 
   @override
