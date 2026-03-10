@@ -415,6 +415,12 @@ abstract class AppLocalizations {
   /// **'No tasks yet'**
   String get tasksEmpty;
 
+  /// No description provided for @tasksLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load tasks right now'**
+  String get tasksLoadError;
+
   /// No description provided for @tasksCreate.
   ///
   /// In en, this message translates to:
@@ -451,6 +457,60 @@ abstract class AppLocalizations {
   /// **'Upcoming'**
   String get tasksUpcoming;
 
+  /// No description provided for @tasksGoodMorning.
+  ///
+  /// In en, this message translates to:
+  /// **'Good morning'**
+  String get tasksGoodMorning;
+
+  /// No description provided for @tasksGoodAfternoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Good afternoon'**
+  String get tasksGoodAfternoon;
+
+  /// No description provided for @tasksGoodEvening.
+  ///
+  /// In en, this message translates to:
+  /// **'Good evening'**
+  String get tasksGoodEvening;
+
+  /// No description provided for @tasksGoodNight.
+  ///
+  /// In en, this message translates to:
+  /// **'Good night'**
+  String get tasksGoodNight;
+
+  /// No description provided for @tasksRequiresAttention.
+  ///
+  /// In en, this message translates to:
+  /// **'Requires attention'**
+  String get tasksRequiresAttention;
+
+  /// No description provided for @tasksCompleteByEndOfDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete by end of day'**
+  String get tasksCompleteByEndOfDay;
+
+  /// No description provided for @tasksPlanAhead.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan ahead'**
+  String get tasksPlanAhead;
+
+  /// No description provided for @tasksCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get tasksCompleted;
+
+  /// No description provided for @tasksCompletedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} completed'**
+  String tasksCompletedCount(int count);
+
   /// No description provided for @tasksPriorityCritical.
   ///
   /// In en, this message translates to:
@@ -474,6 +534,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Low'**
   String get tasksPriorityLow;
+
+  /// No description provided for @tasksUntitled.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled task'**
+  String get tasksUntitled;
 
   /// No description provided for @taskPlanningTitle.
   ///

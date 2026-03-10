@@ -70,16 +70,34 @@
 
     "tasksTitle": "Tasks",
     "tasksEmpty": "No tasks yet",
+    "tasksLoadError": "Couldn't load tasks right now",
     "tasksCreate": "Create task",
     "tasksAllCaughtUp": "You're all caught up!",
     "tasksAllCaughtUpSubtitle": "No pending tasks right now",
     "tasksOverdue": "Overdue",
     "tasksDueToday": "Due today",
     "tasksUpcoming": "Upcoming",
+    "tasksGoodMorning": "Good morning",
+    "tasksGoodAfternoon": "Good afternoon",
+    "tasksGoodEvening": "Good evening",
+    "tasksGoodNight": "Good night",
+    "tasksRequiresAttention": "Requires attention",
+    "tasksCompleteByEndOfDay": "Complete by end of day",
+    "tasksPlanAhead": "Plan ahead",
+    "tasksCompleted": "Completed",
+    "tasksCompletedCount": "{count} completed",
+    "@tasksCompletedCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "tasksPriorityCritical": "Critical",
     "tasksPriorityHigh": "High",
     "tasksPriorityNormal": "Normal",
     "tasksPriorityLow": "Low",
+    "tasksUntitled": "Untitled task",
     "taskPlanningTitle": "Planning",
     "taskEstimatesTitle": "Estimations",
     "taskLabelsTab": "Labels",

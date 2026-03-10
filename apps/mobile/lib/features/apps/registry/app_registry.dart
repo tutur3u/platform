@@ -6,6 +6,7 @@ import 'package:mobile/features/finance/view/finance_page.dart';
 import 'package:mobile/features/tasks/view/task_list_page.dart';
 import 'package:mobile/features/time_tracker/view/time_tracker_page.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class AppRegistry {
   const AppRegistry._();
@@ -14,7 +15,7 @@ class AppRegistry {
     AppModule(
       id: 'tasks',
       route: Routes.tasks,
-      icon: Icons.check_box_outlined,
+      icon: shad.LucideIcons.userCheck,
       labelBuilder: _labelTasks,
       pageBuilder: _pageTasks,
       miniAppNavItems: _tasksMiniNav,
@@ -53,19 +54,19 @@ class AppRegistry {
     MiniAppNavItem(
       id: 'tasks_home',
       route: Routes.tasks,
-      icon: Icons.check_box_outlined,
+      icon: shad.LucideIcons.userCheck,
       labelBuilder: _labelTasks,
     ),
     MiniAppNavItem(
       id: 'tasks_estimates',
       route: Routes.taskEstimates,
-      icon: Icons.calculate_outlined,
+      icon: shad.LucideIcons.calculator,
       labelBuilder: _labelTaskEstimates,
     ),
     MiniAppNavItem(
       id: 'tasks_portfolio',
       route: Routes.taskPortfolio,
-      icon: Icons.account_tree_outlined,
+      icon: shad.LucideIcons.gitBranch,
       labelBuilder: _labelTaskPortfolio,
     ),
   ];

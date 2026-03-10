@@ -173,6 +173,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tasksEmpty => 'No tasks yet';
 
   @override
+  String get tasksLoadError => 'Couldn\'t load tasks right now';
+
+  @override
   String get tasksCreate => 'Create task';
 
   @override
@@ -191,6 +194,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tasksUpcoming => 'Upcoming';
 
   @override
+  String get tasksGoodMorning => 'Good morning';
+
+  @override
+  String get tasksGoodAfternoon => 'Good afternoon';
+
+  @override
+  String get tasksGoodEvening => 'Good evening';
+
+  @override
+  String get tasksGoodNight => 'Good night';
+
+  @override
+  String get tasksRequiresAttention => 'Requires attention';
+
+  @override
+  String get tasksCompleteByEndOfDay => 'Complete by end of day';
+
+  @override
+  String get tasksPlanAhead => 'Plan ahead';
+
+  @override
+  String get tasksCompleted => 'Completed';
+
+  @override
+  String tasksCompletedCount(int count) {
+    return '$count completed';
+  }
+
+  @override
   String get tasksPriorityCritical => 'Critical';
 
   @override
@@ -201,6 +233,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tasksPriorityLow => 'Low';
+
+  @override
+  String get tasksUntitled => 'Untitled task';
 
   @override
   String get taskPlanningTitle => 'Planning';
