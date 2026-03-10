@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/data/models/task_label.dart';
+import 'package:mobile/features/tasks_estimates/utils/task_label_colors.dart';
 import 'package:mobile/features/tasks_estimates/widgets/task_estimates_feedback.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -64,7 +65,7 @@ class _TaskLabelCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
-    final color = _parseHexColor(label.color) ?? theme.colorScheme.primary;
+    final color = parseTaskLabelColor(label.color) ?? theme.colorScheme.primary;
 
     return shad.Card(
       child: Row(
@@ -110,20 +111,5 @@ class _TaskLabelCard extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Color? _parseHexColor(String? hex) {
-    if (hex == null || hex.trim().isEmpty) {
-      return null;
-    }
-    final cleaned = hex.trim().replaceFirst('#', '');
-    if (cleaned.length != 6 && cleaned.length != 8) {
-      return null;
-    }
-    final value = int.tryParse(
-      cleaned.length == 6 ? 'FF$cleaned' : cleaned,
-      radix: 16,
-    );
-    return value != null ? Color(value) : null;
   }
 }

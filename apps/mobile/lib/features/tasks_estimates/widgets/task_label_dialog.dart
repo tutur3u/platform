@@ -55,7 +55,7 @@ class _TaskLabelDialogState extends State<TaskLabelDialog> {
   @override
   Widget build(BuildContext context) {
     final previewColor =
-        _parseHexColor(_colorController.text) ?? const Color(0xFF3B82F6);
+        parseTaskLabelColor(_colorController.text) ?? const Color(0xFF3B82F6);
 
     return shad.AlertDialog(
       title: Text(widget.title),
@@ -128,7 +128,7 @@ class _TaskLabelDialogState extends State<TaskLabelDialog> {
                         height: 28,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: _parseHexColor(color),
+                          color: parseTaskLabelColor(color),
                           border: Border.all(
                             color: _colorController.text.toUpperCase() == color
                                 ? Colors.white
@@ -175,20 +175,5 @@ class _TaskLabelDialogState extends State<TaskLabelDialog> {
         color: taskLabelColorOrDefault(_colorController.text),
       ),
     );
-  }
-
-  Color? _parseHexColor(String? hex) {
-    if (hex == null || hex.trim().isEmpty) {
-      return null;
-    }
-    final cleaned = hex.trim().replaceFirst('#', '');
-    if (cleaned.length != 6 && cleaned.length != 8) {
-      return null;
-    }
-    final value = int.tryParse(
-      cleaned.length == 6 ? 'FF$cleaned' : cleaned,
-      radix: 16,
-    );
-    return value != null ? Color(value) : null;
   }
 }
