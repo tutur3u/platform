@@ -203,7 +203,49 @@ class AppLocalizationsVi extends AppLocalizations {
   String get tasksPriorityLow => 'Thấp';
 
   @override
+  String get taskPlanningTitle => 'Lập kế hoạch';
+
+  @override
   String get taskEstimatesTitle => 'Ước lượng';
+
+  @override
+  String get taskLabelsTab => 'Nhãn';
+
+  @override
+  String get taskLabelsCreate => 'Tạo nhãn';
+
+  @override
+  String get taskLabelsEdit => 'Sửa nhãn';
+
+  @override
+  String get taskLabelsDelete => 'Xóa nhãn';
+
+  @override
+  String get taskLabelsDeleteConfirm => 'Xóa nhãn này?';
+
+  @override
+  String get taskLabelsCreated => 'Đã tạo nhãn.';
+
+  @override
+  String get taskLabelsUpdated => 'Đã cập nhật nhãn.';
+
+  @override
+  String get taskLabelsDeleted => 'Đã xóa nhãn.';
+
+  @override
+  String get taskLabelsName => 'Tên nhãn';
+
+  @override
+  String get taskLabelsNameRequired => 'Tên nhãn là bắt buộc';
+
+  @override
+  String get taskLabelsColorInvalid => 'Chọn một trong các màu cài sẵn được hỗ trợ';
+
+  @override
+  String get taskLabelsEmptyTitle => 'Chưa có nhãn';
+
+  @override
+  String get taskLabelsEmptyDescription => 'Tạo nhãn để gắn thẻ và sắp xếp công việc.';
 
   @override
   String get taskEstimatesDescription => 'Cấu hình phương pháp ước lượng cho các bảng công việc và xem mức độ áp dụng hiện tại.';

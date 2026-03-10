@@ -475,11 +475,95 @@ abstract class AppLocalizations {
   /// **'Low'**
   String get tasksPriorityLow;
 
+  /// No description provided for @taskPlanningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Planning'**
+  String get taskPlanningTitle;
+
   /// No description provided for @taskEstimatesTitle.
   ///
   /// In en, this message translates to:
   /// **'Estimations'**
   String get taskEstimatesTitle;
+
+  /// No description provided for @taskLabelsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Labels'**
+  String get taskLabelsTab;
+
+  /// No description provided for @taskLabelsCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create label'**
+  String get taskLabelsCreate;
+
+  /// No description provided for @taskLabelsEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit label'**
+  String get taskLabelsEdit;
+
+  /// No description provided for @taskLabelsDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete label'**
+  String get taskLabelsDelete;
+
+  /// No description provided for @taskLabelsDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this label?'**
+  String get taskLabelsDeleteConfirm;
+
+  /// No description provided for @taskLabelsCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Label created.'**
+  String get taskLabelsCreated;
+
+  /// No description provided for @taskLabelsUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Label updated.'**
+  String get taskLabelsUpdated;
+
+  /// No description provided for @taskLabelsDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Label deleted.'**
+  String get taskLabelsDeleted;
+
+  /// No description provided for @taskLabelsName.
+  ///
+  /// In en, this message translates to:
+  /// **'Label name'**
+  String get taskLabelsName;
+
+  /// No description provided for @taskLabelsNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Label name is required'**
+  String get taskLabelsNameRequired;
+
+  /// No description provided for @taskLabelsColorInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose one of the supported preset colors'**
+  String get taskLabelsColorInvalid;
+
+  /// No description provided for @taskLabelsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No labels yet'**
+  String get taskLabelsEmptyTitle;
+
+  /// No description provided for @taskLabelsEmptyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Create labels to tag and organize task work.'**
+  String get taskLabelsEmptyDescription;
 
   /// No description provided for @taskEstimatesDescription.
   ///

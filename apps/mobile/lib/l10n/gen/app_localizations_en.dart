@@ -203,7 +203,49 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tasksPriorityLow => 'Low';
 
   @override
+  String get taskPlanningTitle => 'Planning';
+
+  @override
   String get taskEstimatesTitle => 'Estimations';
+
+  @override
+  String get taskLabelsTab => 'Labels';
+
+  @override
+  String get taskLabelsCreate => 'Create label';
+
+  @override
+  String get taskLabelsEdit => 'Edit label';
+
+  @override
+  String get taskLabelsDelete => 'Delete label';
+
+  @override
+  String get taskLabelsDeleteConfirm => 'Delete this label?';
+
+  @override
+  String get taskLabelsCreated => 'Label created.';
+
+  @override
+  String get taskLabelsUpdated => 'Label updated.';
+
+  @override
+  String get taskLabelsDeleted => 'Label deleted.';
+
+  @override
+  String get taskLabelsName => 'Label name';
+
+  @override
+  String get taskLabelsNameRequired => 'Label name is required';
+
+  @override
+  String get taskLabelsColorInvalid => 'Choose one of the supported preset colors';
+
+  @override
+  String get taskLabelsEmptyTitle => 'No labels yet';
+
+  @override
+  String get taskLabelsEmptyDescription => 'Create labels to tag and organize task work.';
 
   @override
   String get taskEstimatesDescription => 'Configure estimation methods for your task boards and review their current coverage.';
