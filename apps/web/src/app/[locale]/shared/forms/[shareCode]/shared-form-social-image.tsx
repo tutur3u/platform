@@ -8,82 +8,135 @@ const ACCENT_PALETTES: Record<
   {
     primary: string;
     secondary: string;
+    tertiary: string;
     border: string;
     badgeBg: string;
     badgeText: string;
+    panelBg: string;
   }
 > = {
   'dynamic-blue': {
     primary: '#0f4c81',
     secondary: '#3b82f6',
+    tertiary: '#7dd3fc',
     border: '#7dd3fc',
-    badgeBg: '#0f4c8133',
-    badgeText: '#93c5fd',
+    badgeBg: 'rgba(15, 76, 129, 0.28)',
+    badgeText: '#bfdbfe',
+    panelBg: 'rgba(8, 23, 44, 0.9)',
   },
   'dynamic-cyan': {
     primary: '#155e75',
     secondary: '#06b6d4',
+    tertiary: '#67e8f9',
     border: '#67e8f9',
-    badgeBg: '#155e7533',
-    badgeText: '#67e8f9',
+    badgeBg: 'rgba(21, 94, 117, 0.28)',
+    badgeText: '#a5f3fc',
+    panelBg: 'rgba(6, 28, 37, 0.9)',
   },
   'dynamic-gray': {
     primary: '#27272a',
     secondary: '#71717a',
+    tertiary: '#d4d4d8',
     border: '#d4d4d8',
-    badgeBg: '#3f3f4633',
-    badgeText: '#e4e4e7',
+    badgeBg: 'rgba(82, 82, 91, 0.32)',
+    badgeText: '#f4f4f5',
+    panelBg: 'rgba(24, 24, 27, 0.9)',
   },
   'dynamic-green': {
     primary: '#14532d',
     secondary: '#22c55e',
+    tertiary: '#86efac',
     border: '#86efac',
-    badgeBg: '#14532d33',
-    badgeText: '#86efac',
+    badgeBg: 'rgba(20, 83, 45, 0.28)',
+    badgeText: '#bbf7d0',
+    panelBg: 'rgba(8, 30, 18, 0.9)',
   },
   'dynamic-indigo': {
     primary: '#312e81',
     secondary: '#6366f1',
+    tertiary: '#a5b4fc',
     border: '#a5b4fc',
-    badgeBg: '#312e8133',
+    badgeBg: 'rgba(49, 46, 129, 0.28)',
     badgeText: '#c7d2fe',
+    panelBg: 'rgba(18, 19, 54, 0.9)',
   },
   'dynamic-orange': {
     primary: '#9a3412',
     secondary: '#f97316',
+    tertiary: '#fdba74',
     border: '#fdba74',
-    badgeBg: '#9a341233',
-    badgeText: '#fdba74',
+    badgeBg: 'rgba(154, 52, 18, 0.28)',
+    badgeText: '#fed7aa',
+    panelBg: 'rgba(47, 19, 8, 0.9)',
   },
   'dynamic-pink': {
     primary: '#9d174d',
     secondary: '#ec4899',
+    tertiary: '#f9a8d4',
     border: '#f9a8d4',
-    badgeBg: '#9d174d33',
+    badgeBg: 'rgba(157, 23, 77, 0.28)',
     badgeText: '#fbcfe8',
+    panelBg: 'rgba(49, 10, 29, 0.9)',
   },
   'dynamic-purple': {
     primary: '#6b21a8',
     secondary: '#a855f7',
+    tertiary: '#d8b4fe',
     border: '#d8b4fe',
-    badgeBg: '#6b21a833',
-    badgeText: '#e9d5ff',
+    badgeBg: 'rgba(107, 33, 168, 0.28)',
+    badgeText: '#f3e8ff',
+    panelBg: 'rgba(37, 10, 55, 0.9)',
   },
   'dynamic-red': {
     primary: '#991b1b',
     secondary: '#ef4444',
+    tertiary: '#fca5a5',
     border: '#fca5a5',
-    badgeBg: '#991b1b33',
+    badgeBg: 'rgba(153, 27, 27, 0.28)',
     badgeText: '#fecaca',
+    panelBg: 'rgba(50, 12, 12, 0.9)',
   },
   'dynamic-yellow': {
     primary: '#854d0e',
     secondary: '#eab308',
+    tertiary: '#fde047',
     border: '#fde047',
-    badgeBg: '#854d0e33',
-    badgeText: '#fde68a',
+    badgeBg: 'rgba(133, 77, 14, 0.28)',
+    badgeText: '#fef08a',
+    panelBg: 'rgba(48, 30, 7, 0.9)',
   },
 };
+
+function createAmbientShapes(
+  palette: (typeof ACCENT_PALETTES)[keyof typeof ACCENT_PALETTES]
+) {
+  return [
+    {
+      top: '-14%',
+      left: '-8%',
+      width: 440,
+      height: 440,
+      background: `radial-gradient(circle, ${palette.secondary}5e 0%, transparent 70%)`,
+      opacity: 0.76,
+    },
+    {
+      top: '50%',
+      left: '54%',
+      width: 340,
+      height: 340,
+      background: `radial-gradient(circle, ${palette.primary}7a 0%, transparent 74%)`,
+      opacity: 0.68,
+    },
+    {
+      top: '6%',
+      left: '72%',
+      width: 280,
+      height: 280,
+      background: `radial-gradient(circle, ${palette.tertiary}40 0%, transparent 74%)`,
+      opacity: 0.66,
+    },
+  ];
+}
 
 export const size = {
   width: 1200,
@@ -92,7 +145,7 @@ export const size = {
 
 export const contentType = 'image/png';
 
-export function createSharedFormSocialImage({
+export async function createSharedFormSocialImage({
   form,
   strings,
   status = 200,
@@ -103,6 +156,16 @@ export function createSharedFormSocialImage({
 }) {
   const presentation = getSharedFormPresentation(form, strings, status);
   const palette = ACCENT_PALETTES[presentation.accentColor];
+  const ambientShapes = createAmbientShapes(palette);
+  const previewRows = Array.from({
+    length: Math.max(2, Math.min(3, presentation.itemCount || 3)),
+  });
+  const titleFontSize =
+    presentation.title.length > 80
+      ? 54
+      : presentation.title.length > 54
+        ? 62
+        : 72;
 
   return new ImageResponse(
     <div
@@ -112,183 +175,381 @@ export function createSharedFormSocialImage({
         display: 'flex',
         position: 'relative',
         overflow: 'hidden',
-        backgroundColor: '#09090b',
+        background:
+          'linear-gradient(135deg, #050816 0%, #09090b 42%, #111827 100%)',
         color: '#fafafa',
       }}
     >
-      {presentation.coverImageUrl ? (
-        // biome-ignore lint/performance/noImgElement: ImageResponse requires standard img elements for generated OG images.
-        <img
-          src={presentation.coverImageUrl}
-          alt=""
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background:
+            'linear-gradient(125deg, rgba(255,255,255,0.05) 0%, transparent 26%, transparent 68%, rgba(255,255,255,0.03) 100%)',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background:
+            'linear-gradient(180deg, rgba(5,8,22,0.06) 0%, rgba(5,8,22,0.18) 100%)',
+        }}
+      />
+      {ambientShapes.map((shape, index) => (
+        <div
+          key={index}
           style={{
             position: 'absolute',
-            inset: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            opacity: 0.24,
+            borderRadius: '999px',
+            ...shape,
           }}
         />
-      ) : null}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: `linear-gradient(135deg, ${palette.primary}dd 0%, rgba(9,9,11,0.9) 48%, rgba(9,9,11,0.96) 100%)`,
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: `radial-gradient(circle at top right, ${palette.secondary}55 0%, transparent 34%), radial-gradient(circle at bottom left, ${palette.primary}55 0%, transparent 36%)`,
-        }}
-      />
+      ))}
+
       <div
         style={{
           position: 'relative',
-          zIndex: 1,
           display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
           width: '100%',
           height: '100%',
-          padding: '56px',
+          padding: '44px 48px',
+          gap: '48px',
         }}
       >
         <div
           style={{
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '24px',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            width: '720px',
+            minWidth: '720px',
+            paddingTop: '8px',
           }}
         >
           <div
             style={{
               display: 'flex',
-              alignItems: 'center',
-              gap: '16px',
+              flexDirection: 'column',
+              gap: '30px',
             }}
           >
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                width: '56px',
-                height: '56px',
-                borderRadius: '18px',
-                border: `1px solid ${palette.border}`,
-                background: `${palette.primary}aa`,
-                fontSize: '24px',
-                fontWeight: 700,
               }}
             >
-              T
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '12px 18px',
+                  borderRadius: '999px',
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  boxShadow: '0 18px 36px rgba(0,0,0,0.18)',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '18px',
+                    fontWeight: 700,
+                    letterSpacing: '0.14em',
+                    textTransform: 'uppercase',
+                    color: 'rgba(250,250,250,0.92)',
+                  }}
+                >
+                  {strings.brand}
+                </div>
+              </div>
             </div>
+
             <div
               style={{
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '4px',
+                gap: '26px',
+                maxWidth: '680px',
               }}
             >
-              <span
+              <div
                 style={{
-                  fontSize: '16px',
-                  letterSpacing: '0.28em',
-                  textTransform: 'uppercase',
-                  color: '#d4d4d8',
+                  fontSize: `${titleFontSize}px`,
+                  lineHeight: 0.94,
+                  fontWeight: 800,
+                  letterSpacing: '-0.06em',
+                  display: '-webkit-box',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  WebkitLineClamp: 3,
+                  WebkitBoxOrient: 'vertical',
                 }}
               >
-                {strings.brand}
-              </span>
-              <span
-                style={{
-                  fontSize: '20px',
-                  color: '#a1a1aa',
-                }}
-              >
-                {presentation.kicker}
-              </span>
-            </div>
-          </div>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                padding: '10px 18px',
-                borderRadius: '999px',
-                background: palette.badgeBg,
-                border: `1px solid ${palette.border}`,
-                color: palette.badgeText,
-                fontSize: '18px',
-                fontWeight: 600,
-              }}
-            >
-              {presentation.sectionCount} sections
-            </div>
-            <div
-              style={{
-                display: 'flex',
-                padding: '10px 18px',
-                borderRadius: '999px',
-                background: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.12)',
-                color: '#f4f4f5',
-                fontSize: '18px',
-                fontWeight: 600,
-              }}
-            >
-              {presentation.questionCount} questions
+                {presentation.title}
+              </div>
+
+              {presentation.description ? (
+                <div
+                  style={{
+                    display: 'flex',
+                    width: '100%',
+                    maxWidth: '650px',
+                    padding: '22px 24px',
+                    borderRadius: '28px',
+                    background: 'rgba(255,255,255,0.055)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    boxShadow: '0 24px 64px rgba(0,0,0,0.18)',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      width: '4px',
+                      borderRadius: '999px',
+                      marginRight: '18px',
+                      background: 'rgba(255,255,255,0.18)',
+                    }}
+                  />
+                  <div
+                    style={{
+                      display: '-webkit-box',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      WebkitLineClamp: 4,
+                      WebkitBoxOrient: 'vertical',
+                      fontSize: '24px',
+                      lineHeight: 1.4,
+                      color: '#d4d4d8',
+                    }}
+                  >
+                    {presentation.description}
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
 
         <div
           style={{
+            position: 'relative',
             display: 'flex',
-            flexDirection: 'column',
-            gap: '20px',
-            maxWidth: '940px',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flex: 1,
           }}
         >
           <div
             style={{
-              fontSize: presentation.title.length > 72 ? '56px' : '68px',
-              lineHeight: 1.1,
-              fontWeight: 700,
-              display: '-webkit-box',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              WebkitLineClamp: 3,
-              WebkitBoxOrient: 'vertical',
+              position: 'absolute',
+              top: '56px',
+              right: '18px',
+              width: '316px',
+              height: '420px',
+              borderRadius: '34px',
+              background:
+                'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.015) 100%)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              boxShadow: '0 28px 80px rgba(0,0,0,0.22)',
             }}
-          >
-            {presentation.title}
-          </div>
+          />
           <div
             style={{
-              fontSize: '28px',
-              lineHeight: 1.45,
-              color: '#d4d4d8',
-              display: '-webkit-box',
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column',
+              width: '304px',
+              height: '404px',
+              borderRadius: '30px',
+              padding: '20px',
+              background: palette.panelBg,
+              border: `1px solid ${palette.border}33`,
+              boxShadow: '0 24px 72px rgba(0,0,0,0.28)',
               overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              WebkitLineClamp: 3,
-              WebkitBoxOrient: 'vertical',
-              maxWidth: '880px',
             }}
           >
-            {presentation.description}
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background:
+                  'linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 28%, transparent 72%, rgba(255,255,255,0.03) 100%)',
+              }}
+            />
+            <div
+              style={{
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+                height: '100%',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '16px',
+                  padding: '18px',
+                  borderRadius: '24px',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'rgba(255,255,255,0.04)',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '10px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '104px',
+                        height: '10px',
+                        borderRadius: '999px',
+                        background: 'rgba(255,255,255,0.9)',
+                      }}
+                    />
+                    <div
+                      style={{
+                        width: '72px',
+                        height: '8px',
+                        borderRadius: '999px',
+                        background: 'rgba(255,255,255,0.2)',
+                      }}
+                    />
+                  </div>
+                  <div
+                    style={{
+                      width: '46px',
+                      height: '46px',
+                      borderRadius: '16px',
+                      background: `linear-gradient(145deg, ${palette.primary} 0%, ${palette.secondary} 100%)`,
+                      boxShadow: `0 12px 28px ${palette.primary}44`,
+                    }}
+                  />
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    width: '100%',
+                    height: '10px',
+                    borderRadius: '999px',
+                    background: 'rgba(255,255,255,0.08)',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '62%',
+                      height: '100%',
+                      borderRadius: '999px',
+                      background: 'rgba(255,255,255,0.28)',
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                  padding: '18px',
+                  borderRadius: '24px',
+                  background: 'rgba(255,255,255,0.045)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    width: '92px',
+                    height: '8px',
+                    borderRadius: '999px',
+                    background: 'rgba(255,255,255,0.2)',
+                  }}
+                />
+                {previewRows.map((_, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '14px 14px',
+                      borderRadius: '18px',
+                      background:
+                        index === 1
+                          ? `${palette.secondary}14`
+                          : 'rgba(255,255,255,0.04)',
+                      border:
+                        index === 1
+                          ? `1px solid ${palette.border}30`
+                          : '1px solid rgba(255,255,255,0.06)',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '18px',
+                        height: '18px',
+                        borderRadius: '999px',
+                        border: `2px solid ${index === 1 ? palette.tertiary : 'rgba(255,255,255,0.22)'}`,
+                        background:
+                          index === 1 ? `${palette.tertiary}22` : 'transparent',
+                      }}
+                    />
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px',
+                        flex: 1,
+                      }}
+                    >
+                      <div
+                        style={{
+                          width:
+                            index % 3 === 0
+                              ? '72%'
+                              : index % 3 === 1
+                                ? '88%'
+                                : '64%',
+                          height: '8px',
+                          borderRadius: '999px',
+                          background:
+                            index === 1
+                              ? 'rgba(255,255,255,0.92)'
+                              : 'rgba(255,255,255,0.24)',
+                        }}
+                      />
+                      <div
+                        style={{
+                          width:
+                            index % 2 === 0
+                              ? '42%'
+                              : index === 1
+                                ? '52%'
+                                : '36%',
+                          height: '6px',
+                          borderRadius: '999px',
+                          background: 'rgba(255,255,255,0.14)',
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>

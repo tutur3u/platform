@@ -6,10 +6,13 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-
 import { FormsMarkdown } from '../forms-markdown';
 import type { FormStudioInput } from '../schema';
 import type { getFormToneClasses } from '../theme';
+import {
+  getBodyTypographyClassName,
+  getStudioTitleTypographyClassName,
+} from '../typography';
 
 export function BuilderSidebar({
   values,
@@ -28,6 +31,12 @@ export function BuilderSidebar({
   const questionCount = values.sections.reduce(
     (total, section) => total + section.questions.length,
     0
+  );
+  const studioTitleClassName = getStudioTitleTypographyClassName(
+    values.theme.typography.headingSize
+  );
+  const bodyClassName = getBodyTypographyClassName(
+    values.theme.typography.bodySize
   );
 
   return (
@@ -63,7 +72,7 @@ export function BuilderSidebar({
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="truncate font-semibold text-sm">
+                  <div className={cn('truncate', studioTitleClassName)}>
                     <span className="mr-1">{index + 1}.</span>
                     <FormsMarkdown
                       content={section.title || t('studio.untitled_section')}
@@ -71,7 +80,7 @@ export function BuilderSidebar({
                       className="inline"
                     />
                   </div>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className={cn('text-muted-foreground', bodyClassName)}>
                     {t('studio.question_count', {
                       count: section.questions.length,
                     })}

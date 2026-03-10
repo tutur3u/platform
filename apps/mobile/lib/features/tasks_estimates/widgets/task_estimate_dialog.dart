@@ -37,13 +37,14 @@ class _TaskEstimateDialogState extends State<TaskEstimateDialog> {
     final l10n = context.l10n;
     final state = context.watch<TaskEstimatesCubit>().state;
     final isSaving = state.status == TaskEstimatesStatus.updating;
+    final boardName = widget.board.name ?? l10n.taskEstimatesUnnamedBoard;
     final type = estimationTypeMeta(
       context,
       _selectedEstimationType == 'none' ? null : _selectedEstimationType,
     );
 
     return shad.AlertDialog(
-      title: Text(l10n.taskEstimatesDialogTitle(widget.board.name)),
+      title: Text(l10n.taskEstimatesDialogTitle(boardName)),
       content: ConstrainedBox(
         constraints: BoxConstraints(
           maxHeight: MediaQuery.sizeOf(context).height * 0.6,

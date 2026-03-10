@@ -267,16 +267,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskEstimatesRangeExtended => 'Extended range';
 
   @override
+  String get taskEstimatesUnnamedBoard => 'Untitled board';
+
+  @override
   String get taskEstimatesAllowZeroEstimates => 'Allow zero estimates';
 
   @override
-  String get taskEstimatesAllowZeroEstimatesDescription => 'When enabled, issues can be estimated with zero points.';
+  String get taskEstimatesAllowZeroEstimatesDescription => 'When enabled, issues can be estimated with a zero-like value.';
 
   @override
   String get taskEstimatesCountUnestimatedIssues => 'Count unestimated issues';
 
   @override
-  String get taskEstimatesCountUnestimatedIssuesDescription => 'When enabled, unestimated issues count as one point. When disabled, they count as zero.';
+  String get taskEstimatesCountUnestimatedIssuesDescription => 'When enabled, unestimated issues count as one estimate unit. When disabled, they count as no estimate.';
 
   @override
   String get taskEstimatesUpdateSuccess => 'Estimation updated successfully.';

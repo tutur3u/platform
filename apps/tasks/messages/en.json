@@ -6906,10 +6906,10 @@
     "boards": "boards",
     "dialog": {
       "allow_zero_estimates": "Allow zero estimates",
-      "allow_zero_estimates_description": "When enabled, issues can be estimated with zero points",
+      "allow_zero_estimates_description": "When enabled, issues can be estimated with a zero-like value",
       "cancel": "Cancel",
       "count_unestimated_issues": "Count unestimated issues",
-      "count_unestimated_issues_description": "When enabled, unestimated issues count as 1 estimate point. When disabled, they count as 0",
+      "count_unestimated_issues_description": "When enabled, unestimated issues count as 1 estimate unit. When disabled, they count as no estimate",
       "estimation_method": "Estimation Method",
       "estimation_options": "Estimation Options",
       "exponential_range": "Exponential Scale Range",
@@ -6968,7 +6968,8 @@
     "toast": {
       "update_error": "Failed to update estimation type",
       "update_success": "Estimation type updated successfully"
-    }
+    },
+    "unnamed_board": "Untitled Board"
   },
   "task-projects": {
     "badges": {

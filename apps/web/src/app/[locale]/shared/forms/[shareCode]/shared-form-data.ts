@@ -35,6 +35,7 @@ export async function fetchSharedFormData(
   shareCode: string,
   options?: {
     cookieHeader?: string;
+    revalidateSeconds?: number;
   }
 ): Promise<SharedFormFetchResult> {
   const headers = options?.cookieHeader
@@ -42,9 +43,19 @@ export async function fetchSharedFormData(
         cookie: options.cookieHeader,
       }
     : undefined;
+
+  const revalidateSeconds = options?.revalidateSeconds;
+
   const response = await fetch(`${API_URL}/v1/shared/forms/${shareCode}`, {
-    cache: 'no-store',
+    cache:
+      revalidateSeconds !== undefined && revalidateSeconds > 0
+        ? 'force-cache'
+        : 'no-store',
     headers,
+    next:
+      revalidateSeconds !== undefined
+        ? { revalidate: revalidateSeconds }
+        : undefined,
   });
 
   if (!response.ok) {
@@ -64,6 +75,16 @@ function buildSharedFormUrl(locale: string, shareCode: string) {
   return `${siteConfig.url}/${locale}/shared/forms/${shareCode}`;
 }
 
+function clampSocialText(value: string, maxLength: number) {
+  const normalized = value.replace(/\s+/g, ' ').trim();
+
+  if (normalized.length <= maxLength) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, Math.max(0, maxLength - 1)).trimEnd()}…`;
+}
+
 export function getSharedFormPresentation(
   form: FormDefinition | null | undefined,
   strings: SharedFormMetadataStrings,
@@ -79,34 +100,45 @@ export function getSharedFormPresentation(
 
     return {
       title: strings.fallbackTitle,
-      description,
-      kicker: strings.brand,
+      description: clampSocialText(description, 160),
       coverImageUrl: '',
+      coverImagePath: '',
       accentColor: 'dynamic-green' as const,
       sectionCount: 0,
-      questionCount: 0,
+      itemCount: 0,
     };
   }
 
   const title =
     normalizeMarkdownToText(form.theme.coverHeadline || form.title) ||
     strings.fallbackTitle;
+
+  const firstSectionDescription =
+    form.sections
+      .map((section) => normalizeMarkdownToText(section.description))
+      .find((value) => value.trim().length > 0) ?? '';
+
   const description =
     normalizeMarkdownToText(form.description) ||
-    normalizeMarkdownToText(form.sections[0]?.description) ||
+    firstSectionDescription ||
     strings.fallbackDescription;
 
+  const itemCount = form.sections.reduce(
+    (count, section) =>
+      count +
+      section.questions.filter((question) => question.type !== 'divider')
+        .length,
+    0
+  );
+
   return {
-    title,
-    description,
-    kicker: form.theme.coverKicker || strings.brand,
+    title: clampSocialText(title, 90),
+    description: clampSocialText(description, 160),
     coverImageUrl: form.theme.coverImage.url || '',
+    coverImagePath: form.theme.coverImage.storagePath || '',
     accentColor: form.theme.accentColor,
     sectionCount: form.sections.length,
-    questionCount: form.sections.reduce(
-      (count, section) => count + section.questions.length,
-      0
-    ),
+    itemCount,
   };
 }
 
@@ -127,7 +159,11 @@ export function buildSharedFormMetadata({
   const imageUrl = `${pageUrl}/opengraph-image`;
   const twitterImageUrl = `${pageUrl}/twitter-image`;
   const presentation = getSharedFormPresentation(form, strings, status);
-  const title = `${presentation.title} | ${strings.brand}`;
+
+  const title =
+    presentation.itemCount > 0
+      ? `${presentation.title} (${presentation.itemCount} items) | ${strings.brand}`
+      : `${presentation.title} | ${strings.brand}`;
 
   return {
     title,

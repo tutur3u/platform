@@ -4,16 +4,11 @@ import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import {
   ArrowLeft,
   ArrowRight,
-  Calendar,
   Check,
   CircleCheckBig,
-  ClipboardList,
-  Clock3,
-  FileText,
   Flag,
   ListChecks,
   Mail,
-  MessageSquare,
   Star,
   ZoomIn,
 } from '@tuturuuu/icons';
@@ -40,6 +35,7 @@ import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { DEV_MODE } from '@/constants/common';
+import { isAnswerableQuestionType } from './block-utils';
 import { getNextSectionTarget } from './branching';
 import { normalizeMarkdownToText } from './content';
 import { FORM_FONT_VARIABLES, getFormFontStyle } from './fonts';
@@ -54,7 +50,15 @@ import type {
   FormDefinitionQuestion,
   FormReadOnlyAnswerIssue,
 } from './types';
-import { validateSubmittedAnswers } from './validation';
+import {
+  getBodyTypographyClassName,
+  getDisplayTypographyClassName,
+  getHeadingTypographyClassName,
+} from './typography';
+import {
+  getValidationConstraintHint,
+  validateSubmittedAnswers,
+} from './validation';
 
 interface FormRuntimeProps {
   form: FormDefinition;
@@ -79,19 +83,19 @@ interface FormRuntimeProps {
 
 const densityClasses = {
   airy: {
-    cardPadding: 'p-8',
-    sectionGap: 'space-y-8',
-    questionGap: 'space-y-6',
+    cardPadding: 'p-8 sm:p-12',
+    sectionGap: 'space-y-20',
+    questionGap: 'space-y-16',
   },
   balanced: {
-    cardPadding: 'p-6',
-    sectionGap: 'space-y-6',
-    questionGap: 'space-y-5',
+    cardPadding: 'p-6 sm:p-10',
+    sectionGap: 'space-y-16',
+    questionGap: 'space-y-12',
   },
   compact: {
-    cardPadding: 'p-5',
-    sectionGap: 'space-y-4',
-    questionGap: 'space-y-4',
+    cardPadding: 'p-5 sm:p-8',
+    sectionGap: 'space-y-12',
+    questionGap: 'space-y-10',
   },
 } as const;
 
@@ -164,17 +168,19 @@ function ExpandableDescriptionPanel({
         </p>
       )}
       {shouldCollapse ? (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="h-9 rounded-xl px-3 text-muted-foreground hover:text-foreground"
-          onClick={() => setExpanded((current) => !current)}
-        >
-          {expanded
-            ? t('runtime.show_less_description')
-            : t('runtime.show_more_description')}
-        </Button>
+        <div className="pt-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-8 rounded-full px-4 font-medium text-muted-foreground text-xs transition-all hover:bg-foreground/5 hover:text-foreground"
+            onClick={() => setExpanded((current) => !current)}
+          >
+            {expanded
+              ? t('runtime.show_less_description')
+              : t('runtime.show_more_description')}
+          </Button>
+        </div>
       ) : null}
     </div>
   );
@@ -187,7 +193,9 @@ function QuestionBlock({
   onProgress,
   onImagePreview,
   disabled = false,
+  validationError,
   toneClasses,
+  typography,
 }: {
   question: FormDefinitionQuestion;
   value: FormAnswerValue | undefined;
@@ -195,15 +203,138 @@ function QuestionBlock({
   onProgress: () => void;
   onImagePreview: (image: { src: string; alt: string }) => void;
   disabled?: boolean;
+  validationError?: string;
   toneClasses: ReturnType<typeof getFormToneClasses>;
+  typography: FormDefinition['theme']['typography'];
 }) {
   const t = useTranslations('forms');
   const settings = question.settings ?? {};
+  const headingClassName = getHeadingTypographyClassName(
+    typography.headingSize
+  );
+  const bodyClassName = getBodyTypographyClassName(typography.bodySize);
 
   if (question.type === 'section_break') {
     return (
       <div className="py-2">
         <Separator className="bg-border/60" />
+      </div>
+    );
+  }
+
+  if (question.type === 'divider') {
+    return (
+      <div className="py-3">
+        <Separator className="bg-border/60" />
+      </div>
+    );
+  }
+
+  if (question.type === 'rich_text') {
+    return (
+      <div className="space-y-3 rounded-[1.6rem] border border-border/60 bg-background/45 p-5 sm:p-6">
+        {question.title ? (
+          <div className={cn('font-semibold leading-tight', headingClassName)}>
+            <FormsMarkdown content={question.title} className="[&_p]:m-0" />
+          </div>
+        ) : null}
+        {question.description ? (
+          <FormsMarkdown
+            content={question.description}
+            className={cn('text-muted-foreground', bodyClassName)}
+          />
+        ) : null}
+      </div>
+    );
+  }
+
+  if (question.type === 'image') {
+    return (
+      <div className="space-y-4 rounded-[1.6rem] border border-border/60 bg-background/45 p-5 sm:p-6">
+        {question.title ? (
+          <div className={cn('font-semibold leading-tight', headingClassName)}>
+            <FormsMarkdown content={question.title} className="[&_p]:m-0" />
+          </div>
+        ) : null}
+        {question.image?.url ? (
+          <div className="relative aspect-16/9 overflow-hidden rounded-[1.35rem] border border-border/60 bg-background/70">
+            <Image
+              src={question.image.url}
+              alt={
+                question.image.alt ||
+                normalizeMarkdownToText(question.title) ||
+                t('studio.question_image')
+              }
+              fill
+              unoptimized
+              className="object-cover"
+            />
+            <Button
+              type="button"
+              size="icon"
+              variant="secondary"
+              className="absolute top-4 right-4 h-10 w-10 rounded-full bg-background/85 shadow-sm backdrop-blur-sm"
+              onClick={() =>
+                onImagePreview({
+                  src: question.image.url,
+                  alt:
+                    question.image.alt ||
+                    normalizeMarkdownToText(question.title) ||
+                    t('studio.question_image'),
+                })
+              }
+            >
+              <ZoomIn className="h-4 w-4" />
+              <span className="sr-only">
+                {t('runtime.view_image_fullscreen')}
+              </span>
+            </Button>
+          </div>
+        ) : null}
+        {question.description ? (
+          <FormsMarkdown
+            content={question.description}
+            className={cn('text-muted-foreground', bodyClassName)}
+          />
+        ) : null}
+      </div>
+    );
+  }
+
+  if (question.type === 'youtube') {
+    const videoId = settings.youtubeVideoId;
+    const startSeconds = settings.youtubeStartSeconds ?? 0;
+    const embedUrl = videoId
+      ? `https://www.youtube.com/embed/${videoId}${startSeconds > 0 ? `?start=${startSeconds}` : ''}`
+      : '';
+
+    return (
+      <div className="space-y-4 rounded-[1.6rem] border border-border/60 bg-background/45 p-5 sm:p-6">
+        {question.title ? (
+          <div className={cn('font-semibold leading-tight', headingClassName)}>
+            <FormsMarkdown content={question.title} className="[&_p]:m-0" />
+          </div>
+        ) : null}
+        {embedUrl ? (
+          <div className="overflow-hidden rounded-[1.35rem] border border-border/60 bg-background/70 shadow-sm">
+            <div className="aspect-video">
+              <iframe
+                src={embedUrl}
+                title={normalizeMarkdownToText(question.title) || 'YouTube'}
+                className="h-full w-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
+              />
+            </div>
+          </div>
+        ) : null}
+        {question.description ? (
+          <FormsMarkdown
+            content={question.description}
+            className={cn('text-muted-foreground', bodyClassName)}
+          />
+        ) : null}
       </div>
     );
   }
@@ -252,61 +383,164 @@ function QuestionBlock({
   const optionLayout = settings.optionLayout === 'grid' ? 'grid' : 'list';
   const choiceLayoutClassName =
     optionLayout === 'grid' ? 'grid gap-3 sm:grid-cols-2' : 'space-y-2';
+  const selectedDropdownOption =
+    question.type === 'dropdown' && typeof value === 'string'
+      ? (question.options.find((option) => option.value === value) ?? null)
+      : null;
 
   return (
-    <div className="space-y-3">
-      <div className="space-y-1">
+    <div
+      id={`question-${question.id}`}
+      className={cn(
+        'group space-y-4 transition-all duration-300',
+        validationError
+          ? 'animate-shake rounded-[2rem] bg-dynamic-red/5 p-6 shadow-dynamic-red/5 shadow-sm ring-1 ring-dynamic-red/20'
+          : 'rounded-[2rem] p-6 transition-colors duration-500 hover:bg-foreground/[0.02]'
+      )}
+    >
+      <div className="space-y-2.5">
         <div className="flex flex-wrap items-center gap-2">
           <Badge
             variant="outline"
-            className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px]"
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-medium text-[11px]',
+              validationError
+                ? 'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red'
+                : ''
+            )}
           >
             <QuestionTypeIcon type={question.type} className="h-3.5 w-3.5" />
             <span>{questionTypeLabel}</span>
           </Badge>
           {question.required ? (
-            <Badge variant="secondary" className="rounded-full text-[11px]">
+            <Badge
+              variant="secondary"
+              className={cn(
+                'rounded-full px-2.5 py-1 font-medium text-[11px]',
+                validationError
+                  ? 'bg-dynamic-red text-white'
+                  : 'bg-foreground/10'
+              )}
+            >
               {t('runtime.required')}
             </Badge>
           ) : null}
         </div>
-        <div className="font-semibold text-base leading-snug">
+        <div
+          className={cn(
+            'font-semibold leading-snug transition-colors',
+            question.description ? 'pb-2' : 'pb-4',
+            validationError ? 'text-dynamic-red' : '',
+            headingClassName
+          )}
+        >
           <FormsMarkdown content={question.title} className="[&_p]:m-0" />
         </div>
+        {question.image?.url ? (
+          <div
+            className={cn(
+              'relative mt-3 aspect-16/9 overflow-hidden rounded-[1.25rem] border bg-background/70 shadow-xs transition-all',
+              validationError
+                ? 'border-dynamic-red/40'
+                : 'border-border/60 hover:border-border/80'
+            )}
+          >
+            <Image
+              src={question.image.url}
+              alt={
+                question.image.alt ||
+                normalizeMarkdownToText(question.title) ||
+                t('studio.question_image')
+              }
+              fill
+              unoptimized
+              className="object-cover transition-transform duration-500 hover:scale-105"
+            />
+            <Button
+              type="button"
+              size="icon"
+              variant="secondary"
+              className="absolute top-3 right-3 h-9 w-9 rounded-full bg-background/85 shadow-sm backdrop-blur-sm transition-all hover:scale-110 hover:bg-background"
+              onClick={() =>
+                onImagePreview({
+                  src: question.image.url,
+                  alt:
+                    question.image.alt ||
+                    normalizeMarkdownToText(question.title) ||
+                    t('studio.question_image'),
+                })
+              }
+            >
+              <ZoomIn className="h-4 w-4" />
+              <span className="sr-only">
+                {t('runtime.view_image_fullscreen')}
+              </span>
+            </Button>
+          </div>
+        ) : null}
         {question.description ? (
           <FormsMarkdown
             content={question.description}
-            className="text-muted-foreground text-sm [&_p]:leading-6"
+            className={cn(
+              'pb-2 transition-colors [&_p]:leading-relaxed',
+              validationError ? 'text-dynamic-red/70' : 'text-muted-foreground',
+              bodyClassName
+            )}
           />
+        ) : null}
+        {(question.type === 'short_text' || question.type === 'long_text') &&
+        getValidationConstraintHint(
+          settings,
+          t as (key: string, values?: Record<string, string | number>) => string
+        ) ? (
+          <p
+            className={cn(
+              'pb-1 text-sm italic opacity-80',
+              validationError ? 'text-dynamic-red' : 'text-muted-foreground'
+            )}
+          >
+            {getValidationConstraintHint(
+              settings,
+              t as (
+                key: string,
+                values?: Record<string, string | number>
+              ) => string
+            )}
+          </p>
         ) : null}
       </div>
 
       {question.type === 'short_text' ? (
-        <div className="relative">
-          <FileText className="absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={typeof value === 'string' ? value : ''}
-            placeholder={settings.placeholder || t('runtime.type_your_answer')}
-            onChange={(event) => onChange(event.target.value)}
-            onBlur={onProgress}
-            className={cn('pl-11', toneClasses.fieldClassName)}
-            disabled={disabled}
-          />
-        </div>
+        <Input
+          value={typeof value === 'string' ? value : ''}
+          placeholder={settings.placeholder || t('runtime.type_your_answer')}
+          onChange={(event) => onChange(event.target.value)}
+          onBlur={onProgress}
+          className={cn(
+            toneClasses.fieldClassName,
+            validationError
+              ? '!border-dynamic-red/50 !ring-2 !ring-dynamic-red/15 focus-visible:!border-dynamic-red focus-visible:!ring-dynamic-red/20'
+              : ''
+          )}
+          disabled={disabled}
+        />
       ) : null}
 
       {question.type === 'long_text' ? (
-        <div className="relative">
-          <MessageSquare className="absolute top-4 left-4 h-4 w-4 text-muted-foreground" />
-          <Textarea
-            value={typeof value === 'string' ? value : ''}
-            placeholder={settings.placeholder || t('runtime.type_your_answer')}
-            onChange={(event) => onChange(event.target.value)}
-            onBlur={onProgress}
-            className={cn('min-h-32 pl-11', toneClasses.fieldClassName)}
-            disabled={disabled}
-          />
-        </div>
+        <Textarea
+          value={typeof value === 'string' ? value : ''}
+          placeholder={settings.placeholder || t('runtime.type_your_answer')}
+          onChange={(event) => onChange(event.target.value)}
+          onBlur={onProgress}
+          className={cn(
+            'min-h-32',
+            toneClasses.fieldClassName,
+            validationError
+              ? '!border-dynamic-red/50 !ring-2 !ring-dynamic-red/15 focus-visible:!border-dynamic-red focus-visible:!ring-dynamic-red/20'
+              : ''
+          )}
+          disabled={disabled}
+        />
       ) : null}
 
       {question.type === 'single_choice' ? (
@@ -323,21 +557,36 @@ function QuestionBlock({
             <label
               key={option.id}
               className={cn(
-                'flex h-full cursor-pointer rounded-2xl border p-3.5 transition',
+                'flex h-full cursor-pointer rounded-2xl border p-4 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]',
                 value === option.value
-                  ? toneClasses.selectedOptionClassName
-                  : toneClasses.optionCardClassName
+                  ? cn(toneClasses.selectedOptionClassName, 'shadow-md')
+                  : validationError
+                    ? '!border-dynamic-red/30 hover:!border-dynamic-red/50 bg-background/50'
+                    : cn(toneClasses.optionCardClassName, 'hover:shadow-sm')
               )}
             >
               <div className="flex w-full items-start gap-3">
                 <RadioGroupItem
                   value={option.value}
                   id={option.id}
-                  className={cn('mt-1 shrink-0', toneClasses.radioClassName)}
+                  className={cn(
+                    'mt-1 shrink-0',
+                    toneClasses.radioClassName,
+                    validationError && value !== option.value
+                      ? '!border-dynamic-red/40'
+                      : ''
+                  )}
                 />
                 <div className="min-w-0 flex-1 space-y-3">
                   {hasOptionImage(option) ? (
-                    <div className="relative aspect-16/10 overflow-hidden rounded-[1.15rem] border border-border/60 bg-background/70">
+                    <div
+                      className={cn(
+                        'relative aspect-16/10 overflow-hidden rounded-[1.15rem] border bg-background/70',
+                        validationError && value !== option.value
+                          ? '!border-dynamic-red/30'
+                          : 'border-border/60'
+                      )}
+                    >
                       <Image
                         src={option.image.url}
                         alt={
@@ -374,10 +623,22 @@ function QuestionBlock({
                     </div>
                   ) : null}
                   <div className="flex items-start gap-2">
-                    <CircleCheckBig className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                    <CircleCheckBig
+                      className={cn(
+                        'mt-0.5 h-4 w-4 shrink-0',
+                        validationError && value !== option.value
+                          ? 'text-dynamic-red/60'
+                          : 'text-muted-foreground'
+                      )}
+                    />
                     <FormsMarkdown
                       content={option.label}
-                      className="min-w-0 font-medium text-sm [&_p]:m-0 [&_p]:leading-6"
+                      className={cn(
+                        'min-w-0 font-medium text-sm [&_p]:m-0 [&_p]:leading-6',
+                        validationError && value !== option.value
+                          ? 'text-dynamic-red/80'
+                          : ''
+                      )}
                     />
                   </div>
                 </div>
@@ -398,10 +659,12 @@ function QuestionBlock({
               <label
                 key={option.id}
                 className={cn(
-                  'flex h-full cursor-pointer rounded-2xl border p-3.5 transition',
+                  'flex h-full cursor-pointer rounded-2xl border p-4 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]',
                   checked
-                    ? toneClasses.selectedOptionClassName
-                    : toneClasses.optionCardClassName
+                    ? cn(toneClasses.selectedOptionClassName, 'shadow-md')
+                    : validationError
+                      ? '!border-dynamic-red/30 hover:!border-dynamic-red/50 bg-background/50'
+                      : cn(toneClasses.optionCardClassName, 'hover:shadow-sm')
                 )}
               >
                 <div className="flex w-full items-start gap-3">
@@ -409,7 +672,10 @@ function QuestionBlock({
                     checked={checked}
                     className={cn(
                       'mt-1 shrink-0',
-                      toneClasses.checkboxClassName
+                      toneClasses.checkboxClassName,
+                      validationError && !checked
+                        ? '!border-dynamic-red/40'
+                        : ''
                     )}
                     disabled={disabled}
                     onCheckedChange={(nextChecked) => {
@@ -427,7 +693,14 @@ function QuestionBlock({
                   />
                   <div className="min-w-0 flex-1 space-y-3">
                     {hasOptionImage(option) ? (
-                      <div className="relative aspect-16/10 overflow-hidden rounded-[1.15rem] border border-border/60 bg-background/70">
+                      <div
+                        className={cn(
+                          'relative aspect-16/10 overflow-hidden rounded-[1.15rem] border bg-background/70',
+                          validationError && !checked
+                            ? '!border-dynamic-red/30'
+                            : 'border-border/60'
+                        )}
+                      >
                         <Image
                           src={option.image.url}
                           alt={
@@ -464,10 +737,22 @@ function QuestionBlock({
                       </div>
                     ) : null}
                     <div className="flex items-start gap-2">
-                      <ListChecks className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                      <ListChecks
+                        className={cn(
+                          'mt-0.5 h-4 w-4 shrink-0',
+                          validationError && !checked
+                            ? 'text-dynamic-red/60'
+                            : 'text-muted-foreground'
+                        )}
+                      />
                       <FormsMarkdown
                         content={option.label}
-                        className="min-w-0 font-medium text-sm [&_p]:m-0 [&_p]:leading-6"
+                        className={cn(
+                          'min-w-0 font-medium text-sm [&_p]:m-0 [&_p]:leading-6',
+                          validationError && !checked
+                            ? 'text-dynamic-red/80'
+                            : ''
+                        )}
                       />
                     </div>
                   </div>
@@ -487,31 +772,76 @@ function QuestionBlock({
             onProgress();
           }}
         >
-          <SelectTrigger className={toneClasses.fieldClassName}>
+          <SelectTrigger
+            className={cn(
+              toneClasses.fieldClassName,
+              validationError
+                ? '!border-dynamic-red/50 !ring-2 !ring-dynamic-red/15 focus:!border-dynamic-red focus:!ring-dynamic-red/20'
+                : ''
+            )}
+          >
             {typeof value === 'string' && value ? (
               <div className="flex min-w-0 items-center gap-2">
-                <ClipboardList className="h-4 w-4 shrink-0 text-muted-foreground" />
+                {selectedDropdownOption &&
+                hasOptionImage(selectedDropdownOption) ? (
+                  <div
+                    className={cn(
+                      'relative h-8 w-8 shrink-0 overflow-hidden rounded-xl border bg-background/70',
+                      validationError
+                        ? '!border-dynamic-red/30'
+                        : 'border-border/60'
+                    )}
+                  >
+                    <Image
+                      src={selectedDropdownOption.image.url}
+                      alt={
+                        selectedDropdownOption.image.alt ||
+                        selectedDropdownOption.value ||
+                        t('runtime.choose_option')
+                      }
+                      fill
+                      unoptimized
+                      className="object-cover"
+                    />
+                  </div>
+                ) : null}
                 <FormsMarkdown
-                  content={
-                    question.options.find((option) => option.value === value)
-                      ?.label ?? value
-                  }
+                  content={selectedDropdownOption?.label ?? value}
                   variant="inline"
                   className="min-w-0 truncate text-left text-sm"
                 />
               </div>
             ) : (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <ClipboardList className="h-4 w-4" />
-                <span>{t('runtime.choose_option')}</span>
-              </div>
+              <span
+                className={
+                  validationError
+                    ? 'text-dynamic-red/70'
+                    : 'text-muted-foreground'
+                }
+              >
+                {t('runtime.choose_option')}
+              </span>
             )}
           </SelectTrigger>
           <SelectContent>
             {question.options.map((option) => (
               <SelectItem key={option.id} value={option.value}>
-                <div className="flex items-center gap-2">
-                  <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                <div className="flex min-w-0 items-center gap-2">
+                  {hasOptionImage(option) ? (
+                    <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-xl border border-border/60 bg-background/70">
+                      <Image
+                        src={option.image.url}
+                        alt={
+                          option.image.alt ||
+                          normalizeMarkdownToText(option.label) ||
+                          option.value
+                        }
+                        fill
+                        unoptimized
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : null}
                   <FormsMarkdown
                     content={option.label}
                     variant="inline"
@@ -525,24 +855,59 @@ function QuestionBlock({
       ) : null}
 
       {question.type === 'linear_scale' || question.type === 'rating' ? (
-        <div className="space-y-4 rounded-[1.6rem] border border-border/60 bg-background/45 p-4 sm:p-5">
+        <div
+          className={cn(
+            'space-y-4 rounded-[1.6rem] border bg-background/45 p-4 transition-all sm:p-5',
+            validationError
+              ? '!border-dynamic-red/40 bg-dynamic-red/5'
+              : 'border-border/60'
+          )}
+        >
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex items-start gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-background/70 text-muted-foreground shadow-sm">
+              <span
+                className={cn(
+                  'flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border bg-background/70 shadow-sm',
+                  validationError
+                    ? '!border-dynamic-red/30 text-dynamic-red'
+                    : 'border-border/60 text-muted-foreground'
+                )}
+              >
                 <QuestionTypeIcon type={question.type} className="h-4 w-4" />
               </span>
               <div className="space-y-1">
-                <p className="text-[11px] text-muted-foreground uppercase tracking-[0.22em]">
+                <p
+                  className={cn(
+                    'text-[11px] uppercase tracking-[0.22em]',
+                    validationError
+                      ? 'text-dynamic-red/80'
+                      : 'text-muted-foreground'
+                  )}
+                >
                   {question.type === 'rating'
                     ? t('question_type.rating')
                     : t('question_type.linear_scale')}
                 </p>
-                <p className="text-muted-foreground text-sm">
+                <p
+                  className={cn(
+                    'text-sm',
+                    validationError
+                      ? 'text-dynamic-red/70'
+                      : 'text-muted-foreground'
+                  )}
+                >
                   {scaleMin} - {scaleMax}
                 </p>
               </div>
             </div>
-            <div className="rounded-full border border-border/60 bg-background/70 px-3 py-1.5 text-sm shadow-sm">
+            <div
+              className={cn(
+                'rounded-full border bg-background/70 px-3 py-1.5 text-sm shadow-sm',
+                validationError
+                  ? '!border-dynamic-red/30 text-dynamic-red'
+                  : 'border-border/60 text-foreground'
+              )}
+            >
               {selectedScaleOption ? (
                 question.type === 'rating' ? (
                   <span className="font-semibold">
@@ -554,7 +919,13 @@ function QuestionBlock({
                   </span>
                 )
               ) : (
-                <span className="text-muted-foreground">
+                <span
+                  className={
+                    validationError
+                      ? 'text-dynamic-red/60'
+                      : 'text-muted-foreground'
+                  }
+                >
                   {t('runtime.choose_option')}
                 </span>
               )}
@@ -562,7 +933,12 @@ function QuestionBlock({
           </div>
 
           {question.type === 'linear_scale' ? (
-            <div className="rounded-[1.45rem] border border-border/60 bg-background/55 p-4 shadow-sm">
+            <div
+              className={cn(
+                'rounded-[1.45rem] border bg-background/55 p-4 shadow-sm',
+                validationError ? '!border-dynamic-red/20' : 'border-border/60'
+              )}
+            >
               <Slider
                 value={[
                   Number.isNaN(selectedScaleNumber)
@@ -585,8 +961,13 @@ function QuestionBlock({
                 className={cn(
                   'px-1 py-4 **:data-[slot=slider-thumb]:h-5 **:data-[slot=slider-thumb]:w-5 **:data-[slot=slider-thumb]:border-2 **:data-[slot=slider-thumb]:border-current **:data-[slot=slider-range]:bg-current **:data-[slot=slider-thumb]:bg-background',
                   selectedScaleLabel
-                    ? 'text-foreground'
-                    : 'text-muted-foreground'
+                    ? validationError
+                      ? 'text-dynamic-red'
+                      : 'text-foreground'
+                    : 'text-muted-foreground',
+                  validationError && !selectedScaleLabel
+                    ? 'text-dynamic-red/40'
+                    : ''
                 )}
               />
               <div className="mt-3 grid gap-2 sm:grid-cols-5">
@@ -613,22 +994,33 @@ function QuestionBlock({
                         onProgress();
                       }}
                       className={cn(
-                        'rounded-[1.15rem] border px-3 py-3 text-left transition focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                        'rounded-[1.15rem] border px-3 py-3 text-left transition-all duration-300 hover:scale-[1.05] focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[0.95]',
                         active
                           ? cn(
                               toneClasses.selectedOptionClassName,
                               'shadow-sm ring-1 ring-current/20'
                             )
-                          : cn(
-                              toneClasses.optionCardClassName,
-                              'hover:border-foreground/20 hover:bg-background/80'
-                            )
+                          : validationError
+                            ? 'hover:!border-dynamic-red/40 border-dynamic-red/25 bg-background/40 hover:bg-background/60'
+                            : cn(
+                                toneClasses.optionCardClassName,
+                                'hover:border-foreground/20 hover:bg-background/80 hover:shadow-sm'
+                              )
                       )}
                       aria-label={showLabel ? plainOptionLabel : option.value}
                       aria-pressed={active}
                     >
                       <div className="flex items-center justify-between gap-3">
-                        <span className="font-semibold text-base">
+                        <span
+                          className={cn(
+                            'font-semibold text-base',
+                            active
+                              ? ''
+                              : validationError
+                                ? 'text-dynamic-red/70'
+                                : ''
+                          )}
+                        >
                           {option.value}
                         </span>
                         {active ? <Check className="h-4 w-4" /> : null}
@@ -636,7 +1028,14 @@ function QuestionBlock({
                       {showLabel ? (
                         <FormsMarkdown
                           content={option.label}
-                          className="mt-1.5 line-clamp-2 text-muted-foreground text-xs leading-4 [&_p]:m-0"
+                          className={cn(
+                            'mt-1.5 line-clamp-2 text-xs leading-4 [&_p]:m-0',
+                            active
+                              ? ''
+                              : validationError
+                                ? 'text-dynamic-red/60'
+                                : 'text-muted-foreground'
+                          )}
                         />
                       ) : null}
                     </button>
@@ -649,7 +1048,12 @@ function QuestionBlock({
               </div>
             </div>
           ) : (
-            <div className="rounded-[1.45rem] border border-border/60 bg-background/55 p-5 shadow-sm">
+            <div
+              className={cn(
+                'rounded-[1.45rem] border bg-background/55 p-5 shadow-sm',
+                validationError ? '!border-dynamic-red/20' : 'border-border/60'
+              )}
+            >
               <div className="flex flex-wrap items-center justify-center gap-2.5">
                 {displayScaleOptions.map((option) => {
                   const score = Number(option.value);
@@ -674,16 +1078,18 @@ function QuestionBlock({
                         onProgress();
                       }}
                       className={cn(
-                        'group flex h-14 w-14 items-center justify-center rounded-[1.15rem] border transition hover:border-foreground/20 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                        'group flex h-14 w-14 items-center justify-center rounded-[1.15rem] border transition-all duration-300 hover:scale-[1.1] hover:border-foreground/20 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[0.9]',
                         selected
                           ? cn(
                               toneClasses.selectedOptionClassName,
                               'shadow-sm ring-1 ring-current/20'
                             )
-                          : cn(
-                              toneClasses.optionCardClassName,
-                              'hover:bg-background/80'
-                            )
+                          : validationError
+                            ? '!border-dynamic-red/25 hover:!border-dynamic-red/40 bg-background/40 hover:bg-background/60'
+                            : cn(
+                                toneClasses.optionCardClassName,
+                                'hover:bg-background/80 hover:shadow-sm'
+                              )
                       )}
                       aria-label={normalizeMarkdownToText(option.label)}
                       aria-pressed={selected}
@@ -691,7 +1097,14 @@ function QuestionBlock({
                       <Star
                         className={cn(
                           'h-7 w-7 transition',
-                          active ? 'fill-current' : 'fill-transparent'
+                          selected
+                            ? 'fill-current'
+                            : active
+                              ? 'fill-current/60'
+                              : 'fill-transparent',
+                          validationError && !active
+                            ? 'text-dynamic-red/40'
+                            : ''
                         )}
                       />
                     </button>
@@ -707,7 +1120,12 @@ function QuestionBlock({
               selectedScaleOption.label !== selectedScaleOption.value ? (
                 <FormsMarkdown
                   content={selectedScaleOption.label}
-                  className="mt-3 text-center text-muted-foreground text-sm [&_p]:m-0"
+                  className={cn(
+                    'mt-3 text-center text-sm [&_p]:m-0',
+                    validationError
+                      ? 'text-dynamic-red/70'
+                      : 'text-muted-foreground'
+                  )}
                 />
               ) : null}
             </div>
@@ -716,11 +1134,12 @@ function QuestionBlock({
       ) : null}
 
       {question.type === 'date' ? (
-        <div className="space-y-3 rounded-[1.45rem] border border-border/60 bg-background/55 p-4 shadow-sm">
-          <div className="flex items-center gap-2 text-muted-foreground text-sm">
-            <Calendar className="h-4 w-4" />
-            <span>{t('question_type.date')}</span>
-          </div>
+        <div
+          className={cn(
+            'space-y-3 rounded-[1.45rem] border bg-background/55 p-4 shadow-sm',
+            validationError ? '!border-dynamic-red/40' : 'border-border/60'
+          )}
+        >
           <DateTimePicker
             date={parseDateAnswer(value)}
             setDate={(date) => {
@@ -742,11 +1161,27 @@ function QuestionBlock({
             onProgress();
           }}
         >
-          <SelectTrigger className={toneClasses.fieldClassName}>
-            <div className="flex items-center gap-2">
-              <Clock3 className="h-4 w-4 text-muted-foreground" />
-              <SelectValue placeholder={t('runtime.pick_time')} />
-            </div>
+          <SelectTrigger
+            className={cn(
+              toneClasses.fieldClassName,
+              validationError
+                ? '!border-dynamic-red/50 !ring-2 !ring-dynamic-red/15 focus:!border-dynamic-red focus:!ring-dynamic-red/20'
+                : ''
+            )}
+          >
+            <SelectValue
+              placeholder={
+                <span
+                  className={
+                    validationError
+                      ? 'text-dynamic-red/70'
+                      : 'text-muted-foreground'
+                  }
+                >
+                  {t('runtime.pick_time')}
+                </span>
+              }
+            />
           </SelectTrigger>
           <SelectContent>
             {TIME_OPTIONS.map((time) => (
@@ -756,6 +1191,14 @@ function QuestionBlock({
             ))}
           </SelectContent>
         </Select>
+      ) : null}
+
+      {validationError ? (
+        <div className="fade-in slide-in-from-top-2 mt-3 animate-in rounded-2xl border border-dynamic-red/25 bg-dynamic-red/10 px-4 py-2.5 transition-all duration-300">
+          <p className="font-medium text-dynamic-red text-sm">
+            {validationError}
+          </p>
+        </div>
       ) : null}
     </div>
   );
@@ -788,6 +1231,8 @@ export function FormRuntime({
     form.sections[0]?.id ? [form.sections[0].id] : []
   );
   const [error, setError] = useState<string | null>(null);
+  const [validationErrorsByQuestionId, setValidationErrorsByQuestionId] =
+    useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string>();
   const [captchaError, setCaptchaError] = useState<string>();
@@ -803,6 +1248,15 @@ export function FormRuntime({
   const toneClasses = getFormToneClasses(form.theme.accentColor);
   const bodyFontStyle = getFormFontStyle(form.theme.bodyFontId);
   const headlineFontStyle = getFormFontStyle(form.theme.headlineFontId);
+  const displayTypographyClassName = getDisplayTypographyClassName(
+    form.theme.typography.displaySize
+  );
+  const headingTypographyClassName = getHeadingTypographyClassName(
+    form.theme.typography.headingSize
+  );
+  const bodyTypographyClassName = getBodyTypographyClassName(
+    form.theme.typography.bodySize
+  );
   const density = densityClasses[form.theme.density];
   const turnstileSiteKey =
     process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? undefined;
@@ -830,7 +1284,10 @@ export function FormRuntime({
     () =>
       new Set(
         currentSection?.questions
-          .filter((question) => question.required)
+          .filter(
+            (question) =>
+              question.required && isAnswerableQuestionType(question.type)
+          )
           .map((question) => question.id)
       ),
     [currentSection]
@@ -934,6 +1391,12 @@ export function FormRuntime({
     answersRef.current = nextAnswers;
     setAnswers(nextAnswers);
     setError(null);
+    setValidationErrorsByQuestionId((prev) => {
+      if (!(questionId in prev)) return prev;
+      const next = { ...prev };
+      delete next[questionId];
+      return next;
+    });
   };
 
   const emitProgress = (payload: { lastQuestionId?: string | null }) => {
@@ -953,25 +1416,46 @@ export function FormRuntime({
   const validateCurrentSection = (
     currentAnswers: Record<string, FormAnswerValue>
   ) => {
-    const firstMissingRequired = currentSection?.questions.find((question) => {
-      if (!requiredQuestionIds.has(question.id)) {
-        return false;
-      }
+    const missingRequiredQuestions =
+      currentSection?.questions.filter((question) => {
+        if (!requiredQuestionIds.has(question.id)) {
+          return false;
+        }
 
-      const value = currentAnswers[question.id];
-      if (Array.isArray(value)) {
-        return value.length === 0;
-      }
+        const value = currentAnswers[question.id];
+        if (Array.isArray(value)) {
+          return value.length === 0;
+        }
 
-      return value == null || value === '';
-    });
+        return value == null || value === '';
+      }) ?? [];
 
-    if (firstMissingRequired) {
+    if (missingRequiredQuestions.length > 0) {
+      const firstMissing = missingRequiredQuestions[0]!;
       setError(
         t('runtime.required_before_continue', {
-          title: normalizeMarkdownToText(firstMissingRequired.title),
+          title: normalizeMarkdownToText(firstMissing.title),
         })
       );
+
+      const nextErrors: Record<string, string> = {};
+      for (const question of missingRequiredQuestions) {
+        nextErrors[question.id] = t('runtime.required');
+      }
+
+      setValidationErrorsByQuestionId((prev) => ({
+        ...prev,
+        ...nextErrors,
+      }));
+
+      // Scroll to the first missing required question
+      requestAnimationFrame(() => {
+        const element = document.getElementById(`question-${firstMissing.id}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      });
+
       return false;
     }
 
@@ -1009,11 +1493,32 @@ export function FormRuntime({
     if (target.type === 'submit') {
       const validation = validateSubmittedAnswers(form, currentAnswers);
       if (!validation.valid) {
-        setError(
-          t('runtime.missing_required_answers', {
-            items: validation.missingRequired.join(', '),
-          })
-        );
+        const errors = validation.validationErrorsByQuestionId ?? {};
+        setValidationErrorsByQuestionId(errors);
+
+        if (validation.missingRequired.length > 0) {
+          setError(
+            t('runtime.missing_required_answers', {
+              items: validation.missingRequired.join(', '),
+            })
+          );
+        } else if (validation.validationErrors.length > 0) {
+          setError(validation.validationErrors[0] ?? null);
+        } else {
+          setError(null);
+        }
+
+        // Scroll to the first error if it's in the current section
+        const firstErrorId = Object.keys(errors)[0];
+        if (firstErrorId) {
+          requestAnimationFrame(() => {
+            const element = document.getElementById(`question-${firstErrorId}`);
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          });
+        }
+
         return;
       }
 
@@ -1050,6 +1555,7 @@ export function FormRuntime({
           : [...currentTrail, target.targetSectionId!]
       );
       setError(null);
+      setValidationErrorsByQuestionId({});
     }
   };
 
@@ -1064,26 +1570,91 @@ export function FormRuntime({
         )}
         style={bodyFontStyle}
       >
-        <Card
-          className={cn('mx-auto w-full border-0', toneClasses.cardClassName)}
-        >
-          <CardContent className="space-y-4 p-8 text-center">
+        <div className="relative w-full max-w-2xl">
+          {/* Subtle ambient glows */}
+          <div
+            className={cn(
+              'absolute -top-24 -left-24 h-64 w-64 rounded-full opacity-10 blur-[80px]',
+              toneClasses.progressIndicatorClassName
+            )}
+          />
+          <div
+            className={cn(
+              'absolute -right-24 -bottom-24 h-64 w-64 rounded-full opacity-10 blur-[80px]',
+              toneClasses.progressIndicatorClassName
+            )}
+          />
+
+          <Card
+            className={cn(
+              'relative overflow-hidden border-0 shadow-2xl',
+              toneClasses.cardClassName
+            )}
+          >
             <div
               className={cn(
-                'mx-auto flex h-16 w-16 items-center justify-center rounded-full',
-                toneClasses.iconClassName
+                'absolute inset-x-0 top-0 h-1.5',
+                toneClasses.progressIndicatorClassName
               )}
-            >
-              <CircleCheckBig className="h-8 w-8" />
-            </div>
-            <h2 className="font-semibold text-3xl" style={headlineFontStyle}>
-              {form.settings.confirmationTitle}
-            </h2>
-            <p className="mx-auto max-w-xl text-muted-foreground">
-              {form.settings.confirmationMessage}
-            </p>
-          </CardContent>
-        </Card>
+            />
+            <CardContent className="flex flex-col items-center space-y-8 p-10 text-center sm:p-16">
+              <div
+                className={cn(
+                  'flex h-20 w-20 items-center justify-center rounded-3xl border-2 border-background/50 shadow-lg transition-transform duration-500 hover:scale-110',
+                  toneClasses.iconClassName
+                )}
+              >
+                <Check className="h-10 w-10 stroke-[2.5]" />
+              </div>
+
+              <div className="space-y-4">
+                <h2
+                  className={cn(
+                    'font-bold tracking-tight',
+                    displayTypographyClassName
+                  )}
+                  style={headlineFontStyle}
+                >
+                  {form.settings.confirmationTitle ||
+                    t('runtime.form_submitted')}
+                </h2>
+                <div
+                  className={cn(
+                    'mx-auto max-w-md text-muted-foreground leading-relaxed',
+                    bodyTypographyClassName
+                  )}
+                >
+                  <FormsMarkdown
+                    content={
+                      form.settings.confirmationMessage ||
+                      t('runtime.form_submitted_description')
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className={cn(
+                    'h-12 rounded-full px-8 font-medium transition-all hover:bg-foreground/5 hover:shadow-sm active:scale-95',
+                    toneClasses.secondaryButtonClassName
+                  )}
+                  onClick={() => window.location.reload()}
+                >
+                  {t('runtime.submit_another')}
+                </Button>
+              </div>
+
+              <div className="flex items-center gap-3 pt-8 text-[10px] text-muted-foreground uppercase tracking-[0.2em] opacity-40">
+                <div className="h-px w-8 bg-current" />
+                <span>{t('brand')}</span>
+                <div className="h-px w-8 bg-current" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -1137,7 +1708,10 @@ export function FormRuntime({
               <div className="absolute inset-x-0 bottom-0 p-6 lg:p-8">
                 <div className="space-y-3">
                   <div
-                    className="max-w-4xl font-semibold text-4xl text-primary-foreground leading-tight sm:text-5xl"
+                    className={cn(
+                      'max-w-4xl font-semibold text-primary-foreground leading-tight',
+                      displayTypographyClassName
+                    )}
                     style={headlineFontStyle}
                   >
                     <FormsMarkdown
@@ -1154,7 +1728,10 @@ export function FormRuntime({
               <div className="space-y-5">
                 <div className="space-y-3">
                   <div
-                    className="font-semibold text-4xl leading-tight sm:text-5xl"
+                    className={cn(
+                      'font-semibold leading-tight',
+                      displayTypographyClassName
+                    )}
                     style={headlineFontStyle}
                   >
                     <FormsMarkdown
@@ -1256,7 +1833,12 @@ export function FormRuntime({
           <CardHeader className={density.cardPadding}>
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="space-y-1">
-                <div className="font-semibold text-2xl">
+                <div
+                  className={cn(
+                    'font-semibold leading-tight',
+                    headingTypographyClassName
+                  )}
+                >
                   <FormsMarkdown
                     content={visibleSectionTitle}
                     className="[&_p]:m-0 [&_p]:leading-tight"
@@ -1265,7 +1847,8 @@ export function FormRuntime({
               </div>
               <Badge variant="outline" className="rounded-full px-3 py-1">
                 <Flag className="mr-1 h-3.5 w-3.5" />
-                {currentSectionIndex + 1} / {form.sections.length}
+                {progressStats.currentSectionNumber} /{' '}
+                {progressStats.routeSectionCount}
               </Badge>
             </div>
             {currentSection.image.url ? (
@@ -1309,7 +1892,7 @@ export function FormRuntime({
               <div className="rounded-[1.45rem] border border-border/60 bg-background/45 p-4 sm:p-5">
                 <ExpandableDescriptionPanel
                   content={currentSection.description}
-                  className="text-sm"
+                  className={bodyTypographyClassName}
                 />
               </div>
             ) : null}
@@ -1327,7 +1910,9 @@ export function FormRuntime({
                   }
                   onImagePreview={(image) => setPreviewImage(image)}
                   disabled={isSubmitting || readOnly}
+                  validationError={validationErrorsByQuestionId[question.id]}
                   toneClasses={toneClasses}
+                  typography={form.theme.typography}
                 />
               ))}
               {readOnly &&
@@ -1365,8 +1950,10 @@ export function FormRuntime({
             </div>
 
             {error ? (
-              <div className="rounded-2xl border border-dynamic-red/20 bg-dynamic-red/10 px-4 py-3 text-dynamic-red text-sm">
-                {error}
+              <div className="rounded-2xl border border-dynamic-red/25 bg-dynamic-red/10 px-4 py-3 text-dynamic-red text-sm">
+                {Object.keys(validationErrorsByQuestionId).length > 0
+                  ? t('runtime.validation_fix_errors')
+                  : error}
               </div>
             ) : null}
 
@@ -1408,63 +1995,58 @@ export function FormRuntime({
               </div>
             ) : null}
 
-            <div className="flex flex-col gap-3 border-border/50 border-t pt-6 sm:flex-row sm:items-center sm:justify-between">
-              <Button
-                type="button"
-                variant="outline"
-                className={toneClasses.secondaryButtonClassName}
-                onClick={() => {
-                  const previousSectionId =
-                    sectionTrail[sectionTrail.length - 2];
-                  if (!previousSectionId) {
-                    return;
-                  }
-
-                  setSectionTrail((currentTrail) => currentTrail.slice(0, -1));
-                  setCurrentSectionId(previousSectionId);
-                }}
-                disabled={sectionTrail.length <= 1 || isSubmitting}
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                {t('runtime.back')}
-              </Button>
-              <div className="flex flex-col items-stretch gap-2 sm:items-end">
-                {advanceSectionTitle ? (
-                  <div className="rounded-full border border-border/60 bg-background/60 px-3 py-1 text-[11px] text-muted-foreground uppercase tracking-[0.2em]">
-                    {t('studio.target_section')}: {advanceSectionTitle}
-                  </div>
-                ) : null}
+            {!readOnly ? (
+              <div className="relative z-10 flex flex-col gap-3 border-border/50 border-t pt-6 sm:flex-row sm:items-center sm:justify-between">
                 <Button
                   type="button"
-                  className={toneClasses.primaryButtonClassName}
-                  onClick={handleAdvance}
-                  disabled={
-                    isSubmitting ||
-                    (readOnly &&
-                      currentSectionIndex >= form.sections.length - 1)
-                  }
+                  variant="outline"
+                  className={toneClasses.secondaryButtonClassName}
+                  onClick={() => {
+                    const previousSectionId =
+                      sectionTrail[sectionTrail.length - 2];
+                    if (!previousSectionId) {
+                      return;
+                    }
+
+                    setSectionTrail((currentTrail) =>
+                      currentTrail.slice(0, -1)
+                    );
+                    setCurrentSectionId(previousSectionId);
+                  }}
+                  disabled={sectionTrail.length <= 1 || isSubmitting}
                 >
-                  {readOnly ? (
-                    <>
-                      {t('runtime.continue')}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </>
-                  ) : advanceTarget.type === 'submit' ? (
-                    <>
-                      <Check className="mr-2 h-4 w-4" />
-                      {mode === 'preview'
-                        ? t('runtime.finish_preview')
-                        : t('runtime.submit_response')}
-                    </>
-                  ) : (
-                    <>
-                      {t('runtime.continue')}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </>
-                  )}
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  {t('runtime.back')}
                 </Button>
+                <div className="flex flex-col items-stretch gap-2 sm:items-end">
+                  {advanceSectionTitle ? (
+                    <div className="rounded-full border border-border/60 bg-background/60 px-3 py-1 text-[11px] text-muted-foreground uppercase tracking-[0.2em]">
+                      {t('studio.target_section')}: {advanceSectionTitle}
+                    </div>
+                  ) : null}
+                  <Button
+                    type="button"
+                    className={toneClasses.primaryButtonClassName}
+                    onClick={handleAdvance}
+                    disabled={isSubmitting}
+                  >
+                    {advanceTarget.type === 'submit' ? (
+                      <>
+                        <Check className="mr-2 h-4 w-4" />
+                        {mode === 'preview'
+                          ? t('runtime.finish_preview')
+                          : t('runtime.submit_response')}
+                      </>
+                    ) : (
+                      <>
+                        {t('runtime.continue')}
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
-            </div>
+            ) : null}
           </CardContent>
         </Card>
         {previewImage ? (

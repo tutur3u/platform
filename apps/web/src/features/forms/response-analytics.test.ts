@@ -30,13 +30,17 @@ const form: FormDefinition = {
     bodyFontId: 'be-vietnam-pro',
     surfaceStyle: 'paper',
     coverHeadline: '',
-    coverKicker: '',
     coverImage: {
       storagePath: '',
       url: '',
       alt: '',
     },
     sectionImages: {},
+    typography: {
+      displaySize: 'md',
+      headingSize: 'md',
+      bodySize: 'md',
+    },
   },
   settings: {
     showProgressBar: true,
@@ -64,6 +68,7 @@ const form: FormDefinition = {
           title: 'What matters most?',
           description: '',
           required: false,
+          image: { storagePath: '', url: '', alt: '' },
           settings: {},
           options: [
             {
@@ -216,6 +221,7 @@ describe('buildQuestionAnalytics', () => {
               title: 'What should we improve next?',
               description: '',
               required: false,
+              image: { storagePath: '', url: '', alt: '' },
               settings: {},
               options: [],
             },

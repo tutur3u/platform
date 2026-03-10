@@ -35,6 +35,10 @@ interface UseBulkReportExportOptions<TReport> {
   renderWaitMs?: number;
 }
 
+export function normalizePrintAfterExportPreference(value: unknown): boolean {
+  return value === true;
+}
+
 function sanitizeFilename(text: string): string {
   return text
     .replace(/[^a-zA-Z0-9\s\u00C0-\u024F\u1E00-\u1EFF]/g, '_')
@@ -330,10 +334,12 @@ export function useReportExport({
   const [storedDefaultExportType, setStoredDefaultExportType] = useLocalStorage<
     ExportType | 'print'
   >('report-export-type', 'pdf');
-  const [printAfterExport, setPrintAfterExport] = useLocalStorage<boolean>(
-    'report-print-after-export',
-    false
+  const [storedPrintAfterExport, setStoredPrintAfterExport] =
+    useLocalStorage<unknown>('report-print-after-export', false);
+  const printAfterExport = normalizePrintAfterExportPreference(
+    storedPrintAfterExport
   );
+  const printAfterExportRef = useRef(printAfterExport);
 
   const defaultExportType: ExportType =
     storedDefaultExportType === 'image' ? 'image' : 'pdf';
@@ -354,6 +360,26 @@ export function useReportExport({
     }
   }, [setStoredDefaultExportType, storedDefaultExportType]);
 
+  const setPrintAfterExport = useCallback(
+    (value: boolean | ((val: boolean) => boolean)) => {
+      setStoredPrintAfterExport((prev: unknown) => {
+        const normalizedPrev = normalizePrintAfterExportPreference(prev);
+        return value instanceof Function ? value(normalizedPrev) : value;
+      });
+    },
+    [setStoredPrintAfterExport]
+  );
+
+  useEffect(() => {
+    printAfterExportRef.current = printAfterExport;
+  }, [printAfterExport]);
+
+  useEffect(() => {
+    if (storedPrintAfterExport !== printAfterExport) {
+      setStoredPrintAfterExport(printAfterExport);
+    }
+  }, [printAfterExport, setStoredPrintAfterExport, storedPrintAfterExport]);
+
   const handlePrintExport = () => {
     if (!isPaginationReady) {
       toast.error(t('ws-reports.export_waiting_for_layout'));
@@ -372,8 +398,9 @@ export function useReportExport({
       return;
     }
 
+    const shouldPrintAfterExport = printAfterExportRef.current;
     let printWindow: Window | null = null;
-    if (printAfterExport) {
+    if (shouldPrintAfterExport) {
       printWindow = window.open('', '_blank');
     }
 
@@ -388,7 +415,7 @@ export function useReportExport({
           groupName,
         },
         onAfterDownload: () => {
-          if (!printAfterExport) {
+          if (!shouldPrintAfterExport) {
             return;
           }
 

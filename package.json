@@ -71,7 +71,7 @@
     "trigger:dev": "bun run --filter @tuturuuu/trigger trigger:dev",
     "trigger:deploy": "bun run --filter @tuturuuu/trigger trigger:deploy",
     "test": "turbo run test",
-    "test:scripts": "node --test scripts/run-i18n-check.test.js scripts/run-tsgo-build.test.js scripts/type-check-consistency.test.js",
+    "test:scripts": "node --test scripts/run-i18n-check.test.js scripts/run-tsgo-build.test.js scripts/type-check-consistency.test.js scripts/proxy-guard-parity.test.js",
     "test:watch": "turbo run test:watch",
     "test:e2e": "turbo run test:e2e",
     "tc": "turbo run type-check",

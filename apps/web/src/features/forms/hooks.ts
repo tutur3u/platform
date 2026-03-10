@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { apiFetch } from '@/lib/api-fetch';
+import { apiFetch, uploadToStorageUrl } from '@/lib/api-fetch';
 import type { FormStudioInput, FormSubmitInput } from './schema';
 import type {
   FormAnalytics,
@@ -129,18 +129,7 @@ export function useFormMediaUploadMutation({ wsId }: { wsId: string }) {
         }),
       });
 
-      const uploadResponse = await fetch(upload.signedUrl, {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${upload.token}`,
-          'Content-Type': file.type || 'application/octet-stream',
-        },
-        body: file,
-      });
-
-      if (!uploadResponse.ok) {
-        throw new Error(t('toast.failed_to_upload_image'));
-      }
+      await uploadToStorageUrl(upload.signedUrl, file, upload.token);
 
       const previewUrl = URL.createObjectURL(file);
 

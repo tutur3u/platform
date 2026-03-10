@@ -23,7 +23,6 @@ import {
   GripVertical,
   MessageSquare,
   MoreHorizontal,
-  Plus,
   Trash,
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -50,15 +49,16 @@ import { FieldLabel } from '../form-icons';
 import { FormsMarkdown } from '../forms-markdown';
 import { FormsRichTextEditor } from '../forms-rich-text-editor';
 import type { getFormToneClasses } from '../theme';
+import {
+  getBodyTypographyClassName,
+  getStudioTitleTypographyClassName,
+} from '../typography';
+import { createQuestionInput } from './block-catalog';
+import { BlockInserter } from './block-inserter';
 import { DestructiveActionDialog } from './destructive-action-dialog';
 import { FormMediaField } from './form-media-field';
 import { QuestionEditor } from './question-editor';
-import {
-  createClientId,
-  duplicateQuestionInput,
-  type StudioForm,
-  type StudioQuestionInput,
-} from './studio-utils';
+import { duplicateQuestionInput, type StudioForm } from './studio-utils';
 
 export function SectionEditor({
   index,
@@ -130,29 +130,37 @@ export function SectionEditor({
     control: form.control,
     name: `sections.${index}.questions`,
   });
+  const typography = useWatch({
+    control: form.control,
+    name: 'theme.typography',
+  });
+  const studioTitleClassName = getStudioTitleTypographyClassName(
+    typography?.headingSize ?? 'md'
+  );
+  const bodyClassName = getBodyTypographyClassName(
+    typography?.bodySize ?? 'md'
+  );
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
   };
 
-  const addQuestion = () => {
-    const nextQuestionId = createClientId();
-    const nextQuestion: StudioQuestionInput = {
-      id: nextQuestionId,
-      type: 'short_text',
-      title: t('studio.new_question'),
-      description: '',
-      required: false,
-      settings: {
-        placeholder: t('runtime.type_your_answer'),
-        optionLayout: 'list',
-      },
-      options: [],
-    };
+  const addQuestion = (type: Parameters<typeof createQuestionInput>[0]) => {
+    const nextQuestion = createQuestionInput(type, t);
 
     questionsArray.append(nextQuestion);
-    onActiveQuestionChange(nextQuestionId);
+    onActiveQuestionChange(nextQuestion.id);
+  };
+
+  const insertQuestionAt = (
+    questionIndex: number,
+    type: Parameters<typeof createQuestionInput>[0]
+  ) => {
+    const nextQuestion = createQuestionInput(type, t);
+
+    questionsArray.insert(questionIndex, nextQuestion);
+    onActiveQuestionChange(nextQuestion.id);
   };
 
   const handleQuestionDragEnd = ({ active, over }: DragEndEvent) => {
@@ -227,7 +235,7 @@ export function SectionEditor({
                         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-background/80 text-muted-foreground">
                           <ClipboardList className="h-4 w-4" />
                         </span>
-                        <div className="truncate font-semibold text-lg">
+                        <div className={cn('truncate', studioTitleClassName)}>
                           <FormsMarkdown
                             content={
                               sectionTitle || t('studio.untitled_section')
@@ -246,7 +254,12 @@ export function SectionEditor({
                         })}
                       </Badge>
                     </div>
-                    <div className="line-clamp-2 text-muted-foreground text-sm">
+                    <div
+                      className={cn(
+                        'line-clamp-2 text-muted-foreground',
+                        bodyClassName
+                      )}
+                    >
                       <FormsMarkdown
                         content={
                           sectionDescription?.trim() ||
@@ -307,33 +320,33 @@ export function SectionEditor({
                     <Copy className="h-4 w-4" />
                     {t('studio.duplicate_section')}
                   </DropdownMenuItem>
-                  <DestructiveActionDialog
-                    actionLabel={t('studio.delete_section')}
-                    cancelLabel={t('studio.keep_section')}
-                    description={t('studio.delete_section_confirmation')}
-                    open={deleteDialogOpen}
-                    onOpenChange={setDeleteDialogOpen}
-                    onConfirm={onRemove}
-                    title={t('studio.delete_section_title')}
-                    trigger={
-                      <DropdownMenuItem
-                        onSelect={(event) => {
-                          event.preventDefault();
-                          setActionsOpen(false);
-                          setDeleteDialogOpen(true);
-                        }}
-                        className="text-destructive focus:text-destructive"
-                      >
-                        <Trash className="h-4 w-4" />
-                        {t('studio.delete_section')}
-                      </DropdownMenuItem>
-                    }
-                  />
+                  <DropdownMenuItem
+                    onSelect={(event) => {
+                      event.preventDefault();
+                      setActionsOpen(false);
+                      requestAnimationFrame(() => {
+                        setDeleteDialogOpen(true);
+                      });
+                    }}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash className="h-4 w-4" />
+                    {t('studio.delete_section')}
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
           </div>
         </CardHeader>
+        <DestructiveActionDialog
+          actionLabel={t('studio.delete_section')}
+          cancelLabel={t('studio.keep_section')}
+          description={t('studio.delete_section_confirmation')}
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          onConfirm={onRemove}
+          title={t('studio.delete_section_title')}
+        />
         <CollapsibleContent className="overflow-hidden border-border/60 border-t data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
           <div className="space-y-5 px-5 py-4">
             <div className="grid gap-4">
@@ -412,67 +425,75 @@ export function SectionEditor({
                       watchedQuestions?.[questionIndex]?.id ?? field.id;
 
                     return (
-                      <QuestionEditor
-                        key={field.id}
-                        wsId={wsId}
-                        questionId={questionFormId}
-                        sectionIndex={index}
-                        questionIndex={questionIndex}
-                        form={form}
-                        open={activeQuestionId === questionFormId}
-                        onOpenChange={(nextOpen) =>
-                          onActiveQuestionChange(nextOpen ? questionFormId : '')
-                        }
-                        toneClasses={toneClasses}
-                        onMoveUp={() =>
-                          questionIndex > 0 &&
-                          questionsArray.move(questionIndex, questionIndex - 1)
-                        }
-                        onMoveDown={() =>
-                          questionIndex < questionsArray.fields.length - 1 &&
-                          questionsArray.move(questionIndex, questionIndex + 1)
-                        }
-                        onDuplicate={() => {
-                          const question = form.getValues(
-                            `sections.${index}.questions.${questionIndex}`
-                          );
-
-                          if (!question) {
-                            return;
+                      <div key={field.id} className="space-y-3">
+                        <QuestionEditor
+                          wsId={wsId}
+                          questionId={questionFormId}
+                          sectionIndex={index}
+                          questionIndex={questionIndex}
+                          form={form}
+                          open={activeQuestionId === questionFormId}
+                          onOpenChange={(nextOpen) =>
+                            onActiveQuestionChange(
+                              nextOpen ? questionFormId : ''
+                            )
                           }
-
-                          const nextQuestion = duplicateQuestionInput(question);
-
-                          questionsArray.insert(
-                            questionIndex + 1,
-                            nextQuestion
-                          );
-                          onActiveQuestionChange(nextQuestion.id);
-                        }}
-                        onRemove={() => {
-                          questionsArray.remove(questionIndex);
-                          if (activeQuestionId === questionFormId) {
-                            onActiveQuestionChange('');
+                          toneClasses={toneClasses}
+                          onMoveUp={() =>
+                            questionIndex > 0 &&
+                            questionsArray.move(
+                              questionIndex,
+                              questionIndex - 1
+                            )
                           }
-                        }}
-                      />
+                          onMoveDown={() =>
+                            questionIndex < questionsArray.fields.length - 1 &&
+                            questionsArray.move(
+                              questionIndex,
+                              questionIndex + 1
+                            )
+                          }
+                          onDuplicate={() => {
+                            const question = form.getValues(
+                              `sections.${index}.questions.${questionIndex}`
+                            );
+
+                            if (!question) {
+                              return;
+                            }
+
+                            const nextQuestion =
+                              duplicateQuestionInput(question);
+
+                            questionsArray.insert(
+                              questionIndex + 1,
+                              nextQuestion
+                            );
+                            onActiveQuestionChange(nextQuestion.id);
+                          }}
+                          onRemove={() => {
+                            questionsArray.remove(questionIndex);
+                            if (activeQuestionId === questionFormId) {
+                              onActiveQuestionChange('');
+                            }
+                          }}
+                        />
+                        <div className="flex justify-center">
+                          <BlockInserter
+                            compact
+                            toneClasses={toneClasses}
+                            onSelect={(type) =>
+                              insertQuestionAt(questionIndex + 1, type)
+                            }
+                          />
+                        </div>
+                      </div>
                     );
                   })}
                 </SortableContext>
               </DndContext>
 
-              <Button
-                type="button"
-                variant="outline"
-                className={cn(
-                  'rounded-2xl border-dashed',
-                  toneClasses.secondaryButtonClassName
-                )}
-                onClick={addQuestion}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                {t('studio.add_question')}
-              </Button>
+              <BlockInserter toneClasses={toneClasses} onSelect={addQuestion} />
             </div>
           </div>
         </CollapsibleContent>

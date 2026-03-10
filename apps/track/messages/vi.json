@@ -6781,10 +6781,10 @@
     "boards": "bảng",
     "dialog": {
       "allow_zero_estimates": "Cho phép ước lượng bằng 0",
-      "allow_zero_estimates_description": "Khi bật, các vấn đề có thể được ước lượng với 0 điểm",
+      "allow_zero_estimates_description": "Khi bật, các vấn đề có thể được ước lượng bằng một giá trị tương đương số không",
       "cancel": "Hủy",
       "count_unestimated_issues": "Đếm các vấn đề chưa ước lượng",
-      "count_unestimated_issues_description": "Khi bật, các vấn đề chưa ước lượng sẽ được tính là 1 điểm. Khi tắt, chúng được tính là 0",
+      "count_unestimated_issues_description": "Khi bật, các vấn đề chưa ước lượng sẽ được tính là 1 đơn vị ước lượng. Khi tắt, chúng sẽ không được tính",
       "estimation_method": "Phương Pháp Ước Lượng",
       "estimation_options": "Tùy Chọn Ước Lượng",
       "exponential_range": "Phạm Vi Thang Lũy Thừa",
@@ -6843,7 +6843,8 @@
     "toast": {
       "update_error": "Không thể cập nhật loại ước lượng",
       "update_success": "Đã cập nhật loại ước lượng thành công"
-    }
+    },
+    "unnamed_board": "Bảng chưa đặt tên"
   },
   "task-projects": {
     "badges": {

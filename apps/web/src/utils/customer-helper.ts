@@ -31,6 +31,7 @@ export async function createCustomerSession({
 
   const session = await polar.customerSessions.create({
     customerId: polarCustomer.id,
+    memberId: polarCustomer.id,
   });
 
   return session;

@@ -212,6 +212,13 @@ export function ResponsesPanel({
                 {t('responses.export_csv')}
               </a>
             </Button>
+            <Button asChild variant="outline" size="sm" className="rounded-xl">
+              <a
+                href={`/api/v1/workspaces/${wsId}/forms/${formId}/responses/export?format=xlsx`}
+              >
+                {t('responses.export_excel')}
+              </a>
+            </Button>
             <DestructiveActionDialog
               actionLabel={
                 clearResponsesMutation.isPending

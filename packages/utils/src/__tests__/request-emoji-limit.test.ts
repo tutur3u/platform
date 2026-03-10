@@ -2,10 +2,12 @@ import { NextRequest } from 'next/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   countEmojisInString,
-  findEmojiLimitViolation,
-  getEmojiLimitViolationForRequest,
+  findRequestContentViolation,
+  getRequestContentViolationForRequest,
   isTrustedEmojiBypassRequest,
   MAX_EMOJIS_PER_FIELD,
+  MAX_REPEATED_GRAPHEME_RUN,
+  MAX_SHORT_TEXT_FIELD_GRAPHEMES,
   shouldValidateEmojiLimit,
 } from '../request-emoji-limit';
 
@@ -42,15 +44,56 @@ describe('request emoji limit', () => {
   });
 
   it('finds the first nested field over the limit', () => {
-    const violation = findEmojiLimitViolation({
+    const violation = findRequestContentViolation({
       wallet: {
         name: '🎉'.repeat(MAX_EMOJIS_PER_FIELD + 1),
       },
     });
 
     expect(violation).toEqual({
+      code: 'EMOJI_LIMIT_EXCEEDED',
       path: 'body.wallet.name',
-      emojiCount: MAX_EMOJIS_PER_FIELD + 1,
+      count: MAX_EMOJIS_PER_FIELD + 1,
+      limit: MAX_EMOJIS_PER_FIELD,
+      message: 'Field "body.wallet.name" cannot contain more than 10 emojis',
+    });
+  });
+
+  it('rejects text bombs in short-form metadata fields', () => {
+    const violation = findRequestContentViolation({
+      wallet: {
+        name: '漢字仮名交響曲'.repeat(
+          Math.ceil(
+            (MAX_SHORT_TEXT_FIELD_GRAPHEMES + 1) / '漢字仮名交響曲'.length
+          )
+        ),
+      },
+    });
+
+    expect(violation).toEqual({
+      code: 'TEXT_BOMB_DETECTED',
+      path: 'body.wallet.name',
+      count: 287,
+      limit: MAX_SHORT_TEXT_FIELD_GRAPHEMES,
+      message:
+        'Field "body.wallet.name" exceeds the maximum short-field length',
+    });
+  });
+
+  it('rejects abusive repeated-character runs', () => {
+    const violation = findRequestContentViolation({
+      wallet: {
+        description: `legit ${'文'.repeat(MAX_REPEATED_GRAPHEME_RUN + 1)}`,
+      },
+    });
+
+    expect(violation).toEqual({
+      code: 'TEXT_BOMB_DETECTED',
+      path: 'body.wallet.description',
+      count: MAX_REPEATED_GRAPHEME_RUN + 1,
+      limit: MAX_REPEATED_GRAPHEME_RUN,
+      message:
+        'Field "body.wallet.description" contains an abusive repeated-character run',
     });
   });
 
@@ -77,7 +120,9 @@ describe('request emoji limit', () => {
       headers: { Authorization: 'Bearer service-role-secret' },
     });
 
-    await expect(getEmojiLimitViolationForRequest(request)).resolves.toBeNull();
+    await expect(
+      getRequestContentViolationForRequest(request)
+    ).resolves.toBeNull();
   });
 
   it('returns the offending field for untrusted JSON mutations', async () => {
@@ -90,9 +135,15 @@ describe('request emoji limit', () => {
       })
     );
 
-    await expect(getEmojiLimitViolationForRequest(request)).resolves.toEqual({
+    await expect(
+      getRequestContentViolationForRequest(request)
+    ).resolves.toEqual({
+      code: 'EMOJI_LIMIT_EXCEEDED',
       path: 'body.wallets[1].name',
-      emojiCount: MAX_EMOJIS_PER_FIELD + 2,
+      count: MAX_EMOJIS_PER_FIELD + 2,
+      limit: MAX_EMOJIS_PER_FIELD,
+      message:
+        'Field "body.wallets[1].name" cannot contain more than 10 emojis',
     });
   });
 });

@@ -1,5 +1,6 @@
 'use client';
 
+import { AlertTriangle } from '@tuturuuu/icons';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,7 +25,7 @@ interface DestructiveActionDialogProps {
   onConfirm: () => void;
   open?: boolean;
   title: string;
-  trigger: ReactNode;
+  trigger?: ReactNode;
 }
 
 export function DestructiveActionDialog({
@@ -42,15 +43,24 @@ export function DestructiveActionDialog({
 }: DestructiveActionDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogTrigger asChild disabled={disabled}>
-        {trigger}
-      </AlertDialogTrigger>
-      <AlertDialogContent>
+      {trigger ? (
+        <AlertDialogTrigger asChild disabled={disabled}>
+          {trigger}
+        </AlertDialogTrigger>
+      ) : null}
+      <AlertDialogContent className="rounded-[1.75rem] border-border/60">
         <AlertDialogHeader>
+          <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-2xl border border-destructive/20 bg-destructive/8 text-destructive">
+            <AlertTriangle className="h-5 w-5" />
+          </div>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
-        {children ? <div>{children}</div> : null}
+        {children ? (
+          <div className="rounded-2xl border border-border/60 bg-muted/20">
+            {children}
+          </div>
+        ) : null}
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isPending}>
             {cancelLabel}

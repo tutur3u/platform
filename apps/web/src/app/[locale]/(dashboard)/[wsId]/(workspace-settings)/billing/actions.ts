@@ -22,7 +22,7 @@ interface ActionResult<T = void> {
 
 export interface WorkspaceBillingDetails {
   email: string;
-  billingName: string;
+  name: string;
   billingAddress: {
     line1: string;
     line2: string;
@@ -35,7 +35,7 @@ export interface WorkspaceBillingDetails {
 
 export interface UpdateWorkspaceBillingDetailsInput {
   email: string;
-  billingName: string;
+  name: string;
   billingAddress: {
     line1: string;
     line2: string;
@@ -100,14 +100,14 @@ export async function getWorkspaceBillingDetails(
     const polar = createPolarClient();
     const supabase = await createClient();
 
-    const session = await createCustomerSession({
+    const polarCustomer = await getOrCreatePolarCustomer({
       polar,
       supabase,
       wsId,
     });
 
-    const customer = await polar.customerPortal.customers.get({
-      customerSession: session.token,
+    const customer = await polar.customers.get({
+      id: polarCustomer.id,
     });
 
     const firstTaxId =
@@ -120,7 +120,7 @@ export async function getWorkspaceBillingDetails(
       success: true,
       data: {
         email: customer.email,
-        billingName: customer.billingName ?? '',
+        name: customer.name ?? '',
         billingAddress: {
           line1: customer.billingAddress?.line1 ?? '',
           line2: customer.billingAddress?.line2 ?? '',
@@ -197,14 +197,14 @@ export async function updateWorkspaceBillingDetails(
       state: null,
     };
 
-    const normalizedBillingName = payload.billingName.trim();
+    const normalizedname = payload.name.trim();
     const normalizedTaxId = payload.taxId.trim();
 
     await polar.customers.update({
       id: polarCustomer.id,
       customerUpdate: {
         email: normalizedEmail,
-        name: normalizedBillingName || null,
+        name: normalizedname || null,
         billingAddress: normalizedBillingAddress,
         taxId: normalizedTaxId || null,
       },
@@ -214,7 +214,7 @@ export async function updateWorkspaceBillingDetails(
       success: true,
       data: {
         email: normalizedEmail,
-        billingName: normalizedBillingName,
+        name: normalizedname,
         billingAddress: {
           line1: payload.billingAddress.line1.trim(),
           line2: payload.billingAddress.line2.trim(),
@@ -398,23 +398,20 @@ export async function updateBillingAddress(
       };
     }
 
-    // Create a customer session to authenticate with customer portal
-    const session = await createCustomerSession({
+    const polarCustomer = await getOrCreatePolarCustomer({
       polar,
       supabase,
       wsId: personalWorkspace.id,
     });
 
-    // Update customer billing address using customer portal API
-    await polar.customerPortal.customers.update(
-      {
-        customerSession: session.token,
-      },
-      {
-        billingName: name,
+    // Update customer billing address
+    await polar.customers.update({
+      id: polarCustomer.id,
+      customerUpdate: {
+        name,
         billingAddress: address,
-      }
-    );
+      },
+    });
 
     return {
       success: true,
@@ -469,7 +466,7 @@ export async function getWorkspaceCustomerPortalUrl(
     return {
       success: true,
       data: {
-        url: session.customerPortalUrl ?? '',
+        url: session.customerPortalUrl,
       },
     };
   } catch (error) {

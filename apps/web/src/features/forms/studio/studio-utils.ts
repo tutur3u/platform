@@ -1,6 +1,12 @@
 import type { UseFormReturn } from '@tuturuuu/ui/hooks/use-form';
 
-import { createDefaultFormStudioInput, type FormStudioInput } from '../schema';
+import {
+  createDefaultFormStudioInput,
+  FORM_EXPORT_FORMAT_VERSION,
+  type FormExportEnvelope,
+  type FormStudioInput,
+  formExportEnvelopeSchema,
+} from '../schema';
 import { getThemePreset } from '../theme';
 import type { FormDefinition } from '../types';
 
@@ -55,9 +61,6 @@ export function applyThemePreset(form: StudioForm, presetId: string) {
     shouldDirty: true,
   });
   form.setValue('theme.surfaceStyle', preset.surfaceStyle, {
-    shouldDirty: true,
-  });
-  form.setValue('theme.coverKicker', preset.kicker, {
     shouldDirty: true,
   });
 }
@@ -120,6 +123,11 @@ export function duplicateQuestionInput(
   return {
     ...question,
     id: createClientId(),
+    image: {
+      storagePath: question.image?.storagePath ?? '',
+      url: question.image?.url ?? '',
+      alt: question.image?.alt ?? '',
+    },
     settings: {
       ...question.settings,
     },
@@ -153,6 +161,11 @@ export function ensureIdentifiers(input: FormStudioInput): FormStudioInput {
       questions: section.questions.map((question) => ({
         ...question,
         id: question.id ?? createClientId(),
+        image: question.image ?? {
+          storagePath: '',
+          url: '',
+          alt: '',
+        },
         options: question.options.map((option) => ({
           ...option,
           id: option.id ?? createClientId(),
@@ -169,6 +182,119 @@ export function ensureIdentifiers(input: FormStudioInput): FormStudioInput {
       id: rule.id ?? createClientId(),
     })),
   };
+}
+
+/** Regenerates all section/question/option/logic-rule IDs and remaps logic-rule references. */
+export function remapFormStudioIds(input: FormStudioInput): FormStudioInput {
+  const sectionIdMap = new Map<string, string>();
+  const questionIdMap = new Map<string, string>();
+
+  const remappedSections = input.sections.map((section) => {
+    const newSectionId = createClientId();
+    if (section.id) {
+      sectionIdMap.set(section.id, newSectionId);
+    }
+
+    const remappedQuestions = section.questions.map((question) => {
+      const newQuestionId = createClientId();
+      if (question.id) {
+        questionIdMap.set(question.id, newQuestionId);
+      }
+
+      return {
+        ...question,
+        id: newQuestionId,
+        image: question.image ?? {
+          storagePath: '',
+          url: '',
+          alt: '',
+        },
+        options: question.options.map((option) => ({
+          ...option,
+          id: createClientId(),
+          image: option.image ?? {
+            storagePath: '',
+            url: '',
+            alt: '',
+          },
+        })),
+      };
+    });
+
+    return {
+      ...section,
+      id: newSectionId,
+      image: section.image ?? {
+        storagePath: '',
+        url: '',
+        alt: '',
+      },
+      questions: remappedQuestions,
+    };
+  });
+
+  const remappedLogicRules = input.logicRules.map((rule) => {
+    const newSourceQuestionId = rule.sourceQuestionId?.trim()
+      ? (questionIdMap.get(rule.sourceQuestionId) ?? rule.sourceQuestionId)
+      : null;
+    const newSourceSectionId = rule.sourceSectionId?.trim()
+      ? (sectionIdMap.get(rule.sourceSectionId) ?? rule.sourceSectionId)
+      : null;
+    const newTargetSectionId =
+      rule.targetSectionId != null
+        ? (sectionIdMap.get(rule.targetSectionId) ?? rule.targetSectionId)
+        : null;
+
+    return {
+      ...rule,
+      id: createClientId(),
+      triggerType: rule.triggerType ?? 'question',
+      sourceSectionId: newSourceSectionId,
+      sourceQuestionId: newSourceQuestionId,
+      targetSectionId: newTargetSectionId,
+    };
+  });
+
+  return {
+    ...input,
+    sections: remappedSections,
+    logicRules: remappedLogicRules,
+  };
+}
+
+export function exportFormStudioPayload(
+  values: FormStudioInput
+): FormExportEnvelope {
+  const normalized = ensureIdentifiers(values);
+  return {
+    formatVersion: FORM_EXPORT_FORMAT_VERSION,
+    exportedAt: new Date().toISOString(),
+    form: normalized,
+  };
+}
+
+export type ImportFormStudioResult =
+  | { ok: true; data: FormStudioInput }
+  | { ok: false; error: string };
+
+export function importFormStudioPayload(json: string): ImportFormStudioResult {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(json) as unknown;
+  } catch {
+    return { ok: false, error: 'Invalid JSON' };
+  }
+
+  const envelopeResult = formExportEnvelopeSchema.safeParse(parsed);
+  if (!envelopeResult.success) {
+    const firstIssue = envelopeResult.error.issues[0];
+    const path = firstIssue?.path?.join('.') ?? 'form';
+    const msg = firstIssue?.message ?? 'Validation failed';
+    return { ok: false, error: `${path}: ${msg}` };
+  }
+
+  const remapped = remapFormStudioIds(envelopeResult.data.form);
+  return { ok: true, data: remapped };
 }
 
 export function toStudioInput(form?: FormDefinition): FormStudioInput {
@@ -197,6 +323,7 @@ export function toStudioInput(form?: FormDefinition): FormStudioInput {
         title: question.title,
         description: question.description,
         required: question.required,
+        image: question.image,
         settings: question.settings,
         options: question.options.map((option) => ({
           id: option.id,
@@ -208,9 +335,11 @@ export function toStudioInput(form?: FormDefinition): FormStudioInput {
     })),
     logicRules: form.logicRules.map((rule) => ({
       id: rule.id,
-      sourceQuestionId: rule.sourceQuestionId,
+      triggerType: rule.triggerType ?? 'question',
+      sourceSectionId: rule.sourceSectionId ?? null,
+      sourceQuestionId: rule.sourceQuestionId ?? null,
       operator: rule.operator,
-      comparisonValue: rule.comparisonValue,
+      comparisonValue: rule.comparisonValue ?? '',
       actionType: rule.actionType,
       targetSectionId: rule.targetSectionId,
     })),
@@ -254,6 +383,7 @@ export function toPreviewDefinition(
         ...question,
         id: question.id ?? createClientId(),
         sectionId: section.id ?? createClientId(),
+        image: question.image,
         options: question.options.map((option) => ({
           id: option.id ?? createClientId(),
           label: option.label,

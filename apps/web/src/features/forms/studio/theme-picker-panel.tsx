@@ -66,7 +66,6 @@ export function ThemePickerPanel({
   const selectedHeadlineFontStyle = getFormFontStyle(
     values.theme.headlineFontId
   );
-  const selectedBodyFontStyle = getFormFontStyle(values.theme.bodyFontId);
   const selectedPalette = FORM_PRESET_PALETTES[selectedPreset.id] ?? [
     selectedPreset.accentColor,
   ];
@@ -123,12 +122,6 @@ export function ThemePickerPanel({
                       >
                         {selectedPreset.name}
                       </h3>
-                      <p
-                        className="max-w-xl text-muted-foreground text-sm"
-                        style={selectedBodyFontStyle}
-                      >
-                        {selectedPreset.kicker}
-                      </p>
                     </div>
                     <div className="shrink-0 rounded-full border border-border/60 bg-background/80 px-3 py-1 text-[11px] text-muted-foreground uppercase tracking-[0.2em]">
                       {selectedPreset.surfaceStyle}
@@ -327,7 +320,7 @@ export function ThemePickerPanel({
                           {preset.name}
                         </p>
                         <p className="truncate text-[11px] opacity-75">
-                          {preset.kicker}
+                          {preset.surfaceStyle}
                         </p>
                       </div>
                       {selected ? (

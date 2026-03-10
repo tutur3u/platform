@@ -1,4 +1,5 @@
-import { getReachableQuestionIds } from './branching';
+import { isAnswerableQuestionType } from './block-utils';
+import { getPlannedSectionIds } from './branching';
 import type { FormAnswerValue, FormDefinition } from './types';
 
 function hasMeaningfulAnswer(value: FormAnswerValue | undefined) {
@@ -19,27 +20,37 @@ export function getRuntimeProgressStats(
   sectionTrail: string[],
   currentSectionId: string
 ) {
-  const questionEntries = form.sections.flatMap((section) =>
-    section.questions
-      .filter((question) => question.type !== 'section_break')
-      .map((question) => ({
-        questionId: question.id,
-        sectionId: section.id,
-      }))
+  const routeSectionIds = getPlannedSectionIds(
+    form,
+    currentSectionId,
+    answers,
+    sectionTrail
   );
+  const currentRouteIndex = Math.max(
+    0,
+    routeSectionIds.indexOf(currentSectionId)
+  );
+  const completedVisitedSectionIds = new Set(
+    routeSectionIds.slice(0, currentRouteIndex)
+  );
+  const questionEntries = routeSectionIds.flatMap((sectionId) => {
+    const section = form.sections.find(
+      (candidate) => candidate.id === sectionId
+    );
+
+    return (
+      section?.questions
+        .filter((question) => isAnswerableQuestionType(question.type))
+        .map((question) => ({
+          questionId: question.id,
+          sectionId,
+        })) ?? []
+    );
+  });
   const totalQuestions = questionEntries.length;
-  const completedSectionIds = new Set(
-    sectionTrail.filter((sectionId) => sectionId !== currentSectionId)
-  );
-  const reachableQuestionIds = new Set(getReachableQuestionIds(form, answers));
   const answeredQuestionIds = new Set(
     questionEntries
-      .filter(
-        ({ questionId, sectionId }) =>
-          hasMeaningfulAnswer(answers[questionId]) &&
-          (completedSectionIds.has(sectionId) ||
-            reachableQuestionIds.has(questionId))
-      )
+      .filter(({ questionId }) => hasMeaningfulAnswer(answers[questionId]))
       .map(({ questionId }) => questionId)
   );
   const skippedQuestionIds = new Set(
@@ -49,16 +60,16 @@ export function getRuntimeProgressStats(
           return false;
         }
 
-        return (
-          completedSectionIds.has(sectionId) ||
-          !reachableQuestionIds.has(questionId)
-        );
+        return completedVisitedSectionIds.has(sectionId);
       })
       .map(({ questionId }) => questionId)
   );
   const completedCount = answeredQuestionIds.size + skippedQuestionIds.size;
 
   return {
+    routeSectionIds,
+    currentSectionNumber: currentRouteIndex + 1,
+    routeSectionCount: routeSectionIds.length,
     totalQuestions,
     answeredCount: answeredQuestionIds.size,
     skippedCount: skippedQuestionIds.size,
