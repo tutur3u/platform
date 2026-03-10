@@ -3,6 +3,7 @@
 import { FormRuntime } from '@/features/forms/form-runtime';
 import {
   usePublicFormProgress,
+  usePublicFormResponseCopy,
   usePublicFormSubmit,
 } from '@/features/forms/hooks';
 import type {
@@ -19,6 +20,11 @@ export default function SharedFormContent({
   initialAnswers,
   answerIssues,
   submittedAt,
+  responseCopyEmail,
+  readOnlyResponseId,
+  readOnlyResponseSessionId,
+  canRequestResponseCopy,
+  responseCopyAlreadySent,
 }: {
   form: FormDefinition;
   shareCode: string;
@@ -27,9 +33,15 @@ export default function SharedFormContent({
   initialAnswers?: Record<string, FormAnswerValue>;
   answerIssues?: FormReadOnlyAnswerIssue[];
   submittedAt?: string | null;
+  responseCopyEmail?: string | null;
+  readOnlyResponseId?: string | null;
+  readOnlyResponseSessionId?: string | null;
+  canRequestResponseCopy?: boolean;
+  responseCopyAlreadySent?: boolean;
 }) {
   const progressMutation = usePublicFormProgress(shareCode);
   const submitMutation = usePublicFormSubmit(shareCode);
+  const responseCopyMutation = usePublicFormResponseCopy(shareCode);
 
   return (
     <FormRuntime
@@ -40,15 +52,27 @@ export default function SharedFormContent({
       initialAnswers={initialAnswers}
       answerIssues={answerIssues}
       submittedAt={submittedAt}
+      responseCopyEmail={responseCopyEmail}
+      readOnlyResponseId={readOnlyResponseId}
+      readOnlyResponseSessionId={readOnlyResponseSessionId}
+      canRequestResponseCopy={canRequestResponseCopy}
+      responseCopyAlreadySent={responseCopyAlreadySent}
       onProgress={(payload) => progressMutation.mutate(payload)}
-      onSubmit={async ({ answers, turnstileToken }) => {
+      onSubmit={async ({ answers, turnstileToken, sendResponseCopy }) => {
         if (!sessionId) return;
-        await submitMutation.mutateAsync({
+        return submitMutation.mutateAsync({
           sessionId,
           answers,
           turnstileToken,
+          sendResponseCopy: sendResponseCopy ?? false,
         });
       }}
+      onRequestResponseCopy={({ responseId, sessionId: existingSessionId }) =>
+        responseCopyMutation.mutateAsync({
+          responseId,
+          sessionId: existingSessionId,
+        })
+      }
       isSubmitting={submitMutation.isPending}
     />
   );

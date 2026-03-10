@@ -15,6 +15,11 @@ export interface SharedFormPayload {
   initialAnswers?: Record<string, FormAnswerValue>;
   answerIssues?: FormReadOnlyAnswerIssue[];
   submittedAt?: string | null;
+  responseCopyEmail?: string | null;
+  readOnlyResponseId?: string | null;
+  readOnlyResponseSessionId?: string | null;
+  canRequestResponseCopy?: boolean;
+  responseCopyAlreadySent?: boolean;
 }
 
 export interface SharedFormFetchResult {

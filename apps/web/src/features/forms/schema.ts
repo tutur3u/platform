@@ -265,6 +265,7 @@ export const formProgressSchema = z.object({
 export const formSubmitSchema = z.object({
   sessionId: canonicalUuidSchema,
   turnstileToken: z.string().max(4096).optional(),
+  sendResponseCopy: z.boolean().optional().default(false),
   answers: z.record(canonicalUuidSchema, formAnswerValueSchema),
 });
 

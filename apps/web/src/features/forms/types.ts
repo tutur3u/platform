@@ -193,4 +193,6 @@ export interface FormReadOnlyAnswers {
   answers: Record<string, FormAnswerValue>;
   issues: FormReadOnlyAnswerIssue[];
   submittedAt: string | null;
+  responseId: string | null;
+  sessionId: string | null;
 }

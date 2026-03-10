@@ -52,9 +52,15 @@ describe('EmailService', () => {
   };
 
   let service: EmailService;
+  const originalSendProductionEmail = process.env.SEND_PRODUCTION_EMAIL;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    if (originalSendProductionEmail === undefined) {
+      delete process.env.SEND_PRODUCTION_EMAIL;
+    } else {
+      process.env.SEND_PRODUCTION_EMAIL = originalSendProductionEmail;
+    }
     service = new EmailService(defaultConfig);
     service.setSupabaseClient({} as any);
   });
@@ -127,6 +133,31 @@ describe('EmailService', () => {
       expect(result.messageId).toBe('dev-mode-skip');
     });
 
+    it('should send real email in DEV_MODE when SEND_PRODUCTION_EMAIL=true', async () => {
+      process.env.SEND_PRODUCTION_EMAIL = 'true';
+
+      const devService = new EmailService({ ...defaultConfig, devMode: true });
+      devService.setSupabaseClient({} as any);
+      (devService as any).blacklistChecker = {
+        checkEmails: vi.fn(async (emails) => ({
+          allowed: emails,
+          blocked: [],
+        })),
+      };
+
+      const sendSpy = vi.spyOn((devService as any).provider, 'send');
+
+      const result = await devService.send({
+        recipients: { to: ['test@example.com'] },
+        content: { subject: 'Hi', text: 'Body', html: '<p>Body</p>' },
+        metadata: defaultMetadata,
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.messageId).toBe('sent-123');
+      expect(sendSpy).toHaveBeenCalledOnce();
+    });
+
     it('should handle all recipients blocked', async () => {
       // Mock blacklist checker to block everyone
       (service as any).blacklistChecker = {
@@ -173,6 +204,35 @@ describe('EmailService', () => {
       });
       expect(result.success).toBe(false);
       expect(result.error).toBe('No recipients specified');
+    });
+
+    it('should send internal email in DEV_MODE when SEND_PRODUCTION_EMAIL=true', async () => {
+      process.env.SEND_PRODUCTION_EMAIL = 'true';
+
+      const devService = new EmailService({ ...defaultConfig, devMode: true });
+      devService.setSupabaseClient({} as any);
+      (devService as any).blacklistChecker = {
+        checkEmails: vi.fn(async (emails) => ({
+          allowed: emails,
+          blocked: [],
+        })),
+      };
+
+      const sendSpy = vi.spyOn((devService as any).provider, 'send');
+
+      const result = await devService.sendInternal({
+        recipients: { to: ['internal@example.com'] },
+        content: {
+          subject: 'Alert',
+          text: 'System Down',
+          html: '<p>System Down</p>',
+        },
+        metadata: defaultMetadata,
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.messageId).toBe('sent-123');
+      expect(sendSpy).toHaveBeenCalledOnce();
     });
   });
 });
