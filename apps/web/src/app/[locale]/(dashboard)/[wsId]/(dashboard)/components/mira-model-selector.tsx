@@ -1,6 +1,11 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { matchesAllowedModel } from '@tuturuuu/ai/credits/model-mapping';
 import {
   ArrowBigUpDash,
@@ -52,25 +57,60 @@ import {
   useState,
 } from 'react';
 import {
-  fetchGatewayModels,
-  MIRA_GATEWAY_MODELS_QUERY_KEY,
+  fetchGatewayFavoriteModels,
+  fetchGatewayModelsPage,
+  fetchGatewayProviders,
+  type GatewayModelProviderSummary,
+  type GatewayModelUi,
+  MAX_PAGINATION_ITEMS,
+  MIRA_GATEWAY_PROVIDER_MODELS_QUERY_KEY,
+  MIRA_GATEWAY_PROVIDERS_QUERY_KEY,
+  sortModelsForDisplay,
 } from './mira-gateway-models';
 import { ProviderLogo, toProviderId } from './provider-logo';
 
 const EMPTY_FAVORITES = new Set<string>();
-const EMPTY_GROUPED_MODELS: Record<string, AIModelUI[]> = {};
-interface RenderedGroup {
-  provider: string;
+const EMPTY_PROVIDER_SUMMARIES: GatewayModelProviderSummary[] = [];
+
+type ModelListProps = {
+  defaultModelId: string | null;
+  fillHeight?: boolean;
+  hasNextPage?: boolean;
+  isEmptyMessage: string;
+  isFavorited: (modelId: string) => boolean;
+  isFetchingNextPage?: boolean;
+  isModelAllowed: (model: AIModelUI) => boolean;
+  model: AIModelUI;
   models: AIModelUI[];
-  isFavoritesGroup?: boolean;
-}
+  onLoadMore?: () => void;
+  onSelectModel: (model: AIModelUI) => void;
+  onToggleFavorite: (
+    event: React.MouseEvent<HTMLButtonElement>,
+    modelId: string,
+    modelLabel: string
+  ) => void;
+  pendingModelId: string | null;
+};
 
-const EMPTY_RENDERED_GROUPS: RenderedGroup[] = [];
+type ProviderModelsSectionProps = {
+  defaultModelId: string | null;
+  enabled: boolean;
+  isFavorited: (modelId: string) => boolean;
+  isModelAllowed: (model: AIModelUI) => boolean;
+  model: AIModelUI;
+  onSelectModel: (model: AIModelUI) => void;
+  onToggleFavorite: (
+    event: React.MouseEvent<HTMLButtonElement>,
+    modelId: string,
+    modelLabel: string
+  ) => void;
+  pendingModelId: string | null;
+  provider: string;
+  search: string;
+};
 
-// Logo status is fetched dynamically and stored in this map
 const providerLogoStatus = new Map<string, boolean>();
 
-// Synchronous check for immediate renders. Will be true if confirmed, false if confirmed missing or unknown
 function hasProviderLogo(provider: string): boolean {
   return providerLogoStatus.get(provider) ?? false;
 }
@@ -79,10 +119,9 @@ async function checkProviderLogo(provider: string): Promise<boolean> {
   const id = toProviderId(provider);
   const url = `https://models.dev/logos/${id}.svg`;
   try {
-    const res = await fetch(url);
+    const res = await fetch(url, { cache: 'force-cache' });
     const text = await res.text();
-    // length 1421 is the fallback spark icon (also used by Meta, so we exclude Meta/x-ai just in case or just rely on the text)
-    if (text.includes('M9.8132 15.9038')) return false; // This is the fallback sparkles SVG path
+    if (text.includes('M9.8132 15.9038')) return false;
     return true;
   } catch {
     return false;
@@ -107,7 +146,7 @@ async function fetchFavorites(wsId: string): Promise<Set<string>> {
     .eq('ws_id', wsId);
 
   if (error || !data?.length) return new Set();
-  return new Set(data.map((r) => r.model_id));
+  return new Set(data.map((row) => row.model_id));
 }
 
 async function toggleFavorite(
@@ -119,6 +158,7 @@ async function toggleFavorite(
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
   if (!user) {
     throw new Error('Authentication required');
   }
@@ -134,35 +174,306 @@ async function toggleFavorite(
     if (error) {
       throw new Error(error.message || 'Failed to update favorites');
     }
-  } else {
-    const { error } = await supabase.from('ai_model_favorites').insert({
-      ws_id: wsId,
-      user_id: user.id,
-      model_id: modelId,
-    });
 
-    if (error) {
-      throw new Error(error.message || 'Failed to update favorites');
-    }
+    return;
+  }
+
+  const { error } = await supabase.from('ai_model_favorites').insert({
+    ws_id: wsId,
+    user_id: user.id,
+    model_id: modelId,
+  });
+
+  if (error) {
+    throw new Error(error.message || 'Failed to update favorites');
   }
 }
 
-/** Capitalize first letter of each word for display */
 function formatProvider(provider: string): string {
   return provider
     .split(/[-_]/)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 }
 
-function modelMatchesSearch(m: AIModelUI, search: string): boolean {
+function modelMatchesSearch(model: AIModelUI, search: string): boolean {
   if (!search.trim()) return true;
-  const q = search.toLowerCase().trim();
+  const query = search.toLowerCase().trim();
+
   return (
-    m.label.toLowerCase().includes(q) ||
-    m.provider.toLowerCase().includes(q) ||
-    m.value.toLowerCase().includes(q) ||
-    (m.description?.toLowerCase().includes(q) ?? false)
+    model.label.toLowerCase().includes(query) ||
+    model.provider.toLowerCase().includes(query) ||
+    model.value.toLowerCase().includes(query) ||
+    (model.description?.toLowerCase().includes(query) ?? false)
+  );
+}
+
+function ModelList({
+  defaultModelId,
+  fillHeight = false,
+  hasNextPage,
+  isEmptyMessage,
+  isFavorited,
+  isFetchingNextPage,
+  isModelAllowed,
+  model,
+  models,
+  onLoadMore,
+  onSelectModel,
+  onToggleFavorite,
+  pendingModelId,
+}: ModelListProps) {
+  const t = useTranslations('dashboard.mira_chat');
+  const scrollContainerClassName = fillHeight
+    ? 'min-h-0 flex-1 overflow-y-auto'
+    : 'max-h-64 overflow-y-auto';
+
+  return (
+    <div
+      className={cn(
+        'flex w-full min-w-0 flex-col overflow-hidden',
+        fillHeight && 'min-h-0 flex-1'
+      )}
+    >
+      <div
+        className={cn('relative w-full min-w-0', scrollContainerClassName)}
+        onScroll={(event) => {
+          if (!onLoadMore || !hasNextPage || isFetchingNextPage) return;
+
+          const target = event.currentTarget;
+          const isNearBottom =
+            target.scrollTop + target.clientHeight >= target.scrollHeight - 24;
+
+          if (isNearBottom) {
+            onLoadMore();
+          }
+        }}
+      >
+        <CommandGroup
+          className={cn(
+            'px-0 py-0 text-foreground **:[[cmdk-group-heading]]:hidden',
+            isFetchingNextPage && 'pb-12'
+          )}
+        >
+          {models.length === 0 ? (
+            <div className="px-3 py-6 text-center text-muted-foreground text-sm">
+              {isEmptyMessage}
+            </div>
+          ) : (
+            models.map((itemModel) => {
+              const allowed = isModelAllowed(itemModel);
+              const favorited = isFavorited(itemModel.value);
+              const isPlanDefault = itemModel.value === defaultModelId;
+
+              const item = (
+                <CommandItem
+                  key={itemModel.value}
+                  value={`${itemModel.provider} ${itemModel.label} ${itemModel.value} ${itemModel.description ?? ''}`}
+                  onSelect={() => {
+                    if (!allowed) return;
+                    onSelectModel(itemModel);
+                  }}
+                  className={cn(
+                    'flex items-start gap-2 py-2',
+                    !allowed && 'cursor-not-allowed opacity-50'
+                  )}
+                  aria-disabled={!allowed}
+                >
+                  <ProviderLogo
+                    provider={itemModel.provider}
+                    size={18}
+                    className="mt-0.5 shrink-0"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-start gap-1.5">
+                      {allowed ? (
+                        <Check
+                          className={cn(
+                            'h-3.5 w-3.5 shrink-0',
+                            model.value === itemModel.value
+                              ? 'opacity-100'
+                              : 'hidden'
+                          )}
+                        />
+                      ) : (
+                        <Lock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      )}
+                      <span className="font-medium font-mono text-xs">
+                        {itemModel.label}
+                      </span>
+                      {isPlanDefault && (
+                        <span className="rounded-full border border-dynamic-primary/25 bg-dynamic-primary/10 px-1.5 py-0.5 font-sans text-[8px] text-dynamic-primary uppercase tracking-[0.16em]">
+                          {t('model_default_badge')}
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        className="group ml-auto flex shrink-0 rounded p-0.5 hover:bg-muted"
+                        onClick={(event) =>
+                          onToggleFavorite(
+                            event,
+                            itemModel.value,
+                            itemModel.label
+                          )
+                        }
+                        disabled={pendingModelId === itemModel.value}
+                        aria-label={
+                          favorited
+                            ? t('model_unfavorite')
+                            : t('model_favorite')
+                        }
+                        title={
+                          favorited
+                            ? t('model_unfavorite')
+                            : t('model_favorite')
+                        }
+                      >
+                        <Star
+                          className={cn(
+                            'h-3.5 w-3.5 transition-[fill]',
+                            favorited && 'fill-current',
+                            !favorited &&
+                              'fill-transparent group-hover:fill-current'
+                          )}
+                        />
+                      </button>
+                    </div>
+                    {itemModel.tags?.length ? (
+                      <div className="flex flex-wrap items-center gap-1 opacity-60">
+                        {itemModel.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[8px] uppercase leading-none"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
+                    {itemModel.description ? (
+                      <p className="mt-0.5 line-clamp-2 pr-4 text-[10px] text-muted-foreground">
+                        {itemModel.description}
+                      </p>
+                    ) : null}
+                  </div>
+                </CommandItem>
+              );
+
+              if (allowed) return item;
+
+              return (
+                <Tooltip key={itemModel.value}>
+                  <TooltipTrigger asChild>{item}</TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p className="text-xs">{t('model_upgrade_required')}</p>
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })
+          )}
+        </CommandGroup>
+        {isFetchingNextPage ? (
+          <div className="pointer-events-none sticky right-0 bottom-0 left-0 flex items-center justify-center bg-linear-to-t from-background via-background/95 to-transparent px-3 py-3">
+            <div className="rounded-full border bg-background/95 px-3 py-1 shadow-sm backdrop-blur-sm">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function ProviderModelsSection({
+  defaultModelId,
+  enabled,
+  isFavorited,
+  isModelAllowed,
+  model,
+  onSelectModel,
+  onToggleFavorite,
+  pendingModelId,
+  provider,
+  search,
+}: ProviderModelsSectionProps) {
+  const t = useTranslations('dashboard.mira_chat');
+  const providerModelsQuery = useInfiniteQuery({
+    queryKey: [MIRA_GATEWAY_PROVIDER_MODELS_QUERY_KEY, { provider }],
+    queryFn: ({ pageParam }) =>
+      fetchGatewayModelsPage({
+        limit: MAX_PAGINATION_ITEMS,
+        offset: typeof pageParam === 'number' ? pageParam : 0,
+        provider,
+      }),
+    enabled,
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) => lastPage.nextOffset,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const models = useMemo(() => {
+    const items =
+      providerModelsQuery.data?.pages.flatMap((page) => page.items) ?? [];
+    const filteredItems = items.filter((item) =>
+      modelMatchesSearch(item, search)
+    );
+    const modelsById = new Map(filteredItems.map((item) => [item.value, item]));
+
+    return sortModelsForDisplay(filteredItems, {
+      defaultModelId,
+      isFavorited,
+      isModelAllowed: (modelId) => {
+        const providerModel = modelsById.get(modelId);
+        return providerModel ? isModelAllowed(providerModel) : false;
+      },
+    });
+  }, [
+    defaultModelId,
+    isFavorited,
+    isModelAllowed,
+    providerModelsQuery.data,
+    search,
+  ]);
+
+  return (
+    <AccordionItem value={provider} className="w-full min-w-0 border-b-0">
+      <AccordionTrigger
+        className="w-full min-w-0 px-3 py-2 font-semibold text-muted-foreground text-xs hover:no-underline"
+        showChevron={true}
+      >
+        <div className="flex items-center gap-2">
+          <ProviderLogo provider={provider} size={14} className="shrink-0" />
+          <span className="capitalize">{formatProvider(provider)}</span>
+        </div>
+      </AccordionTrigger>
+      <AccordionContent className="w-full min-w-0 overflow-hidden pt-0 pb-2">
+        {providerModelsQuery.isLoading ? (
+          <div className="flex items-center justify-center px-3 py-6">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <div className="w-full min-w-0 px-3">
+            <ModelList
+              defaultModelId={defaultModelId}
+              hasNextPage={providerModelsQuery.hasNextPage}
+              isEmptyMessage={t('model_selector_empty')}
+              isFavorited={isFavorited}
+              isFetchingNextPage={providerModelsQuery.isFetchingNextPage}
+              isModelAllowed={isModelAllowed}
+              model={model}
+              models={models}
+              onLoadMore={() => {
+                if (!providerModelsQuery.hasNextPage) return;
+                void providerModelsQuery.fetchNextPage();
+              }}
+              onSelectModel={onSelectModel}
+              onToggleFavorite={onToggleFavorite}
+              pendingModelId={pendingModelId}
+            />
+          </div>
+        )}
+      </AccordionContent>
+    </AccordionItem>
   );
 }
 
@@ -183,15 +494,10 @@ export default function MiraModelSelector({
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [pendingModelId, setPendingModelId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [accordionValue, setAccordionValue] = useState<string[]>([]);
+  const [expandedProviders, setExpandedProviders] = useState<string[]>([]);
   const deferredOpen = useDeferredValue(open);
   const hasAppliedInitialFavoritesView = useRef(false);
-
-  const { data: gatewayModels, isLoading: modelsLoading } = useQuery({
-    queryKey: MIRA_GATEWAY_MODELS_QUERY_KEY,
-    queryFn: fetchGatewayModels,
-    staleTime: 5 * 60 * 1000,
-  });
+  const hasInitializedAllProviders = useRef(false);
 
   const { data: favoriteIds, isLoading: favoritesLoading } = useQuery({
     queryKey: ['ai-model-favorites', wsId],
@@ -200,20 +506,132 @@ export default function MiraModelSelector({
     staleTime: 60 * 1000,
   });
 
+  const { data: credits } = useAiCredits(creditsWsId ?? wsId);
+  const showUpgradeCta = credits?.tier === 'FREE';
+  const defaultModelId = credits?.defaultLanguageModel ?? null;
+  const allowedModels = credits?.allowedModels ?? [];
   const hasFavorites =
     !favoritesLoading && !!favoriteIds && favoriteIds.size > 0;
+  const isAllModelsView = !favoritesOnly && !selectedProvider;
+  const isSingleProviderView = !favoritesOnly && !!selectedProvider;
+
+  const providerSummariesQuery = useQuery({
+    queryKey: [
+      MIRA_GATEWAY_PROVIDERS_QUERY_KEY,
+      { allowedModels, hideLockedModels },
+    ],
+    queryFn: () =>
+      fetchGatewayProviders({
+        allowedModels,
+        hideLockedModels,
+      }),
+    enabled: deferredOpen,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const providerList = useMemo(() => {
+    return [...(providerSummariesQuery.data ?? EMPTY_PROVIDER_SUMMARIES)].sort(
+      (a, b) => {
+        if (a.allowedCount !== b.allowedCount) {
+          return a.allowedCount > 0 ? -1 : 1;
+        }
+
+        const aHasLogo = hasProviderLogo(a.provider);
+        const bHasLogo = hasProviderLogo(b.provider);
+        if (aHasLogo !== bHasLogo) return aHasLogo ? -1 : 1;
+
+        return a.provider.localeCompare(b.provider);
+      }
+    );
+  }, [providerSummariesQuery.data]);
+
+  useQuery({
+    queryKey: [
+      'provider-logos',
+      providerList.map((provider) => provider.provider).join(','),
+    ],
+    queryFn: async () => {
+      await Promise.all(
+        providerList.map(async ({ provider }) => {
+          if (providerLogoStatus.has(provider)) return;
+          const hasLogo = await checkProviderLogo(provider);
+          providerLogoStatus.set(provider, hasLogo);
+        })
+      );
+
+      return true;
+    },
+    enabled: providerList.length > 0,
+    staleTime: Infinity,
+  });
+
+  const favoriteModelsQuery = useQuery({
+    queryKey: ['ai-model-favorites-models', wsId],
+    queryFn: () => fetchGatewayFavoriteModels(wsId),
+    enabled: deferredOpen && favoritesOnly && !!wsId,
+    staleTime: 60 * 1000,
+  });
+
+  const selectedProviderModelsQuery = useInfiniteQuery({
+    queryKey: [
+      MIRA_GATEWAY_PROVIDER_MODELS_QUERY_KEY,
+      { provider: selectedProvider },
+    ],
+    queryFn: ({ pageParam }) =>
+      fetchGatewayModelsPage({
+        limit: MAX_PAGINATION_ITEMS,
+        offset: typeof pageParam === 'number' ? pageParam : 0,
+        provider: selectedProvider ?? '',
+      }),
+    enabled: deferredOpen && !!selectedProvider && !favoritesOnly,
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) => lastPage.nextOffset,
+    staleTime: 5 * 60 * 1000,
+  });
 
   useEffect(() => {
     if (!deferredOpen) {
       hasAppliedInitialFavoritesView.current = false;
+      hasInitializedAllProviders.current = false;
       return;
     }
-    if (hasAppliedInitialFavoritesView.current) return;
-    if (favoritesLoading) return;
+
+    if (hasAppliedInitialFavoritesView.current || favoritesLoading) return;
 
     setFavoritesOnly(hasFavorites);
     hasAppliedInitialFavoritesView.current = true;
   }, [deferredOpen, favoritesLoading, hasFavorites]);
+
+  useEffect(() => {
+    if (!hotkeySignal || disabled) return;
+    setOpen(true);
+  }, [hotkeySignal, disabled]);
+
+  useEffect(() => {
+    if (!isAllModelsView) return;
+    if (hasInitializedAllProviders.current) return;
+
+    const firstProvider = providerList[0]?.provider;
+    if (firstProvider) {
+      setExpandedProviders([firstProvider]);
+      hasInitializedAllProviders.current = true;
+    }
+  }, [isAllModelsView, providerList]);
+
+  useEffect(() => {
+    const validProviders = new Set(
+      providerList.map((provider) => provider.provider)
+    );
+
+    setExpandedProviders((current) => {
+      const next = current.filter((provider) => validProviders.has(provider));
+      return next.length === current.length ? current : next;
+    });
+
+    if (selectedProvider && !validProviders.has(selectedProvider)) {
+      setSelectedProvider(null);
+    }
+  }, [providerList, selectedProvider]);
 
   const toggleFavoriteMutation = useMutation({
     mutationFn: ({
@@ -225,14 +643,22 @@ export default function MiraModelSelector({
       isFavorited: boolean;
     }) => toggleFavorite(wsId, modelId, isFavorited),
     onSuccess: (_, { modelLabel, isFavorited }) => {
-      queryClient.invalidateQueries({ queryKey: ['ai-model-favorites', wsId] });
+      void queryClient.invalidateQueries({
+        queryKey: ['ai-model-favorites', wsId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ['ai-model-favorites-models', wsId],
+      });
+
       const message = isFavorited
         ? t('model_removed_from_favorites', { model: modelLabel })
         : t('model_added_to_favorites', { model: modelLabel });
       toast.success(message);
     },
     onError: (error, { modelId, modelLabel, isFavorited }) => {
-      queryClient.invalidateQueries({ queryKey: ['ai-model-favorites', wsId] });
+      void queryClient.invalidateQueries({
+        queryKey: ['ai-model-favorites', wsId],
+      });
       const action = isFavorited ? t('model_unfavorite') : t('model_favorite');
       const fallbackMessage = `${t('error')} (${action}: ${modelLabel} - ${modelId})`;
       const details = error instanceof Error ? error.message : '';
@@ -245,11 +671,24 @@ export default function MiraModelSelector({
     [favoriteIds]
   );
 
+  const isModelAllowed = useCallback(
+    (candidateModel: AIModelUI) => {
+      if (candidateModel.disabled) return false;
+      return matchesAllowedModel(candidateModel.value, allowedModels);
+    },
+    [allowedModels]
+  );
+
   const handleToggleFavorite = useCallback(
-    (e: React.MouseEvent, modelId: string, modelLabel: string) => {
-      e.stopPropagation();
+    (
+      event: React.MouseEvent<HTMLButtonElement>,
+      modelId: string,
+      modelLabel: string
+    ) => {
+      event.stopPropagation();
       const favorited = isFavorited(modelId);
       setPendingModelId(modelId);
+
       toggleFavoriteMutation.mutate(
         {
           modelId,
@@ -265,206 +704,60 @@ export default function MiraModelSelector({
     [isFavorited, toggleFavoriteMutation]
   );
 
-  const availableModels = useMemo(() => {
-    return gatewayModels ?? [];
-  }, [gatewayModels]);
+  const favoriteModels = useMemo(() => {
+    const models = favoriteModelsQuery.data ?? [];
+    const visibleModels = hideLockedModels
+      ? models.filter((item) => isModelAllowed(item))
+      : models;
 
-  // Fetch logo status for all available providers
-  useQuery({
-    queryKey: [
-      'provider-logos',
-      availableModels.map((m) => m.provider).join(','),
-    ],
-    queryFn: async () => {
-      const uniqueProviders = Array.from(
-        new Set(availableModels.map((m) => m.provider))
-      );
-      const promises = uniqueProviders.map(async (p) => {
-        if (providerLogoStatus.has(p)) return; // Already checked
-        const hasLogo = await checkProviderLogo(p);
-        providerLogoStatus.set(p, hasLogo);
-      });
-      await Promise.all(promises);
-      return true; // Just tickle re-render
-    },
-    enabled: availableModels.length > 0,
-    staleTime: Infinity,
-  });
-
-  const { data: credits } = useAiCredits(creditsWsId ?? wsId);
-  const showUpgradeCta = credits?.tier === 'FREE';
-  const defaultModelId = credits?.defaultLanguageModel ?? null;
-
-  const modelById = useMemo(() => {
-    return new Map(availableModels.map((m) => [m.value, m] as const));
-  }, [availableModels]);
-
-  const isModelAllowed = useCallback(
-    (modelId: string) => {
-      const m = modelById.get(modelId);
-      if (m?.disabled) return false;
-
-      return matchesAllowedModel(modelId, credits?.allowedModels ?? []);
-    },
-    [credits?.allowedModels, modelById]
-  );
-
-  const groupedModels = useMemo(() => {
-    if (!deferredOpen) return EMPTY_GROUPED_MODELS;
-
-    const groups: Record<string, AIModelUI[]> = {};
-    for (const m of availableModels) {
-      const key = m.provider;
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(m);
-    }
-
-    for (const key in groups) {
-      groups[key]?.sort((a, b) => {
-        const aAllowed = isModelAllowed(a.value);
-        const bAllowed = isModelAllowed(b.value);
-
-        if (aAllowed !== bAllowed) return aAllowed ? -1 : 1;
-
-        const aDefault = a.value === defaultModelId;
-        const bDefault = b.value === defaultModelId;
-        if (aDefault !== bDefault) return aDefault ? -1 : 1;
-
-        const aFav = isFavorited(a.value);
-        const bFav = isFavorited(b.value);
-        if (aFav !== bFav) return aFav ? -1 : 1;
-
-        return a.label.localeCompare(b.label);
-      });
-    }
-
-    return groups;
-  }, [
-    availableModels,
-    defaultModelId,
-    deferredOpen,
-    isModelAllowed,
-    isFavorited,
-  ]);
-
-  const providerList = useMemo(() => {
-    return Object.keys(groupedModels).sort((a, b) => {
-      const aHasAllowed = groupedModels[a]?.some((m) =>
-        isModelAllowed(m.value)
-      );
-      const bHasAllowed = groupedModels[b]?.some((m) =>
-        isModelAllowed(m.value)
-      );
-
-      if (aHasAllowed !== bHasAllowed) return aHasAllowed ? -1 : 1;
-
-      const aHasLogo = hasProviderLogo(a);
-      const bHasLogo = hasProviderLogo(b);
-      if (aHasLogo !== bHasLogo) return aHasLogo ? -1 : 1;
-
-      return a.localeCompare(b);
-    });
-  }, [groupedModels, isModelAllowed]);
-
-  const filteredProviderList = useMemo(() => {
-    if (!hideLockedModels) return providerList;
-    return providerList.filter((provider) =>
-      groupedModels[provider]?.some((m) => isModelAllowed(m.value))
-    );
-  }, [groupedModels, hideLockedModels, isModelAllowed, providerList]);
-
-  const providersToShow = useMemo(() => {
-    if (selectedProvider) return [selectedProvider];
-    return filteredProviderList;
-  }, [selectedProvider, filteredProviderList]);
-
-  const modelsToRender = useMemo(() => {
-    if (!deferredOpen) return EMPTY_RENDERED_GROUPS;
-
-    const result: RenderedGroup[] = [];
-
-    if (favoritesOnly) {
-      // Favorites: show ALL favorited models across all providers in one group
-      let models = Object.keys(groupedModels)
-        .flatMap((key) => groupedModels[key] ?? [])
-        .filter((m) => isFavorited(m.value));
-
-      if (hideLockedModels) {
-        models = models.filter((m) => isModelAllowed(m.value));
-      }
-
-      models = models.filter((m) => modelMatchesSearch(m, search));
-
-      models.sort((a, b) => {
+    return visibleModels
+      .filter((item) => modelMatchesSearch(item, search))
+      .sort((a, b) => {
         const providerOrder = a.provider.localeCompare(b.provider);
         if (providerOrder !== 0) return providerOrder;
         return a.label.localeCompare(b.label);
       });
+  }, [favoriteModelsQuery.data, hideLockedModels, isModelAllowed, search]);
 
-      if (models.length > 0) {
-        result.push({
-          provider: 'favorites',
-          models,
-          isFavoritesGroup: true,
-        });
-      }
-      return result;
-    }
+  const selectedProviderModels = useMemo(() => {
+    const items =
+      selectedProviderModelsQuery.data?.pages.flatMap((page) => page.items) ??
+      [];
+    const filteredItems = items.filter((item) =>
+      modelMatchesSearch(item, search)
+    );
+    const modelsById = new Map(filteredItems.map((item) => [item.value, item]));
 
-    // Normal view: group by provider (respecting selectedProvider)
-    for (const provider of providersToShow) {
-      let models = groupedModels[provider] ?? [];
-
-      if (hideLockedModels) {
-        models = models.filter((m) => isModelAllowed(m.value));
-      }
-
-      models = models.filter((m) => modelMatchesSearch(m, search));
-
-      if (models.length > 0) {
-        result.push({ provider, models });
-      }
-    }
-
-    return result;
+    return sortModelsForDisplay(filteredItems, {
+      defaultModelId,
+      isFavorited,
+      isModelAllowed: (modelId) => {
+        const selectedModel = modelsById.get(modelId);
+        return selectedModel ? isModelAllowed(selectedModel) : false;
+      },
+    }) as GatewayModelUi[];
   }, [
-    deferredOpen,
-    providersToShow,
-    groupedModels,
-    hideLockedModels,
-    favoritesOnly,
-    search,
-    isModelAllowed,
+    defaultModelId,
     isFavorited,
+    isModelAllowed,
+    search,
+    selectedProviderModelsQuery.data,
   ]);
 
-  useEffect(() => {
-    if (!deferredOpen || modelsToRender.length === 0) {
-      setAccordionValue([]);
-      return;
-    }
+  const selectModel = useCallback(
+    (nextModel: AIModelUI) => {
+      onChange(nextModel);
+      setOpen(false);
+    },
+    [onChange]
+  );
 
-    // When there is only a single section (e.g. Favorites, a single provider),
-    // automatically expand that section.
-    if (modelsToRender.length === 1) {
-      const onlyProvider = modelsToRender[0]?.provider;
-      if (onlyProvider) {
-        setAccordionValue([onlyProvider]);
-        return;
-      }
-    }
-
-    // Preserve previous behavior of initially expanding all sections when the
-    // list first becomes available and the user hasn't interacted yet.
-    if (accordionValue.length === 0) {
-      setAccordionValue(modelsToRender.map((g) => g.provider));
-    }
-  }, [deferredOpen, modelsToRender, accordionValue.length]);
-
-  useEffect(() => {
-    if (!hotkeySignal || disabled) return;
-    setOpen(true);
-  }, [hotkeySignal, disabled]);
+  const providerNames = providerList.map((provider) => provider.provider);
+  const isLoadingRootPane =
+    !deferredOpen ||
+    providerSummariesQuery.isLoading ||
+    (favoritesOnly && favoriteModelsQuery.isLoading) ||
+    (isSingleProviderView && selectedProviderModelsQuery.isLoading);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -479,20 +772,18 @@ export default function MiraModelSelector({
             >
               <ProviderLogo provider={model.provider} size={16} />
               <span className="min-w-0 truncate">{model.label}</span>
-              {defaultModelId === model.value && (
+              {defaultModelId === model.value ? (
                 <span className="rounded-full bg-dynamic-primary/12 px-2 py-0.5 font-sans text-[10px] text-dynamic-primary uppercase tracking-[0.18em]">
                   {t('model_default_badge')}
                 </span>
-              )}
+              ) : null}
               <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
         </TooltipTrigger>
-        {shortcutLabel && (
-          <TooltipContent>
-            {`${t('model_picker')} (${shortcutLabel})`}
-          </TooltipContent>
-        )}
+        {shortcutLabel ? (
+          <TooltipContent>{`${t('model_picker')} (${shortcutLabel})`}</TooltipContent>
+        ) : null}
       </Tooltip>
       <PopoverContent
         className="flex h-[min(480px,85vh)] w-[min(420px,calc(100vw-2rem))] flex-col overflow-hidden p-0"
@@ -500,7 +791,7 @@ export default function MiraModelSelector({
         sideOffset={4}
       >
         <TooltipProvider delayDuration={200}>
-          {showUpgradeCta && (
+          {showUpgradeCta ? (
             <div className="m-2 mb-0 rounded-xl border border-dynamic-primary/25 bg-linear-to-r from-dynamic-primary/20 via-dynamic-secondary/15 to-dynamic-purple/20 p-3">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
@@ -526,14 +817,15 @@ export default function MiraModelSelector({
                 </Link>
               </div>
             </div>
-          )}
+          ) : null}
+
           <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b px-3 py-2">
             <div className="relative min-w-0 flex-1 sm:max-w-60">
               <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground/70" />
               <Input
                 placeholder={t('model_selector_search')}
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(event) => setSearch(event.target.value)}
                 className="w-full bg-background/50 py-1.5 pr-3 pl-9 text-foreground text-sm placeholder:text-muted-foreground/50 focus-visible:ring-1 focus-visible:ring-primary/20"
               />
             </div>
@@ -562,7 +854,7 @@ export default function MiraModelSelector({
                         favoritesOnly && 'bg-muted'
                       )}
                       onClick={() => {
-                        setFavoritesOnly((v) => !v);
+                        setFavoritesOnly((value) => !value);
                         setSelectedProvider(null);
                       }}
                       aria-label={t('model_show_favorites')}
@@ -592,6 +884,9 @@ export default function MiraModelSelector({
                       onClick={() => {
                         setFavoritesOnly(false);
                         setSelectedProvider(null);
+                        if (providerNames[0]) {
+                          setExpandedProviders([providerNames[0]]);
+                        }
                       }}
                       aria-label={t('model_show_all')}
                     >
@@ -609,7 +904,7 @@ export default function MiraModelSelector({
                   <Separator className="bg-border/50" />
                 </div>
 
-                {filteredProviderList.map((provider) => (
+                {providerNames.map((provider) => (
                   <Tooltip key={provider}>
                     <TooltipTrigger asChild>
                       <Button
@@ -620,10 +915,12 @@ export default function MiraModelSelector({
                           selectedProvider === provider && 'bg-muted'
                         )}
                         onClick={() => {
-                          const next =
+                          const nextProvider =
                             selectedProvider === provider ? null : provider;
-                          setSelectedProvider(next);
-                          if (next) setFavoritesOnly(false);
+                          setSelectedProvider(nextProvider);
+                          if (nextProvider) {
+                            setFavoritesOnly(false);
+                          }
                         }}
                         aria-label={formatProvider(provider)}
                       >
@@ -639,230 +936,108 @@ export default function MiraModelSelector({
             </ScrollArea>
 
             <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-              <ScrollArea className="min-h-0 flex-1">
-                {!deferredOpen || modelsLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              {isLoadingRootPane ? (
+                <div className="flex min-h-0 flex-1 items-center justify-center py-12">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                </div>
+              ) : favoritesOnly ? (
+                <Command
+                  className="flex min-h-0 flex-1 flex-col"
+                  shouldFilter={false}
+                >
+                  <CommandList className="flex min-h-0 flex-1 flex-col border-0 px-3 py-2">
+                    <ModelList
+                      defaultModelId={defaultModelId}
+                      fillHeight={true}
+                      isEmptyMessage={t('model_selector_empty')}
+                      isFavorited={isFavorited}
+                      isModelAllowed={isModelAllowed}
+                      model={model}
+                      models={favoriteModels}
+                      onSelectModel={selectModel}
+                      onToggleFavorite={handleToggleFavorite}
+                      pendingModelId={pendingModelId}
+                    />
+                  </CommandList>
+                </Command>
+              ) : isSingleProviderView && selectedProvider ? (
+                <Command
+                  className="flex min-h-0 flex-1 flex-col"
+                  shouldFilter={false}
+                >
+                  <div className="w-full shrink-0 border-b px-3 py-2 font-semibold text-muted-foreground text-xs">
+                    <div className="flex items-center gap-2">
+                      <ProviderLogo
+                        provider={selectedProvider}
+                        size={14}
+                        className="shrink-0"
+                      />
+                      <span className="capitalize">
+                        {formatProvider(selectedProvider)}
+                      </span>
+                    </div>
                   </div>
-                ) : modelsToRender.length === 0 ? (
-                  <div className="py-8 text-center text-muted-foreground text-sm">
-                    {t('model_selector_empty')}
-                  </div>
-                ) : (
+                  <CommandList className="flex min-h-0 flex-1 flex-col border-0 px-3 py-2">
+                    <ModelList
+                      defaultModelId={defaultModelId}
+                      fillHeight={true}
+                      hasNextPage={selectedProviderModelsQuery.hasNextPage}
+                      isEmptyMessage={t('model_selector_empty')}
+                      isFavorited={isFavorited}
+                      isFetchingNextPage={
+                        selectedProviderModelsQuery.isFetchingNextPage
+                      }
+                      isModelAllowed={isModelAllowed}
+                      model={model}
+                      models={selectedProviderModels}
+                      onLoadMore={() => {
+                        if (!selectedProviderModelsQuery.hasNextPage) return;
+                        void selectedProviderModelsQuery.fetchNextPage();
+                      }}
+                      onSelectModel={selectModel}
+                      onToggleFavorite={handleToggleFavorite}
+                      pendingModelId={pendingModelId}
+                    />
+                  </CommandList>
+                </Command>
+              ) : providerNames.length === 0 ? (
+                <div className="py-8 text-center text-muted-foreground text-sm">
+                  {t('model_selector_empty')}
+                </div>
+              ) : (
+                <ScrollArea className="min-h-0 flex-1">
                   <Command shouldFilter={false}>
-                    <CommandList className="max-h-none border-0">
+                    <CommandList className="max-h-none w-full border-0 px-0 py-0">
                       <Accordion
                         type="multiple"
-                        value={accordionValue}
-                        onValueChange={(val) =>
-                          setAccordionValue(
-                            Array.isArray(val) ? val : val ? [val] : []
+                        value={expandedProviders}
+                        onValueChange={(value) =>
+                          setExpandedProviders(
+                            Array.isArray(value) ? value : []
                           )
                         }
-                        className="w-full"
+                        className="w-full min-w-0"
                       >
-                        {modelsToRender.map(
-                          ({ provider, models, isFavoritesGroup }) => (
-                            <AccordionItem
-                              key={provider}
-                              value={provider}
-                              className="border-b-0"
-                            >
-                              <AccordionTrigger
-                                className="px-3 py-2 font-semibold text-muted-foreground text-xs hover:no-underline"
-                                showChevron={true}
-                              >
-                                <div className="flex items-center gap-2">
-                                  {!isFavoritesGroup && (
-                                    <ProviderLogo
-                                      provider={provider}
-                                      size={14}
-                                      className="shrink-0"
-                                    />
-                                  )}
-                                  <span className="capitalize">
-                                    {isFavoritesGroup
-                                      ? t('model_favorites_heading')
-                                      : formatProvider(provider)}
-                                  </span>
-                                </div>
-                              </AccordionTrigger>
-                              <AccordionContent className="pt-0 pb-2">
-                                <CommandGroup className="px-0 py-0 text-foreground **:[[cmdk-group-heading]]:hidden">
-                                  {models.map((m) => {
-                                    const allowed = isModelAllowed(m.value);
-                                    const favorited = isFavorited(m.value);
-                                    const isPlanDefault =
-                                      m.value === defaultModelId;
-                                    const item = (
-                                      <CommandItem
-                                        key={m.value}
-                                        value={`${m.provider} ${m.label} ${m.value} ${m.description ?? ''}`}
-                                        onSelect={() => {
-                                          if (!allowed) return;
-                                          onChange(m);
-                                          setOpen(false);
-                                        }}
-                                        className={cn(
-                                          'flex items-start gap-2 py-2',
-                                          !allowed &&
-                                            'cursor-not-allowed opacity-50'
-                                        )}
-                                        aria-disabled={!allowed}
-                                      >
-                                        <ProviderLogo
-                                          provider={m.provider}
-                                          size={18}
-                                          className="mt-0.5 shrink-0"
-                                        />
-                                        <div className="min-w-0 flex-1">
-                                          <div className="flex items-start justify-start gap-1.5">
-                                            {allowed ? (
-                                              <Check
-                                                className={cn(
-                                                  'h-3.5 w-3.5 shrink-0',
-                                                  model.value === m.value
-                                                    ? 'opacity-100'
-                                                    : 'hidden'
-                                                )}
-                                              />
-                                            ) : (
-                                              <Lock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                                            )}
-                                            <span className="font-medium font-mono text-xs">
-                                              {m.label}
-                                            </span>
-                                            {isPlanDefault && (
-                                              <span className="rounded-full border border-dynamic-primary/25 bg-dynamic-primary/10 px-1.5 py-0.5 font-sans text-[8px] text-dynamic-primary uppercase tracking-[0.16em]">
-                                                {t('model_default_badge')}
-                                              </span>
-                                            )}
-                                            <button
-                                              type="button"
-                                              className="group ml-auto flex shrink-0 rounded p-0.5 hover:bg-muted"
-                                              onClick={(e) =>
-                                                handleToggleFavorite(
-                                                  e,
-                                                  m.value,
-                                                  m.label
-                                                )
-                                              }
-                                              disabled={
-                                                pendingModelId === m.value
-                                              }
-                                              aria-label={
-                                                favorited
-                                                  ? t('model_unfavorite')
-                                                  : t('model_favorite')
-                                              }
-                                              title={
-                                                favorited
-                                                  ? t('model_unfavorite')
-                                                  : t('model_favorite')
-                                              }
-                                            >
-                                              <Star
-                                                className={cn(
-                                                  'h-3.5 w-3.5 transition-[fill]',
-                                                  favorited && 'fill-current',
-                                                  !favorited &&
-                                                    'fill-transparent group-hover:fill-current'
-                                                )}
-                                              />
-                                            </button>
-                                          </div>
-                                          {(m as any).tags?.length > 0 && (
-                                            <div className="flex flex-wrap items-center gap-1 opacity-60">
-                                              {(m as any).tags.map(
-                                                (tag: string) => (
-                                                  <span
-                                                    key={tag}
-                                                    className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[8px] uppercase leading-none"
-                                                  >
-                                                    {tag}
-                                                  </span>
-                                                )
-                                              )}
-                                            </div>
-                                          )}
-                                          {m.description && (
-                                            <p className="mt-0.5 line-clamp-2 pr-4 text-[10px] text-muted-foreground">
-                                              {m.description}
-                                            </p>
-                                          )}
-                                        </div>
-                                        {/* {(m.context ||
-                                          (m as any).maxTokens ||
-                                          (m as any).inputPricePerToken ||
-                                          (m as any).outputPricePerToken) && (
-                                          <div className="flex shrink-0 flex-col items-end gap-0.5 pt-0.5 text-[9px] text-muted-foreground/80 leading-tight">
-                                            {m.context && (
-                                              <span>
-                                                {t('model_ctx_label')}:{' '}
-                                                {m.context >= 1_000_000
-                                                  ? `${(m.context / 1_000_000).toFixed(0)}M`
-                                                  : `${(m.context / 1_000).toFixed(0)}K`}
-                                              </span>
-                                            )}
-                                            {(m as any).maxTokens && (
-                                              <span>
-                                                {t('model_max_out_label')}:{' '}
-                                                {(m as any).maxTokens >=
-                                                1_000_000
-                                                  ? `${((m as any).maxTokens / 1_000_000).toFixed(0)}M`
-                                                  : `${((m as any).maxTokens / 1_000).toFixed(0)}K`}
-                                              </span>
-                                            )}
-                                            {(m as any).inputPricePerToken && (
-                                              <span>
-                                                {t('model_in_price_label')}:{' '}
-                                                {`$${(
-                                                  ((m as any)
-                                                    .inputPricePerToken as number) *
-                                                    1_000_000
-                                                ).toFixed(3)}/M`}
-                                              </span>
-                                            )}
-                                            {(m as any).outputPricePerToken && (
-                                              <span>
-                                                {t('model_out_price_label')}:{' '}
-                                                {`$${(
-                                                  ((m as any)
-                                                    .outputPricePerToken as number) *
-                                                    1_000_000
-                                                ).toFixed(3)}/M`}
-                                              </span>
-                                            )}
-                                          </div>
-                                        )} */}
-                                      </CommandItem>
-                                    );
-
-                                    if (allowed) return item;
-
-                                    return (
-                                      <Tooltip key={m.value}>
-                                        <TooltipTrigger asChild>
-                                          {item}
-                                        </TooltipTrigger>
-                                        <TooltipContent side="right">
-                                          <p className="text-xs">
-                                            {t('model_upgrade_required')}
-                                          </p>
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    );
-                                  })}
-                                </CommandGroup>
-                              </AccordionContent>
-                            </AccordionItem>
-                          )
-                        )}
+                        {providerNames.map((provider) => (
+                          <ProviderModelsSection
+                            key={provider}
+                            defaultModelId={defaultModelId}
+                            enabled={expandedProviders.includes(provider)}
+                            isFavorited={isFavorited}
+                            isModelAllowed={isModelAllowed}
+                            model={model}
+                            onSelectModel={selectModel}
+                            onToggleFavorite={handleToggleFavorite}
+                            pendingModelId={pendingModelId}
+                            provider={provider}
+                            search={search}
+                          />
+                        ))}
                       </Accordion>
                     </CommandList>
                   </Command>
-                )}
-              </ScrollArea>
+                </ScrollArea>
+              )}
             </div>
           </div>
         </TooltipProvider>
