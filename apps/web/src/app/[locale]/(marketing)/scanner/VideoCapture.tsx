@@ -125,7 +125,9 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
     }
 
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current.getTracks().forEach((track) => {
+        track.stop();
+      });
     }
   };
 
@@ -172,13 +174,14 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
 
         const imageData = canvasRef.current.toDataURL('image/webp', 0.8);
         try {
-          const ocrURL = process.env.OCR_SERVICE_URL || 'http://localhost:5000';
+          const ocrURL =
+            process.env.NEXT_PUBLIC_OCR_SERVICE_URL || 'http://localhost:5000';
           const response = await fetch(`${ocrURL}/capture`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ imageData }),
+            body: JSON.stringify({ image_data: imageData }),
           });
 
           if (!response.ok) {
@@ -237,7 +240,7 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
     <div className="space-y-6">
       {/* Camera Device Selection */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">Camera Selection</h3>
+        <h3 className="font-medium text-lg">Camera Selection</h3>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="w-64 justify-between">
@@ -271,7 +274,7 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
         className={cn(
           'relative aspect-video overflow-hidden rounded-2xl border-4 transition-all duration-300',
           cameraOn
-            ? 'border-blue-500 shadow-lg shadow-blue-500/25'
+            ? 'border-blue-500 shadow-blue-500/25 shadow-lg'
             : 'border-gray-200'
         )}
       >
@@ -291,10 +294,10 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
                 <CameraOff className="h-8 w-8 text-dynamic-gray" />
               </div>
               <div className="space-y-2">
-                <p className="text-lg font-medium text-gray-700">
+                <p className="font-medium text-gray-700 text-lg">
                   Camera is Off
                 </p>
-                <p className="text-sm text-gray-500">
+                <p className="text-gray-500 text-sm">
                   Click "Turn On Camera" to start scanning
                 </p>
               </div>
@@ -309,10 +312,10 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
             <div className="pointer-events-none absolute inset-0">
               <div className="absolute top-1/2 left-1/2 h-48 w-80 -translate-x-1/2 -translate-y-1/2">
                 {/* Corner Brackets */}
-                <div className="absolute top-0 left-0 h-8 w-8 rounded-tl-lg border-t-4 border-l-4 border-white shadow-lg"></div>
-                <div className="absolute top-0 right-0 h-8 w-8 rounded-tr-lg border-t-4 border-r-4 border-white shadow-lg"></div>
-                <div className="absolute bottom-0 left-0 h-8 w-8 rounded-bl-lg border-b-4 border-l-4 border-white shadow-lg"></div>
-                <div className="absolute right-0 bottom-0 h-8 w-8 rounded-br-lg border-r-4 border-b-4 border-white shadow-lg"></div>
+                <div className="absolute top-0 left-0 h-8 w-8 rounded-tl-lg border-white border-t-4 border-l-4 shadow-lg"></div>
+                <div className="absolute top-0 right-0 h-8 w-8 rounded-tr-lg border-white border-t-4 border-r-4 shadow-lg"></div>
+                <div className="absolute bottom-0 left-0 h-8 w-8 rounded-bl-lg border-white border-b-4 border-l-4 shadow-lg"></div>
+                <div className="absolute right-0 bottom-0 h-8 w-8 rounded-br-lg border-white border-r-4 border-b-4 shadow-lg"></div>
 
                 {/* Center Crosshair */}
                 <div className="absolute top-1/2 left-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2">
@@ -339,7 +342,7 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
               <LoadingIndicator className="mx-auto h-12 w-12 text-white" />
             </div>
             <div className="space-y-2 text-center">
-              <p className="text-lg font-semibold text-white">
+              <p className="font-semibold text-lg text-white">
                 Processing Image...
               </p>
               <p className="text-sm text-white/80">
@@ -359,10 +362,10 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
           size="lg"
           variant={cameraOn ? 'destructive' : 'default'}
           className={cn(
-            'h-14 flex-1 text-base font-medium transition-all duration-200',
+            'h-14 flex-1 font-medium text-base transition-all duration-200',
             cameraOn
               ? 'bg-red-500 shadow-lg shadow-red-500/25 hover:bg-red-600'
-              : 'bg-blue-500 text-white shadow-lg shadow-blue-500/25 hover:bg-blue-600'
+              : 'bg-blue-500 text-white shadow-blue-500/25 shadow-lg hover:bg-blue-600'
           )}
         >
           {cameraOn ? (
@@ -383,7 +386,7 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
           size="lg"
           disabled={!cameraOn || capturing || !isReady}
           className={cn(
-            'h-14 flex-1 text-base font-medium transition-all duration-200',
+            'h-14 flex-1 font-medium text-base transition-all duration-200',
             'bg-linear-to-r from-purple-500 to-indigo-600 text-white shadow-lg hover:from-purple-600 hover:to-indigo-700'
           )}
         >

@@ -1,7 +1,7 @@
 # OCR Service (`apps/ocr`)
 
 FastAPI microservice that extracts a student name and 7 digit ID from
-captured ID card images. It uses PaddleOCRVL running on CPU, cleans the
+captured ID card images. It uses PaddleOCR running on CPU, cleans the
 recognized text, and exposes one `POST /capture` endpoint that frontend
 apps (for example `apps/web` via `VideoCapture.tsx`) can call.
 
@@ -24,7 +24,6 @@ Key files in `apps/ocr`:
 - `extraction.py` – regex-based extraction and cleaning of OCR text.
 - `parser.py` – helpers to parse raw PaddleOCR results into text.
 - `pyproject.toml` – project metadata and dependencies (Python 3.12).
-- `uv.lock` – lockfile for deterministic installs when using `uv`.
 - `.venv/` – local virtual environment (not committed).
 - `tests/` – unit tests for parsing and extraction.
 
@@ -33,11 +32,11 @@ Key files in `apps/ocr`:
 | Area | Details |
 | --- | --- |
 | API | FastAPI + Uvicorn with permissive CORS configured in `app.py`. |
-| OCR | `PaddleOCRVL(device="cpu")` from PaddleOCR/PaddlePaddle, confidence filtered at 0.5 and executed in a worker thread. |
+| OCR | `PaddleOCR(device="cpu")` from PaddleOCR/PaddlePaddle, with document and textline orientation models disabled for faster inference on this use case. |
 | Image processing | OpenCV (`cv2`) + NumPy arrays created from base64 encoded frames sent by the client. |
-| Data cleaning | Regex based extraction that strips reserved keywords/months before matching a name + 7 digit ID (`extraction.py`, `parser.py`). |
-| Packaging | `pyproject.toml` + `uv.lock` define runtime and dev dependencies for Python 3.12. |
-| Deployment | Modal serverless with image defined in `app.py`, 2 CPU / 2 GB RAM, up to 100 concurrent invocations. |
+| Data cleaning | `parse_result` keeps OCR tokens with confidence `> 0.5`, then `extract_info` removes reserved keywords/months and matches a name + 7 digit ID (`extraction.py`, `parser.py`). |
+| Packaging | `pyproject.toml` defines runtime and dev dependencies for Python 3.12 (commonly installed via `uv sync`). |
+| Deployment | Modal serverless image defined in `app.py`, 2 CPU / 2 GB RAM, warm container (`min_containers=1`), and up to 100 concurrent inputs. |
 
 ## API contract
 
@@ -58,14 +57,20 @@ Key files in `apps/ocr`:
 }
 ```
 
-Errors are returned as FastAPI `HTTPException`s (400 for bad input,
-500 for unexpected failures). The client should handle these gracefully, showing the error message or prompting the user to retake the capture.
+Errors are returned as FastAPI `HTTPException`s:
+
+- `400` for bad input (missing `image_data`, invalid data URL prefix, or undecodable image).
+- `500` for unexpected failures.
+
+The client should handle these gracefully, showing the error message or prompting the user to retake the capture.
 
 ## Local development
 
 ### Prerequisites
 
-- uv (recommended for managing Python dependencies and virtual environments).
+- Python `3.12.0`.
+- `uv` (recommended for dependency and virtual environment management).
+- Modal CLI authenticated for `poe serve`/`poe deploy`.
 
 ### Setup
 
@@ -102,8 +107,11 @@ The project uses `poethepoet` ([Poe the Poet](https://poethepoet.natn.io/)) to m
 
 - Base image: Debian slim with `libgl1-mesa-glx` and `libglib2.0-0` added.
 - Installs everything from `pyproject.toml` using `pip_install_from_pyproject`.
-- Copies local source (`app`, `extraction`, etc.) into the image.
-- Exposes `fastapi_app` via `@modal.asgi_app()` with 2 CPU, 2 GB RAM, `max_inputs=100` concurrency.
+- Copies local source modules (`extraction`, `parser`) into the image.
+- Uses Modal volumes for OCR model caches:
+	- `/root/.paddlex`
+	- `/root/.cache/huggingface`
+- Exposes `fastapi_app` via `@modal.asgi_app()` with 2 CPU, 2 GB RAM, `min_containers=1`, and `max_inputs=100` concurrency.
 
 Typical workflow (all commands run from `apps/ocr`):
 
@@ -121,9 +129,9 @@ Ensure Modal credentials are available via `MODAL_TOKEN_ID` and `MODAL_TOKEN_SEC
 	before running any Python commands.
 - **OCR accuracy**: adjust regex patterns or excluded keywords in
 	`extract_info` inside `extraction.py` for other document formats.
-- **OpenCV display errors**: install desktop OpenCV deps
-	(`libgl1-mesa-glx`, `libglib2.0-0`) or run inside Modal where they
-	are already included.
+- **No extracted result**: inspect the fallback `extracted_text` field
+	from `/capture` and verify confidence filtering in `parse_result`
+	(`confidence > 0.5`).
 - **Modal auth**: run `modal token new` locally, then export
 	`MODAL_TOKEN_ID` and `MODAL_TOKEN_SECRET` before invoking
 	`modal serve/deploy`.

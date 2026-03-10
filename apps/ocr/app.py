@@ -1,5 +1,15 @@
 import modal
 
+# Persist downloaded OCR model artifacts across container restarts.
+paddlex_cache_volume = modal.Volume.from_name(
+    "ocr-paddlex-cache",
+    create_if_missing=True,
+)
+hf_cache_volume = modal.Volume.from_name(
+    "ocr-hf-cache",
+    create_if_missing=True,
+)
+
 # Define base image and system dependencies
 image = (
     modal.Image.debian_slim(python_version="3.12")
@@ -13,7 +23,15 @@ image = (
 app = modal.App("ocr-service", image=image)
 
 
-@app.function(cpu=2, memory=2048, min_containers=1)
+@app.function(
+    cpu=2,
+    memory=2048,
+    min_containers=1,
+    volumes={
+        "/root/.paddlex": paddlex_cache_volume,
+        "/root/.cache/huggingface": hf_cache_volume,
+    },
+)
 @modal.concurrent(max_inputs=100)
 @modal.asgi_app()
 def fastapi_app():
@@ -24,18 +42,32 @@ def fastapi_app():
     import cv2
     import numpy as np
     from fastapi import FastAPI, HTTPException, Request
-    from paddleocr import PaddleOCRVL  # type: ignore
+    from fastapi.middleware.cors import CORSMiddleware
+    from paddleocr import PaddleOCR  # type: ignore
 
     from extraction import extract_info
     from parser import parse_result
 
     os.environ["OMP_NUM_THREADS"] = "1"
 
-    # Initialize PaddleOCRVL
-    ocr = PaddleOCRVL(device="cpu")
+    # Initialize PaddleOCR
+    ocr = PaddleOCR(
+        device="cpu",
+        use_doc_orientation_classify=False,  # Disables document orientation classification model via this parameter
+        use_doc_unwarping=False,  # Disables text image rectification model via this parameter
+        use_textline_orientation=False,  # Disables text line orientation classification model via this parameter
+    )
 
     # Initialize FastAPI app
     fast_api = FastAPI()
+
+    # Allow CORS for all origins (you can restrict this in production)
+    fast_api.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     @fast_api.post("/capture")
     async def capture(request: Request):
@@ -70,8 +102,8 @@ def fastapi_app():
 
             # Process the frame and extract text
             result = await asyncio.to_thread(ocr.predict, frame)
-            extracted_text = parse_result(result)
 
+            extracted_text = parse_result(result)
             print(f"Extracted text: {extracted_text}")
 
             info = extract_info(extracted_text)
@@ -93,3 +125,5 @@ def fastapi_app():
         except Exception as e:
             print(f"Unexpected error: {e}")
             raise HTTPException(status_code=500, detail=f"Internal server error: {e}") from e
+
+    return fast_api
