@@ -60,13 +60,13 @@ class AppRegistry {
     MiniAppNavItem(
       id: 'tasks_estimates',
       route: Routes.taskEstimates,
-      icon: Icons.calculate_outlined,
+      icon: shad.LucideIcons.calculator,
       labelBuilder: _labelTaskEstimates,
     ),
     MiniAppNavItem(
       id: 'tasks_portfolio',
       route: Routes.taskPortfolio,
-      icon: Icons.account_tree_outlined,
+      icon: shad.LucideIcons.gitBranch,
       labelBuilder: _labelTaskPortfolio,
     ),
   ];

@@ -17,7 +17,6 @@ class TaskListCubit extends Cubit<TaskListState> {
   int _requestVersion = 0;
 
   Future<void> loadTasks({
-    required String userId,
     required String wsId,
     required bool isPersonal,
   }) async {
@@ -69,7 +68,7 @@ class TaskListCubit extends Cubit<TaskListState> {
   Future<void> reload() async {
     final wsId = _wsId;
     if (wsId == null) return;
-    await loadTasks(userId: '', wsId: wsId, isPersonal: _isPersonal);
+    await loadTasks(wsId: wsId, isPersonal: _isPersonal);
   }
 
   Future<void> loadMoreCompleted() async {

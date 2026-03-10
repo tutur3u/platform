@@ -415,6 +415,12 @@ abstract class AppLocalizations {
   /// **'No tasks yet'**
   String get tasksEmpty;
 
+  /// No description provided for @tasksLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load tasks right now'**
+  String get tasksLoadError;
+
   /// No description provided for @tasksCreate.
   ///
   /// In en, this message translates to:
@@ -528,6 +534,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Low'**
   String get tasksPriorityLow;
+
+  /// No description provided for @tasksUntitled.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled task'**
+  String get tasksUntitled;
 
   /// No description provided for @taskPlanningTitle.
   ///

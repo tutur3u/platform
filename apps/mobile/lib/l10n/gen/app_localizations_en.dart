@@ -173,6 +173,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tasksEmpty => 'No tasks yet';
 
   @override
+  String get tasksLoadError => 'Couldn\'t load tasks right now';
+
+  @override
   String get tasksCreate => 'Create task';
 
   @override
@@ -230,6 +233,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tasksPriorityLow => 'Low';
+
+  @override
+  String get tasksUntitled => 'Untitled task';
 
   @override
   String get taskPlanningTitle => 'Planning';

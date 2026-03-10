@@ -7,7 +7,6 @@ import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/features/apps/widgets/apps_back_button.dart';
-import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/shell/view/avatar_dropdown.dart';
 import 'package:mobile/features/tasks/cubit/task_list_cubit.dart';
 import 'package:mobile/features/tasks/widgets/my_tasks_header.dart';
@@ -18,12 +17,10 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 Future<void> _reload(BuildContext context) async {
-  final userId = context.read<AuthCubit>().state.user?.id;
   final ws = context.read<WorkspaceCubit>().state.currentWorkspace;
-  if (userId == null || ws == null) return;
+  if (ws == null) return;
 
   await context.read<TaskListCubit>().loadTasks(
-    userId: userId,
     wsId: ws.id,
     isPersonal: ws.personal,
   );
@@ -45,13 +42,11 @@ class TaskListPage extends StatelessWidget {
   }
 
   void _loadIfReady(BuildContext context, TaskListCubit cubit) {
-    final userId = context.read<AuthCubit>().state.user?.id;
     final ws = context.read<WorkspaceCubit>().state.currentWorkspace;
-    if (userId == null || ws == null) return;
+    if (ws == null) return;
 
     unawaited(
       cubit.loadTasks(
-        userId: userId,
         wsId: ws.id,
         isPersonal: ws.personal,
       ),
@@ -117,13 +112,11 @@ class _TaskListViewState extends State<_TaskListView> {
         listenWhen: (prev, curr) =>
             prev.currentWorkspace?.id != curr.currentWorkspace?.id,
         listener: (context, state) {
-          final userId = context.read<AuthCubit>().state.user?.id;
           final ws = state.currentWorkspace;
-          if (userId == null || ws == null) return;
+          if (ws == null) return;
 
           unawaited(
             context.read<TaskListCubit>().loadTasks(
-              userId: userId,
               wsId: ws.id,
               isPersonal: ws.personal,
             ),
@@ -313,7 +306,7 @@ class _ErrorView extends StatelessWidget {
             color: shad.Theme.of(context).colorScheme.destructive,
           ),
           const SizedBox(height: 16),
-          Text(error ?? l10n.tasksEmpty, textAlign: TextAlign.center),
+          Text(error ?? l10n.tasksLoadError, textAlign: TextAlign.center),
           const SizedBox(height: 16),
           shad.SecondaryButton(
             onPressed: () => _reload(context),

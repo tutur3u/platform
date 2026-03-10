@@ -173,6 +173,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get tasksEmpty => 'Chưa có công việc';
 
   @override
+  String get tasksLoadError => 'Không thể tải công việc lúc này';
+
+  @override
   String get tasksCreate => 'Tạo công việc';
 
   @override
@@ -230,6 +233,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get tasksPriorityLow => 'Thấp';
+
+  @override
+  String get tasksUntitled => 'Công việc chưa có tiêu đề';
 
   @override
   String get taskPlanningTitle => 'Lập kế hoạch';

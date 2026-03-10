@@ -144,8 +144,8 @@ class _TaskTile extends StatelessWidget {
       if (listName != null && listName.isNotEmpty) listName,
     ].join(' / ');
 
+    // TODO(navigation): Open the mobile task detail flow once a route exists.
     return shad.GhostButton(
-      onPressed: () {},
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
         child: Row(
@@ -158,7 +158,9 @@ class _TaskTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    task.name ?? '',
+                    (task.name?.trim().isNotEmpty ?? false)
+                        ? task.name!.trim()
+                        : l10n.tasksUntitled,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: theme.typography.p.copyWith(

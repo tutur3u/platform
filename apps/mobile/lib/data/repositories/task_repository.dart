@@ -26,27 +26,18 @@ class TaskRepository {
     int completedLimit = 20,
   }) async {
     final query = _encodeQueryParameters({
-      'wsId': [wsId],
-      'isPersonal': [isPersonal.toString()],
-      'completedPage': [completedPage.toString()],
-      'completedLimit': [completedLimit.toString()],
+      'wsId': wsId,
+      'isPersonal': isPersonal.toString(),
+      'completedPage': completedPage.toString(),
+      'completedLimit': completedLimit.toString(),
     });
 
     final response = await _apiClient.getJson('/api/v1/users/me/tasks?$query');
     return UserTasksPage.fromJson(response);
   }
 
-  String _encodeQueryParameters(Map<String, List<String>> params) {
-    final pairs = <String>[];
-    for (final entry in params.entries) {
-      for (final value in entry.value) {
-        pairs.add(
-          '${Uri.encodeQueryComponent(entry.key)}='
-          '${Uri.encodeQueryComponent(value)}',
-        );
-      }
-    }
-    return pairs.join('&');
+  String _encodeQueryParameters(Map<String, String> params) {
+    return Uri(queryParameters: params).query;
   }
 
   Future<List<Task>> getTasks(String wsId) async {

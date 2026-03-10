@@ -70,6 +70,7 @@
 
     "tasksTitle": "Tasks",
     "tasksEmpty": "No tasks yet",
+    "tasksLoadError": "Couldn't load tasks right now",
     "tasksCreate": "Create task",
     "tasksAllCaughtUp": "You're all caught up!",
     "tasksAllCaughtUpSubtitle": "No pending tasks right now",
@@ -96,6 +97,7 @@
     "tasksPriorityHigh": "High",
     "tasksPriorityNormal": "Normal",
     "tasksPriorityLow": "Low",
+    "tasksUntitled": "Untitled task",
     "taskPlanningTitle": "Planning",
     "taskEstimatesTitle": "Estimations",
     "taskLabelsTab": "Labels",

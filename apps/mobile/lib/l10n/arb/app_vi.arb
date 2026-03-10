@@ -70,6 +70,7 @@
 
     "tasksTitle": "Công việc",
     "tasksEmpty": "Chưa có công việc",
+    "tasksLoadError": "Không thể tải công việc lúc này",
     "tasksCreate": "Tạo công việc",
     "tasksAllCaughtUp": "Đã hoàn thành tất cả!",
     "tasksAllCaughtUpSubtitle": "Không có công việc cần xử lý",
@@ -96,6 +97,7 @@
     "tasksPriorityHigh": "Cao",
     "tasksPriorityNormal": "Bình thường",
     "tasksPriorityLow": "Thấp",
+    "tasksUntitled": "Công việc chưa có tiêu đề",
     "taskPlanningTitle": "Lập kế hoạch",
     "taskEstimatesTitle": "Ước lượng",
     "taskLabelsTab": "Nhãn",
