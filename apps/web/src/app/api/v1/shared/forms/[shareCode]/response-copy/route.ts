@@ -1,4 +1,8 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  isTurnstileError,
+  verifyTurnstileToken,
+} from '@tuturuuu/turnstile/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -10,6 +14,7 @@ import {
 const responseCopyRequestSchema = z.object({
   responseId: z.uuid(),
   sessionId: z.uuid(),
+  turnstileToken: z.string().max(4096).optional(),
 });
 
 async function loadSharedForm(shareCode: string) {
@@ -114,6 +119,8 @@ export async function POST(
       );
     }
 
+    await verifyTurnstileToken(request, parsed.data.turnstileToken);
+
     const responseCopyAlreadySent = await hasSentResponseCopyEmail(
       adminClient,
       form.ws_id,
@@ -162,6 +169,10 @@ export async function POST(
   } catch (error) {
     const message =
       error instanceof Error ? error.message : 'Internal server error';
+
+    if (isTurnstileError(error)) {
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
 
     if (message.includes('Too many response copy emails')) {
       return NextResponse.json({ error: message }, { status: 429 });

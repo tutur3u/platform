@@ -111,7 +111,11 @@ export function usePublicFormResponseCopy(shareCode: string) {
   const t = useTranslations('forms');
 
   return useMutation({
-    mutationFn: async (payload: { responseId: string; sessionId: string }) =>
+    mutationFn: async (payload: {
+      responseId: string;
+      sessionId: string;
+      turnstileToken?: string;
+    }) =>
       apiFetch<{ responseCopySentTo?: string | null }>(
         `/api/v1/shared/forms/${shareCode}/response-copy`,
         {

@@ -10,6 +10,7 @@ import {
   Star,
   ZoomIn,
 } from '@tuturuuu/icons';
+import { resolveTurnstileClientState } from '@tuturuuu/turnstile/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader } from '@tuturuuu/ui/card';
@@ -91,6 +92,7 @@ interface FormRuntimeProps {
   onRequestResponseCopy?: (payload: {
     responseId: string;
     sessionId: string;
+    turnstileToken?: string;
   }) => Promise<
     | undefined
     | {
@@ -1347,9 +1349,13 @@ export function FormRuntime({
     form.theme.typography.bodySize
   );
   const density = densityClasses[form.theme.density];
-  const turnstileSiteKey =
-    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? undefined;
-  const requiresTurnstile = mode === 'public' && !readOnly && !DEV_MODE;
+  const turnstileClientState = resolveTurnstileClientState({
+    devMode: DEV_MODE,
+    siteKey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+  });
+  const turnstileSiteKey = turnstileClientState.siteKey;
+  const requiresTurnstile =
+    mode === 'public' && turnstileClientState.isRequired;
   const currentSectionIndex = form.sections.findIndex(
     (section) => section.id === currentSectionId
   );
@@ -1434,8 +1440,6 @@ export function FormRuntime({
       ),
     [answerIssues, questionIdSet]
   );
-  const shouldShowTurnstile =
-    requiresTurnstile && !readOnly && advanceTarget.type === 'submit';
   const hasReadOnlyNextSection =
     readOnly && Boolean(advanceTarget.targetSectionId);
   const canTriggerReadOnlyResponseCopy = Boolean(
@@ -1446,8 +1450,19 @@ export function FormRuntime({
       readOnlyResponseSessionId &&
       !readOnlyResponseCopySentTo
   );
+  const shouldShowTurnstile =
+    requiresTurnstile &&
+    ((!readOnly && advanceTarget.type === 'submit') ||
+      canTriggerReadOnlyResponseCopy);
   const shouldShowSectionNavigation =
     !readOnly || sectionTrail.length > 1 || hasReadOnlyNextSection;
+  const isSubmitBlockedByTurnstile =
+    !readOnly && shouldShowTurnstile && !captchaToken;
+  const isResponseCopyBlockedByTurnstile =
+    readOnly &&
+    canTriggerReadOnlyResponseCopy &&
+    requiresTurnstile &&
+    !captchaToken;
   const isBusy = isSubmitting || isRequestingResponseCopy;
 
   useEffect(() => {
@@ -1699,6 +1714,16 @@ export function FormRuntime({
       return;
     }
 
+    if (requiresTurnstile && !turnstileSiteKey) {
+      setError(t('runtime.turnstile_not_configured'));
+      return;
+    }
+
+    if (requiresTurnstile && !captchaToken) {
+      setError(t('runtime.turnstile_required'));
+      return;
+    }
+
     setIsRequestingResponseCopy(true);
     setError(null);
 
@@ -1706,11 +1731,14 @@ export function FormRuntime({
       const result = await onRequestResponseCopy({
         responseId: readOnlyResponseId,
         sessionId: readOnlyResponseSessionId,
+        turnstileToken: captchaToken,
       });
 
       setReadOnlyResponseCopySentTo(
         result?.responseCopySentTo ?? responseCopyEmail ?? null
       );
+      captchaRef.current?.reset();
+      setCaptchaToken(undefined);
     } finally {
       setIsRequestingResponseCopy(false);
     }
@@ -2047,7 +2075,11 @@ export function FormRuntime({
                       type="button"
                       className={toneClasses.primaryButtonClassName}
                       onClick={handleReadOnlyResponseCopy}
-                      disabled={!canTriggerReadOnlyResponseCopy || isBusy}
+                      disabled={
+                        !canTriggerReadOnlyResponseCopy ||
+                        isBusy ||
+                        isResponseCopyBlockedByTurnstile
+                      }
                     >
                       <Mail className="mr-2 h-4 w-4" />
                       {t('runtime.response_copy_send_now')}
@@ -2367,7 +2399,7 @@ export function FormRuntime({
                       type="button"
                       className={toneClasses.primaryButtonClassName}
                       onClick={handleAdvance}
-                      disabled={isBusy}
+                      disabled={isBusy || isSubmitBlockedByTurnstile}
                     >
                       {advanceTarget.type === 'submit' ? (
                         <>

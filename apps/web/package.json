@@ -84,6 +84,7 @@
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/transactional": "workspace:*",
     "@tuturuuu/trigger": "workspace:*",
+    "@tuturuuu/turnstile": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
