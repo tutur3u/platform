@@ -339,16 +339,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskEstimatesTypeTshirtLabel => 'T-shirt';
 
   @override
-  String get taskEstimatesTypeTshirtStandardZeroEnabled => 'T-shirt sizes: -, XS, S, M, L, XL.';
+  String get taskEstimatesTypeTshirtStandard => 'T-shirt sizes: -, XS, S, M, L, XL.';
 
   @override
-  String get taskEstimatesTypeTshirtStandardZeroDisabled => 'T-shirt sizes: XS, S, M, L, XL.';
-
-  @override
-  String get taskEstimatesTypeTshirtExtendedZeroEnabled => 'Extended T-shirt sizes: -, XS, S, M, L, XL, XXL, XXXL.';
-
-  @override
-  String get taskEstimatesTypeTshirtExtendedZeroDisabled => 'Extended T-shirt sizes: XS, S, M, L, XL, XXL, XXXL.';
+  String get taskEstimatesTypeTshirtExtended => 'Extended T-shirt sizes: -, XS, S, M, L, XL, XXL, XXXL.';
 
   @override
   String get taskPortfolioTitle => 'Portfolio';
@@ -576,6 +570,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskPortfolioProjectUnlinked => 'Project unlinked.';
+
+  @override
+  String get taskEstimatesTypeTshirtStandardZeroEnabled => 'T-shirt sizes: -, XS, S, M, L, XL.';
+
+  @override
+  String get taskEstimatesTypeTshirtStandardZeroDisabled => 'T-shirt sizes: XS, S, M, L, XL.';
+
+  @override
+  String get taskEstimatesTypeTshirtExtendedZeroEnabled => 'Extended T-shirt sizes: -, XS, S, M, L, XL, XXL, XXXL.';
+
+  @override
+  String get taskEstimatesTypeTshirtExtendedZeroDisabled => 'Extended T-shirt sizes: XS, S, M, L, XL, XXL, XXXL.';
 
   @override
   String get calendarTitle => 'Calendar';

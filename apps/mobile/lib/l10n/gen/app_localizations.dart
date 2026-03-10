@@ -739,29 +739,17 @@ abstract class AppLocalizations {
   /// **'T-shirt'**
   String get taskEstimatesTypeTshirtLabel;
 
-  /// No description provided for @taskEstimatesTypeTshirtStandardZeroEnabled.
+  /// No description provided for @taskEstimatesTypeTshirtStandard.
   ///
   /// In en, this message translates to:
   /// **'T-shirt sizes: -, XS, S, M, L, XL.'**
-  String get taskEstimatesTypeTshirtStandardZeroEnabled;
+  String get taskEstimatesTypeTshirtStandard;
 
-  /// No description provided for @taskEstimatesTypeTshirtStandardZeroDisabled.
-  ///
-  /// In en, this message translates to:
-  /// **'T-shirt sizes: XS, S, M, L, XL.'**
-  String get taskEstimatesTypeTshirtStandardZeroDisabled;
-
-  /// No description provided for @taskEstimatesTypeTshirtExtendedZeroEnabled.
+  /// No description provided for @taskEstimatesTypeTshirtExtended.
   ///
   /// In en, this message translates to:
   /// **'Extended T-shirt sizes: -, XS, S, M, L, XL, XXL, XXXL.'**
-  String get taskEstimatesTypeTshirtExtendedZeroEnabled;
-
-  /// No description provided for @taskEstimatesTypeTshirtExtendedZeroDisabled.
-  ///
-  /// In en, this message translates to:
-  /// **'Extended T-shirt sizes: XS, S, M, L, XL, XXL, XXXL.'**
-  String get taskEstimatesTypeTshirtExtendedZeroDisabled;
+  String get taskEstimatesTypeTshirtExtended;
 
   /// No description provided for @taskPortfolioTitle.
   ///
@@ -1212,6 +1200,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Project unlinked.'**
   String get taskPortfolioProjectUnlinked;
+
+  /// No description provided for @taskEstimatesTypeTshirtStandardZeroEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'T-shirt sizes: -, XS, S, M, L, XL.'**
+  String get taskEstimatesTypeTshirtStandardZeroEnabled;
+
+  /// No description provided for @taskEstimatesTypeTshirtStandardZeroDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'T-shirt sizes: XS, S, M, L, XL.'**
+  String get taskEstimatesTypeTshirtStandardZeroDisabled;
+
+  /// No description provided for @taskEstimatesTypeTshirtExtendedZeroEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Extended T-shirt sizes: -, XS, S, M, L, XL, XXL, XXXL.'**
+  String get taskEstimatesTypeTshirtExtendedZeroEnabled;
+
+  /// No description provided for @taskEstimatesTypeTshirtExtendedZeroDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Extended T-shirt sizes: XS, S, M, L, XL, XXL, XXXL.'**
+  String get taskEstimatesTypeTshirtExtendedZeroDisabled;
 
   /// No description provided for @calendarTitle.
   ///

@@ -339,16 +339,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskEstimatesTypeTshirtLabel => 'Áo thun';
 
   @override
-  String get taskEstimatesTypeTshirtStandardZeroEnabled => 'Kích cỡ áo: -, XS, S, M, L, XL.';
+  String get taskEstimatesTypeTshirtStandard => 'Kích cỡ áo: -, XS, S, M, L, XL.';
 
   @override
-  String get taskEstimatesTypeTshirtStandardZeroDisabled => 'Kích cỡ áo: XS, S, M, L, XL.';
-
-  @override
-  String get taskEstimatesTypeTshirtExtendedZeroEnabled => 'Kích cỡ áo mở rộng: -, XS, S, M, L, XL, XXL, XXXL.';
-
-  @override
-  String get taskEstimatesTypeTshirtExtendedZeroDisabled => 'Kích cỡ áo mở rộng: XS, S, M, L, XL, XXL, XXXL.';
+  String get taskEstimatesTypeTshirtExtended => 'Kích cỡ áo mở rộng: -, XS, S, M, L, XL, XXL, XXXL.';
 
   @override
   String get taskPortfolioTitle => 'Danh mục';
@@ -576,6 +570,18 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskPortfolioProjectUnlinked => 'Đã gỡ liên kết dự án.';
+
+  @override
+  String get taskEstimatesTypeTshirtStandardZeroEnabled => 'Kích cỡ áo: -, XS, S, M, L, XL.';
+
+  @override
+  String get taskEstimatesTypeTshirtStandardZeroDisabled => 'Kích cỡ áo: XS, S, M, L, XL.';
+
+  @override
+  String get taskEstimatesTypeTshirtExtendedZeroEnabled => 'Kích cỡ áo mở rộng: -, XS, S, M, L, XL, XXL, XXXL.';
+
+  @override
+  String get taskEstimatesTypeTshirtExtendedZeroDisabled => 'Kích cỡ áo mở rộng: XS, S, M, L, XL, XXL, XXXL.';
 
   @override
   String get calendarTitle => 'Lịch';
