@@ -23,6 +23,7 @@ import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { LOCALE_COOKIE_NAME, PORT, PUBLIC_PATHS } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
+import { isProxyRateLimitExemptApiRoute } from './lib/proxy-rate-limit-exempt-route';
 
 // Paths that should bypass onboarding check (public/marketing pages + auth flows)
 const ONBOARDING_BYPASS_PATHS = [
@@ -278,7 +279,10 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
   // Rate-limit API routes at the edge BEFORE any serverless execution
   if (req.nextUrl.pathname.startsWith('/api')) {
-    if (!isDev) {
+    if (
+      !isDev &&
+      !isProxyRateLimitExemptApiRoute(req.nextUrl.pathname, req.headers)
+    ) {
       initRateLimiters();
       const ip = extractIPFromRequest(req.headers);
 
