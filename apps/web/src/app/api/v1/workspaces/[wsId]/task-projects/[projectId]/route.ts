@@ -3,6 +3,7 @@ import {
   MAX_LONG_TEXT_LENGTH,
   MAX_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -65,8 +66,9 @@ async function updateProject(
   params: Promise<{ wsId: string; projectId: string }>
 ) {
   try {
-    const { wsId, projectId } = await params;
-    const supabase = await createClient();
+    const { wsId: rawWsId, projectId } = await params;
+    const supabase = await createClient(request);
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     // Get current user
     const {
@@ -268,12 +270,13 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ wsId: string; projectId: string }> }
 ) {
   try {
-    const { wsId, projectId } = await params;
-    const supabase = await createClient();
+    const { wsId: rawWsId, projectId } = await params;
+    const supabase = await createClient(request);
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     // Get current user
     const {
@@ -297,11 +300,12 @@ export async function DELETE(
     }
 
     // Delete project
-    const { error: deleteError } = await supabase
+    const { data: deletedProjects, error: deleteError } = await supabase
       .from('task_projects')
       .delete()
       .eq('id', projectId)
-      .eq('ws_id', wsId);
+      .eq('ws_id', wsId)
+      .select('id');
 
     if (deleteError) {
       console.error('Error deleting project:', deleteError);
@@ -309,6 +313,10 @@ export async function DELETE(
         { error: 'Failed to delete project' },
         { status: 500 }
       );
+    }
+
+    if (!deletedProjects || deletedProjects.length === 0) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
     return NextResponse.json({ success: true });

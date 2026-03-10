@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -12,8 +13,8 @@ export async function POST(
   { params }: { params: Promise<{ wsId: string; initiativeId: string }> }
 ) {
   try {
-    const { wsId, initiativeId } = await params;
-    const supabase = await createClient();
+    const { wsId: rawWsId, initiativeId } = await params;
+    const supabase = await createClient(request);
 
     const {
       data: { user },
@@ -23,6 +24,8 @@ export async function POST(
     if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     const { data: membership } = await supabase
       .from('workspace_members')

@@ -1,6 +1,9 @@
 import 'package:mobile/data/models/task.dart';
 import 'package:mobile/data/models/task_estimate_board.dart';
+import 'package:mobile/data/models/task_initiative_summary.dart';
+import 'package:mobile/data/models/task_project_summary.dart';
 import 'package:mobile/data/models/user_task.dart';
+import 'package:mobile/data/models/workspace_user_option.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 
@@ -142,5 +145,148 @@ class TaskRepository {
     );
 
     return TaskEstimateBoard.fromJson(response);
+  }
+
+  Future<List<TaskProjectSummary>> getTaskProjects(String wsId) async {
+    final response = await _apiClient.getJsonList(
+      '/api/v1/workspaces/$wsId/task-projects',
+    );
+
+    return response
+        .whereType<Map<String, dynamic>>()
+        .map(TaskProjectSummary.fromJson)
+        .toList(growable: false);
+  }
+
+  Future<List<WorkspaceUserOption>> getWorkspaceUsers(String wsId) async {
+    final response = await _apiClient.getJson(
+      '/api/v1/workspaces/$wsId/members',
+    );
+    final members = response['members'] as List<dynamic>? ?? const [];
+
+    return members
+        .whereType<Map<String, dynamic>>()
+        .map(WorkspaceUserOption.fromJson)
+        .toList(growable: false);
+  }
+
+  Future<void> createTaskProject({
+    required String wsId,
+    required String name,
+    String? description,
+  }) async {
+    await _apiClient.postJson('/api/v1/workspaces/$wsId/task-projects', {
+      'name': name,
+      if (description != null) 'description': description,
+    });
+  }
+
+  Future<void> updateTaskProject({
+    required String wsId,
+    required String projectId,
+    required String name,
+    String? status,
+    String? priority,
+    String? healthStatus,
+    String? description,
+    String? leadId,
+    DateTime? startDate,
+    DateTime? endDate,
+    bool? archived,
+  }) async {
+    await _apiClient.putJson(
+      '/api/v1/workspaces/$wsId/task-projects/$projectId',
+      {
+        'name': name,
+        'description': description,
+        if (status != null) 'status': status,
+        if (priority != null) 'priority': priority,
+        'health_status': healthStatus,
+        'lead_id': leadId,
+        'start_date': startDate?.toUtc().toIso8601String(),
+        'end_date': endDate?.toUtc().toIso8601String(),
+        'archived': archived,
+      },
+    );
+  }
+
+  Future<void> deleteTaskProject({
+    required String wsId,
+    required String projectId,
+  }) async {
+    await _apiClient.deleteJson(
+      '/api/v1/workspaces/$wsId/task-projects/$projectId',
+    );
+  }
+
+  Future<List<TaskInitiativeSummary>> getTaskInitiatives(String wsId) async {
+    final response = await _apiClient.getJsonList(
+      '/api/v1/workspaces/$wsId/task-initiatives',
+    );
+
+    return response
+        .whereType<Map<String, dynamic>>()
+        .map(TaskInitiativeSummary.fromJson)
+        .toList(growable: false);
+  }
+
+  Future<void> createTaskInitiative({
+    required String wsId,
+    required String name,
+    required String status,
+    String? description,
+  }) async {
+    await _apiClient.postJson('/api/v1/workspaces/$wsId/task-initiatives', {
+      'name': name,
+      if (description != null) 'description': description,
+      'status': status,
+    });
+  }
+
+  Future<void> updateTaskInitiative({
+    required String wsId,
+    required String initiativeId,
+    required String name,
+    required String status,
+    String? description,
+  }) async {
+    await _apiClient.putJson(
+      '/api/v1/workspaces/$wsId/task-initiatives/$initiativeId',
+      {
+        'name': name,
+        if (description != null) 'description': description,
+        'status': status,
+      },
+    );
+  }
+
+  Future<void> deleteTaskInitiative({
+    required String wsId,
+    required String initiativeId,
+  }) async {
+    await _apiClient.deleteJson(
+      '/api/v1/workspaces/$wsId/task-initiatives/$initiativeId',
+    );
+  }
+
+  Future<void> linkProjectToInitiative({
+    required String wsId,
+    required String initiativeId,
+    required String projectId,
+  }) async {
+    await _apiClient.postJson(
+      '/api/v1/workspaces/$wsId/task-initiatives/$initiativeId/projects',
+      {'projectId': projectId},
+    );
+  }
+
+  Future<void> unlinkProjectFromInitiative({
+    required String wsId,
+    required String initiativeId,
+    required String projectId,
+  }) async {
+    await _apiClient.deleteJson(
+      '/api/v1/workspaces/$wsId/task-initiatives/$initiativeId/projects/$projectId',
+    );
   }
 }

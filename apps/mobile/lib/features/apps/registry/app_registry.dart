@@ -62,6 +62,12 @@ class AppRegistry {
       icon: Icons.calculate_outlined,
       labelBuilder: _labelTaskEstimates,
     ),
+    MiniAppNavItem(
+      id: 'tasks_portfolio',
+      route: Routes.taskPortfolio,
+      icon: Icons.account_tree_outlined,
+      labelBuilder: _labelTaskPortfolio,
+    ),
   ];
 
   static const List<MiniAppNavItem> _calendarMiniNav = [
@@ -170,6 +176,8 @@ class AppRegistry {
   static String _labelTasks(AppLocalizations l10n) => l10n.navTasks;
   static String _labelTaskEstimates(AppLocalizations l10n) =>
       l10n.taskEstimatesTitle;
+  static String _labelTaskPortfolio(AppLocalizations l10n) =>
+      l10n.taskPortfolioTitle;
   static String _labelCalendar(AppLocalizations l10n) => l10n.navCalendar;
   static String _labelFinance(AppLocalizations l10n) => l10n.navFinance;
   static String _labelWallets(AppLocalizations l10n) => l10n.financeWallets;

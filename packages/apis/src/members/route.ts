@@ -5,12 +5,8 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import {
-  PERSONAL_WORKSPACE_SLUG,
-  ROOT_WORKSPACE_ID,
-  resolveWorkspaceId,
-} from '@tuturuuu/utils/constants';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 
 interface Params {
@@ -19,23 +15,11 @@ interface Params {
   }>;
 }
 
-const normalizeWorkspaceId = async (wsId: string) => {
-  if (wsId.toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
-    const workspace = await getWorkspace(wsId);
-    if (!workspace) {
-      return null;
-    }
-    return workspace.id;
-  }
-
-  return resolveWorkspaceId(wsId);
-};
-
-export async function GET(_: NextRequest, { params }: Params) {
+export async function GET(req: NextRequest, { params }: Params) {
   const { wsId: id } = await params;
-  const supabase = await createClient();
+  const supabase = await createClient(req);
 
-  const wsId = await normalizeWorkspaceId(id);
+  const wsId = await normalizeWorkspaceId(id, supabase);
 
   if (!wsId) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
@@ -95,8 +79,8 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   const userId = searchParams.get('id');
   const userEmail = searchParams.get('email');
 
-  const supabase = await createClient();
-  const resolvedWsId = await normalizeWorkspaceId(wsId);
+  const supabase = await createClient(req);
+  const resolvedWsId = await normalizeWorkspaceId(wsId, supabase);
 
   if (!resolvedWsId) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });

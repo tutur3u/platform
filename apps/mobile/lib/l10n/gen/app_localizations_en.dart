@@ -339,6 +339,239 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskEstimatesTypeTshirtLabel => 'T-shirt';
 
   @override
+  String get taskEstimatesTypeTshirtStandard => 'T-shirt sizes: -, XS, S, M, L, XL.';
+
+  @override
+  String get taskEstimatesTypeTshirtExtended => 'Extended T-shirt sizes: -, XS, S, M, L, XL, XXL, XXXL.';
+
+  @override
+  String get taskPortfolioTitle => 'Portfolio';
+
+  @override
+  String get taskPortfolioProjectsTab => 'Projects';
+
+  @override
+  String get taskPortfolioInitiativesTab => 'Initiatives';
+
+  @override
+  String get taskPortfolioAccessDeniedTitle => 'Access restricted';
+
+  @override
+  String get taskPortfolioAccessDeniedDescription => 'You need project management permission in this workspace to manage projects and initiatives.';
+
+  @override
+  String get taskPortfolioProjectsEmptyTitle => 'No projects yet';
+
+  @override
+  String get taskPortfolioProjectsEmptyDescription => 'Create your first project to organize work beyond individual tasks.';
+
+  @override
+  String get taskPortfolioInitiativesEmptyTitle => 'No initiatives yet';
+
+  @override
+  String get taskPortfolioInitiativesEmptyDescription => 'Create an initiative to group related projects under a shared outcome.';
+
+  @override
+  String get taskPortfolioNoDescription => 'No description yet';
+
+  @override
+  String get taskPortfolioProjectTasksLinked => 'tasks linked';
+
+  @override
+  String get taskPortfolioProjectCompletedTasks => 'completed';
+
+  @override
+  String get taskPortfolioInitiativeProjectsLinked => 'projects linked';
+
+  @override
+  String get taskPortfolioCreateProject => 'Create project';
+
+  @override
+  String get taskPortfolioEditProject => 'Edit project';
+
+  @override
+  String get taskPortfolioDeleteProject => 'Delete project';
+
+  @override
+  String get taskPortfolioDeleteProjectConfirm => 'Delete this project?';
+
+  @override
+  String get taskPortfolioProjectCreated => 'Project created.';
+
+  @override
+  String get taskPortfolioProjectUpdated => 'Project updated.';
+
+  @override
+  String get taskPortfolioProjectDeleted => 'Project deleted.';
+
+  @override
+  String get taskPortfolioProjectName => 'Project name';
+
+  @override
+  String get taskPortfolioProjectNameRequired => 'Project name is required';
+
+  @override
+  String get taskPortfolioProjectDescriptionHint => 'Describe the project goals';
+
+  @override
+  String get taskPortfolioProjectStatus => 'Project status';
+
+  @override
+  String get taskPortfolioProjectPriority => 'Priority';
+
+  @override
+  String get taskPortfolioProjectHealth => 'Health status';
+
+  @override
+  String get taskPortfolioProjectLead => 'Project lead';
+
+  @override
+  String get taskPortfolioProjectNoHealth => 'No health status';
+
+  @override
+  String get taskPortfolioProjectNoLead => 'No lead assigned';
+
+  @override
+  String get taskPortfolioProjectStartDate => 'Start date';
+
+  @override
+  String get taskPortfolioProjectEndDate => 'End date';
+
+  @override
+  String get taskPortfolioProjectArchived => 'Archived';
+
+  @override
+  String get taskPortfolioProjectArchivedHint => 'Hide this project from active planning views.';
+
+  @override
+  String get taskPortfolioPickDate => 'Pick date';
+
+  @override
+  String get taskPortfolioClearSelection => 'Clear';
+
+  @override
+  String get taskPortfolioProjectStatusActive => 'Active';
+
+  @override
+  String get taskPortfolioProjectStatusBacklog => 'Backlog';
+
+  @override
+  String get taskPortfolioProjectStatusPlanned => 'Planned';
+
+  @override
+  String get taskPortfolioProjectStatusInProgress => 'In progress';
+
+  @override
+  String get taskPortfolioProjectStatusInReview => 'In review';
+
+  @override
+  String get taskPortfolioProjectStatusInTesting => 'In testing';
+
+  @override
+  String get taskPortfolioProjectStatusCompleted => 'Completed';
+
+  @override
+  String get taskPortfolioProjectStatusCancelled => 'Cancelled';
+
+  @override
+  String get taskPortfolioProjectStatusOnHold => 'On hold';
+
+  @override
+  String get taskPortfolioProjectPriorityCritical => 'Critical';
+
+  @override
+  String get taskPortfolioProjectPriorityHigh => 'High';
+
+  @override
+  String get taskPortfolioProjectPriorityNormal => 'Normal';
+
+  @override
+  String get taskPortfolioProjectPriorityLow => 'Low';
+
+  @override
+  String get taskPortfolioCreateInitiative => 'Create initiative';
+
+  @override
+  String get taskPortfolioEditInitiative => 'Edit initiative';
+
+  @override
+  String get taskPortfolioDeleteInitiative => 'Delete initiative';
+
+  @override
+  String get taskPortfolioDeleteInitiativeConfirm => 'Delete this initiative?';
+
+  @override
+  String get taskPortfolioInitiativeCreated => 'Initiative created.';
+
+  @override
+  String get taskPortfolioInitiativeUpdated => 'Initiative updated.';
+
+  @override
+  String get taskPortfolioInitiativeDeleted => 'Initiative deleted.';
+
+  @override
+  String get taskPortfolioInitiativeName => 'Initiative name';
+
+  @override
+  String get taskPortfolioInitiativeNameRequired => 'Initiative name is required';
+
+  @override
+  String get taskPortfolioInitiativeDescriptionHint => 'Describe the initiative outcome';
+
+  @override
+  String get taskPortfolioInitiativeStatus => 'Initiative status';
+
+  @override
+  String get taskPortfolioInitiativeStatusActive => 'Active';
+
+  @override
+  String get taskPortfolioInitiativeStatusCompleted => 'Completed';
+
+  @override
+  String get taskPortfolioInitiativeStatusOnHold => 'On hold';
+
+  @override
+  String get taskPortfolioInitiativeStatusCancelled => 'Cancelled';
+
+  @override
+  String get taskPortfolioManageProjects => 'Manage projects';
+
+  @override
+  String get taskPortfolioLinkedProjects => 'Linked projects';
+
+  @override
+  String get taskPortfolioNoLinkedProjects => 'No linked projects yet';
+
+  @override
+  String get taskPortfolioProjectHealthOnTrack => 'On track';
+
+  @override
+  String get taskPortfolioProjectHealthAtRisk => 'At risk';
+
+  @override
+  String get taskPortfolioProjectHealthOffTrack => 'Off track';
+
+  @override
+  String taskPortfolioProjectTasksProgress(int completed, int total) {
+    return '$completed of $total tasks';
+  }
+
+  @override
+  String get taskPortfolioLinkProject => 'Link project';
+
+  @override
+  String get taskPortfolioNoAvailableProjects => 'Select project';
+
+  @override
+  String get taskPortfolioAllProjectsLinked => 'All workspace projects are already linked.';
+
+  @override
+  String get taskPortfolioProjectLinked => 'Project linked.';
+
+  @override
+  String get taskPortfolioProjectUnlinked => 'Project unlinked.';
+
+  @override
   String get taskEstimatesTypeTshirtStandardZeroEnabled => 'T-shirt sizes: -, XS, S, M, L, XL.';
 
   @override
