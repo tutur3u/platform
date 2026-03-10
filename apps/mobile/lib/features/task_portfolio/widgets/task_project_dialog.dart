@@ -222,7 +222,12 @@ class _TaskProjectDialogState extends State<TaskProjectDialog> {
                         initialDate: _startDate,
                       );
                       if (value != null) {
-                        setState(() => _startDate = value);
+                        setState(() {
+                          _startDate = value;
+                          if (_endDate != null && _endDate!.isBefore(value)) {
+                            _endDate = value;
+                          }
+                        });
                       }
                     },
                     onClear: _startDate == null

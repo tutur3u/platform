@@ -79,12 +79,15 @@ Future<DateTime?> _pickDate(
   final effectiveInitial = initialDate ?? firstDate ?? now;
   final effectiveFirst = firstDate ?? DateTime(now.year - 10);
   final effectiveLast = DateTime(now.year + 10, 12, 31);
+  final boundedInitial = effectiveInitial.isBefore(effectiveFirst)
+      ? effectiveFirst
+      : effectiveInitial.isAfter(effectiveLast)
+      ? effectiveLast
+      : effectiveInitial;
 
   return showDatePicker(
     context: context,
-    initialDate: effectiveInitial.isBefore(effectiveFirst)
-        ? effectiveFirst
-        : effectiveInitial,
+    initialDate: boundedInitial,
     firstDate: effectiveFirst,
     lastDate: effectiveLast,
   );

@@ -65,7 +65,6 @@ export async function GET(
   try {
     const { wsId: rawWsId } = await params;
     const supabase = await createClient(request);
-    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     const {
       data: { user },
@@ -75,6 +74,8 @@ export async function GET(
     if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     const { data: membership } = await supabase
       .from('workspace_members')
@@ -140,7 +141,6 @@ export async function POST(
   try {
     const { wsId: rawWsId } = await params;
     const supabase = await createClient(request);
-    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     const {
       data: { user },
@@ -150,6 +150,8 @@ export async function POST(
     if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     const { data: membership } = await supabase
       .from('workspace_members')
