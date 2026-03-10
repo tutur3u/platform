@@ -240,6 +240,20 @@ export async function fetchGatewayFavoriteModels(
   return results;
 }
 
+export async function fetchGatewayModels(): Promise<GatewayModelUi[]> {
+  const providers = await fetchGatewayProviders();
+  const pages = await Promise.all(
+    providers.map((provider) =>
+      fetchGatewayModelsPage({
+        limit: Number.MAX_SAFE_INTEGER,
+        provider: provider.provider,
+      })
+    )
+  );
+
+  return pages.flatMap((page) => page.items);
+}
+
 export function modelSupportsFileInput(model?: Pick<AIModelUI, 'tags'> | null) {
   return Array.isArray(model?.tags) && model.tags.includes('file-input');
 }
