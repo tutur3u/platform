@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/auth/utils/auth_error_localization.dart';
+import 'package:mobile/features/auth/widgets/auth_google_button.dart';
 import 'package:mobile/features/auth/widgets/auth_scaffold.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -52,6 +54,10 @@ class _SignUpPageState extends State<SignUpPage> {
     if (success && mounted) {
       setState(() => _signUpSuccess = true);
     }
+  }
+
+  Future<void> _handleGoogleSignIn() {
+    return context.read<AuthCubit>().signInWithGoogle();
   }
 
   @override
@@ -115,6 +121,13 @@ class _SignUpPageState extends State<SignUpPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                AuthGoogleButton(
+                  isLoading: state.isLoading,
+                  onPressed: _handleGoogleSignIn,
+                ),
+                const shad.Gap(20),
+                const AuthMethodDivider(),
+                const shad.Gap(20),
                 shad.FormField(
                   key: const shad.FormKey<String>(#signUpEmail),
                   label: Text(l10n.emailLabel),
@@ -157,10 +170,19 @@ class _SignUpPageState extends State<SignUpPage> {
                     onSubmitted: (_) => _handleSignUp(),
                   ),
                 ),
-                if (state.error != null) ...[
+                if (resolveAuthErrorMessage(
+                      l10n: l10n,
+                      error: state.error,
+                      errorCode: state.errorCode,
+                    ) !=
+                    null) ...[
                   const shad.Gap(16),
                   Text(
-                    state.error!,
+                    resolveAuthErrorMessage(
+                      l10n: l10n,
+                      error: state.error,
+                      errorCode: state.errorCode,
+                    )!,
                     style: theme.typography.small.copyWith(
                       color: theme.colorScheme.destructive,
                     ),
@@ -186,11 +208,11 @@ class _SignUpPageState extends State<SignUpPage> {
                         style: theme.typography.p,
                         children: [
                           TextSpan(
-                            text: 'Already have an account? ',
+                            text: '${l10n.signUpAlreadyHaveAccountPrompt} ',
                             style: theme.typography.textMuted,
                           ),
                           TextSpan(
-                            text: 'Sign in',
+                            text: l10n.signUpSignIn,
                             style: TextStyle(
                               color: theme.colorScheme.primary,
                               fontWeight: FontWeight.bold,
