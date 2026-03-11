@@ -12,6 +12,11 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import {
+  getWhiteboardMutationErrorKey,
+  normalizeWhiteboardDescription,
+  normalizeWhiteboardTitle,
+} from './validation';
 import WhiteboardForm, { type WhiteboardFormValues } from './whiteboardForm';
 
 interface CreateWhiteboardDialogProps {
@@ -47,15 +52,16 @@ export default function CreateWhiteboardDialog({
 
       // Create the whiteboard
       const { error } = await supabase.from('workspace_whiteboards').insert({
-        title: values.title,
-        description: values.description || null,
+        title: normalizeWhiteboardTitle(values.title),
+        description: normalizeWhiteboardDescription(values.description),
         ws_id: wsId,
         creator_id: user.id,
       });
 
       if (error) {
         console.error('Error creating whiteboard:', error);
-        toast.error(t('create_whiteboard_error'));
+        const errorKey = getWhiteboardMutationErrorKey(error);
+        toast.error(errorKey ? t(errorKey) : t('create_whiteboard_error'));
         return;
       }
 
