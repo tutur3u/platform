@@ -10,8 +10,8 @@ import moment from 'moment';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import {
-  NON_RATE_LIMIT_SECRETS,
   isRateLimitSecretName,
+  NON_RATE_LIMIT_SECRETS,
 } from '../../secrets/constants';
 import SecretForm from '../../secrets/form';
 import {
@@ -74,8 +74,12 @@ export function WorkspaceSecretsManager({ workspaceId }: Props) {
   const tCommon = useTranslations('common');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingSecretId, setEditingSecretId] = useState<string | null>(null);
-  const { data: secrets = [], error, isLoading, isFetching } =
-    useWorkspaceSecrets(workspaceId);
+  const {
+    data: secrets = [],
+    error,
+    isLoading,
+    isFetching,
+  } = useWorkspaceSecrets(workspaceId);
   const deleteMutation = useDeleteWorkspaceSecret(workspaceId);
   const saveMutation = useUpsertWorkspaceSecret(workspaceId);
 
@@ -148,7 +152,9 @@ export function WorkspaceSecretsManager({ workspaceId }: Props) {
             </div>
           ) : (
             <div className="rounded-lg border border-border border-dashed bg-foreground/5 p-4 text-sm">
-              <p className="font-medium">{t('secret_manager_add_hint_title')}</p>
+              <p className="font-medium">
+                {t('secret_manager_add_hint_title')}
+              </p>
               <p className="mt-1 text-muted-foreground">
                 {t('secret_manager_add_hint_description')}
               </p>
@@ -167,7 +173,9 @@ export function WorkspaceSecretsManager({ workspaceId }: Props) {
           ))
         ) : error ? (
           <div className="rounded-xl border border-dynamic-red/30 bg-dynamic-red/10 p-4 text-dynamic-red text-sm">
-            {error instanceof Error ? error.message : t('secret_manager_load_error')}
+            {error instanceof Error
+              ? error.message
+              : t('secret_manager_load_error')}
           </div>
         ) : scopedSecrets.length === 0 ? (
           <div className="rounded-xl border border-border border-dashed bg-background/60 p-8 text-center">
@@ -271,7 +279,9 @@ export function WorkspaceSecretsManager({ workspaceId }: Props) {
                         data={secret}
                         existingSecrets={existingSecretNames}
                         secretScope="non-rate-limits"
-                        onSubmitSecret={(payload) => saveMutation.mutateAsync(payload)}
+                        onSubmitSecret={(payload) =>
+                          saveMutation.mutateAsync(payload)
+                        }
                         onFinish={() => {
                           setEditingSecretId(null);
                         }}

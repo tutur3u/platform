@@ -20,9 +20,9 @@ export function useWorkspaceSecrets(workspaceId: string) {
       });
 
       if (!res.ok) {
-        const payload = (await res.json().catch(() => null)) as
-          | { message?: string }
-          | null;
+        const payload = (await res.json().catch(() => null)) as {
+          message?: string;
+        } | null;
         throw new Error(payload?.message || t('secret_manager_load_error'));
       }
 
@@ -45,9 +45,9 @@ export function useDeleteWorkspaceSecret(workspaceId: string) {
       );
 
       if (!res.ok) {
-        const payload = (await res.json().catch(() => null)) as
-          | { message?: string }
-          | null;
+        const payload = (await res.json().catch(() => null)) as {
+          message?: string;
+        } | null;
         throw new Error(payload?.message || t('secret_manager_delete_error'));
       }
     },
@@ -105,9 +105,9 @@ export function useUpsertWorkspaceSecret(workspaceId: string) {
       );
 
       if (!res.ok) {
-        const payload = (await res.json().catch(() => null)) as
-          | { message?: string }
-          | null;
+        const payload = (await res.json().catch(() => null)) as {
+          message?: string;
+        } | null;
         throw new Error(payload?.message || t('secret_manager_save_error'));
       }
     },
