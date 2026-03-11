@@ -122,6 +122,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workspaceSelectError => 'Failed to switch workspace';
 
   @override
+  String get appUpdateChecking => 'Checking app version...';
+
+  @override
+  String get appUpdateNow => 'Update now';
+
+  @override
+  String get appUpdateLater => 'Later';
+
+  @override
+  String get appUpdateRecommendedTitle => 'Update available';
+
+  @override
+  String get appUpdateRecommendedMessage => 'A newer version of the app is available. Update now for the latest fixes and improvements.';
+
+  @override
+  String get appUpdateRequiredTitle => 'Update required';
+
+  @override
+  String get appUpdateRequiredMessage => 'This app version is no longer supported. Update to continue using the app.';
+
+  @override
   String get navHome => 'Home';
 
   @override

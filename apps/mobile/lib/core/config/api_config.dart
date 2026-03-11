@@ -35,6 +35,11 @@ abstract final class ProfileEndpoints {
   static const avatar = '/api/v1/users/me/avatar';
 }
 
+/// Public mobile-specific endpoint paths.
+abstract final class MobileEndpoints {
+  static const versionCheck = '/api/v1/mobile/version-check';
+}
+
 /// Finance endpoint paths.
 abstract final class FinanceEndpoints {
   static String wallets(String wsId) => '/api/workspaces/$wsId/wallets';

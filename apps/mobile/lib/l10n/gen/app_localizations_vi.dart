@@ -122,6 +122,27 @@ class AppLocalizationsVi extends AppLocalizations {
   String get workspaceSelectError => 'Không thể chuyển không gian làm việc';
 
   @override
+  String get appUpdateChecking => 'Đang kiểm tra phiên bản ứng dụng...';
+
+  @override
+  String get appUpdateNow => 'Cập nhật ngay';
+
+  @override
+  String get appUpdateLater => 'Để sau';
+
+  @override
+  String get appUpdateRecommendedTitle => 'Có bản cập nhật mới';
+
+  @override
+  String get appUpdateRecommendedMessage => 'Đã có phiên bản ứng dụng mới hơn. Hãy cập nhật để nhận các bản sửa lỗi và cải tiến mới nhất.';
+
+  @override
+  String get appUpdateRequiredTitle => 'Bắt buộc cập nhật';
+
+  @override
+  String get appUpdateRequiredMessage => 'Phiên bản ứng dụng này không còn được hỗ trợ. Vui lòng cập nhật để tiếp tục sử dụng.';
+
+  @override
   String get navHome => 'Trang chủ';
 
   @override

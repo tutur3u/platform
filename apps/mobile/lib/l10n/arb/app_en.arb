@@ -50,6 +50,13 @@
     "workspaceSelectTitle": "Select workspace",
     "workspaceSelectEmpty": "No workspaces found",
     "workspaceSelectError": "Failed to switch workspace",
+    "appUpdateChecking": "Checking app version...",
+    "appUpdateNow": "Update now",
+    "appUpdateLater": "Later",
+    "appUpdateRecommendedTitle": "Update available",
+    "appUpdateRecommendedMessage": "A newer version of the app is available. Update now for the latest fixes and improvements.",
+    "appUpdateRequiredTitle": "Update required",
+    "appUpdateRequiredMessage": "This app version is no longer supported. Update to continue using the app.",
 
     "navHome": "Home",
     "navTasks": "Tasks",

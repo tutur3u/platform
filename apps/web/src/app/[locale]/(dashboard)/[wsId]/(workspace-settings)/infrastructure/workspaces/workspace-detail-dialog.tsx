@@ -22,6 +22,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import moment from 'moment';
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 import { WorkspaceRateLimitsPanel } from './workspace-rate-limits-panel';
 import { WorkspaceSecretsManager } from './workspace-secrets-manager';
 
@@ -88,7 +89,9 @@ export function WorkspaceDetailDialog({
                     )}
                   </OverviewItem>
                   <OverviewItem label={t('col_type')}>
-                    <Badge variant={workspace.personal ? 'secondary' : 'outline'}>
+                    <Badge
+                      variant={workspace.personal ? 'secondary' : 'outline'}
+                    >
                       {workspace.personal ? t('personal') : t('team')}
                     </Badge>
                   </OverviewItem>
@@ -102,7 +105,9 @@ export function WorkspaceDetailDialog({
                   </OverviewItem>
                   <OverviewItem label={t('col_created_at')}>
                     <span>
-                      {moment(workspace.created_at).format('MMM DD, YYYY HH:mm')}
+                      {moment(workspace.created_at).format(
+                        'MMM DD, YYYY HH:mm'
+                      )}
                     </span>
                   </OverviewItem>
                   <OverviewItem label={t('id')}>
@@ -129,7 +134,9 @@ export function WorkspaceDetailDialog({
                 </h4>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('col_plan')}</span>
+                    <span className="text-muted-foreground">
+                      {t('col_plan')}
+                    </span>
                     {workspace.highest_tier ? (
                       <TierBadge tier={workspace.highest_tier} />
                     ) : (
@@ -215,7 +222,7 @@ function OverviewItem({
   children,
   label,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   label: string;
 }) {
   return (
@@ -248,7 +255,7 @@ function CountCard({
   label,
   value,
 }: {
-  icon: React.ReactNode;
+  icon: ReactNode;
   label: string;
   value: number;
 }) {
