@@ -46,6 +46,87 @@ export const KNOWN_SECRETS: SecretDefinition[] = [
     type: 'number',
     defaultValue: '1000',
   },
+  {
+    name: 'EMAIL_RATE_LIMIT_MINUTE',
+    description: 'Maximum number of emails a workspace can send per minute.',
+    type: 'number',
+    defaultValue: '50',
+  },
+  {
+    name: 'EMAIL_RATE_LIMIT_HOUR',
+    description: 'Maximum number of emails a workspace can send per hour.',
+    type: 'number',
+    defaultValue: '500',
+  },
+  {
+    name: 'EMAIL_RATE_LIMIT_DAY',
+    description: 'Maximum number of emails a workspace can send per day.',
+    type: 'number',
+    defaultValue: '5000',
+  },
+  {
+    name: 'EMAIL_RATE_LIMIT_USER_MINUTE',
+    description:
+      'Maximum number of emails an authenticated sender can send per minute.',
+    type: 'number',
+    defaultValue: '10',
+  },
+  {
+    name: 'EMAIL_RATE_LIMIT_USER_HOUR',
+    description:
+      'Maximum number of emails an authenticated sender can send per hour.',
+    type: 'number',
+    defaultValue: '100',
+  },
+  {
+    name: 'EMAIL_RATE_LIMIT_RECIPIENT_HOUR',
+    description:
+      'Maximum number of emails a single recipient can receive per hour.',
+    type: 'number',
+    defaultValue: '5',
+  },
+  {
+    name: 'EMAIL_RATE_LIMIT_RECIPIENT_DAY',
+    description:
+      'Maximum number of emails a single recipient can receive per day.',
+    type: 'number',
+    defaultValue: '20',
+  },
+  {
+    name: 'EMAIL_RATE_LIMIT_IP_MINUTE',
+    description:
+      'Maximum number of email requests allowed from one IP per minute.',
+    type: 'number',
+    defaultValue: '20',
+  },
+  {
+    name: 'EMAIL_RATE_LIMIT_IP_HOUR',
+    description:
+      'Maximum number of email requests allowed from one IP per hour.',
+    type: 'number',
+    defaultValue: '200',
+  },
+  {
+    name: 'INVITE_RATE_LIMIT_MINUTE',
+    description:
+      'Maximum number of invite emails a workspace can send per minute.',
+    type: 'number',
+    defaultValue: '10',
+  },
+  {
+    name: 'INVITE_RATE_LIMIT_HOUR',
+    description:
+      'Maximum number of invite emails a workspace can send per hour.',
+    type: 'number',
+    defaultValue: '100',
+  },
+  {
+    name: 'INVITE_RATE_LIMIT_DAY',
+    description:
+      'Maximum number of invite emails a workspace can send per day.',
+    type: 'number',
+    defaultValue: '500',
+  },
 
   // Feature Flags
   {

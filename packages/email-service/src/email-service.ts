@@ -35,6 +35,7 @@ import type {
   SendEmailParams,
   SendEmailResult,
 } from './types';
+import { getWorkspaceEmailRateLimitOverrides } from './workspace-rate-limits';
 
 // =============================================================================
 // Email Service Class
@@ -635,6 +636,11 @@ export class EmailService {
       throw new Error(`No email credentials found for workspace ${wsId}`);
     }
 
+    const workspaceRateLimits = await getWorkspaceEmailRateLimitOverrides(
+      sbAdmin,
+      wsId
+    );
+
     // DEV_MODE is handled globally via the imported constant
     // No need to set devMode in config - it's checked in send() and sendInternal()
     const service = new EmailService({
@@ -649,7 +655,10 @@ export class EmailService {
         name: credentials.source_name,
         email: credentials.source_email,
       },
-      rateLimits: options?.rateLimits,
+      rateLimits: {
+        ...(options?.rateLimits ?? {}),
+        ...workspaceRateLimits,
+      },
       devMode: options?.devMode,
     });
 

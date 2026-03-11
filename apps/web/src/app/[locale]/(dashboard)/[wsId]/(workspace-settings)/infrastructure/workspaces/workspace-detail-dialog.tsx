@@ -20,8 +20,10 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import moment from 'moment';
 import { useTranslations } from 'next-intl';
+import { WorkspaceSecretsManager } from './workspace-secrets-manager';
 
 interface Props {
   workspace: WorkspaceOverviewRow | null;
@@ -40,12 +42,12 @@ export function WorkspaceDetailDialog({
 
   const copyId = () => {
     navigator.clipboard.writeText(workspace.id);
-    toast.success('Copied workspace ID');
+    toast.success(t('copied_workspace_id'));
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {workspace.personal ? (
@@ -57,137 +59,161 @@ export function WorkspaceDetailDialog({
           </DialogTitle>
         </DialogHeader>
 
-        {/* Info Section */}
-        <div>
-          <h4 className="mb-2 font-medium text-sm">{t('detail_info')}</h4>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Handle</span>
-              {workspace.handle ? (
-                <span className="font-medium text-dynamic-purple">
-                  @{workspace.handle}
-                </span>
-              ) : (
-                <span className="text-muted-foreground">—</span>
-              )}
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">{t('col_type')}</span>
-              <Badge variant={workspace.personal ? 'secondary' : 'outline'}>
-                {workspace.personal ? t('personal') : t('team')}
-              </Badge>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">
-                {t('col_creator_name')}
-              </span>
-              <span>{workspace.creator_name || '—'}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">
-                {t('col_creator_email')}
-              </span>
-              <span className="font-mono text-xs">
-                {workspace.creator_email || '—'}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">
-                {t('col_created_at')}
-              </span>
-              <span>
-                {moment(workspace.created_at).format('MMM DD, YYYY HH:mm')}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">ID</span>
-              <div className="flex items-center gap-1">
-                <span className="font-mono text-xs">
-                  {workspace.id.slice(0, 8)}...
-                </span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  onClick={copyId}
-                >
-                  <Copy className="h-3 w-3" />
-                </Button>
+        <Tabs defaultValue="overview" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="overview">
+              {t('detail_tab_overview')}
+            </TabsTrigger>
+            <TabsTrigger value="secrets">{t('detail_tab_secrets')}</TabsTrigger>
+            <TabsTrigger value="rate-limits">
+              {t('detail_tab_rate_limits')}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-4">
+            <div>
+              <h4 className="mb-2 font-medium text-sm">{t('detail_info')}</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Handle</span>
+                  {workspace.handle ? (
+                    <span className="font-medium text-dynamic-purple">
+                      @{workspace.handle}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{t('col_type')}</span>
+                  <Badge variant={workspace.personal ? 'secondary' : 'outline'}>
+                    {workspace.personal ? t('personal') : t('team')}
+                  </Badge>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">
+                    {t('col_creator_name')}
+                  </span>
+                  <span>{workspace.creator_name || '—'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">
+                    {t('col_creator_email')}
+                  </span>
+                  <span className="font-mono text-xs">
+                    {workspace.creator_email || '—'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">
+                    {t('col_created_at')}
+                  </span>
+                  <span>
+                    {moment(workspace.created_at).format('MMM DD, YYYY HH:mm')}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">ID</span>
+                  <div className="flex items-center gap-1">
+                    <span className="font-mono text-xs">
+                      {workspace.id.slice(0, 8)}...
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={copyId}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        <Separator />
+            <Separator />
 
-        {/* Subscription Section */}
-        <div>
-          <h4 className="mb-2 font-medium text-sm">
-            {t('detail_subscription')}
-          </h4>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">{t('col_plan')}</span>
-              {workspace.highest_tier ? (
-                <TierBadge tier={workspace.highest_tier} />
-              ) : (
-                <span className="text-muted-foreground">
-                  {t('no_subscription')}
-                </span>
-              )}
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">{t('col_status')}</span>
-              <div className="flex flex-wrap justify-end gap-1">
-                {workspace.subscription_statuses.length > 0 ? (
-                  workspace.subscription_statuses.map((s) => (
-                    <Badge key={s} variant="outline" className="text-xs">
-                      {s.replace('_', ' ')}
-                    </Badge>
-                  ))
-                ) : (
-                  <span className="text-muted-foreground">—</span>
+            <div>
+              <h4 className="mb-2 font-medium text-sm">
+                {t('detail_subscription')}
+              </h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{t('col_plan')}</span>
+                  {workspace.highest_tier ? (
+                    <TierBadge tier={workspace.highest_tier} />
+                  ) : (
+                    <span className="text-muted-foreground">
+                      {t('no_subscription')}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">
+                    {t('col_status')}
+                  </span>
+                  <div className="flex flex-wrap justify-end gap-1">
+                    {workspace.subscription_statuses.length > 0 ? (
+                      workspace.subscription_statuses.map((s) => (
+                        <Badge key={s} variant="outline" className="text-xs">
+                          {s.replace('_', ' ')}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">
+                    {t('col_active_subs')}
+                  </span>
+                  <span>{workspace.active_subscription_count}</span>
+                </div>
+                {workspace.active_subscription_count > 1 && (
+                  <div className="flex items-center gap-1.5 rounded-md bg-dynamic-yellow/10 p-2 text-dynamic-yellow text-xs">
+                    <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                    {t('multi_sub_warning')}
+                  </div>
                 )}
               </div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">
-                {t('col_active_subs')}
-              </span>
-              <span>{workspace.active_subscription_count}</span>
-            </div>
-            {workspace.active_subscription_count > 1 && (
-              <div className="flex items-center gap-1.5 rounded-md bg-dynamic-yellow/10 p-2 text-dynamic-yellow text-xs">
-                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                {t('multi_sub_warning')}
+
+            <Separator />
+
+            <div>
+              <h4 className="mb-2 font-medium text-sm">{t('detail_counts')}</h4>
+              <div className="grid grid-cols-3 gap-3">
+                <CountCard
+                  icon={<Users className="h-4 w-4 text-dynamic-blue" />}
+                  label={t('col_members')}
+                  value={workspace.member_count}
+                />
+                <CountCard
+                  icon={<Shield className="h-4 w-4 text-dynamic-green" />}
+                  label={t('col_roles')}
+                  value={workspace.role_count}
+                />
+                <CountCard
+                  icon={<Key className="h-4 w-4 text-dynamic-orange" />}
+                  label={t('col_secrets')}
+                  value={workspace.secret_count}
+                />
               </div>
-            )}
-          </div>
-        </div>
+            </div>
+          </TabsContent>
 
-        <Separator />
+          <TabsContent value="secrets">
+            <WorkspaceSecretsManager workspaceId={workspace.id} mode="all" />
+          </TabsContent>
 
-        {/* Counts Grid */}
-        <div>
-          <h4 className="mb-2 font-medium text-sm">{t('detail_counts')}</h4>
-          <div className="grid grid-cols-3 gap-3">
-            <CountCard
-              icon={<Users className="h-4 w-4 text-dynamic-blue" />}
-              label={t('col_members')}
-              value={workspace.member_count}
+          <TabsContent value="rate-limits">
+            <WorkspaceSecretsManager
+              workspaceId={workspace.id}
+              mode="rate-limits"
             />
-            <CountCard
-              icon={<Shield className="h-4 w-4 text-dynamic-green" />}
-              label={t('col_roles')}
-              value={workspace.role_count}
-            />
-            <CountCard
-              icon={<Key className="h-4 w-4 text-dynamic-orange" />}
-              label={t('col_secrets')}
-              value={workspace.secret_count}
-            />
-          </div>
-        </div>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
