@@ -4,26 +4,16 @@ import {
   propagateAuthCookies,
 } from '@tuturuuu/auth/proxy';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import {
-  extractIPFromRequest,
-  isIPBlockedEdge,
-} from '@tuturuuu/utils/abuse-protection/edge';
-import { MAX_PAYLOAD_SIZE, ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { validateRequestEmojiLimit } from '@tuturuuu/utils/request-emoji-limit';
-import {
-  getUpstashRatelimitRedisClient,
-  type UpstashRatelimitRedisClient,
-} from '@tuturuuu/utils/upstash-rest';
+import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
 import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { Ratelimit } from '@upstash/ratelimit';
 import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { LOCALE_COOKIE_NAME, PORT, PUBLIC_PATHS } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
-import { isProxyRateLimitExemptApiRoute } from './lib/proxy-rate-limit-exempt-route';
 
 // Paths that should bypass onboarding check (public/marketing pages + auth flows)
 const ONBOARDING_BYPASS_PATHS = [
@@ -193,180 +183,15 @@ const authProxy = createCentralizedAuthProxy({
   skipApiRoutes: true,
 });
 
-// Edge-compatible rate limiters (lazy-initialized)
-// Split by HTTP method: GET (reads) are more generous, non-GET (mutations) are stricter.
-type ProxyRateLimitWindow = 'minute' | 'hour' | 'day';
-
-type ProxyRateLimitBucket = {
-  limiter: Ratelimit;
-  window: ProxyRateLimitWindow;
-};
-
-let apiGetLimiters: ProxyRateLimitBucket[] = [];
-let apiMutateLimiters: ProxyRateLimitBucket[] = [];
-let usersMeGetLimiters: ProxyRateLimitBucket[] = [];
-let usersMeMutateLimiters: ProxyRateLimitBucket[] = [];
-let rateLimiterInitialized = false;
-
-function createRateLimitBuckets(
-  redis: UpstashRatelimitRedisClient,
-  prefixBase: string,
-  configs: Array<{
-    limit: number;
-    window: ProxyRateLimitWindow;
-    windowSize: '1 m' | '1 h' | '1 d';
-  }>
-): ProxyRateLimitBucket[] {
-  return configs.map((config) => ({
-    window: config.window,
-    limiter: new Ratelimit({
-      redis,
-      limiter: Ratelimit.slidingWindow(config.limit, config.windowSize),
-      prefix: `${prefixBase}:${config.window}`,
-      analytics: false,
-    }),
-  }));
-}
-
-async function initRateLimiters() {
-  if (rateLimiterInitialized) return;
-  rateLimiterInitialized = true;
-
-  const redis = await getUpstashRatelimitRedisClient();
-  if (!redis) return;
-
-  apiGetLimiters = createRateLimitBuckets(redis, 'proxy:api:get', [
-    { limit: 120, window: 'minute', windowSize: '1 m' },
-    { limit: 2000, window: 'hour', windowSize: '1 h' },
-    { limit: 10000, window: 'day', windowSize: '1 d' },
-  ]);
-
-  apiMutateLimiters = createRateLimitBuckets(redis, 'proxy:api:mutate', [
-    { limit: 30, window: 'minute', windowSize: '1 m' },
-    { limit: 300, window: 'hour', windowSize: '1 h' },
-    { limit: 1000, window: 'day', windowSize: '1 d' },
-  ]);
-
-  usersMeGetLimiters = createRateLimitBuckets(redis, 'proxy:users-me:get', [
-    { limit: 60, window: 'minute', windowSize: '1 m' },
-    { limit: 600, window: 'hour', windowSize: '1 h' },
-    { limit: 2500, window: 'day', windowSize: '1 d' },
-  ]);
-
-  usersMeMutateLimiters = createRateLimitBuckets(
-    redis,
-    'proxy:users-me:mutate',
-    [
-      { limit: 20, window: 'minute', windowSize: '1 m' },
-      { limit: 180, window: 'hour', windowSize: '1 h' },
-      { limit: 600, window: 'day', windowSize: '1 d' },
-    ]
-  );
-}
-
 export async function proxy(req: NextRequest): Promise<NextResponse> {
-  // 0. Global payload size check at the edge
-  const contentLength = req.headers.get('content-length');
-  if (contentLength) {
-    const size = parseInt(contentLength, 10);
-    if (size > MAX_PAYLOAD_SIZE) {
-      return NextResponse.json(
-        { error: 'Payload Too Large', message: 'Request body exceeds limit' },
-        { status: 413 }
-      );
-    }
-  }
-
-  // Rate-limit API routes at the edge BEFORE any serverless execution
   if (req.nextUrl.pathname.startsWith('/api')) {
-    if (
-      !isDev &&
-      !isProxyRateLimitExemptApiRoute(req.nextUrl.pathname, req.headers)
-    ) {
-      initRateLimiters();
-      const ip = extractIPFromRequest(req.headers);
-
-      if (ip !== 'unknown') {
-        // Check persistent IP block (Redis cache only — fast)
-        const blockInfo = await isIPBlockedEdge(ip);
-        if (blockInfo) {
-          const retryAfter = Math.max(
-            1,
-            Math.ceil((blockInfo.expiresAt.getTime() - Date.now()) / 1000)
-          );
-          if (isDev) {
-            console.warn(
-              `[RateLimit] IP BLOCKED — IP: ${ip} | reason: ${blockInfo.reason} | level: ${blockInfo.blockLevel} | expires in: ${retryAfter}s`
-            );
-          }
-          return NextResponse.json(
-            { error: 'Too Many Requests', message: 'Rate limit exceeded' },
-            {
-              status: 429,
-              headers: { 'Retry-After': `${retryAfter}` },
-            }
-          );
-        }
-
-        // Sliding window rate limit by IP — split by method category
-        const isUsersMeRoute =
-          req.nextUrl.pathname.startsWith('/api/v1/users/me');
-        const isRead = req.method === 'GET' || req.method === 'HEAD';
-        const limiters = isUsersMeRoute
-          ? isRead
-            ? usersMeGetLimiters
-            : usersMeMutateLimiters
-          : isRead
-            ? apiGetLimiters
-            : apiMutateLimiters;
-
-        for (const { limiter, window } of limiters) {
-          const { success, limit, remaining, reset } = await limiter.limit(ip);
-
-          // Development logging: show consumed/total per request
-          if (isDev) {
-            const consumed = limit - remaining;
-            const tier = isUsersMeRoute ? 'users-me' : 'api';
-            const kind = isRead ? 'read' : 'mutate';
-            console.log(
-              `[RateLimit] ${consumed}/${limit} consumed | remaining: ${remaining} | IP: ${ip} | tier: ${tier}:${kind}:${window} | path: ${req.nextUrl.pathname}`
-            );
-          }
-
-          if (!success) {
-            const retryAfter = Math.max(
-              1,
-              Math.ceil((reset - Date.now()) / 1000)
-            );
-            if (isDev) {
-              console.warn(
-                `[RateLimit] BLOCKED — IP: ${ip} | path: ${req.nextUrl.pathname} | retry in: ${retryAfter}s`
-              );
-            }
-            return NextResponse.json(
-              { error: 'Too Many Requests', message: 'Rate limit exceeded' },
-              {
-                status: 429,
-                headers: {
-                  'Retry-After': `${retryAfter}`,
-                  'X-RateLimit-Limit': `${limit}`,
-                  'X-RateLimit-Remaining': `${remaining}`,
-                  'X-RateLimit-Reset': `${Math.ceil(reset / 1000)}`,
-                  'X-RateLimit-Window': window,
-                },
-              }
-            );
-          }
-        }
-      }
+    const guardResponse = await guardApiProxyRequest(req, {
+      prefixBase: 'proxy:web:api',
+    });
+    if (guardResponse) {
+      return guardResponse;
     }
 
-    const emojiLimitResponse = await validateRequestEmojiLimit(req);
-    if (emojiLimitResponse) {
-      return emojiLimitResponse;
-    }
-
-    // API routes skip auth proxy and locale handling
     return NextResponse.next();
   }
 
