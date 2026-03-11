@@ -259,6 +259,167 @@ class AppLocalizationsVi extends AppLocalizations {
   String get tasksUntitled => 'Công việc chưa có tiêu đề';
 
   @override
+  String get taskBoardsTitle => 'Bảng';
+
+  @override
+  String get taskBoardsCreate => 'Tạo bảng';
+
+  @override
+  String get taskBoardsEdit => 'Sửa bảng';
+
+  @override
+  String get taskBoardsDelete => 'Xóa bảng';
+
+  @override
+  String get taskBoardsDeleteForever => 'Xóa vĩnh viễn';
+
+  @override
+  String get taskBoardsDuplicate => 'Nhân bản bảng';
+
+  @override
+  String get taskBoardsArchive => 'Lưu trữ bảng';
+
+  @override
+  String get taskBoardsUnarchive => 'Bỏ lưu trữ bảng';
+
+  @override
+  String get taskBoardsRestore => 'Khôi phục bảng';
+
+  @override
+  String get taskBoardsCreated => 'Đã tạo bảng.';
+
+  @override
+  String get taskBoardsUpdated => 'Đã cập nhật bảng.';
+
+  @override
+  String get taskBoardsDeleted => 'Đã chuyển bảng vào đã xóa gần đây.';
+
+  @override
+  String get taskBoardsDeletedForever => 'Đã xóa bảng vĩnh viễn.';
+
+  @override
+  String get taskBoardsDuplicated => 'Đã nhân bản bảng.';
+
+  @override
+  String get taskBoardsArchived => 'Đã lưu trữ bảng.';
+
+  @override
+  String get taskBoardsUnarchived => 'Đã bỏ lưu trữ bảng.';
+
+  @override
+  String get taskBoardsRestored => 'Đã khôi phục bảng.';
+
+  @override
+  String get taskBoardsLoadError => 'Không thể tải bảng lúc này';
+
+  @override
+  String get taskBoardsNameLabel => 'Tên bảng';
+
+  @override
+  String get taskBoardsNamePlaceholder => 'Bảng chưa đặt tên';
+
+  @override
+  String get taskBoardsNameRequired => 'Tên bảng là bắt buộc';
+
+  @override
+  String get taskBoardsIconLabel => 'Biểu tượng bảng';
+
+  @override
+  String get taskBoardsIconPlaceholder => 'Chọn biểu tượng';
+
+  @override
+  String get taskBoardsIconPickerTitle => 'Chọn biểu tượng bảng';
+
+  @override
+  String get taskBoardsIconPickerSearch => 'Tìm biểu tượng';
+
+  @override
+  String get taskBoardsIconPickerEmpty => 'Không tìm thấy biểu tượng';
+
+  @override
+  String get taskBoardsAccessDeniedTitle => 'Quyền truy cập bị hạn chế';
+
+  @override
+  String get taskBoardsAccessDeniedDescription => 'Bạn cần quyền quản lý dự án trong không gian làm việc này để quản lý bảng công việc.';
+
+  @override
+  String get taskBoardsFilterAll => 'Tất cả';
+
+  @override
+  String get taskBoardsFilterActive => 'Đang hoạt động';
+
+  @override
+  String get taskBoardsFilterArchived => 'Đã lưu trữ';
+
+  @override
+  String get taskBoardsFilterRecentlyDeleted => 'Đã xóa gần đây';
+
+  @override
+  String get taskBoardsPageSize => 'Kích thước trang';
+
+  @override
+  String taskBoardsPageSizeOption(int count) {
+    return '$count mục';
+  }
+
+  @override
+  String taskBoardsPageInfo(int current, int total) {
+    return 'Trang $current / $total';
+  }
+
+  @override
+  String taskBoardsListsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count danh sách',
+      one: '$count danh sách',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String taskBoardsTasksCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count công việc',
+      one: '$count công việc',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get taskBoardsCreatedAt => 'Đã tạo';
+
+  @override
+  String get taskBoardsRecentlyDeleted => 'Đã xóa gần đây';
+
+  @override
+  String get taskBoardsDeleteConfirm => 'Chuyển bảng này vào mục đã xóa gần đây?';
+
+  @override
+  String get taskBoardsDeleteForeverConfirm => 'Xóa vĩnh viễn bảng này? Hành động này không thể hoàn tác.';
+
+  @override
+  String get taskBoardsEmptyTitle => 'Chưa có bảng nào';
+
+  @override
+  String get taskBoardsEmptyDescription => 'Tạo bảng đầu tiên để sắp xếp công việc.';
+
+  @override
+  String get taskBoardsEmptyArchivedTitle => 'Không có bảng đã lưu trữ';
+
+  @override
+  String get taskBoardsEmptyArchivedDescription => 'Các bảng đã lưu trữ sẽ hiển thị tại đây.';
+
+  @override
+  String get taskBoardsEmptyDeletedTitle => 'Không có bảng đã xóa gần đây';
+
+  @override
+  String get taskBoardsEmptyDeletedDescription => 'Các bảng đã xóa sẽ xuất hiện ở đây trước khi bị xóa vĩnh viễn.';
+
+  @override
   String get taskPlanningTitle => 'Lập kế hoạch';
 
   @override

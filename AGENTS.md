@@ -102,6 +102,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Seed-Dependent Migration Backfills**: When a migration backfills foreign keys to seeded/reference tables (for example `ai_gateway_models` IDs), do not assume those rows already exist in every local/reset state. Prefer nullable columns or conditional subqueries during backfill, and keep runtime/API fallbacks authoritative until the reference data is present.
 - **Supabase Typegen Requires Applied Migrations**: After adding or changing a Supabase migration that affects schema types, apply it to the local database with `bun sb:up` before running `bun sb:typegen`. The generator reads the live local schema, not unapplied SQL files, so skipping the local apply step leaves generated types stale.
 - **Workspace-Scoped Mutation Follow-Through**: For workspace-scoped `UPDATE`/`DELETE` API handlers, request returning rows (`select(...).maybeSingle()` or equivalent) and stop follow-up side effects when no row matched; never run dependent child-table deletes/updates based only on a requested ID.
+- **Membership Check Error Parity**: In API routes that gate access with `workspace_members` lookups, always handle query `error` explicitly and return `500` for membership lookup failures; return `403` only when the lookup succeeds but no membership row exists.
 - **Signed Upload Preview Timing**: For Supabase storage uploads using `createSignedUploadUrl`, do not request a signed read/preview URL before the client uploads the object. The file does not exist yet and storage will return object-not-found errors. Use a local blob preview immediately after upload in the client, and resolve signed read URLs only after the object exists.
 
 ### 6.2 UI & Rendering Patterns
@@ -193,6 +194,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Workflow Bun Parity**: Keep the Type Check workflow Bun version aligned with the repo `packageManager` pin so local `bun run type-check` and GitHub Actions resolve the same Bun runtime behavior.
 - **Root Script Test Coverage**: When adding or refactoring root-level `scripts/*.js` utilities that are not covered by workspace package tests, add a dedicated repo-root test entry (for example `node --test scripts/foo.test.js`) and wire it into `scripts/check.js` so regressions are caught by `bun check`.
 - **Workspace Subpath Imports**: Before importing a workspace package subpath like `@tuturuuu/pkg/foo`, verify that the target is actually covered by that package’s `exports`. Do not assume a directory `index.ts` is reachable via the bare directory subpath; prefer an explicitly exported file path or a relative import within the same package.
+- **Bearer-Aware API Clients**: For API routes that must serve web sessions and mobile Bearer tokens, initialize Supabase with `createClient(request)` in the route handler instead of cookie-only helpers/wrappers so Authorization headers are honored across clients.
 
 ### 6.5 Type Safety & Platform Details
 

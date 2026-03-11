@@ -583,6 +583,288 @@ abstract class AppLocalizations {
   /// **'Untitled task'**
   String get tasksUntitled;
 
+  /// No description provided for @taskBoardsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Boards'**
+  String get taskBoardsTitle;
+
+  /// No description provided for @taskBoardsCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create board'**
+  String get taskBoardsCreate;
+
+  /// No description provided for @taskBoardsEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit board'**
+  String get taskBoardsEdit;
+
+  /// No description provided for @taskBoardsDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete board'**
+  String get taskBoardsDelete;
+
+  /// No description provided for @taskBoardsDeleteForever.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete forever'**
+  String get taskBoardsDeleteForever;
+
+  /// No description provided for @taskBoardsDuplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate board'**
+  String get taskBoardsDuplicate;
+
+  /// No description provided for @taskBoardsArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive board'**
+  String get taskBoardsArchive;
+
+  /// No description provided for @taskBoardsUnarchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Unarchive board'**
+  String get taskBoardsUnarchive;
+
+  /// No description provided for @taskBoardsRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore board'**
+  String get taskBoardsRestore;
+
+  /// No description provided for @taskBoardsCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Board created.'**
+  String get taskBoardsCreated;
+
+  /// No description provided for @taskBoardsUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Board updated.'**
+  String get taskBoardsUpdated;
+
+  /// No description provided for @taskBoardsDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Board moved to recently deleted.'**
+  String get taskBoardsDeleted;
+
+  /// No description provided for @taskBoardsDeletedForever.
+  ///
+  /// In en, this message translates to:
+  /// **'Board permanently deleted.'**
+  String get taskBoardsDeletedForever;
+
+  /// No description provided for @taskBoardsDuplicated.
+  ///
+  /// In en, this message translates to:
+  /// **'Board duplicated.'**
+  String get taskBoardsDuplicated;
+
+  /// No description provided for @taskBoardsArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Board archived.'**
+  String get taskBoardsArchived;
+
+  /// No description provided for @taskBoardsUnarchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Board unarchived.'**
+  String get taskBoardsUnarchived;
+
+  /// No description provided for @taskBoardsRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'Board restored.'**
+  String get taskBoardsRestored;
+
+  /// No description provided for @taskBoardsLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load boards right now'**
+  String get taskBoardsLoadError;
+
+  /// No description provided for @taskBoardsNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Board name'**
+  String get taskBoardsNameLabel;
+
+  /// No description provided for @taskBoardsNamePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled board'**
+  String get taskBoardsNamePlaceholder;
+
+  /// No description provided for @taskBoardsNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Board name is required'**
+  String get taskBoardsNameRequired;
+
+  /// No description provided for @taskBoardsIconLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Board icon'**
+  String get taskBoardsIconLabel;
+
+  /// No description provided for @taskBoardsIconPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Select icon'**
+  String get taskBoardsIconPlaceholder;
+
+  /// No description provided for @taskBoardsIconPickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select board icon'**
+  String get taskBoardsIconPickerTitle;
+
+  /// No description provided for @taskBoardsIconPickerSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search icons'**
+  String get taskBoardsIconPickerSearch;
+
+  /// No description provided for @taskBoardsIconPickerEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No icons found'**
+  String get taskBoardsIconPickerEmpty;
+
+  /// No description provided for @taskBoardsAccessDeniedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Access restricted'**
+  String get taskBoardsAccessDeniedTitle;
+
+  /// No description provided for @taskBoardsAccessDeniedDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'You need project management permission in this workspace to manage task boards.'**
+  String get taskBoardsAccessDeniedDescription;
+
+  /// No description provided for @taskBoardsFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get taskBoardsFilterAll;
+
+  /// No description provided for @taskBoardsFilterActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get taskBoardsFilterActive;
+
+  /// No description provided for @taskBoardsFilterArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get taskBoardsFilterArchived;
+
+  /// No description provided for @taskBoardsFilterRecentlyDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Recently deleted'**
+  String get taskBoardsFilterRecentlyDeleted;
+
+  /// No description provided for @taskBoardsPageSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Page size'**
+  String get taskBoardsPageSize;
+
+  /// No description provided for @taskBoardsPageSizeOption.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} items'**
+  String taskBoardsPageSizeOption(int count);
+
+  /// No description provided for @taskBoardsPageInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {current} of {total}'**
+  String taskBoardsPageInfo(int current, int total);
+
+  /// No description provided for @taskBoardsListsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} list} other{{count} lists}}'**
+  String taskBoardsListsCount(int count);
+
+  /// No description provided for @taskBoardsTasksCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} task} other{{count} tasks}}'**
+  String taskBoardsTasksCount(int count);
+
+  /// No description provided for @taskBoardsCreatedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Created'**
+  String get taskBoardsCreatedAt;
+
+  /// No description provided for @taskBoardsRecentlyDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Recently deleted'**
+  String get taskBoardsRecentlyDeleted;
+
+  /// No description provided for @taskBoardsDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Move this board to recently deleted?'**
+  String get taskBoardsDeleteConfirm;
+
+  /// No description provided for @taskBoardsDeleteForeverConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Permanently delete this board? This action cannot be undone.'**
+  String get taskBoardsDeleteForeverConfirm;
+
+  /// No description provided for @taskBoardsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No boards yet'**
+  String get taskBoardsEmptyTitle;
+
+  /// No description provided for @taskBoardsEmptyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your first board to organize tasks.'**
+  String get taskBoardsEmptyDescription;
+
+  /// No description provided for @taskBoardsEmptyArchivedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No archived boards'**
+  String get taskBoardsEmptyArchivedTitle;
+
+  /// No description provided for @taskBoardsEmptyArchivedDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived boards will appear here.'**
+  String get taskBoardsEmptyArchivedDescription;
+
+  /// No description provided for @taskBoardsEmptyDeletedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No recently deleted boards'**
+  String get taskBoardsEmptyDeletedTitle;
+
+  /// No description provided for @taskBoardsEmptyDeletedDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted boards will appear here before permanent removal.'**
+  String get taskBoardsEmptyDeletedDescription;
+
   /// No description provided for @taskPlanningTitle.
   ///
   /// In en, this message translates to:

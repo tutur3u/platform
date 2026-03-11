@@ -40,6 +40,7 @@ void main() {
       final routes = tasks!.miniAppNavItems.map((item) => item.route).toList();
 
       expect(routes, contains(Routes.tasks));
+      expect(routes, contains(Routes.taskBoards));
       expect(routes, contains(Routes.taskEstimates));
     });
 

@@ -1,4 +1,6 @@
 import 'package:mobile/data/models/task.dart';
+import 'package:mobile/data/models/task_board_summary.dart';
+import 'package:mobile/data/models/task_boards_page.dart';
 import 'package:mobile/data/models/task_estimate_board.dart';
 import 'package:mobile/data/models/task_initiative_summary.dart';
 import 'package:mobile/data/models/task_label.dart';
@@ -94,6 +96,113 @@ class TaskRepository {
           ),
         )
         .toList(growable: false);
+  }
+
+  Future<TaskBoardsPage> getTaskBoards(
+    String wsId, {
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final normalizedPage = page < 1 ? 1 : page;
+    final normalizedPageSize = pageSize.clamp(1, 200);
+
+    final response = await _apiClient.getJson(
+      '/api/v1/workspaces/$wsId/task-boards?page=$normalizedPage&pageSize=$normalizedPageSize',
+    );
+    final boardsData = response['boards'] as List<dynamic>? ?? const [];
+    final pageBoards = boardsData
+        .whereType<Map<String, dynamic>>()
+        .map(TaskBoardSummary.fromSummaryJson)
+        .toList(growable: false);
+    final totalCount =
+        (response['count'] as num?)?.toInt() ?? pageBoards.length;
+
+    return TaskBoardsPage(
+      boards: List.unmodifiable(pageBoards),
+      totalCount: totalCount,
+      page: normalizedPage,
+      pageSize: normalizedPageSize,
+    );
+  }
+
+  Future<void> createTaskBoard({
+    required String wsId,
+    required String name,
+    String? icon,
+  }) async {
+    await _apiClient.postJson('/api/v1/workspaces/$wsId/task-boards', {
+      'name': name,
+      'icon': icon,
+    });
+  }
+
+  Future<void> updateTaskBoard({
+    required String wsId,
+    required String boardId,
+    required String name,
+    String? icon,
+  }) async {
+    await _apiClient.putJson('/api/v1/workspaces/$wsId/task-boards/$boardId', {
+      'name': name,
+      'icon': icon,
+    });
+  }
+
+  Future<void> duplicateTaskBoard({
+    required String wsId,
+    required String boardId,
+    String? newBoardName,
+  }) async {
+    await _apiClient.postJson(
+      '/api/v1/workspaces/$wsId/task-boards/$boardId/copy',
+      {
+        'targetWorkspaceId': wsId,
+        if (newBoardName != null && newBoardName.trim().isNotEmpty)
+          'newBoardName': newBoardName.trim(),
+      },
+    );
+  }
+
+  Future<void> archiveTaskBoard({
+    required String wsId,
+    required String boardId,
+  }) async {
+    await _apiClient.postJson(
+      '/api/v1/workspaces/$wsId/boards/$boardId/archive',
+      {},
+    );
+  }
+
+  Future<void> unarchiveTaskBoard({
+    required String wsId,
+    required String boardId,
+  }) async {
+    await _apiClient.deleteJson(
+      '/api/v1/workspaces/$wsId/boards/$boardId/archive',
+    );
+  }
+
+  Future<void> softDeleteTaskBoard({
+    required String wsId,
+    required String boardId,
+  }) async {
+    await _apiClient.putJson('/api/v1/workspaces/$wsId/boards/$boardId', {});
+  }
+
+  Future<void> restoreTaskBoard({
+    required String wsId,
+    required String boardId,
+  }) async {
+    await _apiClient.patchJson('/api/v1/workspaces/$wsId/boards/$boardId', {
+      'restore': true,
+    });
+  }
+
+  Future<void> permanentlyDeleteTaskBoard({
+    required String wsId,
+    required String boardId,
+  }) async {
+    await _apiClient.deleteJson('/api/v1/workspaces/$wsId/boards/$boardId');
   }
 
   Future<TaskEstimateBoard> updateBoardEstimation({
