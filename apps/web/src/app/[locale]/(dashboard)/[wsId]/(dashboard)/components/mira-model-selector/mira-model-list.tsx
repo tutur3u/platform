@@ -3,6 +3,7 @@
 import { Loader2 } from '@tuturuuu/icons';
 import { CommandGroup } from '@tuturuuu/ui/command';
 import { cn } from '@tuturuuu/utils/format';
+import { useEffect, useRef } from 'react';
 import { MiraModelListItem } from './mira-model-list-item';
 import type { MiraModelListProps } from './types';
 
@@ -21,6 +22,33 @@ export function MiraModelList({
   onToggleFavorite,
   pendingModelId,
 }: MiraModelListProps) {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    if (!onLoadMore || !hasNextPage || isFetchingNextPage) return;
+
+    const target = event.currentTarget;
+    const isNearBottom =
+      target.scrollTop + target.clientHeight >= target.scrollHeight - 24;
+
+    if (isNearBottom) {
+      onLoadMore();
+    }
+  };
+
+  useEffect(() => {
+    if (!onLoadMore || !hasNextPage || isFetchingNextPage) return;
+
+    const target = scrollContainerRef.current;
+    if (!target) return;
+
+    // Check if the content is not scrollable (doesn't overflow)
+    const isOverflowing = target.scrollHeight > target.clientHeight;
+    if (!isOverflowing && models.length > 0) {
+      onLoadMore();
+    }
+  }, [hasNextPage, isFetchingNextPage, models.length, onLoadMore]);
+
   const scrollContainerClassName = fillHeight
     ? 'min-h-0 flex-1 overflow-y-auto'
     : 'max-h-64 overflow-y-auto';
@@ -33,18 +61,9 @@ export function MiraModelList({
       )}
     >
       <div
+        ref={scrollContainerRef}
         className={cn('relative w-full min-w-0', scrollContainerClassName)}
-        onScroll={(event) => {
-          if (!onLoadMore || !hasNextPage || isFetchingNextPage) return;
-
-          const target = event.currentTarget;
-          const isNearBottom =
-            target.scrollTop + target.clientHeight >= target.scrollHeight - 24;
-
-          if (isNearBottom) {
-            onLoadMore();
-          }
-        }}
+        onScroll={handleScroll}
       >
         <CommandGroup
           className={cn(

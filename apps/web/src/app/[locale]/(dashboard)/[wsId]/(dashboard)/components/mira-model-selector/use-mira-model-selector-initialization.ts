@@ -41,14 +41,15 @@ export function useMiraModelSelectorInitialization({
   }, [deferredOpen, favoritesLoading, hasFavorites, setFavoritesOnly]);
 
   useEffect(() => {
-    if (!isAllModelsView || hasInitializedAllProviders.current) return;
+    if (!deferredOpen || !isAllModelsView || hasInitializedAllProviders.current)
+      return;
 
     const firstProvider = providerNames[0];
     if (!firstProvider) return;
 
     setExpandedProviders([firstProvider]);
     hasInitializedAllProviders.current = true;
-  }, [isAllModelsView, providerNames, setExpandedProviders]);
+  }, [deferredOpen, isAllModelsView, providerNames, setExpandedProviders]);
 
   useEffect(() => {
     const validProviders = new Set(providerNames);
