@@ -170,6 +170,10 @@ bun sb:start
 bun dev
 ```
 
+## Optional local Redis
+
+If you need a real Redis backend (e.g., to test rate limiting or Upstash clients) there is an optional stack under `apps/redis`. Run `bun redis:start` from the repo root to boot Redis + the Serverless Redis HTTP proxy and point `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` at `http://localhost:8079`/`example_token`. The platform normally falls back to memory-only storage, so this step is only required when you want container-backed persistence.
+
 ---
 
 ## Key Commands
@@ -193,6 +197,13 @@ bun dev
 | `bun sb:up` | Apply migrations locally |
 | `bun sb:reset` | Reset database to seed state |
 | `bun sb:typegen` | Generate TypeScript types from schema |
+
+### Local Redis
+
+| Command | Description |
+|---------|-------------|
+| `bun redis:start` | Start local Redis + Serverless Redis HTTP proxy |
+| `bun redis:stop` | Stop local Redis stack |
 
 ### Build & Test
 

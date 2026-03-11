@@ -124,6 +124,8 @@
     "sb:pull": "cd apps/database && bun sb:pull && bun sb:typegen",
     "sb:push": "cd apps/database && bun sb:push && bun sb:typegen",
     "sb:linkpush": "cd apps/database && bun sb:linkpush",
+    "redis:start": "cd apps/redis && bun redis:start",
+    "redis:stop": "cd apps/redis && bun redis:stop",
     "ui:add": "bun --filter ui ui:add",
     "ui:diff": "bun --filter ui ui:diff",
     "update-all": "bun ./scripts/package-update.js"
