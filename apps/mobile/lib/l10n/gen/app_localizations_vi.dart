@@ -510,6 +510,28 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailNoDate => 'Chưa đặt ngày';
 
   @override
+  String taskBoardDetailDueAt(String date) {
+    return 'Hạn $date';
+  }
+
+  @override
+  String taskBoardDetailStartsAt(String date) {
+    return 'Bắt đầu $date';
+  }
+
+  @override
+  String get taskBoardDetailOverdue => 'Quá hạn';
+
+  @override
+  String get taskBoardDetailToday => 'hôm nay';
+
+  @override
+  String get taskBoardDetailTomorrow => 'ngày mai';
+
+  @override
+  String get taskBoardDetailYesterday => 'hôm qua';
+
+  @override
   String get taskBoardDetailInvalidDateRange => 'Ngày kết thúc phải cùng hoặc sau ngày bắt đầu';
 
   @override

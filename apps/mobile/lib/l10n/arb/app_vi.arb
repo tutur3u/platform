@@ -213,6 +213,26 @@
     "taskBoardDetailTaskSelectProjects": "Chọn dự án",
     "taskBoardDetailNone": "Không có",
     "taskBoardDetailNoDate": "Chưa đặt ngày",
+    "taskBoardDetailDueAt": "Hạn {date}",
+    "@taskBoardDetailDueAt": {
+        "placeholders": {
+            "date": {
+                "type": "String"
+            }
+        }
+    },
+    "taskBoardDetailStartsAt": "Bắt đầu {date}",
+    "@taskBoardDetailStartsAt": {
+        "placeholders": {
+            "date": {
+                "type": "String"
+            }
+        }
+    },
+    "taskBoardDetailOverdue": "Quá hạn",
+    "taskBoardDetailToday": "hôm nay",
+    "taskBoardDetailTomorrow": "ngày mai",
+    "taskBoardDetailYesterday": "hôm qua",
     "taskBoardDetailInvalidDateRange": "Ngày kết thúc phải cùng hoặc sau ngày bắt đầu",
     "taskBoardDetailTaskSaved": "Đã cập nhật công việc.",
     "taskBoardDetailTaskCreated": "Đã tạo công việc.",

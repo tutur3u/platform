@@ -3,6 +3,7 @@ part of 'task_board_detail_page.dart';
 class _TaskBoardTaskDetailSheet extends StatefulWidget {
   const _TaskBoardTaskDetailSheet({
     required this.task,
+    required this.board,
     required this.lists,
     required this.labels,
     required this.members,
@@ -10,6 +11,7 @@ class _TaskBoardTaskDetailSheet extends StatefulWidget {
   });
 
   final TaskBoardTask task;
+  final TaskBoardDetail board;
   final List<TaskBoardList> lists;
   final List<TaskLabel> labels;
   final List<WorkspaceUserOption> members;
@@ -43,15 +45,6 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
               assignee.id.trim().isNotEmpty,
         )
         .toList(growable: false);
-    final labels = _task.labels
-        .map((label) => (label.name ?? label.id).trim())
-        .where((label) => label.isNotEmpty)
-        .toList(growable: false);
-    final projects = _task.projects
-        .map((project) => (project.name ?? project.id).trim())
-        .where((project) => project.isNotEmpty)
-        .toList(growable: false);
-
     return SafeArea(
       top: false,
       child: SingleChildScrollView(
@@ -74,17 +67,21 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
                     ),
                   ),
                 ),
-                shad.GhostButton(
-                  onPressed: _openTaskEditor,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.edit, size: 14),
-                      const shad.Gap(4),
-                      Text(context.l10n.taskBoardDetailEditTask),
-                    ],
+                Tooltip(
+                  message: context.l10n.taskBoardDetailEditTask,
+                  child: shad.IconButton.ghost(
+                    icon: const Icon(Icons.edit, size: 16),
+                    onPressed: _openTaskEditor,
                   ),
                 ),
+                if (widget.lists.length > 1)
+                  Tooltip(
+                    message: context.l10n.taskBoardDetailMoveTask,
+                    child: shad.IconButton.ghost(
+                      icon: const Icon(Icons.swap_horiz, size: 16),
+                      onPressed: _moveTask,
+                    ),
+                  ),
               ],
             ),
             const shad.Gap(16),
@@ -98,7 +95,7 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
             if (_task.priority?.trim().isNotEmpty == true) ...[
               _TaskBoardTaskDetailRow(
                 label: context.l10n.taskBoardDetailPriority,
-                value: _taskPriorityLabel(context, _task.priority),
+                child: _TaskPriorityChip(priority: _task.priority),
               ),
               const shad.Gap(12),
             ],
@@ -119,7 +116,14 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
             if (_task.estimationPoints != null) ...[
               _TaskBoardTaskDetailRow(
                 label: context.l10n.taskBoardDetailTaskEstimation,
-                value: _task.estimationPoints!.toString(),
+                child: shad.OutlineBadge(
+                  child: Text(
+                    _taskEstimationPointLabel(
+                      points: _task.estimationPoints!,
+                      board: widget.board,
+                    ),
+                  ),
+                ),
               ),
               const shad.Gap(12),
             ],
@@ -143,32 +147,36 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
               ),
               const shad.Gap(12),
             ],
-            if (labels.isNotEmpty) ...[
+            if (_task.labels.isNotEmpty) ...[
               _TaskBoardTaskDetailRow(
                 label: context.l10n.taskBoardDetailTaskLabels,
-                value: labels.join(', '),
-              ),
-              const shad.Gap(12),
-            ],
-            if (projects.isNotEmpty) ...[
-              _TaskBoardTaskDetailRow(
-                label: context.l10n.taskBoardDetailTaskProjects,
-                value: projects.join(', '),
-              ),
-              const shad.Gap(12),
-            ],
-            if (widget.lists.length > 1)
-              shad.OutlineButton(
-                onPressed: _moveTask,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.swap_horiz, size: 16),
-                    const shad.Gap(8),
-                    Text(context.l10n.taskBoardDetailMoveTask),
-                  ],
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _task.labels
+                      .map(_TaskLabelBadge.new)
+                      .toList(growable: false),
                 ),
               ),
+              const shad.Gap(12),
+            ],
+            if (_task.projects.isNotEmpty) ...[
+              _TaskBoardTaskDetailRow(
+                label: context.l10n.taskBoardDetailTaskProjects,
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _task.projects
+                      .map(
+                        (project) => _ProjectBadge(
+                          label: _taskProjectLabel(project),
+                        ),
+                      )
+                      .toList(growable: false),
+                ),
+              ),
+              const shad.Gap(12),
+            ],
           ],
         ),
       ),
@@ -181,6 +189,7 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
       value: cubit,
       child: _TaskBoardTaskEditorSheet(
         task: _task,
+        board: widget.board,
         lists: widget.lists,
         defaultListId: _task.listId,
         labels: widget.labels,

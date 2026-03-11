@@ -510,6 +510,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailNoDate => 'No date';
 
   @override
+  String taskBoardDetailDueAt(String date) {
+    return 'Due $date';
+  }
+
+  @override
+  String taskBoardDetailStartsAt(String date) {
+    return 'Starts $date';
+  }
+
+  @override
+  String get taskBoardDetailOverdue => 'Overdue';
+
+  @override
+  String get taskBoardDetailToday => 'today';
+
+  @override
+  String get taskBoardDetailTomorrow => 'tomorrow';
+
+  @override
+  String get taskBoardDetailYesterday => 'yesterday';
+
+  @override
   String get taskBoardDetailInvalidDateRange => 'End date must be on or after start date';
 
   @override

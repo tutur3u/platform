@@ -218,6 +218,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                                   sortedLists,
                                   filteredByList,
                                   state,
+                                  detail,
                                   bottomPadding,
                                 )
                               : _buildKanbanView(
@@ -225,6 +226,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                                   sortedLists,
                                   filteredByList,
                                   state,
+                                  detail,
                                   bottomPadding,
                                 ),
                         ),
@@ -268,6 +270,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
     List<TaskBoardList> lists,
     Map<String, List<TaskBoardTask>> tasksByList,
     TaskBoardDetailState state,
+    TaskBoardDetail board,
     double bottomPadding,
   ) {
     if (state.filteredTasks.isEmpty &&
@@ -293,6 +296,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
         final list = lists[index];
         final listTasks = tasksByList[list.id] ?? const <TaskBoardTask>[];
         return _BoardListSection(
+          board: board,
           list: list,
           tasks: listTasks,
           isExpanded: !_collapsedListIds.contains(list.id),
@@ -327,6 +331,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
     List<TaskBoardList> lists,
     Map<String, List<TaskBoardTask>> tasksByList,
     TaskBoardDetailState state,
+    TaskBoardDetail board,
     double bottomPadding,
   ) {
     if (state.filteredTasks.isEmpty &&
@@ -357,6 +362,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                   (list) => Padding(
                     padding: const EdgeInsets.only(right: 12),
                     child: _KanbanColumn(
+                      board: board,
                       list: list,
                       tasks: tasksByList[list.id] ?? const <TaskBoardTask>[],
                       onTaskTap: (task) => unawaited(
@@ -395,6 +401,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
       value: parentContext.read<TaskBoardDetailCubit>(),
       child: _TaskBoardTaskDetailSheet(
         task: task,
+        board: board,
         lists: lists,
         labels: board.labels,
         members: board.members,
@@ -440,6 +447,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
       value: parentContext.read<TaskBoardDetailCubit>(),
       child: _TaskBoardTaskEditorSheet(
         task: null,
+        board: board,
         lists: lists,
         defaultListId: normalizedDefaultListId,
         labels: board.labels,

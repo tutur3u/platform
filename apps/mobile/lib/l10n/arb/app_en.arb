@@ -213,6 +213,26 @@
     "taskBoardDetailTaskSelectProjects": "Select projects",
     "taskBoardDetailNone": "None",
     "taskBoardDetailNoDate": "No date",
+    "taskBoardDetailDueAt": "Due {date}",
+    "@taskBoardDetailDueAt": {
+        "placeholders": {
+            "date": {
+                "type": "String"
+            }
+        }
+    },
+    "taskBoardDetailStartsAt": "Starts {date}",
+    "@taskBoardDetailStartsAt": {
+        "placeholders": {
+            "date": {
+                "type": "String"
+            }
+        }
+    },
+    "taskBoardDetailOverdue": "Overdue",
+    "taskBoardDetailToday": "today",
+    "taskBoardDetailTomorrow": "tomorrow",
+    "taskBoardDetailYesterday": "yesterday",
     "taskBoardDetailInvalidDateRange": "End date must be on or after start date",
     "taskBoardDetailTaskSaved": "Task updated.",
     "taskBoardDetailTaskCreated": "Task created.",

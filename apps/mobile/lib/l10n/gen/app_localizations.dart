@@ -1045,6 +1045,42 @@ abstract class AppLocalizations {
   /// **'No date'**
   String get taskBoardDetailNoDate;
 
+  /// No description provided for @taskBoardDetailDueAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Due {date}'**
+  String taskBoardDetailDueAt(String date);
+
+  /// No description provided for @taskBoardDetailStartsAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts {date}'**
+  String taskBoardDetailStartsAt(String date);
+
+  /// No description provided for @taskBoardDetailOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue'**
+  String get taskBoardDetailOverdue;
+
+  /// No description provided for @taskBoardDetailToday.
+  ///
+  /// In en, this message translates to:
+  /// **'today'**
+  String get taskBoardDetailToday;
+
+  /// No description provided for @taskBoardDetailTomorrow.
+  ///
+  /// In en, this message translates to:
+  /// **'tomorrow'**
+  String get taskBoardDetailTomorrow;
+
+  /// No description provided for @taskBoardDetailYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'yesterday'**
+  String get taskBoardDetailYesterday;
+
   /// No description provided for @taskBoardDetailInvalidDateRange.
   ///
   /// In en, this message translates to:

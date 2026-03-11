@@ -3,6 +3,7 @@ part of 'task_board_detail_page.dart';
 class _TaskBoardTaskEditorSheet extends StatefulWidget {
   const _TaskBoardTaskEditorSheet({
     required this.task,
+    required this.board,
     required this.defaultListId,
     required this.lists,
     required this.labels,
@@ -11,6 +12,7 @@ class _TaskBoardTaskEditorSheet extends StatefulWidget {
   });
 
   final TaskBoardTask? task;
+  final TaskBoardDetail board;
   final String defaultListId;
   final List<TaskBoardList> lists;
   final List<TaskLabel> labels;
@@ -501,6 +503,11 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
       context: context,
       builder: (context) => _TaskEstimationPickerDialog(
         selectedValue: _estimationPoints?.toString(),
+        options: _taskEstimationOptions(widget.board),
+        mapValueLabel: (value) => _taskEstimationPointLabel(
+          points: value,
+          board: widget.board,
+        ),
       ),
     );
 
@@ -609,8 +616,12 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
   }
 
   String _estimationLabel(BuildContext context) {
-    return _estimationPoints?.toString() ??
-        context.l10n.taskBoardDetailTaskEstimationNone;
+    return _estimationPoints == null
+        ? context.l10n.taskBoardDetailTaskEstimationNone
+        : _taskEstimationPointLabel(
+            points: _estimationPoints!,
+            board: widget.board,
+          );
   }
 
   String _selectedAssigneesLabel(BuildContext context) {
@@ -882,7 +893,7 @@ class _TaskMultiSelectDialogState extends State<_TaskMultiSelectDialog> {
             const shad.Gap(8),
             shad.PrimaryButton(
               onPressed: () => Navigator.of(context).pop(_selectedIds),
-              child: Text(context.l10n.taskBoardDetailApplyFilters),
+              child: Text(context.l10n.taskBoardDetailStatusDone),
             ),
           ],
         ),
@@ -892,13 +903,22 @@ class _TaskMultiSelectDialogState extends State<_TaskMultiSelectDialog> {
 }
 
 class _TaskEstimationPickerDialog extends StatelessWidget {
-  const _TaskEstimationPickerDialog({required this.selectedValue});
+  const _TaskEstimationPickerDialog({
+    required this.selectedValue,
+    required this.options,
+    required this.mapValueLabel,
+  });
 
   final String? selectedValue;
+  final List<int> options;
+  final String Function(int value) mapValueLabel;
 
   @override
   Widget build(BuildContext context) {
-    final options = <String>['none', ...List.generate(9, (i) => '$i')];
+    final values = <String>[
+      'none',
+      ...options.map((value) => value.toString()),
+    ];
 
     return shad.AlertDialog(
       title: Text(context.l10n.taskBoardDetailTaskEstimation),
@@ -908,11 +928,11 @@ class _TaskEstimationPickerDialog extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              ...options.map((value) {
+              ...values.map((value) {
                 final isSelected = value == (selectedValue ?? 'none');
                 final label = value == 'none'
                     ? context.l10n.taskBoardDetailTaskEstimationNone
-                    : value;
+                    : mapValueLabel(int.parse(value));
 
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),

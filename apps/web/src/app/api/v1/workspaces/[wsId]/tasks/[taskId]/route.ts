@@ -44,6 +44,7 @@ type TaskPriority = Database['public']['Enums']['task_priority'];
 type TaskUpdate = Database['public']['Tables']['tasks']['Update'];
 type TaskRecord = {
   id: string;
+  display_number: number | null;
   name: string;
   description: string | null;
   priority: TaskPriority | null;
@@ -145,6 +146,7 @@ async function getWorkspaceTask(
     .select(
       `
       id,
+      display_number,
       name,
       description,
       priority,
@@ -220,6 +222,7 @@ function serializeTask(task: TaskRecord) {
 
   return {
     id: task.id,
+    display_number: task.display_number,
     name: task.name,
     description: task.description,
     priority: task.priority,

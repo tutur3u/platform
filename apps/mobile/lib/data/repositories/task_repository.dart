@@ -213,7 +213,17 @@ class TaskRepository {
       getTaskLabels(wsId),
       getWorkspaceUsers(wsId),
       getTaskProjects(wsId),
+      getTaskEstimateBoards(wsId),
     ]);
+
+    final estimateBoards = results[6] as List<TaskEstimateBoard>;
+    TaskEstimateBoard? boardEstimation;
+    for (final estimateBoard in estimateBoards) {
+      if (estimateBoard.id == boardId) {
+        boardEstimation = estimateBoard;
+        break;
+      }
+    }
 
     return (results[0] as TaskBoardDetail).copyWith(
       lists: results[1] as List<TaskBoardList>,
@@ -221,6 +231,10 @@ class TaskRepository {
       labels: results[3] as List<TaskLabel>,
       members: results[4] as List<WorkspaceUserOption>,
       projects: results[5] as List<TaskProjectSummary>,
+      estimationType: boardEstimation?.estimationType,
+      extendedEstimation: boardEstimation?.extendedEstimation ?? false,
+      allowZeroEstimates: boardEstimation?.allowZeroEstimates ?? true,
+      countUnestimatedIssues: boardEstimation?.countUnestimatedIssues ?? false,
     );
   }
 
@@ -448,6 +462,7 @@ class TaskRepository {
         wsId: targetBoard.wsId,
         name: targetBoard.name,
         icon: targetBoard.icon,
+        ticketPrefix: targetBoard.ticketPrefix,
         createdAt: targetBoard.createdAt,
         archivedAt: targetBoard.archivedAt,
         deletedAt: targetBoard.deletedAt,

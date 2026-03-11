@@ -124,6 +124,7 @@ export async function GET(
       .select(
         `
         id,
+        display_number,
         name,
         description,
         priority,
@@ -199,6 +200,7 @@ export async function GET(
     const tasks =
       data?.map((task) => ({
         id: task.id,
+        display_number: task.display_number,
         name: task.name,
         description: task.description,
         priority: task.priority,
@@ -423,6 +425,7 @@ export async function POST(
       .select(
         `
         id,
+        display_number,
         name,
         description,
         priority,
@@ -516,6 +519,7 @@ export async function POST(
     // Transform the data to match the expected format
     const task = {
       id: data.id,
+      display_number: data.display_number,
       name: data.name,
       description: data.description,
       priority: data.priority,

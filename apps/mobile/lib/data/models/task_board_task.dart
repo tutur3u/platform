@@ -100,6 +100,7 @@ class TaskBoardTask extends Equatable {
   const TaskBoardTask({
     required this.id,
     required this.listId,
+    this.displayNumber,
     this.name,
     this.description,
     this.priority,
@@ -137,6 +138,7 @@ class TaskBoardTask extends Equatable {
     return TaskBoardTask(
       id: rawId.trim(),
       listId: rawListId.trim(),
+      displayNumber: (json['display_number'] as num?)?.toInt(),
       name: (json['name'] as String?)?.trim(),
       description: (json['description'] as String?)?.trim(),
       priority: (json['priority'] as String?)?.trim(),
@@ -168,6 +170,7 @@ class TaskBoardTask extends Equatable {
 
   final String id;
   final String listId;
+  final int? displayNumber;
   final String? name;
   final String? description;
   final String? priority;
@@ -185,6 +188,7 @@ class TaskBoardTask extends Equatable {
   List<Object?> get props => [
     id,
     listId,
+    displayNumber,
     name,
     description,
     priority,
