@@ -130,8 +130,31 @@
     "taskBoardsFilterActive": "Đang hoạt động",
     "taskBoardsFilterArchived": "Đã lưu trữ",
     "taskBoardsFilterRecentlyDeleted": "Đã xóa gần đây",
-    "taskBoardsListsCount": "danh sách",
-    "taskBoardsTasksCount": "công việc",
+    "taskBoardsPageSize": "Kích thước trang",
+    "taskBoardsPageSizeOption": "{count} mục",
+    "@taskBoardsPageSizeOption": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "taskBoardsListsCount": "{count, plural, one{{count} danh sách} other{{count} danh sách}}",
+    "@taskBoardsListsCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "taskBoardsTasksCount": "{count, plural, one{{count} công việc} other{{count} công việc}}",
+    "@taskBoardsTasksCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "taskBoardsCreatedAt": "Đã tạo",
     "taskBoardsRecentlyDeleted": "Đã xóa gần đây",
     "taskBoardsDeleteConfirm": "Chuyển bảng này vào mục đã xóa gần đây?",

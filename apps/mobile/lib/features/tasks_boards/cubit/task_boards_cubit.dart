@@ -13,27 +13,33 @@ class TaskBoardsCubit extends Cubit<TaskBoardsState> {
   final TaskRepository _taskRepository;
   int _loadRequestToken = 0;
 
-  Future<void> loadBoards(String wsId) async {
+  Future<void> loadBoards(String wsId, {int? pageSize}) async {
     final requestToken = ++_loadRequestToken;
     final workspaceChanged = state.workspaceId != wsId;
+    final normalizedPageSize = (pageSize ?? state.pageSize).clamp(1, 200);
 
     emit(
       state.copyWith(
         status: TaskBoardsStatus.loading,
         workspaceId: wsId,
+        pageSize: normalizedPageSize,
         boards: workspaceChanged ? const [] : state.boards,
         clearError: true,
       ),
     );
 
     try {
-      final boards = await _taskRepository.getTaskBoards(wsId);
+      final boards = await _taskRepository.getTaskBoards(
+        wsId,
+        pageSize: normalizedPageSize,
+      );
       if (requestToken != _loadRequestToken) return;
 
       emit(
         state.copyWith(
           status: TaskBoardsStatus.loaded,
           workspaceId: wsId,
+          pageSize: normalizedPageSize,
           boards: boards,
           clearError: true,
         ),

@@ -1,6 +1,8 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Database } from '@tuturuuu/types';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
 interface Params {
   params: Promise<{
@@ -9,9 +11,20 @@ interface Params {
   }>;
 }
 
+const paramsSchema = z.object({
+  boardId: z.uuid(),
+});
+
 export async function PUT(req: Request, { params }: Params) {
+  const { wsId: id, boardId } = await params;
+  const parsedSchema = paramsSchema.safeParse({ boardId });
+  if (!parsedSchema.success) {
+    return NextResponse.json({ message: 'Invalid board ID' }, { status: 400 });
+  }
   const supabase = await createClient(req);
-  const { wsId, boardId: id } = await params;
+  const wsId = await normalizeWorkspaceId(id, supabase);
+
+  const { boardId: parsedBoardId } = parsedSchema.data;
 
   const {
     data: { user },
@@ -22,12 +35,19 @@ export async function PUT(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const { data: member } = await supabase
+  const { data: member, error: memberError } = await supabase
     .from('workspace_members')
     .select('user_id')
     .eq('ws_id', wsId)
     .eq('user_id', user.id)
     .maybeSingle();
+
+  if (memberError) {
+    return NextResponse.json(
+      { message: 'Failed to verify workspace access' },
+      { status: 500 }
+    );
+  }
 
   if (!member) {
     return NextResponse.json(
@@ -57,7 +77,7 @@ export async function PUT(req: Request, { params }: Params) {
   const { error } = await supabase
     .from('workspace_boards')
     .update(updateData)
-    .eq('id', id)
+    .eq('id', parsedBoardId)
     .eq('ws_id', wsId);
 
   if (error) {
@@ -72,8 +92,15 @@ export async function PUT(req: Request, { params }: Params) {
 }
 
 export async function DELETE(req: Request, { params }: Params) {
+  const { wsId: id, boardId } = await params;
+  const parsedSchema = paramsSchema.safeParse({ boardId });
+  if (!parsedSchema.success) {
+    return NextResponse.json({ message: 'Invalid board ID' }, { status: 400 });
+  }
   const supabase = await createClient(req);
-  const { wsId, boardId: id } = await params;
+  const wsId = await normalizeWorkspaceId(id, supabase);
+
+  const { boardId: parsedBoardId } = parsedSchema.data;
 
   const {
     data: { user },
@@ -84,12 +111,19 @@ export async function DELETE(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const { data: member } = await supabase
+  const { data: member, error: memberError } = await supabase
     .from('workspace_members')
     .select('user_id')
     .eq('ws_id', wsId)
     .eq('user_id', user.id)
     .maybeSingle();
+
+  if (memberError) {
+    return NextResponse.json(
+      { message: 'Failed to verify workspace access' },
+      { status: 500 }
+    );
+  }
 
   if (!member) {
     return NextResponse.json(
@@ -101,7 +135,7 @@ export async function DELETE(req: Request, { params }: Params) {
   const { error } = await supabase
     .from('workspace_boards')
     .delete()
-    .eq('id', id)
+    .eq('id', parsedBoardId)
     .eq('ws_id', wsId);
 
   if (error) {

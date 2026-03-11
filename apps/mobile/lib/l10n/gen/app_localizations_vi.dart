@@ -334,10 +334,34 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardsFilterRecentlyDeleted => 'Đã xóa gần đây';
 
   @override
-  String get taskBoardsListsCount => 'danh sách';
+  String get taskBoardsPageSize => 'Kích thước trang';
 
   @override
-  String get taskBoardsTasksCount => 'công việc';
+  String taskBoardsPageSizeOption(int count) {
+    return '$count mục';
+  }
+
+  @override
+  String taskBoardsListsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count danh sách',
+      one: '$count danh sách',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String taskBoardsTasksCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count công việc',
+      one: '$count công việc',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get taskBoardsCreatedAt => 'Đã tạo';

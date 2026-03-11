@@ -130,8 +130,31 @@
     "taskBoardsFilterActive": "Active",
     "taskBoardsFilterArchived": "Archived",
     "taskBoardsFilterRecentlyDeleted": "Recently deleted",
-    "taskBoardsListsCount": "lists",
-    "taskBoardsTasksCount": "tasks",
+    "taskBoardsPageSize": "Page size",
+    "taskBoardsPageSizeOption": "{count} items",
+    "@taskBoardsPageSizeOption": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "taskBoardsListsCount": "{count, plural, one{{count} list} other{{count} lists}}",
+    "@taskBoardsListsCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "taskBoardsTasksCount": "{count, plural, one{{count} task} other{{count} tasks}}",
+    "@taskBoardsTasksCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "taskBoardsCreatedAt": "Created",
     "taskBoardsRecentlyDeleted": "Recently deleted",
     "taskBoardsDeleteConfirm": "Move this board to recently deleted?",

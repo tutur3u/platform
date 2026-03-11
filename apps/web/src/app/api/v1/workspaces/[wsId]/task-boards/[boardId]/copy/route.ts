@@ -1,5 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Database } from '@tuturuuu/types';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -22,11 +23,31 @@ interface Params {
 
 export async function POST(req: Request, { params }: Params) {
   try {
-    const { wsId, boardId } = paramsSchema.parse(await params);
-    const { targetWorkspaceId, newBoardName } = copySchema.parse(
-      await req.json()
-    );
+    const { wsId: id, boardId } = await params;
+
+    const parsedParams = paramsSchema.safeParse({ boardId });
+
+    if (!parsedParams.success) {
+      return NextResponse.json(
+        { error: 'Invalid URL parameters' },
+        { status: 400 }
+      );
+    }
+
+    const parsedData = copySchema.safeParse(await req.json());
+
+    if (!parsedData.success) {
+      return NextResponse.json(
+        { error: 'Invalid request data' },
+        { status: 400 }
+      );
+    }
+
+    const { targetWorkspaceId, newBoardName } = parsedData.data;
+    const { boardId: parsedBoardId } = parsedParams.data;
+
     const supabase = await createClient(req);
+    const wsId = await normalizeWorkspaceId(id, supabase);
 
     if (targetWorkspaceId !== wsId) {
       return NextResponse.json(
@@ -85,7 +106,7 @@ export async function POST(req: Request, { params }: Params) {
         )
       `
       )
-      .eq('id', boardId)
+      .eq('id', parsedBoardId)
       .eq('ws_id', wsId)
       .is('deleted_at', null)
       .single();
@@ -124,7 +145,17 @@ export async function POST(req: Request, { params }: Params) {
 
     const newBoardId = createdBoard.id;
 
-    await supabase.from('task_lists').delete().eq('board_id', newBoardId);
+    const { error: deleteError } = await supabase
+      .from('task_lists')
+      .delete()
+      .eq('board_id', newBoardId);
+
+    if (deleteError) {
+      console.warn(
+        `Warning: Could not delete auto-created lists for copied board ${newBoardId}:`,
+        deleteError
+      );
+    }
 
     if (sourceBoard.task_lists && sourceBoard.task_lists.length > 0) {
       const nonDeletedLists = sourceBoard.task_lists.filter(
@@ -132,7 +163,7 @@ export async function POST(req: Request, { params }: Params) {
       );
 
       let hasClosedList = false;
-      const listsToCreate = nonDeletedLists.map((list) => {
+      const listsToCreate = nonDeletedLists.map((list, index) => {
         let status = list.status;
         if (list.status === 'closed') {
           if (hasClosedList) {
@@ -141,6 +172,8 @@ export async function POST(req: Request, { params }: Params) {
             hasClosedList = true;
           }
         }
+
+        const createdAt = new Date(Date.now() + index).toISOString();
 
         return {
           name: list.name,
@@ -151,14 +184,15 @@ export async function POST(req: Request, { params }: Params) {
           position: list.position,
           archived: list.archived || false,
           deleted: false,
-          created_at: new Date().toISOString(),
+          created_at: createdAt,
         };
       });
 
       const { data: createdLists, error: listsError } = await supabase
         .from('task_lists')
         .insert(listsToCreate)
-        .select('id');
+        .select('id, created_at')
+        .order('created_at', { ascending: true });
 
       if (listsError || !createdLists) {
         return NextResponse.json(
@@ -215,7 +249,8 @@ export async function POST(req: Request, { params }: Params) {
       boardId: newBoardId,
       boardName: createdBoard.name,
     });
-  } catch {
+  } catch (error) {
+    console.error('Error copying board:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

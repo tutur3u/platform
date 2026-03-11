@@ -733,17 +733,29 @@ abstract class AppLocalizations {
   /// **'Recently deleted'**
   String get taskBoardsFilterRecentlyDeleted;
 
+  /// No description provided for @taskBoardsPageSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Page size'**
+  String get taskBoardsPageSize;
+
+  /// No description provided for @taskBoardsPageSizeOption.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} items'**
+  String taskBoardsPageSizeOption(int count);
+
   /// No description provided for @taskBoardsListsCount.
   ///
   /// In en, this message translates to:
-  /// **'lists'**
-  String get taskBoardsListsCount;
+  /// **'{count, plural, one{{count} list} other{{count} lists}}'**
+  String taskBoardsListsCount(int count);
 
   /// No description provided for @taskBoardsTasksCount.
   ///
   /// In en, this message translates to:
-  /// **'tasks'**
-  String get taskBoardsTasksCount;
+  /// **'{count, plural, one{{count} task} other{{count} tasks}}'**
+  String taskBoardsTasksCount(int count);
 
   /// No description provided for @taskBoardsCreatedAt.
   ///

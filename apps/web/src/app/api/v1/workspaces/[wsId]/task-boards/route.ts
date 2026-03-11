@@ -1,11 +1,8 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Database } from '@tuturuuu/types';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-
-const paramsSchema = z.object({
-  wsId: z.string().uuid(),
-});
 
 const createBoardSchema = z.object({
   name: z.string().trim().min(1).max(255).optional(),
@@ -21,8 +18,9 @@ interface Params {
 
 export async function GET(req: Request, { params }: Params) {
   try {
-    const { wsId } = paramsSchema.parse(await params);
+    const { wsId: id } = await params;
     const supabase = await createClient(req);
+    const wsId = await normalizeWorkspaceId(id, supabase);
 
     const {
       data: { user },
@@ -33,12 +31,19 @@ export async function GET(req: Request, { params }: Params) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: member } = await supabase
+    const { data: member, error: memberError } = await supabase
       .from('workspace_members')
       .select('user_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
       .maybeSingle();
+
+    if (memberError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
 
     if (!member) {
       return NextResponse.json(
@@ -62,7 +67,14 @@ export async function GET(req: Request, { params }: Params) {
     }
 
     return NextResponse.json({ boards: data ?? [] });
-  } catch {
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid request parameters' },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -72,8 +84,9 @@ export async function GET(req: Request, { params }: Params) {
 
 export async function POST(req: Request, { params }: Params) {
   try {
-    const { wsId } = paramsSchema.parse(await params);
+    const { wsId: id } = await params;
     const supabase = await createClient(req);
+    const wsId = await normalizeWorkspaceId(id, supabase);
 
     const {
       data: { user },
@@ -84,12 +97,19 @@ export async function POST(req: Request, { params }: Params) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: member } = await supabase
+    const { data: member, error: memberError } = await supabase
       .from('workspace_members')
       .select('user_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
       .maybeSingle();
+
+    if (memberError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
 
     if (!member) {
       return NextResponse.json(
@@ -127,7 +147,14 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     return NextResponse.json({ board: data }, { status: 201 });
-  } catch {
+  } catch (error) {
+    if (error instanceof z.ZodError || error instanceof SyntaxError) {
+      return NextResponse.json(
+        { error: 'Invalid request payload' },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -14,6 +14,21 @@ class TaskBoardSummary extends Equatable {
   });
 
   factory TaskBoardSummary.fromJson(Map<String, dynamic> json) {
+    final rawId = json['id'];
+    if (rawId is! String || rawId.trim().isEmpty) {
+      throw const FormatException(
+        'TaskBoardSummary.fromJson: required field "id" is missing or invalid',
+      );
+    }
+
+    final rawWorkspaceId = json['ws_id'];
+    if (rawWorkspaceId is! String || rawWorkspaceId.trim().isEmpty) {
+      throw const FormatException(
+        'TaskBoardSummary.fromJson: required field "ws_id" is missing '
+        'or invalid',
+      );
+    }
+
     final taskLists = json['task_lists'] as List<dynamic>? ?? const [];
     final computedTaskCount = taskLists
         .whereType<Map<String, dynamic>>()
@@ -21,8 +36,8 @@ class TaskBoardSummary extends Equatable {
         .fold<int>(0, (acc, count) => acc + count);
 
     return TaskBoardSummary(
-      id: json['id'] as String,
-      wsId: json['ws_id'] as String,
+      id: rawId.trim(),
+      wsId: rawWorkspaceId.trim(),
       name: (json['name'] as String?)?.trim().isNotEmpty == true
           ? (json['name'] as String).trim()
           : null,

@@ -21,6 +21,10 @@ import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:mobile/widgets/fab/fab_action.dart';
 import 'package:mobile/widgets/fab/speed_dial_fab.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+import 'package:shared_preferences/shared_preferences.dart';
+
+part 'task_boards_cards.dart';
+part 'task_boards_states.dart';
 
 class TaskBoardsView extends StatefulWidget {
   const TaskBoardsView({
@@ -36,17 +40,22 @@ class TaskBoardsView extends StatefulWidget {
 
 class _TaskBoardsViewState extends State<TaskBoardsView> {
   static const double _fabContentBottomPadding = 96;
+  static const String _pageSizePreferenceKey = 'task_boards_page_size';
+  static const List<int> _pageSizeOptions = [20, 50, 100, 200];
 
   late final WorkspacePermissionsRepository _permissionsRepository;
   String? _permissionsWorkspaceId;
   bool _canManageProjects = false;
   bool _isCheckingPermissions = false;
+  bool _permissionsLoadFailed = false;
+  int _pageSize = 20;
 
   @override
   void initState() {
     super.initState();
     _permissionsRepository =
         widget.permissionsRepository ?? WorkspacePermissionsRepository();
+    unawaited(_loadPageSizePreference());
   }
 
   @override
@@ -96,6 +105,13 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
                 );
               },
             ),
+            Tooltip(
+              message: '${l10n.taskBoardsPageSize}: $_pageSize',
+              child: shad.IconButton.ghost(
+                icon: const Icon(shad.LucideIcons.listOrdered),
+                onPressed: () => _showPageSizeMenu(context),
+              ),
+            ),
           ],
         ),
       ],
@@ -103,10 +119,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
         listenWhen: (prev, curr) =>
             prev.currentWorkspace?.id != curr.currentWorkspace?.id,
         listener: (context, state) {
-          final wsId = state.currentWorkspace?.id;
-          if (wsId != null) {
-            unawaited(context.read<TaskBoardsCubit>().loadBoards(wsId));
-          }
+          unawaited(_loadPermissions());
         },
         child: Stack(
           children: [
@@ -132,6 +145,12 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
   Widget _buildContent(BuildContext context) {
     if (_isCheckingPermissions) {
       return const Center(child: shad.CircularProgressIndicator());
+    }
+    if (_permissionsLoadFailed) {
+      return _ErrorView(
+        error: context.l10n.commonSomethingWentWrong,
+        onRetry: _loadPermissions,
+      );
     }
     if (!_canManageProjects) {
       return _AccessDeniedView(
@@ -161,6 +180,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
           child: RefreshIndicator(
             onRefresh: _reload,
             child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
               padding: EdgeInsets.fromLTRB(16, 12, 16, bottomPadding),
               children: [
                 if (state.filteredBoards.isEmpty)
@@ -202,6 +222,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
       setState(() {
         _canManageProjects = false;
         _isCheckingPermissions = false;
+        _permissionsLoadFailed = false;
       });
       return;
     }
@@ -211,15 +232,28 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
         wsId: wsId,
       );
       if (!_canUpdatePermissionsState(capturedWsId)) return;
+      final canManageProjects = permissions.containsPermission(
+        'manage_projects',
+      );
       setState(() {
-        _canManageProjects = permissions.containsPermission('manage_projects');
+        _canManageProjects = canManageProjects;
         _isCheckingPermissions = false;
+        _permissionsLoadFailed = false;
       });
+
+      if (canManageProjects && mounted) {
+        unawaited(
+          context.read<TaskBoardsCubit>().loadBoards(
+            wsId,
+            pageSize: _pageSize,
+          ),
+        );
+      }
     } on Exception {
       if (!_canUpdatePermissionsState(capturedWsId)) return;
       setState(() {
-        _canManageProjects = false;
         _isCheckingPermissions = false;
+        _permissionsLoadFailed = true;
       });
     }
   }
@@ -235,9 +269,55 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
   }
 
   Future<void> _reload() async {
+    if (_permissionsLoadFailed) {
+      await _loadPermissions();
+      return;
+    }
+    if (!_canManageProjects) return;
+
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
-    await context.read<TaskBoardsCubit>().loadBoards(wsId);
+    await context.read<TaskBoardsCubit>().loadBoards(wsId, pageSize: _pageSize);
+  }
+
+  Future<void> _loadPageSizePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    final storedPageSize = prefs.getInt(_pageSizePreferenceKey) ?? 20;
+    final normalizedPageSize = storedPageSize.clamp(20, 200);
+
+    if (!mounted) return;
+    if (_pageSize == normalizedPageSize) return;
+
+    setState(() => _pageSize = normalizedPageSize);
+
+    if (!_canManageProjects || _permissionsLoadFailed) return;
+
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    if (wsId == null) return;
+    unawaited(
+      context.read<TaskBoardsCubit>().loadBoards(wsId, pageSize: _pageSize),
+    );
+  }
+
+  Future<void> _setPageSize(int newPageSize) async {
+    final normalizedPageSize = newPageSize.clamp(20, 200);
+    if (_pageSize == normalizedPageSize) return;
+
+    final taskBoardsCubit = context.read<TaskBoardsCubit>();
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+
+    setState(() => _pageSize = normalizedPageSize);
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_pageSizePreferenceKey, normalizedPageSize);
+    if (!mounted) return;
+
+    if (!_canManageProjects || _permissionsLoadFailed) return;
+    if (wsId == null) return;
+    await taskBoardsCubit.loadBoards(
+      wsId,
+      pageSize: normalizedPageSize,
+    );
   }
 
   Future<void> _openCreateBoard() async {
@@ -328,6 +408,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
   Future<void> _deleteBoard(TaskBoardSummary board) async {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
+    final successMessage = context.l10n.taskBoardsDeleted;
 
     final toastContext = Navigator.of(context, rootNavigator: true).context;
     final deleted =
@@ -350,7 +431,8 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
         false;
 
     if (deleted && mounted) {
-      _showSuccessToast(context.l10n.taskBoardsDeleted);
+      if (!toastContext.mounted) return;
+      _showSuccessToast(toastContext, successMessage);
     }
   }
 
@@ -369,6 +451,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
   Future<void> _deleteBoardForever(TaskBoardSummary board) async {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
+    final successMessage = context.l10n.taskBoardsDeletedForever;
 
     final toastContext = Navigator.of(context, rootNavigator: true).context;
     final deleted =
@@ -391,7 +474,8 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
         false;
 
     if (deleted && mounted) {
-      _showSuccessToast(context.l10n.taskBoardsDeletedForever);
+      if (!toastContext.mounted) return;
+      _showSuccessToast(toastContext, successMessage);
     }
   }
 
@@ -399,28 +483,31 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
     Future<void> Function() action, {
     required String successMessage,
   }) async {
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
+    final fallbackErrorMessage = context.l10n.commonSomethingWentWrong;
     try {
       await action();
       if (mounted) {
-        _showSuccessToast(successMessage);
+        if (!toastContext.mounted) return;
+        _showSuccessToast(toastContext, successMessage);
       }
     } on ApiException catch (error) {
       if (mounted) {
+        if (!toastContext.mounted) return;
         _showErrorToast(
-          error.message.trim().isEmpty
-              ? context.l10n.commonSomethingWentWrong
-              : error.message,
+          toastContext,
+          error.message.trim().isEmpty ? fallbackErrorMessage : error.message,
         );
       }
     } on Exception {
       if (mounted) {
-        _showErrorToast(context.l10n.commonSomethingWentWrong);
+        if (!toastContext.mounted) return;
+        _showErrorToast(toastContext, fallbackErrorMessage);
       }
     }
   }
 
-  void _showSuccessToast(String message) {
-    final toastContext = Navigator.of(context, rootNavigator: true).context;
+  void _showSuccessToast(BuildContext toastContext, String message) {
     if (!toastContext.mounted) return;
     shad.showToast(
       context: toastContext,
@@ -428,8 +515,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
     );
   }
 
-  void _showErrorToast(String message) {
-    final toastContext = Navigator.of(context, rootNavigator: true).context;
+  void _showErrorToast(BuildContext toastContext, String message) {
     if (!toastContext.mounted) return;
     shad.showToast(
       context: toastContext,
@@ -441,6 +527,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
   String _filterLabel(BuildContext context, TaskBoardsFilter filter) {
     final l10n = context.l10n;
     return switch (filter) {
+      TaskBoardsFilter.all => l10n.taskBoardsFilterAll,
       TaskBoardsFilter.active => l10n.taskBoardsFilterActive,
       TaskBoardsFilter.archived => l10n.taskBoardsFilterArchived,
       TaskBoardsFilter.recentlyDeleted => l10n.taskBoardsFilterRecentlyDeleted,
@@ -453,6 +540,11 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
       builder: (context) {
         return shad.DropdownMenu(
           children: [
+            _buildFilterMenuButton(
+              context: context,
+              selected: selected,
+              filter: TaskBoardsFilter.all,
+            ),
             _buildFilterMenuButton(
               context: context,
               selected: selected,
@@ -474,274 +566,43 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
     );
   }
 
+  void _showPageSizeMenu(BuildContext context) {
+    shad.showDropdown<void>(
+      context: context,
+      builder: (context) => shad.DropdownMenu(
+        children: _pageSizeOptions
+            .map(
+              (option) => shad.MenuButton(
+                leading: _pageSize == option
+                    ? const Icon(Icons.check, size: 16)
+                    : const SizedBox(width: 16, height: 16),
+                onPressed: (context) {
+                  unawaited(_setPageSize(option));
+                },
+                child: Text(
+                  context.l10n.taskBoardsPageSizeOption(option),
+                ),
+              ),
+            )
+            .toList(growable: false),
+      ),
+    );
+  }
+
   shad.MenuButton _buildFilterMenuButton({
     required BuildContext context,
     required TaskBoardsFilter selected,
     required TaskBoardsFilter filter,
   }) {
+    final cubit = this.context.read<TaskBoardsCubit>();
     return shad.MenuButton(
       leading: selected == filter
           ? const Icon(Icons.check, size: 16)
           : const SizedBox(width: 16, height: 16),
-      onPressed: (context) {
-        context.read<TaskBoardsCubit>().setFilter(filter);
+      onPressed: (_) {
+        cubit.setFilter(filter);
       },
       child: Text(_filterLabel(context, filter)),
-    );
-  }
-}
-
-class _TaskBoardCard extends StatelessWidget {
-  const _TaskBoardCard({
-    required this.board,
-    required this.onTap,
-    required this.onEdit,
-    required this.onDuplicate,
-    required this.onArchive,
-    required this.onUnarchive,
-    required this.onDelete,
-    required this.onRestore,
-    required this.onDeleteForever,
-  });
-
-  final TaskBoardSummary board;
-  final VoidCallback onTap;
-  final VoidCallback onEdit;
-  final VoidCallback onDuplicate;
-  final VoidCallback onArchive;
-  final VoidCallback onUnarchive;
-  final VoidCallback onDelete;
-  final VoidCallback onRestore;
-  final VoidCallback onDeleteForever;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final createdLabel = board.createdAt == null
-        ? '-'
-        : DateFormat.yMMMd().format(board.createdAt!);
-    final boardCounts =
-        '${board.listCount} ${context.l10n.taskBoardsListsCount} • '
-        '${board.taskCount} ${context.l10n.taskBoardsTasksCount}';
-
-    return shad.Card(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(resolvePlatformIcon(board.icon), size: 20),
-                  const shad.Gap(8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          board.name ?? context.l10n.taskEstimatesUnnamedBoard,
-                          style: theme.typography.large.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const shad.Gap(4),
-                        Text(
-                          boardCounts,
-                          style: theme.typography.textSmall.copyWith(
-                            color: theme.colorScheme.mutedForeground,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  shad.IconButton.ghost(
-                    icon: const Icon(Icons.more_horiz),
-                    onPressed: () => _showActionMenu(context),
-                  ),
-                ],
-              ),
-              const shad.Gap(10),
-              Text(
-                '${context.l10n.taskBoardsCreatedAt}: $createdLabel',
-                style: theme.typography.textSmall.copyWith(
-                  color: theme.colorScheme.mutedForeground,
-                ),
-              ),
-              if (board.isArchived) ...[
-                const shad.Gap(8),
-                shad.OutlineBadge(child: Text(context.l10n.taskBoardsArchived)),
-              ],
-              if (board.isRecentlyDeleted) ...[
-                const shad.Gap(8),
-                shad.OutlineBadge(
-                  child: Text(context.l10n.taskBoardsRecentlyDeleted),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showActionMenu(BuildContext context) {
-    shad.showDropdown<void>(
-      context: context,
-      builder: (context) => shad.DropdownMenu(children: _menuButtons(context)),
-    );
-  }
-
-  List<shad.MenuItem> _menuButtons(BuildContext context) {
-    if (board.isRecentlyDeleted) {
-      return [
-        shad.MenuButton(
-          onPressed: (context) => onRestore(),
-          child: Text(context.l10n.taskBoardsRestore),
-        ),
-        shad.MenuButton(
-          onPressed: (context) => onDeleteForever(),
-          child: Text(context.l10n.taskBoardsDeleteForever),
-        ),
-      ];
-    }
-
-    if (board.isArchived) {
-      return [
-        shad.MenuButton(
-          onPressed: (context) => onUnarchive(),
-          child: Text(context.l10n.taskBoardsUnarchive),
-        ),
-        shad.MenuButton(
-          onPressed: (context) => onDelete(),
-          child: Text(context.l10n.taskBoardsDelete),
-        ),
-      ];
-    }
-
-    return [
-      shad.MenuButton(
-        onPressed: (context) => onEdit(),
-        child: Text(context.l10n.taskBoardsEdit),
-      ),
-      shad.MenuButton(
-        onPressed: (context) => onDuplicate(),
-        child: Text(context.l10n.taskBoardsDuplicate),
-      ),
-      shad.MenuButton(
-        onPressed: (context) => onArchive(),
-        child: Text(context.l10n.taskBoardsArchive),
-      ),
-      shad.MenuButton(
-        onPressed: (context) => onDelete(),
-        child: Text(context.l10n.taskBoardsDelete),
-      ),
-    ];
-  }
-}
-
-class _EmptyView extends StatelessWidget {
-  const _EmptyView({required this.filter});
-
-  final TaskBoardsFilter filter;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final title = switch (filter) {
-      TaskBoardsFilter.active => l10n.taskBoardsEmptyTitle,
-      TaskBoardsFilter.archived => l10n.taskBoardsEmptyArchivedTitle,
-      TaskBoardsFilter.recentlyDeleted => l10n.taskBoardsEmptyDeletedTitle,
-    };
-    final description = switch (filter) {
-      TaskBoardsFilter.active => l10n.taskBoardsEmptyDescription,
-      TaskBoardsFilter.archived => l10n.taskBoardsEmptyArchivedDescription,
-      TaskBoardsFilter.recentlyDeleted =>
-        l10n.taskBoardsEmptyDeletedDescription,
-    };
-
-    return shad.Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Icon(
-              Icons.view_kanban_outlined,
-              size: 40,
-              color: shad.Theme.of(context).colorScheme.mutedForeground,
-            ),
-            const shad.Gap(10),
-            Text(title, textAlign: TextAlign.center),
-            const shad.Gap(4),
-            Text(
-              description,
-              textAlign: TextAlign.center,
-              style: shad.Theme.of(context).typography.textMuted,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _AccessDeniedView extends StatelessWidget {
-  const _AccessDeniedView({
-    required this.title,
-    required this.description,
-  });
-
-  final String title;
-  final String description;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.lock_outline, size: 48),
-            const shad.Gap(12),
-            Text(title, textAlign: TextAlign.center),
-            const shad.Gap(6),
-            Text(description, textAlign: TextAlign.center),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ErrorView extends StatelessWidget {
-  const _ErrorView({required this.onRetry, this.error});
-
-  final String? error;
-  final Future<void> Function() onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.error_outline, size: 48),
-          const shad.Gap(12),
-          Text(
-            error ?? context.l10n.taskBoardsLoadError,
-            textAlign: TextAlign.center,
-          ),
-          const shad.Gap(12),
-          shad.OutlineButton(
-            onPressed: () => unawaited(onRetry()),
-            child: Text(context.l10n.commonRetry),
-          ),
-        ],
-      ),
     );
   }
 }

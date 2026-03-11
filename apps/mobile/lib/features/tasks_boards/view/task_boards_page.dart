@@ -1,12 +1,9 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/features/tasks_boards/cubit/task_boards_cubit.dart';
 import 'package:mobile/features/tasks_boards/view/task_boards_view.dart';
-import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 
 class TaskBoardsPage extends StatelessWidget {
   const TaskBoardsPage({
@@ -23,20 +20,8 @@ class TaskBoardsPage extends StatelessWidget {
     return RepositoryProvider<TaskRepository>(
       create: (_) => taskRepository ?? TaskRepository(),
       child: BlocProvider(
-        create: (context) {
-          final cubit = TaskBoardsCubit(
-            taskRepository: context.read<TaskRepository>(),
-          );
-          final wsId = context
-              .read<WorkspaceCubit>()
-              .state
-              .currentWorkspace
-              ?.id;
-          if (wsId != null) {
-            unawaited(cubit.loadBoards(wsId));
-          }
-          return cubit;
-        },
+        create: (context) =>
+            TaskBoardsCubit(taskRepository: context.read<TaskRepository>()),
         child: TaskBoardsView(permissionsRepository: permissionsRepository),
       ),
     );

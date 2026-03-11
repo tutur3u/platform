@@ -97,16 +97,34 @@ class TaskRepository {
         .toList(growable: false);
   }
 
-  Future<List<TaskBoardSummary>> getTaskBoards(String wsId) async {
-    final response = await _apiClient.getJson(
-      '/api/v1/workspaces/$wsId/boards-data?page=1&pageSize=200',
-    );
-    final boardsData = response['data'] as List<dynamic>? ?? const [];
+  Future<List<TaskBoardSummary>> getTaskBoards(
+    String wsId, {
+    int pageSize = 20,
+  }) async {
+    final normalizedPageSize = pageSize.clamp(1, 200);
+    var page = 1;
+    final boards = <TaskBoardSummary>[];
 
-    return boardsData
-        .whereType<Map<String, dynamic>>()
-        .map(TaskBoardSummary.fromJson)
-        .toList(growable: false);
+    while (true) {
+      final response = await _apiClient.getJson(
+        '/api/v1/workspaces/$wsId/boards-data?page=$page&pageSize=$normalizedPageSize',
+      );
+      final boardsData = response['data'] as List<dynamic>? ?? const [];
+      final pageBoards = boardsData
+          .whereType<Map<String, dynamic>>()
+          .map(TaskBoardSummary.fromJson)
+          .toList(growable: false);
+
+      boards.addAll(pageBoards);
+
+      if (boardsData.isEmpty || boardsData.length < normalizedPageSize) {
+        break;
+      }
+
+      page += 1;
+    }
+
+    return List.unmodifiable(boards);
   }
 
   Future<void> createTaskBoard({

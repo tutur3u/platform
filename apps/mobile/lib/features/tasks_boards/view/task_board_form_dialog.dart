@@ -96,8 +96,9 @@ class _TaskBoardFormDialogState extends State<TaskBoardFormDialog> {
   void _submit() {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
+      final toastContext = Navigator.of(context, rootNavigator: true).context;
       shad.showToast(
-        context: context,
+        context: toastContext,
         builder: (context, overlay) => shad.Alert.destructive(
           content: Text(context.l10n.taskBoardsNameRequired),
         ),

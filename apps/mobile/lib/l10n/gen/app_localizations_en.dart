@@ -334,10 +334,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardsFilterRecentlyDeleted => 'Recently deleted';
 
   @override
-  String get taskBoardsListsCount => 'lists';
+  String get taskBoardsPageSize => 'Page size';
 
   @override
-  String get taskBoardsTasksCount => 'tasks';
+  String taskBoardsPageSizeOption(int count) {
+    return '$count items';
+  }
+
+  @override
+  String taskBoardsListsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count lists',
+      one: '$count list',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String taskBoardsTasksCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tasks',
+      one: '$count task',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get taskBoardsCreatedAt => 'Created';

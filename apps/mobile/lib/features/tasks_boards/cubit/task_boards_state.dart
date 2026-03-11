@@ -4,14 +4,15 @@ const _taskBoardsSentinel = Object();
 
 enum TaskBoardsStatus { initial, loading, loaded, mutating, error }
 
-enum TaskBoardsFilter { active, archived, recentlyDeleted }
+enum TaskBoardsFilter { all, active, archived, recentlyDeleted }
 
 class TaskBoardsState extends Equatable {
   const TaskBoardsState({
     this.status = TaskBoardsStatus.initial,
     this.workspaceId,
     this.boards = const <TaskBoardSummary>[],
-    this.filter = TaskBoardsFilter.active,
+    this.filter = TaskBoardsFilter.all,
+    this.pageSize = 20,
     this.error,
   });
 
@@ -19,10 +20,13 @@ class TaskBoardsState extends Equatable {
   final String? workspaceId;
   final List<TaskBoardSummary> boards;
   final TaskBoardsFilter filter;
+  final int pageSize;
   final String? error;
 
   List<TaskBoardSummary> get filteredBoards {
     switch (filter) {
+      case TaskBoardsFilter.all:
+        return List<TaskBoardSummary>.unmodifiable(boards);
       case TaskBoardsFilter.active:
         return boards
             .where((board) => !board.isArchived && !board.isRecentlyDeleted)
@@ -43,6 +47,7 @@ class TaskBoardsState extends Equatable {
     Object? workspaceId = _taskBoardsSentinel,
     List<TaskBoardSummary>? boards,
     TaskBoardsFilter? filter,
+    int? pageSize,
     Object? error = _taskBoardsSentinel,
     bool clearError = false,
   }) {
@@ -53,6 +58,7 @@ class TaskBoardsState extends Equatable {
           : workspaceId as String?,
       boards: boards ?? this.boards,
       filter: filter ?? this.filter,
+      pageSize: pageSize ?? this.pageSize,
       error: clearError
           ? null
           : error == _taskBoardsSentinel
@@ -62,5 +68,12 @@ class TaskBoardsState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [status, workspaceId, boards, filter, error];
+  List<Object?> get props => [
+    status,
+    workspaceId,
+    boards,
+    filter,
+    pageSize,
+    error,
+  ];
 }
