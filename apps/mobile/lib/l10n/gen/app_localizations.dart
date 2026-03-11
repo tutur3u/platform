@@ -1135,6 +1135,12 @@ abstract class AppLocalizations {
   /// **'Create list'**
   String get taskBoardDetailCreateList;
 
+  /// No description provided for @taskBoardDetailEditList.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit list'**
+  String get taskBoardDetailEditList;
+
   /// No description provided for @taskBoardDetailRenameList.
   ///
   /// In en, this message translates to:
@@ -1159,11 +1165,35 @@ abstract class AppLocalizations {
   /// **'List renamed.'**
   String get taskBoardDetailListRenamed;
 
+  /// No description provided for @taskBoardDetailListUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'List updated.'**
+  String get taskBoardDetailListUpdated;
+
   /// No description provided for @taskBoardDetailNameRequired.
   ///
   /// In en, this message translates to:
   /// **'Name is required'**
   String get taskBoardDetailNameRequired;
+
+  /// No description provided for @taskBoardDetailListNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'List name'**
+  String get taskBoardDetailListNameLabel;
+
+  /// No description provided for @taskBoardDetailStatusCategoryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Status category'**
+  String get taskBoardDetailStatusCategoryLabel;
+
+  /// No description provided for @taskBoardDetailColorLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Color'**
+  String get taskBoardDetailColorLabel;
 
   /// No description provided for @taskBoardDetailFilters.
   ///
@@ -1236,6 +1266,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Closed'**
   String get taskBoardDetailStatusClosed;
+
+  /// No description provided for @taskBoardDetailStatusDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'Documents'**
+  String get taskBoardDetailStatusDocuments;
+
+  /// No description provided for @taskBoardDetailColorGray.
+  ///
+  /// In en, this message translates to:
+  /// **'Gray'**
+  String get taskBoardDetailColorGray;
+
+  /// No description provided for @taskBoardDetailColorRed.
+  ///
+  /// In en, this message translates to:
+  /// **'Red'**
+  String get taskBoardDetailColorRed;
+
+  /// No description provided for @taskBoardDetailColorBlue.
+  ///
+  /// In en, this message translates to:
+  /// **'Blue'**
+  String get taskBoardDetailColorBlue;
+
+  /// No description provided for @taskBoardDetailColorGreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Green'**
+  String get taskBoardDetailColorGreen;
+
+  /// No description provided for @taskBoardDetailColorYellow.
+  ///
+  /// In en, this message translates to:
+  /// **'Yellow'**
+  String get taskBoardDetailColorYellow;
+
+  /// No description provided for @taskBoardDetailColorOrange.
+  ///
+  /// In en, this message translates to:
+  /// **'Orange'**
+  String get taskBoardDetailColorOrange;
+
+  /// No description provided for @taskBoardDetailColorPurple.
+  ///
+  /// In en, this message translates to:
+  /// **'Purple'**
+  String get taskBoardDetailColorPurple;
+
+  /// No description provided for @taskBoardDetailColorPink.
+  ///
+  /// In en, this message translates to:
+  /// **'Pink'**
+  String get taskBoardDetailColorPink;
+
+  /// No description provided for @taskBoardDetailColorIndigo.
+  ///
+  /// In en, this message translates to:
+  /// **'Indigo'**
+  String get taskBoardDetailColorIndigo;
+
+  /// No description provided for @taskBoardDetailColorCyan.
+  ///
+  /// In en, this message translates to:
+  /// **'Cyan'**
+  String get taskBoardDetailColorCyan;
 
   /// No description provided for @taskBoardDetailClearFilters.
   ///

@@ -320,7 +320,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
               defaultListId: list.id,
             ),
           ),
-          onRenameList: () => unawaited(_openRenameListDialog(context, list)),
+          onEditList: () => unawaited(_openEditListDialog(context, list)),
         );
       },
     );
@@ -377,8 +377,8 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                           defaultListId: list.id,
                         ),
                       ),
-                      onRenameList: () =>
-                          unawaited(_openRenameListDialog(context, list)),
+                      onEditList: () =>
+                          unawaited(_openEditListDialog(context, list)),
                     ),
                   ),
                 )

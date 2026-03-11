@@ -559,6 +559,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailCreateList => 'Tạo danh sách';
 
   @override
+  String get taskBoardDetailEditList => 'Chỉnh sửa danh sách';
+
+  @override
   String get taskBoardDetailRenameList => 'Đổi tên danh sách';
 
   @override
@@ -571,7 +574,19 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailListRenamed => 'Đã đổi tên danh sách.';
 
   @override
+  String get taskBoardDetailListUpdated => 'Đã cập nhật danh sách.';
+
+  @override
   String get taskBoardDetailNameRequired => 'Tên là bắt buộc';
+
+  @override
+  String get taskBoardDetailListNameLabel => 'Tên danh sách';
+
+  @override
+  String get taskBoardDetailStatusCategoryLabel => 'Nhóm trạng thái';
+
+  @override
+  String get taskBoardDetailColorLabel => 'Màu sắc';
 
   @override
   String get taskBoardDetailFilters => 'Bộ lọc';
@@ -608,6 +623,39 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskBoardDetailStatusClosed => 'Đã đóng';
+
+  @override
+  String get taskBoardDetailStatusDocuments => 'Tài liệu';
+
+  @override
+  String get taskBoardDetailColorGray => 'Xám';
+
+  @override
+  String get taskBoardDetailColorRed => 'Đỏ';
+
+  @override
+  String get taskBoardDetailColorBlue => 'Xanh dương';
+
+  @override
+  String get taskBoardDetailColorGreen => 'Xanh lá';
+
+  @override
+  String get taskBoardDetailColorYellow => 'Vàng';
+
+  @override
+  String get taskBoardDetailColorOrange => 'Cam';
+
+  @override
+  String get taskBoardDetailColorPurple => 'Tím';
+
+  @override
+  String get taskBoardDetailColorPink => 'Hồng';
+
+  @override
+  String get taskBoardDetailColorIndigo => 'Chàm';
+
+  @override
+  String get taskBoardDetailColorCyan => 'Lục lam';
 
   @override
   String get taskBoardDetailClearFilters => 'Xóa bộ lọc';

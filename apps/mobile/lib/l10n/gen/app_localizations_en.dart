@@ -559,6 +559,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailCreateList => 'Create list';
 
   @override
+  String get taskBoardDetailEditList => 'Edit list';
+
+  @override
   String get taskBoardDetailRenameList => 'Rename list';
 
   @override
@@ -571,7 +574,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailListRenamed => 'List renamed.';
 
   @override
+  String get taskBoardDetailListUpdated => 'List updated.';
+
+  @override
   String get taskBoardDetailNameRequired => 'Name is required';
+
+  @override
+  String get taskBoardDetailListNameLabel => 'List name';
+
+  @override
+  String get taskBoardDetailStatusCategoryLabel => 'Status category';
+
+  @override
+  String get taskBoardDetailColorLabel => 'Color';
 
   @override
   String get taskBoardDetailFilters => 'Filters';
@@ -608,6 +623,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskBoardDetailStatusClosed => 'Closed';
+
+  @override
+  String get taskBoardDetailStatusDocuments => 'Documents';
+
+  @override
+  String get taskBoardDetailColorGray => 'Gray';
+
+  @override
+  String get taskBoardDetailColorRed => 'Red';
+
+  @override
+  String get taskBoardDetailColorBlue => 'Blue';
+
+  @override
+  String get taskBoardDetailColorGreen => 'Green';
+
+  @override
+  String get taskBoardDetailColorYellow => 'Yellow';
+
+  @override
+  String get taskBoardDetailColorOrange => 'Orange';
+
+  @override
+  String get taskBoardDetailColorPurple => 'Purple';
+
+  @override
+  String get taskBoardDetailColorPink => 'Pink';
+
+  @override
+  String get taskBoardDetailColorIndigo => 'Indigo';
+
+  @override
+  String get taskBoardDetailColorCyan => 'Cyan';
 
   @override
   String get taskBoardDetailClearFilters => 'Clear filters';

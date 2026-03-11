@@ -9,12 +9,26 @@ const paramsSchema = z.object({
   boardId: z.uuid(),
 });
 
+const supportedColorSchema = z.enum([
+  'GRAY',
+  'RED',
+  'BLUE',
+  'GREEN',
+  'YELLOW',
+  'ORANGE',
+  'PURPLE',
+  'PINK',
+  'INDIGO',
+  'CYAN',
+]);
+
 const createListSchema = z.object({
   name: z.string().trim().min(1).max(255),
   status: z
     .enum(['not_started', 'active', 'done', 'closed', 'documents'])
     .optional()
     .default('not_started'),
+  color: supportedColorSchema.optional(),
 });
 
 async function requireBoardAccess(request: Request, rawParams: unknown) {
@@ -135,11 +149,32 @@ export async function POST(
     const { supabase, boardId } = access;
     const body = createListSchema.parse(await request.json());
 
+    const { data: existingLists, error: existingListsError } = await supabase
+      .from('task_lists')
+      .select('position')
+      .eq('board_id', boardId)
+      .eq('status', body.status)
+      .eq('deleted', false);
+
+    if (existingListsError) {
+      return NextResponse.json(
+        { error: 'Failed to calculate list position' },
+        { status: 500 }
+      );
+    }
+
+    const maxPosition = Math.max(
+      0,
+      ...(existingLists ?? []).map((list) => list.position ?? 0)
+    );
+
     const insertPayload: Database['public']['Tables']['task_lists']['Insert'] =
       {
         board_id: boardId,
         name: body.name.trim(),
         status: body.status,
+        color: body.color,
+        position: maxPosition + 1,
         deleted: false,
       };
 

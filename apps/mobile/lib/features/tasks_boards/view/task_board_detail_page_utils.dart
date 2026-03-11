@@ -14,6 +14,215 @@ List<TaskBoardList> _sortedLists(List<TaskBoardList> lists) {
   return sorted;
 }
 
+class _TaskBoardListColorOption {
+  const _TaskBoardListColorOption({
+    required this.value,
+    required this.label,
+    required this.color,
+    required this.surface,
+  });
+
+  final String value;
+  final String label;
+  final Color color;
+  final Color surface;
+}
+
+class _TaskBoardListStatusOption {
+  const _TaskBoardListStatusOption({
+    required this.value,
+    required this.label,
+    required this.icon,
+    required this.color,
+  });
+
+  final String value;
+  final String label;
+  final IconData icon;
+  final Color color;
+}
+
+class _TaskBoardListVisualStyle {
+  const _TaskBoardListVisualStyle({
+    required this.accent,
+    required this.surface,
+    required this.surfaceBorder,
+    required this.statusBadge,
+    required this.statusIcon,
+    required this.statusLabel,
+  });
+
+  final Color accent;
+  final Color surface;
+  final Color surfaceBorder;
+  final StatusBadgeColors statusBadge;
+  final IconData statusIcon;
+  final String statusLabel;
+}
+
+List<_TaskBoardListColorOption> _taskBoardListColorOptions(
+  BuildContext context,
+) {
+  return TaskBoardList.supportedColors
+      .map(
+        (color) => _TaskBoardListColorOption(
+          value: color,
+          label: _taskBoardListColorLabel(context, color),
+          color: _taskBoardListColor(context, color),
+          surface: _taskBoardListSurfaceColor(context, color),
+        ),
+      )
+      .toList(growable: false);
+}
+
+List<_TaskBoardListStatusOption> _taskBoardListStatusOptions(
+  BuildContext context,
+) {
+  return TaskBoardList.supportedStatuses
+      .map(
+        (status) => _TaskBoardListStatusOption(
+          value: status,
+          label: _taskBoardListStatusLabel(context, status),
+          icon: _taskBoardListStatusIcon(status),
+          color: _taskBoardListStatusBadgeColors(context, status).textColor,
+        ),
+      )
+      .toList(growable: false);
+}
+
+_TaskBoardListVisualStyle _taskBoardListVisualStyle(
+  BuildContext context,
+  TaskBoardList list,
+) {
+  final normalizedColor =
+      TaskBoardList.normalizeSupportedColor(list.color) ?? 'GRAY';
+  final normalizedStatus =
+      TaskBoardList.normalizeSupportedStatus(list.status) ?? 'active';
+  final accent = _taskBoardListColor(context, normalizedColor);
+  final surface = _taskBoardListSurfaceColor(context, normalizedColor);
+
+  return _TaskBoardListVisualStyle(
+    accent: accent,
+    surface: surface,
+    surfaceBorder: accent.withValues(alpha: 0.28),
+    statusBadge: _taskBoardListStatusBadgeColors(context, normalizedStatus),
+    statusIcon: _taskBoardListStatusIcon(normalizedStatus),
+    statusLabel: _taskBoardListStatusLabel(context, normalizedStatus),
+  );
+}
+
+String _taskBoardListStatusLabel(BuildContext context, String? status) {
+  return switch (TaskBoardList.normalizeSupportedStatus(status) ?? 'active') {
+    'documents' => context.l10n.taskBoardDetailStatusDocuments,
+    'not_started' => context.l10n.taskBoardDetailStatusNotStarted,
+    'active' => context.l10n.taskBoardDetailStatusActive,
+    'done' => context.l10n.taskBoardDetailStatusDone,
+    'closed' => context.l10n.taskBoardDetailStatusClosed,
+    _ => context.l10n.taskBoardDetailStatusActive,
+  };
+}
+
+String _taskBoardListColorLabel(BuildContext context, String? color) {
+  return switch (TaskBoardList.normalizeSupportedColor(color) ?? 'GRAY') {
+    'GRAY' => context.l10n.taskBoardDetailColorGray,
+    'RED' => context.l10n.taskBoardDetailColorRed,
+    'BLUE' => context.l10n.taskBoardDetailColorBlue,
+    'GREEN' => context.l10n.taskBoardDetailColorGreen,
+    'YELLOW' => context.l10n.taskBoardDetailColorYellow,
+    'ORANGE' => context.l10n.taskBoardDetailColorOrange,
+    'PURPLE' => context.l10n.taskBoardDetailColorPurple,
+    'PINK' => context.l10n.taskBoardDetailColorPink,
+    'INDIGO' => context.l10n.taskBoardDetailColorIndigo,
+    'CYAN' => context.l10n.taskBoardDetailColorCyan,
+    _ => context.l10n.taskBoardDetailColorGray,
+  };
+}
+
+IconData _taskBoardListStatusIcon(String? status) {
+  return switch (TaskBoardList.normalizeSupportedStatus(status) ?? 'active') {
+    'documents' => Icons.description_outlined,
+    'not_started' => Icons.radio_button_unchecked,
+    'active' => Icons.circle,
+    'done' => Icons.check_circle_outline,
+    'closed' => Icons.cancel_outlined,
+    _ => Icons.circle,
+  };
+}
+
+Color _taskBoardListColor(BuildContext context, String? color) {
+  final palette = context.dynamicColors;
+  return switch (TaskBoardList.normalizeSupportedColor(color) ?? 'GRAY') {
+    'GRAY' => palette.gray,
+    'RED' => palette.red,
+    'BLUE' => palette.blue,
+    'GREEN' => palette.green,
+    'YELLOW' => palette.yellow,
+    'ORANGE' => palette.orange,
+    'PURPLE' => palette.purple,
+    'PINK' => palette.pink,
+    'INDIGO' => palette.indigo,
+    'CYAN' => palette.cyan,
+    _ => palette.gray,
+  };
+}
+
+Color _taskBoardListSurfaceColor(BuildContext context, String? color) {
+  final palette = context.dynamicColors;
+  return switch (TaskBoardList.normalizeSupportedColor(color) ?? 'GRAY') {
+    'GRAY' => palette.calendarGray,
+    'RED' => palette.calendarRed,
+    'BLUE' => palette.calendarBlue,
+    'GREEN' => palette.calendarGreen,
+    'YELLOW' => palette.calendarYellow,
+    'ORANGE' => palette.calendarOrange,
+    'PURPLE' => palette.calendarPurple,
+    'PINK' => palette.calendarPink,
+    'INDIGO' => palette.calendarIndigo,
+    'CYAN' => palette.calendarCyan,
+    _ => palette.calendarGray,
+  };
+}
+
+StatusBadgeColors _taskBoardListStatusBadgeColors(
+  BuildContext context,
+  String? status,
+) {
+  final palette = context.dynamicColors;
+
+  return switch (TaskBoardList.normalizeSupportedStatus(status) ?? 'active') {
+    'documents' => StatusBadgeColors(
+      backgroundColor: palette.cyan.withValues(alpha: 0.12),
+      borderColor: palette.cyan.withValues(alpha: 0.3),
+      textColor: palette.cyan,
+    ),
+    'not_started' => StatusBadgeColors(
+      backgroundColor: palette.gray.withValues(alpha: 0.12),
+      borderColor: palette.gray.withValues(alpha: 0.28),
+      textColor: palette.gray,
+    ),
+    'active' => StatusBadgeColors(
+      backgroundColor: palette.blue.withValues(alpha: 0.12),
+      borderColor: palette.blue.withValues(alpha: 0.28),
+      textColor: palette.blue,
+    ),
+    'done' => StatusBadgeColors(
+      backgroundColor: palette.green.withValues(alpha: 0.12),
+      borderColor: palette.green.withValues(alpha: 0.28),
+      textColor: palette.green,
+    ),
+    'closed' => StatusBadgeColors(
+      backgroundColor: palette.purple.withValues(alpha: 0.12),
+      borderColor: palette.purple.withValues(alpha: 0.28),
+      textColor: palette.purple,
+    ),
+    _ => StatusBadgeColors(
+      backgroundColor: palette.blue.withValues(alpha: 0.12),
+      borderColor: palette.blue.withValues(alpha: 0.28),
+      textColor: palette.blue,
+    ),
+  };
+}
+
 String _taskPriorityLabel(BuildContext context, String? priority) {
   return switch (priority) {
     'critical' => context.l10n.tasksPriorityCritical,

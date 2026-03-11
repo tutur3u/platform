@@ -179,7 +179,11 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     emit(state.copyWith(selectedTaskId: taskId));
   }
 
-  Future<void> createList({required String name}) async {
+  Future<void> createList({
+    required String name,
+    required String status,
+    required String color,
+  }) async {
     final wsId = state.workspaceId;
     final boardId = state.boardId;
     if (wsId == null || boardId == null) {
@@ -191,13 +195,17 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
         wsId: wsId,
         boardId: boardId,
         name: name,
+        status: status,
+        color: color,
       ),
     );
   }
 
-  Future<void> renameList({
+  Future<void> updateList({
     required String listId,
     required String name,
+    required String status,
+    required String color,
   }) async {
     final wsId = state.workspaceId;
     final boardId = state.boardId;
@@ -206,11 +214,13 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     }
 
     await _runMutation(
-      () => _taskRepository.renameBoardList(
+      () => _taskRepository.updateBoardList(
         wsId: wsId,
         boardId: boardId,
         listId: listId,
         name: name,
+        status: status,
+        color: color,
       ),
     );
   }

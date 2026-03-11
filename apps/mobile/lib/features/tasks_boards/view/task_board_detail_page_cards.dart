@@ -8,7 +8,7 @@ class _BoardListSection extends StatelessWidget {
     required this.onTaskTap,
     required this.onTaskMove,
     required this.onCreateTask,
-    this.onRenameList,
+    this.onEditList,
     this.isExpanded = true,
     this.collapsible = false,
     this.onToggleExpanded,
@@ -23,7 +23,7 @@ class _BoardListSection extends StatelessWidget {
   final void Function(TaskBoardTask task) onTaskTap;
   final void Function(TaskBoardTask task) onTaskMove;
   final VoidCallback onCreateTask;
-  final VoidCallback? onRenameList;
+  final VoidCallback? onEditList;
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +31,7 @@ class _BoardListSection extends StatelessWidget {
         ? list.name!.trim()
         : context.l10n.taskBoardDetailUntitledList;
     final theme = shad.Theme.of(context);
+    final style = _taskBoardListVisualStyle(context, list);
 
     return shad.Card(
       child: Column(
@@ -39,51 +40,112 @@ class _BoardListSection extends StatelessWidget {
           InkWell(
             borderRadius: BorderRadius.circular(12),
             onTap: collapsible ? onToggleExpanded : null,
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: theme.typography.large.copyWith(
-                      fontWeight: FontWeight.w600,
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: style.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: style.surfaceBorder),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 4,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: style.accent,
+                      borderRadius: BorderRadius.circular(999),
                     ),
                   ),
-                ),
-                shad.OutlineBadge(
-                  child: Text(context.l10n.taskBoardsTasksCount(tasks.length)),
-                ),
-                const shad.Gap(8),
-                if (collapsible)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 4),
-                    child: Icon(
-                      isExpanded ? Icons.expand_less : Icons.expand_more,
-                      size: 18,
+                  const shad.Gap(10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              style.statusIcon,
+                              size: 14,
+                              color: style.statusBadge.textColor,
+                            ),
+                            const shad.Gap(6),
+                            Expanded(
+                              child: Text(
+                                title,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.typography.base.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const shad.Gap(6),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.background.withValues(
+                                  alpha: 0.72,
+                                ),
+                                borderRadius: BorderRadius.circular(999),
+                                border: Border.all(
+                                  color: style.accent.withValues(alpha: 0.2),
+                                ),
+                              ),
+                              child: Text(
+                                context.l10n.taskBoardsTasksCount(tasks.length),
+                                style: theme.typography.small.copyWith(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                shad.IconButton.ghost(
-                  icon: const Icon(Icons.add),
-                  onPressed: onCreateTask,
-                ),
-                PopupMenuButton<_BoardListMenuAction>(
-                  tooltip: context.l10n.taskBoardDetailListActions,
-                  onSelected: (action) {
-                    if (action == _BoardListMenuAction.rename) {
-                      onRenameList?.call();
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    PopupMenuItem<_BoardListMenuAction>(
-                      value: _BoardListMenuAction.rename,
-                      child: Text(context.l10n.taskBoardDetailRenameList),
+                  if (collapsible)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 4),
+                      child: Icon(
+                        isExpanded ? Icons.expand_less : Icons.expand_more,
+                        size: 18,
+                      ),
                     ),
-                  ],
-                  child: const Padding(
-                    padding: EdgeInsets.only(left: 6),
-                    child: Icon(Icons.more_horiz, size: 18),
+                  shad.IconButton.ghost(
+                    icon: Icon(Icons.add, color: style.accent),
+                    onPressed: onCreateTask,
                   ),
-                ),
-              ],
+                  PopupMenuButton<_BoardListMenuAction>(
+                    tooltip: context.l10n.taskBoardDetailListActions,
+                    onSelected: (action) {
+                      if (action == _BoardListMenuAction.edit) {
+                        onEditList?.call();
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem<_BoardListMenuAction>(
+                        value: _BoardListMenuAction.edit,
+                        child: Text(context.l10n.taskBoardDetailEditList),
+                      ),
+                    ],
+                    child: const Padding(
+                      padding: EdgeInsets.only(left: 6),
+                      child: Icon(Icons.more_horiz, size: 18),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           AnimatedSize(
@@ -106,6 +168,7 @@ class _BoardListSection extends StatelessWidget {
                             padding: const EdgeInsets.only(bottom: 8),
                             child: _BoardTaskTile(
                               board: board,
+                              listStyle: style,
                               task: task,
                               onTap: () => onTaskTap(task),
                               onMove: () => onTaskMove(task),
@@ -124,12 +187,14 @@ class _BoardListSection extends StatelessWidget {
 class _BoardTaskTile extends StatelessWidget {
   const _BoardTaskTile({
     required this.board,
+    required this.listStyle,
     required this.task,
     required this.onTap,
     required this.onMove,
   });
 
   final TaskBoardDetail board;
+  final _TaskBoardListVisualStyle listStyle;
   final TaskBoardTask task;
   final VoidCallback onTap;
   final VoidCallback onMove;
@@ -153,12 +218,22 @@ class _BoardTaskTile extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
         decoration: BoxDecoration(
+          color: listStyle.surface.withValues(alpha: 0.36),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: theme.colorScheme.border),
+          border: Border.all(color: listStyle.accent.withValues(alpha: 0.24)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Container(
+              width: 28,
+              height: 3,
+              decoration: BoxDecoration(
+                color: listStyle.accent.withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+            const shad.Gap(8),
             // Top row: ticket ID | avatars + menu
             Row(
               children: [
@@ -284,11 +359,13 @@ class _BoardTaskTile extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(shad.LucideIcons.timer, size: 12),
+                          const Icon(shad.LucideIcons.timer, size: 12),
                           const shad.Gap(3),
                           Text(
                             estimationLabel,
-                            style: theme.typography.small.copyWith(fontSize: 11),
+                            style: theme.typography.small.copyWith(
+                              fontSize: 11,
+                            ),
                           ),
                         ],
                       ),
@@ -333,7 +410,7 @@ class _KanbanColumn extends StatelessWidget {
     required this.onTaskTap,
     required this.onTaskMove,
     required this.onCreateTask,
-    this.onRenameList,
+    this.onEditList,
   });
 
   final TaskBoardDetail board;
@@ -342,7 +419,7 @@ class _KanbanColumn extends StatelessWidget {
   final void Function(TaskBoardTask task) onTaskTap;
   final void Function(TaskBoardTask task) onTaskMove;
   final VoidCallback onCreateTask;
-  final VoidCallback? onRenameList;
+  final VoidCallback? onEditList;
 
   @override
   Widget build(BuildContext context) {
@@ -355,7 +432,7 @@ class _KanbanColumn extends StatelessWidget {
         onTaskTap: onTaskTap,
         onTaskMove: onTaskMove,
         onCreateTask: onCreateTask,
-        onRenameList: onRenameList,
+        onEditList: onEditList,
       ),
     );
   }
@@ -363,7 +440,7 @@ class _KanbanColumn extends StatelessWidget {
 
 enum _BoardTaskMenuAction { move }
 
-enum _BoardListMenuAction { rename }
+enum _BoardListMenuAction { edit }
 
 class _TaskPriorityChip extends StatelessWidget {
   const _TaskPriorityChip({required this.priority});

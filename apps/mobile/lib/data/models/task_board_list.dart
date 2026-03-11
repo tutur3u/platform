@@ -38,6 +38,27 @@ class TaskBoardList extends Equatable {
     );
   }
 
+  static const List<String> supportedStatuses = [
+    'documents',
+    'not_started',
+    'active',
+    'done',
+    'closed',
+  ];
+
+  static const List<String> supportedColors = [
+    'GRAY',
+    'RED',
+    'BLUE',
+    'GREEN',
+    'YELLOW',
+    'ORANGE',
+    'PURPLE',
+    'PINK',
+    'INDIGO',
+    'CYAN',
+  ];
+
   static int? _parsePosition(Object? value) {
     if (value is int) return value;
     if (value is num) return value.toInt();
@@ -54,6 +75,20 @@ class TaskBoardList extends Equatable {
   final bool archived;
 
   bool get isDone => status == 'done';
+
+  static String? normalizeSupportedStatus(String? rawStatus) {
+    final normalized = rawStatus?.trim().toLowerCase();
+    if (normalized == null || normalized.isEmpty) return null;
+    if (!supportedStatuses.contains(normalized)) return null;
+    return normalized;
+  }
+
+  static String? normalizeSupportedColor(String? rawColor) {
+    final normalized = rawColor?.trim().toUpperCase();
+    if (normalized == null || normalized.isEmpty) return null;
+    if (!supportedColors.contains(normalized)) return null;
+    return normalized;
+  }
 
   @override
   List<Object?> get props => [

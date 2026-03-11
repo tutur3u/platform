@@ -124,6 +124,16 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
                   ],
                 ),
                 const shad.Gap(12),
+                if (_isCreate) ...[
+                  _SelectionFieldButton(
+                    label: context.l10n.taskBoardDetailTaskListLabel,
+                    value: _selectedListLabel(context),
+                    enabled:
+                        !_isSaving && !_isMoving && widget.lists.length > 1,
+                    onPressed: _pickList,
+                  ),
+                  const shad.Gap(10),
+                ],
                 _EditorSectionCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,17 +163,6 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (_isCreate)
-                        _SelectionFieldButton(
-                          label: context.l10n.taskBoardDetailTaskListLabel,
-                          value: _selectedListLabel(context),
-                          enabled:
-                              !_isSaving &&
-                              !_isMoving &&
-                              widget.lists.length > 1,
-                          onPressed: _pickList,
-                        ),
-                      if (_isCreate) const shad.Gap(8),
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
@@ -978,14 +977,45 @@ class _MoveTaskListDialog extends StatelessWidget {
                 final label = list.name?.trim().isNotEmpty == true
                     ? list.name!.trim()
                     : context.l10n.taskBoardDetailUntitledList;
+                final style = _taskBoardListVisualStyle(context, list);
 
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: shad.OutlineButton(
                     onPressed: () => Navigator.of(context).pop(list.id),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(label),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: style.accent,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const shad.Gap(8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(label, overflow: TextOverflow.ellipsis),
+                              Text(
+                                style.statusLabel,
+                                style: shad.Theme.of(context).typography.small
+                                    .copyWith(
+                                      fontSize: 11,
+                                      color: style.statusBadge.textColor,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          style.statusIcon,
+                          size: 16,
+                          color: style.statusBadge.textColor,
+                        ),
+                      ],
                     ),
                   ),
                 );
@@ -1025,14 +1055,45 @@ class _TaskListPickerDialog extends StatelessWidget {
                 final label = list.name?.trim().isNotEmpty == true
                     ? list.name!.trim()
                     : context.l10n.taskBoardDetailUntitledList;
+                final style = _taskBoardListVisualStyle(context, list);
 
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: shad.GhostButton(
                     onPressed: () => Navigator.of(context).pop(list.id),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(label),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: style.accent,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const shad.Gap(8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(label, overflow: TextOverflow.ellipsis),
+                              Text(
+                                style.statusLabel,
+                                style: shad.Theme.of(context).typography.small
+                                    .copyWith(
+                                      fontSize: 11,
+                                      color: style.statusBadge.textColor,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          style.statusIcon,
+                          size: 16,
+                          color: style.statusBadge.textColor,
+                        ),
+                      ],
                     ),
                   ),
                 );

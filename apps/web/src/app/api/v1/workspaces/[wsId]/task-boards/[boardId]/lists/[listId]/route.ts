@@ -9,9 +9,36 @@ const paramsSchema = z.object({
   listId: z.uuid(),
 });
 
-const updateListSchema = z.object({
-  name: z.string().trim().min(1).max(255),
-});
+const supportedColorSchema = z.enum([
+  'GRAY',
+  'RED',
+  'BLUE',
+  'GREEN',
+  'YELLOW',
+  'ORANGE',
+  'PURPLE',
+  'PINK',
+  'INDIGO',
+  'CYAN',
+]);
+
+const updateListSchema = z
+  .object({
+    name: z.string().trim().min(1).max(255).optional(),
+    status: z
+      .enum(['not_started', 'active', 'done', 'closed', 'documents'])
+      .optional(),
+    color: supportedColorSchema.optional(),
+  })
+  .refine(
+    (data) =>
+      data.name !== undefined ||
+      data.status !== undefined ||
+      data.color !== undefined,
+    {
+      message: 'At least one field must be provided',
+    }
+  );
 
 export async function PATCH(
   request: Request,
@@ -77,9 +104,35 @@ export async function PATCH(
     }
 
     const body = updateListSchema.parse(await request.json());
+    const updates: {
+      name?: string;
+      status?: 'not_started' | 'active' | 'done' | 'closed' | 'documents';
+      color?:
+        | 'GRAY'
+        | 'RED'
+        | 'BLUE'
+        | 'GREEN'
+        | 'YELLOW'
+        | 'ORANGE'
+        | 'PURPLE'
+        | 'PINK'
+        | 'INDIGO'
+        | 'CYAN';
+    } = {};
+
+    if (body.name !== undefined) {
+      updates.name = body.name.trim();
+    }
+    if (body.status !== undefined) {
+      updates.status = body.status;
+    }
+    if (body.color !== undefined) {
+      updates.color = body.color;
+    }
+
     const { data: list, error } = await supabase
       .from('task_lists')
-      .update({ name: body.name.trim() })
+      .update(updates)
       .eq('id', listId)
       .select('id, board_id, name, status, color, position, archived')
       .single();

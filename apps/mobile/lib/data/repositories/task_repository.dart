@@ -404,11 +404,21 @@ class TaskRepository {
     required String wsId,
     required String boardId,
     required String name,
-    String status = 'not_started',
+    String status = 'active',
+    String color = 'BLUE',
   }) async {
+    final normalizedStatus =
+        TaskBoardList.normalizeSupportedStatus(status) ?? 'active';
+    final normalizedColor =
+        TaskBoardList.normalizeSupportedColor(color) ?? 'BLUE';
+
     final response = await _apiClient.postJson(
       '/api/v1/workspaces/$wsId/task-boards/$boardId/lists',
-      {'name': name, 'status': status},
+      {
+        'name': name,
+        'status': normalizedStatus,
+        'color': normalizedColor,
+      },
     );
     final list = response['list'];
     if (list is! Map<String, dynamic>) {
@@ -421,15 +431,26 @@ class TaskRepository {
     return TaskBoardList.fromJson(list);
   }
 
-  Future<TaskBoardList> renameBoardList({
+  Future<TaskBoardList> updateBoardList({
     required String wsId,
     required String boardId,
     required String listId,
     required String name,
+    required String status,
+    required String color,
   }) async {
+    final normalizedStatus =
+        TaskBoardList.normalizeSupportedStatus(status) ?? 'active';
+    final normalizedColor =
+        TaskBoardList.normalizeSupportedColor(color) ?? 'BLUE';
+
     final response = await _apiClient.patchJson(
       '/api/v1/workspaces/$wsId/task-boards/$boardId/lists/$listId',
-      {'name': name},
+      {
+        'name': name,
+        'status': normalizedStatus,
+        'color': normalizedColor,
+      },
     );
     final list = response['list'];
     if (list is! Map<String, dynamic>) {

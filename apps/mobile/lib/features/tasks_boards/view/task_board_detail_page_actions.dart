@@ -19,12 +19,14 @@ extension on _TaskBoardDetailPageViewState {
     if (board == null) return;
 
     final initialName = board.name?.trim() ?? '';
-    final value = await _openTextInputDialog(
-      context,
-      title: context.l10n.taskBoardDetailRenameBoard,
-      hintText: context.l10n.taskBoardDetailUntitledBoard,
-      initialValue: initialName,
-      confirmLabel: context.l10n.timerSave,
+    final value = await shad.showDialog<String>(
+      context: context,
+      builder: (_) => _TaskBoardTextInputDialog(
+        title: context.l10n.taskBoardDetailRenameBoard,
+        hintText: context.l10n.taskBoardDetailUntitledBoard,
+        confirmLabel: context.l10n.timerSave,
+        initialValue: initialName,
+      ),
     );
     if (value == null || !context.mounted) return;
 
@@ -39,42 +41,53 @@ extension on _TaskBoardDetailPageViewState {
   }
 
   Future<void> _openCreateListDialog(BuildContext context) async {
-    final value = await _openTextInputDialog(
-      context,
-      title: context.l10n.taskBoardDetailCreateList,
-      hintText: context.l10n.taskBoardDetailUntitledList,
-      confirmLabel: context.l10n.taskBoardDetailCreateList,
+    final result = await shad.showDialog<_TaskBoardListFormValue>(
+      context: context,
+      builder: (_) => _TaskBoardListFormDialog(
+        title: context.l10n.taskBoardDetailCreateList,
+        confirmLabel: context.l10n.taskBoardDetailCreateList,
+      ),
     );
-    if (value == null || !context.mounted) return;
+    if (result == null || !context.mounted) return;
 
     await _runBoardAction(
       context,
-      () => context.read<TaskBoardDetailCubit>().createList(name: value),
+      () => context.read<TaskBoardDetailCubit>().createList(
+        name: result.name,
+        status: result.status,
+        color: result.color,
+      ),
       successMessage: context.l10n.taskBoardDetailListCreated,
     );
   }
 
-  Future<void> _openRenameListDialog(
+  Future<void> _openEditListDialog(
     BuildContext context,
     TaskBoardList list,
   ) async {
-    final initialName = list.name?.trim() ?? '';
-    final value = await _openTextInputDialog(
-      context,
-      title: context.l10n.taskBoardDetailRenameList,
-      hintText: context.l10n.taskBoardDetailUntitledList,
-      initialValue: initialName,
-      confirmLabel: context.l10n.timerSave,
+    final result = await shad.showDialog<_TaskBoardListFormValue>(
+      context: context,
+      builder: (_) => _TaskBoardListFormDialog(
+        title: context.l10n.taskBoardDetailEditList,
+        confirmLabel: context.l10n.timerSave,
+        initialName: list.name?.trim() ?? '',
+        initialStatus:
+            TaskBoardList.normalizeSupportedStatus(list.status) ?? 'active',
+        initialColor:
+            TaskBoardList.normalizeSupportedColor(list.color) ?? 'BLUE',
+      ),
     );
-    if (value == null || !context.mounted) return;
+    if (result == null || !context.mounted) return;
 
     await _runBoardAction(
       context,
-      () => context.read<TaskBoardDetailCubit>().renameList(
+      () => context.read<TaskBoardDetailCubit>().updateList(
         listId: list.id,
-        name: value,
+        name: result.name,
+        status: result.status,
+        color: result.color,
       ),
-      successMessage: context.l10n.taskBoardDetailListRenamed,
+      successMessage: context.l10n.taskBoardDetailListUpdated,
     );
   }
 
@@ -115,24 +128,6 @@ extension on _TaskBoardDetailPageViewState {
     }
   }
 
-  Future<String?> _openTextInputDialog(
-    BuildContext context, {
-    required String title,
-    required String hintText,
-    required String confirmLabel,
-    String initialValue = '',
-  }) async {
-    return shad.showDialog<String>(
-      context: context,
-      builder: (_) => _TaskBoardTextInputDialog(
-        title: title,
-        hintText: hintText,
-        confirmLabel: confirmLabel,
-        initialValue: initialValue,
-      ),
-    );
-  }
-
   Future<void> _runBoardAction(
     BuildContext context,
     Future<void> Function() action, {
@@ -167,86 +162,6 @@ extension on _TaskBoardDetailPageViewState {
             shad.Alert.destructive(content: Text(fallbackErrorMessage)),
       );
     }
-  }
-}
-
-class _TaskBoardTextInputDialog extends StatefulWidget {
-  const _TaskBoardTextInputDialog({
-    required this.title,
-    required this.hintText,
-    required this.confirmLabel,
-    this.initialValue = '',
-  });
-
-  final String title;
-  final String hintText;
-  final String confirmLabel;
-  final String initialValue;
-
-  @override
-  State<_TaskBoardTextInputDialog> createState() =>
-      _TaskBoardTextInputDialogState();
-}
-
-class _TaskBoardTextInputDialogState extends State<_TaskBoardTextInputDialog> {
-  late final TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.initialValue);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return shad.AlertDialog(
-      title: Text(widget.title),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          shad.TextField(
-            controller: _controller,
-            hintText: widget.hintText,
-            autofocus: true,
-            onSubmitted: (_) => _submit(),
-          ),
-          const shad.Gap(12),
-          shad.OutlineButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(context.l10n.commonCancel),
-          ),
-          const shad.Gap(8),
-          shad.PrimaryButton(
-            onPressed: _submit,
-            child: Text(widget.confirmLabel),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _submit() {
-    final value = _controller.text.trim();
-    if (value.isEmpty) {
-      final toastContext = Navigator.of(context, rootNavigator: true).context;
-      if (!toastContext.mounted) return;
-      shad.showToast(
-        context: toastContext,
-        builder: (context, overlay) => shad.Alert.destructive(
-          content: Text(context.l10n.taskBoardDetailNameRequired),
-        ),
-      );
-      return;
-    }
-
-    Navigator.of(context).pop(value);
   }
 }
 
@@ -458,13 +373,7 @@ class _TaskBoardAdvancedFilterSheetState
   }
 
   String _statusLabel(BuildContext context, String status) {
-    return switch (status) {
-      'not_started' => context.l10n.taskBoardDetailStatusNotStarted,
-      'active' => context.l10n.taskBoardDetailStatusActive,
-      'done' => context.l10n.taskBoardDetailStatusDone,
-      'closed' => context.l10n.taskBoardDetailStatusClosed,
-      _ => status,
-    };
+    return _taskBoardListStatusLabel(context, status);
   }
 
   void _clear() {
