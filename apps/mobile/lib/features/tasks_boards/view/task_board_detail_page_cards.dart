@@ -5,11 +5,15 @@ class _BoardListSection extends StatelessWidget {
     required this.list,
     required this.tasks,
     required this.onTaskTap,
+    required this.onTaskMove,
+    required this.onCreateTask,
   });
 
   final TaskBoardList list;
   final List<TaskBoardTask> tasks;
   final void Function(TaskBoardTask task) onTaskTap;
+  final void Function(TaskBoardTask task) onTaskMove;
+  final VoidCallback onCreateTask;
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +39,11 @@ class _BoardListSection extends StatelessWidget {
               shad.OutlineBadge(
                 child: Text(context.l10n.taskBoardsTasksCount(tasks.length)),
               ),
+              const shad.Gap(8),
+              shad.IconButton.ghost(
+                icon: const Icon(Icons.add),
+                onPressed: onCreateTask,
+              ),
             ],
           ),
           const shad.Gap(10),
@@ -47,7 +56,11 @@ class _BoardListSection extends StatelessWidget {
             ...tasks.map(
               (task) => Padding(
                 padding: const EdgeInsets.only(bottom: 8),
-                child: _BoardTaskTile(task: task, onTap: () => onTaskTap(task)),
+                child: _BoardTaskTile(
+                  task: task,
+                  onTap: () => onTaskTap(task),
+                  onMove: () => onTaskMove(task),
+                ),
               ),
             ),
         ],
@@ -57,10 +70,15 @@ class _BoardListSection extends StatelessWidget {
 }
 
 class _BoardTaskTile extends StatelessWidget {
-  const _BoardTaskTile({required this.task, required this.onTap});
+  const _BoardTaskTile({
+    required this.task,
+    required this.onTap,
+    required this.onMove,
+  });
 
   final TaskBoardTask task;
   final VoidCallback onTap;
+  final VoidCallback onMove;
 
   @override
   Widget build(BuildContext context) {
@@ -85,11 +103,35 @@ class _BoardTaskTile extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: theme.typography.small.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: theme.typography.small.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                PopupMenuButton<_BoardTaskMenuAction>(
+                  tooltip: context.l10n.taskBoardDetailTaskActions,
+                  onSelected: (action) {
+                    if (action == _BoardTaskMenuAction.move) {
+                      onMove();
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem<_BoardTaskMenuAction>(
+                      value: _BoardTaskMenuAction.move,
+                      child: Text(context.l10n.taskBoardDetailMoveTask),
+                    ),
+                  ],
+                  child: const Padding(
+                    padding: EdgeInsets.only(left: 8),
+                    child: Icon(Icons.more_horiz, size: 18),
+                  ),
+                ),
+              ],
             ),
             if (description case final descriptionText?) ...[
               const shad.Gap(6),
@@ -125,17 +167,29 @@ class _KanbanColumn extends StatelessWidget {
     required this.list,
     required this.tasks,
     required this.onTaskTap,
+    required this.onTaskMove,
+    required this.onCreateTask,
   });
 
   final TaskBoardList list;
   final List<TaskBoardTask> tasks;
   final void Function(TaskBoardTask task) onTaskTap;
+  final void Function(TaskBoardTask task) onTaskMove;
+  final VoidCallback onCreateTask;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: context.isCompact ? 280 : 320,
-      child: _BoardListSection(list: list, tasks: tasks, onTaskTap: onTaskTap),
+      child: _BoardListSection(
+        list: list,
+        tasks: tasks,
+        onTaskTap: onTaskTap,
+        onTaskMove: onTaskMove,
+        onCreateTask: onCreateTask,
+      ),
     );
   }
 }
+
+enum _BoardTaskMenuAction { move }

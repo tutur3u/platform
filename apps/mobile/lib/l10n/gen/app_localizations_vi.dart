@@ -432,6 +432,63 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailNoMatchingTasks => 'Không có công việc nào khớp với từ khóa tìm kiếm.';
 
   @override
+  String get taskBoardDetailTaskActions => 'Thao tác công việc';
+
+  @override
+  String get taskBoardDetailMoveTask => 'Di chuyển công việc';
+
+  @override
+  String get taskBoardDetailTaskMoved => 'Đã di chuyển công việc.';
+
+  @override
+  String get taskBoardDetailCreateTask => 'Tạo công việc';
+
+  @override
+  String get taskBoardDetailEditTask => 'Chỉnh sửa công việc';
+
+  @override
+  String get taskBoardDetailTaskTitleLabel => 'Tiêu đề';
+
+  @override
+  String get taskBoardDetailTaskTitleHint => 'Công việc chưa đặt tên';
+
+  @override
+  String get taskBoardDetailTaskTitleRequired => 'Tiêu đề công việc là bắt buộc';
+
+  @override
+  String get taskBoardDetailTaskDescriptionLabel => 'Mô tả';
+
+  @override
+  String get taskBoardDetailTaskDescriptionHint => 'Thêm mô tả';
+
+  @override
+  String get taskBoardDetailPriority => 'Độ ưu tiên';
+
+  @override
+  String get taskBoardDetailTaskDates => 'Ngày';
+
+  @override
+  String get taskBoardDetailTaskStartDate => 'Ngày bắt đầu';
+
+  @override
+  String get taskBoardDetailTaskEndDate => 'Ngày kết thúc';
+
+  @override
+  String get taskBoardDetailNoDate => 'Chưa đặt ngày';
+
+  @override
+  String get taskBoardDetailInvalidDateRange => 'Ngày kết thúc phải cùng hoặc sau ngày bắt đầu';
+
+  @override
+  String get taskBoardDetailTaskSaved => 'Đã cập nhật công việc.';
+
+  @override
+  String get taskBoardDetailTaskCreated => 'Đã tạo công việc.';
+
+  @override
+  String get taskBoardDetailNoMoveTargets => 'Không có danh sách khác để di chuyển công việc này.';
+
+  @override
   String get taskPlanningTitle => 'Lập kế hoạch';
 
   @override

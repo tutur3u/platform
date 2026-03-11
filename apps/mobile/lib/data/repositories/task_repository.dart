@@ -238,13 +238,19 @@ class TaskRepository {
     DateTime? startDate,
     DateTime? endDate,
     bool? completed,
+    bool clearDescription = false,
+    bool clearStartDate = false,
+    bool clearEndDate = false,
   }) async {
     final updatePayload = <String, dynamic>{
       if (name != null) 'name': name,
       if (description != null) 'description': description,
+      if (clearDescription) 'description': null,
       if (priority != null) 'priority': priority,
       if (startDate != null) 'start_date': startDate.toUtc().toIso8601String(),
       if (endDate != null) 'end_date': endDate.toUtc().toIso8601String(),
+      if (clearStartDate) 'start_date': null,
+      if (clearEndDate) 'end_date': null,
       if (completed != null) 'completed': completed,
     };
 

@@ -218,7 +218,9 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
         return _BoardListSection(
           list: list,
           tasks: listTasks,
-          onTaskTap: (task) => _openTaskPreview(context, task),
+          onTaskTap: (task) => _openTaskEditor(context, task, lists),
+          onTaskMove: (task) => _openMoveTaskPicker(context, task, lists),
+          onCreateTask: () => _openTaskCreateSheet(context, list),
         );
       },
     );
@@ -259,7 +261,11 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                     child: _KanbanColumn(
                       list: list,
                       tasks: tasksByList[list.id] ?? const <TaskBoardTask>[],
-                      onTaskTap: (task) => _openTaskPreview(context, task),
+                      onTaskTap: (task) =>
+                          _openTaskEditor(context, task, lists),
+                      onTaskMove: (task) =>
+                          _openMoveTaskPicker(context, task, lists),
+                      onCreateTask: () => _openTaskCreateSheet(context, list),
                     ),
                   ),
                 )
@@ -270,66 +276,94 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
     );
   }
 
-  void _openTaskPreview(
+  void _openTaskEditor(
     BuildContext context,
     TaskBoardTask task,
+    List<TaskBoardList> lists,
   ) {
-    final title = task.name?.trim().isNotEmpty == true
-        ? task.name!.trim()
-        : context.l10n.taskBoardDetailUntitledTask;
-    final description = _taskDescriptionPreview(task.description);
-    final priorityLabel = _taskPriorityLabel(context, task.priority);
-    final datesLabel = _taskDatesLabel(task);
-
+    final parentContext = context;
     showAdaptiveDrawer(
       context: context,
-      builder: (context) {
-        final maxHeight = MediaQuery.sizeOf(context).height * 0.7;
-
-        return SafeArea(
-          top: false,
-          child: SizedBox(
-            width: double.infinity,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxHeight: maxHeight),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: shad.Theme.of(context).typography.large.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      if (description case final descriptionText?) ...[
-                        const shad.Gap(8),
-                        Text(
-                          descriptionText,
-                          style: shad.Theme.of(context).typography.textMuted,
-                        ),
-                      ],
-                      const shad.Gap(12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          shad.OutlineBadge(child: Text(priorityLabel)),
-                          if (datesLabel.isNotEmpty)
-                            shad.OutlineBadge(child: Text(datesLabel)),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+      builder: (_) {
+        return BlocProvider.value(
+          value: parentContext.read<TaskBoardDetailCubit>(),
+          child: _TaskBoardTaskEditorSheet(
+            task: task,
+            lists: lists,
+            defaultListId: task.listId,
           ),
         );
       },
     );
+  }
+
+  void _openTaskCreateSheet(BuildContext context, TaskBoardList list) {
+    final parentContext = context;
+
+    showAdaptiveDrawer(
+      context: context,
+      builder: (_) {
+        return BlocProvider.value(
+          value: parentContext.read<TaskBoardDetailCubit>(),
+          child: _TaskBoardTaskEditorSheet(
+            task: null,
+            lists: [list],
+            defaultListId: list.id,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _openMoveTaskPicker(
+    BuildContext context,
+    TaskBoardTask task,
+    List<TaskBoardList> lists,
+  ) async {
+    final availableLists = lists
+        .where((list) => list.id != task.listId)
+        .toList(growable: false);
+    if (availableLists.isEmpty) {
+      return;
+    }
+
+    final selectedListId = await shad.showDialog<String>(
+      context: context,
+      builder: (dialogContext) => _MoveTaskListDialog(lists: availableLists),
+    );
+
+    if (selectedListId == null || !context.mounted) return;
+
+    final cubit = context.read<TaskBoardDetailCubit>();
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
+    final fallbackErrorMessage = context.l10n.commonSomethingWentWrong;
+    final taskMovedMessage = context.l10n.taskBoardDetailTaskMoved;
+
+    try {
+      await cubit.moveTask(taskId: task.id, listId: selectedListId);
+      if (!context.mounted || !toastContext.mounted) return;
+      shad.showToast(
+        context: toastContext,
+        builder: (context, overlay) =>
+            shad.Alert(content: Text(taskMovedMessage)),
+      );
+    } on ApiException catch (error) {
+      if (!context.mounted || !toastContext.mounted) return;
+      shad.showToast(
+        context: toastContext,
+        builder: (context, overlay) => shad.Alert.destructive(
+          content: Text(
+            error.message.trim().isEmpty ? fallbackErrorMessage : error.message,
+          ),
+        ),
+      );
+    } on Exception {
+      if (!context.mounted || !toastContext.mounted) return;
+      shad.showToast(
+        context: toastContext,
+        builder: (context, overlay) =>
+            shad.Alert.destructive(content: Text(fallbackErrorMessage)),
+      );
+    }
   }
 }

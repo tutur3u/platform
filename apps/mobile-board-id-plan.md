@@ -43,7 +43,18 @@ Port the web `boardId` view to mobile with a mobile-native UX that preserves the
   - search filter
   - grouped task rendering by list
   - basic task preview bottom sheet (read-only preview)
-- Added new mobile localization keys in both ARB files for board detail UI.
+- Converted read-only preview into an editable task bottom sheet:
+  - title, description, priority, start/end date edit
+  - task save with validation + API error surfacing
+- Added Phase 3 mutation wiring in board detail cubit/state:
+  - `isMutating` + `mutationError` state fields
+  - `createTask(...)`, `updateTask(...)`, `moveTask(...)`
+  - mutation -> reload strategy for consistency across list/kanban
+- Added list/kanban task actions:
+  - list-scoped create task entrypoint
+  - per-task move action menu
+  - move-to-list picker dialog (current board only)
+- Added/updated localization keys in both ARB files for board detail task actions/sheet UX.
 
 ### Current status vs phases
 - Phase 1 (Foundation): **mostly done**
@@ -55,10 +66,14 @@ Port the web `boardId` view to mobile with a mobile-native UX that preserves the
   - [x] boards index -> board detail navigation
 - Phase 2 (Core Views): **started**
   - [x] list view (initial)
-  - [x] kanban view (initial read-only)
+  - [x] kanban view (initial)
   - [ ] tablet side-by-side kanban refinement
   - [ ] richer parity behavior between list/kanban interactions
-- Phase 3+ : **not started** (except read-only task preview shell)
+- Phase 3 (Task Interaction): **started**
+  - [x] editable task bottom sheet (title/description/priority/dates)
+  - [x] create task from list/kanban surfaces
+  - [x] move task between lists (current board only)
+  - [ ] assignees/labels/projects edit wiring
 
 ### Notes for the next agent
 - Board detail hydration currently composes data from:
@@ -66,9 +81,15 @@ Port the web `boardId` view to mobile with a mobile-native UX that preserves the
   - `/api/v1/workspaces/{wsId}/tasks?boardId=...` (tasks)
   - Supabase `task_lists` query (lists)
   - existing repository calls for labels/members/projects
-- `TaskBoardDetailView` is read-first; editing/mutation UI is not wired yet.
-- Existing task preview is a lightweight bottom sheet placeholder, not full edit flow.
-- Suggested next step: implement Phase 3 bottom-sheet edit flow on top of existing `TaskBoardDetailCubit` + `TaskRepository` mutation methods.
+- Task create/edit/move mutations are now wired through `TaskBoardDetailCubit` and reload board state after success.
+- Task sheet currently covers title/description/priority/start/end dates; assignees/labels/projects remain deferred.
+- Suggested next step: Phase 4 board/list controls + advanced filter sheet, then tablet kanban refinement.
+
+### Immediate next slice (recommended)
+1. Add board actions in detail app bar: rename board, create list, refresh grouping.
+2. Add per-list rename control in both list and kanban headers.
+3. Expand filters beyond search (priority, assignees, labels, projects, list/status) using a filter sheet.
+4. Refine tablet kanban layout for side-by-side readability and compact empty states.
 
 ### Explicitly deferred
 - Timeline view
@@ -96,11 +117,13 @@ The web implementation includes:
 Mobile currently has:
 - Boards index page in `apps/mobile/lib/features/tasks_boards/view/task_boards_view.dart`
 - Boards list cubit in `apps/mobile/lib/features/tasks_boards/cubit/task_boards_cubit.dart`
-- No board detail route
-- No board detail page
-- No task detail page
-- No board-detail-focused models or state layer
-- A thin task model in `apps/mobile/lib/data/models/task.dart`
+- Board detail route + page shell + split part files
+- Dedicated board detail cubit/state with stale async guard
+- Board-detail models (`TaskBoardDetail`, `TaskBoardList`, `TaskBoardTask`)
+- Initial list + kanban rendering, refresh, and search
+- Read-only task preview bottom sheet
+- Repository hydration and base mutation methods for task/list operations
+- Missing: edit/create/move UI wiring, board/list controls, richer filters, tablet refinement
 ## Recommended Strategy
 Do not port the web implementation literally.
 Instead:
@@ -356,20 +379,66 @@ Likely new string groups:
 - empty states
 - loading/error states
 ## Implementation Order
+Completed
 1. Add route and navigation wiring
 2. Create board-detail page shell
 3. Add board-detail models
 4. Add repository methods
 5. Add board-detail cubit/state
 6. Implement list view
-7. Implement bottom-sheet task detail/edit
-8. Add create task and simple move flow
-9. Add basic board actions
-10. Add create/rename list
-11. Implement kanban view
-12. Add filters/search
-13. Add drag/drop
-14. Add realtime in phase 2
+7. Implement initial kanban view
+8. Add refresh + search + read-only task preview
+
+Remaining
+1. Implement bottom-sheet task detail/edit
+2. Add create task and simple move flow
+3. Add basic board actions
+4. Add create/rename list controls in board detail UI
+5. Expand filters beyond search (labels/assignees/projects/priority)
+6. Refine tablet side-by-side kanban behavior
+7. Add drag/drop (after menu-based move is stable)
+8. Add realtime in phase 2
+
+## Detailed Plan For Remaining Work
+### Phase 3A - Task edit sheet (MVP)
+- Replace current preview drawer with an editable sheet component.
+- First-pass editable fields: title, priority, start date, end date.
+- Keep assignees/labels/projects visible but read-only in the first pass if write APIs are not yet ergonomic.
+- Save flow: validate -> call cubit mutation -> dismiss sheet -> reload board detail -> show success/error toast.
+
+### Phase 3B - Task create and move
+- Add list-scoped "Create task" action in both list and kanban surfaces.
+- Add move action (current-board-only) via action sheet listing board lists.
+- Use the same mutation entry points from both view modes to keep behavior consistent.
+- After create/move success, keep search/filter state and current view stable.
+
+### Phase 4A - Board/list controls
+- Add board actions menu in app bar: rename board, create list, refresh.
+- Add per-list rename action from list header/column header.
+- Keep destructive list/board actions deferred.
+
+### Phase 4B - Filter sheet
+- Keep search inline; move advanced filters into a dedicated bottom sheet.
+- Initial advanced filters: assignees, labels, projects, priority, status/list.
+- Store filter state in cubit and derive filtered task groups from a single selector path.
+
+### Phase 5 - UX and reliability polish
+- Tablet: improve side-by-side column sizing, spacing, and empty states.
+- Mutations: add optimistic local patching only after reload-based flow is stable.
+- Tests: add cubit mutation tests and focused widget tests for view switching + edit/create/move actions.
+
+## Mutation Strategy (concrete)
+- Source of truth remains `TaskBoardDetailCubit` state.
+- Add `isMutating` + `mutationError` fields to state.
+- Serialize mutations in cubit to avoid race conditions from rapid taps.
+- First iteration: always call `reload()` after successful write to avoid partial-shape drift.
+- Second iteration (optional): patch local task/list collections for faster UX where payload parity is guaranteed.
+
+## Validation Checklist Per Slice
+- `flutter analyze` passes for mobile board-detail files.
+- New user-facing strings are added in both `app_en.arb` and `app_vi.arb`.
+- Workspace-switch while sheet is open does not apply stale writes.
+- List and kanban both reflect create/edit/move updates after mutation.
 ## Risks
 ### High risk
 - Drag/drop on mobile

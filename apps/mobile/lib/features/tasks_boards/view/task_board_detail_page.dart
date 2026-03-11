@@ -13,6 +13,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/task_board_list.dart';
 import 'package:mobile/data/models/task_board_task.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/tasks_boards/cubit/task_board_detail_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -20,6 +21,7 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'task_board_detail_page_cards.dart';
+part 'task_board_detail_page_sheet.dart';
 part 'task_board_detail_page_states.dart';
 part 'task_board_detail_page_utils.dart';
 part 'task_board_detail_page_view.dart';

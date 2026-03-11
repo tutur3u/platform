@@ -889,6 +889,120 @@ abstract class AppLocalizations {
   /// **'No tasks match your search.'**
   String get taskBoardDetailNoMatchingTasks;
 
+  /// No description provided for @taskBoardDetailTaskActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Task actions'**
+  String get taskBoardDetailTaskActions;
+
+  /// No description provided for @taskBoardDetailMoveTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Move task'**
+  String get taskBoardDetailMoveTask;
+
+  /// No description provided for @taskBoardDetailTaskMoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Task moved.'**
+  String get taskBoardDetailTaskMoved;
+
+  /// No description provided for @taskBoardDetailCreateTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Create task'**
+  String get taskBoardDetailCreateTask;
+
+  /// No description provided for @taskBoardDetailEditTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit task'**
+  String get taskBoardDetailEditTask;
+
+  /// No description provided for @taskBoardDetailTaskTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get taskBoardDetailTaskTitleLabel;
+
+  /// No description provided for @taskBoardDetailTaskTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled task'**
+  String get taskBoardDetailTaskTitleHint;
+
+  /// No description provided for @taskBoardDetailTaskTitleRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Task title is required'**
+  String get taskBoardDetailTaskTitleRequired;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get taskBoardDetailTaskDescriptionLabel;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add description'**
+  String get taskBoardDetailTaskDescriptionHint;
+
+  /// No description provided for @taskBoardDetailPriority.
+  ///
+  /// In en, this message translates to:
+  /// **'Priority'**
+  String get taskBoardDetailPriority;
+
+  /// No description provided for @taskBoardDetailTaskDates.
+  ///
+  /// In en, this message translates to:
+  /// **'Dates'**
+  String get taskBoardDetailTaskDates;
+
+  /// No description provided for @taskBoardDetailTaskStartDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Start date'**
+  String get taskBoardDetailTaskStartDate;
+
+  /// No description provided for @taskBoardDetailTaskEndDate.
+  ///
+  /// In en, this message translates to:
+  /// **'End date'**
+  String get taskBoardDetailTaskEndDate;
+
+  /// No description provided for @taskBoardDetailNoDate.
+  ///
+  /// In en, this message translates to:
+  /// **'No date'**
+  String get taskBoardDetailNoDate;
+
+  /// No description provided for @taskBoardDetailInvalidDateRange.
+  ///
+  /// In en, this message translates to:
+  /// **'End date must be on or after start date'**
+  String get taskBoardDetailInvalidDateRange;
+
+  /// No description provided for @taskBoardDetailTaskSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Task updated.'**
+  String get taskBoardDetailTaskSaved;
+
+  /// No description provided for @taskBoardDetailTaskCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Task created.'**
+  String get taskBoardDetailTaskCreated;
+
+  /// No description provided for @taskBoardDetailNoMoveTargets.
+  ///
+  /// In en, this message translates to:
+  /// **'No other lists available for moving this task.'**
+  String get taskBoardDetailNoMoveTargets;
+
   /// No description provided for @taskPlanningTitle.
   ///
   /// In en, this message translates to:

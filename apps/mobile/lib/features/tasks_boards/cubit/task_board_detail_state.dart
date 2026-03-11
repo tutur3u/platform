@@ -15,6 +15,8 @@ class TaskBoardDetailState extends Equatable {
     this.currentView = TaskBoardDetailView.list,
     this.searchQuery = '',
     this.selectedTaskId,
+    this.isMutating = false,
+    this.mutationError,
     this.error,
   });
 
@@ -25,6 +27,8 @@ class TaskBoardDetailState extends Equatable {
   final TaskBoardDetailView currentView;
   final String searchQuery;
   final String? selectedTaskId;
+  final bool isMutating;
+  final String? mutationError;
   final String? error;
 
   List<TaskBoardTask> get filteredTasks {
@@ -57,7 +61,10 @@ class TaskBoardDetailState extends Equatable {
     TaskBoardDetailView? currentView,
     String? searchQuery,
     Object? selectedTaskId = _taskBoardDetailSentinel,
+    bool? isMutating,
+    Object? mutationError = _taskBoardDetailSentinel,
     Object? error = _taskBoardDetailSentinel,
+    bool clearMutationError = false,
     bool clearError = false,
   }) {
     return TaskBoardDetailState(
@@ -76,6 +83,12 @@ class TaskBoardDetailState extends Equatable {
       selectedTaskId: selectedTaskId == _taskBoardDetailSentinel
           ? this.selectedTaskId
           : selectedTaskId as String?,
+      isMutating: isMutating ?? this.isMutating,
+      mutationError: clearMutationError
+          ? null
+          : mutationError == _taskBoardDetailSentinel
+          ? this.mutationError
+          : mutationError as String?,
       error: clearError
           ? null
           : error == _taskBoardDetailSentinel
@@ -93,6 +106,8 @@ class TaskBoardDetailState extends Equatable {
     currentView,
     searchQuery,
     selectedTaskId,
+    isMutating,
+    mutationError,
     error,
   ];
 }

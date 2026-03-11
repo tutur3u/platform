@@ -64,6 +64,67 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     await loadBoardDetail(wsId: wsId, boardId: boardId);
   }
 
+  Future<void> createTask({
+    required String listId,
+    required String name,
+    String? description,
+    String? priority,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    final wsId = state.workspaceId;
+    if (wsId == null) {
+      throw StateError('Workspace not selected');
+    }
+
+    await _runMutation(
+      () => _taskRepository.createBoardTask(
+        wsId: wsId,
+        listId: listId,
+        name: name,
+        description: description,
+        priority: priority,
+        startDate: startDate,
+        endDate: endDate,
+      ),
+    );
+  }
+
+  Future<void> updateTask({
+    required String taskId,
+    required String name,
+    String? description,
+    String? priority,
+    DateTime? startDate,
+    DateTime? endDate,
+    bool clearDescription = false,
+    bool clearStartDate = false,
+    bool clearEndDate = false,
+  }) async {
+    await _runMutation(
+      () => _taskRepository.updateBoardTask(
+        taskId: taskId,
+        name: name,
+        description: description,
+        priority: priority,
+        startDate: startDate,
+        endDate: endDate,
+        clearDescription: clearDescription,
+        clearStartDate: clearStartDate,
+        clearEndDate: clearEndDate,
+      ),
+    );
+  }
+
+  Future<void> moveTask({
+    required String taskId,
+    required String listId,
+  }) async {
+    await _runMutation(
+      () => _taskRepository.moveBoardTask(taskId: taskId, listId: listId),
+    );
+  }
+
   void setView(TaskBoardDetailView view) {
     emit(state.copyWith(currentView: view));
   }
@@ -74,5 +135,50 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
 
   void selectTask(String? taskId) {
     emit(state.copyWith(selectedTaskId: taskId));
+  }
+
+  Future<void> _runMutation(Future<Object?> Function() action) async {
+    final wsId = state.workspaceId;
+    final boardId = state.boardId;
+
+    if (wsId == null || boardId == null) {
+      throw StateError('Board detail is not initialized');
+    }
+
+    emit(
+      state.copyWith(
+        isMutating: true,
+        clearMutationError: true,
+        clearError: true,
+      ),
+    );
+
+    try {
+      await action();
+
+      if (state.workspaceId != wsId || state.boardId != boardId) {
+        return;
+      }
+
+      emit(
+        state.copyWith(
+          isMutating: false,
+          clearMutationError: true,
+          clearError: true,
+        ),
+      );
+
+      await loadBoardDetail(wsId: wsId, boardId: boardId);
+    } on Exception catch (error) {
+      if (state.workspaceId == wsId && state.boardId == boardId) {
+        emit(
+          state.copyWith(
+            isMutating: false,
+            mutationError: error.toString(),
+          ),
+        );
+      }
+      rethrow;
+    }
   }
 }

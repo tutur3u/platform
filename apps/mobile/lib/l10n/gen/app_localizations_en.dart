@@ -432,6 +432,63 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailNoMatchingTasks => 'No tasks match your search.';
 
   @override
+  String get taskBoardDetailTaskActions => 'Task actions';
+
+  @override
+  String get taskBoardDetailMoveTask => 'Move task';
+
+  @override
+  String get taskBoardDetailTaskMoved => 'Task moved.';
+
+  @override
+  String get taskBoardDetailCreateTask => 'Create task';
+
+  @override
+  String get taskBoardDetailEditTask => 'Edit task';
+
+  @override
+  String get taskBoardDetailTaskTitleLabel => 'Title';
+
+  @override
+  String get taskBoardDetailTaskTitleHint => 'Untitled task';
+
+  @override
+  String get taskBoardDetailTaskTitleRequired => 'Task title is required';
+
+  @override
+  String get taskBoardDetailTaskDescriptionLabel => 'Description';
+
+  @override
+  String get taskBoardDetailTaskDescriptionHint => 'Add description';
+
+  @override
+  String get taskBoardDetailPriority => 'Priority';
+
+  @override
+  String get taskBoardDetailTaskDates => 'Dates';
+
+  @override
+  String get taskBoardDetailTaskStartDate => 'Start date';
+
+  @override
+  String get taskBoardDetailTaskEndDate => 'End date';
+
+  @override
+  String get taskBoardDetailNoDate => 'No date';
+
+  @override
+  String get taskBoardDetailInvalidDateRange => 'End date must be on or after start date';
+
+  @override
+  String get taskBoardDetailTaskSaved => 'Task updated.';
+
+  @override
+  String get taskBoardDetailTaskCreated => 'Task created.';
+
+  @override
+  String get taskBoardDetailNoMoveTargets => 'No other lists available for moving this task.';
+
+  @override
   String get taskPlanningTitle => 'Planning';
 
   @override
