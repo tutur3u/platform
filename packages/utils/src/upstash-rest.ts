@@ -1,12 +1,12 @@
-import type { Ratelimit } from '@upstash/ratelimit';
 import type { Redis } from '@upstash/redis';
 
 export type UpstashRestRedisClient = Pick<
   Redis,
   'del' | 'expire' | 'get' | 'incr' | 'set' | 'ttl'
 >;
-export type UpstashRatelimitRedisClient = NonNullable<
-  ConstructorParameters<typeof Ratelimit>[0]['redis']
+export type UpstashRatelimitRedisClient = Pick<
+  Redis,
+  'eval' | 'evalsha' | 'get' | 'set'
 >;
 
 export function hasUpstashRestEnv(): boolean {
@@ -45,6 +45,7 @@ export async function getUpstashRatelimitRedisClient(): Promise<UpstashRatelimit
   const client = Redis.fromEnv();
 
   const ratelimitClient: UpstashRatelimitRedisClient = {
+    eval: (...args) => client.eval(...args),
     evalsha: (...args) => client.evalsha(...args),
     get: <T = unknown>(key: string) => client.get<T>(key),
     set: (key, value, options) => client.set(key, value, options),

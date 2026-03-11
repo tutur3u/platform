@@ -31,6 +31,7 @@ describe('upstash-rest', () => {
     vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
     const client = {
       del: vi.fn(),
+      eval: vi.fn(),
       evalsha: vi.fn(),
       expire: vi.fn(),
       get: vi.fn(),
@@ -58,6 +59,7 @@ describe('upstash-rest', () => {
     await restClient?.set('rest-key', 'value', { ex: 60 });
     await ratelimitClient?.get('ratelimit-key');
     await ratelimitClient?.set('ratelimit-key', 'value');
+    await ratelimitClient?.eval('return 1', ['k'], ['v']);
     await ratelimitClient?.evalsha('sha', ['k'], ['v']);
 
     expect(client.get).toHaveBeenCalledWith('rest-key');
@@ -68,6 +70,7 @@ describe('upstash-rest', () => {
       'value',
       undefined
     );
+    expect(client.eval).toHaveBeenCalledWith('return 1', ['k'], ['v']);
     expect(client.evalsha).toHaveBeenCalledWith('sha', ['k'], ['v']);
     expect(mocks.fromEnv).toHaveBeenCalledTimes(2);
   });
