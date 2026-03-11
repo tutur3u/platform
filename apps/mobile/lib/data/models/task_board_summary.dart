@@ -60,19 +60,23 @@ class TaskBoardSummary extends Equatable {
     final rawId = json['id'];
     if (rawId is! String || rawId.trim().isEmpty) {
       throw const FormatException(
-        'TaskBoardSummary.fromSummaryJson: required field "id" is missing or invalid',
+        'TaskBoardSummary.fromSummaryJson: required field "id" is missing '
+        'or invalid',
       );
     }
 
     final rawWorkspaceId = json['ws_id'];
     if (rawWorkspaceId is! String || rawWorkspaceId.trim().isEmpty) {
       throw const FormatException(
-        'TaskBoardSummary.fromSummaryJson: required field "ws_id" is missing or invalid',
+        'TaskBoardSummary.fromSummaryJson: required field "ws_id" is missing '
+        'or invalid',
       );
     }
 
-    final listCount = _parseCount(json['list_count']) ?? _parseCount(json['listCount']) ?? 0;
-    final taskCount = _parseCount(json['task_count']) ?? _parseCount(json['taskCount']) ?? 0;
+    final listCount =
+        _parseCount(json['list_count']) ?? _parseCount(json['listCount']) ?? 0;
+    final taskCount =
+        _parseCount(json['task_count']) ?? _parseCount(json['taskCount']) ?? 0;
 
     return TaskBoardSummary(
       id: rawId.trim(),

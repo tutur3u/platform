@@ -305,7 +305,11 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
     if (_pageSize == normalizedPageSize) return;
 
     final taskBoardsCubit = context.read<TaskBoardsCubit>();
-    final capturedWsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    final capturedWsId = context
+        .read<WorkspaceCubit>()
+        .state
+        .currentWorkspace
+        ?.id;
 
     setState(() => _pageSize = normalizedPageSize);
 
