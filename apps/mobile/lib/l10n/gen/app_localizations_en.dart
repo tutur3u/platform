@@ -462,6 +462,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailTaskDescriptionHint => 'Add description';
 
   @override
+  String get taskBoardDetailTaskListLabel => 'List';
+
+  @override
+  String get taskBoardDetailTaskListSelect => 'Choose list';
+
+  @override
   String get taskBoardDetailPriority => 'Priority';
 
   @override

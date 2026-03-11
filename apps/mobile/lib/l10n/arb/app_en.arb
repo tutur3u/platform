@@ -197,6 +197,8 @@
     "taskBoardDetailTaskTitleRequired": "Task title is required",
     "taskBoardDetailTaskDescriptionLabel": "Description",
     "taskBoardDetailTaskDescriptionHint": "Add description",
+    "taskBoardDetailTaskListLabel": "List",
+    "taskBoardDetailTaskListSelect": "Choose list",
     "taskBoardDetailPriority": "Priority",
     "taskBoardDetailTaskDates": "Dates",
     "taskBoardDetailTaskStartDate": "Start date",

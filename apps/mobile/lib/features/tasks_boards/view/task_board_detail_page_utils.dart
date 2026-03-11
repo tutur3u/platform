@@ -74,3 +74,7 @@ String? _taskDescriptionPreview(String? rawDescription) {
     return trimmed;
   }
 }
+
+bool _taskHasDescription(String? rawDescription) {
+  return _taskDescriptionPreview(rawDescription) != null;
+}

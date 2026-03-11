@@ -7,10 +7,16 @@ class _BoardListSection extends StatelessWidget {
     required this.onTaskTap,
     required this.onTaskMove,
     required this.onCreateTask,
+    this.isExpanded = true,
+    this.collapsible = false,
+    this.onToggleExpanded,
   });
 
   final TaskBoardList list;
   final List<TaskBoardTask> tasks;
+  final bool isExpanded;
+  final bool collapsible;
+  final VoidCallback? onToggleExpanded;
   final void Function(TaskBoardTask task) onTaskTap;
   final void Function(TaskBoardTask task) onTaskMove;
   final VoidCallback onCreateTask;
@@ -26,43 +32,66 @@ class _BoardListSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: theme.typography.large.copyWith(
-                    fontWeight: FontWeight.w600,
+          InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: collapsible ? onToggleExpanded : null,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: theme.typography.large.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-              ),
-              shad.OutlineBadge(
-                child: Text(context.l10n.taskBoardsTasksCount(tasks.length)),
-              ),
-              const shad.Gap(8),
-              shad.IconButton.ghost(
-                icon: const Icon(Icons.add),
-                onPressed: onCreateTask,
-              ),
-            ],
-          ),
-          const shad.Gap(10),
-          if (tasks.isEmpty)
-            Text(
-              context.l10n.taskBoardDetailNoTasksInList,
-              style: theme.typography.textMuted,
-            )
-          else
-            ...tasks.map(
-              (task) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: _BoardTaskTile(
-                  task: task,
-                  onTap: () => onTaskTap(task),
-                  onMove: () => onTaskMove(task),
+                shad.OutlineBadge(
+                  child: Text(context.l10n.taskBoardsTasksCount(tasks.length)),
                 ),
-              ),
+                const shad.Gap(8),
+                if (collapsible)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: Icon(
+                      isExpanded ? Icons.expand_less : Icons.expand_more,
+                      size: 18,
+                    ),
+                  ),
+                shad.IconButton.ghost(
+                  icon: const Icon(Icons.add),
+                  onPressed: onCreateTask,
+                ),
+              ],
             ),
+          ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeInOut,
+            child: !isExpanded
+                ? const SizedBox.shrink()
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const shad.Gap(10),
+                      if (tasks.isEmpty)
+                        Text(
+                          context.l10n.taskBoardDetailNoTasksInList,
+                          style: theme.typography.textMuted,
+                        )
+                      else
+                        ...tasks.map(
+                          (task) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: _BoardTaskTile(
+                              task: task,
+                              onTap: () => onTaskTap(task),
+                              onMove: () => onTaskMove(task),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+          ),
         ],
       ),
     );
@@ -86,7 +115,7 @@ class _BoardTaskTile extends StatelessWidget {
     final title = task.name?.trim().isNotEmpty == true
         ? task.name!.trim()
         : context.l10n.taskBoardDetailUntitledTask;
-    final description = _taskDescriptionPreview(task.description);
+    final hasDescription = _taskHasDescription(task.description);
     final datesLabel = _taskDatesLabel(task);
     final hasDates = datesLabel.isNotEmpty;
 
@@ -133,17 +162,6 @@ class _BoardTaskTile extends StatelessWidget {
                 ),
               ],
             ),
-            if (description case final descriptionText?) ...[
-              const shad.Gap(6),
-              Text(
-                descriptionText,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.xSmall.copyWith(
-                  color: theme.colorScheme.mutedForeground,
-                ),
-              ),
-            ],
             const shad.Gap(8),
             Wrap(
               spacing: 8,
@@ -152,6 +170,17 @@ class _BoardTaskTile extends StatelessWidget {
                 shad.OutlineBadge(
                   child: Text(_taskPriorityLabel(context, task.priority)),
                 ),
+                if (hasDescription)
+                  Tooltip(
+                    message: context.l10n.taskBoardDetailTaskDescriptionLabel,
+                    child: shad.OutlineBadge(
+                      child: Icon(
+                        Icons.notes_outlined,
+                        size: 14,
+                        color: theme.colorScheme.mutedForeground,
+                      ),
+                    ),
+                  ),
                 if (hasDates) shad.OutlineBadge(child: Text(datesLabel)),
               ],
             ),

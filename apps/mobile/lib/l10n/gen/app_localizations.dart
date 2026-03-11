@@ -949,6 +949,18 @@ abstract class AppLocalizations {
   /// **'Add description'**
   String get taskBoardDetailTaskDescriptionHint;
 
+  /// No description provided for @taskBoardDetailTaskListLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'List'**
+  String get taskBoardDetailTaskListLabel;
+
+  /// No description provided for @taskBoardDetailTaskListSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose list'**
+  String get taskBoardDetailTaskListSelect;
+
   /// No description provided for @taskBoardDetailPriority.
   ///
   /// In en, this message translates to:

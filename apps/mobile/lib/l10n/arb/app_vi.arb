@@ -197,6 +197,8 @@
     "taskBoardDetailTaskTitleRequired": "Tiêu đề công việc là bắt buộc",
     "taskBoardDetailTaskDescriptionLabel": "Mô tả",
     "taskBoardDetailTaskDescriptionHint": "Thêm mô tả",
+    "taskBoardDetailTaskListLabel": "Danh sách",
+    "taskBoardDetailTaskListSelect": "Chọn danh sách",
     "taskBoardDetailPriority": "Độ ưu tiên",
     "taskBoardDetailTaskDates": "Ngày",
     "taskBoardDetailTaskStartDate": "Ngày bắt đầu",

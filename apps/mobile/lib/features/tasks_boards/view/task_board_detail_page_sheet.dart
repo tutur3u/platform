@@ -27,6 +27,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
   late final TextEditingController _nameController;
   late final TextEditingController _descriptionController;
   late String _priority;
+  late String _selectedListId;
   DateTime? _startDate;
   DateTime? _endDate;
   bool _isSaving = false;
@@ -43,6 +44,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
       text: task?.description ?? '',
     );
     _priority = _normalizePriority(task?.priority);
+    _selectedListId = _resolveInitialListId(task);
     _startDate = task?.startDate;
     _endDate = task?.endDate;
   }
@@ -92,7 +94,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
                       icon: const Icon(Icons.close),
                       onPressed: _isSaving || _isMoving
                           ? null
-                          : () => Navigator.of(context).pop(),
+                          : () => unawaited(_closeEditor()),
                     ),
                   ],
                 ),
@@ -121,6 +123,26 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
                     context.l10n.taskBoardDetailTaskDescriptionHint,
                   ),
                 ),
+                if (_isCreate) ...[
+                  const shad.Gap(12),
+                  Text(
+                    context.l10n.taskBoardDetailTaskListLabel,
+                    style: theme.typography.small,
+                  ),
+                  const shad.Gap(6),
+                  shad.OutlineButton(
+                    onPressed: _isSaving || _isMoving || widget.lists.length < 2
+                        ? null
+                        : _pickList,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(_selectedListLabel(context)),
+                        const Icon(Icons.expand_more, size: 16),
+                      ],
+                    ),
+                  ),
+                ],
                 const shad.Gap(12),
                 Text(
                   context.l10n.taskBoardDetailPriority,
@@ -197,7 +219,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
                       child: shad.OutlineButton(
                         onPressed: _isSaving || _isMoving
                             ? null
-                            : () => Navigator.of(context).pop(),
+                            : () => unawaited(_closeEditor()),
                         child: Text(context.l10n.commonCancel),
                       ),
                     ),
@@ -248,7 +270,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
       final cubit = context.read<TaskBoardDetailCubit>();
       if (_isCreate) {
         await cubit.createTask(
-          listId: widget.defaultListId,
+          listId: _selectedListId,
           name: title,
           description: description,
           priority: _priority,
@@ -273,7 +295,8 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
       }
 
       if (!mounted || !toastContext.mounted) return;
-      Navigator.of(context).pop();
+      await _closeEditor();
+      if (!mounted || !toastContext.mounted) return;
       shad.showToast(
         context: toastContext,
         builder: (context, overlay) => shad.Alert(
@@ -339,7 +362,8 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
       );
 
       if (!mounted || !toastContext.mounted) return;
-      Navigator.of(context).pop();
+      await _closeEditor();
+      if (!mounted || !toastContext.mounted) return;
       shad.showToast(
         context: toastContext,
         builder: (context, overlay) =>
@@ -369,6 +393,26 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     }
   }
 
+  Future<void> _pickList() async {
+    if (widget.lists.length < 2) return;
+
+    final selectedListId = await shad.showDialog<String>(
+      context: context,
+      builder: (context) => _TaskListPickerDialog(
+        title: context.l10n.taskBoardDetailTaskListSelect,
+        lists: widget.lists,
+      ),
+    );
+
+    if (selectedListId == null ||
+        !mounted ||
+        selectedListId == _selectedListId) {
+      return;
+    }
+
+    setState(() => _selectedListId = selectedListId);
+  }
+
   Future<void> _pickDate({required bool isStart}) async {
     final current = isStart ? _startDate : _endDate;
     final picked = await showDatePicker(
@@ -389,12 +433,51 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     });
   }
 
+  Future<void> _closeEditor() async {
+    try {
+      await shad.closeOverlay<void>(context);
+      return;
+    } on Exception {
+      if (!mounted) return;
+      final navigator = Navigator.of(context);
+      if (navigator.canPop()) {
+        navigator.pop();
+      }
+    }
+  }
+
   String _normalizePriority(String? value) {
     final trimmed = value?.trim().toLowerCase();
     if (trimmed == null || trimmed.isEmpty) {
       return 'normal';
     }
     return _priorityOptions.contains(trimmed) ? trimmed : 'normal';
+  }
+
+  String _resolveInitialListId(TaskBoardTask? task) {
+    if (task != null && widget.lists.any((list) => list.id == task.listId)) {
+      return task.listId;
+    }
+
+    if (widget.lists.any((list) => list.id == widget.defaultListId)) {
+      return widget.defaultListId;
+    }
+
+    return widget.lists.first.id;
+  }
+
+  String _selectedListLabel(BuildContext context) {
+    final selectedList = widget.lists.firstWhere(
+      (list) => list.id == _selectedListId,
+      orElse: () => widget.lists.first,
+    );
+
+    final trimmedName = selectedList.name?.trim();
+    if (trimmedName != null && trimmedName.isNotEmpty) {
+      return trimmedName;
+    }
+
+    return context.l10n.taskBoardDetailUntitledList;
   }
 
   String? _normalizeText(String raw) {
@@ -481,6 +564,53 @@ class _MoveTaskListDialog extends StatelessWidget {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: shad.OutlineButton(
+                    onPressed: () => Navigator.of(context).pop(list.id),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(label),
+                    ),
+                  ),
+                );
+              }),
+              shad.OutlineButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(context.l10n.commonCancel),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TaskListPickerDialog extends StatelessWidget {
+  const _TaskListPickerDialog({
+    required this.title,
+    required this.lists,
+  });
+
+  final String title;
+  final List<TaskBoardList> lists;
+
+  @override
+  Widget build(BuildContext context) {
+    return shad.AlertDialog(
+      title: Text(title),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 360),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ...lists.map((list) {
+                final label = list.name?.trim().isNotEmpty == true
+                    ? list.name!.trim()
+                    : context.l10n.taskBoardDetailUntitledList;
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: shad.GhostButton(
                     onPressed: () => Navigator.of(context).pop(list.id),
                     child: Align(
                       alignment: Alignment.centerLeft,
