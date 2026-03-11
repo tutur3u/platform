@@ -4,7 +4,6 @@ import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
-import 'package:mobile/features/apps/widgets/apps_back_button.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mobile/features/calendar/widgets/agenda_view.dart';
 import 'package:mobile/features/calendar/widgets/calendar_connections_sheet.dart';
@@ -16,7 +15,7 @@ import 'package:mobile/features/calendar/widgets/month_view.dart';
 import 'package:mobile/features/calendar/widgets/three_day_view.dart';
 import 'package:mobile/features/calendar/widgets/week_view.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
-import 'package:mobile/features/shell/view/avatar_dropdown.dart';
+import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -55,12 +54,9 @@ class _CalendarView extends StatelessWidget {
 
     return shad.Scaffold(
       headers: [
-        shad.AppBar(
-          leading: const [AppsBackButton()],
-          title: Text(l10n.calendarTitle),
-          trailing: [
-            const AvatarDropdown(),
-            // Calendar connections.
+        MobileSectionAppBar(
+          title: l10n.calendarTitle,
+          actions: [
             Tooltip(
               message: l10n.calendarConnectionsTitle,
               child: shad.IconButton.ghost(
@@ -79,7 +75,6 @@ class _CalendarView extends StatelessWidget {
                 },
               ),
             ),
-            // Today button.
             Tooltip(
               message: l10n.calendarToday,
               child: shad.IconButton.ghost(
@@ -97,7 +92,6 @@ class _CalendarView extends StatelessWidget {
                 },
               ),
             ),
-            // View mode.
             BlocBuilder<CalendarCubit, CalendarState>(
               buildWhen: (prev, curr) => prev.viewMode != curr.viewMode,
               builder: (context, state) {

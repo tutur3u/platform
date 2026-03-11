@@ -163,6 +163,36 @@ abstract class AppLocalizations {
   /// **'Sign in'**
   String get loginSignIn;
 
+  /// No description provided for @authContinueWithGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get authContinueWithGoogle;
+
+  /// No description provided for @authContinueWithEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'or continue with email'**
+  String get authContinueWithEmail;
+
+  /// No description provided for @authGoogleLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting to Google...'**
+  String get authGoogleLoading;
+
+  /// No description provided for @authGoogleSignInFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in failed. Please try again.'**
+  String get authGoogleSignInFailed;
+
+  /// No description provided for @authGoogleBrowserLaunchFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to open Google sign-in right now.'**
+  String get authGoogleBrowserLaunchFailed;
+
   /// No description provided for @authLogOut.
   ///
   /// In en, this message translates to:
@@ -258,6 +288,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Back to login'**
   String get signUpBackToLogin;
+
+  /// No description provided for @signUpAlreadyHaveAccountPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Already have an account?'**
+  String get signUpAlreadyHaveAccountPrompt;
+
+  /// No description provided for @signUpSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get signUpSignIn;
 
   /// No description provided for @forgotPasswordTitle.
   ///
@@ -403,6 +445,12 @@ abstract class AppLocalizations {
   /// **'Assistant'**
   String get navAssistant;
 
+  /// No description provided for @navBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get navBack;
+
   /// No description provided for @appsHubSearchHint.
   ///
   /// In en, this message translates to:
@@ -427,11 +475,389 @@ abstract class AppLocalizations {
   /// **'No apps found'**
   String get appsHubEmpty;
 
+  /// No description provided for @appsHubHeroTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace tools'**
+  String get appsHubHeroTitle;
+
+  /// No description provided for @appsHubHeroSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a tool to open.'**
+  String get appsHubHeroSubtitle;
+
+  /// No description provided for @appsHubFeatured.
+  ///
+  /// In en, this message translates to:
+  /// **'Featured'**
+  String get appsHubFeatured;
+
+  /// No description provided for @appsHubMoreTools.
+  ///
+  /// In en, this message translates to:
+  /// **'More tools'**
+  String get appsHubMoreTools;
+
+  /// No description provided for @appsHubSearchResults.
+  ///
+  /// In en, this message translates to:
+  /// **'Search results'**
+  String get appsHubSearchResults;
+
+  /// No description provided for @appsHubOpenApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get appsHubOpenApp;
+
+  /// No description provided for @appsHubTasksDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Assigned work, planning, and portfolio.'**
+  String get appsHubTasksDescription;
+
+  /// No description provided for @appsHubCalendarDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Agenda, upcoming events, and schedule views.'**
+  String get appsHubCalendarDescription;
+
+  /// No description provided for @appsHubFinanceDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallets, categories, and transaction history.'**
+  String get appsHubFinanceDescription;
+
+  /// No description provided for @appsHubTimerDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Tracking sessions, stats, and requests.'**
+  String get appsHubTimerDescription;
+
   /// No description provided for @assistantComingSoon.
   ///
   /// In en, this message translates to:
   /// **'Coming Soon'**
   String get assistantComingSoon;
+
+  /// No description provided for @assistantSelectWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a workspace'**
+  String get assistantSelectWorkspace;
+
+  /// No description provided for @assistantWorkspaceAwareDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace-aware Mira for planning, questions, and quick actions.'**
+  String get assistantWorkspaceAwareDescription;
+
+  /// No description provided for @assistantHistoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent chats'**
+  String get assistantHistoryTitle;
+
+  /// No description provided for @assistantUntitledChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled chat'**
+  String get assistantUntitledChat;
+
+  /// No description provided for @assistantPersonalWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal'**
+  String get assistantPersonalWorkspace;
+
+  /// No description provided for @assistantSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira settings'**
+  String get assistantSettingsTitle;
+
+  /// No description provided for @assistantActionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira actions'**
+  String get assistantActionsTitle;
+
+  /// No description provided for @assistantRenameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename Mira'**
+  String get assistantRenameTitle;
+
+  /// No description provided for @assistantRenameAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get assistantRenameAction;
+
+  /// No description provided for @assistantCancelAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get assistantCancelAction;
+
+  /// No description provided for @assistantSaveAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get assistantSaveAction;
+
+  /// No description provided for @assistantCreditsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Credits'**
+  String get assistantCreditsTitle;
+
+  /// No description provided for @assistantConversationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation'**
+  String get assistantConversationTitle;
+
+  /// No description provided for @assistantAttachFilesAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach files'**
+  String get assistantAttachFilesAction;
+
+  /// No description provided for @assistantEnterFullscreenAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter fullscreen'**
+  String get assistantEnterFullscreenAction;
+
+  /// No description provided for @assistantExitFullscreenAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit fullscreen'**
+  String get assistantExitFullscreenAction;
+
+  /// No description provided for @assistantPersonalCredits.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal credits'**
+  String get assistantPersonalCredits;
+
+  /// No description provided for @assistantWorkspaceCredits.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace credits'**
+  String get assistantWorkspaceCredits;
+
+  /// No description provided for @assistantTasksLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks'**
+  String get assistantTasksLabel;
+
+  /// No description provided for @assistantCalendarLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar'**
+  String get assistantCalendarLabel;
+
+  /// No description provided for @assistantActiveLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'active'**
+  String get assistantActiveLabel;
+
+  /// No description provided for @assistantDoneTodayLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'done today'**
+  String get assistantDoneTodayLabel;
+
+  /// No description provided for @assistantUpcomingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'upcoming'**
+  String get assistantUpcomingLabel;
+
+  /// No description provided for @assistantYouLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get assistantYouLabel;
+
+  /// No description provided for @assistantThinkingStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Thinking...'**
+  String get assistantThinkingStatus;
+
+  /// No description provided for @assistantReasoningLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Reasoning'**
+  String get assistantReasoningLabel;
+
+  /// No description provided for @assistantAskPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask Mira anything...'**
+  String get assistantAskPlaceholder;
+
+  /// No description provided for @assistantQueuedPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Queued:'**
+  String get assistantQueuedPrefix;
+
+  /// No description provided for @assistantQuickPromptCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Summarize my calendar for today'**
+  String get assistantQuickPromptCalendar;
+
+  /// No description provided for @assistantQuickPromptTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Show my most urgent tasks'**
+  String get assistantQuickPromptTasks;
+
+  /// No description provided for @assistantQuickPromptFocus.
+  ///
+  /// In en, this message translates to:
+  /// **'Help me plan my next focus block'**
+  String get assistantQuickPromptFocus;
+
+  /// No description provided for @assistantQuickPromptExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'Log a quick expense for lunch'**
+  String get assistantQuickPromptExpense;
+
+  /// No description provided for @assistantNewConversation.
+  ///
+  /// In en, this message translates to:
+  /// **'New conversation'**
+  String get assistantNewConversation;
+
+  /// No description provided for @assistantExportChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Export chat'**
+  String get assistantExportChat;
+
+  /// No description provided for @assistantModelLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Model'**
+  String get assistantModelLabel;
+
+  /// No description provided for @assistantModeFast.
+  ///
+  /// In en, this message translates to:
+  /// **'Fast'**
+  String get assistantModeFast;
+
+  /// No description provided for @assistantModeThinking.
+  ///
+  /// In en, this message translates to:
+  /// **'Thinking'**
+  String get assistantModeThinking;
+
+  /// No description provided for @assistantImmersiveLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Immersive'**
+  String get assistantImmersiveLabel;
+
+  /// No description provided for @assistantStandardLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard'**
+  String get assistantStandardLabel;
+
+  /// No description provided for @assistantViewOnlyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'View only'**
+  String get assistantViewOnlyLabel;
+
+  /// No description provided for @assistantEditableLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Editable'**
+  String get assistantEditableLabel;
+
+  /// No description provided for @assistantSourceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Source'**
+  String get assistantSourceLabel;
+
+  /// No description provided for @assistantToolLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool'**
+  String get assistantToolLabel;
+
+  /// No description provided for @assistantInputLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Input'**
+  String get assistantInputLabel;
+
+  /// No description provided for @assistantOutputLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Output'**
+  String get assistantOutputLabel;
+
+  /// No description provided for @assistantSeeMoreLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'See more'**
+  String get assistantSeeMoreLabel;
+
+  /// No description provided for @assistantSeeLessLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'See less'**
+  String get assistantSeeLessLabel;
+
+  /// No description provided for @assistantExportShareText.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira chat export'**
+  String get assistantExportShareText;
+
+  /// No description provided for @assistantContextUpdatedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace context updated'**
+  String get assistantContextUpdatedLabel;
+
+  /// No description provided for @assistantPreferencesUpdatedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant preferences updated'**
+  String get assistantPreferencesUpdatedLabel;
+
+  /// No description provided for @assistantShowBottomNavLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Show bottom nav'**
+  String get assistantShowBottomNavLabel;
+
+  /// No description provided for @assistantHideBottomNavLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide bottom nav'**
+  String get assistantHideBottomNavLabel;
+
+  /// No description provided for @assistantCreditsSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{remaining} remaining • {tier}'**
+  String assistantCreditsSummary(int remaining, String tier);
 
   /// No description provided for @dashboardGreeting.
   ///
@@ -444,6 +870,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Quick actions'**
   String get dashboardQuickActions;
+
+  /// No description provided for @dashboardTodayTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Today at a glance'**
+  String get dashboardTodayTitle;
+
+  /// No description provided for @dashboardQuickLaunch.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick launch'**
+  String get dashboardQuickLaunch;
+
+  /// No description provided for @dashboardAssignedToMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Assigned to me'**
+  String get dashboardAssignedToMe;
+
+  /// No description provided for @dashboardUpcomingEvents.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming events'**
+  String get dashboardUpcomingEvents;
+
+  /// No description provided for @dashboardOpenTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Open tasks'**
+  String get dashboardOpenTasks;
+
+  /// No description provided for @dashboardOpenCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Open calendar'**
+  String get dashboardOpenCalendar;
+
+  /// No description provided for @dashboardNoAssignedTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'No active tasks assigned to you.'**
+  String get dashboardNoAssignedTasks;
+
+  /// No description provided for @dashboardNoAssignedTasksDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re clear for now. New work will appear here.'**
+  String get dashboardNoAssignedTasksDescription;
+
+  /// No description provided for @dashboardNoUpcomingEvents.
+  ///
+  /// In en, this message translates to:
+  /// **'No upcoming timed events in the next 7 days.'**
+  String get dashboardNoUpcomingEvents;
+
+  /// No description provided for @dashboardNoUpcomingEventsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Your schedule looks open.'**
+  String get dashboardNoUpcomingEventsDescription;
+
+  /// No description provided for @dashboardTaskOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue'**
+  String get dashboardTaskOverdue;
+
+  /// No description provided for @dashboardTaskToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get dashboardTaskToday;
+
+  /// No description provided for @dashboardTaskTomorrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Tomorrow'**
+  String get dashboardTaskTomorrow;
+
+  /// No description provided for @dashboardTaskUpcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get dashboardTaskUpcoming;
+
+  /// No description provided for @dashboardTaskNoDate.
+  ///
+  /// In en, this message translates to:
+  /// **'No due date'**
+  String get dashboardTaskNoDate;
+
+  /// No description provided for @dashboardEventAllDay.
+  ///
+  /// In en, this message translates to:
+  /// **'All day'**
+  String get dashboardEventAllDay;
+
+  /// No description provided for @dashboardTasksMetric.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} active'**
+  String dashboardTasksMetric(Object count);
+
+  /// No description provided for @dashboardOverdueMetric.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} overdue'**
+  String dashboardOverdueMetric(Object count);
+
+  /// No description provided for @dashboardEventsMetric.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} next up'**
+  String dashboardEventsMetric(Object count);
 
   /// No description provided for @tasksTitle.
   ///

@@ -12,6 +12,7 @@ import 'package:mobile/features/apps/cubit/app_tab_state.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/apps/widgets/workspace_selector_button.dart';
+import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/dashboard/view/dashboard_page.dart';
 import 'package:mobile/features/shell/view/avatar_dropdown.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -58,9 +59,6 @@ class _ShellPageState extends State<ShellPage> {
   bool _syncingLayerPage = false;
   bool _showMiniNav = true;
   String? _lastLayeredLocation;
-  int _overlayAppsTapEpoch = 0;
-
-  DateTime? _lastBackToRootTapAt;
 
   bool _isAppsTabHit(Offset position) {
     final ctx = _appsTabKey.currentContext;
@@ -158,38 +156,46 @@ class _ShellPageState extends State<ShellPage> {
     final items = _buildNavItems(context, state, l10n);
     final selectedIndex = _calculateSelectedIndex(widget.matchedLocation);
     final selectedKey = _keyForIndex(selectedIndex);
+    final assistantChrome = context.watch<AssistantChromeCubit>().state;
+    final showBottomNav =
+        !widget.matchedLocation.startsWith(Routes.assistant) ||
+        !assistantChrome.isFullscreen;
 
     return shad.Scaffold(
       headers: [_buildAppBar(context)],
-      footers: [
-        SafeArea(
-          top: false,
-          child: SizedBox(
-            width: double.infinity,
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 560),
-                child: Listener(
-                  behavior: HitTestBehavior.translucent,
-                  onPointerDown: _startLongPressTimer,
-                  onPointerUp: _handlePointerUp,
-                  onPointerCancel: _stopLongPressTimer,
-                  child: shad.NavigationBar(
-                    selectedKey: selectedKey,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
+      footers: showBottomNav
+          ? [
+              SafeArea(
+                top: false,
+                child: SizedBox(
+                  width: double.infinity,
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 560),
+                      child: Listener(
+                        behavior: HitTestBehavior.translucent,
+                        onPointerDown: _startLongPressTimer,
+                        onPointerUp: _handlePointerUp,
+                        onPointerCancel: _stopLongPressTimer,
+                        child: shad.NavigationBar(
+                          selectedKey: selectedKey,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          onSelected: (key) =>
+                              _onItemTapped(_indexForKey(key), context, state),
+                          children: items
+                              .map((i) => Expanded(child: i))
+                              .toList(),
+                        ),
+                      ),
                     ),
-                    onSelected: (key) =>
-                        _onItemTapped(_indexForKey(key), context, state),
-                    children: items.map((i) => Expanded(child: i)).toList(),
                   ),
                 ),
               ),
-            ),
-          ),
-        ),
-      ],
+            ]
+          : const [],
       child: _buildNormalizedChild(),
     );
   }
@@ -354,7 +360,7 @@ class _ShellPageState extends State<ShellPage> {
 
   shad.AppBar _buildAppBar(BuildContext context) {
     return const shad.AppBar(
-      title: WorkspaceSelectorButton(),
+      title: _ShellTopBarTitle(),
       trailing: [AvatarDropdown()],
     );
   }
@@ -375,12 +381,6 @@ class _ShellPageState extends State<ShellPage> {
       fontWeight: FontWeight.normal,
     );
 
-    final selectedModule = state.hasSelection
-        ? AppRegistry.moduleById(state.selectedId)
-        : null;
-    final appsLabel = selectedModule?.label(l10n) ?? l10n.navApps;
-    final appsIcon = selectedModule?.icon ?? Icons.apps_outlined;
-
     return [
       shad.NavigationItem(
         key: _homeKey,
@@ -397,8 +397,8 @@ class _ShellPageState extends State<ShellPage> {
       shad.NavigationItem(
         key: useGlobalKey ? _appsTabKey : _appsKey,
         spacing: _navItemSpacing,
-        label: _buildNavLabel(appsLabel, labelStyle),
-        child: Icon(appsIcon, size: _navIconSize),
+        label: _buildNavLabel(l10n.navApps, labelStyle),
+        child: const Icon(Icons.apps_outlined, size: _navIconSize),
       ),
     ];
   }
@@ -432,18 +432,14 @@ class _ShellPageState extends State<ShellPage> {
     final l10n = context.l10n;
 
     return [
-      const Expanded(
+      Expanded(
         child: shad.NavigationItem(
           key: _backToRootKey,
-          spacing: 0,
+          spacing: _navItemSpacing,
           alignment: Alignment.center,
           marginAlignment: Alignment.center,
-          child: SizedBox.square(
-            dimension: _navIconSize,
-            child: Center(
-              child: Icon(Icons.chevron_left, size: _navIconSize),
-            ),
-          ),
+          label: _buildNavLabel(l10n.navBack, labelStyle),
+          child: const Icon(Icons.chevron_left, size: _navIconSize),
         ),
       ),
       ...module.miniAppNavItems.map(
@@ -510,18 +506,7 @@ class _ShellPageState extends State<ShellPage> {
     AppModule activeModule,
   ) async {
     if (key == _backToRootKey) {
-      final now = DateTime.now();
-      final last = _lastBackToRootTapAt;
-      final isDoubleTap =
-          last != null &&
-          now.difference(last) < const Duration(milliseconds: 300);
-      _lastBackToRootTapAt = isDoubleTap ? null : now;
-      if (isDoubleTap) {
-        // Double-tap: go straight to the apps drawer.
-        await _openAppsDrawerFromAppsTab();
-      } else {
-        setState(() => _showMiniNav = false);
-      }
+      await _openAppsDrawerFromAppsTab();
       return;
     }
 
@@ -623,48 +608,23 @@ class _ShellPageState extends State<ShellPage> {
     AppTabState state,
   ) async {
     final appTabCubit = context.read<AppTabCubit>();
-    final appRoute = state.hasSelection
-        ? AppRegistry.moduleById(state.selectedId)?.route
-        : null;
     final isDoubleTap =
         _lastTabIndex == index &&
         _tapStopwatch.isRunning &&
         _tapStopwatch.elapsed < const Duration(milliseconds: 300);
 
     if (index == 2 && isDoubleTap) {
-      _overlayAppsTapEpoch++;
       await _openAppsDrawerFromAppsTab();
       return;
     }
 
-    // In layered mini-app mode:
-    // - single Apps tap returns to mini nav
-    // - double Apps tap opens Apps Hub
-    // Delay the mini-nav restore slightly to preserve the double-tap window.
-    if (index == 2 &&
-        !_showMiniNav &&
-        AppRegistry.moduleFromLocation(widget.matchedLocation) != null) {
-      _lastTabIndex = index;
-      _tapStopwatch
-        ..reset()
-        ..start();
-      final tapEpoch = ++_overlayAppsTapEpoch;
-      Future<void>.delayed(const Duration(milliseconds: 320), () {
-        if (!mounted || tapEpoch != _overlayAppsTapEpoch) {
-          return;
-        }
-        final stillInMiniApp =
-            AppRegistry.moduleFromLocation(widget.matchedLocation) != null;
-        if (stillInMiniApp && !_showMiniNav) {
-          setState(() => _showMiniNav = true);
-        }
-      });
+    if (index == 2) {
+      await _openAppsDrawerFromAppsTab();
       return;
     }
 
     final route = switch (index) {
       1 => Routes.assistant,
-      2 => appRoute ?? Routes.apps,
       _ => Routes.home,
     };
     if (!context.mounted) {
@@ -736,5 +696,43 @@ class _ShellPageState extends State<ShellPage> {
 
   static bool _isModuleRoute(String location) {
     return AppRegistry.moduleFromLocation(location) != null;
+  }
+}
+
+class _ShellTopBarTitle extends StatelessWidget {
+  const _ShellTopBarTitle();
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const NeverScrollableScrollPhysics(),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              'assets/logos/transparent.png',
+              width: 26,
+              height: 26,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '/',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurfaceVariant.withValues(alpha: 0.78),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const WorkspaceSelectorButton(),
+          ],
+        ),
+      ),
+    );
   }
 }

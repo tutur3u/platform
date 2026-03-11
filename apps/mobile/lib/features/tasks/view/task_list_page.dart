@@ -6,8 +6,7 @@ import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
-import 'package:mobile/features/apps/widgets/apps_back_button.dart';
-import 'package:mobile/features/shell/view/avatar_dropdown.dart';
+import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/tasks/cubit/task_list_cubit.dart';
 import 'package:mobile/features/tasks/widgets/my_tasks_header.dart';
 import 'package:mobile/features/tasks/widgets/task_section_accordion.dart';
@@ -102,11 +101,7 @@ class _TaskListViewState extends State<_TaskListView> {
 
     return shad.Scaffold(
       headers: [
-        shad.AppBar(
-          leading: const [AppsBackButton()],
-          title: Text(l10n.tasksTitle),
-          trailing: const [AvatarDropdown()],
-        ),
+        MobileSectionAppBar(title: l10n.tasksTitle),
       ],
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>

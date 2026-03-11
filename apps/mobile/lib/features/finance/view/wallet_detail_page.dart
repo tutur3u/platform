@@ -2,8 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide AppBar, Card, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
-import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/transaction_stats.dart';
@@ -14,6 +12,7 @@ import 'package:mobile/features/finance/view/transaction_detail_action.dart';
 import 'package:mobile/features/finance/view/wallet_detail_widgets.dart';
 import 'package:mobile/features/finance/widgets/grouped_transaction_accordion.dart';
 import 'package:mobile/features/finance/widgets/wallet_dialog.dart';
+import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -84,23 +83,9 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
 
     return shad.Scaffold(
       headers: [
-        shad.AppBar(
-          leading: [
-            shad.OutlineButton(
-              density: shad.ButtonDensity.icon,
-              onPressed: () {
-                final router = GoRouter.of(context);
-                if (router.canPop()) {
-                  router.pop();
-                  return;
-                }
-                context.go(Routes.wallets);
-              },
-              child: const Icon(Icons.arrow_back),
-            ),
-          ],
-          title: Text(_wallet?.name ?? l10n.financeWallet),
-          trailing: [
+        MobileSectionAppBar(
+          title: _wallet?.name ?? l10n.financeWallet,
+          actions: [
             shad.OutlineButton(
               density: shad.ButtonDensity.icon,
               onPressed: (_wallet == null || _isLoadingInitial)

@@ -29,23 +29,7 @@ class _TaskProjectDetailViewState extends State<_TaskProjectDetailView> {
 
     return shad.Scaffold(
       headers: [
-        shad.AppBar(
-          leading: [
-            shad.OutlineButton(
-              density: shad.ButtonDensity.icon,
-              onPressed: () {
-                final router = GoRouter.of(context);
-                if (router.canPop()) {
-                  router.pop();
-                  return;
-                }
-                context.go(Routes.taskPortfolio);
-              },
-              child: const Icon(Icons.arrow_back),
-            ),
-          ],
-          title: Text(l10n.taskPortfolioProjectDetailsTitle),
-        ),
+        MobileSectionAppBar(title: l10n.taskPortfolioProjectDetailsTitle),
       ],
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>
