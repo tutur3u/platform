@@ -1,12 +1,14 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Database } from '@tuturuuu/types';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const paramsSchema = z.object({
-  wsId: z.string().uuid(),
-  boardId: z.string().uuid(),
+  boardId: z.uuid(),
 });
 
 const copySchema = z.object({
@@ -65,16 +67,10 @@ export async function POST(req: Request, { params }: Params) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: member } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (!member) {
+    const permissions = await getPermissions({ wsId, request: req });
+    if (!permissions?.containsPermission('manage_projects')) {
       return NextResponse.json(
-        { error: "You don't have access to this workspace" },
+        { error: "You don't have permission to perform this operation" },
         { status: 403 }
       );
     }

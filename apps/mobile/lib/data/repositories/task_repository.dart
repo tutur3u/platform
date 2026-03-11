@@ -107,17 +107,22 @@ class TaskRepository {
 
     while (true) {
       final response = await _apiClient.getJson(
-        '/api/v1/workspaces/$wsId/boards-data?page=$page&pageSize=$normalizedPageSize',
+        '/api/v1/workspaces/$wsId/task-boards?page=$page&pageSize=$normalizedPageSize',
       );
-      final boardsData = response['data'] as List<dynamic>? ?? const [];
+      final boardsData = response['boards'] as List<dynamic>? ?? const [];
+      final totalCount = (response['count'] as num?)?.toInt();
       final pageBoards = boardsData
           .whereType<Map<String, dynamic>>()
-          .map(TaskBoardSummary.fromJson)
+          .map(TaskBoardSummary.fromSummaryJson)
           .toList(growable: false);
 
       boards.addAll(pageBoards);
 
       if (boardsData.isEmpty || boardsData.length < normalizedPageSize) {
+        break;
+      }
+
+      if (totalCount != null && boards.length >= totalCount) {
         break;
       }
 

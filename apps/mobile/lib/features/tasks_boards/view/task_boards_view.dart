@@ -252,6 +252,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
     } on Exception {
       if (!_canUpdatePermissionsState(capturedWsId)) return;
       setState(() {
+        _canManageProjects = false;
         _isCheckingPermissions = false;
         _permissionsLoadFailed = true;
       });
@@ -304,7 +305,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
     if (_pageSize == normalizedPageSize) return;
 
     final taskBoardsCubit = context.read<TaskBoardsCubit>();
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    final capturedWsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
 
     setState(() => _pageSize = normalizedPageSize);
 
@@ -313,7 +314,8 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
     if (!mounted) return;
 
     if (!_canManageProjects || _permissionsLoadFailed) return;
-    if (wsId == null) return;
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    if (wsId == null || capturedWsId == null || wsId != capturedWsId) return;
     await taskBoardsCubit.loadBoards(
       wsId,
       pageSize: normalizedPageSize,
