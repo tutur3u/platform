@@ -313,6 +313,48 @@ abstract class AppLocalizations {
   /// **'Failed to switch workspace'**
   String get workspaceSelectError;
 
+  /// No description provided for @appUpdateChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking app version...'**
+  String get appUpdateChecking;
+
+  /// No description provided for @appUpdateNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Update now'**
+  String get appUpdateNow;
+
+  /// No description provided for @appUpdateLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get appUpdateLater;
+
+  /// No description provided for @appUpdateRecommendedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update available'**
+  String get appUpdateRecommendedTitle;
+
+  /// No description provided for @appUpdateRecommendedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'A newer version of the app is available. Update now for the latest fixes and improvements.'**
+  String get appUpdateRecommendedMessage;
+
+  /// No description provided for @appUpdateRequiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update required'**
+  String get appUpdateRequiredTitle;
+
+  /// No description provided for @appUpdateRequiredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This app version is no longer supported. Update to continue using the app.'**
+  String get appUpdateRequiredMessage;
+
   /// No description provided for @navHome.
   ///
   /// In en, this message translates to:
