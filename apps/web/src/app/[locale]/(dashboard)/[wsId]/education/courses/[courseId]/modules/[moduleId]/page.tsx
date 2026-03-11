@@ -1,14 +1,8 @@
-import { CourseSection } from '../../section';
-import ClientFlashcards from './flashcards/client-flashcards';
-import ClientQuizzes from './quizzes/client-quizzes';
-import FileDisplay from './resources/file-display';
-import { YoutubeEmbed } from './youtube-links/embed';
-import { extractYoutubeId } from '@/utils/url-helper';
 import {
   createClient,
   createDynamicClient,
 } from '@ncthub/supabase/next/server';
-import { WorkspaceCourseModule } from '@ncthub/types/db';
+import type { WorkspaceCourseModule } from '@ncthub/types/db';
 import {
   BookText,
   Goal,
@@ -19,6 +13,12 @@ import {
 } from '@ncthub/ui/icons';
 import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
+import { extractYoutubeId } from '@/utils/url-helper';
+import { CourseSection } from '../../section';
+import ClientFlashcards from './flashcards/client-flashcards';
+import ClientQuizzes from './quizzes/client-quizzes';
+import FileDisplay from './resources/file-display';
+import { YoutubeEmbed } from './youtube-links/embed';
 
 interface Props {
   params: Promise<{

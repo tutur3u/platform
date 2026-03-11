@@ -3,15 +3,15 @@
 export const EMPTY_FOLDER_PLACEHOLDER_NAME = '.emptyFolderPlaceholder';
 
 export interface StorageObject {
-  id?: string;
-  bucket_id?: string;
+  id?: string | null;
+  bucket_id?: string | null;
   name?: string;
-  owner?: string;
-  created_at?: string;
-  updated_at?: string;
-  last_accessed_at?: string;
+  owner?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  last_accessed_at?: string | null;
   // metadata has eTag, size, mimeType, and other metadata
-  metadata?: Record<string, any>;
+  metadata?: Record<string, any> | null;
   path_tokens?: string[];
-  version?: string;
+  version?: string | null;
 }
