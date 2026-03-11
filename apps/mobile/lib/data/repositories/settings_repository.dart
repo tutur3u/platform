@@ -11,6 +11,8 @@ class SettingsRepository {
   static const _lastTabRouteKey = 'last-tab-route';
   static const _lastAppRouteKey = 'last-app-route';
   static const _hasSeenOnboardingKey = 'has_seen_onboarding';
+  static const _dismissedRecommendedVersionPrefix =
+      'dismissed-recommended-version';
 
   Future<String> getThemeMode() async {
     final prefs = await SharedPreferences.getInstance();
@@ -93,5 +95,21 @@ class SettingsRepository {
   Future<bool> hasSeenOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_hasSeenOnboardingKey) ?? false;
+  }
+
+  Future<String?> getDismissedRecommendedVersion(String platform) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('$_dismissedRecommendedVersionPrefix-$platform');
+  }
+
+  Future<void> setDismissedRecommendedVersion(
+    String platform,
+    String version,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      '$_dismissedRecommendedVersionPrefix-$platform',
+      version,
+    );
   }
 }

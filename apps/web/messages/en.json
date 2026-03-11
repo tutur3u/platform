@@ -4560,6 +4560,7 @@
     "features": "Features",
     "infrastructure": "Infrastructure",
     "integrations": "Integrations",
+    "mobile_versions": "Mobile Versions",
     "monitoring": "Monitoring",
     "overview": "Overview",
     "realtime": "Realtime",
@@ -6257,6 +6258,36 @@
       "toggle_text_chat": "Toggle text chat",
       "type_message": "Type a message...",
       "unavailable": "Voice chat unavailable"
+    }
+  },
+  "mobile-version-settings": {
+    "android": {
+      "description": "Configure soft and hard update thresholds for the Android app.",
+      "title": "Android"
+    },
+    "description": "Manage the effective and minimum app versions enforced by the mobile app before users can continue.",
+    "fields": {
+      "effective_version": "Effective version",
+      "effective_version_description": "Users below this version see an update prompt but can continue.",
+      "minimum_version": "Minimum version",
+      "minimum_version_description": "Users below this version are blocked until they update.",
+      "store_url": "Store URL",
+      "store_url_description": "Direct users to the matching app listing for this platform.",
+      "store_url_placeholder": "https://...",
+      "version_placeholder": "1.2.3"
+    },
+    "ios": {
+      "description": "Configure soft and hard update thresholds for the iOS app.",
+      "title": "iOS"
+    },
+    "save": "Save changes",
+    "save_error": "Failed to save mobile version policy.",
+    "save_success": "Mobile version policy updated.",
+    "saving": "Saving...",
+    "title": "Mobile Versions",
+    "validation": {
+      "store_url_required": "Store URL is required when a version is set.",
+      "version_format": "Version must use x.y.z format."
     }
   },
   "money-lover-import": {

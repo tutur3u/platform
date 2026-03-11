@@ -69,6 +69,7 @@ import {
   ShieldAlert,
   ShieldBan,
   ShieldUser,
+  Smartphone,
   Sparkle,
   Sparkles,
   SquareChevronRight,
@@ -1165,6 +1166,12 @@ export async function WorkspaceNavigationLinks({
               title: t('infrastructure-tabs.workspaces'),
               href: `/${personalOrWsId}/infrastructure/workspaces`,
               icon: <Blocks className="h-5 w-5" />,
+            },
+            {
+              title: t('infrastructure-tabs.mobile_versions'),
+              href: `/${personalOrWsId}/infrastructure/mobile-versions`,
+              icon: <Smartphone className="h-5 w-5" />,
+              disabled: withoutPermission('manage_workspace_roles'),
             },
             {
               title: t('infrastructure-tabs.email_blacklist'),

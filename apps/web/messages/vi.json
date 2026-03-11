@@ -4560,6 +4560,7 @@
     "features": "Tính năng",
     "infrastructure": "Cơ sở hạ tầng",
     "integrations": "Dịch vụ tích hợp",
+    "mobile_versions": "Phiên bản di động",
     "monitoring": "Giám sát",
     "overview": "Tổng quan",
     "realtime": "Thời gian thực",
@@ -6257,6 +6258,36 @@
       "toggle_text_chat": "Bật/tắt trò chuyện văn bản",
       "type_message": "Nhập tin nhắn...",
       "unavailable": "Trò chuyện bằng giọng nói không khả dụng"
+    }
+  },
+  "mobile-version-settings": {
+    "android": {
+      "description": "Cấu hình ngưỡng cập nhật mềm và cứng cho ứng dụng Android.",
+      "title": "Android"
+    },
+    "description": "Quản lý phiên bản hiệu lực và tối thiểu mà ứng dụng di động sẽ áp dụng trước khi người dùng tiếp tục sử dụng.",
+    "fields": {
+      "effective_version": "Phiên bản hiệu lực",
+      "effective_version_description": "Người dùng thấp hơn phiên bản này sẽ thấy lời nhắc cập nhật nhưng vẫn có thể tiếp tục.",
+      "minimum_version": "Phiên bản tối thiểu",
+      "minimum_version_description": "Người dùng thấp hơn phiên bản này sẽ bị chặn cho đến khi cập nhật.",
+      "store_url": "Liên kết cửa hàng",
+      "store_url_description": "Chuyển người dùng đến trang ứng dụng tương ứng trên nền tảng này.",
+      "store_url_placeholder": "https://...",
+      "version_placeholder": "1.2.3"
+    },
+    "ios": {
+      "description": "Cấu hình ngưỡng cập nhật mềm và cứng cho ứng dụng iOS.",
+      "title": "iOS"
+    },
+    "save": "Lưu thay đổi",
+    "save_error": "Không thể lưu chính sách phiên bản di động.",
+    "save_success": "Đã cập nhật chính sách phiên bản di động.",
+    "saving": "Đang lưu...",
+    "title": "Phiên bản di động",
+    "validation": {
+      "store_url_required": "Phải có liên kết cửa hàng khi đặt phiên bản.",
+      "version_format": "Phiên bản phải theo định dạng x.y.z."
     }
   },
   "money-lover-import": {

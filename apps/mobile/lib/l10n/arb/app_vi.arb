@@ -50,6 +50,13 @@
     "workspaceSelectTitle": "Chọn không gian làm việc",
     "workspaceSelectEmpty": "Không tìm thấy không gian làm việc",
     "workspaceSelectError": "Không thể chuyển không gian làm việc",
+    "appUpdateChecking": "Đang kiểm tra phiên bản ứng dụng...",
+    "appUpdateNow": "Cập nhật ngay",
+    "appUpdateLater": "Để sau",
+    "appUpdateRecommendedTitle": "Có bản cập nhật mới",
+    "appUpdateRecommendedMessage": "Đã có phiên bản ứng dụng mới hơn. Hãy cập nhật để nhận các bản sửa lỗi và cải tiến mới nhất.",
+    "appUpdateRequiredTitle": "Bắt buộc cập nhật",
+    "appUpdateRequiredMessage": "Phiên bản ứng dụng này không còn được hỗ trợ. Vui lòng cập nhật để tiếp tục sử dụng.",
 
     "navHome": "Trang chủ",
     "navTasks": "Công việc",
