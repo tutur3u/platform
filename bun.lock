@@ -285,6 +285,10 @@
         "typescript": "^5.9.3",
       },
     },
+    "apps/redis": {
+      "name": "@tuturuuu/redis",
+      "version": "1.0.0",
+    },
     "apps/rewise": {
       "name": "@tuturuuu/rewise",
       "version": "0.14.0",
@@ -2865,6 +2869,8 @@
     "@tuturuuu/payment": ["@tuturuuu/payment@workspace:packages/payment"],
 
     "@tuturuuu/playground": ["@tuturuuu/playground@workspace:apps/playground"],
+
+    "@tuturuuu/redis": ["@tuturuuu/redis@workspace:apps/redis"],
 
     "@tuturuuu/rewise": ["@tuturuuu/rewise@workspace:apps/rewise"],
 
