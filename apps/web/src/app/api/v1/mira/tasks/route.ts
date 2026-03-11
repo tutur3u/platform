@@ -51,7 +51,7 @@ export async function GET(request: Request) {
     const wsId = searchParams.get('wsId');
     const isPersonal = searchParams.get('isPersonal') === 'true';
 
-    const supabase = await createClient();
+    const supabase = await createClient(request);
     const {
       data: { user },
     } = await supabase.auth.getUser();

@@ -19,10 +19,11 @@ function maskIdentifier(value: string): string {
 
 async function getAllChatFiles(
   wsId: string,
-  chatId: string
+  chatId: string,
+  request?: Pick<Request, 'headers'>
 ): Promise<ChatFile[]> {
   try {
-    const sbDynamic = await createDynamicClient();
+    const sbDynamic = await createDynamicClient(request);
 
     const storagePath = `${wsId}/chats/ai/resources/${chatId}`;
     const { data: files, error: listError } = await sbDynamic.storage
@@ -46,7 +47,7 @@ async function getAllChatFiles(
       return [];
     }
 
-    const supabase = await createClient();
+    const supabase = await createClient(request);
     let nextFileIndex = 0;
     const results = new Array<ChatFile | null>(files.length).fill(null);
     const workers = Array.from(
@@ -179,9 +180,10 @@ function addFilesToContent(
 export async function processMessagesWithFiles(
   messages: ModelMessage[],
   wsId: string,
-  chatId: string
+  chatId: string,
+  request?: Pick<Request, 'headers'>
 ): Promise<ModelMessage[]> {
-  const chatFiles = await getAllChatFiles(wsId, chatId);
+  const chatFiles = await getAllChatFiles(wsId, chatId, request);
   if (chatFiles.length === 0) {
     return messages;
   }

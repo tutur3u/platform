@@ -15,7 +15,7 @@ export async function POST(req: Request) {
 
     // Handle "personal" workspace - needs database lookup
     if (wsId.toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
-      const supabase = await createClient();
+      const supabase = await createClient(req);
 
       const {
         data: { user },

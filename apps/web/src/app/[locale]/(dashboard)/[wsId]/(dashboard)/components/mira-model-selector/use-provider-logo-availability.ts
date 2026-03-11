@@ -17,6 +17,7 @@ async function checkProviderLogo(provider: string): Promise<boolean> {
 
   try {
     const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) return false;
     const text = await res.text();
     if (text.includes('M9.8132 15.9038')) return false;
     return true;
@@ -56,9 +57,9 @@ export function useSortedProviderList(
     void logoRefreshKey;
 
     return [...providerSummaries].sort((a, b) => {
-      if (a.allowedCount !== b.allowedCount) {
-        return a.allowedCount > 0 ? -1 : 1;
-      }
+      const aIsAllowed = a.allowedCount > 0;
+      const bIsAllowed = b.allowedCount > 0;
+      if (aIsAllowed !== bIsAllowed) return aIsAllowed ? -1 : 1;
 
       const aHasLogo = hasProviderLogo(a.provider);
       const bHasLogo = hasProviderLogo(b.provider);

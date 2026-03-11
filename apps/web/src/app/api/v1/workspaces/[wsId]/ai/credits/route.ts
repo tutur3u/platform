@@ -27,12 +27,12 @@ function getFallbackDefaultModels(tier: ProductTier) {
 }
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ wsId: string }> }
 ) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(req);
 
     // Auth check — must run BEFORE normalizeWorkspaceId because resolving
     // "personal" requires an authenticated session.
