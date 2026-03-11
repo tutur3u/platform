@@ -342,6 +342,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String taskBoardsPageInfo(int current, int total) {
+    return 'Page $current of $total';
+  }
+
+  @override
   String taskBoardsListsCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

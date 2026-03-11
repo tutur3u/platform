@@ -133,11 +133,22 @@
     "taskBoardsPageSize": "Page size",
     "taskBoardsPageSizeOption": "{count} items",
     "@taskBoardsPageSizeOption": {
-        "placeholders": {
-            "count": {
-                "type": "int"
-            }
+      "placeholders": {
+        "count": {
+          "type": "int"
         }
+      }
+    },
+    "taskBoardsPageInfo": "Page {current} of {total}",
+    "@taskBoardsPageInfo": {
+      "placeholders": {
+        "current": {
+          "type": "int"
+        },
+        "total": {
+          "type": "int"
+        }
+      }
     },
     "taskBoardsListsCount": "{count, plural, one{{count} list} other{{count} lists}}",
     "@taskBoardsListsCount": {

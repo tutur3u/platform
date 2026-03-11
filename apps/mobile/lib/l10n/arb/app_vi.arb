@@ -133,11 +133,22 @@
     "taskBoardsPageSize": "Kích thước trang",
     "taskBoardsPageSizeOption": "{count} mục",
     "@taskBoardsPageSizeOption": {
-        "placeholders": {
-            "count": {
-                "type": "int"
-            }
+      "placeholders": {
+        "count": {
+          "type": "int"
         }
+      }
+    },
+    "taskBoardsPageInfo": "Trang {current} / {total}",
+    "@taskBoardsPageInfo": {
+      "placeholders": {
+        "current": {
+          "type": "int"
+        },
+        "total": {
+          "type": "int"
+        }
+      }
     },
     "taskBoardsListsCount": "{count, plural, one{{count} danh sách} other{{count} danh sách}}",
     "@taskBoardsListsCount": {

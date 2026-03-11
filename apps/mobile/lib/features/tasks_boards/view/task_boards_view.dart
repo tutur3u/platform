@@ -41,7 +41,7 @@ class TaskBoardsView extends StatefulWidget {
 class _TaskBoardsViewState extends State<TaskBoardsView> {
   static const double _fabContentBottomPadding = 96;
   static const String _pageSizePreferenceKey = 'task_boards_page_size';
-  static const List<int> _pageSizeOptions = [20, 50, 100, 200];
+  static const List<int> _pageSizeOptions = [1, 5, 10, 20, 50, 100, 200];
 
   late final WorkspacePermissionsRepository _permissionsRepository;
   String? _permissionsWorkspaceId;
@@ -202,6 +202,19 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
                       ),
                     ),
                   ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: _PaginationRow(
+                    currentPage: state.currentPage,
+                    totalPages: state.totalPages,
+                    onPrevious: state.hasPreviousPage
+                        ? () => unawaited(_goToPage(state.currentPage - 1))
+                        : null,
+                    onNext: state.hasNextPage
+                        ? () => unawaited(_goToPage(state.currentPage + 1))
+                        : null,
+                  ),
+                ),
               ],
             ),
           ),
@@ -284,7 +297,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
   Future<void> _loadPageSizePreference() async {
     final prefs = await SharedPreferences.getInstance();
     final storedPageSize = prefs.getInt(_pageSizePreferenceKey) ?? 20;
-    final normalizedPageSize = storedPageSize.clamp(20, 200);
+    final normalizedPageSize = storedPageSize.clamp(1, 200);
 
     if (!mounted) return;
     if (_pageSize == normalizedPageSize) return;
@@ -301,7 +314,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
   }
 
   Future<void> _setPageSize(int newPageSize) async {
-    final normalizedPageSize = newPageSize.clamp(20, 200);
+    final normalizedPageSize = newPageSize.clamp(1, 200);
     if (_pageSize == normalizedPageSize) return;
 
     final taskBoardsCubit = context.read<TaskBoardsCubit>();
@@ -320,10 +333,18 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
     if (!_canManageProjects || _permissionsLoadFailed) return;
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null || capturedWsId == null || wsId != capturedWsId) return;
-    await taskBoardsCubit.loadBoards(
+    await taskBoardsCubit.goToPage(
       wsId,
+      1,
       pageSize: normalizedPageSize,
     );
+  }
+
+  Future<void> _goToPage(int page) async {
+    if (!_canManageProjects || _permissionsLoadFailed) return;
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    if (wsId == null) return;
+    await context.read<TaskBoardsCubit>().goToPage(wsId, page);
   }
 
   Future<void> _openCreateBoard() async {
@@ -609,6 +630,45 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
         cubit.setFilter(filter);
       },
       child: Text(_filterLabel(context, filter)),
+    );
+  }
+}
+
+class _PaginationRow extends StatelessWidget {
+  const _PaginationRow({
+    required this.currentPage,
+    required this.totalPages,
+    required this.onPrevious,
+    required this.onNext,
+  });
+
+  final int currentPage;
+  final int totalPages;
+  final VoidCallback? onPrevious;
+  final VoidCallback? onNext;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return Row(
+      children: [
+        shad.OutlineButton(
+          onPressed: onPrevious,
+          child: Text(l10n.commonPrevious),
+        ),
+        const shad.Gap(8),
+        Expanded(
+          child: Center(
+            child: Text(l10n.taskBoardsPageInfo(currentPage, totalPages)),
+          ),
+        ),
+        const shad.Gap(8),
+        shad.OutlineButton(
+          onPressed: onNext,
+          child: Text(l10n.commonNext),
+        ),
+      ],
     );
   }
 }

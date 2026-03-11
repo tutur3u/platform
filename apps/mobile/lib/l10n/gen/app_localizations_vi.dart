@@ -342,6 +342,11 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String taskBoardsPageInfo(int current, int total) {
+    return 'Trang $current / $total';
+  }
+
+  @override
   String taskBoardsListsCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

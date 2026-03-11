@@ -12,7 +12,9 @@ class TaskBoardsState extends Equatable {
     this.workspaceId,
     this.boards = const <TaskBoardSummary>[],
     this.filter = TaskBoardsFilter.all,
+    this.currentPage = 1,
     this.pageSize = 20,
+    this.totalCount = 0,
     this.error,
   });
 
@@ -20,8 +22,19 @@ class TaskBoardsState extends Equatable {
   final String? workspaceId;
   final List<TaskBoardSummary> boards;
   final TaskBoardsFilter filter;
+  final int currentPage;
   final int pageSize;
+  final int totalCount;
   final String? error;
+
+  int get totalPages {
+    if (totalCount <= 0) return 1;
+    return (totalCount / pageSize).ceil();
+  }
+
+  bool get hasPreviousPage => currentPage > 1;
+
+  bool get hasNextPage => currentPage < totalPages;
 
   List<TaskBoardSummary> get filteredBoards {
     switch (filter) {
@@ -47,7 +60,9 @@ class TaskBoardsState extends Equatable {
     Object? workspaceId = _taskBoardsSentinel,
     List<TaskBoardSummary>? boards,
     TaskBoardsFilter? filter,
+    int? currentPage,
     int? pageSize,
+    int? totalCount,
     Object? error = _taskBoardsSentinel,
     bool clearError = false,
   }) {
@@ -58,7 +73,9 @@ class TaskBoardsState extends Equatable {
           : workspaceId as String?,
       boards: boards ?? this.boards,
       filter: filter ?? this.filter,
+      currentPage: currentPage ?? this.currentPage,
       pageSize: pageSize ?? this.pageSize,
+      totalCount: totalCount ?? this.totalCount,
       error: clearError
           ? null
           : error == _taskBoardsSentinel
@@ -73,7 +90,9 @@ class TaskBoardsState extends Equatable {
     workspaceId,
     boards,
     filter,
+    currentPage,
     pageSize,
+    totalCount,
     error,
   ];
 }

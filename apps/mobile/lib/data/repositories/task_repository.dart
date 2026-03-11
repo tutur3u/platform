@@ -1,5 +1,6 @@
 import 'package:mobile/data/models/task.dart';
 import 'package:mobile/data/models/task_board_summary.dart';
+import 'package:mobile/data/models/task_boards_page.dart';
 import 'package:mobile/data/models/task_estimate_board.dart';
 import 'package:mobile/data/models/task_initiative_summary.dart';
 import 'package:mobile/data/models/task_label.dart';
@@ -97,39 +98,31 @@ class TaskRepository {
         .toList(growable: false);
   }
 
-  Future<List<TaskBoardSummary>> getTaskBoards(
+  Future<TaskBoardsPage> getTaskBoards(
     String wsId, {
+    int page = 1,
     int pageSize = 20,
   }) async {
+    final normalizedPage = page < 1 ? 1 : page;
     final normalizedPageSize = pageSize.clamp(1, 200);
-    var page = 1;
-    final boards = <TaskBoardSummary>[];
 
-    while (true) {
-      final response = await _apiClient.getJson(
-        '/api/v1/workspaces/$wsId/task-boards?page=$page&pageSize=$normalizedPageSize',
-      );
-      final boardsData = response['boards'] as List<dynamic>? ?? const [];
-      final totalCount = (response['count'] as num?)?.toInt();
-      final pageBoards = boardsData
-          .whereType<Map<String, dynamic>>()
-          .map(TaskBoardSummary.fromSummaryJson)
-          .toList(growable: false);
+    final response = await _apiClient.getJson(
+      '/api/v1/workspaces/$wsId/task-boards?page=$normalizedPage&pageSize=$normalizedPageSize',
+    );
+    final boardsData = response['boards'] as List<dynamic>? ?? const [];
+    final pageBoards = boardsData
+        .whereType<Map<String, dynamic>>()
+        .map(TaskBoardSummary.fromSummaryJson)
+        .toList(growable: false);
+    final totalCount =
+        (response['count'] as num?)?.toInt() ?? pageBoards.length;
 
-      boards.addAll(pageBoards);
-
-      if (boardsData.isEmpty || boardsData.length < normalizedPageSize) {
-        break;
-      }
-
-      if (totalCount != null && boards.length >= totalCount) {
-        break;
-      }
-
-      page += 1;
-    }
-
-    return List.unmodifiable(boards);
+    return TaskBoardsPage(
+      boards: List.unmodifiable(pageBoards),
+      totalCount: totalCount,
+      page: normalizedPage,
+      pageSize: normalizedPageSize,
+    );
   }
 
   Future<void> createTaskBoard({

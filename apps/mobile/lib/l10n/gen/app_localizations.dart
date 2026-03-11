@@ -745,6 +745,12 @@ abstract class AppLocalizations {
   /// **'{count} items'**
   String taskBoardsPageSizeOption(int count);
 
+  /// No description provided for @taskBoardsPageInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {current} of {total}'**
+  String taskBoardsPageInfo(int current, int total);
+
   /// No description provided for @taskBoardsListsCount.
   ///
   /// In en, this message translates to:
