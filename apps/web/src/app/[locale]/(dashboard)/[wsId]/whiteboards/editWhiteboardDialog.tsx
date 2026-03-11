@@ -13,6 +13,11 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import type { Whiteboard } from './client';
+import {
+  getWhiteboardMutationErrorKey,
+  normalizeWhiteboardDescription,
+  normalizeWhiteboardTitle,
+} from './validation';
 import WhiteboardForm, { type WhiteboardFormValues } from './whiteboardForm';
 
 interface EditWhiteboardDialogProps {
@@ -39,14 +44,15 @@ export default function EditWhiteboardDialog({
       const { error } = await supabase
         .from('workspace_whiteboards')
         .update({
-          title: values.title,
-          description: values.description || null,
+          title: normalizeWhiteboardTitle(values.title),
+          description: normalizeWhiteboardDescription(values.description),
         })
         .eq('id', whiteboard.id);
 
       if (error) {
         console.error('Error updating whiteboard:', error);
-        toast.error(t('update_whiteboard_error'));
+        const errorKey = getWhiteboardMutationErrorKey(error);
+        toast.error(errorKey ? t(errorKey) : t('update_whiteboard_error'));
         return;
       }
 

@@ -15,15 +15,17 @@ import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import * as z from 'zod';
+import {
+  getWhiteboardDescriptionValidationError,
+  getWhiteboardTitleValidationError,
+  WHITEBOARD_DESCRIPTION_MAX_LENGTH,
+  WHITEBOARD_TITLE_MAX_LENGTH,
+} from './validation';
 
-const formSchema = z.object({
-  title: z.string().min(1, {
-    message: 'Title is required',
-  }),
-  description: z.string().optional(),
-});
-
-export type WhiteboardFormValues = z.infer<typeof formSchema>;
+export type WhiteboardFormValues = {
+  description: string;
+  title: string;
+};
 
 interface WhiteboardFormProps {
   defaultValues?: WhiteboardFormValues;
@@ -41,6 +43,26 @@ export default function WhiteboardForm({
 }: WhiteboardFormProps) {
   const t = useTranslations('common');
   const isEditing = !!whiteboardId;
+  const formSchema = z.object({
+    title: z.string().superRefine((value, ctx) => {
+      const errorKey = getWhiteboardTitleValidationError(value);
+      if (errorKey) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: t(errorKey),
+        });
+      }
+    }),
+    description: z.string().superRefine((value, ctx) => {
+      const errorKey = getWhiteboardDescriptionValidationError(value);
+      if (errorKey) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: t(errorKey),
+        });
+      }
+    }),
+  });
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -64,6 +86,7 @@ export default function WhiteboardForm({
                 <Input
                   placeholder={t('whiteboard_title_placeholder')}
                   autoFocus
+                  maxLength={WHITEBOARD_TITLE_MAX_LENGTH}
                   {...field}
                 />
               </FormControl>
@@ -82,6 +105,7 @@ export default function WhiteboardForm({
                 <Textarea
                   placeholder={t('whiteboard_description_placeholder')}
                   className="min-h-20 resize-none"
+                  maxLength={WHITEBOARD_DESCRIPTION_MAX_LENGTH}
                   {...field}
                 />
               </FormControl>
