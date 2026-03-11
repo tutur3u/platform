@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import type { MouseEvent } from 'react';
 
 export default function HeroSection() {
   const handleScrollClick = () => {
@@ -9,6 +10,13 @@ export default function HeroSection() {
     }
 
     window.scrollBy({ top: window.innerHeight, behavior: 'smooth' });
+  };
+
+  const handleLearnMoreClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+
+    const aboutSection = document.getElementById('about-neo-league');
+    aboutSection?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
@@ -76,7 +84,11 @@ export default function HeroSection() {
               </svg>
             </Link>
 
-            <Link href="#about" className="btn-secondary">
+            <Link
+              href="#about-neo-league"
+              onClick={handleLearnMoreClick}
+              className="btn-secondary"
+            >
               Learn More
             </Link>
           </div>
