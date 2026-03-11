@@ -15,13 +15,40 @@ jobs:
     with:
       workflow_name: supabase-staging.yaml
 
+  evaluate-prerequisites:
+    name: Evaluate staging prerequisites
+    runs-on: ubuntu-latest
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
+    outputs:
+      should_deploy: ${{ steps.evaluate.outputs.should_deploy }}
+    steps:
+      - name: Evaluate trigger status
+        id: evaluate
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          TRIGGER_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+        run: |
+          SHOULD_DEPLOY=false
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "Manual dispatch detected. Proceeding with staging migration."
+            SHOULD_DEPLOY=true
+          elif [ "$TRIGGER_CONCLUSION" = "success" ]; then
+            echo "Preview deployment completed successfully. Proceeding with staging migration."
+            SHOULD_DEPLOY=true
+          else
+            echo "::notice::Skipping staging migration because the triggering workflow concluded with '$TRIGGER_CONCLUSION'."
+          fi
+
+          echo "should_deploy=$SHOULD_DEPLOY" >> "$GITHUB_OUTPUT"
+
   deploy:
     name: Migrate staging database
     timeout-minutes: 15
     runs-on: ubuntu-latest
-    needs: [check-ci]
-    # Only run if the Vercel deployment succeeded or if manually triggered
-    if: needs.check-ci.outputs.should_run == 'true' && (github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch')
+    needs: [check-ci, evaluate-prerequisites]
+    if: needs.check-ci.outputs.should_run == 'true' && needs.evaluate-prerequisites.outputs.should_deploy == 'true'
 
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
