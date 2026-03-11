@@ -495,6 +495,72 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailNoMoveTargets => 'Không có danh sách khác để di chuyển công việc này.';
 
   @override
+  String get taskBoardDetailBoardActions => 'Thao tác bảng';
+
+  @override
+  String get taskBoardDetailRefresh => 'Làm mới bảng';
+
+  @override
+  String get taskBoardDetailRenameBoard => 'Đổi tên bảng';
+
+  @override
+  String get taskBoardDetailBoardRenamed => 'Đã đổi tên bảng.';
+
+  @override
+  String get taskBoardDetailCreateList => 'Tạo danh sách';
+
+  @override
+  String get taskBoardDetailRenameList => 'Đổi tên danh sách';
+
+  @override
+  String get taskBoardDetailListActions => 'Thao tác danh sách';
+
+  @override
+  String get taskBoardDetailListCreated => 'Đã tạo danh sách.';
+
+  @override
+  String get taskBoardDetailListRenamed => 'Đã đổi tên danh sách.';
+
+  @override
+  String get taskBoardDetailNameRequired => 'Tên là bắt buộc';
+
+  @override
+  String get taskBoardDetailFilters => 'Bộ lọc';
+
+  @override
+  String get taskBoardDetailFiltersActive => 'Bộ lọc đang bật';
+
+  @override
+  String get taskBoardDetailFilterLists => 'Danh sách';
+
+  @override
+  String get taskBoardDetailFilterStatuses => 'Trạng thái';
+
+  @override
+  String get taskBoardDetailFilterAssignees => 'Người được giao';
+
+  @override
+  String get taskBoardDetailNoFilterOptions => 'Không có tùy chọn';
+
+  @override
+  String get taskBoardDetailStatusNotStarted => 'Chưa bắt đầu';
+
+  @override
+  String get taskBoardDetailStatusActive => 'Đang thực hiện';
+
+  @override
+  String get taskBoardDetailStatusDone => 'Hoàn thành';
+
+  @override
+  String get taskBoardDetailStatusClosed => 'Đã đóng';
+
+  @override
+  String get taskBoardDetailClearFilters => 'Xóa bộ lọc';
+
+  @override
+  String get taskBoardDetailApplyFilters => 'Áp dụng bộ lọc';
+
+  @override
   String get taskPlanningTitle => 'Lập kế hoạch';
 
   @override

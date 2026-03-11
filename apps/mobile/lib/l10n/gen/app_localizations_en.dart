@@ -495,6 +495,72 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailNoMoveTargets => 'No other lists available for moving this task.';
 
   @override
+  String get taskBoardDetailBoardActions => 'Board actions';
+
+  @override
+  String get taskBoardDetailRefresh => 'Refresh board';
+
+  @override
+  String get taskBoardDetailRenameBoard => 'Rename board';
+
+  @override
+  String get taskBoardDetailBoardRenamed => 'Board renamed.';
+
+  @override
+  String get taskBoardDetailCreateList => 'Create list';
+
+  @override
+  String get taskBoardDetailRenameList => 'Rename list';
+
+  @override
+  String get taskBoardDetailListActions => 'List actions';
+
+  @override
+  String get taskBoardDetailListCreated => 'List created.';
+
+  @override
+  String get taskBoardDetailListRenamed => 'List renamed.';
+
+  @override
+  String get taskBoardDetailNameRequired => 'Name is required';
+
+  @override
+  String get taskBoardDetailFilters => 'Filters';
+
+  @override
+  String get taskBoardDetailFiltersActive => 'Filters active';
+
+  @override
+  String get taskBoardDetailFilterLists => 'Lists';
+
+  @override
+  String get taskBoardDetailFilterStatuses => 'Statuses';
+
+  @override
+  String get taskBoardDetailFilterAssignees => 'Assignees';
+
+  @override
+  String get taskBoardDetailNoFilterOptions => 'No options available';
+
+  @override
+  String get taskBoardDetailStatusNotStarted => 'Not started';
+
+  @override
+  String get taskBoardDetailStatusActive => 'Active';
+
+  @override
+  String get taskBoardDetailStatusDone => 'Done';
+
+  @override
+  String get taskBoardDetailStatusClosed => 'Closed';
+
+  @override
+  String get taskBoardDetailClearFilters => 'Clear filters';
+
+  @override
+  String get taskBoardDetailApplyFilters => 'Apply filters';
+
+  @override
   String get taskPlanningTitle => 'Planning';
 
   @override

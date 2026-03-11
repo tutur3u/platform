@@ -55,6 +55,23 @@ Port the web `boardId` view to mobile with a mobile-native UX that preserves the
   - per-task move action menu
   - move-to-list picker dialog (current board only)
 - Added/updated localization keys in both ARB files for board detail task actions/sheet UX.
+- Added board/list management controls in board detail UI:
+  - app-bar board actions menu (rename board, create list, refresh)
+  - per-list actions menu with rename action (list + kanban headers)
+- Added board/list mutation wiring to `TaskBoardDetailCubit`:
+  - `renameBoard(...)`
+  - `createList(...)`
+  - `renameList(...)`
+- Added advanced filter bottom sheet with cubit-backed filters:
+  - list filter
+  - status filter
+  - priority filter
+  - assignee filter
+- Extended board-detail state filtering model:
+  - `TaskBoardDetailFilters`
+  - unified search + advanced-filter matching in `filteredTasks`
+- Added create-list CTA in the no-lists state.
+- Regenerated Flutter localizations and re-ran `flutter analyze`.
 
 ### Current status vs phases
 - Phase 1 (Foundation): **mostly done**
@@ -74,6 +91,11 @@ Port the web `boardId` view to mobile with a mobile-native UX that preserves the
   - [x] create task from list/kanban surfaces
   - [x] move task between lists (current board only)
   - [ ] assignees/labels/projects edit wiring
+- Phase 4 (Board/List Controls + Filters): **started**
+  - [x] board actions menu (rename board/create list/refresh)
+  - [x] per-list rename action in list + kanban
+  - [x] advanced filter sheet (priority/assignees/list/status)
+  - [ ] labels/projects filters (deferred until task payload includes relations)
 
 ### Notes for the next agent
 - Board detail hydration currently composes data from:
@@ -83,13 +105,12 @@ Port the web `boardId` view to mobile with a mobile-native UX that preserves the
   - existing repository calls for labels/members/projects
 - Task create/edit/move mutations are now wired through `TaskBoardDetailCubit` and reload board state after success.
 - Task sheet currently covers title/description/priority/start/end dates; assignees/labels/projects remain deferred.
-- Suggested next step: Phase 4 board/list controls + advanced filter sheet, then tablet kanban refinement.
+- Suggested next step: tablet kanban refinement (side-by-side density/column sizing + compact empty states), then targeted board-detail widget/cubit tests.
 
 ### Immediate next slice (recommended)
-1. Add board actions in detail app bar: rename board, create list, refresh grouping.
-2. Add per-list rename control in both list and kanban headers.
-3. Expand filters beyond search (priority, assignees, labels, projects, list/status) using a filter sheet.
-4. Refine tablet kanban layout for side-by-side readability and compact empty states.
+1. Refine tablet kanban layout for side-by-side readability and compact empty states.
+2. Add focused tests for board-detail cubit mutations and filter state transitions.
+3. Add labels/projects filters once mobile task payload includes label/project relations.
 
 ### Explicitly deferred
 - Timeline view
@@ -413,13 +434,14 @@ Remaining
 - After create/move success, keep search/filter state and current view stable.
 
 ### Phase 4A - Board/list controls
-- Add board actions menu in app bar: rename board, create list, refresh.
-- Add per-list rename action from list header/column header.
+- [x] Add board actions menu in app bar: rename board, create list, refresh.
+- [x] Add per-list rename action from list header/column header.
 - Keep destructive list/board actions deferred.
 
 ### Phase 4B - Filter sheet
 - Keep search inline; move advanced filters into a dedicated bottom sheet.
-- Initial advanced filters: assignees, labels, projects, priority, status/list.
+- [x] Initial advanced filters: assignees, priority, status/list.
+- [ ] labels/projects filters (deferred until task payload includes those relations)
 - Store filter state in cubit and derive filtered task groups from a single selector path.
 
 ### Phase 5 - UX and reliability polish

@@ -6,6 +6,43 @@ enum TaskBoardDetailStatus { initial, loading, loaded, error }
 
 enum TaskBoardDetailView { list, kanban }
 
+class TaskBoardDetailFilters extends Equatable {
+  const TaskBoardDetailFilters({
+    this.listIds = const <String>{},
+    this.statuses = const <String>{},
+    this.priorities = const <String>{},
+    this.assigneeIds = const <String>{},
+  });
+
+  final Set<String> listIds;
+  final Set<String> statuses;
+  final Set<String> priorities;
+  final Set<String> assigneeIds;
+
+  bool get hasAdvancedFilters =>
+      listIds.isNotEmpty ||
+      statuses.isNotEmpty ||
+      priorities.isNotEmpty ||
+      assigneeIds.isNotEmpty;
+
+  TaskBoardDetailFilters copyWith({
+    Set<String>? listIds,
+    Set<String>? statuses,
+    Set<String>? priorities,
+    Set<String>? assigneeIds,
+  }) {
+    return TaskBoardDetailFilters(
+      listIds: listIds ?? this.listIds,
+      statuses: statuses ?? this.statuses,
+      priorities: priorities ?? this.priorities,
+      assigneeIds: assigneeIds ?? this.assigneeIds,
+    );
+  }
+
+  @override
+  List<Object?> get props => [listIds, statuses, priorities, assigneeIds];
+}
+
 class TaskBoardDetailState extends Equatable {
   const TaskBoardDetailState({
     this.status = TaskBoardDetailStatus.initial,
@@ -14,6 +51,7 @@ class TaskBoardDetailState extends Equatable {
     this.board,
     this.currentView = TaskBoardDetailView.list,
     this.searchQuery = '',
+    this.filters = const TaskBoardDetailFilters(),
     this.selectedTaskId,
     this.isMutating = false,
     this.mutationError,
@@ -26,6 +64,7 @@ class TaskBoardDetailState extends Equatable {
   final TaskBoardDetail? board;
   final TaskBoardDetailView currentView;
   final String searchQuery;
+  final TaskBoardDetailFilters filters;
   final String? selectedTaskId;
   final bool isMutating;
   final String? mutationError;
@@ -33,14 +72,66 @@ class TaskBoardDetailState extends Equatable {
 
   List<TaskBoardTask> get filteredTasks {
     final source = board?.tasks ?? const <TaskBoardTask>[];
+    final listsById = {
+      for (final list in board?.lists ?? const <TaskBoardList>[]) list.id: list,
+    };
     final query = searchQuery.trim().toLowerCase();
-    if (query.isEmpty) return source;
+    final hasSearchQuery = query.isNotEmpty;
+    final hasAssigneeFilter = filters.assigneeIds.isNotEmpty;
+    final hasPriorityFilter = filters.priorities.isNotEmpty;
+    final hasListFilter = filters.listIds.isNotEmpty;
+    final hasStatusFilter = filters.statuses.isNotEmpty;
+
+    if (!hasSearchQuery &&
+        !hasAssigneeFilter &&
+        !hasPriorityFilter &&
+        !hasListFilter &&
+        !hasStatusFilter) {
+      return source;
+    }
 
     return source
         .where((task) {
-          final name = task.name?.toLowerCase() ?? '';
-          final description = task.description?.toLowerCase() ?? '';
-          return name.contains(query) || description.contains(query);
+          if (hasSearchQuery) {
+            final name = task.name?.toLowerCase() ?? '';
+            final description = task.description?.toLowerCase() ?? '';
+            final matchesSearch =
+                name.contains(query) || description.contains(query);
+            if (!matchesSearch) return false;
+          }
+
+          if (hasListFilter && !filters.listIds.contains(task.listId)) {
+            return false;
+          }
+
+          if (hasPriorityFilter) {
+            final taskPriority = (task.priority ?? 'normal')
+                .trim()
+                .toLowerCase();
+            if (!filters.priorities.contains(taskPriority)) {
+              return false;
+            }
+          }
+
+          if (hasStatusFilter) {
+            final listStatus = listsById[task.listId]?.status
+                ?.trim()
+                .toLowerCase();
+            if (listStatus == null || !filters.statuses.contains(listStatus)) {
+              return false;
+            }
+          }
+
+          if (hasAssigneeFilter) {
+            final hasMatchingAssignee = task.assignees.any(
+              (assignee) => filters.assigneeIds.contains(assignee.id),
+            );
+            if (!hasMatchingAssignee) {
+              return false;
+            }
+          }
+
+          return true;
         })
         .toList(growable: false);
   }
@@ -60,6 +151,7 @@ class TaskBoardDetailState extends Equatable {
     Object? board = _taskBoardDetailSentinel,
     TaskBoardDetailView? currentView,
     String? searchQuery,
+    TaskBoardDetailFilters? filters,
     Object? selectedTaskId = _taskBoardDetailSentinel,
     bool? isMutating,
     Object? mutationError = _taskBoardDetailSentinel,
@@ -80,6 +172,7 @@ class TaskBoardDetailState extends Equatable {
           : board as TaskBoardDetail?,
       currentView: currentView ?? this.currentView,
       searchQuery: searchQuery ?? this.searchQuery,
+      filters: filters ?? this.filters,
       selectedTaskId: selectedTaskId == _taskBoardDetailSentinel
           ? this.selectedTaskId
           : selectedTaskId as String?,
@@ -105,6 +198,7 @@ class TaskBoardDetailState extends Equatable {
     board,
     currentView,
     searchQuery,
+    filters,
     selectedTaskId,
     isMutating,
     mutationError,

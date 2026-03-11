@@ -23,6 +23,58 @@ String _taskPriorityLabel(BuildContext context, String? priority) {
   };
 }
 
+class _TaskPriorityStyle {
+  const _TaskPriorityStyle({
+    required this.label,
+    required this.icon,
+    required this.foreground,
+    required this.background,
+    required this.border,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color foreground;
+  final Color background;
+  final Color border;
+}
+
+_TaskPriorityStyle _taskPriorityStyle(BuildContext context, String? priority) {
+  final normalized = (priority ?? 'normal').trim().toLowerCase();
+  final label = _taskPriorityLabel(context, normalized);
+
+  return switch (normalized) {
+    'critical' => _TaskPriorityStyle(
+      label: label,
+      icon: Icons.priority_high_rounded,
+      foreground: const Color(0xFFB42318),
+      background: const Color(0xFFFEE4E2),
+      border: const Color(0xFFFDA29B),
+    ),
+    'high' => _TaskPriorityStyle(
+      label: label,
+      icon: Icons.keyboard_double_arrow_up_rounded,
+      foreground: const Color(0xFFB54708),
+      background: const Color(0xFFFFF6ED),
+      border: const Color(0xFFFCC17A),
+    ),
+    'low' => _TaskPriorityStyle(
+      label: label,
+      icon: Icons.keyboard_double_arrow_down_rounded,
+      foreground: const Color(0xFF175CD3),
+      background: const Color(0xFFEFF8FF),
+      border: const Color(0xFF84CAFF),
+    ),
+    _ => _TaskPriorityStyle(
+      label: label,
+      icon: Icons.remove_rounded,
+      foreground: const Color(0xFFB54708),
+      background: const Color(0xFFFFFAEB),
+      border: const Color(0xFFFEC84B),
+    ),
+  };
+}
+
 String _taskDatesLabel(TaskBoardTask task) {
   final formatter = DateFormat.yMd();
   if (task.startDate == null && task.endDate == null) return '';

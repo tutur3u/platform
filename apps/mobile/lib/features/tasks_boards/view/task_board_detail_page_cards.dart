@@ -7,6 +7,7 @@ class _BoardListSection extends StatelessWidget {
     required this.onTaskTap,
     required this.onTaskMove,
     required this.onCreateTask,
+    this.onRenameList,
     this.isExpanded = true,
     this.collapsible = false,
     this.onToggleExpanded,
@@ -20,6 +21,7 @@ class _BoardListSection extends StatelessWidget {
   final void Function(TaskBoardTask task) onTaskTap;
   final void Function(TaskBoardTask task) onTaskMove;
   final VoidCallback onCreateTask;
+  final VoidCallback? onRenameList;
 
   @override
   Widget build(BuildContext context) {
@@ -60,6 +62,24 @@ class _BoardListSection extends StatelessWidget {
                 shad.IconButton.ghost(
                   icon: const Icon(Icons.add),
                   onPressed: onCreateTask,
+                ),
+                PopupMenuButton<_BoardListMenuAction>(
+                  tooltip: context.l10n.taskBoardDetailListActions,
+                  onSelected: (action) {
+                    if (action == _BoardListMenuAction.rename) {
+                      onRenameList?.call();
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem<_BoardListMenuAction>(
+                      value: _BoardListMenuAction.rename,
+                      child: Text(context.l10n.taskBoardDetailRenameList),
+                    ),
+                  ],
+                  child: const Padding(
+                    padding: EdgeInsets.only(left: 6),
+                    child: Icon(Icons.more_horiz, size: 18),
+                  ),
                 ),
               ],
             ),
@@ -167,9 +187,7 @@ class _BoardTaskTile extends StatelessWidget {
               spacing: 8,
               runSpacing: 6,
               children: [
-                shad.OutlineBadge(
-                  child: Text(_taskPriorityLabel(context, task.priority)),
-                ),
+                _TaskPriorityChip(priority: task.priority),
                 if (hasDescription)
                   Tooltip(
                     message: context.l10n.taskBoardDetailTaskDescriptionLabel,
@@ -198,6 +216,7 @@ class _KanbanColumn extends StatelessWidget {
     required this.onTaskTap,
     required this.onTaskMove,
     required this.onCreateTask,
+    this.onRenameList,
   });
 
   final TaskBoardList list;
@@ -205,6 +224,7 @@ class _KanbanColumn extends StatelessWidget {
   final void Function(TaskBoardTask task) onTaskTap;
   final void Function(TaskBoardTask task) onTaskMove;
   final VoidCallback onCreateTask;
+  final VoidCallback? onRenameList;
 
   @override
   Widget build(BuildContext context) {
@@ -216,9 +236,48 @@ class _KanbanColumn extends StatelessWidget {
         onTaskTap: onTaskTap,
         onTaskMove: onTaskMove,
         onCreateTask: onCreateTask,
+        onRenameList: onRenameList,
       ),
     );
   }
 }
 
 enum _BoardTaskMenuAction { move }
+
+enum _BoardListMenuAction { rename }
+
+class _TaskPriorityChip extends StatelessWidget {
+  const _TaskPriorityChip({required this.priority});
+
+  final String? priority;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final style = _taskPriorityStyle(context, priority);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: style.background,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: style.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(style.icon, size: 12, color: style.foreground),
+          const shad.Gap(4),
+          Text(
+            style.label,
+            style: theme.typography.small.copyWith(
+              color: style.foreground,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

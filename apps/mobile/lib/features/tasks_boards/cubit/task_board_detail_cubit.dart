@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:mobile/data/models/task_board_detail.dart';
+import 'package:mobile/data/models/task_board_list.dart';
 import 'package:mobile/data/models/task_board_task.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 
@@ -148,8 +149,72 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     emit(state.copyWith(searchQuery: value));
   }
 
+  void setFilters(TaskBoardDetailFilters filters) {
+    emit(state.copyWith(filters: filters));
+  }
+
+  void clearAdvancedFilters() {
+    emit(state.copyWith(filters: const TaskBoardDetailFilters()));
+  }
+
   void selectTask(String? taskId) {
     emit(state.copyWith(selectedTaskId: taskId));
+  }
+
+  Future<void> createList({required String name}) async {
+    final wsId = state.workspaceId;
+    final boardId = state.boardId;
+    if (wsId == null || boardId == null) {
+      throw StateError('Board detail is not initialized');
+    }
+
+    await _runMutation(
+      () => _taskRepository.createBoardList(
+        wsId: wsId,
+        boardId: boardId,
+        name: name,
+      ),
+    );
+  }
+
+  Future<void> renameList({
+    required String listId,
+    required String name,
+  }) async {
+    final wsId = state.workspaceId;
+    final boardId = state.boardId;
+    if (wsId == null || boardId == null) {
+      throw StateError('Board detail is not initialized');
+    }
+
+    await _runMutation(
+      () => _taskRepository.renameBoardList(
+        wsId: wsId,
+        boardId: boardId,
+        listId: listId,
+        name: name,
+      ),
+    );
+  }
+
+  Future<void> renameBoard({
+    required String name,
+    String? icon,
+  }) async {
+    final wsId = state.workspaceId;
+    final boardId = state.boardId;
+    if (wsId == null || boardId == null) {
+      throw StateError('Board detail is not initialized');
+    }
+
+    await _runMutation(
+      () => _taskRepository.updateTaskBoard(
+        wsId: wsId,
+        boardId: boardId,
+        name: name,
+        icon: icon,
+      ),
+    );
   }
 
   Future<void> _runMutation(Future<Object?> Function() action) async {
@@ -158,6 +223,10 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
 
     if (wsId == null || boardId == null) {
       throw StateError('Board detail is not initialized');
+    }
+
+    if (state.isMutating) {
+      throw StateError('Another mutation is already in progress');
     }
 
     emit(

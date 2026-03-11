@@ -1015,6 +1015,138 @@ abstract class AppLocalizations {
   /// **'No other lists available for moving this task.'**
   String get taskBoardDetailNoMoveTargets;
 
+  /// No description provided for @taskBoardDetailBoardActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Board actions'**
+  String get taskBoardDetailBoardActions;
+
+  /// No description provided for @taskBoardDetailRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh board'**
+  String get taskBoardDetailRefresh;
+
+  /// No description provided for @taskBoardDetailRenameBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename board'**
+  String get taskBoardDetailRenameBoard;
+
+  /// No description provided for @taskBoardDetailBoardRenamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Board renamed.'**
+  String get taskBoardDetailBoardRenamed;
+
+  /// No description provided for @taskBoardDetailCreateList.
+  ///
+  /// In en, this message translates to:
+  /// **'Create list'**
+  String get taskBoardDetailCreateList;
+
+  /// No description provided for @taskBoardDetailRenameList.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename list'**
+  String get taskBoardDetailRenameList;
+
+  /// No description provided for @taskBoardDetailListActions.
+  ///
+  /// In en, this message translates to:
+  /// **'List actions'**
+  String get taskBoardDetailListActions;
+
+  /// No description provided for @taskBoardDetailListCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'List created.'**
+  String get taskBoardDetailListCreated;
+
+  /// No description provided for @taskBoardDetailListRenamed.
+  ///
+  /// In en, this message translates to:
+  /// **'List renamed.'**
+  String get taskBoardDetailListRenamed;
+
+  /// No description provided for @taskBoardDetailNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Name is required'**
+  String get taskBoardDetailNameRequired;
+
+  /// No description provided for @taskBoardDetailFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters'**
+  String get taskBoardDetailFilters;
+
+  /// No description provided for @taskBoardDetailFiltersActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters active'**
+  String get taskBoardDetailFiltersActive;
+
+  /// No description provided for @taskBoardDetailFilterLists.
+  ///
+  /// In en, this message translates to:
+  /// **'Lists'**
+  String get taskBoardDetailFilterLists;
+
+  /// No description provided for @taskBoardDetailFilterStatuses.
+  ///
+  /// In en, this message translates to:
+  /// **'Statuses'**
+  String get taskBoardDetailFilterStatuses;
+
+  /// No description provided for @taskBoardDetailFilterAssignees.
+  ///
+  /// In en, this message translates to:
+  /// **'Assignees'**
+  String get taskBoardDetailFilterAssignees;
+
+  /// No description provided for @taskBoardDetailNoFilterOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'No options available'**
+  String get taskBoardDetailNoFilterOptions;
+
+  /// No description provided for @taskBoardDetailStatusNotStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Not started'**
+  String get taskBoardDetailStatusNotStarted;
+
+  /// No description provided for @taskBoardDetailStatusActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get taskBoardDetailStatusActive;
+
+  /// No description provided for @taskBoardDetailStatusDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get taskBoardDetailStatusDone;
+
+  /// No description provided for @taskBoardDetailStatusClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed'**
+  String get taskBoardDetailStatusClosed;
+
+  /// No description provided for @taskBoardDetailClearFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear filters'**
+  String get taskBoardDetailClearFilters;
+
+  /// No description provided for @taskBoardDetailApplyFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply filters'**
+  String get taskBoardDetailApplyFilters;
+
   /// No description provided for @taskPlanningTitle.
   ///
   /// In en, this message translates to:

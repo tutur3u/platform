@@ -56,10 +56,46 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
             },
           ),
           trailing: [
-            shad.IconButton.ghost(
-              icon: const Icon(Icons.refresh),
-              onPressed: () => unawaited(
-                context.read<TaskBoardDetailCubit>().reload(),
+            BlocBuilder<TaskBoardDetailCubit, TaskBoardDetailState>(
+              buildWhen: (prev, curr) => prev.filters != curr.filters,
+              builder: (context, state) {
+                final hasActiveFilters = state.filters.hasAdvancedFilters;
+                return Tooltip(
+                  message: hasActiveFilters
+                      ? context.l10n.taskBoardDetailFiltersActive
+                      : context.l10n.taskBoardDetailFilters,
+                  child: shad.IconButton.ghost(
+                    icon: Icon(
+                      hasActiveFilters
+                          ? Icons.filter_alt
+                          : Icons.filter_alt_outlined,
+                    ),
+                    onPressed: () => unawaited(
+                      _openAdvancedFilterSheet(
+                        context,
+                        context.read<TaskBoardDetailCubit>().state,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            PopupMenuButton<_BoardAction>(
+              tooltip: context.l10n.taskBoardDetailBoardActions,
+              onSelected: (action) => _handleBoardAction(context, action),
+              itemBuilder: (context) => [
+                PopupMenuItem<_BoardAction>(
+                  value: _BoardAction.renameBoard,
+                  child: Text(context.l10n.taskBoardDetailRenameBoard),
+                ),
+                PopupMenuItem<_BoardAction>(
+                  value: _BoardAction.refresh,
+                  child: Text(context.l10n.taskBoardDetailRefresh),
+                ),
+              ],
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4),
+                child: Icon(Icons.more_vert),
               ),
             ),
           ],
@@ -101,7 +137,9 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
             }
 
             if (detail.lists.isEmpty) {
-              return const _NoListsState();
+              return _NoListsState(
+                onCreateList: () => unawaited(_openCreateListDialog(context)),
+              );
             }
 
             final sortedLists = _sortedLists(detail.lists);
@@ -209,6 +247,12 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                         ),
                       ),
                     ),
+                    FabAction(
+                      icon: Icons.playlist_add,
+                      label: context.l10n.taskBoardDetailCreateList,
+                      onPressed: () =>
+                          unawaited(_openCreateListDialog(context)),
+                    ),
                   ],
                 ),
               ],
@@ -226,7 +270,9 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
     TaskBoardDetailState state,
     double bottomPadding,
   ) {
-    if (state.filteredTasks.isEmpty && state.searchQuery.trim().isNotEmpty) {
+    if (state.filteredTasks.isEmpty &&
+        (state.searchQuery.trim().isNotEmpty ||
+            state.filters.hasAdvancedFilters)) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(16, 0, 16, bottomPadding),
@@ -270,6 +316,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
               defaultListId: list.id,
             ),
           ),
+          onRenameList: () => unawaited(_openRenameListDialog(context, list)),
         );
       },
     );
@@ -282,7 +329,9 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
     TaskBoardDetailState state,
     double bottomPadding,
   ) {
-    if (state.filteredTasks.isEmpty && state.searchQuery.trim().isNotEmpty) {
+    if (state.filteredTasks.isEmpty &&
+        (state.searchQuery.trim().isNotEmpty ||
+            state.filters.hasAdvancedFilters)) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(16, 0, 16, bottomPadding),
@@ -322,6 +371,8 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                           defaultListId: list.id,
                         ),
                       ),
+                      onRenameList: () =>
+                          unawaited(_openRenameListDialog(context, list)),
                     ),
                   ),
                 )

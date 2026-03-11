@@ -33,7 +33,9 @@ class _TaskBoardDetailErrorState extends StatelessWidget {
 }
 
 class _NoListsState extends StatelessWidget {
-  const _NoListsState();
+  const _NoListsState({required this.onCreateList});
+
+  final VoidCallback onCreateList;
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +52,11 @@ class _NoListsState extends StatelessWidget {
             Text(
               context.l10n.taskBoardDetailNoListsDescription,
               textAlign: TextAlign.center,
+            ),
+            const shad.Gap(12),
+            shad.PrimaryButton(
+              onPressed: onCreateList,
+              child: Text(context.l10n.taskBoardDetailCreateList),
             ),
           ],
         ),
