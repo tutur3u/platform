@@ -79,7 +79,8 @@ function truncateProcessedMessages(
 export async function prepareProcessedMessages(
   normalizedMessages: UIMessage[],
   wsId: string | undefined,
-  chatId: string
+  chatId: string,
+  request?: Pick<Request, 'headers'>
 ): Promise<{ processedMessages: ModelMessage[] } | { error: Response }> {
   const modelMessages = await convertToModelMessages(normalizedMessages);
   const validationError = validateModelMessages(modelMessages);
@@ -89,7 +90,7 @@ export async function prepareProcessedMessages(
 
   const processedMessages =
     wsId && chatId
-      ? await processMessagesWithFiles(modelMessages, wsId, chatId)
+      ? await processMessagesWithFiles(modelMessages, wsId, chatId, request)
       : modelMessages;
 
   return { processedMessages: truncateProcessedMessages(processedMessages) };

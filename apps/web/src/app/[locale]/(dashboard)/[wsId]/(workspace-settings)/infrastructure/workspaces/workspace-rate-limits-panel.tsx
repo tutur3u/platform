@@ -110,13 +110,8 @@ function getDisplayNumber(
 ) {
   const numericValue = Number(rawValue || fallbackValue || '0');
 
-  if (!Number.isFinite(numericValue)) {
-    return 0;
-  }
-
-  if (mode === 'seconds') {
-    return Math.max(1, Math.round(numericValue / 1000));
-  }
+  if (!Number.isFinite(numericValue)) return 0;
+  if (mode === 'seconds') return Math.max(1, Math.round(numericValue / 1000));
 
   return numericValue;
 }
@@ -130,10 +125,7 @@ function formatRateLimitValue(
   value: number,
   mode: RateLimitEditorMode
 ) {
-  if (mode === 'seconds') {
-    return `${value}s`;
-  }
-
+  if (mode === 'seconds') return `${value}s`;
   if (definition.name.endsWith('_MINUTE')) return `${value}/min`;
   if (definition.name.endsWith('_HOUR')) return `${value}/hr`;
   if (definition.name.endsWith('_DAY')) return `${value}/day`;
@@ -170,7 +162,7 @@ function getGroupOverrideCount(
   ).length;
 }
 
-function RateLimitEditorCard({
+function RateLimitEditorRow({
   definition,
   isResetting,
   isSaving,
@@ -205,8 +197,8 @@ function RateLimitEditorCard({
 
   const hasOverride = !!secret?.id;
   const isDirty = draftValue !== effectiveNumber;
-  const step = getStepValue(definition, mode);
   const minValue = getMinValue(mode);
+  const step = getStepValue(definition, mode);
 
   const saveDraft = () => {
     onSave({
@@ -217,140 +209,138 @@ function RateLimitEditorCard({
   };
 
   return (
-    <div className="rounded-2xl border border-border/80 bg-background/70 p-4 shadow-sm">
-      <div className="flex h-full flex-col gap-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <h4 className="font-semibold text-sm">{definition.name}</h4>
-              <Badge variant={hasOverride ? 'default' : 'secondary'}>
-                {hasOverride
-                  ? t('rate_limit_source_override')
-                  : t('rate_limit_source_default')}
-              </Badge>
-            </div>
-            <p className="max-w-xl text-muted-foreground text-sm">
-              {definition.description}
-            </p>
-          </div>
-
-          <div className="min-w-[132px] rounded-xl border border-border bg-foreground/5 px-3 py-2 text-right">
-            <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
-              {t('rate_limit_current')}
-            </div>
-            <div className="mt-1 font-semibold text-xl">
-              {formatRateLimitValue(definition, effectiveNumber, mode)}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <div className="rounded-full border border-border bg-foreground/5 px-2.5 py-1 text-muted-foreground">
-            {t('rate_limit_default_value', {
-              value: formatRateLimitValue(definition, defaultNumber, mode),
-            })}
-          </div>
-          <div className="rounded-full border border-border bg-foreground/5 px-2.5 py-1 text-muted-foreground">
-            {t('rate_limit_step', { value: step })}
-          </div>
-          {mode === 'seconds' && (
-            <div className="rounded-full border border-border bg-foreground/5 px-2.5 py-1 text-muted-foreground">
-              {formatDuration(draftValue)}
-            </div>
-          )}
-        </div>
-
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-          <div className="space-y-2">
-            <label
-              htmlFor={`rate-limit-${definition.name}`}
-              className="font-medium text-sm"
-            >
-              {mode === 'seconds'
-                ? t('rate_limit_input_seconds')
-                : t('rate_limit_input_requests')}
-            </label>
-
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="h-10 w-10 shrink-0"
-                onClick={() =>
-                  setDraftValue((current) => Math.max(minValue, current - step))
-                }
-              >
-                <Minus className="h-4 w-4" />
-              </Button>
-              <Input
-                id={`rate-limit-${definition.name}`}
-                type="number"
-                min={minValue}
-                step={step}
-                value={draftValue}
-                onChange={(event) => {
-                  const nextValue = Number(event.target.value);
-
-                  if (!Number.isFinite(nextValue)) {
-                    setDraftValue(minValue);
-                    return;
-                  }
-
-                  setDraftValue(Math.max(minValue, Math.round(nextValue)));
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' && isDirty && !isSaving) {
-                    event.preventDefault();
-                    saveDraft();
-                  }
-                }}
-                className="h-11 font-semibold text-base"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="h-10 w-10 shrink-0"
-                onClick={() => setDraftValue((current) => current + step)}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-
+    <div className="rounded-2xl border border-border/80 bg-foreground/5 p-4">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_180px_minmax(280px,360px)_auto] xl:items-center">
+        <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            {hasOverride && (
-              <Button
-                type="button"
-                variant="outline"
-                disabled={isResetting}
-                onClick={() => {
-                  if (!secret) return;
-                  onReset(secret);
-                }}
-              >
-                {isResetting ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCcw className="mr-2 h-4 w-4" />
-                )}
-                {t('rate_limit_reset')}
-              </Button>
+            <h4 className="font-semibold text-sm">{definition.name}</h4>
+            <Badge variant={hasOverride ? 'default' : 'secondary'}>
+              {hasOverride
+                ? t('rate_limit_source_override')
+                : t('rate_limit_source_default')}
+            </Badge>
+          </div>
+
+          <p className="max-w-3xl text-muted-foreground text-sm">
+            {definition.description}
+          </p>
+
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <div className="rounded-full border border-border/80 bg-background/70 px-2.5 py-1 text-muted-foreground">
+              {t('rate_limit_default_value', {
+                value: formatRateLimitValue(definition, defaultNumber, mode),
+              })}
+            </div>
+            <div className="rounded-full border border-border/80 bg-background/70 px-2.5 py-1 text-muted-foreground">
+              {t('rate_limit_step', { value: step })}
+            </div>
+            {mode === 'seconds' && (
+              <div className="rounded-full border border-border/80 bg-background/70 px-2.5 py-1 text-muted-foreground">
+                {formatDuration(draftValue)}
+              </div>
             )}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-border/80 bg-background/70 px-4 py-3">
+          <div className="text-[11px] text-muted-foreground uppercase tracking-[0.18em]">
+            {t('rate_limit_current')}
+          </div>
+          <div className="mt-2 font-semibold text-2xl">
+            {formatRateLimitValue(definition, effectiveNumber, mode)}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label
+            htmlFor={`rate-limit-${definition.name}`}
+            className="font-medium text-sm"
+          >
+            {mode === 'seconds'
+              ? t('rate_limit_input_seconds')
+              : t('rate_limit_input_requests')}
+          </label>
+
+          <div className="flex items-center gap-2">
             <Button
               type="button"
-              disabled={!isDirty || isSaving}
-              onClick={saveDraft}
+              variant="outline"
+              size="icon"
+              className="h-11 w-11 shrink-0"
+              onClick={() =>
+                setDraftValue((current) => Math.max(minValue, current - step))
+              }
             >
-              {isSaving ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="mr-2 h-4 w-4" />
-              )}
-              {hasOverride ? t('rate_limit_update') : t('rate_limit_apply')}
+              <Minus className="h-4 w-4" />
+            </Button>
+            <Input
+              id={`rate-limit-${definition.name}`}
+              type="number"
+              min={minValue}
+              step={step}
+              value={draftValue}
+              onChange={(event) => {
+                const nextValue = Number(event.target.value);
+
+                if (!Number.isFinite(nextValue)) {
+                  setDraftValue(minValue);
+                  return;
+                }
+
+                setDraftValue(Math.max(minValue, Math.round(nextValue)));
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && isDirty && !isSaving) {
+                  event.preventDefault();
+                  saveDraft();
+                }
+              }}
+              className="h-11 font-semibold text-base"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-11 w-11 shrink-0"
+              onClick={() => setDraftValue((current) => current + step)}
+            >
+              <Plus className="h-4 w-4" />
             </Button>
           </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2 xl:flex-col xl:items-stretch">
+          <Button
+            type="button"
+            disabled={!isDirty || isSaving}
+            onClick={saveDraft}
+          >
+            {isSaving ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-4 w-4" />
+            )}
+            {hasOverride ? t('rate_limit_update') : t('rate_limit_apply')}
+          </Button>
+
+          {hasOverride && (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isResetting}
+              onClick={() => {
+                if (!secret) return;
+                onReset(secret);
+              }}
+            >
+              {isResetting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCcw className="mr-2 h-4 w-4" />
+              )}
+              {t('rate_limit_reset')}
+            </Button>
+          )}
         </div>
       </div>
     </div>
@@ -383,10 +373,10 @@ export function WorkspaceRateLimitsPanel({
   const defaultCount = totalRules - overrideCount;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <Card className="border-border/80 bg-background/80">
-        <CardHeader className="space-y-4">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+        <CardContent className="space-y-6 p-6">
+          <div className="flex flex-col gap-4 2xl:flex-row 2xl:items-start 2xl:justify-between">
             <div className="max-w-3xl">
               <CardTitle>{t('detail_tab_rate_limits')}</CardTitle>
               <p className="mt-1 text-muted-foreground text-sm">
@@ -394,29 +384,19 @@ export function WorkspaceRateLimitsPanel({
               </p>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-xl border border-border bg-foreground/5 px-4 py-3">
-                <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                  {t('rate_limit_summary_overrides')}
-                </div>
-                <div className="mt-2 font-semibold text-2xl">
-                  {overrideCount}
-                </div>
-              </div>
-              <div className="rounded-xl border border-border bg-foreground/5 px-4 py-3">
-                <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                  {t('rate_limit_summary_defaults')}
-                </div>
-                <div className="mt-2 font-semibold text-2xl">
-                  {defaultCount}
-                </div>
-              </div>
-              <div className="rounded-xl border border-border bg-foreground/5 px-4 py-3">
-                <div className="text-muted-foreground text-xs uppercase tracking-[0.18em]">
-                  {t('rate_limit_summary_rules')}
-                </div>
-                <div className="mt-2 font-semibold text-2xl">{totalRules}</div>
-              </div>
+            <div className="grid gap-3 sm:grid-cols-3 2xl:min-w-[480px]">
+              <SummaryCard
+                label={t('rate_limit_summary_overrides')}
+                value={overrideCount}
+              />
+              <SummaryCard
+                label={t('rate_limit_summary_defaults')}
+                value={defaultCount}
+              />
+              <SummaryCard
+                label={t('rate_limit_summary_rules')}
+                value={totalRules}
+              />
             </div>
           </div>
 
@@ -466,7 +446,7 @@ export function WorkspaceRateLimitsPanel({
               </p>
             </div>
           )}
-        </CardHeader>
+        </CardContent>
       </Card>
 
       {isLoading ? (
@@ -474,7 +454,7 @@ export function WorkspaceRateLimitsPanel({
           {Array.from({ length: 3 }).map((_, index) => (
             <div
               key={index}
-              className="h-72 animate-pulse rounded-xl border border-border bg-foreground/5"
+              className="h-64 animate-pulse rounded-2xl border border-border bg-foreground/5"
             />
           ))}
         </div>
@@ -485,7 +465,7 @@ export function WorkspaceRateLimitsPanel({
             : t('secret_manager_load_error')}
         </div>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-4">
           {RATE_LIMIT_GROUPS.map((group) => {
             const overrideCountForGroup = getGroupOverrideCount(
               group,
@@ -500,10 +480,10 @@ export function WorkspaceRateLimitsPanel({
                   isFetching && 'opacity-70'
                 )}
               >
-                <CardHeader className="pb-4">
+                <CardHeader className="border-border/60 border-b pb-4">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="flex items-start gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground/5 text-foreground/80">
+                      <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-full bg-foreground/5 text-foreground/80">
                         {group.icon}
                       </div>
                       <div>
@@ -524,7 +504,8 @@ export function WorkspaceRateLimitsPanel({
                     </Badge>
                   </div>
                 </CardHeader>
-                <CardContent className="grid gap-4 xl:grid-cols-2">
+
+                <CardContent className="space-y-3 p-4">
                   {group.items.map((item) => {
                     const definition = getRateLimitDefinition(item.name);
 
@@ -535,7 +516,7 @@ export function WorkspaceRateLimitsPanel({
                     );
 
                     return (
-                      <RateLimitEditorCard
+                      <RateLimitEditorRow
                         key={item.name}
                         definition={definition}
                         isSaving={
@@ -558,6 +539,17 @@ export function WorkspaceRateLimitsPanel({
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+function SummaryCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-2xl border border-border/80 bg-foreground/5 px-4 py-4">
+      <div className="text-[11px] text-muted-foreground uppercase tracking-[0.18em]">
+        {label}
+      </div>
+      <div className="mt-3 font-semibold text-3xl">{value}</div>
     </div>
   );
 }

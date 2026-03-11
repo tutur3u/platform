@@ -14,7 +14,7 @@ export function createPATCH() {
     try {
       if (!id) return new Response('Missing chat ID', { status: 400 });
 
-      const supabase = await createClient();
+      const supabase = await createClient(req);
 
       const {
         data: { user },

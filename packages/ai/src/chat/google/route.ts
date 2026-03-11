@@ -93,7 +93,7 @@ export function createPOST(
         return new Response('Missing messages', { status: 400 });
       }
 
-      const supabase = await createClient();
+      const supabase = await createClient(req);
 
       const {
         data: { user },
@@ -302,7 +302,7 @@ export function createPOST(
       }
       const chatId = resolvedChatId.chatId;
 
-      const sbDynamic = await createDynamicClient();
+      const sbDynamic = await createDynamicClient(req);
       const moveFilesError = await moveTempFilesToThread({
         loadThread: () =>
           supabase.from('ai_chat_messages').select('*').eq('chat_id', chatId),
@@ -322,7 +322,8 @@ export function createPOST(
       const preparedMessages = await prepareProcessedMessages(
         normalizedMessages,
         normalizedWsId ?? undefined,
-        chatId
+        chatId,
+        req
       );
       if ('error' in preparedMessages) {
         return preparedMessages.error;
