@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:mobile/data/models/auth_action_result.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
 const _sentinel = Object();
@@ -22,6 +23,7 @@ class AuthState extends Equatable {
     this.status = AuthStatus.unknown,
     this.user,
     this.error,
+    this.errorCode,
     this.isLoading = false,
   });
 
@@ -39,20 +41,25 @@ class AuthState extends Equatable {
   final AuthStatus status;
   final User? user;
   final String? error;
+  final AuthErrorCode? errorCode;
   final bool isLoading;
 
   AuthState copyWith({
     AuthStatus? status,
     User? user,
     Object? error = _sentinel,
+    Object? errorCode = _sentinel,
     bool? isLoading,
   }) => AuthState._(
     status: status ?? this.status,
     user: user ?? this.user,
     error: error == _sentinel ? this.error : error as String?,
+    errorCode: errorCode == _sentinel
+        ? this.errorCode
+        : errorCode as AuthErrorCode?,
     isLoading: isLoading ?? this.isLoading,
   );
 
   @override
-  List<Object?> get props => [status, user?.id, error, isLoading];
+  List<Object?> get props => [status, user?.id, error, errorCode, isLoading];
 }

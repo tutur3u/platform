@@ -5,15 +5,6 @@ import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
-///
-/// Example:
-/// ```dart
-/// import 'firebase_options.dart';
-/// // ...
-/// await Firebase.initializeApp(
-///   options: DefaultFirebaseOptions.currentPlatform,
-/// );
-/// ```
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
@@ -52,7 +43,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyB_STZHQ6BNgMdVtJ0bMuyk31x9xAVw65c',
-    appId: '1:21140998358:android:acb63cb6b5e3e6ec0de177',
+    appId: '1:21140998358:android:0409412ce9e8ba8c0de177',
     messagingSenderId: '21140998358',
     projectId: 'tuturuuu-mobile',
     storageBucket: 'tuturuuu-mobile.firebasestorage.app',
@@ -60,24 +51,24 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyAmL2LveXmjwuwWkJDFMNtLglVqd2mT0zw',
-    appId: '1:21140998358:ios:b943cf725f57d5500de177',
+    appId: '1:21140998358:ios:389d04f8f02849660de177',
     messagingSenderId: '21140998358',
     projectId: 'tuturuuu-mobile',
     storageBucket: 'tuturuuu-mobile.firebasestorage.app',
     iosClientId:
-        '21140998358-slkc76eli9ggd8d75osab1bq6rdqlnni.apps.googleusercontent.com',
-    iosBundleId: 'com.tuturuuu.app.mobile',
+        '21140998358-lp236sdj7f789vh3eq2aqhhikcm9inp1.apps.googleusercontent.com',
+    iosBundleId: 'com.tuturuuu.app.mobile.stg',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyAmL2LveXmjwuwWkJDFMNtLglVqd2mT0zw',
-    appId: '1:21140998358:ios:b943cf725f57d5500de177',
+    appId: '1:21140998358:ios:389d04f8f02849660de177',
     messagingSenderId: '21140998358',
     projectId: 'tuturuuu-mobile',
     storageBucket: 'tuturuuu-mobile.firebasestorage.app',
     iosClientId:
-        '21140998358-slkc76eli9ggd8d75osab1bq6rdqlnni.apps.googleusercontent.com',
-    iosBundleId: 'com.tuturuuu.app.mobile',
+        '21140998358-lp236sdj7f789vh3eq2aqhhikcm9inp1.apps.googleusercontent.com',
+    iosBundleId: 'com.tuturuuu.app.mobile.stg',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(

@@ -8,7 +8,7 @@ import 'package:flutter/foundation.dart'
 ///
 /// Example:
 /// ```dart
-/// import 'firebase_options.dart';
+/// import 'firebase_options_development.dart';
 /// // ...
 /// await Firebase.initializeApp(
 ///   options: DefaultFirebaseOptions.currentPlatform,
@@ -52,7 +52,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyB_STZHQ6BNgMdVtJ0bMuyk31x9xAVw65c',
-    appId: '1:21140998358:android:acb63cb6b5e3e6ec0de177',
+    appId: '1:21140998358:android:c20877467f81f34f0de177',
     messagingSenderId: '21140998358',
     projectId: 'tuturuuu-mobile',
     storageBucket: 'tuturuuu-mobile.firebasestorage.app',
@@ -60,24 +60,24 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyAmL2LveXmjwuwWkJDFMNtLglVqd2mT0zw',
-    appId: '1:21140998358:ios:b943cf725f57d5500de177',
+    appId: '1:21140998358:ios:74917dcd16ea89060de177',
     messagingSenderId: '21140998358',
     projectId: 'tuturuuu-mobile',
     storageBucket: 'tuturuuu-mobile.firebasestorage.app',
     iosClientId:
-        '21140998358-slkc76eli9ggd8d75osab1bq6rdqlnni.apps.googleusercontent.com',
-    iosBundleId: 'com.tuturuuu.app.mobile',
+        '21140998358-8gegvnj8kq0v3ek0u2tspibqj8t9s3qe.apps.googleusercontent.com',
+    iosBundleId: 'com.tuturuuu.app.mobile.dev',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyAmL2LveXmjwuwWkJDFMNtLglVqd2mT0zw',
-    appId: '1:21140998358:ios:b943cf725f57d5500de177',
+    appId: '1:21140998358:ios:74917dcd16ea89060de177',
     messagingSenderId: '21140998358',
     projectId: 'tuturuuu-mobile',
     storageBucket: 'tuturuuu-mobile.firebasestorage.app',
     iosClientId:
-        '21140998358-slkc76eli9ggd8d75osab1bq6rdqlnni.apps.googleusercontent.com',
-    iosBundleId: 'com.tuturuuu.app.mobile',
+        '21140998358-8gegvnj8kq0v3ek0u2tspibqj8t9s3qe.apps.googleusercontent.com',
+    iosBundleId: 'com.tuturuuu.app.mobile.dev',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(

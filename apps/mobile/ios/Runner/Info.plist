@@ -20,6 +20,31 @@
 		<string>vi</string>
 		<string>es</string>
 	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>supabase-auth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>google-sign-in</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.21140998358-slkc76eli9ggd8d75osab1bq6rdqlnni</string>
+				<string>com.googleusercontent.apps.21140998358-8gegvnj8kq0v3ek0u2tspibqj8t9s3qe</string>
+				<string>com.googleusercontent.apps.21140998358-lp236sdj7f789vh3eq2aqhhikcm9inp1</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleName</key>
 	<string>$(FLAVOR_APP_NAME)</string>
 	<key>CFBundlePackageType</key>

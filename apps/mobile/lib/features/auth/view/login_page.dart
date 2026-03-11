@@ -16,6 +16,8 @@ import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/auth/utils/auth_error_localization.dart';
+import 'package:mobile/features/auth/widgets/auth_google_button.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -88,6 +90,10 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  Future<void> _handleGoogleSignIn() {
+    return context.read<AuthCubit>().signInWithGoogle();
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -115,6 +121,18 @@ class _LoginPageState extends State<LoginPage> {
                     style: shad.Theme.of(context).typography.textMuted,
                   ),
                   const shad.Gap(32),
+                  BlocBuilder<AuthCubit, AuthState>(
+                    buildWhen: (prev, curr) => prev.isLoading != curr.isLoading,
+                    builder: (context, state) {
+                      return AuthGoogleButton(
+                        isLoading: state.isLoading,
+                        onPressed: _handleGoogleSignIn,
+                      );
+                    },
+                  ),
+                  const shad.Gap(20),
+                  const AuthMethodDivider(),
+                  const shad.Gap(20),
                   shad.Tabs(
                     index: _index,
                     onChanged: (index) => setState(() => _index = index),
@@ -137,11 +155,16 @@ class _LoginPageState extends State<LoginPage> {
                   BlocBuilder<AuthCubit, AuthState>(
                     buildWhen: (prev, curr) => prev.error != curr.error,
                     builder: (context, state) {
-                      if (state.error == null) return const SizedBox.shrink();
+                      final errorText = resolveAuthErrorMessage(
+                        l10n: l10n,
+                        error: state.error,
+                        errorCode: state.errorCode,
+                      );
+                      if (errorText == null) return const SizedBox.shrink();
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 16),
                         child: Text(
-                          state.error!,
+                          errorText,
                           style: TextStyle(
                             color: shad.Theme.of(
                               context,
