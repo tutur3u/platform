@@ -101,8 +101,14 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     bool clearStartDate = false,
     bool clearEndDate = false,
   }) async {
+    final wsId = state.workspaceId;
+    if (wsId == null) {
+      throw StateError('Workspace not selected');
+    }
+
     await _runMutation(
       () => _taskRepository.updateBoardTask(
+        wsId: wsId,
         taskId: taskId,
         name: name,
         description: description,
@@ -120,8 +126,17 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     required String taskId,
     required String listId,
   }) async {
+    final wsId = state.workspaceId;
+    if (wsId == null) {
+      throw StateError('Workspace not selected');
+    }
+
     await _runMutation(
-      () => _taskRepository.moveBoardTask(taskId: taskId, listId: listId),
+      () => _taskRepository.moveBoardTask(
+        wsId: wsId,
+        taskId: taskId,
+        listId: listId,
+      ),
     );
   }
 

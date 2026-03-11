@@ -59,12 +59,19 @@ export async function GET(
     }
 
     // Verify workspace access
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: memberError } = await supabase
       .from('workspace_members')
       .select('user_id')
       .eq('ws_id', normalizedWorkspaceId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (memberError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(
@@ -248,7 +255,7 @@ export async function POST(
   try {
     const { wsId } = await params;
     const normalizedWorkspaceId = await normalizeWorkspaceId(wsId);
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     // Get authenticated user
     const {
@@ -260,12 +267,19 @@ export async function POST(
     }
 
     // Verify workspace access
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: memberError } = await supabase
       .from('workspace_members')
       .select('user_id')
       .eq('ws_id', normalizedWorkspaceId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (memberError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(

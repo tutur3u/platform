@@ -13,7 +13,6 @@ import 'package:mobile/data/models/task_project_update.dart';
 import 'package:mobile/data/models/user_tasks_page.dart';
 import 'package:mobile/data/models/workspace_user_option.dart';
 import 'package:mobile/data/sources/api_client.dart';
-import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/tasks_estimates/utils/task_label_colors.dart';
 
 /// Repository for task operations.
@@ -45,45 +44,120 @@ class TaskRepository {
     return Uri(queryParameters: params).query;
   }
 
-  Future<List<Task>> getTasks(String wsId) async {
-    final response = await supabase
-        .from('workspace_tasks')
-        .select()
-        .eq('ws_id', wsId)
-        .order('created_at', ascending: false);
+  Task _taskFromApiJson(Map<String, dynamic> json) {
+    final priority = switch (json['priority']) {
+      'low' => 1,
+      'normal' => 2,
+      'high' => 3,
+      'critical' => 4,
+      final int value => value,
+      final num value => value.toInt(),
+      _ => null,
+    };
 
-    return (response as List<dynamic>)
-        .map((e) => Task.fromJson(e as Map<String, dynamic>))
+    return Task(
+      id: json['id'] as String,
+      name: json['name'] as String?,
+      description: json['description'] as String?,
+      priority: priority,
+      completed: json['completed'] as bool?,
+      startDate: json['start_date'] != null
+          ? DateTime.tryParse(json['start_date'] as String)?.toLocal()
+          : null,
+      endDate: json['end_date'] != null
+          ? DateTime.tryParse(json['end_date'] as String)?.toLocal()
+          : null,
+      boardId: json['board_id'] as String?,
+      listId: json['list_id'] as String?,
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'] as String)?.toLocal()
+          : null,
+    );
+  }
+
+  String? _priorityToApiValue(Object? value) {
+    return switch (value) {
+      'low' => 'low',
+      'normal' => 'normal',
+      'high' => 'high',
+      'critical' => 'critical',
+      1 => 'low',
+      2 => 'normal',
+      3 => 'high',
+      4 => 'critical',
+      final num number when number.toInt() >= 1 && number.toInt() <= 4 =>
+        _priorityToApiValue(number.toInt()),
+      _ => null,
+    };
+  }
+
+  Map<String, dynamic> _normalizeTaskPayload(Map<String, dynamic> data) {
+    return {
+      if (data['name'] != null) 'name': data['name'],
+      if (data.containsKey('description')) 'description': data['description'],
+      if (_priorityToApiValue(data['priority']) != null)
+        'priority': _priorityToApiValue(data['priority']),
+      if (data['start_date'] != null) 'start_date': data['start_date'],
+      if (data['startDate'] != null) 'start_date': data['startDate'],
+      if (data['end_date'] != null) 'end_date': data['end_date'],
+      if (data['endDate'] != null) 'end_date': data['endDate'],
+      if (data['list_id'] != null) 'list_id': data['list_id'],
+      if (data['listId'] != null) 'list_id': data['listId'],
+      if (data['completed'] != null) 'completed': data['completed'],
+      if (data['deleted'] != null) 'deleted': data['deleted'],
+    };
+  }
+
+  Future<List<Task>> getTasks(String wsId) async {
+    final response = await _apiClient.getJson('/api/v1/workspaces/$wsId/tasks');
+    final tasks = response['tasks'] as List<dynamic>? ?? const [];
+
+    return tasks
+        .whereType<Map<String, dynamic>>()
+        .map(_taskFromApiJson)
         .toList();
   }
 
-  Future<Task?> getTaskById(String taskId) async {
-    final response = await supabase
-        .from('workspace_tasks')
-        .select()
-        .eq('id', taskId)
-        .maybeSingle();
-
-    if (response == null) return null;
-    return Task.fromJson(response);
+  Future<Task?> getTaskById(String taskId, {required String wsId}) async {
+    final response = await _apiClient.getJson(
+      '/api/v1/workspaces/$wsId/tasks/$taskId',
+    );
+    final task = response['task'];
+    if (task is! Map<String, dynamic>) return null;
+    return _taskFromApiJson(task);
   }
 
   Future<Task> createTask(String wsId, Map<String, dynamic> data) async {
-    final response = await supabase
-        .from('workspace_tasks')
-        .insert({...data, 'ws_id': wsId})
-        .select()
-        .single();
+    final response = await _apiClient.postJson(
+      '/api/v1/workspaces/$wsId/tasks',
+      _normalizeTaskPayload(data),
+    );
+    final task = response['task'];
+    if (task is! Map<String, dynamic>) {
+      throw const ApiException(
+        message: 'Invalid task create response',
+        statusCode: 0,
+      );
+    }
 
-    return Task.fromJson(response);
+    return _taskFromApiJson(task);
   }
 
-  Future<void> updateTask(String taskId, Map<String, dynamic> data) async {
-    await supabase.from('workspace_tasks').update(data).eq('id', taskId);
+  Future<void> updateTask(
+    String taskId,
+    Map<String, dynamic> data, {
+    required String wsId,
+  }) async {
+    await _apiClient.putJson(
+      '/api/v1/workspaces/$wsId/tasks/$taskId',
+      _normalizeTaskPayload(data),
+    );
   }
 
-  Future<void> deleteTask(String taskId) async {
-    await supabase.from('workspace_tasks').delete().eq('id', taskId);
+  Future<void> deleteTask(String taskId, {required String wsId}) async {
+    await _apiClient.putJson('/api/v1/workspaces/$wsId/tasks/$taskId', {
+      'deleted': true,
+    });
   }
 
   Future<List<TaskEstimateBoard>> getTaskEstimateBoards(String wsId) async {
@@ -134,7 +208,7 @@ class TaskRepository {
   ) async {
     final results = await Future.wait<dynamic>([
       _getTaskBoardMetadata(wsId, boardId),
-      getBoardLists(boardId),
+      getBoardLists(wsId, boardId),
       getBoardTasks(wsId, boardId),
       getTaskLabels(wsId),
       getWorkspaceUsers(wsId),
@@ -183,16 +257,13 @@ class TaskRepository {
     return List.unmodifiable(tasks);
   }
 
-  Future<List<TaskBoardList>> getBoardLists(String boardId) async {
-    final response = await supabase
-        .from('task_lists')
-        .select('id, board_id, name, status, color, position, archived')
-        .eq('board_id', boardId)
-        .eq('deleted', false)
-        .order('position', ascending: true)
-        .order('created_at', ascending: true);
+  Future<List<TaskBoardList>> getBoardLists(String wsId, String boardId) async {
+    final response = await _apiClient.getJson(
+      '/api/v1/workspaces/$wsId/task-boards/$boardId/lists',
+    );
+    final lists = response['lists'] as List<dynamic>? ?? const [];
 
-    return (response as List<dynamic>)
+    return lists
         .whereType<Map<String, dynamic>>()
         .map(TaskBoardList.fromJson)
         .toList(growable: false);
@@ -231,6 +302,7 @@ class TaskRepository {
   }
 
   Future<TaskBoardTask> updateBoardTask({
+    required String wsId,
     required String taskId,
     String? name,
     String? description,
@@ -261,67 +333,81 @@ class TaskRepository {
       );
     }
 
-    final response = await supabase
-        .from('tasks')
-        .update(updatePayload)
-        .eq('id', taskId)
-        .select(
-          'id, list_id, name, description, priority, completed, '
-          'start_date, end_date, created_at, closed_at',
-        )
-        .single();
+    final response = await _apiClient.putJson(
+      '/api/v1/workspaces/$wsId/tasks/$taskId',
+      updatePayload,
+    );
+    final task = response['task'];
+    if (task is! Map<String, dynamic>) {
+      throw const ApiException(
+        message: 'Invalid task update response',
+        statusCode: 0,
+      );
+    }
 
-    return TaskBoardTask.fromJson(response);
+    return TaskBoardTask.fromJson(task);
   }
 
   Future<TaskBoardTask> moveBoardTask({
+    required String wsId,
     required String taskId,
     required String listId,
   }) async {
-    final response = await supabase
-        .from('tasks')
-        .update({'list_id': listId})
-        .eq('id', taskId)
-        .select(
-          'id, list_id, name, description, priority, completed, '
-          'start_date, end_date, created_at, closed_at',
-        )
-        .single();
+    final response = await _apiClient.putJson(
+      '/api/v1/workspaces/$wsId/tasks/$taskId',
+      {'list_id': listId},
+    );
+    final task = response['task'];
+    if (task is! Map<String, dynamic>) {
+      throw const ApiException(
+        message: 'Invalid task move response',
+        statusCode: 0,
+      );
+    }
 
-    return TaskBoardTask.fromJson(response);
+    return TaskBoardTask.fromJson(task);
   }
 
   Future<TaskBoardList> createBoardList({
+    required String wsId,
     required String boardId,
     required String name,
     String status = 'not_started',
   }) async {
-    final response = await supabase
-        .from('task_lists')
-        .insert({
-          'board_id': boardId,
-          'name': name,
-          'status': status,
-          'deleted': false,
-        })
-        .select('id, board_id, name, status, color, position, archived')
-        .single();
+    final response = await _apiClient.postJson(
+      '/api/v1/workspaces/$wsId/task-boards/$boardId/lists',
+      {'name': name, 'status': status},
+    );
+    final list = response['list'];
+    if (list is! Map<String, dynamic>) {
+      throw const ApiException(
+        message: 'Invalid task list create response',
+        statusCode: 0,
+      );
+    }
 
-    return TaskBoardList.fromJson(response);
+    return TaskBoardList.fromJson(list);
   }
 
   Future<TaskBoardList> renameBoardList({
+    required String wsId,
+    required String boardId,
     required String listId,
     required String name,
   }) async {
-    final response = await supabase
-        .from('task_lists')
-        .update({'name': name})
-        .eq('id', listId)
-        .select('id, board_id, name, status, color, position, archived')
-        .single();
+    final response = await _apiClient.patchJson(
+      '/api/v1/workspaces/$wsId/task-boards/$boardId/lists/$listId',
+      {'name': name},
+    );
+    final list = response['list'];
+    if (list is! Map<String, dynamic>) {
+      throw const ApiException(
+        message: 'Invalid task list update response',
+        statusCode: 0,
+      );
+    }
 
-    return TaskBoardList.fromJson(response);
+    return TaskBoardList.fromJson(list);
   }
 
   Future<TaskBoardDetail> _getTaskBoardMetadata(
@@ -350,18 +436,15 @@ class TaskRepository {
       );
     }
 
-    final fallbackBoard = await supabase
-        .from('workspace_boards')
-        .select('id, ws_id, name, icon, created_at, archived_at, deleted_at')
-        .eq('ws_id', wsId)
-        .eq('id', boardId)
-        .maybeSingle();
-
-    if (fallbackBoard == null) {
+    final response = await _apiClient.getJson(
+      '/api/v1/workspaces/$wsId/task-boards/$boardId',
+    );
+    final board = response['board'];
+    if (board is! Map<String, dynamic>) {
       throw const ApiException(message: 'Board not found', statusCode: 404);
     }
 
-    return TaskBoardDetail.fromJson(fallbackBoard);
+    return TaskBoardDetail.fromJson(board);
   }
 
   Future<void> createTaskBoard({
