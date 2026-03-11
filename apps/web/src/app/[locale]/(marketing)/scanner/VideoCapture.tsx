@@ -25,14 +25,12 @@ interface VideoCaptureProps {
   onNewStudent: (name: string, studentNumber: string) => void;
 }
 
-interface CameraDevice {
-  deviceId: string;
-  label: string;
-}
-
 export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
-  const [availableDevices, setAvailableDevices] = useState<CameraDevice[]>([]);
-  const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
+  const [availableDevices, setAvailableDevices] = useState<MediaDeviceInfo[]>(
+    []
+  );
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
+  const [isFrontCamera, setIsFrontCamera] = useState<boolean>(false);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -44,31 +42,41 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
 
   const { toast } = useToast();
 
-  const getSelectedDeviceLabel = () => {
-    const device = availableDevices.find((d) => d.deviceId === selectedDevice);
+  const getSelectedDeviceIdLabel = () => {
+    const device = availableDevices.find(
+      (d) => d.deviceId === selectedDeviceId
+    );
     return device?.label || 'Select Camera';
+  };
+
+  // Detect if the camera is front-facing from track settings
+  const detectFrontCameraFromStream = (stream: MediaStream) => {
+    const videoTracks = stream.getVideoTracks();
+    if (videoTracks.length === 0) return false;
+
+    const settings = videoTracks[0]?.getSettings();
+    const facing = settings?.facingMode;
+
+    return facing === 'user';
   };
 
   // Enumerate available camera devices
   const enumerateDevices = useCallback(async () => {
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices
-        .filter((device) => device.kind === 'videoinput')
-        .map((device) => ({
-          deviceId: device.deviceId,
-          label: device.label || `Camera ${device.deviceId.slice(0, 8)}...`,
-        }));
+      const videoDevices = devices.filter(
+        (device) => device.kind === 'videoinput'
+      );
 
       setAvailableDevices(videoDevices);
 
-      if (videoDevices.length > 0 && !selectedDevice) {
-        setSelectedDevice(videoDevices[0]?.deviceId || null);
+      if (videoDevices.length > 0 && !selectedDeviceId) {
+        setSelectedDeviceId(videoDevices[0]?.deviceId || null);
       }
     } catch (error) {
       console.error('Error enumerating devices:', error);
     }
-  }, [selectedDevice]);
+  }, [selectedDeviceId]);
 
   const startCamera = async (deviceId: string) => {
     setCameraOn(true);
@@ -100,6 +108,9 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
+
+        // Detect camera type from actual stream
+        setIsFrontCamera(detectFrontCameraFromStream(stream));
 
         videoRef.current.onloadedmetadata = () => {
           setIsReady(true);
@@ -133,14 +144,14 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
 
   const toggleCamera = async () => {
     if (!cameraOn) {
-      await startCamera(selectedDevice || '');
+      await startCamera(selectedDeviceId || '');
     } else {
       stopCamera();
     }
   };
 
   const handleDeviceChange = async (deviceId: string) => {
-    setSelectedDevice(deviceId);
+    setSelectedDeviceId(deviceId);
 
     // If camera is currently on, restart with new device
     if (cameraOn) {
@@ -246,7 +257,7 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
             <Button variant="outline" className="w-64 justify-between">
               <div className="flex min-w-0 items-center gap-2">
                 <Video className="h-4 w-4" />
-                <span className="truncate">{getSelectedDeviceLabel()}</span>
+                <span className="truncate">{getSelectedDeviceIdLabel()}</span>
               </div>
               <ChevronDown className="h-4 w-4 opacity-50" />
             </Button>
@@ -258,7 +269,7 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
                 onClick={() => handleDeviceChange(device.deviceId)}
                 className={cn(
                   'cursor-pointer',
-                  selectedDevice === device.deviceId && 'bg-accent'
+                  selectedDeviceId === device.deviceId && 'bg-accent'
                 )}
               >
                 <Video className="mr-2 h-4 w-4" />
@@ -283,7 +294,10 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
           autoPlay
           playsInline
           muted
-          className="h-full w-full object-cover"
+          className={cn(
+            'h-full w-full object-cover',
+            isFrontCamera && 'scale-x-[-1]'
+          )}
         />
 
         {/* Camera Off Placeholder */}
