@@ -170,11 +170,16 @@ bool _taskIsOverdue(TaskBoardTask task) {
   return task.endDate!.isBefore(DateTime.now());
 }
 
-bool _hasChips(String? estimationLabel, TaskBoardTask task) {
+bool _hasChips(
+  String? estimationLabel,
+  TaskBoardTask task, {
+  required bool hasDescription,
+}) {
   return task.priority != null ||
       estimationLabel != null ||
       task.projects.isNotEmpty ||
-      task.labels.isNotEmpty;
+      task.labels.isNotEmpty ||
+      hasDescription;
 }
 
 List<int> _taskEstimationOptions(TaskBoardDetail board) {

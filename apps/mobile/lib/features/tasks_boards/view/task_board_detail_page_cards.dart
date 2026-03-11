@@ -268,7 +268,11 @@ class _BoardTaskTile extends StatelessWidget {
               ),
             ],
             // Chips row: priority, estimation, project, labels
-            if (_hasChips(estimationLabel, task)) ...[
+            if (_hasChips(
+              estimationLabel,
+              task,
+              hasDescription: hasDescription,
+            )) ...[
               const shad.Gap(8),
               Wrap(
                 spacing: 6,
@@ -277,9 +281,16 @@ class _BoardTaskTile extends StatelessWidget {
                   _TaskPriorityChip(priority: task.priority),
                   if (estimationLabel != null)
                     shad.OutlineBadge(
-                      child: Text(
-                        estimationLabel,
-                        style: theme.typography.small.copyWith(fontSize: 11),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(shad.LucideIcons.timer, size: 12),
+                          const shad.Gap(3),
+                          Text(
+                            estimationLabel,
+                            style: theme.typography.small.copyWith(fontSize: 11),
+                          ),
+                        ],
                       ),
                     ),
                   ...task.projects
