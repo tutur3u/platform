@@ -20,7 +20,7 @@ export default function HeroSection() {
   };
 
   return (
-    <section className="relative flex min-h-screen items-center justify-center pb-9">
+    <section className="relative flex min-h-screen items-center justify-center py-28 md:py-32">
       <div
         className="blob absolute -top-20 -right-20 h-64 w-64 animate-float"
         style={{ animationDelay: '2s' }}
@@ -32,8 +32,13 @@ export default function HeroSection() {
 
       <div className="relative mx-auto max-w-6xl px-6 text-center">
         <div className="flex flex-col items-center justify-center gap-8">
-          <div className="w-full max-w-3xl">
-            <video autoPlay muted playsInline className="w-full">
+          <div className="aspect-3/1 max-w-lg">
+            <video
+              autoPlay
+              muted
+              playsInline
+              className="h-full w-full object-cover"
+            >
               <source src="/intro.mov" type="video/quicktime" />
               <source src="/intro.webm" type="video/webm" />
             </video>
