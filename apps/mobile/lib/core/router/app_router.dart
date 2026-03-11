@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/apps/view/apps_hub_page.dart';
+import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/assistant/view/assistant_page.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
@@ -159,8 +161,13 @@ GoRouter createAppRouter(
 
       // ── Main shell with bottom navigation ────────
       ShellRoute(
-        builder: (context, state, child) =>
-            ShellPage(matchedLocation: state.matchedLocation, child: child),
+        builder: (context, state, child) => BlocProvider(
+          create: (_) => AssistantChromeCubit(),
+          child: ShellPage(
+            matchedLocation: state.matchedLocation,
+            child: child,
+          ),
+        ),
         routes: [
           GoRoute(
             path: Routes.home,

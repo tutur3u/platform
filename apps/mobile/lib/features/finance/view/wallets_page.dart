@@ -10,6 +10,7 @@ import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/widgets/wallet_dialog.dart';
 import 'package:mobile/features/finance/widgets/wallet_visual_avatar.dart';
+import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -59,23 +60,7 @@ class _WalletsViewState extends State<_WalletsView> {
 
     return shad.Scaffold(
       headers: [
-        shad.AppBar(
-          leading: [
-            shad.OutlineButton(
-              density: shad.ButtonDensity.icon,
-              onPressed: () {
-                final router = GoRouter.of(context);
-                if (router.canPop()) {
-                  router.pop();
-                  return;
-                }
-                context.go(Routes.finance);
-              },
-              child: const Icon(Icons.arrow_back),
-            ),
-          ],
-          title: Text(l10n.financeWallets),
-        ),
+        MobileSectionAppBar(title: l10n.financeWallets),
       ],
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>
