@@ -31,6 +31,71 @@ class TaskBoardTaskAssignee extends Equatable {
   List<Object?> get props => [id, displayName, avatarUrl];
 }
 
+class TaskBoardTaskLabel extends Equatable {
+  const TaskBoardTaskLabel({
+    required this.id,
+    this.name,
+    this.color,
+  });
+
+  factory TaskBoardTaskLabel.fromJson(Map<String, dynamic> json) {
+    final labelJson = (json['label'] is Map<String, dynamic>)
+        ? json['label'] as Map<String, dynamic>
+        : json;
+    final rawId = labelJson['id'];
+    if (rawId is! String || rawId.trim().isEmpty) {
+      throw const FormatException(
+        'TaskBoardTaskLabel.fromJson: required field "id" '
+        'is missing or invalid',
+      );
+    }
+
+    return TaskBoardTaskLabel(
+      id: rawId.trim(),
+      name: (labelJson['name'] as String?)?.trim(),
+      color: (labelJson['color'] as String?)?.trim(),
+    );
+  }
+
+  final String id;
+  final String? name;
+  final String? color;
+
+  @override
+  List<Object?> get props => [id, name, color];
+}
+
+class TaskBoardTaskProject extends Equatable {
+  const TaskBoardTaskProject({
+    required this.id,
+    this.name,
+  });
+
+  factory TaskBoardTaskProject.fromJson(Map<String, dynamic> json) {
+    final projectJson = (json['project'] is Map<String, dynamic>)
+        ? json['project'] as Map<String, dynamic>
+        : json;
+    final rawId = projectJson['id'];
+    if (rawId is! String || rawId.trim().isEmpty) {
+      throw const FormatException(
+        'TaskBoardTaskProject.fromJson: required field "id" '
+        'is missing or invalid',
+      );
+    }
+
+    return TaskBoardTaskProject(
+      id: rawId.trim(),
+      name: (projectJson['name'] as String?)?.trim(),
+    );
+  }
+
+  final String id;
+  final String? name;
+
+  @override
+  List<Object?> get props => [id, name];
+}
+
 class TaskBoardTask extends Equatable {
   const TaskBoardTask({
     required this.id,
@@ -43,7 +108,10 @@ class TaskBoardTask extends Equatable {
     this.endDate,
     this.createdAt,
     this.closedAt,
+    this.estimationPoints,
     this.assignees = const [],
+    this.labels = const [],
+    this.projects = const [],
   });
 
   factory TaskBoardTask.fromJson(Map<String, dynamic> json) {
@@ -63,6 +131,8 @@ class TaskBoardTask extends Equatable {
     }
 
     final rawAssignees = json['assignees'] as List<dynamic>? ?? const [];
+    final rawLabels = json['labels'] as List<dynamic>? ?? const [];
+    final rawProjects = json['projects'] as List<dynamic>? ?? const [];
 
     return TaskBoardTask(
       id: rawId.trim(),
@@ -75,9 +145,18 @@ class TaskBoardTask extends Equatable {
       endDate: _parseDateTime(json['end_date']),
       createdAt: _parseDateTime(json['created_at']),
       closedAt: _parseDateTime(json['closed_at']),
+      estimationPoints: (json['estimation_points'] as num?)?.toInt(),
       assignees: rawAssignees
           .whereType<Map<String, dynamic>>()
           .map(TaskBoardTaskAssignee.fromJson)
+          .toList(growable: false),
+      labels: rawLabels
+          .whereType<Map<String, dynamic>>()
+          .map(TaskBoardTaskLabel.fromJson)
+          .toList(growable: false),
+      projects: rawProjects
+          .whereType<Map<String, dynamic>>()
+          .map(TaskBoardTaskProject.fromJson)
           .toList(growable: false),
     );
   }
@@ -97,7 +176,10 @@ class TaskBoardTask extends Equatable {
   final DateTime? endDate;
   final DateTime? createdAt;
   final DateTime? closedAt;
+  final int? estimationPoints;
   final List<TaskBoardTaskAssignee> assignees;
+  final List<TaskBoardTaskLabel> labels;
+  final List<TaskBoardTaskProject> projects;
 
   @override
   List<Object?> get props => [
@@ -111,6 +193,9 @@ class TaskBoardTask extends Equatable {
     endDate,
     createdAt,
     closedAt,
+    estimationPoints,
     assignees,
+    labels,
+    projects,
   ];
 }

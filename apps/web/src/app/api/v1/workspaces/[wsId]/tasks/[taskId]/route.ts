@@ -31,6 +31,10 @@ const updateTaskSchema = z
     completed: z.boolean().optional(),
     list_id: z.uuid().optional(),
     deleted: z.boolean().optional(),
+    estimation_points: z.number().int().min(0).max(8).nullable().optional(),
+    label_ids: z.array(z.uuid()).optional(),
+    project_ids: z.array(z.uuid()).optional(),
+    assignee_ids: z.array(z.uuid()).optional(),
   })
   .refine((value) => Object.keys(value).length > 0, {
     message: 'At least one task field is required',
@@ -46,6 +50,7 @@ type TaskRecord = {
   completed: boolean | null;
   start_date: string | null;
   end_date: string | null;
+  estimation_points: number | null;
   created_at: string | null;
   closed_at: string | null;
   deleted_at: string | null;
@@ -66,6 +71,19 @@ type TaskRecord = {
       id: string;
       display_name: string | null;
       avatar_url: string | null;
+    } | null;
+  }> | null;
+  labels: Array<{
+    label: {
+      id: string;
+      name: string | null;
+      color: string | null;
+    } | null;
+  }> | null;
+  projects: Array<{
+    project: {
+      id: string;
+      name: string | null;
     } | null;
   }> | null;
 };
@@ -133,6 +151,7 @@ async function getWorkspaceTask(
       completed,
       start_date,
       end_date,
+      estimation_points,
       created_at,
       closed_at,
       deleted_at,
@@ -153,6 +172,19 @@ async function getWorkspaceTask(
           id,
           display_name,
           avatar_url
+        )
+      ),
+      labels:task_labels(
+        label:workspace_task_labels(
+          id,
+          name,
+          color
+        )
+      ),
+      projects:task_project_tasks(
+        project:task_projects(
+          id,
+          name
         )
       )
     `
@@ -194,6 +226,7 @@ function serializeTask(task: TaskRecord) {
     completed: task.completed,
     start_date: task.start_date,
     end_date: task.end_date,
+    estimation_points: task.estimation_points,
     created_at: task.created_at,
     closed_at: task.closed_at,
     deleted_at: task.deleted_at,
@@ -203,6 +236,31 @@ function serializeTask(task: TaskRecord) {
     list_name: task.task_lists?.name ?? null,
     list_status: task.task_lists?.status ?? null,
     assignees,
+    labels: Array.isArray(task.labels)
+      ? task.labels
+          .map((entry) => entry.label)
+          .filter(
+            (
+              label
+            ): label is {
+              id: string;
+              name: string | null;
+              color: string | null;
+            } => label !== null
+          )
+      : [],
+    projects: Array.isArray(task.projects)
+      ? task.projects
+          .map((entry) => entry.project)
+          .filter(
+            (
+              project
+            ): project is {
+              id: string;
+              name: string | null;
+            } => project !== null
+          )
+      : [],
   };
 }
 
@@ -304,6 +362,9 @@ export async function PUT(
         : {}),
       ...(body.start_date !== undefined ? { start_date: body.start_date } : {}),
       ...(body.end_date !== undefined ? { end_date: body.end_date } : {}),
+      ...(body.estimation_points !== undefined
+        ? { estimation_points: body.estimation_points }
+        : {}),
       ...(body.completed !== undefined ? { completed: body.completed } : {}),
       ...(body.list_id !== undefined ? { list_id: body.list_id } : {}),
       ...(body.deleted !== undefined
@@ -322,6 +383,202 @@ export async function PUT(
         { error: 'Failed to update task' },
         { status: 500 }
       );
+    }
+
+    if (body.assignee_ids !== undefined) {
+      const normalizedAssigneeIds = [...new Set(body.assignee_ids)];
+
+      if (normalizedAssigneeIds.length > 0) {
+        const { data: members, error: membersError } = await supabase
+          .from('workspace_members')
+          .select('user_id')
+          .eq('ws_id', wsId)
+          .in('user_id', normalizedAssigneeIds);
+
+        if (membersError) {
+          console.error('Error validating assignees:', membersError);
+          return NextResponse.json(
+            { error: 'Failed to validate task assignees' },
+            { status: 500 }
+          );
+        }
+
+        const validAssigneeIds = new Set(
+          (members ?? []).map((member) => member.user_id)
+        );
+        const hasInvalidAssignee = normalizedAssigneeIds.some(
+          (assigneeId) => !validAssigneeIds.has(assigneeId)
+        );
+
+        if (hasInvalidAssignee) {
+          return NextResponse.json(
+            { error: 'One or more assignees are not in this workspace' },
+            { status: 400 }
+          );
+        }
+      }
+
+      const { error: clearAssigneesError } = await supabase
+        .from('task_assignees')
+        .delete()
+        .eq('task_id', taskId);
+
+      if (clearAssigneesError) {
+        console.error('Error clearing task assignees:', clearAssigneesError);
+        return NextResponse.json(
+          { error: 'Failed to update task assignees' },
+          { status: 500 }
+        );
+      }
+
+      if (normalizedAssigneeIds.length > 0) {
+        const { error: addAssigneesError } = await supabase
+          .from('task_assignees')
+          .insert(
+            normalizedAssigneeIds.map((assigneeId) => ({
+              task_id: taskId,
+              user_id: assigneeId,
+            }))
+          );
+
+        if (addAssigneesError) {
+          console.error('Error adding task assignees:', addAssigneesError);
+          return NextResponse.json(
+            { error: 'Failed to update task assignees' },
+            { status: 500 }
+          );
+        }
+      }
+    }
+
+    if (body.label_ids !== undefined) {
+      const normalizedLabelIds = [...new Set(body.label_ids)];
+
+      if (normalizedLabelIds.length > 0) {
+        const { data: labels, error: labelsError } = await supabase
+          .from('workspace_task_labels')
+          .select('id')
+          .eq('ws_id', wsId)
+          .in('id', normalizedLabelIds);
+
+        if (labelsError) {
+          console.error('Error validating labels:', labelsError);
+          return NextResponse.json(
+            { error: 'Failed to validate task labels' },
+            { status: 500 }
+          );
+        }
+
+        const validLabelIds = new Set((labels ?? []).map((label) => label.id));
+        const hasInvalidLabel = normalizedLabelIds.some(
+          (labelId) => !validLabelIds.has(labelId)
+        );
+
+        if (hasInvalidLabel) {
+          return NextResponse.json(
+            { error: 'One or more labels do not belong to this workspace' },
+            { status: 400 }
+          );
+        }
+      }
+
+      const { error: clearLabelsError } = await supabase
+        .from('task_labels')
+        .delete()
+        .eq('task_id', taskId);
+
+      if (clearLabelsError) {
+        console.error('Error clearing task labels:', clearLabelsError);
+        return NextResponse.json(
+          { error: 'Failed to update task labels' },
+          { status: 500 }
+        );
+      }
+
+      if (normalizedLabelIds.length > 0) {
+        const { error: addLabelsError } = await supabase
+          .from('task_labels')
+          .insert(
+            normalizedLabelIds.map((labelId) => ({
+              task_id: taskId,
+              label_id: labelId,
+            }))
+          );
+
+        if (addLabelsError) {
+          console.error('Error adding task labels:', addLabelsError);
+          return NextResponse.json(
+            { error: 'Failed to update task labels' },
+            { status: 500 }
+          );
+        }
+      }
+    }
+
+    if (body.project_ids !== undefined) {
+      const normalizedProjectIds = [...new Set(body.project_ids)];
+
+      if (normalizedProjectIds.length > 0) {
+        const { data: projects, error: projectsError } = await supabase
+          .from('task_projects')
+          .select('id')
+          .eq('ws_id', wsId)
+          .in('id', normalizedProjectIds);
+
+        if (projectsError) {
+          console.error('Error validating projects:', projectsError);
+          return NextResponse.json(
+            { error: 'Failed to validate task projects' },
+            { status: 500 }
+          );
+        }
+
+        const validProjectIds = new Set(
+          (projects ?? []).map((project) => project.id)
+        );
+        const hasInvalidProject = normalizedProjectIds.some(
+          (projectId) => !validProjectIds.has(projectId)
+        );
+
+        if (hasInvalidProject) {
+          return NextResponse.json(
+            { error: 'One or more projects do not belong to this workspace' },
+            { status: 400 }
+          );
+        }
+      }
+
+      const { error: clearProjectsError } = await supabase
+        .from('task_project_tasks')
+        .delete()
+        .eq('task_id', taskId);
+
+      if (clearProjectsError) {
+        console.error('Error clearing task projects:', clearProjectsError);
+        return NextResponse.json(
+          { error: 'Failed to update task projects' },
+          { status: 500 }
+        );
+      }
+
+      if (normalizedProjectIds.length > 0) {
+        const { error: addProjectsError } = await supabase
+          .from('task_project_tasks')
+          .insert(
+            normalizedProjectIds.map((projectId) => ({
+              task_id: taskId,
+              project_id: projectId,
+            }))
+          );
+
+        if (addProjectsError) {
+          console.error('Error adding task projects:', addProjectsError);
+          return NextResponse.json(
+            { error: 'Failed to update task projects' },
+            { status: 500 }
+          );
+        }
+      }
     }
 
     const updatedTaskResult = await getWorkspaceTask(supabase, wsId, taskId);

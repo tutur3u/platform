@@ -985,6 +985,60 @@ abstract class AppLocalizations {
   /// **'End date'**
   String get taskBoardDetailTaskEndDate;
 
+  /// No description provided for @taskBoardDetailTaskEstimation.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimation'**
+  String get taskBoardDetailTaskEstimation;
+
+  /// No description provided for @taskBoardDetailTaskEstimationNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No estimate'**
+  String get taskBoardDetailTaskEstimationNone;
+
+  /// No description provided for @taskBoardDetailTaskAssignees.
+  ///
+  /// In en, this message translates to:
+  /// **'Assignees'**
+  String get taskBoardDetailTaskAssignees;
+
+  /// No description provided for @taskBoardDetailTaskLabels.
+  ///
+  /// In en, this message translates to:
+  /// **'Labels'**
+  String get taskBoardDetailTaskLabels;
+
+  /// No description provided for @taskBoardDetailTaskProjects.
+  ///
+  /// In en, this message translates to:
+  /// **'Projects'**
+  String get taskBoardDetailTaskProjects;
+
+  /// No description provided for @taskBoardDetailTaskSelectAssignees.
+  ///
+  /// In en, this message translates to:
+  /// **'Select assignees'**
+  String get taskBoardDetailTaskSelectAssignees;
+
+  /// No description provided for @taskBoardDetailTaskSelectLabels.
+  ///
+  /// In en, this message translates to:
+  /// **'Select labels'**
+  String get taskBoardDetailTaskSelectLabels;
+
+  /// No description provided for @taskBoardDetailTaskSelectProjects.
+  ///
+  /// In en, this message translates to:
+  /// **'Select projects'**
+  String get taskBoardDetailTaskSelectProjects;
+
+  /// No description provided for @taskBoardDetailNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get taskBoardDetailNone;
+
   /// No description provided for @taskBoardDetailNoDate.
   ///
   /// In en, this message translates to:
@@ -1104,6 +1158,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Assignees'**
   String get taskBoardDetailFilterAssignees;
+
+  /// No description provided for @taskBoardDetailFilterLabels.
+  ///
+  /// In en, this message translates to:
+  /// **'Labels'**
+  String get taskBoardDetailFilterLabels;
+
+  /// No description provided for @taskBoardDetailFilterProjects.
+  ///
+  /// In en, this message translates to:
+  /// **'Projects'**
+  String get taskBoardDetailFilterProjects;
 
   /// No description provided for @taskBoardDetailNoFilterOptions.
   ///

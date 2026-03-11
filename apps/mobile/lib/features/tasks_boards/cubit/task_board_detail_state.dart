@@ -12,35 +12,52 @@ class TaskBoardDetailFilters extends Equatable {
     this.statuses = const <String>{},
     this.priorities = const <String>{},
     this.assigneeIds = const <String>{},
+    this.labelIds = const <String>{},
+    this.projectIds = const <String>{},
   });
 
   final Set<String> listIds;
   final Set<String> statuses;
   final Set<String> priorities;
   final Set<String> assigneeIds;
+  final Set<String> labelIds;
+  final Set<String> projectIds;
 
   bool get hasAdvancedFilters =>
       listIds.isNotEmpty ||
       statuses.isNotEmpty ||
       priorities.isNotEmpty ||
-      assigneeIds.isNotEmpty;
+      assigneeIds.isNotEmpty ||
+      labelIds.isNotEmpty ||
+      projectIds.isNotEmpty;
 
   TaskBoardDetailFilters copyWith({
     Set<String>? listIds,
     Set<String>? statuses,
     Set<String>? priorities,
     Set<String>? assigneeIds,
+    Set<String>? labelIds,
+    Set<String>? projectIds,
   }) {
     return TaskBoardDetailFilters(
       listIds: listIds ?? this.listIds,
       statuses: statuses ?? this.statuses,
       priorities: priorities ?? this.priorities,
       assigneeIds: assigneeIds ?? this.assigneeIds,
+      labelIds: labelIds ?? this.labelIds,
+      projectIds: projectIds ?? this.projectIds,
     );
   }
 
   @override
-  List<Object?> get props => [listIds, statuses, priorities, assigneeIds];
+  List<Object?> get props => [
+    listIds,
+    statuses,
+    priorities,
+    assigneeIds,
+    labelIds,
+    projectIds,
+  ];
 }
 
 class TaskBoardDetailState extends Equatable {
@@ -78,12 +95,16 @@ class TaskBoardDetailState extends Equatable {
     final query = searchQuery.trim().toLowerCase();
     final hasSearchQuery = query.isNotEmpty;
     final hasAssigneeFilter = filters.assigneeIds.isNotEmpty;
+    final hasLabelFilter = filters.labelIds.isNotEmpty;
+    final hasProjectFilter = filters.projectIds.isNotEmpty;
     final hasPriorityFilter = filters.priorities.isNotEmpty;
     final hasListFilter = filters.listIds.isNotEmpty;
     final hasStatusFilter = filters.statuses.isNotEmpty;
 
     if (!hasSearchQuery &&
         !hasAssigneeFilter &&
+        !hasLabelFilter &&
+        !hasProjectFilter &&
         !hasPriorityFilter &&
         !hasListFilter &&
         !hasStatusFilter) {
@@ -127,6 +148,24 @@ class TaskBoardDetailState extends Equatable {
               (assignee) => filters.assigneeIds.contains(assignee.id),
             );
             if (!hasMatchingAssignee) {
+              return false;
+            }
+          }
+
+          if (hasLabelFilter) {
+            final hasMatchingLabel = task.labels.any(
+              (label) => filters.labelIds.contains(label.id),
+            );
+            if (!hasMatchingLabel) {
+              return false;
+            }
+          }
+
+          if (hasProjectFilter) {
+            final hasMatchingProject = task.projects.any(
+              (project) => filters.projectIds.contains(project.id),
+            );
+            if (!hasMatchingProject) {
               return false;
             }
           }

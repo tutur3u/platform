@@ -389,11 +389,16 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
     List<TaskBoardList> lists,
   ) async {
     final parentContext = context;
+    final board = parentContext.read<TaskBoardDetailCubit>().state.board;
+    if (board == null) return;
     final content = BlocProvider.value(
       value: parentContext.read<TaskBoardDetailCubit>(),
       child: _TaskBoardTaskDetailSheet(
         task: task,
         lists: lists,
+        labels: board.labels,
+        members: board.members,
+        projects: board.projects,
       ),
     );
 
@@ -424,6 +429,8 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
   }) async {
     final parentContext = context;
     if (lists.isEmpty) return;
+    final board = parentContext.read<TaskBoardDetailCubit>().state.board;
+    if (board == null) return;
     final normalizedDefaultListId =
         defaultListId != null && lists.any((list) => list.id == defaultListId)
         ? defaultListId
@@ -435,6 +442,9 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
         task: null,
         lists: lists,
         defaultListId: normalizedDefaultListId,
+        labels: board.labels,
+        members: board.members,
+        projects: board.projects,
       ),
     );
 

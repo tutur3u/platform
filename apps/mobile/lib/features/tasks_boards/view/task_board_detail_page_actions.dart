@@ -89,6 +89,8 @@ extension on _TaskBoardDetailPageViewState {
       initialFilters: state.filters,
       lists: _sortedLists(board.lists),
       members: board.members,
+      labels: board.labels,
+      projects: board.projects,
       onApply: (filters) {
         context.read<TaskBoardDetailCubit>().setFilters(filters);
       },
@@ -253,12 +255,16 @@ class _TaskBoardAdvancedFilterSheet extends StatefulWidget {
     required this.initialFilters,
     required this.lists,
     required this.members,
+    required this.labels,
+    required this.projects,
     required this.onApply,
   });
 
   final TaskBoardDetailFilters initialFilters;
   final List<TaskBoardList> lists;
   final List<WorkspaceUserOption> members;
+  final List<TaskLabel> labels;
+  final List<TaskProjectSummary> projects;
   final void Function(TaskBoardDetailFilters filters) onApply;
 
   @override
@@ -279,6 +285,8 @@ class _TaskBoardAdvancedFilterSheetState
   late Set<String> _statuses;
   late Set<String> _priorities;
   late Set<String> _assigneeIds;
+  late Set<String> _labelIds;
+  late Set<String> _projectIds;
 
   @override
   void initState() {
@@ -287,6 +295,8 @@ class _TaskBoardAdvancedFilterSheetState
     _statuses = Set<String>.from(widget.initialFilters.statuses);
     _priorities = Set<String>.from(widget.initialFilters.priorities);
     _assigneeIds = Set<String>.from(widget.initialFilters.assigneeIds);
+    _labelIds = Set<String>.from(widget.initialFilters.labelIds);
+    _projectIds = Set<String>.from(widget.initialFilters.projectIds);
   }
 
   @override
@@ -388,6 +398,40 @@ class _TaskBoardAdvancedFilterSheetState
                     )
                     .toList(growable: false),
               ),
+              const shad.Gap(10),
+              _FilterSection(
+                title: context.l10n.taskBoardDetailFilterLabels,
+                children: widget.labels
+                    .map(
+                      (label) => _FilterToggleButton(
+                        label: label.name.trim().isEmpty
+                            ? label.id
+                            : label.name,
+                        selected: _labelIds.contains(label.id),
+                        onPressed: () => setState(() {
+                          _toggleSetValue(_labelIds, label.id);
+                        }),
+                      ),
+                    )
+                    .toList(growable: false),
+              ),
+              const shad.Gap(10),
+              _FilterSection(
+                title: context.l10n.taskBoardDetailFilterProjects,
+                children: widget.projects
+                    .map(
+                      (project) => _FilterToggleButton(
+                        label: project.name.trim().isEmpty
+                            ? project.id
+                            : project.name,
+                        selected: _projectIds.contains(project.id),
+                        onPressed: () => setState(() {
+                          _toggleSetValue(_projectIds, project.id);
+                        }),
+                      ),
+                    )
+                    .toList(growable: false),
+              ),
               const shad.Gap(16),
               Row(
                 children: [
@@ -429,6 +473,8 @@ class _TaskBoardAdvancedFilterSheetState
       _statuses.clear();
       _priorities.clear();
       _assigneeIds.clear();
+      _labelIds.clear();
+      _projectIds.clear();
     });
   }
 
@@ -439,6 +485,8 @@ class _TaskBoardAdvancedFilterSheetState
         statuses: _statuses,
         priorities: _priorities,
         assigneeIds: _assigneeIds,
+        labelIds: _labelIds,
+        projectIds: _projectIds,
       ),
     );
 

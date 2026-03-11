@@ -40,6 +40,21 @@ interface TaskAssigneeData {
   } | null;
 }
 
+interface TaskLabelData {
+  label: {
+    id: string;
+    name: string | null;
+    color: string | null;
+  } | null;
+}
+
+interface TaskProjectData {
+  project: {
+    id: string;
+    name: string | null;
+  } | null;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ wsId: string }> }
@@ -115,6 +130,7 @@ export async function GET(
         completed,
         start_date,
         end_date,
+        estimation_points,
         created_at,
         list_id,
         closed_at,
@@ -134,6 +150,19 @@ export async function GET(
             id,
             display_name,
             avatar_url
+          )
+        ),
+        labels:task_labels(
+          label:workspace_task_labels(
+            id,
+            name,
+            color
+          )
+        ),
+        projects:task_project_tasks(
+          project:task_projects(
+            id,
+            name
           )
         )
       `
@@ -176,6 +205,7 @@ export async function GET(
         completed: task.completed,
         start_date: task.start_date,
         end_date: task.end_date,
+        estimation_points: task.estimation_points,
         created_at: task.created_at,
         list_id: task.list_id,
         closed_at: task.closed_at,
@@ -207,6 +237,63 @@ export async function GET(
           task.assignees?.some(
             (a: TaskAssigneeData) => a.user?.id === user.id
           ) || false,
+        labels: [
+          ...(task.labels ?? [])
+            .map((entry: TaskLabelData) => entry.label)
+            .filter(
+              (
+                label
+              ): label is {
+                id: string;
+                name: string | null;
+                color: string | null;
+              } => !!label?.id
+            )
+            .reduce(
+              (
+                uniqueLabels: Map<
+                  string,
+                  { id: string; name: string | null; color: string | null }
+                >,
+                label
+              ) => {
+                if (!uniqueLabels.has(label.id)) {
+                  uniqueLabels.set(label.id, label);
+                }
+                return uniqueLabels;
+              },
+              new Map()
+            )
+            .values(),
+        ],
+        projects: [
+          ...(task.projects ?? [])
+            .map((entry: TaskProjectData) => entry.project)
+            .filter(
+              (
+                project
+              ): project is {
+                id: string;
+                name: string | null;
+              } => !!project?.id
+            )
+            .reduce(
+              (
+                uniqueProjects: Map<
+                  string,
+                  { id: string; name: string | null }
+                >,
+                project
+              ) => {
+                if (!uniqueProjects.has(project.id)) {
+                  uniqueProjects.set(project.id, project);
+                }
+                return uniqueProjects;
+              },
+              new Map()
+            )
+            .values(),
+        ],
       })) || [];
 
     // Prioritize tasks by list status for command center (no specific filters)

@@ -72,6 +72,12 @@ Port the web `boardId` view to mobile with a mobile-native UX that preserves the
   - unified search + advanced-filter matching in `filteredTasks`
 - Added create-list CTA in the no-lists state.
 - Regenerated Flutter localizations and re-ran `flutter analyze`.
+- Added richer task mutation support in board detail edit sheet:
+  - estimation points edit
+  - assignees multi-select edit
+  - labels multi-select edit
+  - projects multi-select edit
+  - task detail sheet now displays estimation/assignees/labels/projects
 
 ### Current status vs phases
 - Phase 1 (Foundation): **mostly done**
@@ -90,12 +96,12 @@ Port the web `boardId` view to mobile with a mobile-native UX that preserves the
   - [x] editable task bottom sheet (title/description/priority/dates)
   - [x] create task from list/kanban surfaces
   - [x] move task between lists (current board only)
-  - [ ] assignees/labels/projects edit wiring
+  - [x] assignees/labels/projects edit wiring (+ estimation points)
 - Phase 4 (Board/List Controls + Filters): **started**
   - [x] board actions menu (rename board/create list/refresh)
   - [x] per-list rename action in list + kanban
   - [x] advanced filter sheet (priority/assignees/list/status)
-  - [ ] labels/projects filters (deferred until task payload includes relations)
+  - [x] labels/projects filters
 
 ### Notes for the next agent
 - Board detail hydration currently composes data from:

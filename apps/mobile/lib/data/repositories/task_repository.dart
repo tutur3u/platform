@@ -277,6 +277,10 @@ class TaskRepository {
     String? priority,
     DateTime? startDate,
     DateTime? endDate,
+    int? estimationPoints,
+    List<String>? labelIds,
+    List<String>? projectIds,
+    List<String>? assigneeIds,
   }) async {
     final response = await _apiClient.postJson(
       '/api/v1/workspaces/$wsId/tasks',
@@ -287,6 +291,10 @@ class TaskRepository {
         'priority': priority,
         'start_date': startDate?.toUtc().toIso8601String(),
         'end_date': endDate?.toUtc().toIso8601String(),
+        'estimation_points': estimationPoints,
+        if (labelIds != null) 'label_ids': labelIds,
+        if (projectIds != null) 'project_ids': projectIds,
+        if (assigneeIds != null) 'assignee_ids': assigneeIds,
       },
     );
 
@@ -309,10 +317,15 @@ class TaskRepository {
     String? priority,
     DateTime? startDate,
     DateTime? endDate,
+    int? estimationPoints,
+    List<String>? labelIds,
+    List<String>? projectIds,
+    List<String>? assigneeIds,
     bool? completed,
     bool clearDescription = false,
     bool clearStartDate = false,
     bool clearEndDate = false,
+    bool clearEstimationPoints = false,
   }) async {
     final updatePayload = <String, dynamic>{
       if (name != null) 'name': name,
@@ -323,6 +336,11 @@ class TaskRepository {
       if (endDate != null) 'end_date': endDate.toUtc().toIso8601String(),
       if (clearStartDate) 'start_date': null,
       if (clearEndDate) 'end_date': null,
+      if (estimationPoints != null) 'estimation_points': estimationPoints,
+      if (clearEstimationPoints) 'estimation_points': null,
+      if (labelIds != null) 'label_ids': labelIds,
+      if (projectIds != null) 'project_ids': projectIds,
+      if (assigneeIds != null) 'assignee_ids': assigneeIds,
       if (completed != null) 'completed': completed,
     };
 

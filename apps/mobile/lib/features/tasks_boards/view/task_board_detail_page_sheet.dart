@@ -5,11 +5,17 @@ class _TaskBoardTaskEditorSheet extends StatefulWidget {
     required this.task,
     required this.defaultListId,
     required this.lists,
+    required this.labels,
+    required this.members,
+    required this.projects,
   });
 
   final TaskBoardTask? task;
   final String defaultListId;
   final List<TaskBoardList> lists;
+  final List<TaskLabel> labels;
+  final List<WorkspaceUserOption> members;
+  final List<TaskProjectSummary> projects;
 
   @override
   State<_TaskBoardTaskEditorSheet> createState() =>
@@ -28,6 +34,10 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
   late final TextEditingController _descriptionController;
   late String _priority;
   late String _selectedListId;
+  int? _estimationPoints;
+  late Set<String> _selectedAssigneeIds;
+  late Set<String> _selectedLabelIds;
+  late Set<String> _selectedProjectIds;
   DateTime? _startDate;
   DateTime? _endDate;
   bool _isSaving = false;
@@ -45,6 +55,19 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     );
     _priority = _normalizePriority(task?.priority);
     _selectedListId = _resolveInitialListId(task);
+    _estimationPoints = task?.estimationPoints;
+    _selectedAssigneeIds = {
+      for (final assignee in task?.assignees ?? const <TaskBoardTaskAssignee>[])
+        assignee.id,
+    };
+    _selectedLabelIds = {
+      for (final label in task?.labels ?? const <TaskBoardTaskLabel>[])
+        label.id,
+    };
+    _selectedProjectIds = {
+      for (final project in task?.projects ?? const <TaskBoardTaskProject>[])
+        project.id,
+    };
     _startDate = task?.startDate;
     _endDate = task?.endDate;
   }
@@ -99,104 +122,134 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
                   ],
                 ),
                 const shad.Gap(12),
-                Text(
-                  context.l10n.taskBoardDetailTaskTitleLabel,
-                  style: theme.typography.small,
-                ),
-                const shad.Gap(6),
-                shad.TextField(
-                  controller: _nameController,
-                  placeholder: Text(context.l10n.taskBoardDetailTaskTitleHint),
-                  autofocus: _isCreate,
-                  onSubmitted: (_) => unawaited(_saveTask()),
-                ),
-                const shad.Gap(12),
-                Text(
-                  context.l10n.taskBoardDetailTaskDescriptionLabel,
-                  style: theme.typography.small,
-                ),
-                const shad.Gap(6),
-                shad.TextField(
-                  controller: _descriptionController,
-                  maxLines: 3,
-                  placeholder: Text(
-                    context.l10n.taskBoardDetailTaskDescriptionHint,
+                _EditorSectionCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      shad.TextField(
+                        controller: _nameController,
+                        placeholder: Text(
+                          context.l10n.taskBoardDetailTaskTitleHint,
+                        ),
+                        autofocus: _isCreate,
+                        onSubmitted: (_) => unawaited(_saveTask()),
+                      ),
+                      const shad.Gap(10),
+                      shad.TextField(
+                        controller: _descriptionController,
+                        maxLines: 3,
+                        placeholder: Text(
+                          context.l10n.taskBoardDetailTaskDescriptionHint,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                if (_isCreate) ...[
-                  const shad.Gap(12),
-                  Text(
-                    context.l10n.taskBoardDetailTaskListLabel,
-                    style: theme.typography.small,
+                const shad.Gap(10),
+                _EditorSectionCard(
+                  title: context.l10n.taskBoardDetailPriority,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (_isCreate)
+                        _SelectionFieldButton(
+                          label: context.l10n.taskBoardDetailTaskListLabel,
+                          value: _selectedListLabel(context),
+                          enabled:
+                              !_isSaving &&
+                              !_isMoving &&
+                              widget.lists.length > 1,
+                          onPressed: _pickList,
+                        ),
+                      if (_isCreate) const shad.Gap(8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _priorityOptions
+                            .map((value) {
+                              final selected = _priority == value;
+                              final label = _taskPriorityLabel(context, value);
+                              return selected
+                                  ? shad.PrimaryButton(
+                                      onPressed: () {},
+                                      child: Text(label),
+                                    )
+                                  : shad.OutlineButton(
+                                      onPressed: _isSaving || _isMoving
+                                          ? null
+                                          : () => setState(
+                                              () => _priority = value,
+                                            ),
+                                      child: Text(label),
+                                    );
+                            })
+                            .toList(growable: false),
+                      ),
+                    ],
                   ),
-                  const shad.Gap(6),
-                  shad.OutlineButton(
-                    onPressed: _isSaving || _isMoving || widget.lists.length < 2
-                        ? null
-                        : _pickList,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(_selectedListLabel(context)),
-                        const Icon(Icons.expand_more, size: 16),
-                      ],
-                    ),
+                ),
+                const shad.Gap(10),
+                _EditorSectionCard(
+                  title: context.l10n.taskBoardDetailTaskDates,
+                  child: Column(
+                    children: [
+                      _DateFieldRow(
+                        label: context.l10n.taskBoardDetailTaskStartDate,
+                        value: _startDate,
+                        onPick: _isSaving || _isMoving
+                            ? null
+                            : () => _pickDate(isStart: true),
+                        onClear: _isSaving || _isMoving || _startDate == null
+                            ? null
+                            : () => setState(() => _startDate = null),
+                      ),
+                      const shad.Gap(8),
+                      _DateFieldRow(
+                        label: context.l10n.taskBoardDetailTaskEndDate,
+                        value: _endDate,
+                        onPick: _isSaving || _isMoving
+                            ? null
+                            : () => _pickDate(isStart: false),
+                        onClear: _isSaving || _isMoving || _endDate == null
+                            ? null
+                            : () => setState(() => _endDate = null),
+                      ),
+                    ],
                   ),
-                ],
-                const shad.Gap(12),
-                Text(
-                  context.l10n.taskBoardDetailPriority,
-                  style: theme.typography.small,
                 ),
-                const shad.Gap(6),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: _priorityOptions
-                      .map((value) {
-                        final selected = _priority == value;
-                        final label = _taskPriorityLabel(context, value);
-                        if (selected) {
-                          return shad.PrimaryButton(
-                            onPressed: () {},
-                            child: Text(label),
-                          );
-                        }
-                        return shad.OutlineButton(
-                          onPressed: _isSaving || _isMoving
-                              ? null
-                              : () => setState(() => _priority = value),
-                          child: Text(label),
-                        );
-                      })
-                      .toList(growable: false),
-                ),
-                const shad.Gap(12),
-                Text(
-                  context.l10n.taskBoardDetailTaskDates,
-                  style: theme.typography.small,
-                ),
-                const shad.Gap(6),
-                _DateFieldRow(
-                  label: context.l10n.taskBoardDetailTaskStartDate,
-                  value: _startDate,
-                  onPick: _isSaving || _isMoving
-                      ? null
-                      : () => _pickDate(isStart: true),
-                  onClear: _isSaving || _isMoving || _startDate == null
-                      ? null
-                      : () => setState(() => _startDate = null),
-                ),
-                const shad.Gap(8),
-                _DateFieldRow(
-                  label: context.l10n.taskBoardDetailTaskEndDate,
-                  value: _endDate,
-                  onPick: _isSaving || _isMoving
-                      ? null
-                      : () => _pickDate(isStart: false),
-                  onClear: _isSaving || _isMoving || _endDate == null
-                      ? null
-                      : () => setState(() => _endDate = null),
+                const shad.Gap(10),
+                _EditorSectionCard(
+                  child: Column(
+                    children: [
+                      _SelectionFieldButton(
+                        label: context.l10n.taskBoardDetailTaskEstimation,
+                        value: _estimationLabel(context),
+                        enabled: !_isSaving && !_isMoving,
+                        onPressed: _pickEstimation,
+                      ),
+                      const shad.Gap(8),
+                      _SelectionFieldButton(
+                        label: context.l10n.taskBoardDetailTaskAssignees,
+                        value: _selectedAssigneesLabel(context),
+                        enabled: !_isSaving && !_isMoving,
+                        onPressed: _pickAssignees,
+                      ),
+                      const shad.Gap(8),
+                      _SelectionFieldButton(
+                        label: context.l10n.taskBoardDetailTaskLabels,
+                        value: _selectedLabelsLabel(context),
+                        enabled: !_isSaving && !_isMoving,
+                        onPressed: _pickLabels,
+                      ),
+                      const shad.Gap(8),
+                      _SelectionFieldButton(
+                        label: context.l10n.taskBoardDetailTaskProjects,
+                        value: _selectedProjectsLabel(context),
+                        enabled: !_isSaving && !_isMoving,
+                        onPressed: _pickProjects,
+                      ),
+                    ],
+                  ),
                 ),
                 if (!_isCreate && widget.lists.length > 1) ...[
                   const shad.Gap(14),
@@ -276,6 +329,10 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
           priority: _priority,
           startDate: _startDate,
           endDate: _endDate,
+          estimationPoints: _estimationPoints,
+          assigneeIds: _selectedAssigneeIds.toList(growable: false),
+          labelIds: _selectedLabelIds.toList(growable: false),
+          projectIds: _selectedProjectIds.toList(growable: false),
         );
       } else {
         final currentTask = widget.task!;
@@ -286,11 +343,17 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
           priority: _priority,
           startDate: _startDate,
           endDate: _endDate,
+          estimationPoints: _estimationPoints,
+          assigneeIds: _selectedAssigneeIds.toList(growable: false),
+          labelIds: _selectedLabelIds.toList(growable: false),
+          projectIds: _selectedProjectIds.toList(growable: false),
           clearDescription:
               description == null &&
               (currentTask.description?.trim().isNotEmpty ?? false),
           clearStartDate: _startDate == null && currentTask.startDate != null,
           clearEndDate: _endDate == null && currentTask.endDate != null,
+          clearEstimationPoints:
+              _estimationPoints == null && currentTask.estimationPoints != null,
         );
       }
 
@@ -433,6 +496,71 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     });
   }
 
+  Future<void> _pickEstimation() async {
+    final result = await shad.showDialog<String>(
+      context: context,
+      builder: (context) => _TaskEstimationPickerDialog(
+        selectedValue: _estimationPoints?.toString(),
+      ),
+    );
+
+    if (result == null || !mounted) return;
+    setState(() {
+      _estimationPoints = result == 'none' ? null : int.tryParse(result);
+    });
+  }
+
+  Future<void> _pickAssignees() async {
+    final nextValues = await shad.showDialog<Set<String>>(
+      context: context,
+      builder: (context) => _TaskMultiSelectDialog(
+        title: context.l10n.taskBoardDetailTaskSelectAssignees,
+        options: [
+          for (final member in widget.members)
+            _MultiSelectOption(id: member.id, label: member.label),
+        ],
+        selectedIds: _selectedAssigneeIds,
+      ),
+    );
+
+    if (nextValues == null || !mounted) return;
+    setState(() => _selectedAssigneeIds = nextValues);
+  }
+
+  Future<void> _pickLabels() async {
+    final nextValues = await shad.showDialog<Set<String>>(
+      context: context,
+      builder: (context) => _TaskMultiSelectDialog(
+        title: context.l10n.taskBoardDetailTaskSelectLabels,
+        options: [
+          for (final label in widget.labels)
+            _MultiSelectOption(id: label.id, label: label.name),
+        ],
+        selectedIds: _selectedLabelIds,
+      ),
+    );
+
+    if (nextValues == null || !mounted) return;
+    setState(() => _selectedLabelIds = nextValues);
+  }
+
+  Future<void> _pickProjects() async {
+    final nextValues = await shad.showDialog<Set<String>>(
+      context: context,
+      builder: (context) => _TaskMultiSelectDialog(
+        title: context.l10n.taskBoardDetailTaskSelectProjects,
+        options: [
+          for (final project in widget.projects)
+            _MultiSelectOption(id: project.id, label: project.name),
+        ],
+        selectedIds: _selectedProjectIds,
+      ),
+    );
+
+    if (nextValues == null || !mounted) return;
+    setState(() => _selectedProjectIds = nextValues);
+  }
+
   Future<void> _closeEditor() async {
     try {
       await shad.closeOverlay<void>(context);
@@ -478,6 +606,60 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     }
 
     return context.l10n.taskBoardDetailUntitledList;
+  }
+
+  String _estimationLabel(BuildContext context) {
+    return _estimationPoints?.toString() ??
+        context.l10n.taskBoardDetailTaskEstimationNone;
+  }
+
+  String _selectedAssigneesLabel(BuildContext context) {
+    return _selectionSummary(
+      selectedIds: _selectedAssigneeIds,
+      options: [
+        for (final member in widget.members)
+          _MultiSelectOption(id: member.id, label: member.label),
+      ],
+      emptyLabel: context.l10n.taskBoardDetailNone,
+    );
+  }
+
+  String _selectedLabelsLabel(BuildContext context) {
+    return _selectionSummary(
+      selectedIds: _selectedLabelIds,
+      options: [
+        for (final label in widget.labels)
+          _MultiSelectOption(id: label.id, label: label.name),
+      ],
+      emptyLabel: context.l10n.taskBoardDetailNone,
+    );
+  }
+
+  String _selectedProjectsLabel(BuildContext context) {
+    return _selectionSummary(
+      selectedIds: _selectedProjectIds,
+      options: [
+        for (final project in widget.projects)
+          _MultiSelectOption(id: project.id, label: project.name),
+      ],
+      emptyLabel: context.l10n.taskBoardDetailNone,
+    );
+  }
+
+  String _selectionSummary({
+    required Set<String> selectedIds,
+    required List<_MultiSelectOption> options,
+    required String emptyLabel,
+  }) {
+    if (selectedIds.isEmpty) return emptyLabel;
+    final labels = options
+        .where((option) => selectedIds.contains(option.id))
+        .map((option) => option.label.trim())
+        .where((label) => label.isNotEmpty)
+        .toList(growable: false);
+    if (labels.isEmpty) return '${selectedIds.length}';
+    if (labels.length <= 2) return labels.join(', ');
+    return '${labels.take(2).join(', ')} +${labels.length - 2}';
   }
 
   String? _normalizeText(String raw) {
@@ -537,6 +719,222 @@ class _DateFieldRow extends StatelessWidget {
           onPressed: onClear,
         ),
       ],
+    );
+  }
+}
+
+class _EditorSectionCard extends StatelessWidget {
+  const _EditorSectionCard({
+    required this.child,
+    this.title,
+  });
+
+  final String? title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(color: theme.colorScheme.border),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (title != null) ...[
+            Text(
+              title!,
+              style: theme.typography.small.copyWith(
+                color: theme.colorScheme.mutedForeground,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const shad.Gap(8),
+          ],
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _SelectionFieldButton extends StatelessWidget {
+  const _SelectionFieldButton({
+    required this.label,
+    required this.value,
+    required this.enabled,
+    required this.onPressed,
+  });
+
+  final String label;
+  final String value;
+  final bool enabled;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return shad.OutlineButton(
+      onPressed: enabled ? onPressed : null,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label),
+          Flexible(
+            child: Text(
+              value,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.right,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MultiSelectOption {
+  const _MultiSelectOption({required this.id, required this.label});
+
+  final String id;
+  final String label;
+}
+
+class _TaskMultiSelectDialog extends StatefulWidget {
+  const _TaskMultiSelectDialog({
+    required this.title,
+    required this.options,
+    required this.selectedIds,
+  });
+
+  final String title;
+  final List<_MultiSelectOption> options;
+  final Set<String> selectedIds;
+
+  @override
+  State<_TaskMultiSelectDialog> createState() => _TaskMultiSelectDialogState();
+}
+
+class _TaskMultiSelectDialogState extends State<_TaskMultiSelectDialog> {
+  late Set<String> _selectedIds;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIds = Set<String>.from(widget.selectedIds);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return shad.AlertDialog(
+      title: Text(widget.title),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 420),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: widget.options
+                      .map((option) {
+                        final selected = _selectedIds.contains(option.id);
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: shad.OutlineButton(
+                            onPressed: () {
+                              setState(() {
+                                if (selected) {
+                                  _selectedIds.remove(option.id);
+                                } else {
+                                  _selectedIds.add(option.id);
+                                }
+                              });
+                            },
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    option.label.trim().isEmpty
+                                        ? option.id
+                                        : option.label,
+                                  ),
+                                ),
+                                if (selected) const Icon(Icons.check, size: 16),
+                              ],
+                            ),
+                          ),
+                        );
+                      })
+                      .toList(growable: false),
+                ),
+              ),
+            ),
+            const shad.Gap(8),
+            shad.OutlineButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(context.l10n.commonCancel),
+            ),
+            const shad.Gap(8),
+            shad.PrimaryButton(
+              onPressed: () => Navigator.of(context).pop(_selectedIds),
+              child: Text(context.l10n.taskBoardDetailApplyFilters),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TaskEstimationPickerDialog extends StatelessWidget {
+  const _TaskEstimationPickerDialog({required this.selectedValue});
+
+  final String? selectedValue;
+
+  @override
+  Widget build(BuildContext context) {
+    final options = <String>['none', ...List.generate(9, (i) => '$i')];
+
+    return shad.AlertDialog(
+      title: Text(context.l10n.taskBoardDetailTaskEstimation),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 360),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ...options.map((value) {
+                final isSelected = value == (selectedValue ?? 'none');
+                final label = value == 'none'
+                    ? context.l10n.taskBoardDetailTaskEstimationNone
+                    : value;
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: shad.OutlineButton(
+                    onPressed: () => Navigator.of(context).pop(value),
+                    child: Row(
+                      children: [
+                        Expanded(child: Text(label)),
+                        if (isSelected) const Icon(Icons.check, size: 16),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+              shad.OutlineButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(context.l10n.commonCancel),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

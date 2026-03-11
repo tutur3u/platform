@@ -480,6 +480,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailTaskEndDate => 'End date';
 
   @override
+  String get taskBoardDetailTaskEstimation => 'Estimation';
+
+  @override
+  String get taskBoardDetailTaskEstimationNone => 'No estimate';
+
+  @override
+  String get taskBoardDetailTaskAssignees => 'Assignees';
+
+  @override
+  String get taskBoardDetailTaskLabels => 'Labels';
+
+  @override
+  String get taskBoardDetailTaskProjects => 'Projects';
+
+  @override
+  String get taskBoardDetailTaskSelectAssignees => 'Select assignees';
+
+  @override
+  String get taskBoardDetailTaskSelectLabels => 'Select labels';
+
+  @override
+  String get taskBoardDetailTaskSelectProjects => 'Select projects';
+
+  @override
+  String get taskBoardDetailNone => 'None';
+
+  @override
   String get taskBoardDetailNoDate => 'No date';
 
   @override
@@ -538,6 +565,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskBoardDetailFilterAssignees => 'Assignees';
+
+  @override
+  String get taskBoardDetailFilterLabels => 'Labels';
+
+  @override
+  String get taskBoardDetailFilterProjects => 'Projects';
 
   @override
   String get taskBoardDetailNoFilterOptions => 'No options available';

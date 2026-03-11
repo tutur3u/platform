@@ -480,6 +480,33 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailTaskEndDate => 'Ngày kết thúc';
 
   @override
+  String get taskBoardDetailTaskEstimation => 'Ước lượng';
+
+  @override
+  String get taskBoardDetailTaskEstimationNone => 'Chưa ước lượng';
+
+  @override
+  String get taskBoardDetailTaskAssignees => 'Người được giao';
+
+  @override
+  String get taskBoardDetailTaskLabels => 'Nhãn';
+
+  @override
+  String get taskBoardDetailTaskProjects => 'Dự án';
+
+  @override
+  String get taskBoardDetailTaskSelectAssignees => 'Chọn người được giao';
+
+  @override
+  String get taskBoardDetailTaskSelectLabels => 'Chọn nhãn';
+
+  @override
+  String get taskBoardDetailTaskSelectProjects => 'Chọn dự án';
+
+  @override
+  String get taskBoardDetailNone => 'Không có';
+
+  @override
   String get taskBoardDetailNoDate => 'Chưa đặt ngày';
 
   @override
@@ -538,6 +565,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskBoardDetailFilterAssignees => 'Người được giao';
+
+  @override
+  String get taskBoardDetailFilterLabels => 'Nhãn';
+
+  @override
+  String get taskBoardDetailFilterProjects => 'Dự án';
 
   @override
   String get taskBoardDetailNoFilterOptions => 'Không có tùy chọn';

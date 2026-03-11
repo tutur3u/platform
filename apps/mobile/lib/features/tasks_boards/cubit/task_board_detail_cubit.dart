@@ -72,6 +72,10 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     String? priority,
     DateTime? startDate,
     DateTime? endDate,
+    int? estimationPoints,
+    List<String>? labelIds,
+    List<String>? projectIds,
+    List<String>? assigneeIds,
   }) async {
     final wsId = state.workspaceId;
     if (wsId == null) {
@@ -87,6 +91,10 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
         priority: priority,
         startDate: startDate,
         endDate: endDate,
+        estimationPoints: estimationPoints,
+        labelIds: labelIds,
+        projectIds: projectIds,
+        assigneeIds: assigneeIds,
       ),
     );
   }
@@ -98,9 +106,14 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     String? priority,
     DateTime? startDate,
     DateTime? endDate,
+    int? estimationPoints,
+    List<String>? labelIds,
+    List<String>? projectIds,
+    List<String>? assigneeIds,
     bool clearDescription = false,
     bool clearStartDate = false,
     bool clearEndDate = false,
+    bool clearEstimationPoints = false,
   }) async {
     final wsId = state.workspaceId;
     if (wsId == null) {
@@ -116,9 +129,14 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
         priority: priority,
         startDate: startDate,
         endDate: endDate,
+        estimationPoints: estimationPoints,
+        labelIds: labelIds,
+        projectIds: projectIds,
+        assigneeIds: assigneeIds,
         clearDescription: clearDescription,
         clearStartDate: clearStartDate,
         clearEndDate: clearEndDate,
+        clearEstimationPoints: clearEstimationPoints,
       ),
     );
   }
