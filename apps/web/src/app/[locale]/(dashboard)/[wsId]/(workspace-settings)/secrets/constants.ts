@@ -268,3 +268,21 @@ export const KNOWN_SECRETS: SecretDefinition[] = [
     defaultValue: 'false',
   },
 ];
+
+export function isRateLimitSecretName(name?: string | null) {
+  if (!name) return false;
+
+  return (
+    name.startsWith('RATE_LIMIT_') ||
+    name.startsWith('EMAIL_RATE_LIMIT_') ||
+    name.startsWith('INVITE_RATE_LIMIT_')
+  );
+}
+
+export const RATE_LIMIT_SECRETS = KNOWN_SECRETS.filter((secret) =>
+  isRateLimitSecretName(secret.name)
+);
+
+export const NON_RATE_LIMIT_SECRETS = KNOWN_SECRETS.filter(
+  (secret) => !isRateLimitSecretName(secret.name)
+);
