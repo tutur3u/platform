@@ -823,6 +823,72 @@ abstract class AppLocalizations {
   /// **'Deleted boards will appear here before permanent removal.'**
   String get taskBoardsEmptyDeletedDescription;
 
+  /// No description provided for @taskBoardDetailLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load board details right now'**
+  String get taskBoardDetailLoadError;
+
+  /// No description provided for @taskBoardDetailUntitledBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled board'**
+  String get taskBoardDetailUntitledBoard;
+
+  /// No description provided for @taskBoardDetailUntitledList.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled list'**
+  String get taskBoardDetailUntitledList;
+
+  /// No description provided for @taskBoardDetailUntitledTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled task'**
+  String get taskBoardDetailUntitledTask;
+
+  /// No description provided for @taskBoardDetailListView.
+  ///
+  /// In en, this message translates to:
+  /// **'List view'**
+  String get taskBoardDetailListView;
+
+  /// No description provided for @taskBoardDetailKanbanView.
+  ///
+  /// In en, this message translates to:
+  /// **'Kanban view'**
+  String get taskBoardDetailKanbanView;
+
+  /// No description provided for @taskBoardDetailSearchPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Search tasks'**
+  String get taskBoardDetailSearchPlaceholder;
+
+  /// No description provided for @taskBoardDetailNoListsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No lists yet'**
+  String get taskBoardDetailNoListsTitle;
+
+  /// No description provided for @taskBoardDetailNoListsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a list to start organizing tasks in this board.'**
+  String get taskBoardDetailNoListsDescription;
+
+  /// No description provided for @taskBoardDetailNoTasksInList.
+  ///
+  /// In en, this message translates to:
+  /// **'No tasks in this list'**
+  String get taskBoardDetailNoTasksInList;
+
+  /// No description provided for @taskBoardDetailNoMatchingTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'No tasks match your search.'**
+  String get taskBoardDetailNoMatchingTasks;
+
   /// No description provided for @taskPlanningTitle.
   ///
   /// In en, this message translates to:

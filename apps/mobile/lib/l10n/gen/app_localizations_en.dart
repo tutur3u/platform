@@ -399,6 +399,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardsEmptyDeletedDescription => 'Deleted boards will appear here before permanent removal.';
 
   @override
+  String get taskBoardDetailLoadError => 'Couldn\'t load board details right now';
+
+  @override
+  String get taskBoardDetailUntitledBoard => 'Untitled board';
+
+  @override
+  String get taskBoardDetailUntitledList => 'Untitled list';
+
+  @override
+  String get taskBoardDetailUntitledTask => 'Untitled task';
+
+  @override
+  String get taskBoardDetailListView => 'List view';
+
+  @override
+  String get taskBoardDetailKanbanView => 'Kanban view';
+
+  @override
+  String get taskBoardDetailSearchPlaceholder => 'Search tasks';
+
+  @override
+  String get taskBoardDetailNoListsTitle => 'No lists yet';
+
+  @override
+  String get taskBoardDetailNoListsDescription => 'Create a list to start organizing tasks in this board.';
+
+  @override
+  String get taskBoardDetailNoTasksInList => 'No tasks in this list';
+
+  @override
+  String get taskBoardDetailNoMatchingTasks => 'No tasks match your search.';
+
+  @override
   String get taskPlanningTitle => 'Planning';
 
   @override

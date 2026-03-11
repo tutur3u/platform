@@ -12,6 +12,64 @@ Port the web `boardId` view to mobile with a mobile-native UX that preserves the
 - Current-board-only task moves
 - Side-by-side kanban on tablet
 - Balanced rollout: MVP first, with a clean path toward broader parity
+
+## Implementation Progress (2026-03-11)
+### Completed in this session
+- Added board detail routing:
+  - `Routes.taskBoardDetail = '/tasks/boards/:boardId'`
+  - `Routes.taskBoardDetailPath(String boardId)`
+  - `GoRouter` route wiring in `app_router.dart` with safe fallback to `TaskBoardsPage`
+- Wired board-card navigation from boards index to board detail route.
+- Added board-detail models:
+  - `TaskBoardDetail`
+  - `TaskBoardList`
+  - `TaskBoardTask` (+ assignee model)
+- Extended `TaskRepository` with board-detail-focused methods:
+  - `getTaskBoardDetail(wsId, boardId)`
+  - `getBoardTasks(wsId, boardId)`
+  - `getBoardLists(boardId)`
+  - `createBoardTask(...)`
+  - `updateBoardTask(...)`
+  - `moveBoardTask(...)`
+  - `createBoardList(...)`
+  - `renameBoardList(...)`
+- Added dedicated board detail state layer:
+  - `TaskBoardDetailCubit`
+  - `TaskBoardDetailState`
+  - stale async request token guard
+- Added initial board detail UI scaffolding with split view files:
+  - page shell + app bar + refresh
+  - list/kanban view toggle
+  - search filter
+  - grouped task rendering by list
+  - basic task preview bottom sheet (read-only preview)
+- Added new mobile localization keys in both ARB files for board detail UI.
+
+### Current status vs phases
+- Phase 1 (Foundation): **mostly done**
+  - [x] route
+  - [x] page shell
+  - [x] models
+  - [x] repository hydration methods
+  - [x] dedicated cubit/state
+  - [x] boards index -> board detail navigation
+- Phase 2 (Core Views): **started**
+  - [x] list view (initial)
+  - [x] kanban view (initial read-only)
+  - [ ] tablet side-by-side kanban refinement
+  - [ ] richer parity behavior between list/kanban interactions
+- Phase 3+ : **not started** (except read-only task preview shell)
+
+### Notes for the next agent
+- Board detail hydration currently composes data from:
+  - `/api/v1/workspaces/{wsId}/task-boards` (metadata)
+  - `/api/v1/workspaces/{wsId}/tasks?boardId=...` (tasks)
+  - Supabase `task_lists` query (lists)
+  - existing repository calls for labels/members/projects
+- `TaskBoardDetailView` is read-first; editing/mutation UI is not wired yet.
+- Existing task preview is a lightweight bottom sheet placeholder, not full edit flow.
+- Suggested next step: implement Phase 3 bottom-sheet edit flow on top of existing `TaskBoardDetailCubit` + `TaskRepository` mutation methods.
+
 ### Explicitly deferred
 - Timeline view
 - Cross-board task moves

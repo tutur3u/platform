@@ -399,6 +399,39 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardsEmptyDeletedDescription => 'Các bảng đã xóa sẽ xuất hiện ở đây trước khi bị xóa vĩnh viễn.';
 
   @override
+  String get taskBoardDetailLoadError => 'Không thể tải chi tiết bảng lúc này';
+
+  @override
+  String get taskBoardDetailUntitledBoard => 'Bảng chưa đặt tên';
+
+  @override
+  String get taskBoardDetailUntitledList => 'Danh sách chưa đặt tên';
+
+  @override
+  String get taskBoardDetailUntitledTask => 'Công việc chưa đặt tên';
+
+  @override
+  String get taskBoardDetailListView => 'Chế độ danh sách';
+
+  @override
+  String get taskBoardDetailKanbanView => 'Chế độ kanban';
+
+  @override
+  String get taskBoardDetailSearchPlaceholder => 'Tìm kiếm công việc';
+
+  @override
+  String get taskBoardDetailNoListsTitle => 'Chưa có danh sách';
+
+  @override
+  String get taskBoardDetailNoListsDescription => 'Tạo danh sách để bắt đầu sắp xếp công việc trong bảng này.';
+
+  @override
+  String get taskBoardDetailNoTasksInList => 'Danh sách này chưa có công việc';
+
+  @override
+  String get taskBoardDetailNoMatchingTasks => 'Không có công việc nào khớp với từ khóa tìm kiếm.';
+
+  @override
   String get taskPlanningTitle => 'Lập kế hoạch';
 
   @override

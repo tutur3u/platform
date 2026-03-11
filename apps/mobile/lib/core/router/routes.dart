@@ -17,6 +17,7 @@ abstract final class Routes {
   static const profileRoot = '/profile';
   static const tasks = '/tasks';
   static const taskBoards = '/tasks/boards';
+  static const taskBoardDetail = '/tasks/boards/:boardId';
   static const taskEstimates = '/tasks/estimates';
   static const taskPortfolio = '/tasks/portfolio';
   static const taskPortfolioProject = '/tasks/portfolio/projects/:projectId';
@@ -44,4 +45,6 @@ abstract final class Routes {
 
   static String taskPortfolioProjectPath(String projectId) =>
       '/tasks/portfolio/projects/$projectId';
+
+  static String taskBoardDetailPath(String boardId) => '/tasks/boards/$boardId';
 }

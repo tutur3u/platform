@@ -1,5 +1,8 @@
 import 'package:mobile/data/models/task.dart';
+import 'package:mobile/data/models/task_board_detail.dart';
+import 'package:mobile/data/models/task_board_list.dart';
 import 'package:mobile/data/models/task_board_summary.dart';
+import 'package:mobile/data/models/task_board_task.dart';
 import 'package:mobile/data/models/task_boards_page.dart';
 import 'package:mobile/data/models/task_estimate_board.dart';
 import 'package:mobile/data/models/task_initiative_summary.dart';
@@ -123,6 +126,236 @@ class TaskRepository {
       page: normalizedPage,
       pageSize: normalizedPageSize,
     );
+  }
+
+  Future<TaskBoardDetail> getTaskBoardDetail(
+    String wsId,
+    String boardId,
+  ) async {
+    final results = await Future.wait<dynamic>([
+      _getTaskBoardMetadata(wsId, boardId),
+      getBoardLists(boardId),
+      getBoardTasks(wsId, boardId),
+      getTaskLabels(wsId),
+      getWorkspaceUsers(wsId),
+      getTaskProjects(wsId),
+    ]);
+
+    return (results[0] as TaskBoardDetail).copyWith(
+      lists: results[1] as List<TaskBoardList>,
+      tasks: results[2] as List<TaskBoardTask>,
+      labels: results[3] as List<TaskLabel>,
+      members: results[4] as List<WorkspaceUserOption>,
+      projects: results[5] as List<TaskProjectSummary>,
+    );
+  }
+
+  Future<List<TaskBoardTask>> getBoardTasks(
+    String wsId,
+    String boardId, {
+    int pageSize = 200,
+  }) async {
+    final normalizedPageSize = pageSize.clamp(1, 200);
+    final tasks = <TaskBoardTask>[];
+    var offset = 0;
+
+    while (true) {
+      final query = _encodeQueryParameters({
+        'boardId': boardId,
+        'limit': normalizedPageSize.toString(),
+        'offset': offset.toString(),
+      });
+
+      final response = await _apiClient.getJson(
+        '/api/v1/workspaces/$wsId/tasks?$query',
+      );
+      final taskRows = response['tasks'] as List<dynamic>? ?? const [];
+      final pageTasks = taskRows
+          .whereType<Map<String, dynamic>>()
+          .map(TaskBoardTask.fromJson)
+          .toList(growable: false);
+
+      tasks.addAll(pageTasks);
+      if (pageTasks.length < normalizedPageSize) break;
+      offset += normalizedPageSize;
+    }
+
+    return List.unmodifiable(tasks);
+  }
+
+  Future<List<TaskBoardList>> getBoardLists(String boardId) async {
+    final response = await supabase
+        .from('task_lists')
+        .select('id, board_id, name, status, color, position, archived')
+        .eq('board_id', boardId)
+        .eq('deleted', false)
+        .order('position', ascending: true)
+        .order('created_at', ascending: true);
+
+    return (response as List<dynamic>)
+        .whereType<Map<String, dynamic>>()
+        .map(TaskBoardList.fromJson)
+        .toList(growable: false);
+  }
+
+  Future<TaskBoardTask> createBoardTask({
+    required String wsId,
+    required String listId,
+    required String name,
+    String? description,
+    String? priority,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    final response = await _apiClient.postJson(
+      '/api/v1/workspaces/$wsId/tasks',
+      {
+        'name': name,
+        'listId': listId,
+        'description': description,
+        'priority': priority,
+        'start_date': startDate?.toUtc().toIso8601String(),
+        'end_date': endDate?.toUtc().toIso8601String(),
+      },
+    );
+
+    final task = response['task'];
+    if (task is! Map<String, dynamic>) {
+      throw const ApiException(
+        message: 'Invalid task create response',
+        statusCode: 0,
+      );
+    }
+
+    return TaskBoardTask.fromJson(task);
+  }
+
+  Future<TaskBoardTask> updateBoardTask({
+    required String taskId,
+    String? name,
+    String? description,
+    String? priority,
+    DateTime? startDate,
+    DateTime? endDate,
+    bool? completed,
+  }) async {
+    final updatePayload = <String, dynamic>{
+      if (name != null) 'name': name,
+      if (description != null) 'description': description,
+      if (priority != null) 'priority': priority,
+      if (startDate != null) 'start_date': startDate.toUtc().toIso8601String(),
+      if (endDate != null) 'end_date': endDate.toUtc().toIso8601String(),
+      if (completed != null) 'completed': completed,
+    };
+
+    if (updatePayload.isEmpty) {
+      throw const ApiException(
+        message: 'No task fields provided for update',
+        statusCode: 400,
+      );
+    }
+
+    final response = await supabase
+        .from('tasks')
+        .update(updatePayload)
+        .eq('id', taskId)
+        .select(
+          'id, list_id, name, description, priority, completed, '
+          'start_date, end_date, created_at, closed_at',
+        )
+        .single();
+
+    return TaskBoardTask.fromJson(response);
+  }
+
+  Future<TaskBoardTask> moveBoardTask({
+    required String taskId,
+    required String listId,
+  }) async {
+    final response = await supabase
+        .from('tasks')
+        .update({'list_id': listId})
+        .eq('id', taskId)
+        .select(
+          'id, list_id, name, description, priority, completed, '
+          'start_date, end_date, created_at, closed_at',
+        )
+        .single();
+
+    return TaskBoardTask.fromJson(response);
+  }
+
+  Future<TaskBoardList> createBoardList({
+    required String boardId,
+    required String name,
+    String status = 'not_started',
+  }) async {
+    final response = await supabase
+        .from('task_lists')
+        .insert({
+          'board_id': boardId,
+          'name': name,
+          'status': status,
+          'deleted': false,
+        })
+        .select('id, board_id, name, status, color, position, archived')
+        .single();
+
+    return TaskBoardList.fromJson(response);
+  }
+
+  Future<TaskBoardList> renameBoardList({
+    required String listId,
+    required String name,
+  }) async {
+    final response = await supabase
+        .from('task_lists')
+        .update({'name': name})
+        .eq('id', listId)
+        .select('id, board_id, name, status, color, position, archived')
+        .single();
+
+    return TaskBoardList.fromJson(response);
+  }
+
+  Future<TaskBoardDetail> _getTaskBoardMetadata(
+    String wsId,
+    String boardId,
+  ) async {
+    final boardsPage = await getTaskBoards(wsId, pageSize: 200);
+
+    TaskBoardSummary? targetBoard;
+    for (final board in boardsPage.boards) {
+      if (board.id == boardId) {
+        targetBoard = board;
+        break;
+      }
+    }
+
+    if (targetBoard != null) {
+      return TaskBoardDetail(
+        id: targetBoard.id,
+        wsId: targetBoard.wsId,
+        name: targetBoard.name,
+        icon: targetBoard.icon,
+        createdAt: targetBoard.createdAt,
+        archivedAt: targetBoard.archivedAt,
+        deletedAt: targetBoard.deletedAt,
+      );
+    }
+
+    final fallbackBoard = await supabase
+        .from('workspace_boards')
+        .select('id, ws_id, name, icon, created_at, archived_at, deleted_at')
+        .eq('ws_id', wsId)
+        .eq('id', boardId)
+        .maybeSingle();
+
+    if (fallbackBoard == null) {
+      throw const ApiException(message: 'Board not found', statusCode: 404);
+    }
+
+    return TaskBoardDetail.fromJson(fallbackBoard);
   }
 
   Future<void> createTaskBoard({
