@@ -1,5 +1,5 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { getWorkspaceSecretsAccess } from './access';
 
 interface Params {
   params: Promise<{
@@ -8,14 +8,21 @@ interface Params {
 }
 
 export async function GET(_: Request, { params }: Params) {
-  const supabase = await createClient();
   const { wsId } = await params;
+  const access = await getWorkspaceSecretsAccess(wsId);
 
-  const { data, error } = await supabase
+  if (!access.allowed) {
+    return NextResponse.json(
+      { message: access.message },
+      { status: access.status }
+    );
+  }
+
+  const { data, error } = await access.db
     .from('workspace_secrets')
     .select('*')
-    .eq('ws_id', wsId)
-    .single();
+    .eq('ws_id', access.resolvedWsId)
+    .order('name', { ascending: true });
 
   if (error) {
     console.log(error);
@@ -29,13 +36,20 @@ export async function GET(_: Request, { params }: Params) {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient();
   const data = await req.json();
   const { wsId } = await params;
+  const access = await getWorkspaceSecretsAccess(wsId);
 
-  const { error } = await supabase.from('workspace_secrets').insert({
+  if (!access.allowed) {
+    return NextResponse.json(
+      { message: access.message },
+      { status: access.status }
+    );
+  }
+
+  const { error } = await access.db.from('workspace_secrets').insert({
     ...data,
-    ws_id: wsId,
+    ws_id: access.resolvedWsId,
   });
 
   if (error) {
