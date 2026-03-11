@@ -8,7 +8,10 @@ import 'package:mobile/core/router/app_router.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
+import 'package:mobile/data/repositories/version_check_repository.dart';
 import 'package:mobile/data/repositories/workspace_repository.dart';
+import 'package:mobile/features/app_version/cubit/app_version_cubit.dart';
+import 'package:mobile/features/app_version/view/app_version_gate.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
@@ -42,13 +45,16 @@ class _AppState extends State<App> {
   late final AuthRepository _authRepo;
   late final WorkspaceRepository _workspaceRepo;
   late final SettingsRepository _settingsRepo;
+  late final VersionCheckRepository _versionCheckRepository;
   late final AuthCubit _authCubit;
+  late final AppVersionCubit _appVersionCubit;
   late final WorkspaceCubit _workspaceCubit;
   late final LocaleCubit _localeCubit;
   late final ThemeCubit _themeCubit;
   late final CalendarSettingsCubit _calendarSettingsCubit;
   late final AppTabCubit _appTabCubit;
   late final GoRouter _router;
+  late final _AppLifecycleObserver _lifecycleObserver;
 
   @override
   void initState() {
@@ -56,13 +62,22 @@ class _AppState extends State<App> {
     _authRepo = AuthRepository();
     _workspaceRepo = WorkspaceRepository();
     _settingsRepo = SettingsRepository();
+    _versionCheckRepository = VersionCheckRepository();
     _authCubit = AuthCubit(authRepository: _authRepo);
+    _appVersionCubit = AppVersionCubit(
+      versionCheckRepository: _versionCheckRepository,
+      settingsRepository: _settingsRepo,
+    );
     _workspaceCubit = WorkspaceCubit(workspaceRepository: _workspaceRepo);
     _localeCubit = LocaleCubit(settingsRepository: _settingsRepo);
     _themeCubit = ThemeCubit(settingsRepository: _settingsRepo);
     unawaited(_themeCubit.loadThemeMode());
     _calendarSettingsCubit = CalendarSettingsCubit();
     _appTabCubit = AppTabCubit(settingsRepository: _settingsRepo);
+    _lifecycleObserver = _AppLifecycleObserver(() {
+      unawaited(_appVersionCubit.checkVersion(background: true));
+    });
+    WidgetsBinding.instance.addObserver(_lifecycleObserver);
     unawaited(_appTabCubit.loadLastApp());
     _router = createAppRouter(
       _authCubit,
@@ -73,6 +88,7 @@ class _AppState extends State<App> {
     );
     unawaited(_localeCubit.loadLocale());
     unawaited(_calendarSettingsCubit.loadUserPreference());
+    unawaited(_appVersionCubit.checkVersion());
     // If auth resolved synchronously to authenticated, load workspaces now.
     // BlocListener only fires on state *changes*, so it won't trigger for
     // the initial state set in the AuthCubit constructor.
@@ -83,8 +99,10 @@ class _AppState extends State<App> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(_lifecycleObserver);
     _router.dispose();
     unawaited(_authCubit.close());
+    unawaited(_appVersionCubit.close());
     unawaited(_workspaceCubit.close());
     unawaited(_localeCubit.close());
     unawaited(_themeCubit.close());
@@ -98,6 +116,7 @@ class _AppState extends State<App> {
     return MultiBlocProvider(
       providers: [
         BlocProvider.value(value: _authCubit),
+        BlocProvider.value(value: _appVersionCubit),
         BlocProvider.value(value: _workspaceCubit),
         BlocProvider.value(value: _localeCubit),
         BlocProvider.value(value: _themeCubit),
@@ -133,7 +152,9 @@ class _AppState extends State<App> {
                   supportedLocales: AppLocalizations.supportedLocales,
                   routerConfig: _router,
                   builder: (context, child) {
-                    return _ShadcnMaterialBridge(child: child!);
+                    return _ShadcnMaterialBridge(
+                      child: AppVersionGate(child: child!),
+                    );
                   },
                 );
               },
@@ -142,6 +163,19 @@ class _AppState extends State<App> {
         ),
       ),
     );
+  }
+}
+
+final class _AppLifecycleObserver extends WidgetsBindingObserver {
+  _AppLifecycleObserver(this._onResumed);
+
+  final VoidCallback _onResumed;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _onResumed();
+    }
   }
 }
 

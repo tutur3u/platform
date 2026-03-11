@@ -52,6 +52,7 @@ export default function SecretForm({
   onFinish,
 }: Props) {
   const t = useTranslations();
+  const tCommon = useTranslations('common');
   const router = useRouter();
   const availableSecrets =
     secretScope === 'rate-limits'
@@ -87,9 +88,10 @@ export default function SecretForm({
       );
 
       if (!res.ok) {
-        const responsePayload = (await res.json().catch(() => null)) as
-          | { id?: string; message?: string }
-          | null;
+        const responsePayload = (await res.json().catch(() => null)) as {
+          id?: string;
+          message?: string;
+        } | null;
 
         throw new Error(
           responsePayload?.message ||
@@ -108,7 +110,7 @@ export default function SecretForm({
       toast({
         title: `Failed to ${payload.id ? 'edit' : 'create'} secret`,
         description:
-          error instanceof Error ? error.message : t('common.something_went_wrong'),
+          error instanceof Error ? error.message : tCommon('500-msg'),
       });
     },
   });
@@ -139,14 +141,16 @@ export default function SecretForm({
                     mode="single"
                     className="w-full"
                     placeholder={t('ws-secrets.name')}
-                    options={availableSecrets.filter(
-                      (secret) =>
-                        !existingSecrets.includes(secret.name) ||
-                        data?.name === secret.name
-                    ).map((secret) => ({
-                      value: secret.name,
-                      label: secret.name,
-                    }))}
+                    options={availableSecrets
+                      .filter(
+                        (secret) =>
+                          !existingSecrets.includes(secret.name) ||
+                          data?.name === secret.name
+                      )
+                      .map((secret) => ({
+                        value: secret.name,
+                        label: secret.name,
+                      }))}
                     selected={field.value}
                     onChange={(val) => {
                       const value = Array.isArray(val) ? val[0] : val;
