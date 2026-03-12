@@ -230,8 +230,8 @@ DECLARE
         INTERVAL '1 hour',
         INTERVAL '1 day'
     ];
-    v_authenticated_limits INTEGER[] := ARRAY[12, 120, 400];
-    v_authenticated_ip_limits INTEGER[] := ARRAY[60, 500, 2000];
+    v_authenticated_user_ip_limits INTEGER[] := ARRAY[20, 200, 800];
+    v_authenticated_user_backstop_limits INTEGER[] := ARRAY[40, 400, 1500];
     v_anonymous_limits INTEGER[] := ARRAY[5, 50, 100];
     v_request_method TEXT := NULLIF(current_setting('request.method', true), '');
     v_request_path TEXT := COALESCE(NULLIF(current_setting('request.path', true), ''), 'unknown');
@@ -283,13 +283,35 @@ BEGIN
         v_primary_bucket := format('user:%s', v_user_id);
         v_secondary_bucket := CASE
             WHEN v_ip IS NULL THEN NULL
-            ELSE format('ip:%s', v_ip)
+            ELSE format('user-ip:%s:%s', v_user_id, v_ip)
         END;
         PERFORM private.acquire_rate_limit_locks(v_primary_bucket, v_secondary_bucket);
 
+        IF v_ip IS NOT NULL THEN
+            FOR v_rate_window_index IN 1..array_length(v_rate_windows, 1) LOOP
+                v_rate_window := v_rate_windows[v_rate_window_index];
+                v_limit := v_authenticated_user_ip_limits[v_rate_window_index];
+
+                SELECT COUNT(*), MIN(request_at)
+                INTO v_request_count, v_oldest_request_at
+                FROM private.rate_limits
+                WHERE user_id = v_user_id
+                  AND ip = v_ip
+                  AND request_at >= NOW() - v_rate_window;
+
+                IF v_request_count >= v_limit THEN
+                    v_retry_after := GREATEST(
+                        1,
+                        CEIL(EXTRACT(EPOCH FROM ((v_oldest_request_at + v_rate_window) - NOW())))::INTEGER
+                    );
+                    PERFORM private.raise_rate_limit_exceeded(v_retry_after);
+                END IF;
+            END LOOP;
+        END IF;
+
         FOR v_rate_window_index IN 1..array_length(v_rate_windows, 1) LOOP
             v_rate_window := v_rate_windows[v_rate_window_index];
-            v_limit := v_authenticated_limits[v_rate_window_index];
+            v_limit := v_authenticated_user_backstop_limits[v_rate_window_index];
 
             SELECT COUNT(*), MIN(request_at)
             INTO v_request_count, v_oldest_request_at
@@ -305,27 +327,6 @@ BEGIN
                 PERFORM private.raise_rate_limit_exceeded(v_retry_after);
             END IF;
         END LOOP;
-
-        IF v_ip IS NOT NULL THEN
-            FOR v_rate_window_index IN 1..array_length(v_rate_windows, 1) LOOP
-                v_rate_window := v_rate_windows[v_rate_window_index];
-                v_limit := v_authenticated_ip_limits[v_rate_window_index];
-
-                SELECT COUNT(*), MIN(request_at)
-                INTO v_request_count, v_oldest_request_at
-                FROM private.rate_limits
-                WHERE ip = v_ip
-                  AND request_at >= NOW() - v_rate_window;
-
-                IF v_request_count >= v_limit THEN
-                    v_retry_after := GREATEST(
-                        1,
-                        CEIL(EXTRACT(EPOCH FROM ((v_oldest_request_at + v_rate_window) - NOW())))::INTEGER
-                    );
-                    PERFORM private.raise_rate_limit_exceeded(v_retry_after);
-                END IF;
-            END LOOP;
-        END IF;
     ELSE
         v_primary_bucket := CASE
             WHEN v_ip IS NULL THEN format('anonymous-role:%s', v_request_role)
@@ -388,7 +389,30 @@ COMMENT ON FUNCTION private.cleanup_rate_limits(INTERVAL) IS
 COMMENT ON FUNCTION private.record_rate_limit_attempt(TEXT, TEXT, TEXT, UUID, INET) IS
     'Attempts to persist a rate-limit event via dblink so failed downstream writes still consume quota.';
 COMMENT ON FUNCTION public.check_request() IS
-    'PostgREST pre-request hook that rate limits Data API writes by authenticated user or client IP.';
+    'PostgREST pre-request hook that rate limits Data API writes by authenticated user+IP with a higher per-user backstop.';
+
+CREATE OR REPLACE FUNCTION public.admin_reset_rate_limits()
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = private, pg_temp
+AS $$
+DECLARE
+    v_deleted_count INTEGER;
+BEGIN
+    DELETE FROM private.rate_limits;
+
+    GET DIAGNOSTICS v_deleted_count = ROW_COUNT;
+
+    RETURN v_deleted_count;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.admin_reset_rate_limits() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_reset_rate_limits() TO service_role;
+
+COMMENT ON FUNCTION public.admin_reset_rate_limits() IS
+    'Service-role-only helper that clears internal Data API rate-limit audit rows for controlled test setup.';
 
 DO $rate_limit_cleanup$
 BEGIN
