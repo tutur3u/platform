@@ -2193,7 +2193,13 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String taskBoardDetailTaskAssigneeCount(int count) {
-    return '$count người được giao';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count người được giao',
+      one: '$count người được giao',
+    );
+    return '$_temp0';
   }
 
   @override

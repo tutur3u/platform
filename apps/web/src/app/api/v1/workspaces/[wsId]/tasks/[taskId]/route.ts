@@ -40,6 +40,10 @@ const updateTaskSchema = z
     message: 'At least one task field is required',
   });
 
+const restoreTaskSchema = z.object({
+  restore: z.literal(true),
+});
+
 type TaskPriority = Database['public']['Enums']['task_priority'];
 type TaskRecord = {
   id: string;
@@ -99,7 +103,6 @@ async function requireWorkspaceAccess(
 ) {
   const { wsId: rawWsId, taskId } = paramsSchema.parse(rawParams);
   const supabase = await createClient(request);
-  const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
   const {
     data: { user },
@@ -111,6 +114,8 @@ async function requireWorkspaceAccess(
       error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
     };
   }
+
+  const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
   const { data: memberCheck, error: memberError } = await supabase
     .from('workspace_members')
@@ -633,14 +638,7 @@ export async function PATCH(
     if ('error' in access) return access.error;
 
     const { supabase, wsId, taskId } = access;
-    const body = await request.json();
-
-    if (body.restore !== true) {
-      return NextResponse.json(
-        { error: 'Invalid request. Use restore: true to restore a task' },
-        { status: 400 }
-      );
-    }
+    restoreTaskSchema.parse(await request.json());
 
     const { task, error } = await getWorkspaceTask(supabase, wsId, taskId);
 
@@ -693,7 +691,7 @@ export async function PATCH(
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid workspace or task ID' },
+        { error: 'Invalid request data', details: error.issues },
         { status: 400 }
       );
     }

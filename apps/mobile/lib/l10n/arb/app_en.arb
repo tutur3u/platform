@@ -836,7 +836,7 @@
     "timerRequestActivityCommentUpdated": "updated a comment",
     "timerRequestActivityCommentDeleted": "deleted a comment",
     "timerRequestActivityUpdated": "updated this request",
-    "taskBoardDetailTaskAssigneeCount": "{count} assignees",
+    "taskBoardDetailTaskAssigneeCount": "{count, plural, one{{count} assignee} other{{count} assignees}}",
     "@taskBoardDetailTaskAssigneeCount": {
       "placeholders": {
         "count": {

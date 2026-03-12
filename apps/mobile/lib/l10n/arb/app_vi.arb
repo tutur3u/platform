@@ -838,7 +838,7 @@
     "timerRequestActivityCommentAdded": "đã thêm bình luận",
     "timerRequestActivityCommentUpdated": "đã cập nhật bình luận",
     "timerRequestActivityCommentDeleted": "đã xóa bình luận",
-    "taskBoardDetailTaskAssigneeCount": "{count} người được giao",
+    "taskBoardDetailTaskAssigneeCount": "{count, plural, one{{count} người được giao} other{{count} người được giao}}",
     "@taskBoardDetailTaskAssigneeCount": {
       "placeholders": {
         "count": {

@@ -88,12 +88,14 @@ Future<void> _saveTaskEditorTask(_TaskBoardTaskEditorSheetState state) async {
         ),
       ),
     );
-  } on Exception {
+  } on Object catch (error) {
+    final message = error.toString().trim();
     if (!state.mounted || !toastContext.mounted) return;
     shad.showToast(
       context: toastContext,
-      builder: (context, overlay) =>
-          shad.Alert.destructive(content: Text(fallbackErrorMessage)),
+      builder: (context, overlay) => shad.Alert.destructive(
+        content: Text(message.isEmpty ? fallbackErrorMessage : message),
+      ),
     );
   } finally {
     if (state.mounted) {
@@ -152,12 +154,14 @@ Future<void> _moveTaskEditorTask(_TaskBoardTaskEditorSheetState state) async {
         ),
       ),
     );
-  } on Exception {
+  } on Object catch (error) {
+    final message = error.toString().trim();
     if (!state.mounted || !toastContext.mounted) return;
     shad.showToast(
       context: toastContext,
-      builder: (context, overlay) =>
-          shad.Alert.destructive(content: Text(fallbackErrorMessage)),
+      builder: (context, overlay) => shad.Alert.destructive(
+        content: Text(message.isEmpty ? fallbackErrorMessage : message),
+      ),
     );
   } finally {
     if (state.mounted) {

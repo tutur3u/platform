@@ -291,15 +291,15 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
 
       await loadBoardDetail(wsId: wsId, boardId: boardId);
     } on Exception catch (error) {
-      if (state.workspaceId == wsId && state.boardId == boardId) {
-        emit(
-          state.copyWith(
-            isMutating: false,
-            clearError: true,
-            mutationError: error.toString(),
-          ),
-        );
-      }
+      final isSameBoard = state.workspaceId == wsId && state.boardId == boardId;
+      emit(
+        state.copyWith(
+          isMutating: false,
+          clearError: true,
+          mutationError: isSameBoard ? error.toString() : null,
+          clearMutationError: !isSameBoard,
+        ),
+      );
       rethrow;
     }
   }

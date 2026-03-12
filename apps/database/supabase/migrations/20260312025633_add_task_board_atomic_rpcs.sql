@@ -149,10 +149,7 @@ begin
     end,
     completed = case
       when p_task_updates ? 'completed' then
-        case
-          when jsonb_typeof(p_task_updates->'completed') = 'null' then null
-          else (p_task_updates->>'completed')::boolean
-        end
+        (p_task_updates->>'completed')::boolean
       else tasks.completed
     end,
     list_id = case
@@ -194,7 +191,9 @@ begin
       insert into public.task_assignees (task_id, user_id)
       select p_task_id, assignee_id
       from (
-        select distinct unnest(p_assignee_ids) as assignee_id
+        select distinct assignee_id
+        from unnest(p_assignee_ids) as assignee_id
+        where assignee_id is not null
       ) deduplicated_assignees;
     end if;
   end if;
@@ -207,7 +206,9 @@ begin
       insert into public.task_labels (task_id, label_id)
       select p_task_id, label_id
       from (
-        select distinct unnest(p_label_ids) as label_id
+        select distinct label_id
+        from unnest(p_label_ids) as label_id
+        where label_id is not null
       ) deduplicated_labels;
     end if;
   end if;
@@ -220,7 +221,9 @@ begin
       insert into public.task_project_tasks (task_id, project_id)
       select p_task_id, project_id
       from (
-        select distinct unnest(p_project_ids) as project_id
+        select distinct project_id
+        from unnest(p_project_ids) as project_id
+        where project_id is not null
       ) deduplicated_projects;
     end if;
   end if;

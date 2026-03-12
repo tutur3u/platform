@@ -4318,7 +4318,7 @@ abstract class AppLocalizations {
   /// No description provided for @taskBoardDetailTaskAssigneeCount.
   ///
   /// In en, this message translates to:
-  /// **'{count} assignees'**
+  /// **'{count, plural, one{{count} assignee} other{{count} assignees}}'**
   String taskBoardDetailTaskAssigneeCount(int count);
 
   /// No description provided for @timerRequestActivityFeedbackLabel.

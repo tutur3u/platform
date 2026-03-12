@@ -1,5 +1,7 @@
 part of 'task_board_detail_page.dart';
 
+const kTaskBoardOverdueColor = Color(0xFFB42318);
+
 class _BoardListSection extends StatelessWidget {
   const _BoardListSection({
     required this.board,
@@ -302,7 +304,7 @@ class _BoardTaskTile extends StatelessWidget {
                     Icons.calendar_today_outlined,
                     size: 11,
                     color: isOverdue
-                        ? const Color(0xFFB42318)
+                        ? kTaskBoardOverdueColor
                         : theme.colorScheme.mutedForeground,
                   ),
                   const shad.Gap(3),
@@ -311,7 +313,7 @@ class _BoardTaskTile extends StatelessWidget {
                     style: theme.typography.small.copyWith(
                       fontSize: 11,
                       color: isOverdue
-                          ? const Color(0xFFB42318)
+                          ? kTaskBoardOverdueColor
                           : theme.colorScheme.mutedForeground,
                       fontWeight: isOverdue
                           ? FontWeight.w600
@@ -326,7 +328,7 @@ class _BoardTaskTile extends StatelessWidget {
                         vertical: 1,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFB42318),
+                        color: kTaskBoardOverdueColor,
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -587,19 +589,22 @@ class _AssigneeAvatar extends StatelessWidget {
     final name = (assignee.displayName?.trim().isNotEmpty == true)
         ? assignee.displayName!.trim()
         : assignee.id;
-    final hasAvatar = assignee.avatarUrl?.trim().isNotEmpty == true;
+    final avatarUrl = assignee.avatarUrl?.trim() ?? '';
+    final hasAvatar = avatarUrl.isNotEmpty;
+    final fallback = Text(
+      name.isNotEmpty ? name.substring(0, 1).toUpperCase() : '?',
+      style: const TextStyle(fontSize: 9),
+    );
+
+    if (!hasAvatar) {
+      return CircleAvatar(radius: 10, child: fallback);
+    }
 
     return CircleAvatar(
       radius: 10,
-      foregroundImage: hasAvatar
-          ? NetworkImage(assignee.avatarUrl!.trim())
-          : null,
-      child: hasAvatar
-          ? null
-          : Text(
-              name.isNotEmpty ? name.substring(0, 1).toUpperCase() : '?',
-              style: const TextStyle(fontSize: 9),
-            ),
+      backgroundImage: NetworkImage(avatarUrl),
+      onBackgroundImageError: (error, stackTrace) {},
+      child: fallback,
     );
   }
 }
