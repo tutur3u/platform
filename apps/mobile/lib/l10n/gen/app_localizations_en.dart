@@ -698,6 +698,293 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardsEmptyDeletedDescription => 'Deleted boards will appear here before permanent removal.';
 
   @override
+  String get taskBoardDetailLoadError => 'Couldn\'t load board details right now';
+
+  @override
+  String get taskBoardDetailUntitledBoard => 'Untitled board';
+
+  @override
+  String get taskBoardDetailUntitledList => 'Untitled list';
+
+  @override
+  String get taskBoardDetailUntitledTask => 'Untitled task';
+
+  @override
+  String get taskBoardDetailListView => 'List view';
+
+  @override
+  String get taskBoardDetailKanbanView => 'Kanban view';
+
+  @override
+  String get taskBoardDetailSearchPlaceholder => 'Search tasks';
+
+  @override
+  String get taskBoardDetailNoListsTitle => 'No lists yet';
+
+  @override
+  String get taskBoardDetailNoListsDescription => 'Create a list to start organizing tasks in this board.';
+
+  @override
+  String get taskBoardDetailNoTasksInList => 'No tasks in this list';
+
+  @override
+  String get taskBoardDetailNoMatchingTasks => 'No tasks match your search.';
+
+  @override
+  String get taskBoardDetailTaskActions => 'Task actions';
+
+  @override
+  String get taskBoardDetailMoveTask => 'Move task';
+
+  @override
+  String get taskBoardDetailTaskMoved => 'Task moved.';
+
+  @override
+  String get taskBoardDetailCreateTask => 'Create task';
+
+  @override
+  String get taskBoardDetailEditTask => 'Edit task';
+
+  @override
+  String get taskBoardDetailTaskTitleLabel => 'Title';
+
+  @override
+  String get taskBoardDetailTaskTitleHint => 'Untitled task';
+
+  @override
+  String get taskBoardDetailTaskTitleRequired => 'Task title is required';
+
+  @override
+  String get taskBoardDetailTaskDescriptionLabel => 'Description';
+
+  @override
+  String get taskBoardDetailTaskDescriptionHint => 'Add description';
+
+  @override
+  String get taskBoardDetailTaskListLabel => 'List';
+
+  @override
+  String get taskBoardDetailTaskListSelect => 'Choose list';
+
+  @override
+  String get taskBoardDetailPriority => 'Priority';
+
+  @override
+  String get taskBoardDetailTaskDates => 'Dates';
+
+  @override
+  String get taskBoardDetailTaskStartDate => 'Start date';
+
+  @override
+  String get taskBoardDetailTaskEndDate => 'End date';
+
+  @override
+  String get taskBoardDetailTaskEstimation => 'Estimation';
+
+  @override
+  String get taskBoardDetailTaskEstimationNone => 'No estimate';
+
+  @override
+  String get taskBoardDetailTaskAssignees => 'Assignees';
+
+  @override
+  String get taskBoardDetailTaskLabels => 'Labels';
+
+  @override
+  String get taskBoardDetailTaskProjects => 'Projects';
+
+  @override
+  String get taskBoardDetailTaskSelectAssignees => 'Select assignees';
+
+  @override
+  String get taskBoardDetailTaskSelectLabels => 'Select labels';
+
+  @override
+  String get taskBoardDetailTaskSelectProjects => 'Select projects';
+
+  @override
+  String get taskBoardDetailNone => 'None';
+
+  @override
+  String get taskBoardDetailNoDate => 'No date';
+
+  @override
+  String taskBoardDetailDueAt(String date) {
+    return 'Due $date';
+  }
+
+  @override
+  String taskBoardDetailStartsAt(String date) {
+    return 'Starts $date';
+  }
+
+  @override
+  String get taskBoardDetailOverdue => 'Overdue';
+
+  @override
+  String get taskBoardDetailToday => 'today';
+
+  @override
+  String get taskBoardDetailTomorrow => 'tomorrow';
+
+  @override
+  String get taskBoardDetailYesterday => 'yesterday';
+
+  @override
+  String taskBoardDetailInDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'in $count days',
+      one: 'in $count day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String taskBoardDetailDaysAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days ago',
+      one: '$count day ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get taskBoardDetailInvalidDateRange => 'End date must be on or after start date';
+
+  @override
+  String get taskBoardDetailTaskSaved => 'Task updated.';
+
+  @override
+  String get taskBoardDetailTaskCreated => 'Task created.';
+
+  @override
+  String get taskBoardDetailNoMoveTargets => 'No other lists available for moving this task.';
+
+  @override
+  String get taskBoardDetailBoardActions => 'Board actions';
+
+  @override
+  String get taskBoardDetailRefresh => 'Refresh board';
+
+  @override
+  String get taskBoardDetailRenameBoard => 'Rename board';
+
+  @override
+  String get taskBoardDetailBoardRenamed => 'Board renamed.';
+
+  @override
+  String get taskBoardDetailCreateList => 'Create list';
+
+  @override
+  String get taskBoardDetailEditList => 'Edit list';
+
+  @override
+  String get taskBoardDetailRenameList => 'Rename list';
+
+  @override
+  String get taskBoardDetailListActions => 'List actions';
+
+  @override
+  String get taskBoardDetailListCreated => 'List created.';
+
+  @override
+  String get taskBoardDetailListRenamed => 'List renamed.';
+
+  @override
+  String get taskBoardDetailListUpdated => 'List updated.';
+
+  @override
+  String get taskBoardDetailNameRequired => 'Name is required';
+
+  @override
+  String get taskBoardDetailListNameLabel => 'List name';
+
+  @override
+  String get taskBoardDetailStatusCategoryLabel => 'Status category';
+
+  @override
+  String get taskBoardDetailColorLabel => 'Color';
+
+  @override
+  String get taskBoardDetailFilters => 'Filters';
+
+  @override
+  String get taskBoardDetailFiltersActive => 'Filters active';
+
+  @override
+  String get taskBoardDetailFilterLists => 'Lists';
+
+  @override
+  String get taskBoardDetailFilterStatuses => 'Statuses';
+
+  @override
+  String get taskBoardDetailFilterAssignees => 'Assignees';
+
+  @override
+  String get taskBoardDetailFilterLabels => 'Labels';
+
+  @override
+  String get taskBoardDetailFilterProjects => 'Projects';
+
+  @override
+  String get taskBoardDetailNoFilterOptions => 'No options available';
+
+  @override
+  String get taskBoardDetailStatusNotStarted => 'Not started';
+
+  @override
+  String get taskBoardDetailStatusActive => 'Active';
+
+  @override
+  String get taskBoardDetailStatusDone => 'Done';
+
+  @override
+  String get taskBoardDetailStatusClosed => 'Closed';
+
+  @override
+  String get taskBoardDetailStatusDocuments => 'Documents';
+
+  @override
+  String get taskBoardDetailColorGray => 'Gray';
+
+  @override
+  String get taskBoardDetailColorRed => 'Red';
+
+  @override
+  String get taskBoardDetailColorBlue => 'Blue';
+
+  @override
+  String get taskBoardDetailColorGreen => 'Green';
+
+  @override
+  String get taskBoardDetailColorYellow => 'Yellow';
+
+  @override
+  String get taskBoardDetailColorOrange => 'Orange';
+
+  @override
+  String get taskBoardDetailColorPurple => 'Purple';
+
+  @override
+  String get taskBoardDetailColorPink => 'Pink';
+
+  @override
+  String get taskBoardDetailColorIndigo => 'Indigo';
+
+  @override
+  String get taskBoardDetailColorCyan => 'Cyan';
+
+  @override
+  String get taskBoardDetailClearFilters => 'Clear filters';
+
+  @override
+  String get taskBoardDetailApplyFilters => 'Apply filters';
+
+  @override
   String get taskPlanningTitle => 'Planning';
 
   @override
@@ -1905,6 +2192,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerRequestActivityUpdated => 'updated this request';
 
   @override
+  String taskBoardDetailTaskAssigneeCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count assignees',
+      one: '$count assignee',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get timerRequestActivityFeedbackLabel => 'Feedback';
 
   @override
@@ -2189,7 +2487,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String timerDays(int count) {
-    return '$count days';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '# days',
+      one: '# day',
+    );
+    return '$_temp0';
   }
 
   @override

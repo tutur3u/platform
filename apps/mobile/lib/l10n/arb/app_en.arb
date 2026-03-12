@@ -283,6 +283,123 @@
     "taskBoardsEmptyArchivedDescription": "Archived boards will appear here.",
     "taskBoardsEmptyDeletedTitle": "No recently deleted boards",
     "taskBoardsEmptyDeletedDescription": "Deleted boards will appear here before permanent removal.",
+    "taskBoardDetailLoadError": "Couldn't load board details right now",
+    "taskBoardDetailUntitledBoard": "Untitled board",
+    "taskBoardDetailUntitledList": "Untitled list",
+    "taskBoardDetailUntitledTask": "Untitled task",
+    "taskBoardDetailListView": "List view",
+    "taskBoardDetailKanbanView": "Kanban view",
+    "taskBoardDetailSearchPlaceholder": "Search tasks",
+    "taskBoardDetailNoListsTitle": "No lists yet",
+    "taskBoardDetailNoListsDescription": "Create a list to start organizing tasks in this board.",
+    "taskBoardDetailNoTasksInList": "No tasks in this list",
+    "taskBoardDetailNoMatchingTasks": "No tasks match your search.",
+    "taskBoardDetailTaskActions": "Task actions",
+    "taskBoardDetailMoveTask": "Move task",
+    "taskBoardDetailTaskMoved": "Task moved.",
+    "taskBoardDetailCreateTask": "Create task",
+    "taskBoardDetailEditTask": "Edit task",
+    "taskBoardDetailTaskTitleLabel": "Title",
+    "taskBoardDetailTaskTitleHint": "Untitled task",
+    "taskBoardDetailTaskTitleRequired": "Task title is required",
+    "taskBoardDetailTaskDescriptionLabel": "Description",
+    "taskBoardDetailTaskDescriptionHint": "Add description",
+    "taskBoardDetailTaskListLabel": "List",
+    "taskBoardDetailTaskListSelect": "Choose list",
+    "taskBoardDetailPriority": "Priority",
+    "taskBoardDetailTaskDates": "Dates",
+    "taskBoardDetailTaskStartDate": "Start date",
+    "taskBoardDetailTaskEndDate": "End date",
+    "taskBoardDetailTaskEstimation": "Estimation",
+    "taskBoardDetailTaskEstimationNone": "No estimate",
+    "taskBoardDetailTaskAssignees": "Assignees",
+    "taskBoardDetailTaskLabels": "Labels",
+    "taskBoardDetailTaskProjects": "Projects",
+    "taskBoardDetailTaskSelectAssignees": "Select assignees",
+    "taskBoardDetailTaskSelectLabels": "Select labels",
+    "taskBoardDetailTaskSelectProjects": "Select projects",
+    "taskBoardDetailNone": "None",
+    "taskBoardDetailNoDate": "No date",
+    "taskBoardDetailDueAt": "Due {date}",
+    "@taskBoardDetailDueAt": {
+        "placeholders": {
+            "date": {
+                "type": "String"
+            }
+        }
+    },
+    "taskBoardDetailStartsAt": "Starts {date}",
+    "@taskBoardDetailStartsAt": {
+        "placeholders": {
+            "date": {
+                "type": "String"
+            }
+        }
+    },
+    "taskBoardDetailOverdue": "Overdue",
+    "taskBoardDetailToday": "today",
+    "taskBoardDetailTomorrow": "tomorrow",
+    "taskBoardDetailYesterday": "yesterday",
+    "taskBoardDetailInDays": "{count, plural, one{in {count} day} other{in {count} days}}",
+    "@taskBoardDetailInDays": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "taskBoardDetailDaysAgo": "{count, plural, one{{count} day ago} other{{count} days ago}}",
+    "@taskBoardDetailDaysAgo": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "taskBoardDetailInvalidDateRange": "End date must be on or after start date",
+    "taskBoardDetailTaskSaved": "Task updated.",
+    "taskBoardDetailTaskCreated": "Task created.",
+    "taskBoardDetailNoMoveTargets": "No other lists available for moving this task.",
+    "taskBoardDetailBoardActions": "Board actions",
+    "taskBoardDetailRefresh": "Refresh board",
+    "taskBoardDetailRenameBoard": "Rename board",
+    "taskBoardDetailBoardRenamed": "Board renamed.",
+    "taskBoardDetailCreateList": "Create list",
+    "taskBoardDetailEditList": "Edit list",
+    "taskBoardDetailRenameList": "Rename list",
+    "taskBoardDetailListActions": "List actions",
+    "taskBoardDetailListCreated": "List created.",
+    "taskBoardDetailListRenamed": "List renamed.",
+    "taskBoardDetailListUpdated": "List updated.",
+    "taskBoardDetailNameRequired": "Name is required",
+    "taskBoardDetailListNameLabel": "List name",
+    "taskBoardDetailStatusCategoryLabel": "Status category",
+    "taskBoardDetailColorLabel": "Color",
+    "taskBoardDetailFilters": "Filters",
+    "taskBoardDetailFiltersActive": "Filters active",
+    "taskBoardDetailFilterLists": "Lists",
+    "taskBoardDetailFilterStatuses": "Statuses",
+    "taskBoardDetailFilterAssignees": "Assignees",
+    "taskBoardDetailFilterLabels": "Labels",
+    "taskBoardDetailFilterProjects": "Projects",
+    "taskBoardDetailNoFilterOptions": "No options available",
+    "taskBoardDetailStatusNotStarted": "Not started",
+    "taskBoardDetailStatusActive": "Active",
+    "taskBoardDetailStatusDone": "Done",
+    "taskBoardDetailStatusClosed": "Closed",
+    "taskBoardDetailStatusDocuments": "Documents",
+    "taskBoardDetailColorGray": "Gray",
+    "taskBoardDetailColorRed": "Red",
+    "taskBoardDetailColorBlue": "Blue",
+    "taskBoardDetailColorGreen": "Green",
+    "taskBoardDetailColorYellow": "Yellow",
+    "taskBoardDetailColorOrange": "Orange",
+    "taskBoardDetailColorPurple": "Purple",
+    "taskBoardDetailColorPink": "Pink",
+    "taskBoardDetailColorIndigo": "Indigo",
+    "taskBoardDetailColorCyan": "Cyan",
+    "taskBoardDetailClearFilters": "Clear filters",
+    "taskBoardDetailApplyFilters": "Apply filters",
     "taskPlanningTitle": "Planning",
     "taskEstimatesTitle": "Estimations",
     "taskLabelsTab": "Labels",
@@ -719,6 +836,14 @@
     "timerRequestActivityCommentUpdated": "updated a comment",
     "timerRequestActivityCommentDeleted": "deleted a comment",
     "timerRequestActivityUpdated": "updated this request",
+    "taskBoardDetailTaskAssigneeCount": "{count, plural, one{{count} assignee} other{{count} assignees}}",
+    "@taskBoardDetailTaskAssigneeCount": {
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
     "timerRequestActivityFeedbackLabel": "Feedback",
     "timerRequestActivityTitleLabel": "Title",
     "timerRequestActivityUnknownUser": "Unknown user",
@@ -843,7 +968,7 @@
     },
     "timerHourUnitShort": "h",
     "timerMinuteUnitShort": "m",
-    "timerDays": "{count} days",
+    "timerDays": "{count, plural, one{# day} other{# days}}",
     "@timerDays": {
         "placeholders": {
             "count": {

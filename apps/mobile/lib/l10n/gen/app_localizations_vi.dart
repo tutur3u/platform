@@ -698,6 +698,293 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardsEmptyDeletedDescription => 'Các bảng đã xóa sẽ xuất hiện ở đây trước khi bị xóa vĩnh viễn.';
 
   @override
+  String get taskBoardDetailLoadError => 'Không thể tải chi tiết bảng lúc này';
+
+  @override
+  String get taskBoardDetailUntitledBoard => 'Bảng chưa đặt tên';
+
+  @override
+  String get taskBoardDetailUntitledList => 'Danh sách chưa đặt tên';
+
+  @override
+  String get taskBoardDetailUntitledTask => 'Công việc chưa đặt tên';
+
+  @override
+  String get taskBoardDetailListView => 'Chế độ danh sách';
+
+  @override
+  String get taskBoardDetailKanbanView => 'Chế độ kanban';
+
+  @override
+  String get taskBoardDetailSearchPlaceholder => 'Tìm kiếm công việc';
+
+  @override
+  String get taskBoardDetailNoListsTitle => 'Chưa có danh sách';
+
+  @override
+  String get taskBoardDetailNoListsDescription => 'Tạo danh sách để bắt đầu sắp xếp công việc trong bảng này.';
+
+  @override
+  String get taskBoardDetailNoTasksInList => 'Danh sách này chưa có công việc';
+
+  @override
+  String get taskBoardDetailNoMatchingTasks => 'Không có công việc nào khớp với từ khóa tìm kiếm.';
+
+  @override
+  String get taskBoardDetailTaskActions => 'Thao tác công việc';
+
+  @override
+  String get taskBoardDetailMoveTask => 'Di chuyển công việc';
+
+  @override
+  String get taskBoardDetailTaskMoved => 'Đã di chuyển công việc.';
+
+  @override
+  String get taskBoardDetailCreateTask => 'Tạo công việc';
+
+  @override
+  String get taskBoardDetailEditTask => 'Chỉnh sửa công việc';
+
+  @override
+  String get taskBoardDetailTaskTitleLabel => 'Tiêu đề';
+
+  @override
+  String get taskBoardDetailTaskTitleHint => 'Công việc chưa đặt tên';
+
+  @override
+  String get taskBoardDetailTaskTitleRequired => 'Tiêu đề công việc là bắt buộc';
+
+  @override
+  String get taskBoardDetailTaskDescriptionLabel => 'Mô tả';
+
+  @override
+  String get taskBoardDetailTaskDescriptionHint => 'Thêm mô tả';
+
+  @override
+  String get taskBoardDetailTaskListLabel => 'Danh sách';
+
+  @override
+  String get taskBoardDetailTaskListSelect => 'Chọn danh sách';
+
+  @override
+  String get taskBoardDetailPriority => 'Độ ưu tiên';
+
+  @override
+  String get taskBoardDetailTaskDates => 'Ngày';
+
+  @override
+  String get taskBoardDetailTaskStartDate => 'Ngày bắt đầu';
+
+  @override
+  String get taskBoardDetailTaskEndDate => 'Ngày kết thúc';
+
+  @override
+  String get taskBoardDetailTaskEstimation => 'Ước lượng';
+
+  @override
+  String get taskBoardDetailTaskEstimationNone => 'Chưa ước lượng';
+
+  @override
+  String get taskBoardDetailTaskAssignees => 'Người được giao';
+
+  @override
+  String get taskBoardDetailTaskLabels => 'Nhãn';
+
+  @override
+  String get taskBoardDetailTaskProjects => 'Dự án';
+
+  @override
+  String get taskBoardDetailTaskSelectAssignees => 'Chọn người được giao';
+
+  @override
+  String get taskBoardDetailTaskSelectLabels => 'Chọn nhãn';
+
+  @override
+  String get taskBoardDetailTaskSelectProjects => 'Chọn dự án';
+
+  @override
+  String get taskBoardDetailNone => 'Không có';
+
+  @override
+  String get taskBoardDetailNoDate => 'Chưa đặt ngày';
+
+  @override
+  String taskBoardDetailDueAt(String date) {
+    return 'Hạn $date';
+  }
+
+  @override
+  String taskBoardDetailStartsAt(String date) {
+    return 'Bắt đầu $date';
+  }
+
+  @override
+  String get taskBoardDetailOverdue => 'Quá hạn';
+
+  @override
+  String get taskBoardDetailToday => 'hôm nay';
+
+  @override
+  String get taskBoardDetailTomorrow => 'ngày mai';
+
+  @override
+  String get taskBoardDetailYesterday => 'hôm qua';
+
+  @override
+  String taskBoardDetailInDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'trong $count ngày',
+      one: 'trong $count ngày',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String taskBoardDetailDaysAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ngày trước',
+      one: '$count ngày trước',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get taskBoardDetailInvalidDateRange => 'Ngày kết thúc phải cùng hoặc sau ngày bắt đầu';
+
+  @override
+  String get taskBoardDetailTaskSaved => 'Đã cập nhật công việc.';
+
+  @override
+  String get taskBoardDetailTaskCreated => 'Đã tạo công việc.';
+
+  @override
+  String get taskBoardDetailNoMoveTargets => 'Không có danh sách khác để di chuyển công việc này.';
+
+  @override
+  String get taskBoardDetailBoardActions => 'Thao tác bảng';
+
+  @override
+  String get taskBoardDetailRefresh => 'Làm mới bảng';
+
+  @override
+  String get taskBoardDetailRenameBoard => 'Đổi tên bảng';
+
+  @override
+  String get taskBoardDetailBoardRenamed => 'Đã đổi tên bảng.';
+
+  @override
+  String get taskBoardDetailCreateList => 'Tạo danh sách';
+
+  @override
+  String get taskBoardDetailEditList => 'Chỉnh sửa danh sách';
+
+  @override
+  String get taskBoardDetailRenameList => 'Đổi tên danh sách';
+
+  @override
+  String get taskBoardDetailListActions => 'Thao tác danh sách';
+
+  @override
+  String get taskBoardDetailListCreated => 'Đã tạo danh sách.';
+
+  @override
+  String get taskBoardDetailListRenamed => 'Đã đổi tên danh sách.';
+
+  @override
+  String get taskBoardDetailListUpdated => 'Đã cập nhật danh sách.';
+
+  @override
+  String get taskBoardDetailNameRequired => 'Tên là bắt buộc';
+
+  @override
+  String get taskBoardDetailListNameLabel => 'Tên danh sách';
+
+  @override
+  String get taskBoardDetailStatusCategoryLabel => 'Nhóm trạng thái';
+
+  @override
+  String get taskBoardDetailColorLabel => 'Màu sắc';
+
+  @override
+  String get taskBoardDetailFilters => 'Bộ lọc';
+
+  @override
+  String get taskBoardDetailFiltersActive => 'Bộ lọc đang bật';
+
+  @override
+  String get taskBoardDetailFilterLists => 'Danh sách';
+
+  @override
+  String get taskBoardDetailFilterStatuses => 'Trạng thái';
+
+  @override
+  String get taskBoardDetailFilterAssignees => 'Người được giao';
+
+  @override
+  String get taskBoardDetailFilterLabels => 'Nhãn';
+
+  @override
+  String get taskBoardDetailFilterProjects => 'Dự án';
+
+  @override
+  String get taskBoardDetailNoFilterOptions => 'Không có tùy chọn';
+
+  @override
+  String get taskBoardDetailStatusNotStarted => 'Chưa bắt đầu';
+
+  @override
+  String get taskBoardDetailStatusActive => 'Đang thực hiện';
+
+  @override
+  String get taskBoardDetailStatusDone => 'Hoàn thành';
+
+  @override
+  String get taskBoardDetailStatusClosed => 'Đã đóng';
+
+  @override
+  String get taskBoardDetailStatusDocuments => 'Tài liệu';
+
+  @override
+  String get taskBoardDetailColorGray => 'Xám';
+
+  @override
+  String get taskBoardDetailColorRed => 'Đỏ';
+
+  @override
+  String get taskBoardDetailColorBlue => 'Xanh dương';
+
+  @override
+  String get taskBoardDetailColorGreen => 'Xanh lá';
+
+  @override
+  String get taskBoardDetailColorYellow => 'Vàng';
+
+  @override
+  String get taskBoardDetailColorOrange => 'Cam';
+
+  @override
+  String get taskBoardDetailColorPurple => 'Tím';
+
+  @override
+  String get taskBoardDetailColorPink => 'Hồng';
+
+  @override
+  String get taskBoardDetailColorIndigo => 'Chàm';
+
+  @override
+  String get taskBoardDetailColorCyan => 'Lục lam';
+
+  @override
+  String get taskBoardDetailClearFilters => 'Xóa bộ lọc';
+
+  @override
+  String get taskBoardDetailApplyFilters => 'Áp dụng bộ lọc';
+
+  @override
   String get taskPlanningTitle => 'Lập kế hoạch';
 
   @override
@@ -1905,6 +2192,17 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerRequestActivityUpdated => 'đã cập nhật yêu cầu này';
 
   @override
+  String taskBoardDetailTaskAssigneeCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count người được giao',
+      one: '$count người được giao',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get timerRequestActivityFeedbackLabel => 'Phản hồi';
 
   @override
@@ -2183,7 +2481,13 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String timerDays(int count) {
-    return '$count ngày';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '# ngày',
+      one: '# ngày',
+    );
+    return '$_temp0';
   }
 
   @override

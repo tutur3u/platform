@@ -7,6 +7,7 @@ class TaskBoardSummary extends Equatable {
     required this.createdAt,
     this.name,
     this.icon,
+    this.ticketPrefix,
     this.archivedAt,
     this.deletedAt,
     this.listCount = 0,
@@ -42,6 +43,7 @@ class TaskBoardSummary extends Equatable {
           ? (json['name'] as String).trim()
           : null,
       icon: json['icon'] as String?,
+      ticketPrefix: (json['ticket_prefix'] as String?)?.trim(),
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'] as String)
           : null,
@@ -85,6 +87,7 @@ class TaskBoardSummary extends Equatable {
           ? (json['name'] as String).trim()
           : null,
       icon: json['icon'] as String?,
+      ticketPrefix: (json['ticket_prefix'] as String?)?.trim(),
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'] as String)
           : null,
@@ -110,6 +113,7 @@ class TaskBoardSummary extends Equatable {
   final String wsId;
   final String? name;
   final String? icon;
+  final String? ticketPrefix;
   final DateTime? createdAt;
   final DateTime? archivedAt;
   final DateTime? deletedAt;
@@ -125,6 +129,7 @@ class TaskBoardSummary extends Equatable {
     wsId,
     name,
     icon,
+    ticketPrefix,
     createdAt,
     archivedAt,
     deletedAt,
