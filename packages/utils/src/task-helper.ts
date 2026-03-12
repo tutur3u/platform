@@ -32,6 +32,31 @@ import type {
 } from '@tuturuuu/types/primitives/TaskRelationship';
 import { transformTaskRecord } from './task/transformers';
 
+type TaskListIdRow = Pick<
+  Database['public']['Tables']['task_lists']['Row'],
+  'id'
+>;
+type RestorableTaskRow = Pick<
+  Database['public']['Tables']['tasks']['Row'],
+  'id' | 'list_id'
+>;
+type WorkspaceTaskPickerRow = Pick<
+  Database['public']['Tables']['tasks']['Row'],
+  | 'id'
+  | 'name'
+  | 'display_number'
+  | 'completed_at'
+  | 'closed_at'
+  | 'priority'
+  | 'board_id'
+> & {
+  list: {
+    board: {
+      name: string | null;
+    } | null;
+  } | null;
+};
+
 /**
  * Generate a human-readable ticket identifier from prefix and display number
  * @param prefix - Board's ticket prefix (e.g., "DEV", "BUG")
@@ -117,7 +142,7 @@ export async function getTasks(supabase: TypedSupabaseClient, boardId: string) {
       )
       .in(
         'list_id',
-        lists.map((list) => list.id)
+        lists.map((list: TaskListIdRow) => list.id)
       )
       .is('deleted_at', null)
       .order('sort_key', { ascending: true, nullsFirst: false })
@@ -128,7 +153,9 @@ export async function getTasks(supabase: TypedSupabaseClient, boardId: string) {
       throw error;
     }
 
-    return data.map((task) => transformTaskRecord(task));
+    return data.map((task: Parameters<typeof transformTaskRecord>[0]) =>
+      transformTaskRecord(task)
+    );
   } catch (error) {
     console.error('Error in getTasks:', error);
     throw error;
@@ -1162,7 +1189,7 @@ export async function getDeletedTasks(
       )
       .in(
         'list_id',
-        lists.map((list) => list.id)
+        lists.map((list: TaskListIdRow) => list.id)
       )
       .not('deleted_at', 'is', null)
       .order('deleted_at', { ascending: false });
@@ -1172,7 +1199,9 @@ export async function getDeletedTasks(
       throw error;
     }
 
-    return data.map((task) => transformTaskRecord(task));
+    return data.map((task: Parameters<typeof transformTaskRecord>[0]) =>
+      transformTaskRecord(task)
+    );
   } catch (error) {
     console.error('Error in getDeletedTasks:', error);
     throw error;
@@ -1222,8 +1251,11 @@ export async function restoreTasks(
   // Get valid list IDs (filter out nulls)
   const listIds = [
     ...new Set(
-      tasks?.map((t) => t.list_id).filter((id): id is string => id !== null) ||
-        []
+      tasks
+        ?.map((task: RestorableTaskRow) => task.list_id)
+        .filter(
+          (id: RestorableTaskRow['list_id']): id is string => id !== null
+        ) || []
     ),
   ];
   const { data: validLists } = await supabase
@@ -1232,13 +1264,21 @@ export async function restoreTasks(
     .in('id', listIds)
     .eq('deleted', false);
 
-  const validListIds = new Set(validLists?.map((l) => l.id) || []);
+  const validListIds = new Set(
+    validLists?.map((list: TaskListIdRow) => list.id) || []
+  );
 
   // Separate tasks into those with valid lists and those needing fallback
   const tasksWithValidLists =
-    tasks?.filter((t) => t.list_id && validListIds.has(t.list_id)) || [];
+    tasks?.filter(
+      (task: RestorableTaskRow) =>
+        !!task.list_id && validListIds.has(task.list_id)
+    ) || [];
   const tasksNeedingFallback =
-    tasks?.filter((t) => !t.list_id || !validListIds.has(t.list_id)) || [];
+    tasks?.filter(
+      (task: RestorableTaskRow) =>
+        !task.list_id || !validListIds.has(task.list_id)
+    ) || [];
 
   const results: Task[] = [];
 
@@ -2623,7 +2663,9 @@ export async function normalizeListSortKeys(
   );
 
   const results = await Promise.all(updatePromises);
-  const updateError = results.find((result) => result.error)?.error;
+  const updateError = results.find(
+    (result: Awaited<(typeof updatePromises)[number]>) => result.error
+  )?.error;
 
   if (updateError) {
     console.error('Failed to update sort keys:', updateError);
@@ -3025,7 +3067,7 @@ export async function getWorkspaceTasks(
 
   if (error) throw error;
 
-  return (data || []).map((task) => ({
+  return (data || []).map((task: WorkspaceTaskPickerRow) => ({
     id: task.id,
     name: task.name,
     display_number: task.display_number,
