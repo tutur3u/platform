@@ -1,19 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireBoardAccess } from './access';
-
-const supportedColorSchema = z.enum([
-  'GRAY',
-  'RED',
-  'BLUE',
-  'GREEN',
-  'YELLOW',
-  'ORANGE',
-  'PURPLE',
-  'PINK',
-  'INDIGO',
-  'CYAN',
-]);
+import { supportedColorSchema } from './schema';
 
 const createListSchema = z.object({
   name: z.string().trim().min(1).max(255),

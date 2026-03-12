@@ -1,19 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireBoardAccess } from '../access';
-
-const supportedColorSchema = z.enum([
-  'GRAY',
-  'RED',
-  'BLUE',
-  'GREEN',
-  'YELLOW',
-  'ORANGE',
-  'PURPLE',
-  'PINK',
-  'INDIGO',
-  'CYAN',
-]);
+import { type SupportedColor, supportedColorSchema } from '../schema';
 
 const updateListSchema = z
   .object({
@@ -56,17 +44,7 @@ export async function PATCH(
     const updates: {
       name?: string;
       status?: 'not_started' | 'active' | 'done' | 'closed' | 'documents';
-      color?:
-        | 'GRAY'
-        | 'RED'
-        | 'BLUE'
-        | 'GREEN'
-        | 'YELLOW'
-        | 'ORANGE'
-        | 'PURPLE'
-        | 'PINK'
-        | 'INDIGO'
-        | 'CYAN';
+      color?: SupportedColor;
     } = {};
 
     if (body.name !== undefined) {

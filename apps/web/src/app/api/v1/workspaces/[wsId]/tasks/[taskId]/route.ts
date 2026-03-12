@@ -1,101 +1,16 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { Database } from '@tuturuuu/types';
-import {
-  MAX_TASK_DESCRIPTION_LENGTH,
-  MAX_TASK_NAME_LENGTH,
-} from '@tuturuuu/utils/constants';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
-
-const paramsSchema = z.object({
-  wsId: z.string().min(1),
-  taskId: z.uuid(),
-});
-
-const updateTaskSchema = z
-  .object({
-    name: z.string().trim().min(1).max(MAX_TASK_NAME_LENGTH).optional(),
-    description: z
-      .string()
-      .max(MAX_TASK_DESCRIPTION_LENGTH)
-      .nullable()
-      .optional(),
-    priority: z
-      .enum(['low', 'normal', 'high', 'critical'])
-      .nullable()
-      .optional(),
-    start_date: z.string().datetime().nullable().optional(),
-    end_date: z.string().datetime().nullable().optional(),
-    completed: z.boolean().optional(),
-    list_id: z.uuid().optional(),
-    deleted: z.boolean().optional(),
-    estimation_points: z.number().int().min(0).max(8).nullable().optional(),
-    label_ids: z.array(z.uuid()).optional(),
-    project_ids: z.array(z.uuid()).optional(),
-    assignee_ids: z.array(z.uuid()).optional(),
-  })
-  .refine((value) => Object.keys(value).length > 0, {
-    message: 'At least one task field is required',
-  });
-
-const restoreTaskSchema = z.object({
-  restore: z.literal(true),
-});
-
-type TaskPriority = Database['public']['Enums']['task_priority'];
-type TaskRecord = {
-  id: string;
-  display_number: number | null;
-  name: string;
-  description: string | null;
-  priority: TaskPriority | null;
-  completed: boolean | null;
-  start_date: string | null;
-  end_date: string | null;
-  estimation_points: number | null;
-  created_at: string | null;
-  closed_at: string | null;
-  deleted_at: string | null;
-  list_id: string | null;
-  task_lists: {
-    id: string;
-    name: string | null;
-    status: string | null;
-    board_id: string;
-    workspace_boards: {
-      id: string;
-      ws_id: string;
-      name: string | null;
-    } | null;
-  } | null;
-  assignees: Array<{
-    user: {
-      id: string;
-      display_name: string | null;
-      avatar_url: string | null;
-    } | null;
-  }> | null;
-  labels: Array<{
-    label: {
-      id: string;
-      name: string | null;
-      color: string | null;
-    } | null;
-  }> | null;
-  projects: Array<{
-    project: {
-      id: string;
-      name: string | null;
-    } | null;
-  }> | null;
-};
-
-type TaskMutationResult = Pick<
-  Database['public']['Tables']['tasks']['Row'],
-  'id' | 'list_id'
->;
+import { ZodError } from 'zod';
+import {
+  paramsSchema,
+  restoreTaskSchema,
+  type TaskMutationResult,
+  type TaskPriority,
+  type TaskRecord,
+  updateTaskSchema,
+} from './schema';
 
 async function requireWorkspaceAccess(
   request: NextRequest,
@@ -179,24 +94,13 @@ async function getWorkspaceTask(
         )
       ),
       assignees:task_assignees(
-        user:users(
-          id,
-          display_name,
-          avatar_url
-        )
+        user_id
       ),
       labels:task_labels(
-        label:workspace_task_labels(
-          id,
-          name,
-          color
-        )
+        label_id
       ),
       projects:task_project_tasks(
-        project:task_projects(
-          id,
-          name
-        )
+        project_id
       )
     `
     )
@@ -215,19 +119,27 @@ async function getWorkspaceTask(
 }
 
 function serializeTask(task: TaskRecord) {
-  const assignees = Array.isArray(task.assignees)
+  const assigneeIds = Array.isArray(task.assignees)
     ? task.assignees
-        .map((entry) => entry.user)
-        .filter(
-          (
-            user
-          ): user is {
-            id: string;
-            display_name: string | null;
-            avatar_url: string | null;
-          } => user !== null
-        )
+        .map((entry) => entry.user_id)
+        .filter((id): id is string => !!id)
     : [];
+
+  const labelIds = Array.isArray(task.labels)
+    ? task.labels
+        .map((entry) => entry.label_id)
+        .filter((id): id is string => !!id)
+    : [];
+
+  const projectIds = Array.isArray(task.projects)
+    ? task.projects
+        .map((entry) => entry.project_id)
+        .filter((id): id is string => !!id)
+    : [];
+
+  const uniqueAssigneeIds = [...new Set(assigneeIds)];
+  const uniqueLabelIds = [...new Set(labelIds)];
+  const uniqueProjectIds = [...new Set(projectIds)];
 
   return {
     id: task.id,
@@ -247,32 +159,9 @@ function serializeTask(task: TaskRecord) {
     board_name: task.task_lists?.workspace_boards?.name ?? null,
     list_name: task.task_lists?.name ?? null,
     list_status: task.task_lists?.status ?? null,
-    assignees,
-    labels: Array.isArray(task.labels)
-      ? task.labels
-          .map((entry) => entry.label)
-          .filter(
-            (
-              label
-            ): label is {
-              id: string;
-              name: string | null;
-              color: string | null;
-            } => label !== null
-          )
-      : [],
-    projects: Array.isArray(task.projects)
-      ? task.projects
-          .map((entry) => entry.project)
-          .filter(
-            (
-              project
-            ): project is {
-              id: string;
-              name: string | null;
-            } => project !== null
-          )
-      : [],
+    assignee_ids: uniqueAssigneeIds,
+    label_ids: uniqueLabelIds,
+    project_ids: uniqueProjectIds,
   };
 }
 
@@ -301,7 +190,7 @@ export async function GET(
 
     return NextResponse.json({ task: serializeTask(task) });
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (error instanceof ZodError) {
       return NextResponse.json(
         { error: 'Invalid workspace or task ID' },
         { status: 400 }
@@ -538,7 +427,7 @@ export async function PUT(
 
     return NextResponse.json({ task: serializeTask(updatedTaskResult.task) });
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (error instanceof ZodError) {
       return NextResponse.json(
         { error: 'Invalid request data', details: error.issues },
         { status: 400 }
@@ -614,7 +503,7 @@ export async function DELETE(
       message: 'Task permanently deleted',
     });
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (error instanceof ZodError) {
       return NextResponse.json(
         { error: 'Invalid workspace or task ID' },
         { status: 400 }
@@ -689,7 +578,7 @@ export async function PATCH(
       message: 'Task restored successfully',
     });
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (error instanceof ZodError) {
       return NextResponse.json(
         { error: 'Invalid request data', details: error.issues },
         { status: 400 }

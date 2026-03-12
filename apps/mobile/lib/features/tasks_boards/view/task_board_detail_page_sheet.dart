@@ -58,18 +58,9 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     _priority = _normalizePriority(task?.priority);
     _selectedListId = _resolveInitialListId(task);
     _estimationPoints = task?.estimationPoints;
-    _selectedAssigneeIds = {
-      for (final assignee in task?.assignees ?? const <TaskBoardTaskAssignee>[])
-        assignee.id,
-    };
-    _selectedLabelIds = {
-      for (final label in task?.labels ?? const <TaskBoardTaskLabel>[])
-        label.id,
-    };
-    _selectedProjectIds = {
-      for (final project in task?.projects ?? const <TaskBoardTaskProject>[])
-        project.id,
-    };
+    _selectedAssigneeIds = {...?task?.assigneeIds};
+    _selectedLabelIds = {...?task?.labelIds};
+    _selectedProjectIds = {...?task?.projectIds};
     _startDate = task?.startDate;
     _endDate = task?.endDate;
   }

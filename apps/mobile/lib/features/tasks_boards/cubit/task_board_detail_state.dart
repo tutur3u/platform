@@ -153,8 +153,8 @@ class TaskBoardDetailState extends Equatable {
           }
 
           if (hasAssigneeFilter) {
-            final hasMatchingAssignee = task.assignees.any(
-              (assignee) => filters.assigneeIds.contains(assignee.id),
+            final hasMatchingAssignee = task.assigneeIds.any(
+              filters.assigneeIds.contains,
             );
             if (!hasMatchingAssignee) {
               return false;
@@ -162,8 +162,8 @@ class TaskBoardDetailState extends Equatable {
           }
 
           if (hasLabelFilter) {
-            final hasMatchingLabel = task.labels.any(
-              (label) => filters.labelIds.contains(label.id),
+            final hasMatchingLabel = task.labelIds.any(
+              filters.labelIds.contains,
             );
             if (!hasMatchingLabel) {
               return false;
@@ -171,8 +171,8 @@ class TaskBoardDetailState extends Equatable {
           }
 
           if (hasProjectFilter) {
-            final hasMatchingProject = task.projects.any(
-              (project) => filters.projectIds.contains(project.id),
+            final hasMatchingProject = task.projectIds.any(
+              filters.projectIds.contains,
             );
             if (!hasMatchingProject) {
               return false;

@@ -25,34 +25,16 @@ const CreateTaskSchema = z.object({
   project_ids: z.array(z.string().uuid()).optional(),
   assignee_ids: z.array(z.string().uuid()).optional(),
 });
-interface ProcessedAssignee {
-  id: string;
-  display_name: string | null;
-  avatar_url: string | null;
+interface TaskAssigneeRelation {
+  user_id: string | null;
 }
 
-interface TaskAssigneeData {
-  user: {
-    id: string;
-    display_name: string | null;
-    avatar_url: string | null;
-    email?: string;
-  } | null;
+interface TaskLabelRelation {
+  label_id: string | null;
 }
 
-interface TaskLabelData {
-  label: {
-    id: string;
-    name: string | null;
-    color: string | null;
-  } | null;
-}
-
-interface TaskProjectData {
-  project: {
-    id: string;
-    name: string | null;
-  } | null;
+interface TaskProjectRelation {
+  project_id: string | null;
 }
 
 export async function GET(
@@ -118,7 +100,7 @@ export async function GET(
     // Check if this is a request for time tracking (indicated by limit=100 and no specific filters)
     const isTimeTrackingRequest = limit === 100 && !boardId && !listId;
 
-    // Build the query for fetching tasks with assignee information
+    // Build the query for fetching tasks with relation IDs only
     let query = supabase
       .from('tasks')
       .select(
@@ -147,24 +129,13 @@ export async function GET(
           )
         ),
         assignees:task_assignees(
-          user:users(
-            id,
-            display_name,
-            avatar_url
-          )
+          user_id
         ),
         labels:task_labels(
-          label:workspace_task_labels(
-            id,
-            name,
-            color
-          )
+          label_id
         ),
         projects:task_project_tasks(
-          project:task_projects(
-            id,
-            name
-          )
+          project_id
         )
       `
       )
@@ -198,105 +169,62 @@ export async function GET(
 
     // Transform the data to match the expected WorkspaceTask format
     const tasks =
-      data?.map((task) => ({
-        id: task.id,
-        display_number: task.display_number,
-        name: task.name,
-        description: task.description,
-        priority: task.priority,
-        completed: task.completed,
-        start_date: task.start_date,
-        end_date: task.end_date,
-        estimation_points: task.estimation_points,
-        created_at: task.created_at,
-        list_id: task.list_id,
-        closed_at: task.closed_at,
-        // Add board information for context
-        board_name: task.task_lists?.workspace_boards?.name,
-        list_name: task.task_lists?.name,
-        list_status: task.task_lists?.status,
-        // Add assignee information
-        assignees: [
+      data?.map((task) => {
+        const assigneeIds = [
           ...(task.assignees ?? [])
-            .map((a: TaskAssigneeData) => a.user)
-            .filter((u): u is ProcessedAssignee => !!u?.id)
-            .reduce(
-              (
-                uniqueUsers: Map<string, ProcessedAssignee>,
-                user: ProcessedAssignee
-              ) => {
-                if (!uniqueUsers.has(user.id)) {
-                  uniqueUsers.set(user.id, user);
-                }
-                return uniqueUsers;
-              },
-              new Map()
-            )
-            .values(),
-        ],
-        // Add helper field to identify if current user is assigned
-        is_assigned_to_current_user:
-          task.assignees?.some(
-            (a: TaskAssigneeData) => a.user?.id === user.id
-          ) || false,
-        labels: [
+            .map((entry: TaskAssigneeRelation) => entry.user_id)
+            .filter((id): id is string => !!id)
+            .reduce((uniqueIds: Set<string>, assigneeId: string) => {
+              uniqueIds.add(assigneeId);
+              return uniqueIds;
+            }, new Set()),
+        ];
+
+        const labelIds = [
           ...(task.labels ?? [])
-            .map((entry: TaskLabelData) => entry.label)
-            .filter(
-              (
-                label
-              ): label is {
-                id: string;
-                name: string | null;
-                color: string | null;
-              } => !!label?.id
-            )
-            .reduce(
-              (
-                uniqueLabels: Map<
-                  string,
-                  { id: string; name: string | null; color: string | null }
-                >,
-                label
-              ) => {
-                if (!uniqueLabels.has(label.id)) {
-                  uniqueLabels.set(label.id, label);
-                }
-                return uniqueLabels;
-              },
-              new Map()
-            )
-            .values(),
-        ],
-        projects: [
+            .map((entry: TaskLabelRelation) => entry.label_id)
+            .filter((id): id is string => !!id)
+            .reduce((uniqueIds: Set<string>, labelId: string) => {
+              uniqueIds.add(labelId);
+              return uniqueIds;
+            }, new Set()),
+        ];
+
+        const projectIds = [
           ...(task.projects ?? [])
-            .map((entry: TaskProjectData) => entry.project)
-            .filter(
-              (
-                project
-              ): project is {
-                id: string;
-                name: string | null;
-              } => !!project?.id
-            )
-            .reduce(
-              (
-                uniqueProjects: Map<
-                  string,
-                  { id: string; name: string | null }
-                >,
-                project
-              ) => {
-                if (!uniqueProjects.has(project.id)) {
-                  uniqueProjects.set(project.id, project);
-                }
-                return uniqueProjects;
-              },
-              new Map()
-            )
-            .values(),
-        ],
-      })) || [];
+            .map((entry: TaskProjectRelation) => entry.project_id)
+            .filter((id): id is string => !!id)
+            .reduce((uniqueIds: Set<string>, projectId: string) => {
+              uniqueIds.add(projectId);
+              return uniqueIds;
+            }, new Set()),
+        ];
+
+        return {
+          id: task.id,
+          display_number: task.display_number,
+          name: task.name,
+          description: task.description,
+          priority: task.priority,
+          completed: task.completed,
+          start_date: task.start_date,
+          end_date: task.end_date,
+          estimation_points: task.estimation_points,
+          created_at: task.created_at,
+          list_id: task.list_id,
+          closed_at: task.closed_at,
+          // Add board information for context
+          board_name: task.task_lists?.workspace_boards?.name,
+          list_name: task.task_lists?.name,
+          list_status: task.task_lists?.status,
+          // Keep ID arrays as canonical payload for relation hydration on clients.
+          assignee_ids: assigneeIds,
+          label_ids: labelIds,
+          project_ids: projectIds,
+          // Add helper field to identify if current user is assigned
+          is_assigned_to_current_user: assigneeIds.includes(user.id),
+        };
+      }) || [];
 
     // Prioritize tasks by list status for command center (no specific filters)
     // active/not_started tasks appear first, then done/closed

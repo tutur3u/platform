@@ -111,6 +111,9 @@ class TaskBoardTask extends Equatable {
     this.createdAt,
     this.closedAt,
     this.estimationPoints,
+    this.assigneeIds = const [],
+    this.labelIds = const [],
+    this.projectIds = const [],
     this.assignees = const [],
     this.labels = const [],
     this.projects = const [],
@@ -132,9 +135,9 @@ class TaskBoardTask extends Equatable {
       );
     }
 
-    final rawAssignees = json['assignees'] as List<dynamic>? ?? const [];
-    final rawLabels = json['labels'] as List<dynamic>? ?? const [];
-    final rawProjects = json['projects'] as List<dynamic>? ?? const [];
+    final assigneeIds = _parseIdList(json['assignee_ids']);
+    final labelIds = _parseIdList(json['label_ids']);
+    final projectIds = _parseIdList(json['project_ids']);
 
     return TaskBoardTask(
       id: rawId.trim(),
@@ -149,19 +152,76 @@ class TaskBoardTask extends Equatable {
       createdAt: parseDateTime(json['created_at']),
       closedAt: parseDateTime(json['closed_at']),
       estimationPoints: (json['estimation_points'] as num?)?.toInt(),
-      assignees: rawAssignees
-          .whereType<Map<String, dynamic>>()
-          .map(TaskBoardTaskAssignee.fromJson)
+      assigneeIds: assigneeIds,
+      labelIds: labelIds,
+      projectIds: projectIds,
+      assignees: assigneeIds
+          .map((id) => TaskBoardTaskAssignee(id: id))
           .toList(growable: false),
-      labels: rawLabels
-          .whereType<Map<String, dynamic>>()
-          .map(TaskBoardTaskLabel.fromJson)
+      labels: labelIds
+          .map((id) => TaskBoardTaskLabel(id: id))
           .toList(growable: false),
-      projects: rawProjects
-          .whereType<Map<String, dynamic>>()
-          .map(TaskBoardTaskProject.fromJson)
+      projects: projectIds
+          .map((id) => TaskBoardTaskProject(id: id))
           .toList(growable: false),
     );
+  }
+
+  TaskBoardTask copyWith({
+    String? listId,
+    int? displayNumber,
+    String? name,
+    String? description,
+    String? priority,
+    bool? completed,
+    DateTime? startDate,
+    DateTime? endDate,
+    DateTime? createdAt,
+    DateTime? closedAt,
+    int? estimationPoints,
+    List<String>? assigneeIds,
+    List<String>? labelIds,
+    List<String>? projectIds,
+    List<TaskBoardTaskAssignee>? assignees,
+    List<TaskBoardTaskLabel>? labels,
+    List<TaskBoardTaskProject>? projects,
+  }) {
+    return TaskBoardTask(
+      id: id,
+      listId: listId ?? this.listId,
+      displayNumber: displayNumber ?? this.displayNumber,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      priority: priority ?? this.priority,
+      completed: completed ?? this.completed,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
+      createdAt: createdAt ?? this.createdAt,
+      closedAt: closedAt ?? this.closedAt,
+      estimationPoints: estimationPoints ?? this.estimationPoints,
+      assigneeIds: assigneeIds ?? this.assigneeIds,
+      labelIds: labelIds ?? this.labelIds,
+      projectIds: projectIds ?? this.projectIds,
+      assignees: assignees ?? this.assignees,
+      labels: labels ?? this.labels,
+      projects: projects ?? this.projects,
+    );
+  }
+
+  static List<String> _parseIdList(dynamic value) {
+    if (value is! List<dynamic>) {
+      return const [];
+    }
+
+    final uniqueIds = <String>{};
+    for (final id in value.whereType<String>()) {
+      final normalized = id.trim();
+      if (normalized.isNotEmpty) {
+        uniqueIds.add(normalized);
+      }
+    }
+
+    return List.unmodifiable(uniqueIds);
   }
 
   final String id;
@@ -176,6 +236,9 @@ class TaskBoardTask extends Equatable {
   final DateTime? createdAt;
   final DateTime? closedAt;
   final int? estimationPoints;
+  final List<String> assigneeIds;
+  final List<String> labelIds;
+  final List<String> projectIds;
   final List<TaskBoardTaskAssignee> assignees;
   final List<TaskBoardTaskLabel> labels;
   final List<TaskBoardTaskProject> projects;
@@ -194,6 +257,9 @@ class TaskBoardTask extends Equatable {
     createdAt,
     closedAt,
     estimationPoints,
+    assigneeIds,
+    labelIds,
+    projectIds,
     assignees,
     labels,
     projects,
