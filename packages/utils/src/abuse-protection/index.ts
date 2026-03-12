@@ -532,6 +532,69 @@ export async function checkOTPSendLimit(
     };
   }
 
+  if (email) {
+    const emailHash = hashEmail(email);
+
+    const cooldownKey = REDIS_KEYS.OTP_SEND_EMAIL_COOLDOWN(emailHash);
+    const { count: cooldownCount, ttl: cooldownTTL } = await incrementCounter(
+      cooldownKey,
+      ABUSE_THRESHOLDS.OTP_SEND_EMAIL_COOLDOWN_WINDOW_MS
+    );
+
+    if (cooldownCount > 1) {
+      void logAbuseEvent(ipAddress, 'otp_send', {
+        email,
+        success: false,
+        metadata: { trigger: 'email_cooldown' },
+      });
+
+      return {
+        allowed: false,
+        reason: 'Too many OTP requests. Please try again later.',
+        retryAfter: cooldownTTL,
+        remainingAttempts: 0,
+      };
+    }
+
+    const hourlyEmailKey = REDIS_KEYS.OTP_SEND_EMAIL_HOURLY(emailHash);
+    const { count: hourlyEmailCount, ttl: hourlyEmailTTL } =
+      await incrementCounter(hourlyEmailKey, WINDOW_MS.ONE_HOUR);
+
+    if (hourlyEmailCount > ABUSE_THRESHOLDS.OTP_SEND_EMAIL_PER_HOUR) {
+      void logAbuseEvent(ipAddress, 'otp_send', {
+        email,
+        success: false,
+        metadata: { trigger: 'email_hourly_limit' },
+      });
+
+      return {
+        allowed: false,
+        reason: 'Hourly OTP limit reached. Please try again later.',
+        retryAfter: hourlyEmailTTL,
+        remainingAttempts: 0,
+      };
+    }
+
+    const dailyEmailKey = REDIS_KEYS.OTP_SEND_EMAIL_DAILY(emailHash);
+    const { count: dailyEmailCount, ttl: dailyEmailTTL } =
+      await incrementCounter(dailyEmailKey, WINDOW_MS.TWENTY_FOUR_HOURS);
+
+    if (dailyEmailCount > ABUSE_THRESHOLDS.OTP_SEND_EMAIL_PER_DAY) {
+      void logAbuseEvent(ipAddress, 'otp_send', {
+        email,
+        success: false,
+        metadata: { trigger: 'email_daily_limit' },
+      });
+
+      return {
+        allowed: false,
+        reason: 'OTP limit reached. Please try again later.',
+        retryAfter: dailyEmailTTL,
+        remainingAttempts: 0,
+      };
+    }
+  }
+
   // Log successful attempt
   void logAbuseEvent(ipAddress, 'otp_send', { email, success: true });
 

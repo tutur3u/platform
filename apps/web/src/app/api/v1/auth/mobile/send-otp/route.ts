@@ -59,18 +59,6 @@ export async function POST(request: NextRequest) {
     const headersList = await headers();
     const ipAddress = extractIPFromHeaders(headersList);
 
-    const abuseCheck = await checkOTPSendLimit(ipAddress, email);
-    if (!abuseCheck.allowed) {
-      return jsonWithCors(
-        {
-          error:
-            abuseCheck.reason || 'Too many requests. Please try again later.',
-          retryAfter: abuseCheck.retryAfter,
-        },
-        { status: 429 }
-      );
-    }
-
     let validatedEmail: string;
 
     try {
@@ -81,6 +69,18 @@ export async function POST(request: NextRequest) {
           ? error.message
           : String(error || 'Invalid email');
       return jsonWithCors({ error: message }, { status: 400 });
+    }
+
+    const abuseCheck = await checkOTPSendLimit(ipAddress, validatedEmail);
+    if (!abuseCheck.allowed) {
+      return jsonWithCors(
+        {
+          error:
+            abuseCheck.reason || 'Too many requests. Please try again later.',
+          retryAfter: abuseCheck.retryAfter,
+        },
+        { status: 429 }
+      );
     }
 
     const infrastructureCheck =

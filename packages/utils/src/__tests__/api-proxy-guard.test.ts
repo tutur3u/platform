@@ -180,7 +180,35 @@ describe('guardApiProxyRequest', () => {
     expect(response?.headers.get('X-RateLimit-Policy')).toBe('users-me');
   });
 
-  it('uses strict auth buckets for auth mutations', async () => {
+  it('uses the dedicated otp-send bucket for mobile OTP sends', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 1,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/v1/auth/mobile/send-otp', 'POST'),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('1');
+    expect(response?.headers.get('X-RateLimit-Policy')).toBe('otp-send');
+  });
+
+  it('keeps verify-otp on the strict auth bucket', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
     vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
@@ -199,7 +227,7 @@ describe('guardApiProxyRequest', () => {
     clearApiProxyGuardLimiterCache();
 
     const response = await guardApiProxyRequest(
-      makeRequest('/api/v1/auth/mobile/send-otp', 'POST'),
+      makeRequest('/api/v1/auth/mobile/verify-otp', 'POST'),
       { prefixBase: 'proxy:test:api' }
     );
 
