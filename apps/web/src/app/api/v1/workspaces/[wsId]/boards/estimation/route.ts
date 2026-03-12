@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -48,7 +51,9 @@ export async function GET(
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    const { data: boards, error: boardsError } = await supabase
+    const sbAdmin = await createAdminClient();
+
+    const { data: boards, error: boardsError } = await sbAdmin
       .from('workspace_boards')
       .select(
         'id, name, estimation_type, extended_estimation, allow_zero_estimates, count_unestimated_issues, created_at'

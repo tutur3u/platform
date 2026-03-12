@@ -1,6 +1,13 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  buildNotificationAccessFilter,
+  getNotificationAccessContext,
+} from '../../access';
 
 const metadataSchema = z
   .object({
@@ -19,6 +26,7 @@ export async function PATCH(
 ) {
   try {
     const supabase = await createClient(req);
+    const sbAdmin = await createAdminClient();
 
     // Get authenticated user
     const {
@@ -29,6 +37,9 @@ export async function PATCH(
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const accessContext = await getNotificationAccessContext(supabase, user);
+    const accessFilter = buildNotificationAccessFilter(accessContext);
 
     const { id } = await params;
 
@@ -54,13 +65,12 @@ export async function PATCH(
       );
     }
 
-    // Fetch the notification to verify ownership and get current data
-    // Note: RLS policies handle access control (user_id OR email match)
-    const { data: notification, error: fetchError } = await supabase
+    const { data: notification, error: fetchError } = await sbAdmin
       .from('notifications')
-      .select('id, user_id, email, data')
+      .select('id, data')
       .eq('id', id)
-      .single();
+      .or(accessFilter)
+      .maybeSingle();
 
     if (fetchError) {
       console.error('Error fetching notification:', fetchError);
@@ -80,61 +90,6 @@ export async function PATCH(
       );
     }
 
-    // Additional verification: ensure this notification belongs to current user
-    // Check both user_id and email to handle email-based notifications
-
-    // Try to get user email from auth.users (more reliable)
-    const { data: authUser } = await supabase.auth.getUser();
-    let userEmail = authUser.user?.email;
-
-    // Fallback: try from user_private_details
-    if (!userEmail) {
-      const { data: currentUserData, error: userError } = await supabase
-        .from('users')
-        .select('email:user_private_details(email)')
-        .eq('id', user.id)
-        .single();
-
-      if (userError) {
-        console.error('Error fetching user email:', userError);
-      }
-
-      userEmail = (currentUserData?.email as any)?.[0]?.email;
-    }
-
-    // Check ownership: user_id matches OR email matches
-    const userIdMatches = notification.user_id === user.id;
-    const emailMatches =
-      notification.email &&
-      userEmail &&
-      notification.email.toLowerCase() === userEmail.toLowerCase();
-    const belongsToUser = userIdMatches || emailMatches;
-
-    console.log('Metadata update ownership check:', {
-      notification_id: notification.id,
-      notification_user_id: notification.user_id,
-      notification_email: notification.email,
-      current_user_id: user.id,
-      current_user_email: userEmail,
-      userIdMatches,
-      emailMatches,
-      belongsToUser,
-    });
-
-    if (!belongsToUser) {
-      return NextResponse.json(
-        {
-          error: 'Notification not found or access denied',
-          debug: {
-            notification_email: notification.email,
-            your_email: userEmail,
-            matches: emailMatches,
-          },
-        },
-        { status: 404 }
-      );
-    }
-
     // Merge new metadata with existing data
     const updatedData = {
       ...(typeof notification.data === 'object' && notification.data !== null
@@ -143,18 +98,26 @@ export async function PATCH(
       ...validatedMetadata.data,
     } as Record<string, unknown>;
 
-    // Update the notification
-    // RLS policies handle access control, we just need to match by id
-    const { error: updateError } = await supabase
+    const { data: updatedNotification, error: updateError } = await sbAdmin
       .from('notifications')
       .update({ data: updatedData as any })
-      .eq('id', id);
+      .eq('id', id)
+      .or(accessFilter)
+      .select('id')
+      .maybeSingle();
 
     if (updateError) {
       console.error('Error updating notification metadata:', updateError);
       return NextResponse.json(
         { error: 'Failed to update notification metadata' },
         { status: 500 }
+      );
+    }
+
+    if (!updatedNotification) {
+      return NextResponse.json(
+        { error: 'Notification not found' },
+        { status: 404 }
       );
     }
 

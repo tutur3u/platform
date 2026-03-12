@@ -1,5 +1,8 @@
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { ZodError } from 'zod';
@@ -189,8 +192,9 @@ export async function GET(
     const access = await requireWorkspaceAccess(request, await params);
     if ('error' in access) return access.error;
 
-    const { supabase, wsId, taskId } = access;
-    const { task, error } = await getWorkspaceTask(supabase, wsId, taskId);
+    const { wsId, taskId } = access;
+    const sbAdmin = await createAdminClient();
+    const { task, error } = await getWorkspaceTask(sbAdmin, wsId, taskId);
 
     if (error) {
       console.error('Error loading task:', error);
@@ -230,8 +234,9 @@ export async function PUT(
     if ('error' in access) return access.error;
 
     const { supabase, wsId, taskId } = access;
+    const sbAdmin = await createAdminClient();
     const body = updateTaskSchema.parse(await request.json());
-    const { task, error } = await getWorkspaceTask(supabase, wsId, taskId);
+    const { task, error } = await getWorkspaceTask(sbAdmin, wsId, taskId);
 
     if (error) {
       console.error('Error loading task before update:', error);
@@ -392,7 +397,7 @@ export async function PUT(
     const expectedListId =
       body.list_id !== undefined ? body.list_id : task.list_id;
 
-    const { data: updatedTaskRow, error: updateError } = (await supabase
+    const { data: updatedTaskRow, error: updateError } = (await sbAdmin
       .rpc('update_task_with_relations', {
         p_task_id: taskId,
         p_task_updates: updatePayload,
@@ -424,7 +429,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
-    const updatedTaskResult = await getWorkspaceTask(supabase, wsId, taskId);
+    const updatedTaskResult = await getWorkspaceTask(sbAdmin, wsId, taskId);
 
     if (updatedTaskResult.error) {
       console.error('Error reloading updated task:', updatedTaskResult.error);
@@ -466,8 +471,9 @@ export async function DELETE(
     const access = await requireWorkspaceAccess(request, await params);
     if ('error' in access) return access.error;
 
-    const { supabase, wsId, taskId } = access;
-    const { task, error } = await getWorkspaceTask(supabase, wsId, taskId);
+    const { wsId, taskId } = access;
+    const sbAdmin = await createAdminClient();
+    const { task, error } = await getWorkspaceTask(sbAdmin, wsId, taskId);
 
     if (error) {
       console.error('Error loading task before delete:', error);
@@ -491,7 +497,7 @@ export async function DELETE(
       );
     }
 
-    const { data: deletedTaskRow, error: deleteError } = await supabase
+    const { data: deletedTaskRow, error: deleteError } = await sbAdmin
       .from('tasks')
       .delete()
       .eq('id', taskId)
@@ -542,10 +548,11 @@ export async function PATCH(
     const access = await requireWorkspaceAccess(request, await params);
     if ('error' in access) return access.error;
 
-    const { supabase, wsId, taskId } = access;
+    const { wsId, taskId } = access;
+    const sbAdmin = await createAdminClient();
     restoreTaskSchema.parse(await request.json());
 
-    const { task, error } = await getWorkspaceTask(supabase, wsId, taskId);
+    const { task, error } = await getWorkspaceTask(sbAdmin, wsId, taskId);
 
     if (error) {
       console.error('Error loading task before restore:', error);
@@ -566,7 +573,7 @@ export async function PATCH(
       );
     }
 
-    const { data: restoredTaskRow, error: restoreError } = await supabase
+    const { data: restoredTaskRow, error: restoreError } = await sbAdmin
       .from('tasks')
       .update({ deleted_at: null })
       .eq('id', taskId)

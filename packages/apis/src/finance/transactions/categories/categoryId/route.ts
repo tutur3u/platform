@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -18,7 +18,6 @@ const TransactionCategoryUpdateSchema = z.object({
 });
 
 export async function GET(req: Request, { params }: Params) {
-  const supabase = await createClient(req);
   const { categoryId, wsId } = await params;
 
   const permissions = await getPermissions({
@@ -39,7 +38,9 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  const { data, error } = await supabase
+  const sbAdmin = await createAdminClient();
+
+  const { data, error } = await sbAdmin
     .from('transaction_categories')
     .select('*')
     .eq('id', categoryId)
@@ -89,9 +90,9 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-  const supabase = await createClient(req);
+  const sbAdmin = await createAdminClient();
 
-  const { error } = await supabase
+  const { error } = await sbAdmin
     .from('transaction_categories')
     .update(data)
     .eq('id', categoryId)
@@ -109,7 +110,7 @@ export async function PUT(req: Request, { params }: Params) {
 }
 
 export async function DELETE(req: Request, { params }: Params) {
-  const supabase = await createClient(req);
+  const sbAdmin = await createAdminClient();
   const { categoryId, wsId } = await params;
 
   const permissions = await getPermissions({
@@ -130,7 +131,7 @@ export async function DELETE(req: Request, { params }: Params) {
     );
   }
 
-  const { error } = await supabase
+  const { error } = await sbAdmin
     .from('transaction_categories')
     .delete()
     .eq('id', categoryId)

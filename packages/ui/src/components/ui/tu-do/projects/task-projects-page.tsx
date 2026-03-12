@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { TaskProjectsClient } from '@tuturuuu/ui/tu-do/projects/task-projects-client';
 import type {
   ProjectHealth,
@@ -38,7 +38,7 @@ export default async function TaskProjectsPage({ params }: Props) {
   const { withoutPermission } = permissions;
   if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
 
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
   const t = await getTranslations('task-projects');
 
   const { data: projects, error: projectsError } = await supabase

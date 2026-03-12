@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { MAX_LONG_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -23,6 +26,7 @@ export async function PATCH(
   try {
     const { wsId, id: requestId, commentId } = await params;
     const supabase = await createClient(request);
+    const sbAdmin = await createAdminClient();
 
     // Get current user
     const {
@@ -34,12 +38,19 @@ export async function PATCH(
     }
 
     // Verify user has access to workspace
-    const { data: membership } = await supabase
+    const { data: membership, error: membershipError } = await supabase
       .from('workspace_members')
       .select('ws_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
       .single();
+
+    if (membershipError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
 
     if (!membership) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -50,7 +61,7 @@ export async function PATCH(
     const { content } = updateCommentSchema.parse(body);
 
     // Get comment to verify ownership and time window
-    const { data: existingComment } = await supabase
+    const { data: existingComment } = await sbAdmin
       .from('time_tracking_request_comments')
       .select('user_id, created_at')
       .eq('id', commentId)
@@ -80,7 +91,7 @@ export async function PATCH(
     }
 
     // Update comment
-    const { data: updatedComment, error: updateError } = await supabase
+    const { data: updatedComment, error: updateError } = await sbAdmin
       .from('time_tracking_request_comments')
       .update({
         content,
@@ -134,6 +145,7 @@ export async function DELETE(
   try {
     const { wsId, id: requestId, commentId } = await params;
     const supabase = await createClient(request);
+    const sbAdmin = await createAdminClient();
 
     // Get current user
     const {
@@ -145,19 +157,26 @@ export async function DELETE(
     }
 
     // Verify workspace membership
-    const { data: membership } = await supabase
+    const { data: membership, error: membershipError } = await supabase
       .from('workspace_members')
       .select('ws_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
       .single();
 
+    if (membershipError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
     if (!membership) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Get comment to verify ownership and time window
-    const { data: existingComment } = await supabase
+    const { data: existingComment } = await sbAdmin
       .from('time_tracking_request_comments')
       .select('user_id, created_at')
       .eq('id', commentId)
@@ -187,7 +206,7 @@ export async function DELETE(
     }
 
     // Delete comment
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await sbAdmin
       .from('time_tracking_request_comments')
       .delete()
       .eq('id', commentId);

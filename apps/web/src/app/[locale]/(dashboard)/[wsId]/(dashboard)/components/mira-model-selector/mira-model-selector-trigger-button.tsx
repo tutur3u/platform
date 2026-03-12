@@ -2,28 +2,41 @@
 
 import { ChevronDown } from '@tuturuuu/icons';
 import type { AIModelUI } from '@tuturuuu/types';
-import { Button } from '@tuturuuu/ui/button';
+import { type ButtonProps, buttonVariants } from '@tuturuuu/ui/button';
+import { cn } from '@tuturuuu/utils/format';
+import { forwardRef } from 'react';
 import { ProviderLogo } from '../provider-logo';
 
 interface MiraModelSelectorTriggerButtonProps {
   defaultModelId: string | null;
-  disabled?: boolean;
   model: AIModelUI;
   modelDefaultBadgeLabel: string;
 }
 
-export function MiraModelSelectorTriggerButton({
-  defaultModelId,
-  disabled,
-  model,
-  modelDefaultBadgeLabel,
-}: MiraModelSelectorTriggerButtonProps) {
+export const MiraModelSelectorTriggerButton = forwardRef<
+  HTMLButtonElement,
+  MiraModelSelectorTriggerButtonProps & Omit<ButtonProps, 'children'>
+>(function MiraModelSelectorTriggerButton(
+  {
+    className,
+    defaultModelId,
+    model,
+    modelDefaultBadgeLabel,
+    type = 'button',
+    ...props
+  },
+  ref
+) {
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="h-8 min-w-0 max-w-full gap-2 rounded-full px-3 font-mono text-muted-foreground text-sm"
-      disabled={disabled}
+    <button
+      ref={ref}
+      type={type}
+      className={cn(
+        buttonVariants({ size: 'sm', variant: 'ghost' }),
+        'h-8 min-w-0 max-w-full gap-2 rounded-full px-3 font-mono text-muted-foreground text-sm',
+        className
+      )}
+      {...props}
     >
       <ProviderLogo provider={model.provider} size={16} />
       <span className="min-w-0 truncate">{model.label}</span>
@@ -33,6 +46,6 @@ export function MiraModelSelectorTriggerButton({
         </span>
       ) : null}
       <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-50" />
-    </Button>
+    </button>
   );
-}
+});

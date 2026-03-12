@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Agent, fetch as undiciFetch } from 'undici';
 import { DEV_MODE } from '@/constants/common';
-import { checkRateLimit, type RateLimitConfig } from '@/lib/api-middleware';
 
 // Custom dispatcher with increased header size limit (128KB)
 // This prevents HeadersOverflowError when external API returns many headers
@@ -51,47 +50,18 @@ function isValidApiPath(path: string): boolean {
   return true;
 }
 
-// Default rate limit for proxy: 60 requests per minute
-// Can be overridden via workspace secrets (RATE_LIMIT_WINDOW_MS, RATE_LIMIT_MAX_REQUESTS)
-const DEFAULT_PROXY_RATE_LIMIT: RateLimitConfig = {
-  windowMs: 60_000, // 1 minute
-  maxRequests: 60, // 60 requests per minute
-};
-
-/**
- * Extract IP address from request headers
- */
-function getClientIP(request: Request): string {
-  const headers = request.headers;
-  // Check common headers for client IP
-  const forwardedFor = headers.get('x-forwarded-for');
-  if (forwardedFor) {
-    return forwardedFor.split(',')[0]?.trim() ?? 'unknown';
-  }
-  const realIP = headers.get('x-real-ip');
-  if (realIP) {
-    return realIP;
-  }
-  return 'unknown';
-}
-
 /**
  * Proxy route to avoid CORS issues when fetching from Tuturuuu production API.
  *
  * The browser cannot directly call tuturuuu.com due to CORS restrictions.
  * This server-side proxy makes the request on behalf of the client.
  *
- * Rate Limited: Uses Redis-backed rate limiting with workspace-specific config support.
- * Default: 60 requests/minute per IP+API key combination.
- * Override via workspace_secrets: RATE_LIMIT_WINDOW_MS, RATE_LIMIT_MAX_REQUESTS
- *
  * Usage:
- *   GET /api/v1/proxy/tuturuuu?path=/workspaces/[id]&wsId=[targetWsId]&apiUrl=[customApiUrl]
+ *   GET /api/v1/proxy/tuturuuu?path=/workspaces/[id]&apiUrl=[customApiUrl]
  *   Headers: X-Tuturuuu-Api-Key: <api-key>
  *
  * Parameters:
  *   - path: API path to call (required)
- *   - wsId: Target workspace ID for rate limit config lookup (optional)
  *   - apiUrl: Custom Tuturuuu API base URL (optional, defaults to https://tuturuuu.com/api/v2)
  */
 export async function GET(request: Request) {
@@ -105,31 +75,9 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const path = searchParams.get('path');
-    const wsId = searchParams.get('wsId'); // Target workspace ID for rate limit config
     const apiUrl = searchParams.get('apiUrl'); // Custom API URL (optional)
-
-    // Get API key and client IP for rate limit key
     const apiKey = request.headers.get('X-Tuturuuu-Api-Key');
-    const clientIP = getClientIP(request);
-
-    // Create rate limit key from IP + truncated API key hash
-    // This prevents one user from affecting another's rate limit
-    const apiKeyHash = apiKey ? apiKey.substring(0, 8) : 'no-key';
-    const rateLimitKey = `proxy:tuturuuu:${clientIP}:${apiKeyHash}`;
-
-    // Check rate limit using Redis (with workspace-specific config if wsId provided)
-    const rateLimitResult = await checkRateLimit(
-      rateLimitKey,
-      DEFAULT_PROXY_RATE_LIMIT,
-      wsId ?? undefined
-    );
-
-    // If rate limit exceeded, checkRateLimit returns a NextResponse directly
-    if (!('allowed' in rateLimitResult)) {
-      return rateLimitResult;
-    }
-
-    const rateLimitHeaders = rateLimitResult.headers;
+    const rateLimitHeaders: Record<string, string> = {};
 
     if (!path) {
       return NextResponse.json(

@@ -82,6 +82,21 @@ type PendingInvoiceExportData = {
   wallet: null;
 };
 
+type CreatedInvoiceExportData = InvoiceExportRow & {
+  customer?: {
+    full_name?: string | null;
+    avatar_url?: string | null;
+  } | null;
+  creator?: {
+    display_name?: string | null;
+    full_name?: string | null;
+    email?: string | null;
+  } | null;
+  wallet?: {
+    name?: string | null;
+  } | null;
+};
+
 type PendingInvoiceRaw =
   Database['public']['Functions']['get_pending_invoices']['Returns'][number];
 type PendingInvoiceGroupedRaw =
@@ -331,7 +346,8 @@ export default function ExportDialogContent({
 
         const flattenedData: InvoiceExportRow[] = data.map((invoice) => {
           // Destructure out complex objects to prevent [object Object] in exports
-          const { customer, creator, wallet, ...rest } = invoice;
+          const { customer, creator, wallet, ...rest } =
+            invoice as CreatedInvoiceExportData;
 
           // Only include creator & wallet fields for created invoices
           if (invoiceType === 'created') {
@@ -350,7 +366,7 @@ export default function ExportDialogContent({
           }
 
           // For pending invoices, just return rest (user_name & user_avatar_url already included)
-          return rest as InvoiceExportRow;
+          return rest as unknown as InvoiceExportRow;
         });
 
         allData.push(...flattenedData);
@@ -463,7 +479,7 @@ export default function ExportDialogContent({
 async function getData(
   wsId: string,
   {
-    // q,
+    q,
     page = '1',
     pageSize = '10',
     start,
@@ -482,143 +498,46 @@ async function getData(
     walletIds?: string | string[];
   }
 ) {
-  const supabase = createClient();
+  const searchParams = new URLSearchParams({
+    page,
+    pageSize,
+  });
 
-  // Combine walletId and walletIds
-  let wallets = Array.isArray(walletIds)
+  if (q) searchParams.set('q', q);
+  if (start) searchParams.set('start', start);
+  if (end) searchParams.set('end', end);
+  if (walletId) searchParams.append('walletIds', walletId);
+
+  const normalizedUserIds = Array.isArray(userIds)
+    ? userIds
+    : userIds
+      ? [userIds]
+      : [];
+  const normalizedWalletIds = Array.isArray(walletIds)
     ? walletIds
     : walletIds
       ? [walletIds]
       : [];
-  if (walletId) wallets.push(walletId);
-  wallets = Array.from(new Set(wallets.filter(Boolean)));
 
-  // Build select query dynamically
-  let selectQuery =
-    '*, customer:workspace_users!customer_id(full_name, avatar_url), legacy_creator:workspace_users!creator_id(id, full_name, display_name, email, avatar_url), platform_creator:users!platform_creator_id(id, display_name, avatar_url, user_private_details(full_name, email))';
-
-  const walletJoinType = wallets.length > 0 ? '!inner' : '';
-  selectQuery += `, wallet_transactions!finance_invoices_transaction_id_fkey${walletJoinType}(wallet:workspace_wallets(name))`;
-
-  const queryBuilder = supabase
-    .from('finance_invoices')
-    .select(selectQuery, {
-      count: 'exact',
-    })
-    .eq('ws_id', wsId)
-    .order('created_at', { ascending: false });
-
-  let filteredQuery = queryBuilder;
-
-  if (start && end) {
-    filteredQuery = filteredQuery
-      .gte('created_at', start)
-      .lte('created_at', end);
+  for (const userId of normalizedUserIds.filter(Boolean)) {
+    searchParams.append('userIds', userId);
   }
 
-  if (userIds) {
-    const ids = Array.isArray(userIds) ? userIds : [userIds];
-    if (ids.length > 0) {
-      filteredQuery = filteredQuery.in('creator_id', ids);
-    }
+  for (const selectedWalletId of normalizedWalletIds.filter(Boolean)) {
+    searchParams.append('walletIds', selectedWalletId);
   }
 
-  if (wallets.length > 0) {
-    filteredQuery = filteredQuery.in('wallet_transactions.wallet_id', wallets);
-  }
-
-  if (page && pageSize) {
-    const parsedPage = parseInt(page, 10);
-    const parsedSize = parseInt(pageSize, 10);
-    const startRange = (parsedPage - 1) * parsedSize;
-    const endRange = parsedPage * parsedSize - 1;
-    filteredQuery = filteredQuery.range(startRange, endRange);
-  }
-
-  const { data: rawData, error, count } = await filteredQuery;
-  if (error) throw error;
-
-  interface FinanceInvoiceRow {
-    customer: {
-      full_name: string | null;
-      avatar_url: string | null;
-    } | null;
-    legacy_creator: {
-      id: string;
-      display_name: string | null;
-      full_name: string | null;
-      email: string | null;
-      avatar_url: string | null;
-    } | null;
-    platform_creator: {
-      id: string;
-      display_name: string | null;
-      avatar_url: string | null;
-      user_private_details: {
-        full_name: string | null;
-        email: string | null;
-      } | null;
-    } | null;
-    wallet_transactions:
-      | { wallet: { name: string } | null }
-      | { wallet: { name: string } | null }[]
-      | null;
-    [key: string]: unknown;
-  }
-
-  const data = ((rawData as unknown as FinanceInvoiceRow[]) || []).map(
-    (row) => {
-      const customer = row.customer;
-      const platformCreator = row.platform_creator;
-      const legacyCreator = row.legacy_creator;
-
-      const creator = {
-        id: platformCreator?.id ?? legacyCreator?.id ?? '',
-        display_name:
-          platformCreator?.display_name ??
-          legacyCreator?.display_name ??
-          platformCreator?.user_private_details?.email ??
-          null,
-        full_name:
-          platformCreator?.user_private_details?.full_name ??
-          legacyCreator?.full_name ??
-          null,
-        email:
-          platformCreator?.user_private_details?.email ??
-          legacyCreator?.email ??
-          null,
-        avatar_url:
-          platformCreator?.avatar_url ?? legacyCreator?.avatar_url ?? null,
-      };
-
-      const walletTransactions = row.wallet_transactions;
-
-      const wallet = walletTransactions
-        ? Array.isArray(walletTransactions)
-          ? walletTransactions[0]?.wallet
-            ? { name: walletTransactions[0].wallet.name }
-            : null
-          : walletTransactions.wallet
-            ? { name: walletTransactions.wallet.name }
-            : null
-        : null;
-
-      const {
-        customer: _customer,
-        legacy_creator: _legacy_creator,
-        platform_creator: _platform_creator,
-        wallet_transactions: _wallet_transactions,
-        ...rest
-      } = row;
-
-      return {
-        ...(rest as Record<string, unknown>),
-        customer,
-        creator,
-        wallet,
-      };
-    }
+  const response = await fetch(
+    `/api/v1/workspaces/${wsId}/finance/invoices?${searchParams.toString()}`,
+    { cache: 'no-store' }
   );
 
-  return { data, count: count || 0 };
+  if (!response.ok) {
+    throw new Error('Failed to fetch invoices for export');
+  }
+
+  return (await response.json()) as {
+    data: CreatedInvoiceExportData[];
+    count: number;
+  };
 }

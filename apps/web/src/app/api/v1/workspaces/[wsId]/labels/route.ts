@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -52,7 +55,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    const { data: labels, error } = await supabase
+    const sbAdmin = await createAdminClient();
+
+    const { data: labels, error } = await sbAdmin
       .from('workspace_task_labels')
       .select('*')
       .eq('ws_id', wsId)
@@ -119,7 +124,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Create the label
-    const { data: newLabel, error: createError } = await supabase
+    const sbAdmin = await createAdminClient();
+
+    const { data: newLabel, error: createError } = await sbAdmin
       .from('workspace_task_labels')
       .insert({
         name: name.trim(),

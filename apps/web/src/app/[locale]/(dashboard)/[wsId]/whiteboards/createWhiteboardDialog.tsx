@@ -1,6 +1,5 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
 import {
   Dialog,
   DialogContent,
@@ -37,28 +36,20 @@ export default function CreateWhiteboardDialog({
     setIsSubmitting(true);
 
     try {
-      const supabase = createClient();
-
-      // Get the current user
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError || !user) {
-        toast.error(t('error_must_be_logged_in'));
-        return;
-      }
-
-      // Create the whiteboard
-      const { error } = await supabase.from('workspace_whiteboards').insert({
-        title: normalizeWhiteboardTitle(values.title),
-        description: normalizeWhiteboardDescription(values.description),
-        ws_id: wsId,
-        creator_id: user.id,
+      const response = await fetch(`/api/v1/workspaces/${wsId}/whiteboards`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store',
+        body: JSON.stringify({
+          title: normalizeWhiteboardTitle(values.title),
+          description: normalizeWhiteboardDescription(values.description),
+        }),
       });
 
-      if (error) {
+      if (!response.ok) {
+        const error = await response.json().catch(() => null);
         console.error('Error creating whiteboard:', error);
         const errorKey = getWhiteboardMutationErrorKey(error);
         toast.error(errorKey ? t(errorKey) : t('create_whiteboard_error'));

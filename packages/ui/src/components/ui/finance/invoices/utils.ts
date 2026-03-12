@@ -1,3 +1,5 @@
+import type { Database } from '@tuturuuu/types';
+
 type AttendanceRecord = {
   status: string;
   date: string;
@@ -10,14 +12,11 @@ type AttendanceStats = {
   total: number;
 };
 
-export type WorkspaceUserGroup = {
-  id: string;
-  name?: string | null;
-  sessions?: string[] | null;
-};
+export type WorkspaceUserGroup =
+  Database['public']['Tables']['workspace_user_groups']['Row'];
 
 export type UserGroup = {
-  workspace_user_groups?: WorkspaceUserGroup | null;
+  workspace_user_groups: WorkspaceUserGroup | null;
 };
 
 type Invoice = {

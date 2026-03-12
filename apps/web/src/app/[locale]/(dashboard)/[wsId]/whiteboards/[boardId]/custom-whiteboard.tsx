@@ -219,18 +219,24 @@ export function CustomWhiteboard({
   const snapshotQuery = useQuery({
     queryKey: ['whiteboard-snapshot', wsId, boardId],
     queryFn: async () => {
-      const client = createClient();
-      const { data, error } = await client
-        .from('workspace_whiteboards')
-        .select('snapshot, updated_at')
-        .eq('id', boardId)
-        .eq('ws_id', wsId)
-        .maybeSingle();
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/whiteboards/${boardId}`,
+        { cache: 'no-store' }
+      );
 
-      if (error) {
+      if (!response.ok) {
+        const error = await response.json().catch(() => null);
         console.error('Failed to fetch whiteboard snapshot:', error);
-        throw error;
+        throw new Error(error?.error || 'Failed to fetch whiteboard snapshot');
       }
+
+      const payload = (await response.json()) as {
+        whiteboard?: {
+          snapshot?: string | null;
+          updated_at?: string | null;
+        };
+      };
+      const data = payload.whiteboard;
 
       return {
         snapshot: data?.snapshot as string | null | undefined,
@@ -443,15 +449,25 @@ export function CustomWhiteboard({
         appState: essentialAppState,
       };
 
-      const { error } = await supabase
-        .from('workspace_whiteboards')
-        .update({
-          snapshot: JSON.stringify(snapshot),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', boardId);
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/whiteboards/${boardId}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          cache: 'no-store',
+          body: JSON.stringify({
+            snapshot: JSON.stringify(snapshot),
+            updated_at: new Date().toISOString(),
+          }),
+        }
+      );
 
-      if (error) throw error;
+      if (!response.ok) {
+        const error = await response.json().catch(() => null);
+        throw new Error(error?.error || 'Failed to save whiteboard');
+      }
 
       lastSavedRef.current = JSON.stringify({ elements });
       pendingChangesRef.current = false;
@@ -470,7 +486,7 @@ export function CustomWhiteboard({
         },
       });
     }
-  }, [supabase, boardId]);
+  }, [boardId, wsId]);
 
   const triggerAutoSave = useCallback(() => {
     if (autoSaveTimeoutRef.current) {
@@ -597,15 +613,25 @@ export function CustomWhiteboard({
       }
 
       try {
-        const { error } = await supabase
-          .from('workspace_whiteboards')
-          .update({
-            title: trimmedTitle,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', boardId);
+        const response = await fetch(
+          `/api/v1/workspaces/${wsId}/whiteboards/${boardId}`,
+          {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            cache: 'no-store',
+            body: JSON.stringify({
+              title: trimmedTitle,
+              updated_at: new Date().toISOString(),
+            }),
+          }
+        );
 
-        if (error) throw error;
+        if (!response.ok) {
+          const error = await response.json().catch(() => null);
+          throw new Error(error?.error || 'Failed to update whiteboard');
+        }
         setEditedTitle(trimmedTitle);
       } catch (error) {
         console.error('Failed to save title:', error);
@@ -618,7 +644,7 @@ export function CustomWhiteboard({
         setEditedTitle(boardName);
       }
     },
-    [supabase, boardId, boardName, commonT]
+    [boardId, boardName, commonT, wsId]
   );
 
   const handleTitleChange = useCallback(

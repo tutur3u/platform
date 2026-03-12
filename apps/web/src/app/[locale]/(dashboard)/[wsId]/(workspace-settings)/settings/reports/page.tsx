@@ -1,20 +1,23 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import LeadGenerationPreview from '@tuturuuu/ui/custom/lead-generation-preview';
-import ReportPreview from '@tuturuuu/ui/custom/report-preview';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
-import type { ReactNode } from 'react';
 import { CustomDataTable } from '@/components/custom-data-table';
 import {
   leadGenerationConfigs,
   reportConfigs,
 } from '@/constants/configs/reports';
 import { configColumns } from './columns';
+import ReportPreviewClient from './report-preview-client';
+
+const REPORT_CONFIG_TRANSLATION_OVERRIDES: Partial<Record<string, string>> = {
+  LEAD_EMAIL_TITLE: 'ws-reports.lead_email_table_title',
+};
 
 export const metadata: Metadata = {
   title: 'Reports',
@@ -63,12 +66,23 @@ export default async function WorkspaceReportsSettingsPage({
 
   const locale = await getLocale();
   const t = await getTranslations();
+  const translateConfigName = (id?: string | null) => {
+    if (!id) return '';
+
+    const translator = t as typeof t & {
+      has?: (key: string) => boolean;
+    };
+    const key =
+      REPORT_CONFIG_TRANSLATION_OVERRIDES[id] ??
+      `ws-reports.${id.toLowerCase()}`;
+
+    return translator.has?.(key) ? translator(key as any) : id;
+  };
 
   const reportConfigsData = reportData.map((config) => ({
     ...config,
     ws_id: wsId,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    name: config?.id ? t(`ws-reports.${config.id.toLowerCase()}` as any) : '',
+    name: translateConfigName(config.id),
   }));
 
   const leadGenConfigsData = leadGenData
@@ -76,38 +90,8 @@ export default async function WorkspaceReportsSettingsPage({
     .map((config) => ({
       ...config,
       ws_id: wsId,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      name: t(`ws-reports.${config.id.toLowerCase()}` as any),
+      name: translateConfigName(config.id),
     }));
-
-  const getReportConfig = (id: string) =>
-    reportConfigsData.find((c) => c.id === id)?.value;
-
-  const parseDynamicText = (text?: string | null): ReactNode => {
-    if (!text) return '';
-
-    // Split the text into segments of dynamic keys and plain text
-    const segments = text.split(/({{.*?}})/g).filter(Boolean);
-
-    // Map over the segments, converting dynamic keys into <span> elements
-    const parsedText = segments.map((segment, index) => {
-      const match = segment.match(/{{(.*?)}}/);
-      if (match) {
-        const key = match?.[1]?.trim() || '';
-        return (
-          <span
-            key={key + index}
-            className="rounded bg-foreground px-1 py-0.5 font-semibold text-background"
-          >
-            {key}
-          </span>
-        );
-      }
-      return segment;
-    });
-
-    return parsedText;
-  };
 
   return (
     <>
@@ -142,12 +126,7 @@ export default async function WorkspaceReportsSettingsPage({
               }}
             />
 
-            <ReportPreview
-              t={t}
-              lang={locale}
-              parseDynamicText={parseDynamicText}
-              getConfig={getReportConfig}
-            />
+            <ReportPreviewClient lang={locale} configs={reportConfigsData} />
           </div>
         </TabsContent>
 

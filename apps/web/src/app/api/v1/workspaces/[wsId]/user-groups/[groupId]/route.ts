@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
@@ -9,13 +9,53 @@ interface Params {
   }>;
 }
 
+export async function GET(req: Request, { params }: Params) {
+  const { wsId, groupId } = await params;
+
+  const permissions = await getPermissions({ wsId, request: req });
+  if (!permissions) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+  const { withoutPermission } = permissions;
+  if (withoutPermission('view_user_groups')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to view user groups' },
+      { status: 403 }
+    );
+  }
+
+  const sbAdmin = await createAdminClient();
+  const { data, error } = await sbAdmin
+    .from('workspace_user_groups')
+    .select('id, name, sessions, starting_date, ending_date')
+    .eq('ws_id', wsId)
+    .eq('id', groupId)
+    .maybeSingle();
+
+  if (error) {
+    console.log(error);
+    return NextResponse.json(
+      { message: 'Error fetching workspace user group' },
+      { status: 500 }
+    );
+  }
+
+  if (!data) {
+    return NextResponse.json(
+      { message: 'Workspace user group not found' },
+      { status: 404 }
+    );
+  }
+
+  return NextResponse.json({ data });
+}
+
 export async function PUT(req: Request, { params }: Params) {
-  const supabase = await createClient();
   const data = await req.json();
   const { wsId, groupId } = await params;
 
   // Check permissions
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -27,7 +67,9 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-  const { error } = await supabase
+  const sbAdmin = await createAdminClient();
+
+  const { error } = await sbAdmin
     .from('workspace_user_groups')
     .update(data)
     .eq('id', groupId);
@@ -43,12 +85,11 @@ export async function PUT(req: Request, { params }: Params) {
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function DELETE(req: Request, { params }: Params) {
   const { wsId, groupId } = await params;
 
   // Check permissions
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -60,7 +101,9 @@ export async function DELETE(_: Request, { params }: Params) {
     );
   }
 
-  const { error } = await supabase
+  const sbAdmin = await createAdminClient();
+
+  const { error } = await sbAdmin
     .from('workspace_user_groups')
     .delete()
     .eq('id', groupId);

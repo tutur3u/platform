@@ -43,6 +43,7 @@ export async function PATCH(
 
     const { wsId, goalId } = parsedParams.data;
     const supabase = await createClient(request);
+    const sbAdmin = await createAdminClient();
 
     // Get authenticated user
     const {
@@ -57,12 +58,19 @@ export async function PATCH(
     const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Verify workspace access
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: memberCheckError } = await supabase
       .from('workspace_members')
       .select('id:user_id')
       .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (memberCheckError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(
@@ -72,13 +80,17 @@ export async function PATCH(
     }
 
     // Verify goal exists and belongs to user
-    const { data: goal } = await supabase
+    const { data: goal, error: goalError } = await sbAdmin
       .from('time_tracking_goals')
       .select('*')
       .eq('id', goalId)
       .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (goalError) {
+      throw goalError;
+    }
 
     if (!goal) {
       return NextResponse.json({ error: 'Goal not found' }, { status: 404 });
@@ -112,12 +124,19 @@ export async function PATCH(
 
     // Verify category exists if provided
     if (categoryId != null) {
-      const { data: categoryCheck } = await supabase
+      const { data: categoryCheck, error: categoryCheckError } = await sbAdmin
         .from('time_tracking_categories')
         .select('id')
         .eq('id', categoryId)
         .eq('ws_id', normalizedWsId)
-        .single();
+        .maybeSingle();
+
+      if (categoryCheckError) {
+        return NextResponse.json(
+          { error: 'Failed to verify category' },
+          { status: 500 }
+        );
+      }
 
       if (!categoryCheck) {
         return NextResponse.json(
@@ -146,9 +165,6 @@ export async function PATCH(
     if (isActive !== undefined) {
       updateData.is_active = isActive;
     }
-
-    // Use admin client for update
-    const sbAdmin = await createAdminClient();
 
     const { data, error } = await sbAdmin
       .from('time_tracking_goals')
@@ -194,6 +210,7 @@ export async function DELETE(
 
     const { wsId, goalId } = parsedParams.data;
     const supabase = await createClient(request);
+    const sbAdmin = await createAdminClient();
 
     // Get authenticated user
     const {
@@ -208,12 +225,19 @@ export async function DELETE(
     const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Verify workspace access
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: memberCheckError } = await supabase
       .from('workspace_members')
       .select('id:user_id')
       .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (memberCheckError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(
@@ -223,20 +247,22 @@ export async function DELETE(
     }
 
     // Verify goal exists and belongs to user
-    const { data: goal } = await supabase
+    const { data: goal, error: goalError } = await sbAdmin
       .from('time_tracking_goals')
       .select('id')
       .eq('id', goalId)
       .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (goalError) {
+      throw goalError;
+    }
 
     if (!goal) {
       return NextResponse.json({ error: 'Goal not found' }, { status: 404 });
     }
 
-    // Delete the goal
-    const sbAdmin = await createAdminClient();
     const { data: deletedGoals, error } = await sbAdmin
       .from('time_tracking_goals')
       .delete()

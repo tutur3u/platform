@@ -12,7 +12,6 @@ import {
   UserCheck,
   VenusAndMars,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -96,47 +95,22 @@ export default function GroupMembers({
       { canViewPersonalInfo, canViewPublicInfo },
     ],
     queryFn: async ({ pageParam }) => {
-      const supabase = createClient();
       const from = typeof pageParam === 'number' ? pageParam : 0;
-      const to = from + pageSize - 1;
-
-      const baseFields =
-        'id, display_name, full_name, avatar_url, archived, archived_until, note';
-      const publicFields = canViewPublicInfo ? ', birthday, gender' : '';
-      const personalFields = canViewPersonalInfo ? ', email, phone' : '';
-      const selectQuery = `workspace_users(${baseFields}${publicFields}${personalFields}), role`;
-
-      const { data: groupUsers, error: groupError } = await supabase
-        .from('workspace_user_groups_users')
-        .select(selectQuery)
-        .eq('group_id', groupId)
-        .range(from, to);
-
-      if (groupError) throw groupError;
-      if (!groupUsers || groupUsers.length === 0)
-        return { items: [], next: undefined };
-
-      const membersWithGuestStatus = await Promise.all(
-        groupUsers.map(async (user) => {
-          const typedUser = user as unknown as {
-            workspace_users: WorkspaceUser;
-            role: string | null;
-          };
-
-          const { data: isGuest } = await supabase.rpc('is_user_guest', {
-            user_uuid: typedUser.workspace_users.id,
-          });
-
-          return {
-            ...typedUser.workspace_users,
-            role: typedUser.role,
-            isGuest: isGuest || false,
-          } as GroupMember;
-        })
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/members?offset=${from}&limit=${pageSize}`,
+        { cache: 'no-store' }
       );
 
-      const next = groupUsers.length < pageSize ? undefined : to + 1;
-      return { items: membersWithGuestStatus, next } as {
+      if (!response.ok) {
+        throw new Error('Failed to fetch group members');
+      }
+
+      const payload = (await response.json()) as {
+        data?: GroupMember[];
+        next?: number;
+      };
+
+      return { items: payload.data ?? [], next: payload.next } as {
         items: GroupMember[];
         next?: number;
       };
@@ -209,13 +183,17 @@ export default function GroupMembers({
     if (!removeTarget) return;
     try {
       setRemoving(true);
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('workspace_user_groups_users')
-        .delete()
-        .eq('group_id', groupId)
-        .eq('user_id', removeTarget.id);
-      if (error) throw error;
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/members/${removeTarget.id}`,
+        {
+          method: 'DELETE',
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to remove group member');
+      }
       toast.success(t('common.removed'));
       setRemoveTarget(null);
       await queryClient.invalidateQueries({

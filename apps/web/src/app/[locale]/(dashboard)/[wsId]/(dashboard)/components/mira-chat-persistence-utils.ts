@@ -1,7 +1,6 @@
 'use client';
 
 import type { UIMessage } from '@tuturuuu/ai/types';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { AIChat } from '@tuturuuu/types';
 import type { MessageFileAttachment } from './file-preview-chips';
 
@@ -119,39 +118,35 @@ export async function loadExistingChat({
   wsId: string;
   storedChatId: string;
 }): Promise<RestoredChatPayload | null> {
-  const supabase = await createClient();
-  const { data: chatData, error: chatError } = await supabase
-    .from('ai_chats')
-    .select('id, title, model, is_public')
-    .eq('id', storedChatId)
-    .maybeSingle();
+  const restoreRes = await fetch('/api/ai/chat/restore', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chatId: storedChatId }),
+    cache: 'no-store',
+  });
 
-  if (chatError) {
+  if (!restoreRes.ok) {
     console.error(
-      '[Mira Chat] Error fetching ai_chats:',
-      chatError,
+      '[Mira Chat] Error restoring chat:',
+      await restoreRes.json().catch(() => ({})),
       'storedChatId:',
       storedChatId
     );
     return null;
   }
-  if (!chatData) return null;
 
-  const { data: messagesData, error: messagesError } = await supabase
-    .from('ai_chat_messages')
-    .select('id, role, content, metadata')
-    .eq('chat_id', storedChatId)
-    .order('created_at', { ascending: true });
-
-  if (messagesError) {
-    console.error(
-      '[Mira Chat] Error fetching ai_chat_messages:',
-      messagesError,
-      'storedChatId:',
-      storedChatId
-    );
-    return null;
-  }
+  const restorePayload = (await restoreRes.json()) as {
+    chat: Partial<AIChat>;
+    messages: Array<{
+      id: string;
+      role: string;
+      content: string | null;
+      metadata: unknown;
+    }>;
+  };
+  const chatData = restorePayload.chat;
+  const messagesData = restorePayload.messages;
 
   const restoredMessages = messagesData?.length
     ? restoreMessages(messagesData)

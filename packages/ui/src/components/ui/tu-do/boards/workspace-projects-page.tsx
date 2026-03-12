@@ -4,7 +4,7 @@ import {
   QueryClient,
 } from '@tanstack/react-query';
 import { Plus } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -56,7 +56,7 @@ async function getData(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   // Build the main query for boards
   const queryBuilder = supabase

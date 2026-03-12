@@ -94,8 +94,8 @@ describe('Supabase Server Client', () => {
       expect(cookieHandler.getAll()).toEqual([
         { name: 'test-cookie', value: 'test-value' },
       ]);
-      expect(() => client.from('tasks')).toThrow(
-        getProxyOnlyPublicTableError('tasks')
+      expect(() => client.from('mira_accessories')).toThrow(
+        getProxyOnlyPublicTableError('mira_accessories')
       );
     });
 
@@ -136,16 +136,19 @@ describe('Supabase Server Client', () => {
         })
       );
 
-      expect(client.from('tasks')).toEqual({ client: 'admin', table: 'tasks' });
-      expect(client.from('workspace_whiteboards')).toEqual({
+      expect(client.from('mira_accessories')).toEqual({
         client: 'admin',
-        table: 'workspace_whiteboards',
+        table: 'mira_accessories',
+      });
+      expect(client.from('workspace_calendars')).toEqual({
+        client: 'admin',
+        table: 'workspace_calendars',
       });
       expect(client.from('users')).toEqual({ client: 'user', table: 'users' });
-      expect(client.schema('public').from('tasks')).toEqual({
+      expect(client.schema('public').from('mira_accessories')).toEqual({
         client: 'admin',
         schema: 'public',
-        table: 'tasks',
+        table: 'mira_accessories',
       });
     });
 
@@ -169,12 +172,15 @@ describe('Supabase Server Client', () => {
         })
       );
 
-      expect(client.from('tasks')).toEqual({ client: 'admin', table: 'tasks' });
+      expect(client.from('mira_accessories')).toEqual({
+        client: 'admin',
+        table: 'mira_accessories',
+      });
       expect(client.from('users')).toEqual({ client: 'user', table: 'users' });
-      expect(client.schema('public').from('tasks')).toEqual({
+      expect(client.schema('public').from('mira_accessories')).toEqual({
         client: 'admin',
         schema: 'public',
-        table: 'tasks',
+        table: 'mira_accessories',
       });
     });
   });
@@ -222,11 +228,11 @@ describe('Supabase Server Client', () => {
           cookies: expect.any(Object),
         })
       );
-      expect(() => client.from('workspace_whiteboards')).toThrow(
-        getProxyOnlyPublicTableError('workspace_whiteboards')
+      expect(() => client.from('workspace_calendars')).toThrow(
+        getProxyOnlyPublicTableError('workspace_calendars')
       );
-      expect(() => client.from('ai_chat_messages')).toThrow(
-        getProxyOnlyPublicTableError('ai_chat_messages')
+      expect(() => client.from('mira_accessories')).toThrow(
+        getProxyOnlyPublicTableError('mira_accessories')
       );
     });
   });

@@ -573,6 +573,7 @@ export function TaskEditDialog({
     saveSchedulingSettings,
     schedulingSaving,
   } = useTaskMutations({
+    wsId,
     taskId: task?.id,
     isCreateMode,
     boardId,
@@ -598,10 +599,10 @@ export function TaskEditDialog({
     creatingLabel,
     creatingProject,
   } = useTaskRelationships({
+    wsId,
     taskId: task?.id,
     isCreateMode,
     boardId,
-    boardConfig,
     selectedLabels: formState.selectedLabels,
     selectedAssignees: formState.selectedAssignees,
     selectedProjects: formState.selectedProjects,

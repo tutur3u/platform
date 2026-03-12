@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { WalletForm } from '@tuturuuu/ui/finance/wallets/form';
@@ -93,8 +96,9 @@ async function getData(
   hasManageFinance: boolean
 ) {
   const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
-  const queryBuilder = supabase
+  const queryBuilder = sbAdmin
     .from('workspace_wallets')
     .select('*, credit_wallets(limit, statement_date, payment_date)', {
       count: 'exact',
@@ -111,7 +115,7 @@ async function getData(
     }
 
     // Get whitelisted wallet IDs by joining role members and role wallet whitelist
-    const { data: whitelistData } = await supabase
+    const { data: whitelistData } = await sbAdmin
       .from('workspace_role_wallet_whitelist')
       .select(
         'wallet_id, workspace_roles!inner(workspace_role_members!inner(user_id))'

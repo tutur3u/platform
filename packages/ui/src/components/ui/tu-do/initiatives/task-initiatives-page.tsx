@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { TaskInitiativesClient } from '@tuturuuu/ui/tu-do/initiatives/task-initiatives-client';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
@@ -54,7 +54,7 @@ export default async function TaskInitiativesPage({ params }: Props) {
   const { withoutPermission } = permissions;
   if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
 
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const { data: initiativesData, error } = await supabase
     .from('task_initiatives')

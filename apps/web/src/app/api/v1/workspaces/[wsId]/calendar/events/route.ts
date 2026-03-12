@@ -1,10 +1,14 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   MAX_CALENDAR_EVENT_DESCRIPTION_LENGTH,
   MAX_CALENDAR_EVENT_TITLE_LENGTH,
   MAX_COLOR_LENGTH,
   MAX_SEARCH_LENGTH,
 } from '@tuturuuu/utils/constants';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -25,6 +29,7 @@ const CreateEventSchema = z.object({
   end_at: z.string().datetime(),
   color: z.string().max(MAX_COLOR_LENGTH).optional(),
   locked: z.boolean().optional(),
+  task_id: z.string().uuid().nullable().optional(),
 });
 
 interface Params {
@@ -33,9 +38,62 @@ interface Params {
   }>;
 }
 
-export async function GET(request: Request, { params }: Params) {
+async function authorizeWorkspaceCalendarAccess(
+  request: Request,
+  rawWsId: string
+) {
   const supabase = await createClient(request);
-  const { wsId } = await params;
+  const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return {
+      error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+    };
+  }
+
+  const { data: membership, error: membershipError } = await supabase
+    .from('workspace_members')
+    .select('user_id')
+    .eq('ws_id', wsId)
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (membershipError) {
+    return {
+      error: NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      ),
+    };
+  }
+
+  if (!membership) {
+    return {
+      error: NextResponse.json(
+        { error: 'Workspace access denied' },
+        { status: 403 }
+      ),
+    };
+  }
+
+  return {
+    sbAdmin: await createAdminClient(),
+    wsId,
+  };
+}
+
+export async function GET(request: Request, { params }: Params) {
+  const access = await authorizeWorkspaceCalendarAccess(
+    request,
+    (await params).wsId
+  );
+  if ('error' in access) return access.error;
+  const { sbAdmin, wsId } = access;
 
   // Get the start_at and end_at from the URL
   const url = new URL(request.url);
@@ -52,7 +110,7 @@ export async function GET(request: Request, { params }: Params) {
   try {
     // Query events that overlap with the requested date range
     // Event overlaps if: event_start < end_at AND event_end > start_at
-    const query = supabase
+    const query = sbAdmin
       .from('workspace_calendar_events')
       .select('*')
       .eq('ws_id', wsId)
@@ -81,8 +139,12 @@ export async function GET(request: Request, { params }: Params) {
 }
 
 export async function POST(request: Request, { params }: Params) {
-  const supabase = await createClient(request);
-  const { wsId } = await params;
+  const access = await authorizeWorkspaceCalendarAccess(
+    request,
+    (await params).wsId
+  );
+  if ('error' in access) return access.error;
+  const { sbAdmin, wsId } = access;
 
   try {
     const body = await request.json();
@@ -103,7 +165,7 @@ export async function POST(request: Request, { params }: Params) {
       workspaceKey
     );
 
-    const { data, error } = await supabase
+    const { data, error } = await sbAdmin
       .from('workspace_calendar_events')
       .insert({
         title: encryptedFields.title,
@@ -113,6 +175,7 @@ export async function POST(request: Request, { params }: Params) {
         end_at: event.end_at,
         color: event.color || 'blue',
         locked: event.locked || false,
+        task_id: event.task_id ?? null,
         ws_id: wsId,
         is_encrypted: encryptedFields.is_encrypted,
       })

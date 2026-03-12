@@ -1,7 +1,4 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   MAX_LONG_TEXT_LENGTH,
   MAX_MEDIUM_TEXT_LENGTH,
@@ -107,9 +104,18 @@ async function getDataFromSession(
   req: NextRequest,
   { wsId }: { wsId: string }
 ) {
-  const supabase = await createClient();
+  const permissions = await getPermissions({
+    wsId,
+    request: req,
+  });
 
-  const mainQuery = supabase
+  if (!permissions) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const sbAdmin = await createAdminClient();
+
+  const mainQuery = sbAdmin
     .from('workspace_users')
     .select('*')
     .eq('ws_id', wsId);
@@ -172,13 +178,13 @@ export async function POST(req: Request, { params }: Params) {
 
   const data = validationResult.data;
 
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
   // Separate control flags from user payload
   // Do NOT allow archived or archived_until during creation
   const { is_guest, ...userPayload } = data ?? {};
 
   // Create user and get the new id
-  const { data: createdUser, error } = await supabase
+  const { data: createdUser, error } = await sbAdmin
     .from('workspace_users')
     .insert({
       ...userPayload,
@@ -198,7 +204,7 @@ export async function POST(req: Request, { params }: Params) {
   // If marked as guest, attach the user to the workspace's guest group
   let warning: string | undefined;
   if (is_guest && createdUser?.id) {
-    const { data: guestGroup, error: groupError } = await supabase
+    const { data: guestGroup, error: groupError } = await sbAdmin
       .from('workspace_user_groups')
       .select('id')
       .eq('ws_id', wsId)
@@ -207,7 +213,7 @@ export async function POST(req: Request, { params }: Params) {
 
     if (!groupError && guestGroup?.id) {
       // Insert relation; use upsert to handle case where trigger already assigned user to this group
-      const { error: linkError } = await supabase
+      const { error: linkError } = await sbAdmin
         .from('workspace_user_groups_users')
         .upsert(
           {

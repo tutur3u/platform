@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
 
 export interface WorkspaceUserGroup {
   id: string;
@@ -62,35 +61,23 @@ export function useWorkspaceUserGroups(
   return useQuery({
     queryKey: ['workspace-user-groups', wsId],
     queryFn: async () => {
-      const supabase = createClient();
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users/groups?page=1&pageSize=200`,
+        { cache: 'no-store' }
+      );
 
-      if (includeGuest) {
-        const { data, error } = await supabase
-          .from('workspace_user_groups')
-          .select('id, name, archived, is_guest')
-          .eq('ws_id', wsId)
-          .order('name', { ascending: true });
-
-        if (error) {
-          console.error('Error fetching workspace user groups:', error);
-          throw error;
-        }
-
-        return (data || []) as WorkspaceUserGroupWithGuest[];
-      } else {
-        const { data, error } = await supabase
-          .from('workspace_user_groups')
-          .select('id, name, archived')
-          .eq('ws_id', wsId)
-          .order('name', { ascending: true });
-
-        if (error) {
-          console.error('Error fetching workspace user groups:', error);
-          throw error;
-        }
-
-        return (data || []) as WorkspaceUserGroup[];
+      if (!response.ok) {
+        throw new Error('Failed to fetch workspace user groups');
       }
+
+      const payload = (await response.json()) as {
+        data?: WorkspaceUserGroupWithGuest[];
+      };
+      const groups = payload.data ?? [];
+
+      return includeGuest
+        ? groups
+        : groups.map(({ is_guest: _isGuest, ...group }) => group);
     },
     enabled: !!wsId,
     staleTime: 5 * 60 * 1000, // 5 minutes

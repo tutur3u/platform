@@ -1,5 +1,5 @@
 import { ArrowRight, Calendar, Clock } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
@@ -15,7 +15,7 @@ interface CompactCalendarSummaryProps {
 export default async function CompactCalendarSummary({
   wsId,
 }: CompactCalendarSummaryProps) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
   const t = await getTranslations('dashboard');
 
   const now = new Date();

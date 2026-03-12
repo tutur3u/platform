@@ -5,7 +5,10 @@
  * POST - Create new habit
  */
 
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { HabitInput } from '@tuturuuu/types/primitives/Habit';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
@@ -44,12 +47,19 @@ export async function GET(
     }
 
     // Verify workspace access
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: memberError } = await supabase
       .from('workspace_members')
       .select('user_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
       .single();
+
+    if (memberError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(
@@ -58,13 +68,15 @@ export async function GET(
       );
     }
 
+    const sbAdmin = await createAdminClient();
+
     // Parse query params
     const { searchParams } = new URL(request.url);
     const activeOnly = searchParams.get('active') !== 'false';
     const includeDeleted = searchParams.get('includeDeleted') === 'true';
 
     // Build query
-    let query = supabase
+    let query = sbAdmin
       .from('workspace_habits')
       .select('*')
       .eq('ws_id', wsId)
@@ -128,12 +140,19 @@ export async function POST(
     }
 
     // Verify workspace access
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: memberError } = await supabase
       .from('workspace_members')
       .select('user_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
       .single();
+
+    if (memberError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(
@@ -141,6 +160,8 @@ export async function POST(
         { status: 403 }
       );
     }
+
+    const sbAdmin = await createAdminClient();
 
     // Parse request body
     const body: HabitInput = await request.json();
@@ -242,7 +263,7 @@ export async function POST(
       auto_schedule: body.auto_schedule !== false,
     };
 
-    const { data: habit, error: createError } = await supabase
+    const { data: habit, error: createError } = await sbAdmin
       .from('workspace_habits')
       .insert(habitData)
       .select()

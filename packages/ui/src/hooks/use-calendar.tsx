@@ -1058,13 +1058,21 @@ export const CalendarProvider = ({
           .eq('event_id', eventId);
       }
 
-      // Delete the event
-      const { error } = await supabase
-        .from('workspace_calendar_events')
-        .delete()
-        .eq('id', eventId);
+      if (!ws?.id) {
+        throw new Error('No workspace selected');
+      }
 
-      if (error) throw error;
+      const deleteResponse = await fetch(
+        `/api/v1/workspaces/${ws.id}/calendar/events/${eventId}`,
+        {
+          method: 'DELETE',
+        }
+      );
+
+      if (!deleteResponse.ok) {
+        const errorData = await deleteResponse.json().catch(() => null);
+        throw new Error(errorData?.error || 'Failed to delete event');
+      }
 
       // Refresh the query cache after deleting an event
       refresh();
@@ -1124,7 +1132,9 @@ export const CalendarProvider = ({
         changesMade: boolean;
       }) => void
     ) => {
-      if (!googleEvents.length || !experimentalGoogleToken) return;
+      const workspaceId = ws?.id;
+      if (!workspaceId || !googleEvents.length || !experimentalGoogleToken)
+        return;
 
       // Get local events that are synced with Google Calendar
       const localGoogleEvents: CalendarEvent[] = events.filter(
@@ -1167,8 +1177,6 @@ export const CalendarProvider = ({
       // Handle events to delete
       if (eventsToDelete.length > 0) {
         changesMade = true;
-        const supabase = createClient();
-
         // Delete events in batches for better performance
         const batchSize = 10;
         for (let i = 0; i < eventsToDelete.length; i += batchSize) {
@@ -1186,14 +1194,23 @@ export const CalendarProvider = ({
           }
 
           try {
-            const { error } = await supabase
-              .from('workspace_calendar_events')
-              .delete()
-              .in('id', eventIds);
+            await Promise.all(
+              eventIds.map(async (eventId) => {
+                const response = await fetch(
+                  `/api/v1/workspaces/${workspaceId}/calendar/events/${eventId}`,
+                  {
+                    method: 'DELETE',
+                  }
+                );
 
-            if (error) {
-              // Failed to delete events batch
-            }
+                if (!response.ok) {
+                  const errorData = await response.json().catch(() => null);
+                  throw new Error(
+                    errorData?.error || 'Failed to delete calendar event'
+                  );
+                }
+              })
+            );
           } catch (_) {
             // Failed to delete events batch
           }
@@ -1312,7 +1329,6 @@ export const CalendarProvider = ({
           });
         }
 
-        const supabase = createClient();
         const batchSize = 5; // Smaller batch size for updates to be safer
 
         for (let i = 0; i < eventsToUpdate.length; i += batchSize) {
@@ -1331,35 +1347,20 @@ export const CalendarProvider = ({
           // Process each update one by one to ensure reliability
           for (const item of batch) {
             try {
-              // Use upsert with onConflict to handle race conditions
-              const { error } = await supabase
-                .from('workspace_calendar_events')
-                .update(item.data)
-                .eq('id', item.id);
-
-              if (error) {
-                // If there's an error, try a direct approach
-                // Fallback method - get the current event first
-                const { data: currentEvent } = await supabase
-                  .from('workspace_calendar_events')
-                  .select('*')
-                  .eq('id', item.id)
-                  .single();
-
-                if (currentEvent) {
-                  // Then update it
-                  const { error: fallbackError } = await supabase
-                    .from('workspace_calendar_events')
-                    .update({
-                      ...item.data,
-                      id: item.id, // Ensure ID is preserved
-                    })
-                    .eq('id', item.id);
-
-                  if (fallbackError) {
-                    // Failed to update event using fallback
-                  }
+              const response = await fetch(
+                `/api/v1/workspaces/${workspaceId}/calendar/events/${item.id}`,
+                {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(item.data),
                 }
+              );
+
+              if (!response.ok) {
+                const errorData = await response.json().catch(() => null);
+                throw new Error(
+                  errorData?.error || 'Failed to update calendar event'
+                );
               }
             } catch (_) {
               // Failed to update event
@@ -1380,7 +1381,6 @@ export const CalendarProvider = ({
           });
         }
 
-        const supabase = createClient();
         const batchSize = 10;
 
         for (let i = 0; i < eventsToInsert.length; i += batchSize) {
@@ -1397,26 +1397,25 @@ export const CalendarProvider = ({
           }
 
           try {
-            const { error } = await supabase
-              .from('workspace_calendar_events')
-              .insert(batch);
-
-            if (error) {
-              // Try inserting one by one as fallback
-              for (const event of batch) {
-                try {
-                  const { error: singleError } = await supabase
-                    .from('workspace_calendar_events')
-                    .insert(event);
-
-                  if (singleError) {
-                    // Failed to insert single event
+            await Promise.all(
+              batch.map(async (event) => {
+                const response = await fetch(
+                  `/api/v1/workspaces/${workspaceId}/calendar/events`,
+                  {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(event),
                   }
-                } catch (_) {
-                  // Failed to insert single event
+                );
+
+                if (!response.ok) {
+                  const errorData = await response.json().catch(() => null);
+                  throw new Error(
+                    errorData?.error || 'Failed to insert calendar event'
+                  );
                 }
-              }
-            }
+              })
+            );
           } catch (_) {
             // Failed to insert events batch
           }
@@ -1773,25 +1772,29 @@ export const CalendarProvider = ({
       const priority = String(task?.priority ?? 'normal');
       const eventColor = priorityColorMap[priority] || 'BLUE';
 
-      // Create calendar event with task_id for direct reference
-      const { data: event, error: eventError } = await supabase
-        .from('workspace_calendar_events')
-        .insert({
-          title: task?.name || 'Task',
-          start_at: startAt.toISOString(),
-          end_at: endAt.toISOString(),
-          ws_id: ws.id,
-          color: eventColor,
-          locked: true, // Mark as locked to prevent auto-scheduling from moving it
-          task_id: taskId, // Direct reference to task (added in migration)
-        })
-        .select()
-        .single();
+      const eventResponse = await fetch(
+        `/api/v1/workspaces/${ws.id}/calendar/events`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: task?.name || 'Task',
+            start_at: startAt.toISOString(),
+            end_at: endAt.toISOString(),
+            color: eventColor,
+            locked: true,
+            task_id: taskId,
+          }),
+        }
+      );
 
-      if (eventError) {
-        console.error('Failed to create calendar event:', eventError);
-        throw eventError;
+      if (!eventResponse.ok) {
+        const errorData = await eventResponse.json().catch(() => null);
+        console.error('Failed to create calendar event:', errorData);
+        throw new Error(errorData?.error || 'Failed to create calendar event');
       }
+
+      const event = (await eventResponse.json()) as CalendarEvent;
 
       // Create junction record to link task and event
       if (event) {

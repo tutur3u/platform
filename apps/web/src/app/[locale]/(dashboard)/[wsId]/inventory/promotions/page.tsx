@@ -1,5 +1,8 @@
 import { Settings } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { ProductPromotion } from '@tuturuuu/types/primitives/ProductPromotion';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -160,7 +163,7 @@ async function getData(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const queryBuilder = supabase
     .from('workspace_promotions')

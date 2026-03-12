@@ -1,5 +1,5 @@
 import { PlusIcon } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
@@ -59,7 +59,7 @@ export default async function WhiteboardsPage({
 }
 
 async function getWhiteboards(wsId: string): Promise<Whiteboard[]> {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const { data: whiteboards, error } = await supabase
     .from('workspace_whiteboards')
@@ -78,6 +78,7 @@ async function getWhiteboards(wsId: string): Promise<Whiteboard[]> {
 
   return whiteboards.map((whiteboard) => ({
     id: whiteboard.id,
+    wsId,
     title: whiteboard.title,
     description: whiteboard.description || undefined,
     dateCreated: new Date(whiteboard.created_at),

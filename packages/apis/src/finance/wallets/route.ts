@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
@@ -31,12 +34,14 @@ export async function GET(request: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
+  const sbAdmin = await createAdminClient();
+
   // Check if user has manage_finance permission
   const hasManageFinance = !withoutPermission('manage_finance');
 
   if (hasManageFinance) {
     // User has full access - return all wallets
-    const { data, error } = await supabase
+    const { data, error } = await sbAdmin
       .from('workspace_wallets')
       .select('*, credit_wallets(limit, statement_date, payment_date)')
       .eq('ws_id', wsId)
@@ -56,7 +61,7 @@ export async function GET(request: Request, { params }: Params) {
   // User doesn't have manage_finance - check wallet whitelist
 
   // Get user's role IDs
-  const { data: userRoles, error: rolesError } = await supabase
+  const { data: userRoles, error: rolesError } = await sbAdmin
     .from('workspace_role_members')
     .select('role_id')
     .eq('user_id', user.id);
@@ -76,7 +81,7 @@ export async function GET(request: Request, { params }: Params) {
   const roleIds = userRoles.map((r) => r.role_id);
 
   // Get whitelisted wallet IDs and their viewing windows
-  const { data: whitelistData, error: whitelistError } = await supabase
+  const { data: whitelistData, error: whitelistError } = await sbAdmin
     .from('workspace_role_wallet_whitelist')
     .select('wallet_id, viewing_window, custom_days')
     .in('role_id', roleIds);
@@ -97,7 +102,7 @@ export async function GET(request: Request, { params }: Params) {
   const walletIds = [...new Set(whitelistData.map((item) => item.wallet_id))];
 
   // Fetch wallet details
-  const { data: wallets, error: walletsError } = await supabase
+  const { data: wallets, error: walletsError } = await sbAdmin
     .from('workspace_wallets')
     .select('*, credit_wallets(limit, statement_date, payment_date)')
     .eq('ws_id', wsId)
@@ -194,7 +199,7 @@ function flattenCreditData(wallets: any[]) {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient(req);
+  const sbAdmin = await createAdminClient();
   const { wsId } = await params;
   const data: Wallet = await req.json();
 
@@ -232,7 +237,7 @@ export async function POST(req: Request, { params }: Params) {
     walletData.report_opt_in = data.report_opt_in;
   if (data.type) walletData.type = data.type;
 
-  const { data: upsertedWallet, error } = await supabase
+  const { data: upsertedWallet, error } = await sbAdmin
     .from('workspace_wallets')
     .upsert([walletData as never])
     .select('id')
@@ -248,14 +253,12 @@ export async function POST(req: Request, { params }: Params) {
 
   // Handle credit wallet data
   if (data.type === 'CREDIT' && upsertedWallet) {
-    const { error: creditError } = await supabase
-      .from('credit_wallets')
-      .upsert({
-        wallet_id: upsertedWallet.id,
-        statement_date: data.statement_date ?? 1,
-        payment_date: data.payment_date ?? 1,
-        limit: data.limit ?? 0,
-      });
+    const { error: creditError } = await sbAdmin.from('credit_wallets').upsert({
+      wallet_id: upsertedWallet.id,
+      statement_date: data.statement_date ?? 1,
+      payment_date: data.payment_date ?? 1,
+      limit: data.limit ?? 0,
+    });
 
     if (creditError) {
       console.log(creditError);

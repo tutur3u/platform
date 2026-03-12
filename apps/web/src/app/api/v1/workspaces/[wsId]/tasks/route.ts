@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   MAX_COLOR_LENGTH,
   MAX_TASK_DESCRIPTION_LENGTH,
@@ -8,6 +11,20 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { generateTaskEmbedding } from '@/lib/embeddings/generate-task-embedding';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
+
+const SORT_KEY_BASE_UNIT = 1000000;
+const SORT_KEY_DEFAULT = SORT_KEY_BASE_UNIT * 1000;
+let sortKeySequence = 0;
+
+function calculateEndSortKey(prevSortKey: number | null | undefined) {
+  sortKeySequence = (sortKeySequence % 999) + 1;
+
+  if (prevSortKey === null || prevSortKey === undefined) {
+    return SORT_KEY_DEFAULT + sortKeySequence;
+  }
+
+  return prevSortKey + SORT_KEY_BASE_UNIT + sortKeySequence;
+}
 
 const CreateTaskSchema = z.object({
   name: z.string().min(1).max(MAX_TASK_NAME_LENGTH),
@@ -90,6 +107,8 @@ export async function GET(
       );
     }
 
+    const sbAdmin = await createAdminClient();
+
     const url = new URL(request.url);
 
     const parsedLimit = Number.parseInt(
@@ -109,12 +128,13 @@ export async function GET(
       Number.isFinite(parsedOffset) && parsedOffset >= 0 ? parsedOffset : 0;
     const boardId = url.searchParams.get('boardId');
     const listId = url.searchParams.get('listId');
+    const searchQuery = url.searchParams.get('q')?.trim();
 
     // Check if this is a request for time tracking (indicated by limit=100 and no specific filters)
     const isTimeTrackingRequest = limit === 100 && !boardId && !listId;
 
     // Build the query for fetching tasks with relation details plus IDs.
-    let query = supabase
+    let query = sbAdmin
       .from('tasks')
       .select(
         `
@@ -181,6 +201,10 @@ export async function GET(
       query = query.eq('list_id', listId);
     } else if (boardId) {
       query = query.eq('task_lists.board_id', boardId);
+    }
+
+    if (searchQuery) {
+      query = query.ilike('name', `%${searchQuery}%`);
     }
 
     // Apply ordering and pagination
@@ -334,6 +358,8 @@ export async function POST(
       );
     }
 
+    const sbAdmin = await createAdminClient();
+
     const body = await request.json();
     const validatedData = CreateTaskSchema.parse(body);
     const {
@@ -364,8 +390,112 @@ export async function POST(
       );
     }
 
+    if (label_ids && label_ids.length > 0) {
+      const { data: labels, error: labelsError } = await supabase
+        .from('workspace_task_labels')
+        .select('id')
+        .eq('ws_id', normalizedWorkspaceId)
+        .in('id', label_ids);
+
+      if (labelsError) {
+        console.error('Error validating labels:', labelsError);
+        return NextResponse.json(
+          { error: 'Failed to validate task labels' },
+          { status: 500 }
+        );
+      }
+
+      const validLabelIds = new Set((labels ?? []).map((label) => label.id));
+      const hasInvalidLabel = label_ids.some(
+        (labelId) => !validLabelIds.has(labelId)
+      );
+
+      if (hasInvalidLabel) {
+        return NextResponse.json(
+          { error: 'One or more labels do not belong to this workspace' },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (project_ids && project_ids.length > 0) {
+      const { data: projects, error: projectsError } = await supabase
+        .from('task_projects')
+        .select('id')
+        .eq('ws_id', normalizedWorkspaceId)
+        .in('id', project_ids);
+
+      if (projectsError) {
+        console.error('Error validating projects:', projectsError);
+        return NextResponse.json(
+          { error: 'Failed to validate task projects' },
+          { status: 500 }
+        );
+      }
+
+      const validProjectIds = new Set(
+        (projects ?? []).map((project) => project.id)
+      );
+      const hasInvalidProject = project_ids.some(
+        (projectId) => !validProjectIds.has(projectId)
+      );
+
+      if (hasInvalidProject) {
+        return NextResponse.json(
+          { error: 'One or more projects do not belong to this workspace' },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (assignee_ids && assignee_ids.length > 0) {
+      const { data: members, error: membersError } = await supabase
+        .from('workspace_members')
+        .select('user_id')
+        .eq('ws_id', normalizedWorkspaceId)
+        .in('user_id', assignee_ids);
+
+      if (membersError) {
+        console.error('Error validating assignees:', membersError);
+        return NextResponse.json(
+          { error: 'Failed to validate task assignees' },
+          { status: 500 }
+        );
+      }
+
+      const validAssigneeIds = new Set(
+        (members ?? []).map((member) => member.user_id)
+      );
+      const hasInvalidAssignee = assignee_ids.some(
+        (assigneeId) => !validAssigneeIds.has(assigneeId)
+      );
+
+      if (hasInvalidAssignee) {
+        return NextResponse.json(
+          { error: 'One or more assignees are not in this workspace' },
+          { status: 400 }
+        );
+      }
+    }
+
     // Create the task
-    const { data, error } = await supabase
+    const { data: existingTasks, error: tasksError } = await sbAdmin
+      .from('tasks')
+      .select('sort_key')
+      .eq('list_id', listId)
+      .is('deleted_at', null)
+      .order('sort_key', { ascending: false })
+      .limit(1);
+
+    if (tasksError) {
+      console.error('Database error in task sort key query:', tasksError);
+      throw new Error('TASKS_SORT_KEY_QUERY_FAILED');
+    }
+
+    const highestSortKey = existingTasks?.[0]?.sort_key ?? null;
+    const newSortKey = calculateEndSortKey(highestSortKey);
+
+    const { data, error } = await sbAdmin
       .from('tasks')
       .insert({
         name: taskName.trim(),
@@ -375,6 +505,7 @@ export async function POST(
         start_date: start_date || null,
         end_date: end_date || null,
         estimation_points: estimation_points || null,
+        sort_key: newSortKey,
         created_at: new Date().toISOString(),
         deleted_at: null,
         completed: false,
@@ -415,7 +546,7 @@ export async function POST(
         label_id: labelId,
       }));
 
-      const { error: labelError } = await supabase
+      const { error: labelError } = await sbAdmin
         .from('task_labels')
         .insert(labelInserts);
 
@@ -432,7 +563,7 @@ export async function POST(
         project_id: projectId,
       }));
 
-      const { error: projectError } = await supabase
+      const { error: projectError } = await sbAdmin
         .from('task_project_tasks')
         .insert(projectInserts);
 
@@ -453,7 +584,7 @@ export async function POST(
         user_id: assigneeId,
       }));
 
-      const { error: assigneeError } = await supabase
+      const { error: assigneeError } = await sbAdmin
         .from('task_assignees')
         .insert(assigneeInserts);
 
@@ -468,7 +599,7 @@ export async function POST(
       taskId: data.id,
       taskName: data.name,
       taskDescription: data.description,
-      supabase,
+      supabase: sbAdmin,
     }).catch((err) => {
       console.error('Failed to generate embedding in background:', err);
     });

@@ -85,8 +85,10 @@ export function StandardInvoice({
   const { data: availablePromotions = [], isLoading: promotionsLoading } =
     useAvailablePromotions(wsId, selectedUserId);
   const { data: promotionsAllowed = true } = useInvoicePromotionConfig(wsId);
-  const { data: linkedPromotions = [] } =
-    useUserLinkedPromotions(selectedUserId);
+  const { data: linkedPromotions = [] } = useUserLinkedPromotions(
+    wsId,
+    selectedUserId
+  );
   const { data: referralDiscountRows = [] } = useUserReferralDiscounts(
     wsId,
     selectedUserId
@@ -97,8 +99,10 @@ export function StandardInvoice({
 
   // Blocked groups check
   const { data: blockedGroupIds = [] } = useInvoiceBlockedGroups(wsId);
-  const { data: userGroups = [], isLoading: userGroupsLoading } =
-    useUserGroups(selectedUserId);
+  const { data: userGroups = [], isLoading: userGroupsLoading } = useUserGroups(
+    wsId,
+    selectedUserId
+  );
 
   const isBlocked = useMemo(() => {
     if (

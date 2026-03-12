@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -42,7 +45,9 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  const { data, error } = await supabase
+  const sbAdmin = await createAdminClient();
+
+  const { data, error } = await sbAdmin
     .rpc('get_transaction_categories_with_amount_by_workspace', {
       p_ws_id: normalizedWsId,
     })
@@ -92,7 +97,9 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const { data: res, error } = await supabase
+  const sbAdmin = await createAdminClient();
+
+  const { data: res, error } = await sbAdmin
     .from('transaction_categories')
     .insert({
       ws_id: normalizedwsId,

@@ -1,6 +1,5 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
 import {
   Dialog,
   DialogContent,
@@ -38,18 +37,23 @@ export default function EditWhiteboardDialog({
     setIsSubmitting(true);
 
     try {
-      const supabase = createClient();
+      const response = await fetch(
+        `/api/v1/workspaces/${whiteboard.wsId}/whiteboards/${whiteboard.id}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          cache: 'no-store',
+          body: JSON.stringify({
+            title: normalizeWhiteboardTitle(values.title),
+            description: normalizeWhiteboardDescription(values.description),
+          }),
+        }
+      );
 
-      // Update the whiteboard
-      const { error } = await supabase
-        .from('workspace_whiteboards')
-        .update({
-          title: normalizeWhiteboardTitle(values.title),
-          description: normalizeWhiteboardDescription(values.description),
-        })
-        .eq('id', whiteboard.id);
-
-      if (error) {
+      if (!response.ok) {
+        const error = await response.json().catch(() => null);
         console.error('Error updating whiteboard:', error);
         const errorKey = getWhiteboardMutationErrorKey(error);
         toast.error(errorKey ? t(errorKey) : t('update_whiteboard_error'));

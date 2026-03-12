@@ -159,16 +159,15 @@ export function useWorkspaceUserFields(wsId: string) {
   return useQuery({
     queryKey: ['workspace-user-fields', wsId],
     queryFn: async (): Promise<WorkspaceUserField[]> => {
-      const supabase = createClient();
+      const response = await fetch(`/api/v1/workspaces/${wsId}/users/fields`, {
+        cache: 'no-store',
+      });
 
-      const { data, error } = await supabase
-        .from('workspace_user_fields')
-        .select('*')
-        .eq('ws_id', wsId)
-        .order('created_at', { ascending: false });
+      if (!response.ok) {
+        throw new Error('Failed to fetch workspace user fields');
+      }
 
-      if (error) throw error;
-      return data as WorkspaceUserField[];
+      return (await response.json()) as WorkspaceUserField[];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes

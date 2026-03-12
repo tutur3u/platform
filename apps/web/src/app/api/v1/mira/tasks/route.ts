@@ -4,13 +4,7 @@
  */
 
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { extractIPFromHeaders } from '@tuturuuu/utils/abuse-protection';
 import { NextResponse } from 'next/server';
-import {
-  buildMiraReadRateLimitKey,
-  checkRateLimit,
-  MIRA_READ_RATE_LIMIT,
-} from '@/lib/rate-limit';
 
 interface RpcTask {
   task_id: string;
@@ -38,15 +32,6 @@ interface TaskList {
 
 export async function GET(request: Request) {
   try {
-    const ipAddress = extractIPFromHeaders(request.headers);
-    const rateLimitResult = await checkRateLimit(
-      buildMiraReadRateLimitKey('tasks', ipAddress),
-      MIRA_READ_RATE_LIMIT
-    );
-    if (!('allowed' in rateLimitResult)) {
-      return rateLimitResult;
-    }
-
     const { searchParams } = new URL(request.url);
     const wsId = searchParams.get('wsId');
     const isPersonal = searchParams.get('isPersonal') === 'true';

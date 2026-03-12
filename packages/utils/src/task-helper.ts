@@ -230,7 +230,11 @@ export async function createTaskList(
 export async function createTask(
   supabase: TypedSupabaseClient,
   listId: string,
-  task: Partial<Task>
+  task: Partial<Task> & {
+    label_ids?: string[];
+    assignee_ids?: string[];
+    project_ids?: string[];
+  }
 ) {
   // Validate required fields
   if (!task.name || task.name.trim().length === 0) {
@@ -266,6 +270,61 @@ export async function createTask(
 
   if (!listCheck) {
     throw new Error('List not found');
+  }
+
+  const listWorkspaceId =
+    typeof window !== 'undefined'
+      ? await (async () => {
+          const { data, error } = await supabase
+            .from('task_lists')
+            .select('workspace_boards!inner(ws_id)')
+            .eq('id', listId)
+            .single();
+
+          if (error) {
+            throw new Error(
+              `List not found or access denied: ${error.message || 'Unknown error'}`
+            );
+          }
+
+          return data?.workspace_boards?.ws_id ?? null;
+        })()
+      : null;
+
+  if (typeof window !== 'undefined' && listWorkspaceId) {
+    const response = await fetch(
+      `/api/v1/workspaces/${listWorkspaceId}/tasks`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: task.name.trim(),
+          description: task.description || null,
+          listId,
+          priority: task.priority || null,
+          start_date: task.start_date || null,
+          end_date: task.end_date || null,
+          estimation_points: task.estimation_points ?? null,
+          label_ids: task.label_ids ?? [],
+          assignee_ids: task.assignee_ids ?? [],
+          project_ids: task.project_ids ?? [],
+        }),
+        cache: 'no-store',
+      }
+    );
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => null);
+      const errorMessage = errorBody?.error || 'Failed to create task';
+      const enhancedError = new Error(errorMessage);
+      enhancedError.name = 'TaskCreationError';
+      throw enhancedError;
+    }
+
+    const result = (await response.json()) as { task: Task };
+    return result.task;
   }
 
   // Get the highest sort_key in the list to place new task at the end

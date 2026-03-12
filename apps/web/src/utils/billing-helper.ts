@@ -148,8 +148,12 @@ export async function fetchSubscription(
     .limit(1)
     .maybeSingle();
 
-  if (error || !dbSub) {
+  if (error) {
     console.error('Error fetching subscription:', error);
+    return null;
+  }
+
+  if (!dbSub) {
     return null;
   }
 

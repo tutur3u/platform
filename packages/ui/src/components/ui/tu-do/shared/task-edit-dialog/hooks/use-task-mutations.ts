@@ -9,6 +9,7 @@ import {
   getActiveBroadcast,
   useBoardBroadcast,
 } from '../../board-broadcast-context';
+import { updateWorkspaceTask } from './task-api';
 
 export interface SchedulingSettings {
   totalDuration: number | null;
@@ -20,6 +21,7 @@ export interface SchedulingSettings {
 }
 
 export interface UseTaskMutationsProps {
+  wsId: string;
   taskId?: string;
   isCreateMode: boolean;
   boardId: string;
@@ -62,6 +64,7 @@ const supabase = createClient();
  * Extracted from task-edit-dialog.tsx to improve maintainability
  */
 export function useTaskMutations({
+  wsId,
   taskId,
   isCreateMode,
   boardId,
@@ -114,13 +117,14 @@ export function useTaskMutations({
       );
 
       try {
-        const { error } = await supabase
-          .from('tasks')
-          .update({ estimation_points: points })
-          .eq('id', taskId);
-        if (error) throw error;
+        const { task } = await updateWorkspaceTask(wsId, taskId, {
+          estimation_points: points,
+        });
         broadcast?.('task:upsert', {
-          task: { id: taskId, estimation_points: points },
+          task: {
+            id: taskId,
+            estimation_points: task.estimation_points ?? points,
+          },
         });
         triggerRefresh();
       } catch (e: any) {
@@ -139,6 +143,7 @@ export function useTaskMutations({
     [
       estimationPoints,
       isCreateMode,
+      wsId,
       taskId,
       queryClient,
       boardId,
@@ -169,13 +174,14 @@ export function useTaskMutations({
       );
 
       try {
-        const { error } = await supabase
-          .from('tasks')
-          .update({ priority: newPriority })
-          .eq('id', taskId);
-        if (error) throw error;
+        const { task } = await updateWorkspaceTask(wsId, taskId, {
+          priority: newPriority,
+        });
         broadcast?.('task:upsert', {
-          task: { id: taskId, priority: newPriority },
+          task: {
+            id: taskId,
+            priority: task.priority ?? newPriority,
+          },
         });
         triggerRefresh();
       } catch (e: any) {
@@ -192,6 +198,7 @@ export function useTaskMutations({
     [
       priority,
       isCreateMode,
+      wsId,
       taskId,
       queryClient,
       boardId,
@@ -223,13 +230,14 @@ export function useTaskMutations({
       );
 
       try {
-        const { error } = await supabase
-          .from('tasks')
-          .update({ start_date: dateString })
-          .eq('id', taskId);
-        if (error) throw error;
+        const { task } = await updateWorkspaceTask(wsId, taskId, {
+          start_date: dateString,
+        });
         broadcast?.('task:upsert', {
-          task: { id: taskId, start_date: dateString },
+          task: {
+            id: taskId,
+            start_date: task.start_date ?? dateString,
+          },
         });
         triggerRefresh();
       } catch (e: any) {
@@ -245,6 +253,7 @@ export function useTaskMutations({
     },
     [
       isCreateMode,
+      wsId,
       taskId,
       queryClient,
       boardId,
@@ -276,13 +285,14 @@ export function useTaskMutations({
       );
 
       try {
-        const { error } = await supabase
-          .from('tasks')
-          .update({ end_date: dateString })
-          .eq('id', taskId);
-        if (error) throw error;
+        const { task } = await updateWorkspaceTask(wsId, taskId, {
+          end_date: dateString,
+        });
         broadcast?.('task:upsert', {
-          task: { id: taskId, end_date: dateString },
+          task: {
+            id: taskId,
+            end_date: task.end_date ?? dateString,
+          },
         });
         triggerRefresh();
       } catch (e: any) {
@@ -298,6 +308,7 @@ export function useTaskMutations({
     },
     [
       isCreateMode,
+      wsId,
       taskId,
       queryClient,
       boardId,
@@ -328,13 +339,9 @@ export function useTaskMutations({
       );
 
       try {
-        const { data: updatedTask, error } = await supabase
-          .from('tasks')
-          .update({ list_id: newListId })
-          .eq('id', taskId)
-          .select('id, completed_at, closed_at')
-          .single();
-        if (error) throw error;
+        const { task: updatedTask } = await updateWorkspaceTask(wsId, taskId, {
+          list_id: newListId,
+        });
         // Update sender's own cache with DB-computed timestamps
         queryClient.setQueryData(
           ['tasks', boardId],
@@ -378,6 +385,7 @@ export function useTaskMutations({
     [
       selectedListId,
       isCreateMode,
+      wsId,
       taskId,
       queryClient,
       boardId,
@@ -410,13 +418,11 @@ export function useTaskMutations({
       );
 
       try {
-        const { error } = await supabase
-          .from('tasks')
-          .update({ name: trimmedName })
-          .eq('id', taskId);
-        if (error) throw error;
+        const { task } = await updateWorkspaceTask(wsId, taskId, {
+          name: trimmedName,
+        });
         broadcast?.('task:upsert', {
-          task: { id: taskId, name: trimmedName },
+          task: { id: taskId, name: task.name ?? trimmedName },
         });
         triggerRefresh();
       } catch (e: any) {
@@ -432,6 +438,7 @@ export function useTaskMutations({
     },
     [
       taskName,
+      wsId,
       taskId,
       isCreateMode,
       queryClient,

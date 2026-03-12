@@ -4,7 +4,10 @@
  * POST - Mark an occurrence as completed/uncompleted
  */
 
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { Habit } from '@tuturuuu/types/primitives/Habit';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
@@ -35,6 +38,7 @@ export async function POST(
     }
 
     const supabase = await createClient();
+    const sbAdmin = await createAdminClient();
 
     // Get authenticated user
     const {
@@ -46,6 +50,27 @@ export async function POST(
       return NextResponse.json(
         { error: 'Please sign in to complete habits' },
         { status: 401 }
+      );
+    }
+
+    const { data: membership, error: membershipError } = await supabase
+      .from('workspace_members')
+      .select('user_id')
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (membershipError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
+    if (!membership) {
+      return NextResponse.json(
+        { error: "You don't have access to this workspace" },
+        { status: 403 }
       );
     }
 
@@ -69,7 +94,7 @@ export async function POST(
     }
 
     // Fetch habit
-    const { data: habit, error: habitError } = await supabase
+    const { data: habit, error: habitError } = await sbAdmin
       .from('workspace_habits')
       .select('*')
       .eq('id', habitId)
@@ -85,7 +110,7 @@ export async function POST(
 
     if (completed) {
       // Mark as completed - upsert into habit_completions
-      const { error: completionError } = await supabase
+      const { error: completionError } = await sbAdmin
         .from('habit_completions')
         .upsert(
           {
@@ -107,14 +132,14 @@ export async function POST(
       }
 
       // Also update the habit_calendar_events if there's a linked event
-      await supabase
+      await sbAdmin
         .from('habit_calendar_events')
         .update({ completed: true })
         .eq('habit_id', habitId)
         .eq('occurrence_date', body.occurrence_date);
     } else {
       // Mark as uncompleted - delete from habit_completions
-      const { error: deleteError } = await supabase
+      const { error: deleteError } = await sbAdmin
         .from('habit_completions')
         .delete()
         .eq('habit_id', habitId)
@@ -129,7 +154,7 @@ export async function POST(
       }
 
       // Also update the habit_calendar_events if there's a linked event
-      await supabase
+      await sbAdmin
         .from('habit_calendar_events')
         .update({ completed: false })
         .eq('habit_id', habitId)
@@ -137,7 +162,7 @@ export async function POST(
     }
 
     // Fetch updated streak
-    const streak = await fetchHabitStreak(supabase as any, habit as Habit);
+    const streak = await fetchHabitStreak(sbAdmin as any, habit as Habit);
 
     return NextResponse.json({
       success: true,

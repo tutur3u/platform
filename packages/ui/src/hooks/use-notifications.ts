@@ -72,6 +72,21 @@ interface UseNotificationsOptions {
   type?: NotificationType;
 }
 
+export function dedupeNotifications(
+  notifications: Notification[]
+): Notification[] {
+  const seen = new Set<string>();
+
+  return notifications.filter((notification) => {
+    if (seen.has(notification.id)) {
+      return false;
+    }
+
+    seen.add(notification.id);
+    return true;
+  });
+}
+
 /**
  * Hook to fetch notifications with pagination
  * @param wsId - If provided, filters to specific workspace. If omitted, fetches all notifications across all workspaces.
@@ -114,7 +129,12 @@ export function useNotifications({
       }
 
       const data = await response.json();
-      return data as NotificationsPage;
+      return {
+        ...(data as NotificationsPage),
+        notifications: dedupeNotifications(
+          ((data as NotificationsPage).notifications ?? []) as Notification[]
+        ),
+      } satisfies NotificationsPage;
     },
     staleTime: 30000,
     gcTime: 5 * 60 * 1000,
@@ -156,7 +176,11 @@ export function useInfiniteNotifications({
         cache: 'no-store',
       });
       if (!response.ok) throw new Error('Failed to fetch notifications');
-      return (await response.json()) as NotificationsPage;
+      const data = (await response.json()) as NotificationsPage;
+      return {
+        ...data,
+        notifications: dedupeNotifications(data.notifications ?? []),
+      } satisfies NotificationsPage;
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage) => {
