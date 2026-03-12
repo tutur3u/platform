@@ -75,6 +75,7 @@
     "@tuturuuu/apis": "workspace:*",
     "@tuturuuu/hooks": "workspace:*",
     "@tuturuuu/icons": "workspace:*",
+    "@tuturuuu/internal-api": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/trigger": "workspace:*",
     "@tuturuuu/utils": "workspace:*",

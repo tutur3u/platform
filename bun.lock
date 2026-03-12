@@ -453,6 +453,7 @@
         "@tuturuuu/auth": "workspace:*",
         "@tuturuuu/hooks": "workspace:*",
         "@tuturuuu/icons": "workspace:*",
+        "@tuturuuu/internal-api": "workspace:*",
         "@tuturuuu/satellite": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
@@ -855,6 +856,16 @@
       },
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",
+      },
+    },
+    "packages/internal-api": {
+      "name": "@tuturuuu/internal-api",
+      "version": "0.0.1",
+      "devDependencies": {
+        "@tuturuuu/typescript-config": "workspace:*",
+        "@types/node": "^25.4.0",
+        "typescript": "^5.9.3",
+        "vitest": "^4.0.18",
       },
     },
     "packages/masonry": {
@@ -2862,6 +2873,8 @@
     "@tuturuuu/hooks": ["@tuturuuu/hooks@workspace:packages/hooks"],
 
     "@tuturuuu/icons": ["@tuturuuu/icons@workspace:packages/icons"],
+
+    "@tuturuuu/internal-api": ["@tuturuuu/internal-api@workspace:packages/internal-api"],
 
     "@tuturuuu/masonry": ["@tuturuuu/masonry@workspace:packages/masonry"],
 
