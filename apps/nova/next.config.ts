@@ -7,7 +7,6 @@ const WEB_APP_URL =
   process.env.INTERNAL_WEB_API_ORIGIN ||
   process.env.NEXT_PUBLIC_WEB_APP_URL ||
   process.env.WEB_APP_URL ||
-  process.env.NEXT_PUBLIC_APP_URL ||
   (process.env.NODE_ENV === 'production'
     ? 'https://tuturuuu.com'
     : `http://localhost:${CENTRAL_PORT}`);

@@ -58,7 +58,6 @@ function getConfiguredBaseUrl() {
     process.env.INTERNAL_WEB_API_ORIGIN ||
     process.env.NEXT_PUBLIC_WEB_APP_URL ||
     process.env.WEB_APP_URL ||
-    process.env.NEXT_PUBLIC_APP_URL ||
     (process.env.NODE_ENV === 'production'
       ? 'https://tuturuuu.com'
       : 'http://localhost:7803')
@@ -124,7 +123,7 @@ export function createInternalApiClient(
 
       if (!response.ok) {
         const fallbackMessage = `Internal API request failed: ${response.status}`;
-        let message = fallbackMessage;
+        let message: string;
 
         try {
           const data = (await response.json()) as {
