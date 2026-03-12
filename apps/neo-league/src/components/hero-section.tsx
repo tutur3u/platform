@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import type { MouseEvent } from 'react';
 
@@ -21,8 +20,7 @@ export default function HeroSection() {
   };
 
   return (
-    <section className="relative flex min-h-screen items-center justify-center pb-9">
-      {/* Animated Blobs */}
+    <section className="relative flex min-h-screen items-center justify-center py-28 md:py-32">
       <div
         className="blob absolute -top-20 -right-20 h-64 w-64 animate-float"
         style={{ animationDelay: '2s' }}
@@ -34,14 +32,16 @@ export default function HeroSection() {
 
       <div className="relative mx-auto max-w-6xl px-6 text-center">
         <div className="flex flex-col items-center justify-center gap-8">
-          <div className="w-full max-w-lg">
-            <Image
-              src="/logo.png"
-              alt="RMIT NEO League 2026 — Innovation Humanity Challenge"
-              width={350}
-              height={100}
-              className="w-full"
-            />
+          <div className="aspect-3/1 w-full max-w-sm sm:max-w-md md:max-w-xl lg:max-w-2xl">
+            <video
+              autoPlay
+              muted
+              playsInline
+              className="h-full w-full object-cover"
+            >
+              <source src="/intro.mov" type="video/quicktime" />
+              <source src="/intro.webm" type="video/webm" />
+            </video>
           </div>
 
           <h1 className="sr-only">
