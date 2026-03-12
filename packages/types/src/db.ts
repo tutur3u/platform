@@ -33,6 +33,17 @@ export type InvoiceProduct = Tables<'finance_invoice_products'>;
 export type InvoicePromotion = Tables<'finance_invoice_promotions'>;
 export type Workspace = Tables<'workspaces'>;
 export type WorkspaceUser = Tables<'workspace_users'>;
+export type InternalApiWorkspaceSummary = Pick<
+  Workspace,
+  'id' | 'name' | 'personal' | 'avatar_url' | 'logo_url'
+>;
+export type InternalApiWorkspaceMember = Pick<
+  WorkspaceUser,
+  'id' | 'display_name' | 'email' | 'avatar_url'
+> & {
+  user_id?: string;
+  is_creator?: boolean;
+};
 export type WorkspacePromotion = Tables<'workspace_promotions'>;
 export type WorkspaceFlashcard = Tables<'workspace_flashcards'>;
 export type WorkspaceQuiz = Tables<'workspace_quizzes'>;
