@@ -53,7 +53,25 @@ export type WorkspaceTaskBoard = Tables<'workspace_boards'> & {
 export type WorkspaceTaskList = Tables<'task_lists'> & {
   tasks?: Partial<WorkspaceTask>[];
 };
+export type TaskListIdRow = Pick<Tables<'task_lists'>, 'id'>;
 export type WorkspaceTask = Tables<'tasks'>;
+export type RestorableTaskRow = Pick<Tables<'tasks'>, 'id' | 'list_id'>;
+export type WorkspaceTaskPickerRow = Pick<
+  Tables<'tasks'>,
+  | 'id'
+  | 'name'
+  | 'display_number'
+  | 'completed_at'
+  | 'closed_at'
+  | 'priority'
+  | 'board_id'
+> & {
+  list: {
+    board: {
+      name: string | null;
+    } | null;
+  } | null;
+};
 export type TaskLabel = Tables<'workspace_task_labels'>;
 export type TaskProject = Tables<'task_projects'>;
 export type TaskProjectUpdate = Tables<'task_project_updates'>;

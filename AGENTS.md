@@ -42,6 +42,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 - **Workspace Protocol**: Internal packages use `workspace:*`.
 - **Server Components**: Default to Server Components; use 'use client' only when state/interactivity is required.
 - **Type Inference**: Import extended types from `@tuturuuu/types/db`. Never hand-edit generated type files. Refrain from ad-hoc type definitions that duplicate DB types; extend them in `packages/types` if necessary.
+- **Shared DB Row Aliases**: If a query row shape is reused beyond a single inline callback, define/export it from `packages/types/src/db.ts` (and consume it through `@tuturuuu/types`) instead of recreating local `Pick<Database...>` aliases. For type-only Supabase usage, import `TypedSupabaseClient` from `@tuturuuu/supabase/types`, not `@tuturuuu/supabase/next/client`.
 
 ## 4. Canonical Workflows
 
