@@ -54,6 +54,7 @@ class _TaskLabelDialogState extends State<TaskLabelDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final selectedColor = normalizeTaskLabelColor(_colorController.text);
     final previewColor =
         parseTaskLabelColor(_colorController.text) ?? const Color(0xFF3B82F6);
 
@@ -120,7 +121,7 @@ class _TaskLabelDialogState extends State<TaskLabelDialog> {
                   for (final color in taskLabelColorPresets)
                     GestureDetector(
                       onTap: () {
-                        _colorController.text = color;
+                        _colorController.text = taskLabelColorOrDefault(color);
                         setState(() {});
                       },
                       child: Container(
@@ -130,7 +131,8 @@ class _TaskLabelDialogState extends State<TaskLabelDialog> {
                           shape: BoxShape.circle,
                           color: parseTaskLabelColor(color),
                           border: Border.all(
-                            color: _colorController.text.toUpperCase() == color
+                            color:
+                                selectedColor == normalizeTaskLabelColor(color)
                                 ? Colors.white
                                 : Colors.transparent,
                             width: 2,
@@ -140,7 +142,9 @@ class _TaskLabelDialogState extends State<TaskLabelDialog> {
                     ),
                   shad.OutlineButton(
                     onPressed: () {
-                      _colorController.text = randomTaskLabelColorPreset();
+                      _colorController.text = taskLabelColorOrDefault(
+                        randomTaskLabelColorPreset(),
+                      );
                       setState(() {});
                     },
                     child: Text(context.l10n.financeRandomizeColor),

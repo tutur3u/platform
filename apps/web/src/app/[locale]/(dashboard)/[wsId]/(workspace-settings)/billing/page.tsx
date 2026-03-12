@@ -23,7 +23,6 @@ import { BillingClient } from './billing-client';
 import BillingDetailsCard from './billing-details-card';
 import BillingHistory from './billing-history';
 import NoSubscriptionMessage from './no-subscription-message';
-import PaymentMethodsCard from './payment-methods-card';
 
 export const metadata: Metadata = {
   title: 'Billing',
@@ -121,7 +120,6 @@ export default async function BillingPage({
             />
 
             <BillingDetailsCard wsId={wsId} />
-            <PaymentMethodsCard wsId={wsId} />
             <AiCreditBillingCard wsId={wsId} packs={creditPacks} />
             <BillingHistory orders={orders} />
           </div>

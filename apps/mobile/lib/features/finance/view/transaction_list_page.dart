@@ -2,12 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide AppBar, Scaffold, TextField;
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
-import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/cubit/transaction_list_cubit.dart';
 import 'package:mobile/features/finance/view/transaction_detail_action.dart';
 import 'package:mobile/features/finance/widgets/grouped_transaction_accordion.dart';
+import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -217,23 +216,7 @@ class _TransactionListViewState extends State<_TransactionListView> {
 
     return shad.Scaffold(
       headers: [
-        shad.AppBar(
-          leading: [
-            shad.OutlineButton(
-              density: shad.ButtonDensity.icon,
-              onPressed: () {
-                final router = GoRouter.of(context);
-                if (router.canPop()) {
-                  router.pop();
-                  return;
-                }
-                context.go(Routes.finance);
-              },
-              child: const Icon(Icons.arrow_back),
-            ),
-          ],
-          title: Text(l10n.financeTransactions),
-        ),
+        MobileSectionAppBar(title: l10n.financeTransactions),
       ],
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>

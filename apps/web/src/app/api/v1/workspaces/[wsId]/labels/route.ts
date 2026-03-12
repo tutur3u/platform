@@ -29,7 +29,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { wsId: id } = await params;
     const supabase = await createClient(request);
-    const wsId = await normalizeWorkspaceId(id, supabase);
 
     const {
       data: { user },
@@ -38,6 +37,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const wsId = await normalizeWorkspaceId(id, supabase);
 
     // Verify membership in the workspace
     const { data: workspaceMember } = await supabase
@@ -79,8 +80,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const { wsId: id } = await params;
-    const supabase = await createClient(request);
-    const wsId = await normalizeWorkspaceId(id, supabase);
+
     const body = await request.json();
     const data = LabelSchema.safeParse(body);
 
@@ -93,6 +93,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     const { name, color } = data.data;
+    const supabase = await createClient(request);
 
     // Get current user
     const {
@@ -102,6 +103,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const wsId = await normalizeWorkspaceId(id, supabase);
 
     // Check if user has access to the workspace
     const { data: workspaceMember } = await supabase

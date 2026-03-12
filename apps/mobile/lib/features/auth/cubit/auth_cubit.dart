@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
+import 'package:mobile/data/models/auth_action_result.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
@@ -55,14 +56,20 @@ class AuthCubit extends Cubit<AuthState> {
     String email, {
     String? captchaToken,
   }) async {
-    emit(state.copyWith(isLoading: true));
+    emit(state.copyWith(isLoading: true, error: null, errorCode: null));
     final result = await _repo.sendOtp(email, captchaToken: captchaToken);
-    emit(state.copyWith(isLoading: false, error: result.error));
+    emit(
+      state.copyWith(
+        isLoading: false,
+        error: result.error,
+        errorCode: null,
+      ),
+    );
     return (success: result.success, retryAfter: result.retryAfter);
   }
 
   Future<bool> verifyOtp(String email, String otp) async {
-    emit(state.copyWith(isLoading: true));
+    emit(state.copyWith(isLoading: true, error: null, errorCode: null));
     final result = await _repo.verifyOtp(email, otp);
     if (result.success) {
       final user = await _repo.getCurrentUser();
@@ -75,7 +82,13 @@ class AuthCubit extends Cubit<AuthState> {
         return true;
       }
     }
-    emit(state.copyWith(isLoading: false, error: result.error));
+    emit(
+      state.copyWith(
+        isLoading: false,
+        error: result.error,
+        errorCode: null,
+      ),
+    );
     return false;
   }
 
@@ -86,7 +99,7 @@ class AuthCubit extends Cubit<AuthState> {
     String password, {
     String? captchaToken,
   }) async {
-    emit(state.copyWith(isLoading: true));
+    emit(state.copyWith(isLoading: true, error: null, errorCode: null));
     final result = await _repo.passwordLogin(
       email,
       password,
@@ -103,14 +116,56 @@ class AuthCubit extends Cubit<AuthState> {
         return true;
       }
     }
-    emit(state.copyWith(isLoading: false, error: result.error));
+    emit(
+      state.copyWith(
+        isLoading: false,
+        error: result.error,
+        errorCode: null,
+      ),
+    );
     return false;
+  }
+
+  Future<void> signInWithGoogle() async {
+    emit(state.copyWith(isLoading: true, error: null, errorCode: null));
+    final result = await _repo.signInWithGoogle();
+
+    switch (result.status) {
+      case AuthActionStatus.success:
+        final user = await _repo.getCurrentUser();
+        if (user != null) {
+          if (_repo.checkMfaRequired()) {
+            emit(AuthState.mfaRequired(user));
+          } else {
+            emit(AuthState.authenticated(user));
+          }
+          return;
+        }
+        emit(
+          state.copyWith(
+            isLoading: false,
+            error: null,
+            errorCode: AuthErrorCode.googleSignInFailed,
+          ),
+        );
+      case AuthActionStatus.externalFlowStarted:
+      case AuthActionStatus.cancelled:
+        emit(state.copyWith(isLoading: false, error: null, errorCode: null));
+      case AuthActionStatus.failure:
+        emit(
+          state.copyWith(
+            isLoading: false,
+            error: null,
+            errorCode: result.errorCode ?? AuthErrorCode.googleSignInFailed,
+          ),
+        );
+    }
   }
 
   // ── MFA ────────────────────────────────────────
 
   Future<bool> verifyMfa(String code) async {
-    emit(state.copyWith(isLoading: true));
+    emit(state.copyWith(isLoading: true, error: null, errorCode: null));
     final result = await _repo.verifyMfaCode(code);
     if (result.success) {
       final user = await _repo.getCurrentUser();
@@ -119,23 +174,41 @@ class AuthCubit extends Cubit<AuthState> {
         return true;
       }
     }
-    emit(state.copyWith(isLoading: false, error: result.error));
+    emit(
+      state.copyWith(
+        isLoading: false,
+        error: result.error,
+        errorCode: null,
+      ),
+    );
     return false;
   }
 
   Future<bool> signUp(String email, String password) async {
-    emit(state.copyWith(isLoading: true));
+    emit(state.copyWith(isLoading: true, error: null, errorCode: null));
     final result = await _repo.signUp(email, password);
-    emit(state.copyWith(isLoading: false, error: result.error));
+    emit(
+      state.copyWith(
+        isLoading: false,
+        error: result.error,
+        errorCode: null,
+      ),
+    );
     return result.success;
   }
 
   // ── Password reset ──────────────────────────────
 
   Future<bool> resetPassword(String email) async {
-    emit(state.copyWith(isLoading: true));
+    emit(state.copyWith(isLoading: true, error: null, errorCode: null));
     final result = await _repo.resetPassword(email);
-    emit(state.copyWith(isLoading: false, error: result.error));
+    emit(
+      state.copyWith(
+        isLoading: false,
+        error: result.error,
+        errorCode: null,
+      ),
+    );
     return result.success;
   }
 
@@ -147,7 +220,7 @@ class AuthCubit extends Cubit<AuthState> {
     emit(const AuthState.unauthenticated());
   }
 
-  void clearError() => emit(state.copyWith(error: null));
+  void clearError() => emit(state.copyWith(error: null, errorCode: null));
 
   @override
   Future<void> close() async {

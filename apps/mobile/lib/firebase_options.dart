@@ -64,6 +64,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '21140998358',
     projectId: 'tuturuuu-mobile',
     storageBucket: 'tuturuuu-mobile.firebasestorage.app',
+    iosClientId:
+        '21140998358-slkc76eli9ggd8d75osab1bq6rdqlnni.apps.googleusercontent.com',
     iosBundleId: 'com.tuturuuu.app.mobile',
   );
 
@@ -73,6 +75,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '21140998358',
     projectId: 'tuturuuu-mobile',
     storageBucket: 'tuturuuu-mobile.firebasestorage.app',
+    iosClientId:
+        '21140998358-slkc76eli9ggd8d75osab1bq6rdqlnni.apps.googleusercontent.com',
     iosBundleId: 'com.tuturuuu.app.mobile',
   );
 

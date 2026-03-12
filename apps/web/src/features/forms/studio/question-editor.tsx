@@ -15,6 +15,7 @@ import {
   GripVertical,
   ListChecks,
   MessageSquare,
+  MoreHorizontal,
   Plus,
   Shield,
   Star,
@@ -28,6 +29,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@tuturuuu/ui/collapsible';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import { useFieldArray, useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
@@ -41,7 +48,7 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { deriveUniqueOptionValue } from '../answer-utils';
 import { isAnswerableQuestionType } from '../block-utils';
@@ -109,6 +116,8 @@ export function QuestionEditor({
   toneClasses: ReturnType<typeof getFormToneClasses>;
 }) {
   const t = useTranslations('forms');
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const {
     attributes,
     listeners,
@@ -259,6 +268,24 @@ export function QuestionEditor({
   const showsDescriptionEditor =
     isAnswerable || isRichText || isImageBlock || isYoutubeBlock;
 
+  const blockRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (open && blockRef.current) {
+      setTimeout(() => {
+        blockRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      }, 150);
+    }
+  }, [open]);
+
+  const setCombinedNodeRef = (node: HTMLDivElement | null) => {
+    setNodeRef(node);
+    blockRef.current = node;
+  };
+
   useEffect(() => {
     if (!hasScale) {
       return;
@@ -328,10 +355,13 @@ export function QuestionEditor({
   return (
     <Collapsible open={open} onOpenChange={onOpenChange}>
       <div
-        ref={setNodeRef}
+        ref={setCombinedNodeRef}
         style={style}
         className={cn(
-          'rounded-3xl border border-border/70 bg-background/80 shadow-sm transition-shadow',
+          'rounded-[1.75rem] border transition-all duration-300',
+          open
+            ? 'border-border/80 bg-background/95 shadow-foreground/5 shadow-md'
+            : 'border-border/50 bg-muted/30 shadow-sm hover:bg-muted/50',
           isDragging && 'z-10 opacity-70 shadow-lg'
         )}
       >
@@ -424,55 +454,74 @@ export function QuestionEditor({
             </Button>
           </CollapsibleTrigger>
           <div className="flex items-center gap-1">
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              onClick={onMoveUp}
-              className="rounded-xl"
-            >
-              <ChevronUp className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              onClick={onMoveDown}
-              className="rounded-xl"
-            >
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              onClick={onDuplicate}
-              className="rounded-xl"
-              aria-label={t('studio.duplicate_question')}
-            >
-              <Copy className="h-4 w-4" />
-            </Button>
-            <DestructiveActionDialog
-              actionLabel={t('studio.delete_question')}
-              cancelLabel={t('studio.keep_question')}
-              description={t('studio.delete_question_confirmation')}
-              onConfirm={onRemove}
-              title={t('studio.delete_question_title')}
-              trigger={
+            <DropdownMenu open={actionsOpen} onOpenChange={setActionsOpen}>
+              <DropdownMenuTrigger asChild>
                 <Button
                   type="button"
                   size="icon"
                   variant="ghost"
-                  className="rounded-xl text-muted-foreground hover:text-destructive"
+                  className="rounded-xl"
+                  aria-label={t('studio.more')}
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuItem
+                  onClick={() => {
+                    onMoveUp();
+                    setActionsOpen(false);
+                  }}
+                >
+                  <ChevronUp className="h-4 w-4" />
+                  {t('studio.move_question_up' as any)}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    onMoveDown();
+                    setActionsOpen(false);
+                  }}
+                >
+                  <ChevronDown className="h-4 w-4" />
+                  {t('studio.move_question_down' as any)}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    onDuplicate();
+                    setActionsOpen(false);
+                  }}
+                >
+                  <Copy className="h-4 w-4" />
+                  {t('studio.duplicate_question')}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={(event) => {
+                    event.preventDefault();
+                    setActionsOpen(false);
+                    requestAnimationFrame(() => {
+                      setDeleteDialogOpen(true);
+                    });
+                  }}
+                  className="text-destructive focus:text-destructive"
                 >
                   <Trash className="h-4 w-4" />
-                </Button>
-              }
+                  {t('studio.delete_question')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DestructiveActionDialog
+              actionLabel={t('studio.delete_question')}
+              cancelLabel={t('studio.keep_question')}
+              description={t('studio.delete_question_confirmation')}
+              open={deleteDialogOpen}
+              onOpenChange={setDeleteDialogOpen}
+              onConfirm={onRemove}
+              title={t('studio.delete_question_title')}
             />
           </div>
         </div>
 
-        <CollapsibleContent className="overflow-hidden border-border/60 border-t data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+        <CollapsibleContent className="overflow-hidden border-border/40 border-t data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
           <div className="space-y-3 px-4 py-4">
             <div className="grid gap-3 md:grid-cols-2">
               {!isDividerBlock ? (

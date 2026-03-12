@@ -1,11 +1,16 @@
 import crypto from 'node:crypto';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+  isTurnstileError,
+  verifyTurnstileToken,
+} from '@tuturuuu/turnstile/server';
 import { type NextRequest, NextResponse } from 'next/server';
-import { DEV_MODE } from '@/constants/common';
 import { normalizeMarkdownToText } from '@/features/forms/content';
+import {
+  getAuthenticatedUserContext,
+  hasSentResponseCopyEmail,
+  maybeSendResponseCopyEmail,
+} from '@/features/forms/response-copy-email';
 import {
   FORM_ACCESS_MODE_VALUES,
   formSubmitSchema,
@@ -69,39 +74,36 @@ async function getResponderContext(
   request: NextRequest,
   accessMode: 'anonymous' | 'authenticated' | 'authenticated_email'
 ) {
-  const supabase = await createClient(request);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user: authenticatedUser, authenticatedEmail } =
+    await getAuthenticatedUserContext(request);
 
   if (accessMode === 'anonymous') {
     return {
+      authenticatedUser,
+      authenticatedEmail,
       user: null,
       respondentEmail: null as string | null,
     };
   }
 
-  if (!user) {
+  if (!authenticatedUser) {
     throw new Error('Authentication required to access this form');
   }
 
   if (accessMode === 'authenticated') {
     return {
-      user,
+      authenticatedUser,
+      authenticatedEmail,
+      user: authenticatedUser,
       respondentEmail: null as string | null,
     };
   }
 
-  const adminClient = await createAdminClient();
-  const { data: emailRow } = await adminClient
-    .from('user_private_details')
-    .select('email')
-    .eq('user_id', user.id)
-    .maybeSingle();
-
   return {
-    user,
-    respondentEmail: emailRow?.email ?? null,
+    authenticatedUser,
+    authenticatedEmail,
+    user: authenticatedUser,
+    respondentEmail: authenticatedEmail,
   };
 }
 
@@ -111,58 +113,6 @@ function resolveAccessMode(value: string) {
   )
     ? (value as (typeof FORM_ACCESS_MODE_VALUES)[number])
     : 'anonymous';
-}
-
-async function verifyTurnstileToken(
-  request: NextRequest,
-  token: string | undefined
-) {
-  if (DEV_MODE) {
-    return;
-  }
-
-  const secret = process.env.TURNSTILE_SECRET_KEY;
-
-  if (!secret) {
-    throw new Error('Turnstile is not configured');
-  }
-
-  if (!token) {
-    throw new Error('Turnstile verification is required');
-  }
-
-  const forwardedFor = request.headers.get('x-forwarded-for');
-  const remoteIp = forwardedFor?.split(',')[0]?.trim();
-  const formData = new URLSearchParams({
-    secret,
-    response: token,
-  });
-
-  if (remoteIp) {
-    formData.set('remoteip', remoteIp);
-  }
-
-  const response = await fetch(
-    'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: formData,
-      cache: 'no-store',
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error('Turnstile verification failed');
-  }
-
-  const result = (await response.json()) as { success?: boolean };
-
-  if (!result.success) {
-    throw new Error('Turnstile verification failed');
-  }
 }
 
 export async function GET(
@@ -207,6 +157,13 @@ export async function GET(
             respondentUserId: responder.user.id,
           }
         );
+        const responseCopyAlreadySent = readOnlyAnswers.sessionId
+          ? await hasSentResponseCopyEmail(
+              adminClient,
+              form.ws_id,
+              readOnlyAnswers.sessionId
+            )
+          : false;
 
         return NextResponse.json({
           form: definition,
@@ -214,6 +171,16 @@ export async function GET(
           initialAnswers: readOnlyAnswers.answers,
           answerIssues: readOnlyAnswers.issues,
           submittedAt: readOnlyAnswers.submittedAt,
+          responseCopyEmail: responder.authenticatedEmail,
+          readOnlyResponseId: readOnlyAnswers.responseId,
+          readOnlyResponseSessionId: readOnlyAnswers.sessionId,
+          canRequestResponseCopy: Boolean(
+            responder.authenticatedEmail &&
+              readOnlyAnswers.responseId &&
+              readOnlyAnswers.sessionId &&
+              !responseCopyAlreadySent
+          ),
+          responseCopyAlreadySent,
         });
       }
     }
@@ -246,6 +213,7 @@ export async function GET(
     return NextResponse.json({
       form: definition,
       sessionId: session.id,
+      responseCopyEmail: responder.authenticatedEmail,
     });
   } catch (error) {
     const message =
@@ -255,8 +223,12 @@ export async function GET(
       return NextResponse.json({ error: message }, { status: 401 });
     }
 
-    if (message.includes('Turnstile')) {
+    if (isTurnstileError(error)) {
       return NextResponse.json({ error: message }, { status: 400 });
+    }
+
+    if (message.includes('Too many response copy emails')) {
+      return NextResponse.json({ error: message }, { status: 429 });
     }
 
     return NextResponse.json({ error: message }, { status: 500 });
@@ -297,6 +269,21 @@ export async function POST(
       request,
       resolveAccessMode(form.access_mode)
     );
+    const responseCopyRequested = parsed.data.sendResponseCopy === true;
+
+    if (
+      responseCopyRequested &&
+      (!responder.authenticatedUser?.id || !responder.authenticatedEmail)
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'Sign in with the email account that should receive the response copy',
+        },
+        { status: 401 }
+      );
+    }
+
     await verifyTurnstileToken(request, parsed.data.turnstileToken);
     const validation = validateSubmittedAnswers(
       definition,
@@ -432,7 +419,62 @@ export async function POST(
       })
       .eq('id', session.id);
 
-    return NextResponse.json({ responseId: response.id }, { status: 201 });
+    const submittedAtIso = now.toISOString();
+    let responseCopySentTo: string | null = null;
+    let responseCopyStatus: 'sent' | 'rate_limited' | 'failed' | null = null;
+
+    if (responseCopyRequested) {
+      try {
+        responseCopySentTo = await maybeSendResponseCopyEmail({
+          adminClient,
+          request,
+          form: {
+            id: form.id,
+            title: form.title,
+            ws_id: form.ws_id,
+          },
+          sessionId: session.id,
+          responseId: response.id,
+          responder,
+          answerRows: answerRows.map((answer) => ({
+            question_title: answer.question_title,
+            answer_text: answer.answer_text,
+            answer_json: answer.answer_json,
+          })),
+          submittedAt: submittedAtIso,
+        });
+        responseCopyStatus = responseCopySentTo ? 'sent' : 'failed';
+      } catch (responseCopyError) {
+        const responseCopyMessage =
+          responseCopyError instanceof Error
+            ? responseCopyError.message
+            : 'Failed to send response copy';
+
+        console.error('[forms] Response submitted but copy email failed', {
+          formId: form.id,
+          responseId: response.id,
+          sessionId: session.id,
+          userId: responder.authenticatedUser?.id ?? null,
+          error: responseCopyMessage,
+        });
+
+        responseCopyStatus = responseCopyMessage.includes(
+          'Too many response copy emails'
+        )
+          ? 'rate_limited'
+          : 'failed';
+      }
+    }
+
+    return NextResponse.json(
+      {
+        responseId: response.id,
+        responseCopyRequested,
+        responseCopyStatus,
+        responseCopySentTo,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     const message =
       error instanceof Error ? error.message : 'Internal server error';

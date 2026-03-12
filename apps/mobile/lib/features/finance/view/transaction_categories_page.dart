@@ -3,14 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
-import 'package:go_router/go_router.dart';
 import 'package:mobile/core/icons/platform_icon.dart';
-import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/utils/color_hex.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/tag.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -71,23 +70,7 @@ class _TransactionCategoriesViewState
 
     return shad.Scaffold(
       headers: [
-        shad.AppBar(
-          leading: [
-            shad.OutlineButton(
-              density: shad.ButtonDensity.icon,
-              onPressed: () {
-                final router = GoRouter.of(context);
-                if (router.canPop()) {
-                  router.pop();
-                  return;
-                }
-                context.go(Routes.finance);
-              },
-              child: const Icon(Icons.arrow_back),
-            ),
-          ],
-          title: Text(l10n.financeCategories),
-        ),
+        MobileSectionAppBar(title: l10n.financeCategories),
       ],
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>
@@ -555,7 +538,7 @@ class _CategoryDialogState extends State<_CategoryDialog> {
     _nameController = TextEditingController(text: widget.category?.name ?? '');
     _isExpense = widget.category?.isExpense ?? true;
     _icon = widget.category?.icon;
-    _colorHex = _normalizeHex(widget.category?.color ?? '');
+    _colorHex = normalizeHex(widget.category?.color ?? '');
   }
 
   @override
@@ -567,7 +550,7 @@ class _CategoryDialogState extends State<_CategoryDialog> {
   @override
   Widget build(BuildContext context) {
     final previewColor =
-        _parseHexColor(_colorHex) ??
+        parseHex(_colorHex) ??
         (_isExpense
             ? shad.Theme.of(context).colorScheme.destructive
             : shad.Theme.of(context).colorScheme.primary);
@@ -826,25 +809,9 @@ class _CategoryDialogState extends State<_CategoryDialog> {
     }
   }
 
-  String? _normalizeHex(String raw) {
-    if (raw.trim().isEmpty) return null;
-    final value = raw.trim().replaceFirst('#', '');
-    if (value.length != 6 && value.length != 8) {
-      return null;
-    }
-    final parsed = int.tryParse(value, radix: 16);
-    if (parsed == null) {
-      return null;
-    }
-    if (value.length == 8) {
-      return '#${value.substring(2)}'.toUpperCase();
-    }
-    return '#${value.toUpperCase()}';
-  }
-
   Future<void> _openColorPicker() async {
     var selected =
-        _parseHexColor(_colorHex) ??
+        parseHex(_colorHex) ??
         (_isExpense
             ? shad.Theme.of(context).colorScheme.destructive
             : shad.Theme.of(context).colorScheme.primary);
@@ -890,17 +857,6 @@ class _CategoryDialogState extends State<_CategoryDialog> {
       setState(() => _colorHex = colorToHexString(result));
     }
   }
-
-  Color? _parseHexColor(String? hex) {
-    if (hex == null || hex.trim().isEmpty) return null;
-    final cleaned = hex.trim().replaceFirst('#', '');
-    if (cleaned.length != 6 && cleaned.length != 8) return null;
-    final value = int.tryParse(
-      cleaned.length == 6 ? 'FF$cleaned' : cleaned,
-      radix: 16,
-    );
-    return value != null ? Color(value) : null;
-  }
 }
 
 class _TagDialog extends StatefulWidget {
@@ -932,7 +888,7 @@ class _TagDialogState extends State<_TagDialog> {
     _descriptionController = TextEditingController(
       text: widget.tag?.description ?? '',
     );
-    _colorHex = _normalizeHex(widget.tag?.color ?? '') ?? '#3B82F6';
+    _colorHex = normalizeHex(widget.tag?.color ?? '') ?? '#3B82F6';
   }
 
   @override
@@ -944,7 +900,7 @@ class _TagDialogState extends State<_TagDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final previewColor = _parseHexColor(_colorHex) ?? const Color(0xFF3B82F6);
+    final previewColor = parseHex(_colorHex) ?? const Color(0xFF3B82F6);
 
     return shad.AlertDialog(
       title: Text(
@@ -1115,7 +1071,7 @@ class _TagDialogState extends State<_TagDialog> {
   }
 
   Future<void> _openColorPicker() async {
-    var selected = _parseHexColor(_colorHex) ?? const Color(0xFF3B82F6);
+    var selected = parseHex(_colorHex) ?? const Color(0xFF3B82F6);
 
     final result = await shad.showDialog<Color>(
       context: context,
@@ -1158,33 +1114,6 @@ class _TagDialogState extends State<_TagDialog> {
       setState(() => _colorHex = colorToHexString(result));
     }
   }
-
-  String? _normalizeHex(String raw) {
-    if (raw.trim().isEmpty) return null;
-    final value = raw.trim().replaceFirst('#', '');
-    if (value.length != 6 && value.length != 8) {
-      return null;
-    }
-    final parsed = int.tryParse(value, radix: 16);
-    if (parsed == null) {
-      return null;
-    }
-    if (value.length == 8) {
-      return '#${value.substring(2)}'.toUpperCase();
-    }
-    return '#${value.toUpperCase()}';
-  }
-
-  Color? _parseHexColor(String? hex) {
-    if (hex == null || hex.trim().isEmpty) return null;
-    final cleaned = hex.trim().replaceFirst('#', '');
-    if (cleaned.length != 6 && cleaned.length != 8) return null;
-    final value = int.tryParse(
-      cleaned.length == 6 ? 'FF$cleaned' : cleaned,
-      radix: 16,
-    );
-    return value != null ? Color(value) : null;
-  }
 }
 
 class _CategoryCard extends StatelessWidget {
@@ -1205,7 +1134,7 @@ class _CategoryCard extends StatelessWidget {
     final baseColor = isExpense
         ? theme.colorScheme.destructive
         : theme.colorScheme.primary;
-    final color = _parseHex(category.color) ?? baseColor;
+    final color = parseHex(category.color) ?? baseColor;
     final icon = resolvePlatformIcon(
       category.icon,
       fallback: isExpense ? Icons.arrow_downward : Icons.arrow_upward,
@@ -1287,17 +1216,6 @@ class _CategoryCard extends StatelessWidget {
       ),
     );
   }
-
-  Color? _parseHex(String? hex) {
-    if (hex == null) return null;
-    final cleaned = hex.replaceFirst('#', '');
-    if (cleaned.length != 6 && cleaned.length != 8) return null;
-    final value = int.tryParse(
-      cleaned.length == 6 ? 'FF$cleaned' : cleaned,
-      radix: 16,
-    );
-    return value != null ? Color(value) : null;
-  }
 }
 
 class _TagCard extends StatelessWidget {
@@ -1314,7 +1232,7 @@ class _TagCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
-    final color = _parseHex(tag.color) ?? theme.colorScheme.primary;
+    final color = parseHex(tag.color) ?? theme.colorScheme.primary;
 
     return shad.Card(
       child: Row(
@@ -1363,16 +1281,5 @@ class _TagCard extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Color? _parseHex(String? hex) {
-    if (hex == null) return null;
-    final cleaned = hex.replaceFirst('#', '');
-    if (cleaned.length != 6 && cleaned.length != 8) return null;
-    final value = int.tryParse(
-      cleaned.length == 6 ? 'FF$cleaned' : cleaned,
-      radix: 16,
-    );
-    return value != null ? Color(value) : null;
   }
 }

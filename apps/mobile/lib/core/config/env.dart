@@ -30,6 +30,20 @@ class Env {
     'TURNSTILE_BASE_URL',
   );
 
+  static const googleWebClientId = String.fromEnvironment(
+    'GOOGLE_WEB_CLIENT_ID',
+    defaultValue:
+        '21140998358-'
+        'islbgrnrvoqipmghnb3rq5cjg23rvr9m.apps.googleusercontent.com',
+  );
+
+  static const googleIosClientId = String.fromEnvironment(
+    'GOOGLE_IOS_CLIENT_ID',
+    defaultValue:
+        '21140998358-'
+        'slkc76eli9ggd8d75osab1bq6rdqlnni.apps.googleusercontent.com',
+  );
+
   static bool get isTurnstileConfigured =>
       turnstileSiteKey.isNotEmpty && turnstileBaseUrl.isNotEmpty;
 

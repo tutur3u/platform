@@ -10,7 +10,6 @@ import { BillingClient } from '@/app/[locale]/(dashboard)/[wsId]/(workspace-sett
 import BillingDetailsCard from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/billing-details-card';
 import BillingHistory from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/billing-history';
 import NoSubscriptionMessage from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/no-subscription-message';
-import PaymentMethodsCard from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/payment-methods-card';
 
 interface BillingSettingsProps {
   wsId: string;
@@ -123,7 +122,6 @@ export default function BillingSettings({ wsId }: BillingSettingsProps) {
       />
 
       <BillingDetailsCard wsId={wsId} />
-      <PaymentMethodsCard wsId={wsId} />
       <AiCreditBillingCard wsId={wsId} packs={creditPacks} />
       <BillingHistory orders={orders} />
     </div>

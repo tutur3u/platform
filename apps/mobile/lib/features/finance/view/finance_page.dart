@@ -14,10 +14,9 @@ import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
-import 'package:mobile/features/apps/widgets/apps_back_button.dart';
 import 'package:mobile/features/finance/cubit/finance_cubit.dart';
 import 'package:mobile/features/finance/view/transaction_detail_action.dart';
-import 'package:mobile/features/shell/view/avatar_dropdown.dart';
+import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -108,11 +107,7 @@ class _FinanceView extends StatelessWidget {
 
     return shad.Scaffold(
       headers: [
-        shad.AppBar(
-          leading: const [AppsBackButton()],
-          title: Text(l10n.financeTitle),
-          trailing: const [AvatarDropdown()],
-        ),
+        MobileSectionAppBar(title: l10n.financeTitle),
       ],
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>

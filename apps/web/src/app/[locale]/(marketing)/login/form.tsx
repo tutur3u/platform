@@ -5,6 +5,7 @@ import { generateCrossAppToken, mapUrlToApp } from '@tuturuuu/auth/cross-app';
 import { Eye, EyeOff, Github, Lock, Mail } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import { resolveTurnstileClientState } from '@tuturuuu/turnstile/client';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
@@ -161,9 +162,11 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
   // Distinct refs for each tab's Turnstile widget
   const captchaRefOtp = useRef<TurnstileInstance>(null);
   const captchaRefPassword = useRef<TurnstileInstance>(null);
-  // Read env var once with runtime guard (undefined if not set)
-  const turnstileSiteKey =
-    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? undefined;
+  const turnstileClientState = resolveTurnstileClientState({
+    devMode: DEV_MODE,
+    siteKey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+  });
+  const turnstileSiteKey = turnstileClientState.siteKey;
 
   const resetCaptcha = useCallback(() => {
     captchaRefOtp.current?.reset();
@@ -1056,20 +1059,27 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                   />
                 )}
 
-                {/* Turnstile CAPTCHA - show when not in dev mode (both on initial send and resend) */}
-                {!DEV_MODE && turnstileSiteKey && (
+                {/* Turnstile CAPTCHA - show when required for OTP send/resend */}
+                {turnstileClientState.isRequired && (
                   <div className="flex flex-col items-center gap-2">
-                    <Turnstile
-                      ref={captchaRefOtp}
-                      siteKey={turnstileSiteKey}
-                      onSuccess={(token) => {
-                        setCaptchaToken(token);
-                        setCaptchaError(undefined);
-                      }}
-                      onExpire={() => setCaptchaToken(undefined)}
-                      onError={handleCaptchaError}
-                      onTimeout={handleCaptchaTimeout}
-                    />
+                    {turnstileClientState.canRenderWidget &&
+                    turnstileSiteKey ? (
+                      <Turnstile
+                        ref={captchaRefOtp}
+                        siteKey={turnstileSiteKey}
+                        onSuccess={(token) => {
+                          setCaptchaToken(token);
+                          setCaptchaError(undefined);
+                        }}
+                        onExpire={() => setCaptchaToken(undefined)}
+                        onError={handleCaptchaError}
+                        onTimeout={handleCaptchaTimeout}
+                      />
+                    ) : (
+                      <p className="text-destructive text-sm">
+                        {t('login.captcha_not_configured')}
+                      </p>
+                    )}
                     {captchaError && (
                       <p className="text-destructive text-sm">{captchaError}</p>
                     )}
@@ -1084,7 +1094,9 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                     _isLoading ||
                     (otpSent &&
                       otpForm.watch('otp').length !== MAX_OTP_LENGTH) ||
-                    (!DEV_MODE && !otpSent && !captchaToken)
+                    (turnstileClientState.isRequired &&
+                      !otpSent &&
+                      !captchaToken)
                   }
                 >
                   {_isLoading ? (
@@ -1107,7 +1119,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                     disabled={
                       _isLoading ||
                       resendCooldown > 0 ||
-                      (!DEV_MODE && !captchaToken)
+                      (turnstileClientState.isRequired && !captchaToken)
                     }
                     onClick={() => {
                       otpForm.handleSubmit(onOtpSubmit)();
@@ -1277,20 +1289,27 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                   )}
                 />
 
-                {/* Turnstile CAPTCHA - only show when not in dev mode */}
-                {!DEV_MODE && turnstileSiteKey && (
+                {/* Turnstile CAPTCHA - show when required for password login */}
+                {turnstileClientState.isRequired && (
                   <div className="flex flex-col items-center gap-2">
-                    <Turnstile
-                      ref={captchaRefPassword}
-                      siteKey={turnstileSiteKey}
-                      onSuccess={(token) => {
-                        setCaptchaToken(token);
-                        setCaptchaError(undefined);
-                      }}
-                      onExpire={() => setCaptchaToken(undefined)}
-                      onError={handleCaptchaError}
-                      onTimeout={handleCaptchaTimeout}
-                    />
+                    {turnstileClientState.canRenderWidget &&
+                    turnstileSiteKey ? (
+                      <Turnstile
+                        ref={captchaRefPassword}
+                        siteKey={turnstileSiteKey}
+                        onSuccess={(token) => {
+                          setCaptchaToken(token);
+                          setCaptchaError(undefined);
+                        }}
+                        onExpire={() => setCaptchaToken(undefined)}
+                        onError={handleCaptchaError}
+                        onTimeout={handleCaptchaTimeout}
+                      />
+                    ) : (
+                      <p className="text-destructive text-sm">
+                        {t('login.captcha_not_configured')}
+                      </p>
+                    )}
                     {captchaError && (
                       <p className="text-destructive text-sm">{captchaError}</p>
                     )}
@@ -1304,7 +1323,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                   disabled={
                     _isLoading ||
                     !passwordForm.formState.isValid ||
-                    (!DEV_MODE && !captchaToken)
+                    (turnstileClientState.isRequired && !captchaToken)
                   }
                 >
                   {_isLoading ? (

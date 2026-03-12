@@ -44,8 +44,12 @@ vi.mock('../request-emoji-limit', () => ({
   validateRequestEmojiLimit: (req: NextRequest) => mocks.validateEmoji(req),
 }));
 
-function makeRequest(method = 'POST', headers?: Record<string, string>) {
-  return new NextRequest('http://localhost/api/test', {
+function makeRequest(
+  pathname = '/api/test',
+  method = 'POST',
+  headers?: Record<string, string>
+) {
+  return new NextRequest(`http://localhost${pathname}`, {
     method,
     headers,
     body: method === 'GET' || method === 'HEAD' ? undefined : '{}',
@@ -69,7 +73,9 @@ describe('guardApiProxyRequest', () => {
   it('rejects oversized payloads before rate limiting', async () => {
     const { guardApiProxyRequest } = await import('../api-proxy-guard.js');
     const response = await guardApiProxyRequest(
-      makeRequest('POST', { 'content-length': `${1024 * 1024 + 1}` }),
+      makeRequest('/api/test', 'POST', {
+        'content-length': `${1024 * 1024 + 1}`,
+      }),
       { prefixBase: 'proxy:test:api' }
     );
 
@@ -90,15 +96,18 @@ describe('guardApiProxyRequest', () => {
       await import('../api-proxy-guard.js');
     clearApiProxyGuardLimiterCache();
 
-    const response = await guardApiProxyRequest(makeRequest('POST'), {
-      prefixBase: 'proxy:test:api',
-    });
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/test', 'POST'),
+      {
+        prefixBase: 'proxy:test:api',
+      }
+    );
 
     expect(response?.status).toBe(429);
     expect(mocks.limit).not.toHaveBeenCalled();
   });
 
-  it('rate limits GET requests across minute, hourly, and daily buckets', async () => {
+  it('uses emergency default buckets for generic GET routes', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
     vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
@@ -108,13 +117,13 @@ describe('guardApiProxyRequest', () => {
     mocks.limit
       .mockResolvedValueOnce({
         success: true,
-        limit: 120,
-        remaining: 119,
+        limit: 60,
+        remaining: 59,
         reset: Date.now() + 15_000,
       })
       .mockResolvedValueOnce({
         success: false,
-        limit: 2000,
+        limit: 600,
         remaining: 0,
         reset: Date.now() + 15_000,
       });
@@ -123,14 +132,190 @@ describe('guardApiProxyRequest', () => {
       await import('../api-proxy-guard.js');
     clearApiProxyGuardLimiterCache();
 
-    const response = await guardApiProxyRequest(makeRequest('GET'), {
-      prefixBase: 'proxy:test:api',
-    });
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/test', 'GET'),
+      {
+        prefixBase: 'proxy:test:api',
+      }
+    );
 
     expect(response?.status).toBe(429);
-    expect(response?.headers.get('X-RateLimit-Limit')).toBe('2000');
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('600');
     expect(response?.headers.get('X-RateLimit-Window')).toBe('hour');
-    expect(mocks.validateEmoji).not.toHaveBeenCalled();
+    expect(response?.headers.get('X-RateLimit-Policy')).toBe('default');
+  });
+
+  it('uses users-me buckets for users/me reads', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit
+      .mockResolvedValueOnce({
+        success: true,
+        limit: 30,
+        remaining: 29,
+        reset: Date.now() + 15_000,
+      })
+      .mockResolvedValueOnce({
+        success: false,
+        limit: 300,
+        remaining: 0,
+        reset: Date.now() + 15_000,
+      });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/v1/users/me/configs/demo', 'GET'),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('300');
+    expect(response?.headers.get('X-RateLimit-Policy')).toBe('users-me');
+  });
+
+  it('uses strict auth buckets for auth mutations', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 3,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/v1/auth/mobile/send-otp', 'POST'),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('3');
+    expect(response?.headers.get('X-RateLimit-Policy')).toBe('auth');
+  });
+
+  it('uses strict high-fanout buckets for email routes', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 2,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/v1/workspaces/ws-1/mail/send', 'POST'),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('2');
+    expect(response?.headers.get('X-RateLimit-Policy')).toBe('high-fanout');
+  });
+
+  it('bypasses trusted cron traffic only when credentials are present', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('CRON_SECRET', 'cron-secret');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const allowedResponse = await guardApiProxyRequest(
+      makeRequest('/api/cron/process-notification-batches', 'POST', {
+        authorization: 'Bearer cron-secret',
+      }),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    expect(allowedResponse).toBeNull();
+    expect(mocks.extractIp).not.toHaveBeenCalled();
+
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 12,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const blockedResponse = await guardApiProxyRequest(
+      makeRequest('/api/cron/process-notification-batches', 'POST', {
+        authorization: 'Bearer wrong-secret',
+      }),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    expect(blockedResponse?.status).toBe(429);
+    expect(blockedResponse?.headers.get('X-RateLimit-Policy')).toBe('default');
+  });
+
+  it('bypasses trusted webhook traffic only with required signature headers', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('POLAR_WEBHOOK_SECRET', 'polar-secret');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const allowedResponse = await guardApiProxyRequest(
+      makeRequest('/api/payment/webhooks', 'POST', {
+        'webhook-id': 'id',
+        'webhook-signature': 'sig',
+        'webhook-timestamp': 'ts',
+      }),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    expect(allowedResponse).toBeNull();
+
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 12,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const blockedResponse = await guardApiProxyRequest(
+      makeRequest('/api/payment/webhooks', 'POST', {
+        'webhook-id': 'id',
+      }),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    expect(blockedResponse?.status).toBe(429);
   });
 
   it('delegates to emoji validation after rate limiting passes', async () => {
@@ -143,20 +328,20 @@ describe('guardApiProxyRequest', () => {
     mocks.limit
       .mockResolvedValueOnce({
         success: true,
-        limit: 30,
-        remaining: 29,
+        limit: 12,
+        remaining: 11,
         reset: Date.now() + 60_000,
       })
       .mockResolvedValueOnce({
         success: true,
-        limit: 300,
-        remaining: 299,
+        limit: 120,
+        remaining: 119,
         reset: Date.now() + 60_000,
       })
       .mockResolvedValueOnce({
         success: true,
-        limit: 1000,
-        remaining: 999,
+        limit: 400,
+        remaining: 399,
         reset: Date.now() + 60_000,
       });
 
@@ -167,9 +352,10 @@ describe('guardApiProxyRequest', () => {
       await import('../api-proxy-guard.js');
     clearApiProxyGuardLimiterCache();
 
-    const response = await guardApiProxyRequest(makeRequest('POST'), {
-      prefixBase: 'proxy:test:api',
-    });
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/test', 'POST'),
+      { prefixBase: 'proxy:test:api' }
+    );
 
     expect(response).toBe(emojiResponse);
     expect(mocks.validateEmoji).toHaveBeenCalledTimes(1);

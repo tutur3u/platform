@@ -3,13 +3,16 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import {
+  isTurnstileError,
+  resolveTurnstileToken,
+} from '@tuturuuu/turnstile/server';
+import {
   checkPasswordLoginLimit,
   clearPasswordLoginFailures,
   extractIPFromHeaders,
   recordPasswordLoginFailure,
 } from '@tuturuuu/utils/abuse-protection';
 import {
-  DEV_MODE,
   MAX_CODE_LENGTH,
   MAX_EMAIL_LENGTH,
   MAX_LONG_TEXT_LENGTH,
@@ -73,18 +76,17 @@ export async function POST(request: NextRequest) {
       return jsonWithCors({ error: message }, { status: 400 });
     }
     const sbAdmin = await createAdminClient();
-    const captchaOptions = captchaToken ? { captchaToken } : {};
-
-    // In development, when no captcha token is provided, use the admin client
-    // which bypasses GoTrue's captcha validation. In production, always use the
-    // regular client to enforce captcha.
-    const useAdminAuth = DEV_MODE && !captchaToken;
+    const turnstile = resolveTurnstileToken({
+      token: captchaToken,
+      requireConfiguration: true,
+    });
+    const useAdminAuth = turnstile.shouldBypassForDev;
     const supabase = useAdminAuth ? sbAdmin : await createClient();
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email: validatedEmail,
       password,
-      options: { ...captchaOptions },
+      options: { ...turnstile.captchaOptions },
     });
 
     if (error) {
@@ -141,6 +143,10 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
+    if (isTurnstileError(error)) {
+      return jsonWithCors({ error: error.message }, { status: 400 });
+    }
+
     const message = error instanceof Error ? error.message : 'Failed to login';
     return jsonWithCors({ error: message }, { status: 500 });
   }

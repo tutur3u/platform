@@ -84,7 +84,12 @@ export function usePublicFormSubmit(shareCode: string) {
 
   return useMutation({
     mutationFn: async (payload: FormSubmitInput) =>
-      apiFetch<{ responseId: string }>(`/api/v1/shared/forms/${shareCode}`, {
+      apiFetch<{
+        responseId: string;
+        responseCopyRequested?: boolean;
+        responseCopyStatus?: 'sent' | 'rate_limited' | 'failed' | null;
+        responseCopySentTo?: string | null;
+      }>(`/api/v1/shared/forms/${shareCode}`, {
         method: 'POST',
         cache: 'no-store',
         headers: {
@@ -92,6 +97,36 @@ export function usePublicFormSubmit(shareCode: string) {
         },
         body: JSON.stringify(payload),
       }),
+    onError: (error) => {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t('toast.failed_to_submit_response')
+      );
+    },
+  });
+}
+
+export function usePublicFormResponseCopy(shareCode: string) {
+  const t = useTranslations('forms');
+
+  return useMutation({
+    mutationFn: async (payload: {
+      responseId: string;
+      sessionId: string;
+      turnstileToken?: string;
+    }) =>
+      apiFetch<{ responseCopySentTo?: string | null }>(
+        `/api/v1/shared/forms/${shareCode}/response-copy`,
+        {
+          method: 'POST',
+          cache: 'no-store',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        }
+      ),
     onError: (error) => {
       toast.error(
         error instanceof Error

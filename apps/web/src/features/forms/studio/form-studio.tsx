@@ -19,6 +19,7 @@ import {
   Eye,
   LayoutTemplate,
   Link,
+  Plus,
   Settings2,
   Table2,
 } from '@tuturuuu/icons';
@@ -45,7 +46,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { parseAsString, useQueryState } from 'nuqs';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { FORM_FONT_VARIABLES, getFormFontStyle } from '../fonts';
 import { FormRuntime } from '../form-runtime';
@@ -72,7 +73,6 @@ import {
 } from '../typography';
 import { AnalyticsPanel } from './analytics-panel';
 import { createQuestionInput } from './block-catalog';
-import { BuilderSidebar } from './builder-sidebar';
 import { FloatingBlockToolbar } from './floating-block-toolbar';
 import { FontPreviewPanel } from './font-preview-panel';
 import { FormMediaField } from './form-media-field';
@@ -307,23 +307,23 @@ export function FormStudio({
     });
   };
 
-  const openSection = (sectionId: string) => {
+  const openSection = useCallback((sectionId: string) => {
     setActiveSectionId(sectionId);
     setActiveQuestionIdsBySection((current) => ({
       ...current,
       [sectionId]: '',
     }));
-  };
+  }, []);
 
-  const setActiveQuestionForSection = (
-    sectionId: string,
-    questionId: string
-  ) => {
-    setActiveQuestionIdsBySection((current) => ({
-      ...current,
-      [sectionId]: questionId,
-    }));
-  };
+  const setActiveQuestionForSection = useCallback(
+    (sectionId: string, questionId: string) => {
+      setActiveQuestionIdsBySection((current) => ({
+        ...current,
+        [sectionId]: questionId,
+      }));
+    },
+    []
+  );
 
   const handleCopyLink = () => {
     if (!shareQuery?.shareLink?.code) return;
@@ -393,10 +393,14 @@ export function FormStudio({
     };
   };
 
-  const addSection = () => {
+  const addSection = (index?: number) => {
     const nextSection = createSectionInput(sectionsArray.fields.length + 1);
 
-    sectionsArray.append(nextSection);
+    if (typeof index === 'number') {
+      sectionsArray.insert(index, nextSection);
+    } else {
+      sectionsArray.append(nextSection);
+    }
     openSection(nextSection.id);
     setActiveQuestionForSection(
       nextSection.id,
@@ -627,6 +631,25 @@ export function FormStudio({
     return () => observer.disconnect();
   }, []);
 
+  const SectionDivider = ({ onClick }: { onClick: () => void }) => (
+    <div className="group relative flex items-center justify-center py-2">
+      <div className="absolute inset-x-0 h-px bg-border/40 transition-colors group-hover:bg-border/60" />
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={onClick}
+        className={cn(
+          'relative h-8 gap-2 rounded-full border border-dashed bg-background px-4 opacity-40 transition-all hover:opacity-100',
+          studioToneClasses.secondaryButtonClassName
+        )}
+      >
+        <Plus className="h-4 w-4" />
+        {t('studio.add_section')}
+      </Button>
+    </div>
+  );
+
   return (
     <div
       className={cn(
@@ -855,21 +878,11 @@ export function FormStudio({
           </div>
 
           <TabsContent value="build" className="mt-0">
-            <div className="grid items-start gap-6 lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[72px_280px_minmax(0,1fr)]">
+            <div className="grid items-start gap-6 lg:grid-cols-1 xl:grid-cols-[72px_minmax(0,1fr)]">
               <FloatingBlockToolbar
                 toneClasses={studioToneClasses}
-                onAddSection={addSection}
+                onAddSection={() => addSection()}
                 onAddBlock={addBlockToActiveSection}
-              />
-              <BuilderSidebar
-                values={values}
-                activeSectionId={resolvedActiveSectionId}
-                onAddSection={addSection}
-                onSelectSection={(sectionId) => {
-                  openSection(sectionId);
-                  scrollToSection(sectionId);
-                }}
-                toneClasses={studioToneClasses}
               />
               <div className="space-y-6">
                 <Collapsible
@@ -897,14 +910,6 @@ export function FormStudio({
                                 values.theme.coverImage.storagePath
                                   ? t('studio.cover_set')
                                   : t('studio.cover_not_set')}
-                              </Badge>
-                              <Badge
-                                variant="outline"
-                                className="rounded-full px-2 py-0.5 text-[11px]"
-                              >
-                                {isFormDetailsOpen
-                                  ? t('studio.expanded')
-                                  : t('studio.collapsed')}
                               </Badge>
                             </div>
                             <div className="line-clamp-2 text-muted-foreground text-sm">
@@ -989,77 +994,122 @@ export function FormStudio({
                   collisionDetection={closestCenter}
                   onDragEnd={handleSectionDragEnd}
                 >
-                  <SortableContext
-                    items={sectionsArray.fields.map(
-                      (field, sectionIndex) =>
-                        values.sections[sectionIndex]?.id ?? field.id
+                  <div className="space-y-4">
+                    {sectionsArray.fields.length > 0 && (
+                      <SectionDivider onClick={() => addSection(0)} />
                     )}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    {sectionsArray.fields.map((field, sectionIndex) => {
-                      const sectionFormId =
-                        values.sections[sectionIndex]?.id ?? field.id;
 
-                      return (
-                        <SectionEditor
-                          key={field.id}
-                          index={sectionIndex}
-                          wsId={wsId}
-                          sectionId={sectionFormId}
-                          form={form}
-                          open={resolvedActiveSectionId === sectionFormId}
-                          onOpenChange={(nextOpen) => {
-                            if (nextOpen) {
-                              openSection(sectionFormId);
-                              return;
-                            }
+                    <SortableContext
+                      items={sectionsArray.fields.map(
+                        (field, sectionIndex) =>
+                          values.sections[sectionIndex]?.id ?? field.id
+                      )}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div className="space-y-4">
+                        {sectionsArray.fields.map((field, sectionIndex) => {
+                          const sectionFormId =
+                            values.sections[sectionIndex]?.id ?? field.id;
 
-                            if (resolvedActiveSectionId === sectionFormId) {
-                              setActiveSectionId('');
-                            }
-                          }}
-                          activeQuestionId={
-                            activeQuestionIdsBySection[sectionFormId]
-                          }
-                          onActiveQuestionChange={(questionId) =>
-                            setActiveQuestionForSection(
-                              sectionFormId,
-                              questionId
-                            )
-                          }
-                          onDuplicate={() => {
-                            const section = form.getValues(
-                              `sections.${sectionIndex}`
-                            );
+                          return (
+                            <div key={field.id} className="space-y-4">
+                              <SectionEditor
+                                index={sectionIndex}
+                                wsId={wsId}
+                                sectionId={sectionFormId}
+                                form={form}
+                                open={resolvedActiveSectionId === sectionFormId}
+                                onOpenChange={(nextOpen) => {
+                                  if (nextOpen) {
+                                    openSection(sectionFormId);
+                                    return;
+                                  }
 
-                            if (!section) {
-                              return;
-                            }
+                                  if (
+                                    resolvedActiveSectionId === sectionFormId
+                                  ) {
+                                    setActiveSectionId('');
+                                  }
+                                }}
+                                activeQuestionId={
+                                  activeQuestionIdsBySection[sectionFormId]
+                                }
+                                onActiveQuestionChange={(questionId) =>
+                                  setActiveQuestionForSection(
+                                    sectionFormId,
+                                    questionId
+                                  )
+                                }
+                                onDuplicate={() => {
+                                  const section = form.getValues(
+                                    `sections.${sectionIndex}`
+                                  );
 
-                            const nextSection = duplicateSectionInput(section);
-                            sectionsArray.insert(sectionIndex + 1, nextSection);
-                            openSection(nextSection.id);
-                            scrollToSection(nextSection.id);
-                          }}
-                          toneClasses={studioToneClasses}
-                          onRemove={() => {
-                            sectionsArray.remove(sectionIndex);
-                            if (resolvedActiveSectionId === sectionFormId) {
-                              setActiveSectionId('');
-                            }
-                          }}
-                          onMoveUp={() =>
-                            sectionIndex > 0 &&
-                            sectionsArray.move(sectionIndex, sectionIndex - 1)
-                          }
-                          onMoveDown={() =>
-                            sectionIndex < sectionsArray.fields.length - 1 &&
-                            sectionsArray.move(sectionIndex, sectionIndex + 1)
-                          }
-                        />
-                      );
-                    })}
-                  </SortableContext>
+                                  if (!section) {
+                                    return;
+                                  }
+
+                                  const nextSection =
+                                    duplicateSectionInput(section);
+                                  sectionsArray.insert(
+                                    sectionIndex + 1,
+                                    nextSection
+                                  );
+                                  openSection(nextSection.id);
+                                  scrollToSection(nextSection.id);
+                                }}
+                                toneClasses={studioToneClasses}
+                                onRemove={() => {
+                                  sectionsArray.remove(sectionIndex);
+                                  if (
+                                    resolvedActiveSectionId === sectionFormId
+                                  ) {
+                                    setActiveSectionId('');
+                                  }
+                                }}
+                                onMoveUp={() =>
+                                  sectionIndex > 0 &&
+                                  sectionsArray.move(
+                                    sectionIndex,
+                                    sectionIndex - 1
+                                  )
+                                }
+                                onMoveDown={() =>
+                                  sectionIndex <
+                                    sectionsArray.fields.length - 1 &&
+                                  sectionsArray.move(
+                                    sectionIndex,
+                                    sectionIndex + 1
+                                  )
+                                }
+                              />
+                              <SectionDivider
+                                onClick={() => addSection(sectionIndex + 1)}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </SortableContext>
+
+                    {sectionsArray.fields.length === 0 && (
+                      <div className="flex flex-col items-center justify-center rounded-3xl border border-border/60 border-dashed bg-background/40 py-12">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className={cn(
+                            'h-10 gap-2 rounded-full border-border/60 px-6',
+                            studioToneClasses.secondaryButtonClassName
+                          )}
+                          onClick={() => addSection()}
+                        >
+                          <Plus className="h-4 w-4" />
+                          {t('studio.add_section')}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </DndContext>
 
                 <LogicRulesEditor form={form} toneClasses={studioToneClasses} />

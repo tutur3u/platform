@@ -12,8 +12,15 @@ class TaskLinkOption extends Equatable {
   });
 
   factory TaskLinkOption.fromJson(Map<String, dynamic> json) {
+    final id = json['id'];
+    if (id is! String || id.trim().isEmpty) {
+      throw const FormatException(
+        'Invalid task link option payload: missing task id',
+      );
+    }
+
     return TaskLinkOption(
-      id: json['id'] as String? ?? '',
+      id: id,
       name: json['name'] as String? ?? '',
       listName: json['list_name'] as String?,
       boardName: json['board_name'] as String?,

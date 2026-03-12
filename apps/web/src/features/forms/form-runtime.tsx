@@ -5,17 +5,17 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
-  CircleCheckBig,
   Flag,
-  ListChecks,
   Mail,
   Star,
   ZoomIn,
 } from '@tuturuuu/icons';
+import { resolveTurnstileClientState } from '@tuturuuu/turnstile/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader } from '@tuturuuu/ui/card';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
+import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import { Input } from '@tuturuuu/ui/input';
 import { Progress } from '@tuturuuu/ui/progress';
@@ -32,6 +32,7 @@ import { Slider } from '@tuturuuu/ui/slider';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { DEV_MODE } from '@/constants/common';
@@ -39,7 +40,6 @@ import { isAnswerableQuestionType } from './block-utils';
 import { getNextSectionTarget } from './branching';
 import { normalizeMarkdownToText } from './content';
 import { FORM_FONT_VARIABLES, getFormFontStyle } from './fonts';
-import { QuestionTypeIcon } from './form-icons';
 import { FormsImageDialog } from './forms-image-dialog';
 import { FormsMarkdown } from './forms-markdown';
 import { getRuntimeProgressStats } from './runtime-progress';
@@ -67,6 +67,11 @@ interface FormRuntimeProps {
   initialAnswers?: Record<string, FormAnswerValue>;
   answerIssues?: FormReadOnlyAnswerIssue[];
   submittedAt?: string | null;
+  responseCopyEmail?: string | null;
+  readOnlyResponseId?: string | null;
+  readOnlyResponseSessionId?: string | null;
+  canRequestResponseCopy?: boolean;
+  responseCopyAlreadySent?: boolean;
   onProgress?: (payload: {
     sessionId: string;
     lastQuestionId?: string | null;
@@ -75,11 +80,31 @@ interface FormRuntimeProps {
   onSubmit?: (payload: {
     answers: Record<string, FormAnswerValue>;
     turnstileToken?: string;
-  }) => Promise<void>;
+    sendResponseCopy?: boolean;
+  }) => Promise<
+    | undefined
+    | {
+        responseCopyRequested?: boolean;
+        responseCopyStatus?: 'sent' | 'rate_limited' | 'failed' | null;
+        responseCopySentTo?: string | null;
+      }
+  >;
+  onRequestResponseCopy?: (payload: {
+    responseId: string;
+    sessionId: string;
+    turnstileToken?: string;
+  }) => Promise<
+    | undefined
+    | {
+        responseCopySentTo?: string | null;
+      }
+  >;
   isSubmitting?: boolean;
   readOnly?: boolean;
   className?: string;
 }
+
+const SUPPORT_EMAIL = 'support@tuturuuu.com';
 
 const densityClasses = {
   airy: {
@@ -186,6 +211,34 @@ function ExpandableDescriptionPanel({
   );
 }
 
+function FormBrandFooter({ className }: { className?: string }) {
+  return (
+    <Link
+      href="/home"
+      aria-label="Go to Tuturuuu home"
+      className={cn(
+        'group mx-auto flex w-fit items-center gap-3 rounded-full px-2 py-1 text-muted-foreground transition-all hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+        className
+      )}
+    >
+      <TuturuuLogo
+        width={32}
+        height={32}
+        alt="Tuturuuu"
+        className="h-8 w-8 object-contain transition-transform duration-200 group-hover:scale-[1.04]"
+      />
+      <div className="flex translate-y-0.5 flex-col text-left leading-none">
+        <span className="text-[10px] uppercase tracking-[0.24em] transition-colors group-hover:text-foreground/80">
+          Tuturuuu
+        </span>
+        <span className="font-semibold text-lg uppercase tracking-[0.08em]">
+          Forms
+        </span>
+      </div>
+    </Link>
+  );
+}
+
 function QuestionBlock({
   question,
   value,
@@ -257,7 +310,7 @@ function QuestionBlock({
           </div>
         ) : null}
         {question.image?.url ? (
-          <div className="relative aspect-16/9 overflow-hidden rounded-[1.35rem] border border-border/60 bg-background/70">
+          <div className="relative aspect-video overflow-hidden rounded-[1.35rem] border border-border/60 bg-background/70">
             <Image
               src={question.image.url}
               alt={
@@ -383,6 +436,9 @@ function QuestionBlock({
   const optionLayout = settings.optionLayout === 'grid' ? 'grid' : 'list';
   const choiceLayoutClassName =
     optionLayout === 'grid' ? 'grid gap-3 sm:grid-cols-2' : 'space-y-2';
+  const interactionStateClassName = disabled
+    ? 'cursor-default opacity-75'
+    : 'cursor-pointer transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]';
   const selectedDropdownOption =
     question.type === 'dropdown' && typeof value === 'string'
       ? (question.options.find((option) => option.value === value) ?? null)
@@ -394,8 +450,10 @@ function QuestionBlock({
       className={cn(
         'group space-y-4 transition-all duration-300',
         validationError
-          ? 'animate-shake rounded-[2rem] bg-dynamic-red/5 p-6 shadow-dynamic-red/5 shadow-sm ring-1 ring-dynamic-red/20'
-          : 'rounded-[2rem] p-6 transition-colors duration-500 hover:bg-foreground/[0.02]'
+          ? 'animate-shake rounded-4xl bg-dynamic-red/5 p-6 shadow-dynamic-red/5 shadow-sm ring-1 ring-dynamic-red/20'
+          : disabled
+            ? 'rounded-4xl p-6'
+            : 'rounded-4xl p-6 transition-colors duration-500 hover:bg-foreground/2'
       )}
     >
       <div className="space-y-2.5">
@@ -409,7 +467,6 @@ function QuestionBlock({
                 : ''
             )}
           >
-            <QuestionTypeIcon type={question.type} className="h-3.5 w-3.5" />
             <span>{questionTypeLabel}</span>
           </Badge>
           {question.required ? (
@@ -439,10 +496,12 @@ function QuestionBlock({
         {question.image?.url ? (
           <div
             className={cn(
-              'relative mt-3 aspect-16/9 overflow-hidden rounded-[1.25rem] border bg-background/70 shadow-xs transition-all',
+              'relative mt-3 aspect-video overflow-hidden rounded-[1.25rem] border bg-background/70 shadow-xs transition-all',
               validationError
                 ? 'border-dynamic-red/40'
-                : 'border-border/60 hover:border-border/80'
+                : disabled
+                  ? 'border-border/50'
+                  : 'border-border/60 hover:border-border/80'
             )}
           >
             <Image
@@ -454,7 +513,12 @@ function QuestionBlock({
               }
               fill
               unoptimized
-              className="object-cover transition-transform duration-500 hover:scale-105"
+              className={cn(
+                'object-cover',
+                disabled
+                  ? ''
+                  : 'transition-transform duration-500 hover:scale-105'
+              )}
             />
             <Button
               type="button"
@@ -519,7 +583,7 @@ function QuestionBlock({
           className={cn(
             toneClasses.fieldClassName,
             validationError
-              ? '!border-dynamic-red/50 !ring-2 !ring-dynamic-red/15 focus-visible:!border-dynamic-red focus-visible:!ring-dynamic-red/20'
+              ? 'border-dynamic-red/50! ring-2! ring-dynamic-red/15! focus-visible:border-dynamic-red! focus-visible:ring-dynamic-red/20!'
               : ''
           )}
           disabled={disabled}
@@ -536,7 +600,7 @@ function QuestionBlock({
             'min-h-32',
             toneClasses.fieldClassName,
             validationError
-              ? '!border-dynamic-red/50 !ring-2 !ring-dynamic-red/15 focus-visible:!border-dynamic-red focus-visible:!ring-dynamic-red/20'
+              ? 'border-dynamic-red/50! ring-2! ring-dynamic-red/15! focus-visible:border-dynamic-red! focus-visible:ring-dynamic-red/20!'
               : ''
           )}
           disabled={disabled}
@@ -557,12 +621,19 @@ function QuestionBlock({
             <label
               key={option.id}
               className={cn(
-                'flex h-full cursor-pointer rounded-2xl border p-4 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]',
+                'flex h-full rounded-2xl border p-4',
+                interactionStateClassName,
                 value === option.value
                   ? cn(toneClasses.selectedOptionClassName, 'shadow-md')
                   : validationError
-                    ? '!border-dynamic-red/30 hover:!border-dynamic-red/50 bg-background/50'
-                    : cn(toneClasses.optionCardClassName, 'hover:shadow-sm')
+                    ? cn(
+                        'border-dynamic-red/30! bg-background/50',
+                        disabled ? '' : 'hover:border-dynamic-red/50!'
+                      )
+                    : cn(
+                        toneClasses.optionCardClassName,
+                        disabled ? '' : 'hover:shadow-sm'
+                      )
               )}
             >
               <div className="flex w-full items-start gap-3">
@@ -573,7 +644,7 @@ function QuestionBlock({
                     'mt-1 shrink-0',
                     toneClasses.radioClassName,
                     validationError && value !== option.value
-                      ? '!border-dynamic-red/40'
+                      ? 'border-dynamic-red/40!'
                       : ''
                   )}
                 />
@@ -583,7 +654,7 @@ function QuestionBlock({
                       className={cn(
                         'relative aspect-16/10 overflow-hidden rounded-[1.15rem] border bg-background/70',
                         validationError && value !== option.value
-                          ? '!border-dynamic-red/30'
+                          ? 'border-dynamic-red/30!'
                           : 'border-border/60'
                       )}
                     >
@@ -623,14 +694,6 @@ function QuestionBlock({
                     </div>
                   ) : null}
                   <div className="flex items-start gap-2">
-                    <CircleCheckBig
-                      className={cn(
-                        'mt-0.5 h-4 w-4 shrink-0',
-                        validationError && value !== option.value
-                          ? 'text-dynamic-red/60'
-                          : 'text-muted-foreground'
-                      )}
-                    />
                     <FormsMarkdown
                       content={option.label}
                       className={cn(
@@ -659,12 +722,19 @@ function QuestionBlock({
               <label
                 key={option.id}
                 className={cn(
-                  'flex h-full cursor-pointer rounded-2xl border p-4 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]',
+                  'flex h-full rounded-2xl border p-4',
+                  interactionStateClassName,
                   checked
                     ? cn(toneClasses.selectedOptionClassName, 'shadow-md')
                     : validationError
-                      ? '!border-dynamic-red/30 hover:!border-dynamic-red/50 bg-background/50'
-                      : cn(toneClasses.optionCardClassName, 'hover:shadow-sm')
+                      ? cn(
+                          'border-dynamic-red/30! bg-background/50',
+                          disabled ? '' : 'hover:border-dynamic-red/50!'
+                        )
+                      : cn(
+                          toneClasses.optionCardClassName,
+                          disabled ? '' : 'hover:shadow-sm'
+                        )
                 )}
               >
                 <div className="flex w-full items-start gap-3">
@@ -674,7 +744,7 @@ function QuestionBlock({
                       'mt-1 shrink-0',
                       toneClasses.checkboxClassName,
                       validationError && !checked
-                        ? '!border-dynamic-red/40'
+                        ? 'border-dynamic-red/40!'
                         : ''
                     )}
                     disabled={disabled}
@@ -697,7 +767,7 @@ function QuestionBlock({
                         className={cn(
                           'relative aspect-16/10 overflow-hidden rounded-[1.15rem] border bg-background/70',
                           validationError && !checked
-                            ? '!border-dynamic-red/30'
+                            ? 'border-dynamic-red/30!'
                             : 'border-border/60'
                         )}
                       >
@@ -737,14 +807,6 @@ function QuestionBlock({
                       </div>
                     ) : null}
                     <div className="flex items-start gap-2">
-                      <ListChecks
-                        className={cn(
-                          'mt-0.5 h-4 w-4 shrink-0',
-                          validationError && !checked
-                            ? 'text-dynamic-red/60'
-                            : 'text-muted-foreground'
-                        )}
-                      />
                       <FormsMarkdown
                         content={option.label}
                         className={cn(
@@ -776,7 +838,7 @@ function QuestionBlock({
             className={cn(
               toneClasses.fieldClassName,
               validationError
-                ? '!border-dynamic-red/50 !ring-2 !ring-dynamic-red/15 focus:!border-dynamic-red focus:!ring-dynamic-red/20'
+                ? 'border-dynamic-red/50! ring-2! ring-dynamic-red/15! focus:border-dynamic-red! focus:ring-dynamic-red/20!'
                 : ''
             )}
           >
@@ -788,7 +850,7 @@ function QuestionBlock({
                     className={cn(
                       'relative h-8 w-8 shrink-0 overflow-hidden rounded-xl border bg-background/70',
                       validationError
-                        ? '!border-dynamic-red/30'
+                        ? 'border-dynamic-red/30!'
                         : 'border-border/60'
                     )}
                   >
@@ -859,22 +921,12 @@ function QuestionBlock({
           className={cn(
             'space-y-4 rounded-[1.6rem] border bg-background/45 p-4 transition-all sm:p-5',
             validationError
-              ? '!border-dynamic-red/40 bg-dynamic-red/5'
+              ? 'border-dynamic-red/40! bg-dynamic-red/5'
               : 'border-border/60'
           )}
         >
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex items-start gap-3">
-              <span
-                className={cn(
-                  'flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border bg-background/70 shadow-sm',
-                  validationError
-                    ? '!border-dynamic-red/30 text-dynamic-red'
-                    : 'border-border/60 text-muted-foreground'
-                )}
-              >
-                <QuestionTypeIcon type={question.type} className="h-4 w-4" />
-              </span>
               <div className="space-y-1">
                 <p
                   className={cn(
@@ -904,7 +956,7 @@ function QuestionBlock({
               className={cn(
                 'rounded-full border bg-background/70 px-3 py-1.5 text-sm shadow-sm',
                 validationError
-                  ? '!border-dynamic-red/30 text-dynamic-red'
+                  ? 'border-dynamic-red/30! text-dynamic-red'
                   : 'border-border/60 text-foreground'
               )}
             >
@@ -936,7 +988,7 @@ function QuestionBlock({
             <div
               className={cn(
                 'rounded-[1.45rem] border bg-background/55 p-4 shadow-sm',
-                validationError ? '!border-dynamic-red/20' : 'border-border/60'
+                validationError ? 'border-dynamic-red/20!' : 'border-border/60'
               )}
             >
               <Slider
@@ -994,17 +1046,27 @@ function QuestionBlock({
                         onProgress();
                       }}
                       className={cn(
-                        'rounded-[1.15rem] border px-3 py-3 text-left transition-all duration-300 hover:scale-[1.05] focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[0.95]',
+                        'rounded-[1.15rem] border px-3 py-3 text-left focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                        disabled
+                          ? 'cursor-default opacity-75'
+                          : 'transition-all duration-300 hover:scale-[1.05] active:scale-[0.95]',
                         active
                           ? cn(
                               toneClasses.selectedOptionClassName,
                               'shadow-sm ring-1 ring-current/20'
                             )
                           : validationError
-                            ? 'hover:!border-dynamic-red/40 border-dynamic-red/25 bg-background/40 hover:bg-background/60'
+                            ? cn(
+                                'border-dynamic-red/25 bg-background/40',
+                                disabled
+                                  ? ''
+                                  : 'hover:border-dynamic-red/40! hover:bg-background/60'
+                              )
                             : cn(
                                 toneClasses.optionCardClassName,
-                                'hover:border-foreground/20 hover:bg-background/80 hover:shadow-sm'
+                                disabled
+                                  ? ''
+                                  : 'hover:border-foreground/20 hover:bg-background/80 hover:shadow-sm'
                               )
                       )}
                       aria-label={showLabel ? plainOptionLabel : option.value}
@@ -1051,7 +1113,7 @@ function QuestionBlock({
             <div
               className={cn(
                 'rounded-[1.45rem] border bg-background/55 p-5 shadow-sm',
-                validationError ? '!border-dynamic-red/20' : 'border-border/60'
+                validationError ? 'border-dynamic-red/20!' : 'border-border/60'
               )}
             >
               <div className="flex flex-wrap items-center justify-center gap-2.5">
@@ -1078,17 +1140,27 @@ function QuestionBlock({
                         onProgress();
                       }}
                       className={cn(
-                        'group flex h-14 w-14 items-center justify-center rounded-[1.15rem] border transition-all duration-300 hover:scale-[1.1] hover:border-foreground/20 focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[0.9]',
+                        'group flex h-14 w-14 items-center justify-center rounded-[1.15rem] border focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                        disabled
+                          ? 'cursor-default opacity-75'
+                          : 'transition-all duration-300 hover:scale-[1.1] hover:border-foreground/20 active:scale-[0.9]',
                         selected
                           ? cn(
                               toneClasses.selectedOptionClassName,
                               'shadow-sm ring-1 ring-current/20'
                             )
                           : validationError
-                            ? '!border-dynamic-red/25 hover:!border-dynamic-red/40 bg-background/40 hover:bg-background/60'
+                            ? cn(
+                                'border-dynamic-red/25! bg-background/40',
+                                disabled
+                                  ? ''
+                                  : 'hover:border-dynamic-red/40! hover:bg-background/60'
+                              )
                             : cn(
                                 toneClasses.optionCardClassName,
-                                'hover:bg-background/80 hover:shadow-sm'
+                                disabled
+                                  ? ''
+                                  : 'hover:bg-background/80 hover:shadow-sm'
                               )
                       )}
                       aria-label={normalizeMarkdownToText(option.label)}
@@ -1137,7 +1209,7 @@ function QuestionBlock({
         <div
           className={cn(
             'space-y-3 rounded-[1.45rem] border bg-background/55 p-4 shadow-sm',
-            validationError ? '!border-dynamic-red/40' : 'border-border/60'
+            validationError ? 'border-dynamic-red/40!' : 'border-border/60'
           )}
         >
           <DateTimePicker
@@ -1165,7 +1237,7 @@ function QuestionBlock({
             className={cn(
               toneClasses.fieldClassName,
               validationError
-                ? '!border-dynamic-red/50 !ring-2 !ring-dynamic-red/15 focus:!border-dynamic-red focus:!ring-dynamic-red/20'
+                ? 'border-dynamic-red/50! ring-2! ring-dynamic-red/15! focus:border-dynamic-red! focus:ring-dynamic-red/20!'
                 : ''
             )}
           >
@@ -1211,8 +1283,14 @@ export function FormRuntime({
   initialAnswers,
   answerIssues = [],
   submittedAt,
+  responseCopyEmail,
+  readOnlyResponseId,
+  readOnlyResponseSessionId,
+  canRequestResponseCopy = false,
+  responseCopyAlreadySent = false,
   onProgress,
   onSubmit,
+  onRequestResponseCopy,
   isSubmitting = false,
   readOnly = false,
   className,
@@ -1234,6 +1312,19 @@ export function FormRuntime({
   const [validationErrorsByQuestionId, setValidationErrorsByQuestionId] =
     useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [sendResponseCopy, setSendResponseCopy] = useState(false);
+  const [submittedResponseCopyEmail, setSubmittedResponseCopyEmail] = useState<
+    string | null
+  >(null);
+  const [submittedResponseCopyStatus, setSubmittedResponseCopyStatus] =
+    useState<'sent' | 'rate_limited' | 'failed' | null>(null);
+  const [submittedResponseCopyRequested, setSubmittedResponseCopyRequested] =
+    useState(false);
+  const [isRequestingResponseCopy, setIsRequestingResponseCopy] =
+    useState(false);
+  const [readOnlyResponseCopySentTo, setReadOnlyResponseCopySentTo] = useState<
+    string | null
+  >(responseCopyAlreadySent ? (responseCopyEmail ?? null) : null);
   const [captchaToken, setCaptchaToken] = useState<string>();
   const [captchaError, setCaptchaError] = useState<string>();
   const [previewImage, setPreviewImage] = useState<{
@@ -1258,9 +1349,13 @@ export function FormRuntime({
     form.theme.typography.bodySize
   );
   const density = densityClasses[form.theme.density];
-  const turnstileSiteKey =
-    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? undefined;
-  const requiresTurnstile = mode === 'public' && !readOnly && !DEV_MODE;
+  const turnstileClientState = resolveTurnstileClientState({
+    devMode: DEV_MODE,
+    siteKey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+  });
+  const turnstileSiteKey = turnstileClientState.siteKey;
+  const requiresTurnstile =
+    mode === 'public' && turnstileClientState.isRequired;
   const currentSectionIndex = form.sections.findIndex(
     (section) => section.id === currentSectionId
   );
@@ -1345,14 +1440,50 @@ export function FormRuntime({
       ),
     [answerIssues, questionIdSet]
   );
+  const hasReadOnlyNextSection =
+    readOnly && Boolean(advanceTarget.targetSectionId);
+  const canTriggerReadOnlyResponseCopy = Boolean(
+    readOnly &&
+      canRequestResponseCopy &&
+      onRequestResponseCopy &&
+      readOnlyResponseId &&
+      readOnlyResponseSessionId &&
+      !readOnlyResponseCopySentTo
+  );
   const shouldShowTurnstile =
-    requiresTurnstile && !readOnly && advanceTarget.type === 'submit';
+    requiresTurnstile &&
+    ((!readOnly && advanceTarget.type === 'submit') ||
+      canTriggerReadOnlyResponseCopy);
+  const shouldShowSectionNavigation =
+    !readOnly || sectionTrail.length > 1 || hasReadOnlyNextSection;
+  const isSubmitBlockedByTurnstile =
+    !readOnly && shouldShowTurnstile && !captchaToken;
+  const isResponseCopyBlockedByTurnstile =
+    readOnly &&
+    canTriggerReadOnlyResponseCopy &&
+    requiresTurnstile &&
+    !captchaToken;
+  const isBusy = isSubmitting || isRequestingResponseCopy;
 
   useEffect(() => {
     const nextAnswers = initialAnswers ?? {};
     answersRef.current = nextAnswers;
     setAnswers(nextAnswers);
   }, [initialAnswers]);
+
+  useEffect(() => {
+    if (responseCopyEmail) {
+      return;
+    }
+
+    setSendResponseCopy(false);
+  }, [responseCopyEmail]);
+
+  useEffect(() => {
+    setReadOnlyResponseCopySentTo(
+      responseCopyAlreadySent ? (responseCopyEmail ?? null) : null
+    );
+  }, [responseCopyAlreadySent, responseCopyEmail]);
 
   useEffect(() => {
     if (shouldShowTurnstile) {
@@ -1463,6 +1594,10 @@ export function FormRuntime({
   };
 
   const handleAdvance = async () => {
+    if (isBusy) {
+      return;
+    }
+
     const currentAnswers = answersRef.current;
 
     if (!readOnly && !validateCurrentSection(currentAnswers)) {
@@ -1537,12 +1672,22 @@ export function FormRuntime({
         return;
       }
 
-      await onSubmit({
+      const submitResult = await onSubmit({
         answers: currentAnswers,
         turnstileToken: captchaToken,
+        sendResponseCopy: Boolean(responseCopyEmail && sendResponseCopy),
       });
       captchaRef.current?.reset();
       setCaptchaToken(undefined);
+      setSubmittedResponseCopyRequested(
+        submitResult?.responseCopyRequested ??
+          Boolean(responseCopyEmail && sendResponseCopy)
+      );
+      setSubmittedResponseCopyStatus(
+        submitResult?.responseCopyStatus ??
+          (submitResult?.responseCopySentTo ? 'sent' : null)
+      );
+      setSubmittedResponseCopyEmail(submitResult?.responseCopySentTo ?? null);
       setSubmitted(true);
       return;
     }
@@ -1556,6 +1701,46 @@ export function FormRuntime({
       );
       setError(null);
       setValidationErrorsByQuestionId({});
+    }
+  };
+
+  const handleReadOnlyResponseCopy = async () => {
+    if (
+      isBusy ||
+      !onRequestResponseCopy ||
+      !readOnlyResponseId ||
+      !readOnlyResponseSessionId
+    ) {
+      return;
+    }
+
+    if (requiresTurnstile && !turnstileSiteKey) {
+      setError(t('runtime.turnstile_not_configured'));
+      return;
+    }
+
+    if (requiresTurnstile && !captchaToken) {
+      setError(t('runtime.turnstile_required'));
+      return;
+    }
+
+    setIsRequestingResponseCopy(true);
+    setError(null);
+
+    try {
+      const result = await onRequestResponseCopy({
+        responseId: readOnlyResponseId,
+        sessionId: readOnlyResponseSessionId,
+        turnstileToken: captchaToken,
+      });
+
+      setReadOnlyResponseCopySentTo(
+        result?.responseCopySentTo ?? responseCopyEmail ?? null
+      );
+      captchaRef.current?.reset();
+      setCaptchaToken(undefined);
+    } finally {
+      setIsRequestingResponseCopy(false);
     }
   };
 
@@ -1633,6 +1818,52 @@ export function FormRuntime({
                 </div>
               </div>
 
+              {submittedResponseCopyRequested ? (
+                <div
+                  className={cn(
+                    'w-full max-w-lg rounded-[1.6rem] border px-5 py-4 text-left',
+                    submittedResponseCopyEmail
+                      ? 'border-dynamic-green/20 bg-dynamic-green/8'
+                      : 'border-dynamic-orange/20 bg-dynamic-orange/10'
+                  )}
+                >
+                  <div className="flex items-start gap-3">
+                    <Mail
+                      className={cn(
+                        'mt-0.5 h-4 w-4 shrink-0',
+                        submittedResponseCopyEmail
+                          ? 'text-dynamic-green'
+                          : 'text-dynamic-orange'
+                      )}
+                    />
+                    <div className="space-y-1">
+                      <p className="font-medium text-sm">
+                        {submittedResponseCopyEmail
+                          ? t('runtime.response_copy_sent_title')
+                          : submittedResponseCopyStatus === 'rate_limited'
+                            ? t('runtime.response_copy_not_sent_title')
+                            : t('runtime.response_copy_delivery_help_title')}
+                      </p>
+                      <p className="text-muted-foreground text-sm leading-6">
+                        {submittedResponseCopyEmail
+                          ? t('runtime.response_copy_sent_description', {
+                              email: submittedResponseCopyEmail,
+                            })
+                          : submittedResponseCopyStatus === 'rate_limited'
+                            ? t(
+                                'runtime.response_copy_rate_limited_description'
+                              )
+                            : submittedResponseCopyStatus === 'failed'
+                              ? t('runtime.response_copy_failed_description')
+                              : t('runtime.response_copy_support_note', {
+                                  email: SUPPORT_EMAIL,
+                                })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
               <div className="pt-4">
                 <Button
                   variant="outline"
@@ -1647,11 +1878,7 @@ export function FormRuntime({
                 </Button>
               </div>
 
-              <div className="flex items-center gap-3 pt-8 text-[10px] text-muted-foreground uppercase tracking-[0.2em] opacity-40">
-                <div className="h-px w-8 bg-current" />
-                <span>{t('brand')}</span>
-                <div className="h-px w-8 bg-current" />
-              </div>
+              <FormBrandFooter className="mt-2" />
             </CardContent>
           </Card>
         </div>
@@ -1799,6 +2026,78 @@ export function FormRuntime({
                 ) : null}
               </div>
             </div>
+            {readOnlyResponseCopySentTo ? (
+              <div className="flex items-center gap-2 rounded-2xl border border-dynamic-green/20 bg-dynamic-green/8 px-4 py-3 text-sm">
+                <Check className="h-4 w-4 shrink-0 text-dynamic-green" />
+                <p className="text-muted-foreground leading-6">
+                  {t('runtime.response_copy_sent_description', {
+                    email: readOnlyResponseCopySentTo,
+                  })}
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-[1.65rem] border border-border/60 bg-linear-to-br from-background/95 via-background/80 to-background/55 p-5 shadow-sm">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={cn(
+                          'flex h-10 w-10 items-center justify-center rounded-2xl',
+                          toneClasses.iconClassName
+                        )}
+                      >
+                        <Mail className="h-4 w-4" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="font-medium text-sm">
+                          {t('runtime.response_copy_title')}
+                        </p>
+                        <p className="text-muted-foreground text-sm leading-6">
+                          {t('runtime.response_copy_read_only_description')}
+                        </p>
+                      </div>
+                    </div>
+                    {responseCopyEmail ? (
+                      <div className="inline-flex rounded-full border border-border/60 bg-background/85 px-3 py-1.5 font-medium text-xs">
+                        {t('runtime.response_copy_email_badge', {
+                          email: responseCopyEmail,
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-sm leading-6">
+                        {t('runtime.response_copy_unavailable')}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex min-w-62 flex-col items-stretch gap-3 lg:max-w-xs">
+                    <Button
+                      type="button"
+                      className={toneClasses.primaryButtonClassName}
+                      onClick={handleReadOnlyResponseCopy}
+                      disabled={
+                        !canTriggerReadOnlyResponseCopy ||
+                        isBusy ||
+                        isResponseCopyBlockedByTurnstile
+                      }
+                    >
+                      <Mail className="mr-2 h-4 w-4" />
+                      {t('runtime.response_copy_send_now')}
+                    </Button>
+                    <p className="text-muted-foreground text-xs leading-6">
+                      {responseCopyEmail
+                        ? t('runtime.response_copy_once_only')
+                        : t('runtime.response_copy_login_required_hint')}
+                    </p>
+                  </div>
+                </div>
+                <p className="mt-4 text-muted-foreground text-xs leading-6">
+                  {t('runtime.response_copy_support_note', {
+                    email: SUPPORT_EMAIL,
+                  })}
+                </p>
+              </div>
+            )}
             {missingQuestionIssues.length > 0 ? (
               <div className="rounded-2xl border border-dynamic-orange/20 bg-background/55 px-5 py-4">
                 <p className="font-medium text-dynamic-orange text-sm">
@@ -1909,7 +2208,7 @@ export function FormRuntime({
                       : undefined
                   }
                   onImagePreview={(image) => setPreviewImage(image)}
-                  disabled={isSubmitting || readOnly}
+                  disabled={isBusy || readOnly}
                   validationError={validationErrorsByQuestionId[question.id]}
                   toneClasses={toneClasses}
                   typography={form.theme.typography}
@@ -1957,6 +2256,77 @@ export function FormRuntime({
               </div>
             ) : null}
 
+            {mode === 'public' &&
+            !readOnly &&
+            advanceTarget.type === 'submit' ? (
+              <div className="rounded-3xl border border-border/60 bg-linear-to-br from-background/90 via-background/70 to-background/45 p-5 shadow-sm">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={cn(
+                          'flex h-10 w-10 items-center justify-center rounded-2xl',
+                          toneClasses.iconClassName
+                        )}
+                      >
+                        <Mail className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">
+                          {t('runtime.response_copy_title')}
+                        </p>
+                        <p className="text-muted-foreground text-sm">
+                          {t('runtime.response_copy_description')}
+                        </p>
+                      </div>
+                    </div>
+                    {responseCopyEmail ? (
+                      <div className="inline-flex rounded-full border border-border/60 bg-background/80 px-3 py-1.5 font-medium text-xs">
+                        {t('runtime.response_copy_email_badge', {
+                          email: responseCopyEmail,
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-sm leading-6">
+                        {t('runtime.response_copy_unavailable')}
+                      </p>
+                    )}
+                  </div>
+
+                  <label
+                    className={cn(
+                      'flex min-w-60 items-start gap-3 rounded-[1.3rem] border border-border/60 bg-background/75 p-4 text-left transition-colors',
+                      !responseCopyEmail && 'opacity-70'
+                    )}
+                  >
+                    <Checkbox
+                      checked={sendResponseCopy}
+                      onCheckedChange={(checked) =>
+                        setSendResponseCopy(checked === true)
+                      }
+                      disabled={!responseCopyEmail || isBusy}
+                      className="mt-0.5"
+                    />
+                    <div className="space-y-1">
+                      <p className="font-medium text-sm">
+                        {t('runtime.response_copy_checkbox')}
+                      </p>
+                      <p className="text-muted-foreground text-xs leading-5">
+                        {responseCopyEmail
+                          ? t('runtime.response_copy_once_only')
+                          : t('runtime.response_copy_login_required_hint')}
+                      </p>
+                    </div>
+                  </label>
+                </div>
+                <p className="mt-4 text-muted-foreground text-xs leading-6">
+                  {t('runtime.response_copy_support_note', {
+                    email: SUPPORT_EMAIL,
+                  })}
+                </p>
+              </div>
+            ) : null}
+
             {shouldShowTurnstile ? (
               <div className="space-y-3 rounded-[1.4rem] border border-border/60 bg-background/60 p-4">
                 <div className="space-y-1">
@@ -1995,7 +2365,7 @@ export function FormRuntime({
               </div>
             ) : null}
 
-            {!readOnly ? (
+            {shouldShowSectionNavigation ? (
               <div className="relative z-10 flex flex-col gap-3 border-border/50 border-t pt-6 sm:flex-row sm:items-center sm:justify-between">
                 <Button
                   type="button"
@@ -2013,7 +2383,7 @@ export function FormRuntime({
                     );
                     setCurrentSectionId(previousSectionId);
                   }}
-                  disabled={sectionTrail.length <= 1 || isSubmitting}
+                  disabled={sectionTrail.length <= 1 || isBusy}
                 >
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   {t('runtime.back')}
@@ -2024,31 +2394,34 @@ export function FormRuntime({
                       {t('studio.target_section')}: {advanceSectionTitle}
                     </div>
                   ) : null}
-                  <Button
-                    type="button"
-                    className={toneClasses.primaryButtonClassName}
-                    onClick={handleAdvance}
-                    disabled={isSubmitting}
-                  >
-                    {advanceTarget.type === 'submit' ? (
-                      <>
-                        <Check className="mr-2 h-4 w-4" />
-                        {mode === 'preview'
-                          ? t('runtime.finish_preview')
-                          : t('runtime.submit_response')}
-                      </>
-                    ) : (
-                      <>
-                        {t('runtime.continue')}
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </>
-                    )}
-                  </Button>
+                  {!readOnly || hasReadOnlyNextSection ? (
+                    <Button
+                      type="button"
+                      className={toneClasses.primaryButtonClassName}
+                      onClick={handleAdvance}
+                      disabled={isBusy || isSubmitBlockedByTurnstile}
+                    >
+                      {advanceTarget.type === 'submit' ? (
+                        <>
+                          <Check className="mr-2 h-4 w-4" />
+                          {mode === 'preview'
+                            ? t('runtime.finish_preview')
+                            : t('runtime.submit_response')}
+                        </>
+                      ) : (
+                        <>
+                          {t('runtime.continue')}
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </>
+                      )}
+                    </Button>
+                  ) : null}
                 </div>
               </div>
             ) : null}
           </CardContent>
         </Card>
+        <FormBrandFooter className="pb-2" />
         {previewImage ? (
           <FormsImageDialog
             open={!!previewImage}

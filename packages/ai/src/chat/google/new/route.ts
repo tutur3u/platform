@@ -27,7 +27,7 @@ export function createPOST(
       if (!message)
         return NextResponse.json('No message provided', { status: 400 });
 
-      const supabase = await createClient();
+      const supabase = await createClient(req);
 
       const {
         data: { user },

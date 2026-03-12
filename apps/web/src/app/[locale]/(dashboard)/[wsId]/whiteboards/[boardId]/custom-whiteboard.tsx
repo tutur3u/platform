@@ -37,6 +37,12 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  getWhiteboardMutationErrorKey,
+  getWhiteboardTitleValidationError,
+  normalizeWhiteboardTitle,
+  WHITEBOARD_TITLE_MAX_LENGTH,
+} from '../validation';
 import './excalidraw-overrides.css';
 
 const Excalidraw = dynamic(
@@ -121,6 +127,7 @@ export function CustomWhiteboard({
   const supabase = createClient();
   const { resolvedTheme } = useTheme();
   const t = useTranslations('ws-presence');
+  const commonT = useTranslations('common');
   const wsPresence = useOptionalWorkspacePresenceContext();
 
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('synced');
@@ -576,7 +583,14 @@ export function CustomWhiteboard({
 
   const saveTitle = useCallback(
     async (newTitle: string) => {
-      const trimmedTitle = newTitle.trim();
+      const validationError = getWhiteboardTitleValidationError(newTitle);
+      if (validationError) {
+        toast.error(commonT(validationError));
+        setEditedTitle(boardName);
+        return;
+      }
+
+      const trimmedTitle = normalizeWhiteboardTitle(newTitle);
       if (!trimmedTitle || trimmedTitle === boardName) {
         setEditedTitle(boardName);
         return;
@@ -592,13 +606,19 @@ export function CustomWhiteboard({
           .eq('id', boardId);
 
         if (error) throw error;
+        setEditedTitle(trimmedTitle);
       } catch (error) {
         console.error('Failed to save title:', error);
-        toast.error('Failed to update title');
+        const errorKey = getWhiteboardMutationErrorKey(
+          error as Error & { details?: string }
+        );
+        toast.error(
+          errorKey ? commonT(errorKey) : commonT('update_whiteboard_error')
+        );
         setEditedTitle(boardName);
       }
     },
-    [supabase, boardId, boardName]
+    [supabase, boardId, boardName, commonT]
   );
 
   const handleTitleChange = useCallback(
@@ -827,6 +847,7 @@ export function CustomWhiteboard({
               onKeyDown={handleTitleKeyDown}
               className="h-8 max-w-md font-semibold text-lg"
               autoFocus
+              maxLength={WHITEBOARD_TITLE_MAX_LENGTH}
             />
           ) : (
             <button

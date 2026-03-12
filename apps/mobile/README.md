@@ -33,6 +33,28 @@ $ flutter run --flavor production --target lib/main_production.dart
 
 _\*Tuturuuu works on iOS, Android, Web, and Windows._
 
+### Google Sign-In config
+
+Native Google sign-in in `apps/mobile` uses:
+
+- `GOOGLE_WEB_CLIENT_ID`
+- `GOOGLE_IOS_CLIENT_ID`
+
+The current baked-in fallback value for `GOOGLE_WEB_CLIENT_ID` is:
+
+```text
+21140998358-islbgrnrvoqipmghnb3rq5cjg23rvr9m.apps.googleusercontent.com
+```
+
+The current baked-in fallback value for `GOOGLE_IOS_CLIENT_ID` is:
+
+```text
+21140998358-slkc76eli9ggd8d75osab1bq6rdqlnni.apps.googleusercontent.com
+```
+
+You still need to ensure each non-production flavor has its own matching
+Firebase app registration and native config files.
+
 ---
 
 ## Running Tests 🧪

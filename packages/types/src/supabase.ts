@@ -22035,7 +22035,10 @@ export type Database = {
           workspaces_created_today: number;
         }[];
       };
-      get_workspace_storage_limit: { Args: { ws_id: string }; Returns: number };
+      get_workspace_storage_limit: {
+        Args: { p_ws_id: string };
+        Returns: number;
+      };
       get_workspace_task_history: {
         Args: {
           p_board_id?: string;

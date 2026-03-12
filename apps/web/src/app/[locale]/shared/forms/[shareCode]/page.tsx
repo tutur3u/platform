@@ -79,6 +79,11 @@ export default async function SharedFormPage({ params }: PageProps) {
       initialAnswers={data.initialAnswers}
       answerIssues={data.answerIssues}
       submittedAt={data.submittedAt}
+      responseCopyEmail={data.responseCopyEmail}
+      readOnlyResponseId={data.readOnlyResponseId}
+      readOnlyResponseSessionId={data.readOnlyResponseSessionId}
+      canRequestResponseCopy={data.canRequestResponseCopy}
+      responseCopyAlreadySent={data.responseCopyAlreadySent}
     />
   );
 }

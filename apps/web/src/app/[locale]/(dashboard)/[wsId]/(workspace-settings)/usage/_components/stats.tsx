@@ -124,7 +124,7 @@ export async function DriveUsageStats({
 
     const { data: storageLimit } = await supabase.rpc(
       'get_workspace_storage_limit',
-      { ws_id: wsId }
+      { p_ws_id: wsId }
     );
 
     const effectiveLimit = isRootWorkspace ? undefined : storageLimit;

@@ -47,6 +47,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginSignIn => 'Sign in';
 
   @override
+  String get authContinueWithGoogle => 'Continue with Google';
+
+  @override
+  String get authContinueWithEmail => 'or continue with email';
+
+  @override
+  String get authGoogleLoading => 'Connecting to Google...';
+
+  @override
+  String get authGoogleSignInFailed => 'Google sign-in failed. Please try again.';
+
+  @override
+  String get authGoogleBrowserLaunchFailed => 'Unable to open Google sign-in right now.';
+
+  @override
   String get authLogOut => 'Log out';
 
   @override
@@ -95,6 +110,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signUpBackToLogin => 'Back to login';
 
   @override
+  String get signUpAlreadyHaveAccountPrompt => 'Already have an account?';
+
+  @override
+  String get signUpSignIn => 'Sign in';
+
+  @override
   String get forgotPasswordTitle => 'Reset password';
 
   @override
@@ -122,6 +143,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workspaceSelectError => 'Failed to switch workspace';
 
   @override
+  String get appUpdateChecking => 'Checking app version...';
+
+  @override
+  String get appUpdateNow => 'Update now';
+
+  @override
+  String get appUpdateLater => 'Later';
+
+  @override
+  String get appUpdateRecommendedTitle => 'Update available';
+
+  @override
+  String get appUpdateRecommendedMessage => 'A newer version of the app is available. Update now for the latest fixes and improvements.';
+
+  @override
+  String get appUpdateRequiredTitle => 'Update required';
+
+  @override
+  String get appUpdateRequiredMessage => 'This app version is no longer supported. Update to continue using the app.';
+
+  @override
   String get navHome => 'Home';
 
   @override
@@ -146,6 +188,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navAssistant => 'Assistant';
 
   @override
+  String get navBack => 'Back';
+
+  @override
   String get appsHubSearchHint => 'Search apps';
 
   @override
@@ -158,13 +203,267 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appsHubEmpty => 'No apps found';
 
   @override
+  String get appsHubHeroTitle => 'Workspace tools';
+
+  @override
+  String get appsHubHeroSubtitle => 'Choose a tool to open.';
+
+  @override
+  String get appsHubFeatured => 'Featured';
+
+  @override
+  String get appsHubMoreTools => 'More tools';
+
+  @override
+  String get appsHubSearchResults => 'Search results';
+
+  @override
+  String get appsHubOpenApp => 'Open';
+
+  @override
+  String get appsHubTasksDescription => 'Assigned work, planning, and portfolio.';
+
+  @override
+  String get appsHubCalendarDescription => 'Agenda, upcoming events, and schedule views.';
+
+  @override
+  String get appsHubFinanceDescription => 'Wallets, categories, and transaction history.';
+
+  @override
+  String get appsHubTimerDescription => 'Tracking sessions, stats, and requests.';
+
+  @override
   String get assistantComingSoon => 'Coming Soon';
+
+  @override
+  String get assistantSelectWorkspace => 'Select a workspace';
+
+  @override
+  String get assistantWorkspaceAwareDescription => 'Workspace-aware Mira for planning, questions, and quick actions.';
+
+  @override
+  String get assistantHistoryTitle => 'Recent chats';
+
+  @override
+  String get assistantUntitledChat => 'Untitled chat';
+
+  @override
+  String get assistantPersonalWorkspace => 'Personal';
+
+  @override
+  String get assistantSettingsTitle => 'Mira settings';
+
+  @override
+  String get assistantActionsTitle => 'Mira actions';
+
+  @override
+  String get assistantRenameTitle => 'Rename Mira';
+
+  @override
+  String get assistantRenameAction => 'Rename';
+
+  @override
+  String get assistantCancelAction => 'Cancel';
+
+  @override
+  String get assistantSaveAction => 'Save';
+
+  @override
+  String get assistantCreditsTitle => 'Credits';
+
+  @override
+  String get assistantConversationTitle => 'Conversation';
+
+  @override
+  String get assistantAttachFilesAction => 'Attach files';
+
+  @override
+  String get assistantEnterFullscreenAction => 'Enter fullscreen';
+
+  @override
+  String get assistantExitFullscreenAction => 'Exit fullscreen';
+
+  @override
+  String get assistantPersonalCredits => 'Personal credits';
+
+  @override
+  String get assistantWorkspaceCredits => 'Workspace credits';
+
+  @override
+  String get assistantTasksLabel => 'Tasks';
+
+  @override
+  String get assistantCalendarLabel => 'Calendar';
+
+  @override
+  String get assistantActiveLabel => 'active';
+
+  @override
+  String get assistantDoneTodayLabel => 'done today';
+
+  @override
+  String get assistantUpcomingLabel => 'upcoming';
+
+  @override
+  String get assistantYouLabel => 'You';
+
+  @override
+  String get assistantThinkingStatus => 'Thinking...';
+
+  @override
+  String get assistantReasoningLabel => 'Reasoning';
+
+  @override
+  String get assistantAskPlaceholder => 'Ask Mira anything...';
+
+  @override
+  String get assistantQueuedPrefix => 'Queued:';
+
+  @override
+  String get assistantQuickPromptCalendar => 'Summarize my calendar for today';
+
+  @override
+  String get assistantQuickPromptTasks => 'Show my most urgent tasks';
+
+  @override
+  String get assistantQuickPromptFocus => 'Help me plan my next focus block';
+
+  @override
+  String get assistantQuickPromptExpense => 'Log a quick expense for lunch';
+
+  @override
+  String get assistantNewConversation => 'New conversation';
+
+  @override
+  String get assistantExportChat => 'Export chat';
+
+  @override
+  String get assistantModelLabel => 'Model';
+
+  @override
+  String get assistantModeFast => 'Fast';
+
+  @override
+  String get assistantModeThinking => 'Thinking';
+
+  @override
+  String get assistantImmersiveLabel => 'Immersive';
+
+  @override
+  String get assistantStandardLabel => 'Standard';
+
+  @override
+  String get assistantViewOnlyLabel => 'View only';
+
+  @override
+  String get assistantEditableLabel => 'Editable';
+
+  @override
+  String get assistantSourceLabel => 'Source';
+
+  @override
+  String get assistantToolLabel => 'Tool';
+
+  @override
+  String get assistantInputLabel => 'Input';
+
+  @override
+  String get assistantOutputLabel => 'Output';
+
+  @override
+  String get assistantSeeMoreLabel => 'See more';
+
+  @override
+  String get assistantSeeLessLabel => 'See less';
+
+  @override
+  String get assistantExportShareText => 'Mira chat export';
+
+  @override
+  String get assistantContextUpdatedLabel => 'Workspace context updated';
+
+  @override
+  String get assistantPreferencesUpdatedLabel => 'Assistant preferences updated';
+
+  @override
+  String get assistantShowBottomNavLabel => 'Show bottom nav';
+
+  @override
+  String get assistantHideBottomNavLabel => 'Hide bottom nav';
+
+  @override
+  String assistantCreditsSummary(int remaining, String tier) {
+    return '$remaining remaining • $tier';
+  }
 
   @override
   String get dashboardGreeting => 'Welcome back!';
 
   @override
   String get dashboardQuickActions => 'Quick actions';
+
+  @override
+  String get dashboardTodayTitle => 'Today at a glance';
+
+  @override
+  String get dashboardQuickLaunch => 'Quick launch';
+
+  @override
+  String get dashboardAssignedToMe => 'Assigned to me';
+
+  @override
+  String get dashboardUpcomingEvents => 'Upcoming events';
+
+  @override
+  String get dashboardOpenTasks => 'Open tasks';
+
+  @override
+  String get dashboardOpenCalendar => 'Open calendar';
+
+  @override
+  String get dashboardNoAssignedTasks => 'No active tasks assigned to you.';
+
+  @override
+  String get dashboardNoAssignedTasksDescription => 'You\'re clear for now. New work will appear here.';
+
+  @override
+  String get dashboardNoUpcomingEvents => 'No upcoming timed events in the next 7 days.';
+
+  @override
+  String get dashboardNoUpcomingEventsDescription => 'Your schedule looks open.';
+
+  @override
+  String get dashboardTaskOverdue => 'Overdue';
+
+  @override
+  String get dashboardTaskToday => 'Today';
+
+  @override
+  String get dashboardTaskTomorrow => 'Tomorrow';
+
+  @override
+  String get dashboardTaskUpcoming => 'Upcoming';
+
+  @override
+  String get dashboardTaskNoDate => 'No due date';
+
+  @override
+  String get dashboardEventAllDay => 'All day';
+
+  @override
+  String dashboardTasksMetric(Object count) {
+    return '$count active';
+  }
+
+  @override
+  String dashboardOverdueMetric(Object count) {
+    return '$count overdue';
+  }
+
+  @override
+  String dashboardEventsMetric(Object count) {
+    return '$count next up';
+  }
 
   @override
   String get tasksTitle => 'Tasks';

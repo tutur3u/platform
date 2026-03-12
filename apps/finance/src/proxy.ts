@@ -36,24 +36,22 @@ const authProxy = createCentralizedAuthProxy({
 });
 
 export async function proxy(req: NextRequest): Promise<NextResponse> {
-  // Handle authentication and MFA with the centralized middleware
-  const authRes = await authProxy(req);
-
-  // If the auth middleware returned a redirect response, return it
-  if (authRes.headers.has('Location')) {
-    return authRes;
-  }
-
-  // Skip locale handling for API routes
   if (req.nextUrl.pathname.startsWith('/api')) {
     const guardResponse = await guardApiProxyRequest(req, {
       prefixBase: 'proxy:finance:api',
     });
     if (guardResponse) {
-      propagateAuthCookies(authRes, guardResponse);
       return guardResponse;
     }
 
+    return NextResponse.next();
+  }
+
+  // Handle authentication and MFA with the centralized middleware
+  const authRes = await authProxy(req);
+
+  // If the auth middleware returned a redirect response, return it
+  if (authRes.headers.has('Location')) {
     return authRes;
   }
 

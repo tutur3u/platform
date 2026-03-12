@@ -47,6 +47,21 @@ class AppLocalizationsVi extends AppLocalizations {
   String get loginSignIn => 'Đăng nhập';
 
   @override
+  String get authContinueWithGoogle => 'Tiếp tục với Google';
+
+  @override
+  String get authContinueWithEmail => 'hoặc tiếp tục với email';
+
+  @override
+  String get authGoogleLoading => 'Đang kết nối với Google...';
+
+  @override
+  String get authGoogleSignInFailed => 'Đăng nhập Google thất bại. Vui lòng thử lại.';
+
+  @override
+  String get authGoogleBrowserLaunchFailed => 'Không thể mở đăng nhập Google lúc này.';
+
+  @override
   String get authLogOut => 'Đăng xuất';
 
   @override
@@ -95,6 +110,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get signUpBackToLogin => 'Quay lại đăng nhập';
 
   @override
+  String get signUpAlreadyHaveAccountPrompt => 'Đã có tài khoản?';
+
+  @override
+  String get signUpSignIn => 'Đăng nhập';
+
+  @override
   String get forgotPasswordTitle => 'Đặt lại mật khẩu';
 
   @override
@@ -122,6 +143,27 @@ class AppLocalizationsVi extends AppLocalizations {
   String get workspaceSelectError => 'Không thể chuyển không gian làm việc';
 
   @override
+  String get appUpdateChecking => 'Đang kiểm tra phiên bản ứng dụng...';
+
+  @override
+  String get appUpdateNow => 'Cập nhật ngay';
+
+  @override
+  String get appUpdateLater => 'Để sau';
+
+  @override
+  String get appUpdateRecommendedTitle => 'Có bản cập nhật mới';
+
+  @override
+  String get appUpdateRecommendedMessage => 'Đã có phiên bản ứng dụng mới hơn. Hãy cập nhật để nhận các bản sửa lỗi và cải tiến mới nhất.';
+
+  @override
+  String get appUpdateRequiredTitle => 'Bắt buộc cập nhật';
+
+  @override
+  String get appUpdateRequiredMessage => 'Phiên bản ứng dụng này không còn được hỗ trợ. Vui lòng cập nhật để tiếp tục sử dụng.';
+
+  @override
   String get navHome => 'Trang chủ';
 
   @override
@@ -146,6 +188,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get navAssistant => 'Trợ lý';
 
   @override
+  String get navBack => 'Quay lại';
+
+  @override
   String get appsHubSearchHint => 'Tìm kiếm ứng dụng';
 
   @override
@@ -158,13 +203,267 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appsHubEmpty => 'Không tìm thấy ứng dụng';
 
   @override
+  String get appsHubHeroTitle => 'Công cụ không gian làm việc';
+
+  @override
+  String get appsHubHeroSubtitle => 'Chọn một công cụ để mở.';
+
+  @override
+  String get appsHubFeatured => 'Nổi bật';
+
+  @override
+  String get appsHubMoreTools => 'Công cụ khác';
+
+  @override
+  String get appsHubSearchResults => 'Kết quả tìm kiếm';
+
+  @override
+  String get appsHubOpenApp => 'Mở';
+
+  @override
+  String get appsHubTasksDescription => 'Công việc được giao, lập kế hoạch và portfolio.';
+
+  @override
+  String get appsHubCalendarDescription => 'Lịch làm việc, sự kiện sắp tới và các chế độ xem lịch.';
+
+  @override
+  String get appsHubFinanceDescription => 'Ví, danh mục và lịch sử giao dịch.';
+
+  @override
+  String get appsHubTimerDescription => 'Theo dõi phiên, thống kê và yêu cầu.';
+
+  @override
   String get assistantComingSoon => 'Sắp ra mắt';
+
+  @override
+  String get assistantSelectWorkspace => 'Chọn một không gian làm việc';
+
+  @override
+  String get assistantWorkspaceAwareDescription => 'Mira theo ngữ cảnh không gian làm việc cho việc lên kế hoạch, hỏi đáp và thao tác nhanh.';
+
+  @override
+  String get assistantHistoryTitle => 'Đoạn chat gần đây';
+
+  @override
+  String get assistantUntitledChat => 'Đoạn chat chưa có tiêu đề';
+
+  @override
+  String get assistantPersonalWorkspace => 'Cá nhân';
+
+  @override
+  String get assistantSettingsTitle => 'Cài đặt Mira';
+
+  @override
+  String get assistantActionsTitle => 'Thao tác Mira';
+
+  @override
+  String get assistantRenameTitle => 'Đổi tên Mira';
+
+  @override
+  String get assistantRenameAction => 'Đổi tên';
+
+  @override
+  String get assistantCancelAction => 'Huỷ';
+
+  @override
+  String get assistantSaveAction => 'Lưu';
+
+  @override
+  String get assistantCreditsTitle => 'Tín dụng';
+
+  @override
+  String get assistantConversationTitle => 'Cuộc trò chuyện';
+
+  @override
+  String get assistantAttachFilesAction => 'Đính kèm tệp';
+
+  @override
+  String get assistantEnterFullscreenAction => 'Vào toàn màn hình';
+
+  @override
+  String get assistantExitFullscreenAction => 'Thoát toàn màn hình';
+
+  @override
+  String get assistantPersonalCredits => 'Tín dụng cá nhân';
+
+  @override
+  String get assistantWorkspaceCredits => 'Tín dụng không gian làm việc';
+
+  @override
+  String get assistantTasksLabel => 'Công việc';
+
+  @override
+  String get assistantCalendarLabel => 'Lịch';
+
+  @override
+  String get assistantActiveLabel => 'đang hoạt động';
+
+  @override
+  String get assistantDoneTodayLabel => 'hoàn thành hôm nay';
+
+  @override
+  String get assistantUpcomingLabel => 'sắp tới';
+
+  @override
+  String get assistantYouLabel => 'Bạn';
+
+  @override
+  String get assistantThinkingStatus => 'Đang suy nghĩ...';
+
+  @override
+  String get assistantReasoningLabel => 'Lý do';
+
+  @override
+  String get assistantAskPlaceholder => 'Hỏi Mira bất cứ điều gì...';
+
+  @override
+  String get assistantQueuedPrefix => 'Đang xếp hàng:';
+
+  @override
+  String get assistantQuickPromptCalendar => 'Tóm tắt lịch hôm nay của tôi';
+
+  @override
+  String get assistantQuickPromptTasks => 'Cho tôi xem các công việc khẩn cấp nhất';
+
+  @override
+  String get assistantQuickPromptFocus => 'Giúp tôi lên kế hoạch cho một khối tập trung tiếp theo';
+
+  @override
+  String get assistantQuickPromptExpense => 'Ghi nhanh một khoản chi cho bữa trưa';
+
+  @override
+  String get assistantNewConversation => 'Cuộc trò chuyện mới';
+
+  @override
+  String get assistantExportChat => 'Xuất đoạn chat';
+
+  @override
+  String get assistantModelLabel => 'Mô hình';
+
+  @override
+  String get assistantModeFast => 'Nhanh';
+
+  @override
+  String get assistantModeThinking => 'Suy nghĩ';
+
+  @override
+  String get assistantImmersiveLabel => 'Tập trung';
+
+  @override
+  String get assistantStandardLabel => 'Tiêu chuẩn';
+
+  @override
+  String get assistantViewOnlyLabel => 'Chỉ xem';
+
+  @override
+  String get assistantEditableLabel => 'Có thể chỉnh sửa';
+
+  @override
+  String get assistantSourceLabel => 'Nguồn';
+
+  @override
+  String get assistantToolLabel => 'Công cụ';
+
+  @override
+  String get assistantInputLabel => 'Đầu vào';
+
+  @override
+  String get assistantOutputLabel => 'Đầu ra';
+
+  @override
+  String get assistantSeeMoreLabel => 'Xem thêm';
+
+  @override
+  String get assistantSeeLessLabel => 'Thu gọn';
+
+  @override
+  String get assistantExportShareText => 'Xuất đoạn chat Mira';
+
+  @override
+  String get assistantContextUpdatedLabel => 'Đã cập nhật ngữ cảnh không gian làm việc';
+
+  @override
+  String get assistantPreferencesUpdatedLabel => 'Đã cập nhật tuỳ chọn trợ lý';
+
+  @override
+  String get assistantShowBottomNavLabel => 'Hiện thanh điều hướng dưới';
+
+  @override
+  String get assistantHideBottomNavLabel => 'Ẩn thanh điều hướng dưới';
+
+  @override
+  String assistantCreditsSummary(int remaining, String tier) {
+    return 'Còn $remaining • $tier';
+  }
 
   @override
   String get dashboardGreeting => 'Chào mừng trở lại!';
 
   @override
   String get dashboardQuickActions => 'Thao tác nhanh';
+
+  @override
+  String get dashboardTodayTitle => 'Tổng quan hôm nay';
+
+  @override
+  String get dashboardQuickLaunch => 'Mở nhanh';
+
+  @override
+  String get dashboardAssignedToMe => 'Được giao cho tôi';
+
+  @override
+  String get dashboardUpcomingEvents => 'Sự kiện sắp tới';
+
+  @override
+  String get dashboardOpenTasks => 'Mở công việc';
+
+  @override
+  String get dashboardOpenCalendar => 'Mở lịch';
+
+  @override
+  String get dashboardNoAssignedTasks => 'Không có công việc đang hoạt động nào được giao cho bạn.';
+
+  @override
+  String get dashboardNoAssignedTasksDescription => 'Bạn đang khá trống. Công việc mới sẽ xuất hiện ở đây.';
+
+  @override
+  String get dashboardNoUpcomingEvents => 'Không có sự kiện có giờ cụ thể nào trong 7 ngày tới.';
+
+  @override
+  String get dashboardNoUpcomingEventsDescription => 'Lịch của bạn hiện khá thoáng.';
+
+  @override
+  String get dashboardTaskOverdue => 'Quá hạn';
+
+  @override
+  String get dashboardTaskToday => 'Hôm nay';
+
+  @override
+  String get dashboardTaskTomorrow => 'Ngày mai';
+
+  @override
+  String get dashboardTaskUpcoming => 'Sắp tới';
+
+  @override
+  String get dashboardTaskNoDate => 'Không có hạn';
+
+  @override
+  String get dashboardEventAllDay => 'Cả ngày';
+
+  @override
+  String dashboardTasksMetric(Object count) {
+    return '$count đang hoạt động';
+  }
+
+  @override
+  String dashboardOverdueMetric(Object count) {
+    return '$count quá hạn';
+  }
+
+  @override
+  String dashboardEventsMetric(Object count) {
+    return '$count tiếp theo';
+  }
 
   @override
   String get tasksTitle => 'Công việc';

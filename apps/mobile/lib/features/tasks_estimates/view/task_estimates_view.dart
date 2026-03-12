@@ -2,15 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide AppBar, Card, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
-import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/task_label.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/tasks_estimates/cubit/task_estimates_cubit.dart';
 import 'package:mobile/features/tasks_estimates/cubit/task_labels_cubit.dart';
 import 'package:mobile/features/tasks_estimates/widgets/task_estimate_boards_section.dart';
@@ -74,23 +73,7 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
 
     return shad.Scaffold(
       headers: [
-        shad.AppBar(
-          leading: [
-            shad.OutlineButton(
-              density: shad.ButtonDensity.icon,
-              onPressed: () {
-                final router = GoRouter.of(context);
-                if (router.canPop()) {
-                  router.pop();
-                  return;
-                }
-                context.go(Routes.tasks);
-              },
-              child: const Icon(Icons.arrow_back),
-            ),
-          ],
-          title: Text(l10n.taskPlanningTitle),
-        ),
+        MobileSectionAppBar(title: l10n.taskPlanningTitle),
       ],
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>
@@ -98,6 +81,8 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
         listener: (context, state) {
           final wsId = state.currentWorkspace?.id;
           if (wsId != null) {
+            _permissionsWorkspaceId = wsId;
+            unawaited(_loadPermissions());
             unawaited(context.read<TaskEstimatesCubit>().loadBoards(wsId));
             unawaited(context.read<TaskLabelsCubit>().loadLabels(wsId));
           }

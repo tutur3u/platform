@@ -1,20 +1,56 @@
 import 'dart:async';
 
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mobile/core/config/api_config.dart';
+import 'package:mobile/core/config/env.dart';
+import 'package:mobile/core/platform/device_platform.dart';
 import 'package:mobile/core/utils/device_info.dart';
+import 'package:mobile/data/models/auth_action_result.dart';
 import 'package:mobile/data/models/auth_session.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/data/sources/google_identity_client.dart';
+import 'package:mobile/data/sources/oauth_url_launcher.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+typedef PackageInfoLoader = Future<PackageInfo> Function();
 
 /// Repository for all authentication operations.
 ///
 /// Ported from apps/native/lib/stores/auth-store.ts.
 class AuthRepository {
-  AuthRepository({ApiClient? apiClient})
-    : _apiClient = apiClient ?? ApiClient();
+  AuthRepository({
+    ApiClient? apiClient,
+    SupabaseClient? supabaseClient,
+    GoogleIdentityClient? googleIdentityClient,
+    OAuthUrlLauncher? oauthUrlLauncher,
+    PackageInfoLoader? packageInfoLoader,
+    DevicePlatform? devicePlatform,
+    String? googleWebClientId,
+    String? googleIosClientId,
+  }) : _apiClient = apiClient ?? ApiClient(),
+       _client = supabaseClient ?? supabase,
+       _googleIdentityClient =
+           googleIdentityClient ?? GoogleIdentityClientImpl(),
+       _devicePlatform = devicePlatform ?? const DefaultDevicePlatform(),
+       _oauthUrlLauncher =
+           oauthUrlLauncher ??
+           SupabaseOAuthUrlLauncher(
+             devicePlatform: devicePlatform ?? const DefaultDevicePlatform(),
+           ),
+       _packageInfoLoader = packageInfoLoader ?? PackageInfo.fromPlatform,
+       _googleWebClientId = googleWebClientId ?? Env.googleWebClientId,
+       _googleIosClientId = googleIosClientId ?? Env.googleIosClientId;
 
   final ApiClient _apiClient;
+  final SupabaseClient _client;
+  final GoogleIdentityClient _googleIdentityClient;
+  final OAuthUrlLauncher _oauthUrlLauncher;
+  final PackageInfoLoader _packageInfoLoader;
+  final DevicePlatform _devicePlatform;
+  final String _googleWebClientId;
+  final String _googleIosClientId;
 
   // ── OTP ─────────────────────────────────────────
 
@@ -76,7 +112,7 @@ class AuthRepository {
       }
 
       final payload = AuthSessionPayload.fromJson(sessionJson);
-      await supabase.auth.setSession(payload.refreshToken);
+      await _client.auth.setSession(payload.refreshToken);
 
       return (success: true, error: null);
     } on ApiException catch (e) {
@@ -123,7 +159,7 @@ class AuthRepository {
       }
 
       final payload = AuthSessionPayload.fromJson(sessionJson);
-      await supabase.auth.setSession(payload.refreshToken);
+      await _client.auth.setSession(payload.refreshToken);
 
       return (success: true, error: null, retryAfter: null);
     } on ApiException catch (e) {
@@ -140,7 +176,7 @@ class AuthRepository {
   /// Returns `true` if user has verified TOTP factors but session is at aal1.
   bool checkMfaRequired() {
     try {
-      final aal = supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      final aal = _client.auth.mfa.getAuthenticatorAssuranceLevel();
       return aal.currentLevel == AuthenticatorAssuranceLevels.aal1 &&
           aal.nextLevel == AuthenticatorAssuranceLevels.aal2;
     } on Exception {
@@ -150,7 +186,7 @@ class AuthRepository {
 
   /// Returns verified TOTP factors for the current user.
   Future<List<Factor>> getVerifiedTotpFactors() async {
-    final response = await supabase.auth.mfa.listFactors();
+    final response = await _client.auth.mfa.listFactors();
     return response.totp
         .where((f) => f.status == FactorStatus.verified)
         .toList();
@@ -166,10 +202,10 @@ class AuthRepository {
 
       for (final factor in factors) {
         try {
-          final challenge = await supabase.auth.mfa.challenge(
+          final challenge = await _client.auth.mfa.challenge(
             factorId: factor.id,
           );
-          await supabase.auth.mfa.verify(
+          await _client.auth.mfa.verify(
             factorId: factor.id,
             challengeId: challenge.id,
             code: code,
@@ -196,7 +232,7 @@ class AuthRepository {
     String password,
   ) async {
     try {
-      final response = await supabase.auth.signUp(
+      final response = await _client.auth.signUp(
         email: email,
         password: password,
       );
@@ -215,11 +251,106 @@ class AuthRepository {
 
   Future<({bool success, String? error})> resetPassword(String email) async {
     try {
-      await supabase.auth.resetPasswordForEmail(email);
+      await _client.auth.resetPasswordForEmail(email);
       return (success: true, error: null);
     } on AuthException catch (e) {
       return (success: false, error: e.message);
     }
+  }
+
+  // ── Google ─────────────────────────────────────
+
+  Future<AuthActionResult> signInWithGoogle() async {
+    if (_shouldTryNativeGoogleSignIn()) {
+      final nativeResult = await _tryNativeGoogleSignIn();
+      if (nativeResult != null) {
+        return nativeResult;
+      }
+    }
+
+    return _launchBrowserGoogleSignIn();
+  }
+
+  bool _shouldTryNativeGoogleSignIn() {
+    if (!(_devicePlatform.isAndroid || _devicePlatform.isIOS)) {
+      return false;
+    }
+
+    if (_googleWebClientId.isEmpty) {
+      return false;
+    }
+
+    return true;
+  }
+
+  Future<AuthActionResult?> _tryNativeGoogleSignIn() async {
+    try {
+      await _googleIdentityClient.initialize(
+        clientId: _devicePlatform.isIOS && _googleIosClientId.isNotEmpty
+            ? _googleIosClientId
+            : null,
+        serverClientId: _googleWebClientId,
+      );
+
+      if (!_googleIdentityClient.supportsAuthenticate()) {
+        return null;
+      }
+
+      final tokens = await _googleIdentityClient.authenticate();
+
+      await _client.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: tokens.idToken,
+        accessToken: tokens.accessToken,
+      );
+
+      return const AuthActionResult.success();
+    } on GoogleSignInException catch (e) {
+      if (e.code == GoogleSignInExceptionCode.canceled) {
+        return const AuthActionResult.cancelled();
+      }
+
+      return null;
+    } on AuthException {
+      return null;
+    } on Exception {
+      return null;
+    }
+  }
+
+  Future<AuthActionResult> _launchBrowserGoogleSignIn() async {
+    try {
+      final redirectTo = await _buildGoogleRedirectUrl();
+      final launched = await _oauthUrlLauncher.launchGoogleSignIn(
+        authClient: _client.auth,
+        redirectTo: redirectTo,
+        queryParams: const {
+          'access_type': 'offline',
+          'prompt': 'consent',
+        },
+      );
+
+      if (!launched) {
+        return const AuthActionResult.failure(
+          AuthErrorCode.googleBrowserLaunchFailed,
+        );
+      }
+
+      return const AuthActionResult.externalFlowStarted();
+    } on Exception {
+      return const AuthActionResult.failure(
+        AuthErrorCode.googleBrowserLaunchFailed,
+      );
+    }
+  }
+
+  Future<String> _buildGoogleRedirectUrl() async {
+    final packageInfo = await _packageInfoLoader();
+    final packageName = packageInfo.packageName.trim();
+    final scheme = packageName.isEmpty
+        ? 'com.tuturuuu.app.mobile'
+        : packageName;
+    return '$scheme://login-callback';
   }
 
   // ── Session management ──────────────────────────
@@ -228,26 +359,32 @@ class AuthRepository {
   ///
   /// Safe to call after `Supabase.initialize()` has completed (which happens
   /// in `main()` before `runApp()`).
-  User? getCurrentUserSync() => supabase.auth.currentUser;
+  User? getCurrentUserSync() => _client.auth.currentUser;
 
   Future<User?> getCurrentUser() async {
-    return supabase.auth.currentUser;
+    return _client.auth.currentUser;
   }
 
   Future<Session?> getCurrentSession() async {
-    return supabase.auth.currentSession;
+    return _client.auth.currentSession;
   }
 
   Stream<AuthState> onAuthStateChange() {
-    return supabase.auth.onAuthStateChange;
+    return _client.auth.onAuthStateChange;
   }
 
   Future<void> signOut() async {
-    await supabase.auth.signOut();
+    try {
+      await _googleIdentityClient.signOut();
+    } on Exception {
+      // Ignore Google sign-out failures and still clear the Supabase session.
+    }
+
+    await _client.auth.signOut();
   }
 
   Future<void> refreshSession() async {
-    await supabase.auth.refreshSession();
+    await _client.auth.refreshSession();
   }
 
   void dispose() {

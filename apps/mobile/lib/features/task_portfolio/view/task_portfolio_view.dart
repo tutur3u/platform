@@ -11,6 +11,7 @@ import 'package:mobile/data/models/task_initiative_summary.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
+import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/task_portfolio/cubit/task_portfolio_cubit.dart';
 import 'package:mobile/features/task_portfolio/view/task_portfolio_actions.dart';
 import 'package:mobile/features/task_portfolio/view/task_portfolio_permissions_controller.dart';
@@ -73,23 +74,7 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
   Widget build(BuildContext context) {
     return shad.Scaffold(
       headers: [
-        shad.AppBar(
-          leading: [
-            shad.OutlineButton(
-              density: shad.ButtonDensity.icon,
-              onPressed: () {
-                final router = GoRouter.of(context);
-                if (router.canPop()) {
-                  router.pop();
-                  return;
-                }
-                context.go(Routes.tasks);
-              },
-              child: const Icon(Icons.arrow_back),
-            ),
-          ],
-          title: Text(context.l10n.taskPortfolioTitle),
-        ),
+        MobileSectionAppBar(title: context.l10n.taskPortfolioTitle),
       ],
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>

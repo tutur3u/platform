@@ -35,7 +35,7 @@ export async function GET(request: Request) {
       return rateLimitResult;
     }
 
-    const supabase = await createClient();
+    const supabase = await createClient(request);
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -70,7 +70,7 @@ export async function GET(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const supabase = await createClient();
+    const supabase = await createClient(request);
     const {
       data: { user },
     } = await supabase.auth.getUser();

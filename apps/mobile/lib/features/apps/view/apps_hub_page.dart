@@ -8,99 +8,176 @@ import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
+import 'package:mobile/features/apps/widgets/app_card_palette.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
-class AppsHubPage extends StatefulWidget {
+class AppsHubPage extends StatelessWidget {
   const AppsHubPage({super.key});
 
   @override
-  State<AppsHubPage> createState() => _AppsHubPageState();
+  Widget build(BuildContext context) {
+    final modules = AppRegistry.modules(context);
+
+    return shad.Scaffold(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Theme.of(context).colorScheme.surface,
+              Theme.of(
+                context,
+              ).colorScheme.surfaceContainerLowest.withValues(alpha: 0.82),
+              Theme.of(context).colorScheme.surface,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          top: false,
+          bottom: false,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              ResponsivePadding.horizontal(context.deviceClass),
+              10,
+              ResponsivePadding.horizontal(context.deviceClass),
+              24 + MediaQuery.paddingOf(context).bottom,
+            ),
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                const SliverToBoxAdapter(child: _AppsIntro()),
+                const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                SliverGrid(
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    return _SubproductCard(
+                      module: modules[index],
+                      index: index,
+                    );
+                  }, childCount: modules.length),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: 0.88,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class _AppsHubPageState extends State<AppsHubPage> {
-  late final TextEditingController _searchController;
-  late final FocusNode _searchFocusNode;
-  String _query = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _searchController = TextEditingController();
-    _searchFocusNode = FocusNode();
-
-    // Handle auto-focus if requested
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        final cubit = context.read<AppTabCubit>();
-        if (cubit.state.shouldAutoFocus) {
-          _searchFocusNode.requestFocus();
-          cubit.consumeAutoFocus();
-        }
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    _searchFocusNode.dispose();
-    super.dispose();
-  }
+class _AppsIntro extends StatelessWidget {
+  const _AppsIntro();
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final theme = shad.Theme.of(context);
-    final crossAxisCount = responsiveValue(
-      context,
-      compact: 2,
-      medium: 3,
-      expanded: 4,
-    );
-    final normalizedQuery = _query.trim().toLowerCase();
-    final modules = AppRegistry.modules(context);
-    final filteredModules = normalizedQuery.isEmpty
-        ? modules
-        : modules
-              .where(
-                (module) =>
-                    module.label(l10n).toLowerCase().contains(normalizedQuery),
-              )
-              .toList(growable: false);
-    final pinnedModules = normalizedQuery.isEmpty
-        ? AppRegistry.pinnedModules(context)
-        : const <AppModule>[];
-
-    return shad.Scaffold(
-      headers: [
-        shad.AppBar(title: Text(l10n.navApps)),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          context.l10n.navApps,
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          context.l10n.appsHubHeroSubtitle,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurfaceVariant.withValues(alpha: 0.84),
+            height: 1.35,
+          ),
+        ),
       ],
-      child: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(
-            ResponsivePadding.horizontal(context.deviceClass),
+    );
+  }
+}
+
+class _SubproductCard extends StatelessWidget {
+  const _SubproductCard({required this.module, required this.index});
+
+  final AppModule module;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = AppCardPalette.resolve(context, index);
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(26),
+      onTap: () {
+        unawaited(context.read<AppTabCubit>().select(module));
+        context.go(module.route);
+      },
+      child: Material(
+        color: palette.background,
+        borderRadius: BorderRadius.circular(26),
+        clipBehavior: Clip.antiAlias,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(26),
+            border: Border.all(color: palette.border),
+            boxShadow: [
+              BoxShadow(
+                color: palette.shadow,
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              shad.TextField(
-                controller: _searchController,
-                focusNode: _searchFocusNode,
-                hintText: l10n.appsHubSearchHint,
-                onChanged: (value) => setState(() => _query = value),
-              ),
-              const shad.Gap(16),
-              Expanded(
-                child: CustomScrollView(
-                  slivers: _buildSlivers(
-                    context,
-                    theme,
-                    l10n,
-                    pinnedModules,
-                    filteredModules,
-                    crossAxisCount,
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: palette.iconBackground,
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Icon(
+                      module.icon,
+                      color: palette.iconColor,
+                      size: 22,
+                    ),
                   ),
+                  const Spacer(),
+                  Icon(
+                    Icons.arrow_outward_rounded,
+                    size: 18,
+                    color: palette.textColor.withValues(alpha: 0.72),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              Text(
+                module.label(context.l10n),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: palette.textColor,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _description(context, module.id),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: palette.textColor.withValues(alpha: 0.78),
+                  height: 1.32,
                 ),
               ),
             ],
@@ -110,129 +187,13 @@ class _AppsHubPageState extends State<AppsHubPage> {
     );
   }
 
-  List<Widget> _buildSlivers(
-    BuildContext context,
-    shad.ThemeData theme,
-    AppLocalizations l10n,
-    List<AppModule> pinnedModules,
-    List<AppModule> filteredModules,
-    int crossAxisCount,
-  ) {
-    if (filteredModules.isEmpty) {
-      return [
-        SliverFillRemaining(
-          child: Center(
-            child: Text(
-              l10n.appsHubEmpty,
-              style: theme.typography.textLarge,
-            ),
-          ),
-        ),
-      ];
-    }
-
-    final slivers = <Widget>[];
-
-    if (pinnedModules.isNotEmpty) {
-      slivers
-        ..add(_SectionHeader(title: l10n.appsHubQuickAccess))
-        ..add(
-          SliverPadding(
-            padding: const EdgeInsets.only(bottom: 20),
-            sliver: _AppGrid(
-              modules: pinnedModules,
-              crossAxisCount: crossAxisCount,
-            ),
-          ),
-        );
-    }
-
-    slivers
-      ..add(_SectionHeader(title: l10n.appsHubAllApps))
-      ..add(
-        _AppGrid(
-          modules: filteredModules,
-          crossAxisCount: crossAxisCount,
-        ),
-      );
-
-    return slivers;
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: Text(
-          title,
-          style: shad.Theme.of(context).typography.textLarge,
-        ),
-      ),
-    );
-  }
-}
-
-class _AppGrid extends StatelessWidget {
-  const _AppGrid({required this.modules, required this.crossAxisCount});
-
-  final List<AppModule> modules;
-  final int crossAxisCount;
-
-  @override
-  Widget build(BuildContext context) {
-    return SliverGrid(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          final module = modules[index];
-          return _AppCard(module: module);
-        },
-        childCount: modules.length,
-      ),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: crossAxisCount,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 1.1,
-      ),
-    );
-  }
-}
-
-class _AppCard extends StatelessWidget {
-  const _AppCard({required this.module});
-
-  final AppModule module;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-
-    return shad.CardButton(
-      onPressed: () {
-        unawaited(context.read<AppTabCubit>().select(module));
-        context.go(module.route);
-      },
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(module.icon, size: 32),
-          const shad.Gap(8),
-          Text(
-            module.label(l10n),
-            textAlign: TextAlign.center,
-            style: shad.Theme.of(context).typography.small.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
+  String _description(BuildContext context, String moduleId) {
+    return switch (moduleId) {
+      'tasks' => context.l10n.appsHubTasksDescription,
+      'calendar' => context.l10n.appsHubCalendarDescription,
+      'finance' => context.l10n.appsHubFinanceDescription,
+      'timer' => context.l10n.appsHubTimerDescription,
+      _ => '',
+    };
   }
 }
