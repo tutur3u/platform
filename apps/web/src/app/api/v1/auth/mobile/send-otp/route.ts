@@ -5,6 +5,7 @@ import {
 import {
   isTurnstileError,
   resolveTurnstileToken,
+  verifyTurnstileToken,
 } from '@tuturuuu/turnstile/server';
 import {
   checkOTPSendLimit,
@@ -50,7 +51,6 @@ export async function POST(request: NextRequest) {
     const normalizedLocale = locale || 'en';
 
     console.log('[mobile/send-otp] Request:', {
-      email,
       locale: normalizedLocale,
       hasDeviceId: !!deviceId,
       hasCaptchaToken: !!captchaToken,
@@ -98,6 +98,9 @@ export async function POST(request: NextRequest) {
     const turnstile = resolveTurnstileToken({
       token: captchaToken,
       requireConfiguration: true,
+    });
+    await verifyTurnstileToken(request, turnstile.captchaToken, {
+      remoteIp: ipAddress !== 'unknown' ? ipAddress : undefined,
     });
     const useAdminAuth = turnstile.shouldBypassForDev;
     const supabase = useAdminAuth ? sbAdmin : await createClient();

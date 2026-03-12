@@ -152,11 +152,12 @@ describe('abuse-protection', () => {
     it('should have valid OTP send limits', () => {
       expect(ABUSE_THRESHOLDS.OTP_SEND_PER_MINUTE).toBe(3);
       expect(ABUSE_THRESHOLDS.OTP_SEND_PER_HOUR).toBe(10);
+      expect(ABUSE_THRESHOLDS.OTP_SEND_PER_DAY).toBe(12);
       expect(ABUSE_THRESHOLDS.OTP_SEND_EMAIL_COOLDOWN_WINDOW_MS).toBe(
-        10 * 60 * 1000
+        15 * 60 * 1000
       );
-      expect(ABUSE_THRESHOLDS.OTP_SEND_EMAIL_PER_HOUR).toBe(3);
-      expect(ABUSE_THRESHOLDS.OTP_SEND_EMAIL_PER_DAY).toBe(6);
+      expect(ABUSE_THRESHOLDS.OTP_SEND_EMAIL_PER_HOUR).toBe(2);
+      expect(ABUSE_THRESHOLDS.OTP_SEND_EMAIL_PER_DAY).toBe(4);
     });
 
     it('should have valid OTP verify limits', () => {
@@ -228,6 +229,9 @@ describe('abuse-protection', () => {
       expect(REDIS_KEYS.OTP_SEND(testIP)).toBe(`otp:send:${testIP}`);
       expect(REDIS_KEYS.OTP_SEND_HOURLY(testIP)).toBe(
         `otp:send:hourly:${testIP}`
+      );
+      expect(REDIS_KEYS.OTP_SEND_DAILY(testIP)).toBe(
+        `otp:send:daily:${testIP}`
       );
       expect(REDIS_KEYS.OTP_SEND_EMAIL_COOLDOWN(testEmailHash)).toBe(
         `otp:send:email:cooldown:${testEmailHash}`
@@ -311,18 +315,45 @@ describe('abuse-protection', () => {
       const email = `hourly-${Date.now()}@example.com`;
 
       const first = await checkOTPSendLimit('203.0.113.1', email);
-      vi.advanceTimersByTime(WINDOW_MS.TEN_MINUTES + 1);
+      vi.advanceTimersByTime(
+        ABUSE_THRESHOLDS.OTP_SEND_EMAIL_COOLDOWN_WINDOW_MS + 1
+      );
       const second = await checkOTPSendLimit('203.0.113.2', email);
-      vi.advanceTimersByTime(WINDOW_MS.TEN_MINUTES + 1);
+      vi.advanceTimersByTime(
+        ABUSE_THRESHOLDS.OTP_SEND_EMAIL_COOLDOWN_WINDOW_MS + 1
+      );
       const third = await checkOTPSendLimit('203.0.113.3', email);
-      vi.advanceTimersByTime(WINDOW_MS.TEN_MINUTES + 1);
-      const fourth = await checkOTPSendLimit('203.0.113.4', email);
 
       expect(first.allowed).toBe(true);
       expect(second.allowed).toBe(true);
-      expect(third.allowed).toBe(true);
-      expect(fourth.allowed).toBe(false);
-      expect(fourth.retryAfter).toBeGreaterThan(0);
+      expect(third.allowed).toBe(false);
+      expect(third.retryAfter).toBeGreaterThan(0);
+    });
+
+    it('caps slow OTP send abuse from a single IP over a day', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-03-12T00:00:00.000Z'));
+
+      const emailBase = `slow-ip-${Date.now()}`;
+      let lastAttempt = await checkOTPSendLimit(
+        '198.51.100.20',
+        `${emailBase}-0@example.com`
+      );
+
+      for (
+        let attempt = 1;
+        attempt <= ABUSE_THRESHOLDS.OTP_SEND_PER_DAY;
+        attempt++
+      ) {
+        vi.advanceTimersByTime(90 * 60 * 1000);
+        lastAttempt = await checkOTPSendLimit(
+          '198.51.100.20',
+          `${emailBase}-${attempt}@example.com`
+        );
+      }
+
+      expect(lastAttempt.allowed).toBe(false);
+      expect(lastAttempt.retryAfter).toBeGreaterThan(0);
     });
   });
 });

@@ -524,10 +524,34 @@ export async function checkOTPSendLimit(
   if (hourlyCount > ABUSE_THRESHOLDS.OTP_SEND_PER_HOUR) {
     void logAbuseEvent(ipAddress, 'otp_send', { email, success: false });
 
+    void blockIP(ipAddress, 'otp_send', { trigger: 'hourly_rate_limit' });
+
     return {
       allowed: false,
       reason: 'Hourly OTP limit reached. Please try again later.',
       retryAfter: hourlyTTL,
+      remainingAttempts: 0,
+    };
+  }
+
+  const dailyKey = REDIS_KEYS.OTP_SEND_DAILY(ipAddress);
+  const { count: dailyCount, ttl: dailyTTL } = await incrementCounter(
+    dailyKey,
+    WINDOW_MS.TWENTY_FOUR_HOURS
+  );
+
+  if (dailyCount > ABUSE_THRESHOLDS.OTP_SEND_PER_DAY) {
+    void logAbuseEvent(ipAddress, 'otp_send', {
+      email,
+      success: false,
+      metadata: { trigger: 'ip_daily_limit' },
+    });
+    void blockIP(ipAddress, 'otp_send', { trigger: 'ip_daily_limit' });
+
+    return {
+      allowed: false,
+      reason: 'OTP limit reached. Please try again later.',
+      retryAfter: dailyTTL,
       remainingAttempts: 0,
     };
   }
