@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -65,6 +68,7 @@ const querySchema = z.object({
 export async function GET(req: Request) {
   try {
     const supabase = await createClient(req);
+    const sbAdmin = await createAdminClient();
 
     // Get authenticated user
     const {
@@ -117,7 +121,7 @@ export async function GET(req: Request) {
     // Build query - DO NOT add order yet, apply it after all filters.
     // notifications uses the proxy-only admin path, so ownership must be
     // enforced explicitly here instead of relying on RLS.
-    let query = supabase
+    let query = sbAdmin
       .from('notifications')
       .select(
         '*, workspace:workspaces(name), actor:users!notifications_created_by_fkey(id, display_name, avatar_url)',
@@ -226,6 +230,7 @@ const bulkUpdateSchema = z.object({
 export async function PATCH(req: Request) {
   try {
     const supabase = await createClient(req);
+    const sbAdmin = await createAdminClient();
 
     // Get authenticated user
     const {
@@ -260,7 +265,7 @@ export async function PATCH(req: Request) {
 
     // notifications uses the proxy-only admin path, so ownership must be
     // enforced explicitly instead of relying on RLS.
-    let query = supabase
+    let query = sbAdmin
       .from('notifications')
       .update(update)
       .or(buildNotificationAccessFilter(accessContext));

@@ -80,24 +80,22 @@ export const useProducts = (wsId: string) => {
   return useQuery({
     queryKey: ['products', wsId],
     queryFn: async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('workspace_products')
-        .select(
-          `id, name, description, manufacturer,category_id, inventory_products!inventory_products_product_id_fkey(unit_id, warehouse_id, inventory_units!inventory_products_unit_id_fkey(name))`
-        )
-        .eq('ws_id', wsId)
-        .order('name');
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/products/options`,
+        {
+          cache: 'no-store',
+        }
+      );
 
-      if (error) {
-        toast(
-          error instanceof Error
-            ? error.message
-            : t('ws-groups.failed_to_fetch_available_products')
-        );
+      if (!response.ok) {
+        toast(t('ws-groups.failed_to_fetch_available_products'));
         return [];
       }
-      return data as WorkspaceProduct[];
+
+      const payload = (await response.json()) as {
+        data?: WorkspaceProduct[];
+      };
+      return payload.data ?? [];
     },
   });
 };
@@ -107,22 +105,19 @@ export const useWarehouses = (wsId: string) => {
   return useQuery({
     queryKey: ['warehouses', wsId],
     queryFn: async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('inventory_warehouses')
-        .select('id, name')
-        .eq('ws_id', wsId)
-        .order('name');
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/product-warehouses`,
+        {
+          cache: 'no-store',
+        }
+      );
 
-      if (error) {
-        toast(
-          error instanceof Error
-            ? error.message
-            : t('ws-groups.failed_to_fetch_warehouses')
-        );
+      if (!response.ok) {
+        toast(t('ws-groups.failed_to_fetch_warehouses'));
         return [];
       }
-      return data as WarehouseOption[];
+
+      return (await response.json()) as WarehouseOption[];
     },
   });
 };

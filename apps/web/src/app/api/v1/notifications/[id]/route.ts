@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -20,6 +23,7 @@ export async function PATCH(
 ) {
   try {
     const supabase = await createClient(req);
+    const sbAdmin = await createAdminClient();
 
     // Get authenticated user
     const {
@@ -49,7 +53,7 @@ export async function PATCH(
 
     const { read } = validatedData.data;
 
-    const { data: notification } = await supabase
+    const { data: notification } = await sbAdmin
       .from('notifications')
       .select('id')
       .eq('id', id)
@@ -66,7 +70,7 @@ export async function PATCH(
       ? { read_at: new Date().toISOString() }
       : { read_at: null };
 
-    const { data: updatedNotification, error } = await supabase
+    const { data: updatedNotification, error } = await sbAdmin
       .from('notifications')
       .update(update)
       .eq('id', id)
@@ -113,6 +117,7 @@ export async function DELETE(
 ) {
   try {
     const supabase = await createClient(req);
+    const sbAdmin = await createAdminClient();
 
     // Get authenticated user
     const {
@@ -129,7 +134,7 @@ export async function DELETE(
 
     const { id } = await params;
 
-    const { data: notification } = await supabase
+    const { data: notification } = await sbAdmin
       .from('notifications')
       .select('id')
       .eq('id', id)
@@ -142,7 +147,7 @@ export async function DELETE(
         { status: 404 }
       );
     }
-    const { data: deletedNotification, error } = await supabase
+    const { data: deletedNotification, error } = await sbAdmin
       .from('notifications')
       .delete()
       .eq('id', id)

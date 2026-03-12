@@ -85,8 +85,36 @@ async function getDataFromSession({
   groupId: string;
 }) {
   const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
-  const { data, error } = await supabase
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { data: membership, error: membershipError } = await supabase
+    .from('workspace_members')
+    .select('user_id')
+    .eq('ws_id', wsId)
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (membershipError) {
+    return NextResponse.json(
+      { message: 'Failed to verify workspace membership' },
+      { status: 500 }
+    );
+  }
+
+  if (!membership) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { data, error } = await sbAdmin
     .from('workspace_user_groups_users')
     .select('count(), workspace_user_groups!inner(id, ws_id)')
     .eq('workspace_user_groups.ws_id', wsId)

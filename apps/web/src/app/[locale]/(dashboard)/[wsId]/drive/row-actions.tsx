@@ -28,7 +28,9 @@ import {
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { joinPath } from '@/utils/path-helper';
+import { RenameStorageObjectDialog } from './rename-storage-object-dialog';
 
 interface Props {
   wsId: string;
@@ -53,6 +55,7 @@ export function StorageObjectRowActions({
   const t = useTranslations();
   const router = useRouter();
   const storageObj = row.original;
+  const [showRenameDialog, setShowRenameDialog] = useState(false);
 
   const previewFile = () => {
     if (storageObj) {
@@ -123,102 +126,6 @@ export function StorageObjectRowActions({
     }
   };
 
-  const renameStorageObject = async () => {
-    if (!storageObj.name) return;
-
-    const currentName =
-      storageObj.name.split(`${wsId}/`).pop() || storageObj.name;
-    const newName = prompt(t('ws-storage-objects.enter_new_name'), currentName);
-
-    if (!newName || newName === currentName) return;
-
-    // re-add extension if it was removed
-    const safeNewName = storageObj.name.includes('.')
-      ? newName.includes('.')
-        ? newName
-        : `${newName}.${storageObj.name.split('.').pop()}`
-      : newName;
-
-    const { error } = await supabase.storage
-      .from('workspaces')
-      .move(
-        joinPath(wsId, path, storageObj.name),
-        joinPath(wsId, path, safeNewName)
-      );
-
-    if (!error) {
-      router.refresh();
-      toast({
-        title: t('common.success'),
-        description: t('ws-storage-objects.file_renamed'),
-      });
-    } else {
-      toast({
-        title: t('common.error'),
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const renameStorageFolder = async () => {
-    if (!storageObj.name) return;
-
-    const currentName =
-      storageObj.name.split(`${wsId}/`).pop() || storageObj.name;
-    const newName = prompt(
-      t('ws-storage-objects.enter_new_folder_name'),
-      currentName
-    );
-
-    if (!newName || newName === currentName) return;
-
-    // get all inside contents using query
-    const { data, error } = await supabase
-      .schema('storage')
-      .from('objects')
-      .select()
-      .ilike('name', joinPath(wsId, path, storageObj.name, '%'));
-
-    if (error) {
-      toast({
-        title: t('common.error'),
-        description: error.message,
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    for (const object of data) {
-      const source = object.name;
-      const destination = source.replace(
-        joinPath(wsId, path, storageObj.name),
-        joinPath(wsId, path, newName)
-      );
-
-      // try to move everything from old folder to new folder
-      const { error } = await supabase.storage
-        .from('workspaces')
-        .move(source, destination);
-
-      // prompt in case of error, continue otherwise
-      if (error) {
-        toast({
-          title: t('common.error'),
-          description: `${t('ws-storage-objects.move_failed')}: ${source} to ${destination}`,
-          variant: 'destructive',
-        });
-      }
-    }
-
-    // refresh on complete
-    router.refresh();
-    toast({
-      title: t('common.success'),
-      description: t('ws-storage-objects.folder_renamed'),
-    });
-  };
-
   const downloadStorageObject = async () => {
     if (!storageObj.name) return;
 
@@ -264,9 +171,7 @@ export function StorageObjectRowActions({
           <ContextMenuSeparator />
         </>
       )}
-      <ContextMenuItem
-        onClick={storageObj.id ? renameStorageObject : renameStorageFolder}
-      >
+      <ContextMenuItem onClick={() => setShowRenameDialog(true)}>
         <Edit3 className="mr-2 h-4 w-4" />
         {t('common.rename')}
       </ContextMenuItem>
@@ -313,9 +218,7 @@ export function StorageObjectRowActions({
           <DropdownMenuSeparator />
         </>
       )}
-      <DropdownMenuItem
-        onClick={storageObj.id ? renameStorageObject : renameStorageFolder}
-      >
+      <DropdownMenuItem onClick={() => setShowRenameDialog(true)}>
         <Edit3 className="mr-2 h-4 w-4" />
         {t('common.rename')}
       </DropdownMenuItem>
@@ -350,25 +253,48 @@ export function StorageObjectRowActions({
   );
 
   if (menuOnly) {
-    return menuContent;
+    return (
+      <>
+        {menuContent}
+        <RenameStorageObjectDialog
+          wsId={wsId}
+          path={path}
+          storageObject={showRenameDialog ? storageObj : null}
+          open={showRenameDialog}
+          onOpenChange={setShowRenameDialog}
+          onSuccess={() => router.refresh()}
+        />
+      </>
+    );
   }
 
   return (
-    <DropdownMenu modal={false}>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
-          onClick={(e) => e.stopPropagation()}
-          onKeyDown={(e) => e.stopPropagation()}
-        >
-          <Ellipsis className="h-4 w-4" />
-          <span className="sr-only">Open menu</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-45">
-        {menuContent}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <DropdownMenu modal={false}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
+            <Ellipsis className="h-4 w-4" />
+            <span className="sr-only">Open menu</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-45">
+          {menuContent}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <RenameStorageObjectDialog
+        wsId={wsId}
+        path={path}
+        storageObject={showRenameDialog ? storageObj : null}
+        open={showRenameDialog}
+        onOpenChange={setShowRenameDialog}
+        onSuccess={() => router.refresh()}
+      />
+    </>
   );
 }

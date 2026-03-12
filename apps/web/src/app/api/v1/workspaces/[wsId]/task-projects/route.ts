@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -34,8 +37,10 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const sbAdmin = await createAdminClient();
+
     // Fetch task projects
-    const { data: projects, error: projectsError } = await supabase
+    const { data: projects, error: projectsError } = await sbAdmin
       .from('task_projects')
       .select(`
         *,
@@ -149,6 +154,8 @@ export async function POST(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const sbAdmin = await createAdminClient();
+
     // Parse and validate request body
     const body = await request.json();
     const { name, description } = z
@@ -162,7 +169,7 @@ export async function POST(
       .parse(body);
 
     // Create project
-    const { data: project, error: projectError } = await supabase
+    const { data: project, error: projectError } = await sbAdmin
       .from('task_projects')
       .insert({
         name,

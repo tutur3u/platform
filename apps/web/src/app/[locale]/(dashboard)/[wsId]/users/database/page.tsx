@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -331,7 +334,7 @@ async function getInitialData(
 }
 
 async function getUserFields(wsId: string) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const queryBuilder = supabase
     .from('workspace_user_fields')

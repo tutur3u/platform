@@ -1,7 +1,6 @@
 'use client';
 
 import { CreditCard, Loader2 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
@@ -42,7 +41,6 @@ export default function InvoiceEditForm({
 }: Props) {
   const t = useTranslations();
   const router = useRouter();
-  const supabase = createClient();
   const { data: wallets = [], isLoading: walletsLoading } = useWallets(wsId);
 
   const [notice, setNotice] = useState<string>(initialNotice || '');
@@ -53,11 +51,29 @@ export default function InvoiceEditForm({
   const handleSave = async () => {
     try {
       setSaving(true);
-      const { error } = await supabase
-        .from('finance_invoices')
-        .update({ notice, note, wallet_id: walletId || undefined })
-        .eq('id', invoiceId);
-      if (error) throw error;
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/finance/invoices/${invoiceId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          cache: 'no-store',
+          body: JSON.stringify({
+            notice,
+            note,
+            wallet_id: walletId || null,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorBody = (await response.json().catch(() => null)) as {
+          message?: string;
+        } | null;
+        throw new Error(errorBody?.message || 'Failed to update invoice');
+      }
+
       toast.success(t('common.saved', { default: 'Saved' }));
       router.refresh();
     } catch (e) {

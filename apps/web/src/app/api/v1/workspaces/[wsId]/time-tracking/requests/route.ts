@@ -1,4 +1,5 @@
 import {
+  createAdminClient,
   createClient,
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
@@ -54,6 +55,7 @@ export async function POST(
     const { wsId } = await params;
     const normalizedWsId = await normalizeWorkspaceId(wsId);
     const supabase = await createClient(request);
+    const sbAdmin = await createAdminClient();
 
     // Get authenticated user
     const {
@@ -65,12 +67,19 @@ export async function POST(
     }
 
     // Verify workspace access
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: memberError } = await supabase
       .from('workspace_members')
       .select('id:user_id')
       .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
+
+    if (memberError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(
@@ -134,7 +143,7 @@ export async function POST(
     }
 
     // Create time tracking request (images already uploaded via signed URLs)
-    const { data, error } = await supabase
+    const { data, error } = await sbAdmin
       .from('time_tracking_requests')
       .insert({
         id: requestId,
@@ -195,6 +204,8 @@ export async function GET(
   try {
     const { wsId } = await params;
     const supabase = await createClient(request);
+    const sbAdmin = await createAdminClient();
+    const normalizedWsId = await normalizeWorkspaceId(wsId);
 
     // Get authenticated user
     const {
@@ -206,12 +217,19 @@ export async function GET(
     }
 
     // Verify workspace access
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: memberError } = await supabase
       .from('workspace_members')
       .select('id:user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
+
+    if (memberError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(
@@ -237,10 +255,10 @@ export async function GET(
     const offset = (page - 1) * limit;
 
     // Build count query
-    let countQuery = supabase
+    let countQuery = sbAdmin
       .from('time_tracking_requests')
       .select('*', { count: 'exact', head: true })
-      .eq('workspace_id', wsId);
+      .eq('workspace_id', normalizedWsId);
 
     // Filter by approval status
     if (status === 'pending') {
@@ -270,7 +288,7 @@ export async function GET(
     const totalCount = Number.isFinite(count) ? count : 0;
 
     // Build data query with explicit relationship hints
-    let query = supabase
+    let query = sbAdmin
       .from('time_tracking_requests')
       .select(
         `
@@ -306,7 +324,7 @@ export async function GET(
         )
       `
       )
-      .eq('workspace_id', wsId);
+      .eq('workspace_id', normalizedWsId);
 
     // Filter by approval status
     if (status === 'pending') {

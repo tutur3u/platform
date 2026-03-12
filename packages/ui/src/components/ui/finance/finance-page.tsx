@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { BudgetAlerts } from '@tuturuuu/ui/finance/budgets/budget-alerts';
@@ -175,6 +178,7 @@ export default async function FinancePage({
 
 async function getRecentTransactions(wsId: string) {
   const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
   // Use RPC function to get redacted transactions with confidential filtering
   const { data: transactions, error } = await supabase.rpc(
@@ -210,7 +214,7 @@ async function getRecentTransactions(wsId: string) {
   // Fetch wallet names
   const walletMap = new Map<string, string>();
   if (walletIds.length > 0) {
-    const { data: wallets, error: walletError } = await supabase
+    const { data: wallets, error: walletError } = await sbAdmin
       .from('workspace_wallets')
       .select('id, name')
       .in('id', walletIds)
@@ -226,7 +230,7 @@ async function getRecentTransactions(wsId: string) {
   // Fetch category names
   const categoryMap = new Map<string, string>();
   if (categoryIds.length > 0) {
-    const { data: categories, error: categoryError } = await supabase
+    const { data: categories, error: categoryError } = await sbAdmin
       .from('transaction_categories')
       .select('id, name')
       .in('id', categoryIds);

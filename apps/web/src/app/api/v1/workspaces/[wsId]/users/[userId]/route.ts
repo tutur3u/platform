@@ -1,7 +1,4 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   MAX_COLOR_LENGTH,
   MAX_LONG_TEXT_LENGTH,
@@ -55,7 +52,7 @@ export async function GET(_: Request, { params }: Params) {
   const apiKey = (await headers()).get('API_KEY');
   return apiKey
     ? getDataWithApiKey({ wsId, userId, apiKey })
-    : getDataFromSession({ wsId, userId });
+    : getDataFromSession({ req: _, wsId, userId });
 }
 
 export async function PUT(req: Request, { params }: Params) {
@@ -110,10 +107,10 @@ export async function PUT(req: Request, { params }: Params) {
     userPayload.archived_until = archived_until;
   }
 
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
   // Get current user to check status changes
-  const { data: currentUser, error: fetchError } = await supabase
+  const { data: currentUser, error: fetchError } = await sbAdmin
     .from('workspace_users')
     .select('archived, archived_until')
     .eq('ws_id', wsId)
@@ -129,7 +126,7 @@ export async function PUT(req: Request, { params }: Params) {
   }
 
   // Update user
-  const { error } = await supabase
+  const { error } = await sbAdmin
     .from('workspace_users')
     .update(userPayload)
     .eq('ws_id', wsId)
@@ -147,7 +144,7 @@ export async function PUT(req: Request, { params }: Params) {
   if (typeof archived === 'boolean' && archived !== currentUser.archived) {
     const currentWorkspaceUser = await getCurrentWorkspaceUser(wsId);
     if (currentWorkspaceUser) {
-      const { error: logError } = await supabase
+      const { error: logError } = await sbAdmin
         .from('workspace_user_status_changes')
         .insert({
           user_id: userId,
@@ -171,7 +168,7 @@ export async function PUT(req: Request, { params }: Params) {
   // Sync guest membership based on is_guest flag when provided
   let warning: string | undefined;
   if (typeof is_guest === 'boolean') {
-    const { data: guestGroup, error: groupError } = await supabase
+    const { data: guestGroup, error: groupError } = await sbAdmin
       .from('workspace_user_groups')
       .select('id')
       .eq('ws_id', wsId)
@@ -185,7 +182,7 @@ export async function PUT(req: Request, { params }: Params) {
       warning = 'No guest group found in this workspace.';
     } else {
       if (is_guest) {
-        const { error: linkError } = await supabase
+        const { error: linkError } = await sbAdmin
           .from('workspace_user_groups_users')
           .upsert(
             { group_id: guestGroup.id, user_id: userId },
@@ -196,7 +193,7 @@ export async function PUT(req: Request, { params }: Params) {
           warning = 'Failed to link user to guest group.';
         }
       } else {
-        const { error: unlinkError } = await supabase
+        const { error: unlinkError } = await sbAdmin
           .from('workspace_user_groups_users')
           .delete()
           .eq('group_id', guestGroup.id)
@@ -227,8 +224,8 @@ export async function DELETE(_: Request, { params }: Params) {
       { status: 403 }
     );
   }
-  const supabase = await createClient();
-  const { error } = await supabase
+  const sbAdmin = await createAdminClient();
+  const { error } = await sbAdmin
     .from('workspace_users')
     .delete()
     .eq('ws_id', wsId)
@@ -292,15 +289,26 @@ async function getDataWithApiKey({
 }
 
 async function getDataFromSession({
+  req,
   wsId,
   userId,
 }: {
+  req: Request;
   wsId: string;
   userId: string;
 }) {
-  const supabase = await createClient();
+  const permissions = await getPermissions({
+    wsId,
+    request: req,
+  });
 
-  const { data, error } = await supabase
+  if (!permissions) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const sbAdmin = await createAdminClient();
+
+  const { data, error } = await sbAdmin
     .from('workspace_users')
     .select('*')
     .eq('ws_id', wsId)

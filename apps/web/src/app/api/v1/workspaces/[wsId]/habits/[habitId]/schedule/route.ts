@@ -6,7 +6,10 @@
  */
 
 import { getOccurrencesInRange } from '@tuturuuu/ai/scheduling';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { Habit } from '@tuturuuu/types/primitives/Habit';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
@@ -35,6 +38,7 @@ export async function POST(
     }
 
     const supabase = await createClient();
+    const sbAdmin = await createAdminClient();
 
     // Get authenticated user
     const {
@@ -49,8 +53,29 @@ export async function POST(
       );
     }
 
+    const { data: membership, error: membershipError } = await supabase
+      .from('workspace_members')
+      .select('user_id')
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (membershipError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
+    if (!membership) {
+      return NextResponse.json(
+        { error: "You don't have access to this workspace" },
+        { status: 403 }
+      );
+    }
+
     // Fetch habit
-    const { data: habit, error: habitError } = await supabase
+    const { data: habit, error: habitError } = await sbAdmin
       .from('workspace_habits')
       .select('*')
       .eq('id', habitId)
@@ -71,7 +96,7 @@ export async function POST(
       }
       // If reschedule flag is set, delete future events first
       if (body.reschedule) {
-        await deleteFutureHabitEvents(supabase as any, habitId);
+        await deleteFutureHabitEvents(sbAdmin as any, habitId);
       }
     } catch {
       // No body or invalid JSON, use defaults
@@ -79,7 +104,7 @@ export async function POST(
 
     // Schedule the habit
     const result = await scheduleHabit(
-      supabase as any,
+      sbAdmin as any,
       wsId,
       habit as Habit,
       windowDays
@@ -117,6 +142,7 @@ export async function GET(
     }
 
     const supabase = await createClient();
+    const sbAdmin = await createAdminClient();
 
     // Get authenticated user
     const {
@@ -131,8 +157,29 @@ export async function GET(
       );
     }
 
+    const { data: membership, error: membershipError } = await supabase
+      .from('workspace_members')
+      .select('user_id')
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (membershipError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
+    if (!membership) {
+      return NextResponse.json(
+        { error: "You don't have access to this workspace" },
+        { status: 403 }
+      );
+    }
+
     // Fetch habit
-    const { data: habit, error: habitError } = await supabase
+    const { data: habit, error: habitError } = await sbAdmin
       .from('workspace_habits')
       .select('*')
       .eq('id', habitId)
@@ -156,7 +203,7 @@ export async function GET(
     );
 
     // Fetch scheduled events for these occurrences
-    const { data: scheduledEvents } = await supabase
+    const { data: scheduledEvents } = await sbAdmin
       .from('habit_calendar_events')
       .select(`
         occurrence_date,

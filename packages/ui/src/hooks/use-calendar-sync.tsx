@@ -1,7 +1,6 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { canProceedWithSync } from '@tuturuuu/trigger/calendar-sync-coordination';
 import type {
   Workspace,
@@ -446,58 +445,38 @@ export const CalendarSyncProvider = ({
     staleTime: 60000, // Consider data fresh for 1 minute
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
     queryFn: async () => {
-      const supabase = createClient();
       const startDate = dayjs(dates[0]).startOf('day');
       const endDate = dayjs(dates[dates.length - 1]).endOf('day');
 
-      // Fetch habit_calendar_events junction records for the date range
-      // Note: Using type assertion until bun sb:push and bun sb:typegen are run
-      // Filter by ws_id through the workspace_habits relation
-      const { data: habitEvents, error } = await (supabase as any)
-        .from('habit_calendar_events')
-        .select(
-          `
-          event_id,
-          habit_id,
-          completed,
-          workspace_habits!inner (
-            ws_id
-          ),
-          workspace_calendar_events!inner (
-            start_at,
-            end_at
-          )
-        `
-        )
-        .eq('workspace_habits.ws_id', wsId)
-        .lt(
-          'workspace_calendar_events.start_at',
-          endDate.add(1, 'day').toISOString()
-        )
-        .gt('workspace_calendar_events.end_at', startDate.toISOString());
+      try {
+        const response = await fetch(
+          `/api/v1/workspaces/${wsId}/calendar/habit-events?start_at=${startDate.toISOString()}&end_at=${endDate.add(1, 'day').toISOString()}`,
+          { cache: 'no-store' }
+        );
 
-      if (error) {
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null);
+          throw new Error(
+            errorData?.error || 'Failed to fetch habit calendar events'
+          );
+        }
+
+        const result = (await response.json()) as {
+          habitEventIds?: string[];
+          completedHabitEventIds?: string[];
+        };
+
+        return {
+          habitEventIds: new Set(result.habitEventIds ?? []),
+          completedHabitEventIds: new Set(result.completedHabitEventIds ?? []),
+        };
+      } catch (error) {
         console.error('Failed to fetch habit calendar events:', error);
         return {
           habitEventIds: new Set<string>(),
           completedHabitEventIds: new Set<string>(),
         };
       }
-
-      // Build sets of habit event IDs and completed habit event IDs
-      const habitEventIds = new Set<string>();
-      const completedHabitEventIds = new Set<string>();
-
-      (habitEvents || []).forEach((record: any) => {
-        if (record.event_id) {
-          habitEventIds.add(record.event_id);
-          if (record.completed) {
-            completedHabitEventIds.add(record.event_id);
-          }
-        }
-      });
-
-      return { habitEventIds, completedHabitEventIds };
     },
     refetchInterval: 60000, // Refetch every minute
   });

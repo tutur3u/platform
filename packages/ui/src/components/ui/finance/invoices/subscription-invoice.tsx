@@ -126,8 +126,10 @@ export function SubscriptionInvoice({
   const { data: products = [], isLoading: productsLoading } = useProducts(wsId);
   const { data: availablePromotions = [], isLoading: promotionsLoading } =
     useAvailablePromotions(wsId, selectedUserId);
-  const { data: linkedPromotions = [] } =
-    useUserLinkedPromotions(selectedUserId);
+  const { data: linkedPromotions = [] } = useUserLinkedPromotions(
+    wsId,
+    selectedUserId
+  );
   const { data: referralDiscountRows = [] } = useUserReferralDiscounts(
     wsId,
     selectedUserId
@@ -184,8 +186,10 @@ export function SubscriptionInvoice({
     useState<SelectedProductItem[]>([]);
 
   // Subscription-specific queries
-  const { data: userGroups = [], isLoading: userGroupsLoading } =
-    useUserGroups(selectedUserId);
+  const { data: userGroups = [], isLoading: userGroupsLoading } = useUserGroups(
+    wsId,
+    selectedUserId
+  );
   const {
     data: userAttendance = [],
     isLoading: userAttendanceLoading,

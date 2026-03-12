@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   MAX_COLOR_LENGTH,
   MAX_SHORT_TEXT_LENGTH,
@@ -47,6 +50,7 @@ export async function GET(
   try {
     const { wsId } = await params;
     const supabase = await createClient(req);
+    const sbAdmin = await createAdminClient();
     const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
     const searchParams = Object.fromEntries(req.nextUrl.searchParams);
     const result = querySchema.safeParse(searchParams);
@@ -70,8 +74,29 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { data: membership, error: membershipError } = await supabase
+      .from('workspace_members')
+      .select('user_id')
+      .eq('ws_id', normalizedWsId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (membershipError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
+    if (!membership) {
+      return NextResponse.json(
+        { error: 'Workspace access denied' },
+        { status: 403 }
+      );
+    }
+
     // Call the database function to get pre-calculated stats with timezone awareness
-    const { data, error } = await supabase.rpc('get_time_tracker_stats', {
+    const { data, error } = await sbAdmin.rpc('get_time_tracker_stats', {
       p_user_id: userId,
       p_ws_id: normalizedWsId,
       p_is_personal: isPersonal,

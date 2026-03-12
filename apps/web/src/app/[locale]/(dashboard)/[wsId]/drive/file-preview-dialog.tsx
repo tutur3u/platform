@@ -136,14 +136,20 @@ export function FilePreviewDialog({
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
+    let cancelled = false;
+
     if (!file?.name || !open) {
       setSignedUrl(null);
       setTextContent('');
-      return;
+      return () => {
+        cancelled = true;
+      };
     }
 
     const fetchSignedUrl = async () => {
-      setLoading(true);
+      if (!cancelled) {
+        setLoading(true);
+      }
       try {
         if (!file.name) {
           toast({
@@ -179,15 +185,21 @@ export function FilePreviewDialog({
           return;
         }
 
+        if (cancelled) {
+          return;
+        }
+
         setSignedUrl(data.signedUrl);
 
         // For text files, fetch content
         if (fileType === 'text' || fileType === 'code') {
           try {
             const response = await fetch(data.signedUrl);
-            if (response.ok) {
+            if (response.ok && !cancelled) {
               const content = await response.text();
-              setTextContent(content);
+              if (!cancelled) {
+                setTextContent(content);
+              }
             }
           } catch (error) {
             console.error('Error fetching text content:', error);
@@ -196,11 +208,17 @@ export function FilePreviewDialog({
       } catch (error) {
         console.error('Error:', error);
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
 
-    fetchSignedUrl();
+    void fetchSignedUrl();
+
+    return () => {
+      cancelled = true;
+    };
   }, [file?.name, open, fileType, wsId, path, supabase.storage]);
 
   const handleDownload = async () => {

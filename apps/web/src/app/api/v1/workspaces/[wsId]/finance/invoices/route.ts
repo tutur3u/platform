@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { WorkspacePromotion } from '@tuturuuu/types/db';
 import {
   MAX_COLOR_LENGTH,
@@ -30,6 +33,10 @@ const SearchParamsSchema = z.object({
   start: z.string().max(MAX_COLOR_LENGTH).optional(),
   end: z.string().max(MAX_COLOR_LENGTH).optional(),
   userIds: z
+    .union([z.string(), z.array(z.string())])
+    .transform((val) => (Array.isArray(val) ? val : val ? [val] : []))
+    .default([]),
+  customerIds: z
     .union([z.string(), z.array(z.string())])
     .transform((val) => (Array.isArray(val) ? val : val ? [val] : []))
     .default([]),
@@ -91,7 +98,7 @@ export async function calculateInvoiceValues(
   },
   isSubscriptionInvoice: boolean = false
 ): Promise<CalculatedValues> {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
   // Calculate subtotal from products
   let subtotal = 0;
   const productIds = products.map((p) => p.product_id);
@@ -215,7 +222,7 @@ export async function calculateInvoiceValues(
 
 export async function GET(request: Request, { params }: Params) {
   try {
-    const supabase = await createClient();
+    const supabase = await createAdminClient();
     const { wsId: id } = await params;
 
     // Resolve workspace ID
@@ -345,6 +352,10 @@ export async function GET(request: Request, { params }: Params) {
       queryBuilder = queryBuilder.in('creator_id', sp.userIds);
     }
 
+    if (sp.customerIds.length > 0) {
+      queryBuilder = queryBuilder.in('customer_id', sp.customerIds);
+    }
+
     // Apply wallet IDs filter
     if (sp.walletIds.length > 0) {
       queryBuilder = queryBuilder.in(
@@ -390,6 +401,7 @@ export async function GET(request: Request, { params }: Params) {
 
 export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
   const { wsId } = await params;
 
   const permissions = await getPermissions({
@@ -444,7 +456,7 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     // Get user workspace ID
-    const { data: workspaceUser } = await supabase
+    const { data: workspaceUser } = await sbAdmin
       .from('workspace_user_linked_users')
       .select('virtual_user_id')
       .eq('platform_user_id', user.id)
@@ -515,7 +527,7 @@ export async function POST(req: Request, { params }: Params) {
       invoiceData.creator_id = workspaceUserId;
     }
 
-    const { data: invoice, error: invoiceError } = await supabase
+    const { data: invoice, error: invoiceError } = await sbAdmin
       .from('finance_invoices')
       .insert(invoiceData)
       .select('id')

@@ -7,7 +7,7 @@ import {
   ShoppingCart,
   User,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -240,10 +240,10 @@ function DetailItem({
 }
 
 async function getInvoiceDetails(invoiceId: string) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
   // Fetch invoice with both platform and workspace user data in a single query
-  const { data: invoice, error: invoiceError } = await supabase
+  const { data: invoice, error: invoiceError } = await sbAdmin
     .from('finance_invoices')
     .select(
       `*,
@@ -295,9 +295,9 @@ async function getInvoiceDetails(invoiceId: string) {
 }
 
 async function getProducts(invoiceId: string) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
-  const { data: products, error: productsError } = await supabase
+  const { data: products, error: productsError } = await sbAdmin
     .from('finance_invoice_products')
     .select('*')
     .eq('invoice_id', invoiceId);
@@ -308,9 +308,9 @@ async function getProducts(invoiceId: string) {
 }
 
 async function getPromotions(invoiceId: string) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
-  const { data: promotions, error: promotionsError } = await supabase
+  const { data: promotions, error: promotionsError } = await sbAdmin
     .from('finance_invoice_promotions')
     .select('*')
     .eq('invoice_id', invoiceId);
@@ -321,9 +321,9 @@ async function getPromotions(invoiceId: string) {
 }
 
 async function getConfigs(wsId: string) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
-  const queryBuilder = supabase
+  const queryBuilder = sbAdmin
     .from('workspace_configs')
     .select('*')
     .eq('ws_id', wsId)

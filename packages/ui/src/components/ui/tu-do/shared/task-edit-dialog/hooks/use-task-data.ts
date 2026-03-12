@@ -52,8 +52,6 @@ const SharedTaskContextSchema = z.object({
     .optional(),
 });
 
-const supabase = createClient();
-
 /**
  * Pre-loaded data for shared task context.
  * When provided, bypasses internal API fetches.
@@ -124,6 +122,8 @@ export function useTaskData({
     }
   }
 
+  const supabase = createClient();
+
   // Board configuration - fetch first to get real workspace ID
   const { data: fetchedBoardConfig } = useBoardConfig(
     hasSharedContext ? null : boardId
@@ -165,7 +165,14 @@ export function useTaskData({
     sharedContext?.workspaceLabels || fetchedWorkspaceLabels;
 
   // Workspace members
-  const { data: fetchedWorkspaceMembers = [] } = useQuery({
+  const { data: fetchedWorkspaceMembers = [] } = useQuery<
+    Array<{
+      id: string;
+      user_id: string;
+      display_name: string;
+      avatar_url?: string | null;
+    }>
+  >({
     queryKey: ['workspace-members', realWorkspaceId],
     queryFn: async () => {
       if (!realWorkspaceId || !isValidWsId) return [];
@@ -191,17 +198,25 @@ export function useTaskData({
 
       if (!members) return [];
 
-      const transformedMembers = members
-        .filter((m: any) => m.user_id && m.users) // Filter out invalid entries
-        .map((m: any) => ({
-          id: m.user_id, // Include id for compatibility with assignee-select.tsx
-          user_id: m.user_id, // Include user_id for task creation
-          display_name: m.users?.display_name || 'Unknown User',
-          avatar_url: m.users?.avatar_url,
-        }));
+      const transformedMembers = members.flatMap((member) => {
+        if (!member.user_id || !member.users) {
+          return [];
+        }
+
+        return [
+          {
+            id: member.user_id,
+            user_id: member.user_id,
+            display_name: member.users.display_name || 'Unknown User',
+            avatar_url: member.users.avatar_url,
+          },
+        ];
+      });
 
       const uniqueMembers = Array.from(
-        new Map(transformedMembers.map((m) => [m.user_id, m])).values()
+        new Map(
+          transformedMembers.map((member) => [member.user_id, member] as const)
+        ).values()
       );
 
       return uniqueMembers.sort((a, b) =>
@@ -219,25 +234,27 @@ export function useTaskData({
     queryKey: ['task-projects', realWorkspaceId],
     queryFn: async () => {
       if (!realWorkspaceId || !isValidWsId) return [];
+      const response = await fetch(
+        `/api/v1/workspaces/${realWorkspaceId}/task-projects`,
+        { cache: 'no-store' }
+      );
 
-      const { data: projects, error } = await supabase
-        .from('task_projects')
-        .select('id, name, status')
-        .eq('ws_id', realWorkspaceId)
-        .eq('deleted', false)
-        .order('name');
-
-      if (error) {
-        console.error('Error fetching task projects:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code,
-        });
-        throw error;
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => null);
+        const errorMessage =
+          errorBody?.error || 'Failed to fetch task projects';
+        console.error('Error fetching task projects:', errorMessage);
+        throw new Error(errorMessage);
       }
 
-      return projects || [];
+      const projects = (await response.json()) as Array<{
+        id: string;
+        name: string;
+        status: string;
+        deleted?: boolean | null;
+      }>;
+
+      return projects.filter((project) => !project.deleted);
     },
     enabled: !!realWorkspaceId && isOpen && isValidWsId && !hasSharedContext,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -251,44 +268,37 @@ export function useTaskData({
       queryFn: async () => {
         if (!realWorkspaceId || !isValidWsId) return [];
 
-        const { data: boards, error: boardsError } = await supabase
-          .from('workspace_boards')
-          .select('id')
-          .eq('ws_id', realWorkspaceId);
-
-        if (boardsError) throw boardsError;
-
-        const boardIds = ((boards || []) as { id: string }[]).map((b) => b.id);
-
-        if (boardIds.length === 0) {
-          return [];
-        }
-
-        let query = supabase
-          .from('tasks')
-          .select(
-            `
-          id,
-          name,
-          display_number,
-          priority,
-          created_at,
-          list:task_lists!inner(id, name, board_id, color)
-        `
-          )
-          .in('task_lists.board_id', boardIds)
-          .is('deleted_at', null);
+        const query = new URLSearchParams({
+          limit: taskSearchQuery ? '50' : '25',
+        });
 
         if (taskSearchQuery?.trim()) {
-          query = query.ilike('name', `%${taskSearchQuery.trim()}%`);
+          query.set('q', taskSearchQuery.trim());
         }
 
-        const { data, error } = await query
-          .order('created_at', { ascending: false })
-          .limit(taskSearchQuery ? 50 : 25);
+        const response = await fetch(
+          `/api/v1/workspaces/${realWorkspaceId}/tasks?${query.toString()}`,
+          { cache: 'no-store' }
+        );
 
-        if (error) throw error;
-        return data || [];
+        if (!response.ok) {
+          const errorBody = await response.json().catch(() => null);
+          throw new Error(
+            errorBody?.error || 'Failed to fetch workspace tasks'
+          );
+        }
+
+        const result = (await response.json()) as {
+          tasks?: Array<{
+            id: string;
+            name: string;
+            display_number?: number | null;
+            priority?: string | null;
+            created_at?: string | null;
+          }>;
+        };
+
+        return result.tasks || [];
       },
       enabled: !!realWorkspaceId && isOpen && isValidWsId && !hasSharedContext,
       staleTime: 2 * 60 * 1000, // 2 minutes
@@ -313,6 +323,7 @@ export async function getCurrentUser(): Promise<{
   display_name: string | null;
   avatar_url: string | null;
 } | null> {
+  const supabase = createClient();
   const {
     data: { user },
     error,

@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   MAX_MEDIUM_TEXT_LENGTH,
   MAX_NAME_LENGTH,
@@ -35,12 +35,11 @@ interface Params {
   }>;
 }
 
-export async function GET(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function GET(req: Request, { params }: Params) {
   const { wsId } = await params;
 
   // Check permissions
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -52,7 +51,9 @@ export async function GET(_: Request, { params }: Params) {
     );
   }
 
-  const { data, error } = await supabase
+  const sbAdmin = await createAdminClient();
+
+  const { data, error } = await sbAdmin
     .from('workspace_user_groups')
     .select('*')
     .eq('ws_id', wsId);
@@ -69,11 +70,10 @@ export async function GET(_: Request, { params }: Params) {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient();
   const { wsId } = await params;
 
   // Check permissions
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -94,7 +94,9 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const { error } = await supabase
+  const sbAdmin = await createAdminClient();
+
+  const { error } = await sbAdmin
     .from('workspace_user_groups')
     .insert({
       name: data.data.name,

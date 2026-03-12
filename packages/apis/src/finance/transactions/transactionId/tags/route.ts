@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
@@ -9,11 +9,11 @@ interface Params {
   }>;
 }
 
-export async function GET(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function GET(req: Request, { params }: Params) {
   const { transactionId, wsId } = await params;
   const permissions = await getPermissions({
     wsId,
+    request: req,
   });
 
   if (!permissions) {
@@ -29,7 +29,9 @@ export async function GET(_: Request, { params }: Params) {
     );
   }
 
-  const { data, error } = await supabase
+  const sbAdmin = await createAdminClient();
+
+  const { data, error } = await sbAdmin
     .from('wallet_transaction_tags')
     .select('tag_id')
     .eq('transaction_id', transactionId);

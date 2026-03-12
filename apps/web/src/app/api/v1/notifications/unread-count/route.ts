@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -23,6 +26,7 @@ const querySchema = z.object({
 export async function GET(req: Request) {
   try {
     const supabase = await createClient(req);
+    const sbAdmin = await createAdminClient();
 
     // Get authenticated user
     const {
@@ -77,7 +81,7 @@ export async function GET(req: Request) {
     }
 
     // Get unread count - RLS handles access control
-    let query = supabase
+    let query = sbAdmin
       .from('notifications')
       .select('*', { count: 'exact', head: true })
       .or(buildNotificationAccessFilter(accessContext))

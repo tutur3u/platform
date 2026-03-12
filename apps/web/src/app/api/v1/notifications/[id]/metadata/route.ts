@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -23,6 +26,7 @@ export async function PATCH(
 ) {
   try {
     const supabase = await createClient(req);
+    const sbAdmin = await createAdminClient();
 
     // Get authenticated user
     const {
@@ -61,7 +65,7 @@ export async function PATCH(
       );
     }
 
-    const { data: notification, error: fetchError } = await supabase
+    const { data: notification, error: fetchError } = await sbAdmin
       .from('notifications')
       .select('id, data')
       .eq('id', id)
@@ -94,7 +98,7 @@ export async function PATCH(
       ...validatedMetadata.data,
     } as Record<string, unknown>;
 
-    const { data: updatedNotification, error: updateError } = await supabase
+    const { data: updatedNotification, error: updateError } = await sbAdmin
       .from('notifications')
       .update({ data: updatedData as any })
       .eq('id', id)

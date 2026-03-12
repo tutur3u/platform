@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
@@ -11,13 +11,20 @@ export default async function PermanentlyArchivedUsersStatistics({
   wsId: string;
   redirect?: boolean;
 }) {
-  const supabase = await createClient();
   const t = await getTranslations();
-
   const enabled = true;
+  const permissions = await getPermissions({
+    wsId,
+  });
+  if (!permissions) notFound();
+  const { containsPermission } = permissions;
+
+  if (!enabled || !containsPermission('manage_users')) return null;
+
+  const sbAdmin = await createAdminClient();
 
   const { count: permanentlyArchivedUsers } = enabled
-    ? await supabase
+    ? await sbAdmin
         .from('workspace_users')
         .select('*', {
           count: 'exact',
@@ -27,14 +34,6 @@ export default async function PermanentlyArchivedUsersStatistics({
         .eq('archived', true)
         .is('archived_until', null)
     : { count: 0 };
-
-  const permissions = await getPermissions({
-    wsId,
-  });
-  if (!permissions) notFound();
-  const { containsPermission } = permissions;
-
-  if (!enabled || !containsPermission('manage_users')) return null;
 
   return (
     <StatisticCard

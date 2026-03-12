@@ -66,8 +66,36 @@ async function getDataWithApiKey({
 
 async function getDataFromSession({ wsId }: { wsId: string }) {
   const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
 
-  const { data, error } = await supabase
+  if (authError || !user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { data: membership, error: membershipError } = await supabase
+    .from('workspace_members')
+    .select('user_id')
+    .eq('ws_id', wsId)
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (membershipError) {
+    return NextResponse.json(
+      { message: 'Failed to verify workspace membership' },
+      { status: 500 }
+    );
+  }
+
+  if (!membership) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const sbAdmin = await createAdminClient();
+
+  const { data, error } = await sbAdmin
     .from('workspace_users')
     .select('count()')
     .eq('ws_id', wsId)

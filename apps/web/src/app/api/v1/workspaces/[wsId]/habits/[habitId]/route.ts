@@ -6,7 +6,11 @@
  * DELETE - Soft delete habit
  */
 
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Habit, HabitInput } from '@tuturuuu/types/primitives/Habit';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
@@ -18,6 +22,19 @@ import {
 interface RouteParams {
   wsId: string;
   habitId: string;
+}
+
+async function verifyWorkspaceMembership(
+  supabase: TypedSupabaseClient,
+  wsId: string,
+  userId: string
+) {
+  return await supabase
+    .from('workspace_members')
+    .select('user_id')
+    .eq('ws_id', wsId)
+    .eq('user_id', userId)
+    .maybeSingle();
 }
 
 export async function GET(
@@ -35,6 +52,7 @@ export async function GET(
     }
 
     const supabase = await createClient();
+    const sbAdmin = await createAdminClient();
 
     // Get authenticated user
     const {
@@ -49,8 +67,25 @@ export async function GET(
       );
     }
 
+    const { data: membership, error: membershipError } =
+      await verifyWorkspaceMembership(supabase, wsId, user.id);
+
+    if (membershipError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
+    if (!membership) {
+      return NextResponse.json(
+        { error: "You don't have access to this workspace" },
+        { status: 403 }
+      );
+    }
+
     // Fetch habit
-    const { data: habit, error: habitError } = await supabase
+    const { data: habit, error: habitError } = await sbAdmin
       .from('workspace_habits')
       .select('*')
       .eq('id', habitId)
@@ -63,7 +98,7 @@ export async function GET(
     }
 
     // Fetch scheduled events
-    const { data: habitEvents } = await supabase
+    const { data: habitEvents } = await sbAdmin
       .from('habit_calendar_events')
       .select(`
         id,
@@ -81,7 +116,7 @@ export async function GET(
       .order('occurrence_date', { ascending: true });
 
     // Calculate streak
-    const streak = await fetchHabitStreak(supabase as any, habit as Habit);
+    const streak = await fetchHabitStreak(sbAdmin as any, habit as Habit);
 
     return NextResponse.json({
       habit,
@@ -121,6 +156,7 @@ export async function PUT(
     }
 
     const supabase = await createClient();
+    const sbAdmin = await createAdminClient();
 
     // Get authenticated user
     const {
@@ -135,8 +171,25 @@ export async function PUT(
       );
     }
 
+    const { data: membership, error: membershipError } =
+      await verifyWorkspaceMembership(supabase, wsId, user.id);
+
+    if (membershipError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
+    if (!membership) {
+      return NextResponse.json(
+        { error: "You don't have access to this workspace" },
+        { status: 403 }
+      );
+    }
+
     // Fetch existing habit
-    const { data: existingHabit, error: fetchError } = await supabase
+    const { data: existingHabit, error: fetchError } = await sbAdmin
       .from('workspace_habits')
       .select('*')
       .eq('id', habitId)
@@ -210,7 +263,7 @@ export async function PUT(
       updateData.is_visible_in_calendar = body.is_visible_in_calendar;
 
     // Update the habit
-    const { data: updatedHabit, error: updateError } = await supabase
+    const { data: updatedHabit, error: updateError } = await sbAdmin
       .from('workspace_habits')
       .update(updateData)
       .eq('id', habitId)
@@ -228,7 +281,7 @@ export async function PUT(
     // If scheduling changed or habit was deactivated, delete future events
     // Note: Rescheduling is handled by the Smart Schedule button in Calendar
     if (schedulingChanged || body.is_active === false) {
-      await deleteFutureHabitEvents(supabase as any, habitId);
+      await deleteFutureHabitEvents(sbAdmin as any, habitId);
     }
 
     return NextResponse.json({
@@ -259,6 +312,7 @@ export async function DELETE(
     }
 
     const supabase = await createClient();
+    const sbAdmin = await createAdminClient();
 
     // Get authenticated user
     const {
@@ -273,8 +327,25 @@ export async function DELETE(
       );
     }
 
+    const { data: membership, error: membershipError } =
+      await verifyWorkspaceMembership(supabase, wsId, user.id);
+
+    if (membershipError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
+    if (!membership) {
+      return NextResponse.json(
+        { error: "You don't have access to this workspace" },
+        { status: 403 }
+      );
+    }
+
     // Verify habit exists and belongs to workspace
-    const { data: habit, error: fetchError } = await supabase
+    const { data: habit, error: fetchError } = await sbAdmin
       .from('workspace_habits')
       .select('id')
       .eq('id', habitId)
@@ -287,10 +358,10 @@ export async function DELETE(
     }
 
     // Delete future scheduled events
-    await deleteFutureHabitEvents(supabase as any, habitId);
+    await deleteFutureHabitEvents(sbAdmin as any, habitId);
 
     // Soft delete the habit
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await sbAdmin
       .from('workspace_habits')
       .update({
         deleted_at: new Date().toISOString(),

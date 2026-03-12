@@ -29,9 +29,10 @@ export async function GET(
     if ('error' in authResult) {
       return authResult.error;
     }
-    const { supabase, user, normalizedWsId } = authResult;
+    const { user, normalizedWsId } = authResult;
+    const sbAdmin = await createAdminClient();
 
-    const { data, error } = await supabase
+    const { data, error } = await sbAdmin
       .from('time_tracking_sessions')
       .select(
         `
@@ -83,19 +84,20 @@ export async function PATCH(
     }
     const body: PatchSessionBody = bodyResult.data;
 
-    const { data: session, error: sessionError } = await supabase
+    const sbAdmin = await createAdminClient();
+
+    const { data: session, error: sessionError } = await sbAdmin
       .from('time_tracking_sessions')
       .select('*')
       .eq('id', sessionId)
       .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (sessionError || !session) {
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
-    const sbAdmin = await createAdminClient();
     const permissions = await getPermissions({ wsId: normalizedWsId, request });
     if (!permissions) {
       return NextResponse.json(
@@ -179,21 +181,25 @@ export async function DELETE(
     if ('error' in authResult) {
       return authResult.error;
     }
-    const { supabase, user, normalizedWsId } = authResult;
+    const { user, normalizedWsId } = authResult;
+    const sbAdmin = await createAdminClient();
 
-    const { data: session } = await supabase
+    const { data: session, error: sessionError } = await sbAdmin
       .from('time_tracking_sessions')
       .select('id')
       .eq('id', sessionId)
       .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (sessionError) {
+      throw sessionError;
+    }
 
     if (!session) {
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
-    const sbAdmin = await createAdminClient();
     const permissions = await getPermissions({ wsId: normalizedWsId, request });
     if (!permissions) {
       return NextResponse.json(
@@ -266,7 +272,7 @@ async function authenticateAndResolveWorkspace(
     .select('id:user_id')
     .eq('ws_id', normalizedWsId)
     .eq('user_id', user.id)
-    .single();
+    .maybeSingle();
 
   if (!memberCheck) {
     return {

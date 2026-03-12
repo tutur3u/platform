@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
@@ -9,12 +9,11 @@ interface Params {
   }>;
 }
 
-export async function GET(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function GET(req: Request, { params }: Params) {
   const { groupId, wsId } = await params;
 
   // Check permissions
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -26,7 +25,9 @@ export async function GET(_: Request, { params }: Params) {
     );
   }
 
-  const { data, error } = await supabase
+  const sbAdmin = await createAdminClient();
+
+  const { data, error } = await sbAdmin
     .from('workspace_user_groups_users')
     .select('*', {
       count: 'exact',
@@ -45,11 +46,10 @@ export async function GET(_: Request, { params }: Params) {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient();
   const { groupId, wsId } = await params;
 
   // Check permissions
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -68,7 +68,9 @@ export async function POST(req: Request, { params }: Params) {
   if (!data?.memberIds)
     return NextResponse.json({ message: 'Invalid request' }, { status: 400 });
 
-  const { error: groupError } = await supabase
+  const sbAdmin = await createAdminClient();
+
+  const { error: groupError } = await sbAdmin
     .from('workspace_user_groups_users')
     .insert(
       data.memberIds.map((memberId) => ({

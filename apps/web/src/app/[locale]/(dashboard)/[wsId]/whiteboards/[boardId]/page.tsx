@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
@@ -32,7 +32,7 @@ export default async function WhiteboardPage({ params }: WhiteboardPageProps) {
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
         const { boardId } = await params;
-        const supabase = await createClient();
+        const supabase = await createAdminClient();
 
         const { data: whiteboard } = await supabase
           .from('workspace_whiteboards')

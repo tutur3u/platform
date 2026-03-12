@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -9,6 +12,7 @@ export async function GET(
   try {
     const { wsId } = await params;
     const supabase = await createClient(request);
+    const sbAdmin = await createAdminClient();
 
     // Get authenticated user
     const {
@@ -20,12 +24,19 @@ export async function GET(
     }
 
     // Verify workspace access
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: memberError } = await supabase
       .from('workspace_members')
       .select('id:user_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
       .single();
+
+    if (memberError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(
@@ -51,7 +62,7 @@ export async function GET(
     }
 
     // Get unique users who have submitted time tracking requests
-    const { data: requests, error } = await supabase
+    const { data: requests, error } = await sbAdmin
       .from('time_tracking_requests')
       .select(
         `

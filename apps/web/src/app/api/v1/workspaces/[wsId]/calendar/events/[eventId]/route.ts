@@ -1,10 +1,14 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   MAX_COLOR_LENGTH,
   MAX_LONG_TEXT_LENGTH,
   MAX_NAME_LENGTH,
   MAX_SEARCH_LENGTH,
 } from '@tuturuuu/utils/constants';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -30,12 +34,63 @@ interface Params {
   }>;
 }
 
-export async function GET(request: Request, { params }: Params) {
+async function authorizeWorkspaceCalendarEventAccess(
+  request: Request,
+  rawWsId: string
+) {
   const supabase = await createClient(request);
-  const { wsId, eventId } = await params;
+  const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return {
+      error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+    };
+  }
+
+  const { data: membership, error: membershipError } = await supabase
+    .from('workspace_members')
+    .select('user_id')
+    .eq('ws_id', wsId)
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (membershipError) {
+    return {
+      error: NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      ),
+    };
+  }
+
+  if (!membership) {
+    return {
+      error: NextResponse.json(
+        { error: 'Workspace access denied' },
+        { status: 403 }
+      ),
+    };
+  }
+
+  return {
+    sbAdmin: await createAdminClient(),
+    wsId,
+  };
+}
+
+export async function GET(request: Request, { params }: Params) {
+  const { wsId: rawWsId, eventId } = await params;
+  const access = await authorizeWorkspaceCalendarEventAccess(request, rawWsId);
+  if ('error' in access) return access.error;
+  const { sbAdmin, wsId } = access;
 
   try {
-    const { data: event, error } = await supabase
+    const { data: event, error } = await sbAdmin
       .from('workspace_calendar_events')
       .select('*')
       .eq('id', eventId)
@@ -63,8 +118,10 @@ export async function GET(request: Request, { params }: Params) {
 }
 
 export async function PUT(request: Request, { params }: Params) {
-  const supabase = await createClient(request);
-  const { wsId, eventId } = await params;
+  const { wsId: rawWsId, eventId } = await params;
+  const access = await authorizeWorkspaceCalendarEventAccess(request, rawWsId);
+  if ('error' in access) return access.error;
+  const { sbAdmin, wsId } = access;
 
   try {
     // Validate UUIDs
@@ -109,7 +166,7 @@ export async function PUT(request: Request, { params }: Params) {
     // a mixed state where is_encrypted=true but some fields remain as plaintext.
     if (hasSensitiveUpdates && workspaceKey) {
       // Fetch the existing event to check its encryption state
-      const { data: existingEvent, error: fetchError } = await supabase
+      const { data: existingEvent, error: fetchError } = await sbAdmin
         .from('workspace_calendar_events')
         .select('title, description, location, is_encrypted')
         .eq('id', eventId)
@@ -179,7 +236,7 @@ export async function PUT(request: Request, { params }: Params) {
     } else if (hasSensitiveUpdates) {
       // No encryption key available - check if the existing event is encrypted
       // to avoid data corruption (encrypted fields becoming unreadable gibberish)
-      const { data: existingEvent, error: fetchError } = await supabase
+      const { data: existingEvent, error: fetchError } = await sbAdmin
         .from('workspace_calendar_events')
         .select('is_encrypted')
         .eq('id', eventId)
@@ -238,7 +295,7 @@ export async function PUT(request: Request, { params }: Params) {
       );
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await sbAdmin
       .from('workspace_calendar_events')
       .update(updatePayload)
       .eq('id', eventId)
@@ -284,11 +341,13 @@ export async function PUT(request: Request, { params }: Params) {
 }
 
 export async function DELETE(request: Request, { params }: Params) {
-  const supabase = await createClient(request);
-  const { wsId, eventId } = await params;
+  const { wsId: rawWsId, eventId } = await params;
+  const access = await authorizeWorkspaceCalendarEventAccess(request, rawWsId);
+  if ('error' in access) return access.error;
+  const { sbAdmin, wsId } = access;
 
   try {
-    const { error } = await supabase
+    const { error } = await sbAdmin
       .from('workspace_calendar_events')
       .delete()
       .eq('id', eventId)
