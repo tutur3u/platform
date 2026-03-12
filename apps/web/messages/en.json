@@ -3715,11 +3715,7 @@
     "description": "Opt audit-tracked tables into shared insert-rate enforcement and tune per-tier quotas using the authenticated actor's personal workspace tier.",
     "empty_state": "No tables have been configured yet.",
     "feedback": {
-      "error_prefix": "Update failed",
-      "metadata-saved": "Table settings saved.",
-      "table-added": "Table configured and trigger attached.",
-      "tier-saved": "Tier limits saved.",
-      "trigger-reattached": "Trigger reattached successfully."
+      "error_prefix": "Update failed"
     },
     "fields": {
       "enabled": "Enabled",

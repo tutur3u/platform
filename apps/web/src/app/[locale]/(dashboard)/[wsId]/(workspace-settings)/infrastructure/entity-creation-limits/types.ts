@@ -30,24 +30,6 @@ export const TIER_ORDER: WorkspaceProductTier[] = [
   'ENTERPRISE',
 ];
 
-export const FEEDBACK_STATUS_KEYS = [
-  'metadata-saved',
-  'table-added',
-  'tier-saved',
-  'trigger-reattached',
-] as const;
-
-export type FeedbackStatusKey = (typeof FEEDBACK_STATUS_KEYS)[number];
-
-export function isFeedbackStatusKey(
-  value?: string
-): value is FeedbackStatusKey {
-  return (
-    typeof value === 'string' &&
-    FEEDBACK_STATUS_KEYS.includes(value as FeedbackStatusKey)
-  );
-}
-
 export function buildTableGroups(rows: LimitRow[]): TableGroup[] {
   const groupedRows = new Map<string, LimitRow[]>();
 

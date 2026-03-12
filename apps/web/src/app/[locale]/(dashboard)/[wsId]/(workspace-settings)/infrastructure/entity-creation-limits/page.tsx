@@ -4,7 +4,7 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import EntityCreationLimitsClient from './client';
 import type { AvailableTableRow, LimitRow } from './types';
-import { buildTableGroups, isFeedbackStatusKey } from './types';
+import { buildTableGroups } from './types';
 
 export const metadata: Metadata = {
   title: 'Entity Creation Limits',
@@ -41,16 +41,13 @@ interface Props {
   searchParams: Promise<{ error?: string; status?: string }>;
 }
 
-export default async function EntityCreationLimitsPage({
-  params,
-  searchParams,
-}: Props) {
+export default async function EntityCreationLimitsPage({ params }: Props) {
   const { wsId } = await params;
-  await enforceRootWorkspaceAdmin(wsId, { redirectTo: `/${wsId}/settings` });
+  await enforceRootWorkspaceAdmin(wsId, {
+    redirectTo: `/${wsId}/settings`,
+  });
 
   const t = await getTranslations('entity-creation-limits');
-  const { error, status } = await searchParams;
-  const knownFeedbackStatus = isFeedbackStatusKey(status) ? status : undefined;
 
   const [rows, availableTables] = await Promise.all([
     getLimitRows(),
@@ -82,18 +79,6 @@ export default async function EntityCreationLimitsPage({
           </div>
         </div>
       </div>
-
-      {error ? (
-        <div className="rounded-lg border border-dynamic-red/20 bg-dynamic-red/10 px-4 py-3 text-dynamic-red text-sm">
-          {t('feedback.error_prefix')}: {decodeURIComponent(error)}
-        </div>
-      ) : null}
-
-      {knownFeedbackStatus ? (
-        <div className="rounded-lg border border-dynamic-green/20 bg-dynamic-green/10 px-4 py-3 text-dynamic-green text-sm">
-          {t(`feedback.${knownFeedbackStatus}`)}
-        </div>
-      ) : null}
 
       <EntityCreationLimitsClient
         wsId={wsId}

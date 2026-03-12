@@ -3715,11 +3715,7 @@
     "description": "Cho phép opt-in các bảng đã bật audit tracking vào cơ chế giới hạn insert dùng chung và tinh chỉnh quota theo gói dựa trên personal workspace của người dùng đang thao tác.",
     "empty_state": "Chưa có bảng nào được cấu hình.",
     "feedback": {
-      "error_prefix": "Cập nhật thất bại",
-      "metadata-saved": "Đã lưu cấu hình bảng.",
-      "table-added": "Đã cấu hình bảng và gắn trigger.",
-      "tier-saved": "Đã lưu giới hạn của gói.",
-      "trigger-reattached": "Đã gắn lại trigger thành công."
+      "error_prefix": "Cập nhật thất bại"
     },
     "fields": {
       "enabled": "Bật",

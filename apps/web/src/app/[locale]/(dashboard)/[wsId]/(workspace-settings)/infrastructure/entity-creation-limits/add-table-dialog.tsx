@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -50,6 +51,8 @@ export function AddTableDialog({
 }: Props) {
   const t = useTranslations('entity-creation-limits');
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const router = useRouter();
   const form = useForm<AddTableFormValues>({
     defaultValues: {
       targetTable: '',
@@ -57,23 +60,37 @@ export function AddTableDialog({
     },
   });
 
+  const handleDialogOpenChange = (value: boolean) => {
+    if (!value) {
+      setErrorMessage(null);
+    }
+
+    onOpenChange(value);
+  };
+
   const onSubmit = async (values: AddTableFormValues) => {
     setIsLoading(true);
+    setErrorMessage(null);
     try {
       const formData = new FormData();
       formData.append('targetTable', values.targetTable);
       formData.append('notes', values.notes);
 
       await addPlatformEntityCreationLimitTable(wsId, formData);
+      router.refresh();
       form.reset();
-      onOpenChange(false);
+      handleDialogOpenChange(false);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : 'unexpected_error'
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t('add_table.title')}</DialogTitle>
@@ -82,6 +99,12 @@ export function AddTableDialog({
         <p className="text-muted-foreground text-sm">
           {t('add_table.description')}
         </p>
+
+        {errorMessage ? (
+          <div className='rounded-lg border border-dynamic-red/30 bg-dynamic-red/10 px-3 py-2 text-dynamic-red text-xs'>
+            {t('feedback.error_prefix')}: {errorMessage}
+          </div>
+        ) : null}
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
@@ -146,7 +169,7 @@ export function AddTableDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={() => handleDialogOpenChange(false)}
               >
                 {t('actions.cancel')}
               </Button>

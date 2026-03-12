@@ -19,6 +19,7 @@ import {
 import { Input } from '@tuturuuu/ui/input';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -53,6 +54,8 @@ interface TierFormValues {
 export function EditLimitDialog({ wsId, group, open, onOpenChange }: Props) {
   const t = useTranslations('entity-creation-limits');
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const [triggerError, setTriggerError] = useState<string | null>(null);
 
   if (!group) return null;
 
@@ -60,7 +63,7 @@ export function EditLimitDialog({ wsId, group, open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle className="font-mono text-base">{tableName}</DialogTitle>
         </DialogHeader>
@@ -75,6 +78,7 @@ export function EditLimitDialog({ wsId, group, open, onOpenChange }: Props) {
               wsId={wsId}
               isLoading={isLoading}
               setIsLoading={setIsLoading}
+              router={router}
               t={t}
             />
           </section>
@@ -100,6 +104,7 @@ export function EditLimitDialog({ wsId, group, open, onOpenChange }: Props) {
                     wsId={wsId}
                     isLoading={isLoading}
                     setIsLoading={setIsLoading}
+                    router={router}
                     t={t}
                   />
                 );
@@ -109,17 +114,28 @@ export function EditLimitDialog({ wsId, group, open, onOpenChange }: Props) {
 
           <Separator />
 
-          {/* Reattach trigger */}
+          {triggerError ? (
+            <div className="rounded-lg border border-dynamic-red/30 bg-dynamic-red/10 px-3 py-2 text-dynamic-red text-xs">
+              {t('feedback.error_prefix')}: {triggerError}
+            </div>
+          ) : null}
+
           <Button
             variant="outline"
             size="sm"
             disabled={isLoading}
             onClick={async () => {
               setIsLoading(true);
+              setTriggerError(null);
               try {
                 await reattachPlatformEntityCreationLimitTrigger(
                   wsId,
                   tableName
+                );
+                router.refresh();
+              } catch (error) {
+                setTriggerError(
+                  error instanceof Error ? error.message : 'unexpected_error'
                 );
               } finally {
                 setIsLoading(false);
@@ -140,6 +156,7 @@ function MetadataForm({
   wsId,
   isLoading,
   setIsLoading,
+  router,
   t,
 }: {
   tableName: string;
@@ -147,8 +164,10 @@ function MetadataForm({
   wsId: string;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
+  router: ReturnType<typeof useRouter>;
   t: ReturnType<typeof useTranslations>;
 }) {
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const form = useForm<MetadataFormValues>({
     defaultValues: {
       notes: metadata.notes ?? '',
@@ -157,6 +176,7 @@ function MetadataForm({
 
   const onSubmit = async (values: MetadataFormValues) => {
     setIsLoading(true);
+    setErrorMessage(null);
     try {
       const formData = new FormData();
       formData.append('notes', values.notes);
@@ -165,6 +185,12 @@ function MetadataForm({
         wsId,
         tableName,
         formData
+      );
+
+      router.refresh();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : 'unexpected_error'
       );
     } finally {
       setIsLoading(false);
@@ -194,7 +220,12 @@ function MetadataForm({
           )}
         />
 
-        <div>
+        <div className="space-y-2">
+          {errorMessage ? (
+            <div className="rounded-lg border border-dynamic-red/30 bg-dynamic-red/10 px-2 py-1 text-[11px] text-dynamic-red">
+              {t('feedback.error_prefix')}: {errorMessage}
+            </div>
+          ) : null}
           <Button
             type="submit"
             variant="outline"
@@ -215,6 +246,7 @@ function TierForm({
   wsId,
   isLoading,
   setIsLoading,
+  router,
   t,
 }: {
   tier: TableGroup['tiers'][0];
@@ -222,8 +254,10 @@ function TierForm({
   wsId: string;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
+  router: ReturnType<typeof useRouter>;
   t: ReturnType<typeof useTranslations>;
 }) {
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const form = useForm<TierFormValues>({
     defaultValues: {
       enabled: tier.enabled,
@@ -237,6 +271,7 @@ function TierForm({
 
   const onSubmit = async (values: TierFormValues) => {
     setIsLoading(true);
+    setErrorMessage(null);
     try {
       const formData = new FormData();
       formData.append('enabled', String(values.enabled));
@@ -251,6 +286,11 @@ function TierForm({
         tableName,
         tier.tier as WorkspaceProductTier,
         formData
+      );
+      router.refresh();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : 'unexpected_error'
       );
     } finally {
       setIsLoading(false);
@@ -358,9 +398,21 @@ function TierForm({
           )}
         />
 
-        <Button type="submit" variant="outline" size="sm" disabled={isLoading}>
-          {t('actions.save_tier')}
-        </Button>
+        <div className="space-y-2">
+          {errorMessage ? (
+            <div className="rounded-lg border border-dynamic-red/30 bg-dynamic-red/10 px-2 py-1 text-[11px] text-dynamic-red">
+              {t('feedback.error_prefix')}: {errorMessage}
+            </div>
+          ) : null}
+          <Button
+            type="submit"
+            variant="outline"
+            size="sm"
+            disabled={isLoading}
+          >
+            {t('actions.save_tier')}
+          </Button>
+        </div>
       </form>
     </Form>
   );

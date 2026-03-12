@@ -2,17 +2,8 @@
 
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { enforceRootWorkspaceAdmin } from '@tuturuuu/utils/workspace-helper';
-import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 
 type WorkspaceProductTier = 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
-
-function getEntityLimitPath(wsId: string, params?: Record<string, string>) {
-  const search = new URLSearchParams(params);
-  const query = search.toString();
-
-  return `/${wsId}/infrastructure/entity-creation-limits${query ? `?${query}` : ''}`;
-}
 
 function parseRequiredText(formData: FormData, fieldName: string) {
   const value = String(formData.get(fieldName) ?? '').trim();
@@ -65,7 +56,7 @@ function getErrorMessage(error: unknown) {
 export async function addPlatformEntityCreationLimitTable(
   wsId: string,
   formData: FormData
-) {
+): Promise<{ status: 'table-added' }> {
   await enforceRootWorkspaceAdmin(wsId, {
     redirectTo: `/${wsId}/settings`,
   });
@@ -87,14 +78,9 @@ export async function addPlatformEntityCreationLimitTable(
       throw new Error(error.message);
     }
 
-    revalidatePath(getEntityLimitPath(wsId));
-    redirect(getEntityLimitPath(wsId, { status: 'table-added' }));
+    return { status: 'table-added' };
   } catch (error) {
-    redirect(
-      getEntityLimitPath(wsId, {
-        error: getErrorMessage(error),
-      })
-    );
+    throw new Error(getErrorMessage(error));
   }
 }
 
@@ -102,7 +88,7 @@ export async function updatePlatformEntityCreationLimitMetadata(
   wsId: string,
   targetTable: string,
   formData: FormData
-) {
+): Promise<{ status: 'metadata-saved' }> {
   await enforceRootWorkspaceAdmin(wsId, {
     redirectTo: `/${wsId}/settings`,
   });
@@ -123,14 +109,9 @@ export async function updatePlatformEntityCreationLimitMetadata(
       throw new Error(error.message);
     }
 
-    revalidatePath(getEntityLimitPath(wsId));
-    redirect(getEntityLimitPath(wsId, { status: 'metadata-saved' }));
+    return { status: 'metadata-saved' };
   } catch (error) {
-    redirect(
-      getEntityLimitPath(wsId, {
-        error: getErrorMessage(error),
-      })
-    );
+    throw new Error(getErrorMessage(error));
   }
 }
 
@@ -139,7 +120,7 @@ export async function updatePlatformEntityCreationLimitTier(
   targetTable: string,
   tier: WorkspaceProductTier,
   formData: FormData
-) {
+): Promise<{ status: 'tier-saved' }> {
   await enforceRootWorkspaceAdmin(wsId, {
     redirectTo: `/${wsId}/settings`,
   });
@@ -164,21 +145,16 @@ export async function updatePlatformEntityCreationLimitTier(
       throw new Error(error.message);
     }
 
-    revalidatePath(getEntityLimitPath(wsId));
-    redirect(getEntityLimitPath(wsId, { status: 'tier-saved' }));
+    return { status: 'tier-saved' };
   } catch (error) {
-    redirect(
-      getEntityLimitPath(wsId, {
-        error: getErrorMessage(error),
-      })
-    );
+    throw new Error(getErrorMessage(error));
   }
 }
 
 export async function reattachPlatformEntityCreationLimitTrigger(
   wsId: string,
   targetTable: string
-) {
+): Promise<{ status: 'trigger-reattached' }> {
   await enforceRootWorkspaceAdmin(wsId, {
     redirectTo: `/${wsId}/settings`,
   });
@@ -196,13 +172,8 @@ export async function reattachPlatformEntityCreationLimitTrigger(
       throw new Error(error.message);
     }
 
-    revalidatePath(getEntityLimitPath(wsId));
-    redirect(getEntityLimitPath(wsId, { status: 'trigger-reattached' }));
+    return { status: 'trigger-reattached' };
   } catch (error) {
-    redirect(
-      getEntityLimitPath(wsId, {
-        error: getErrorMessage(error),
-      })
-    );
+    throw new Error(getErrorMessage(error));
   }
 }
