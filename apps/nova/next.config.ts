@@ -6,14 +6,25 @@ const CENTRAL_PORT = process.env.CENTRAL_PORT || 7803;
 const isProductionDeployment = process.env.VERCEL_ENV
   ? process.env.VERCEL_ENV === 'production'
   : process.env.NODE_ENV === 'production';
-const WEB_APP_URL = (
+
+function trimTrailingSlashes(value: string) {
+  let end = value.length;
+
+  while (end > 0 && value.charCodeAt(end - 1) === 47) {
+    end -= 1;
+  }
+
+  return end === value.length ? value : value.slice(0, end);
+}
+
+const WEB_APP_URL = trimTrailingSlashes(
   process.env.INTERNAL_WEB_API_ORIGIN ||
-  process.env.NEXT_PUBLIC_WEB_APP_URL ||
-  process.env.WEB_APP_URL ||
-  (isProductionDeployment
-    ? 'https://tuturuuu.com'
-    : `http://localhost:${CENTRAL_PORT}`)
-).replace(/\/+$/, '');
+    process.env.NEXT_PUBLIC_WEB_APP_URL ||
+    process.env.WEB_APP_URL ||
+    (isProductionDeployment
+      ? 'https://tuturuuu.com'
+      : `http://localhost:${CENTRAL_PORT}`)
+);
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
