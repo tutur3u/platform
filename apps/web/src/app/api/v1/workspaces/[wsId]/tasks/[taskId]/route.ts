@@ -41,7 +41,6 @@ const updateTaskSchema = z
   });
 
 type TaskPriority = Database['public']['Enums']['task_priority'];
-type TaskUpdate = Database['public']['Tables']['tasks']['Update'];
 type TaskRecord = {
   id: string;
   display_number: number | null;
@@ -331,6 +330,16 @@ export async function PUT(
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
+    const normalizedAssigneeIds = body.assignee_ids
+      ? [...new Set(body.assignee_ids)]
+      : undefined;
+    const normalizedLabelIds = body.label_ids
+      ? [...new Set(body.label_ids)]
+      : undefined;
+    const normalizedProjectIds = body.project_ids
+      ? [...new Set(body.project_ids)]
+      : undefined;
+
     if (body.list_id) {
       const { data: listCheck, error: listError } = await supabase
         .from('task_lists')
@@ -355,7 +364,98 @@ export async function PUT(
       }
     }
 
-    const updatePayload: TaskUpdate = {
+    if (
+      normalizedAssigneeIds !== undefined &&
+      normalizedAssigneeIds.length > 0
+    ) {
+      const { data: members, error: membersError } = await supabase
+        .from('workspace_members')
+        .select('user_id')
+        .eq('ws_id', wsId)
+        .in('user_id', normalizedAssigneeIds);
+
+      if (membersError) {
+        console.error('Error validating assignees:', membersError);
+        return NextResponse.json(
+          { error: 'Failed to validate task assignees' },
+          { status: 500 }
+        );
+      }
+
+      const validAssigneeIds = new Set(
+        (members ?? []).map((member) => member.user_id)
+      );
+      const hasInvalidAssignee = normalizedAssigneeIds.some(
+        (assigneeId) => !validAssigneeIds.has(assigneeId)
+      );
+
+      if (hasInvalidAssignee) {
+        return NextResponse.json(
+          { error: 'One or more assignees are not in this workspace' },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (normalizedLabelIds !== undefined && normalizedLabelIds.length > 0) {
+      const { data: labels, error: labelsError } = await supabase
+        .from('workspace_task_labels')
+        .select('id')
+        .eq('ws_id', wsId)
+        .in('id', normalizedLabelIds);
+
+      if (labelsError) {
+        console.error('Error validating labels:', labelsError);
+        return NextResponse.json(
+          { error: 'Failed to validate task labels' },
+          { status: 500 }
+        );
+      }
+
+      const validLabelIds = new Set((labels ?? []).map((label) => label.id));
+      const hasInvalidLabel = normalizedLabelIds.some(
+        (labelId) => !validLabelIds.has(labelId)
+      );
+
+      if (hasInvalidLabel) {
+        return NextResponse.json(
+          { error: 'One or more labels do not belong to this workspace' },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (normalizedProjectIds !== undefined && normalizedProjectIds.length > 0) {
+      const { data: projects, error: projectsError } = await supabase
+        .from('task_projects')
+        .select('id')
+        .eq('ws_id', wsId)
+        .in('id', normalizedProjectIds);
+
+      if (projectsError) {
+        console.error('Error validating projects:', projectsError);
+        return NextResponse.json(
+          { error: 'Failed to validate task projects' },
+          { status: 500 }
+        );
+      }
+
+      const validProjectIds = new Set(
+        (projects ?? []).map((project) => project.id)
+      );
+      const hasInvalidProject = normalizedProjectIds.some(
+        (projectId) => !validProjectIds.has(projectId)
+      );
+
+      if (hasInvalidProject) {
+        return NextResponse.json(
+          { error: 'One or more projects do not belong to this workspace' },
+          { status: 400 }
+        );
+      }
+    }
+
+    const updatePayload = {
       ...(body.name != null ? { name: body.name.trim() } : {}),
       ...(body.description !== undefined
         ? { description: body.description?.trim() || null }
@@ -375,10 +475,19 @@ export async function PUT(
         : {}),
     };
 
-    const { error: updateError } = await supabase
-      .from('tasks')
-      .update(updatePayload)
-      .eq('id', taskId);
+    const { error: updateError } = await supabase.rpc(
+      'update_task_with_relations',
+      {
+        p_task_id: taskId,
+        p_task_updates: updatePayload,
+        p_assignee_ids: normalizedAssigneeIds,
+        p_replace_assignees: body.assignee_ids !== undefined,
+        p_label_ids: normalizedLabelIds,
+        p_replace_labels: body.label_ids !== undefined,
+        p_project_ids: normalizedProjectIds,
+        p_replace_projects: body.project_ids !== undefined,
+      }
+    );
 
     if (updateError) {
       console.error('Error updating task:', updateError);
@@ -386,202 +495,6 @@ export async function PUT(
         { error: 'Failed to update task' },
         { status: 500 }
       );
-    }
-
-    if (body.assignee_ids !== undefined) {
-      const normalizedAssigneeIds = [...new Set(body.assignee_ids)];
-
-      if (normalizedAssigneeIds.length > 0) {
-        const { data: members, error: membersError } = await supabase
-          .from('workspace_members')
-          .select('user_id')
-          .eq('ws_id', wsId)
-          .in('user_id', normalizedAssigneeIds);
-
-        if (membersError) {
-          console.error('Error validating assignees:', membersError);
-          return NextResponse.json(
-            { error: 'Failed to validate task assignees' },
-            { status: 500 }
-          );
-        }
-
-        const validAssigneeIds = new Set(
-          (members ?? []).map((member) => member.user_id)
-        );
-        const hasInvalidAssignee = normalizedAssigneeIds.some(
-          (assigneeId) => !validAssigneeIds.has(assigneeId)
-        );
-
-        if (hasInvalidAssignee) {
-          return NextResponse.json(
-            { error: 'One or more assignees are not in this workspace' },
-            { status: 400 }
-          );
-        }
-      }
-
-      const { error: clearAssigneesError } = await supabase
-        .from('task_assignees')
-        .delete()
-        .eq('task_id', taskId);
-
-      if (clearAssigneesError) {
-        console.error('Error clearing task assignees:', clearAssigneesError);
-        return NextResponse.json(
-          { error: 'Failed to update task assignees' },
-          { status: 500 }
-        );
-      }
-
-      if (normalizedAssigneeIds.length > 0) {
-        const { error: addAssigneesError } = await supabase
-          .from('task_assignees')
-          .insert(
-            normalizedAssigneeIds.map((assigneeId) => ({
-              task_id: taskId,
-              user_id: assigneeId,
-            }))
-          );
-
-        if (addAssigneesError) {
-          console.error('Error adding task assignees:', addAssigneesError);
-          return NextResponse.json(
-            { error: 'Failed to update task assignees' },
-            { status: 500 }
-          );
-        }
-      }
-    }
-
-    if (body.label_ids !== undefined) {
-      const normalizedLabelIds = [...new Set(body.label_ids)];
-
-      if (normalizedLabelIds.length > 0) {
-        const { data: labels, error: labelsError } = await supabase
-          .from('workspace_task_labels')
-          .select('id')
-          .eq('ws_id', wsId)
-          .in('id', normalizedLabelIds);
-
-        if (labelsError) {
-          console.error('Error validating labels:', labelsError);
-          return NextResponse.json(
-            { error: 'Failed to validate task labels' },
-            { status: 500 }
-          );
-        }
-
-        const validLabelIds = new Set((labels ?? []).map((label) => label.id));
-        const hasInvalidLabel = normalizedLabelIds.some(
-          (labelId) => !validLabelIds.has(labelId)
-        );
-
-        if (hasInvalidLabel) {
-          return NextResponse.json(
-            { error: 'One or more labels do not belong to this workspace' },
-            { status: 400 }
-          );
-        }
-      }
-
-      const { error: clearLabelsError } = await supabase
-        .from('task_labels')
-        .delete()
-        .eq('task_id', taskId);
-
-      if (clearLabelsError) {
-        console.error('Error clearing task labels:', clearLabelsError);
-        return NextResponse.json(
-          { error: 'Failed to update task labels' },
-          { status: 500 }
-        );
-      }
-
-      if (normalizedLabelIds.length > 0) {
-        const { error: addLabelsError } = await supabase
-          .from('task_labels')
-          .insert(
-            normalizedLabelIds.map((labelId) => ({
-              task_id: taskId,
-              label_id: labelId,
-            }))
-          );
-
-        if (addLabelsError) {
-          console.error('Error adding task labels:', addLabelsError);
-          return NextResponse.json(
-            { error: 'Failed to update task labels' },
-            { status: 500 }
-          );
-        }
-      }
-    }
-
-    if (body.project_ids !== undefined) {
-      const normalizedProjectIds = [...new Set(body.project_ids)];
-
-      if (normalizedProjectIds.length > 0) {
-        const { data: projects, error: projectsError } = await supabase
-          .from('task_projects')
-          .select('id')
-          .eq('ws_id', wsId)
-          .in('id', normalizedProjectIds);
-
-        if (projectsError) {
-          console.error('Error validating projects:', projectsError);
-          return NextResponse.json(
-            { error: 'Failed to validate task projects' },
-            { status: 500 }
-          );
-        }
-
-        const validProjectIds = new Set(
-          (projects ?? []).map((project) => project.id)
-        );
-        const hasInvalidProject = normalizedProjectIds.some(
-          (projectId) => !validProjectIds.has(projectId)
-        );
-
-        if (hasInvalidProject) {
-          return NextResponse.json(
-            { error: 'One or more projects do not belong to this workspace' },
-            { status: 400 }
-          );
-        }
-      }
-
-      const { error: clearProjectsError } = await supabase
-        .from('task_project_tasks')
-        .delete()
-        .eq('task_id', taskId);
-
-      if (clearProjectsError) {
-        console.error('Error clearing task projects:', clearProjectsError);
-        return NextResponse.json(
-          { error: 'Failed to update task projects' },
-          { status: 500 }
-        );
-      }
-
-      if (normalizedProjectIds.length > 0) {
-        const { error: addProjectsError } = await supabase
-          .from('task_project_tasks')
-          .insert(
-            normalizedProjectIds.map((projectId) => ({
-              task_id: taskId,
-              project_id: projectId,
-            }))
-          );
-
-        if (addProjectsError) {
-          console.error('Error adding task projects:', addProjectsError);
-          return NextResponse.json(
-            { error: 'Failed to update task projects' },
-            { status: 500 }
-          );
-        }
-      }
     }
 
     const updatedTaskResult = await getWorkspaceTask(supabase, wsId, taskId);

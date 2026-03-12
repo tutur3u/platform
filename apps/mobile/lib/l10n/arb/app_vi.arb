@@ -233,6 +233,22 @@
     "taskBoardDetailToday": "hôm nay",
     "taskBoardDetailTomorrow": "ngày mai",
     "taskBoardDetailYesterday": "hôm qua",
+    "taskBoardDetailInDays": "trong {count} ngày",
+    "@taskBoardDetailInDays": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "taskBoardDetailDaysAgo": "{count} ngày trước",
+    "@taskBoardDetailDaysAgo": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "taskBoardDetailInvalidDateRange": "Ngày kết thúc phải cùng hoặc sau ngày bắt đầu",
     "taskBoardDetailTaskSaved": "Đã cập nhật công việc.",
     "taskBoardDetailTaskCreated": "Đã tạo công việc.",

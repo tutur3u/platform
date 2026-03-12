@@ -532,6 +532,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailYesterday => 'hôm qua';
 
   @override
+  String taskBoardDetailInDays(int count) {
+    return 'trong $count ngày';
+  }
+
+  @override
+  String taskBoardDetailDaysAgo(int count) {
+    return '$count ngày trước';
+  }
+
+  @override
   String get taskBoardDetailInvalidDateRange => 'Ngày kết thúc phải cùng hoặc sau ngày bắt đầu';
 
   @override

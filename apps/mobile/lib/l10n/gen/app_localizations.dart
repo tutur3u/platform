@@ -1081,6 +1081,18 @@ abstract class AppLocalizations {
   /// **'yesterday'**
   String get taskBoardDetailYesterday;
 
+  /// No description provided for @taskBoardDetailInDays.
+  ///
+  /// In en, this message translates to:
+  /// **'in {count} days'**
+  String taskBoardDetailInDays(int count);
+
+  /// No description provided for @taskBoardDetailDaysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} days ago'**
+  String taskBoardDetailDaysAgo(int count);
+
   /// No description provided for @taskBoardDetailInvalidDateRange.
   ///
   /// In en, this message translates to:

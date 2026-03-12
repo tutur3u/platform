@@ -1,13 +1,6 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { normalizeWorkspaceId } from '@/lib/workspace-helper';
-
-const paramsSchema = z.object({
-  wsId: z.string().min(1),
-  boardId: z.uuid(),
-  listId: z.uuid(),
-});
+import { requireBoardAccess } from '../access';
 
 const supportedColorSchema = z.enum([
   'GRAY',
@@ -47,56 +40,13 @@ export async function PATCH(
   }: { params: Promise<{ wsId: string; boardId: string; listId: string }> }
 ) {
   try {
-    const { wsId: rawWsId, boardId, listId } = paramsSchema.parse(await params);
-    const supabase = await createClient(request);
-    const wsId = await normalizeWorkspaceId(rawWsId);
+    const access = await requireBoardAccess(request, await params);
+    if ('error' in access) return access.error;
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const { supabase, boardId } = access;
+    const listId = access.listId;
 
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { data: memberCheck, error: memberError } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (memberError) {
-      return NextResponse.json(
-        { error: 'Failed to verify workspace membership' },
-        { status: 500 }
-      );
-    }
-
-    if (!memberCheck) {
-      return NextResponse.json(
-        { error: 'Workspace access denied' },
-        { status: 403 }
-      );
-    }
-
-    const { data: listCheck, error: listCheckError } = await supabase
-      .from('task_lists')
-      .select('id, board_id, workspace_boards!inner(ws_id)')
-      .eq('id', listId)
-      .eq('board_id', boardId)
-      .eq('workspace_boards.ws_id', wsId)
-      .maybeSingle();
-
-    if (listCheckError) {
-      return NextResponse.json(
-        { error: 'Failed to load task list' },
-        { status: 500 }
-      );
-    }
-
-    if (!listCheck) {
+    if (!listId) {
       return NextResponse.json(
         { error: 'Task list not found' },
         { status: 404 }
@@ -121,7 +71,7 @@ export async function PATCH(
     } = {};
 
     if (body.name !== undefined) {
-      updates.name = body.name.trim();
+      updates.name = body.name;
     }
     if (body.status !== undefined) {
       updates.status = body.status;
@@ -134,6 +84,7 @@ export async function PATCH(
       .from('task_lists')
       .update(updates)
       .eq('id', listId)
+      .eq('board_id', boardId)
       .select('id, board_id, name, status, color, position, archived')
       .single();
 

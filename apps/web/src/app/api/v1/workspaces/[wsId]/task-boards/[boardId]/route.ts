@@ -19,7 +19,6 @@ export async function GET(
   try {
     const { wsId: rawWsId, boardId } = paramsSchema.parse(await params);
     const supabase = await createClient(request);
-    const wsId = await normalizeWorkspaceId(rawWsId);
 
     const {
       data: { user },
@@ -29,6 +28,8 @@ export async function GET(
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     const { data: memberCheck, error: memberError } = await supabase
       .from('workspace_members')
@@ -53,7 +54,9 @@ export async function GET(
 
     const { data: board, error } = await supabase
       .from('workspace_boards')
-      .select('id, ws_id, name, icon, created_at, archived_at, deleted_at')
+      .select(
+        'id, ws_id, name, icon, ticket_prefix, created_at, archived_at, deleted_at, estimation_type, extended_estimation, allow_zero_estimates, count_unestimated_issues'
+      )
       .eq('ws_id', wsId)
       .eq('id', boardId)
       .maybeSingle();

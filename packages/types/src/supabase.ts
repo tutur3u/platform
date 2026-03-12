@@ -7,6 +7,11 @@ export type Json =
   | Json[];
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: '14.1';
+  };
   public: {
     Tables: {
       abuse_events: {
@@ -18399,36 +18404,7 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
+        Relationships: [];
       };
       calendar_event_participants: {
         Row: {
@@ -20135,6 +20111,23 @@ export type Database = {
           p_title: string;
         };
         Returns: string;
+      };
+      create_task_list_with_next_position: {
+        Args: {
+          p_board_id: string;
+          p_color?: string;
+          p_name: string;
+          p_status: Database['public']['Enums']['task_board_status'];
+        };
+        Returns: {
+          archived: boolean;
+          board_id: string;
+          color: string;
+          id: string;
+          name: string;
+          position: number;
+          status: Database['public']['Enums']['task_board_status'];
+        }[];
       };
       create_task_with_relationship: {
         Args: {
@@ -22747,6 +22740,19 @@ export type Database = {
       update_many_tasks: { Args: { updates: Json }; Returns: number };
       update_session_total_score: {
         Args: { challenge_id_param: string; user_id_param: string };
+        Returns: undefined;
+      };
+      update_task_with_relations: {
+        Args: {
+          p_assignee_ids?: string[];
+          p_label_ids?: string[];
+          p_project_ids?: string[];
+          p_replace_assignees?: boolean;
+          p_replace_labels?: boolean;
+          p_replace_projects?: boolean;
+          p_task_id: string;
+          p_task_updates?: Json;
+        };
         Returns: undefined;
       };
       update_time_tracking_request: {

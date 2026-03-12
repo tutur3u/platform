@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:mobile/data/utils/date_utils.dart';
 
 class TaskBoardTaskAssignee extends Equatable {
   const TaskBoardTaskAssignee({
@@ -143,10 +144,10 @@ class TaskBoardTask extends Equatable {
       description: (json['description'] as String?)?.trim(),
       priority: (json['priority'] as String?)?.trim(),
       completed: json['completed'] as bool?,
-      startDate: _parseDateTime(json['start_date']),
-      endDate: _parseDateTime(json['end_date']),
-      createdAt: _parseDateTime(json['created_at']),
-      closedAt: _parseDateTime(json['closed_at']),
+      startDate: parseDateTime(json['start_date']),
+      endDate: parseDateTime(json['end_date']),
+      createdAt: parseDateTime(json['created_at']),
+      closedAt: parseDateTime(json['closed_at']),
       estimationPoints: (json['estimation_points'] as num?)?.toInt(),
       assignees: rawAssignees
           .whereType<Map<String, dynamic>>()
@@ -161,11 +162,6 @@ class TaskBoardTask extends Equatable {
           .map(TaskBoardTaskProject.fromJson)
           .toList(growable: false),
     );
-  }
-
-  static DateTime? _parseDateTime(Object? value) {
-    if (value is! String || value.isEmpty) return null;
-    return DateTime.tryParse(value)?.toLocal();
   }
 
   final String id;

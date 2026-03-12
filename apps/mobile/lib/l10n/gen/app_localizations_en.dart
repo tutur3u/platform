@@ -532,6 +532,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailYesterday => 'yesterday';
 
   @override
+  String taskBoardDetailInDays(int count) {
+    return 'in $count days';
+  }
+
+  @override
+  String taskBoardDetailDaysAgo(int count) {
+    return '$count days ago';
+  }
+
+  @override
   String get taskBoardDetailInvalidDateRange => 'End date must be on or after start date';
 
   @override

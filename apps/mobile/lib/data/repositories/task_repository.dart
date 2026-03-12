@@ -244,10 +244,17 @@ class TaskRepository {
     int pageSize = 200,
   }) async {
     final normalizedPageSize = pageSize.clamp(1, 200);
+    const maxIterations = 1000;
     final tasks = <TaskBoardTask>[];
     var offset = 0;
+    var iteration = 0;
 
     while (true) {
+      iteration += 1;
+      if (iteration > maxIterations) {
+        break;
+      }
+
       final query = _encodeQueryParameters({
         'boardId': boardId,
         'limit': normalizedPageSize.toString(),
@@ -341,6 +348,30 @@ class TaskRepository {
     bool clearEndDate = false,
     bool clearEstimationPoints = false,
   }) async {
+    if (description != null && clearDescription) {
+      throw ArgumentError(
+        'description and clearDescription cannot both be provided',
+      );
+    }
+
+    if (startDate != null && clearStartDate) {
+      throw ArgumentError(
+        'startDate and clearStartDate cannot both be provided',
+      );
+    }
+
+    if (endDate != null && clearEndDate) {
+      throw ArgumentError(
+        'endDate and clearEndDate cannot both be provided',
+      );
+    }
+
+    if (estimationPoints != null && clearEstimationPoints) {
+      throw ArgumentError(
+        'estimationPoints and clearEstimationPoints cannot both be provided',
+      );
+    }
+
     final updatePayload = <String, dynamic>{
       if (name != null) 'name': name,
       if (description != null) 'description': description,
@@ -467,38 +498,57 @@ class TaskRepository {
     String wsId,
     String boardId,
   ) async {
-    final boardsPage = await getTaskBoards(wsId, pageSize: 200);
+    try {
+      final response = await _apiClient.getJson(
+        '/api/v1/workspaces/$wsId/task-boards/$boardId',
+      );
+      final board = response['board'];
+      if (board is! Map<String, dynamic>) {
+        throw const ApiException(message: 'Board not found', statusCode: 404);
+      }
 
-    TaskBoardSummary? targetBoard;
-    for (final board in boardsPage.boards) {
-      if (board.id == boardId) {
-        targetBoard = board;
-        break;
+      return TaskBoardDetail.fromJson(board);
+    } on ApiException catch (error) {
+      if (error.statusCode != 404) {
+        rethrow;
       }
     }
 
-    if (targetBoard != null) {
-      return TaskBoardDetail(
-        id: targetBoard.id,
-        wsId: targetBoard.wsId,
-        name: targetBoard.name,
-        icon: targetBoard.icon,
-        ticketPrefix: targetBoard.ticketPrefix,
-        createdAt: targetBoard.createdAt,
-        archivedAt: targetBoard.archivedAt,
-        deletedAt: targetBoard.deletedAt,
-      );
+    var page = 1;
+
+    while (true) {
+      final boardsPage = await getTaskBoards(wsId, page: page, pageSize: 200);
+
+      TaskBoardSummary? targetBoard;
+      for (final board in boardsPage.boards) {
+        if (board.id == boardId) {
+          targetBoard = board;
+          break;
+        }
+      }
+
+      if (targetBoard != null) {
+        return TaskBoardDetail(
+          id: targetBoard.id,
+          wsId: targetBoard.wsId,
+          name: targetBoard.name,
+          icon: targetBoard.icon,
+          ticketPrefix: targetBoard.ticketPrefix,
+          createdAt: targetBoard.createdAt,
+          archivedAt: targetBoard.archivedAt,
+          deletedAt: targetBoard.deletedAt,
+        );
+      }
+
+      final loadedCount = page * boardsPage.pageSize;
+      if (boardsPage.boards.isEmpty || loadedCount >= boardsPage.totalCount) {
+        break;
+      }
+
+      page += 1;
     }
 
-    final response = await _apiClient.getJson(
-      '/api/v1/workspaces/$wsId/task-boards/$boardId',
-    );
-    final board = response['board'];
-    if (board is! Map<String, dynamic>) {
-      throw const ApiException(message: 'Board not found', statusCode: 404);
-    }
-
-    return TaskBoardDetail.fromJson(board);
+    throw const ApiException(message: 'Board not found', statusCode: 404);
   }
 
   Future<void> createTaskBoard({

@@ -126,24 +126,25 @@ class _BoardListSection extends StatelessWidget {
                     icon: Icon(Icons.add, color: style.accent),
                     onPressed: onCreateTask,
                   ),
-                  PopupMenuButton<_BoardListMenuAction>(
-                    tooltip: context.l10n.taskBoardDetailListActions,
-                    onSelected: (action) {
-                      if (action == _BoardListMenuAction.edit) {
-                        onEditList?.call();
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      PopupMenuItem<_BoardListMenuAction>(
-                        value: _BoardListMenuAction.edit,
-                        child: Text(context.l10n.taskBoardDetailEditList),
+                  if (onEditList != null)
+                    PopupMenuButton<_BoardListMenuAction>(
+                      tooltip: context.l10n.taskBoardDetailListActions,
+                      onSelected: (action) {
+                        if (action == _BoardListMenuAction.edit) {
+                          onEditList?.call();
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        PopupMenuItem<_BoardListMenuAction>(
+                          value: _BoardListMenuAction.edit,
+                          child: Text(context.l10n.taskBoardDetailEditList),
+                        ),
+                      ],
+                      child: const Padding(
+                        padding: EdgeInsets.only(left: 6),
+                        child: Icon(Icons.more_horiz, size: 18),
                       ),
-                    ],
-                    child: const Padding(
-                      padding: EdgeInsets.only(left: 6),
-                      child: Icon(Icons.more_horiz, size: 18),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -578,7 +579,7 @@ class _AssigneeAvatar extends StatelessWidget {
       child: hasAvatar
           ? null
           : Text(
-              name.substring(0, 1).toUpperCase(),
+              name.isNotEmpty ? name.substring(0, 1).toUpperCase() : '?',
               style: const TextStyle(fontSize: 9),
             ),
     );

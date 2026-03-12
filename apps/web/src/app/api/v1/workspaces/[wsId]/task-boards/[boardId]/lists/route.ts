@@ -1,13 +1,6 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import type { Database } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { normalizeWorkspaceId } from '@/lib/workspace-helper';
-
-const paramsSchema = z.object({
-  wsId: z.string().min(1),
-  boardId: z.uuid(),
-});
+import { requireBoardAccess } from './access';
 
 const supportedColorSchema = z.enum([
   'GRAY',
@@ -30,72 +23,6 @@ const createListSchema = z.object({
     .default('not_started'),
   color: supportedColorSchema.optional(),
 });
-
-async function requireBoardAccess(request: Request, rawParams: unknown) {
-  const { wsId: rawWsId, boardId } = paramsSchema.parse(rawParams);
-  const supabase = await createClient(request);
-  const wsId = await normalizeWorkspaceId(rawWsId);
-
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    return {
-      error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
-  }
-
-  const { data: memberCheck, error: memberError } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .maybeSingle();
-
-  if (memberError) {
-    return {
-      error: NextResponse.json(
-        { error: 'Failed to verify workspace membership' },
-        { status: 500 }
-      ),
-    };
-  }
-
-  if (!memberCheck) {
-    return {
-      error: NextResponse.json(
-        { error: 'Workspace access denied' },
-        { status: 403 }
-      ),
-    };
-  }
-
-  const { data: board, error: boardError } = await supabase
-    .from('workspace_boards')
-    .select('id, ws_id')
-    .eq('id', boardId)
-    .eq('ws_id', wsId)
-    .maybeSingle();
-
-  if (boardError) {
-    return {
-      error: NextResponse.json(
-        { error: 'Failed to load task board' },
-        { status: 500 }
-      ),
-    };
-  }
-
-  if (!board) {
-    return {
-      error: NextResponse.json({ error: 'Board not found' }, { status: 404 }),
-    };
-  }
-
-  return { supabase, wsId, boardId, user };
-}
 
 export async function GET(
   request: Request,
@@ -149,40 +76,15 @@ export async function POST(
     const { supabase, boardId } = access;
     const body = createListSchema.parse(await request.json());
 
-    const { data: existingLists, error: existingListsError } = await supabase
-      .from('task_lists')
-      .select('position')
-      .eq('board_id', boardId)
-      .eq('status', body.status)
-      .eq('deleted', false);
-
-    if (existingListsError) {
-      return NextResponse.json(
-        { error: 'Failed to calculate list position' },
-        { status: 500 }
-      );
-    }
-
-    const maxPosition = Math.max(
-      0,
-      ...(existingLists ?? []).map((list) => list.position ?? 0)
-    );
-
-    const insertPayload: Database['public']['Tables']['task_lists']['Insert'] =
+    const { data: list, error } = await supabase.rpc(
+      'create_task_list_with_next_position',
       {
-        board_id: boardId,
-        name: body.name.trim(),
-        status: body.status,
-        color: body.color,
-        position: maxPosition + 1,
-        deleted: false,
-      };
-
-    const { data: list, error } = await supabase
-      .from('task_lists')
-      .insert(insertPayload)
-      .select('id, board_id, name, status, color, position, archived')
-      .single();
+        p_board_id: boardId,
+        p_name: body.name,
+        p_status: body.status,
+        p_color: body.color,
+      }
+    );
 
     if (error) {
       return NextResponse.json(
@@ -191,7 +93,16 @@ export async function POST(
       );
     }
 
-    return NextResponse.json({ list }, { status: 201 });
+    const createdList = Array.isArray(list) ? list[0] : list;
+
+    if (!createdList) {
+      return NextResponse.json(
+        { error: 'Failed to create task list' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ list: createdList }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError || error instanceof SyntaxError) {
       return NextResponse.json(

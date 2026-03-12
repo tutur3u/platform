@@ -353,10 +353,10 @@ String _taskSmartDate(BuildContext context, DateTime date) {
   if (diff == 1) return context.l10n.taskBoardDetailTomorrow;
   if (diff == -1) return context.l10n.taskBoardDetailYesterday;
   if (diff > 1) {
-    return 'in $diff days';
+    return context.l10n.taskBoardDetailInDays(diff);
   }
   // past
-  return '${diff.abs()} days ago';
+  return context.l10n.taskBoardDetailDaysAgo(diff.abs());
 }
 
 String? _taskDueLabel(BuildContext context, TaskBoardTask task) {
@@ -376,7 +376,14 @@ String? _taskStartLabel(BuildContext context, TaskBoardTask task) {
 
 bool _taskIsOverdue(TaskBoardTask task) {
   if (task.endDate == null) return false;
-  return task.endDate!.isBefore(DateTime.now());
+  final dueDate = DateTime(
+    task.endDate!.year,
+    task.endDate!.month,
+    task.endDate!.day,
+  );
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  return dueDate.isBefore(today);
 }
 
 bool _hasChips(

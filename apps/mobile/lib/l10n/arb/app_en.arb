@@ -233,6 +233,22 @@
     "taskBoardDetailToday": "today",
     "taskBoardDetailTomorrow": "tomorrow",
     "taskBoardDetailYesterday": "yesterday",
+    "taskBoardDetailInDays": "in {count} days",
+    "@taskBoardDetailInDays": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "taskBoardDetailDaysAgo": "{count} days ago",
+    "@taskBoardDetailDaysAgo": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "taskBoardDetailInvalidDateRange": "End date must be on or after start date",
     "taskBoardDetailTaskSaved": "Task updated.",
     "taskBoardDetailTaskCreated": "Task created.",

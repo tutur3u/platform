@@ -74,7 +74,7 @@ extension on _TaskBoardDetailPageViewState {
         initialStatus:
             TaskBoardList.normalizeSupportedStatus(list.status) ?? 'active',
         initialColor:
-            TaskBoardList.normalizeSupportedColor(list.color) ?? 'BLUE',
+          TaskBoardList.normalizeSupportedColor(list.color) ?? 'GRAY',
       ),
     );
     if (result == null || !context.mounted) return;
@@ -390,12 +390,12 @@ class _TaskBoardAdvancedFilterSheetState
   void _apply() {
     widget.onApply(
       TaskBoardDetailFilters(
-        listIds: _listIds,
-        statuses: _statuses,
-        priorities: _priorities,
-        assigneeIds: _assigneeIds,
-        labelIds: _labelIds,
-        projectIds: _projectIds,
+        listIds: Set<String>.from(_listIds),
+        statuses: Set<String>.from(_statuses),
+        priorities: Set<String>.from(_priorities),
+        assigneeIds: Set<String>.from(_assigneeIds),
+        labelIds: Set<String>.from(_labelIds),
+        projectIds: Set<String>.from(_projectIds),
       ),
     );
 

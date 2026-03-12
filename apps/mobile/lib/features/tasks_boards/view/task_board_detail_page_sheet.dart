@@ -359,8 +359,6 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
       }
 
       if (!mounted || !toastContext.mounted) return;
-      await _closeEditor();
-      if (!mounted || !toastContext.mounted) return;
       shad.showToast(
         context: toastContext,
         builder: (context, overlay) => shad.Alert(
@@ -371,6 +369,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
           ),
         ),
       );
+      await _closeEditor();
     } on ApiException catch (error) {
       if (!mounted || !toastContext.mounted) return;
       shad.showToast(
@@ -426,13 +425,12 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
       );
 
       if (!mounted || !toastContext.mounted) return;
-      await _closeEditor();
-      if (!mounted || !toastContext.mounted) return;
       shad.showToast(
         context: toastContext,
         builder: (context, overlay) =>
             shad.Alert(content: Text(context.l10n.taskBoardDetailTaskMoved)),
       );
+      await _closeEditor();
     } on ApiException catch (error) {
       if (!mounted || !toastContext.mounted) return;
       shad.showToast(
@@ -974,49 +972,11 @@ class _MoveTaskListDialog extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               ...lists.map((list) {
-                final label = list.name?.trim().isNotEmpty == true
-                    ? list.name!.trim()
-                    : context.l10n.taskBoardDetailUntitledList;
-                final style = _taskBoardListVisualStyle(context, list);
-
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: shad.OutlineButton(
                     onPressed: () => Navigator.of(context).pop(list.id),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: style.accent,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const shad.Gap(8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(label, overflow: TextOverflow.ellipsis),
-                              Text(
-                                style.statusLabel,
-                                style: shad.Theme.of(context).typography.small
-                                    .copyWith(
-                                      fontSize: 11,
-                                      color: style.statusBadge.textColor,
-                                    ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Icon(
-                          style.statusIcon,
-                          size: 16,
-                          color: style.statusBadge.textColor,
-                        ),
-                      ],
-                    ),
+                    child: _TaskBoardListOptionRow(list: list),
                   ),
                 );
               }),
@@ -1052,49 +1012,11 @@ class _TaskListPickerDialog extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               ...lists.map((list) {
-                final label = list.name?.trim().isNotEmpty == true
-                    ? list.name!.trim()
-                    : context.l10n.taskBoardDetailUntitledList;
-                final style = _taskBoardListVisualStyle(context, list);
-
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: shad.GhostButton(
                     onPressed: () => Navigator.of(context).pop(list.id),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: style.accent,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const shad.Gap(8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(label, overflow: TextOverflow.ellipsis),
-                              Text(
-                                style.statusLabel,
-                                style: shad.Theme.of(context).typography.small
-                                    .copyWith(
-                                      fontSize: 11,
-                                      color: style.statusBadge.textColor,
-                                    ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Icon(
-                          style.statusIcon,
-                          size: 16,
-                          color: style.statusBadge.textColor,
-                        ),
-                      ],
-                    ),
+                    child: _TaskBoardListOptionRow(list: list),
                   ),
                 );
               }),
@@ -1106,6 +1028,54 @@ class _TaskListPickerDialog extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _TaskBoardListOptionRow extends StatelessWidget {
+  const _TaskBoardListOptionRow({required this.list});
+
+  final TaskBoardList list;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = list.name?.trim().isNotEmpty == true
+        ? list.name!.trim()
+        : context.l10n.taskBoardDetailUntitledList;
+    final style = _taskBoardListVisualStyle(context, list);
+
+    return Row(
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(
+            color: style.accent,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const shad.Gap(8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, overflow: TextOverflow.ellipsis),
+              Text(
+                style.statusLabel,
+                style: shad.Theme.of(context).typography.small.copyWith(
+                  fontSize: 11,
+                  color: style.statusBadge.textColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Icon(
+          style.statusIcon,
+          size: 16,
+          color: style.statusBadge.textColor,
+        ),
+      ],
     );
   }
 }

@@ -1,9 +1,12 @@
 import 'package:equatable/equatable.dart';
 import 'package:mobile/data/models/task_board_list.dart';
 import 'package:mobile/data/models/task_board_task.dart';
+import 'package:mobile/data/utils/date_utils.dart';
 import 'package:mobile/data/models/task_label.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
 import 'package:mobile/data/models/workspace_user_option.dart';
+
+const _taskBoardDetailSentinel = Object();
 
 class TaskBoardDetail extends Equatable {
   const TaskBoardDetail({
@@ -48,20 +51,15 @@ class TaskBoardDetail extends Equatable {
       name: (json['name'] as String?)?.trim(),
       icon: (json['icon'] as String?)?.trim(),
       ticketPrefix: (json['ticket_prefix'] as String?)?.trim(),
-      createdAt: _parseDateTime(json['created_at']),
-      archivedAt: _parseDateTime(json['archived_at']),
-      deletedAt: _parseDateTime(json['deleted_at']),
+      createdAt: parseDateTime(json['created_at']),
+      archivedAt: parseDateTime(json['archived_at']),
+      deletedAt: parseDateTime(json['deleted_at']),
       estimationType: (json['estimation_type'] as String?)?.trim(),
       extendedEstimation: json['extended_estimation'] as bool? ?? false,
       allowZeroEstimates: json['allow_zero_estimates'] as bool? ?? true,
       countUnestimatedIssues:
           json['count_unestimated_issues'] as bool? ?? false,
     );
-  }
-
-  static DateTime? _parseDateTime(Object? value) {
-    if (value is! String || value.isEmpty) return null;
-    return DateTime.tryParse(value)?.toLocal();
   }
 
   final String id;
@@ -83,13 +81,13 @@ class TaskBoardDetail extends Equatable {
   final List<TaskProjectSummary> projects;
 
   TaskBoardDetail copyWith({
-    String? name,
-    String? icon,
-    String? ticketPrefix,
-    DateTime? createdAt,
-    DateTime? archivedAt,
-    DateTime? deletedAt,
-    String? estimationType,
+    Object? name = _taskBoardDetailSentinel,
+    Object? icon = _taskBoardDetailSentinel,
+    Object? ticketPrefix = _taskBoardDetailSentinel,
+    Object? createdAt = _taskBoardDetailSentinel,
+    Object? archivedAt = _taskBoardDetailSentinel,
+    Object? deletedAt = _taskBoardDetailSentinel,
+    Object? estimationType = _taskBoardDetailSentinel,
     bool? extendedEstimation,
     bool? allowZeroEstimates,
     bool? countUnestimatedIssues,
@@ -102,13 +100,23 @@ class TaskBoardDetail extends Equatable {
     return TaskBoardDetail(
       id: id,
       wsId: wsId,
-      name: name ?? this.name,
-      icon: icon ?? this.icon,
-      ticketPrefix: ticketPrefix ?? this.ticketPrefix,
-      createdAt: createdAt ?? this.createdAt,
-      archivedAt: archivedAt ?? this.archivedAt,
-      deletedAt: deletedAt ?? this.deletedAt,
-      estimationType: estimationType ?? this.estimationType,
+      name: name == _taskBoardDetailSentinel ? this.name : name as String?,
+      icon: icon == _taskBoardDetailSentinel ? this.icon : icon as String?,
+      ticketPrefix: ticketPrefix == _taskBoardDetailSentinel
+        ? this.ticketPrefix
+        : ticketPrefix as String?,
+      createdAt: createdAt == _taskBoardDetailSentinel
+        ? this.createdAt
+        : createdAt as DateTime?,
+      archivedAt: archivedAt == _taskBoardDetailSentinel
+        ? this.archivedAt
+        : archivedAt as DateTime?,
+      deletedAt: deletedAt == _taskBoardDetailSentinel
+        ? this.deletedAt
+        : deletedAt as DateTime?,
+      estimationType: estimationType == _taskBoardDetailSentinel
+        ? this.estimationType
+        : estimationType as String?,
       extendedEstimation: extendedEstimation ?? this.extendedEstimation,
       allowZeroEstimates: allowZeroEstimates ?? this.allowZeroEstimates,
       countUnestimatedIssues:

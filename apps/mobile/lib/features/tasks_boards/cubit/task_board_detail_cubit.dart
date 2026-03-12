@@ -28,6 +28,8 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
         workspaceId: wsId,
         boardId: boardId,
         board: targetChanged ? null : state.board,
+        filters: targetChanged ? const TaskBoardDetailFilters() : state.filters,
+        selectedTaskId: targetChanged ? null : state.selectedTaskId,
         clearError: true,
       ),
     );
@@ -269,6 +271,13 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
       await action();
 
       if (state.workspaceId != wsId || state.boardId != boardId) {
+        emit(
+          state.copyWith(
+            isMutating: false,
+            clearMutationError: true,
+            clearError: true,
+          ),
+        );
         return;
       }
 
@@ -282,10 +291,16 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
 
       await loadBoardDetail(wsId: wsId, boardId: boardId);
     } on Exception catch (error) {
+      emit(
+        state.copyWith(
+          isMutating: false,
+          clearError: true,
+        ),
+      );
+
       if (state.workspaceId == wsId && state.boardId == boardId) {
         emit(
           state.copyWith(
-            isMutating: false,
             mutationError: error.toString(),
           ),
         );
