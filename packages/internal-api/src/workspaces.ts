@@ -1,6 +1,7 @@
 import type {
   InternalApiWorkspaceMember,
   InternalApiWorkspaceSummary,
+  Workspace,
 } from '@tuturuuu/types';
 import {
   encodePathSegment,
@@ -13,6 +14,19 @@ export async function listWorkspaces(options?: InternalApiClientOptions) {
   return client.json<InternalApiWorkspaceSummary[]>('/api/v1/workspaces', {
     cache: 'no-store',
   });
+}
+
+export async function getWorkspace(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<Workspace>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}`,
+    {
+      cache: 'no-store',
+    }
+  );
 }
 
 export async function listWorkspaceMembers(

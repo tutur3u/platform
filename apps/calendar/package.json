@@ -32,6 +32,7 @@
     "@tuturuuu/apis": "workspace:*",
     "@tuturuuu/auth": "workspace:*",
     "@tuturuuu/icons": "workspace:*",
+    "@tuturuuu/internal-api": "workspace:*",
     "@tuturuuu/offline": "workspace:*",
     "@tuturuuu/satellite": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
