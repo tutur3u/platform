@@ -63,8 +63,10 @@ export async function sendOtpAction(
     const headersList = await headers();
     const ipAddress = extractIPFromHeaders(headersList);
 
+    const validatedEmail = await validateEmail(email);
+
     // Check rate limits and IP blocks
-    const abuseCheck = await checkOTPSendLimit(ipAddress, email);
+    const abuseCheck = await checkOTPSendLimit(ipAddress, validatedEmail);
     if (!abuseCheck.allowed) {
       return {
         error:
@@ -72,8 +74,6 @@ export async function sendOtpAction(
         retryAfter: abuseCheck.retryAfter,
       };
     }
-
-    const validatedEmail = await validateEmail(email);
 
     // Check if email is blocked by infrastructure (blacklist, bounces, complaints)
     const infrastructureCheck =
