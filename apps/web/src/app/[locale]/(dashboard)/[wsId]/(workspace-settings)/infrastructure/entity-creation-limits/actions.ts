@@ -15,13 +15,18 @@ function parseRequiredText(formData: FormData, fieldName: string) {
   return value;
 }
 
-function parseOptionalText(formData: FormData, fieldName: string): string | undefined {
+function parseOptionalText(
+  formData: FormData,
+  fieldName: string
+): string | undefined {
   const value = String(formData.get(fieldName) ?? '').trim();
   return value || undefined;
 }
 
 function parseBoolean(formData: FormData, fieldName: string) {
-  const value = String(formData.get(fieldName) ?? '').trim().toLowerCase();
+  const value = String(formData.get(fieldName) ?? '')
+    .trim()
+    .toLowerCase();
 
   return value === 'on' || value === 'true' || value === '1';
 }

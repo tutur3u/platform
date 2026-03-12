@@ -101,7 +101,7 @@ export function AddTableDialog({
         </p>
 
         {errorMessage ? (
-          <div className='rounded-lg border border-dynamic-red/30 bg-dynamic-red/10 px-3 py-2 text-dynamic-red text-xs'>
+          <div className="rounded-lg border border-dynamic-red/30 bg-dynamic-red/10 px-3 py-2 text-dynamic-red text-xs">
             {t('feedback.error_prefix')}: {errorMessage}
           </div>
         ) : null}
