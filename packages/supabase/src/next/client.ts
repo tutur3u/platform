@@ -6,6 +6,7 @@ import {
   createBaseClientWithSession,
   createBaseDynamicBrowserClient,
 } from './browser-base';
+import { applyClientSession } from './session-switch';
 
 const WARNING_KEY = '__tuturuuu_supabase_client_deprecation_warning__';
 
@@ -17,27 +18,34 @@ function isFalsyFlag(value?: string) {
   return value === '0' || value === 'false';
 }
 
-function shouldForceBypass() {
-  const publicFlag = process.env.NEXT_PUBLIC_SUPABASE_CLIENT_FORCE_BYPASS;
-  const privateFlag = process.env.SUPABASE_CLIENT_FORCE_BYPASS;
-
-  if (isTruthyFlag(publicFlag) || isTruthyFlag(privateFlag)) {
+function resolveFlag(...values: Array<string | undefined>) {
+  if (values.some((value) => isTruthyFlag(value))) {
     return true;
   }
 
-  if (isFalsyFlag(publicFlag) || isFalsyFlag(privateFlag)) {
+  if (values.some((value) => isFalsyFlag(value))) {
     return false;
   }
 
-  return true;
+  return undefined;
+}
+
+function shouldForceBypass() {
+  return (
+    resolveFlag(
+      process.env.NEXT_PUBLIC_SUPABASE_CLIENT_FORCE_BYPASS,
+      process.env.SUPABASE_CLIENT_FORCE_BYPASS
+    ) ?? true
+  );
 }
 
 function shouldThrowDeprecationError() {
-  const strictFlag =
-    process.env.SUPABASE_CLIENT_STRICT_MODE ||
-    process.env.NEXT_PUBLIC_SUPABASE_CLIENT_STRICT_MODE;
-
-  return isTruthyFlag(strictFlag) || !shouldForceBypass();
+  return (
+    resolveFlag(
+      process.env.SUPABASE_CLIENT_STRICT_MODE,
+      process.env.NEXT_PUBLIC_SUPABASE_CLIENT_STRICT_MODE
+    ) === true || !shouldForceBypass()
+  );
 }
 
 function warnOnce() {
@@ -115,20 +123,7 @@ export async function switchClientSession(
   session: Session
 ): Promise<Session> {
   assertDeprecatedBrowserClientAllowed();
-  // Set the session with the stored tokens
-  // This replaces the cookie without revoking the old session on the server
-  const { data, error } = await client.auth.setSession({
-    access_token: session.access_token,
-    refresh_token: session.refresh_token,
-  });
-
-  if (error || !data.session) {
-    throw new Error(
-      `Failed to switch session: ${error?.message || 'No session returned'}`
-    );
-  }
-
-  return data.session;
+  return applyClientSession(client, session);
 }
 
 export function __resetSupabaseClientDeprecationWarningForTests() {
