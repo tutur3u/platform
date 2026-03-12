@@ -22,15 +22,15 @@
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "@upstash/redis": "^1.36.3",
-    "isomorphic-dompurify": "^3.1.0",
+    "@upstash/redis": "^1.37.0",
+    "isomorphic-dompurify": "^3.3.0",
     "juice": "^11.1.1",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.4.0",
+    "@types/node": "^25.5.0",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
+    "vitest": "^4.1.0"
   }
 }
