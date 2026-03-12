@@ -32,7 +32,7 @@ export default function HeroSection() {
 
       <div className="relative mx-auto max-w-6xl px-6 text-center">
         <div className="flex flex-col items-center justify-center gap-8">
-          <div className="aspect-3/1 max-w-2xl">
+          <div className="aspect-3/1 w-full max-w-sm sm:max-w-md md:max-w-xl lg:max-w-2xl">
             <video
               autoPlay
               muted
