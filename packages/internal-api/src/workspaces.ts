@@ -1,3 +1,4 @@
+import type { Workspace } from '@tuturuuu/types';
 import {
   createInternalApiClient,
   type InternalApiClientOptions,
@@ -7,6 +8,7 @@ import {
 export interface InternalWorkspaceSummary {
   id: string;
   name: string;
+  created_at?: string;
   personal?: boolean;
   avatar_url?: string | null;
   logo_url?: string | null;
@@ -29,6 +31,16 @@ function getClient(options?: InternalApiClientOptions) {
 export async function listWorkspaces(options?: InternalApiClientOptions) {
   const client = getClient(options);
   return client.json<InternalWorkspaceSummary[]>('/api/v1/workspaces', {
+    cache: 'no-store',
+  });
+}
+
+export async function getWorkspace(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getClient(options);
+  return client.json<Workspace>(`/api/workspaces/${workspaceId}`, {
     cache: 'no-store',
   });
 }

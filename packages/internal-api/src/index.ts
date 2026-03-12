@@ -17,6 +17,7 @@ export {
   updateUserConfig,
 } from './users';
 export {
+  getWorkspace,
   listWorkspaceMembers,
   listWorkspaces,
 } from './workspaces';
