@@ -125,7 +125,7 @@ describe('withSessionAuth', () => {
 
     const handler = vi.fn();
     const wrapped = withSessionAuth(handler);
-    const response = await wrapped(makeRequest('GET'));
+    const response = await wrapped(makeRequest('POST'));
 
     expect(response.status).toBe(429);
     expect(handler).not.toHaveBeenCalled();
@@ -133,26 +133,20 @@ describe('withSessionAuth', () => {
     expect(mockGetUser).not.toHaveBeenCalled();
   });
 
-  it('should use read key for GET requests', async () => {
+  it('should skip default read rate limiting for GET requests', async () => {
     const handler = vi.fn().mockReturnValue(NextResponse.json({}));
     const wrapped = withSessionAuth(handler);
     await wrapped(makeRequest('GET'));
 
-    expect(mockCheckRateLimit).toHaveBeenCalledWith(
-      expect.stringContaining('read'),
-      expect.objectContaining({ maxRequests: 60 })
-    );
+    expect(mockCheckRateLimit).not.toHaveBeenCalled();
   });
 
-  it('should use read key for HEAD requests', async () => {
+  it('should skip default read rate limiting for HEAD requests', async () => {
     const handler = vi.fn().mockReturnValue(NextResponse.json({}));
     const wrapped = withSessionAuth(handler);
     await wrapped(makeRequest('HEAD'));
 
-    expect(mockCheckRateLimit).toHaveBeenCalledWith(
-      expect.stringContaining('read'),
-      expect.objectContaining({ maxRequests: 60 })
-    );
+    expect(mockCheckRateLimit).not.toHaveBeenCalled();
   });
 
   it('should use mutate key for POST requests', async () => {

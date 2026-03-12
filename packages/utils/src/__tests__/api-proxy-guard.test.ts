@@ -107,26 +107,13 @@ describe('guardApiProxyRequest', () => {
     expect(mocks.limit).not.toHaveBeenCalled();
   });
 
-  it('uses emergency default buckets for generic GET routes', async () => {
+  it('does not rate limit generic GET routes', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
     vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
     mocks.redis.mockReturnValue({});
     mocks.extractIp.mockReturnValue('1.2.3.4');
     mocks.isBlocked.mockResolvedValue(null);
-    mocks.limit
-      .mockResolvedValueOnce({
-        success: true,
-        limit: 60,
-        remaining: 59,
-        reset: Date.now() + 15_000,
-      })
-      .mockResolvedValueOnce({
-        success: false,
-        limit: 600,
-        remaining: 0,
-        reset: Date.now() + 15_000,
-      });
 
     const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
       await import('../api-proxy-guard.js');
@@ -139,32 +126,17 @@ describe('guardApiProxyRequest', () => {
       }
     );
 
-    expect(response?.status).toBe(429);
-    expect(response?.headers.get('X-RateLimit-Limit')).toBe('600');
-    expect(response?.headers.get('X-RateLimit-Window')).toBe('hour');
-    expect(response?.headers.get('X-RateLimit-Policy')).toBe('default');
+    expect(response).toBeNull();
+    expect(mocks.limit).not.toHaveBeenCalled();
   });
 
-  it('uses users-me buckets for users/me reads', async () => {
+  it('does not rate limit users/me reads', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
     vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
     mocks.redis.mockReturnValue({});
     mocks.extractIp.mockReturnValue('1.2.3.4');
     mocks.isBlocked.mockResolvedValue(null);
-    mocks.limit
-      .mockResolvedValueOnce({
-        success: true,
-        limit: 30,
-        remaining: 29,
-        reset: Date.now() + 15_000,
-      })
-      .mockResolvedValueOnce({
-        success: false,
-        limit: 300,
-        remaining: 0,
-        reset: Date.now() + 15_000,
-      });
 
     const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
       await import('../api-proxy-guard.js');
@@ -175,9 +147,8 @@ describe('guardApiProxyRequest', () => {
       { prefixBase: 'proxy:test:api' }
     );
 
-    expect(response?.status).toBe(429);
-    expect(response?.headers.get('X-RateLimit-Limit')).toBe('300');
-    expect(response?.headers.get('X-RateLimit-Policy')).toBe('users-me');
+    expect(response).toBeNull();
+    expect(mocks.limit).not.toHaveBeenCalled();
   });
 
   it('uses the dedicated otp-send bucket for mobile OTP sends', async () => {

@@ -22720,6 +22720,10 @@ export type Database = {
       };
       show_limit: { Args: never; Returns: number };
       show_trgm: { Args: { '': string }; Returns: string[] };
+      strict_payload_field_byte_limit: {
+        Args: { _column_name: string; _table_name: string };
+        Returns: number;
+      };
       strict_text_field_byte_limit: {
         Args: { _column_name: string; _table_name: string };
         Returns: number;

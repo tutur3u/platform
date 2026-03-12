@@ -127,11 +127,7 @@ interface CacheConfig {
   swr?: number;
 }
 
-/** Default rate limits — generous for reads, strict for mutations. */
-const DEFAULT_GET_RATE_LIMIT: RateLimitConfig = {
-  windowMs: 60000,
-  maxRequests: 60,
-};
+/** Default rate limits — reads stay open, mutations remain strict. */
 const DEFAULT_MUTATE_RATE_LIMIT: RateLimitConfig = {
   windowMs: 60000,
   maxRequests: 20,
@@ -140,7 +136,7 @@ const DEFAULT_MUTATE_RATE_LIMIT: RateLimitConfig = {
 interface SessionAuthOptions {
   /**
    * IP-based rate limit config. Overrides the method-aware defaults.
-   * Defaults: GET/HEAD → 60 req/min, mutations → 20 req/min.
+   * Defaults: GET/HEAD are not rate-limited, mutations → 20 req/min.
    * Set `false` to disable rate limiting entirely (not recommended).
    */
   rateLimit?: RateLimitConfig | false;
@@ -227,14 +223,16 @@ export function withSessionAuth<T = unknown>(
       if (options?.rateLimit !== false) {
         const isRead = request.method === 'GET' || request.method === 'HEAD';
         const config =
-          options?.rateLimit ??
-          (isRead ? DEFAULT_GET_RATE_LIMIT : DEFAULT_MUTATE_RATE_LIMIT);
-        const rateLimitResult = await checkRateLimit(
-          `session:ip:${isRead ? 'read' : 'mutate'}:${ipAddress}`,
-          config
-        );
-        if (!('allowed' in rateLimitResult)) {
-          return rateLimitResult;
+          options?.rateLimit ?? (isRead ? false : DEFAULT_MUTATE_RATE_LIMIT);
+
+        if (config !== false) {
+          const rateLimitResult = await checkRateLimit(
+            `session:ip:${isRead ? 'read' : 'mutate'}:${ipAddress}`,
+            config
+          );
+          if (!('allowed' in rateLimitResult)) {
+            return rateLimitResult;
+          }
         }
       }
     }
