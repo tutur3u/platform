@@ -817,21 +817,20 @@ export const CalendarSyncProvider = ({
       // Delete duplicate events if any were found
       if (eventsToDelete.length > 0) {
         try {
-          const supabase = createClient();
-          // Delete in batches of 10 to avoid request size limitations
-          const batchSize = 10;
-          for (let i = 0; i < eventsToDelete.length; i += batchSize) {
-            const batch = eventsToDelete.slice(i, i + batchSize);
-            const { error } = await supabase
-              .from('workspace_calendar_events')
-              .delete()
-              .in('id', batch);
+          for (const eventId of eventsToDelete) {
+            const response = await fetch(
+              `/api/v1/workspaces/${wsId}/calendar/events/${eventId}`,
+              {
+                method: 'DELETE',
+              }
+            );
 
-            if (error) {
+            if (!response.ok) {
               // Error deleting duplicate events
-            } else {
-              deletionPerformed = true;
+              continue;
             }
+
+            deletionPerformed = true;
           }
 
           // If events were deleted, refresh to get updated data

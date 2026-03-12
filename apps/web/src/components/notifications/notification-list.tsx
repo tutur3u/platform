@@ -7,6 +7,7 @@ import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useState } from 'react';
 import {
+  dedupeNotifications,
   useMarkAllAsRead,
   useNotificationSubscription,
   useNotifications,
@@ -117,7 +118,10 @@ export default function NotificationList({
   };
 
   // Process notifications
-  const notifications = data?.notifications || [];
+  const notifications = useMemo(
+    () => dedupeNotifications(data?.notifications || []),
+    [data?.notifications]
+  );
   const totalCount = data?.count || 0;
   const hasMore = (page + 1) * pageSize < totalCount;
   const hasPrevious = page > 0;

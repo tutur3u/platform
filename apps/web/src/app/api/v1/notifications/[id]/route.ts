@@ -1,6 +1,10 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  buildNotificationAccessFilter,
+  getNotificationAccessContext,
+} from '../access';
 
 const updateSchema = z.object({
   read: z.boolean(),
@@ -27,6 +31,9 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const accessContext = await getNotificationAccessContext(supabase, user);
+    const accessFilter = buildNotificationAccessFilter(accessContext);
+
     const { id } = await params;
 
     // Parse and validate body
@@ -42,13 +49,12 @@ export async function PATCH(
 
     const { read } = validatedData.data;
 
-    // Verify notification belongs to user
-    // RLS policies handle access control (user_id OR email match)
     const { data: notification } = await supabase
       .from('notifications')
-      .select('id, ws_id, user_id, email')
+      .select('id')
       .eq('id', id)
-      .single();
+      .or(accessFilter)
+      .maybeSingle();
 
     if (!notification) {
       return NextResponse.json(
@@ -56,73 +62,34 @@ export async function PATCH(
         { status: 404 }
       );
     }
-
-    // Additional verification: check both user_id and email
-    // Get email from auth.users (more reliable)
-    const { data: authUser } = await supabase.auth.getUser();
-    let userEmail = authUser.user?.email;
-
-    // Fallback: try from user_private_details
-    if (!userEmail) {
-      const { data: currentUserData } = await supabase
-        .from('users')
-        .select('email:user_private_details(email)')
-        .eq('id', user.id)
-        .single();
-
-      userEmail = (currentUserData?.email as any)?.[0]?.email;
-    }
-
-    const userIdMatches = notification.user_id === user.id;
-    const emailMatches =
-      notification.email &&
-      userEmail &&
-      notification.email.toLowerCase() === userEmail.toLowerCase();
-    const belongsToUser = userIdMatches || emailMatches;
-
-    if (!belongsToUser) {
-      console.error('ACCESS DENIED - Notification update failed:', {
-        notificationId: id,
-        notification: {
-          user_id: notification.user_id,
-          email: notification.email,
-          ws_id: notification.ws_id,
-        },
-        currentUser: {
-          id: user.id,
-          email: userEmail,
-        },
-        checks: {
-          userIdMatches,
-          emailMatches,
-          belongsToUser,
-        },
-      });
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
-    }
-
-    // Update notification (RLS policies handle final access control)
     const update = read
       ? { read_at: new Date().toISOString() }
       : { read_at: null };
 
-    const { error } = await supabase
+    const { data: updatedNotification, error } = await supabase
       .from('notifications')
       .update(update)
-      .eq('id', id);
+      .eq('id', id)
+      .or(accessFilter)
+      .select('id')
+      .maybeSingle();
 
     if (error) {
       console.error('Error updating notification:', {
         error,
         notificationId: id,
-        userId: user.id,
         update,
-        message:
-          'RLS policy may be blocking this update. Check if migrations are applied.',
       });
       return NextResponse.json(
         { error: 'Failed to update notification' },
         { status: 500 }
+      );
+    }
+
+    if (!updatedNotification) {
+      return NextResponse.json(
+        { error: 'Notification not found' },
+        { status: 404 }
       );
     }
 
@@ -157,15 +124,17 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const accessContext = await getNotificationAccessContext(supabase, user);
+    const accessFilter = buildNotificationAccessFilter(accessContext);
+
     const { id } = await params;
 
-    // Verify notification belongs to user
-    // RLS policies handle access control (user_id OR email match)
     const { data: notification } = await supabase
       .from('notifications')
-      .select('id, user_id, email')
+      .select('id')
       .eq('id', id)
-      .single();
+      .or(accessFilter)
+      .maybeSingle();
 
     if (!notification) {
       return NextResponse.json(
@@ -173,45 +142,26 @@ export async function DELETE(
         { status: 404 }
       );
     }
-
-    // Additional verification: check both user_id and email
-    // Get email from auth.users (more reliable)
-    const { data: authUser } = await supabase.auth.getUser();
-    let userEmail = authUser.user?.email;
-
-    // Fallback: try from user_private_details
-    if (!userEmail) {
-      const { data: currentUserData } = await supabase
-        .from('users')
-        .select('email:user_private_details(email)')
-        .eq('id', user.id)
-        .single();
-
-      userEmail = (currentUserData?.email as any)?.[0]?.email;
-    }
-
-    const userIdMatches = notification.user_id === user.id;
-    const emailMatches =
-      notification.email &&
-      userEmail &&
-      notification.email.toLowerCase() === userEmail.toLowerCase();
-    const belongsToUser = userIdMatches || emailMatches;
-
-    if (!belongsToUser) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
-    }
-
-    // Delete notification (RLS policies handle final access control)
-    const { error } = await supabase
+    const { data: deletedNotification, error } = await supabase
       .from('notifications')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .or(accessFilter)
+      .select('id')
+      .maybeSingle();
 
     if (error) {
       console.error('Error deleting notification:', error);
       return NextResponse.json(
         { error: 'Failed to delete notification' },
         { status: 500 }
+      );
+    }
+
+    if (!deletedNotification) {
+      return NextResponse.json(
+        { error: 'Notification not found' },
+        { status: 404 }
       );
     }
 

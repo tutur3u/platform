@@ -1,6 +1,10 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  buildNotificationAccessFilter,
+  getNotificationAccessContext,
+} from './access';
 
 const querySchema = z.object({
   wsId: z
@@ -72,6 +76,8 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const accessContext = await getNotificationAccessContext(supabase, user);
+
     // Parse and validate query parameters
     const { searchParams } = new URL(req.url);
     const queryParams = querySchema.safeParse({
@@ -108,16 +114,16 @@ export async function GET(req: Request) {
     const { wsId, scope, limit, offset, unreadOnly, readOnly, type, priority } =
       queryParams.data;
 
-    // Build query - DO NOT add order yet, apply it after all filters
-    // Include workspace name and actor info via join
-    // NOTE: We rely entirely on RLS policies for access control
-    // RLS handles: user_id matches, email matches, workspace membership, etc.
+    // Build query - DO NOT add order yet, apply it after all filters.
+    // notifications uses the proxy-only admin path, so ownership must be
+    // enforced explicitly here instead of relying on RLS.
     let query = supabase
       .from('notifications')
       .select(
         '*, workspace:workspaces(name), actor:users!notifications_created_by_fkey(id, display_name, avatar_url)',
         { count: 'exact' }
-      );
+      )
+      .or(buildNotificationAccessFilter(accessContext));
 
     // Filter by workspace if specifically requested
     if (wsId) {
@@ -231,6 +237,8 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const accessContext = await getNotificationAccessContext(supabase, user);
+
     // Parse and validate body
     const body = await req.json();
     const validatedData = bulkUpdateSchema.safeParse(body);
@@ -250,9 +258,12 @@ export async function PATCH(req: Request) {
         ? { read_at: new Date().toISOString() }
         : { read_at: null };
 
-    // Build query - RLS handles access control completely
-    // This allows updating notifications matched by user_id OR email
-    let query = supabase.from('notifications').update(update);
+    // notifications uses the proxy-only admin path, so ownership must be
+    // enforced explicitly instead of relying on RLS.
+    let query = supabase
+      .from('notifications')
+      .update(update)
+      .or(buildNotificationAccessFilter(accessContext));
 
     // Filter by workspace if specifically requested
     if (wsId) {

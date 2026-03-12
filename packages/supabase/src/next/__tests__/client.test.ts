@@ -66,12 +66,12 @@ describe('Supabase Client', () => {
         'test-key'
       );
       expect(warnSpy).toHaveBeenCalledTimes(1);
-      expect(() => client.from('tasks')).toThrow(
-        getProxyOnlyPublicTableError('tasks')
+      expect(() => client.from('mira_accessories')).toThrow(
+        getProxyOnlyPublicTableError('mira_accessories')
       );
       expect(client.from('users')).toEqual({ table: 'users' });
-      expect(() => client.schema('public').from('tasks')).toThrow(
-        getProxyOnlyPublicTableError('tasks')
+      expect(() => client.schema('public').from('mira_accessories')).toThrow(
+        getProxyOnlyPublicTableError('mira_accessories')
       );
     });
 
@@ -95,8 +95,8 @@ describe('Supabase Client', () => {
         'test-key'
       );
       expect(warnSpy).toHaveBeenCalledTimes(1);
-      expect(() => client.from('workspace_whiteboards')).toThrow(
-        getProxyOnlyPublicTableError('workspace_whiteboards')
+      expect(() => client.from('workspace_calendars')).toThrow(
+        getProxyOnlyPublicTableError('workspace_calendars')
       );
     });
   });
@@ -127,8 +127,8 @@ describe('Supabase Client', () => {
         refresh_token: 'test-refresh-token',
       });
       expect(client.from('users')).toEqual({ table: 'users' });
-      expect(() => client.from('workspace_whiteboards')).toThrow(
-        getProxyOnlyPublicTableError('workspace_whiteboards')
+      expect(() => client.from('workspace_calendars')).toThrow(
+        getProxyOnlyPublicTableError('workspace_calendars')
       );
     });
 

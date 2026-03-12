@@ -1,6 +1,10 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  buildNotificationAccessFilter,
+  getNotificationAccessContext,
+} from '../access';
 
 const querySchema = z.object({
   wsId: z
@@ -30,6 +34,8 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const accessContext = await getNotificationAccessContext(supabase, user);
+
     // Parse and validate query parameters
     const { searchParams } = new URL(req.url);
     const queryParams = querySchema.safeParse({
@@ -47,12 +53,20 @@ export async function GET(req: Request) {
 
     // If workspace is specified, verify membership
     if (wsId) {
-      const { data: membership } = await supabase
+      const { data: membership, error: membershipError } = await supabase
         .from('workspace_members')
         .select('id')
         .eq('ws_id', wsId)
         .eq('user_id', user.id)
         .single();
+
+      if (membershipError) {
+        console.error('Error checking workspace membership:', membershipError);
+        return NextResponse.json(
+          { error: 'Failed to verify workspace access' },
+          { status: 500 }
+        );
+      }
 
       if (!membership) {
         return NextResponse.json(
@@ -66,6 +80,7 @@ export async function GET(req: Request) {
     let query = supabase
       .from('notifications')
       .select('*', { count: 'exact', head: true })
+      .or(buildNotificationAccessFilter(accessContext))
       .is('read_at', null);
 
     if (wsId) {

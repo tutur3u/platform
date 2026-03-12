@@ -6,8 +6,10 @@ export async function GET(_: Request) {
 
   const { data, error } = await sbAdmin
     .from('ai_gateway_models')
-    .select('id, name, provider, description, context_window, type, is_enabled')
-    .eq('is_enabled', true)
+    .select(
+      'id, name, provider, description, context_window, max_tokens, tags, input_price_per_token, output_price_per_token, type, is_enabled'
+    )
+    .eq('type', 'language')
     .order('provider')
     .order('name');
 

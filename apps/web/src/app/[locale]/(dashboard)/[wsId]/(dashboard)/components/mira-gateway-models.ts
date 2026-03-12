@@ -1,7 +1,6 @@
 'use client';
 
 import { matchesAllowedModel } from '@tuturuuu/ai/credits/model-mapping';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { AIModelUI } from '@tuturuuu/types';
 
 export const MIRA_GATEWAY_MODELS_QUERY_KEY = ['ai-gateway-models', 'enabled'];
@@ -49,31 +48,6 @@ type FetchGatewayModelsPageOptions = {
   search?: string;
 };
 
-function applyGatewayModelSearch<
-  T extends {
-    ilike: (column: string, value: string) => T;
-    or: (filters: string) => T;
-  },
->(query: T, search?: string) {
-  const trimmedSearch = search?.trim();
-  if (!trimmedSearch) return query;
-
-  const escapedSearch = trimmedSearch.replace(
-    /[%_,]/g,
-    (match) => `\\${match}`
-  );
-  const pattern = `%${escapedSearch}%`;
-  const encodedPattern = encodeURIComponent(pattern);
-
-  return query.or(
-    [
-      `name.ilike.${encodedPattern}`,
-      `id.ilike.${encodedPattern}`,
-      `description.ilike.${encodedPattern}`,
-    ].join(',')
-  );
-}
-
 function mapGatewayModel(model: GatewayModelRow): GatewayModelUi {
   const inputPricePerToken = Number(model.input_price_per_token ?? 0);
   const outputPricePerToken = Number(model.output_price_per_token ?? 0);
@@ -96,6 +70,31 @@ function mapGatewayModel(model: GatewayModelRow): GatewayModelUi {
     tags: model.tags ?? undefined,
     value: model.id,
   };
+}
+
+function matchesGatewayModelSearch(model: GatewayModelUi, search?: string) {
+  const trimmedSearch = search?.trim().toLowerCase();
+  if (!trimmedSearch) return true;
+
+  return (
+    model.label.toLowerCase().includes(trimmedSearch) ||
+    model.value.toLowerCase().includes(trimmedSearch) ||
+    model.provider.toLowerCase().includes(trimmedSearch) ||
+    (model.description?.toLowerCase().includes(trimmedSearch) ?? false)
+  );
+}
+
+async function fetchGatewayModelCatalog(): Promise<GatewayModelUi[]> {
+  const response = await fetch('/api/v1/infrastructure/ai/models', {
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch AI gateway models');
+  }
+
+  const data = (await response.json()) as GatewayModelRow[];
+  return data.map((model) => mapGatewayModel(model));
 }
 
 export function sortModelsForDisplay<T extends AIModelUI>(
@@ -133,17 +132,11 @@ export async function fetchGatewayProviders({
   hideLockedModels = false,
   search,
 }: FetchGatewayProvidersOptions = {}): Promise<GatewayModelProviderSummary[]> {
-  const supabase = createClient();
-  let query = supabase
-    .from('ai_gateway_models')
-    .select('id, provider, is_enabled')
-    .eq('type', 'language');
+  const data = (await fetchGatewayModelCatalog()).filter((model) =>
+    matchesGatewayModelSearch(model, search)
+  );
 
-  query = applyGatewayModelSearch(query, search);
-
-  const { data, error } = await query.order('provider').order('name');
-
-  if (error || !data?.length) return [];
+  if (data.length === 0) return [];
 
   const providerMap = new Map<string, GatewayModelProviderSummary>();
 
@@ -155,7 +148,7 @@ export async function fetchGatewayProviders({
     };
 
     current.total += 1;
-    if (row.is_enabled && matchesAllowedModel(row.id, allowedModels)) {
+    if (!row.disabled && matchesAllowedModel(row.value, allowedModels)) {
       current.allowedCount += 1;
     }
 
@@ -177,26 +170,16 @@ export async function fetchGatewayModelsPage({
   items: GatewayModelUi[];
   nextOffset?: number;
 }> {
-  const supabase = createClient();
-  let query = supabase
-    .from('ai_gateway_models')
-    .select(
-      'id, name, provider, description, context_window, max_tokens, tags, is_enabled, input_price_per_token, output_price_per_token'
-    )
-    .eq('type', 'language')
-    .eq('provider', provider);
+  const data = (await fetchGatewayModelCatalog()).filter(
+    (model) =>
+      model.provider === provider && matchesGatewayModelSearch(model, search)
+  );
 
-  query = applyGatewayModelSearch(query, search);
-
-  const { data, error } = await query
-    .order('name')
-    .range(offset, offset + limit - 1);
-
-  if (error || !data?.length) {
+  if (data.length === 0) {
     return { items: [], nextOffset: undefined };
   }
 
-  const items = data.map((model) => mapGatewayModel(model as GatewayModelRow));
+  const items = data.slice(offset, offset + limit);
 
   return {
     items,
@@ -207,6 +190,7 @@ export async function fetchGatewayModelsPage({
 export async function fetchGatewayFavoriteModels(
   wsId: string
 ): Promise<GatewayModelUi[]> {
+  const { createClient } = await import('@tuturuuu/supabase/next/client');
   const supabase = createClient();
   const { data: favorites, error: favoritesError } = await supabase
     .from('ai_model_favorites')
@@ -215,43 +199,14 @@ export async function fetchGatewayFavoriteModels(
 
   if (favoritesError || !favorites?.length) return [];
 
-  const favoriteIds = favorites.map((favorite) => favorite.model_id);
-  const BATCH_SIZE = 500;
-  const results: GatewayModelUi[] = [];
+  const favoriteIds = new Set(favorites.map((favorite) => favorite.model_id));
+  const catalog = await fetchGatewayModelCatalog();
 
-  // Batch favoriteIds to avoid PostgREST 8KB limit
-  for (let i = 0; i < favoriteIds.length; i += BATCH_SIZE) {
-    const batch = favoriteIds.slice(i, i + BATCH_SIZE);
-    const { data, error } = await supabase
-      .from('ai_gateway_models')
-      .select(
-        'id, name, provider, description, context_window, max_tokens, tags, is_enabled, input_price_per_token, output_price_per_token'
-      )
-      .in('id', batch)
-      .eq('type', 'language');
-
-    if (!error && data?.length) {
-      results.push(
-        ...data.map((model) => mapGatewayModel(model as GatewayModelRow))
-      );
-    }
-  }
-
-  return results;
+  return catalog.filter((model) => favoriteIds.has(model.value));
 }
 
 export async function fetchGatewayModels(): Promise<GatewayModelUi[]> {
-  const providers = await fetchGatewayProviders();
-  const pages = await Promise.all(
-    providers.map((provider) =>
-      fetchGatewayModelsPage({
-        limit: Number.MAX_SAFE_INTEGER,
-        provider: provider.provider,
-      })
-    )
-  );
-
-  return pages.flatMap((page) => page.items);
+  return fetchGatewayModelCatalog();
 }
 
 export function modelSupportsFileInput(model?: Pick<AIModelUI, 'tags'> | null) {

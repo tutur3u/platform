@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import type { Metadata } from 'next';
@@ -21,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 async function fetchTimerData(userId: string, wsId: string) {
-  const sbAdmin = await createClient();
+  const sbAdmin = await createAdminClient();
 
   const [categoriesResult, runningSessionResult] = await Promise.all([
     sbAdmin.from('time_tracking_categories').select('*').eq('ws_id', wsId),

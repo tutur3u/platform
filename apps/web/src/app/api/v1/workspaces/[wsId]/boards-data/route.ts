@@ -1,3 +1,4 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import {
   MAX_LONG_TEXT_LENGTH,
@@ -40,8 +41,10 @@ export const GET = withSessionAuth<{ wsId: string }>(
         );
       }
 
+      const sbAdmin = await createAdminClient();
+
       // Build the main query for boards
-      const queryBuilder = supabase
+      const queryBuilder = sbAdmin
         .from('workspace_boards')
         .select('*', { count: 'exact' })
         .eq('ws_id', wsId)
@@ -67,7 +70,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
       }
 
       // Fetch task lists with proper deleted filter
-      const { data: taskLists, error: listsError } = await supabase
+      const { data: taskLists, error: listsError } = await sbAdmin
         .from('task_lists')
         .select('id, name, status, color, position, archived, board_id')
         .in(
@@ -79,7 +82,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
       if (listsError) throw listsError;
 
       // Fetch tasks with proper deleted filter
-      const { data: tasks, error: tasksError } = await supabase
+      const { data: tasks, error: tasksError } = await sbAdmin
         .from('tasks')
         .select(
           'id, name, description, closed_at, priority, start_date, end_date, created_at, list_id'

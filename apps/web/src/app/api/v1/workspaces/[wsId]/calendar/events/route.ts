@@ -25,6 +25,7 @@ const CreateEventSchema = z.object({
   end_at: z.string().datetime(),
   color: z.string().max(MAX_COLOR_LENGTH).optional(),
   locked: z.boolean().optional(),
+  task_id: z.string().uuid().nullable().optional(),
 });
 
 interface Params {
@@ -113,6 +114,7 @@ export async function POST(request: Request, { params }: Params) {
         end_at: event.end_at,
         color: event.color || 'blue',
         locked: event.locked || false,
+        task_id: event.task_id ?? null,
         ws_id: wsId,
         is_encrypted: encryptedFields.is_encrypted,
       })
