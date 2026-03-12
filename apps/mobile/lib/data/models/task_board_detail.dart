@@ -1,10 +1,10 @@
 import 'package:equatable/equatable.dart';
 import 'package:mobile/data/models/task_board_list.dart';
 import 'package:mobile/data/models/task_board_task.dart';
-import 'package:mobile/data/utils/date_utils.dart';
 import 'package:mobile/data/models/task_label.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
 import 'package:mobile/data/models/workspace_user_option.dart';
+import 'package:mobile/data/utils/date_utils.dart';
 
 const _taskBoardDetailSentinel = Object();
 
@@ -103,20 +103,20 @@ class TaskBoardDetail extends Equatable {
       name: name == _taskBoardDetailSentinel ? this.name : name as String?,
       icon: icon == _taskBoardDetailSentinel ? this.icon : icon as String?,
       ticketPrefix: ticketPrefix == _taskBoardDetailSentinel
-        ? this.ticketPrefix
-        : ticketPrefix as String?,
+          ? this.ticketPrefix
+          : ticketPrefix as String?,
       createdAt: createdAt == _taskBoardDetailSentinel
-        ? this.createdAt
-        : createdAt as DateTime?,
+          ? this.createdAt
+          : createdAt as DateTime?,
       archivedAt: archivedAt == _taskBoardDetailSentinel
-        ? this.archivedAt
-        : archivedAt as DateTime?,
+          ? this.archivedAt
+          : archivedAt as DateTime?,
       deletedAt: deletedAt == _taskBoardDetailSentinel
-        ? this.deletedAt
-        : deletedAt as DateTime?,
+          ? this.deletedAt
+          : deletedAt as DateTime?,
       estimationType: estimationType == _taskBoardDetailSentinel
-        ? this.estimationType
-        : estimationType as String?,
+          ? this.estimationType
+          : estimationType as String?,
       extendedEstimation: extendedEstimation ?? this.extendedEstimation,
       allowZeroEstimates: allowZeroEstimates ?? this.allowZeroEstimates,
       countUnestimatedIssues:

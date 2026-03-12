@@ -101,13 +101,13 @@ class TaskBoardDetailState extends Equatable {
     final hasListFilter = filters.listIds.isNotEmpty;
     final hasStatusFilter = filters.statuses.isNotEmpty;
     final normalizedPriorities = hasPriorityFilter
-      ? filters.priorities
-          .map((priority) => priority.trim().toLowerCase())
-          .toSet()
-      : const <String>{};
+        ? filters.priorities
+              .map((priority) => priority.trim().toLowerCase())
+              .toSet()
+        : const <String>{};
     final normalizedStatuses = hasStatusFilter
-      ? filters.statuses.map((status) => status.trim().toLowerCase()).toSet()
-      : const <String>{};
+        ? filters.statuses.map((status) => status.trim().toLowerCase()).toSet()
+        : const <String>{};
 
     if (!hasSearchQuery &&
         !hasAssigneeFilter &&
@@ -146,7 +146,8 @@ class TaskBoardDetailState extends Equatable {
             final listStatus = listsById[task.listId]?.status
                 ?.trim()
                 .toLowerCase();
-            if (listStatus == null || !normalizedStatuses.contains(listStatus)) {
+            if (listStatus == null ||
+                !normalizedStatuses.contains(listStatus)) {
               return false;
             }
           }

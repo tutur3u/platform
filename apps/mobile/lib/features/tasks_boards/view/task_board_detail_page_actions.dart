@@ -74,7 +74,7 @@ extension on _TaskBoardDetailPageViewState {
         initialStatus:
             TaskBoardList.normalizeSupportedStatus(list.status) ?? 'active',
         initialColor:
-          TaskBoardList.normalizeSupportedColor(list.color) ?? 'GRAY',
+            TaskBoardList.normalizeSupportedColor(list.color) ?? 'GRAY',
       ),
     );
     if (result == null || !context.mounted) return;
