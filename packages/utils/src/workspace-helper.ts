@@ -67,6 +67,10 @@ interface WorkspaceSubscriptionData {
   } | null;
 }
 
+interface WorkspaceSubscriptionTierLookupRow extends WorkspaceSubscriptionData {
+  ws_id: string;
+}
+
 /**
  * Extracts the tier from workspace subscription data.
  * Filters for active subscriptions and returns the tier from the most recent one.
@@ -94,6 +98,50 @@ export function extractTierFromSubscriptions(
   );
 }
 
+async function getWorkspaceTierMap(
+  workspaceIds: string[]
+): Promise<Map<string, WorkspaceProductTier | null>> {
+  if (workspaceIds.length === 0) return new Map();
+
+  const sbAdmin = await createAdminClient();
+  const { data, error } = await sbAdmin
+    .from('workspace_subscriptions')
+    .select('ws_id, created_at, status, workspace_subscription_products(tier)')
+    .in('ws_id', workspaceIds);
+
+  if (error) {
+    logWorkspaceError('Failed to fetch workspace subscription tiers', error, {
+      workspaceIds,
+      errorCode: error.code,
+      errorDetails: error.details,
+    });
+    return new Map(
+      workspaceIds.map((workspaceId) => [workspaceId, null] as const)
+    );
+  }
+
+  const subscriptionsByWorkspace = new Map<
+    string,
+    WorkspaceSubscriptionData[]
+  >();
+
+  for (const subscription of (data ??
+    []) as WorkspaceSubscriptionTierLookupRow[]) {
+    const current = subscriptionsByWorkspace.get(subscription.ws_id) ?? [];
+    current.push(subscription);
+    subscriptionsByWorkspace.set(subscription.ws_id, current);
+  }
+
+  return new Map(
+    workspaceIds.map((workspaceId) => [
+      workspaceId,
+      extractTierFromSubscriptions(
+        subscriptionsByWorkspace.get(workspaceId) ?? null
+      ),
+    ])
+  );
+}
+
 /**
  * Gets the workspace tier for a user by their creator ID.
  * Useful for API routes to check tier requirements without full workspace context.
@@ -112,15 +160,16 @@ export async function getWorkspaceTierByCreator(
 
   const { data } = await supabase
     .from('workspaces')
-    .select(
-      'id, workspace_subscriptions!left(created_at, status, workspace_subscription_products(tier))'
-    )
+    .select('id')
     .eq('creator_id', creatorId)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
 
-  return extractTierFromSubscriptions(data?.workspace_subscriptions) || 'FREE';
+  if (!data?.id) return 'FREE';
+
+  const tierMap = await getWorkspaceTierMap([data.id]);
+  return tierMap.get(data.id) || 'FREE';
 }
 
 /**
@@ -143,13 +192,14 @@ export async function getWorkspaceTier(
 
   const { data } = await supabase
     .from('workspaces')
-    .select(
-      'id, workspace_subscriptions!left(created_at, status, workspace_subscription_products(tier))'
-    )
+    .select('id')
     .eq('id', resolvedWorkspaceId)
     .maybeSingle();
 
-  return extractTierFromSubscriptions(data?.workspace_subscriptions) || 'FREE';
+  if (!data?.id) return 'FREE';
+
+  const tierMap = await getWorkspaceTierMap([data.id]);
+  return tierMap.get(data.id) || 'FREE';
 }
 
 /**
@@ -183,9 +233,7 @@ export async function getWorkspace(
 
   const queryBuilder = sbAdmin
     .from('workspaces')
-    .select(
-      '*, workspace_members!inner(user_id), workspace_subscriptions!left(created_at, status, workspace_subscription_products(tier))'
-    );
+    .select('*, workspace_members!inner(user_id)');
 
   const resolvedWorkspaceId = resolveWorkspaceId(id);
 
@@ -212,19 +260,10 @@ export async function getWorkspace(
   const workspaceJoined = data.workspace_members.some(
     (member) => member.user_id === user.id
   );
+  const tierMap = await getWorkspaceTierMap([data.id]);
+  const tier = tierMap.get(data.id) ?? null;
 
-  // Extract tier from workspace subscription - filter active subscriptions and sort by created_at
-  const activeSubscriptions = (data.workspace_subscriptions || [])
-    .filter((sub) => sub?.status === 'active')
-    .sort(
-      (a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
-
-  const tier =
-    activeSubscriptions?.[0]?.workspace_subscription_products?.tier || null;
-
-  const { workspace_members: _, workspace_subscriptions: __, ...rest } = data;
+  const { workspace_members: _, ...rest } = data;
 
   const ws = {
     ...rest,
@@ -251,7 +290,7 @@ export async function getWorkspaces(options: { useAdmin?: boolean } = {}) {
   const { data, error } = await sbAdmin
     .from('workspaces')
     .select(
-      'id, name, avatar_url, logo_url, personal, created_at, workspace_members!inner(user_id), workspace_subscriptions!left(created_at, status, workspace_subscription_products(tier))'
+      'id, name, avatar_url, logo_url, personal, created_at, workspace_members!inner(user_id)'
     )
     .eq('workspace_members.user_id', user.id);
 
@@ -264,23 +303,14 @@ export async function getWorkspaces(options: { useAdmin?: boolean } = {}) {
     return null;
   }
 
+  const tierMap = await getWorkspaceTierMap(
+    data.map((workspace) => workspace.id)
+  );
+
   return data.map((ws) => {
-    // Extract tier from workspace subscription - filter active subscriptions and sort by created_at
-    const activeSubscriptions = (ws.workspace_subscriptions || [])
-      .filter((sub) => sub?.status === 'active')
-      .sort(
-        (a, b) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-
-    const tier =
-      activeSubscriptions?.[0]?.workspace_subscription_products?.tier || null;
-
-    const { workspace_subscriptions: _, ...rest } = ws;
-
     return {
-      ...rest,
-      tier,
+      ...ws,
+      tier: tierMap.get(ws.id) ?? null,
     };
   });
 }

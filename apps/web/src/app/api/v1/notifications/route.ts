@@ -60,7 +60,7 @@ const querySchema = z.object({
  */
 export async function GET(req: Request) {
   try {
-    const supabase = await createClient();
+    const supabase = await createClient(req);
 
     // Get authenticated user
     const {
@@ -219,7 +219,7 @@ const bulkUpdateSchema = z.object({
  */
 export async function PATCH(req: Request) {
   try {
-    const supabase = await createClient();
+    const supabase = await createClient(req);
 
     // Get authenticated user
     const {
