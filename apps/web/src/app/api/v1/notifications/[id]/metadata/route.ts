@@ -18,7 +18,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createClient();
+    const supabase = await createClient(req);
 
     // Get authenticated user
     const {

@@ -15,7 +15,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createClient();
+    const supabase = await createClient(req);
 
     // Get authenticated user
     const {
@@ -141,11 +141,11 @@ export async function PATCH(
  * Deletes a single notification
  */
 export async function DELETE(
-  _: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createClient();
+    const supabase = await createClient(req);
 
     // Get authenticated user
     const {
