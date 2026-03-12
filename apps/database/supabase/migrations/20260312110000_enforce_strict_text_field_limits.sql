@@ -33,12 +33,12 @@ as $$
     when lower(_column_name) = 'html'
       or lower(_column_name) like '%html%' then 10000
     when lower(_column_name) = 'text'
-      or lower(_column_name) like '%_text' then 1000
+      or lower(_column_name) like '%\_text' escape '\' then 1000
     when lower(_column_name) = 'input'
       or lower(_column_name) = 'output'
       or lower(_column_name) = 'data'
-      or lower(_column_name) like '%_input'
-      or lower(_column_name) like '%_output' then 1000
+      or lower(_column_name) like '%\_input' escape '\'
+      or lower(_column_name) like '%\_output' escape '\' then 1000
     when lower(_column_name) like '%slug%'
       or lower(_column_name) like '%handle%'
       or lower(_column_name) like '%username%'
@@ -49,8 +49,8 @@ as $$
       or lower(_column_name) like '%link%'
       or lower(_column_name) like '%path%' then 2048
     when lower(_column_name) = 'ip'
-      or lower(_column_name) like 'ip_%'
-      or lower(_column_name) like '%_ip'
+      or lower(_column_name) like 'ip\_%' escape '\'
+      or lower(_column_name) like '%\_ip' escape '\'
       or lower(_column_name) like '%ip_address%' then 45
     when lower(_column_name) like '%locale%'
       or lower(_column_name) like '%timezone%'
@@ -61,8 +61,8 @@ as $$
     when lower(_column_name) = 'name'
       or lower(_column_name) = 'title'
       or lower(_column_name) = 'subject'
-      or lower(_column_name) like '%_name'
-      or lower(_column_name) like '%_title' then 128
+      or lower(_column_name) like '%\_name' escape '\'
+      or lower(_column_name) like '%\_title' escape '\' then 128
     when lower(_column_name) like '%summary%'
       or lower(_column_name) like '%description%'
       or lower(_column_name) like '%bio%'
@@ -94,18 +94,18 @@ as $$
     when lower(_column_name) = 'html'
       or lower(_column_name) like '%html%' then 40000
     when lower(_column_name) = 'text'
-      or lower(_column_name) like '%_text' then 16000
+      or lower(_column_name) like '%\_text' escape '\' then 16000
     when lower(_column_name) = 'input'
       or lower(_column_name) = 'output'
       or lower(_column_name) = 'data'
-      or lower(_column_name) like '%_input'
-      or lower(_column_name) like '%_output' then 16000
+      or lower(_column_name) like '%\_input' escape '\'
+      or lower(_column_name) like '%\_output' escape '\' then 16000
     when lower(_column_name) like '%url%'
       or lower(_column_name) like '%link%'
       or lower(_column_name) like '%path%' then 2048
     when lower(_column_name) = 'ip'
-      or lower(_column_name) like 'ip_%'
-      or lower(_column_name) like '%_ip'
+      or lower(_column_name) like 'ip\_%' escape '\'
+      or lower(_column_name) like '%\_ip' escape '\'
       or lower(_column_name) like '%ip_address%' then 64
     else public.strict_text_field_char_limit(_table_name, _column_name) * 4
   end;

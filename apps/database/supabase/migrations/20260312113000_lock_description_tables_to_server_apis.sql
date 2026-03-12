@@ -12,6 +12,7 @@ begin
         and t.table_name = c.table_name
       where c.table_schema = 'public'
         and t.table_type = 'BASE TABLE'
+        and c.data_type in ('text', 'character varying', 'character')
         and (
           c.column_name = 'description'
           or c.column_name = 'content'
@@ -23,13 +24,13 @@ begin
           or c.column_name = 'input'
           or c.column_name = 'output'
           or c.column_name = 'data'
-          or c.column_name like '%_content'
-          or c.column_name like '%_message'
-          or c.column_name like '%_prompt'
-          or c.column_name like '%_body'
-          or c.column_name like '%_text'
-          or c.column_name like '%_input'
-          or c.column_name like '%_output'
+          or c.column_name like '%\_content' escape '\'
+          or c.column_name like '%\_message' escape '\'
+          or c.column_name like '%\_prompt' escape '\'
+          or c.column_name like '%\_body' escape '\'
+          or c.column_name like '%\_text' escape '\'
+          or c.column_name like '%\_input' escape '\'
+          or c.column_name like '%\_output' escape '\'
         )
     )
     select table_name
