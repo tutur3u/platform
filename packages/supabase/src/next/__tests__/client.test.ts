@@ -6,6 +6,7 @@ import {
   createDynamicClient,
   switchClientSession,
 } from '../client';
+import { getProxyOnlyPublicTableError } from '../protected-tables';
 
 // Mock the environment variables and browser client creation
 vi.mock('@supabase/ssr', () => ({
@@ -27,6 +28,7 @@ vi.mock('../realtime-log-provider', () => ({
 describe('Supabase Client', () => {
   const mockSetSession = vi.fn();
   const mockClient = {
+    from: vi.fn((table: string) => ({ table })),
     auth: {
       setSession: mockSetSession,
     },
@@ -39,20 +41,39 @@ describe('Supabase Client', () => {
 
   describe('createClient', () => {
     it('should create a typed client with createClient', () => {
-      createClient();
+      const client = createClient();
       expect(createBrowserClient).toHaveBeenCalledWith(
         'https://test.supabase.co',
         'test-key'
       );
+      expect(client).not.toBe(mockClient);
+    });
+
+    it('should block direct access to proxy-only tables', () => {
+      const client = createClient();
+
+      expect(() => client.from('tasks')).toThrow(
+        getProxyOnlyPublicTableError('tasks')
+      );
+    });
+
+    it('should allow access to non-proxy-only tables', () => {
+      const client = createClient();
+
+      expect(client.from('users')).toEqual({ table: 'users' });
+      expect(mockClient.from).toHaveBeenCalledWith('users');
     });
   });
 
   describe('createDynamicClient', () => {
     it('should create an untyped client with createDynamicClient', () => {
-      createDynamicClient();
+      const client = createDynamicClient();
       expect(createBrowserClient).toHaveBeenCalledWith(
         'https://test.supabase.co',
         'test-key'
+      );
+      expect(() => client.from('workspace_whiteboards')).toThrow(
+        getProxyOnlyPublicTableError('workspace_whiteboards')
       );
     });
   });
@@ -80,7 +101,12 @@ describe('Supabase Client', () => {
         refresh_token: 'test-refresh-token',
       });
 
-      expect(client).toBe(mockClient);
+      expect(client).not.toBe(mockClient);
+      expect(client.auth).toBe(mockClient.auth);
+      expect(client.from('users')).toEqual({ table: 'users' });
+      expect(() => client.from('notes')).toThrow(
+        getProxyOnlyPublicTableError('notes')
+      );
     });
 
     it('should create separate clients for multiple sessions', async () => {

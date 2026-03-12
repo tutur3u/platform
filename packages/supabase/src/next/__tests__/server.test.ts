@@ -1,6 +1,7 @@
 import { createBrowserClient, createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { getProxyOnlyPublicTableError } from '../protected-tables';
 import {
   createAdminClient,
   createAnonClient,
@@ -33,15 +34,35 @@ describe('Supabase Server Client', () => {
       .mockReturnValue([{ name: 'test-cookie', value: 'test-value' }]),
     set: vi.fn(),
   };
+  const mockUserClient = {
+    from: vi.fn((table: string) => ({ client: 'user', table })),
+    auth: {
+      getUser: vi.fn(),
+    },
+  };
+  const mockAdminClient = {
+    from: vi.fn((table: string) => ({ client: 'admin', table })),
+    auth: {
+      getUser: vi.fn(),
+    },
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
     (cookies as any).mockReturnValue(mockCookieStore);
+    (createServerClient as any).mockImplementation(
+      (_url: string, key: string) =>
+        key === 'test-secret-key' ? mockAdminClient : mockUserClient
+    );
+    (createBrowserClient as any).mockImplementation(
+      (_url: string, key: string) =>
+        key === 'test-secret-key' ? mockAdminClient : mockUserClient
+    );
   });
 
   describe('createClient', () => {
     it('should create a regular client with cookie handling', async () => {
-      await createClient();
+      const client = await createClient();
 
       expect(createServerClient).toHaveBeenCalledWith(
         'https://test.supabase.co',
@@ -57,6 +78,9 @@ describe('Supabase Server Client', () => {
       expect(cookieHandler.getAll()).toEqual([
         { name: 'test-cookie', value: 'test-value' },
       ]);
+      expect(() => client.from('tasks')).toThrow(
+        getProxyOnlyPublicTableError('tasks')
+      );
     });
 
     it('should create a Bearer-token client when request has Authorization header', async () => {
@@ -66,7 +90,7 @@ describe('Supabase Server Client', () => {
         }),
       };
 
-      await createClient(mockRequest);
+      const client = await createClient(mockRequest);
 
       expect(createBrowserClient).toHaveBeenCalledWith(
         'https://test.supabase.co',
@@ -84,8 +108,21 @@ describe('Supabase Server Client', () => {
           },
         })
       );
-      // Should NOT fall back to cookie-based client.
-      expect(createServerClient).not.toHaveBeenCalled();
+      expect(createBrowserClient).toHaveBeenCalledWith(
+        'https://test.supabase.co',
+        'test-secret-key',
+        expect.objectContaining({
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+            detectSessionInUrl: false,
+          },
+        })
+      );
+
+      expect(client.from('tasks')).toEqual({ client: 'admin', table: 'tasks' });
+      expect(client.from('notes')).toEqual({ client: 'admin', table: 'notes' });
+      expect(client.from('users')).toEqual({ client: 'user', table: 'users' });
     });
 
     it('should fall back to cookie auth when request has no Bearer token', async () => {
@@ -93,11 +130,23 @@ describe('Supabase Server Client', () => {
         headers: new Headers({}),
       };
 
-      await createClient(mockRequest);
+      const client = await createClient(mockRequest);
 
-      // No Bearer token → falls back to cookie-based createServerClient.
       expect(createServerClient).toHaveBeenCalled();
-      expect(createBrowserClient).not.toHaveBeenCalled();
+      expect(createBrowserClient).toHaveBeenCalledWith(
+        'https://test.supabase.co',
+        'test-secret-key',
+        expect.objectContaining({
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+            detectSessionInUrl: false,
+          },
+        })
+      );
+
+      expect(client.from('tasks')).toEqual({ client: 'admin', table: 'tasks' });
+      expect(client.from('users')).toEqual({ client: 'user', table: 'users' });
     });
   });
 
@@ -135,7 +184,7 @@ describe('Supabase Server Client', () => {
 
   describe('createDynamicClient', () => {
     it('should create a dynamic client with cookie handling', async () => {
-      await createDynamicClient();
+      const client = await createDynamicClient();
 
       expect(createServerClient).toHaveBeenCalledWith(
         'https://test.supabase.co',
@@ -143,6 +192,12 @@ describe('Supabase Server Client', () => {
         expect.objectContaining({
           cookies: expect.any(Object),
         })
+      );
+      expect(() => client.from('workspace_whiteboards')).toThrow(
+        getProxyOnlyPublicTableError('workspace_whiteboards')
+      );
+      expect(() => client.from('ai_chat_messages')).toThrow(
+        getProxyOnlyPublicTableError('ai_chat_messages')
       );
     });
   });
