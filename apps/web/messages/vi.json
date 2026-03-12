@@ -365,6 +365,7 @@
   },
   "abuse-events-data-table": {
     "created_at": "Thời gian",
+    "email": "Email",
     "email_hash": "Mã hash email",
     "endpoint": "Điểm cuối",
     "event_type": "Loại sự kiện",

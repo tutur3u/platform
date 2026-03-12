@@ -77,6 +77,7 @@
     "@tuturuuu/google": "workspace:*",
     "@tuturuuu/hooks": "workspace:*",
     "@tuturuuu/icons": "workspace:*",
+    "@tuturuuu/internal-api": "workspace:*",
     "@tuturuuu/masonry": "workspace:*",
     "@tuturuuu/microsoft": "workspace:*",
     "@tuturuuu/offline": "workspace:*",

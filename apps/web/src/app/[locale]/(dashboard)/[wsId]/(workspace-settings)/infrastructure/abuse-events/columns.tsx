@@ -2,6 +2,7 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import { CheckCircle, Shield, XCircle } from '@tuturuuu/icons';
+import type { AbuseEvent as AbuseEventRow } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
@@ -20,17 +21,19 @@ export type AbuseEventType =
   | 'api_abuse'
   | 'manual';
 
-export interface AbuseEventEntry {
-  id: string;
-  ip_address: string;
-  event_type: AbuseEventType;
-  email_hash: string | null;
-  user_agent: string | null;
-  endpoint: string | null;
-  success: boolean;
-  metadata: unknown;
-  created_at: string;
-}
+export type AbuseEventEntry = Pick<
+  AbuseEventRow,
+  | 'id'
+  | 'ip_address'
+  | 'event_type'
+  | 'email'
+  | 'email_hash'
+  | 'user_agent'
+  | 'endpoint'
+  | 'success'
+  | 'metadata'
+  | 'created_at'
+>;
 
 const getEventTypeBadge = (eventType: string) => {
   const colors: Record<string, string> = {
@@ -159,6 +162,24 @@ export const getAbuseEventsColumns = ({
               <span className="text-dynamic-red text-sm">Failed</span>
             </>
           )}
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: 'email',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.email`)}
+      />
+    ),
+    cell: ({ row }) => {
+      const email = row.getValue<string | null>('email');
+      return (
+        <div className="max-w-48 truncate font-mono text-xs">
+          {email || '-'}
         </div>
       );
     },

@@ -28,11 +28,23 @@ export type UserGroupPost = Tables<'user_group_posts'> & {
   group_name?: string | null;
 };
 export type EmailHistoryEntry = Tables<'sent_emails'>;
+export type AbuseEvent = Tables<'abuse_events'>;
 export type Invoice = Tables<'finance_invoices'>;
 export type InvoiceProduct = Tables<'finance_invoice_products'>;
 export type InvoicePromotion = Tables<'finance_invoice_promotions'>;
 export type Workspace = Tables<'workspaces'>;
 export type WorkspaceUser = Tables<'workspace_users'>;
+export type InternalApiWorkspaceSummary = Pick<
+  Workspace,
+  'id' | 'name' | 'personal' | 'avatar_url' | 'logo_url'
+>;
+export type InternalApiWorkspaceMember = Pick<
+  WorkspaceUser,
+  'id' | 'display_name' | 'email' | 'avatar_url'
+> & {
+  user_id?: string;
+  is_creator?: boolean;
+};
 export type WorkspacePromotion = Tables<'workspace_promotions'>;
 export type WorkspaceFlashcard = Tables<'workspace_flashcards'>;
 export type WorkspaceQuiz = Tables<'workspace_quizzes'>;
@@ -53,7 +65,25 @@ export type WorkspaceTaskBoard = Tables<'workspace_boards'> & {
 export type WorkspaceTaskList = Tables<'task_lists'> & {
   tasks?: Partial<WorkspaceTask>[];
 };
+export type TaskListIdRow = Pick<Tables<'task_lists'>, 'id'>;
 export type WorkspaceTask = Tables<'tasks'>;
+export type RestorableTaskRow = Pick<Tables<'tasks'>, 'id' | 'list_id'>;
+export type WorkspaceTaskPickerRow = Pick<
+  Tables<'tasks'>,
+  | 'id'
+  | 'name'
+  | 'display_number'
+  | 'completed_at'
+  | 'closed_at'
+  | 'priority'
+  | 'board_id'
+> & {
+  list: {
+    board: {
+      name: string | null;
+    } | null;
+  } | null;
+};
 export type TaskLabel = Tables<'workspace_task_labels'>;
 export type TaskProject = Tables<'task_projects'>;
 export type TaskProjectUpdate = Tables<'task_project_updates'>;

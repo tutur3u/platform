@@ -4,7 +4,11 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { resolveTurnstileToken } from '@tuturuuu/turnstile/server';
+import {
+  isTurnstileError,
+  resolveTurnstileToken,
+  verifyTurnstileToken,
+} from '@tuturuuu/turnstile/server';
 import {
   checkOTPSendLimit,
   checkOTPVerifyLimit,
@@ -63,8 +67,10 @@ export async function sendOtpAction(
     const headersList = await headers();
     const ipAddress = extractIPFromHeaders(headersList);
 
+    const validatedEmail = await validateEmail(email);
+
     // Check rate limits and IP blocks
-    const abuseCheck = await checkOTPSendLimit(ipAddress, email);
+    const abuseCheck = await checkOTPSendLimit(ipAddress, validatedEmail);
     if (!abuseCheck.allowed) {
       return {
         error:
@@ -72,8 +78,6 @@ export async function sendOtpAction(
         retryAfter: abuseCheck.retryAfter,
       };
     }
-
-    const validatedEmail = await validateEmail(email);
 
     // Check if email is blocked by infrastructure (blacklist, bounces, complaints)
     const infrastructureCheck =
@@ -93,6 +97,13 @@ export async function sendOtpAction(
       token: captchaToken,
       requireConfiguration: true,
     });
+    await verifyTurnstileToken(
+      { headers: headersList },
+      turnstile.captchaToken,
+      {
+        remoteIp: ipAddress !== 'unknown' ? ipAddress : undefined,
+      }
+    );
 
     const sbAdmin = await createAdminClient();
     const supabase = await createClient();
@@ -142,6 +153,12 @@ export async function sendOtpAction(
 
     return { success: true };
   } catch (error) {
+    if (isTurnstileError(error)) {
+      return {
+        error: 'Verification failed. Please try again.',
+      };
+    }
+
     console.error('SendOTP Server Action Error:', error);
     return {
       error: error instanceof Error ? error.message : 'Failed to send OTP',

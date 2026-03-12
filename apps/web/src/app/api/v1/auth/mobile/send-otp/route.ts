@@ -5,6 +5,7 @@ import {
 import {
   isTurnstileError,
   resolveTurnstileToken,
+  verifyTurnstileToken,
 } from '@tuturuuu/turnstile/server';
 import {
   checkOTPSendLimit,
@@ -50,7 +51,6 @@ export async function POST(request: NextRequest) {
     const normalizedLocale = locale || 'en';
 
     console.log('[mobile/send-otp] Request:', {
-      email,
       locale: normalizedLocale,
       hasDeviceId: !!deviceId,
       hasCaptchaToken: !!captchaToken,
@@ -58,18 +58,6 @@ export async function POST(request: NextRequest) {
 
     const headersList = await headers();
     const ipAddress = extractIPFromHeaders(headersList);
-
-    const abuseCheck = await checkOTPSendLimit(ipAddress, email);
-    if (!abuseCheck.allowed) {
-      return jsonWithCors(
-        {
-          error:
-            abuseCheck.reason || 'Too many requests. Please try again later.',
-          retryAfter: abuseCheck.retryAfter,
-        },
-        { status: 429 }
-      );
-    }
 
     let validatedEmail: string;
 
@@ -81,6 +69,18 @@ export async function POST(request: NextRequest) {
           ? error.message
           : String(error || 'Invalid email');
       return jsonWithCors({ error: message }, { status: 400 });
+    }
+
+    const abuseCheck = await checkOTPSendLimit(ipAddress, validatedEmail);
+    if (!abuseCheck.allowed) {
+      return jsonWithCors(
+        {
+          error:
+            abuseCheck.reason || 'Too many requests. Please try again later.',
+          retryAfter: abuseCheck.retryAfter,
+        },
+        { status: 429 }
+      );
     }
 
     const infrastructureCheck =
@@ -98,6 +98,9 @@ export async function POST(request: NextRequest) {
     const turnstile = resolveTurnstileToken({
       token: captchaToken,
       requireConfiguration: true,
+    });
+    await verifyTurnstileToken(request, turnstile.captchaToken, {
+      remoteIp: ipAddress !== 'unknown' ? ipAddress : undefined,
     });
     const useAdminAuth = turnstile.shouldBypassForDev;
     const supabase = useAdminAuth ? sbAdmin : await createClient();

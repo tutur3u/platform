@@ -52,22 +52,12 @@ type Limiters = {
 
 const limiterCache = new Map<string, Limiters>();
 
-const DEFAULT_GET_RATE_LIMITS: RateLimitConfig[] = [
-  { window: 'minute', limit: 60, duration: '1 m' },
-  { window: 'hour', limit: 600, duration: '1 h' },
-  { window: 'day', limit: 4000, duration: '1 d' },
-];
+const NO_READ_RATE_LIMITS: RateLimitConfig[] = [];
 
 const DEFAULT_MUTATE_RATE_LIMITS: RateLimitConfig[] = [
   { window: 'minute', limit: 12, duration: '1 m' },
   { window: 'hour', limit: 120, duration: '1 h' },
   { window: 'day', limit: 400, duration: '1 d' },
-];
-
-const USERS_ME_GET_RATE_LIMITS: RateLimitConfig[] = [
-  { window: 'minute', limit: 30, duration: '1 m' },
-  { window: 'hour', limit: 300, duration: '1 h' },
-  { window: 'day', limit: 1200, duration: '1 d' },
 ];
 
 const USERS_ME_MUTATE_RATE_LIMITS: RateLimitConfig[] = [
@@ -77,11 +67,7 @@ const USERS_ME_MUTATE_RATE_LIMITS: RateLimitConfig[] = [
 ];
 
 const AUTH_RATE_LIMITS: RateLimitProfile = {
-  get: [
-    { window: 'minute', limit: 3, duration: '1 m' },
-    { window: 'hour', limit: 12, duration: '1 h' },
-    { window: 'day', limit: 30, duration: '1 d' },
-  ],
+  get: NO_READ_RATE_LIMITS,
   mutate: [
     { window: 'minute', limit: 3, duration: '1 m' },
     { window: 'hour', limit: 12, duration: '1 h' },
@@ -89,8 +75,17 @@ const AUTH_RATE_LIMITS: RateLimitProfile = {
   ],
 };
 
+const OTP_SEND_RATE_LIMITS: RateLimitProfile = {
+  get: NO_READ_RATE_LIMITS,
+  mutate: [
+    { window: 'minute', limit: 1, duration: '1 m' },
+    { window: 'hour', limit: 3, duration: '1 h' },
+    { window: 'day', limit: 6, duration: '1 d' },
+  ],
+};
+
 const HIGH_FANOUT_RATE_LIMITS: RateLimitProfile = {
-  get: DEFAULT_GET_RATE_LIMITS,
+  get: NO_READ_RATE_LIMITS,
   mutate: [
     { window: 'minute', limit: 2, duration: '1 m' },
     { window: 'hour', limit: 20, duration: '1 h' },
@@ -100,10 +95,16 @@ const HIGH_FANOUT_RATE_LIMITS: RateLimitProfile = {
 
 const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
   {
+    key: 'otp-send',
+    matches: (req) =>
+      /^\/api\/v1\/auth\/mobile\/send-otp(?:\/|$)/.test(req.nextUrl.pathname),
+    rateLimits: OTP_SEND_RATE_LIMITS,
+  },
+  {
     key: 'auth',
     matches: (req) =>
       req.nextUrl.pathname.startsWith('/api/auth/mfa/') ||
-      /^\/api\/v1\/auth\/mobile\/(?:send-otp|verify-otp|password-login)(?:\/|$)/.test(
+      /^\/api\/v1\/auth\/mobile\/(?:verify-otp|password-login)(?:\/|$)/.test(
         req.nextUrl.pathname
       ),
     rateLimits: AUTH_RATE_LIMITS,
@@ -126,7 +127,7 @@ const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
     key: 'users-me',
     matches: (req) => req.nextUrl.pathname.startsWith('/api/v1/users/me'),
     rateLimits: {
-      get: USERS_ME_GET_RATE_LIMITS,
+      get: NO_READ_RATE_LIMITS,
       mutate: USERS_ME_MUTATE_RATE_LIMITS,
     },
   },
@@ -134,7 +135,7 @@ const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
     key: 'default',
     matches: () => true,
     rateLimits: {
-      get: DEFAULT_GET_RATE_LIMITS,
+      get: NO_READ_RATE_LIMITS,
       mutate: DEFAULT_MUTATE_RATE_LIMITS,
     },
   },

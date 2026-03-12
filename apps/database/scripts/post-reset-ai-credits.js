@@ -45,6 +45,12 @@ function parseNumber(value, fallback = null) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function truncateText(value, maxLength) {
+  if (typeof value !== 'string') return value ?? null;
+  if (value.length <= maxLength) return value;
+  return value.slice(0, maxLength);
+}
+
 function getStatusValue(status, ...candidates) {
   for (const key of candidates) {
     const value = status[key];
@@ -193,10 +199,10 @@ function mapGatewayModel(model) {
 
   return {
     id: model.id,
-    name: model.name || modelName || model.id,
-    provider,
-    description: model.description || null,
-    type: model.type || 'language',
+    name: truncateText(model.name || modelName || model.id, 128),
+    provider: truncateText(provider, 64),
+    description: truncateText(model.description, 512),
+    type: truncateText(model.type || 'language', 64),
     context_window: model.context_window ?? null,
     max_tokens: model.max_tokens ?? null,
     tags: Array.isArray(model.tags) ? model.tags : [],

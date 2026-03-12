@@ -365,6 +365,7 @@
   },
   "abuse-events-data-table": {
     "created_at": "Timestamp",
+    "email": "Email",
     "email_hash": "Email Hash",
     "endpoint": "Endpoint",
     "event_type": "Event Type",

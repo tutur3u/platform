@@ -25,18 +25,28 @@ const CreateTaskSchema = z.object({
   project_ids: z.array(z.string().uuid()).optional(),
   assignee_ids: z.array(z.string().uuid()).optional(),
 });
-interface ProcessedAssignee {
-  id: string;
-  display_name: string | null;
-  avatar_url: string | null;
-}
-
-interface TaskAssigneeData {
+interface TaskAssigneeRelation {
   user: {
-    id: string;
+    id: string | null;
     display_name: string | null;
     avatar_url: string | null;
-    email?: string;
+  } | null;
+}
+
+interface TaskLabelRelation {
+  label: {
+    id: string | null;
+    name: string | null;
+    color: string | null;
+    created_at: string | null;
+  } | null;
+}
+
+interface TaskProjectRelation {
+  project: {
+    id: string | null;
+    name: string | null;
+    status: string | null;
   } | null;
 }
 
@@ -59,12 +69,19 @@ export async function GET(
     }
 
     // Verify workspace access
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: memberError } = await supabase
       .from('workspace_members')
       .select('user_id')
       .eq('ws_id', normalizedWorkspaceId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (memberError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(
@@ -96,18 +113,20 @@ export async function GET(
     // Check if this is a request for time tracking (indicated by limit=100 and no specific filters)
     const isTimeTrackingRequest = limit === 100 && !boardId && !listId;
 
-    // Build the query for fetching tasks with assignee information
+    // Build the query for fetching tasks with relation details plus IDs.
     let query = supabase
       .from('tasks')
       .select(
         `
         id,
+        display_number,
         name,
         description,
         priority,
         completed,
         start_date,
         end_date,
+        estimation_points,
         created_at,
         list_id,
         closed_at,
@@ -127,6 +146,21 @@ export async function GET(
             id,
             display_name,
             avatar_url
+          )
+        ),
+        labels:task_labels(
+          label:workspace_task_labels(
+            id,
+            name,
+            color,
+            created_at
+          )
+        ),
+        projects:task_project_tasks(
+          project:task_projects(
+            id,
+            name,
+            status
           )
         )
       `
@@ -161,46 +195,65 @@ export async function GET(
 
     // Transform the data to match the expected WorkspaceTask format
     const tasks =
-      data?.map((task) => ({
-        id: task.id,
-        name: task.name,
-        description: task.description,
-        priority: task.priority,
-        completed: task.completed,
-        start_date: task.start_date,
-        end_date: task.end_date,
-        created_at: task.created_at,
-        list_id: task.list_id,
-        closed_at: task.closed_at,
-        // Add board information for context
-        board_name: task.task_lists?.workspace_boards?.name,
-        list_name: task.task_lists?.name,
-        list_status: task.task_lists?.status,
-        // Add assignee information
-        assignees: [
+      data?.map((task) => {
+        const assigneeIds = [
           ...(task.assignees ?? [])
-            .map((a: TaskAssigneeData) => a.user)
-            .filter((u): u is ProcessedAssignee => !!u?.id)
-            .reduce(
-              (
-                uniqueUsers: Map<string, ProcessedAssignee>,
-                user: ProcessedAssignee
-              ) => {
-                if (!uniqueUsers.has(user.id)) {
-                  uniqueUsers.set(user.id, user);
-                }
-                return uniqueUsers;
-              },
-              new Map()
-            )
-            .values(),
-        ],
-        // Add helper field to identify if current user is assigned
-        is_assigned_to_current_user:
-          task.assignees?.some(
-            (a: TaskAssigneeData) => a.user?.id === user.id
-          ) || false,
-      })) || [];
+            .map((entry: TaskAssigneeRelation) => entry.user?.id)
+            .filter((id): id is string => !!id)
+            .reduce((uniqueIds: Set<string>, assigneeId: string) => {
+              uniqueIds.add(assigneeId);
+              return uniqueIds;
+            }, new Set()),
+        ];
+
+        const labelIds = [
+          ...(task.labels ?? [])
+            .map((entry: TaskLabelRelation) => entry.label?.id)
+            .filter((id): id is string => !!id)
+            .reduce((uniqueIds: Set<string>, labelId: string) => {
+              uniqueIds.add(labelId);
+              return uniqueIds;
+            }, new Set()),
+        ];
+
+        const projectIds = [
+          ...(task.projects ?? [])
+            .map((entry: TaskProjectRelation) => entry.project?.id)
+            .filter((id): id is string => !!id)
+            .reduce((uniqueIds: Set<string>, projectId: string) => {
+              uniqueIds.add(projectId);
+              return uniqueIds;
+            }, new Set()),
+        ];
+
+        return {
+          id: task.id,
+          display_number: task.display_number,
+          name: task.name,
+          description: task.description,
+          priority: task.priority,
+          completed: task.completed,
+          start_date: task.start_date,
+          end_date: task.end_date,
+          estimation_points: task.estimation_points,
+          created_at: task.created_at,
+          list_id: task.list_id,
+          closed_at: task.closed_at,
+          // Add board information for context
+          board_name: task.task_lists?.workspace_boards?.name,
+          list_name: task.task_lists?.name,
+          list_status: task.task_lists?.status,
+          assignees: task.assignees ?? [],
+          labels: task.labels ?? [],
+          projects: task.projects ?? [],
+          // Keep ID arrays for clients that hydrate by ID.
+          assignee_ids: assigneeIds,
+          label_ids: labelIds,
+          project_ids: projectIds,
+          // Add helper field to identify if current user is assigned
+          is_assigned_to_current_user: assigneeIds.includes(user.id),
+        };
+      }) || [];
 
     // Prioritize tasks by list status for command center (no specific filters)
     // active/not_started tasks appear first, then done/closed
@@ -248,7 +301,7 @@ export async function POST(
   try {
     const { wsId } = await params;
     const normalizedWorkspaceId = await normalizeWorkspaceId(wsId);
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     // Get authenticated user
     const {
@@ -260,12 +313,19 @@ export async function POST(
     }
 
     // Verify workspace access
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: memberError } = await supabase
       .from('workspace_members')
       .select('user_id')
       .eq('ws_id', normalizedWorkspaceId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (memberError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(
@@ -322,6 +382,7 @@ export async function POST(
       .select(
         `
         id,
+        display_number,
         name,
         description,
         priority,
@@ -415,6 +476,7 @@ export async function POST(
     // Transform the data to match the expected format
     const task = {
       id: data.id,
+      display_number: data.display_number,
       name: data.name,
       description: data.description,
       priority: data.priority,
