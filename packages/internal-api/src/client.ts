@@ -24,7 +24,13 @@ export function encodePathSegment(value: string) {
 }
 
 function normalizeBaseUrl(baseUrl: string) {
-  return baseUrl.replace(/\/+$/, '');
+  let end = baseUrl.length;
+
+  while (end > 0 && baseUrl.charCodeAt(end - 1) === 47) {
+    end -= 1;
+  }
+
+  return end === baseUrl.length ? baseUrl : baseUrl.slice(0, end);
 }
 
 function isProductionDeployment() {
