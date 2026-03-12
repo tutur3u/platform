@@ -1,10 +1,21 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-
 export async function resetDbRateLimits(): Promise<void> {
-  const admin = await createAdminClient();
-  const { error } = await admin.rpc('admin_reset_rate_limits');
+  const baseUrl = process.env.BASE_URL || 'http://localhost:7803';
+  const response = await fetch(`${baseUrl}/api/dev/rate-limits/reset`, {
+    method: 'POST',
+  });
 
-  if (error) {
-    throw new Error(`Failed to reset DB rate limits: ${error.message}`);
+  if (!response.ok) {
+    let message = `Failed to reset DB rate limits: ${response.status}`;
+
+    try {
+      const body = (await response.json()) as { error?: string };
+      if (body.error) {
+        message = `Failed to reset DB rate limits: ${body.error}`;
+      }
+    } catch {
+      // Ignore JSON parsing issues and keep the status-based message.
+    }
+
+    throw new Error(message);
   }
 }

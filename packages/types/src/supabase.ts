@@ -19878,6 +19878,7 @@ export type Database = {
           ws_name: string;
         }[];
       };
+      admin_reset_rate_limits: { Args: never; Returns: number };
       archive_old_notifications: {
         Args: { p_days_threshold?: number };
         Returns: number;
