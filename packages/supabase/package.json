@@ -35,31 +35,38 @@
     },
     "./next/client": {
       "types": "./dist/next/client.d.ts",
-      "default": "./src/next/client.ts"
+      "bun": "./src/next/client.ts",
+      "default": "./dist/next/client.js"
     },
     "./next/common": {
       "types": "./dist/next/common.d.ts",
-      "default": "./src/next/common.ts"
+      "bun": "./src/next/common.ts",
+      "default": "./dist/next/common.js"
     },
     "./next/proxy": {
       "types": "./dist/next/proxy.d.ts",
-      "default": "./src/next/proxy.ts"
+      "bun": "./src/next/proxy.ts",
+      "default": "./dist/next/proxy.js"
     },
     "./next/realtime": {
       "types": "./dist/next/realtime.d.ts",
-      "default": "./src/next/realtime.ts"
+      "bun": "./src/next/realtime.ts",
+      "default": "./dist/next/realtime.js"
     },
     "./next/realtime-log-provider": {
       "types": "./dist/next/realtime-log-provider.d.ts",
-      "default": "./src/next/realtime-log-provider.tsx"
+      "bun": "./src/next/realtime-log-provider.tsx",
+      "default": "./dist/next/realtime-log-provider.js"
     },
     "./next/server": {
       "types": "./dist/next/server.d.ts",
-      "default": "./src/next/server.ts"
+      "bun": "./src/next/server.ts",
+      "default": "./dist/next/server.js"
     },
     "./next/user": {
       "types": "./dist/next/user.d.ts",
-      "default": "./src/next/user.ts"
+      "bun": "./src/next/user.ts",
+      "default": "./dist/next/user.js"
     }
   },
   "publishConfig": {
