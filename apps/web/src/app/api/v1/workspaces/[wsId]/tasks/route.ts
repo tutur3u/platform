@@ -26,15 +26,28 @@ const CreateTaskSchema = z.object({
   assignee_ids: z.array(z.string().uuid()).optional(),
 });
 interface TaskAssigneeRelation {
-  user_id: string | null;
+  user: {
+    id: string | null;
+    display_name: string | null;
+    avatar_url: string | null;
+  } | null;
 }
 
 interface TaskLabelRelation {
-  label_id: string | null;
+  label: {
+    id: string | null;
+    name: string | null;
+    color: string | null;
+    created_at: string | null;
+  } | null;
 }
 
 interface TaskProjectRelation {
-  project_id: string | null;
+  project: {
+    id: string | null;
+    name: string | null;
+    status: string | null;
+  } | null;
 }
 
 export async function GET(
@@ -100,7 +113,7 @@ export async function GET(
     // Check if this is a request for time tracking (indicated by limit=100 and no specific filters)
     const isTimeTrackingRequest = limit === 100 && !boardId && !listId;
 
-    // Build the query for fetching tasks with relation IDs only
+    // Build the query for fetching tasks with relation details plus IDs.
     let query = supabase
       .from('tasks')
       .select(
@@ -129,13 +142,26 @@ export async function GET(
           )
         ),
         assignees:task_assignees(
-          user_id
+          user:users(
+            id,
+            display_name,
+            avatar_url
+          )
         ),
         labels:task_labels(
-          label_id
+          label:workspace_task_labels(
+            id,
+            name,
+            color,
+            created_at
+          )
         ),
         projects:task_project_tasks(
-          project_id
+          project:task_projects(
+            id,
+            name,
+            status
+          )
         )
       `
       )
@@ -172,7 +198,7 @@ export async function GET(
       data?.map((task) => {
         const assigneeIds = [
           ...(task.assignees ?? [])
-            .map((entry: TaskAssigneeRelation) => entry.user_id)
+            .map((entry: TaskAssigneeRelation) => entry.user?.id)
             .filter((id): id is string => !!id)
             .reduce((uniqueIds: Set<string>, assigneeId: string) => {
               uniqueIds.add(assigneeId);
@@ -182,7 +208,7 @@ export async function GET(
 
         const labelIds = [
           ...(task.labels ?? [])
-            .map((entry: TaskLabelRelation) => entry.label_id)
+            .map((entry: TaskLabelRelation) => entry.label?.id)
             .filter((id): id is string => !!id)
             .reduce((uniqueIds: Set<string>, labelId: string) => {
               uniqueIds.add(labelId);
@@ -192,7 +218,7 @@ export async function GET(
 
         const projectIds = [
           ...(task.projects ?? [])
-            .map((entry: TaskProjectRelation) => entry.project_id)
+            .map((entry: TaskProjectRelation) => entry.project?.id)
             .filter((id): id is string => !!id)
             .reduce((uniqueIds: Set<string>, projectId: string) => {
               uniqueIds.add(projectId);
@@ -217,7 +243,10 @@ export async function GET(
           board_name: task.task_lists?.workspace_boards?.name,
           list_name: task.task_lists?.name,
           list_status: task.task_lists?.status,
-          // Keep ID arrays as canonical payload for relation hydration on clients.
+          assignees: task.assignees ?? [],
+          labels: task.labels ?? [],
+          projects: task.projects ?? [],
+          // Keep ID arrays for clients that hydrate by ID.
           assignee_ids: assigneeIds,
           label_ids: labelIds,
           project_ids: projectIds,

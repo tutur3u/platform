@@ -589,8 +589,16 @@ class TaskRepository {
     }
 
     var page = 1;
+    const maxPages = 50;
 
     while (true) {
+      if (page > maxPages) {
+        throw const ApiException(
+          message: 'Board search pagination limit exceeded',
+          statusCode: 500,
+        );
+      }
+
       final boardsPage = await getTaskBoards(wsId, page: page, pageSize: 200);
 
       TaskBoardSummary? targetBoard;
