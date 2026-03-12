@@ -265,45 +265,48 @@ class TaskRepository {
     final labelsById = {for (final label in labels) label.id: label};
     final projectsById = {for (final project in projects) project.id: project};
 
-    return tasks.map((task) {
-      final hydratedAssignees = task.assigneeIds
-          .map((id) => membersById[id])
-          .whereType<WorkspaceUserOption>()
-          .map(
-            (member) => TaskBoardTaskAssignee(
-              id: member.id,
-              displayName: member.displayName,
-              avatarUrl: member.avatarUrl,
-            ),
-          )
-          .toList(growable: false);
+    return tasks
+        .map((task) {
+          final hydratedAssignees = task.assigneeIds
+              .map((id) => membersById[id])
+              .whereType<WorkspaceUserOption>()
+              .map(
+                (member) => TaskBoardTaskAssignee(
+                  id: member.id,
+                  displayName: member.displayName,
+                  avatarUrl: member.avatarUrl,
+                ),
+              )
+              .toList(growable: false);
 
-      final hydratedLabels = task.labelIds
-          .map((id) => labelsById[id])
-          .whereType<TaskLabel>()
-          .map(
-            (label) => TaskBoardTaskLabel(
-              id: label.id,
-              name: label.name,
-              color: normalizeTaskLabelColor(label.color),
-            ),
-          )
-          .toList(growable: false);
+          final hydratedLabels = task.labelIds
+              .map((id) => labelsById[id])
+              .whereType<TaskLabel>()
+              .map(
+                (label) => TaskBoardTaskLabel(
+                  id: label.id,
+                  name: label.name,
+                  color: normalizeTaskLabelColor(label.color),
+                ),
+              )
+              .toList(growable: false);
 
-      final hydratedProjects = task.projectIds
-          .map((id) => projectsById[id])
-          .whereType<TaskProjectSummary>()
-          .map(
-            (project) => TaskBoardTaskProject(id: project.id, name: project.name),
-          )
-          .toList(growable: false);
+          final hydratedProjects = task.projectIds
+              .map((id) => projectsById[id])
+              .whereType<TaskProjectSummary>()
+              .map(
+                (project) =>
+                    TaskBoardTaskProject(id: project.id, name: project.name),
+              )
+              .toList(growable: false);
 
-      return task.copyWith(
-        assignees: hydratedAssignees,
-        labels: hydratedLabels,
-        projects: hydratedProjects,
-      );
-    }).toList(growable: false);
+          return task.copyWith(
+            assignees: hydratedAssignees,
+            labels: hydratedLabels,
+            projects: hydratedProjects,
+          );
+        })
+        .toList(growable: false);
   }
 
   Future<List<TaskBoardTask>> getBoardTasks(
