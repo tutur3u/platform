@@ -13,8 +13,8 @@ export const metadata: Metadata = {
 };
 
 async function getLimitRows(): Promise<LimitRow[]> {
-  const adminClient = await createAdminClient();
-  const { data, error } = await adminClient
+  const sbAdmin = await createAdminClient();
+  const { data, error } = await sbAdmin
     .from('platform_entity_creation_limits')
     .select('*')
     .order('table_name', { ascending: true })
@@ -26,8 +26,8 @@ async function getLimitRows(): Promise<LimitRow[]> {
 }
 
 async function getAvailableTables(): Promise<AvailableTableRow[]> {
-  const adminClient = await createAdminClient();
-  const { data, error } = await adminClient.rpc(
+  const sbAdmin = await createAdminClient();
+  const { data, error } = await sbAdmin.rpc(
     'get_available_platform_entity_limit_tables'
   );
 

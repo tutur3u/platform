@@ -65,8 +65,8 @@ export async function addPlatformEntityCreationLimitTable(
   const notes = parseOptionalText(formData, 'notes');
 
   try {
-    const adminClient = await createAdminClient();
-    const { error } = await adminClient.rpc(
+    const sbAdmin = await createAdminClient();
+    const { error } = await sbAdmin.rpc(
       'add_platform_entity_creation_limit_table',
       {
         p_target_table: targetTable,
@@ -96,8 +96,8 @@ export async function updatePlatformEntityCreationLimitMetadata(
   const notes = parseOptionalText(formData, 'notes');
 
   try {
-    const adminClient = await createAdminClient();
-    const { error } = await adminClient.rpc(
+    const sbAdmin = await createAdminClient();
+    const { error } = await sbAdmin.rpc(
       'update_platform_entity_creation_limit_metadata',
       {
         p_target_table: targetTable,
@@ -126,8 +126,8 @@ export async function updatePlatformEntityCreationLimitTier(
   });
 
   try {
-    const adminClient = await createAdminClient();
-    const { error } = await adminClient.rpc(
+    const sbAdmin = await createAdminClient();
+    const { error } = await sbAdmin.rpc(
       'update_platform_entity_creation_limit_tier',
       {
         p_target_table: targetTable,
@@ -160,8 +160,8 @@ export async function reattachPlatformEntityCreationLimitTrigger(
   });
 
   try {
-    const adminClient = await createAdminClient();
-    const { error } = await adminClient.rpc(
+    const sbAdmin = await createAdminClient();
+    const { error } = await sbAdmin.rpc(
       'reattach_platform_entity_creation_limit_trigger',
       {
         p_target_table: targetTable,
