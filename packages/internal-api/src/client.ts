@@ -40,7 +40,6 @@ function isProductionDeployment() {
 
   return process.env.NODE_ENV === 'production';
 }
-
 function normalizePath(path: string): string {
   if (/^https?:\/\//.test(path)) {
     return path;
@@ -76,6 +75,7 @@ function getConfiguredBaseUrl() {
     process.env.INTERNAL_WEB_API_ORIGIN ||
       process.env.NEXT_PUBLIC_WEB_APP_URL ||
       process.env.WEB_APP_URL ||
+      process.env.NEXT_PUBLIC_APP_URL ||
       (isProductionDeployment()
         ? 'https://tuturuuu.com'
         : 'http://localhost:7803')
