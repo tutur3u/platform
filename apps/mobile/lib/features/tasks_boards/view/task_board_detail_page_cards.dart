@@ -543,19 +543,37 @@ class _AssigneeAvatarStack extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final visible = assignees.take(3).toList(growable: false);
-    return SizedBox(
+    final overflowCount = assignees.length - visible.length;
+    Widget child = SizedBox(
       height: 20,
       width: visible.length * 14 + 14,
       child: Stack(
+        clipBehavior: Clip.none,
         children: [
           for (var i = 0; i < visible.length; i++)
             Positioned(
               left: i * 14,
               child: _AssigneeAvatar(assignee: visible[i]),
             ),
+          if (overflowCount > 0)
+            Positioned(
+              left: visible.length * 14,
+              child: _AssigneeOverflowAvatar(count: overflowCount),
+            ),
         ],
       ),
     );
+
+    if (overflowCount > 0) {
+      child = Tooltip(
+        message: context.l10n.taskBoardDetailTaskAssigneeCount(
+          assignees.length,
+        ),
+        child: child,
+      );
+    }
+
+    return child;
   }
 }
 
@@ -582,6 +600,23 @@ class _AssigneeAvatar extends StatelessWidget {
               name.isNotEmpty ? name.substring(0, 1).toUpperCase() : '?',
               style: const TextStyle(fontSize: 9),
             ),
+    );
+  }
+}
+
+class _AssigneeOverflowAvatar extends StatelessWidget {
+  const _AssigneeOverflowAvatar({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return CircleAvatar(
+      radius: 10,
+      child: Text(
+        '+$count',
+        style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w600),
+      ),
     );
   }
 }

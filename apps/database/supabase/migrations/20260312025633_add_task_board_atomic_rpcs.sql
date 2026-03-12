@@ -91,14 +91,26 @@ create or replace function public.update_task_with_relations(
   p_project_ids uuid[] default null,
   p_replace_projects boolean default false
 )
-returns void
+returns setof public.tasks
 language plpgsql
 security invoker
 set search_path = public
 as $$
+declare
+  updated_task public.tasks%rowtype;
 begin
   if p_task_id is null then
     raise exception 'Task ID is required';
+  end if;
+
+  if p_task_updates ? 'name'
+    and jsonb_typeof(p_task_updates->'name') = 'null' then
+    raise exception 'Task name cannot be null';
+  end if;
+
+  if p_task_updates ? 'completed'
+    and jsonb_typeof(p_task_updates->'completed') = 'null' then
+    raise exception 'Task completed cannot be null';
   end if;
 
   update public.tasks
@@ -136,7 +148,11 @@ begin
       else tasks.end_date
     end,
     completed = case
-      when p_task_updates ? 'completed' then (p_task_updates->>'completed')::boolean
+      when p_task_updates ? 'completed' then
+        case
+          when jsonb_typeof(p_task_updates->'completed') = 'null' then null
+          else (p_task_updates->>'completed')::boolean
+        end
       else tasks.completed
     end,
     list_id = case
@@ -163,10 +179,11 @@ begin
         end
       else tasks.deleted_at
     end
-  where tasks.id = p_task_id;
+  where tasks.id = p_task_id
+  returning tasks.* into updated_task;
 
-  if not found then
-    raise exception 'Task not found';
+  if updated_task is null then
+    return;
   end if;
 
   if p_replace_assignees then
@@ -175,7 +192,10 @@ begin
 
     if coalesce(array_length(p_assignee_ids, 1), 0) > 0 then
       insert into public.task_assignees (task_id, user_id)
-      select p_task_id, unnest(p_assignee_ids);
+      select p_task_id, assignee_id
+      from (
+        select distinct unnest(p_assignee_ids) as assignee_id
+      ) deduplicated_assignees;
     end if;
   end if;
 
@@ -185,7 +205,10 @@ begin
 
     if coalesce(array_length(p_label_ids, 1), 0) > 0 then
       insert into public.task_labels (task_id, label_id)
-      select p_task_id, unnest(p_label_ids);
+      select p_task_id, label_id
+      from (
+        select distinct unnest(p_label_ids) as label_id
+      ) deduplicated_labels;
     end if;
   end if;
 
@@ -195,9 +218,15 @@ begin
 
     if coalesce(array_length(p_project_ids, 1), 0) > 0 then
       insert into public.task_project_tasks (task_id, project_id)
-      select p_task_id, unnest(p_project_ids);
+      select p_task_id, project_id
+      from (
+        select distinct unnest(p_project_ids) as project_id
+      ) deduplicated_projects;
     end if;
   end if;
+
+  return next updated_task;
+  return;
 end;
 $$;
 
@@ -213,4 +242,4 @@ grant execute on function public.update_task_with_relations(
 ) to authenticated;
 
 comment on function public.update_task_with_relations(uuid, jsonb, uuid[], boolean, uuid[], boolean, uuid[], boolean) is
-'Updates a task and optionally replaces assignees, labels, and project links inside one database transaction.';
+'Updates a task, returns the touched row when one matched, and optionally replaces assignees, labels, and project links inside one database transaction.';

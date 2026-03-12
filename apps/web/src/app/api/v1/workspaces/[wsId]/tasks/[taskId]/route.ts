@@ -88,6 +88,11 @@ type TaskRecord = {
   }> | null;
 };
 
+type TaskMutationResult = Pick<
+  Database['public']['Tables']['tasks']['Row'],
+  'id' | 'list_id'
+>;
+
 async function requireWorkspaceAccess(
   request: NextRequest,
   rawParams: unknown
@@ -474,10 +479,11 @@ export async function PUT(
         ? { deleted_at: body.deleted ? new Date().toISOString() : null }
         : {}),
     };
+    const expectedListId =
+      body.list_id !== undefined ? body.list_id : task.list_id;
 
-    const { error: updateError } = await supabase.rpc(
-      'update_task_with_relations',
-      {
+    const { data: updatedTaskRow, error: updateError } = (await supabase
+      .rpc('update_task_with_relations', {
         p_task_id: taskId,
         p_task_updates: updatePayload,
         p_assignee_ids: normalizedAssigneeIds,
@@ -486,8 +492,11 @@ export async function PUT(
         p_replace_labels: body.label_ids !== undefined,
         p_project_ids: normalizedProjectIds,
         p_replace_projects: body.project_ids !== undefined,
-      }
-    );
+      })
+      .maybeSingle()) as {
+      data: TaskMutationResult | null;
+      error: Error | null;
+    };
 
     if (updateError) {
       console.error('Error updating task:', updateError);
@@ -495,6 +504,14 @@ export async function PUT(
         { error: 'Failed to update task' },
         { status: 500 }
       );
+    }
+
+    if (
+      !updatedTaskRow ||
+      updatedTaskRow.id !== task.id ||
+      updatedTaskRow.list_id !== expectedListId
+    ) {
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
     const updatedTaskResult = await getWorkspaceTask(supabase, wsId, taskId);
@@ -564,10 +581,12 @@ export async function DELETE(
       );
     }
 
-    const { error: deleteError } = await supabase
+    const { data: deletedTaskRow, error: deleteError } = await supabase
       .from('tasks')
       .delete()
-      .eq('id', taskId);
+      .eq('id', taskId)
+      .select('id, list_id')
+      .maybeSingle();
 
     if (deleteError) {
       console.error('Supabase error:', deleteError);
@@ -575,6 +594,14 @@ export async function DELETE(
         { error: 'Failed to permanently delete task' },
         { status: 500 }
       );
+    }
+
+    if (
+      !deletedTaskRow ||
+      deletedTaskRow.id !== task.id ||
+      deletedTaskRow.list_id !== task.list_id
+    ) {
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -636,10 +663,12 @@ export async function PATCH(
       );
     }
 
-    const { error: restoreError } = await supabase
+    const { data: restoredTaskRow, error: restoreError } = await supabase
       .from('tasks')
       .update({ deleted_at: null })
-      .eq('id', taskId);
+      .eq('id', taskId)
+      .select('id, list_id')
+      .maybeSingle();
 
     if (restoreError) {
       console.error('Supabase error:', restoreError);
@@ -647,6 +676,14 @@ export async function PATCH(
         { error: 'Failed to restore task' },
         { status: 500 }
       );
+    }
+
+    if (
+      !restoredTaskRow ||
+      restoredTaskRow.id !== task.id ||
+      restoredTaskRow.list_id !== task.list_id
+    ) {
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
     return NextResponse.json({

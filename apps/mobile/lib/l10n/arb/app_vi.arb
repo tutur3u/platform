@@ -340,7 +340,7 @@
     "taskBoardDetailToday": "hôm nay",
     "taskBoardDetailTomorrow": "ngày mai",
     "taskBoardDetailYesterday": "hôm qua",
-    "taskBoardDetailInDays": "trong {count} ngày",
+    "taskBoardDetailInDays": "{count, plural, one{trong {count} ngày} other{trong {count} ngày}}",
     "@taskBoardDetailInDays": {
         "placeholders": {
             "count": {
@@ -348,7 +348,7 @@
             }
         }
     },
-    "taskBoardDetailDaysAgo": "{count} ngày trước",
+    "taskBoardDetailDaysAgo": "{count, plural, one{{count} ngày trước} other{{count} ngày trước}}",
     "@taskBoardDetailDaysAgo": {
         "placeholders": {
             "count": {
@@ -838,6 +838,14 @@
     "timerRequestActivityCommentAdded": "đã thêm bình luận",
     "timerRequestActivityCommentUpdated": "đã cập nhật bình luận",
     "timerRequestActivityCommentDeleted": "đã xóa bình luận",
+    "taskBoardDetailTaskAssigneeCount": "{count} người được giao",
+    "@taskBoardDetailTaskAssigneeCount": {
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
     "timerRequestActivityUpdated": "đã cập nhật yêu cầu này",
     "timerRequestActivityFeedbackLabel": "Phản hồi",
     "timerRequestActivityTitleLabel": "Tiêu đề",
@@ -962,7 +970,7 @@
             }
         }
     },
-    "timerDays": "{count} ngày",
+    "timerDays": "{count, plural, one{# ngày} other{# ngày}}",
     "@timerDays": {
         "placeholders": {
             "count": {

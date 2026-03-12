@@ -340,7 +340,7 @@
     "taskBoardDetailToday": "today",
     "taskBoardDetailTomorrow": "tomorrow",
     "taskBoardDetailYesterday": "yesterday",
-    "taskBoardDetailInDays": "in {count} days",
+    "taskBoardDetailInDays": "{count, plural, one{in {count} day} other{in {count} days}}",
     "@taskBoardDetailInDays": {
         "placeholders": {
             "count": {
@@ -348,7 +348,7 @@
             }
         }
     },
-    "taskBoardDetailDaysAgo": "{count} days ago",
+    "taskBoardDetailDaysAgo": "{count, plural, one{{count} day ago} other{{count} days ago}}",
     "@taskBoardDetailDaysAgo": {
         "placeholders": {
             "count": {
@@ -836,6 +836,14 @@
     "timerRequestActivityCommentUpdated": "updated a comment",
     "timerRequestActivityCommentDeleted": "deleted a comment",
     "timerRequestActivityUpdated": "updated this request",
+    "taskBoardDetailTaskAssigneeCount": "{count} assignees",
+    "@taskBoardDetailTaskAssigneeCount": {
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
     "timerRequestActivityFeedbackLabel": "Feedback",
     "timerRequestActivityTitleLabel": "Title",
     "timerRequestActivityUnknownUser": "Unknown user",
@@ -960,7 +968,7 @@
     },
     "timerHourUnitShort": "h",
     "timerMinuteUnitShort": "m",
-    "timerDays": "{count} days",
+    "timerDays": "{count, plural, one{# day} other{# days}}",
     "@timerDays": {
         "placeholders": {
             "count": {

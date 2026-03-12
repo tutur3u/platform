@@ -93,6 +93,7 @@ export async function POST(
       );
     }
 
+    // The list RPC sometimes returns list as a single row and sometimes as an array, so createdList normalizes both shapes.
     const createdList = Array.isArray(list) ? list[0] : list;
 
     if (!createdList) {

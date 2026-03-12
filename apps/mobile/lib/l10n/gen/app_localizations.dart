@@ -1666,13 +1666,13 @@ abstract class AppLocalizations {
   /// No description provided for @taskBoardDetailInDays.
   ///
   /// In en, this message translates to:
-  /// **'in {count} days'**
+  /// **'{count, plural, one{in {count} day} other{in {count} days}}'**
   String taskBoardDetailInDays(int count);
 
   /// No description provided for @taskBoardDetailDaysAgo.
   ///
   /// In en, this message translates to:
-  /// **'{count} days ago'**
+  /// **'{count, plural, one{{count} day ago} other{{count} days ago}}'**
   String taskBoardDetailDaysAgo(int count);
 
   /// No description provided for @taskBoardDetailInvalidDateRange.
@@ -4315,6 +4315,12 @@ abstract class AppLocalizations {
   /// **'updated this request'**
   String get timerRequestActivityUpdated;
 
+  /// No description provided for @taskBoardDetailTaskAssigneeCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} assignees'**
+  String taskBoardDetailTaskAssigneeCount(int count);
+
   /// No description provided for @timerRequestActivityFeedbackLabel.
   ///
   /// In en, this message translates to:
@@ -4840,7 +4846,7 @@ abstract class AppLocalizations {
   /// No description provided for @timerDays.
   ///
   /// In en, this message translates to:
-  /// **'{count} days'**
+  /// **'{count, plural, one{# day} other{# days}}'**
   String timerDays(int count);
 
   /// No description provided for @settingsTitle.

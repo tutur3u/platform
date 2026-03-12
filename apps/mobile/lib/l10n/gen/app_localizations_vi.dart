@@ -832,12 +832,24 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String taskBoardDetailInDays(int count) {
-    return 'trong $count ngày';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'trong $count ngày',
+      one: 'trong $count ngày',
+    );
+    return '$_temp0';
   }
 
   @override
   String taskBoardDetailDaysAgo(int count) {
-    return '$count ngày trước';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ngày trước',
+      one: '$count ngày trước',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -2180,6 +2192,11 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerRequestActivityUpdated => 'đã cập nhật yêu cầu này';
 
   @override
+  String taskBoardDetailTaskAssigneeCount(int count) {
+    return '$count người được giao';
+  }
+
+  @override
   String get timerRequestActivityFeedbackLabel => 'Phản hồi';
 
   @override
@@ -2458,7 +2475,13 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String timerDays(int count) {
-    return '$count ngày';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '# ngày',
+      one: '# ngày',
+    );
+    return '$_temp0';
   }
 
   @override

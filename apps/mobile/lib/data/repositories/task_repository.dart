@@ -119,12 +119,19 @@ class TaskRepository {
   }
 
   Future<Task?> getTaskById(String taskId, {required String wsId}) async {
-    final response = await _apiClient.getJson(
-      '/api/v1/workspaces/$wsId/tasks/$taskId',
-    );
-    final task = response['task'];
-    if (task is! Map<String, dynamic>) return null;
-    return _taskFromApiJson(task);
+    try {
+      final response = await _apiClient.getJson(
+        '/api/v1/workspaces/$wsId/tasks/$taskId',
+      );
+      final task = response['task'];
+      if (task is! Map<String, dynamic>) return null;
+      return _taskFromApiJson(task);
+    } on ApiException catch (error) {
+      if (error.statusCode == 404) {
+        return null;
+      }
+      rethrow;
+    }
   }
 
   Future<Task> createTask(String wsId, Map<String, dynamic> data) async {
@@ -252,7 +259,10 @@ class TaskRepository {
     while (true) {
       iteration += 1;
       if (iteration > maxIterations) {
-        break;
+        throw const ApiException(
+          message: 'Task pagination iteration limit exceeded',
+          statusCode: 500,
+        );
       }
 
       final query = _encodeQueryParameters({
@@ -307,7 +317,7 @@ class TaskRepository {
       '/api/v1/workspaces/$wsId/tasks',
       {
         'name': name,
-        'listId': listId,
+        'list_id': listId,
         'description': description,
         'priority': priority,
         'start_date': startDate?.toUtc().toIso8601String(),

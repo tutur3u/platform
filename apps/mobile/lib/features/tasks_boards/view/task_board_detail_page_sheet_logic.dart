@@ -203,8 +203,14 @@ Future<void> _pickTaskDate(
   state._updateState(() {
     if (isStart) {
       state._startDate = normalized;
+      if (state._endDate != null && normalized.isAfter(state._endDate!)) {
+        state._endDate = normalized;
+      }
     } else {
       state._endDate = normalized;
+      if (state._startDate != null && normalized.isBefore(state._startDate!)) {
+        state._startDate = normalized;
+      }
     }
   });
 }

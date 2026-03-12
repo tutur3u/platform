@@ -44,14 +44,7 @@ export async function PATCH(
     if ('error' in access) return access.error;
 
     const { supabase, boardId } = access;
-    const listId = access.listId;
-
-    if (!listId) {
-      return NextResponse.json(
-        { error: 'Task list not found' },
-        { status: 404 }
-      );
-    }
+    const listId = access.listId!;
 
     const body = updateListSchema.parse(await request.json());
     const updates: {
@@ -86,12 +79,19 @@ export async function PATCH(
       .eq('id', listId)
       .eq('board_id', boardId)
       .select('id, board_id, name, status, color, position, archived')
-      .single();
+      .maybeSingle();
 
     if (error) {
       return NextResponse.json(
         { error: 'Failed to update task list' },
         { status: 500 }
+      );
+    }
+
+    if (!list) {
+      return NextResponse.json(
+        { error: 'Task list not found' },
+        { status: 404 }
       );
     }
 

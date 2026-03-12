@@ -22756,7 +22756,34 @@ export type Database = {
           p_task_id: string;
           p_task_updates?: Json;
         };
-        Returns: undefined;
+        Returns: {
+          board_id: string | null;
+          closed_at: string | null;
+          completed: boolean | null;
+          completed_at: string | null;
+          created_at: string | null;
+          creator_id: string | null;
+          deleted_at: string | null;
+          description: string | null;
+          description_yjs_state: number[] | null;
+          display_number: number | null;
+          embedding: string | null;
+          end_date: string | null;
+          estimation_points: number | null;
+          fts: unknown;
+          id: string;
+          list_id: string | null;
+          name: string;
+          priority: Database['public']['Enums']['task_priority'] | null;
+          sort_key: number | null;
+          start_date: string | null;
+        }[];
+        SetofOptions: {
+          from: '*';
+          to: 'tasks';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
       };
       update_time_tracking_request: {
         Args: {

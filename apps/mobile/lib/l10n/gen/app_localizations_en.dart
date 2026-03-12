@@ -832,12 +832,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String taskBoardDetailInDays(int count) {
-    return 'in $count days';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'in $count days',
+      one: 'in $count day',
+    );
+    return '$_temp0';
   }
 
   @override
   String taskBoardDetailDaysAgo(int count) {
-    return '$count days ago';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days ago',
+      one: '$count day ago',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -2180,6 +2192,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerRequestActivityUpdated => 'updated this request';
 
   @override
+  String taskBoardDetailTaskAssigneeCount(int count) {
+    return '$count assignees';
+  }
+
+  @override
   String get timerRequestActivityFeedbackLabel => 'Feedback';
 
   @override
@@ -2464,7 +2481,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String timerDays(int count) {
-    return '$count days';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '# days',
+      one: '# day',
+    );
+    return '$_temp0';
   }
 
   @override
