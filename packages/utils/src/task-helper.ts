@@ -38,31 +38,6 @@ import type {
 } from '@tuturuuu/types/primitives/TaskRelationship';
 import { transformTaskRecord } from './task/transformers';
 
-type TaskListIdRow = Pick<
-  Database['public']['Tables']['task_lists']['Row'],
-  'id'
->;
-type RestorableTaskRow = Pick<
-  Database['public']['Tables']['tasks']['Row'],
-  'id' | 'list_id'
->;
-type WorkspaceTaskPickerRow = Pick<
-  Database['public']['Tables']['tasks']['Row'],
-  | 'id'
-  | 'name'
-  | 'display_number'
-  | 'completed_at'
-  | 'closed_at'
-  | 'priority'
-  | 'board_id'
-> & {
-  list: {
-    board: {
-      name: string | null;
-    } | null;
-  } | null;
-};
-
 /**
  * Generate a human-readable ticket identifier from prefix and display number
  * @param prefix - Board's ticket prefix (e.g., "DEV", "BUG")
