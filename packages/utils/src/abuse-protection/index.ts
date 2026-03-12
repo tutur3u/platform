@@ -115,9 +115,14 @@ export function extractIPFromHeaders(
  */
 export function hashEmail(email: string): string {
   return createHash('sha256')
-    .update(email.toLowerCase())
+    .update(email.trim().toLowerCase())
     .digest('hex')
     .substring(0, 16);
+}
+
+function normalizeAbuseEventEmail(email?: string): string | null {
+  const normalized = email?.trim().toLowerCase();
+  return normalized ? normalized : null;
 }
 
 /**
@@ -452,12 +457,14 @@ export async function logAbuseEvent(
   try {
     const sbAdmin = await getSupabaseAdmin();
     if (!sbAdmin) return;
+    const normalizedEmail = normalizeAbuseEventEmail(options?.email);
 
     await sbAdmin.from('abuse_events').insert([
       {
         ip_address: ipAddress,
         event_type: eventType,
-        email_hash: options?.email ? hashEmail(options.email) : null,
+        email: normalizedEmail,
+        email_hash: normalizedEmail ? hashEmail(normalizedEmail) : null,
         user_agent: options?.userAgent?.substring(0, 500),
         endpoint: options?.endpoint,
         success: options?.success ?? false,

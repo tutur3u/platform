@@ -28,6 +28,7 @@ export type UserGroupPost = Tables<'user_group_posts'> & {
   group_name?: string | null;
 };
 export type EmailHistoryEntry = Tables<'sent_emails'>;
+export type AbuseEvent = Tables<'abuse_events'>;
 export type Invoice = Tables<'finance_invoices'>;
 export type InvoiceProduct = Tables<'finance_invoice_products'>;
 export type InvoicePromotion = Tables<'finance_invoice_promotions'>;

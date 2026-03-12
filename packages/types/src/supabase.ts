@@ -12,6 +12,7 @@ export type Database = {
       abuse_events: {
         Row: {
           created_at: string;
+          email: string | null;
           email_hash: string | null;
           endpoint: string | null;
           event_type: Database['public']['Enums']['abuse_event_type'];
@@ -23,6 +24,7 @@ export type Database = {
         };
         Insert: {
           created_at?: string;
+          email?: string | null;
           email_hash?: string | null;
           endpoint?: string | null;
           event_type: Database['public']['Enums']['abuse_event_type'];
@@ -34,6 +36,7 @@ export type Database = {
         };
         Update: {
           created_at?: string;
+          email?: string | null;
           email_hash?: string | null;
           endpoint?: string | null;
           event_type?: Database['public']['Enums']['abuse_event_type'];
