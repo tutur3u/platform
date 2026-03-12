@@ -8,7 +8,14 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["**", "!dist", "!**/dist", "!apps/mobile"]
+    "includes": [
+      "**",
+      "!dist",
+      "!**/dist",
+      "!apps/mobile",
+      "!.worktrees",
+      "!.worktrees/**"
+    ]
   },
   "formatter": {
     "enabled": true,
