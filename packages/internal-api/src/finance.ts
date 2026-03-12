@@ -1,30 +1,31 @@
+import type { Wallet } from '@tuturuuu/types';
+import type { TransactionCategoryWithStats } from '@tuturuuu/types/primitives/TransactionCategory';
 import {
-  createInternalApiClient,
+  encodePathSegment,
+  getInternalApiClient,
   type InternalApiClientOptions,
-  internalApiClient,
 } from './client';
-
-function getClient(options?: InternalApiClientOptions) {
-  return options ? createInternalApiClient(options) : internalApiClient;
-}
 
 export async function listWallets(
   workspaceId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getClient(options);
-  return client.json<unknown[]>(`/api/v1/workspaces/${workspaceId}/wallets`, {
-    cache: 'no-store',
-  });
+  const client = getInternalApiClient(options);
+  return client.json<Wallet[]>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/wallets`,
+    {
+      cache: 'no-store',
+    }
+  );
 }
 
 export async function listTransactionCategories(
   workspaceId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getClient(options);
-  return client.json<unknown[]>(
-    `/api/workspaces/${workspaceId}/transactions/categories`,
+  const client = getInternalApiClient(options);
+  return client.json<TransactionCategoryWithStats[]>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/transactions/categories`,
     {
       cache: 'no-store',
     }

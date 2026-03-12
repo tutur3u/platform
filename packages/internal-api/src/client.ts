@@ -19,6 +19,10 @@ export type InternalApiClientOptions = {
   fetch?: typeof fetch;
 };
 
+export function encodePathSegment(value: string) {
+  return encodeURIComponent(value);
+}
+
 function normalizePath(path: string): string {
   if (/^https?:\/\//.test(path)) {
     return path;
@@ -32,7 +36,11 @@ function appendQuery(path: string, query?: InternalApiQuery): string {
     return path;
   }
 
-  const url = new URL(normalizePath(path), 'http://internal-api.local');
+  const normalizedPath = normalizePath(path);
+  const isAbsoluteUrl = /^https?:\/\//.test(normalizedPath);
+  const url = isAbsoluteUrl
+    ? new URL(normalizedPath)
+    : new URL(normalizedPath, 'http://internal-api.local');
 
   for (const [key, value] of Object.entries(query)) {
     if (value === undefined || value === null) {
@@ -42,7 +50,7 @@ function appendQuery(path: string, query?: InternalApiQuery): string {
     url.searchParams.set(key, String(value));
   }
 
-  return `${url.pathname}${url.search}`;
+  return isAbsoluteUrl ? url.toString() : `${url.pathname}${url.search}`;
 }
 
 function getConfiguredBaseUrl() {
@@ -141,3 +149,7 @@ export function createInternalApiClient(
 }
 
 export const internalApiClient = createInternalApiClient();
+
+export function getInternalApiClient(options?: InternalApiClientOptions) {
+  return options ? createInternalApiClient(options) : internalApiClient;
+}
