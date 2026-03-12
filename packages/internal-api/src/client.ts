@@ -23,6 +23,18 @@ export function encodePathSegment(value: string) {
   return encodeURIComponent(value);
 }
 
+function normalizeBaseUrl(baseUrl: string) {
+  return baseUrl.replace(/\/+$/, '');
+}
+
+function isProductionDeployment() {
+  if (process.env.VERCEL_ENV) {
+    return process.env.VERCEL_ENV === 'production';
+  }
+
+  return process.env.NODE_ENV === 'production';
+}
+
 function normalizePath(path: string): string {
   if (/^https?:\/\//.test(path)) {
     return path;
@@ -54,13 +66,13 @@ function appendQuery(path: string, query?: InternalApiQuery): string {
 }
 
 function getConfiguredBaseUrl() {
-  return (
+  return normalizeBaseUrl(
     process.env.INTERNAL_WEB_API_ORIGIN ||
-    process.env.NEXT_PUBLIC_WEB_APP_URL ||
-    process.env.WEB_APP_URL ||
-    (process.env.NODE_ENV === 'production'
-      ? 'https://tuturuuu.com'
-      : 'http://localhost:7803')
+      process.env.NEXT_PUBLIC_WEB_APP_URL ||
+      process.env.WEB_APP_URL ||
+      (isProductionDeployment()
+        ? 'https://tuturuuu.com'
+        : 'http://localhost:7803')
   );
 }
 
@@ -71,11 +83,17 @@ export function resolveInternalApiUrl(path: string, baseUrl?: string) {
     return normalizedPath;
   }
 
-  if (typeof window !== 'undefined') {
+  const resolvedBaseUrl = baseUrl
+    ? normalizeBaseUrl(baseUrl)
+    : typeof window === 'undefined'
+      ? getConfiguredBaseUrl()
+      : undefined;
+
+  if (!resolvedBaseUrl) {
     return normalizedPath;
   }
 
-  return new URL(normalizedPath, baseUrl || getConfiguredBaseUrl()).toString();
+  return new URL(normalizedPath, resolvedBaseUrl).toString();
 }
 
 function mergeHeaders(
