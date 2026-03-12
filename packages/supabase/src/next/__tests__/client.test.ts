@@ -42,6 +42,7 @@ describe('Supabase Client', () => {
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.unstubAllEnvs();
     __resetSupabaseClientDeprecationWarningForTests();
   });
@@ -92,7 +93,10 @@ describe('Supabase Client', () => {
 
     it('should create a client and set the session', async () => {
       vi.spyOn(console, 'warn').mockImplementation(() => {});
-      mockSetSession.mockResolvedValue({});
+      mockSetSession.mockResolvedValue({
+        data: { session: mockSession },
+        error: null,
+      });
 
       const client = await createClientWithSession(mockSession as any);
 
@@ -111,7 +115,10 @@ describe('Supabase Client', () => {
 
     it('should create separate clients for multiple sessions', async () => {
       vi.spyOn(console, 'warn').mockImplementation(() => {});
-      mockSetSession.mockResolvedValue({});
+      mockSetSession.mockResolvedValue({
+        data: { session: mockSession },
+        error: null,
+      });
 
       await createClientWithSession(mockSession as any);
       await createClientWithSession({
@@ -120,6 +127,18 @@ describe('Supabase Client', () => {
       } as any);
 
       expect(createBrowserClient).toHaveBeenCalledTimes(2);
+    });
+
+    it('should throw when the injected session fails to apply', async () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      mockSetSession.mockResolvedValue({
+        data: { session: null },
+        error: { message: 'Session rejected' },
+      });
+
+      await expect(createClientWithSession(mockSession as any)).rejects.toThrow(
+        'Failed to set session: Session rejected'
+      );
     });
   });
 
