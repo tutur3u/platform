@@ -3692,6 +3692,71 @@
     "template_props": "Thuộc tính Mẫu",
     "title": "Mẫu Email"
   },
+  "entity-creation-limits": {
+    "actions": {
+      "add_table": "Thêm bảng",
+      "cancel": "Hủy bỏ",
+      "edit": "Chỉnh sửa",
+      "reattach_trigger": "Gắn lại trigger",
+      "save_metadata": "Lưu metadata",
+      "save_tier": "Lưu cấu hình gói"
+    },
+    "add_table": {
+      "description": "Chọn một bảng public đã bật audit tracking, rồi cấu hình giới hạn theo từng gói cho các lần tạo do người dùng đã xác thực thực hiện.",
+      "requirements_hint": "Giới hạn luôn áp dụng cho người dùng đã xác thực và gói của personal workspace của họ. Bảng đích phải bật audit tracking.",
+      "select_placeholder": "Chọn một bảng",
+      "submit": "Thêm bảng",
+      "title": "Thêm bảng đã cấu hình"
+    },
+    "configured_table": {
+      "updated_at": "Cập nhật lần cuối {updatedAt}",
+      "updated_label": "Cập nhật"
+    },
+    "description": "Cho phép opt-in các bảng đã bật audit tracking vào cơ chế giới hạn insert dùng chung và tinh chỉnh quota theo gói dựa trên personal workspace của người dùng đang thao tác.",
+    "empty_state": "Chưa có bảng nào được cấu hình.",
+    "feedback": {
+      "error_prefix": "Cập nhật thất bại",
+      "metadata-saved": "Đã lưu cấu hình bảng.",
+      "table-added": "Đã cấu hình bảng và gắn trigger.",
+      "tier-saved": "Đã lưu giới hạn của gói.",
+      "trigger-reattached": "Đã gắn lại trigger thành công."
+    },
+    "fields": {
+      "enabled": "Bật",
+      "notes": "Ghi chú",
+      "notes_placeholder": "Ghi chú các trường hợp đặc biệt hoặc hướng dẫn vận hành.",
+      "table_name": "Tên bảng"
+    },
+    "limits": {
+      "per_day": "Mỗi ngày",
+      "per_hour": "Mỗi giờ",
+      "per_month": "Mỗi 30 ngày",
+      "per_week": "Mỗi 7 ngày",
+      "total_limit": "Tổng"
+    },
+    "metadata": {
+      "requirements_hint": "Cơ chế giới hạn luôn dùng người dùng đã xác thực hiện tại và suy ra gói từ personal workspace của chính họ."
+    },
+    "notes": {
+      "empty": "Không có ghi chú"
+    },
+    "section": {
+      "configured_tables": "Bảng đã cấu hình",
+      "metadata": "Thiết lập bảng",
+      "tier_limits": "Giới hạn theo gói"
+    },
+    "summary": {
+      "available_tables": "Bảng khả dụng",
+      "configured_tables": "Bảng đã cấu hình"
+    },
+    "tiers": {
+      "ENTERPRISE": "Enterprise",
+      "FREE": "Miễn phí",
+      "PLUS": "Plus",
+      "PRO": "Pro"
+    },
+    "title": "Giới hạn tạo thực thể"
+  },
   "experimental-notice": {
     "experimental_feature": "Tính năng thử nghiệm",
     "experimental_notice": "Đây là một tính năng thử nghiệm đang trong quá trình phát triển. Nó có thể không hoạt động như mong đợi và có thể thay đổi trong tương lai."
@@ -4562,6 +4627,7 @@
     "email_audit": "Nhật ký email",
     "email_blacklist": "Danh sách đen email",
     "email_templates": "Mẫu Email",
+    "entity_creation_limits": "Giới hạn tạo thực thể",
     "features": "Tính năng",
     "infrastructure": "Cơ sở hạ tầng",
     "integrations": "Dịch vụ tích hợp",

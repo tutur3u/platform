@@ -3692,6 +3692,71 @@
     "template_props": "Template Properties",
     "title": "Email Templates"
   },
+  "entity-creation-limits": {
+    "actions": {
+      "add_table": "Add table",
+      "cancel": "Cancel",
+      "edit": "Edit",
+      "reattach_trigger": "Reattach trigger",
+      "save_metadata": "Save metadata",
+      "save_tier": "Save tier"
+    },
+    "add_table": {
+      "description": "Choose an audit-tracked public table, then configure per-tier limits for creations performed by the authenticated actor.",
+      "requirements_hint": "Limits are enforced against the authenticated user and their personal workspace tier. Target tables must be audit-tracked.",
+      "select_placeholder": "Select a table",
+      "submit": "Add table",
+      "title": "Add Configured Table"
+    },
+    "configured_table": {
+      "updated_at": "Last updated {updatedAt}",
+      "updated_label": "Updated"
+    },
+    "description": "Opt audit-tracked tables into shared insert-rate enforcement and tune per-tier quotas using the authenticated actor's personal workspace tier.",
+    "empty_state": "No tables have been configured yet.",
+    "feedback": {
+      "error_prefix": "Update failed",
+      "metadata-saved": "Table settings saved.",
+      "table-added": "Table configured and trigger attached.",
+      "tier-saved": "Tier limits saved.",
+      "trigger-reattached": "Trigger reattached successfully."
+    },
+    "fields": {
+      "enabled": "Enabled",
+      "notes": "Notes",
+      "notes_placeholder": "Document special cases or operator guidance.",
+      "table_name": "Table name"
+    },
+    "limits": {
+      "per_day": "Per day",
+      "per_hour": "Per hour",
+      "per_month": "Per 30 days",
+      "per_week": "Per 7 days",
+      "total_limit": "Total"
+    },
+    "metadata": {
+      "requirements_hint": "Enforcement always uses the authenticated user and resolves limits from that user's personal workspace tier."
+    },
+    "notes": {
+      "empty": "No notes"
+    },
+    "section": {
+      "configured_tables": "Configured tables",
+      "metadata": "Table Settings",
+      "tier_limits": "Tier Limits"
+    },
+    "summary": {
+      "available_tables": "Available tables",
+      "configured_tables": "Configured tables"
+    },
+    "tiers": {
+      "ENTERPRISE": "Enterprise",
+      "FREE": "Free",
+      "PLUS": "Plus",
+      "PRO": "Pro"
+    },
+    "title": "Entity Creation Limits"
+  },
   "experimental-notice": {
     "experimental_feature": "Experimental feature",
     "experimental_notice": "This is an experimental feature that is still under heavy development. It may not work as expected and may change in the future."
@@ -4562,6 +4627,7 @@
     "email_audit": "Email Audit",
     "email_blacklist": "Email Blacklist",
     "email_templates": "Email Templates",
+    "entity_creation_limits": "Entity Creation Limits",
     "features": "Features",
     "infrastructure": "Infrastructure",
     "integrations": "Integrations",
