@@ -2,9 +2,13 @@ import type { NextConfig } from 'next';
 
 const CENTRAL_PORT = process.env.CENTRAL_PORT || 7803;
 const WEB_APP_URL =
-  process.env.NODE_ENV === 'production'
+  process.env.INTERNAL_WEB_API_ORIGIN ||
+  process.env.NEXT_PUBLIC_WEB_APP_URL ||
+  process.env.WEB_APP_URL ||
+  process.env.NEXT_PUBLIC_APP_URL ||
+  (process.env.NODE_ENV === 'production'
     ? 'https://tuturuuu.com'
-    : `http://localhost:${CENTRAL_PORT}`;
+    : `http://localhost:${CENTRAL_PORT}`);
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
