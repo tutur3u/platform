@@ -34,14 +34,30 @@ describe('Supabase Server Client', () => {
       .mockReturnValue([{ name: 'test-cookie', value: 'test-value' }]),
     set: vi.fn(),
   };
+  const mockUserSchemaFrom = vi.fn((table: string) => ({
+    client: 'user',
+    schema: 'public',
+    table,
+  }));
+  const mockAdminSchemaFrom = vi.fn((table: string) => ({
+    client: 'admin',
+    schema: 'public',
+    table,
+  }));
   const mockUserClient = {
     from: vi.fn((table: string) => ({ client: 'user', table })),
+    schema: vi.fn(() => ({
+      from: mockUserSchemaFrom,
+    })),
     auth: {
       getUser: vi.fn(),
     },
   };
   const mockAdminClient = {
     from: vi.fn((table: string) => ({ client: 'admin', table })),
+    schema: vi.fn(() => ({
+      from: mockAdminSchemaFrom,
+    })),
     auth: {
       getUser: vi.fn(),
     },
@@ -121,8 +137,16 @@ describe('Supabase Server Client', () => {
       );
 
       expect(client.from('tasks')).toEqual({ client: 'admin', table: 'tasks' });
-      expect(client.from('notes')).toEqual({ client: 'admin', table: 'notes' });
+      expect(client.from('workspace_whiteboards')).toEqual({
+        client: 'admin',
+        table: 'workspace_whiteboards',
+      });
       expect(client.from('users')).toEqual({ client: 'user', table: 'users' });
+      expect(client.schema('public').from('tasks')).toEqual({
+        client: 'admin',
+        schema: 'public',
+        table: 'tasks',
+      });
     });
 
     it('should fall back to cookie auth when request has no Bearer token', async () => {
@@ -147,6 +171,11 @@ describe('Supabase Server Client', () => {
 
       expect(client.from('tasks')).toEqual({ client: 'admin', table: 'tasks' });
       expect(client.from('users')).toEqual({ client: 'user', table: 'users' });
+      expect(client.schema('public').from('tasks')).toEqual({
+        client: 'admin',
+        schema: 'public',
+        table: 'tasks',
+      });
     });
   });
 

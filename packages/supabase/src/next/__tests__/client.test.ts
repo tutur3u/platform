@@ -27,8 +27,15 @@ vi.mock('../realtime-log-provider', () => ({
 
 describe('Supabase Client', () => {
   const mockSetSession = vi.fn();
+  const mockSchemaFrom = vi.fn((table: string) => ({
+    schema: 'public',
+    table,
+  }));
   const mockClient = {
     from: vi.fn((table: string) => ({ table })),
+    schema: vi.fn(() => ({
+      from: mockSchemaFrom,
+    })),
     auth: {
       setSession: mockSetSession,
     },
@@ -62,6 +69,14 @@ describe('Supabase Client', () => {
 
       expect(client.from('users')).toEqual({ table: 'users' });
       expect(mockClient.from).toHaveBeenCalledWith('users');
+    });
+
+    it('should block schema-scoped access to proxy-only tables', () => {
+      const client = createClient();
+
+      expect(() => client.schema('public').from('tasks')).toThrow(
+        getProxyOnlyPublicTableError('tasks')
+      );
     });
   });
 
@@ -104,8 +119,8 @@ describe('Supabase Client', () => {
       expect(client).not.toBe(mockClient);
       expect(client.auth).toBe(mockClient.auth);
       expect(client.from('users')).toEqual({ table: 'users' });
-      expect(() => client.from('notes')).toThrow(
-        getProxyOnlyPublicTableError('notes')
+      expect(() => client.from('workspace_whiteboards')).toThrow(
+        getProxyOnlyPublicTableError('workspace_whiteboards')
       );
     });
 

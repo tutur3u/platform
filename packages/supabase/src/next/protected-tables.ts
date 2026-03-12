@@ -4,7 +4,6 @@ export const PROXY_ONLY_PUBLIC_TABLES = [
   'ai_whitelisted_domains',
   'board_templates',
   'calendar_sync_dashboard',
-  'changelog_entries',
   'crawled_urls',
   'email_audit',
   'external_user_monthly_report_logs',
@@ -20,7 +19,6 @@ export const PROXY_ONLY_PUBLIC_TABLES = [
   'meet_together_plans',
   'mira_accessories',
   'mira_achievements',
-  'notes',
   'notification_batches',
   'notification_delivery_log',
   'notifications',
@@ -62,12 +60,10 @@ export const PROXY_ONLY_PUBLIC_TABLES = [
   'workspace_api_keys',
   'workspace_break_types',
   'workspace_calendar_events',
-  'workspace_calendar_hour_settings',
   'workspace_calendar_sync_log',
   'workspace_calendars',
   'workspace_chat_channels',
   'workspace_chat_messages',
-  'workspace_course_modules',
   'workspace_courses',
   'workspace_credit_packs',
   'workspace_dataset_cells',
@@ -91,6 +87,7 @@ const proxyOnlyPublicTableSet = new Set<string>(PROXY_ONLY_PUBLIC_TABLES);
 
 type TableAwareClient = {
   from: (table: string) => unknown;
+  schema?: (...args: any[]) => unknown;
 };
 
 export const isProxyOnlyPublicTable = (table: string): boolean =>
@@ -106,17 +103,41 @@ export const wrapDirectClientForProxyOnlyTables = <T extends TableAwareClient>(
 ): T =>
   new Proxy(client, {
     get(target, property, receiver) {
-      if (property !== 'from') {
-        return Reflect.get(target, property, receiver);
+      if (property === 'from') {
+        return (table: string) => {
+          if (isProxyOnlyPublicTable(table)) {
+            throw getProxyOnlyPublicTableError(table);
+          }
+
+          return target.from(table);
+        };
       }
 
-      return (table: string) => {
-        if (isProxyOnlyPublicTable(table)) {
-          throw getProxyOnlyPublicTableError(table);
+      if (property === 'schema') {
+        const schema = Reflect.get(target, property, receiver);
+
+        if (typeof schema !== 'function') {
+          return schema;
         }
 
-        return target.from(table);
-      };
+        return (schemaName: string) => {
+          const schemaClient = schema.call(target, schemaName);
+
+          if (
+            schemaName !== 'public' ||
+            !schemaClient ||
+            typeof schemaClient !== 'object'
+          ) {
+            return schemaClient;
+          }
+
+          return wrapDirectClientForProxyOnlyTables(
+            schemaClient as TableAwareClient
+          );
+        };
+      }
+
+      return Reflect.get(target, property, receiver);
     },
   });
 
@@ -129,16 +150,47 @@ export const wrapRequestClientForProxyOnlyTables = <
 ): TUserClient =>
   new Proxy(userClient, {
     get(target, property, receiver) {
-      if (property !== 'from') {
-        return Reflect.get(target, property, receiver);
+      if (property === 'from') {
+        return (table: string) => {
+          const delegatedClient = isProxyOnlyPublicTable(table)
+            ? adminClient
+            : target;
+
+          return delegatedClient.from(table);
+        };
       }
 
-      return (table: string) => {
-        const delegatedClient = isProxyOnlyPublicTable(table)
-          ? adminClient
-          : target;
+      if (property === 'schema') {
+        const userSchema = Reflect.get(target, property, receiver);
+        const adminSchema = Reflect.get(adminClient, property);
 
-        return delegatedClient.from(table);
-      };
+        if (typeof userSchema !== 'function') {
+          return userSchema;
+        }
+
+        return (schemaName: string) => {
+          const userSchemaClient = userSchema.call(target, schemaName);
+
+          if (
+            schemaName !== 'public' ||
+            !userSchemaClient ||
+            typeof userSchemaClient !== 'object'
+          ) {
+            return userSchemaClient;
+          }
+
+          const adminSchemaClient =
+            typeof adminSchema === 'function'
+              ? adminSchema.call(adminClient, schemaName)
+              : adminClient;
+
+          return wrapRequestClientForProxyOnlyTables(
+            userSchemaClient as TableAwareClient,
+            adminSchemaClient as TableAwareClient
+          );
+        };
+      }
+
+      return Reflect.get(target, property, receiver);
     },
   });
