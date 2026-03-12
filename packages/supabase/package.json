@@ -35,31 +35,31 @@
     },
     "./next/client": {
       "types": "./dist/next/client.d.ts",
-      "default": "./dist/next/client.js"
+      "default": "./src/next/client.ts"
     },
     "./next/common": {
       "types": "./dist/next/common.d.ts",
-      "default": "./dist/next/common.js"
+      "default": "./src/next/common.ts"
     },
     "./next/proxy": {
       "types": "./dist/next/proxy.d.ts",
-      "default": "./dist/next/proxy.js"
+      "default": "./src/next/proxy.ts"
     },
     "./next/realtime": {
       "types": "./dist/next/realtime.d.ts",
-      "default": "./dist/next/realtime.js"
+      "default": "./src/next/realtime.ts"
     },
     "./next/realtime-log-provider": {
       "types": "./dist/next/realtime-log-provider.d.ts",
-      "default": "./dist/next/realtime-log-provider.js"
+      "default": "./src/next/realtime-log-provider.tsx"
     },
     "./next/server": {
       "types": "./dist/next/server.d.ts",
-      "default": "./dist/next/server.js"
+      "default": "./src/next/server.ts"
     },
     "./next/user": {
       "types": "./dist/next/user.d.ts",
-      "default": "./dist/next/user.js"
+      "default": "./src/next/user.ts"
     }
   },
   "publishConfig": {
