@@ -1,35 +1,28 @@
 import type { Workspace } from '@tuturuuu/types';
 import {
-  createInternalApiClient,
+  encodePathSegment,
+  getInternalApiClient,
   type InternalApiClientOptions,
-  internalApiClient,
 } from './client';
 
-export interface InternalWorkspaceSummary {
-  id: string;
-  name: string;
+export type InternalWorkspaceSummary = Pick<
+  Workspace,
+  'id' | 'name' | 'personal' | 'avatar_url' | 'logo_url'
+> & {
   created_at?: string;
-  personal?: boolean;
-  avatar_url?: string | null;
-  logo_url?: string | null;
-}
+};
 
 export interface InternalWorkspaceMember {
   id: string;
   user_id?: string;
-  workspace_id: string;
-  display_name?: string;
-  email?: string;
-  avatar_url?: string;
-  [key: string]: unknown;
-}
-
-function getClient(options?: InternalApiClientOptions) {
-  return options ? createInternalApiClient(options) : internalApiClient;
+  display_name?: string | null;
+  email?: string | null;
+  avatar_url?: string | null;
+  is_creator?: boolean;
 }
 
 export async function listWorkspaces(options?: InternalApiClientOptions) {
-  const client = getClient(options);
+  const client = getInternalApiClient(options);
   return client.json<InternalWorkspaceSummary[]>('/api/v1/workspaces', {
     cache: 'no-store',
   });
@@ -39,19 +32,22 @@ export async function getWorkspace(
   workspaceId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getClient(options);
-  return client.json<Workspace>(`/api/workspaces/${workspaceId}`, {
-    cache: 'no-store',
-  });
+  const client = getInternalApiClient(options);
+  return client.json<Workspace>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}`,
+    {
+      cache: 'no-store',
+    }
+  );
 }
 
 export async function listWorkspaceMembers(
   workspaceId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getClient(options);
+  const client = getInternalApiClient(options);
   const payload = await client.json<{ members: InternalWorkspaceMember[] }>(
-    `/api/workspaces/${workspaceId}/members`,
+    `/api/workspaces/${encodePathSegment(workspaceId)}/members`,
     {
       cache: 'no-store',
     }
