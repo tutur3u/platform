@@ -1,11 +1,11 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import StatisticCard from '@/components/cards/StatisticCard';
 
 export default async function PromotionsStatistics({ wsId }: { wsId: string }) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
   const t = await getTranslations();
 
   const permissions = await getPermissions({

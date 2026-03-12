@@ -9810,6 +9810,16 @@
       "title": "Di Chuyển Phiên Sang Không Gian Làm Việc Khác"
     }
   },
+  "timezone-data-table": {
+    "abbr": "Viết tắt",
+    "created_at": "Ngày tạo",
+    "isdst": "DST",
+    "offset": "Độ lệch",
+    "status": "Trạng thái",
+    "text": "Văn bản",
+    "utc": "UTC",
+    "value": "Giá trị"
+  },
   "transaction-category-data-table": {
     "amount": "Giao dịch",
     "category_name": "Tên danh mục",
@@ -9935,6 +9945,7 @@
     "group_count": "Số nhóm",
     "guardian": "Người giám hộ",
     "guest": "Khách mời",
+    "handle": "Tên định danh",
     "id": "Mã số",
     "included_groups": "Nhóm đã bao gồm",
     "invoices": "Hóa đơn",
@@ -12451,6 +12462,7 @@
     "lead_email_table_header_score": "Điểm số",
     "lead_email_table_score_scale": "Thang điểm",
     "lead_email_table_title": "Tiêu đề email",
+    "lead_email_title": "Tiêu đề email",
     "lead_generation": "Tạo khách hàng tiềm năng",
     "light": "Sáng",
     "loading": "Đang tải...",

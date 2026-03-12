@@ -2,7 +2,6 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronDown, Loader2, Search, UserPlus, X } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import {
   Accordion,
   AccordionContent,
@@ -81,24 +80,26 @@ export default function GroupMemberActions({
     queryKey: ['workspace-users-search', wsId, debouncedSearch, activeAction],
     queryFn: async () => {
       if (!activeAction) return [];
-      const supabase = createClient();
-
-      let queryBuilder = supabase
-        .from('workspace_users')
-        .select('id, display_name, full_name, email, avatar_url')
-        .eq('ws_id', wsId)
-        .neq('archived', true)
-        .limit(50);
-
+      const search = new URLSearchParams({
+        limit: '50',
+      });
       if (debouncedSearch) {
-        queryBuilder = queryBuilder.or(
-          `display_name.ilike.%${debouncedSearch}%,full_name.ilike.%${debouncedSearch}%,email.ilike.%${debouncedSearch}%`
-        );
+        search.set('q', debouncedSearch);
       }
 
-      const { data, error } = await queryBuilder;
-      if (error) throw error;
-      return (data ?? []) as WorkspaceUserLite[];
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users?${search.toString()}`,
+        { cache: 'no-store' }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch workspace users');
+      }
+
+      const payload = (await response.json()) as {
+        data?: WorkspaceUserLite[];
+      };
+      return payload.data ?? [];
     },
     enabled: !!activeAction,
     placeholderData: (previousData) => previousData,
@@ -152,39 +153,51 @@ export default function GroupMemberActions({
   const onSubmit = async () => {
     if (!activeAction) return;
     try {
-      const supabase = createClient();
       if (activeAction === 'add_members') {
         if (selectedIds.length === 0) {
           toast.info(t('common.no-selection'));
           return;
         }
-        const { error } = await supabase
-          .from('workspace_user_groups_users')
-          .insert(
-            selectedIds.map((userId) => ({
-              user_id: userId,
-              group_id: groupId,
+        const response = await fetch(
+          `/api/v1/workspaces/${wsId}/user-groups/${groupId}/members`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              memberIds: selectedIds,
               role: 'STUDENT',
-            }))
-          );
-        if (error) throw error;
+            }),
+          }
+        );
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || 'Failed to add group members');
+        }
         toast.success(t('ws-user-group-details.members_added'));
       } else if (activeAction === 'add_managers') {
         if (selectedIds.length === 0) {
           toast.info(t('common.no-selection'));
           return;
         }
-        const { error } = await supabase
-          .from('workspace_user_groups_users')
-          .upsert(
-            selectedIds.map((userId) => ({
-              user_id: userId,
-              group_id: groupId,
+        const response = await fetch(
+          `/api/v1/workspaces/${wsId}/user-groups/${groupId}/members`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              memberIds: selectedIds,
               role: 'TEACHER',
-            })),
-            { onConflict: 'group_id,user_id' }
-          );
-        if (error) throw error;
+            }),
+          }
+        );
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || 'Failed to add group managers');
+        }
         toast.success(t('ws-user-group-details.managers_added'));
       }
       await queryClient.invalidateQueries({

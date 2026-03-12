@@ -35,10 +35,11 @@ const updateSchema = z.object({
         'task_project_linked',
         'task_project_unlinked',
         'task_assignee_removed',
+        'deadline_reminder',
         // Workspace
         'workspace_invite',
       ]),
-      channel: z.enum(['web', 'email', 'push']),
+      channel: z.enum(['web', 'email', 'push', 'sms']),
       enabled: z.boolean(),
     })
   ),
@@ -50,7 +51,7 @@ const updateSchema = z.object({
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     // Get authenticated user
     const {
@@ -86,8 +87,15 @@ export async function GET(request: NextRequest) {
       .eq('user_id', user.id)
       .maybeSingle();
 
-    if (membershipError || !membership) {
+    if (membershipError) {
       console.error('Membership check error:', membershipError);
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!membership) {
       return NextResponse.json(
         { error: 'Access denied to workspace' },
         { status: 403 }
@@ -125,7 +133,7 @@ export async function GET(request: NextRequest) {
  */
 export async function PUT(request: Request) {
   try {
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     // Get authenticated user
     const {
@@ -159,8 +167,15 @@ export async function PUT(request: Request) {
       .eq('user_id', user.id)
       .maybeSingle();
 
-    if (membershipError || !membership) {
+    if (membershipError) {
       console.error('Membership check error:', membershipError);
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!membership) {
       return NextResponse.json(
         { error: 'Access denied to workspace' },
         { status: 403 }
@@ -212,7 +227,7 @@ export async function PUT(request: Request) {
         scope: 'workspace' as const,
       }));
 
-      const { error: insertError } = await supabase
+      const { error: insertError } = await supabaseAdmin
         .from('notification_preferences')
         .insert(preferencesToInsert);
 

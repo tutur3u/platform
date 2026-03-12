@@ -5,7 +5,7 @@ import {
   FileUser,
   UserCheck,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import LinkButton from '@tuturuuu/ui/custom/education/modules/link-button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -133,7 +133,7 @@ export default async function Layout({ children, params }: LayoutProps) {
 }
 
 async function getData(wsId: string, groupId: string) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const { data, error } = await supabase
     .from('workspace_user_groups')
@@ -155,7 +155,7 @@ async function getRejectedCount(
   canApproveReports: boolean,
   canApprovePosts: boolean
 ): Promise<number> {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
   let count = 0;
 
   if (canApproveReports) {

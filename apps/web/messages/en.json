@@ -9810,6 +9810,16 @@
       "title": "Move Session to Another Workspace"
     }
   },
+  "timezone-data-table": {
+    "abbr": "Abbreviation",
+    "created_at": "Created At",
+    "isdst": "DST",
+    "offset": "Offset",
+    "status": "Status",
+    "text": "Text",
+    "utc": "UTC",
+    "value": "Value"
+  },
   "transaction-category-data-table": {
     "amount": "Transactions",
     "category_name": "Category name",
@@ -9935,6 +9945,7 @@
     "group_count": "Group Count",
     "guardian": "Guardian",
     "guest": "Guest",
+    "handle": "Handle",
     "id": "ID",
     "included_groups": "Included Groups",
     "invoices": "Invoices",
@@ -12451,6 +12462,7 @@
     "lead_email_table_header_score": "Score",
     "lead_email_table_score_scale": "Score Scale",
     "lead_email_table_title": "Email Title",
+    "lead_email_title": "Email Title",
     "lead_generation": "Lead Generation",
     "light": "Light",
     "loading": "Loading...",

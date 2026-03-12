@@ -8,15 +8,17 @@ import {
 import type { ColumnDef } from '@tanstack/react-table';
 import { Loader2 } from '@tuturuuu/icons';
 import type { AIWhitelistDomain } from '@tuturuuu/types';
+import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Switch } from '@tuturuuu/ui/switch';
 import moment from 'moment';
 import { useRouter } from 'next/navigation';
 import { AIWhitelistDomainRowActions } from './domain-row-actions';
 
-export const getAIWhitelistDomainColumns = (
-  t: any
-): ColumnDef<AIWhitelistDomain>[] => {
+export const getAIWhitelistDomainColumns = ({
+  t,
+}: ColumnGeneratorOptions<AIWhitelistDomain>): ColumnDef<AIWhitelistDomain>[] => {
+  const translate = typeof t === 'function' ? t : (key: string) => key;
   const router = useRouter();
   const queryClient = useQueryClient();
   const isFetching = useIsFetching({ queryKey: ['ai-whitelist-domains'] });
@@ -100,7 +102,7 @@ export const getAIWhitelistDomainColumns = (
         <DataTableColumnHeader
           t={t}
           column={column}
-          title={t(`common.enabled`)}
+          title={translate('common.enabled')}
         />
       ),
       cell: ({ row }) => {
@@ -132,7 +134,7 @@ export const getAIWhitelistDomainColumns = (
         <DataTableColumnHeader
           t={t}
           column={column}
-          title={t(`ws-users.created_at`)}
+          title={translate('ws-users.created_at')}
         />
       ),
       cell: ({ row }) => (

@@ -301,39 +301,17 @@ export const useProducts = (wsId: string) => {
   return useQuery({
     queryKey: ['products', wsId],
     queryFn: async () => {
-      const supabase = createClient();
-      const { data: rawData, error } = await supabase
-        .from('workspace_products')
-        .select(
-          '*, product_categories(name), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, unit_id, warehouse_id, inventory_warehouses!inventory_products_warehouse_id_fkey(name), inventory_units!inventory_products_unit_id_fkey(name))'
-        )
-        .eq('ws_id', wsId)
-        .order('created_at', { ascending: false });
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/inventory/products?page=1&pageSize=500`,
+        { cache: 'no-store' }
+      );
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to fetch products');
+      }
 
-      const data = rawData.map((item) => ({
-        id: item.id,
-        name: item.name,
-        manufacturer: item.manufacturer,
-        description: item.description,
-        usage: item.usage,
-        category: item.product_categories?.name,
-        category_id: item.category_id,
-        ws_id: item.ws_id,
-        created_at: item.created_at,
-        inventory: (item.inventory_products || []).map((inventory) => ({
-          unit_id: inventory.unit_id,
-          warehouse_id: inventory.warehouse_id,
-          amount: inventory.amount,
-          min_amount: inventory.min_amount || 0,
-          price: inventory.price || 0,
-          unit_name: inventory.inventory_units?.name || null,
-          warehouse_name: inventory.inventory_warehouses?.name || null,
-        })),
-      }));
-
-      return data as Product[];
+      const payload = (await response.json()) as { data?: Product[] };
+      return payload.data ?? [];
     },
   });
 };

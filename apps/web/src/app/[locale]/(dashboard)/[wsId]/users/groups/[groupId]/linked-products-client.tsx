@@ -11,7 +11,6 @@ import {
   Trash2,
   Warehouse,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import {
@@ -134,20 +133,18 @@ export default function LinkedProductsClient({
     queryKey: linkedProductsQueryKey,
     enabled: Boolean(wsId && groupId),
     queryFn: async () => {
-      const supabase = createClient();
-      const { data, error, count } = await supabase
-        .from('user_group_linked_products')
-        .select(
-          'warehouse_id, unit_id, ...workspace_products(id, name, description)',
-          { count: 'exact' }
-        )
-        .eq('group_id', groupId)
-        .order('created_at', { ascending: false });
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/linked-products`,
+        { cache: 'no-store' }
+      );
 
-      if (error) throw error;
-      return {
-        items: (data ?? []) as LinkedProduct[],
-        count: count ?? 0,
+      if (!response.ok) {
+        throw new Error('Failed to fetch linked products');
+      }
+
+      return (await response.json()) as {
+        items: LinkedProduct[];
+        count: number;
       };
     },
     staleTime: 30 * 1000,
@@ -184,16 +181,24 @@ export default function LinkedProductsClient({
       warehouseId: string;
       unitId: string;
     }) => {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('user_group_linked_products')
-        .insert({
-          group_id: groupId,
-          product_id: productId,
-          warehouse_id: warehouseId,
-          unit_id: unitId,
-        });
-      if (error) throw error;
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/linked-products`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            productId,
+            warehouseId,
+            unitId,
+          }),
+        }
+      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to add linked product');
+      }
       const matched = (workspaceProducts ?? []).find((p) => p.id === productId);
       const newLinked: LinkedProduct = {
         id: productId,
@@ -241,13 +246,16 @@ export default function LinkedProductsClient({
 
   const deleteLinkedProductMutation = useMutation({
     mutationFn: async ({ productId }: { productId: string }) => {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('user_group_linked_products')
-        .delete()
-        .eq('group_id', groupId)
-        .eq('product_id', productId);
-      if (error) throw error;
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/linked-products/${productId}`,
+        {
+          method: 'DELETE',
+        }
+      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to delete linked product');
+      }
       return { productId };
     },
     onSuccess: ({ productId }) => {
@@ -292,16 +300,23 @@ export default function LinkedProductsClient({
       warehouseId: string;
       unitId: string;
     }) => {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('user_group_linked_products')
-        .update({
-          warehouse_id: warehouseId,
-          unit_id: unitId,
-        })
-        .eq('group_id', groupId)
-        .eq('product_id', productId);
-      if (error) throw error;
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/linked-products/${productId}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            warehouseId,
+            unitId,
+          }),
+        }
+      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to update linked product');
+      }
       return { productId, warehouseId, unitId };
     },
     onSuccess: ({ productId, warehouseId, unitId }) => {

@@ -1,5 +1,5 @@
 import { Plus } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type {
   InventoryProduct,
   ProductStockChange,
@@ -135,7 +135,7 @@ async function getInitialData(
     canViewStockQuantity: boolean;
   }
 ) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const parsedPage = parseInt(page || '1', 10);
   const parsedSize = parseInt(pageSize || '10', 10);

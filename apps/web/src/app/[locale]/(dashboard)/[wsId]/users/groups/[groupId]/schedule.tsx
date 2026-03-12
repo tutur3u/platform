@@ -2,7 +2,6 @@
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import useSearchParams from '@tuturuuu/ui/hooks/useSearchParams';
 import { cn } from '@tuturuuu/utils/format';
@@ -225,16 +224,20 @@ export default function GroupSchedule({
 }
 
 async function getData(wsId: string, groupId: string) {
-  const supabase = await createClient();
+  const response = await fetch(
+    `/api/v1/workspaces/${wsId}/user-groups/${groupId}`,
+    { cache: 'no-store' }
+  );
 
-  const queryBuilder = supabase
-    .from('workspace_user_groups')
-    .select('sessions, starting_date, ending_date')
-    .eq('id', groupId)
-    .eq('ws_id', wsId);
+  if (!response.ok) {
+    throw new Error('Failed to fetch group schedule');
+  }
 
-  const { data, error } = await queryBuilder.single();
-
-  if (error) throw error;
-  return { data };
+  return (await response.json()) as {
+    data: {
+      sessions: string[] | null;
+      starting_date: string | null;
+      ending_date: string | null;
+    };
+  };
 }

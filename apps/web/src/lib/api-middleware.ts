@@ -209,6 +209,7 @@ export function withApiAuth<T = unknown>(
     // Extract IP and User-Agent
     const ipAddress = extractIPFromHeaders(request.headers);
     const userAgent = request.headers.get('user-agent') || null;
+    const isRead = method === 'GET' || method === 'HEAD';
 
     // Enforce persistent IP blocks (shared across services)
     if (ipAddress && ipAddress !== 'unknown') {
@@ -232,13 +233,18 @@ export function withApiAuth<T = unknown>(
 
       // IP-based rate limit BEFORE auth — reject floods cheaply
       if (options?.rateLimit !== false) {
-        const preAuthConfig = { windowMs: 60000, maxRequests: 120 };
-        const preAuthResult = await checkRateLimit(
-          `ip:${ipAddress}`,
-          preAuthConfig
-        );
-        if (!('allowed' in preAuthResult)) {
-          return preAuthResult;
+        const preAuthConfig =
+          options?.rateLimit ??
+          (isRead ? false : { windowMs: 60000, maxRequests: 120 });
+
+        if (preAuthConfig !== false) {
+          const preAuthResult = await checkRateLimit(
+            `ip:${isRead ? 'read' : 'mutate'}:${ipAddress}`,
+            preAuthConfig
+          );
+          if (!('allowed' in preAuthResult)) {
+            return preAuthResult;
+          }
         }
       }
     }
@@ -249,39 +255,46 @@ export function withApiAuth<T = unknown>(
     if ('context' in authResult) {
       const { context } = authResult;
 
-      // Check rate limit if enabled (default: enabled with 100 requests per minute)
+      // Check rate limit if enabled (default: GET/HEAD open, mutations limited)
       // Workspace-specific limits from workspace_secrets will override defaults
       let rateLimitHeaders: Record<string, string> = {};
       if (options?.rateLimit !== false) {
-        const rateLimitConfig = options?.rateLimit || {
-          windowMs: 60000,
-          maxRequests: 100,
-        };
-        const rateLimitResult = await checkRateLimit(
-          context.keyId,
-          rateLimitConfig,
-          context.wsId // Pass wsId to check for workspace-specific config
-        );
+        const rateLimitConfig =
+          options?.rateLimit ??
+          (isRead
+            ? false
+            : {
+                windowMs: 60000,
+                maxRequests: 100,
+              });
 
-        if ('allowed' in rateLimitResult) {
-          // Rate limit check returned success with headers
-          rateLimitHeaders = rateLimitResult.headers;
-        } else {
-          // Rate limit exceeded - log and return error response
-          const responseTimeMs = Date.now() - startTime;
-          void logApiKeyUsage({
-            apiKeyId: context.keyId,
-            wsId: context.wsId,
-            endpoint,
-            method,
-            statusCode: 429,
-            ipAddress,
-            userAgent,
-            responseTimeMs,
-            requestParams: Object.fromEntries(url.searchParams),
-            errorMessage: 'Rate limit exceeded',
-          });
-          return rateLimitResult;
+        if (rateLimitConfig !== false) {
+          const rateLimitResult = await checkRateLimit(
+            `${context.keyId}:${isRead ? 'read' : 'mutate'}`,
+            rateLimitConfig,
+            context.wsId // Pass wsId to check for workspace-specific config
+          );
+
+          if ('allowed' in rateLimitResult) {
+            // Rate limit check returned success with headers
+            rateLimitHeaders = rateLimitResult.headers;
+          } else {
+            // Rate limit exceeded - log and return error response
+            const responseTimeMs = Date.now() - startTime;
+            void logApiKeyUsage({
+              apiKeyId: context.keyId,
+              wsId: context.wsId,
+              endpoint,
+              method,
+              statusCode: 429,
+              ipAddress,
+              userAgent,
+              responseTimeMs,
+              requestParams: Object.fromEntries(url.searchParams),
+              errorMessage: 'Rate limit exceeded',
+            });
+            return rateLimitResult;
+          }
         }
       }
 
