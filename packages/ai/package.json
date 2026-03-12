@@ -47,7 +47,7 @@
     "@chat-adapter/slack": "^4.20.0",
     "@chat-adapter/state-redis": "^4.20.0",
     "@chat-adapter/teams": "^4.20.0",
-    "@json-render/core": "^0.12.1",
+    "@json-render/core": "^0.13.0",
     "@json-render/react": "^0.12.1",
     "@octokit/rest": "^22.0.1",
     "@streamdown/cjk": "^1.0.2",
