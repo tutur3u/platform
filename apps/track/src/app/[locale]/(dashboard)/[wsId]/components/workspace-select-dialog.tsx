@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { CircleUserRound, Move, RefreshCw, Users } from '@tuturuuu/icons';
+import { listWorkspaces } from '@tuturuuu/internal-api/workspaces';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -48,15 +49,7 @@ export function WorkspaceSelectDialog({
 
   const { data: workspaces, isLoading } = useQuery<Workspace[]>({
     queryKey: ['workspaces'],
-    queryFn: async () => {
-      const response = await fetch('/api/v1/workspaces', {
-        cache: 'no-store',
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch workspaces');
-      }
-      return response.json();
-    },
+    queryFn: async () => (await listWorkspaces()) as Workspace[],
     enabled: isOpen,
   });
 

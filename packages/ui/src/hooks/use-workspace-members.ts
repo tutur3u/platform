@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { listWorkspaceMembers } from '@tuturuuu/internal-api/workspaces';
 
 export interface WorkspaceMember {
   id: string;
@@ -49,18 +50,7 @@ export function useWorkspaceMembers(
         return [];
       }
 
-      const response = await fetch(`/api/workspaces/${workspaceId}/members`, {
-        cache: 'no-store',
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch members');
-      }
-
-      const { members: fetchedMembers } = (await response.json()) as {
-        members: WorkspaceMember[];
-      };
-
-      return fetchedMembers || [];
+      return (await listWorkspaceMembers(workspaceId)) as WorkspaceMember[];
     },
     enabled: isEnabled,
     staleTime: 5 * 60 * 1000, // 5 minutes - members rarely change

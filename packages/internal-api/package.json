@@ -1,0 +1,30 @@
+{
+  "name": "@tuturuuu/internal-api",
+  "version": "0.0.1",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "type-check": "node ../../scripts/run-tsgo-build.js --build"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts",
+    "./finance": "./src/finance.ts",
+    "./users": "./src/users.ts",
+    "./workspaces": "./src/workspaces.ts"
+  },
+  "devDependencies": {
+    "@tuturuuu/typescript-config": "workspace:*",
+    "@types/node": "^25.4.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  },
+  "packageManager": "bun@1.3.10",
+  "dependencies": {
+    "@tuturuuu/types": "workspace:*"
+  }
+}
