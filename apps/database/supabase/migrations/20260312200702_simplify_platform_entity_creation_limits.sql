@@ -65,26 +65,14 @@ declare
   v_subject_bucket text;
   v_count bigint;
   v_actor_role text;
-  v_actor_jwt_role text;
   v_is_service_role boolean;
-  v_enforce_entity_limits text;
-  v_enforcement_active boolean;
 begin
-  -- The caller identity may be missing for migrations or service_role tokens; the
-  -- "enforce_entity_limits" setting (default true) lets us skip enforcement when
-  -- no authenticated actor is available.
   v_actor_user_id := auth.uid();
   v_actor_role := auth.role();
-  v_actor_jwt_role := current_setting('jwt.claims.role', true);
-  v_is_service_role := v_actor_role = 'service_role'
-    or v_actor_jwt_role = 'service_role';
-  v_enforce_entity_limits := current_setting('enforce_entity_limits', true);
-  v_enforcement_active :=
-    v_enforce_entity_limits is null
-    or lower(btrim(v_enforce_entity_limits)) not in ('0', 'false', 'off', 'no');
+  v_is_service_role := v_actor_role = 'service_role';
 
   if v_actor_user_id is null then
-    if v_enforcement_active and not v_is_service_role then
+    if not v_is_service_role then
       raise exception 'ENTITY_LIMIT_AUTH_REQUIRED'
         using errcode = 'P0001';
     end if;
