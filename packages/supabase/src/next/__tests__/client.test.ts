@@ -1,5 +1,6 @@
 import { createBrowserClient } from '@supabase/ssr';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { __resetBrowserClientCacheForTests } from '../browser-base';
 import {
   __resetSupabaseClientDeprecationWarningForTests,
   createClient,
@@ -46,6 +47,7 @@ describe('Supabase Client', () => {
     vi.unstubAllEnvs();
     vi.stubEnv('SUPABASE_CLIENT_FORCE_BYPASS', 'true');
     __resetSupabaseClientDeprecationWarningForTests();
+    __resetBrowserClientCacheForTests();
     (createBrowserClient as any).mockReturnValue(mockClient);
   });
 
@@ -53,6 +55,7 @@ describe('Supabase Client', () => {
     vi.restoreAllMocks();
     vi.unstubAllEnvs();
     __resetSupabaseClientDeprecationWarningForTests();
+    __resetBrowserClientCacheForTests();
   });
 
   describe('createClient', () => {
@@ -73,6 +76,15 @@ describe('Supabase Client', () => {
       expect(() => client.schema('public').from('mira_accessories')).toThrow(
         getProxyOnlyPublicTableError('mira_accessories')
       );
+    });
+
+    it('reuses the same underlying browser client across calls', () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      createClient();
+      createClient();
+
+      expect(createBrowserClient).toHaveBeenCalledTimes(1);
     });
 
     it('throws when strict mode is enabled', () => {

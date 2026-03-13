@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Database } from '@tuturuuu/types';
 import type { InvoiceTotalsByGroup } from '@tuturuuu/types/primitives/Invoice';
 import dayjs from 'dayjs';
@@ -56,7 +56,7 @@ export const getInvoiceTotalsByDateRange = async (
   wsId: string,
   params: DateRangeParams
 ): Promise<InvoiceTotalsByGroup[]> => {
-  const supabase = await createClient<Database>();
+  const supabase = await createAdminClient<Database>();
 
   const { data, error } = await supabase.rpc(
     'get_invoice_totals_by_date_range',
@@ -86,7 +86,7 @@ export const getDailyInvoiceTotals = async (
   walletIds?: string[],
   userIds?: string[]
 ): Promise<InvoiceTotalsByGroup[]> => {
-  const supabase = await createClient<Database>();
+  const supabase = await createAdminClient<Database>();
 
   const { data, error } = await supabase.rpc('get_daily_invoice_totals', {
     _ws_id: wsId,
@@ -109,7 +109,7 @@ export const getWeeklyInvoiceTotals = async (
   userIds?: string[],
   weekStartsOn: WeekStartsOn = 1
 ): Promise<InvoiceTotalsByGroup[]> => {
-  const supabase = await createClient<Database>();
+  const supabase = await createAdminClient<Database>();
 
   const { data, error } = await supabase.rpc('get_weekly_invoice_totals', {
     _ws_id: wsId,
@@ -132,7 +132,7 @@ export const getMonthlyInvoiceTotals = async (
   walletIds?: string[],
   userIds?: string[]
 ): Promise<InvoiceTotalsByGroup[]> => {
-  const supabase = await createClient<Database>();
+  const supabase = await createAdminClient<Database>();
 
   const { data, error } = await supabase.rpc('get_monthly_invoice_totals', {
     _ws_id: wsId,
@@ -155,7 +155,7 @@ export const getDailyInvoiceTotalsByCreator = async (
   userIds?: string[],
   weekStartsOn: WeekStartsOn = 1
 ): Promise<InvoiceTotalsByGroup[]> => {
-  const supabase = await createClient<Database>();
+  const supabase = await createAdminClient<Database>();
 
   // Match SQL: CURRENT_DATE - INTERVAL '13 days' to CURRENT_DATE (14 days total)
   const endDate = dayjs();
@@ -188,7 +188,7 @@ export const getWeeklyInvoiceTotalsByCreator = async (
   userIds?: string[],
   weekStartsOn: WeekStartsOn = 1
 ): Promise<InvoiceTotalsByGroup[]> => {
-  const supabase = await createClient<Database>();
+  const supabase = await createAdminClient<Database>();
 
   // Calculate week-aligned start date based on user's preference
   const endDate = dayjs();
@@ -221,7 +221,7 @@ export const getMonthlyInvoiceTotalsByCreator = async (
   walletIds?: string[],
   userIds?: string[]
 ): Promise<InvoiceTotalsByGroup[]> => {
-  const supabase = await createClient<Database>();
+  const supabase = await createAdminClient<Database>();
 
   // Match SQL: date_trunc('month', CURRENT_DATE) - INTERVAL '1 month' * 11 to CURRENT_DATE
   const endDate = dayjs();
