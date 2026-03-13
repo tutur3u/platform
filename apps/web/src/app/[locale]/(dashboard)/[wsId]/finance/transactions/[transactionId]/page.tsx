@@ -1,15 +1,15 @@
-import { Bill } from './bill';
-import { DetailObjects } from './objects';
-import { joinPath } from '@/utils/path-helper';
 import { createClient } from '@ncthub/supabase/next/server';
 import FeatureSummary from '@ncthub/ui/custom/feature-summary';
 import { CalendarIcon, DollarSign, Wallet } from '@ncthub/ui/icons';
 import { Separator } from '@ncthub/ui/separator';
+import { joinPath } from '@/utils/path-helper';
+import { Bill } from './bill';
+import { DetailObjects } from './objects';
 import 'dayjs/locale/vi';
 import moment from 'moment';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 
 interface Props {
   params: Promise<{
@@ -41,7 +41,7 @@ export default async function TransactionDetailsPage({ params }: Props) {
       <div className="grid h-fit gap-4 md:grid-cols-2">
         <div className="space-y-4 overflow-auto">
           <div className="grid h-fit gap-2 rounded-lg border p-4">
-            <div className="text-lg font-semibold">
+            <div className="font-semibold text-lg">
               {t('invoices.basic-info')}
             </div>
             <Separator />
@@ -84,7 +84,7 @@ export default async function TransactionDetailsPage({ params }: Props) {
         <div className="grid h-fit gap-4">
           <div className="h-full rounded-lg border p-4">
             <div className="grid h-full content-start gap-2">
-              <div className="text-lg font-semibold">
+              <div className="font-semibold text-lg">
                 {t('ai_chat.upload_files')}
               </div>
               <Separator className="mb-2" />
@@ -145,7 +145,7 @@ async function getData(wsId: string, transactionId: string) {
   if (objectError) throw objectError;
 
   const imageObjects = objects.filter((object) =>
-    object.metadata.mimetype.includes('image')
+    object.metadata?.mimetype.includes('image')
   );
 
   // batch signed to reduce network calls

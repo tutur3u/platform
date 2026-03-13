@@ -96,46 +96,42 @@ export function Navbar({
         )}
       >
         <div className="relative flex items-center justify-between gap-2 md:gap-4">
-          <div className="flex w-full items-center gap-2 overflow-hidden md:gap-4">
-            {customLogoLink || (
-              <Link
-                href={homeUrl}
-                className={cn(
-                  'flex flex-none items-center gap-2 transition-opacity hover:opacity-80',
-                  logoClassName
-                )}
-              >
-                {typeof logo === 'string' ? (
-                  <Image
-                    src={logo}
-                    className="h-8 w-8 transition-transform hover:scale-105"
-                    width={32}
-                    height={32}
-                    alt="logo"
-                  />
-                ) : (
-                  logo
-                )}
-                {title}
-              </Link>
-            )}
+          {customLogoLink || (
+            <Link
+              href={homeUrl}
+              className={cn(
+                'flex flex-none items-center gap-2 transition-opacity hover:opacity-80',
+                logoClassName
+              )}
+            >
+              {typeof logo === 'string' ? (
+                <Image
+                  src={logo}
+                  className="h-8 w-8 transition-transform hover:scale-105"
+                  width={32}
+                  height={32}
+                  alt="logo"
+                />
+              ) : (
+                logo
+              )}
+              {title}
+            </Link>
+          )}
 
-            {afterTitle && (
-              <Suspense
-                fallback={
-                  <div className="h-10 w-32 animate-pulse rounded-lg bg-foreground/5" />
-                }
-              >
-                {afterTitle}
-              </Suspense>
-            )}
+          {afterTitle && (
+            <Suspense
+              fallback={
+                <div className="h-10 w-32 animate-pulse rounded-lg bg-foreground/5" />
+              }
+            >
+              {afterTitle}
+            </Suspense>
+          )}
 
-            {navigationMenu && (
-              <div className="ml-4 hidden w-full overflow-hidden md:block">
-                {navigationMenu}
-              </div>
-            )}
-          </div>
+          {navigationMenu && (
+            <div className="hidden w-full md:block">{navigationMenu}</div>
+          )}
 
           {actions && (
             <div className="flex w-fit flex-none flex-row-reverse items-center gap-2 md:flex-row md:justify-between">
