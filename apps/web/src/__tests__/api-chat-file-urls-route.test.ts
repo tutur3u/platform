@@ -59,6 +59,14 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createDynamicAdminClient: vi.fn(() => Promise.resolve(mocks.adminSupabase)),
 }));
 
+type FileUrlsRouteHandler = (
+  request: NextRequest,
+  context: {
+    user: { id: string };
+    supabase: typeof mocks.sessionSupabase;
+  }
+) => Promise<Response>;
+
 describe('chat file-urls route', () => {
   beforeEach(() => {
     vi.resetModules();
@@ -102,7 +110,7 @@ describe('chat file-urls route', () => {
     });
 
     const { POST } = await import('@/app/api/ai/chat/file-urls/route');
-    const response = await (POST as any)(
+    const response = await (POST as FileUrlsRouteHandler)(
       new NextRequest('http://localhost/api/ai/chat/file-urls', {
         method: 'POST',
         body: JSON.stringify({
@@ -164,7 +172,7 @@ describe('chat file-urls route', () => {
     });
 
     const { POST } = await import('@/app/api/ai/chat/file-urls/route');
-    const response = await (POST as any)(
+    const response = await (POST as FileUrlsRouteHandler)(
       new NextRequest('http://localhost/api/ai/chat/file-urls', {
         method: 'POST',
         body: JSON.stringify({

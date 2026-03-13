@@ -1,3 +1,4 @@
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -48,8 +49,10 @@ describe('prepareMiraRuntime', () => {
   });
 
   it('uses the authorized tool supabase client for Mira context resolution and tools', async () => {
-    const sessionSupabase = { client: 'session' } as any;
-    const toolSupabase = { client: 'admin' } as any;
+    const sessionSupabase = {
+      client: 'session',
+    } as unknown as TypedSupabaseClient;
+    const toolSupabase = { client: 'admin' } as unknown as TypedSupabaseClient;
     const withoutPermission = vi.fn(() => false);
     const resolvedWorkspaceContext = {
       workspaceContextId: 'workspace-2',

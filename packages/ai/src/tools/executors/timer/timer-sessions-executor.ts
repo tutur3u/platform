@@ -1,4 +1,5 @@
 import type { MiraToolContext } from '../../mira-tools';
+import { getWorkspaceContextWorkspaceId } from '../../workspace-context';
 import { coerceOptionalString, normalizeCursor } from './timer-helpers';
 
 export async function executeListTimeTrackingSessions(
@@ -8,6 +9,7 @@ export async function executeListTimeTrackingSessions(
   const includePending = Boolean(args.includePending);
   const limit = Math.min(Math.max(Number(args.limit) || 20, 1), 50);
   const cursor = args.cursor;
+  const workspaceId = getWorkspaceContextWorkspaceId(ctx);
 
   let query = ctx.supabase
     .from('time_tracking_sessions')
@@ -19,7 +21,7 @@ export async function executeListTimeTrackingSessions(
       task:tasks(id, name)
     `
     )
-    .eq('ws_id', ctx.wsId)
+    .eq('ws_id', workspaceId)
     .eq('user_id', ctx.userId)
     .order('start_time', { ascending: false })
     .order('id', { ascending: false })
@@ -65,6 +67,7 @@ export async function executeGetTimeTrackingSession(
   const sessionIdNormalized = coerceOptionalString(args.sessionId);
   const idNormalized = coerceOptionalString(args.id);
   const sessionId = sessionIdNormalized ?? idNormalized;
+  const workspaceId = getWorkspaceContextWorkspaceId(ctx);
   if (!sessionId) return { error: 'sessionId is required' };
 
   const { data, error } = await ctx.supabase
@@ -77,7 +80,7 @@ export async function executeGetTimeTrackingSession(
     `
     )
     .eq('id', sessionId)
-    .eq('ws_id', ctx.wsId)
+    .eq('ws_id', workspaceId)
     .eq('user_id', ctx.userId)
     .maybeSingle();
 
