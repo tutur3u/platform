@@ -39,6 +39,7 @@ interface EditTemplateDialogProps {
   templateName: string;
   templateDescription: string | null;
   templateVisibility: 'private' | 'workspace' | 'public';
+  templateBackgroundPath?: string | null;
   templateBackgroundUrl?: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -50,6 +51,7 @@ export function EditTemplateDialog({
   templateName,
   templateDescription,
   templateVisibility,
+  templateBackgroundPath,
   templateBackgroundUrl,
   open,
   onOpenChange,
@@ -82,13 +84,9 @@ export function EditTemplateDialog({
     setIsEditing(true);
     try {
       // Delete old background if it was changed or removed
-      if (backgroundPath !== null && templateBackgroundUrl) {
+      if (backgroundPath !== null && templateBackgroundPath) {
         try {
-          // Extract path from URL if it's a full URL
-          const oldPath = templateBackgroundUrl.includes('/')
-            ? templateBackgroundUrl.split('/').slice(-3).join('/')
-            : templateBackgroundUrl;
-          await deleteTemplateBackground(oldPath);
+          await deleteTemplateBackground(wsId, templateBackgroundPath);
         } catch (error) {
           console.error('Failed to delete old background:', error);
           // Continue anyway - the update is more important

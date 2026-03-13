@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { Json } from '@tuturuuu/types/supabase';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -111,8 +114,10 @@ export async function POST(req: NextRequest, { params }: Params) {
       );
     }
 
+    const sbAdmin = await createAdminClient();
+
     // Fetch the source board with lists and tasks
-    const { data: sourceBoard, error: fetchError } = await supabase
+    const { data: sourceBoard, error: fetchError } = await sbAdmin
       .from('workspace_boards')
       .select(
         `
@@ -159,7 +164,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     // Labels in this system are workspace-scoped (workspace_task_labels)
     let labels: Array<{ name: string; color: string }> = [];
     if (includeLabels) {
-      const { data: workspaceLabels } = await supabase
+      const { data: workspaceLabels } = await sbAdmin
         .from('workspace_task_labels')
         .select('name, color')
         .eq('ws_id', wsId);
@@ -228,7 +233,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     };
 
     // Insert the template
-    const { error: insertError } = await supabase
+    const { error: insertError } = await sbAdmin
       .from('board_templates')
       .insert({
         ws_id: wsId,

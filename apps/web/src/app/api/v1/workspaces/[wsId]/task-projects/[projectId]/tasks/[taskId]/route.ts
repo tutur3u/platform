@@ -1,4 +1,7 @@
-import { createClient, createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 

@@ -20,6 +20,10 @@ export {
   listWorkspaceTaskProjects,
 } from './tasks';
 export {
+  getWorkspaceTemplate,
+  getWorkspaceTemplateBackgroundUrl,
+} from './templates';
+export {
   createWorkspaceBreakType,
   deleteWorkspaceBreakType,
   getTimeTrackingRequestImageUrls,

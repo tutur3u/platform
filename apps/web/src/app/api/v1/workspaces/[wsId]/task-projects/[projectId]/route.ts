@@ -1,4 +1,7 @@
-import { createClient, createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   MAX_LONG_TEXT_LENGTH,
   MAX_NAME_LENGTH,
