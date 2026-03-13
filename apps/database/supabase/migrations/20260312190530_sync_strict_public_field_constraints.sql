@@ -11,7 +11,7 @@ as $$
     when lower(_table_name) = 'users' and lower(_column_name) = 'bio' then 160
     when lower(_table_name) = 'workspaces' and lower(_column_name) = 'name' then 63
     when lower(_table_name) = 'tasks' and lower(_column_name) = 'name' then 128
-    when lower(_table_name) = 'tasks' and lower(_column_name) = 'description' then 2000
+    when lower(_table_name) = 'tasks' and lower(_column_name) = 'description' then 100000
     when lower(_table_name) = 'workspace_calendar_events' and lower(_column_name) = 'title' then 128
     when lower(_table_name) = 'workspace_calendar_events' and lower(_column_name) = 'description' then 512
     when lower(_table_name) = 'support_inquiries' and lower(_column_name) = 'name' then 64
