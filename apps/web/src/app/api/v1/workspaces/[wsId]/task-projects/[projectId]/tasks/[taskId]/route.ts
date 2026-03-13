@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient, createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
@@ -32,7 +32,9 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { data: projectRecord } = await supabase
+    const sbAdmin = await createAdminClient();
+
+    const { data: projectRecord } = await sbAdmin
       .from('task_projects')
       .select('ws_id')
       .eq('id', projectId)
@@ -42,7 +44,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    const { error } = await supabase
+    const { error } = await sbAdmin
       .from('task_project_tasks')
       .delete()
       .eq('project_id', projectId)

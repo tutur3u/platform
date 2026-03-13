@@ -71,8 +71,10 @@ export async function PATCH(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const sbAdmin = await createAdminClient();
+
     // Verify update exists and user is the creator
-    const { data: existingUpdate } = await supabase
+    const { data: existingUpdate } = await sbAdmin
       .from('task_project_updates')
       .select(
         `
@@ -105,7 +107,7 @@ export async function PATCH(
     const { content } = updateUpdateSchema.parse(body);
 
     // Update the update
-    const { data: updatedUpdate, error: updateError } = await supabase
+    const { data: updatedUpdate, error: updateError } = await sbAdmin
       .from('task_project_updates')
       .update({ content })
       .eq('id', updateId)
@@ -194,8 +196,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const sbAdmin = await createAdminClient();
+
     // Verify update exists and user is the creator
-    const { data: existingUpdate } = await supabase
+    const { data: existingUpdate } = await sbAdmin
       .from('task_project_updates')
       .select(
         `
@@ -222,9 +226,6 @@ export async function DELETE(
         { status: 403 }
       );
     }
-
-    // Soft delete the update using admin client (bypasses RLS after permission verification)
-    const sbAdmin = await createAdminClient();
 
     const { error: deleteError } = await sbAdmin
       .from('task_project_updates')

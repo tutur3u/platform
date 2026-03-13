@@ -14,6 +14,8 @@ export {
 } from './finance';
 export {
   createWorkspaceTaskProject,
+  getWorkspaceTaskProject,
+  getWorkspaceTaskProjectTasks,
   getWorkspaceTaskRelationships,
   listWorkspaceTaskProjects,
 } from './tasks';

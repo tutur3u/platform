@@ -1,3 +1,6 @@
+import type { TaskProjectWithRelations } from '@tuturuuu/types';
+import type { Task } from '@tuturuuu/types/primitives/Task';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type {
   RelatedTaskInfo,
   TaskRelationshipsResponse,
@@ -77,6 +80,34 @@ export async function createWorkspaceTaskProject(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function getWorkspaceTaskProject(
+  workspaceId: string,
+  projectId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<TaskProjectWithRelations>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-projects/${encodePathSegment(projectId)}`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function getWorkspaceTaskProjectTasks(
+  workspaceId: string,
+  projectId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ tasks: Task[]; lists: TaskList[] }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-projects/${encodePathSegment(projectId)}/tasks`,
+    {
       cache: 'no-store',
     }
   );
