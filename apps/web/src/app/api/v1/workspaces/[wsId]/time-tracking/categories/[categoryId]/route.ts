@@ -3,6 +3,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 
 export async function PATCH(
   request: NextRequest,
@@ -10,7 +11,8 @@ export async function PATCH(
 ) {
   try {
     const { wsId, categoryId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Get authenticated user
     const {
@@ -37,12 +39,14 @@ export async function PATCH(
       );
     }
 
+    const sbAdmin = await createAdminClient();
+
     // Verify category belongs to workspace
-    const { data: categoryCheck } = await supabase
+    const { data: categoryCheck } = await sbAdmin
       .from('time_tracking_categories')
       .select('id')
       .eq('id', categoryId)
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .single();
 
     if (!categoryCheck) {
@@ -62,8 +66,6 @@ export async function PATCH(
       );
     }
 
-    // Use admin client for update
-    const sbAdmin = await createAdminClient();
 
     const { data, error } = await sbAdmin
       .from('time_tracking_categories')
@@ -122,8 +124,10 @@ export async function DELETE(
       );
     }
 
+    const sbAdmin = await createAdminClient();
+
     // Verify category belongs to workspace
-    const { data: categoryCheck } = await supabase
+    const { data: categoryCheck } = await sbAdmin
       .from('time_tracking_categories')
       .select('id, name')
       .eq('id', categoryId)
@@ -136,9 +140,6 @@ export async function DELETE(
         { status: 404 }
       );
     }
-
-    // Use admin client for deletion
-    const sbAdmin = await createAdminClient();
 
     const { error } = await sbAdmin
       .from('time_tracking_categories')

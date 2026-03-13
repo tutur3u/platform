@@ -1,3 +1,4 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   MAX_COLOR_LENGTH,
   MAX_NAME_LENGTH,
@@ -7,7 +8,7 @@ import { sanitizeSearchQuery } from '@tuturuuu/utils/search-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { normalizeWorkspaceId } from '@/lib/workspace-helper';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 
 const timezoneEnumValues = (() => {
   if (typeof Intl !== 'undefined' && 'supportedValuesOf' in Intl) {
@@ -108,7 +109,8 @@ const periodStatsSchema = z.object({
 export const GET = withSessionAuth<{ wsId: string }>(
   async (request, { user, supabase }, { wsId }) => {
     try {
-      const normalizedWsId = await normalizeWorkspaceId(wsId);
+      const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+      const sbAdmin = await createAdminClient();
 
       // Verify workspace access
       const { data: memberCheck } = await supabase
@@ -184,7 +186,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
 
       const sanitizedSearchQuery = sanitizeSearchQuery(searchQuery);
 
-      const { data: stats, error } = await supabase.rpc(
+      const { data: stats, error } = await sbAdmin.rpc(
         'get_time_tracking_period_stats',
         {
           p_ws_id: normalizedWsId,

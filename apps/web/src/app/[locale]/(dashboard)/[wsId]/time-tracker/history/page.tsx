@@ -1,4 +1,3 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   getCurrentSupabaseUser,
   getCurrentUser,
@@ -24,14 +23,8 @@ export default async function TimeTrackerHistoryPage({
     <WorkspaceWrapper params={params}>
       {async ({ wsId, workspace, isPersonal }) => {
         const user = await getCurrentSupabaseUser();
-        const supabase = await createClient();
 
         if (!user) return notFound();
-
-        const { data: categories } = await supabase
-          .from('time_tracking_categories')
-          .select('*')
-          .eq('ws_id', wsId);
 
         // Fetch permissions and current user for non-personal workspaces
         let currentUser = null;
@@ -59,7 +52,6 @@ export default async function TimeTrackerHistoryPage({
           <SessionHistory
             wsId={wsId}
             userId={user.id}
-            categories={categories}
             workspace={workspace}
             isPersonal={isPersonal}
             currentUser={currentUser}

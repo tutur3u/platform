@@ -3,6 +3,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 
 export async function GET(
   request: NextRequest,
@@ -11,6 +12,7 @@ export async function GET(
   try {
     const { wsId } = await params;
     const supabase = await createClient(request);
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Get authenticated user
     const {
@@ -26,7 +28,7 @@ export async function GET(
     const { data: memberCheck } = await supabase
       .from('workspace_members')
       .select('id:user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -37,11 +39,13 @@ export async function GET(
       );
     }
 
+    const sbAdmin = await createAdminClient();
+
     // Fetch categories
-    const { data, error } = await supabase
+    const { data, error } = await sbAdmin
       .from('time_tracking_categories')
       .select('*')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .order('name');
 
     if (error) throw error;
@@ -62,7 +66,8 @@ export async function POST(
 ) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Get authenticated user
     const {
@@ -78,7 +83,7 @@ export async function POST(
     const { data: memberCheck } = await supabase
       .from('workspace_members')
       .select('id:user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -105,7 +110,7 @@ export async function POST(
     const { data, error } = await sbAdmin
       .from('time_tracking_categories')
       .insert({
-        ws_id: wsId,
+        ws_id: normalizedWsId,
         name: name.trim(),
         description: description?.trim() || null,
         color: color || 'BLUE',

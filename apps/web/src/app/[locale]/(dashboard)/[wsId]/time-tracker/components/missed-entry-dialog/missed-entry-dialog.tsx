@@ -26,7 +26,13 @@ import type { MissedEntryDialogProps } from './types';
 import { useMissedEntryForm } from './use-missed-entry-form';
 
 export default function MissedEntryDialog(props: MissedEntryDialogProps) {
-  const { open, categories, wsId, mode = 'normal', canSkipProof } = props;
+  const {
+    open,
+    categories = null,
+    wsId,
+    mode = 'normal',
+    canSkipProof,
+  } = props;
 
   const t = useTranslations('time-tracker.missed_entry_dialog');
 
