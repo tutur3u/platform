@@ -55,7 +55,7 @@ begin
   into v_personal_ws_id
   from public.workspaces w
   where w.personal is true
-    and w.created_by = p_user_id
+    and w.creator_id = p_user_id
   order by w.created_at asc
   limit 1;
 
