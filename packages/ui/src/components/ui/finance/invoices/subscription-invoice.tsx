@@ -2,7 +2,6 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { Calculator, Loader2, Plus } from '@tuturuuu/icons';
-import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -12,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useDebounce } from '../../../../hooks/use-debounce';
 import { useFinanceHref } from '../finance-route-context';
 import { InvoiceBlockedState } from './components/invoice-blocked-state';
 import { InvoiceCheckoutSummary } from './components/invoice-checkout-summary';
@@ -27,6 +27,7 @@ import {
   useCategories,
   useInvoiceAttendanceConfig,
   useInvoiceBlockedGroups,
+  useInvoiceCustomerSearch,
   useMultiGroupLatestSubscriptionInvoice,
   useMultiGroupProducts,
   useMultiGroupUserAttendance,
@@ -34,7 +35,6 @@ import {
   useUserGroups,
   useUserLinkedPromotions,
   useUserReferralDiscounts,
-  useUsersWithSelectableGroups,
   useWallets,
 } from './hooks';
 import { useBestPromotionSelection } from './hooks/use-best-promotion-selection';
@@ -94,6 +94,8 @@ export function SubscriptionInvoice({
   });
 
   const [activeGroupId, setActiveGroupId] = useState<string>('');
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [debouncedCustomerSearch] = useDebounce(customerSearch, 300);
 
   const updateSearchParam = useCallback(
     (key: string, value: string) => {
@@ -119,10 +121,15 @@ export function SubscriptionInvoice({
 
   // Data queries
   const {
-    data: users = [],
+    customers: users,
+    selectedUser,
     isLoading: usersLoading,
     error: usersError,
-  } = useUsersWithSelectableGroups(wsId);
+    hasNextPage: hasMoreCustomers,
+    fetchNextPage: fetchMoreCustomers,
+    isFetching: isFetchingCustomers,
+    isFetchingNextPage: isFetchingMoreCustomers,
+  } = useInvoiceCustomerSearch(wsId, debouncedCustomerSearch, selectedUserId);
   const { data: products = [], isLoading: productsLoading } = useProducts(wsId);
   const { data: availablePromotions = [], isLoading: promotionsLoading } =
     useAvailablePromotions(wsId, selectedUserId);
@@ -226,9 +233,6 @@ export function SubscriptionInvoice({
     });
   }, [latestSubscriptionInvoices, selectedMonth, selectedGroupIds]);
 
-  const selectedUser = users.find(
-    (user: WorkspaceUser) => user.id === selectedUserId
-  );
   const selectedPromotion =
     selectedPromotionId === 'none'
       ? null
@@ -564,9 +568,10 @@ export function SubscriptionInvoice({
         setInvoiceNotes('');
         resetRoundingSubscription();
         updateSearchParam('user_id', '');
-        setSelectedWalletId('');
-        setSelectedCategoryId('');
+        setSelectedWalletId(defaultWalletId || '');
+        setSelectedCategoryId(defaultCategoryId || '');
         setSelectedGroupIds(null);
+        setCustomerSearch('');
       }
     } catch (error) {
       console.error('Error creating subscription invoice:', error);
@@ -609,9 +614,18 @@ export function SubscriptionInvoice({
           onSelect={(value) => updateSearchParam('user_id', value)}
           selectedUser={selectedUser}
           showUserPreview
-          loading={usersLoading}
-          errorMessage={usersError?.message}
+          loading={
+            usersLoading || (isFetchingCustomers && !isFetchingMoreCustomers)
+          }
+          isFetchingNextPage={isFetchingMoreCustomers}
+          hasNextPage={hasMoreCustomers}
+          onLoadMore={() => void fetchMoreCustomers()}
+          errorMessage={
+            usersError instanceof Error ? usersError.message : undefined
+          }
           emptyMessage={t('ws-invoices.no_customers_found')}
+          searchValue={customerSearch}
+          onSearchChange={setCustomerSearch}
         />
 
         {selectedUserId && (

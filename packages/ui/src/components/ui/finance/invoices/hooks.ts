@@ -272,6 +272,154 @@ export const useUsers = (wsId: string) => {
   });
 };
 
+const INVOICE_CUSTOMER_PAGE_SIZE = 25;
+
+type WorkspaceUsersPage = {
+  data: WorkspaceUser[];
+  count: number;
+  offset: number;
+};
+
+function parseWorkspaceUsersPayload(
+  payload: WorkspaceUser[] | { data?: WorkspaceUser[]; count?: number }
+) {
+  if (Array.isArray(payload)) {
+    return {
+      data: payload,
+      count: payload.length,
+    };
+  }
+
+  return {
+    data: payload.data ?? [],
+    count: payload.count ?? payload.data?.length ?? 0,
+  };
+}
+
+async function fetchInvoiceCustomerPage(
+  wsId: string,
+  searchQuery: string,
+  offset: number
+): Promise<WorkspaceUsersPage> {
+  const searchParams = new URLSearchParams({
+    from: String(offset),
+    to: String(offset + INVOICE_CUSTOMER_PAGE_SIZE - 1),
+    limit: String(INVOICE_CUSTOMER_PAGE_SIZE),
+  });
+
+  if (searchQuery.trim()) {
+    searchParams.set('q', searchQuery.trim());
+  }
+
+  const response = await fetch(
+    `/api/v1/workspaces/${wsId}/users?${searchParams.toString()}`,
+    {
+      cache: 'no-store',
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch workspace users');
+  }
+
+  const payload = parseWorkspaceUsersPayload(
+    (await response.json()) as
+      | WorkspaceUser[]
+      | { data?: WorkspaceUser[]; count?: number }
+  );
+
+  return {
+    data: payload.data,
+    count: payload.count,
+    offset,
+  };
+}
+
+async function fetchWorkspaceUserById(
+  wsId: string,
+  userId: string
+): Promise<WorkspaceUser | null> {
+  const response = await fetch(`/api/v1/workspaces/${wsId}/users/${userId}`, {
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch workspace user');
+  }
+
+  const payload = (await response.json()) as WorkspaceUser[] | WorkspaceUser;
+  if (Array.isArray(payload)) {
+    return payload[0] ?? null;
+  }
+  return payload ?? null;
+}
+
+export function useInvoiceCustomerSearch(
+  wsId: string,
+  searchQuery: string,
+  selectedUserId: string
+) {
+  const normalizedSearchQuery = searchQuery.trim();
+
+  const usersQuery = useInfiniteQuery({
+    queryKey: ['invoice-customer-search', wsId, normalizedSearchQuery],
+    queryFn: async ({ pageParam = 0 }) =>
+      fetchInvoiceCustomerPage(wsId, normalizedSearchQuery, pageParam),
+    initialPageParam: 0,
+    placeholderData: (previousData) => previousData,
+    getNextPageParam: (lastPage, allPages) => {
+      const loadedCount = allPages.reduce(
+        (total, page) => total + page.data.length,
+        0
+      );
+      return loadedCount < lastPage.count ? loadedCount : undefined;
+    },
+    enabled: !!wsId,
+    staleTime: 30 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  const loadedCustomers =
+    usersQuery.data?.pages.flatMap((page) => page.data) ?? [];
+  const selectedUserQuery = useQuery({
+    queryKey: ['invoice-customer', wsId, selectedUserId],
+    queryFn: async () => fetchWorkspaceUserById(wsId, selectedUserId),
+    enabled:
+      !!wsId &&
+      !!selectedUserId &&
+      !loadedCustomers.some((user) => user.id === selectedUserId),
+    staleTime: 30 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  const customersById = new Map<string, WorkspaceUser>();
+
+  if (selectedUserQuery.data) {
+    customersById.set(selectedUserQuery.data.id, selectedUserQuery.data);
+  }
+
+  for (const customer of loadedCustomers) {
+    customersById.set(customer.id, customer);
+  }
+
+  const customers = Array.from(customersById.values());
+  const selectedUser =
+    (selectedUserId
+      ? customers.find((user) => user.id === selectedUserId)
+      : undefined) ?? undefined;
+
+  return {
+    ...usersQuery,
+    customers,
+    selectedUser,
+    error: usersQuery.error ?? selectedUserQuery.error,
+    isLoading: usersQuery.isLoading || selectedUserQuery.isLoading,
+    isFetchingSelectedUser: selectedUserQuery.isFetching,
+  };
+}
+
 // Users with selectable groups (groups where they have STUDENT role)
 export const useUsersWithSelectableGroups = (wsId: string) => {
   return useQuery({
@@ -934,17 +1082,19 @@ export const useUserReferralDiscounts = (wsId: string, userId: string) => {
   return useQuery({
     queryKey: ['user-referral-discounts', wsId, userId],
     queryFn: async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('v_user_referral_discounts')
-        .select('promo_id, calculated_discount_value')
-        .eq('ws_id', wsId)
-        .eq('user_id', userId);
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users/${userId}/referral-discounts`,
+        { cache: 'no-store' }
+      );
 
-      if (error) {
-        console.error('❌ User referral discounts fetch error:', error);
-        throw error;
+      if (!response.ok) {
+        throw new Error('Failed to fetch referral discounts');
       }
+
+      const data = (await response.json()) as Array<{
+        promo_id: string | null;
+        calculated_discount_value: number | null;
+      }>;
 
       return (
         (data || []).map((row) => ({
