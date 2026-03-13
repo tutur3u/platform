@@ -3703,8 +3703,8 @@
       "save_tier": "Save tier"
     },
     "add_table": {
-      "description": "Choose an audit-tracked public table, then configure per-tier limits for creations performed by the authenticated actor.",
-      "requirements_hint": "Limits are enforced against the authenticated user and their personal workspace tier. Target tables must be audit-tracked.",
+      "description": "Choose a public table from the available table view, then configure per-tier limits for creations performed by the authenticated actor.",
+      "requirements_hint": "For the workspaces table, limits are tracked by the creator's personal workspace tier. For all other tables, limits are tracked by the workspace associated via that table's source view.",
       "select_placeholder": "Select a table",
       "submit": "Add table",
       "title": "Add Configured Table"
@@ -3713,7 +3713,7 @@
       "updated_at": "Last updated {updatedAt}",
       "updated_label": "Updated"
     },
-    "description": "Opt audit-tracked tables into shared insert-rate enforcement and tune per-tier quotas using the authenticated actor's personal workspace tier.",
+    "description": "Opt tables into shared insert-rate enforcement using the available table view. The workspaces table uses the creator's personal workspace tier, while other tables use the tier of the workspace associated with that table.",
     "empty_state": "No tables have been configured yet.",
     "feedback": {
       "error_prefix": "Update failed"
@@ -3732,7 +3732,7 @@
       "total_limit": "Total"
     },
     "metadata": {
-      "requirements_hint": "Enforcement always uses the authenticated user and resolves limits from that user's personal workspace tier."
+      "requirements_hint": "Tier resolution is scope-based: workspaces uses the creator's personal workspace tier; other tables use the associated workspace derived for that table."
     },
     "notes": {
       "empty": "No notes"

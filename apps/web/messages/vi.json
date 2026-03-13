@@ -3703,8 +3703,8 @@
       "save_tier": "Lưu cấu hình gói"
     },
     "add_table": {
-      "description": "Chọn một bảng public đã bật theo dõi kiểm toán, rồi cấu hình giới hạn theo từng gói cho các lần chèn do người dùng đã xác thực thực hiện.",
-      "requirements_hint": "Giới hạn luôn áp dụng cho người dùng đã xác thực và gói của personal workspace của họ. Bảng đích phải bật theo dõi kiểm toán.",
+      "description": "Chọn một bảng public từ danh sách bảng khả dụng, rồi cấu hình giới hạn theo từng gói cho các lần chèn do người dùng đã xác thực thực hiện.",
+      "requirements_hint": "Với bảng workspaces, giới hạn được tính theo gói của personal workspace của người tạo. Với các bảng khác, giới hạn được tính theo workspace liên kết được suy ra từ source view của bảng đó.",
       "select_placeholder": "Chọn một bảng",
       "submit": "Thêm bảng",
       "title": "Chọn bảng để cấu hình"
@@ -3713,7 +3713,7 @@
       "updated_at": "Cập nhật lần cuối {updatedAt}",
       "updated_label": "Cập nhật"
     },
-    "description": "Cho phép đăng ký tham gia các bảng đã bật theo dõi kiểm toán vào cơ chế giới hạn chèn dùng chung và tinh chỉnh quota theo gói dựa trên personal workspace của người dùng đang thao tác.",
+    "description": "Cho phép đăng ký các bảng vào cơ chế giới hạn chèn dùng chung dựa trên bảng khả dụng. Bảng workspaces dùng gói của personal workspace của người tạo, còn các bảng khác dùng gói của workspace liên kết với bảng đó.",
     "empty_state": "Chưa có bảng nào được cấu hình.",
     "feedback": {
       "error_prefix": "Cập nhật thất bại"
@@ -3732,7 +3732,7 @@
       "total_limit": "Tổng"
     },
     "metadata": {
-      "requirements_hint": "Cơ chế giới hạn luôn dùng người dùng đã xác thực hiện tại và suy ra gói từ personal workspace của chính họ."
+      "requirements_hint": "Suy ra gói theo phạm vi: workspaces dùng gói personal workspace của người tạo; các bảng khác dùng workspace liên kết được suy ra cho bảng đó. Các phép đếm lấy từ bảng khả dụng thay vì audit log."
     },
     "notes": {
       "empty": "Không có ghi chú"
