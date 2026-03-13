@@ -449,17 +449,32 @@ export const useProducts = (wsId: string) => {
   return useQuery({
     queryKey: ['products', wsId],
     queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/inventory/products?page=1&pageSize=500`,
-        { cache: 'no-store' }
-      );
+      const pageSize = 500;
+      let page = 1;
+      let count = 0;
+      const products: Product[] = [];
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch products');
-      }
+      do {
+        const response = await fetch(
+          `/api/v1/workspaces/${wsId}/inventory/products?page=${page}&pageSize=${pageSize}`,
+          { cache: 'no-store' }
+        );
 
-      const payload = (await response.json()) as { data?: Product[] };
-      return payload.data ?? [];
+        if (!response.ok) {
+          throw new Error('Failed to fetch products');
+        }
+
+        const payload = (await response.json()) as {
+          data?: Product[];
+          count?: number;
+        };
+
+        products.push(...(payload.data ?? []));
+        count = payload.count ?? products.length;
+        page += 1;
+      } while (products.length < count);
+
+      return products;
     },
   });
 };
@@ -721,6 +736,68 @@ export const useMultiGroupUserAttendance = (
   });
 };
 
+export const useSubscriptionInvoiceContext = (
+  wsId: string,
+  userId: string,
+  groupIds: string[],
+  month: string
+) => {
+  return useQuery({
+    queryKey: ['subscription-invoice-context', wsId, userId, groupIds, month],
+    queryFn: async () => {
+      if (!wsId || !userId || groupIds.length === 0 || !month) {
+        return {
+          attendance: [] as Array<{
+            status: string;
+            date: string;
+            group_id?: string;
+          }>,
+          latestInvoices: [] as Array<{
+            group_id?: string;
+            valid_until?: string | null;
+            created_at?: string | null;
+          }>,
+        };
+      }
+
+      const searchParams = new URLSearchParams({
+        userId,
+        month,
+      });
+      groupIds.forEach((groupId) => {
+        searchParams.append('groupIds', groupId);
+      });
+
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/finance/invoices/subscription/context?${searchParams.toString()}`,
+        { cache: 'no-store' }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch subscription invoice context');
+      }
+
+      return (await response.json()) as {
+        attendance: Array<{
+          status: string;
+          date: string;
+          group_id?: string;
+        }>;
+        latestInvoices: Array<{
+          group_id?: string;
+          valid_until?: string | null;
+          created_at?: string | null;
+        }>;
+      };
+    },
+    enabled: !!wsId && !!userId && groupIds.length > 0 && !!month,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: 3,
+  });
+};
+
 // Get workspace config for attendance-based invoice calculation
 // Returns true if attendance-based calculation should be used (default), false if all sessions should be included
 export const useInvoiceAttendanceConfig = (wsId: string) => {
@@ -845,26 +922,47 @@ export const useInvoiceBlockedGroups = (wsId: string) => {
 };
 
 // Get User's Group Products with improved caching
-export const useUserGroupProducts = (groupId: string) => {
+export const useUserGroupProducts = (wsId: string, groupId: string) => {
   return useQuery({
-    queryKey: ['user-group-products', groupId],
+    queryKey: ['user-group-products', wsId, groupId],
     queryFn: async () => {
-      const supabase = createClient();
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/linked-products`,
+        { cache: 'no-store' }
+      );
 
-      const { data, error } = await supabase
-        .from('user_group_linked_products')
-        .select(
-          'workspace_products(id, name, product_categories(name)), inventory_units(name, id), warehouse_id'
-        )
-        .eq('group_id', groupId);
-
-      if (error) {
-        console.error('❌ Group products fetch error:', error);
-        throw error;
+      if (!response.ok) {
+        throw new Error('Failed to fetch linked products');
       }
-      return data as UserGroupProducts[];
+
+      const payload = (await response.json()) as {
+        items?: Array<{
+          id: string;
+          name: string | null;
+          description?: string | null;
+          warehouse_id: string | null;
+          unit_id: string | null;
+        }>;
+      };
+
+      return (payload.items ?? []).map((item) => ({
+        workspace_products: {
+          id: item.id,
+          name: item.name,
+          product_categories: {
+            name: null,
+          },
+        },
+        inventory_units: item.unit_id
+          ? {
+              id: item.unit_id,
+              name: null,
+            }
+          : null,
+        warehouse_id: item.warehouse_id,
+      })) as UserGroupProducts[];
     },
-    enabled: !!groupId,
+    enabled: !!wsId && !!groupId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false,
@@ -873,28 +971,33 @@ export const useUserGroupProducts = (groupId: string) => {
 };
 
 // Get multiple groups' linked products combined (for multi-group selection)
-export const useMultiGroupProducts = (groupIds: string[]) => {
+export const useMultiGroupProducts = (wsId: string, groupIds: string[]) => {
   return useQuery({
-    queryKey: ['multi-group-products', groupIds],
+    queryKey: ['multi-group-products', wsId, groupIds],
     queryFn: async () => {
       if (groupIds.length === 0) return [];
 
-      const supabase = createClient();
+      const searchParams = new URLSearchParams();
+      groupIds.forEach((groupId) => {
+        searchParams.append('groupIds', groupId);
+      });
 
-      const { data, error } = await supabase
-        .from('user_group_linked_products')
-        .select(
-          'group_id, workspace_user_groups(name), workspace_products(id, name, product_categories(name)), inventory_units(name, id), warehouse_id'
-        )
-        .in('group_id', groupIds);
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/linked-products?${searchParams.toString()}`,
+        { cache: 'no-store' }
+      );
 
-      if (error) {
-        console.error('❌ Multi-group products fetch error:', error);
-        throw error;
+      if (!response.ok) {
+        throw new Error('Failed to fetch linked products');
       }
-      return (data || []) as (UserGroupProducts & { group_id?: string })[];
+
+      const payload = (await response.json()) as {
+        items?: Array<UserGroupProducts & { group_id?: string }>;
+      };
+
+      return payload.items ?? [];
     },
-    enabled: groupIds.length > 0,
+    enabled: !!wsId && groupIds.length > 0,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false,

@@ -28,10 +28,9 @@ import {
   useInvoiceAttendanceConfig,
   useInvoiceBlockedGroups,
   useInvoiceCustomerSearch,
-  useMultiGroupLatestSubscriptionInvoice,
   useMultiGroupProducts,
-  useMultiGroupUserAttendance,
   useProducts,
+  useSubscriptionInvoiceContext,
   useUserGroups,
   useUserLinkedPromotions,
   useUserReferralDiscounts,
@@ -197,22 +196,29 @@ export function SubscriptionInvoice({
     wsId,
     selectedUserId
   );
-  const {
-    data: userAttendance = [],
-    isLoading: userAttendanceLoading,
-    error: userAttendanceError,
-  } = useMultiGroupUserAttendance(
-    selectedGroupIds,
-    selectedUserId,
-    selectedMonth
-  );
   const { data: groupProducts = [], isLoading: groupProductsLoading } =
-    useMultiGroupProducts(selectedGroupIds);
+    useMultiGroupProducts(wsId, selectedGroupIds);
 
   const { data: useAttendanceBased = true } = useInvoiceAttendanceConfig(wsId);
 
-  const { data: latestSubscriptionInvoices = [] } =
-    useMultiGroupLatestSubscriptionInvoice(selectedUserId, selectedGroupIds);
+  const {
+    data: subscriptionInvoiceContext,
+    isLoading: subscriptionInvoiceContextLoading,
+    error: subscriptionInvoiceContextError,
+  } = useSubscriptionInvoiceContext(
+    wsId,
+    selectedUserId,
+    selectedGroupIds,
+    selectedMonth
+  );
+
+  const userAttendance = subscriptionInvoiceContext?.attendance ?? [];
+  const latestSubscriptionInvoices =
+    subscriptionInvoiceContext?.latestInvoices ?? [];
+  const userAttendanceError =
+    subscriptionInvoiceContextError instanceof Error
+      ? subscriptionInvoiceContextError
+      : null;
 
   const isSelectedMonthPaid = useMemo(() => {
     if (selectedGroupIds.length === 0 || !selectedMonth) return false;
@@ -242,7 +248,9 @@ export function SubscriptionInvoice({
         );
 
   const isLoadingSubscriptionData =
-    userGroupsLoading || userAttendanceLoading || groupProductsLoading;
+    userGroupsLoading ||
+    subscriptionInvoiceContextLoading ||
+    groupProductsLoading;
 
   const isLoadingData =
     usersLoading ||

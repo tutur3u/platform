@@ -29,7 +29,11 @@ import {
   Users,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Workspace } from '@tuturuuu/types';
+import type {
+  CalendarConnection,
+  Workspace,
+  WorkspaceCalendarGoogleToken,
+} from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
@@ -219,14 +223,20 @@ export function SettingsDialog({
     queryFn: async () => {
       if (!workspace?.id) return null;
 
-      const supabase = createClient();
-      const { data } = await supabase
-        .from('calendar_auth_tokens')
-        .select('*')
-        .eq('ws_id', workspace.id)
-        .maybeSingle();
+      const response = await fetch(
+        `/api/v1/calendar/auth/tokens?wsId=${workspace.id}`,
+        { cache: 'no-store' }
+      );
 
-      return data;
+      if (!response.ok) {
+        throw new Error('Failed to fetch calendar token');
+      }
+
+      const payload = (await response.json()) as {
+        tokens?: WorkspaceCalendarGoogleToken | null;
+      };
+
+      return payload.tokens ?? null;
     },
     enabled: !!workspace?.id,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -238,20 +248,20 @@ export function SettingsDialog({
     queryFn: async () => {
       if (!workspace?.id) return [];
 
-      const supabase = createClient();
+      const response = await fetch(
+        `/api/v1/calendar/connections?wsId=${workspace.id}`,
+        { cache: 'no-store' }
+      );
 
-      const { data, error } = await supabase
-        .from('calendar_connections')
-        .select('*')
-        .eq('ws_id', workspace.id)
-        .order('created_at', { ascending: true });
-
-      if (error) {
-        console.error('Error fetching calendar connections:', error);
-        throw error;
+      if (!response.ok) {
+        throw new Error('Failed to fetch calendar connections');
       }
 
-      return data || [];
+      const payload = (await response.json()) as {
+        connections?: CalendarConnection[];
+      };
+
+      return payload.connections ?? [];
     },
     enabled: !!workspace?.id,
     staleTime: 30 * 1000, // 30 seconds for fresh data

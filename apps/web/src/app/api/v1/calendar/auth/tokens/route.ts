@@ -5,6 +5,8 @@ export async function GET(request: Request) {
   try {
     // Initialize Supabase client with auth from request headers or cookies
     const supabase = await createClient(request);
+    const url = new URL(request.url);
+    const wsId = url.searchParams.get('wsId');
 
     // Get the current authenticated user
     const {
@@ -20,11 +22,16 @@ export async function GET(request: Request) {
     }
 
     // Fetch the user's tokens from the calendar_auth_tokens table
-    const { data: tokenData, error: tokenError } = await supabase
+    let tokenQuery = supabase
       .from('calendar_auth_tokens')
-      .select('access_token, refresh_token')
-      .eq('user_id', user.id)
-      .single();
+      .select('*')
+      .eq('user_id', user.id);
+
+    if (wsId) {
+      tokenQuery = tokenQuery.eq('ws_id', wsId);
+    }
+
+    const { data: tokenData, error: tokenError } = await tokenQuery.single();
 
     if (tokenError) {
       if (tokenError.code === 'PGRST116') {
@@ -42,12 +49,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ tokens: null }, { status: 200 });
     }
 
-    const tokens = {
-      access_token: tokenData.access_token,
-      refresh_token: tokenData.refresh_token || undefined,
-    };
-
-    return NextResponse.json({ tokens }, { status: 200 });
+    return NextResponse.json({ tokens: tokenData }, { status: 200 });
   } catch (error) {
     console.error('Error in /api/v1/calendar/auth/tokens:', error);
     return NextResponse.json(
