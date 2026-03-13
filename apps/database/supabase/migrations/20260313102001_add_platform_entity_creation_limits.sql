@@ -2,8 +2,6 @@ create table if not exists public.platform_entity_creation_limits (
   table_name text not null,
   tier public.workspace_product_tier not null,
   enabled boolean not null default false,
-  ownership_scope text not null,
-  resolver_key text not null,
   per_hour integer,
   per_day integer,
   per_week integer,
@@ -14,9 +12,6 @@ create table if not exists public.platform_entity_creation_limits (
   updated_at timestamptz not null default timezone('utc', now()),
   updated_by uuid references auth.users (id) on delete set null,
   constraint platform_entity_creation_limits_pkey primary key (table_name, tier),
-  constraint platform_entity_creation_limits_ownership_scope_check check (
-    ownership_scope in ('workspace', 'user', 'workspace_user')
-  ),
   constraint platform_entity_creation_limits_per_hour_check check (
     per_hour is null or per_hour > 0
   ),
@@ -37,7 +32,7 @@ create table if not exists public.platform_entity_creation_limits (
 alter table public.platform_entity_creation_limits enable row level security;
 
 comment on table public.platform_entity_creation_limits is
-  'Manual opt-in table for generic entity creation limits enforced by a shared before insert trigger.';
+  'Manual opt-in table for entity creation limits enforced by a shared before insert trigger. The table stores per-tier thresholds while counting sources are provided by dedicated entity_limit_source__<table> views.';
 
 create or replace function public._resolve_user_personal_workspace_tier(
   p_user_id uuid
@@ -67,10 +62,56 @@ begin
 end;
 $$;
 
+create or replace view public.entity_limit_source__workspaces as
+select
+  coalesce(personal_ws.id, w.id) as ws_id,
+  w.creator_id as user_id,
+  w.created_at
+from public.workspaces w
+left join lateral (
+  select pw.id
+  from public.workspaces pw
+  where pw.creator_id = w.creator_id
+    and pw.personal is true
+  order by pw.created_at asc nulls last
+  limit 1
+) personal_ws on true;
+
+comment on view public.entity_limit_source__workspaces is
+  'Source view for workspace creation limits: ws_id is the creator personal workspace id, user_id is creator_id.';
+
+create or replace view public.entity_limit_source__tasks as
+select
+  coalesce(wb_direct.ws_id, wb_via_list.ws_id) as ws_id,
+  t.creator_id as user_id,
+  t.created_at
+from public.tasks t
+left join public.workspace_boards wb_direct
+  on wb_direct.id = t.board_id
+left join public.task_lists tl
+  on tl.id = t.list_id
+left join public.workspace_boards wb_via_list
+  on wb_via_list.id = tl.board_id;
+
+comment on view public.entity_limit_source__tasks is
+  'Source view for task creation limits: ws_id inferred from tasks.board_id or fallback tasks.list_id -> task_lists.board_id.';
+
+create or replace view public.entity_limit_source__workspace_whiteboards as
+select
+  wb.ws_id,
+  wb.creator_id as user_id,
+  wb.created_at
+from public.workspace_whiteboards wb;
+
+comment on view public.entity_limit_source__workspace_whiteboards is
+  'Source view for whiteboard creation limits: direct ws_id and creator_id mapping.';
+
+drop function if exists public._validate_platform_entity_limit_target(text, text, text);
+drop function if exists public.add_platform_entity_creation_limit_table(text, text, text, text, uuid);
+drop function if exists public.update_platform_entity_creation_limit_metadata(text, text, text, text, uuid);
+
 create or replace function public._validate_platform_entity_limit_target(
-  p_target_table text,
-  p_ownership_scope text,
-  p_resolver_key text
+  p_target_table text
 )
 returns void
 language plpgsql
@@ -78,9 +119,7 @@ security definer
 set search_path = public
 as $$
 declare
-  v_resolver_keys text[];
-  v_expected_key_count integer;
-  v_column_name text;
+  v_source_view_name text;
 begin
   if p_target_table is null or btrim(p_target_table) = '' then
     raise exception 'TARGET_TABLE_REQUIRED'
@@ -89,11 +128,6 @@ begin
 
   if p_target_table = 'platform_entity_creation_limits' then
     raise exception 'TARGET_TABLE_NOT_ALLOWED'
-      using errcode = 'P0001';
-  end if;
-
-  if p_ownership_scope not in ('workspace', 'user', 'workspace_user') then
-    raise exception 'INVALID_OWNERSHIP_SCOPE'
       using errcode = 'P0001';
   end if;
 
@@ -108,45 +142,129 @@ begin
       using errcode = 'P0001';
   end if;
 
+  v_source_view_name := format('entity_limit_source__%s', p_target_table);
+
   perform 1
-  from information_schema.columns
+  from information_schema.views
   where table_schema = 'public'
-    and table_name = p_target_table
-    and column_name = 'created_at';
+    and table_name = v_source_view_name;
 
   if not found then
-    raise exception 'TARGET_TABLE_REQUIRES_CREATED_AT'
+    raise exception 'TARGET_TABLE_REQUIRES_SOURCE_VIEW'
       using errcode = 'P0001';
   end if;
 
-  v_resolver_keys := regexp_split_to_array(
-    regexp_replace(coalesce(p_resolver_key, ''), '\s+', '', 'g'),
-    ','
-  );
+  perform 1
+  from information_schema.columns c
+  where c.table_schema = 'public'
+    and c.table_name = v_source_view_name
+    and c.column_name = 'ws_id'
+    and c.data_type = 'uuid';
 
-  v_expected_key_count := case
-    when p_ownership_scope = 'workspace_user' then 2
-    else 1
-  end;
-
-  if array_length(v_resolver_keys, 1) is distinct from v_expected_key_count then
-    raise exception 'INVALID_RESOLVER_KEY_COUNT'
+  if not found then
+    raise exception 'SOURCE_VIEW_REQUIRES_WS_ID_UUID'
       using errcode = 'P0001';
   end if;
 
-  foreach v_column_name in array v_resolver_keys loop
-    perform 1
-    from information_schema.columns
-    where table_schema = 'public'
-      and table_name = p_target_table
-      and column_name = v_column_name
-      and data_type = 'uuid';
+  perform 1
+  from information_schema.columns c
+  where c.table_schema = 'public'
+    and c.table_name = v_source_view_name
+    and c.column_name = 'user_id'
+    and c.data_type = 'uuid';
 
-    if not found then
-      raise exception 'RESOLVER_COLUMN_NOT_FOUND_OR_NOT_UUID'
-        using errcode = 'P0001';
+  if not found then
+    raise exception 'SOURCE_VIEW_REQUIRES_USER_ID_UUID'
+      using errcode = 'P0001';
+  end if;
+
+  perform 1
+  from information_schema.columns c
+  where c.table_schema = 'public'
+    and c.table_name = v_source_view_name
+    and c.column_name = 'created_at'
+    and c.data_type = 'timestamp with time zone';
+
+  if not found then
+    raise exception 'SOURCE_VIEW_REQUIRES_CREATED_AT_TIMESTAMPTZ'
+      using errcode = 'P0001';
+  end if;
+end;
+$$;
+
+create or replace function public._resolve_platform_entity_limit_scope(
+  p_target_table text,
+  p_new_record jsonb,
+  p_actor_user_id uuid
+)
+returns table (
+  ws_id uuid,
+  user_id uuid
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user_id uuid;
+  v_ws_id uuid;
+  v_board_id uuid;
+  v_list_id uuid;
+begin
+  if p_target_table = 'workspaces' then
+    v_user_id := coalesce((p_new_record ->> 'creator_id')::uuid, p_actor_user_id);
+
+    if v_user_id is not null then
+      select w.id
+      into v_ws_id
+      from public.workspaces w
+      where w.creator_id = v_user_id
+        and w.personal is true
+      order by w.created_at asc nulls last
+      limit 1;
     end if;
-  end loop;
+
+    v_ws_id := coalesce(v_ws_id, (p_new_record ->> 'id')::uuid);
+
+    return query select v_ws_id, v_user_id;
+    return;
+  end if;
+
+  if p_target_table = 'tasks' then
+    v_user_id := coalesce((p_new_record ->> 'creator_id')::uuid, p_actor_user_id);
+    v_board_id := (p_new_record ->> 'board_id')::uuid;
+    v_list_id := (p_new_record ->> 'list_id')::uuid;
+
+    if v_board_id is null and v_list_id is not null then
+      select tl.board_id
+      into v_board_id
+      from public.task_lists tl
+      where tl.id = v_list_id
+      limit 1;
+    end if;
+
+    if v_board_id is not null then
+      select wb.ws_id
+      into v_ws_id
+      from public.workspace_boards wb
+      where wb.id = v_board_id
+      limit 1;
+    end if;
+
+    return query select v_ws_id, v_user_id;
+    return;
+  end if;
+
+  if p_target_table = 'workspace_whiteboards' then
+    v_ws_id := (p_new_record ->> 'ws_id')::uuid;
+    v_user_id := coalesce((p_new_record ->> 'creator_id')::uuid, p_actor_user_id);
+
+    return query select v_ws_id, v_user_id;
+    return;
+  end if;
+
+  raise exception 'ENTITY_LIMIT_SCOPE_RESOLUTION_NOT_SUPPORTED'
+    using errcode = 'P0001';
 end;
 $$;
 
@@ -157,82 +275,40 @@ security definer
 set search_path = public
 as $$
 declare
-  v_metadata record;
   v_limit_row public.platform_entity_creation_limits%rowtype;
-  v_new_row jsonb;
-  v_resolver_keys text[];
-  v_subject_bucket text;
+  v_actor_user_id uuid;
   v_effective_tier public.workspace_product_tier;
-  v_workspace_id_text text;
-  v_user_id_text text;
-  v_where_clause text;
+  v_subject_ws_id uuid;
+  v_subject_user_id uuid;
+  v_subject_bucket text;
+  v_source_view_name text;
   v_count bigint;
+  v_actor_role text;
+  v_is_service_role boolean;
 begin
-  select *
-  into v_metadata
-  from public.platform_entity_creation_limits
-  where table_name = tg_table_name
-  order by case tier
-    when 'FREE' then 1
-    when 'PLUS' then 2
-    when 'PRO' then 3
-    when 'ENTERPRISE' then 4
-    else 5
-  end
-  limit 1;
+  v_actor_user_id := auth.uid();
+  v_actor_role := auth.role();
+  v_is_service_role := v_actor_role = 'service_role';
 
-  if not found then
-    return new;
+  if v_actor_user_id is null and not v_is_service_role then
+    raise exception 'ENTITY_LIMIT_AUTH_REQUIRED'
+      using errcode = 'P0001';
   end if;
 
-  v_new_row := to_jsonb(new);
-  v_resolver_keys := regexp_split_to_array(
-    regexp_replace(v_metadata.resolver_key, '\s+', '', 'g'),
-    ','
-  );
+  if v_actor_user_id is null then
+    v_actor_user_id := (to_jsonb(new) ->> 'creator_id')::uuid;
+  end if;
 
-  case v_metadata.ownership_scope
-    when 'workspace' then
-      v_workspace_id_text := nullif(v_new_row ->> v_resolver_keys[1], '');
+  if v_actor_user_id is null then
+    if v_is_service_role then
+      return new;
+    end if;
 
-      if v_workspace_id_text is null then
-        return new;
-      end if;
+    raise exception 'ENTITY_LIMIT_ACTOR_REQUIRED'
+      using errcode = 'P0001';
+  end if;
 
-      v_subject_bucket := v_workspace_id_text;
-      v_effective_tier := public._resolve_workspace_tier(v_workspace_id_text::uuid);
-      v_where_clause := format('%I = %L', v_resolver_keys[1], v_workspace_id_text);
-    when 'user' then
-      v_user_id_text := nullif(v_new_row ->> v_resolver_keys[1], '');
-
-      if v_user_id_text is null then
-        return new;
-      end if;
-
-      v_subject_bucket := v_user_id_text;
-      v_effective_tier := public._resolve_user_personal_workspace_tier(v_user_id_text::uuid);
-      v_where_clause := format('%I = %L', v_resolver_keys[1], v_user_id_text);
-    when 'workspace_user' then
-      v_workspace_id_text := nullif(v_new_row ->> v_resolver_keys[1], '');
-      v_user_id_text := nullif(v_new_row ->> v_resolver_keys[2], '');
-
-      if v_workspace_id_text is null or v_user_id_text is null then
-        return new;
-      end if;
-
-      v_subject_bucket := v_workspace_id_text || ':' || v_user_id_text;
-      v_effective_tier := public._resolve_workspace_tier(v_workspace_id_text::uuid);
-      v_where_clause := format(
-        '%I = %L and %I = %L',
-        v_resolver_keys[1],
-        v_workspace_id_text,
-        v_resolver_keys[2],
-        v_user_id_text
-      );
-    else
-      raise exception 'UNSUPPORTED_OWNERSHIP_SCOPE'
-        using errcode = 'P0001';
-  end case;
+  v_effective_tier := public._resolve_user_personal_workspace_tier(v_actor_user_id);
 
   select *
   into v_limit_row
@@ -246,15 +322,35 @@ begin
     return new;
   end if;
 
+  select s.ws_id, s.user_id
+  into v_subject_ws_id, v_subject_user_id
+  from public._resolve_platform_entity_limit_scope(
+    tg_table_name,
+    to_jsonb(new),
+    v_actor_user_id
+  ) s;
+
+  if tg_table_name <> 'workspaces' and v_subject_ws_id is null then
+    raise exception 'ENTITY_LIMIT_WS_ID_REQUIRED'
+      using errcode = 'P0001';
+  end if;
+
+  if v_subject_user_id is null then
+    v_subject_user_id := v_actor_user_id;
+  end if;
+
+  v_subject_bucket := coalesce(v_subject_ws_id::text, 'none') || ':' || coalesce(v_subject_user_id::text, 'none');
   perform pg_advisory_xact_lock(hashtext(tg_table_name), hashtext(v_subject_bucket));
+
+  v_source_view_name := format('entity_limit_source__%s', tg_table_name);
 
   if v_limit_row.total_limit is not null then
     execute format(
-      'select count(*) from public.%I where %s',
-      tg_table_name,
-      v_where_clause
+      'select count(*) from public.%I src where src.ws_id is not distinct from $1 and src.user_id is not distinct from $2',
+      v_source_view_name
     )
-    into v_count;
+    into v_count
+    using v_subject_ws_id, v_subject_user_id;
 
     if v_count >= v_limit_row.total_limit then
       raise exception 'ENTITY_TOTAL_LIMIT_EXCEEDED'
@@ -262,13 +358,17 @@ begin
     end if;
   end if;
 
+  if tg_table_name = 'workspaces' then
+    return new;
+  end if;
+
   if v_limit_row.per_hour is not null then
     execute format(
-      'select count(*) from public.%I where %s and created_at >= now() - interval ''1 hour''',
-      tg_table_name,
-      v_where_clause
+      'select count(*) from public.%I src where src.ws_id is not distinct from $1 and src.user_id is not distinct from $2 and src.created_at >= $3',
+      v_source_view_name
     )
-    into v_count;
+    into v_count
+    using v_subject_ws_id, v_subject_user_id, now() - interval '1 hour';
 
     if v_count >= v_limit_row.per_hour then
       raise exception 'ENTITY_HOURLY_LIMIT_EXCEEDED'
@@ -278,11 +378,11 @@ begin
 
   if v_limit_row.per_day is not null then
     execute format(
-      'select count(*) from public.%I where %s and created_at >= now() - interval ''1 day''',
-      tg_table_name,
-      v_where_clause
+      'select count(*) from public.%I src where src.ws_id is not distinct from $1 and src.user_id is not distinct from $2 and src.created_at >= $3',
+      v_source_view_name
     )
-    into v_count;
+    into v_count
+    using v_subject_ws_id, v_subject_user_id, now() - interval '1 day';
 
     if v_count >= v_limit_row.per_day then
       raise exception 'ENTITY_DAILY_LIMIT_EXCEEDED'
@@ -292,11 +392,11 @@ begin
 
   if v_limit_row.per_week is not null then
     execute format(
-      'select count(*) from public.%I where %s and created_at >= now() - interval ''7 days''',
-      tg_table_name,
-      v_where_clause
+      'select count(*) from public.%I src where src.ws_id is not distinct from $1 and src.user_id is not distinct from $2 and src.created_at >= $3',
+      v_source_view_name
     )
-    into v_count;
+    into v_count
+    using v_subject_ws_id, v_subject_user_id, now() - interval '7 days';
 
     if v_count >= v_limit_row.per_week then
       raise exception 'ENTITY_WEEKLY_LIMIT_EXCEEDED'
@@ -306,11 +406,11 @@ begin
 
   if v_limit_row.per_month is not null then
     execute format(
-      'select count(*) from public.%I where %s and created_at >= now() - interval ''30 days''',
-      tg_table_name,
-      v_where_clause
+      'select count(*) from public.%I src where src.ws_id is not distinct from $1 and src.user_id is not distinct from $2 and src.created_at >= $3',
+      v_source_view_name
     )
-    into v_count;
+    into v_count
+    using v_subject_ws_id, v_subject_user_id, now() - interval '30 days';
 
     if v_count >= v_limit_row.per_month then
       raise exception 'ENTITY_MONTHLY_LIMIT_EXCEEDED'
@@ -324,8 +424,6 @@ $$;
 
 create or replace function public.add_platform_entity_creation_limit_table(
   p_target_table text,
-  p_ownership_scope text,
-  p_resolver_key text,
   p_notes text default null,
   p_updated_by uuid default auth.uid()
 )
@@ -335,26 +433,20 @@ security definer
 set search_path = public
 as $$
 begin
-  perform public._validate_platform_entity_limit_target(
-    p_target_table,
-    p_ownership_scope,
-    p_resolver_key
-  );
+  perform public._validate_platform_entity_limit_target(p_target_table);
 
   insert into public.platform_entity_creation_limits (
     table_name,
     tier,
     enabled,
-    ownership_scope,
-    resolver_key,
     notes,
     updated_by
   )
   values
-    (p_target_table, 'FREE', false, p_ownership_scope, p_resolver_key, p_notes, p_updated_by),
-    (p_target_table, 'PLUS', false, p_ownership_scope, p_resolver_key, p_notes, p_updated_by),
-    (p_target_table, 'PRO', false, p_ownership_scope, p_resolver_key, p_notes, p_updated_by),
-    (p_target_table, 'ENTERPRISE', false, p_ownership_scope, p_resolver_key, p_notes, p_updated_by);
+    (p_target_table, 'FREE', false, p_notes, p_updated_by),
+    (p_target_table, 'PLUS', false, p_notes, p_updated_by),
+    (p_target_table, 'PRO', false, p_notes, p_updated_by),
+    (p_target_table, 'ENTERPRISE', false, p_notes, p_updated_by);
 
   execute format(
     'drop trigger if exists enforce_platform_entity_creation_limits on public.%I',
@@ -370,8 +462,6 @@ $$;
 
 create or replace function public.update_platform_entity_creation_limit_metadata(
   p_target_table text,
-  p_ownership_scope text,
-  p_resolver_key text,
   p_notes text default null,
   p_updated_by uuid default auth.uid()
 )
@@ -381,16 +471,10 @@ security definer
 set search_path = public
 as $$
 begin
-  perform public._validate_platform_entity_limit_target(
-    p_target_table,
-    p_ownership_scope,
-    p_resolver_key
-  );
+  perform public._validate_platform_entity_limit_target(p_target_table);
 
   update public.platform_entity_creation_limits
-  set ownership_scope = p_ownership_scope,
-      resolver_key = p_resolver_key,
-      notes = p_notes,
+  set notes = p_notes,
       updated_at = timezone('utc', now()),
       updated_by = p_updated_by
   where table_name = p_target_table;
@@ -472,11 +556,7 @@ begin
       using errcode = 'P0001';
   end if;
 
-  perform public._validate_platform_entity_limit_target(
-    p_target_table,
-    v_any_row.ownership_scope,
-    v_any_row.resolver_key
-  );
+  perform public._validate_platform_entity_limit_target(p_target_table);
 
   execute format(
     'drop trigger if exists enforce_platform_entity_creation_limits on public.%I',
@@ -497,43 +577,74 @@ stable
 security definer
 set search_path = public
 as $$
-  select t.table_name
-  from information_schema.tables t
-  where t.table_schema = 'public'
-    and t.table_type = 'BASE TABLE'
-    and t.table_name <> 'platform_entity_creation_limits'
-    and exists (
+  with candidate_tables as (
+    select t.table_name,
+           format('entity_limit_source__%s', t.table_name) as source_view_name
+    from information_schema.tables t
+    where t.table_schema = 'public'
+      and t.table_type = 'BASE TABLE'
+      and t.table_name <> 'platform_entity_creation_limits'
+  ),
+  valid_views as (
+    select c.table_name
+    from candidate_tables c
+    join information_schema.views v
+      on v.table_schema = 'public'
+     and v.table_name = c.source_view_name
+    where exists (
       select 1
-      from information_schema.columns c
-      where c.table_schema = t.table_schema
-        and c.table_name = t.table_name
-        and c.column_name = 'created_at'
+      from information_schema.columns col
+      where col.table_schema = 'public'
+        and col.table_name = c.source_view_name
+        and col.column_name = 'ws_id'
+        and col.data_type = 'uuid'
     )
-    and not exists (
+      and exists (
       select 1
-      from public.platform_entity_creation_limits l
-      where l.table_name = t.table_name
+      from information_schema.columns col
+      where col.table_schema = 'public'
+        and col.table_name = c.source_view_name
+        and col.column_name = 'user_id'
+        and col.data_type = 'uuid'
     )
-  order by t.table_name;
+      and exists (
+      select 1
+      from information_schema.columns col
+      where col.table_schema = 'public'
+        and col.table_name = c.source_view_name
+        and col.column_name = 'created_at'
+        and col.data_type = 'timestamp with time zone'
+    )
+  )
+  select v.table_name
+  from valid_views v
+  where not exists (
+    select 1
+    from public.platform_entity_creation_limits l
+    where l.table_name = v.table_name
+  )
+  order by v.table_name;
 $$;
 
 revoke all on table public.platform_entity_creation_limits from anon, authenticated;
 
 revoke all on function public._resolve_user_personal_workspace_tier(uuid) from public, anon, authenticated;
-revoke all on function public._validate_platform_entity_limit_target(text, text, text) from public, anon, authenticated;
+revoke all on function public._validate_platform_entity_limit_target(text) from public, anon, authenticated;
+revoke all on function public._resolve_platform_entity_limit_scope(text, jsonb, uuid) from public, anon, authenticated;
 revoke all on function public.enforce_platform_entity_creation_limits() from public, anon, authenticated;
-revoke all on function public.add_platform_entity_creation_limit_table(text, text, text, text, uuid) from public, anon, authenticated;
-revoke all on function public.update_platform_entity_creation_limit_metadata(text, text, text, text, uuid) from public, anon, authenticated;
+revoke all on function public.add_platform_entity_creation_limit_table(text, text, uuid) from public, anon, authenticated;
+revoke all on function public.update_platform_entity_creation_limit_metadata(text, text, uuid) from public, anon, authenticated;
 revoke all on function public.update_platform_entity_creation_limit_tier(text, public.workspace_product_tier, boolean, integer, integer, integer, integer, integer, uuid) from public, anon, authenticated;
 revoke all on function public.reattach_platform_entity_creation_limit_trigger(text) from public, anon, authenticated;
 revoke all on function public.get_available_platform_entity_limit_tables() from public, anon, authenticated;
 
 grant select, insert, update, delete on table public.platform_entity_creation_limits to service_role;
 grant execute on function public._resolve_user_personal_workspace_tier(uuid) to service_role;
-grant execute on function public._validate_platform_entity_limit_target(text, text, text) to service_role;
+grant execute on function public._validate_platform_entity_limit_target(text) to service_role;
+grant execute on function public._resolve_platform_entity_limit_scope(text, jsonb, uuid) to service_role;
 grant execute on function public.enforce_platform_entity_creation_limits() to service_role;
-grant execute on function public.add_platform_entity_creation_limit_table(text, text, text, text, uuid) to service_role;
-grant execute on function public.update_platform_entity_creation_limit_metadata(text, text, text, text, uuid) to service_role;
+grant execute on function public.add_platform_entity_creation_limit_table(text, text, uuid) to service_role;
+grant execute on function public.update_platform_entity_creation_limit_metadata(text, text, uuid) to service_role;
 grant execute on function public.update_platform_entity_creation_limit_tier(text, public.workspace_product_tier, boolean, integer, integer, integer, integer, integer, uuid) to service_role;
 grant execute on function public.reattach_platform_entity_creation_limit_trigger(text) to service_role;
 grant execute on function public.get_available_platform_entity_limit_tables() to service_role;
