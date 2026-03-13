@@ -16,6 +16,8 @@ export interface SupabaseProviderConfig {
   resyncInterval?: number | false;
   saveDebounceMs?: number; // Debounce time for database saves (default: 1000ms)
   broadcastDebounceMs?: number; // Debounce time for broadcasting updates (0 = immediate, default: 0)
+  loadState?: () => Promise<number[] | null>;
+  saveState?: (state: number[]) => Promise<void>;
 }
 
 export default class SupabaseProvider extends EventEmitter {
@@ -168,42 +170,46 @@ export default class SupabaseProvider extends EventEmitter {
 
       this.logger(`saving ${content.length} bytes to database`);
 
-      const { error, status } = await this.supabase
-        .from(this.config.tableName as any)
-        .update({ [this.config.columnName]: content })
-        .eq(this.config.idName || 'id', this.config.id);
+      if (this.config.saveState) {
+        await this.config.saveState(content);
+      } else {
+        const { error, status } = await this.supabase
+          .from(this.config.tableName as any)
+          .update({ [this.config.columnName]: content })
+          .eq(this.config.idName || 'id', this.config.id);
 
-      if (error) {
-        this.logger(`save failed with status ${status}:`, error);
+        if (error) {
+          this.logger(`save failed with status ${status}:`, error);
 
-        // Handle 422 errors - task was deleted, validation failed, or RLS rejected
-        if (status === 422) {
-          console.warn(
-            `Failed to save Yjs state (422 - Unprocessable Entity):`,
-            {
-              message: error.message,
-              details: error.details,
-              hint: error.hint,
-              taskId: this.config.id,
-            }
-          );
+          // Handle 422 errors - task was deleted, validation failed, or RLS rejected
+          if (status === 422) {
+            console.warn(
+              `Failed to save Yjs state (422 - Unprocessable Entity):`,
+              {
+                message: error.message,
+                details: error.details,
+                hint: error.hint,
+                taskId: this.config.id,
+              }
+            );
 
-          // Mark as not synced so UI shows warning
-          this.synced = false;
+            // Mark as not synced so UI shows warning
+            this.synced = false;
 
-          // Stop trying to save this document
-          this.logger('stopping future saves due to 422 error');
-          return;
+            // Stop trying to save this document
+            this.logger('stopping future saves due to 422 error');
+            return;
+          }
+
+          // Handle 404 errors - task doesn't exist
+          if (status === 404) {
+            console.warn(`Task ${this.config.id} not found, stopping saves`);
+            this.synced = false;
+            return;
+          }
+
+          throw error;
         }
-
-        // Handle 404 errors - task doesn't exist
-        if (status === 404) {
-          console.warn(`Task ${this.config.id} not found, stopping saves`);
-          this.synced = false;
-          return;
-        }
-
-        throw error;
       }
 
       this.logger('save successful');
@@ -228,18 +234,25 @@ export default class SupabaseProvider extends EventEmitter {
       this.reconnectTimeout = undefined;
     }
 
-    const { data, status } = await this.supabase
-      .from(this.config.tableName as any)
-      .select<string, { [key: string]: number[] }>(`${this.config.columnName}`)
-      .eq(this.config.idName || 'id', this.config.id)
-      .single();
+    const persistedState = this.config.loadState
+      ? await this.config.loadState()
+      : await (async () => {
+          const { data, status } = await this.supabase
+            .from(this.config.tableName as any)
+            .select<string, { [key: string]: number[] }>(
+              `${this.config.columnName}`
+            )
+            .eq(this.config.idName || 'id', this.config.id)
+            .single();
 
-    this.logger('retrieved data from supabase', status);
+          this.logger('retrieved data from supabase', status);
+          return data?.[this.config.columnName] ?? null;
+        })();
 
-    if (data?.[this.config.columnName]) {
+    if (persistedState && persistedState.length > 0) {
       this.logger('applying update to yjs');
       try {
-        this.applyUpdate(Uint8Array.from(data[this.config.columnName] ?? []));
+        this.applyUpdate(Uint8Array.from(persistedState));
       } catch (error) {
         this.logger(error);
       }

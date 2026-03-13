@@ -255,7 +255,7 @@ export async function POST(
     const results = await Promise.all(
       data.users.map(async (user) => {
         // Check if email was already sent for this post/user combination
-        const { data: existingSentEmail } = await supabase
+        const { data: existingSentEmail } = await sbAdmin
           .from('sent_emails')
           .select('id')
           .eq('receiver_id', user.id)
@@ -297,7 +297,7 @@ export async function POST(
 
         if (result.success) {
           // Log sent email to sent_emails table for backwards compatibility
-          const { data: sentEmail, error: insertError } = await supabase
+          const { data: sentEmail, error: insertError } = await sbAdmin
             .from('sent_emails')
             .insert({
               post_id: postId,
@@ -320,7 +320,7 @@ export async function POST(
             });
           } else if (sentEmail) {
             // Update user_group_post_checks with the email_id
-            await supabase
+            await sbAdmin
               .from('user_group_post_checks')
               .update({ email_id: sentEmail.id })
               .eq('post_id', postId)

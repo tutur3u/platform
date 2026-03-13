@@ -1,5 +1,5 @@
 import { PlusCircle, User } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUserReport } from '@tuturuuu/types';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
@@ -193,9 +193,9 @@ export default async function WorkspaceUserDetailsPage({
 }
 
 async function getData({ wsId, reportId }: { wsId: string; reportId: string }) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
-  const queryBuilder = supabase
+  const queryBuilder = sbAdmin
     .from('external_user_monthly_reports')
     .select(
       '*, user:workspace_users!user_id!inner(full_name, ws_id, archived, archived_until, note), creator:workspace_users!creator_id(full_name), ...workspace_user_groups(group_name:name)',
@@ -212,51 +212,40 @@ async function getData({ wsId, reportId }: { wsId: string; reportId: string }) {
   if (error) throw error;
   if (!rawData) notFound();
 
-  const data: {
-    user_name?: string;
-    creator_name?: string;
-    user?: any;
-    creator?: any;
-    [key: string]: any;
-  } = {
-    user_name: Array.isArray(rawData.user)
-      ? rawData.user?.[0]?.full_name
-      : //
-        (rawData.user?.full_name ?? undefined),
-    user_archived: Array.isArray(rawData.user)
-      ? rawData.user?.[0]?.archived
-      : //
-        (rawData.user?.archived ?? undefined),
-    user_archived_until: Array.isArray(rawData.user)
-      ? rawData.user?.[0]?.archived_until
-      : //
-        (rawData.user?.archived_until ?? undefined),
-    user_note: Array.isArray(rawData.user)
-      ? rawData.user?.[0]?.note
-      : //
-        (rawData.user?.note ?? undefined),
-    creator_name: Array.isArray(rawData.creator)
-      ? rawData.creator?.[0]?.full_name
-      : //
-        (rawData.creator?.full_name ?? undefined),
-    ...rawData,
-  };
-
-  delete data.user;
-  delete data.creator;
-
-  return data as WorkspaceUserReport & {
+  const data: WorkspaceUserReport & {
     group_name: string;
     user_archived?: boolean;
     user_archived_until?: string | null;
     user_note?: string | null;
+    user_name?: string;
+    creator_name?: string;
+  } = {
+    ...rawData,
+    user_name: Array.isArray(rawData.user)
+      ? rawData.user?.[0]?.full_name
+      : (rawData.user?.full_name ?? undefined),
+    user_archived: Array.isArray(rawData.user)
+      ? rawData.user?.[0]?.archived
+      : (rawData.user?.archived ?? undefined),
+    user_archived_until: Array.isArray(rawData.user)
+      ? rawData.user?.[0]?.archived_until
+      : (rawData.user?.archived_until ?? undefined),
+    user_note: Array.isArray(rawData.user)
+      ? rawData.user?.[0]?.note
+      : (rawData.user?.note ?? undefined),
+    creator_name: Array.isArray(rawData.creator)
+      ? rawData.creator?.[0]?.full_name
+      : (rawData.creator?.full_name ?? undefined),
+    group_name: rawData.group_name || 'No group',
   };
+
+  return data;
 }
 
 async function getUserGroups(wsId: string) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
-  const queryBuilder = supabase
+  const queryBuilder = sbAdmin
     .from('workspace_user_groups_with_amount')
     .select('id, name, amount', {
       count: 'exact',
@@ -271,9 +260,9 @@ async function getUserGroups(wsId: string) {
 }
 
 async function getUsers(wsId: string, groupId: string) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
-  const queryBuilder = supabase
+  const queryBuilder = sbAdmin
     .rpc(
       'get_workspace_users',
       {
@@ -305,9 +294,9 @@ async function getReports(
   userId: string,
   forceRedirect = false
 ) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
-  const queryBuilder = supabase
+  const queryBuilder = sbAdmin
     .from('external_user_monthly_reports')
     .select(
       '*, user:workspace_users!user_id!inner(full_name, ws_id), creator:workspace_users!creator_id(full_name)',
@@ -322,10 +311,14 @@ async function getReports(
   const { data: rawData, error, count } = await queryBuilder;
   if (error) throw error;
 
-  const data = rawData?.map((rawData) => ({
-    user_name: rawData.user.full_name,
-    creator_name: rawData.creator?.full_name,
-    ...rawData,
+  const data = (rawData || []).map((row) => ({
+    ...row,
+    user_name: Array.isArray(row.user)
+      ? row.user?.[0]?.full_name
+      : (row.user?.full_name ?? undefined),
+    creator_name: Array.isArray(row.creator)
+      ? row.creator?.[0]?.full_name
+      : (row.creator?.full_name ?? undefined),
   }));
 
   if (forceRedirect) {
@@ -338,9 +331,9 @@ async function getReports(
 }
 
 async function getConfigs(wsId: string) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
-  const queryBuilder = supabase
+  const queryBuilder = sbAdmin
     .from('workspace_configs')
     .select('*')
     .eq('ws_id', wsId)
@@ -366,16 +359,16 @@ async function getConfigs(wsId: string) {
 
   // If rawData is not empty, merge it with availableConfigs
   if (rawData?.length) {
-    rawData.forEach((config) => {
+    for (const config of rawData) {
       const index = configs.findIndex((c) => c.id === config.id);
       if (index !== -1) {
         // Replace the default config with the one from the database
         configs[index] = { ...configs[index], ...config };
       } else {
         // If the config does not exist in availableConfigs, add it
-        configs.push(config);
+        configs.push(config as any);
       }
-    });
+    }
   }
 
   const count = configs.length;

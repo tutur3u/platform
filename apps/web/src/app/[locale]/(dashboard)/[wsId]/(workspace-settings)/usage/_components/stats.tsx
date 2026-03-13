@@ -173,7 +173,7 @@ export async function DocumentsUsageStats({ wsId }: { wsId: string }) {
 }
 
 export async function PostsUsageStats({ wsId }: { wsId: string }) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
   const permissions = await getPermissions({ wsId });
   if (!permissions) notFound();
   const { containsPermission } = permissions;
@@ -182,14 +182,14 @@ export async function PostsUsageStats({ wsId }: { wsId: string }) {
     return <StatisticCard title="Posts" value="***" className="opacity-50" />;
   }
 
-  const { data: userGroups } = await supabase
+  const { data: userGroups } = await sbAdmin
     .from('workspace_user_groups')
     .select('id')
     .eq('ws_id', wsId);
 
   const userGroupIds = userGroups?.map((group) => group.id) || [];
 
-  const { count } = await supabase
+  const { count } = await sbAdmin
     .from('user_group_posts')
     .select('*', { count: 'exact', head: true })
     .in('group_id', userGroupIds);

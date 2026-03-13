@@ -1,7 +1,6 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUserReport } from '@tuturuuu/types';
 import { toast } from '@tuturuuu/ui/sonner';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -46,7 +45,6 @@ export function useReportMutations({
   canApproveReports?: boolean;
 }) {
   const t = useTranslations();
-  const supabase = createClient();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -60,21 +58,6 @@ export function useReportMutations({
     }) => {
       if (!report.user_id || !report.group_id)
         throw new Error('Missing user or group');
-
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser();
-      if (!authUser) throw new Error('User not authenticated');
-
-      const { data: workspaceUser, error: workspaceUserError } = await supabase
-        .from('workspace_user_linked_users')
-        .select('virtual_user_id')
-        .eq('platform_user_id', authUser.id)
-        .eq('ws_id', wsId)
-        .single();
-
-      if (workspaceUserError) throw workspaceUserError;
-      if (!workspaceUser) throw new Error('User not found in workspace');
 
       let calculatedScores = report.scores;
       let calculatedScore = report.score;
@@ -96,24 +79,10 @@ export function useReportMutations({
             : null;
       }
 
-      // Check for duplicate report with same user, group, and title
-      const { data: existing } = await supabase
-        .from('external_user_monthly_reports')
-        .select('id')
-        .eq('user_id', report.user_id)
-        .eq('group_id', report.group_id)
-        .eq('title', payload.title)
-        .limit(1)
-        .maybeSingle();
-
-      if (existing) {
-        throw new Error(t('ws-reports.duplicate_report_exists'));
-      }
-
-      const now = new Date().toISOString();
-      const { data, error } = await supabase
-        .from('external_user_monthly_reports')
-        .insert({
+      const response = await fetch(`/api/v1/workspaces/${wsId}/users/reports`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           user_id: report.user_id,
           group_id: report.group_id,
           title: payload.title,
@@ -121,14 +90,18 @@ export function useReportMutations({
           feedback: payload.feedback,
           score: calculatedScore,
           scores: calculatedScores,
-          creator_id: workspaceUser.virtual_user_id ?? undefined,
-          created_at: now,
-          updated_at: now,
-        })
-        .select('id')
-        .single();
-      if (error) throw error;
-      return data as { id: string };
+        }),
+      });
+
+      if (!response.ok) {
+        if (response.status === 409) {
+          throw new Error(t('ws-reports.duplicate_report_exists'));
+        }
+        const data = await response.json();
+        throw new Error(data.message || t('ws-reports.failed_create_report'));
+      }
+
+      return await response.json();
     },
     onSuccess: async (data) => {
       toast.success(t('ws-reports.report_created'));
@@ -139,6 +112,15 @@ export function useReportMutations({
       ];
       if (report.group_id) {
         statusPromises.push(
+          queryClient.invalidateQueries({
+            queryKey: [
+              'ws',
+              wsId,
+              'group',
+              report.group_id,
+              'reports-dashboard',
+            ],
+          }),
           queryClient.invalidateQueries({
             queryKey: [
               'ws',
@@ -177,11 +159,12 @@ export function useReportMutations({
         router.replace(`/${wsId}/users/reports?${sp.toString()}`);
       }
     },
-    onError: (err: any) => {
+    onError: (err) => {
+      const error = err as { code?: string; message?: string };
       const isDuplicate =
-        err?.code === '23505' ||
-        err?.message?.includes('duplicate key value') ||
-        err?.message === t('ws-reports.duplicate_report_exists');
+        error?.code === '23505' ||
+        error?.message?.includes('duplicate key value') ||
+        error?.message === t('ws-reports.duplicate_report_exists');
 
       toast.error(
         isDuplicate
@@ -207,21 +190,30 @@ export function useReportMutations({
       score?: number | null;
     }) => {
       if (!report.id) throw new Error('Missing report id');
-      const { error } = await supabase
-        .from('external_user_monthly_reports')
-        .update({
-          title: payload.title,
-          content: payload.content,
-          feedback: payload.feedback,
-          score: payload.score,
-          updated_at: new Date().toISOString(),
-          // Auto-approve when user with approval permission saves
-          ...(canApproveReports && report.report_approval_status !== 'APPROVED'
-            ? buildApproveFields()
-            : {}),
-        })
-        .eq('id', report.id);
-      if (error) throw error;
+
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users/reports/${report.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: payload.title,
+            content: payload.content,
+            feedback: payload.feedback,
+            score: payload.score,
+            // Auto-approve when user with approval permission saves
+            ...(canApproveReports &&
+            report.report_approval_status !== 'APPROVED'
+              ? buildApproveFields()
+              : {}),
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || t('ws-reports.failed_save_report'));
+      }
     },
     onSuccess: async () => {
       toast.success(t('ws-reports.report_saved'));
@@ -237,11 +229,18 @@ export function useReportMutations({
   const deleteMutation = useMutation({
     mutationFn: async () => {
       if (!report.id) throw new Error('Missing report id');
-      const { error } = await supabase
-        .from('external_user_monthly_reports')
-        .delete()
-        .eq('id', report.id);
-      if (error) throw error;
+
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users/reports/${report.id}`,
+        {
+          method: 'DELETE',
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || t('ws-reports.failed_delete_report'));
+      }
     },
     onSuccess: async () => {
       toast.success(t('ws-reports.report_deleted'));
@@ -305,39 +304,28 @@ export function useReportMutations({
         throw new Error('Missing report, user, or group information');
       }
 
-      const { data: vitalsData, error: vitalsError } = await supabase
-        .from('user_indicators')
-        .select(`
-          value,
-          healthcare_vitals!inner(
-            id,
-            name,
-            unit,
-            factor,
-            group_id,
-            created_at
-          )
-        `)
-        .eq('user_id', report.user_id)
-        .eq('healthcare_vitals.group_id', report.group_id);
+      // To fetch vitals, we need another API or use an existing one.
+      // /api/v1/workspaces/${wsId}/users/reports/groups/${groupId}/dashboard already returns vitals!
+      // But we need them for a specific user.
+      const searchParams = new URLSearchParams({
+        userId: report.user_id,
+        reportId: report.id,
+      });
 
-      if (vitalsError) throw vitalsError;
+      const dashboardRes = await fetch(
+        `/api/v1/workspaces/${wsId}/users/reports/groups/${report.group_id}/dashboard?${searchParams.toString()}`,
+        { cache: 'no-store' }
+      );
 
-      // Sort by healthcare_vitals.created_at ASC to ensure
-      // scores[scores.length - 1] corresponds to the latest column
-      const vitals = (vitalsData ?? [])
-        .sort(
-          (a, b) =>
-            new Date(a.healthcare_vitals.created_at ?? 0).getTime() -
-            new Date(b.healthcare_vitals.created_at ?? 0).getTime()
-        )
-        .map((item) => ({
-          id: item.healthcare_vitals.id,
-          name: item.healthcare_vitals.name,
-          unit: item.healthcare_vitals.unit,
-          factor: item.healthcare_vitals.factor,
-          value: item.value,
-        }));
+      if (!dashboardRes.ok) throw new Error('Failed to fetch vitals');
+      const dashboardData = await dashboardRes.json();
+      const vitals = (dashboardData.healthcareVitals || []) as Array<{
+        id: string;
+        name: string;
+        unit: string;
+        factor: number;
+        value: number | null;
+      }>;
 
       const scores = vitals
         .filter((vital) => vital.value !== null && vital.value !== undefined)
@@ -362,28 +350,33 @@ export function useReportMutations({
             : scores.reduce((sum, score) => sum + score, 0) / scores.length
           : null;
 
-      const { error: updateError } = await supabase
-        .from('external_user_monthly_reports')
-        .update({
-          scores: scores.length > 0 ? scores : null,
-          score: calculatedScore,
-          updated_at: new Date().toISOString(),
-          // Auto-approve when user with approval permission saves
-          ...(canApproveReports && report.report_approval_status !== 'APPROVED'
-            ? buildApproveFields()
-            : // If user cannot approve and report was REJECTED, reset to PENDING so they can resubmit
-              !canApproveReports && report.report_approval_status === 'REJECTED'
-              ? {
-                  report_approval_status: 'PENDING' as const,
-                  rejected_at: null,
-                  rejection_reason: null,
-                  rejected_by: null,
-                }
-              : {}),
-        })
-        .eq('id', report.id);
+      const updateRes = await fetch(
+        `/api/v1/workspaces/${wsId}/users/reports/${report.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            scores: scores.length > 0 ? scores : null,
+            score: calculatedScore,
+            // Auto-approve when user with approval permission saves
+            ...(canApproveReports &&
+            report.report_approval_status !== 'APPROVED'
+              ? buildApproveFields()
+              : // If user cannot approve and report was REJECTED, reset to PENDING so they can resubmit
+                !canApproveReports &&
+                  report.report_approval_status === 'REJECTED'
+                ? {
+                    report_approval_status: 'PENDING',
+                    rejected_at: null,
+                    rejection_reason: null,
+                    rejected_by: null,
+                  }
+                : {}),
+          }),
+        }
+      );
 
-      if (updateError) throw updateError;
+      if (!updateRes.ok) throw new Error(t('ws-reports.failed_update_scores'));
 
       return { scores, calculatedScore, vitals, needsConfirmation: false };
     },
@@ -448,6 +441,7 @@ export function useReportMutations({
   });
 
   const { approveMutation, rejectMutation } = useReportApproval({
+    wsId,
     report,
     invalidateReportQueries,
   });

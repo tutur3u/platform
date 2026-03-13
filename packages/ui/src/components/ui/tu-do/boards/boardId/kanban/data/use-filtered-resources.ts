@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { normalizeBoardText } from '../../board-text-utils';
 
 export function useFilteredResources({
   workspaceLabels,
@@ -21,7 +22,9 @@ export function useFilteredResources({
     return workspaceLabels.filter(
       (label) =>
         !search.labelQuery ||
-        label.name.toLowerCase().includes(search.labelQuery.toLowerCase())
+        normalizeBoardText(label.name).includes(
+          normalizeBoardText(search.labelQuery)
+        )
     );
   }, [workspaceLabels, search.labelQuery]);
 
@@ -29,7 +32,9 @@ export function useFilteredResources({
     return workspaceProjects.filter(
       (project: any) =>
         !search.projectQuery ||
-        project.name.toLowerCase().includes(search.projectQuery.toLowerCase())
+        normalizeBoardText(project.name).includes(
+          normalizeBoardText(search.projectQuery)
+        )
     );
   }, [workspaceProjects, search.projectQuery]);
 

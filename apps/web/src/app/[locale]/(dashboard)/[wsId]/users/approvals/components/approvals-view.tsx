@@ -14,7 +14,6 @@ import {
   XCircleIcon,
   XIcon,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -58,8 +57,6 @@ export function ApprovalsView({
   const t = useTranslations('approvals');
   const router = useRouter();
   const searchParams = useSearchParams();
-
-  const supabase = createClient();
 
   // Memoize URL params
   const {
@@ -126,12 +123,12 @@ export function ApprovalsView({
   const groupsQuery = useQuery({
     queryKey: ['ws', wsId, 'approvals', 'filter-groups'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('workspace_user_groups_with_amount')
-        .select('id, name')
-        .eq('ws_id', wsId)
-        .order('name');
-      if (error) throw error;
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users/groups?limit=500`,
+        { cache: 'no-store' }
+      );
+      if (!response.ok) throw new Error('Failed to fetch groups');
+      const { data } = await response.json();
       return (data ?? []) as Array<{ id: string; name: string | null }>;
     },
     staleTime: 5 * 60 * 1000,
@@ -142,23 +139,17 @@ export function ApprovalsView({
     queryKey: ['ws', wsId, 'approvals', 'filter-users', currentGroupId],
     enabled: kind === 'reports',
     queryFn: async () => {
-      let q = supabase
-        .from('workspace_users')
-        .select('id, full_name')
-        .eq('ws_id', wsId)
-        .order('full_name', { ascending: true, nullsFirst: false });
-      if (currentGroupId) {
-        const { data: groupUserIds } = await supabase
-          .from('workspace_user_groups_users')
-          .select('user_id')
-          .eq('group_id', currentGroupId);
-        const ids = (groupUserIds ?? []).map((r) => r.user_id);
-        if (ids.length > 0) q = q.in('id', ids);
-        else return [];
-      }
-      const { data, error } = await q.limit(200);
-      if (error) throw error;
-      return (data ?? []) as Array<{
+      const searchParams = new URLSearchParams({
+        limit: '500',
+      });
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users?${searchParams.toString()}`,
+        { cache: 'no-store' }
+      );
+      if (!response.ok) throw new Error('Failed to fetch users');
+      const data = await response.json();
+      const users = Array.isArray(data) ? data : data.data || [];
+      return (users ?? []) as Array<{
         id: string;
         full_name: string | null;
       }>;
@@ -171,14 +162,16 @@ export function ApprovalsView({
     queryKey: ['ws', wsId, 'approvals', 'filter-creators'],
     enabled: kind === 'reports',
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('workspace_users')
-        .select('id, full_name')
-        .eq('ws_id', wsId)
-        .order('full_name', { ascending: true, nullsFirst: false })
-        .limit(200);
-      if (error) throw error;
-      return (data ?? []) as Array<{
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users?limit=500`,
+        {
+          cache: 'no-store',
+        }
+      );
+      if (!response.ok) throw new Error('Failed to fetch creators');
+      const data = await response.json();
+      const users = Array.isArray(data) ? data : data.data || [];
+      return (users ?? []) as Array<{
         id: string;
         full_name: string | null;
       }>;

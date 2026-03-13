@@ -45,7 +45,6 @@ export default async function WorkspaceUserReportsPage({ params }: Props) {
           notFound();
         }
 
-        const hasManageUsers = containsPermission('manage_users');
         const canCheckUserAttendance = containsPermission(
           'check_user_attendance'
         );
@@ -70,8 +69,6 @@ export default async function WorkspaceUserReportsPage({ params }: Props) {
             <Separator className="my-4" />
             <GroupReportsSelector
               wsId={wsId}
-              workspaceUserId={user.virtual_user_id}
-              hasManageUsers={hasManageUsers}
               canCheckUserAttendance={canCheckUserAttendance}
               canApproveReports={canApproveReports}
               canCreateReports={canCreateReports}

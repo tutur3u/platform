@@ -1,14 +1,17 @@
 'use client';
 
 import type { QueryClient } from '@tanstack/react-query';
-import type { JSONContent } from '@tiptap/react';
+import type { Editor, JSONContent } from '@tiptap/react';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { CalendarHoursType, Task } from '@tuturuuu/types/primitives/Task';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import { MAX_TASK_DESCRIPTION_LENGTH } from '@tuturuuu/utils/constants';
 import {
   createTask,
   createTaskRelationship,
 } from '@tuturuuu/utils/task-helper';
+import { convertJsonContentToYjsState } from '@tuturuuu/utils/yjs-helper';
+import { useTranslations } from 'next-intl';
 import type React from 'react';
 import { useCallback, useRef } from 'react';
 import type { BoardBroadcastFn } from '../../board-broadcast-context';
@@ -17,8 +20,11 @@ import {
   useBoardBroadcast,
 } from '../../board-broadcast-context';
 import type { PendingRelationship } from '../types/pending-relationship';
-import { clearDraft } from '../utils';
-import { updateWorkspaceTask } from './task-api';
+import { clearDraft, serializeTaskDescriptionContent } from '../utils';
+import {
+  updateWorkspaceTask,
+  updateWorkspaceTaskDescription,
+} from './task-api';
 import type {
   SaveSchedulingSettingsOptions,
   SchedulingSettings,
@@ -46,6 +52,7 @@ export interface UseTaskSaveProps {
   // Form state
   name: string;
   description: JSONContent | null;
+  editorInstance: Editor | null;
   priority: 'critical' | 'high' | 'low' | 'normal' | null;
   startDate: Date | undefined;
   endDate: Date | undefined;
@@ -159,6 +166,7 @@ export function useTaskSave({
   draftStorageKey,
   name,
   description,
+  editorInstance,
   priority,
   startDate,
   endDate,
@@ -197,6 +205,7 @@ export function useTaskSave({
   setSelectedProjects,
 }: UseTaskSaveProps): UseTaskSaveReturn {
   const { toast } = useToast();
+  const t = useTranslations('ws-task-boards.dialog');
   const updateSharedTaskMutation = useUpdateSharedTask();
   const contextBroadcast = useBoardBroadcast();
   const broadcast = contextBroadcast ?? getActiveBroadcast();
@@ -225,24 +234,41 @@ export function useTaskSave({
     // Get current description from editor
     let currentDescription = description;
     if (flushEditorPendingRef.current) {
-      const flushedContent = flushEditorPendingRef.current();
-      if (flushedContent) currentDescription = flushedContent;
+      currentDescription = flushEditorPendingRef.current();
     }
 
     setIsSaving(true);
     setIsLoading(true);
-    clearDraft(draftStorageKey);
 
-    // Serialize description
-    let descriptionString: string | null = null;
-    if (currentDescription) {
-      try {
-        descriptionString = JSON.stringify(currentDescription);
-      } catch (serializationError) {
-        console.error('Failed to serialize description:', serializationError);
-        descriptionString = null;
-      }
+    const descriptionString =
+      serializeTaskDescriptionContent(currentDescription);
+    const descriptionYjsState =
+      currentDescription && editorInstance?.schema
+        ? Array.from(
+            convertJsonContentToYjsState(
+              currentDescription,
+              editorInstance.schema
+            )
+          )
+        : null;
+
+    if (
+      descriptionString &&
+      descriptionString.length > MAX_TASK_DESCRIPTION_LENGTH
+    ) {
+      toast({
+        title: t('description_too_long_title'),
+        description: t('description_too_long_description', {
+          max: MAX_TASK_DESCRIPTION_LENGTH,
+        }),
+        variant: 'destructive',
+      });
+      setIsLoading(false);
+      setIsSaving(false);
+      return;
     }
+
+    clearDraft(draftStorageKey);
 
     if (isCreateMode && saveAsDraft) {
       await handleSaveAsDraft({
@@ -310,6 +336,7 @@ export function useTaskSave({
       await handleCreateTask({
         name,
         descriptionString,
+        descriptionYjsState,
         priority,
         startDate,
         endDate,
@@ -357,6 +384,7 @@ export function useTaskSave({
       wsId,
       name,
       descriptionString,
+      descriptionYjsState,
       priority,
       startDate,
       endDate,
@@ -376,6 +404,7 @@ export function useTaskSave({
   }, [
     name,
     description,
+    editorInstance,
     draftStorageKey,
     isCreateMode,
     saveAsDraft,
@@ -428,6 +457,7 @@ export function useTaskSave({
     shareCode,
     sharedPermission,
     broadcast,
+    t,
   ]);
 
   // Keep ref updated
@@ -606,6 +636,7 @@ async function handleSaveAsDraft({
 async function handleCreateTask({
   name,
   descriptionString,
+  descriptionYjsState,
   priority,
   startDate,
   endDate,
@@ -646,6 +677,7 @@ async function handleCreateTask({
 }: {
   name: string;
   descriptionString: string | null;
+  descriptionYjsState: number[] | null;
   priority: 'critical' | 'high' | 'low' | 'normal' | null;
   startDate: Date | undefined;
   endDate: Date | undefined;
@@ -753,6 +785,7 @@ async function handleCreateTask({
     };
     const newTask = await createTask(supabase, selectedListId, {
       ...taskData,
+      description_yjs_state: descriptionYjsState ?? undefined,
       label_ids: selectedLabels.map((label) => label.id),
       assignee_ids: desiredAssignees
         .map((assignee) => assignee.user_id || assignee.id)
@@ -988,6 +1021,7 @@ async function handleUpdateTask({
   wsId,
   name,
   descriptionString,
+  descriptionYjsState,
   priority,
   startDate,
   endDate,
@@ -1008,6 +1042,7 @@ async function handleUpdateTask({
   wsId: string;
   name: string;
   descriptionString: string | null;
+  descriptionYjsState: number[] | null;
   priority: 'critical' | 'high' | 'low' | 'normal' | null;
   startDate: Date | undefined;
   endDate: Date | undefined;
@@ -1026,7 +1061,7 @@ async function handleUpdateTask({
   setIsLoading: (loading: boolean) => void;
   setIsSaving: (saving: boolean) => void;
 }) {
-  const taskUpdates: Partial<Task> & { description?: string | undefined } = {
+  const taskUpdates: Partial<Task> = {
     name: name.trim(),
     priority: priority,
     start_date: startDate ? startDate.toISOString() : undefined,
@@ -1037,20 +1072,23 @@ async function handleUpdateTask({
     // (task_user_scheduling_settings). Do not persist them to the shared task row.
   };
 
-  if (collaborationMode && flushEditorPendingRef.current) {
-    const yjsDescription = flushEditorPendingRef.current();
-    taskUpdates.description = yjsDescription
-      ? JSON.stringify(yjsDescription)
-      : undefined;
-  } else {
-    taskUpdates.description = descriptionString ?? undefined;
-  }
-
   if (taskId) {
     // Shared task editing (no workspace membership required): use shared endpoint.
     if (shareCode) {
+      const sharedDescription =
+        collaborationMode && flushEditorPendingRef.current
+          ? (serializeTaskDescriptionContent(flushEditorPendingRef.current()) ??
+            undefined)
+          : (descriptionString ?? undefined);
+
       updateSharedTaskMutation.mutate(
-        { shareCode, updates: taskUpdates },
+        {
+          shareCode,
+          updates: {
+            ...taskUpdates,
+            description: sharedDescription,
+          },
+        },
         {
           onSuccess: async () => {
             toast({
@@ -1080,6 +1118,10 @@ async function handleUpdateTask({
 
     try {
       await updateWorkspaceTask(wsId, taskId, taskUpdates);
+      await updateWorkspaceTaskDescription(wsId, taskId, {
+        description: descriptionString,
+        description_yjs_state: descriptionYjsState,
+      });
       toast({
         title: 'Task updated',
         description: 'The task has been successfully updated.',

@@ -2,19 +2,24 @@
 
 import type { QueryClient } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/react';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { convertJsonContentToYjsState } from '@tuturuuu/utils/yjs-helper';
 import debounce from 'lodash/debounce';
 import type React from 'react';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type * as Y from 'yjs';
 import { DESCRIPTION_SYNC_DEBOUNCE_MS } from '../constants';
-import { saveYjsDescriptionToDatabase } from '../utils';
-
-const supabase = createClient();
+import {
+  serializeTaskDescriptionContent,
+  updateTaskDescriptionCaches,
+} from '../utils';
+import {
+  fetchWorkspaceTaskDescription,
+  updateWorkspaceTaskDescription,
+} from './task-api';
 
 export interface UseTaskYjsSyncProps {
   taskId?: string;
+  wsId: string;
   boardId: string;
   isOpen: boolean;
   isCreateMode: boolean;
@@ -35,6 +40,7 @@ export interface UseTaskYjsSyncProps {
  */
 export function useTaskYjsSync({
   taskId,
+  wsId,
   boardId,
   isOpen,
   isCreateMode,
@@ -45,45 +51,67 @@ export function useTaskYjsSync({
   queryClient,
   flushEditorPendingRef,
 }: UseTaskYjsSyncProps): void {
+  const initializedTaskIdRef = useRef<string | null>(null);
+
   // Initialize Yjs state for task description if not present
   useEffect(() => {
     if (!taskId || !editorInstance?.schema || !description || !doc) return;
+    if (initializedTaskIdRef.current === taskId) return;
 
     const initializeYjsState = async () => {
       try {
-        const { data: taskData, error: taskDataError } = await supabase
-          .from('tasks')
-          .select('description_yjs_state')
-          .eq('id', taskId)
-          .single();
+        const taskDescription = await fetchWorkspaceTaskDescription(
+          wsId,
+          taskId
+        );
+        const currentYjsState = Array.isArray(
+          taskDescription.description_yjs_state
+        )
+          ? taskDescription.description_yjs_state
+          : null;
 
-        if (taskDataError) throw taskDataError;
-
-        if (!taskData?.description_yjs_state) {
+        if (!currentYjsState || currentYjsState.length === 0) {
           const yjsState = convertJsonContentToYjsState(
             description,
             editorInstance.schema
           );
-          const { error: updateError } = await supabase
-            .from('tasks')
-            .update({ description_yjs_state: Array.from(yjsState) })
-            .eq('id', taskId);
 
-          if (updateError) throw updateError;
+          if (yjsState.length > 0) {
+            await updateWorkspaceTaskDescription(wsId, taskId, {
+              description_yjs_state: Array.from(yjsState),
+            });
+          }
 
           // Import Y dynamically to apply update
           const Y = await import('yjs');
           Y.applyUpdate(doc, yjsState);
         }
+
+        initializedTaskIdRef.current = taskId;
       } catch (error) {
-        console.error('Error initializing Yjs state:', error);
+        console.error('Error initializing Yjs state:', {
+          taskId,
+          wsId,
+          ...(error instanceof Error
+            ? { message: error.message, name: error.name }
+            : { error }),
+        });
       }
     };
 
     initializeYjsState();
-  }, [doc, description, editorInstance, taskId]);
+  }, [doc, description, editorInstance, taskId, wsId]);
 
-  // Event-based sync: Update description field from Yjs for real-time UI updates
+  useEffect(() => {
+    if (
+      initializedTaskIdRef.current &&
+      initializedTaskIdRef.current !== taskId
+    ) {
+      initializedTaskIdRef.current = null;
+    }
+  }, [taskId]);
+
+  // Event-based sync: update local caches from Yjs for real-time UI updates
   useEffect(() => {
     if (
       !realtimeEnabled ||
@@ -98,25 +126,22 @@ export function useTaskYjsSync({
 
     let lastSyncedContent: string | null = null;
 
-    const syncDescriptionFromYjs = async () => {
+    const syncDescriptionFromYjs = () => {
       if (!flushEditorPendingRef.current) return;
 
       const currentDescription = flushEditorPendingRef.current();
-      const descriptionString = currentDescription
-        ? JSON.stringify(currentDescription)
-        : null;
+      const descriptionString =
+        serializeTaskDescriptionContent(currentDescription);
 
       if (descriptionString === lastSyncedContent) return;
 
-      const success = await saveYjsDescriptionToDatabase({
+      updateTaskDescriptionCaches({
         taskId,
-        getContent: () => currentDescription,
+        descriptionString,
         boardId,
         queryClient,
-        context: 'yjs-update',
       });
-
-      if (success) lastSyncedContent = descriptionString;
+      lastSyncedContent = descriptionString;
     };
 
     const debouncedSync = debounce(

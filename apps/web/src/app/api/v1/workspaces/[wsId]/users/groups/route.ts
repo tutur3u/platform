@@ -1,9 +1,6 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
-import {
-  MAX_SEARCH_LENGTH,
-  MAX_SHORT_TEXT_LENGTH,
-} from '@tuturuuu/utils/constants';
+import { MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -15,16 +12,12 @@ import {
   fetchManagersForGroups,
   getUserGroupMemberships,
 } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/utils';
+import { buildPostgrestRateLimitResponse } from '@/lib/postgrest-rate-limit';
 
 const SearchParamsSchema = z.object({
   q: z.string().max(MAX_SEARCH_LENGTH).optional(),
   page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(MAX_SHORT_TEXT_LENGTH)
-    .default(10),
+  pageSize: z.coerce.number().int().min(1).max(200).default(10),
 });
 
 interface Params {
@@ -35,14 +28,15 @@ interface Params {
 
 export async function GET(request: Request, { params }: Params) {
   try {
-    const supabase = await createClient();
     const { wsId: id } = await params;
+    const supabase = await createAdminClient();
 
     const wsId = await normalizeWorkspaceId(id);
 
     // Check permissions
     const permissions = await getPermissions({
       wsId,
+      request,
     });
     if (!permissions) {
       return Response.json({ error: 'Not found' }, { status: 404 });
@@ -106,7 +100,15 @@ export async function GET(request: Request, { params }: Params) {
       error,
       count: fetchedCount,
     } = await queryBuilder;
-    if (error) throw error;
+
+    if (error) {
+      const rateLimitResponse = buildPostgrestRateLimitResponse(error);
+      if (rateLimitResponse) {
+        return rateLimitResponse;
+      }
+
+      throw error;
+    }
 
     data = fetchedData as UserGroup[];
     count = fetchedCount ?? 0;

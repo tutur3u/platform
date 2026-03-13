@@ -434,9 +434,9 @@ async function getReportData({
   wsId: string;
   userId: string;
 }) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
-  const queryBuilder = supabase
+  const queryBuilder = sbAdmin
     .from('external_user_monthly_reports')
     .select('*, user:workspace_users!user_id!inner(ws_id)', {
       count: 'exact',

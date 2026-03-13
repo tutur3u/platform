@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { MAX_URL_LENGTH } from '@tuturuuu/utils/constants';
 import {
   getPermissions,
@@ -24,7 +24,7 @@ const SingleSchema = z.object({
 const MultipleSchema = z.array(SingleSchema);
 
 export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
   const data = await req.json();
   const { wsId: id, groupId } = await params;
 
@@ -32,7 +32,7 @@ export async function POST(req: Request, { params }: Params) {
   const wsId = await normalizeWorkspaceId(id);
 
   // Check permissions
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -79,7 +79,7 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   // Ensure resource belongs to this workspace and group, and is approved
-  const { data: post, error: postErr } = await supabase
+  const { data: post, error: postErr } = await sbAdmin
     .from('user_group_posts')
     .select(`
       id,
@@ -115,7 +115,7 @@ export async function POST(req: Request, { params }: Params) {
         },
       ];
 
-  const { error } = await supabase
+  const { error } = await sbAdmin
     .from('user_group_post_checks')
     .insert(insertPayload);
 

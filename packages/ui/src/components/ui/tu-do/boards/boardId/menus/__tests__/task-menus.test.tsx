@@ -294,6 +294,25 @@ describe('TaskLabelsMenu', () => {
 
     expect(screen.getByText('No labels available')).toBeInTheDocument();
   });
+
+  it('should ignore labels with missing names without crashing', () => {
+    render(
+      <TaskLabelsMenu
+        taskLabels={[]}
+        availableLabels={[
+          ...mockLabels,
+          { id: 'label-3', color: '#0000ff' } as any,
+        ]}
+        isLoading={false}
+        onToggleLabel={mockOnToggleLabel}
+        onCreateNewLabel={mockOnCreateNewLabel}
+        onMenuItemSelect={mockOnMenuItemSelect}
+      />
+    );
+
+    expect(screen.getByText('Bug')).toBeInTheDocument();
+    expect(screen.getByText('Feature')).toBeInTheDocument();
+  });
 });
 
 describe('TaskProjectsMenu', () => {
@@ -365,6 +384,25 @@ describe('TaskProjectsMenu', () => {
     );
 
     expect(screen.getByText('No projects available')).toBeInTheDocument();
+  });
+
+  it('should ignore projects with missing names without crashing', () => {
+    render(
+      <TaskProjectsMenu
+        taskProjects={[]}
+        availableProjects={[
+          ...mockProjects,
+          { id: 'project-3', status: 'active' } as any,
+        ]}
+        isLoading={false}
+        onToggleProject={mockOnToggleProject}
+        onCreateNewProject={mockOnCreateNewProject}
+        onMenuItemSelect={mockOnMenuItemSelect}
+      />
+    );
+
+    expect(screen.getByText('Project Alpha')).toBeInTheDocument();
+    expect(screen.getByText('Project Beta')).toBeInTheDocument();
   });
 });
 
