@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
@@ -10,13 +10,13 @@ export default async function UserReportsStatistics({
   wsId: string;
   redirect?: boolean;
 }) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
   const t = await getTranslations();
 
   const enabled = true;
 
   const { count: reports } = enabled
-    ? await supabase
+    ? await sbAdmin
         .from('external_user_monthly_reports')
         .select('*, user:workspace_users!user_id!inner(ws_id)', {
           count: 'exact',

@@ -1,7 +1,6 @@
 'use client';
 
 import { type QueryClient, useMutation } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import type { UserReport } from './use-report-mutations';
@@ -14,16 +13,6 @@ export function buildApproveFields() {
     rejected_by: null,
     rejected_at: null,
     rejection_reason: null,
-  };
-}
-
-function buildRejectFields(reason: string) {
-  return {
-    report_approval_status: 'REJECTED' as const,
-    rejected_at: new Date().toISOString(),
-    rejection_reason: reason,
-    approved_by: null,
-    approved_at: null,
   };
 }
 
@@ -97,25 +86,39 @@ export function createReportQueryInvalidator(
 }
 
 interface UseReportApprovalOptions {
+  wsId: string;
   report: UserReport;
   invalidateReportQueries: () => Promise<void>;
 }
 
 export function useReportApproval({
+  wsId,
   report,
   invalidateReportQueries,
 }: UseReportApprovalOptions) {
   const t = useTranslations();
-  const supabase = createClient();
 
   const approveMutation = useMutation({
     mutationFn: async () => {
       if (!report.id) throw new Error('Missing report id');
-      const { error } = await supabase
-        .from('external_user_monthly_reports')
-        .update(buildApproveFields())
-        .eq('id', report.id);
-      if (error) throw error;
+
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users/approvals`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'approve',
+            kind: 'reports',
+            itemId: report.id,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || t('ws-reports.failed_approve_report'));
+      }
     },
     onSuccess: async () => {
       toast.success(t('ws-reports.report_approved'));
@@ -133,11 +136,25 @@ export function useReportApproval({
   const rejectMutation = useMutation({
     mutationFn: async (reason: string) => {
       if (!report.id) throw new Error('Missing report id');
-      const { error } = await supabase
-        .from('external_user_monthly_reports')
-        .update(buildRejectFields(reason))
-        .eq('id', report.id);
-      if (error) throw error;
+
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users/approvals`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'reject',
+            kind: 'reports',
+            itemId: report.id,
+            reason,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || t('ws-reports.failed_reject_report'));
+      }
     },
     onSuccess: async () => {
       toast.success(t('ws-reports.report_rejected'));

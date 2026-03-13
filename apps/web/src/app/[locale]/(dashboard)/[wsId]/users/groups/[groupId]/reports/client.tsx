@@ -8,7 +8,6 @@ import {
   Download,
   Loader2,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUserReport } from '@tuturuuu/types';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -134,7 +133,6 @@ export default function GroupReportsClient({
   const userId = queryParams.userId;
   const reportId = queryParams.reportId;
 
-  const supabase = createClient();
   const dashboardQuery = useQuery({
     queryKey: [
       'ws',
@@ -461,34 +459,26 @@ export default function GroupReportsClient({
     setBulkExportTheme(resolveCurrentReportPreviewTheme());
     setIsPreparingBulkExport(true);
     try {
-      let query = supabase
-        .from('external_user_monthly_reports')
-        .select(
-          '*, user:workspace_users!user_id!inner(full_name, ws_id), creator:workspace_users!creator_id(full_name), ...workspace_user_groups(group_name:name)'
-        )
-        .eq('group_id', groupId)
-        .eq('workspace_users.ws_id', wsId)
-        .eq('title', titleFilter);
+      const searchParams = new URLSearchParams({
+        title: titleFilter,
+        status: filter,
+      });
 
-      if (filter === 'APPROVED') {
-        query = query.eq('report_approval_status', 'APPROVED');
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users/reports/groups/${groupId}/bulk-export?${searchParams.toString()}`,
+        { cache: 'no-store' }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch reports for bulk export');
       }
 
-      const { data, error } = await query;
+      const mappedReports = await response.json();
 
-      if (error) throw error;
-
-      if (!data || data.length === 0) {
+      if (!mappedReports || mappedReports.length === 0) {
         toast.error(t('ws-reports.no_reports_found'));
         return;
       }
-
-      const mappedReports = data.map((raw: any) => ({
-        ...raw,
-        user_name: raw.user?.full_name,
-        creator_name: raw.creator?.full_name,
-        group_name: raw.group_name,
-      }));
 
       setBulkReportsToExport(mappedReports);
       setBulkExportOpen(true);

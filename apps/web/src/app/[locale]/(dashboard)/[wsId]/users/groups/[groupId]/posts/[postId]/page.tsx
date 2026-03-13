@@ -7,10 +7,7 @@ import {
   Send,
   X,
 } from '@tuturuuu/icons';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import type { Database } from '@tuturuuu/types/supabase';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -269,8 +266,8 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
 }
 
 async function getPostData(postId: string) {
-  const supabase = await createClient();
-  const { data, error } = await supabase
+  const sbAdmin = await createAdminClient();
+  const { data, error } = await sbAdmin
     .from('user_group_posts')
     .select('*')
     .eq('id', postId)
@@ -281,8 +278,8 @@ async function getPostData(postId: string) {
 }
 
 async function getGroupData(wsId: string, groupId: string) {
-  const supabase = await createClient();
-  const { data, error } = await supabase
+  const sbAdmin = await createAdminClient();
+  const { data, error } = await sbAdmin
     .from('workspace_user_groups')
     .select('*')
     .eq('ws_id', wsId)
@@ -294,9 +291,9 @@ async function getGroupData(wsId: string, groupId: string) {
 }
 
 async function getPostStatus(groupId: string, postId: string) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
-  const { data: users, count } = await supabase
+  const { data: users, count } = await sbAdmin
     .from('workspace_user_groups_users')
     .select(
       '...workspace_users(id, user_group_post_checks!inner(post_id, is_completed))',
@@ -307,7 +304,7 @@ async function getPostStatus(groupId: string, postId: string) {
     .eq('group_id', groupId)
     .eq('workspace_users.user_group_post_checks.post_id', postId);
 
-  const { data: sentEmails } = await supabase
+  const { data: sentEmails } = await sbAdmin
     .from('sent_emails')
     .select('receiver_id', {
       count: 'exact',
@@ -320,7 +317,9 @@ async function getPostStatus(groupId: string, postId: string) {
       user?.user_group_post_checks?.find((check) => check?.is_completed)
     ).length,
     failed: users?.filter((user) =>
-      user?.user_group_post_checks?.find((check) => !check?.is_completed)
+      user?.user_group_post_checks?.find(
+        (check) => check?.is_completed === false
+      )
     ).length,
     tenative: users?.filter((user) => !user.id).length,
     count,
@@ -338,9 +337,9 @@ async function getUserData(
     retry = true,
   }: SearchParams & { retry?: boolean } = {}
 ) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
-  const queryBuilder = supabase
+  const queryBuilder = sbAdmin
     .from('workspace_user_groups_users')
     .select('...workspace_users!inner(*)', {
       count: 'exact',

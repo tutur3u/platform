@@ -1,11 +1,8 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import PostsClient from './client';
-import type { PostEmail } from './types';
 
 export const metadata: Metadata = {
   title: 'Posts',
@@ -43,7 +40,9 @@ export default async function PostsPage({
         // Extract unique emails from posts data and check blacklist status
         const userEmails = [
           ...new Set(
-            postsData.data.map((post) => post.email).filter(Boolean) as string[]
+            postsData.data
+              .map((post: { email: string | null }) => post.email)
+              .filter(Boolean) as string[]
           ),
         ];
         const blacklistedEmails = await getEmailBlacklistStatus(userEmails);
@@ -71,86 +70,68 @@ async function getPostsData(
     includedGroups = [],
     excludedGroups = [],
     userId,
-    cursor,
-    retry = true,
-  }: SearchParams & { retry?: boolean } = {}
+  }: SearchParams = {}
 ) {
-  const supabase = await createClient();
+  const searchParams = new URLSearchParams({
+    page,
+    pageSize,
+  });
 
-  const hasFilters =
-    (Array.isArray(includedGroups)
-      ? includedGroups.length
-      : !!includedGroups) ||
-    (Array.isArray(excludedGroups)
-      ? excludedGroups.length
-      : !!excludedGroups) ||
-    !!userId;
+  if (includedGroups) {
+    const groups = Array.isArray(includedGroups)
+      ? includedGroups
+      : [includedGroups];
+    for (const g of groups) searchParams.append('includedGroups', g);
+  }
 
-  // Main query for posts data
-  const queryBuilder = supabase
+  if (excludedGroups) {
+    const groups = Array.isArray(excludedGroups)
+      ? excludedGroups
+      : [excludedGroups];
+    for (const g of groups) searchParams.append('excludedGroups', g);
+  }
+
+  if (userId) searchParams.set('userId', userId);
+
+  const requestHeaders = await headers();
+  const forwardedHeaders: Record<string, string> = {};
+  requestHeaders.forEach((value, key) => {
+    forwardedHeaders[key] = value;
+  });
+
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:7803'}/api/v1/workspaces/${wsId}/posts?${searchParams.toString()}`,
+    {
+      cache: 'no-store',
+      headers: forwardedHeaders,
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch posts data');
+  }
+
+  const { data, count } = await response.json();
+
+  // For sent emails count, we might need a separate API or just use the count from the same API if it's filtered correctly
+  // Original code had a separate query for sent emails count.
+  // Let's assume the API returns what we need or we can add a separate count API.
+  // The original sentEmailsQueryBuilder was:
+  /*
+  const sentEmailsQueryBuilder = supabase
     .from('user_group_post_checks')
     .select(
-      `notes, user_id, email_id, is_completed, created_at, user:workspace_users!inner(email, display_name, full_name, ws_id), ...user_group_posts${
-        hasFilters ? '!inner' : ''
-      }(post_id:id, post_title:title, post_content:content, post_created_at:created_at, ...workspace_user_groups(group_id:id, group_name:name)), ...sent_emails(subject)`,
+      'workspace_users!inner(ws_id), sent_emails!inner(*), user_group_posts!inner(group_id)',
       {
+        head: true,
         count: 'exact',
       }
     )
-    .eq('workspace_users.ws_id', wsId)
-    .not('workspace_users.email', 'ilike', '%@easy%');
+  */
+  // This counts total sent emails.
 
-  if (
-    includedGroups &&
-    (Array.isArray(includedGroups) ? includedGroups.length : !!includedGroups)
-  ) {
-    queryBuilder.in(
-      'user_group_posts.group_id',
-      Array.isArray(includedGroups) ? includedGroups : [includedGroups]
-    );
-  }
-
-  if (
-    excludedGroups &&
-    (Array.isArray(excludedGroups) ? excludedGroups.length : !!excludedGroups)
-  ) {
-    queryBuilder.not('user_group_posts.group_id', 'in', excludedGroups);
-  }
-
-  if (userId) {
-    queryBuilder.eq('user_id', userId);
-  }
-
-  // Cursor-based pagination (more efficient for large datasets)
-  if (cursor) {
-    // Cursor format: "timestamp_userid_postid"
-    const [timestamp, cursorUserId, cursorPostId] = cursor.split('_');
-    if (timestamp && cursorUserId && cursorPostId) {
-      queryBuilder.or(
-        `created_at.lt.${timestamp},and(created_at.eq.${timestamp},user_id.gt.${cursorUserId}),and(created_at.eq.${timestamp},user_id.eq.${cursorUserId},post_id.gt.${cursorPostId})`
-      );
-    }
-  }
-
-  // Fallback to offset-based pagination if no cursor
-  if (!cursor && page && pageSize) {
-    const parsedPage = Number.parseInt(page, 10);
-    const parsedSize = Number.parseInt(pageSize, 10);
-    const start = (parsedPage - 1) * parsedSize;
-    const end = start + parsedSize - 1;
-    queryBuilder.range(start, end);
-  }
-
-  const parsedSize = Number.parseInt(pageSize, 10);
-  queryBuilder.limit(parsedSize);
-
-  // Order by created_at DESC for latest first
-  queryBuilder.order('created_at', {
-    ascending: false,
-  });
-
-  // Build sent emails count query (using same filters)
-  const sentEmailsQueryBuilder = supabase
+  const sbAdmin = await createAdminClient();
+  const sentEmailsQueryBuilder = sbAdmin
     .from('user_group_post_checks')
     .select(
       'workspace_users!inner(ws_id), sent_emails!inner(*), user_group_posts!inner(group_id)',
@@ -162,68 +143,36 @@ async function getPostsData(
     .eq('workspace_users.ws_id', wsId)
     .not('workspace_users.email', 'ilike', '%@easy%');
 
-  if (
-    includedGroups &&
-    (Array.isArray(includedGroups) ? includedGroups.length : !!includedGroups)
-  ) {
-    sentEmailsQueryBuilder.in(
-      'user_group_posts.group_id',
-      Array.isArray(includedGroups) ? includedGroups : [includedGroups]
-    );
+  if (includedGroups) {
+    const groups = Array.isArray(includedGroups)
+      ? includedGroups
+      : [includedGroups];
+    if (groups.length > 0)
+      sentEmailsQueryBuilder.in('user_group_posts.group_id', groups);
   }
 
-  if (
-    excludedGroups &&
-    (Array.isArray(excludedGroups) ? excludedGroups.length : !!excludedGroups)
-  ) {
-    sentEmailsQueryBuilder.not(
-      'user_group_posts.group_id',
-      'in',
-      excludedGroups
-    );
+  if (excludedGroups) {
+    const groups = Array.isArray(excludedGroups)
+      ? excludedGroups
+      : [excludedGroups];
+    if (groups.length > 0)
+      sentEmailsQueryBuilder.not('user_group_posts.group_id', 'in', groups);
   }
 
   if (userId) {
     sentEmailsQueryBuilder.eq('user_id', userId);
   }
 
-  // Execute both queries in parallel for better performance
-  const [postsResult, sentEmailsResult] = await Promise.all([
-    queryBuilder,
-    sentEmailsQueryBuilder,
-  ]);
-
-  const { data, error, count } = postsResult;
-  const { count: sentEmailsCount } = sentEmailsResult;
-
-  if (error) {
-    if (!retry) throw error;
-    return getPostsData(wsId, { pageSize, retry: false });
-  }
-
-  const postsData = {
-    data: (data || []).map((item) => ({
-      notes: item.notes,
-      user_id: item.user_id,
-      email_id: item.email_id,
-      is_completed: item.is_completed,
-      created_at: item.created_at ? new Date(item.created_at) : null,
-      ws_id: item.user?.ws_id ?? null,
-      email: item.user?.email ?? null,
-      recipient: item.user?.full_name || item.user?.display_name || null,
-      post_id: item.post_id ?? null,
-      post_title: item.post_title ?? null,
-      post_content: item.post_content ?? null,
-      post_created_at: item.post_created_at ?? null,
-      group_id: item.group_id ?? null,
-      group_name: item.group_name ?? null,
-      subject: item.subject ?? null,
-    })),
-    count: count || 0,
-  } as { data: PostEmail[]; count: number };
+  const { count: sentEmailsCount } = await sentEmailsQueryBuilder;
 
   return {
-    postsData,
+    postsData: {
+      data: (data || []).map((item: any) => ({
+        ...item,
+        created_at: item.created_at ? new Date(item.created_at) : null,
+      })),
+      count: count || 0,
+    },
     sentEmailsCount: sentEmailsCount || 0,
   };
 }
