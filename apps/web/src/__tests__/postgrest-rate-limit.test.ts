@@ -57,6 +57,22 @@ describe('postgrest rate limit helpers', () => {
     });
   });
 
+  it('detects direct RATE_LIMITED errors with plain-text retry details', async () => {
+    const response = buildPostgrestRateLimitResponse({
+      code: 'RATE_LIMITED',
+      details: 'Retry after 21 seconds',
+      hint: 'Reduce request frequency and retry after the provided delay.',
+      message: 'Rate limit exceeded, try again later',
+    });
+
+    expect(response?.status).toBe(429);
+    expect(response?.headers.get('Retry-After')).toBe('21');
+    await expect(response?.json()).resolves.toEqual({
+      error: 'Too Many Requests',
+      message: 'Rate limit exceeded',
+    });
+  });
+
   it('ignores non-rate-limit PostgREST errors', () => {
     const response = buildPostgrestRateLimitResponse({
       code: 'PGRST116',

@@ -7,58 +7,64 @@ type PostgrestLikeError = {
   message?: string | null;
 };
 
-function tryParseJson(value: string | null | undefined): unknown {
-  if (!value) {
-    return null;
-  }
+type PostgrestRateLimitDetails = {
+  headers?: Record<string, string | number | null | undefined>;
+  status?: number;
+};
+
+function parseJson<T>(value: string | null | undefined): T | null {
+  if (!value) return null;
 
   try {
-    return JSON.parse(value);
+    return JSON.parse(value) as T;
   } catch {
     return null;
   }
 }
 
+function getRetryAfterSeconds(
+  error: PostgrestLikeError,
+  details: PostgrestRateLimitDetails | null
+) {
+  const retryAfterValue = details?.headers?.['Retry-After'] ?? error.details;
+
+  if (typeof retryAfterValue === 'number') {
+    return Number.isFinite(retryAfterValue) ? retryAfterValue : null;
+  }
+
+  if (typeof retryAfterValue !== 'string') {
+    return null;
+  }
+
+  const directValue = Number.parseInt(retryAfterValue, 10);
+  if (!Number.isNaN(directValue)) {
+    return directValue;
+  }
+
+  const match = retryAfterValue.match(/retry after\s+(\d+)\s+seconds/i)?.[1];
+  return match ? Number.parseInt(match, 10) : null;
+}
+
 export function getPostgrestRateLimitMetadata(error: PostgrestLikeError): {
   retryAfter: number | null;
 } | null {
-  const messageJson = tryParseJson(error.message);
-  const detailsJson = tryParseJson(error.details) as {
-    headers?: Record<string, string | number | null | undefined>;
-    status?: number;
-  } | null;
+  const message = parseJson<{ code?: string }>(error.message);
+  const details = parseJson<PostgrestRateLimitDetails>(error.details);
 
-  const errorCodeFromMessage =
-    messageJson && typeof messageJson === 'object' && 'code' in messageJson
-      ? (messageJson.code as string | undefined)
-      : undefined;
+  const isRateLimited =
+    error.code === 'RATE_LIMITED' ||
+    (error.code === 'PGRST' && message?.code === 'RATE_LIMITED');
 
-  const statusFromDetails = detailsJson?.status;
-  const retryAfterHeader = detailsJson?.headers?.['Retry-After'];
-  const retryAfter =
-    typeof retryAfterHeader === 'number'
-      ? retryAfterHeader
-      : typeof retryAfterHeader === 'string'
-        ? Number.parseInt(retryAfterHeader, 10)
-        : Number.NaN;
-
-  const hasRateLimitSqlState =
-    error.code === 'PGRST' || error.code === 'RATE_LIMITED';
-
-  if (!hasRateLimitSqlState && errorCodeFromMessage !== 'RATE_LIMITED') {
+  if (!isRateLimited) {
     return null;
   }
 
-  if (errorCodeFromMessage !== 'RATE_LIMITED') {
-    return null;
-  }
-
-  if (statusFromDetails !== 429) {
+  if (details?.status !== undefined && details.status !== 429) {
     return null;
   }
 
   return {
-    retryAfter: Number.isNaN(retryAfter) ? null : retryAfter,
+    retryAfter: getRetryAfterSeconds(error, details),
   };
 }
 

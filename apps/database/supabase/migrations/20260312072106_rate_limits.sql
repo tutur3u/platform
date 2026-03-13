@@ -220,6 +220,9 @@ BEGIN
 END;
 $$;
 
+-- Restore a writable-transaction fallback for rate-limit audit rows when the
+-- authenticated dblink connection is not configured or fails.
+
 CREATE OR REPLACE FUNCTION private.record_rate_limit_attempt(
     p_request_method TEXT,
     p_request_path TEXT,
@@ -238,6 +241,7 @@ DECLARE
     v_user_literal TEXT;
     v_ip_literal TEXT;
     v_sql TEXT;
+    v_is_read_only BOOLEAN := COALESCE(current_setting('transaction_read_only', true), 'off') = 'on';
 BEGIN
     v_user_literal := CASE
         WHEN p_user_id IS NULL THEN
@@ -263,30 +267,55 @@ BEGIN
     );
 
     v_connstr := private.build_rate_limit_dblink_connstr();
-    IF v_connstr IS NULL THEN
+    IF v_connstr IS NOT NULL THEN
+        BEGIN
+            BEGIN
+                PERFORM dblink_disconnect(v_conn_name);
+            EXCEPTION
+                WHEN OTHERS THEN
+                    NULL;
+            END;
+
+            PERFORM dblink_connect(v_conn_name, v_connstr);
+            PERFORM dblink_exec(v_conn_name, v_sql);
+            PERFORM dblink_disconnect(v_conn_name);
+            RETURN;
+        EXCEPTION
+            WHEN OTHERS THEN
+                BEGIN
+                    PERFORM dblink_disconnect(v_conn_name);
+                EXCEPTION
+                    WHEN OTHERS THEN
+                        NULL;
+                END;
+        END;
+    END IF;
+
+    IF v_is_read_only THEN
         RETURN;
     END IF;
 
     BEGIN
-        PERFORM dblink_disconnect(v_conn_name);
+        INSERT INTO private.rate_limits (
+            request_method,
+            request_path,
+            db_role,
+            user_id,
+            ip
+        )
+        VALUES (
+            p_request_method,
+            p_request_path,
+            p_db_role,
+            p_user_id,
+            p_ip
+        );
     EXCEPTION
+        WHEN read_only_sql_transaction THEN
+            RETURN;
         WHEN OTHERS THEN
-            NULL;
+            RETURN;
     END;
-
-    PERFORM dblink_connect(v_conn_name, v_connstr);
-    PERFORM dblink_exec(v_conn_name, v_sql);
-    PERFORM dblink_disconnect(v_conn_name);
-EXCEPTION
-    WHEN OTHERS THEN
-        BEGIN
-            PERFORM dblink_disconnect(v_conn_name);
-        EXCEPTION
-            WHEN OTHERS THEN
-                NULL;
-        END;
-
-        RETURN;
 END;
 $$;
 
@@ -443,7 +472,7 @@ COMMENT ON FUNCTION private.cleanup_rate_limits(INTERVAL) IS
 COMMENT ON FUNCTION private.build_rate_limit_dblink_connstr() IS
     'Builds the authenticated dblink connection string for autonomous rate-limit audit writes from app.rate_limit_dblink_* settings.';
 COMMENT ON FUNCTION private.record_rate_limit_attempt(TEXT, TEXT, TEXT, UUID, INET) IS
-    'Attempts to persist a rate-limit event through an authenticated dblink connection and otherwise fails open.';
+    'Attempts autonomous rate-limit logging through authenticated dblink, then falls back to an in-transaction insert for writable requests when dblink is unavailable.';
 COMMENT ON FUNCTION public.check_request() IS
     'PostgREST pre-request hook that atomically enforces fixed-window write limits, while skipping read-only transactions such as STABLE RPC calls.';
 
