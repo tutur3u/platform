@@ -14,6 +14,7 @@ import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
 import { useProgressiveLoader } from '../../shared/progressive-loader-context';
+import { normalizeBoardText } from './board-text-utils';
 import { ListActions } from './list-actions';
 import { statusIcons } from './status-section';
 import type { TaskFilters } from './task-filter';
@@ -149,15 +150,15 @@ export function BoardColumn({
   }, [column.id, listState, loadListPage]);
 
   // Helper to translate standard list names
-  const translateListName = (name: string): string => {
-    const normalized = name.toLowerCase().replace(/\s+/g, '');
+  const translateListName = (name: string | null | undefined): string => {
+    const normalized = normalizeBoardText(name).replace(/\s+/g, '');
     const translations: Record<string, string> = {
       todo: t('list_name_to_do'),
       inprogress: t('list_name_in_progress'),
       done: t('list_name_done'),
       closed: t('list_name_closed'),
     };
-    return translations[normalized] ?? name;
+    return translations[normalized] ?? name ?? '';
   };
 
   const {

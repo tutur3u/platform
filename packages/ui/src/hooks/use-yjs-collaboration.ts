@@ -19,6 +19,10 @@ export interface YjsCollaborationConfig {
   enabled?: boolean;
   /** Debounce time for broadcasting document updates (0 = immediate). */
   broadcastDebounceMs?: number;
+  /** Debounce time for persistence writes (broadcast stays realtime). */
+  saveDebounceMs?: number;
+  loadDocumentState?: () => Promise<number[] | null>;
+  saveDocumentState?: (state: number[]) => Promise<void>;
   onSync?: (synced: boolean) => void;
   onError?: (error: Error) => void;
   onSave?: (version: number) => void;
@@ -50,6 +54,9 @@ export function useYjsCollaboration(
     user,
     enabled = true,
     broadcastDebounceMs,
+    saveDebounceMs,
+    loadDocumentState,
+    saveDocumentState,
     onSync,
     onError,
     onSave,
@@ -146,7 +153,9 @@ export function useYjsCollaboration(
       columnName: columnName,
       awareness,
       resyncInterval: 30000,
-      saveDebounceMs: 300,
+      saveDebounceMs: saveDebounceMs ?? 300,
+      loadState: loadDocumentState,
+      saveState: saveDocumentState,
       ...(broadcastDebounceMs !== undefined && { broadcastDebounceMs }),
     });
 
@@ -263,6 +272,9 @@ export function useYjsCollaboration(
     awareness,
     enabled,
     broadcastDebounceMs,
+    saveDebounceMs,
+    loadDocumentState,
+    saveDocumentState,
   ]);
 
   // Awareness update: sync user identity without recreating the provider

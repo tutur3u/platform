@@ -149,10 +149,12 @@ const COLOR_NAME_MAP: Record<string, string> = {
  * @returns Object with bg, border, and text colors, or null if invalid
  */
 export function computeAccessibleLabelStyles(
-  raw: string
+  raw: string | null | undefined
 ): { bg: string; border: string; text: string } | null {
+  const normalizedName =
+    typeof raw === 'string' ? raw.trim().toLowerCase() : '';
   const baseHex =
-    normalizeHex(raw) || COLOR_NAME_MAP[raw.toLowerCase?.()] || null;
+    normalizeHex(raw ?? '') || COLOR_NAME_MAP[normalizedName] || null;
   if (!baseHex) return null;
   const rgb = hexToRgb(baseHex);
   if (!rgb) return null;

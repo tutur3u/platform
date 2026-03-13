@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
   MAX_SEARCH_LENGTH,
@@ -7,6 +7,7 @@ import {
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { buildPostgrestRateLimitResponse } from '@/lib/postgrest-rate-limit';
 
 function normalizeListParam(value: string | string[]) {
   const rawValues = Array.isArray(value) ? value : [value];
@@ -48,7 +49,6 @@ interface Params {
 
 export async function GET(request: Request, { params }: Params) {
   try {
-    const supabase = await createClient();
     const { wsId: id } = await params;
 
     // Resolve workspace ID
@@ -93,7 +93,9 @@ export async function GET(request: Request, { params }: Params) {
     const sp = SearchParamsSchema.parse(params_obj);
 
     // Fetch data using RPC with link_status parameter for efficient filtering
-    let queryBuilder = supabase
+    const sbAdmin = await createAdminClient();
+
+    let queryBuilder = sbAdmin
       .rpc(
         'get_workspace_users',
         {
@@ -131,6 +133,11 @@ export async function GET(request: Request, { params }: Params) {
     const { data, error, count } = await queryBuilder;
 
     if (error) {
+      const rateLimitResponse = buildPostgrestRateLimitResponse(error);
+      if (rateLimitResponse) {
+        return rateLimitResponse;
+      }
+
       console.error('Error fetching workspace users:', error);
       return NextResponse.json(
         { message: 'Error fetching workspace users' },
@@ -138,50 +145,78 @@ export async function GET(request: Request, { params }: Params) {
       );
     }
 
-    // Enrich each user with guest status
-    const withGuest = await Promise.all(
-      (data as unknown as WorkspaceUser[]).map(async (u) => {
-        const { data: isGuest } = await supabase.rpc('is_user_guest', {
-          user_uuid: u.id,
-        });
+    const workspaceUsers = (data as unknown as WorkspaceUser[]) ?? [];
+    const workspaceUserIds = workspaceUsers
+      .map((user) => user.id)
+      .filter((userId): userId is string => Boolean(userId));
 
-        // Sanitize data based on permissions
-        const sanitized: Record<string, unknown> = {
-          ...u,
-          is_guest: Boolean(isGuest),
-        };
+    let guestUserIds = new Set<string>();
 
-        // Remove private fields if user doesn't have permission
-        if (!hasPrivateInfo) {
-          delete sanitized.email;
-          delete sanitized.phone;
-          delete sanitized.birthday;
-          delete sanitized.gender;
-          delete sanitized.ethnicity;
-          delete sanitized.guardian;
-          delete sanitized.national_id;
-          delete sanitized.address;
-          delete sanitized.note;
+    if (workspaceUserIds.length > 0) {
+      const { data: guestMemberships, error: guestError } = await sbAdmin
+        .from('workspace_user_groups_users')
+        .select('user_id, workspace_user_groups!inner(is_guest, ws_id)')
+        .eq('workspace_user_groups.ws_id', wsId)
+        .eq('workspace_user_groups.is_guest', true)
+        .in('user_id', workspaceUserIds);
+
+      if (guestError) {
+        const rateLimitResponse = buildPostgrestRateLimitResponse(guestError);
+        if (rateLimitResponse) {
+          return rateLimitResponse;
         }
 
-        // Remove public fields if user doesn't have permission
-        if (!hasPublicInfo) {
-          delete sanitized.avatar_url;
-          delete sanitized.full_name;
-          delete sanitized.display_name;
-          delete sanitized.group_count;
-          delete sanitized.linked_users;
-          delete sanitized.created_at;
-          delete sanitized.updated_at;
-        }
+        console.error('Error fetching guest workspace users:', guestError);
+        return NextResponse.json(
+          { message: 'Error fetching workspace users' },
+          { status: 500 }
+        );
+      }
 
-        if (!canCheckUserAttendance) {
-          delete sanitized.attendance_count;
-        }
+      guestUserIds = new Set(
+        (guestMemberships ?? [])
+          .map((membership) => membership.user_id)
+          .filter((userId): userId is string => Boolean(userId))
+      );
+    }
 
-        return sanitized as unknown as WorkspaceUser & { is_guest?: boolean };
-      })
-    );
+    const withGuest = workspaceUsers.map((u) => {
+      // Sanitize data based on permissions
+      const sanitized: Record<string, unknown> = {
+        ...u,
+        is_guest: guestUserIds.has(u.id),
+      };
+
+      // Remove private fields if user doesn't have permission
+      if (!hasPrivateInfo) {
+        delete sanitized.email;
+        delete sanitized.phone;
+        delete sanitized.birthday;
+        delete sanitized.gender;
+        delete sanitized.ethnicity;
+        delete sanitized.guardian;
+        delete sanitized.national_id;
+        delete sanitized.address;
+        delete sanitized.note;
+      }
+
+      // Remove public fields if user doesn't have permission
+      if (!hasPublicInfo) {
+        delete sanitized.avatar_url;
+        delete sanitized.full_name;
+        delete sanitized.display_name;
+        delete sanitized.group_count;
+        delete sanitized.linked_users;
+        delete sanitized.created_at;
+        delete sanitized.updated_at;
+      }
+
+      if (!canCheckUserAttendance) {
+        delete sanitized.attendance_count;
+      }
+
+      return sanitized as unknown as WorkspaceUser & { is_guest?: boolean };
+    });
 
     return NextResponse.json({
       data: withGuest,

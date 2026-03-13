@@ -145,6 +145,15 @@ export function useReportMutations({
               wsId,
               'group',
               report.group_id,
+              'reports-dashboard',
+            ],
+          }),
+          queryClient.invalidateQueries({
+            queryKey: [
+              'ws',
+              wsId,
+              'group',
+              report.group_id,
               'user-report-status-summary',
             ],
           })

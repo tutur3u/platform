@@ -14,6 +14,7 @@ import { memo } from 'react';
 import { TaskEstimationDisplay } from '../../../shared/task-estimation-display';
 import { TaskLabelsDisplay } from '../../../shared/task-labels-display';
 import { getPriorityIndicator } from '../../../utils/taskPriorityUtils';
+import { sortByDisplayName } from '../board-text-utils';
 
 interface TaskCardMetadataProps {
   task: Task;
@@ -81,9 +82,7 @@ export const TaskCardMetadata = memo(function TaskCardMetadata({
           <div className="flex min-w-0 shrink-0 flex-wrap gap-1">
             {/* Sort labels for deterministic display order */}
             <TaskLabelsDisplay
-              labels={[...task.labels].sort((a, b) =>
-                a.name.toLowerCase().localeCompare(b.name.toLowerCase())
-              )}
+              labels={sortByDisplayName(task.labels)}
               size="sm"
               hiddenLabelsLabel={hiddenLabelsLabel}
             />

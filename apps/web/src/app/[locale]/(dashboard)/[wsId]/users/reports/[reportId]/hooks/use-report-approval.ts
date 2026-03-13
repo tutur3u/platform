@@ -52,6 +52,9 @@ export function createReportQueryInvalidator(
     if (report.group_id) {
       promises.push(
         queryClient.invalidateQueries({
+          queryKey: ['ws', wsId, 'group', report.group_id, 'reports-dashboard'],
+        }),
+        queryClient.invalidateQueries({
           queryKey: [
             'ws',
             wsId,

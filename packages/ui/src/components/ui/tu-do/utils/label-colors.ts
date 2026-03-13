@@ -101,7 +101,7 @@ export interface AccessibleLabelStyles {
  * @returns Accessible styles object with bg, border, and text colors, or null if invalid color
  */
 export function computeAccessibleLabelStyles(
-  raw: string,
+  raw: string | null | undefined,
   isDark: boolean
 ): AccessibleLabelStyles | null {
   const nameMap: Record<string, string> = {
@@ -126,7 +126,9 @@ export function computeAccessibleLabelStyles(
     slate: '#64748b',
     zinc: '#71717a',
   };
-  const baseHex = normalizeHex(raw) || nameMap[raw.toLowerCase?.()] || null;
+  const normalizedName =
+    typeof raw === 'string' ? raw.trim().toLowerCase() : '';
+  const baseHex = normalizeHex(raw ?? '') || nameMap[normalizedName] || null;
   if (!baseHex) return null;
   const rgb = hexToRgb(baseHex);
   if (!rgb) return null;

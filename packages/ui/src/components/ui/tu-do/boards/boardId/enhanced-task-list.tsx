@@ -38,6 +38,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
 import { useBoardBroadcast } from '../../shared/board-broadcast-context';
+import { normalizeBoardText } from './board-text-utils';
 import { TaskCard } from './task';
 
 interface Props {
@@ -106,15 +107,15 @@ export function EnhancedTaskList({
   const broadcast = useBoardBroadcast();
 
   // Helper to translate standard list names
-  const translateListName = (name: string): string => {
-    const normalized = name.toLowerCase().replace(/\s+/g, '');
+  const translateListName = (name: string | null | undefined): string => {
+    const normalized = normalizeBoardText(name).replace(/\s+/g, '');
     const translations: Record<string, string> = {
       todo: t('list_name_to_do'),
       inprogress: t('list_name_in_progress'),
       done: t('list_name_done'),
       closed: t('list_name_closed'),
     };
-    return translations[normalized] ?? name;
+    return translations[normalized] ?? name ?? '';
   };
 
   // Draggable for the list itself

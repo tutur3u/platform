@@ -3,7 +3,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/react';
 import { Loader2 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
@@ -11,6 +10,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
 import type * as Y from 'yjs';
 import { RichTextEditor } from '../../../../text-editor/editor';
+import { fetchWorkspaceTask, updateWorkspaceTask } from '../hooks/task-api';
 
 // Provider type from Yjs collaboration
 type HocuspocusProvider = Parameters<typeof RichTextEditor>[0]['yjsProvider'];
@@ -50,6 +50,9 @@ export interface TaskDescriptionEditorProps {
   // Callbacks
   onImageUpload: (file: File) => Promise<string>;
   onEditorReady: (editor: Editor) => void;
+  descriptionStorageLength: number;
+  descriptionLimit: number;
+  isDescriptionOverLimit: boolean;
 
   /** Translations for mention chip dialogs */
   mentionTranslations?: {
@@ -98,6 +101,9 @@ export function TaskDescriptionEditor({
   collaborationUser,
   onImageUpload,
   onEditorReady,
+  descriptionStorageLength,
+  descriptionLimit,
+  isDescriptionOverLimit,
   mentionTranslations,
   disabled = false,
 }: TaskDescriptionEditorProps) {
@@ -105,7 +111,6 @@ export function TaskDescriptionEditor({
   // Yjs sync is enabled for all tiers (realtimeEnabled), but cursor labels only for paid tiers (collaborationMode)
   const allowYjsSync = isOpen && !isCreateMode && realtimeEnabled;
   const showCollaborationCursors = isOpen && !isCreateMode && collaborationMode;
-  const supabase = createClient();
 
   // Track mention changes to detect undo/redo operations and sync with database
   const previousMentionedTaskIdsRef = useRef<Set<string>>(new Set());
@@ -170,34 +175,22 @@ export function TaskDescriptionEditor({
       // Handle restored mentions (undo operation)
       for (const taskId of addedMentions) {
         try {
-          const { data: task } = await supabase
-            .from('tasks')
-            .select('id, deleted_at, name, board_id')
-            .eq('id', taskId)
-            .maybeSingle();
+          const { task } = await fetchWorkspaceTask(wsId, taskId);
 
           if (task?.deleted_at) {
-            // Restore the task
-            const { error } = await supabase
-              .from('tasks')
-              .update({ deleted_at: null })
-              .eq('id', taskId);
-
-            if (!error) {
-              // Update caches
-              queryClient.invalidateQueries({ queryKey: ['task', taskId] });
-              if (task.board_id) {
-                queryClient.invalidateQueries({
-                  queryKey: ['tasks', task.board_id],
-                });
-              }
-
-              toast.info(t('task_restored'), {
-                description: t('task_restored_description', {
-                  name: task.name || `#${taskId.slice(0, 8)}`,
-                }),
+            await updateWorkspaceTask(wsId, taskId, { deleted: false });
+            queryClient.invalidateQueries({ queryKey: ['task', taskId] });
+            if (task.board_id) {
+              queryClient.invalidateQueries({
+                queryKey: ['tasks', task.board_id],
               });
             }
+
+            toast.info(t('task_restored'), {
+              description: t('task_restored_description', {
+                name: task.name || `#${taskId.slice(0, 8)}`,
+              }),
+            });
           }
         } catch (error) {
           console.error(`Failed to restore task ${taskId}:`, error);
@@ -207,34 +200,23 @@ export function TaskDescriptionEditor({
       // Handle removed mentions (redo deletion - re-delete the task)
       for (const taskId of removedMentions) {
         try {
-          const { data: task } = await supabase
-            .from('tasks')
-            .select('id, deleted_at, name, board_id')
-            .eq('id', taskId)
-            .maybeSingle();
+          const { task } = await fetchWorkspaceTask(wsId, taskId);
 
           // Only re-delete if task is not already deleted
           if (task && !task.deleted_at) {
-            const { error } = await supabase
-              .from('tasks')
-              .update({ deleted_at: new Date().toISOString() })
-              .eq('id', taskId);
-
-            if (!error) {
-              // Update caches
-              queryClient.invalidateQueries({ queryKey: ['task', taskId] });
-              if (task.board_id) {
-                queryClient.invalidateQueries({
-                  queryKey: ['tasks', task.board_id],
-                });
-              }
-
-              toast.info(t('task_deleted'), {
-                description: t('task_deleted_description', {
-                  name: task.name || `#${taskId.slice(0, 8)}`,
-                }),
+            await updateWorkspaceTask(wsId, taskId, { deleted: true });
+            queryClient.invalidateQueries({ queryKey: ['task', taskId] });
+            if (task.board_id) {
+              queryClient.invalidateQueries({
+                queryKey: ['tasks', task.board_id],
               });
             }
+
+            toast.info(t('task_deleted'), {
+              description: t('task_deleted_description', {
+                name: task.name || `#${taskId.slice(0, 8)}`,
+              }),
+            });
           }
         } catch (error) {
           console.error(`Failed to re-delete task ${taskId}:`, error);
@@ -250,7 +232,7 @@ export function TaskDescriptionEditor({
     return () => {
       editor.off('update', handleUpdate);
     };
-  }, [isCreateMode, queryClient, supabase, t]);
+  }, [isCreateMode, queryClient, t, wsId]);
 
   return (
     <div ref={editorRef} className="relative">
@@ -326,6 +308,44 @@ export function TaskDescriptionEditor({
             </p>
           </div>
         )}
+      </div>
+
+      <div className="flex items-center justify-between border-border/60 border-t px-4 py-3 md:px-8">
+        <p
+          className={cn(
+            'text-xs transition-colors',
+            isDescriptionOverLimit
+              ? 'text-destructive'
+              : descriptionStorageLength >= descriptionLimit * 0.85
+                ? 'text-dynamic-yellow'
+                : 'text-muted-foreground'
+          )}
+        >
+          {isDescriptionOverLimit
+            ? t('description_storage_over_limit', {
+                max: descriptionLimit,
+              })
+            : descriptionStorageLength >= descriptionLimit * 0.85
+              ? t('description_storage_warning', {
+                  remaining: descriptionLimit - descriptionStorageLength,
+                })
+              : t('description_storage_helper')}
+        </p>
+        <div
+          className={cn(
+            'rounded-full border px-3 py-1 font-medium text-xs tabular-nums transition-colors',
+            isDescriptionOverLimit
+              ? 'border-destructive/30 bg-destructive/10 text-destructive'
+              : descriptionStorageLength >= descriptionLimit * 0.85
+                ? 'border-dynamic-yellow/30 bg-dynamic-yellow/10 text-dynamic-yellow'
+                : 'border-border/60 bg-muted/40 text-muted-foreground'
+          )}
+        >
+          {t('description_storage_counter', {
+            count: descriptionStorageLength,
+            max: descriptionLimit,
+          })}
+        </div>
       </div>
     </div>
   );

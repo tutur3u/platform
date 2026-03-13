@@ -9,6 +9,7 @@ import type { User } from '@tuturuuu/types/primitives/User';
 import { Dialog, DialogContent, DialogTitle } from '@tuturuuu/ui/dialog';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { useYjsCollaboration } from '@tuturuuu/ui/hooks/use-yjs-collaboration';
+import { MAX_TASK_DESCRIPTION_LENGTH } from '@tuturuuu/utils/constants';
 import { convertListItemToTask } from '@tuturuuu/utils/editor';
 import {
   getTicketIdentifier,
@@ -34,6 +35,7 @@ import { TaskDialogHeader } from './task-edit-dialog/components/task-dialog-head
 import { TaskNameInput } from './task-edit-dialog/components/task-name-input';
 import { TaskSuggestionMenus } from './task-edit-dialog/components/task-suggestion-menus';
 import { NAME_UPDATE_DEBOUNCE_MS } from './task-edit-dialog/constants';
+import { fetchWorkspaceTaskDescription } from './task-edit-dialog/hooks/task-api';
 import { useEditorCommands } from './task-edit-dialog/hooks/use-editor-commands';
 import { useSuggestionMenus } from './task-edit-dialog/hooks/use-suggestion-menus';
 import { useTaskChangeDetection } from './task-edit-dialog/hooks/use-task-change-detection';
@@ -66,6 +68,7 @@ import type {
 import {
   clearDraft,
   getDraftStorageKey,
+  getTaskDescriptionStorageLength,
   saveYjsDescriptionToDatabase,
 } from './task-edit-dialog/utils';
 import { TaskShareDialog } from './task-share-dialog';
@@ -192,6 +195,11 @@ export function TaskEditDialog({
   const quickDueRef = useRef<(days: number | null) => void>(() => {});
   const updateEstimationRef = useRef<(points: number | null) => void>(() => {});
   const handleConvertToTaskRef = useRef<(() => Promise<void>) | null>(null);
+  const descriptionRef = useRef<JSONContent | null>(formState.description);
+
+  useEffect(() => {
+    descriptionRef.current = formState.description;
+  }, [formState.description]);
 
   // User state
   const [user, setUser] = useState<User | null>(
@@ -260,6 +268,32 @@ export function TaskEditDialog({
     staleTime: 5 * 60 * 1000,
   });
 
+  const loadTaskDescriptionState = useCallback(async () => {
+    if (!task?.id) return null;
+    const response = await fetchWorkspaceTaskDescription(wsId, task.id);
+    return response.description_yjs_state ?? null;
+  }, [task?.id, wsId]);
+
+  const saveTaskDescriptionState = useCallback(
+    async (yjsState: number[]) => {
+      if (!task?.id) return;
+
+      await saveYjsDescriptionToDatabase({
+        wsId,
+        taskId: task.id,
+        getContent: () =>
+          flushEditorPendingRef.current
+            ? flushEditorPendingRef.current()
+            : descriptionRef.current,
+        getYjsState: () => yjsState,
+        boardId,
+        queryClient,
+        context: 'realtime-persist',
+      });
+    },
+    [boardId, queryClient, task?.id, wsId]
+  );
+
   // Yjs collaboration — paid tiers get immediate broadcasts; free tier coalesces rapid edits
   // Note: realtimeEnabled controls Yjs sync (all tiers), collaborationMode controls cursors (paid tiers)
   const { doc, provider, synced, connected } = useYjsCollaboration({
@@ -270,6 +304,9 @@ export function TaskEditDialog({
     user: yjsUser,
     enabled: isOpen && !isCreateMode && realtimeEnabled && !!task?.id,
     broadcastDebounceMs: workspaceTier && workspaceTier !== 'FREE' ? 0 : 200,
+    saveDebounceMs: 5000,
+    loadDocumentState: loadTaskDescriptionState,
+    saveDocumentState: saveTaskDescriptionState,
   });
 
   const isYjsSyncing = useMemo(() => {
@@ -696,6 +733,7 @@ export function TaskEditDialog({
   // Yjs sync
   useTaskYjsSync({
     taskId: task?.id,
+    wsId,
     boardId,
     isOpen,
     isCreateMode,
@@ -706,6 +744,13 @@ export function TaskEditDialog({
     queryClient,
     flushEditorPendingRef,
   });
+
+  const descriptionStorageLength = useMemo(
+    () => getTaskDescriptionStorageLength(formState.description),
+    [formState.description]
+  );
+  const isDescriptionOverLimit =
+    descriptionStorageLength > MAX_TASK_DESCRIPTION_LENGTH;
 
   // Quick due date handler
   const handleQuickDueDate = useCallback(
@@ -935,6 +980,7 @@ export function TaskEditDialog({
     draftStorageKey,
     name: formState.name,
     description: formState.description,
+    editorInstance,
     priority: formState.priority,
     startDate: formState.startDate,
     endDate: formState.endDate,
@@ -977,6 +1023,7 @@ export function TaskEditDialog({
   const { handleClose, handleForceClose, handleNavigateBack, handleCloseRef } =
     useTaskDialogClose({
       taskId: task?.id,
+      wsId,
       boardId,
       isCreateMode,
       collaborationMode,
@@ -990,6 +1037,9 @@ export function TaskEditDialog({
       onClose,
       onNavigateToTask,
       flushNameUpdate,
+      flushCollaborativePersistence: provider
+        ? () => provider.flushSave()
+        : undefined,
       setShowSyncWarning,
     });
 
@@ -1127,13 +1177,18 @@ export function TaskEditDialog({
           task?.id &&
           flushEditorPendingRef.current
         ) {
-          await saveYjsDescriptionToDatabase({
-            taskId: task.id,
-            getContent: flushEditorPendingRef.current,
-            boardId,
-            queryClient,
-            context: 'auto-close',
-          });
+          if (provider) {
+            provider.flushSave();
+          } else {
+            await saveYjsDescriptionToDatabase({
+              wsId,
+              taskId: task.id,
+              getContent: flushEditorPendingRef.current,
+              boardId,
+              queryClient,
+              context: 'auto-close',
+            });
+          }
         }
         if (!isCreateMode) clearDraft(draftStorageKey);
         onClose();
@@ -1150,6 +1205,8 @@ export function TaskEditDialog({
     onClose,
     collaborationMode,
     task?.id,
+    provider,
+    wsId,
     boardId,
     queryClient,
   ]);
@@ -1321,7 +1378,7 @@ export function TaskEditDialog({
                 wsId={wsId}
                 boardId={boardId}
                 pathname={pathname}
-                canSave={canSave}
+                canSave={canSave && !isDescriptionOverLimit}
                 isLoading={isLoading}
                 setCreateMultiple={setCreateMultiple}
                 handleClose={handleAttemptClose}
@@ -1518,6 +1575,9 @@ export function TaskEditDialog({
                   }
                   onImageUpload={handleImageUpload}
                   onEditorReady={handleEditorReady}
+                  descriptionStorageLength={descriptionStorageLength}
+                  descriptionLimit={MAX_TASK_DESCRIPTION_LENGTH}
+                  isDescriptionOverLimit={isDescriptionOverLimit}
                   disabled={disabled}
                   mentionTranslations={{
                     delete_task: t('delete_task'),
@@ -1599,7 +1659,7 @@ export function TaskEditDialog({
             isCreateMode={isCreateMode}
             collaborationMode={collaborationMode}
             isLoading={isLoading}
-            canSave={canSave}
+            canSave={canSave && !isDescriptionOverLimit}
             handleSave={handleSave}
             disabled={disabled}
           />
