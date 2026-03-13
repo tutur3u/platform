@@ -89,7 +89,7 @@ export async function GET(request: Request, { params }: Params) {
     }
 
     const { reportId, userId } = parsedSearchParams.data;
-    const permissions = await getPermissions({ wsId });
+    const permissions = await getPermissions({ wsId, request });
 
     if (!permissions) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });

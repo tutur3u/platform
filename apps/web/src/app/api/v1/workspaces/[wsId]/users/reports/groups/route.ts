@@ -45,7 +45,7 @@ export async function GET(request: Request, { params }: Params) {
     const { wsId: rawWsId } = await params;
     const wsId = await normalizeWorkspaceId(rawWsId);
 
-    const permissions = await getPermissions({ wsId });
+    const permissions = await getPermissions({ wsId, request });
     if (!permissions) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }

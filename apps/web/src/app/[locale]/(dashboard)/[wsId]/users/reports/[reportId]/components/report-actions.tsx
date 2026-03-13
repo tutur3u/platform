@@ -11,6 +11,7 @@ import {
   Moon,
   Palette,
   Printer,
+  Settings2,
   Sun,
   XCircle,
 } from '@tuturuuu/icons';
@@ -22,6 +23,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 import type { ApprovalStatus } from '../../../approvals/utils';
@@ -305,30 +307,38 @@ export function ReportActions({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-border/60 bg-background/80 p-3 shadow-sm backdrop-blur-sm xl:min-w-80">
-          <div className="flex items-start gap-3">
-            <div className="rounded-2xl bg-dynamic-blue/10 p-2 text-dynamic-blue">
-              <Printer className="h-4 w-4" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-start justify-between gap-3">
-                <div className="space-y-1">
-                  <div className="font-medium text-sm">
-                    {t('ws-reports.print_after_pdf_export')}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button size="sm" variant="outline" className="gap-2 rounded-xl">
+              <Settings2 className="h-4 w-4" />
+              {t('common.settings')}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-80 p-4">
+            <div className="flex items-start gap-3">
+              <div className="rounded-2xl bg-dynamic-blue/10 p-2 text-dynamic-blue">
+                <Printer className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="font-medium text-sm">
+                      {t('ws-reports.print_after_pdf_export')}
+                    </div>
+                    <p className="text-muted-foreground text-xs">
+                      {t('ws-reports.print_after_pdf_export_description')}
+                    </p>
                   </div>
-                  <p className="text-muted-foreground text-xs">
-                    {t('ws-reports.print_after_pdf_export_description')}
-                  </p>
+                  <Switch
+                    checked={printAfterExport}
+                    onCheckedChange={setPrintAfterExport}
+                    aria-label={t('ws-reports.print_after_pdf_export')}
+                  />
                 </div>
-                <Switch
-                  checked={printAfterExport}
-                  onCheckedChange={setPrintAfterExport}
-                  aria-label={t('ws-reports.print_after_pdf_export')}
-                />
               </div>
             </div>
-          </div>
-        </div>
+          </PopoverContent>
+        </Popover>
       </div>
     </div>
   );
