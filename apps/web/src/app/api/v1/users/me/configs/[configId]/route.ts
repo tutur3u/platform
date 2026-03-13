@@ -2,6 +2,7 @@ import { MAX_MEDIUM_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { buildPostgrestRateLimitResponse } from '@/lib/postgrest-rate-limit';
 
 export const GET = withSessionAuth<{ configId: string }>(
   async (_req, { user, supabase }, { configId: id }) => {
@@ -56,6 +57,11 @@ export const PUT = withSessionAuth<{ configId: string }>(
     );
 
     if (error) {
+      const rateLimitResponse = buildPostgrestRateLimitResponse(error);
+      if (rateLimitResponse) {
+        return rateLimitResponse;
+      }
+
       console.error('Error upserting user config:', error);
       return NextResponse.json(
         { message: 'Error upserting user config' },

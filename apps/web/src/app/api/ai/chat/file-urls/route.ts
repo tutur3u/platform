@@ -1,3 +1,4 @@
+import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -59,9 +60,11 @@ export const POST = withSessionAuth(
         );
       }
 
+      const sbAdmin = await createDynamicAdminClient();
+
       // List all files in the chat's storage folder
       const storagePath = `${wsId}/chats/ai/resources/${chatId}`;
-      const { data: fileList, error: listError } = await supabase.storage
+      const { data: fileList, error: listError } = await sbAdmin.storage
         .from('workspaces')
         .list(storagePath, {
           limit: 50,
@@ -92,7 +95,7 @@ export const POST = withSessionAuth(
       // Generate signed URLs for all files
       const filePaths = realFiles.map((f) => `${storagePath}/${f.name}`);
 
-      const { data: signedUrls, error: signError } = await supabase.storage
+      const { data: signedUrls, error: signError } = await sbAdmin.storage
         .from('workspaces')
         .createSignedUrls(filePaths, SIGNED_URL_EXPIRY_SECONDS);
 
