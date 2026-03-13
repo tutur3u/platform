@@ -106,10 +106,6 @@ from public.workspace_whiteboards wb;
 comment on view public.entity_limit_source__workspace_whiteboards is
   'Source view for whiteboard creation limits: direct ws_id and creator_id mapping.';
 
-drop function if exists public._validate_platform_entity_limit_target(text, text, text);
-drop function if exists public.add_platform_entity_creation_limit_table(text, text, text, text, uuid);
-drop function if exists public.update_platform_entity_creation_limit_metadata(text, text, text, text, uuid);
-
 create or replace function public._validate_platform_entity_limit_target(
   p_target_table text
 )
@@ -206,65 +202,38 @@ security definer
 set search_path = public
 as $$
 declare
+  v_scope_resolver_name text;
+  v_scope_resolver_signature regprocedure;
+  v_lookup_user_id uuid;
   v_user_id uuid;
   v_ws_id uuid;
-  v_board_id uuid;
-  v_list_id uuid;
 begin
-  if p_target_table = 'workspaces' then
-    v_user_id := coalesce((p_new_record ->> 'creator_id')::uuid, p_actor_user_id);
+  v_lookup_user_id := coalesce(
+    nullif(p_new_record ->> 'user_id', '')::uuid,
+    nullif(p_new_record ->> 'creator_id', '')::uuid,
+    p_actor_user_id
+  );
 
-    if v_user_id is not null then
-      select w.id
-      into v_ws_id
-      from public.workspaces w
-      where w.creator_id = v_user_id
-        and w.personal is true
-      order by w.created_at asc nulls last
-      limit 1;
-    end if;
+  v_scope_resolver_name := format('entity_limit_scope__%s', p_target_table);
+  select to_regprocedure(format('public.%I(jsonb,uuid)', v_scope_resolver_name))
+  into v_scope_resolver_signature;
 
-    v_ws_id := coalesce(v_ws_id, (p_new_record ->> 'id')::uuid);
-
-    return query select v_ws_id, v_user_id;
-    return;
+  if v_scope_resolver_signature is not null then
+    execute format(
+      'select s.ws_id, s.user_id from public.%I($1, $2) s limit 1',
+      v_scope_resolver_name
+    )
+    into v_ws_id, v_user_id
+    using p_new_record, p_actor_user_id;
+  else
+    v_ws_id := nullif(p_new_record ->> 'ws_id', '')::uuid;
+    v_user_id := v_lookup_user_id;
   end if;
 
-  if p_target_table = 'tasks' then
-    v_user_id := coalesce((p_new_record ->> 'creator_id')::uuid, p_actor_user_id);
-    v_board_id := (p_new_record ->> 'board_id')::uuid;
-    v_list_id := (p_new_record ->> 'list_id')::uuid;
+  v_user_id := coalesce(v_user_id, v_lookup_user_id);
+  v_ws_id := coalesce(v_ws_id, nullif(p_new_record ->> 'ws_id', '')::uuid);
 
-    if v_board_id is null and v_list_id is not null then
-      select tl.board_id
-      into v_board_id
-      from public.task_lists tl
-      where tl.id = v_list_id
-      limit 1;
-    end if;
-
-    if v_board_id is not null then
-      select wb.ws_id
-      into v_ws_id
-      from public.workspace_boards wb
-      where wb.id = v_board_id
-      limit 1;
-    end if;
-
-    return query select v_ws_id, v_user_id;
-    return;
-  end if;
-
-  if p_target_table = 'workspace_whiteboards' then
-    v_ws_id := (p_new_record ->> 'ws_id')::uuid;
-    v_user_id := coalesce((p_new_record ->> 'creator_id')::uuid, p_actor_user_id);
-
-    return query select v_ws_id, v_user_id;
-    return;
-  end if;
-
-  raise exception 'ENTITY_LIMIT_SCOPE_RESOLUTION_NOT_SUPPORTED'
-    using errcode = 'P0001';
+  return query select v_ws_id, v_user_id;
 end;
 $$;
 
