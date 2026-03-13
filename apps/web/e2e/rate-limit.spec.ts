@@ -32,11 +32,10 @@ const CONFIG_URL = '/api/v1/users/me/configs/RATE_LIMIT_E2E_TEST';
 const FULL_NAME_URL = '/api/v1/users/me/full-name';
 
 function clientHeaders(addr: string) {
-  const [a = '10', b = '0', c = '0', d = '1'] = addr.split('.');
   return {
     'CF-Connecting-IP': addr,
     'True-Client-IP': addr,
-    'X-Forwarded-For': `203.${a}.${b}.${c}, 10.0.0.${d}`,
+    'X-Forwarded-For': `${addr}, 10.0.0.1`,
   };
 }
 

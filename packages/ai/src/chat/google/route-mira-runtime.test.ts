@@ -98,6 +98,7 @@ describe('prepareMiraRuntime', () => {
       supabase: toolSupabase,
       timezone: 'UTC',
       userId: 'user-1',
+      withoutPermission,
       wsId: 'workspace-2',
     });
     expect(mocks.createMiraStreamTools).toHaveBeenCalledWith(
@@ -116,5 +117,50 @@ describe('prepareMiraRuntime', () => {
         'ctx\n\n## Workspace Context\n\nCurrent task/calendar/finance workspace context: Workspace Two (shared workspace).\nUse this workspace for "my tasks", "my calendar", and "my finance" requests. Only switch to another workspace when the user explicitly names a different workspace.\n\ninstruction',
       miraTools: tools,
     });
+  });
+
+  it('fails closed for permissioned Mira tools when permission resolution errors', async () => {
+    const sessionSupabase = {
+      client: 'session',
+    } as unknown as TypedSupabaseClient;
+    const toolSupabase = { client: 'admin' } as unknown as TypedSupabaseClient;
+
+    mocks.resolveWorkspaceContextState.mockResolvedValue({
+      workspaceContextId: 'workspace-2',
+      wsId: 'workspace-2',
+      name: 'Workspace Two',
+      personal: false,
+      memberCount: 4,
+    });
+    mocks.getPermissions.mockRejectedValue(new Error('boom'));
+    mocks.buildMiraContext.mockResolvedValue({
+      contextString: 'ctx',
+      soul: null,
+      isFirstInteraction: false,
+    });
+    mocks.buildMiraSystemInstruction.mockReturnValue('instruction');
+    mocks.createMiraStreamTools.mockReturnValue({});
+
+    const { prepareMiraRuntime } = await import('./route-mira-runtime');
+    await prepareMiraRuntime({
+      isMiraMode: true,
+      wsId: 'workspace-1',
+      workspaceContextId: 'workspace-2',
+      request: new NextRequest('http://localhost/api/ai/chat'),
+      userId: 'user-1',
+      chatId: 'chat-1',
+      supabase: sessionSupabase,
+      toolSupabase,
+      timezone: 'UTC',
+    });
+
+    const deniedPermission = mocks.createMiraStreamTools.mock.calls[0]?.[1];
+    expect(deniedPermission).toBeTypeOf('function');
+    expect(deniedPermission?.('manage_finance')).toBe(true);
+    expect(mocks.buildMiraContext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        withoutPermission: expect.any(Function),
+      })
+    );
   });
 });

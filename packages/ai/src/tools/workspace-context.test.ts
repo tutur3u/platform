@@ -11,11 +11,14 @@ type QueryState = {
 };
 
 class WorkspaceContextSupabaseMock {
+  public readonly states: QueryState[] = [];
+
   from(table: string) {
     const state: QueryState = {
       table,
       filters: [],
     };
+    this.states.push(state);
 
     const respond = async () => this.respond(state);
 
@@ -46,7 +49,7 @@ class WorkspaceContextSupabaseMock {
     const userFilter = state.filters.find(
       ([method, column]) => method === 'eq' && column === 'user_id'
     );
-    if (userFilter) {
+    if (userFilter?.[2] === 'user-1') {
       return {
         data: [
           {
@@ -73,7 +76,11 @@ class WorkspaceContextSupabaseMock {
     const workspaceIdsFilter = state.filters.find(
       ([method, column]) => method === 'in' && column === 'ws_id'
     );
-    if (workspaceIdsFilter) {
+    if (
+      Array.isArray(workspaceIdsFilter?.[2]) &&
+      workspaceIdsFilter[2].includes('personal-ws') &&
+      workspaceIdsFilter[2].includes('team-ws')
+    ) {
       return {
         data: [
           { ws_id: 'personal-ws' },
@@ -90,8 +97,8 @@ class WorkspaceContextSupabaseMock {
 
 describe('workspace context security', () => {
   it('lists only accessible workspaces for the current user', async () => {
-    const supabase =
-      new WorkspaceContextSupabaseMock() as unknown as TypedSupabaseClient;
+    const supabaseMock = new WorkspaceContextSupabaseMock();
+    const supabase = supabaseMock as unknown as TypedSupabaseClient;
 
     await expect(
       listAccessibleWorkspaceSummaries(supabase, 'user-1')
@@ -109,11 +116,21 @@ describe('workspace context security', () => {
         personal: false,
       },
     ]);
+    expect(supabaseMock.states[0]?.filters).toContainEqual([
+      'eq',
+      'user_id',
+      'user-1',
+    ]);
+    expect(supabaseMock.states[1]?.filters).toContainEqual([
+      'in',
+      'ws_id',
+      ['personal-ws', 'team-ws'],
+    ]);
   });
 
   it('rejects inaccessible workspace context switches in strict mode', async () => {
-    const supabase =
-      new WorkspaceContextSupabaseMock() as unknown as TypedSupabaseClient;
+    const supabaseMock = new WorkspaceContextSupabaseMock();
+    const supabase = supabaseMock as unknown as TypedSupabaseClient;
 
     await expect(
       resolveWorkspaceContextState({
@@ -126,5 +143,10 @@ describe('workspace context security', () => {
     ).rejects.toThrow(
       'Workspace "outside-ws" is not accessible for this user.'
     );
+    expect(supabaseMock.states[0]?.filters).toContainEqual([
+      'eq',
+      'user_id',
+      'user-1',
+    ]);
   });
 });

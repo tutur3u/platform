@@ -76,12 +76,14 @@ export async function prepareMiraRuntime({
   }
 
   let withoutPermission: PermissionResultLike['withoutPermission'];
+  const denyPermissionByDefault = () => true;
+  withoutPermission = denyPermissionByDefault;
   try {
     const permissionsResult = (await getPermissions({
       wsId: resolvedWorkspaceContext.wsId,
       request,
     })) as PermissionResultLike | null;
-    if (permissionsResult) {
+    if (permissionsResult?.withoutPermission) {
       withoutPermission = permissionsResult.withoutPermission;
     }
   } catch (permErr) {
@@ -105,6 +107,7 @@ export async function prepareMiraRuntime({
       wsId: resolvedWorkspaceContext.wsId,
       supabase: miraSupabase,
       timezone,
+      withoutPermission,
     });
     const dynamicInstruction = buildMiraSystemInstruction({
       soul,
