@@ -6,14 +6,12 @@ import { checkSessionThreshold } from '../threshold';
 
 export async function handleStopAction({
   sbAdmin,
-  supabase,
   session,
   sessionId,
   normalizedWsId,
   canBypass,
 }: {
   sbAdmin: TypedSupabaseClient;
-  supabase: TypedSupabaseClient;
   session: SessionRecord;
   sessionId: string;
   normalizedWsId: string;
@@ -76,7 +74,7 @@ export async function handleStopAction({
   }
 
   if (isPaused) {
-    const { data, error } = await supabase
+    const { data, error } = await sbAdmin
       .from('time_tracking_sessions')
       .select(
         `

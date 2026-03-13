@@ -2,8 +2,8 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
-import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 // PATCH /api/v1/workspaces/[wsId]/time-tracking/break-types/[breakTypeId]
 // Update a custom break type (workspace admins only)
@@ -13,8 +13,8 @@ export async function PATCH(
 ) {
   try {
     const { wsId, breakTypeId } = await params;
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
-    const supabase = await createClient();
+    const supabase = await createClient(request);
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Get authenticated user
     const {
@@ -25,8 +25,10 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const sbAdmin = await createAdminClient();
+
     // Verify break type exists and belongs to workspace
-    const { data: existingBreakType } = await supabase
+    const { data: existingBreakType } = await sbAdmin
       .from('workspace_break_types')
       .select('id')
       .eq('id', breakTypeId)
@@ -59,8 +61,6 @@ export async function PATCH(
         );
       }
     }
-
-    const sbAdmin = await createAdminClient();
 
     // Build update object
     const updateData: {
@@ -110,13 +110,13 @@ export async function PATCH(
 // DELETE /api/v1/workspaces/[wsId]/time-tracking/break-types/[breakTypeId]
 // Delete a custom break type (workspace admins only)
 export async function DELETE(
-  _: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ wsId: string; breakTypeId: string }> }
 ) {
   try {
     const { wsId, breakTypeId } = await params;
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
-    const supabase = await createClient();
+    const supabase = await createClient(request);
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Get authenticated user
     const {
@@ -127,8 +127,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const sbAdmin = await createAdminClient();
+
     // Verify break type exists and belongs to workspace
-    const { data: breakType } = await supabase
+    const { data: breakType } = await sbAdmin
       .from('workspace_break_types')
       .select('id')
       .eq('id', breakTypeId)
@@ -141,8 +143,6 @@ export async function DELETE(
         { status: 404 }
       );
     }
-
-    const sbAdmin = await createAdminClient();
 
     // Delete the break type
     // Note: Associated break records will have their break_type_id set to NULL (on delete set null)

@@ -12,7 +12,13 @@ export {
   listTransactionCategories,
   listWallets,
 } from './finance';
-export { getTimeTrackingRequestImageUrls } from './time-tracking';
+export {
+  createWorkspaceBreakType,
+  deleteWorkspaceBreakType,
+  getTimeTrackingRequestImageUrls,
+  listWorkspaceBreakTypes,
+  updateWorkspaceBreakType,
+} from './time-tracking';
 export {
   getUserConfig,
   updateUserConfig,

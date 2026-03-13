@@ -70,7 +70,7 @@ export async function PATCH(
     if ('error' in authResult) {
       return authResult.error;
     }
-    const { supabase, user, normalizedWsId } = authResult;
+    const { user, normalizedWsId } = authResult;
 
     const bodyResult = patchSessionBodySchema.safeParse(await request.json());
     if (!bodyResult.success) {
@@ -123,7 +123,6 @@ export async function PATCH(
       case 'stop':
         return await handleStopAction({
           sbAdmin,
-          supabase,
           session: sessionRecord,
           sessionId,
           normalizedWsId,

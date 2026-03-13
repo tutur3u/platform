@@ -3,16 +3,16 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { MAX_LONG_TEXT_LENGTH } from '@tuturuuu/utils/constants';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const createBreakTypeSchema = z.object({
   name: z
     .string()
     .min(1, 'Break type name is required')
     .max(50, 'Break type name must be 50 characters or less'),
-  description: z.string().max(MAX_LONG_TEXT_LENGTH).optional(),
+  description: z.string().max(MAX_LONG_TEXT_LENGTH).optional().nullable(),
   color: z.enum([
     'RED',
     'ORANGE',
@@ -49,13 +49,13 @@ const createBreakTypeSchema = z.object({
 // GET /api/v1/workspaces/[wsId]/time-tracking/break-types
 // Fetch all break types for a workspace
 export async function GET(
-  _: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ wsId: string }> }
 ) {
   try {
-    const { wsId } = await params;
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
-    const supabase = await createClient();
+    const { wsId: id } = await params;
+    const supabase = await createClient(request);
+    const normalizedWsId = await normalizeWorkspaceId(id, supabase);
 
     // Get authenticated user
     const {
@@ -81,8 +81,10 @@ export async function GET(
       );
     }
 
+    const sbAdmin = await createAdminClient();
+
     // Fetch all break types for the workspace
-    const { data: breakTypes, error } = await supabase
+    const { data: breakTypes, error } = await sbAdmin
       .from('workspace_break_types')
       .select('*')
       .eq('ws_id', normalizedWsId)
@@ -107,9 +109,9 @@ export async function POST(
   { params }: { params: Promise<{ wsId: string }> }
 ) {
   try {
-    const { wsId } = await params;
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
-    const supabase = await createClient();
+    const { wsId: id } = await params;
+    const supabase = await createClient(request);
+    const normalizedWsId = await normalizeWorkspaceId(id, supabase);
 
     // Get authenticated user
     const {
