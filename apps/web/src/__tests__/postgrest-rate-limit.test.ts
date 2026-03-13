@@ -21,6 +21,22 @@ describe('postgrest rate limit helpers', () => {
     expect(metadata).toEqual({ retryAfter: 17 });
   });
 
+  it('extracts retry-after metadata from the real PostgREST error shape', () => {
+    const metadata = getPostgrestRateLimitMetadata({
+      code: 'PGRST',
+      details: JSON.stringify({
+        status: 429,
+        headers: { 'Retry-After': '30' },
+      }),
+      message: JSON.stringify({
+        code: 'RATE_LIMITED',
+        message: 'Rate limit exceeded, try again later',
+      }),
+    });
+
+    expect(metadata).toEqual({ retryAfter: 30 });
+  });
+
   it('builds a 429 response for custom PostgREST rate-limit errors', async () => {
     const response = buildPostgrestRateLimitResponse({
       code: 'RATE_LIMITED',

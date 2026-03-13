@@ -42,10 +42,14 @@ export function getPostgrestRateLimitMetadata(error: PostgrestLikeError): {
         ? Number.parseInt(retryAfterHeader, 10)
         : Number.NaN;
 
-  if (
-    error.code !== 'RATE_LIMITED' &&
-    errorCodeFromMessage !== 'RATE_LIMITED'
-  ) {
+  const hasRateLimitSqlState =
+    error.code === 'PGRST' || error.code === 'RATE_LIMITED';
+
+  if (!hasRateLimitSqlState && errorCodeFromMessage !== 'RATE_LIMITED') {
+    return null;
+  }
+
+  if (errorCodeFromMessage !== 'RATE_LIMITED') {
     return null;
   }
 

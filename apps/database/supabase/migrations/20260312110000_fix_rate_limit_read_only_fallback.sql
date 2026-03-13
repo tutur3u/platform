@@ -1,5 +1,5 @@
--- Avoid read-only transaction failures when the PostgREST rate-limit hook
--- falls back from dblink logging to an in-transaction insert.
+-- Keep PostgREST rate-limit audit logging on an authenticated dblink
+-- connection so failures stay fail-open without in-transaction fallbacks.
 
 CREATE OR REPLACE FUNCTION private.record_rate_limit_attempt(
     p_request_method TEXT,
@@ -14,6 +14,8 @@ SECURITY DEFINER
 SET search_path = private, extensions, public, pg_catalog, pg_temp
 AS $$
 DECLARE
+    v_conn_name CONSTANT TEXT := 'rate_limit_conn';
+    v_connstr TEXT;
     v_user_literal TEXT;
     v_ip_literal TEXT;
     v_sql TEXT;
@@ -41,42 +43,33 @@ BEGIN
         v_ip_literal
     );
 
-    PERFORM dblink_exec(
-        format('dbname=%L', current_database()),
-        v_sql
-    );
+    v_connstr := private.build_rate_limit_dblink_connstr();
+    IF v_connstr IS NULL THEN
+        RETURN;
+    END IF;
+
+    BEGIN
+        PERFORM dblink_disconnect(v_conn_name);
+    EXCEPTION
+        WHEN OTHERS THEN
+            NULL;
+    END;
+
+    PERFORM dblink_connect(v_conn_name, v_connstr);
+    PERFORM dblink_exec(v_conn_name, v_sql);
+    PERFORM dblink_disconnect(v_conn_name);
 EXCEPTION
     WHEN OTHERS THEN
-        -- Fail open to avoid blocking RPCs or writes when autonomous logging is
-        -- unavailable. Read-only transactions cannot use the direct insert
-        -- fallback, so bail out silently in that case.
         BEGIN
-            IF COALESCE(current_setting('transaction_read_only', true), 'off') = 'on' THEN
-                RETURN;
-            END IF;
-
-            INSERT INTO private.rate_limits (
-                request_method,
-                request_path,
-                db_role,
-                user_id,
-                ip
-            )
-            VALUES (
-                p_request_method,
-                p_request_path,
-                p_db_role,
-                p_user_id,
-                p_ip
-            );
+            PERFORM dblink_disconnect(v_conn_name);
         EXCEPTION
-            WHEN read_only_sql_transaction THEN
-                RETURN;
             WHEN OTHERS THEN
-                RETURN;
+                NULL;
         END;
+
+        RETURN;
 END;
 $$;
 
 COMMENT ON FUNCTION private.record_rate_limit_attempt(TEXT, TEXT, TEXT, UUID, INET) IS
-    'Attempts to persist a rate-limit event via dblink, then fails open when fallback inserts are unavailable or the request transaction is read-only.';
+    'Attempts to persist a rate-limit event through an authenticated dblink connection and otherwise fails open.';
