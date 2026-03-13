@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { resetDbRateLimits } from '../../e2e/helpers/rate-limits';
+import {
+  getLocalE2ESupabaseSecretKey,
+  resetDbRateLimits,
+  resolveRateLimitResetConfig,
+} from '../../e2e/helpers/rate-limits';
 
 const originalEnv = {
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -24,7 +28,7 @@ afterEach(() => {
 
 describe('resetDbRateLimits', () => {
   it('calls the admin reset RPC with service-role headers', async () => {
-    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co';
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://127.0.0.1:8001';
     process.env.SUPABASE_SECRET_KEY = 'secret';
 
     const fetchMock = vi.fn().mockResolvedValue({ ok: true });
@@ -33,7 +37,7 @@ describe('resetDbRateLimits', () => {
     await resetDbRateLimits();
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://example.supabase.co/rest/v1/rpc/admin_reset_rate_limits',
+      'http://127.0.0.1:8001/rest/v1/rpc/admin_reset_rate_limits',
       {
         method: 'POST',
         headers: {
@@ -46,12 +50,44 @@ describe('resetDbRateLimits', () => {
     );
   });
 
-  it('fails fast when Supabase env vars are missing', async () => {
+  it('uses the fixed local Supabase defaults when env vars are missing', async () => {
     delete process.env.NEXT_PUBLIC_SUPABASE_URL;
     delete process.env.SUPABASE_SECRET_KEY;
 
-    await expect(resetDbRateLimits()).rejects.toThrow(
-      'Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SECRET_KEY'
+    await expect(resolveRateLimitResetConfig()).resolves.toEqual({
+      supabaseUrl: 'http://127.0.0.1:8001',
+      serviceKey: getLocalE2ESupabaseSecretKey(),
+    });
+  });
+});
+
+describe('resolveRateLimitResetConfig', () => {
+  it('prefers explicit env vars over the fixed local defaults', async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:8001';
+    process.env.SUPABASE_SECRET_KEY = 'secret';
+
+    await expect(resolveRateLimitResetConfig()).resolves.toEqual({
+      supabaseUrl: 'http://localhost:8001',
+      serviceKey: 'secret',
+    });
+  });
+
+  it('falls back to the safe local defaults when env vars are absent', async () => {
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.SUPABASE_SECRET_KEY;
+
+    await expect(resolveRateLimitResetConfig()).resolves.toEqual({
+      supabaseUrl: 'http://127.0.0.1:8001',
+      serviceKey: getLocalE2ESupabaseSecretKey(),
+    });
+  });
+
+  it('refuses non-local Supabase URLs from process env', async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co';
+    process.env.SUPABASE_SECRET_KEY = 'secret';
+
+    await expect(resolveRateLimitResetConfig()).rejects.toThrow(
+      'Refusing to reset rate limits against non-local Supabase URL'
     );
   });
 });

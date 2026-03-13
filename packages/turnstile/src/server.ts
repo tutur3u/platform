@@ -49,6 +49,13 @@ export function extractTurnstileRemoteIp(request: TurnstileRequestLike) {
     return cfConnectingIp;
   }
 
+  const trueClientIp = normalizeEnvValue(
+    readHeader(request.headers, 'true-client-ip')
+  );
+  if (trueClientIp) {
+    return trueClientIp;
+  }
+
   const realIp = normalizeEnvValue(readHeader(request.headers, 'x-real-ip'));
   if (realIp) {
     return realIp;

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { resetDbRateLimits } from './helpers/rate-limits';
 
 /**
  * E2E tests for payload size protection on API endpoints.
@@ -23,7 +24,19 @@ function ip(testSlot: number, retry: number): string {
   return `10.200.${testSlot}.${retry + 1}`;
 }
 
+function clientHeaders(addr: string) {
+  return {
+    'CF-Connecting-IP': addr,
+    'True-Client-IP': addr,
+    'X-Forwarded-For': '203.0.113.200, 10.0.0.1',
+  };
+}
+
 test.describe('Payload size protection', () => {
+  test.beforeEach(async () => {
+    await resetDbRateLimits();
+  });
+
   test('rejects body exceeding byte size limit', async ({
     context,
   }, testInfo) => {
@@ -31,7 +44,7 @@ test.describe('Payload size protection', () => {
     const largeValue = 'x'.repeat(300 * 1024);
 
     const res = await context.request.put(CONFIG_URL, {
-      headers: { 'X-Forwarded-For': ip(1, testInfo.retry) },
+      headers: clientHeaders(ip(1, testInfo.retry)),
       data: { value: largeValue },
     });
 
@@ -50,7 +63,7 @@ test.describe('Payload size protection', () => {
     const emojiPayload = '🎉'.repeat(65000);
 
     const res = await context.request.put(CONFIG_URL, {
-      headers: { 'X-Forwarded-For': ip(2, testInfo.retry) },
+      headers: clientHeaders(ip(2, testInfo.retry)),
       data: { value: emojiPayload },
     });
 
@@ -60,7 +73,7 @@ test.describe('Payload size protection', () => {
 
   test('accepts normal-sized payload', async ({ context }, testInfo) => {
     const res = await context.request.put(CONFIG_URL, {
-      headers: { 'X-Forwarded-For': ip(3, testInfo.retry) },
+      headers: clientHeaders(ip(3, testInfo.retry)),
       data: { value: 'normal-test-value' },
     });
 
@@ -75,7 +88,7 @@ test.describe('Payload size protection', () => {
     const smallEmojiPayload = '🎉'.repeat(10);
 
     const res = await context.request.put(CONFIG_URL, {
-      headers: { 'X-Forwarded-For': ip(4, testInfo.retry) },
+      headers: clientHeaders(ip(4, testInfo.retry)),
       data: { value: smallEmojiPayload },
     });
 
@@ -91,7 +104,7 @@ test.describe('Payload size protection', () => {
     const longValue = 'a'.repeat(1500);
 
     const res = await context.request.put(CONFIG_URL, {
-      headers: { 'X-Forwarded-For': ip(5, testInfo.retry) },
+      headers: clientHeaders(ip(5, testInfo.retry)),
       data: { value: longValue },
     });
 
@@ -104,7 +117,7 @@ test.describe('Payload size protection', () => {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'X-Forwarded-For': ip(6, testInfo.retry),
+        ...clientHeaders(ip(6, testInfo.retry)),
       },
       data: '{invalid json!!!}',
     });
