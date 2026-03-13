@@ -63,7 +63,8 @@ export default function NewInvoicePage({ wsId }: Props) {
     printAfterCreateInitialized &&
     downloadImageAfterCreateInitialized;
 
-  const invoiceType = searchParams.get('type') || 'standard';
+  const invoiceType =
+    searchParams.get('type') === 'subscription' ? 'subscription' : 'standard';
   const prefillAmount = (() => {
     const raw = searchParams.get('amount');
     if (!raw) return undefined;
@@ -79,7 +80,7 @@ export default function NewInvoicePage({ wsId }: Props) {
       />
       <Separator className="my-4" />
       <Tabs
-        defaultValue={invoiceType}
+        value={invoiceType}
         className="w-full"
         onValueChange={(value) => {
           // Update URL without refreshing

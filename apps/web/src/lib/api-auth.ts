@@ -127,6 +127,8 @@ interface CacheConfig {
   swr?: number;
 }
 
+type SessionAuthRateLimitKind = 'method' | 'read' | 'mutate';
+
 /** Default rate limits — reads stay open, mutations remain strict. */
 const DEFAULT_MUTATE_RATE_LIMIT: RateLimitConfig = {
   windowMs: 60000,
@@ -140,6 +142,12 @@ interface SessionAuthOptions {
    * Set `false` to disable rate limiting entirely (not recommended).
    */
   rateLimit?: RateLimitConfig | false;
+  /**
+   * Classifies the route for rate limiting.
+   * Defaults to `method`, which maps GET/HEAD → read and everything else → mutate.
+   * Use `read` for read-only POST endpoints that need a request body.
+   */
+  rateLimitKind?: SessionAuthRateLimitKind;
   /**
    * Cache-Control header for successful GET responses.
    * Always uses `private` (browser-only, never CDN-cached) since these are
@@ -184,6 +192,12 @@ export function withSessionAuth<T = unknown>(
   ) => {
     const url = new URL(request.url);
     const endpoint = url.pathname;
+    const isRead =
+      options?.rateLimitKind === 'read'
+        ? true
+        : options?.rateLimitKind === 'mutate'
+          ? false
+          : request.method === 'GET' || request.method === 'HEAD';
 
     // 0. Check payload size
     const contentLength = request.headers.get('content-length');
@@ -221,7 +235,6 @@ export function withSessionAuth<T = unknown>(
 
       // 3. IP rate limit BEFORE auth — method-aware defaults + separate keys
       if (options?.rateLimit !== false) {
-        const isRead = request.method === 'GET' || request.method === 'HEAD';
         const config =
           options?.rateLimit ?? (isRead ? false : DEFAULT_MUTATE_RATE_LIMIT);
 

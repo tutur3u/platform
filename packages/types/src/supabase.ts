@@ -22576,6 +22576,10 @@ export type Database = {
         Returns: Json;
       };
       normalize_task_sort_keys: { Args: never; Returns: undefined };
+      normalize_workspace_user_search_text: {
+        Args: { input: string };
+        Returns: string;
+      };
       nova_get_all_challenges_with_user_stats: {
         Args: { user_id: string };
         Returns: Json;

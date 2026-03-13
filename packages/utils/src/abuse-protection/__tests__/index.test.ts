@@ -44,18 +44,27 @@ describe('abuse-protection', () => {
       expect(extractIPFromHeaders(headers)).toBe('172.16.0.1');
     });
 
-    it('should prefer x-forwarded-for over other headers', () => {
+    it('should prefer cf-connecting-ip over forwarded proxy headers', () => {
       const headers = new Headers();
       headers.set('x-forwarded-for', '192.168.1.1');
       headers.set('x-real-ip', '192.168.1.2');
       headers.set('cf-connecting-ip', '192.168.1.3');
-      expect(extractIPFromHeaders(headers)).toBe('192.168.1.1');
+      expect(extractIPFromHeaders(headers)).toBe('192.168.1.3');
     });
 
-    it('should fall back to x-real-ip if x-forwarded-for is invalid', () => {
+    it('should prefer true-client-ip when cf-connecting-ip is absent', () => {
       const headers = new Headers();
-      headers.set('x-forwarded-for', 'invalid-ip');
-      headers.set('x-real-ip', '192.168.1.100');
+      headers.set('x-forwarded-for', '192.168.1.1');
+      headers.set('x-real-ip', '192.168.1.2');
+      headers.set('true-client-ip', '192.168.1.4');
+      expect(extractIPFromHeaders(headers)).toBe('192.168.1.4');
+    });
+
+    it('should fall back to x-forwarded-for if explicit client IP headers are invalid', () => {
+      const headers = new Headers();
+      headers.set('cf-connecting-ip', 'invalid-ip');
+      headers.set('true-client-ip', 'also-invalid');
+      headers.set('x-forwarded-for', '192.168.1.100, 10.0.0.1');
       expect(extractIPFromHeaders(headers)).toBe('192.168.1.100');
     });
 

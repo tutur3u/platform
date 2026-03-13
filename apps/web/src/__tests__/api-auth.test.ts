@@ -149,6 +149,30 @@ describe('withSessionAuth', () => {
     expect(mockCheckRateLimit).not.toHaveBeenCalled();
   });
 
+  it('should skip default rate limiting for read-only POST requests', async () => {
+    const handler = vi.fn().mockReturnValue(NextResponse.json({}));
+    const wrapped = withSessionAuth(handler, { rateLimitKind: 'read' });
+    await wrapped(makeRequest('POST'));
+
+    expect(mockCheckRateLimit).not.toHaveBeenCalled();
+  });
+
+  it('should use read key for read-only POST requests with a custom rate limit', async () => {
+    const handler = vi.fn().mockReturnValue(NextResponse.json({}));
+    const customConfig = { windowMs: 30000, maxRequests: 99 };
+    const wrapped = withSessionAuth(handler, {
+      rateLimitKind: 'read',
+      rateLimit: customConfig,
+    });
+
+    await wrapped(makeRequest('POST'));
+
+    expect(mockCheckRateLimit).toHaveBeenCalledWith(
+      expect.stringContaining('read'),
+      customConfig
+    );
+  });
+
   it('should use mutate key for POST requests', async () => {
     const handler = vi.fn().mockReturnValue(NextResponse.json({}));
     const wrapped = withSessionAuth(handler);

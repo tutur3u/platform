@@ -86,7 +86,19 @@ export function extractIPFromHeaders(
     return headers[name] || null;
   };
 
-  // Check x-forwarded-for first (most common with proxies/load balancers)
+  // Check cf-connecting-ip (Cloudflare)
+  const cfIP = getHeader('cf-connecting-ip');
+  if (cfIP && isValidIP(cfIP)) {
+    return cfIP;
+  }
+
+  // Check true-client-ip (some Cloudflare/enterprise proxy setups)
+  const trueClientIP = getHeader('true-client-ip');
+  if (trueClientIP && isValidIP(trueClientIP)) {
+    return trueClientIP;
+  }
+
+  // Check x-forwarded-for after explicit client IP headers
   const forwardedFor = getHeader('x-forwarded-for');
   if (forwardedFor) {
     const firstIP = forwardedFor.split(',')[0]?.trim();
@@ -99,12 +111,6 @@ export function extractIPFromHeaders(
   const realIP = getHeader('x-real-ip');
   if (realIP && isValidIP(realIP)) {
     return realIP;
-  }
-
-  // Check cf-connecting-ip (Cloudflare)
-  const cfIP = getHeader('cf-connecting-ip');
-  if (cfIP && isValidIP(cfIP)) {
-    return cfIP;
   }
 
   return 'unknown';
