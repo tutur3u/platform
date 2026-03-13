@@ -43,6 +43,7 @@ const CreateTaskSchema = z.object({
   assignee_ids: z.array(z.string().uuid()).optional(),
 });
 interface TaskAssigneeRelation {
+  user_id: string | null;
   user: {
     id: string | null;
     display_name: string | null;
@@ -162,6 +163,7 @@ export async function GET(
           )
         ),
         assignees:task_assignees(
+          user_id,
           user:users(
             id,
             display_name,
@@ -222,13 +224,33 @@ export async function GET(
       data?.map((task) => {
         const assigneeIds = [
           ...(task.assignees ?? [])
-            .map((entry: TaskAssigneeRelation) => entry.user?.id)
+            .map(
+              (entry: TaskAssigneeRelation) => entry.user?.id || entry.user_id
+            )
             .filter((id): id is string => !!id)
             .reduce((uniqueIds: Set<string>, assigneeId: string) => {
               uniqueIds.add(assigneeId);
               return uniqueIds;
             }, new Set()),
         ];
+
+        const assignees = (task.assignees ?? []).flatMap(
+          (entry: TaskAssigneeRelation) => {
+            const resolvedId = entry.user?.id || entry.user_id;
+            if (!resolvedId) {
+              return [];
+            }
+
+            return [
+              {
+                id: resolvedId,
+                user_id: resolvedId,
+                display_name: entry.user?.display_name ?? undefined,
+                avatar_url: entry.user?.avatar_url ?? undefined,
+              },
+            ];
+          }
+        );
 
         const labelIds = [
           ...(task.labels ?? [])
@@ -250,6 +272,41 @@ export async function GET(
             }, new Set()),
         ];
 
+        const labels = (task.labels ?? []).flatMap(
+          (entry: TaskLabelRelation) => {
+            const label = entry.label;
+            if (!label?.id || !label.name || !label.color) {
+              return [];
+            }
+
+            return [
+              {
+                id: label.id,
+                name: label.name,
+                color: label.color,
+                created_at: label.created_at ?? '',
+              },
+            ];
+          }
+        );
+
+        const projects = (task.projects ?? []).flatMap(
+          (entry: TaskProjectRelation) => {
+            const project = entry.project;
+            if (!project?.id || !project.name) {
+              return [];
+            }
+
+            return [
+              {
+                id: project.id,
+                name: project.name,
+                status: project.status ?? 'active',
+              },
+            ];
+          }
+        );
+
         return {
           id: task.id,
           display_number: task.display_number,
@@ -267,9 +324,9 @@ export async function GET(
           board_name: task.task_lists?.workspace_boards?.name,
           list_name: task.task_lists?.name,
           list_status: task.task_lists?.status,
-          assignees: task.assignees ?? [],
-          labels: task.labels ?? [],
-          projects: task.projects ?? [],
+          assignees,
+          labels,
+          projects,
           // Keep ID arrays for clients that hydrate by ID.
           assignee_ids: assigneeIds,
           label_ids: labelIds,

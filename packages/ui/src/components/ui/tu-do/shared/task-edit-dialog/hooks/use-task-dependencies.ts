@@ -1,6 +1,7 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { getWorkspaceTaskRelationships } from '@tuturuuu/internal-api/tasks';
 import type {
   RelatedTaskInfo,
   TaskRelationshipsResponse,
@@ -10,7 +11,6 @@ import {
   useCreateTaskRelationship,
   useCreateTaskWithRelationship,
   useDeleteTaskRelationship,
-  useTaskRelationships,
 } from '@tuturuuu/utils/task-helper';
 import { useCallback, useState } from 'react';
 import {
@@ -96,9 +96,18 @@ export function useTaskDependencies({
   const [pendingRelated, setPendingRelated] = useState<RelatedTaskInfo[]>([]);
 
   // Fetch relationships from server
-  const { data: relationships, isLoading } = useTaskRelationships(
-    isCreateMode ? undefined : taskId
-  );
+  const { data: relationships, isLoading } = useQuery({
+    queryKey: ['task-relationships', taskId],
+    queryFn: async (): Promise<TaskRelationshipsResponse | null> => {
+      if (isCreateMode || !taskId || !wsId) {
+        return null;
+      }
+
+      return getWorkspaceTaskRelationships(wsId, taskId);
+    },
+    enabled: !isCreateMode && !!taskId && !!wsId,
+    staleTime: 30000,
+  });
 
   // Mutations
   const createRelationship = useCreateTaskRelationship(boardId);

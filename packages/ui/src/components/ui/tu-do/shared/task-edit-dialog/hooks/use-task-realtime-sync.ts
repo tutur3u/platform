@@ -1,4 +1,5 @@
 import type { JSONContent } from '@tiptap/react';
+import { listWorkspaceTaskProjects } from '@tuturuuu/internal-api/tasks';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { useEffect, useRef } from 'react';
@@ -6,6 +7,7 @@ import type { WorkspaceTaskLabel } from '../types';
 import { getDescriptionContent } from '../utils';
 
 export interface UseTaskRealtimeSyncProps {
+  wsId: string;
   taskId?: string;
   isCreateMode: boolean;
   isOpen: boolean;
@@ -43,6 +45,7 @@ const supabase = createClient();
  * Extracted from task-edit-dialog.tsx to improve maintainability
  */
 export function useTaskRealtimeSync({
+  wsId,
   taskId,
   isCreateMode,
   isOpen,
@@ -223,17 +226,8 @@ export function useTaskRealtimeSync({
 
         if (projectIds.length === 0) return [];
 
-        const { data: projects, error: projectsError } = await supabase
-          .from('task_projects')
-          .select('id, name, status')
-          .in('id', projectIds);
-
-        if (projectsError) {
-          console.error('Error fetching project details:', projectsError);
-          throw projectsError;
-        }
-
-        return projects || [];
+        const projects = await listWorkspaceTaskProjects(wsId);
+        return projects.filter((project) => projectIds.includes(project.id));
       } catch (error: any) {
         console.error('Failed to fetch task projects:', {
           error,
@@ -398,6 +392,7 @@ export function useTaskRealtimeSync({
     isCreateMode,
     isOpen,
     taskId,
+    wsId,
     collaborationMode,
     setEndDate,
     setEstimationPoints,

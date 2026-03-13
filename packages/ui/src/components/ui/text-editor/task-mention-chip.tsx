@@ -494,6 +494,7 @@ export function TaskMentionChip({
   } = useTaskCardRelationships({
     taskId: task?.id || '',
     boardId: task?.board_id || '',
+    wsId: boardConfig?.ws_id,
   });
 
   const targetCompletionList = useMemo(() => {

@@ -13,6 +13,11 @@ export {
   listWallets,
 } from './finance';
 export {
+  createWorkspaceTaskProject,
+  getWorkspaceTaskRelationships,
+  listWorkspaceTaskProjects,
+} from './tasks';
+export {
   createWorkspaceBreakType,
   deleteWorkspaceBreakType,
   getTimeTrackingRequestImageUrls,

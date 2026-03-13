@@ -1,5 +1,7 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
+import { getWorkspaceTaskRelationships } from '@tuturuuu/internal-api/tasks';
 import type {
   RelatedTaskInfo,
   TaskRelationshipType,
@@ -7,7 +9,6 @@ import type {
 import {
   useCreateTaskRelationship,
   useDeleteTaskRelationship,
-  useTaskRelationships,
 } from '@tuturuuu/utils/task-helper';
 import { useCallback, useState } from 'react';
 import { useBoardBroadcast } from '../shared/board-broadcast-context';
@@ -15,6 +16,7 @@ import { useBoardBroadcast } from '../shared/board-broadcast-context';
 export interface UseTaskCardRelationshipsProps {
   taskId: string;
   boardId: string;
+  wsId?: string;
 }
 
 export interface UseTaskCardRelationshipsReturn {
@@ -52,12 +54,24 @@ export interface UseTaskCardRelationshipsReturn {
 export function useTaskCardRelationships({
   taskId,
   boardId,
+  wsId,
 }: UseTaskCardRelationshipsProps): UseTaskCardRelationshipsReturn {
   const broadcast = useBoardBroadcast();
   const [savingTaskId, setSavingTaskId] = useState<string | null>(null);
 
   // Fetch relationships
-  const { data: relationships, isLoading } = useTaskRelationships(taskId);
+  const { data: relationships, isLoading } = useQuery({
+    queryKey: ['task-relationships', taskId],
+    queryFn: async () => {
+      if (!wsId || !taskId) {
+        return null;
+      }
+
+      return getWorkspaceTaskRelationships(wsId, taskId);
+    },
+    enabled: !!wsId && !!taskId,
+    staleTime: 30000,
+  });
 
   // Mutations
   const createRelationship = useCreateTaskRelationship(boardId);
