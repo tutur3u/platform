@@ -3698,22 +3698,22 @@
       "add_table": "Thêm bảng",
       "cancel": "Hủy bỏ",
       "edit": "Chỉnh sửa",
-      "reattach_trigger": "Gắn lại trigger",
-      "save_metadata": "Lưu metadata",
+      "reattach_trigger": "Gắn lại trình kích hoạt",
+      "save_metadata": "Lưu siêu dữ liệu",
       "save_tier": "Lưu cấu hình gói"
     },
     "add_table": {
-      "description": "Chọn một bảng public đã bật audit tracking, rồi cấu hình giới hạn theo từng gói cho các lần tạo do người dùng đã xác thực thực hiện.",
-      "requirements_hint": "Giới hạn luôn áp dụng cho người dùng đã xác thực và gói của personal workspace của họ. Bảng đích phải bật audit tracking.",
+      "description": "Chọn một bảng public đã bật theo dõi kiểm toán, rồi cấu hình giới hạn theo từng gói cho các lần chèn do người dùng đã xác thực thực hiện.",
+      "requirements_hint": "Giới hạn luôn áp dụng cho người dùng đã xác thực và gói của personal workspace của họ. Bảng đích phải bật theo dõi kiểm toán.",
       "select_placeholder": "Chọn một bảng",
       "submit": "Thêm bảng",
-      "title": "Thêm bảng đã cấu hình"
+      "title": "Chọn bảng để cấu hình"
     },
     "configured_table": {
       "updated_at": "Cập nhật lần cuối {updatedAt}",
       "updated_label": "Cập nhật"
     },
-    "description": "Cho phép opt-in các bảng đã bật audit tracking vào cơ chế giới hạn insert dùng chung và tinh chỉnh quota theo gói dựa trên personal workspace của người dùng đang thao tác.",
+    "description": "Cho phép đăng ký tham gia các bảng đã bật theo dõi kiểm toán vào cơ chế giới hạn chèn dùng chung và tinh chỉnh quota theo gói dựa trên personal workspace của người dùng đang thao tác.",
     "empty_state": "Chưa có bảng nào được cấu hình.",
     "feedback": {
       "error_prefix": "Cập nhật thất bại"

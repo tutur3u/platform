@@ -1,10 +1,10 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { LimitRow } from '@tuturuuu/types/db';
 import { enforceRootWorkspaceAdmin } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import EntityCreationLimitsClient from './client';
-import type { AvailableTableRow, LimitRow } from './types';
-import { buildTableGroups } from './types';
+import { type AvailableTableRow, buildTableGroups } from './types';
 
 export const metadata: Metadata = {
   title: 'Entity Creation Limits',
@@ -22,7 +22,7 @@ async function getLimitRows(): Promise<LimitRow[]> {
 
   if (error) throw error;
 
-  return (data ?? []) as LimitRow[];
+  return data ?? [];
 }
 
 async function getAvailableTables(): Promise<AvailableTableRow[]> {
@@ -38,7 +38,6 @@ async function getAvailableTables(): Promise<AvailableTableRow[]> {
 
 interface Props {
   params: Promise<{ wsId: string }>;
-  searchParams: Promise<{ error?: string; status?: string }>;
 }
 
 export default async function EntityCreationLimitsPage({ params }: Props) {

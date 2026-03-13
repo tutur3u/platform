@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@tuturuuu/ui/button';
+import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -28,7 +29,7 @@ import {
   updatePlatformEntityCreationLimitMetadata,
   updatePlatformEntityCreationLimitTier,
 } from './actions';
-import type { TableGroup, WorkspaceProductTier } from './types';
+import type { TableGroup } from './types';
 import { getLimitInputValue, TIER_ORDER } from './types';
 
 interface Props {
@@ -79,7 +80,6 @@ export function EditLimitDialog({ wsId, group, open, onOpenChange }: Props) {
               isLoading={isLoading}
               setIsLoading={setIsLoading}
               router={router}
-              t={t}
             />
           </section>
 
@@ -105,7 +105,6 @@ export function EditLimitDialog({ wsId, group, open, onOpenChange }: Props) {
                     isLoading={isLoading}
                     setIsLoading={setIsLoading}
                     router={router}
-                    t={t}
                   />
                 );
               })}
@@ -157,7 +156,6 @@ function MetadataForm({
   isLoading,
   setIsLoading,
   router,
-  t,
 }: {
   tableName: string;
   metadata: TableGroup['metadata'];
@@ -165,7 +163,6 @@ function MetadataForm({
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
   router: ReturnType<typeof useRouter>;
-  t: ReturnType<typeof useTranslations>;
 }) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const form = useForm<MetadataFormValues>({
@@ -173,6 +170,7 @@ function MetadataForm({
       notes: metadata.notes ?? '',
     },
   });
+  const t = useTranslations('entity-creation-limits');
 
   const onSubmit = async (values: MetadataFormValues) => {
     setIsLoading(true);
@@ -247,7 +245,6 @@ function TierForm({
   isLoading,
   setIsLoading,
   router,
-  t,
 }: {
   tier: TableGroup['tiers'][0];
   tableName: string;
@@ -255,7 +252,6 @@ function TierForm({
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
   router: ReturnType<typeof useRouter>;
-  t: ReturnType<typeof useTranslations>;
 }) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const form = useForm<TierFormValues>({
@@ -268,6 +264,7 @@ function TierForm({
       totalLimit: getLimitInputValue(tier.total_limit),
     },
   });
+  const t = useTranslations('entity-creation-limits');
 
   const onSubmit = async (values: TierFormValues) => {
     setIsLoading(true);
@@ -284,7 +281,7 @@ function TierForm({
       await updatePlatformEntityCreationLimitTier(
         wsId,
         tableName,
-        tier.tier as WorkspaceProductTier,
+        tier.tier,
         formData
       );
       router.refresh();
@@ -313,11 +310,11 @@ function TierForm({
             render={({ field }) => (
               <FormItem className="flex items-center gap-2">
                 <FormControl>
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={field.value}
-                    onChange={field.onChange}
+                    onCheckedChange={(checked) => field.onChange(!!checked)}
                     className="h-4 w-4 rounded border-border"
+                    ref={field.ref}
                   />
                 </FormControl>
                 <FormLabel className="text-xs">{t('fields.enabled')}</FormLabel>

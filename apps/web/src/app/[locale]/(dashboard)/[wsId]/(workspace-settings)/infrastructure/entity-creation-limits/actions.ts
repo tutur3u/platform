@@ -1,9 +1,8 @@
 'use server';
 
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { WorkspaceProductTier } from '@tuturuuu/types/db';
 import { enforceRootWorkspaceAdmin } from '@tuturuuu/utils/workspace-helper';
-
-type WorkspaceProductTier = 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
 
 function parseRequiredText(formData: FormData, fieldName: string) {
   const value = String(formData.get(fieldName) ?? '').trim();
@@ -51,6 +50,8 @@ function parseNullablePositiveInteger(
 }
 
 function getErrorMessage(error: unknown) {
+  console.error('Entity creation limit action failed', error);
+
   if (error instanceof Error && error.message) {
     return error.message;
   }

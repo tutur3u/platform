@@ -1,17 +1,4 @@
-export type WorkspaceProductTier = 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
-
-export type LimitRow = {
-  table_name: string;
-  tier: WorkspaceProductTier;
-  enabled: boolean;
-  per_hour: number | null;
-  per_day: number | null;
-  per_week: number | null;
-  per_month: number | null;
-  total_limit: number | null;
-  notes: string | null;
-  updated_at: string;
-};
+import type { LimitRow, WorkspaceProductTier } from '@tuturuuu/types/db';
 
 export type AvailableTableRow = {
   table_name: string;

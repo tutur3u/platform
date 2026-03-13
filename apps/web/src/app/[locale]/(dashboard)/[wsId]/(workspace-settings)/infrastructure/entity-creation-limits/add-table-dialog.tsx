@@ -116,8 +116,8 @@ export function AddTableDialog({
                 <FormItem>
                   <FormLabel>{t('fields.table_name')}</FormLabel>
                   <Select
+                    value={field.value}
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
                     disabled={availableTables.length === 0}
                   >
                     <FormControl>
@@ -139,13 +139,12 @@ export function AddTableDialog({
                     </SelectContent>
                   </Select>
                   <FormMessage />
+                  <FormDescription>
+                    {t('add_table.requirements_hint')}
+                  </FormDescription>
                 </FormItem>
               )}
             />
-
-            <FormDescription>
-              {t('add_table.requirements_hint')}
-            </FormDescription>
 
             <FormField
               control={form.control}

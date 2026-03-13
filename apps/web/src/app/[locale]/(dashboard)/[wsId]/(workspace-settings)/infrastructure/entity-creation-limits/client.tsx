@@ -36,7 +36,11 @@ export default function EntityCreationLimitsClient({
         </Button>
       </div>
 
-      <DataTable columns={columns} data={tableGroups} />
+      <DataTable
+        columns={columns}
+        data={tableGroups}
+        emptyMessage={t('empty_state')}
+      />
 
       <AddTableDialog
         wsId={wsId}
