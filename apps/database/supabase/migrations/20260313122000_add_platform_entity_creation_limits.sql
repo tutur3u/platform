@@ -277,7 +277,28 @@ begin
       using errcode = 'P0001';
   end if;
 
-  v_effective_tier := public._resolve_user_personal_workspace_tier(v_actor_user_id);
+  select s.ws_id, s.user_id
+  into v_subject_ws_id, v_subject_user_id
+  from public._resolve_platform_entity_limit_scope(
+    tg_table_name,
+    to_jsonb(new),
+    v_actor_user_id
+  ) s;
+
+  if v_subject_user_id is null then
+    v_subject_user_id := v_actor_user_id;
+  end if;
+
+  if tg_table_name <> 'workspaces' and v_subject_ws_id is null then
+    raise exception 'ENTITY_LIMIT_WS_ID_REQUIRED'
+      using errcode = 'P0001';
+  end if;
+
+  if v_subject_ws_id is not null then
+    v_effective_tier := public._resolve_workspace_tier(v_subject_ws_id);
+  else
+    v_effective_tier := public._resolve_user_personal_workspace_tier(v_subject_user_id);
+  end if;
 
   select *
   into v_limit_row
@@ -289,23 +310,6 @@ begin
 
   if not found then
     return new;
-  end if;
-
-  select s.ws_id, s.user_id
-  into v_subject_ws_id, v_subject_user_id
-  from public._resolve_platform_entity_limit_scope(
-    tg_table_name,
-    to_jsonb(new),
-    v_actor_user_id
-  ) s;
-
-  if tg_table_name <> 'workspaces' and v_subject_ws_id is null then
-    raise exception 'ENTITY_LIMIT_WS_ID_REQUIRED'
-      using errcode = 'P0001';
-  end if;
-
-  if v_subject_user_id is null then
-    v_subject_user_id := v_actor_user_id;
   end if;
 
   v_subject_bucket := coalesce(v_subject_ws_id::text, 'none') || ':' || coalesce(v_subject_user_id::text, 'none');
