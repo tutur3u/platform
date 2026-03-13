@@ -36,42 +36,19 @@ interface Params {
   }>;
 }
 
-export async function GET(_: Request, { params }: Params) {
+export async function GET(req: Request, { params }: Params) {
   const { wsId } = await params;
-  const supabase = await createClient();
   const sbAdmin = await createAdminClient();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  const { data: membership, error: membershipError } = await supabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id)
-    .maybeSingle();
-
-  if (membershipError) {
-    return NextResponse.json(
-      { message: 'Failed to verify workspace membership' },
-      { status: 500 }
-    );
-  }
-
-  if (!membership) {
+  const permissions = await getPermissions({ wsId, request: req });
+  if (!permissions) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
   const { data, error } = await sbAdmin
     .from('workspace_promotions')
     .select(
-      'id, name, code, value, use_ratio, promo_type, max_uses, current_uses'
+      'id, name, description, code, value, use_ratio, promo_type, max_uses, current_uses'
     )
     .eq('ws_id', wsId)
     .order('code', { ascending: true });

@@ -8,7 +8,6 @@ import {
   UserMinus,
   UserPlus,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
 import { Avatar, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -48,29 +47,20 @@ export default function ReferralSectionClient({
   const t = useTranslations('user-data-table');
   const [selectedUserId, setSelectedUserId] = useState<string>('');
 
-  const supabase = createClient();
   const queryClient = useQueryClient();
 
   // Single query: fetch all available users via RPC, hydrate with SSR data
   const availableUsersQuery = useQuery({
     queryKey: ['ws', wsId, 'users', 'available-for-referral', userId],
     queryFn: async (): Promise<{ data: WorkspaceUser[]; count: number }> => {
-      const { data: rows, error } = await supabase.rpc(
-        'get_available_referral_users',
-        {
-          p_ws_id: wsId,
-          p_user_id: userId,
-        }
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users/${userId}/referrals?type=available`,
+        { cache: 'no-store' }
       );
-      if (error) throw error;
-      const data = (rows || []).map((r) => ({
-        id: r.id,
-        full_name: r.full_name,
-        display_name: r.display_name,
-        email: r.email,
-        phone: r.phone,
-      })) as WorkspaceUser[];
-      return { data, count: data.length };
+      if (!response.ok) throw new Error('Failed to fetch available users');
+      const data = await response.json();
+      const users = (Array.isArray(data) ? data : []) as WorkspaceUser[];
+      return { data: users, count: users.length };
     },
     initialData: {
       data: initialAvailableUsers,
@@ -83,15 +73,13 @@ export default function ReferralSectionClient({
   const currentReferralsQuery = useQuery({
     queryKey: ['ws', wsId, 'user', userId, 'referrals', 'count'],
     queryFn: async (): Promise<number> => {
-      const { count, error } = await supabase
-        .from('workspace_users')
-        .select('id', { count: 'exact' })
-        .eq('ws_id', wsId)
-        .eq('referred_by', userId)
-        .eq('archived', false);
-
-      if (error) throw error;
-      return count || 0;
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users/${userId}/referrals`,
+        { cache: 'no-store' }
+      );
+      if (!response.ok) throw new Error('Failed to fetch referral count');
+      const data = await response.json();
+      return (data?.count || 0) as number;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -100,15 +88,13 @@ export default function ReferralSectionClient({
   const referredUsersQuery = useQuery({
     queryKey: ['ws', wsId, 'user', userId, 'referrals', 'list'],
     queryFn: async (): Promise<WorkspaceUser[]> => {
-      const { data, error } = await supabase
-        .from('workspace_users')
-        .select('id, full_name, display_name, email, phone')
-        .eq('ws_id', wsId)
-        .eq('referred_by', userId)
-        .eq('archived', false)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return (data || []) as unknown as WorkspaceUser[];
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users/${userId}/referrals`,
+        { cache: 'no-store' }
+      );
+      if (!response.ok) throw new Error('Failed to fetch referred users');
+      const data = await response.json();
+      return (Array.isArray(data?.data) ? data.data : []) as WorkspaceUser[];
     },
     initialData: initialReferredUsers,
     staleTime: 5 * 60 * 1000,
@@ -147,94 +133,18 @@ export default function ReferralSectionClient({
 
   const referUserMutation = useMutation({
     mutationFn: async (referredUserId: string) => {
-      // Prevent duplicate referral: ensure this user is still in the available list
-      const stillAvailable = (availableUsersQuery.data?.data || []).some(
-        (u) => u.id === referredUserId
-      );
-      if (!stillAvailable) {
-        throw new Error(t('user_already_referred'));
-      }
-
-      // 1) Ensure referrer-owned referral promotion exists
-      const { data: existingPromo, error: promoFetchErr } = await supabase
-        .from('workspace_promotions')
-        .select('id')
-        .eq('ws_id', wsId)
-        .eq('promo_type', 'REFERRAL')
-        .eq('owner_id', userId)
-        .maybeSingle();
-      if (promoFetchErr) throw promoFetchErr;
-
-      // Resolve current workspace virtual user id for auditing fields
-      let creatorVirtualUserId: string | null = null;
-      try {
-        const { data: userData, error: userError } =
-          await supabase.auth.getUser();
-        if (userError) throw userError;
-        if (userData?.user?.id) {
-          const { data: creatorRow, error: creatorIdErr } = await supabase
-            .from('workspace_user_linked_users')
-            .select('virtual_user_id')
-            .eq('ws_id', wsId)
-            .eq('platform_user_id', userData.user.id)
-            .maybeSingle();
-          if (creatorIdErr) throw creatorIdErr;
-          creatorVirtualUserId = creatorRow?.virtual_user_id ?? null;
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users/${userId}/referrals`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ referredUserId }),
         }
-      } catch (_error) {
-        // If we fail to resolve the virtual user id, proceed without it
-        creatorVirtualUserId = null;
+      );
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error?.message || 'Failed to refer user');
       }
-
-      // Require a valid creatorVirtualUserId; otherwise, do nothing.
-      if (!creatorVirtualUserId) {
-        throw new Error(t('missing_creator_id'));
-      }
-
-      // Create a referrer-owned referral promotion only when we have a
-      // platform user mapped to a virtual user (creatorVirtualUserId).
-      if (!existingPromo) {
-        const { error: promoInsertErr } = await supabase
-          .from('workspace_promotions')
-          .insert({
-            ws_id: wsId,
-            owner_id: userId,
-            promo_type: 'REFERRAL',
-            value: 0,
-            code: 'REF',
-            name: 'Referral',
-            description: 'Referral Code for Referral System',
-            use_ratio: true,
-            creator_id: creatorVirtualUserId,
-          })
-          .select('id')
-          .single();
-        if (promoInsertErr) throw promoInsertErr;
-      }
-
-      // 2) Set referred_by for the selected user
-      const { error: updateErr } = await supabase
-        .from('workspace_users')
-        .update({ referred_by: userId, updated_by: creatorVirtualUserId })
-        .eq('id', referredUserId)
-        .eq('ws_id', wsId);
-      if (updateErr) throw updateErr;
-
-      // 3) Conditionally link workspace default referral promotion to referred user
-      const rewardType = workspaceSettings?.referral_reward_type;
-      const shouldLink = rewardType === 'RECEIVER' || rewardType === 'BOTH';
-      const promoIdToLink = workspaceSettings?.referral_promotion_id || null;
-
-      if (shouldLink && promoIdToLink) {
-        const { error: linkErr } = await supabase
-          .from('user_linked_promotions')
-          .upsert(
-            { user_id: referredUserId, promo_id: promoIdToLink },
-            { onConflict: 'user_id,promo_id' }
-          );
-        if (linkErr) throw linkErr;
-      }
-
       return referredUserId;
     },
     onSuccess: async (referredUserId) => {
@@ -244,8 +154,10 @@ export default function ReferralSectionClient({
       // Optimistic cache updates
       await queryClient.setQueryData(
         ['ws', wsId, 'users', 'available-for-referral', userId],
-        (prev: { data: WorkspaceUser[]; count: number } | undefined) => {
-          if (!prev) return prev as any;
+        (
+          prev: { data: WorkspaceUser[]; count: number } | undefined
+        ): { data: WorkspaceUser[]; count: number } | undefined => {
+          if (!prev) return prev;
           const data = prev.data.filter((u) => u.id !== referredUserId);
           return { data, count: data.length };
         }
@@ -290,55 +202,16 @@ export default function ReferralSectionClient({
 
   const unreferUserMutation = useMutation({
     mutationFn: async (referredUserId: string) => {
-      // Resolve current workspace virtual user id for auditing fields
-      let updaterVirtualUserId: string | null = null;
-      try {
-        const { data: userData, error: userError } =
-          await supabase.auth.getUser();
-        if (userError) throw userError;
-        if (userData?.user?.id) {
-          const { data: updaterRow, error: updaterIdErr } = await supabase
-            .from('workspace_user_linked_users')
-            .select('virtual_user_id')
-            .eq('ws_id', wsId)
-            .eq('platform_user_id', userData.user.id)
-            .maybeSingle();
-          if (updaterIdErr) throw updaterIdErr;
-          updaterVirtualUserId = updaterRow?.virtual_user_id ?? null;
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users/${userId}/referrals?referredUserId=${referredUserId}`,
+        {
+          method: 'DELETE',
         }
-      } catch (_error) {
-        // If we fail to resolve the virtual user id, proceed without it
-        updaterVirtualUserId = null;
+      );
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error?.message || 'Failed to remove referral');
       }
-
-      // Require a valid updaterVirtualUserId; otherwise, do nothing.
-      if (!updaterVirtualUserId) {
-        throw new Error(t('missing_updater_id'));
-      }
-
-      // 1) Remove referred_by relationship
-      const { error: updateErr } = await supabase
-        .from('workspace_users')
-        .update({ referred_by: null, updated_by: updaterVirtualUserId })
-        .eq('id', referredUserId)
-        .eq('ws_id', wsId)
-        .eq('referred_by', userId); // Ensure they were referred by this user
-
-      if (updateErr) throw updateErr;
-
-      // 2) Remove linked referral promotion if it exists and matches the workspace default
-      // Note: We try to remove it regardless of the current 'referral_reward_type' setting
-      // to clean up past links, provided it matches the current configured promo ID.
-      const promoIdToRemove = workspaceSettings?.referral_promotion_id || null;
-      if (promoIdToRemove) {
-        const { error: unlinkErr } = await supabase
-          .from('user_linked_promotions')
-          .delete()
-          .eq('user_id', referredUserId)
-          .eq('promo_id', promoIdToRemove);
-        if (unlinkErr) throw unlinkErr;
-      }
-
       return referredUserId;
     },
     onSuccess: async (referredUserId) => {
@@ -348,8 +221,10 @@ export default function ReferralSectionClient({
       // Optimistic cache updates
       await queryClient.setQueryData(
         ['ws', wsId, 'users', 'available-for-referral', userId],
-        (prev: { data: WorkspaceUser[]; count: number } | undefined) => {
-          if (!prev) return prev as any;
+        (
+          prev: { data: WorkspaceUser[]; count: number } | undefined
+        ): { data: WorkspaceUser[]; count: number } | undefined => {
+          if (!prev) return prev;
           const data = prev.data.filter((u) => u.id !== referredUserId);
           return { data, count: data.length };
         }

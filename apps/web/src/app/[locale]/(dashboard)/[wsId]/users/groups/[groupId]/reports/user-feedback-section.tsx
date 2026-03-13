@@ -12,7 +12,6 @@ import {
   ShieldUserIcon,
   Trash2,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
   AlertDialog,
@@ -81,7 +80,6 @@ export default function UserFeedbackSection({
 }: UserFeedbackSectionProps) {
   const t = useTranslations();
   const tFeedback = useTranslations('ws-user-group-feedback');
-  const supabase = createClient();
   const queryClient = useQueryClient();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -115,47 +113,13 @@ export default function UserFeedbackSection({
       if (!user) return { data: [], count: 0, hasMore: false };
 
       const from = (currentPage - 1) * FEEDBACKS_PER_PAGE;
-      const to = from + FEEDBACKS_PER_PAGE - 1;
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/members/${user.id}/feedbacks?offset=${from}&limit=${FEEDBACKS_PER_PAGE}`,
+        { cache: 'no-store' }
+      );
 
-      const { data, error, count } = await supabase
-        .from('user_feedbacks')
-        .select(
-          `
-          id,
-          content,
-          require_attention,
-          created_at,
-          creator_id,
-          workspace_users!user_feedbacks_creator_id_fkey(
-            full_name,
-            display_name
-          )
-        `,
-          { count: 'exact' }
-        )
-        .eq('user_id', user.id)
-        .eq('group_id', groupId)
-        .order('created_at', { ascending: false })
-        .range(from, to);
-
-      if (error) throw error;
-
-      const feedbacksWithCreator =
-        data?.map((feedback) => ({
-          ...feedback,
-          creator: feedback.workspace_users
-            ? {
-                full_name: feedback.workspace_users.full_name,
-                display_name: feedback.workspace_users.display_name,
-              }
-            : null,
-        })) || [];
-
-      return {
-        data: feedbacksWithCreator,
-        count: count || 0,
-        hasMore: (count || 0) > to + 1,
-      };
+      if (!res.ok) throw new Error('Failed to fetch feedback history');
+      return await res.json();
     },
     enabled: !!user && isOpen,
     staleTime: 30000,
@@ -179,30 +143,19 @@ export default function UserFeedbackSection({
     mutationFn: async (data: FeedbackFormData) => {
       if (!user) throw new Error('No user selected');
 
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser();
-      if (!authUser) throw new Error('User not authenticated');
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/members/${user.id}/feedbacks`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        }
+      );
 
-      const { data: workspaceUser, error: workspaceUserError } = await supabase
-        .from('workspace_user_linked_users')
-        .select('virtual_user_id')
-        .eq('platform_user_id', authUser.id)
-        .eq('ws_id', wsId)
-        .single();
-
-      if (workspaceUserError) throw workspaceUserError;
-      if (!workspaceUser) throw new Error('User not found in workspace');
-
-      const { error } = await supabase.from('user_feedbacks').insert({
-        user_id: user.id,
-        group_id: groupId,
-        content: data.content.trim(),
-        require_attention: data.require_attention,
-        creator_id: workspaceUser.virtual_user_id,
-      });
-
-      if (error) throw error;
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Failed to create feedback');
+      }
     },
     onSuccess: () => {
       toast.success(tFeedback('feedback_created_successfully'));
@@ -227,15 +180,21 @@ export default function UserFeedbackSection({
       feedbackId: string;
       data: FeedbackFormData;
     }) => {
-      const { error } = await supabase
-        .from('user_feedbacks')
-        .update({
-          content: data.content.trim(),
-          require_attention: data.require_attention,
-        })
-        .eq('id', feedbackId);
+      if (!user) throw new Error('No user selected');
 
-      if (error) throw error;
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/members/${user.id}/feedbacks?feedbackId=${feedbackId}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        }
+      );
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Failed to update feedback');
+      }
     },
     onSuccess: () => {
       toast.success(tFeedback('feedback_updated_successfully'));
@@ -254,12 +213,19 @@ export default function UserFeedbackSection({
   // Mutation for deleting feedback
   const deleteFeedbackMutation = useMutation({
     mutationFn: async (feedbackId: string) => {
-      const { error } = await supabase
-        .from('user_feedbacks')
-        .delete()
-        .eq('id', feedbackId);
+      if (!user) throw new Error('No user selected');
 
-      if (error) throw error;
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/members/${user.id}/feedbacks?feedbackId=${feedbackId}`,
+        {
+          method: 'DELETE',
+        }
+      );
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Failed to delete feedback');
+      }
     },
     onSuccess: () => {
       toast.success(tFeedback('feedback_deleted_successfully'));

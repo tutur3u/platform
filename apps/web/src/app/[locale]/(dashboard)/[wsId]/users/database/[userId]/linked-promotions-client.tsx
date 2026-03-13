@@ -8,7 +8,6 @@ import {
   TicketCheck,
   Trash2,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import {
@@ -62,22 +61,25 @@ const useWorkspacePromotions = (wsId: string) => {
   return useQuery({
     queryKey: ['workspace-promotions', wsId],
     queryFn: async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('workspace_promotions')
-        .select('id, name, description, code, value, use_ratio')
-        .eq('ws_id', wsId)
-        .neq('promo_type', 'REFERRAL')
-        .order('created_at', { ascending: false });
-      if (error) {
-        toast(
-          error instanceof Error
-            ? error.message
-            : t('ws-user-linked-coupons.load_failed')
-        );
+      const response = await fetch(`/api/v1/workspaces/${wsId}/promotions`, {
+        cache: 'no-store',
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        toast.error(error?.message || t('ws-user-linked-coupons.load_failed'));
         return [] as WorkspacePromotion[];
       }
-      return (data || []) as WorkspacePromotion[];
+      const data = await response.json();
+      return (Array.isArray(data) ? data : [])
+        .filter((p: any) => p.promo_type !== 'REFERRAL')
+        .map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          description: p.description,
+          code: p.code,
+          value: p.value,
+          use_ratio: p.use_ratio,
+        })) as WorkspacePromotion[];
     },
   });
 };
@@ -100,18 +102,13 @@ export default function LinkedPromotionsClient({
   const userLinkedPromotionsQuery = useQuery({
     queryKey: ['user-linked-promotions', wsId, userId],
     queryFn: async (): Promise<LinkedPromotionItem[]> => {
-      console.log('Fetching linked promotions for user:', userId);
-      const supabase = createClient();
-      // Single joined query: get linked promotions with joined workspace promotion data
-      const { data, error } = await supabase
-        .from('user_linked_promotions')
-        .select(
-          'workspace_promotions!inner(id, name, description, code, value, use_ratio)'
-        )
-        .eq('user_id', userId)
-        .eq('workspace_promotions.ws_id', wsId);
-      if (error) throw error;
-      const items = (data || [])
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users/${userId}/linked-promotions`,
+        { cache: 'no-store' }
+      );
+      if (!response.ok) throw new Error('Failed to fetch linked promotions');
+      const data = await response.json();
+      const items = (Array.isArray(data) ? data : [])
         .map((row: any) => row.workspace_promotions)
         .filter(Boolean)
         .map((p: any) => ({
@@ -142,14 +139,12 @@ export default function LinkedPromotionsClient({
   const referralDiscountsQuery = useQuery({
     queryKey: ['user-referral-discounts', wsId, userId],
     queryFn: async (): Promise<ReferralDiscountRow[]> => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('v_user_referral_discounts')
-        .select('promo_id, calculated_discount_value')
-        .eq('ws_id', wsId)
-        .eq('user_id', userId);
-      if (error) throw error;
-      return (data || []) as ReferralDiscountRow[];
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users/${userId}/referral-discounts`,
+        { cache: 'no-store' }
+      );
+      if (!response.ok) return [];
+      return await response.json();
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -173,11 +168,18 @@ export default function LinkedPromotionsClient({
 
   const addPromotionMutation = useMutation({
     mutationFn: async ({ promoId }: { promoId: string }) => {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('user_linked_promotions')
-        .insert({ user_id: userId, promo_id: promoId });
-      if (error) throw error;
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users/${userId}/linked-promotions`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ promoId }),
+        }
+      );
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error?.message || 'Failed to link promotion');
+      }
       return { promoId };
     },
     onSuccess: () => {
@@ -212,13 +214,16 @@ export default function LinkedPromotionsClient({
 
   const deletePromotionMutation = useMutation({
     mutationFn: async ({ promoId }: { promoId: string }) => {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('user_linked_promotions')
-        .delete()
-        .eq('user_id', userId)
-        .eq('promo_id', promoId);
-      if (error) throw error;
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users/${userId}/linked-promotions?promoId=${promoId}`,
+        {
+          method: 'DELETE',
+        }
+      );
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error?.message || 'Failed to unlink promotion');
+      }
       return { promoId };
     },
     onSuccess: ({ promoId: _promoId }) => {

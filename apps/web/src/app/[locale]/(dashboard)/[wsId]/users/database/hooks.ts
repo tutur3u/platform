@@ -1,7 +1,6 @@
 'use client';
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
@@ -11,16 +10,16 @@ import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUse
  * Used by both useWorkspaceUserGroups and useExcludedUserGroups
  */
 async function fetchAllWorkspaceUserGroups(wsId: string): Promise<UserGroup[]> {
-  const supabase = createClient();
+  const response = await fetch(`/api/v1/workspaces/${wsId}/users/groups`, {
+    cache: 'no-store',
+  });
 
-  const { data, error } = await supabase
-    .from('workspace_user_groups_with_amount')
-    .select('id, name, amount')
-    .eq('ws_id', wsId)
-    .order('name');
+  if (!response.ok) {
+    throw new Error('Failed to fetch workspace user groups');
+  }
 
-  if (error) throw error;
-  return data as UserGroup[];
+  const { data } = await response.json();
+  return data || [];
 }
 
 export interface WorkspaceUsersParams {
@@ -119,9 +118,6 @@ export function useWorkspaceUserGroups(wsId: string) {
   });
 }
 
-/**
- * Fetch possible excluded groups based on current included groups
- */
 export function useExcludedUserGroups(
   wsId: string,
   includedGroups: string[] = []
@@ -134,18 +130,22 @@ export function useExcludedUserGroups(
         return fetchAllWorkspaceUserGroups(wsId);
       }
 
-      // Use RPC to get possible excluded groups
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .rpc('get_possible_excluded_groups', {
-          _ws_id: wsId,
-          included_groups: includedGroups,
-        })
-        .select('id, name, amount')
-        .order('name');
+      // Use backend API to get possible excluded groups
+      const searchParams = new URLSearchParams();
+      includedGroups.forEach((group) => {
+        searchParams.append('includedGroups', group);
+      });
 
-      if (error) throw error;
-      return data as UserGroup[];
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users/groups/possible-excluded?${searchParams.toString()}`,
+        { cache: 'no-store' }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch possible excluded groups');
+      }
+
+      return (await response.json()) as UserGroup[];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
@@ -174,25 +174,24 @@ export function useWorkspaceUserFields(wsId: string) {
   });
 }
 
-/**
- * Fetch featured groups for quick filtering on the database page
- */
 export function useFeaturedGroups(wsId: string) {
   return useQuery({
     queryKey: ['workspace-featured-groups', wsId],
     queryFn: async (): Promise<string[]> => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('workspace_configs')
-        .select('value')
-        .eq('ws_id', wsId)
-        .eq('id', 'DATABASE_FEATURED_GROUPS')
-        .maybeSingle();
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/settings/DATABASE_FEATURED_GROUPS`,
+        { cache: 'no-store' }
+      );
 
-      if (error) throw error;
+      if (!response.ok) {
+        if (response.status === 404) return [];
+        throw new Error('Failed to fetch featured groups config');
+      }
 
-      return data?.value
-        ? data.value
+      const { value } = await response.json();
+
+      return value
+        ? (value as string)
             .split(',')
             .map((v: string) => v.trim())
             .filter(Boolean)
@@ -213,11 +212,6 @@ export interface FeaturedGroupCountsParams {
   linkStatus?: string;
 }
 
-/**
- * Fetch accurate filtered counts for each featured group chip.
- * Returns a Record<groupId, count> reflecting how many users in each group
- * match the current filters (search, excluded groups, status, link status).
- */
 export function useFeaturedGroupCounts(
   wsId: string,
   featuredGroupIds: string[],
@@ -238,24 +232,27 @@ export function useFeaturedGroupCounts(
       { excludedGroups, searchQuery, status, linkStatus },
     ],
     queryFn: async (): Promise<Record<string, number>> => {
-      const supabase = createClient();
-
-      const { data, error } = await supabase.rpc('get_featured_group_counts', {
-        _ws_id: wsId,
-        _featured_group_ids: featuredGroupIds,
-        _excluded_groups: excludedGroups,
-        _search_query: searchQuery || undefined,
-        _status: status,
-        _link_status: linkStatus,
+      const searchParams = new URLSearchParams();
+      featuredGroupIds.forEach((id) => {
+        searchParams.append('featuredGroupIds', id);
       });
+      excludedGroups.forEach((id) => {
+        searchParams.append('excludedGroups', id);
+      });
+      if (searchQuery) searchParams.set('q', searchQuery);
+      searchParams.set('status', status);
+      searchParams.set('linkStatus', linkStatus);
 
-      if (error) throw error;
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users/groups/featured-counts?${searchParams.toString()}`,
+        { cache: 'no-store' }
+      );
 
-      const counts: Record<string, number> = {};
-      for (const row of data ?? []) {
-        counts[row.group_id] = Number(row.user_count);
+      if (!response.ok) {
+        throw new Error('Failed to fetch featured group counts');
       }
-      return counts;
+
+      return (await response.json()) as Record<string, number>;
     },
     enabled: featuredGroupIds.length > 0,
     placeholderData: keepPreviousData,
@@ -264,25 +261,24 @@ export function useFeaturedGroupCounts(
   });
 }
 
-/**
- * Fetch default excluded groups for the workspace
- */
 export function useDefaultExcludedGroups(wsId: string) {
   return useQuery({
     queryKey: ['workspace-default-excluded-groups', wsId],
     queryFn: async (): Promise<string[]> => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('workspace_configs')
-        .select('value')
-        .eq('ws_id', wsId)
-        .eq('id', 'DATABASE_DEFAULT_EXCLUDED_GROUPS')
-        .maybeSingle();
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/settings/DATABASE_DEFAULT_EXCLUDED_GROUPS`,
+        { cache: 'no-store' }
+      );
 
-      if (error) throw error;
+      if (!response.ok) {
+        if (response.status === 404) return [];
+        throw new Error('Failed to fetch default excluded groups config');
+      }
 
-      return data?.value
-        ? data.value
+      const { value } = await response.json();
+
+      return value
+        ? (value as string)
             .split(',')
             .map((v: string) => v.trim())
             .filter(Boolean)

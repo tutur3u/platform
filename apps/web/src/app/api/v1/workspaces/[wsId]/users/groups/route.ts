@@ -16,6 +16,7 @@ import { buildPostgrestRateLimitResponse } from '@/lib/postgrest-rate-limit';
 
 const SearchParamsSchema = z.object({
   q: z.string().max(MAX_SEARCH_LENGTH).optional(),
+  userId: z.string().uuid().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(200).default(10),
 });
@@ -83,7 +84,9 @@ export async function GET(request: Request, { params }: Params) {
       queryBuilder.ilike('name', `%${escapedSearch}%`);
     }
 
-    if (!hasManageUsers) {
+    if (sp.userId) {
+      queryBuilder.eq('workspace_user_groups_users.user_id', sp.userId);
+    } else if (!hasManageUsers) {
       const groupIds = await getUserGroupMemberships(wsId);
       if (groupIds.length === 0) {
         return NextResponse.json({ data: [], count: 0 });

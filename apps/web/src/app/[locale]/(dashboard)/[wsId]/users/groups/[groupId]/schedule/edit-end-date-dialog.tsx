@@ -3,7 +3,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { CalendarIcon } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import { Calendar } from '@tuturuuu/ui/calendar';
 import {
@@ -78,23 +77,24 @@ export default function EditEndDateDialog({
 
   const updateDatesMutation = useMutation({
     mutationFn: async (values: FormValues) => {
-      const supabase = createClient();
-
       const formattedStartDate = dayjs(values.starting_date).format(
         'YYYY-MM-DD'
       );
       const formattedEndDate = dayjs(values.ending_date).format('YYYY-MM-DD');
 
-      const { error } = await supabase
-        .from('workspace_user_groups')
-        .update({
-          starting_date: formattedStartDate,
-          ending_date: formattedEndDate,
-        })
-        .eq('ws_id', wsId)
-        .eq('id', groupId);
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            starting_date: formattedStartDate,
+            ending_date: formattedEndDate,
+          }),
+        }
+      );
 
-      if (error) throw error;
+      if (!res.ok) throw new Error('Failed to update group dates');
     },
     onSuccess: () => {
       setOpen(false);

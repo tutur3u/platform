@@ -2,7 +2,6 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { RotateCcw, Save } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import { YearCalendar } from '@tuturuuu/ui/custom/calendar/year-calendar';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -43,15 +42,12 @@ export default function ScheduleCalendar({
   const { data: fetchedSessions } = useQuery({
     queryKey: ['group-schedule', groupId],
     queryFn: async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('workspace_user_groups')
-        .select('sessions')
-        .eq('ws_id', wsId)
-        .eq('id', groupId)
-        .single();
-
-      if (error) throw error;
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}`,
+        { cache: 'no-store' }
+      );
+      if (!res.ok) throw new Error('Failed to fetch group details');
+      const { data } = await res.json();
       return (data?.sessions as string[]) || [];
     },
     initialData: initialSessions,
@@ -77,14 +73,15 @@ export default function ScheduleCalendar({
   // Mutation for updating schedule
   const mutation = useMutation({
     mutationFn: async (newSessions: string[]) => {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('workspace_user_groups')
-        .update({ sessions: newSessions })
-        .eq('ws_id', wsId)
-        .eq('id', groupId);
-
-      if (error) throw error;
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessions: newSessions }),
+        }
+      );
+      if (!res.ok) throw new Error('Failed to update group sessions');
     },
     onSuccess: () => {
       setPendingChanges(new Set());

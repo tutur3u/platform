@@ -2,7 +2,6 @@
 
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Loader2, Mail } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Database } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -39,28 +38,21 @@ export default function SentEmailsClient({
   const [selectedEmail, setSelectedEmail] = useState<SentEmail | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
-  const supabase = createClient();
-
   const sentEmailsQuery = useInfiniteQuery({
     queryKey: ['sent-emails', wsId, userId, pageSize],
     queryFn: async ({ pageParam = 0 }) => {
-      const start = pageParam * pageSize;
-      const end = start + pageSize - 1;
-
-      const { data, error, count } = await supabase
-        .from('sent_emails')
-        .select('*', { count: 'exact' })
-        .eq('ws_id', wsId)
-        .eq('receiver_id', userId)
-        .order('created_at', { ascending: false })
-        .range(start, end);
-
-      if (error) throw error;
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users/${userId}/emails?page=${pageParam}&pageSize=${pageSize}`,
+        { cache: 'no-store' }
+      );
+      if (!response.ok) throw new Error('Failed to fetch sent emails');
+      const { data, count } = await response.json();
 
       return {
         data: (data || []) as SentEmail[],
         count: count || 0,
-        nextCursor: data && data.length === pageSize ? pageParam + 1 : null,
+        nextCursor:
+          data && data.length === pageSize ? (pageParam as number) + 1 : null,
       };
     },
     initialPageParam: 0,
