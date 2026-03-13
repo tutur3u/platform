@@ -5,10 +5,10 @@ import {
   MAX_SEARCH_LENGTH,
 } from '@tuturuuu/utils/constants';
 import { sanitizeSearchQuery } from '@tuturuuu/utils/search-helper';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 
 const timezoneEnumValues = (() => {
   if (typeof Intl !== 'undefined' && 'supportedValuesOf' in Intl) {

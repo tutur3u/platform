@@ -2,8 +2,8 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { type NextRequest, NextResponse } from 'next/server';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import { type NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
   request: NextRequest,

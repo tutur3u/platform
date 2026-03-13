@@ -2,8 +2,8 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { type NextRequest, NextResponse } from 'next/server';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import { type NextRequest, NextResponse } from 'next/server';
 
 export async function PATCH(
   request: NextRequest,
@@ -65,7 +65,6 @@ export async function PATCH(
         { status: 400 }
       );
     }
-
 
     const { data, error } = await sbAdmin
       .from('time_tracking_categories')
