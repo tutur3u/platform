@@ -1,5 +1,6 @@
 import type { MiraToolContext } from '../../mira-tools';
 import { getWorkspaceContextWorkspaceId } from '../../workspace-context';
+import { hasTaskAccess, hasTimeTrackingCategoryAccess } from '../scope-helpers';
 import {
   coerceOptionalString,
   MIN_DURATION_SECONDS,
@@ -236,6 +237,33 @@ export async function executeCreateTimeTrackingEntry(
     };
   }
 
+  const categoryId = coerceOptionalString(parsedArgs.categoryId);
+  if (categoryId) {
+    try {
+      if (!(await hasTimeTrackingCategoryAccess(ctx, categoryId))) {
+        return { error: 'Category not found in current workspace' };
+      }
+    } catch (error) {
+      return {
+        error:
+          error instanceof Error ? error.message : 'Category lookup failed',
+      };
+    }
+  }
+
+  const taskId = coerceOptionalString(parsedArgs.taskId);
+  if (taskId) {
+    try {
+      if (!(await hasTaskAccess(ctx, taskId))) {
+        return { error: 'Task not found in current workspace' };
+      }
+    } catch (error) {
+      return {
+        error: error instanceof Error ? error.message : 'Task lookup failed',
+      };
+    }
+  }
+
   const { data, error } = await ctx.supabase
     .from('time_tracking_sessions')
     .insert({
@@ -243,8 +271,8 @@ export async function executeCreateTimeTrackingEntry(
       user_id: ctx.userId,
       title,
       description: coerceOptionalString(parsedArgs.description),
-      category_id: coerceOptionalString(parsedArgs.categoryId),
-      task_id: coerceOptionalString(parsedArgs.taskId),
+      category_id: categoryId,
+      task_id: taskId,
       start_time: startTime.toISOString(),
       end_time: endTime.toISOString(),
       duration_seconds: durationSeconds,

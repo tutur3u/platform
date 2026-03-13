@@ -2,7 +2,6 @@ import { google } from '@ai-sdk/google';
 import {
   createAdminClient,
   createClient,
-  createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { consumeStream, smoothStream, stepCountIs, streamText } from 'ai';
@@ -302,7 +301,6 @@ export function createPOST(
       }
       const chatId = resolvedChatId.chatId;
 
-      const sbDynamic = await createDynamicClient(req);
       const moveFilesError = await moveTempFilesToThread({
         loadThread: () =>
           sbAdmin
@@ -311,7 +309,7 @@ export function createPOST(
             .eq('chat_id', chatId)
             .eq('ai_chats.creator_id', user.id),
         listFiles: (tempStoragePath) =>
-          sbDynamic.storage.from('workspaces').list(tempStoragePath),
+          sbAdmin.storage.from('workspaces').list(tempStoragePath),
         moveFile: (fromPath, toPath) =>
           sbAdmin.storage.from('workspaces').move(fromPath, toPath),
         wsId: normalizedWsId ?? undefined,
@@ -369,6 +367,7 @@ export function createPOST(
         userId: user.id,
         chatId,
         supabase,
+        toolSupabase: sbAdmin as typeof supabase,
         timezone,
         getSteps: () => stepsRef.current,
       });

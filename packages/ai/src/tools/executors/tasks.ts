@@ -3,6 +3,15 @@ import type { Enums, TablesInsert, TablesUpdate } from '@tuturuuu/types';
 import { parseTaskDateToUTCISO } from '@tuturuuu/utils/task-date-timezone';
 import type { MiraToolContext } from '../mira-tools';
 import { getWorkspaceContextWorkspaceId } from '../workspace-context';
+import {
+  getTaskScope,
+  hasProjectAccess,
+  hasTaskAccess,
+  hasTaskListAccess,
+  hasWorkspaceBoardAccess,
+  isWorkspaceMember,
+  type TaskScope,
+} from './scope-helpers';
 
 type RpcTask = {
   task_id: string;
@@ -19,6 +28,18 @@ const mapTask = (t: RpcTask) => ({
   priority: t.task_priority,
   dueDate: t.task_end_date,
 });
+
+function getTaskScopePredicate(taskScope: TaskScope) {
+  const value = taskScope.boardId ?? taskScope.listId;
+  if (!value) {
+    return null;
+  }
+
+  return {
+    column: taskScope.boardId ? 'board_id' : 'list_id',
+    value,
+  } as const;
+}
 
 export async function executeGetMyTasks(
   args: Record<string, unknown>,
@@ -283,11 +304,28 @@ export async function executeCompleteTask(
   ctx: MiraToolContext
 ) {
   const taskId = args.taskId as string;
+  let taskScope: TaskScope | null = null;
+
+  try {
+    taskScope = await getTaskScope(ctx, taskId);
+    if (!taskScope) {
+      return { error: 'Task not found in current workspace' };
+    }
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : 'Task lookup failed',
+    };
+  }
+  const taskScopePredicate = getTaskScopePredicate(taskScope);
+  if (!taskScopePredicate) {
+    return { error: 'Task not found in current workspace' };
+  }
 
   const { error } = await ctx.supabase
     .from('tasks')
     .update({ completed: true, completed_at: new Date().toISOString() })
-    .eq('id', taskId);
+    .eq('id', taskId)
+    .eq(taskScopePredicate.column, taskScopePredicate.value);
 
   if (error) return { error: error.message };
   return { success: true, message: 'Task marked as completed' };
@@ -345,7 +383,19 @@ export async function executeUpdateTask(
   }
   if (args.estimationPoints !== undefined)
     updates.estimation_points = args.estimationPoints as number;
-  if (args.listId !== undefined) updates.list_id = args.listId as string;
+  if (args.listId !== undefined) {
+    const nextListId = args.listId as string;
+    try {
+      if (!(await hasTaskListAccess(ctx, nextListId))) {
+        return { error: 'Target list not found in current workspace' };
+      }
+    } catch (error) {
+      return {
+        error: error instanceof Error ? error.message : 'List lookup failed',
+      };
+    }
+    updates.list_id = nextListId;
+  }
 
   if (Object.keys(updates).length === 0) {
     return {
@@ -354,10 +404,27 @@ export async function executeUpdateTask(
     };
   }
 
+  let taskScope: TaskScope | null = null;
+  try {
+    taskScope = await getTaskScope(ctx, taskId);
+    if (!taskScope) {
+      return { error: 'Task not found in current workspace' };
+    }
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : 'Task lookup failed',
+    };
+  }
+  const taskScopePredicate = getTaskScopePredicate(taskScope);
+  if (!taskScopePredicate) {
+    return { error: 'Task not found in current workspace' };
+  }
+
   const { error } = await ctx.supabase
     .from('tasks')
     .update(updates)
-    .eq('id', taskId);
+    .eq('id', taskId)
+    .eq(taskScopePredicate.column, taskScopePredicate.value);
 
   if (error) return { error: error.message };
   return { success: true, message: `Task ${taskId} updated` };
@@ -368,11 +435,28 @@ export async function executeDeleteTask(
   ctx: MiraToolContext
 ) {
   const taskId = args.taskId as string;
+  let taskScope: TaskScope | null = null;
+
+  try {
+    taskScope = await getTaskScope(ctx, taskId);
+    if (!taskScope) {
+      return { error: 'Task not found in current workspace' };
+    }
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : 'Task lookup failed',
+    };
+  }
+  const taskScopePredicate = getTaskScopePredicate(taskScope);
+  if (!taskScopePredicate) {
+    return { error: 'Task not found in current workspace' };
+  }
 
   const { error } = await ctx.supabase
     .from('tasks')
     .update({ deleted_at: new Date().toISOString() })
-    .eq('id', taskId);
+    .eq('id', taskId)
+    .eq(taskScopePredicate.column, taskScopePredicate.value);
 
   if (error) return { error: error.message };
   return { success: true, message: `Task ${taskId} deleted` };
@@ -458,6 +542,16 @@ export async function executeListTaskLists(
 ) {
   const boardId = args.boardId as string;
 
+  try {
+    if (!(await hasWorkspaceBoardAccess(ctx, boardId))) {
+      return { error: 'Board not found in current workspace' };
+    }
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : 'Board lookup failed',
+    };
+  }
+
   const { data, error } = await ctx.supabase
     .from('task_lists')
     .select('id, name, board_id, color, position, archived')
@@ -516,6 +610,16 @@ export async function executeUpdateTaskList(
     return { success: true, message: 'No fields to update' };
   }
 
+  try {
+    if (!(await hasTaskListAccess(ctx, listId))) {
+      return { error: 'List not found in current workspace' };
+    }
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : 'List lookup failed',
+    };
+  }
+
   const { error } = await ctx.supabase
     .from('task_lists')
     .update(updates)
@@ -530,6 +634,16 @@ export async function executeDeleteTaskList(
   ctx: MiraToolContext
 ) {
   const listId = args.listId as string;
+
+  try {
+    if (!(await hasTaskListAccess(ctx, listId))) {
+      return { error: 'List not found in current workspace' };
+    }
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : 'List lookup failed',
+    };
+  }
 
   const { error } = await ctx.supabase
     .from('task_lists')
@@ -629,17 +743,15 @@ export async function executeAddTaskLabels(
     return { success: true, message: 'No labels provided' };
   }
 
-  const { data: task, error: taskError } = await ctx.supabase
-    .from('tasks')
-    .select('id')
-    .eq('id', taskId)
-    .eq('ws_id', getWorkspaceContextWorkspaceId(ctx))
-    .maybeSingle();
-
-  if (taskError) return { error: taskError.message };
-  if (!task) {
+  try {
+    if (!(await hasTaskAccess(ctx, taskId))) {
+      return {
+        error: 'Authorization failed: task does not belong to this workspace',
+      };
+    }
+  } catch (error) {
     return {
-      error: 'Authorization failed: task does not belong to this workspace',
+      error: error instanceof Error ? error.message : 'Task lookup failed',
     };
   }
 
@@ -685,17 +797,15 @@ export async function executeRemoveTaskLabels(
     return { success: true, message: 'No labels provided' };
   }
 
-  const { data: task, error: taskError } = await ctx.supabase
-    .from('tasks')
-    .select('id')
-    .eq('id', taskId)
-    .eq('ws_id', getWorkspaceContextWorkspaceId(ctx))
-    .maybeSingle();
-
-  if (taskError) return { error: taskError.message };
-  if (!task) {
+  try {
+    if (!(await hasTaskAccess(ctx, taskId))) {
+      return {
+        error: 'Authorization failed: task does not belong to this workspace',
+      };
+    }
+  } catch (error) {
     return {
-      error: 'Authorization failed: task does not belong to this workspace',
+      error: error instanceof Error ? error.message : 'Task lookup failed',
     };
   }
 
@@ -809,6 +919,22 @@ export async function executeAddTaskToProject(
   args: Record<string, unknown>,
   ctx: MiraToolContext
 ) {
+  try {
+    if (!(await hasTaskAccess(ctx, args.taskId as string))) {
+      return { error: 'Task not found in current workspace' };
+    }
+    if (!(await hasProjectAccess(ctx, args.projectId as string))) {
+      return { error: 'Project not found in current workspace' };
+    }
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Task or project lookup failed',
+    };
+  }
+
   const { error } = await ctx.supabase.from('task_project_tasks').upsert(
     {
       task_id: args.taskId as string,
@@ -825,6 +951,22 @@ export async function executeRemoveTaskFromProject(
   args: Record<string, unknown>,
   ctx: MiraToolContext
 ) {
+  try {
+    if (!(await hasTaskAccess(ctx, args.taskId as string))) {
+      return { error: 'Task not found in current workspace' };
+    }
+    if (!(await hasProjectAccess(ctx, args.projectId as string))) {
+      return { error: 'Project not found in current workspace' };
+    }
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Task or project lookup failed',
+    };
+  }
+
   const { error } = await ctx.supabase
     .from('task_project_tasks')
     .delete()
@@ -839,6 +981,20 @@ export async function executeAddTaskAssignee(
   args: Record<string, unknown>,
   ctx: MiraToolContext
 ) {
+  try {
+    if (!(await hasTaskAccess(ctx, args.taskId as string))) {
+      return { error: 'Task not found in current workspace' };
+    }
+    if (!(await isWorkspaceMember(ctx, args.userId as string))) {
+      return { error: 'Assignee is not a member of the current workspace' };
+    }
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error ? error.message : 'Task or member lookup failed',
+    };
+  }
+
   const { error } = await ctx.supabase.from('task_assignees').upsert(
     {
       task_id: args.taskId as string,
@@ -855,6 +1011,16 @@ export async function executeRemoveTaskAssignee(
   args: Record<string, unknown>,
   ctx: MiraToolContext
 ) {
+  try {
+    if (!(await hasTaskAccess(ctx, args.taskId as string))) {
+      return { error: 'Task not found in current workspace' };
+    }
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : 'Task lookup failed',
+    };
+  }
+
   const { error } = await ctx.supabase
     .from('task_assignees')
     .delete()

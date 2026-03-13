@@ -2,6 +2,7 @@ import type { TablesInsert, TablesUpdate } from '@tuturuuu/types';
 import { z } from 'zod';
 import type { MiraToolContext } from '../mira-tools';
 import { getWorkspaceContextWorkspaceId } from '../workspace-context';
+import { hasTransactionCategoryAccess, hasWalletAccess } from './scope-helpers';
 
 const createWalletArgsSchema = z.object({
   name: z.string().trim().min(1),
@@ -98,6 +99,31 @@ export async function executeLogTransaction(
 
     if (!wallet) return { error: 'No wallet found in workspace' };
     walletId = wallet.id;
+  } else {
+    try {
+      if (!(await hasWalletAccess(ctx, walletId))) {
+        return { error: 'Wallet not found in current workspace' };
+      }
+    } catch (error) {
+      return {
+        error: error instanceof Error ? error.message : 'Wallet lookup failed',
+      };
+    }
+  }
+
+  if (args.categoryId) {
+    try {
+      if (
+        !(await hasTransactionCategoryAccess(ctx, args.categoryId as string))
+      ) {
+        return { error: 'Category not found in current workspace' };
+      }
+    } catch (error) {
+      return {
+        error:
+          error instanceof Error ? error.message : 'Category lookup failed',
+      };
+    }
   }
 
   const { data: tx, error } = await ctx.supabase
@@ -106,6 +132,7 @@ export async function executeLogTransaction(
       amount,
       description: (args.description as string) ?? null,
       wallet_id: walletId,
+      category_id: (args.categoryId as string | undefined) ?? null,
       taken_at: new Date().toISOString(),
     })
     .select('id, amount, description, taken_at')
@@ -330,8 +357,38 @@ export async function executeUpdateTransaction(
 
   if (args.amount !== undefined) updates.amount = args.amount;
   if (args.description !== undefined) updates.description = args.description;
-  if (args.categoryId !== undefined) updates.category_id = args.categoryId;
-  if (args.walletId !== undefined) updates.wallet_id = args.walletId;
+  if (args.categoryId !== undefined) {
+    const categoryId = args.categoryId as string | null;
+    if (categoryId) {
+      try {
+        if (!(await hasTransactionCategoryAccess(ctx, categoryId))) {
+          return { error: 'Category not found in current workspace' };
+        }
+      } catch (error) {
+        return {
+          error:
+            error instanceof Error ? error.message : 'Category lookup failed',
+        };
+      }
+    }
+    updates.category_id = categoryId;
+  }
+  if (args.walletId !== undefined) {
+    const walletId = args.walletId as string | null;
+    if (walletId) {
+      try {
+        if (!(await hasWalletAccess(ctx, walletId))) {
+          return { error: 'Wallet not found in current workspace' };
+        }
+      } catch (error) {
+        return {
+          error:
+            error instanceof Error ? error.message : 'Wallet lookup failed',
+        };
+      }
+    }
+    updates.wallet_id = walletId;
+  }
 
   if (Object.keys(updates).length === 0) {
     return { success: true, message: 'No fields to update' };
