@@ -153,7 +153,7 @@ export default function HeroSection() {
           {/* Large top image */}
           <div className="group relative aspect-4/3 overflow-hidden rounded-2xl shadow-2xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl">
             <Image
-              src="/club-day/club-day.jpeg"
+              src="/club-day/sem-a-2026.jpg"
               alt="NCT Club Day"
               fill
               className="object-cover transition-transform duration-700 group-hover:scale-110"
