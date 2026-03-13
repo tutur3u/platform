@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@tuturuuu/supabase';
+import type { PermissionId } from '@tuturuuu/types';
 import type { MiraSoulConfig } from '../chat/mira-system-instruction';
 
 /**
@@ -20,6 +21,7 @@ type ContextOptions = {
   wsId: string;
   supabase: SupabaseClient;
   timezone?: string;
+  withoutPermission?: (permission: PermissionId) => boolean;
 };
 
 export type MiraContextResult = {
@@ -41,7 +43,9 @@ export type MiraContextResult = {
 export async function buildMiraContext(
   opts: ContextOptions
 ): Promise<MiraContextResult> {
-  const { userId, wsId, supabase, timezone = 'UTC' } = opts;
+  const { userId, wsId, supabase, timezone = 'UTC', withoutPermission } = opts;
+  const canReadCalendar = !withoutPermission?.('manage_calendar');
+  const canReadFinance = !withoutPermission?.('manage_finance');
 
   let now = new Date();
   try {
@@ -110,21 +114,25 @@ export async function buildMiraContext(
     }),
 
     // Calendar: next 7 days
-    supabase
-      .from('workspace_calendar_events')
-      .select('title, start_at, end_at, location')
-      .eq('ws_id', wsId)
-      .gte('start_at', now.toISOString())
-      .lte('start_at', weekAhead.toISOString())
-      .order('start_at', { ascending: true })
-      .limit(15),
+    canReadCalendar
+      ? supabase
+          .from('workspace_calendar_events')
+          .select('title, start_at, end_at, location')
+          .eq('ws_id', wsId)
+          .gte('start_at', now.toISOString())
+          .lte('start_at', weekAhead.toISOString())
+          .order('start_at', { ascending: true })
+          .limit(15)
+      : Promise.resolve({ data: null, error: null }),
 
     // Wallets with balances
-    supabase
-      .from('workspace_wallets')
-      .select('name, currency, balance')
-      .eq('ws_id', wsId)
-      .limit(10),
+    canReadFinance
+      ? supabase
+          .from('workspace_wallets')
+          .select('name, currency, balance')
+          .eq('ws_id', wsId)
+          .limit(10)
+      : Promise.resolve({ data: null, error: null }),
 
     // Recent memories (most recently referenced or updated)
     supabase

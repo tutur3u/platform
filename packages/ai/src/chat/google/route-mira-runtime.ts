@@ -25,6 +25,7 @@ type PrepareMiraRuntimeParams = {
   userId: string;
   chatId: string;
   supabase: SupabaseClientLike;
+  toolSupabase?: SupabaseClientLike;
   timezone?: string;
   /** Optional callback for render_ui context-aware fallback. */
   getSteps?: () => unknown[];
@@ -39,6 +40,7 @@ export async function prepareMiraRuntime({
   userId,
   chatId,
   supabase,
+  toolSupabase,
   timezone,
   getSteps,
 }: PrepareMiraRuntimeParams): Promise<{
@@ -49,10 +51,12 @@ export async function prepareMiraRuntime({
     return {};
   }
 
+  const miraSupabase = toolSupabase ?? supabase;
+
   let resolvedWorkspaceContext: MiraWorkspaceContextState;
   try {
     resolvedWorkspaceContext = await resolveWorkspaceContextState({
-      supabase,
+      supabase: miraSupabase,
       userId,
       requestedWorkspaceContextId: workspaceContextId,
       fallbackWorkspaceId: wsId,
@@ -72,12 +76,14 @@ export async function prepareMiraRuntime({
   }
 
   let withoutPermission: PermissionResultLike['withoutPermission'];
+  const denyPermissionByDefault = () => true;
+  withoutPermission = denyPermissionByDefault;
   try {
     const permissionsResult = (await getPermissions({
       wsId: resolvedWorkspaceContext.wsId,
       request,
     })) as PermissionResultLike | null;
-    if (permissionsResult) {
+    if (permissionsResult?.withoutPermission) {
       withoutPermission = permissionsResult.withoutPermission;
     }
   } catch (permErr) {
@@ -90,7 +96,7 @@ export async function prepareMiraRuntime({
     creditWsId,
     workspaceContext: resolvedWorkspaceContext,
     chatId,
-    supabase,
+    supabase: miraSupabase,
     timezone,
   };
 
@@ -99,8 +105,9 @@ export async function prepareMiraRuntime({
     const { contextString, soul, isFirstInteraction } = await buildMiraContext({
       userId,
       wsId: resolvedWorkspaceContext.wsId,
-      supabase,
+      supabase: miraSupabase,
       timezone,
+      withoutPermission,
     });
     const dynamicInstruction = buildMiraSystemInstruction({
       soul,

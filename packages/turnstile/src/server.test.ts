@@ -16,6 +16,17 @@ describe('extractTurnstileRemoteIp', () => {
 
     expect(extractTurnstileRemoteIp(request)).toBe('198.51.100.10');
   });
+
+  it('falls back to true-client-ip before generic forwarded headers', () => {
+    const request = {
+      headers: new Headers({
+        'true-client-ip': '198.51.100.11',
+        'x-forwarded-for': '203.0.113.3, 203.0.113.4',
+      }),
+    };
+
+    expect(extractTurnstileRemoteIp(request)).toBe('198.51.100.11');
+  });
 });
 
 describe('resolveTurnstileToken', () => {

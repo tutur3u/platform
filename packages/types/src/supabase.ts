@@ -19881,6 +19881,7 @@ export type Database = {
           ws_name: string;
         }[];
       };
+      admin_reset_rate_limits: { Args: never; Returns: number };
       archive_old_notifications: {
         Args: { p_days_threshold?: number };
         Returns: number;
@@ -20005,6 +20006,7 @@ export type Database = {
         Args: { p_user_id: string; p_ws_id: string };
         Returns: Json;
       };
+      check_request: { Args: never; Returns: undefined };
       check_ws_creator:
         | { Args: { ws_id: string }; Returns: boolean }
         | { Args: { user_id: string; ws_id: string }; Returns: boolean };
