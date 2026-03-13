@@ -1,4 +1,8 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { validate } from 'uuid';
@@ -17,18 +21,18 @@ interface Params {
   }>;
 }
 
-export async function GET(_req: NextRequest, { params }: Params) {
+export async function GET(req: NextRequest, { params }: Params) {
   try {
-    const { wsId, templateId } = await params;
+    const { wsId: id, templateId } = await params;
 
-    if (!validate(wsId) || !validate(templateId)) {
+    if (!validate(templateId)) {
       return NextResponse.json(
-        { error: 'Invalid workspace ID or template ID' },
+        { error: 'Invalid template ID' },
         { status: 400 }
       );
     }
 
-    const supabase = await createClient();
+    const supabase = await createClient(req);
 
     // Get authenticated user
     const {
@@ -43,8 +47,29 @@ export async function GET(_req: NextRequest, { params }: Params) {
       );
     }
 
+    const wsId = await normalizeWorkspaceId(id, supabase);
+
+    // Verify workspace access
+
+    const { data: memberCheck, error } = await supabase
+      .from('workspace_members')
+      .select('id:user_id')
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (!memberCheck) {
+      console.log(error);
+      return NextResponse.json(
+        { error: 'Access denied to workspace' },
+        { status: 403 }
+      );
+    }
+
+    const sbAdmin = await createAdminClient();
+
     // Fetch the template (RLS will handle access control)
-    const { data: template, error: fetchError } = await supabase
+    const { data: template, error: fetchError } = await sbAdmin
       .from('board_templates')
       .select(
         `
@@ -56,12 +81,17 @@ export async function GET(_req: NextRequest, { params }: Params) {
         description,
         visibility,
         content,
+        background_path,
         created_at,
         updated_at
       `
       )
       .eq('id', templateId)
       .single();
+
+    if (template?.visibility === 'private' && template.ws_id !== wsId) {
+      return NextResponse.json({ error: 'Access Denied' }, { status: 404 });
+    }
 
     if (fetchError || !template) {
       console.error('Failed to fetch template:', fetchError);
@@ -100,6 +130,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
         description: template.description,
         visibility: template.visibility,
         content: template.content,
+        backgroundPath: template.background_path,
         createdAt: template.created_at,
         updatedAt: template.updated_at,
         isOwner,
@@ -117,14 +148,14 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
 export async function PATCH(req: NextRequest, { params }: Params) {
   try {
-    const { wsId, templateId } = await params;
+    const { wsId: id, templateId } = await params;
     const body: UpdateTemplateRequest = await req.json();
 
     const { name, description, visibility, backgroundPath } = body;
 
-    if (!validate(wsId) || !validate(templateId)) {
+    if (!validate(templateId)) {
       return NextResponse.json(
-        { error: 'Invalid workspace ID or template ID' },
+        { error: 'Invalid template ID' },
         { status: 400 }
       );
     }
@@ -140,7 +171,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       );
     }
 
-    const supabase = await createClient();
+    const supabase = await createClient(req);
 
     // Get authenticated user
     const {
@@ -154,6 +185,25 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         { status: 401 }
       );
     }
+
+    const wsId = await normalizeWorkspaceId(id, supabase);
+
+    // Verify workspace access
+    const { data: memberCheck } = await supabase
+      .from('workspace_members')
+      .select('id:user_id')
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (!memberCheck) {
+      return NextResponse.json(
+        { error: 'Access denied to workspace' },
+        { status: 403 }
+      );
+    }
+
+    const sbAdmin = await createAdminClient();
 
     // Build update object
     const updateData: Record<string, unknown> = {
@@ -183,7 +233,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
 
     // Update the template (RLS will enforce owner-only access)
-    const { data: template, error: updateError } = await supabase
+    const { data: template, error: updateError } = await sbAdmin
       .from('board_templates')
       .update(updateData)
       .eq('id', templateId)
@@ -226,18 +276,18 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
 }
 
-export async function DELETE(_req: NextRequest, { params }: Params) {
+export async function DELETE(req: NextRequest, { params }: Params) {
   try {
-    const { wsId, templateId } = await params;
+    const { wsId: id, templateId } = await params;
 
-    if (!validate(wsId) || !validate(templateId)) {
+    if (!validate(templateId)) {
       return NextResponse.json(
-        { error: 'Invalid workspace ID or template ID' },
+        { error: 'Invalid template ID' },
         { status: 400 }
       );
     }
 
-    const supabase = await createClient();
+    const supabase = await createClient(req);
 
     // Get authenticated user
     const {
@@ -252,12 +302,30 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
       );
     }
 
-    // Delete the template (RLS will enforce owner-only access)
-    const { error: deleteError } = await supabase
+    const wsId = await normalizeWorkspaceId(id, supabase);
+
+    // Verify workspace access
+    const { data: memberCheck } = await supabase
+      .from('workspace_members')
+      .select('id:user_id')
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (!memberCheck) {
+      return NextResponse.json(
+        { error: 'Access denied to workspace' },
+        { status: 403 }
+      );
+    }
+
+    const sbAdmin = await createAdminClient();
+
+    const { error: deleteError } = await sbAdmin
       .from('board_templates')
       .delete()
       .eq('id', templateId)
-      .eq('created_by', user.id); // Explicit owner check for extra safety
+      .eq('created_by', user.id);
 
     if (deleteError) {
       console.error('Failed to delete template:', deleteError);

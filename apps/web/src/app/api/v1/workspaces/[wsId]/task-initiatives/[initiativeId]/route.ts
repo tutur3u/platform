@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -27,7 +30,6 @@ export async function PUT(
   try {
     const { wsId: rawWsId, initiativeId } = await params;
     const supabase = await createClient(request);
-    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     const {
       data: { user },
@@ -37,6 +39,8 @@ export async function PUT(
     if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     const { data: membership } = await supabase
       .from('workspace_members')
@@ -48,11 +52,12 @@ export async function PUT(
     if (!membership) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
+    const sbAdmin = await createAdminClient();
 
     const body = await request.json();
     const { name, description, status } = updateInitiativeSchema.parse(body);
 
-    const { data: updatedInitiative, error } = await supabase
+    const { data: updatedInitiative, error } = await sbAdmin
       .from('task_initiatives')
       .update({
         name,
@@ -124,7 +129,6 @@ export async function DELETE(
   try {
     const { wsId: rawWsId, initiativeId } = await params;
     const supabase = await createClient(request);
-    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     const {
       data: { user },
@@ -134,6 +138,8 @@ export async function DELETE(
     if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     const { data: membership } = await supabase
       .from('workspace_members')
@@ -146,7 +152,9 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { data: deletedInitiative, error } = await supabase
+    const sbAdmin = await createAdminClient();
+
+    const { data: deletedInitiative, error } = await sbAdmin
       .from('task_initiatives')
       .delete()
       .eq('id', initiativeId)

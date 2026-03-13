@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -76,6 +79,7 @@ export async function GET(
     }
 
     const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+    const sbAdmin = await createAdminClient();
 
     const { data: membership } = await supabase
       .from('workspace_members')
@@ -88,7 +92,7 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { data: initiatives, error } = await supabase
+    const { data: initiatives, error } = await sbAdmin
       .from('task_initiatives')
       .select(
         `
@@ -164,10 +168,12 @@ export async function POST(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const sbAdmin = await createAdminClient();
+
     const body = await request.json();
     const { name, description, status } = createInitiativeSchema.parse(body);
 
-    const { data: initiative, error } = await supabase
+    const { data: initiative, error } = await sbAdmin
       .from('task_initiatives')
       .insert({
         name,

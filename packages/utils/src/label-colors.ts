@@ -141,29 +141,81 @@ const COLOR_NAME_MAP: Record<string, string> = {
   zinc: '#71717a',
 };
 
+export interface AccessibleLabelStyles {
+  bg: string;
+  border: string;
+  text: string;
+}
+
 /**
- * Compute accessible label styles with proper contrast.
- * Automatically adjusts text color based on luminance to ensure readability.
+ * Compute accessible label styles based on theme.
  *
  * @param raw - Raw color input (hex code or color name)
- * @returns Object with bg, border, and text colors, or null if invalid
+ * @param isDark - Whether current theme is dark mode
  */
 export function computeAccessibleLabelStyles(
-  raw: string
-): { bg: string; border: string; text: string } | null {
+  raw: string | null | undefined,
+  isDark?: boolean
+): AccessibleLabelStyles | null {
+  if (typeof raw !== 'string') return null;
+  const normalizedRaw = raw.trim();
+  if (!normalizedRaw) return null;
+
   const baseHex =
-    normalizeHex(raw) || COLOR_NAME_MAP[raw.toLowerCase?.()] || null;
+    normalizeHex(normalizedRaw) ||
+    COLOR_NAME_MAP[normalizedRaw.toLowerCase()] ||
+    null;
   if (!baseHex) return null;
+
   const rgb = hexToRgb(baseHex);
   if (!rgb) return null;
   const lum = luminance(rgb);
+
   const bg = `${baseHex}1a`;
-  const border = `${baseHex}4d`;
+  let border: string;
   let text = baseHex;
-  if (lum < 0.22) {
-    text = adjust(baseHex, 1.25);
-  } else if (lum > 0.82) {
-    text = adjust(baseHex, 0.65);
+
+  // Backward-compatible default behavior used across existing packages.
+  if (typeof isDark !== 'boolean') {
+    border = `${baseHex}4d`;
+    if (lum < 0.22) {
+      text = adjust(baseHex, 1.25);
+    } else if (lum > 0.82) {
+      text = adjust(baseHex, 0.65);
+    }
+    return { bg, border, text };
   }
+
+  if (isDark) {
+    border = `${baseHex}4d`;
+    if (lum < 0.35) {
+      text = adjust(baseHex, 1.5);
+    } else if (lum < 0.6) {
+      text = adjust(baseHex, 1.25);
+    } else if (lum > 0.85) {
+      text = adjust(baseHex, 0.9);
+    }
+  } else {
+    if (lum < 0.18) {
+      text = adjust(baseHex, 1.4);
+      border = `${baseHex}4d`;
+    } else if (lum < 0.35) {
+      text = adjust(baseHex, 1.2);
+      border = `${baseHex}66`;
+    } else if (lum < 0.55) {
+      text = adjust(baseHex, 0.65);
+      border = `${adjust(baseHex, 0.65)}99`;
+    } else if (lum < 0.75) {
+      text = adjust(baseHex, 0.5);
+      border = `${adjust(baseHex, 0.5)}99`;
+    } else if (lum < 0.85) {
+      text = adjust(baseHex, 0.4);
+      border = `${adjust(baseHex, 0.4)}99`;
+    } else {
+      text = adjust(baseHex, 0.3);
+      border = `${adjust(baseHex, 0.3)}99`;
+    }
+  }
+
   return { bg, border, text };
 }

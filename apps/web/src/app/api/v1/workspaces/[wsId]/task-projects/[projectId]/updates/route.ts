@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { MAX_LONG_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -108,8 +111,10 @@ export async function POST(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const sbAdmin = await createAdminClient();
+
     // Verify project exists and belongs to workspace
-    const { data: project } = await supabase
+    const { data: project } = await sbAdmin
       .from('task_projects')
       .select('id')
       .eq('id', projectId)
@@ -125,7 +130,7 @@ export async function POST(
     const { content } = createUpdateSchema.parse(body);
 
     // Create update
-    const { data: newUpdate, error: createError } = await supabase
+    const { data: newUpdate, error: createError } = await sbAdmin
       .from('task_project_updates')
       .insert({
         project_id: projectId,
@@ -198,13 +203,15 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const sbAdmin = await createAdminClient();
+
     // Parse query parameters
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '50', 10);
     const offset = parseInt(searchParams.get('offset') || '0', 10);
 
     // Fetch updates with reactions, comments, and attachments
-    const { data: updates, error: fetchError } = await supabase
+    const { data: updates, error: fetchError } = await sbAdmin
       .from('task_project_updates')
       .select(
         `

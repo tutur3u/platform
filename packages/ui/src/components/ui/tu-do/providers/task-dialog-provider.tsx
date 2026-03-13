@@ -1,5 +1,6 @@
 'use client';
 
+import { listWorkspaceTaskProjects } from '@tuturuuu/internal-api/tasks';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -499,15 +500,26 @@ export function TaskDialogProvider({
         status: string | null;
       }> = [];
       if (draft.project_ids && draft.project_ids.length > 0) {
-        const { data } = await supabase
-          .from('task_projects')
-          .select('id, name, status')
-          .in('id', draft.project_ids);
-        projects = (data || []).map((p) => ({
-          id: p.id,
-          name: p.name ?? '',
-          status: p.status,
-        }));
+        const { data: boardRow } = draft.board_id
+          ? await supabase
+              .from('workspace_boards')
+              .select('ws_id')
+              .eq('id', draft.board_id)
+              .maybeSingle()
+          : { data: null };
+
+        if (boardRow?.ws_id) {
+          const workspaceProjects = await listWorkspaceTaskProjects(
+            boardRow.ws_id
+          );
+          projects = workspaceProjects
+            .filter((project) => draft.project_ids?.includes(project.id))
+            .map((project) => ({
+              id: project.id,
+              name: project.name,
+              status: project.status,
+            }));
+        }
       }
 
       // Create a fake Task pre-populated with draft data + resolved metadata

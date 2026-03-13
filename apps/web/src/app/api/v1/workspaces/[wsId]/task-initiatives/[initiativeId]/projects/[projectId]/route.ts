@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -14,7 +17,6 @@ export async function DELETE(
   try {
     const { wsId: rawWsId, initiativeId, projectId } = await params;
     const supabase = await createClient(request);
-    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     const {
       data: { user },
@@ -24,6 +26,8 @@ export async function DELETE(
     if (userError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     const { data: membership } = await supabase
       .from('workspace_members')
@@ -36,7 +40,9 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { data: initiative } = await supabase
+    const sbAdmin = await createAdminClient();
+
+    const { data: initiative } = await sbAdmin
       .from('task_initiatives')
       .select('id')
       .eq('id', initiativeId)
@@ -44,10 +50,13 @@ export async function DELETE(
       .maybeSingle();
 
     if (!initiative) {
-      return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Initiative not found' },
+        { status: 404 }
+      );
     }
 
-    const { data: project } = await supabase
+    const { data: project } = await sbAdmin
       .from('task_projects')
       .select('id')
       .eq('id', projectId)
@@ -55,10 +64,10 @@ export async function DELETE(
       .maybeSingle();
 
     if (!project) {
-      return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    const { data: deletedLink, error } = await supabase
+    const { data: deletedLink, error } = await sbAdmin
       .from('task_project_initiatives')
       .delete()
       .eq('initiative_id', initiativeId)

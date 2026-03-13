@@ -649,6 +649,7 @@ export function TaskEditDialog({
 
   // Realtime sync
   useTaskRealtimeSync({
+    wsId,
     taskId: task?.id,
     isCreateMode,
     isOpen,

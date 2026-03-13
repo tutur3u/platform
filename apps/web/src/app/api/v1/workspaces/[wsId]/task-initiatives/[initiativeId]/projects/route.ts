@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -38,10 +41,12 @@ export async function POST(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const sbAdmin = await createAdminClient();
+
     const body = await request.json();
     const { projectId } = linkProjectSchema.parse(body);
 
-    const { data: initiative } = await supabase
+    const { data: initiative } = await sbAdmin
       .from('task_initiatives')
       .select('ws_id')
       .eq('id', initiativeId)
@@ -54,7 +59,7 @@ export async function POST(
       );
     }
 
-    const { data: project } = await supabase
+    const { data: project } = await sbAdmin
       .from('task_projects')
       .select('ws_id')
       .eq('id', projectId)
@@ -67,7 +72,7 @@ export async function POST(
       );
     }
 
-    const { error: linkError } = await supabase
+    const { error: linkError } = await sbAdmin
       .from('task_project_initiatives')
       .insert({
         project_id: projectId,

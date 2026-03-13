@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   MAX_LONG_TEXT_LENGTH,
   MAX_NAME_LENGTH,
@@ -60,6 +63,66 @@ const updateProjectSchema = z
       }
     }
   });
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ wsId: string; projectId: string }> }
+) {
+  try {
+    const { wsId: rawWsId, projectId } = await params;
+    const supabase = await createClient(request);
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { data: membership } = await supabase
+      .from('workspace_members')
+      .select('ws_id')
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (!membership) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const sbAdmin = await createAdminClient();
+
+    const { data: project, error: projectError } = await sbAdmin
+      .from('task_projects')
+      .select(
+        `
+        *,
+        creator:users!task_projects_creator_id_fkey(id, display_name, avatar_url),
+        lead:users!task_projects_lead_id_fkey(id, display_name, avatar_url)
+      `
+      )
+      .eq('id', projectId)
+      .eq('ws_id', wsId)
+      .single();
+
+    if (projectError || !project) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(project);
+  } catch (error) {
+    console.error(
+      'Error in GET /api/v1/workspaces/[wsId]/task-projects/[projectId]:',
+      error
+    );
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
 
 async function updateProject(
   request: NextRequest,
@@ -154,6 +217,8 @@ async function updateProject(
       );
     }
 
+    const sbAdmin = await createAdminClient();
+
     // If lead_id is being set, verify the user belongs to the workspace
     if (validatedData.lead_id !== undefined && validatedData.lead_id !== null) {
       const { data: leadMembership } = await supabase
@@ -172,7 +237,7 @@ async function updateProject(
     }
 
     // Update project
-    const { data: updatedProject, error: updateError } = await supabase
+    const { data: updatedProject, error: updateError } = await sbAdmin
       .from('task_projects')
       .update(updateData)
       .eq('id', projectId)
@@ -299,8 +364,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const sbAdmin = await createAdminClient();
+
     // Delete project
-    const { data: deletedProjects, error: deleteError } = await supabase
+    const { data: deletedProjects, error: deleteError } = await sbAdmin
       .from('task_projects')
       .delete()
       .eq('id', projectId)

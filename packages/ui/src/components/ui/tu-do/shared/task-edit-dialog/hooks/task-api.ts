@@ -1,3 +1,4 @@
+import { createWorkspaceTaskProject } from '@tuturuuu/internal-api/tasks';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { WorkspaceTaskLabel } from '../types';
@@ -75,25 +76,11 @@ export async function createWorkspaceProject(
   wsId: string,
   payload: { name: string; description?: string }
 ) {
-  const response = await fetch(`/api/v1/workspaces/${wsId}/task-projects`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-    cache: 'no-store',
-  });
-
-  if (!response.ok) {
+  try {
+    return await createWorkspaceTaskProject(wsId, payload);
+  } catch (error) {
     throw new Error(
-      await getErrorMessage(response, 'Failed to create project')
+      error instanceof Error ? error.message : 'Failed to create project'
     );
   }
-
-  return (await response.json()) as {
-    id: string;
-    name: string;
-    status?: string | null;
-    created_at?: string;
-  };
 }

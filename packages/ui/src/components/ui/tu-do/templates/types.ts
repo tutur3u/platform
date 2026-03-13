@@ -6,6 +6,7 @@ export interface BoardTemplate {
   name: string;
   description: string | null;
   visibility: 'private' | 'workspace' | 'public';
+  backgroundPath?: string | null;
   backgroundUrl?: string | null;
   createdAt: string;
   updatedAt: string;
