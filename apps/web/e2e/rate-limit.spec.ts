@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { resetDbRateLimits } from './helpers/rate-limits';
 
 /**
  * E2E tests for IP-based rate limiting through the full Next.js stack.
@@ -90,6 +91,13 @@ async function firePuts(
 // ---------------------------------------------------------------------------
 
 test.describe('Rate limiting (session auth)', () => {
+  test.beforeEach(async () => {
+    // The database layer also enforces authenticated-user write budgets with a
+    // cross-route backstop, so clear those counters between tests to keep each
+    // spec isolated while still exercising real downstream writes.
+    await resetDbRateLimits();
+  });
+
   test('API returns 200 for a normal authenticated GET request', async ({
     context,
   }, testInfo) => {
