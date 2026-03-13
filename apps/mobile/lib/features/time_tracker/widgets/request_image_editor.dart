@@ -9,11 +9,16 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class RequestImageEditor extends StatefulWidget {
   const RequestImageEditor({
+    required this.wsId,
+    required this.requestId,
     required this.initialImages,
     required this.onChanged,
     this.maxImages = 5,
     super.key,
   });
+
+  final String wsId;
+  final String requestId;
 
   final List<String> initialImages;
   final ValueChanged<RequestImageEditorResult> onChanged;
@@ -184,8 +189,29 @@ class _RequestImageEditorState extends State<RequestImageEditor> {
     super.initState();
     _initialImages = List<String>.from(widget.initialImages);
     _existingImages = List<String>.from(widget.initialImages);
-    _existingUrlsFuture = resolveRequestImageUrlsWithIndices(_existingImages);
+    _existingUrlsFuture = resolveRequestImageUrlsWithIndices(
+      wsId: widget.wsId,
+      requestId: widget.requestId,
+      imagePaths: _existingImages,
+    );
     _emitState();
+  }
+
+  @override
+  void didUpdateWidget(covariant RequestImageEditor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.wsId != widget.wsId ||
+        oldWidget.requestId != widget.requestId ||
+        !_samePaths(oldWidget.initialImages, widget.initialImages)) {
+      _existingImages = List<String>.from(widget.initialImages);
+      _newImages.clear();
+      _existingUrlsFuture = resolveRequestImageUrlsWithIndices(
+        wsId: widget.wsId,
+        requestId: widget.requestId,
+        imagePaths: _existingImages,
+      );
+      _emitState();
+    }
   }
 
   void _addNewImage(XFile image) {
@@ -267,7 +293,11 @@ class _RequestImageEditorState extends State<RequestImageEditor> {
 
     setState(() {
       _existingImages.removeAt(index);
-      _existingUrlsFuture = resolveRequestImageUrlsWithIndices(_existingImages);
+      _existingUrlsFuture = resolveRequestImageUrlsWithIndices(
+        wsId: widget.wsId,
+        requestId: widget.requestId,
+        imagePaths: _existingImages,
+      );
       _emitState();
     });
   }
@@ -277,5 +307,21 @@ class _RequestImageEditorState extends State<RequestImageEditor> {
       _newImages.removeAt(index);
       _emitState();
     });
+  }
+
+  bool _samePaths(List<String> oldPaths, List<String> newPaths) {
+    if (identical(oldPaths, newPaths)) {
+      return true;
+    }
+    if (oldPaths.length != newPaths.length) {
+      return false;
+    }
+
+    for (var i = 0; i < oldPaths.length; i++) {
+      if (oldPaths[i] != newPaths[i]) {
+        return false;
+      }
+    }
+    return true;
   }
 }

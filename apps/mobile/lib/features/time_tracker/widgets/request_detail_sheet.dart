@@ -261,7 +261,11 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
                         ),
                       if (_request.images.isNotEmpty) ...[
                         const shad.Gap(16),
-                        RequestImageGallery(imagePaths: _request.images),
+                        RequestImageGallery(
+                          wsId: widget.wsId,
+                          requestId: _request.id,
+                          imagePaths: _request.images,
+                        ),
                       ],
                       if (_request.rejectionReason != null) ...[
                         const shad.Gap(12),
@@ -429,6 +433,7 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
       shad.showDialog<void>(
         context: context,
         builder: (_) => EditRequestDialog(
+          wsId: widget.wsId,
           request: _request,
           onSave:
               (
