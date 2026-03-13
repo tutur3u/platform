@@ -278,7 +278,7 @@ export async function POST(req: Request, { params }: Params) {
     const productValues = Array.from(productMap.values());
 
     // Fetch product and unit names
-    const { data: productsData, error: productsError } = await supabase
+    const { data: productsData, error: productsError } = await sbAdmin
       .from('workspace_products')
       .select('name, id')
       .in(
@@ -300,7 +300,7 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     const unitIds = productValues.map((product) => product.unit_id);
-    const { data: unitsData, error: unitsError } = await supabase
+    const { data: unitsData, error: unitsError } = await sbAdmin
       .from('inventory_units')
       .select('name, id')
       .in('id', unitIds)
@@ -331,7 +331,7 @@ export async function POST(req: Request, { params }: Params) {
       price: Math.round(product.price),
     }));
 
-    const { error: invoiceProductsError } = await supabase
+    const { error: invoiceProductsError } = await sbAdmin
       .from('finance_invoice_products')
       .insert(invoiceProducts);
 
@@ -352,14 +352,14 @@ export async function POST(req: Request, { params }: Params) {
 
     // Promotion linkage
     if (promotion_id && promotion_id !== 'none' && discount_amount > 0) {
-      const { data: promotion, error: promotionFetchError } = await supabase
+      const { data: promotion, error: promotionFetchError } = await sbAdmin
         .from('workspace_promotions')
         .select('use_ratio, value, name, code, description')
         .eq('id', promotion_id)
         .single();
 
       if (!promotionFetchError || promotion) {
-        const { error: promotionError } = await supabase
+        const { error: promotionError } = await sbAdmin
           .from('finance_invoice_promotions')
           .insert({
             invoice_id: invoiceId,
@@ -395,7 +395,7 @@ export async function POST(req: Request, { params }: Params) {
       beneficiary_id: customer_id,
     }));
 
-    const { error: stockError } = await supabase
+    const { error: stockError } = await sbAdmin
       .from('product_stock_changes')
       .insert(stockChanges);
 
@@ -452,7 +452,7 @@ export async function POST(req: Request, { params }: Params) {
           .from('finance_invoice_promotions')
           .delete()
           .eq('invoice_id', createdInvoiceId),
-        supabase
+        sbAdmin
           .from('finance_invoice_products')
           .delete()
           .eq('invoice_id', createdInvoiceId),
