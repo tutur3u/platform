@@ -1,7 +1,4 @@
-import {
-  createClient,
-  createDynamicClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   EMPTY_FOLDER_PLACEHOLDER_NAME,
   type StorageDatabase,
@@ -215,7 +212,8 @@ async function getData(
   wsId: string,
   { q, page = '1', pageSize = '10', path = '' }: Awaited<Props['searchParams']>
 ) {
-  const supabase = await createDynamicClient();
+  const supabase = await createAdminClient();
+  const normalizedQuery = q?.trim();
 
   const { data, error } = await supabase.storage
     .from('workspaces')
@@ -223,7 +221,7 @@ async function getData(
       limit: parseInt(pageSize, 10),
       offset: (parseInt(page, 10) - 1) * parseInt(pageSize, 10),
       sortBy: { column: 'created_at', order: 'desc' },
-      search: `%${q ?? ''}%`,
+      search: normalizedQuery || undefined,
     });
 
   if (error) {
@@ -241,7 +239,7 @@ async function getData(
 }
 
 async function getTotalSize(wsId: string) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const { data, error } = await supabase.rpc('get_workspace_drive_size', {
     ws_id: wsId,
@@ -255,7 +253,7 @@ async function getTotalSize(wsId: string) {
 }
 
 async function getFileCount(wsId: string) {
-  const supabase = await createDynamicClient<StorageDatabase>();
+  const supabase = await createAdminClient<StorageDatabase>();
 
   const { count, error } = await supabase
     .schema('storage')
@@ -273,7 +271,7 @@ async function getFileCount(wsId: string) {
 }
 
 async function getLargestFile(wsId: string) {
-  const supabase = await createDynamicClient<StorageDatabase>();
+  const supabase = await createAdminClient<StorageDatabase>();
 
   const { data, error } = await supabase
     .schema('storage')
@@ -294,7 +292,7 @@ async function getLargestFile(wsId: string) {
 }
 
 async function getSmallestFile(wsId: string) {
-  const supabase = await createDynamicClient<StorageDatabase>();
+  const supabase = await createAdminClient<StorageDatabase>();
 
   const { data, error } = await supabase
     .schema('storage')
@@ -315,7 +313,7 @@ async function getSmallestFile(wsId: string) {
 }
 
 async function getStorageLimit(wsId: string) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const { data, error } = await supabase.rpc('get_workspace_storage_limit', {
     p_ws_id: wsId,

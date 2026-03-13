@@ -63,7 +63,8 @@ export default function NewInvoicePage({ wsId }: Props) {
     printAfterCreateInitialized &&
     downloadImageAfterCreateInitialized;
 
-  const invoiceType = searchParams.get('type') || 'standard';
+  const invoiceType =
+    searchParams.get('type') === 'subscription' ? 'subscription' : 'standard';
   const prefillAmount = (() => {
     const raw = searchParams.get('amount');
     if (!raw) return undefined;
@@ -79,7 +80,7 @@ export default function NewInvoicePage({ wsId }: Props) {
       />
       <Separator className="my-4" />
       <Tabs
-        defaultValue={invoiceType}
+        value={invoiceType}
         className="w-full"
         onValueChange={(value) => {
           // Update URL without refreshing
@@ -181,8 +182,8 @@ export default function NewInvoicePage({ wsId }: Props) {
         <TabsContent value="standard" className="mt-4">
           <StandardInvoice
             wsId={wsId}
-            defaultWalletId={defaultWalletId}
-            defaultCurrency={defaultCurrency}
+            defaultWalletId={defaultWalletId ?? undefined}
+            defaultCurrency={defaultCurrency ?? undefined}
             createMultipleInvoices={createMultipleInvoices}
             printAfterCreate={printAfterCreate}
             downloadImageAfterCreate={downloadImageAfterCreate}
@@ -192,9 +193,9 @@ export default function NewInvoicePage({ wsId }: Props) {
           <SubscriptionInvoice
             wsId={wsId}
             prefillAmount={prefillAmount}
-            defaultWalletId={defaultWalletId}
-            defaultCategoryId={defaultCategoryId}
-            defaultCurrency={defaultCurrency}
+            defaultWalletId={defaultWalletId ?? undefined}
+            defaultCategoryId={defaultCategoryId ?? undefined}
+            defaultCurrency={defaultCurrency ?? undefined}
             createMultipleInvoices={createMultipleInvoices}
             printAfterCreate={printAfterCreate}
             downloadImageAfterCreate={downloadImageAfterCreate}

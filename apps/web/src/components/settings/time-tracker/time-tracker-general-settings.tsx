@@ -48,7 +48,7 @@ export function TimeTrackerGeneralSettings({ wsId }: Props) {
       allow_future_sessions: false,
     },
     values: useMemo(() => {
-      if (isLoading || configValue === undefined) return undefined;
+      if (isLoading || configValue == null) return undefined;
       return {
         allow_future_sessions: configValue.trim().toLowerCase() === 'true',
       };

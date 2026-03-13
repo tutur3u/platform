@@ -3,8 +3,8 @@
 import { useQuery } from '@tanstack/react-query';
 import type { WorkspaceBreakType } from '@tuturuuu/hooks/hooks/use-workspace-break-types';
 import * as Icons from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import dayjs from 'dayjs';
+import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
   BREAK_COLOR_CLASSES,
@@ -14,6 +14,16 @@ import {
 
 interface BreakDisplayProps {
   sessionId: string;
+}
+
+interface BreakRecord {
+  id: string;
+  break_start: string;
+  break_end: string | null;
+  break_duration_seconds: number | null;
+  break_type_name: string | null;
+  break_type_id: WorkspaceBreakType | null;
+  break_type?: WorkspaceBreakType | null;
 }
 
 /**
@@ -46,24 +56,43 @@ export const formatTime = (isoString: string): string => {
  */
 export function BreakDisplay({ sessionId }: BreakDisplayProps) {
   const t = useTranslations('time-tracker.breaks');
-  const supabase = createClient();
+  const params = useParams<{ wsId: string }>();
+  const wsId = params.wsId;
 
   const { data: breaks, isLoading } = useQuery({
-    queryKey: ['session-breaks', sessionId],
+    queryKey: ['session-breaks', wsId, sessionId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('time_tracking_breaks')
-        .select('*, break_type_id:workspace_break_types(*)')
-        .eq('session_id', sessionId)
-        .order('break_start', { ascending: false });
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/breaks?sessionId=${sessionId}`,
+        { cache: 'no-store' }
+      );
 
-      if (error) {
-        console.error('Error fetching breaks:', error);
+      if (!response.ok) {
+        console.error(
+          'Error fetching breaks:',
+          await response.json().catch(() => ({}))
+        );
         return [];
       }
-      return data || [];
+      const payload = (await response.json()) as {
+        breaks?: Array<
+          Omit<BreakRecord, 'break_type_id'> & {
+            break_type_id?: WorkspaceBreakType | string | null;
+          }
+        >;
+      };
+      return (payload.breaks || []).map<BreakRecord>((breakRecord) => ({
+        ...breakRecord,
+        break_type_id:
+          typeof breakRecord.break_type_id === 'object' &&
+          breakRecord.break_type_id !== null &&
+          !Array.isArray(breakRecord.break_type_id)
+            ? breakRecord.break_type_id
+            : (breakRecord.break_type ?? null),
+      }));
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !!wsId,
   });
 
   if (isLoading) {
@@ -138,16 +167,13 @@ export function BreakDisplay({ sessionId }: BreakDisplayProps) {
           );
         })}
       </div>
-      {breaks.some((b) => {
-        const breakType = b.break_type_id as any;
-        return breakType?.notes;
-      }) && (
+      {breaks.some((b) => b.break_type_id?.description) && (
         <div className="space-y-1 border-border/20 border-t pt-2">
           {breaks.map((breakRecord) => {
-            const breakType = breakRecord.break_type_id as any;
-            return breakType?.notes ? (
+            const breakType = breakRecord.break_type_id;
+            return breakType?.description ? (
               <p
-                key={`${breakRecord.id}-notes`}
+                key={`${breakRecord.id}-description`}
                 className="px-1 text-muted-foreground text-xs italic"
               >
                 <span className="font-medium">
@@ -156,7 +182,7 @@ export function BreakDisplay({ sessionId }: BreakDisplayProps) {
                     t('unnamed_break')}
                   :
                 </span>{' '}
-                {breakType.notes}
+                {breakType.description}
               </p>
             ) : null;
           })}
@@ -178,39 +204,33 @@ export interface BreakSummaryData {
  * Prevents N+1 query issues by batching all session IDs
  */
 export function useSessionBreaksSummary(sessionIds: string[]) {
-  const supabase = createClient();
+  const params = useParams<{ wsId: string }>();
+  const wsId = params.wsId;
 
   return useQuery({
-    queryKey: ['session-breaks-batch', sessionIds.sort().join(',')],
+    queryKey: ['session-breaks-batch', wsId, sessionIds.sort().join(',')],
     queryFn: async () => {
       if (sessionIds.length === 0) return {};
 
-      const { data, error } = await supabase
-        .from('time_tracking_breaks')
-        .select('session_id, break_duration_seconds')
-        .in('session_id', sessionIds)
-        .not('break_duration_seconds', 'is', null);
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/breaks?sessionIds=${sessionIds.join(',')}&summaryOnly=true`,
+        { cache: 'no-store' }
+      );
 
-      if (error) {
-        console.error('Error fetching break summaries:', error);
+      if (!response.ok) {
+        console.error(
+          'Error fetching break summaries:',
+          await response.json().catch(() => ({}))
+        );
         return {};
       }
-
-      // Group breaks by session_id
-      const breaksBySession: Record<string, BreakSummaryData[]> = {};
-      for (const breakRecord of data || []) {
-        if (!breaksBySession[breakRecord.session_id]) {
-          breaksBySession[breakRecord.session_id] = [];
-        }
-        breaksBySession[breakRecord.session_id]?.push({
-          break_duration_seconds: breakRecord.break_duration_seconds ?? 0,
-        });
-      }
-
-      return breaksBySession;
+      const payload = (await response.json()) as {
+        breaksBySession?: Record<string, BreakSummaryData[]>;
+      };
+      return payload.breaksBySession || {};
     },
     staleTime: 5 * 60 * 1000, // 5 minutes - same as other break queries
-    enabled: sessionIds.length > 0,
+    enabled: !!wsId && sessionIds.length > 0,
   });
 }
 
@@ -231,23 +251,29 @@ export function BreakSummary({
   breaks: prefetchedBreaks,
 }: BreakSummaryProps) {
   const t = useTranslations('time-tracker.breaks');
-  const supabase = createClient();
+  const params = useParams<{ wsId: string }>();
+  const wsId = params.wsId;
 
   // Only fetch if breaks weren't provided
   const { data: fetchedBreaks } = useQuery({
-    queryKey: ['session-breaks-summary', sessionId],
+    queryKey: ['session-breaks-summary', wsId, sessionId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('time_tracking_breaks')
-        .select('break_duration_seconds')
-        .eq('session_id', sessionId)
-        .not('break_duration_seconds', 'is', null);
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/breaks?sessionIds=${sessionId}&summaryOnly=true`,
+        { cache: 'no-store' }
+      );
 
-      if (error) return [];
-      return (data || []) as BreakSummaryData[];
+      if (!response.ok) {
+        return [];
+      }
+
+      const payload = (await response.json()) as {
+        breaksBySession?: Record<string, BreakSummaryData[]>;
+      };
+      return payload.breaksBySession?.[sessionId] || [];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
-    enabled: !prefetchedBreaks, // Skip query if data already provided
+    enabled: !!wsId && !prefetchedBreaks, // Skip query if data already provided
   });
 
   // Use prefetched data if available, otherwise use fetched data

@@ -1,5 +1,8 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -28,6 +31,7 @@ const TagIdSchema = z.string().uuid();
 type AuthorizedTagRequest = {
   normalizedWsId: string;
   supabase: TypedSupabaseClient;
+  sbAdmin: TypedSupabaseClient;
 };
 
 async function authorizeTagRequest(
@@ -66,7 +70,9 @@ async function authorizeTagRequest(
     };
   }
 
-  return { normalizedWsId, supabase };
+  const sbAdmin = await createAdminClient();
+
+  return { normalizedWsId, supabase, sbAdmin };
 }
 
 export async function PUT(req: Request, { params }: Params) {
@@ -102,9 +108,9 @@ export async function PUT(req: Request, { params }: Params) {
     return authorization.response;
   }
 
-  const { normalizedWsId, supabase } = authorization;
+  const { normalizedWsId, sbAdmin } = authorization;
 
-  const { data, error } = await supabase
+  const { data, error } = await sbAdmin
     .from('transaction_tags')
     .update(parsed.data)
     .eq('id', tagId)
@@ -143,9 +149,9 @@ export async function DELETE(req: Request, { params }: Params) {
     return authorization.response;
   }
 
-  const { normalizedWsId, supabase } = authorization;
+  const { normalizedWsId, sbAdmin } = authorization;
 
-  const { data, error } = await supabase
+  const { data, error } = await sbAdmin
     .from('transaction_tags')
     .delete()
     .eq('id', tagId)

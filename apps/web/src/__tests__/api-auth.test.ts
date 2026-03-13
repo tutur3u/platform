@@ -125,7 +125,7 @@ describe('withSessionAuth', () => {
 
     const handler = vi.fn();
     const wrapped = withSessionAuth(handler);
-    const response = await wrapped(makeRequest('GET'));
+    const response = await wrapped(makeRequest('POST'));
 
     expect(response.status).toBe(429);
     expect(handler).not.toHaveBeenCalled();
@@ -133,25 +133,43 @@ describe('withSessionAuth', () => {
     expect(mockGetUser).not.toHaveBeenCalled();
   });
 
-  it('should use read key for GET requests', async () => {
+  it('should skip default read rate limiting for GET requests', async () => {
     const handler = vi.fn().mockReturnValue(NextResponse.json({}));
     const wrapped = withSessionAuth(handler);
     await wrapped(makeRequest('GET'));
 
-    expect(mockCheckRateLimit).toHaveBeenCalledWith(
-      expect.stringContaining('read'),
-      expect.objectContaining({ maxRequests: 60 })
-    );
+    expect(mockCheckRateLimit).not.toHaveBeenCalled();
   });
 
-  it('should use read key for HEAD requests', async () => {
+  it('should skip default read rate limiting for HEAD requests', async () => {
     const handler = vi.fn().mockReturnValue(NextResponse.json({}));
     const wrapped = withSessionAuth(handler);
     await wrapped(makeRequest('HEAD'));
 
+    expect(mockCheckRateLimit).not.toHaveBeenCalled();
+  });
+
+  it('should skip default rate limiting for read-only POST requests', async () => {
+    const handler = vi.fn().mockReturnValue(NextResponse.json({}));
+    const wrapped = withSessionAuth(handler, { rateLimitKind: 'read' });
+    await wrapped(makeRequest('POST'));
+
+    expect(mockCheckRateLimit).not.toHaveBeenCalled();
+  });
+
+  it('should use read key for read-only POST requests with a custom rate limit', async () => {
+    const handler = vi.fn().mockReturnValue(NextResponse.json({}));
+    const customConfig = { windowMs: 30000, maxRequests: 99 };
+    const wrapped = withSessionAuth(handler, {
+      rateLimitKind: 'read',
+      rateLimit: customConfig,
+    });
+
+    await wrapped(makeRequest('POST'));
+
     expect(mockCheckRateLimit).toHaveBeenCalledWith(
       expect.stringContaining('read'),
-      expect.objectContaining({ maxRequests: 60 })
+      customConfig
     );
   });
 

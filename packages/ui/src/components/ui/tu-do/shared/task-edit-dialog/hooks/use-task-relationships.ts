@@ -1,17 +1,21 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { invalidateTaskCaches } from '@tuturuuu/utils/task-helper';
 import { useCallback, useState } from 'react';
 import { useBoardBroadcast } from '../../board-broadcast-context';
 import type { WorkspaceTaskLabel } from '../types';
+import {
+  createWorkspaceLabel,
+  createWorkspaceProject,
+  updateWorkspaceTask,
+} from './task-api';
 
 export interface UseTaskRelationshipsProps {
+  wsId: string;
   taskId?: string;
   isCreateMode: boolean;
   boardId: string;
-  boardConfig: any;
   selectedLabels: WorkspaceTaskLabel[];
   selectedAssignees: any[];
   selectedProjects: any[];
@@ -48,17 +52,11 @@ export interface UseTaskRelationshipsReturn {
   creatingProject: boolean;
 }
 
-const supabase = createClient();
-
-/**
- * Custom hook for managing task relationships (labels, assignees, projects)
- * Extracted from task-edit-dialog.tsx to improve maintainability
- */
 export function useTaskRelationships({
+  wsId,
   taskId,
   isCreateMode,
   boardId,
-  boardConfig,
   selectedLabels,
   selectedAssignees,
   selectedProjects,
@@ -84,37 +82,33 @@ export function useTaskRelationships({
 
   const toggleLabel = useCallback(
     async (label: WorkspaceTaskLabel) => {
-      const exists = selectedLabels.some((l) => l.id === label.id);
+      const exists = selectedLabels.some((entry) => entry.id === label.id);
+
       try {
         if (isCreateMode) {
           setSelectedLabels((prev) =>
-            exists ? prev.filter((l) => l.id !== label.id) : [label, ...prev]
+            exists
+              ? prev.filter((entry) => entry.id !== label.id)
+              : [label, ...prev]
           );
           return;
         }
-        if (exists) {
-          if (!taskId) return;
-          const { error } = await supabase
-            .from('task_labels')
-            .delete()
-            .eq('task_id', taskId)
-            .eq('label_id', label.id);
-          if (error) throw error;
-          setSelectedLabels((prev) => prev.filter((l) => l.id !== label.id));
-        } else {
-          if (!taskId) return;
-          const { error } = await supabase
-            .from('task_labels')
-            .insert({ task_id: taskId, label_id: label.id });
-          if (error) throw error;
-          setSelectedLabels((prev) =>
-            [label, ...prev].sort((a, b) => {
-              const aName = a?.name || '';
-              const bName = b?.name || '';
-              return aName.toLowerCase().localeCompare(bName.toLowerCase());
-            })
-          );
-        }
+
+        if (!taskId) return;
+
+        const nextSelectedLabels = exists
+          ? selectedLabels.filter((entry) => entry.id !== label.id)
+          : [label, ...selectedLabels].sort((a, b) =>
+              (a?.name || '')
+                .toLowerCase()
+                .localeCompare((b?.name || '').toLowerCase())
+            );
+
+        await updateWorkspaceTask(wsId, taskId, {
+          label_ids: nextSelectedLabels.map((entry) => entry.id),
+        });
+
+        setSelectedLabels(nextSelectedLabels);
         await invalidateTaskCaches(queryClient, boardId);
         queryClient.invalidateQueries({ queryKey: ['task-history'] });
         broadcast?.('task:relations-changed', { taskId });
@@ -130,6 +124,7 @@ export function useTaskRelationships({
     [
       selectedLabels,
       isCreateMode,
+      wsId,
       taskId,
       boardId,
       queryClient,
@@ -142,40 +137,38 @@ export function useTaskRelationships({
 
   const toggleAssignee = useCallback(
     async (member: any) => {
-      // selectedAssignees has 'id' property, workspaceMembers has 'user_id' property
       const userId = member.user_id || member.id;
       const exists = selectedAssignees.some(
-        (a) => (a.id || a.user_id) === userId
+        (assignee) => (assignee.id || assignee.user_id) === userId
       );
+
       try {
         if (isCreateMode) {
           setSelectedAssignees((prev) =>
             exists
-              ? prev.filter((a) => (a.id || a.user_id) !== userId)
+              ? prev.filter(
+                  (assignee) => (assignee.id || assignee.user_id) !== userId
+                )
               : [...prev, member]
           );
           return;
         }
-        if (exists) {
-          if (!taskId) return;
-          const { error } = await supabase
-            .from('task_assignees')
-            .delete()
-            .eq('task_id', taskId)
-            .eq('user_id', userId);
-          if (error) throw error;
-          setSelectedAssignees((prev) =>
-            prev.filter((a) => (a.id || a.user_id) !== userId)
-          );
-        } else {
-          if (!taskId) return;
-          const { error } = await supabase
-            .from('task_assignees')
-            .insert({ task_id: taskId, user_id: userId });
-          if (error) throw error;
-          setSelectedAssignees((prev) => [...prev, member]);
-        }
-        // Update task cache directly to avoid full refetch flickering
+
+        if (!taskId) return;
+
+        const nextSelectedAssignees = exists
+          ? selectedAssignees.filter(
+              (assignee) => (assignee.id || assignee.user_id) !== userId
+            )
+          : [...selectedAssignees, member];
+
+        await updateWorkspaceTask(wsId, taskId, {
+          assignee_ids: nextSelectedAssignees
+            .map((assignee) => assignee.user_id || assignee.id)
+            .filter((assigneeId): assigneeId is string => !!assigneeId),
+        });
+
+        setSelectedAssignees(nextSelectedAssignees);
         queryClient.setQueryData(
           ['tasks', boardId],
           (old: Task[] | undefined) => {
@@ -184,7 +177,7 @@ export function useTaskRelationships({
               if (task.id !== taskId) return task;
               const currentAssignees = task.assignees || [];
               const newAssignees = exists
-                ? currentAssignees.filter((a) => a.id !== userId)
+                ? currentAssignees.filter((assignee) => assignee.id !== userId)
                 : [
                     ...currentAssignees,
                     {
@@ -213,6 +206,7 @@ export function useTaskRelationships({
     [
       isCreateMode,
       selectedAssignees,
+      wsId,
       taskId,
       boardId,
       queryClient,
@@ -225,47 +219,29 @@ export function useTaskRelationships({
 
   const toggleProject = useCallback(
     async (project: any) => {
-      const exists = selectedProjects.some((p) => p.id === project.id);
+      const exists = selectedProjects.some((entry) => entry.id === project.id);
+
       try {
         if (isCreateMode) {
           setSelectedProjects((prev) =>
             exists
-              ? prev.filter((p) => p.id !== project.id)
+              ? prev.filter((entry) => entry.id !== project.id)
               : [...prev, project]
           );
           return;
         }
-        if (exists) {
-          if (!taskId) return;
-          const { error } = await supabase
-            .from('task_project_tasks')
-            .delete()
-            .eq('task_id', taskId)
-            .eq('project_id', project.id);
-          if (error) throw error;
-          setSelectedProjects((prev) =>
-            prev.filter((p) => p.id !== project.id)
-          );
-        } else {
-          if (!taskId) return;
-          const { error } = await supabase
-            .from('task_project_tasks')
-            .insert({ task_id: taskId, project_id: project.id });
 
-          if (error) {
-            if (error.code === '23505') {
-              toast({
-                title: 'Already linked',
-                description: 'This project is already linked to the task',
-              });
-              onUpdate();
-              return;
-            }
-            throw error;
-          }
-          setSelectedProjects((prev) => [...prev, project]);
-        }
-        // Update task cache directly to avoid full refetch flickering
+        if (!taskId) return;
+
+        const nextSelectedProjects = exists
+          ? selectedProjects.filter((entry) => entry.id !== project.id)
+          : [...selectedProjects, project];
+
+        await updateWorkspaceTask(wsId, taskId, {
+          project_ids: nextSelectedProjects.map((entry) => entry.id),
+        });
+
+        setSelectedProjects(nextSelectedProjects);
         queryClient.setQueryData(
           ['tasks', boardId],
           (old: Task[] | undefined) => {
@@ -274,7 +250,7 @@ export function useTaskRelationships({
               if (task.id !== taskId) return task;
               const currentProjects = task.projects || [];
               const newProjects = exists
-                ? currentProjects.filter((p) => p.id !== project.id)
+                ? currentProjects.filter((entry) => entry.id !== project.id)
                 : [...currentProjects, project];
               return { ...task, projects: newProjects };
             });
@@ -294,6 +270,7 @@ export function useTaskRelationships({
     [
       selectedProjects,
       isCreateMode,
+      wsId,
       taskId,
       queryClient,
       boardId,
@@ -305,102 +282,71 @@ export function useTaskRelationships({
   );
 
   const handleCreateLabel = useCallback(async () => {
-    if (!newLabelName.trim() || !boardConfig) return;
+    if (!newLabelName.trim()) return;
+
     setCreatingLabel(true);
+
     try {
-      let wsId: string | undefined = (boardConfig as any)?.ws_id;
-      if (!wsId) {
-        const { data: board } = await supabase
-          .from('workspace_boards')
-          .select('ws_id')
-          .eq('id', boardId)
-          .single();
-        wsId = (board as any)?.ws_id;
-      }
-      if (!wsId) throw new Error('Workspace id not found');
+      const newLabel = await createWorkspaceLabel(wsId, {
+        name: newLabelName.trim(),
+        color: newLabelColor,
+      });
 
-      const { data, error } = await supabase
-        .from('workspace_task_labels')
-        .insert({
-          ws_id: wsId,
-          name: newLabelName.trim(),
-          color: newLabelColor,
-        })
-        .select('id,name,color,created_at')
-        .single();
+      setAvailableLabels((prev) =>
+        [newLabel, ...prev].sort((a, b) =>
+          (a?.name || '')
+            .toLowerCase()
+            .localeCompare((b?.name || '').toLowerCase())
+        )
+      );
 
-      if (error) throw error;
-
-      if (data) {
-        const newLabel = data as WorkspaceTaskLabel;
-        setAvailableLabels((prev) =>
-          [newLabel, ...prev].sort((a, b) =>
-            (a?.name || '')
-              .toLowerCase()
-              .localeCompare((b?.name || '').toLowerCase())
-          )
+      if (isCreateMode) {
+        setSelectedLabels((prev) => [...prev, newLabel]);
+        toast({
+          title: 'Label created',
+          description: 'New label will be attached to the task on save.',
+        });
+      } else if (taskId) {
+        const nextSelectedLabels = [...selectedLabels, newLabel].sort((a, b) =>
+          (a?.name || '')
+            .toLowerCase()
+            .localeCompare((b?.name || '').toLowerCase())
         );
 
-        if (isCreateMode) {
-          setSelectedLabels((prev) => [...prev, newLabel]);
-          toast({
-            title: 'Label created',
-            description: 'New label will be attached to the task on save.',
-          });
-        } else if (taskId) {
-          const { error: linkErr } = await supabase
-            .from('task_labels')
-            .insert({ task_id: taskId, label_id: newLabel.id });
+        await updateWorkspaceTask(wsId, taskId, {
+          label_ids: nextSelectedLabels.map((entry) => entry.id),
+        });
 
-          if (linkErr) {
-            if (linkErr.code === '23505') {
-              toast({
-                title: 'Already linked',
-                description: 'This label is already linked to the task.',
-              });
-              // Ensure it's in the selected list if not already
-              setSelectedLabels((prev) =>
-                prev.some((l) => l.id === newLabel.id)
-                  ? prev
-                  : [...prev, newLabel]
-              );
-            } else {
-              throw linkErr;
-            }
-          } else {
-            setSelectedLabels((prev) => [...prev, newLabel]);
-            // Update task cache directly to avoid full refetch flickering
-            queryClient.setQueryData(
-              ['tasks', boardId],
-              (old: Task[] | undefined) => {
-                if (!old) return old;
-                return old.map((task) => {
-                  if (task.id !== taskId) return task;
-                  const currentLabels = task.labels || [];
-                  return {
-                    ...task,
-                    labels: [...currentLabels, newLabel].sort((a, b) =>
-                      (a?.name || '')
-                        .toLowerCase()
-                        .localeCompare((b?.name || '').toLowerCase())
-                    ),
-                  };
-                });
-              }
-            );
-            broadcast?.('task:relations-changed', { taskId });
-            onUpdate();
-            toast({
-              title: 'Label created & linked',
-              description: 'New label added and attached to this task.',
+        setSelectedLabels(nextSelectedLabels);
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+            return old.map((task) => {
+              if (task.id !== taskId) return task;
+              const currentLabels = task.labels || [];
+              return {
+                ...task,
+                labels: [...currentLabels, newLabel].sort((a, b) =>
+                  (a?.name || '')
+                    .toLowerCase()
+                    .localeCompare((b?.name || '').toLowerCase())
+                ),
+              };
             });
           }
-        }
-
-        setNewLabelName('');
-        setNewLabelColor('gray');
-        setShowNewLabelDialog(false);
+        );
+        broadcast?.('task:relations-changed', { taskId });
+        onUpdate();
+        toast({
+          title: 'Label created & linked',
+          description: 'New label added and attached to this task.',
+        });
       }
+
+      setNewLabelName('');
+      setNewLabelColor('gray');
+      setShowNewLabelDialog(false);
     } catch (e: any) {
       toast({
         title: 'Label creation failed',
@@ -413,13 +359,14 @@ export function useTaskRelationships({
   }, [
     newLabelName,
     newLabelColor,
-    boardConfig,
+    wsId,
     boardId,
     taskId,
     queryClient,
     onUpdate,
     toast,
     isCreateMode,
+    selectedLabels,
     setSelectedLabels,
     setAvailableLabels,
     setNewLabelName,
@@ -429,93 +376,57 @@ export function useTaskRelationships({
   ]);
 
   const handleCreateProject = useCallback(async () => {
-    if (!newProjectName.trim() || !boardConfig) return;
+    if (!newProjectName.trim()) return;
+
     setCreatingProject(true);
+
     try {
-      let wsId: string | undefined = (boardConfig as any)?.ws_id;
-      if (!wsId) {
-        const { data: board } = await supabase
-          .from('workspace_boards')
-          .select('ws_id')
-          .eq('id', boardId)
-          .single();
-        wsId = (board as any)?.ws_id;
-      }
-      if (!wsId) throw new Error('Workspace id not found');
+      const newProject = await createWorkspaceProject(wsId, {
+        name: newProjectName.trim(),
+      });
 
-      const { data, error } = await supabase
-        .from('task_projects')
-        .insert({
-          ws_id: wsId,
-          name: newProjectName.trim(),
-        })
-        .select('id,name,status,created_at')
-        .single();
+      await queryClient.invalidateQueries({
+        queryKey: ['task-projects', wsId],
+      });
 
-      if (error) throw error;
+      if (isCreateMode) {
+        setSelectedProjects((prev) => [...prev, newProject]);
+        toast({
+          title: 'Project created',
+          description: 'New project will be attached to the task on save.',
+        });
+      } else if (taskId) {
+        const nextSelectedProjects = [...selectedProjects, newProject];
 
-      if (data) {
-        const newProject = data as any;
-
-        // Invalidate and refetch task projects query to include the new project
-        await queryClient.invalidateQueries({
-          queryKey: ['task-projects', wsId],
+        await updateWorkspaceTask(wsId, taskId, {
+          project_ids: nextSelectedProjects.map((entry) => entry.id),
         });
 
-        if (isCreateMode) {
-          setSelectedProjects((prev) => [...prev, newProject]);
-          toast({
-            title: 'Project created',
-            description: 'New project will be attached to the task on save.',
-          });
-        } else if (taskId) {
-          const { error: linkErr } = await supabase
-            .from('task_project_tasks')
-            .insert({ task_id: taskId, project_id: newProject.id });
-
-          if (linkErr) {
-            if (linkErr.code === '23505') {
-              toast({
-                title: 'Already linked',
-                description: 'This project is already linked to the task.',
-              });
-              setSelectedProjects((prev) =>
-                prev.some((p) => p.id === newProject.id)
-                  ? prev
-                  : [...prev, newProject]
-              );
-            } else {
-              throw linkErr;
-            }
-          } else {
-            setSelectedProjects((prev) => [...prev, newProject]);
-            // Update task cache directly to avoid full refetch flickering
-            queryClient.setQueryData(
-              ['tasks', boardId],
-              (old: Task[] | undefined) => {
-                if (!old) return old;
-                return old.map((task) => {
-                  if (task.id !== taskId) return task;
-                  const currentProjects = task.projects || [];
-                  return {
-                    ...task,
-                    projects: [...currentProjects, newProject],
-                  };
-                });
-              }
-            );
-            broadcast?.('task:relations-changed', { taskId });
-            onUpdate();
-            toast({
-              title: 'Project created & linked',
-              description: 'New project added and attached to this task.',
+        setSelectedProjects(nextSelectedProjects);
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+            return old.map((task) => {
+              if (task.id !== taskId) return task;
+              const currentProjects = task.projects || [];
+              return {
+                ...task,
+                projects: [...currentProjects, newProject as any],
+              };
             });
           }
-        }
-
-        setNewProjectName('');
-        setShowNewProjectDialog(false);
+        );
+        broadcast?.('task:relations-changed', { taskId });
+        onUpdate();
+        toast({
+          title: 'Project created & linked',
+          description: 'New project added and attached to this task.',
+        });
       }
+
+      setNewProjectName('');
+      setShowNewProjectDialog(false);
     } catch (e: any) {
       toast({
         title: 'Project creation failed',
@@ -527,13 +438,14 @@ export function useTaskRelationships({
     }
   }, [
     newProjectName,
-    boardConfig,
+    wsId,
     boardId,
     taskId,
     queryClient,
     onUpdate,
     toast,
     isCreateMode,
+    selectedProjects,
     setSelectedProjects,
     setNewProjectName,
     setShowNewProjectDialog,

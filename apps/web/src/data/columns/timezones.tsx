@@ -11,6 +11,30 @@ import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-col
 import moment from 'moment';
 import { TimezoneRowActions } from '@/components/row-actions/timezones';
 
+// Gracefully fall back when a locale is missing this older namespace.
+const getColumnTitle = (t: any, namespace: string | undefined, key: string) => {
+  const fallbackTitles: Record<string, string> = {
+    value: 'Value',
+    abbr: 'Abbreviation',
+    offset: 'Offset',
+    isdst: 'DST',
+    status: 'Status',
+    text: 'Text',
+    utc: 'UTC',
+    created_at: 'Created At',
+  };
+
+  if (typeof t !== 'function' || !namespace) {
+    return fallbackTitles[key] ?? key;
+  }
+
+  try {
+    return t(`${namespace}.${key}`);
+  } catch {
+    return fallbackTitles[key] ?? key;
+  }
+};
+
 export const timezoneColumns = ({
   t,
   namespace,
@@ -42,7 +66,7 @@ export const timezoneColumns = ({
       <DataTableColumnHeader
         t={t}
         column={column}
-        title={t(`${namespace}.value`)}
+        title={getColumnTitle(t, namespace, 'value')}
       />
     ),
     cell: ({ row }) => (
@@ -57,7 +81,7 @@ export const timezoneColumns = ({
       <DataTableColumnHeader
         t={t}
         column={column}
-        title={t(`${namespace}.abbr`)}
+        title={getColumnTitle(t, namespace, 'abbr')}
       />
     ),
     cell: ({ row }) => (
@@ -72,7 +96,7 @@ export const timezoneColumns = ({
       <DataTableColumnHeader
         t={t}
         column={column}
-        title={t(`${namespace}.offset`)}
+        title={getColumnTitle(t, namespace, 'offset')}
       />
     ),
     cell: ({ row }) => (
@@ -89,7 +113,7 @@ export const timezoneColumns = ({
       <DataTableColumnHeader
         t={t}
         column={column}
-        title={t(`${namespace}.isdst`)}
+        title={getColumnTitle(t, namespace, 'isdst')}
       />
     ),
     cell: ({ row }) => (
@@ -104,7 +128,7 @@ export const timezoneColumns = ({
       <DataTableColumnHeader
         t={t}
         column={column}
-        title={t(`${namespace}.status`)}
+        title={getColumnTitle(t, namespace, 'status')}
       />
     ),
     cell: ({ row }) => {
@@ -133,7 +157,7 @@ export const timezoneColumns = ({
       <DataTableColumnHeader
         t={t}
         column={column}
-        title={t(`${namespace}.text`)}
+        title={getColumnTitle(t, namespace, 'text')}
       />
     ),
     cell: ({ row }) => (
@@ -148,7 +172,7 @@ export const timezoneColumns = ({
       <DataTableColumnHeader
         t={t}
         column={column}
-        title={t(`${namespace}.utc`)}
+        title={getColumnTitle(t, namespace, 'utc')}
       />
     ),
     cell: ({ row }) => (
@@ -166,7 +190,7 @@ export const timezoneColumns = ({
       <DataTableColumnHeader
         t={t}
         column={column}
-        title={t(`${namespace}.created_at`)}
+        title={getColumnTitle(t, namespace, 'created_at')}
       />
     ),
     cell: ({ row }) => (

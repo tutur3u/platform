@@ -72,7 +72,15 @@ export async function isIPBlockedEdge(
  * Checks standard proxy headers in priority order.
  */
 export function extractIPFromRequest(headers: Headers): string {
-  // x-forwarded-for (most common with proxies/load balancers)
+  // cf-connecting-ip (Cloudflare)
+  const cfIP = headers.get('cf-connecting-ip');
+  if (cfIP && isValidIPEdge(cfIP)) return cfIP;
+
+  // true-client-ip (some Cloudflare/enterprise proxy setups)
+  const trueClientIP = headers.get('true-client-ip');
+  if (trueClientIP && isValidIPEdge(trueClientIP)) return trueClientIP;
+
+  // x-forwarded-for (most common generic proxy header)
   const forwardedFor = headers.get('x-forwarded-for');
   if (forwardedFor) {
     const firstIP = forwardedFor.split(',')[0]?.trim();
@@ -82,10 +90,6 @@ export function extractIPFromRequest(headers: Headers): string {
   // x-real-ip (Nginx)
   const realIP = headers.get('x-real-ip');
   if (realIP && isValidIPEdge(realIP)) return realIP;
-
-  // cf-connecting-ip (Cloudflare)
-  const cfIP = headers.get('cf-connecting-ip');
-  if (cfIP && isValidIPEdge(cfIP)) return cfIP;
 
   return 'unknown';
 }

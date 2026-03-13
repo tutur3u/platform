@@ -25,10 +25,6 @@
  * @packageDocumentation
  */
 
-export type {
-  SupabaseClient,
-  TypedSupabaseClient,
-} from './next/client';
 // Re-export types and common utilities only (no function conflicts)
 export type { SupabaseCookie } from './next/common';
 export { checkEnvVariables } from './next/common';
@@ -40,6 +36,7 @@ export type {
   SupabaseSession,
   SupabaseUser,
 } from './next/user';
+export type { SupabaseClient, TypedSupabaseClient } from './types';
 
 // Note: createClient functions are NOT re-exported here to avoid conflicts.
 // Use subpath imports as shown in the usage examples above.

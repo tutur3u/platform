@@ -61,5 +61,5 @@ export const POST = withSessionAuth(
       );
     }
   },
-  { rateLimit: { windowMs: 60000, maxRequests: 120 } }
+  { rateLimitKind: 'read' }
 );

@@ -5,7 +5,7 @@ import {
   Lock,
   Sparkles,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
@@ -23,7 +23,7 @@ export default async function UpcomingCalendarEvents({
   wsId,
   showNavigation = false,
 }: UpcomingCalendarEventsProps) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
   const t = await getTranslations('dashboard');
 
   // Get upcoming events (next 7 days)

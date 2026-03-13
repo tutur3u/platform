@@ -1,5 +1,5 @@
 import { Store } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import TemplatesClient from '@tuturuuu/ui/tu-do/templates/client';
@@ -34,15 +34,10 @@ interface Props {
 }
 
 async function getTemplates(
-  wsId: string
+  wsId: string,
+  userId: string
 ): Promise<{ templates: BoardTemplate[] }> {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return { templates: [] };
+  const supabase = await createAdminClient();
 
   const { data: templates, error } = await supabase
     .from('board_templates')
@@ -50,7 +45,7 @@ async function getTemplates(
       'id, ws_id, created_by, source_board_id, name, description, visibility, background_path, content, created_at, updated_at'
     )
     .eq('ws_id', wsId)
-    .or(`visibility.neq.private,created_by.eq.${user.id}`)
+    .or(`visibility.neq.private,created_by.eq.${userId}`)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -88,7 +83,7 @@ async function getTemplates(
         backgroundUrl,
         createdAt: template.created_at,
         updatedAt: template.updated_at,
-        isOwner: template.created_by === user?.id,
+        isOwner: template.created_by === userId,
         stats: {
           lists: content.lists?.length || 0,
           tasks:
@@ -131,7 +126,7 @@ export default async function TaskTemplatesPage({
   const { withoutPermission } = permissions;
   if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
 
-  const { templates } = await getTemplates(wsId);
+  const { templates } = await getTemplates(wsId, user.id);
   const t = await getTranslations('ws-board-templates');
 
   const marketplaceUrl = `/${wsId}/${templatesBasePath}/marketplace`;

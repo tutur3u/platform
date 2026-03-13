@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { RawInventoryProduct } from '@tuturuuu/types/primitives/InventoryProductRelations';
 import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
 import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
@@ -107,7 +110,7 @@ async function getData(
     canViewStockQuantity: boolean;
   }
 ) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   let rawProduct: RawInventoryProduct | null = null;
 

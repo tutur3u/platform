@@ -17,6 +17,148 @@ const createBreakSchema = z.object({
     .optional(),
 });
 
+const getBreaksSchema = z.object({
+  sessionId: z.uuid().optional(),
+  sessionIds: z.string().optional(),
+  summaryOnly: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((value) => value === 'true'),
+});
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ wsId: string }> }
+) {
+  try {
+    const { wsId } = await params;
+    const normalizedWsId = await normalizeWorkspaceId(wsId);
+    const supabase = await createClient(request);
+    const sbAdmin = await createAdminClient();
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { data: memberCheck, error: memberCheckError } = await supabase
+      .from('workspace_members')
+      .select('id:user_id')
+      .eq('ws_id', normalizedWsId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (memberCheckError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
+    if (!memberCheck) {
+      return NextResponse.json(
+        { error: 'Workspace access denied' },
+        { status: 403 }
+      );
+    }
+
+    const searchParams = Object.fromEntries(request.nextUrl.searchParams);
+    const parsedQuery = getBreaksSchema.safeParse(searchParams);
+
+    if (!parsedQuery.success) {
+      return NextResponse.json(
+        { error: 'Invalid query parameters', issues: parsedQuery.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const requestedSessionIds = [
+      ...(parsedQuery.data.sessionId ? [parsedQuery.data.sessionId] : []),
+      ...(parsedQuery.data.sessionIds || '')
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean),
+    ];
+    const sessionIds = Array.from(new Set(requestedSessionIds));
+
+    if (sessionIds.length === 0) {
+      return NextResponse.json(
+        { error: 'At least one sessionId is required' },
+        { status: 400 }
+      );
+    }
+
+    if (parsedQuery.data.summaryOnly) {
+      const { data, error } = await sbAdmin
+        .from('time_tracking_breaks')
+        .select(
+          'session_id, break_duration_seconds, session:time_tracking_sessions!inner(ws_id, user_id)'
+        )
+        .in('session_id', sessionIds)
+        .eq('session.ws_id', normalizedWsId)
+        .eq('session.user_id', user.id)
+        .not('break_duration_seconds', 'is', null);
+
+      if (error) {
+        throw error;
+      }
+
+      const breaksBySession: Record<
+        string,
+        Array<{ break_duration_seconds: number }>
+      > = {};
+
+      for (const breakRecord of data || []) {
+        if (!breaksBySession[breakRecord.session_id]) {
+          breaksBySession[breakRecord.session_id] = [];
+        }
+
+        breaksBySession[breakRecord.session_id]?.push({
+          break_duration_seconds: breakRecord.break_duration_seconds ?? 0,
+        });
+      }
+
+      return NextResponse.json({ breaksBySession });
+    }
+
+    if (sessionIds.length > 1) {
+      return NextResponse.json(
+        { error: 'Detailed break fetch only supports a single sessionId' },
+        { status: 400 }
+      );
+    }
+
+    const { data, error } = await sbAdmin
+      .from('time_tracking_breaks')
+      .select(
+        '*, break_type:workspace_break_types(*), session:time_tracking_sessions!inner(ws_id, user_id)'
+      )
+      .eq('session_id', sessionIds[0] || '')
+      .eq('session.ws_id', normalizedWsId)
+      .eq('session.user_id', user.id)
+      .order('break_start', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    const breaks = (data || []).map(({ session: _session, ...breakRecord }) => {
+      return breakRecord;
+    });
+
+    return NextResponse.json({ breaks });
+  } catch (error) {
+    console.error('Error fetching breaks:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ wsId: string }> }

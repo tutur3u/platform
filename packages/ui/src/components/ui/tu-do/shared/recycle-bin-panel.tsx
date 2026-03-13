@@ -162,7 +162,7 @@ export function RecycleBinPanel({
   const handleSelectAll = useCallback(
     (checked: boolean) => {
       if (checked) {
-        setSelectedTasks(new Set(deletedTasks.map((t) => t.id)));
+        setSelectedTasks(new Set(deletedTasks.map((task: Task) => task.id)));
       } else {
         setSelectedTasks(new Set());
       }
@@ -296,7 +296,7 @@ export function RecycleBinPanel({
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {deletedTasks.map((task) => (
+                  {deletedTasks.map((task: Task) => (
                     <RecycleBinTaskRow
                       key={task.id}
                       task={task}

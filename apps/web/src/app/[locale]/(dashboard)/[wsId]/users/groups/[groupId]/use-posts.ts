@@ -5,7 +5,6 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { UserGroupPost as DBUserGroupPost } from '@tuturuuu/types/db';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
@@ -47,35 +46,36 @@ export function useGroupPostsInfiniteQuery(
     queryKey: ['group-posts', wsId, groupId],
     enabled: Boolean(wsId && groupId && canViewPosts),
     queryFn: async ({ pageParam }) => {
-      const supabase = createClient();
-
-      let query = supabase
-        .from('user_group_posts')
-        .select('*', { count: 'exact' })
-        .eq('group_id', groupId)
-        .order('created_at', { ascending: false })
-        .limit(PAGINATION_LIMIT);
-
+      const search = new URLSearchParams({
+        limit: String(PAGINATION_LIMIT),
+      });
       if (pageParam) {
-        query = query.lt('created_at', pageParam as string);
+        search.set('cursor', pageParam as string);
       }
 
-      const { data, error, count } = await query;
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/posts?${search.toString()}`,
+        { cache: 'no-store' }
+      );
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to fetch group posts');
+      }
 
-      const posts = (data ?? []) as UserGroupPost[];
-      const hasMore = posts.length === PAGINATION_LIMIT;
-      const nextCursor =
-        hasMore && posts.length > 0
-          ? (posts[posts.length - 1]?.created_at ?? null)
-          : null;
+      const payload = (await response.json()) as {
+        data?: UserGroupPost[];
+        count?: number;
+        nextCursor?: string | null;
+      };
+
+      const posts = payload.data ?? [];
+      const hasMore = Boolean(payload.nextCursor);
 
       return {
         posts,
-        total: count ?? 0,
+        total: payload.count ?? 0,
         hasMore,
-        nextCursor,
+        nextCursor: payload.nextCursor ?? null,
       };
     },
     initialPageParam: null as string | null,
@@ -136,7 +136,6 @@ export function useUpsertPostMutation(
   return useMutation({
     mutationFn: async (post: UserGroupPostFormInput) => {
       if (!groupId) throw new Error('Missing groupId');
-      const supabase = createClient();
       const payload = {
         title: post.title,
         content: post.content,
@@ -145,22 +144,38 @@ export function useUpsertPostMutation(
       };
 
       if (post.id) {
-        const { error } = await supabase
-          .from('user_group_posts')
-          .update(payload)
-          .eq('id', post.id)
-          .eq('group_id', groupId);
-        if (error) throw error;
+        const response = await fetch(
+          `/api/v1/workspaces/${wsId}/user-groups/${groupId}/posts/${post.id}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+          }
+        );
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || 'Failed to update group post');
+        }
         return { kind: 'update' as const, id: post.id };
       }
 
-      const { data, error } = await supabase
-        .from('user_group_posts')
-        .insert(payload)
-        .select('id')
-        .single();
-      if (error) throw error;
-      return { kind: 'create' as const, id: data.id };
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/posts`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to create group post');
+      }
+      return { kind: 'create' as const, id: post.id ?? '' };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -184,13 +199,16 @@ export function useDeletePostMutation(
   return useMutation({
     mutationFn: async (postId: string) => {
       if (!groupId) throw new Error('Missing groupId');
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('user_group_posts')
-        .delete()
-        .eq('id', postId)
-        .eq('group_id', groupId);
-      if (error) throw error;
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/posts/${postId}`,
+        {
+          method: 'DELETE',
+        }
+      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to delete group post');
+      }
       return { postId };
     },
     onSuccess: () => {

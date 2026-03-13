@@ -20,6 +20,7 @@ export async function GET(
   try {
     const { wsId } = await params;
     const supabase = await createClient(request);
+    const sbAdmin = await createAdminClient();
 
     // Get authenticated user
     const {
@@ -34,12 +35,19 @@ export async function GET(
     const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Verify workspace access
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: memberCheckError } = await supabase
       .from('workspace_members')
       .select('id:user_id')
       .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (memberCheckError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(
@@ -54,12 +62,20 @@ export async function GET(
 
     // If targeting another user, verify they're in the same workspace
     if (targetUserId && targetUserId !== user.id) {
-      const { data: targetUserCheck } = await supabase
-        .from('workspace_members')
-        .select('id:user_id')
-        .eq('ws_id', normalizedWsId)
-        .eq('user_id', targetUserId)
-        .single();
+      const { data: targetUserCheck, error: targetUserCheckError } =
+        await supabase
+          .from('workspace_members')
+          .select('id:user_id')
+          .eq('ws_id', normalizedWsId)
+          .eq('user_id', targetUserId)
+          .maybeSingle();
+
+      if (targetUserCheckError) {
+        return NextResponse.json(
+          { error: 'Failed to verify target user workspace membership' },
+          { status: 500 }
+        );
+      }
 
       if (!targetUserCheck) {
         return NextResponse.json(
@@ -70,7 +86,7 @@ export async function GET(
     }
 
     // Fetch goals with category information
-    const { data, error } = await supabase
+    const { data, error } = await sbAdmin
       .from('time_tracking_goals')
       .select(
         `
@@ -101,6 +117,7 @@ export async function POST(
   try {
     const { wsId } = await params;
     const supabase = await createClient(request);
+    const sbAdmin = await createAdminClient();
 
     // Get authenticated user
     const {
@@ -115,12 +132,19 @@ export async function POST(
     const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Verify workspace access
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: memberCheckError } = await supabase
       .from('workspace_members')
       .select('id:user_id')
       .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (memberCheckError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(
@@ -146,12 +170,19 @@ export async function POST(
 
     // Verify category exists if provided
     if (categoryId) {
-      const { data: categoryCheck } = await supabase
+      const { data: categoryCheck, error: categoryCheckError } = await sbAdmin
         .from('time_tracking_categories')
         .select('id')
         .eq('id', categoryId)
         .eq('ws_id', normalizedWsId)
-        .single();
+        .maybeSingle();
+
+      if (categoryCheckError) {
+        return NextResponse.json(
+          { error: 'Failed to verify category' },
+          { status: 500 }
+        );
+      }
 
       if (!categoryCheck) {
         return NextResponse.json(
@@ -160,9 +191,6 @@ export async function POST(
         );
       }
     }
-
-    // Use admin client for insertion
-    const sbAdmin = await createAdminClient();
 
     const { data, error } = await sbAdmin
       .from('time_tracking_goals')

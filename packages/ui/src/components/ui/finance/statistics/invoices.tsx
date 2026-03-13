@@ -1,5 +1,5 @@
 import { FileText } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/metrics';
 import StatisticCard from '@tuturuuu/ui/finance/statistics/card';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
@@ -18,11 +18,19 @@ export default async function InvoicesStatistics({
   searchParams?: FinanceDashboardSearchParams;
   financePrefix?: string;
 }) {
-  const supabase = await createClient();
   const t = await getTranslations();
+  const permissions = await getPermissions({
+    wsId,
+  });
+  if (!permissions) notFound();
+  const { containsPermission } = permissions;
+
+  if (!enabled || !containsPermission('manage_finance')) return null;
+
+  const sbAdmin = await createAdminClient();
 
   const getData = async () => {
-    const query = supabase
+    const query = sbAdmin
       .from('finance_invoices')
       .select('*', {
         count: 'exact',
@@ -50,14 +58,6 @@ export default async function InvoicesStatistics({
   };
 
   const { count: invoicesCount } = enabled ? await getData() : { count: 0 };
-
-  const permissions = await getPermissions({
-    wsId,
-  });
-  if (!permissions) notFound();
-  const { containsPermission } = permissions;
-
-  if (!enabled || !containsPermission('manage_finance')) return null;
 
   return (
     <StatisticCard

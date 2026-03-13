@@ -6,9 +6,15 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Database, WorkspaceTaskBoard } from '@tuturuuu/types';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import type {
+  Database,
+  RestorableTaskRow,
+  TaskListIdRow,
+  WorkspaceTaskBoard,
+  WorkspaceTaskPickerRow,
+} from '@tuturuuu/types';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { isTaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
@@ -84,7 +90,9 @@ export async function getTasks(supabase: TypedSupabaseClient, boardId: string) {
       .eq('board_id', boardId)
       .eq('deleted', false);
 
-    if (!lists?.length) return [];
+    const taskLists = (lists ?? []) as TaskListIdRow[];
+
+    if (!taskLists.length) return [];
 
     const { data, error } = await supabase
       .from('tasks')
@@ -117,7 +125,7 @@ export async function getTasks(supabase: TypedSupabaseClient, boardId: string) {
       )
       .in(
         'list_id',
-        lists.map((list) => list.id)
+        taskLists.map((list) => list.id)
       )
       .is('deleted_at', null)
       .order('sort_key', { ascending: true, nullsFirst: false })
@@ -128,7 +136,7 @@ export async function getTasks(supabase: TypedSupabaseClient, boardId: string) {
       throw error;
     }
 
-    return data.map((task) => transformTaskRecord(task));
+    return ((data ?? []) as unknown[]).map((task) => transformTaskRecord(task));
   } catch (error) {
     console.error('Error in getTasks:', error);
     throw error;
@@ -222,7 +230,11 @@ export async function createTaskList(
 export async function createTask(
   supabase: TypedSupabaseClient,
   listId: string,
-  task: Partial<Task>
+  task: Partial<Task> & {
+    label_ids?: string[];
+    assignee_ids?: string[];
+    project_ids?: string[];
+  }
 ) {
   // Validate required fields
   if (!task.name || task.name.trim().length === 0) {
@@ -258,6 +270,61 @@ export async function createTask(
 
   if (!listCheck) {
     throw new Error('List not found');
+  }
+
+  const listWorkspaceId =
+    typeof window !== 'undefined'
+      ? await (async () => {
+          const { data, error } = await supabase
+            .from('task_lists')
+            .select('workspace_boards!inner(ws_id)')
+            .eq('id', listId)
+            .single();
+
+          if (error) {
+            throw new Error(
+              `List not found or access denied: ${error.message || 'Unknown error'}`
+            );
+          }
+
+          return data?.workspace_boards?.ws_id ?? null;
+        })()
+      : null;
+
+  if (typeof window !== 'undefined' && listWorkspaceId) {
+    const response = await fetch(
+      `/api/v1/workspaces/${listWorkspaceId}/tasks`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: task.name.trim(),
+          description: task.description || null,
+          listId,
+          priority: task.priority || null,
+          start_date: task.start_date || null,
+          end_date: task.end_date || null,
+          estimation_points: task.estimation_points ?? null,
+          label_ids: task.label_ids ?? [],
+          assignee_ids: task.assignee_ids ?? [],
+          project_ids: task.project_ids ?? [],
+        }),
+        cache: 'no-store',
+      }
+    );
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => null);
+      const errorMessage = errorBody?.error || 'Failed to create task';
+      const enhancedError = new Error(errorMessage);
+      enhancedError.name = 'TaskCreationError';
+      throw enhancedError;
+    }
+
+    const result = (await response.json()) as { task: Task };
+    return result.task;
   }
 
   // Get the highest sort_key in the list to place new task at the end
@@ -1129,7 +1196,9 @@ export async function getDeletedTasks(
       .select('id, name')
       .eq('board_id', boardId);
 
-    if (!lists?.length) return [];
+    const taskLists = (lists ?? []) as TaskListIdRow[];
+
+    if (!taskLists.length) return [];
 
     const { data, error } = await supabase
       .from('tasks')
@@ -1162,7 +1231,7 @@ export async function getDeletedTasks(
       )
       .in(
         'list_id',
-        lists.map((list) => list.id)
+        taskLists.map((list) => list.id)
       )
       .not('deleted_at', 'is', null)
       .order('deleted_at', { ascending: false });
@@ -1172,7 +1241,7 @@ export async function getDeletedTasks(
       throw error;
     }
 
-    return data.map((task) => transformTaskRecord(task));
+    return ((data ?? []) as unknown[]).map((task) => transformTaskRecord(task));
   } catch (error) {
     console.error('Error in getDeletedTasks:', error);
     throw error;
@@ -1219,11 +1288,14 @@ export async function restoreTasks(
 
   if (fetchError) throw fetchError;
 
+  const fetchedTasks = (tasks ?? []) as RestorableTaskRow[];
+
   // Get valid list IDs (filter out nulls)
   const listIds = [
     ...new Set(
-      tasks?.map((t) => t.list_id).filter((id): id is string => id !== null) ||
-        []
+      fetchedTasks
+        .map((task) => task.list_id)
+        .filter((id): id is string => id !== null)
     ),
   ];
   const { data: validLists } = await supabase
@@ -1232,13 +1304,16 @@ export async function restoreTasks(
     .in('id', listIds)
     .eq('deleted', false);
 
-  const validListIds = new Set(validLists?.map((l) => l.id) || []);
+  const validListIds = new Set((validLists ?? []).map((list) => list.id));
 
   // Separate tasks into those with valid lists and those needing fallback
-  const tasksWithValidLists =
-    tasks?.filter((t) => t.list_id && validListIds.has(t.list_id)) || [];
-  const tasksNeedingFallback =
-    tasks?.filter((t) => !t.list_id || !validListIds.has(t.list_id)) || [];
+  const tasksWithValidLists = fetchedTasks.filter(
+    (task): task is RestorableTaskRow & { list_id: string } =>
+      task.list_id !== null && validListIds.has(task.list_id)
+  );
+  const tasksNeedingFallback = fetchedTasks.filter(
+    (task) => !task.list_id || !validListIds.has(task.list_id)
+  );
 
   const results: Task[] = [];
 
@@ -2623,7 +2698,9 @@ export async function normalizeListSortKeys(
   );
 
   const results = await Promise.all(updatePromises);
-  const updateError = results.find((result) => result.error)?.error;
+  const updateError = results.find((result: (typeof results)[number]) =>
+    Boolean(result.error)
+  )?.error;
 
   if (updateError) {
     console.error('Failed to update sort keys:', updateError);
@@ -3025,7 +3102,9 @@ export async function getWorkspaceTasks(
 
   if (error) throw error;
 
-  return (data || []).map((task) => ({
+  const workspaceTasks = (data ?? []) as WorkspaceTaskPickerRow[];
+
+  return workspaceTasks.map((task) => ({
     id: task.id,
     name: task.name,
     display_number: task.display_number,

@@ -1,4 +1,5 @@
 import {
+  createAdminClient,
   createClient,
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
@@ -187,6 +188,7 @@ export async function PUT(
   try {
     const { wsId, id } = await context.params;
     const supabase = await createClient(request);
+    const sbAdmin = await createAdminClient();
     // Use createDynamicClient with request to support Bearer token auth for mobile apps
     const storageClient = await createDynamicClient(request);
 
@@ -203,12 +205,19 @@ export async function PUT(
     const normalizedWsId = await normalizeWorkspaceId(wsId);
 
     // Verify workspace membership
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: memberError } = await supabase
       .from('workspace_members')
       .select('id:user_id')
       .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
+
+    if (memberError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(
@@ -218,7 +227,7 @@ export async function PUT(
     }
 
     // Fetch the existing request
-    const { data: existingRequest, error: fetchError } = await supabase
+    const { data: existingRequest, error: fetchError } = await sbAdmin
       .from('time_tracking_requests')
       .select('*')
       .eq('id', id)
@@ -326,7 +335,7 @@ export async function PUT(
     const finalImages = [...currentImages, ...newImagePaths];
 
     // Update the request
-    const { data: updatedRequest, error: updateError } = await supabase
+    const { data: updatedRequest, error: updateError } = await sbAdmin
       .from('time_tracking_requests')
       .update({
         title,

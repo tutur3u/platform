@@ -365,6 +365,7 @@
   },
   "abuse-events-data-table": {
     "created_at": "Timestamp",
+    "email": "Email",
     "email_hash": "Email Hash",
     "endpoint": "Endpoint",
     "event_type": "Event Type",
@@ -9809,6 +9810,16 @@
       "title": "Move Session to Another Workspace"
     }
   },
+  "timezone-data-table": {
+    "abbr": "Abbreviation",
+    "created_at": "Created At",
+    "isdst": "DST",
+    "offset": "Offset",
+    "status": "Status",
+    "text": "Text",
+    "utc": "UTC",
+    "value": "Value"
+  },
   "transaction-category-data-table": {
     "amount": "Transactions",
     "category_name": "Category name",
@@ -9934,6 +9945,7 @@
     "group_count": "Group Count",
     "guardian": "Guardian",
     "guest": "Guest",
+    "handle": "Handle",
     "id": "ID",
     "included_groups": "Included Groups",
     "invoices": "Invoices",
@@ -11913,10 +11925,12 @@
     "invoice_items_description": "Review and adjust quantities for selected products.",
     "late": "Late",
     "linked_to_group": "Linked to group",
+    "live_search": "Live search",
     "load_more": "Load more",
     "loading": "Loading...",
     "loading_attendance": "Loading attendance...",
     "loading_groups": "Loading groups...",
+    "loading_more_customers": "Loading more customers...",
     "loading_pending": "Loading pending invoices...",
     "loading_user_history": "Loading user history...",
     "low_stock": "Low Stock",
@@ -11958,7 +11972,9 @@
     "round_up": "Round Up",
     "rounding": "Rounding",
     "rounding_options": "Rounding Options",
+    "scroll_for_more_customers": "Scroll for more customers",
     "search_customers": "Search customers...",
+    "search_customers_description": "Search by name, email, or phone",
     "search_products": "Search products...",
     "search_promotions": "Search promotions...",
     "select_category_required": "Select a category (required)...",
@@ -12450,6 +12466,7 @@
     "lead_email_table_header_score": "Score",
     "lead_email_table_score_scale": "Score Scale",
     "lead_email_table_title": "Email Title",
+    "lead_email_title": "Email Title",
     "lead_generation": "Lead Generation",
     "light": "Light",
     "loading": "Loading...",

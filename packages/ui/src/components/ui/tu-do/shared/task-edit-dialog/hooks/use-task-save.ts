@@ -8,7 +8,6 @@ import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import {
   createTask,
   createTaskRelationship,
-  useUpdateTask,
 } from '@tuturuuu/utils/task-helper';
 import type React from 'react';
 import { useCallback, useRef } from 'react';
@@ -19,6 +18,7 @@ import {
 } from '../../board-broadcast-context';
 import type { PendingRelationship } from '../types/pending-relationship';
 import { clearDraft } from '../utils';
+import { updateWorkspaceTask } from './task-api';
 import type {
   SaveSchedulingSettingsOptions,
   SchedulingSettings,
@@ -197,7 +197,6 @@ export function useTaskSave({
   setSelectedProjects,
 }: UseTaskSaveProps): UseTaskSaveReturn {
   const { toast } = useToast();
-  const updateTaskMutation = useUpdateTask(boardId);
   const updateSharedTaskMutation = useUpdateSharedTask();
   const contextBroadcast = useBoardBroadcast();
   const broadcast = contextBroadcast ?? getActiveBroadcast();
@@ -355,6 +354,7 @@ export function useTaskSave({
     // Update mode
     await handleUpdateTask({
       taskId,
+      wsId,
       name,
       descriptionString,
       priority,
@@ -364,7 +364,6 @@ export function useTaskSave({
       estimationPoints,
       collaborationMode,
       flushEditorPendingRef,
-      updateTaskMutation,
       updateSharedTaskMutation,
       shareCode,
       queryClient,
@@ -397,7 +396,6 @@ export function useTaskSave({
     createMultiple,
     onClose,
     taskId,
-    updateTaskMutation,
     updateSharedTaskMutation,
     collaborationMode,
     setName,
@@ -720,6 +718,29 @@ async function handleCreateTask({
   >;
 }) {
   try {
+    let resolvedUserId = user?.id;
+    if (!resolvedUserId) {
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
+      resolvedUserId = authUser?.id;
+    }
+
+    let desiredAssignees = [...selectedAssignees];
+    if (
+      desiredAssignees.length === 0 &&
+      userTaskSettings?.task_auto_assign_to_self &&
+      resolvedUserId &&
+      !isPersonalWorkspace
+    ) {
+      desiredAssignees = [
+        {
+          id: resolvedUserId,
+          user_id: resolvedUserId,
+        },
+      ];
+    }
+
     const taskData: Partial<Task> = {
       name: name.trim(),
       description: descriptionString || '',
@@ -730,15 +751,14 @@ async function handleCreateTask({
       // IMPORTANT: scheduling settings are personal and stored separately
       // (task_user_scheduling_settings). Do not persist them to the shared task row.
     };
-    const newTask = await createTask(supabase, selectedListId, taskData);
-
-    let resolvedUserId = user?.id;
-    if (!resolvedUserId) {
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser();
-      resolvedUserId = authUser?.id;
-    }
+    const newTask = await createTask(supabase, selectedListId, {
+      ...taskData,
+      label_ids: selectedLabels.map((label) => label.id),
+      assignee_ids: desiredAssignees
+        .map((assignee) => assignee.user_id || assignee.id)
+        .filter((assigneeId): assigneeId is string => !!assigneeId),
+      project_ids: selectedProjects.map((project) => project.id),
+    });
 
     // Save per-user scheduling settings for the creator (if any were provided)
     if (resolvedUserId) {
@@ -804,96 +824,33 @@ async function handleCreateTask({
       );
     }
 
-    // Handle labels
-    let nextLabels: Task['labels'] = [];
-    if (selectedLabels.length > 0) {
-      const { error: labelsError } = await supabase
-        .from('task_labels')
-        .insert(
-          selectedLabels.map((l) => ({ task_id: newTask.id, label_id: l.id }))
-        );
-      if (labelsError) {
-        console.error('Error adding labels:', labelsError);
-      } else {
-        nextLabels = selectedLabels.flatMap((label) =>
-          label.name && label.color && label.created_at
-            ? [
-                {
-                  id: label.id,
-                  name: label.name,
-                  color: label.color,
-                  created_at: label.created_at,
-                },
-              ]
-            : []
-        );
-      }
-    }
+    const nextLabels: Task['labels'] = selectedLabels.flatMap((label) =>
+      label.name && label.color && label.created_at
+        ? [
+            {
+              id: label.id,
+              name: label.name,
+              color: label.color,
+              created_at: label.created_at,
+            },
+          ]
+        : []
+    );
 
-    // Handle assignees
-    let finalAssignees: typeof selectedAssignees = [];
-    let desiredAssignees = [...selectedAssignees];
-    if (
-      desiredAssignees.length === 0 &&
-      userTaskSettings?.task_auto_assign_to_self &&
-      resolvedUserId &&
-      !isPersonalWorkspace
-    ) {
-      desiredAssignees = [
-        {
-          id: resolvedUserId,
-          user_id: resolvedUserId,
-        },
-      ];
-    }
-    if (desiredAssignees.length > 0) {
-      const assigneesToInsert = desiredAssignees
-        .map((a) => ({ task_id: newTask.id, user_id: a.user_id || a.id }))
-        .filter((a) => a.user_id);
-      if (assigneesToInsert.length > 0) {
-        const { error: assigneesError } = await supabase
-          .from('task_assignees')
-          .insert(assigneesToInsert);
-        if (assigneesError) {
-          console.error('Error adding assignees:', assigneesError);
-          toast({
-            title: 'Warning',
-            description: 'Task created but some assignees could not be added',
-            variant: 'destructive',
-          });
-        } else {
-          finalAssignees = desiredAssignees;
-        }
-      }
-    }
+    const finalAssignees = desiredAssignees;
 
-    // Handle projects
-    let nextProjects: Task['projects'] = [];
-    if (selectedProjects.length > 0) {
-      const { error: projectsError } = await supabase
-        .from('task_project_tasks')
-        .insert(
-          selectedProjects.map((p) => ({
-            task_id: newTask.id,
-            project_id: p.id,
-          }))
-        );
-      if (projectsError) {
-        console.error('Error adding projects:', projectsError);
-      } else {
-        nextProjects = selectedProjects.flatMap((project) =>
-          project.name && project.status
-            ? [
-                {
-                  id: project.id,
-                  name: project.name,
-                  status: project.status,
-                },
-              ]
-            : []
-        );
-      }
-    }
+    const nextProjects: Task['projects'] = selectedProjects.flatMap(
+      (project) =>
+        project.name && project.status
+          ? [
+              {
+                id: project.id,
+                name: project.name,
+                status: project.status,
+              },
+            ]
+          : []
+    );
 
     const createdTaskWithRelations: Task = {
       ...(newTask as Task),
@@ -1028,6 +985,7 @@ async function handlePendingRelationship(
 // Helper function for updating tasks
 async function handleUpdateTask({
   taskId,
+  wsId,
   name,
   descriptionString,
   priority,
@@ -1037,7 +995,6 @@ async function handleUpdateTask({
   estimationPoints,
   collaborationMode,
   flushEditorPendingRef,
-  updateTaskMutation,
   updateSharedTaskMutation,
   shareCode,
   queryClient,
@@ -1048,6 +1005,7 @@ async function handleUpdateTask({
   setIsSaving,
 }: {
   taskId?: string;
+  wsId: string;
   name: string;
   descriptionString: string | null;
   priority: 'critical' | 'high' | 'low' | 'normal' | null;
@@ -1059,7 +1017,6 @@ async function handleUpdateTask({
   flushEditorPendingRef: React.MutableRefObject<
     (() => JSONContent | null) | undefined
   >;
-  updateTaskMutation: ReturnType<typeof useUpdateTask>;
   updateSharedTaskMutation: ReturnType<typeof useUpdateSharedTask>;
   shareCode?: string;
   queryClient: QueryClient;
@@ -1121,31 +1078,26 @@ async function handleUpdateTask({
       return;
     }
 
-    updateTaskMutation.mutate(
-      { taskId, updates: taskUpdates },
-      {
-        onSuccess: async () => {
-          toast({
-            title: 'Task updated',
-            description: 'The task has been successfully updated.',
-          });
-          onUpdate();
-          onClose();
-        },
-        onError: (error: Error) => {
-          console.error('Error updating task:', error);
-          toast({
-            title: 'Error updating task',
-            description: error.message || 'Please try again later',
-            variant: 'destructive',
-          });
-        },
-        onSettled: () => {
-          setIsLoading(false);
-          setIsSaving(false);
-          queryClient.invalidateQueries({ queryKey: ['task-history'] });
-        },
-      }
-    );
+    try {
+      await updateWorkspaceTask(wsId, taskId, taskUpdates);
+      toast({
+        title: 'Task updated',
+        description: 'The task has been successfully updated.',
+      });
+      onUpdate();
+      onClose();
+    } catch (error) {
+      console.error('Error updating task:', error);
+      toast({
+        title: 'Error updating task',
+        description:
+          error instanceof Error ? error.message : 'Please try again later',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+      setIsSaving(false);
+      queryClient.invalidateQueries({ queryKey: ['task-history'] });
+    }
   }
 }

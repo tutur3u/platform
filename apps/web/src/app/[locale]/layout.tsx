@@ -61,7 +61,7 @@ export default async function RootLayout({ children, params }: Props) {
   setRequestLocale(locale as Locale);
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning data-scroll-behavior="smooth">
       <ReactScan />
       <body
         className={cn(

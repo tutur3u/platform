@@ -1,7 +1,5 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
   MAX_LONG_TEXT_LENGTH,
   MAX_MEDIUM_TEXT_LENGTH,
@@ -16,6 +14,28 @@ interface Params {
   params: Promise<{
     wsId: string;
   }>;
+}
+
+function buildWorkspaceUsersRpcQuery(
+  sbAdmin: TypedSupabaseClient,
+  wsId: string,
+  searchQuery: string
+) {
+  return sbAdmin
+    .rpc(
+      'get_workspace_users',
+      {
+        _ws_id: wsId,
+        included_groups: [],
+        excluded_groups: [],
+        search_query: searchQuery,
+        include_archived: true,
+        link_status: 'all',
+      },
+      { count: 'exact' }
+    )
+    .order('full_name', { ascending: true, nullsFirst: false })
+    .order('display_name', { ascending: true, nullsFirst: false });
 }
 
 const CreateUserSchema = z.object({
@@ -52,7 +72,8 @@ async function getDataWithApiKey(
     apiKey: string;
   }
 ) {
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
+  const searchParams = req.nextUrl.searchParams;
 
   const apiCheckQuery = sbAdmin
     .from('workspace_api_keys')
@@ -61,25 +82,14 @@ async function getDataWithApiKey(
     .eq('value', apiKey)
     .single();
 
-  const mainQuery = sbAdmin
-    .from('workspace_users')
-    .select('*', { count: 'exact' })
-    .eq('ws_id', wsId)
-    .order('full_name', { ascending: true })
-    .order('display_name', { ascending: true });
-
-  const searchParams = req.nextUrl.searchParams;
-  const query = searchParams.get('q');
-
-  const from = searchParams.get('from');
-  const to = searchParams.get('to');
-  const limit = searchParams.get('limit');
-
-  console.log({ query, from, to, limit });
-
-  if (query) mainQuery.textSearch('full_name', query);
-  if (from && to) mainQuery.range(parseInt(from, 10), parseInt(to, 10));
-  if (limit) mainQuery.limit(parseInt(limit, 10));
+  const query = searchParams.get('q') || searchParams.get('query');
+  const from = parseInt(searchParams.get('from') || '0', 10);
+  const to = parseInt(searchParams.get('to') || '-1', 10);
+  const limit = parseInt(searchParams.get('limit') || '50', 10);
+  const mainQuery = buildWorkspaceUsersRpcQuery(sbAdmin, wsId, query ?? '');
+  if (!Number.isNaN(from) && !Number.isNaN(to) && to >= from)
+    mainQuery.range(from, to);
+  if (!Number.isNaN(limit)) mainQuery.limit(limit);
 
   const [apiCheck, response] = await Promise.all([apiCheckQuery, mainQuery]);
 
@@ -107,25 +117,27 @@ async function getDataFromSession(
   req: NextRequest,
   { wsId }: { wsId: string }
 ) {
-  const supabase = await createClient();
+  const permissions = await getPermissions({
+    wsId,
+    request: req,
+  });
 
-  const mainQuery = supabase
-    .from('workspace_users')
-    .select('*')
-    .eq('ws_id', wsId);
+  if (!permissions) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
 
+  const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
   const searchParams = new URLSearchParams(req.nextUrl.search);
-  const query = searchParams.get('query');
+  const query = searchParams.get('q') || searchParams.get('query');
+  const from = parseInt(searchParams.get('from') || '0', 10);
+  const to = parseInt(searchParams.get('to') || '-1', 10);
+  const limit = parseInt(searchParams.get('limit') || '50', 10);
+  const mainQuery = buildWorkspaceUsersRpcQuery(sbAdmin, wsId, query ?? '');
+  if (!Number.isNaN(from) && !Number.isNaN(to) && to >= from)
+    mainQuery.range(from, to);
+  if (!Number.isNaN(limit)) mainQuery.limit(limit);
 
-  const from = searchParams.get('from');
-  const to = searchParams.get('to');
-  const limit = searchParams.get('limit');
-
-  if (query) mainQuery.textSearch('full_name', query);
-  if (from && to) mainQuery.range(parseInt(from, 10), parseInt(to, 10));
-  if (limit) mainQuery.limit(parseInt(limit, 10));
-
-  const { data, error } = await mainQuery;
+  const { data, count, error } = await mainQuery;
 
   if (error) {
     console.log(error);
@@ -135,7 +147,7 @@ async function getDataFromSession(
     );
   }
 
-  return NextResponse.json(data || []);
+  return NextResponse.json({ data: data || [], count: count ?? 0 });
 }
 
 export async function POST(req: Request, { params }: Params) {
@@ -172,13 +184,13 @@ export async function POST(req: Request, { params }: Params) {
 
   const data = validationResult.data;
 
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
   // Separate control flags from user payload
   // Do NOT allow archived or archived_until during creation
   const { is_guest, ...userPayload } = data ?? {};
 
   // Create user and get the new id
-  const { data: createdUser, error } = await supabase
+  const { data: createdUser, error } = await sbAdmin
     .from('workspace_users')
     .insert({
       ...userPayload,
@@ -198,7 +210,7 @@ export async function POST(req: Request, { params }: Params) {
   // If marked as guest, attach the user to the workspace's guest group
   let warning: string | undefined;
   if (is_guest && createdUser?.id) {
-    const { data: guestGroup, error: groupError } = await supabase
+    const { data: guestGroup, error: groupError } = await sbAdmin
       .from('workspace_user_groups')
       .select('id')
       .eq('ws_id', wsId)
@@ -207,7 +219,7 @@ export async function POST(req: Request, { params }: Params) {
 
     if (!groupError && guestGroup?.id) {
       // Insert relation; use upsert to handle case where trigger already assigned user to this group
-      const { error: linkError } = await supabase
+      const { error: linkError } = await sbAdmin
         .from('workspace_user_groups_users')
         .upsert(
           {

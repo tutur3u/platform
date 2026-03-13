@@ -30,7 +30,7 @@ import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export type SmartSchedulingData = {
   enableSmartScheduling: boolean;
@@ -107,6 +107,10 @@ export function GoogleCalendarSettings({
     new Set()
   );
   const [isImportingCalendars, setIsImportingCalendars] = useState(false);
+
+  useEffect(() => {
+    setGoogleCalendarConnected(!!experimentalGoogleToken?.id);
+  }, [experimentalGoogleToken?.id]);
 
   // Check if user is a Tuturuuu user (using TanStack Query)
   const { data: isTuturuuuUser = false } = useQuery({
@@ -362,12 +366,32 @@ export function GoogleCalendarSettings({
         throw new Error(errorData.error || 'Failed to disconnect');
       }
 
-      // Also delete all calendar connections for this workspace
-      const supabase = createClient();
-      await supabase
-        .from('calendar_connections')
-        .delete()
-        .eq('ws_id', workspace.id);
+      await Promise.all(
+        calendarConnections.map(async (connection) => {
+          const deleteResponse = await fetch(
+            `/api/v1/calendar/connections?id=${connection.id}`,
+            {
+              method: 'DELETE',
+            }
+          );
+
+          if (!deleteResponse.ok) {
+            const errorData = await deleteResponse.json();
+            throw new Error(
+              errorData.error || 'Failed to remove calendar connection'
+            );
+          }
+        })
+      );
+
+      queryClient.setQueryData(
+        ['calendar-token', workspace.id],
+        null as WorkspaceCalendarGoogleToken | null
+      );
+      queryClient.setQueryData<CalendarConnection[]>(
+        ['calendar-connections', workspace.id],
+        []
+      );
 
       toast({
         title: 'Disconnected',

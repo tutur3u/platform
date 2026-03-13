@@ -2,8 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { CalendarDays, Palette, PanelLeft, User } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Workspace } from '@tuturuuu/types';
+import { getWorkspace } from '@tuturuuu/internal-api/workspaces';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { AppearanceSettings } from '@tuturuuu/ui/custom/settings/appearance-settings';
 import { LunarCalendarSettings } from '@tuturuuu/ui/custom/settings/lunar-calendar-settings';
@@ -11,7 +10,6 @@ import SharedSidebarSettings from '@tuturuuu/ui/custom/settings/sidebar-settings
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
-import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useSidebar } from '@/context/sidebar-context';
@@ -40,27 +38,7 @@ export function SettingsDialog({
     queryKey: ['workspace', wsId],
     queryFn: async () => {
       if (!wsId) throw new Error('No workspace ID');
-
-      const supabase = createClient();
-      const {
-        data: { user: currentUser },
-      } = await supabase.auth.getUser();
-
-      if (!currentUser) throw new Error('Not authenticated');
-
-      const resolvedWsId = resolveWorkspaceId(wsId);
-
-      const { data, error } = await supabase
-        .from('workspaces')
-        .select('*, workspace_members!inner(user_id)')
-        .eq('id', resolvedWsId)
-        .eq('workspace_members.user_id', currentUser.id)
-        .single();
-
-      if (error) throw new Error(error.message);
-
-      const { workspace_members: _, ...workspaceData } = data;
-      return workspaceData as Workspace;
+      return getWorkspace(wsId);
     },
     enabled: !!wsId,
     staleTime: 5 * 60 * 1000,

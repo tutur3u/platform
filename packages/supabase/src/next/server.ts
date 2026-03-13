@@ -5,6 +5,10 @@ import type { RequestCookie } from 'next/dist/compiled/@edge-runtime/cookies';
 import type { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies';
 import { cookies } from 'next/headers';
 import { checkEnvVariables, type SupabaseCookie } from './common';
+import {
+  wrapDirectClientForProxyOnlyTables,
+  wrapRequestClientForProxyOnlyTables,
+} from './protected-tables';
 
 function createCookieHandler(cookieStore: ReadonlyRequestCookies): {
   getAll(): RequestCookie[];
@@ -43,6 +47,18 @@ async function createGenericClient<T = Database>(
           setAll(_: SupabaseCookie[]) {},
         }
       : createCookieHandler(cookieStore),
+  });
+}
+
+function createRequestAdminProxyClient<T = Database>(): SupabaseClient<T> {
+  const { url, key } = checkEnvVariables({ useSecretKey: true });
+
+  return createBrowserClient<T>(url, key, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false,
+    },
   });
 }
 
@@ -101,7 +117,7 @@ export async function createClient<T = Database>(
 
     if (accessToken) {
       const { url, key } = checkEnvVariables({ useSecretKey: false });
-      return createBrowserClient<T>(url, key, {
+      const userClient = createBrowserClient<T>(url, key, {
         global: {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -113,11 +129,25 @@ export async function createClient<T = Database>(
           detectSessionInUrl: false,
         },
       });
+
+      return wrapRequestClientForProxyOnlyTables(
+        userClient,
+        createRequestAdminProxyClient<T>()
+      );
     }
+
+    const userClient = await createGenericClient<T>(false);
+
+    return wrapRequestClientForProxyOnlyTables(
+      userClient,
+      createRequestAdminProxyClient<T>()
+    );
   }
 
   // Fall back to cookie-based auth (web browser flow).
-  return createGenericClient<T>(false);
+  return wrapDirectClientForProxyOnlyTables(
+    await createGenericClient<T>(false)
+  );
 }
 
 /**
@@ -143,7 +173,7 @@ export async function createDynamicClient<T = Database>(
 
     if (accessToken) {
       const { url, key } = checkEnvVariables({ useSecretKey: false });
-      return createBrowserClient<T>(url, key, {
+      const userClient = createBrowserClient<T>(url, key, {
         global: {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -155,15 +185,29 @@ export async function createDynamicClient<T = Database>(
           detectSessionInUrl: false,
         },
       });
+
+      return wrapRequestClientForProxyOnlyTables(
+        userClient,
+        createRequestAdminProxyClient<T>()
+      );
     }
+
+    const userClient = await createGenericClient<T>(false);
+
+    return wrapRequestClientForProxyOnlyTables(
+      userClient,
+      createRequestAdminProxyClient<T>()
+    );
   }
 
   // Fall back to cookie-based auth (web browser flow).
   const { url, key } = checkEnvVariables({ useSecretKey: false });
   const cookieStore = await cookies();
-  return createServerClient(url, key, {
-    cookies: createCookieHandler(cookieStore),
-  });
+  return wrapDirectClientForProxyOnlyTables(
+    createServerClient<T>(url, key, {
+      cookies: createCookieHandler(cookieStore),
+    })
+  );
 }
 
 /**

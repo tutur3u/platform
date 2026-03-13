@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { formatBytes } from '@tuturuuu/utils/format';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
@@ -702,7 +705,7 @@ export async function DiscordIntegrationsStats({ wsId }: { wsId: string }) {
 }
 
 export async function SentEmailsStats({ wsId }: { wsId: string }) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
   const permissions = await getPermissions({ wsId });
   if (!permissions) notFound();
   const { containsPermission } = permissions;

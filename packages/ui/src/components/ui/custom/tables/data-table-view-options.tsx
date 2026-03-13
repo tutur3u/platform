@@ -27,6 +27,9 @@ export function DataTableViewOptions<TData>({
   table,
   extraColumns,
 }: DataTableViewOptionsProps<TData>) {
+  const translator = t as
+    | (((key: string) => string) & { has?: (key: string) => boolean })
+    | undefined;
   const isShowingAll = table
     .getAllColumns()
     .every((column) => column.getIsVisible());
@@ -56,6 +59,22 @@ export function DataTableViewOptions<TData>({
                 typeof column.accessorFn !== 'undefined' && column.getCanHide()
             )
             .map((column, idx) => {
+              const extraColumnLabel = (
+                extraColumns as Array<{ id: string; name?: string }>
+              )
+                ?.filter(
+                  (extraColumn: { id: string; name?: string }) =>
+                    extraColumn.id === column.id
+                )
+                .pop()?.name;
+              const translationKey = namespace
+                ? `${namespace}.${column.id}`
+                : undefined;
+              const translatedLabel =
+                translationKey && translator?.has?.(translationKey)
+                  ? translator(translationKey)
+                  : undefined;
+
               return (
                 <Fragment key={column.id}>
                   {/* If this item is the last system column before the extra
@@ -77,14 +96,7 @@ export function DataTableViewOptions<TData>({
                       <UserCog className="mr-1 h-4 w-4" />
                     ) : undefined}
 
-                    {(extraColumns as Array<{ id: string; name?: string }>)
-                      ?.filter(
-                        (extraColumn: { id: string; name?: string }) =>
-                          extraColumn.id === column.id
-                      )
-                      .pop()?.name || namespace
-                      ? t?.(`${namespace}.${column.id}`)
-                      : column.id}
+                    {extraColumnLabel || translatedLabel || column.id}
                   </DropdownMenuCheckboxItem>
                 </Fragment>
               );

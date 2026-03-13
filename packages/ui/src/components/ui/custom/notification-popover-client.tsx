@@ -24,6 +24,7 @@ import {
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
+  dedupeNotifications,
   type Notification,
   useInfiniteNotifications,
   useMarkAllAsRead,
@@ -112,8 +113,9 @@ export default function NotificationPopoverClient({
   useNotificationSubscription(wsId || '', userId || '');
 
   const activeQuery = activeTab === 'inbox' ? inboxQuery : archiveQuery;
-  const allNotifications =
-    activeQuery.data?.pages.flatMap((p) => p.notifications) ?? [];
+  const allNotifications = dedupeNotifications(
+    activeQuery.data?.pages.flatMap((p) => p.notifications) ?? []
+  );
   const hasNotifications = allNotifications.length > 0;
 
   // When webAppUrl is set, link to the external web app's notifications page

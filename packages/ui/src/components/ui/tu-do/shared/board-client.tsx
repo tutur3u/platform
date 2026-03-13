@@ -1,7 +1,6 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type {
   Workspace,
   WorkspaceProductTier,
@@ -9,12 +8,7 @@ import type {
 } from '@tuturuuu/types';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useBoardRealtime } from '@tuturuuu/ui/hooks/useBoardRealtime';
-import {
-  getTaskBoard,
-  getTaskLists,
-  getTasks,
-  useWorkspaceLabels,
-} from '@tuturuuu/utils/task-helper';
+import { useWorkspaceLabels } from '@tuturuuu/utils/task-helper';
 import { useEffect } from 'react';
 import {
   BoardBroadcastProvider,
@@ -46,8 +40,17 @@ export function BoardClient({
   const { data: board = initialBoard } = useQuery({
     queryKey: ['task-board', boardId],
     queryFn: async () => {
-      const supabase = createClient();
-      return getTaskBoard(supabase, boardId);
+      const response = await fetch(
+        `/api/v1/workspaces/${workspace.id}/task-boards/${boardId}`,
+        { cache: 'no-store' }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch task board');
+      }
+
+      const result = (await response.json()) as { board: WorkspaceTaskBoard };
+      return result.board;
     },
     initialData: initialBoard,
     staleTime: 5 * 60 * 1000,
@@ -59,8 +62,17 @@ export function BoardClient({
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', boardId],
     queryFn: async () => {
-      const supabase = createClient();
-      return await getTasks(supabase, boardId);
+      const response = await fetch(
+        `/api/v1/workspaces/${workspace.id}/tasks?boardId=${boardId}`,
+        { cache: 'no-store' }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch board tasks');
+      }
+
+      const result = (await response.json()) as { tasks: any[] };
+      return result.tasks;
     },
     initialData: [],
     refetchOnMount: false,
@@ -71,8 +83,17 @@ export function BoardClient({
   const { data: lists = initialLists } = useQuery({
     queryKey: ['task_lists', boardId],
     queryFn: async () => {
-      const supabase = createClient();
-      return getTaskLists(supabase, boardId);
+      const response = await fetch(
+        `/api/v1/workspaces/${workspace.id}/task-boards/${boardId}/lists`,
+        { cache: 'no-store' }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch task lists');
+      }
+
+      const result = (await response.json()) as { lists: TaskList[] };
+      return result.lists;
     },
     initialData: initialLists,
     staleTime: 5 * 60 * 1000,
@@ -81,7 +102,7 @@ export function BoardClient({
   });
 
   // Progressive per-list loading
-  const progressiveLoader = useProgressiveBoardLoader(boardId);
+  const progressiveLoader = useProgressiveBoardLoader(workspace.id, boardId);
 
   // Fetch workspace labels once at the board level
   const { data: workspaceLabels = [] } = useWorkspaceLabels(board?.ws_id);

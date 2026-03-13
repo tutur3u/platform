@@ -1,8 +1,11 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { isGroupBlockedForSubscriptionInvoices } from '@/utils/workspace-config';
-import { calculateInvoiceValues } from '../route';
+import { type CalculatedValues, calculateInvoiceValues } from '../route';
 
 interface Params {
   params: Promise<{
@@ -37,12 +40,14 @@ interface CreateSubscriptionInvoiceRequest {
 
 export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
   const { wsId } = await params;
 
   let createdInvoiceId: string | null = null;
 
   const permissions = await getPermissions({
     wsId,
+    request: req,
   });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
@@ -108,17 +113,30 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     // Calculate values using backend logic (shared)
-    const calculatedValues = await calculateInvoiceValues(
-      wsId,
-      products,
-      promotion_id,
-      {
-        subtotal: frontend_subtotal,
-        discount_amount: frontend_discount_amount,
-        total: frontend_total,
-      },
-      true
-    );
+    let calculatedValues: CalculatedValues;
+
+    try {
+      calculatedValues = await calculateInvoiceValues(
+        wsId,
+        products,
+        promotion_id,
+        {
+          subtotal: frontend_subtotal,
+          discount_amount: frontend_discount_amount,
+          total: frontend_total,
+        },
+        true
+      );
+    } catch (e) {
+      if ((e as { code?: string })?.code === 'PROMOTION_LIMIT_REACHED') {
+        return NextResponse.json(
+          { message: 'Promotion usage limit reached' },
+          { status: 400 }
+        );
+      }
+
+      throw e;
+    }
 
     const {
       subtotal,
@@ -140,7 +158,7 @@ export async function POST(req: Request, { params }: Params) {
     // Map platform user to workspace virtual user
     let workspaceUserId: string | null = null;
     if (user) {
-      const { data: workspaceUser } = await supabase
+      const { data: workspaceUser } = await sbAdmin
         .from('workspace_user_linked_users')
         .select('virtual_user_id ')
         .eq('platform_user_id', user.id)
@@ -179,7 +197,7 @@ export async function POST(req: Request, { params }: Params) {
       invoiceData.creator_id = workspaceUserId;
     }
 
-    const { data: invoice, error: invoiceError } = await supabase
+    const { data: invoice, error: invoiceError } = await sbAdmin
       .from('finance_invoices')
       .insert(invoiceData)
       .select('id')
@@ -204,21 +222,21 @@ export async function POST(req: Request, { params }: Params) {
 
       // Best-effort rollback: delete children first, then the invoice itself.
       await Promise.all([
-        supabase
+        sbAdmin
           .from('finance_invoice_promotions')
           .delete()
           .eq('invoice_id', createdInvoiceId),
-        supabase
+        sbAdmin
           .from('finance_invoice_products')
           .delete()
           .eq('invoice_id', createdInvoiceId),
-        supabase
+        sbAdmin
           .from('finance_invoice_user_groups')
           .delete()
           .eq('invoice_id', createdInvoiceId),
       ]);
 
-      await supabase
+      await sbAdmin
         .from('finance_invoices')
         .delete()
         .eq('id', createdInvoiceId);
@@ -229,7 +247,7 @@ export async function POST(req: Request, { params }: Params) {
       user_group_id: groupId,
     }));
 
-    const { error: invoiceGroupsError } = await supabase
+    const { error: invoiceGroupsError } = await sbAdmin
       .from('finance_invoice_user_groups')
       .insert(invoiceGroupRows);
 
@@ -260,7 +278,7 @@ export async function POST(req: Request, { params }: Params) {
     const productValues = Array.from(productMap.values());
 
     // Fetch product and unit names
-    const { data: productsData, error: productsError } = await supabase
+    const { data: productsData, error: productsError } = await sbAdmin
       .from('workspace_products')
       .select('name, id')
       .in(
@@ -282,7 +300,7 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     const unitIds = productValues.map((product) => product.unit_id);
-    const { data: unitsData, error: unitsError } = await supabase
+    const { data: unitsData, error: unitsError } = await sbAdmin
       .from('inventory_units')
       .select('name, id')
       .in('id', unitIds)
@@ -313,7 +331,7 @@ export async function POST(req: Request, { params }: Params) {
       price: Math.round(product.price),
     }));
 
-    const { error: invoiceProductsError } = await supabase
+    const { error: invoiceProductsError } = await sbAdmin
       .from('finance_invoice_products')
       .insert(invoiceProducts);
 
@@ -334,14 +352,14 @@ export async function POST(req: Request, { params }: Params) {
 
     // Promotion linkage
     if (promotion_id && promotion_id !== 'none' && discount_amount > 0) {
-      const { data: promotion, error: promotionFetchError } = await supabase
+      const { data: promotion, error: promotionFetchError } = await sbAdmin
         .from('workspace_promotions')
         .select('use_ratio, value, name, code, description')
         .eq('id', promotion_id)
         .single();
 
       if (!promotionFetchError || promotion) {
-        const { error: promotionError } = await supabase
+        const { error: promotionError } = await sbAdmin
           .from('finance_invoice_promotions')
           .insert({
             invoice_id: invoiceId,
@@ -377,7 +395,7 @@ export async function POST(req: Request, { params }: Params) {
       beneficiary_id: customer_id,
     }));
 
-    const { error: stockError } = await supabase
+    const { error: stockError } = await sbAdmin
       .from('product_stock_changes')
       .insert(stockChanges);
 
@@ -434,15 +452,15 @@ export async function POST(req: Request, { params }: Params) {
           .from('finance_invoice_promotions')
           .delete()
           .eq('invoice_id', createdInvoiceId),
-        supabase
+        sbAdmin
           .from('finance_invoice_products')
           .delete()
           .eq('invoice_id', createdInvoiceId),
-        supabase
+        sbAdmin
           .from('finance_invoice_user_groups')
           .delete()
           .eq('invoice_id', createdInvoiceId),
-        supabase.from('finance_invoices').delete().eq('id', createdInvoiceId),
+        sbAdmin.from('finance_invoices').delete().eq('id', createdInvoiceId),
       ]);
     }
     return NextResponse.json(

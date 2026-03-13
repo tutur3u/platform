@@ -24,6 +24,8 @@ export function DataTableColumnHeader<TData, TValue>({
   title,
   className,
 }: DataTableColumnHeaderProps<TData, TValue>) {
+  const translate = typeof t === 'function' ? t : (key: string) => key;
+
   if (!column.getCanSort()) {
     return <div className={cn(className)}>{title}</div>;
   }
@@ -54,16 +56,16 @@ export function DataTableColumnHeader<TData, TValue>({
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => column.toggleSorting(false)}>
             <ArrowUp className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
-            {t('common.ascending')}
+            {translate('common.ascending')}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => column.toggleSorting(true)}>
             <ArrowDown className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
-            {t('common.descending')}
+            {translate('common.descending')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => column.toggleVisibility(false)}>
             <EyeOff className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
-            {t('common.hide_column')}
+            {translate('common.hide_column')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

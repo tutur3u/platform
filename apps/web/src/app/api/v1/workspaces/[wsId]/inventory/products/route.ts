@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type {
   InventoryProduct,
   RawInventoryProduct,
@@ -45,11 +48,39 @@ interface Params {
 
 export async function GET(request: Request, { params }: Params) {
   try {
-    const supabase = await createClient();
+    const supabase = await createClient(request);
+    const sbAdmin = await createAdminClient();
     const { wsId: id } = await params;
 
     // Resolve workspace ID
-    const wsId = await normalizeWorkspaceId(id);
+    const wsId = await normalizeWorkspaceId(id, supabase);
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { data: membership, error: membershipError } = await supabase
+      .from('workspace_members')
+      .select('ws_id')
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (membershipError) {
+      return NextResponse.json(
+        { message: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!membership) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
 
     // Check permissions
     const permissions = await getPermissions({ wsId });
@@ -89,7 +120,7 @@ export async function GET(request: Request, { params }: Params) {
     let count: number | null = null;
 
     if (canViewStockQuantity) {
-      let query = supabase
+      let query = sbAdmin
         .from('workspace_products')
         .select(
           'id, name, manufacturer, description, usage, category_id, created_at, ws_id, product_categories(name), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, warehouse_id, unit_id, created_at, inventory_warehouses!inventory_products_warehouse_id_fkey(id, name), inventory_units!inventory_products_unit_id_fkey(id, name))',
@@ -118,7 +149,7 @@ export async function GET(request: Request, { params }: Params) {
       rawData = data;
       count = fetchedCount;
     } else {
-      let query = supabase
+      let query = sbAdmin
         .from('workspace_products')
         .select(
           'id, name, manufacturer, description, usage, category_id, created_at, ws_id, product_categories(name)',
@@ -188,6 +219,17 @@ export async function GET(request: Request, { params }: Params) {
               unit: inventory.inventory_units?.name,
               warehouse: inventory.inventory_warehouses?.name,
               price: inventory.price,
+            }))
+          : [],
+        inventory: canViewStockQuantity
+          ? (item.inventory_products || []).map((inventory) => ({
+              unit_id: inventory.unit_id,
+              warehouse_id: inventory.warehouse_id,
+              amount: inventory.amount,
+              min_amount: inventory.min_amount ?? 0,
+              price: inventory.price ?? 0,
+              unit_name: inventory.inventory_units?.name ?? null,
+              warehouse_name: inventory.inventory_warehouses?.name ?? null,
             }))
           : [],
         min_amount: canViewStockQuantity

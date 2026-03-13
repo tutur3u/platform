@@ -1,5 +1,8 @@
 import { FileCheck2, Plus } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import { transformInvoiceSearchResults } from '@tuturuuu/utils/finance/transform-invoice-results';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
@@ -112,16 +115,16 @@ export default async function InvoicesPage({
   const workspace = await getWorkspace(id);
   if (!workspace) notFound();
   const wsId = workspace.id;
-  const [initialData, weekStartsOn] = await Promise.all([
-    getInitialData(wsId, resolvedSearchParams),
-    getWeekStartsOn(wsId),
-  ]);
-
   const permissions = await getPermissions({
     wsId,
   });
   if (!permissions) notFound();
   const { containsPermission } = permissions;
+
+  const [initialData, weekStartsOn] = await Promise.all([
+    getInitialData(wsId, resolvedSearchParams),
+    getWeekStartsOn(wsId),
+  ]);
 
   const canExportFinanceData = containsPermission('export_finance_data');
 
@@ -209,7 +212,7 @@ async function getInitialData(
     pageSize?: string;
   }
 ) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
   // Validate and coerce pagination parameters
   const paginationSchema = z.object({
@@ -247,7 +250,7 @@ async function getInitialData(
 
   // If there's a search query, use the RPC function for customer name search
   if (q) {
-    const { data: searchResults, error: rpcError } = await supabase.rpc(
+    const { data: searchResults, error: rpcError } = await sbAdmin.rpc(
       'search_finance_invoices',
       {
         p_ws_id: wsId,
@@ -272,7 +275,7 @@ async function getInitialData(
       return { data: [], count: 0 };
     }
 
-    const { data: fullInvoices } = await supabase
+    const { data: fullInvoices } = await sbAdmin
       .from('finance_invoices')
       .select(
         `*, 
@@ -301,7 +304,7 @@ async function getInitialData(
     data: rawData,
     error,
     count,
-  } = await supabase
+  } = await sbAdmin
     .from('finance_invoices')
     .select(selectQuery, {
       count: 'exact',

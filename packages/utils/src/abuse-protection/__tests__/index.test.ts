@@ -2,10 +2,11 @@
  * Unit tests for OTP Abuse Protection System
  */
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   ABUSE_THRESHOLDS,
   BLOCK_DURATIONS,
+  checkOTPSendLimit,
   extractIPFromHeaders,
   hashEmail,
   MAX_BLOCK_LEVEL,
@@ -14,6 +15,10 @@ import {
 } from '../index';
 
 describe('abuse-protection', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   describe('extractIPFromHeaders', () => {
     it('should extract IP from x-forwarded-for header', () => {
       const headers = new Headers();
@@ -39,18 +44,27 @@ describe('abuse-protection', () => {
       expect(extractIPFromHeaders(headers)).toBe('172.16.0.1');
     });
 
-    it('should prefer x-forwarded-for over other headers', () => {
+    it('should prefer cf-connecting-ip over forwarded proxy headers', () => {
       const headers = new Headers();
       headers.set('x-forwarded-for', '192.168.1.1');
       headers.set('x-real-ip', '192.168.1.2');
       headers.set('cf-connecting-ip', '192.168.1.3');
-      expect(extractIPFromHeaders(headers)).toBe('192.168.1.1');
+      expect(extractIPFromHeaders(headers)).toBe('192.168.1.3');
     });
 
-    it('should fall back to x-real-ip if x-forwarded-for is invalid', () => {
+    it('should prefer true-client-ip when cf-connecting-ip is absent', () => {
       const headers = new Headers();
-      headers.set('x-forwarded-for', 'invalid-ip');
-      headers.set('x-real-ip', '192.168.1.100');
+      headers.set('x-forwarded-for', '192.168.1.1');
+      headers.set('x-real-ip', '192.168.1.2');
+      headers.set('true-client-ip', '192.168.1.4');
+      expect(extractIPFromHeaders(headers)).toBe('192.168.1.4');
+    });
+
+    it('should fall back to x-forwarded-for if explicit client IP headers are invalid', () => {
+      const headers = new Headers();
+      headers.set('cf-connecting-ip', 'invalid-ip');
+      headers.set('true-client-ip', 'also-invalid');
+      headers.set('x-forwarded-for', '192.168.1.100, 10.0.0.1');
       expect(extractIPFromHeaders(headers)).toBe('192.168.1.100');
     });
 
@@ -147,6 +161,12 @@ describe('abuse-protection', () => {
     it('should have valid OTP send limits', () => {
       expect(ABUSE_THRESHOLDS.OTP_SEND_PER_MINUTE).toBe(3);
       expect(ABUSE_THRESHOLDS.OTP_SEND_PER_HOUR).toBe(10);
+      expect(ABUSE_THRESHOLDS.OTP_SEND_PER_DAY).toBe(12);
+      expect(ABUSE_THRESHOLDS.OTP_SEND_EMAIL_COOLDOWN_WINDOW_MS).toBe(
+        15 * 60 * 1000
+      );
+      expect(ABUSE_THRESHOLDS.OTP_SEND_EMAIL_PER_HOUR).toBe(2);
+      expect(ABUSE_THRESHOLDS.OTP_SEND_EMAIL_PER_DAY).toBe(4);
     });
 
     it('should have valid OTP verify limits', () => {
@@ -219,6 +239,18 @@ describe('abuse-protection', () => {
       expect(REDIS_KEYS.OTP_SEND_HOURLY(testIP)).toBe(
         `otp:send:hourly:${testIP}`
       );
+      expect(REDIS_KEYS.OTP_SEND_DAILY(testIP)).toBe(
+        `otp:send:daily:${testIP}`
+      );
+      expect(REDIS_KEYS.OTP_SEND_EMAIL_COOLDOWN(testEmailHash)).toBe(
+        `otp:send:email:cooldown:${testEmailHash}`
+      );
+      expect(REDIS_KEYS.OTP_SEND_EMAIL_HOURLY(testEmailHash)).toBe(
+        `otp:send:email:hourly:${testEmailHash}`
+      );
+      expect(REDIS_KEYS.OTP_SEND_EMAIL_DAILY(testEmailHash)).toBe(
+        `otp:send:email:daily:${testEmailHash}`
+      );
     });
 
     it('should generate correct OTP verify keys', () => {
@@ -261,13 +293,76 @@ describe('abuse-protection', () => {
   describe('WINDOW_MS constants', () => {
     it('should have correct time windows', () => {
       expect(WINDOW_MS.ONE_MINUTE).toBe(60 * 1000);
+      expect(WINDOW_MS.TEN_MINUTES).toBe(10 * 60 * 1000);
       expect(WINDOW_MS.ONE_HOUR).toBe(60 * 60 * 1000);
       expect(WINDOW_MS.TWENTY_FOUR_HOURS).toBe(24 * 60 * 60 * 1000);
     });
 
     it('should have windows in proper order', () => {
       expect(WINDOW_MS.ONE_MINUTE).toBeLessThan(WINDOW_MS.ONE_HOUR);
+      expect(WINDOW_MS.TEN_MINUTES).toBeLessThan(WINDOW_MS.ONE_HOUR);
       expect(WINDOW_MS.ONE_HOUR).toBeLessThan(WINDOW_MS.TWENTY_FOUR_HOURS);
+    });
+  });
+
+  describe('checkOTPSendLimit', () => {
+    it('blocks repeated sends to the same email across different IPs during cooldown', async () => {
+      const email = `cooldown-${Date.now()}@example.com`;
+
+      const firstAttempt = await checkOTPSendLimit('198.51.100.1', email);
+      const secondAttempt = await checkOTPSendLimit('198.51.100.2', email);
+
+      expect(firstAttempt.allowed).toBe(true);
+      expect(secondAttempt.allowed).toBe(false);
+      expect(secondAttempt.retryAfter).toBeGreaterThan(0);
+    });
+
+    it('caps successful sends for the same email across distributed IPs within an hour', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-03-12T00:00:00.000Z'));
+
+      const email = `hourly-${Date.now()}@example.com`;
+
+      const first = await checkOTPSendLimit('203.0.113.1', email);
+      vi.advanceTimersByTime(
+        ABUSE_THRESHOLDS.OTP_SEND_EMAIL_COOLDOWN_WINDOW_MS + 1
+      );
+      const second = await checkOTPSendLimit('203.0.113.2', email);
+      vi.advanceTimersByTime(
+        ABUSE_THRESHOLDS.OTP_SEND_EMAIL_COOLDOWN_WINDOW_MS + 1
+      );
+      const third = await checkOTPSendLimit('203.0.113.3', email);
+
+      expect(first.allowed).toBe(true);
+      expect(second.allowed).toBe(true);
+      expect(third.allowed).toBe(false);
+      expect(third.retryAfter).toBeGreaterThan(0);
+    });
+
+    it('caps slow OTP send abuse from a single IP over a day', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-03-12T00:00:00.000Z'));
+
+      const emailBase = `slow-ip-${Date.now()}`;
+      let lastAttempt = await checkOTPSendLimit(
+        '198.51.100.20',
+        `${emailBase}-0@example.com`
+      );
+
+      for (
+        let attempt = 1;
+        attempt <= ABUSE_THRESHOLDS.OTP_SEND_PER_DAY;
+        attempt++
+      ) {
+        vi.advanceTimersByTime(90 * 60 * 1000);
+        lastAttempt = await checkOTPSendLimit(
+          '198.51.100.20',
+          `${emailBase}-${attempt}@example.com`
+        );
+      }
+
+      expect(lastAttempt.allowed).toBe(false);
+      expect(lastAttempt.retryAfter).toBeGreaterThan(0);
     });
   });
 });

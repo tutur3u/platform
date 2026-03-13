@@ -127,11 +127,9 @@ interface CacheConfig {
   swr?: number;
 }
 
-/** Default rate limits — generous for reads, strict for mutations. */
-const DEFAULT_GET_RATE_LIMIT: RateLimitConfig = {
-  windowMs: 60000,
-  maxRequests: 60,
-};
+type SessionAuthRateLimitKind = 'method' | 'read' | 'mutate';
+
+/** Default rate limits — reads stay open, mutations remain strict. */
 const DEFAULT_MUTATE_RATE_LIMIT: RateLimitConfig = {
   windowMs: 60000,
   maxRequests: 20,
@@ -140,10 +138,16 @@ const DEFAULT_MUTATE_RATE_LIMIT: RateLimitConfig = {
 interface SessionAuthOptions {
   /**
    * IP-based rate limit config. Overrides the method-aware defaults.
-   * Defaults: GET/HEAD → 60 req/min, mutations → 20 req/min.
+   * Defaults: GET/HEAD are not rate-limited, mutations → 20 req/min.
    * Set `false` to disable rate limiting entirely (not recommended).
    */
   rateLimit?: RateLimitConfig | false;
+  /**
+   * Classifies the route for rate limiting.
+   * Defaults to `method`, which maps GET/HEAD → read and everything else → mutate.
+   * Use `read` for read-only POST endpoints that need a request body.
+   */
+  rateLimitKind?: SessionAuthRateLimitKind;
   /**
    * Cache-Control header for successful GET responses.
    * Always uses `private` (browser-only, never CDN-cached) since these are
@@ -188,6 +192,12 @@ export function withSessionAuth<T = unknown>(
   ) => {
     const url = new URL(request.url);
     const endpoint = url.pathname;
+    const isRead =
+      options?.rateLimitKind === 'read'
+        ? true
+        : options?.rateLimitKind === 'mutate'
+          ? false
+          : request.method === 'GET' || request.method === 'HEAD';
 
     // 0. Check payload size
     const contentLength = request.headers.get('content-length');
@@ -225,16 +235,17 @@ export function withSessionAuth<T = unknown>(
 
       // 3. IP rate limit BEFORE auth — method-aware defaults + separate keys
       if (options?.rateLimit !== false) {
-        const isRead = request.method === 'GET' || request.method === 'HEAD';
         const config =
-          options?.rateLimit ??
-          (isRead ? DEFAULT_GET_RATE_LIMIT : DEFAULT_MUTATE_RATE_LIMIT);
-        const rateLimitResult = await checkRateLimit(
-          `session:ip:${isRead ? 'read' : 'mutate'}:${ipAddress}`,
-          config
-        );
-        if (!('allowed' in rateLimitResult)) {
-          return rateLimitResult;
+          options?.rateLimit ?? (isRead ? false : DEFAULT_MUTATE_RATE_LIMIT);
+
+        if (config !== false) {
+          const rateLimitResult = await checkRateLimit(
+            `session:ip:${isRead ? 'read' : 'mutate'}:${ipAddress}`,
+            config
+          );
+          if (!('allowed' in rateLimitResult)) {
+            return rateLimitResult;
+          }
         }
       }
     }

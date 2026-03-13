@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -41,7 +44,9 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  const { data, error } = await supabase
+  const sbAdmin = await createAdminClient();
+
+  const { data, error } = await sbAdmin
     .from('workspace_wallets')
     .select('*, credit_wallets(limit, statement_date, payment_date)')
     .eq('id', id)
@@ -77,6 +82,7 @@ export async function GET(req: Request, { params }: Params) {
 
 export async function PUT(req: Request, { params }: Params) {
   const supabase = await createClient(req);
+  const sbAdmin = await createAdminClient();
   const data = await req.json();
   const { walletId: id, wsId } = await params;
   let normalizedWsId: string;
@@ -108,7 +114,7 @@ export async function PUT(req: Request, { params }: Params) {
   // Extract credit-specific fields before updating the wallet
   const { limit, statement_date, payment_date, ...walletData } = data;
 
-  const { data: updatedWallet, error } = await supabase
+  const { data: updatedWallet, error } = await sbAdmin
     .from('workspace_wallets')
     .update(walletData)
     .select('id')
@@ -130,14 +136,12 @@ export async function PUT(req: Request, { params }: Params) {
 
   // Handle credit wallet data based on type
   if (data.type === 'CREDIT') {
-    const { error: creditError } = await supabase
-      .from('credit_wallets')
-      .upsert({
-        wallet_id: id,
-        statement_date: statement_date ?? 1,
-        payment_date: payment_date ?? 1,
-        limit: limit ?? 0,
-      });
+    const { error: creditError } = await sbAdmin.from('credit_wallets').upsert({
+      wallet_id: id,
+      statement_date: statement_date ?? 1,
+      payment_date: payment_date ?? 1,
+      limit: limit ?? 0,
+    });
 
     if (creditError) {
       console.log(creditError);
@@ -148,7 +152,7 @@ export async function PUT(req: Request, { params }: Params) {
     }
   } else if (data.type === 'STANDARD') {
     // Remove credit data if switching from CREDIT to STANDARD
-    const deleteResult = await supabase
+    const deleteResult = await sbAdmin
       .from('credit_wallets')
       .delete()
       .eq('wallet_id', id);
@@ -171,6 +175,7 @@ export async function PUT(req: Request, { params }: Params) {
 
 export async function DELETE(req: Request, { params }: Params) {
   const supabase = await createClient(req);
+  const sbAdmin = await createAdminClient();
   const { walletId: id, wsId } = await params;
   let normalizedWsId: string;
 
@@ -198,7 +203,7 @@ export async function DELETE(req: Request, { params }: Params) {
     );
   }
 
-  const { error } = await supabase
+  const { error } = await sbAdmin
     .from('workspace_wallets')
     .delete()
     .eq('id', id)

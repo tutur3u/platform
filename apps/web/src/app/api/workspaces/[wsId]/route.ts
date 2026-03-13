@@ -33,7 +33,7 @@ export async function GET(_: Request, { params }: Params) {
 
   const { data, error } = await supabase
     .from('workspaces')
-    .select('id, name, created_at, workspace_members!inner(user_id)')
+    .select('*, workspace_members!inner(user_id)')
     .eq('id', wsId)
     .eq('workspace_members.user_id', user.id)
     .single();
@@ -44,7 +44,11 @@ export async function GET(_: Request, { params }: Params) {
       { status: 500 }
     );
 
-  return NextResponse.json(data);
+  const { workspace_members: workspaceMembers, ...workspaceData } = data;
+
+  void workspaceMembers;
+
+  return NextResponse.json(workspaceData);
 }
 
 export async function PUT(req: Request, { params }: Params) {

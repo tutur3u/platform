@@ -8,13 +8,13 @@ export const TEST_USER = {
 export const DEFAULT_LOCALE = 'en';
 
 /**
- * The "personal" workspace slug. The app resolves this to the user's
- * personal workspace UUID server-side.
+ * Stable authenticated workspace route covered by the seeded e2e account.
+ * The broader e2e suite already exercises this route successfully.
  */
-export const PERSONAL_WORKSPACE_SLUG = 'personal';
+export const TEST_WORKSPACE_ROUTE = 'personal/tasks';
 
 /** Dashboard URL for the authenticated test user */
-export const DASHBOARD_URL = `/${DEFAULT_LOCALE}/${PERSONAL_WORKSPACE_SLUG}`;
+export const DASHBOARD_URL = `/${DEFAULT_LOCALE}/${TEST_WORKSPACE_ROUTE}`;
 
 /** Path to persisted auth state (cookies + localStorage) */
 export const AUTH_STATE_PATH = 'e2e/.auth/user.json';

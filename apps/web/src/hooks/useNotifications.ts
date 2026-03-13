@@ -1,4 +1,5 @@
 export {
+  dedupeNotifications,
   type Notification,
   type NotificationActor,
   type NotificationType,

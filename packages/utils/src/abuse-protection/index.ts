@@ -86,7 +86,19 @@ export function extractIPFromHeaders(
     return headers[name] || null;
   };
 
-  // Check x-forwarded-for first (most common with proxies/load balancers)
+  // Check cf-connecting-ip (Cloudflare)
+  const cfIP = getHeader('cf-connecting-ip');
+  if (cfIP && isValidIP(cfIP)) {
+    return cfIP;
+  }
+
+  // Check true-client-ip (some Cloudflare/enterprise proxy setups)
+  const trueClientIP = getHeader('true-client-ip');
+  if (trueClientIP && isValidIP(trueClientIP)) {
+    return trueClientIP;
+  }
+
+  // Check x-forwarded-for after explicit client IP headers
   const forwardedFor = getHeader('x-forwarded-for');
   if (forwardedFor) {
     const firstIP = forwardedFor.split(',')[0]?.trim();
@@ -101,12 +113,6 @@ export function extractIPFromHeaders(
     return realIP;
   }
 
-  // Check cf-connecting-ip (Cloudflare)
-  const cfIP = getHeader('cf-connecting-ip');
-  if (cfIP && isValidIP(cfIP)) {
-    return cfIP;
-  }
-
   return 'unknown';
 }
 
@@ -115,9 +121,14 @@ export function extractIPFromHeaders(
  */
 export function hashEmail(email: string): string {
   return createHash('sha256')
-    .update(email.toLowerCase())
+    .update(email.trim().toLowerCase())
     .digest('hex')
     .substring(0, 16);
+}
+
+function normalizeAbuseEventEmail(email?: string): string | null {
+  const normalized = email?.trim().toLowerCase();
+  return normalized ? normalized : null;
 }
 
 /**
@@ -452,12 +463,14 @@ export async function logAbuseEvent(
   try {
     const sbAdmin = await getSupabaseAdmin();
     if (!sbAdmin) return;
+    const normalizedEmail = normalizeAbuseEventEmail(options?.email);
 
     await sbAdmin.from('abuse_events').insert([
       {
         ip_address: ipAddress,
         event_type: eventType,
-        email_hash: options?.email ? hashEmail(options.email) : null,
+        email: normalizedEmail,
+        email_hash: normalizedEmail ? hashEmail(normalizedEmail) : null,
         user_agent: options?.userAgent?.substring(0, 500),
         endpoint: options?.endpoint,
         success: options?.success ?? false,
@@ -524,12 +537,99 @@ export async function checkOTPSendLimit(
   if (hourlyCount > ABUSE_THRESHOLDS.OTP_SEND_PER_HOUR) {
     void logAbuseEvent(ipAddress, 'otp_send', { email, success: false });
 
+    void blockIP(ipAddress, 'otp_send', { trigger: 'hourly_rate_limit' });
+
     return {
       allowed: false,
       reason: 'Hourly OTP limit reached. Please try again later.',
       retryAfter: hourlyTTL,
       remainingAttempts: 0,
     };
+  }
+
+  const dailyKey = REDIS_KEYS.OTP_SEND_DAILY(ipAddress);
+  const { count: dailyCount, ttl: dailyTTL } = await incrementCounter(
+    dailyKey,
+    WINDOW_MS.TWENTY_FOUR_HOURS
+  );
+
+  if (dailyCount > ABUSE_THRESHOLDS.OTP_SEND_PER_DAY) {
+    void logAbuseEvent(ipAddress, 'otp_send', {
+      email,
+      success: false,
+      metadata: { trigger: 'ip_daily_limit' },
+    });
+    void blockIP(ipAddress, 'otp_send', { trigger: 'ip_daily_limit' });
+
+    return {
+      allowed: false,
+      reason: 'OTP limit reached. Please try again later.',
+      retryAfter: dailyTTL,
+      remainingAttempts: 0,
+    };
+  }
+
+  if (email) {
+    const emailHash = hashEmail(email);
+
+    const cooldownKey = REDIS_KEYS.OTP_SEND_EMAIL_COOLDOWN(emailHash);
+    const { count: cooldownCount, ttl: cooldownTTL } = await incrementCounter(
+      cooldownKey,
+      ABUSE_THRESHOLDS.OTP_SEND_EMAIL_COOLDOWN_WINDOW_MS
+    );
+
+    if (cooldownCount > 1) {
+      void logAbuseEvent(ipAddress, 'otp_send', {
+        email,
+        success: false,
+        metadata: { trigger: 'email_cooldown' },
+      });
+
+      return {
+        allowed: false,
+        reason: 'Too many OTP requests. Please try again later.',
+        retryAfter: cooldownTTL,
+        remainingAttempts: 0,
+      };
+    }
+
+    const hourlyEmailKey = REDIS_KEYS.OTP_SEND_EMAIL_HOURLY(emailHash);
+    const { count: hourlyEmailCount, ttl: hourlyEmailTTL } =
+      await incrementCounter(hourlyEmailKey, WINDOW_MS.ONE_HOUR);
+
+    if (hourlyEmailCount > ABUSE_THRESHOLDS.OTP_SEND_EMAIL_PER_HOUR) {
+      void logAbuseEvent(ipAddress, 'otp_send', {
+        email,
+        success: false,
+        metadata: { trigger: 'email_hourly_limit' },
+      });
+
+      return {
+        allowed: false,
+        reason: 'Hourly OTP limit reached. Please try again later.',
+        retryAfter: hourlyEmailTTL,
+        remainingAttempts: 0,
+      };
+    }
+
+    const dailyEmailKey = REDIS_KEYS.OTP_SEND_EMAIL_DAILY(emailHash);
+    const { count: dailyEmailCount, ttl: dailyEmailTTL } =
+      await incrementCounter(dailyEmailKey, WINDOW_MS.TWENTY_FOUR_HOURS);
+
+    if (dailyEmailCount > ABUSE_THRESHOLDS.OTP_SEND_EMAIL_PER_DAY) {
+      void logAbuseEvent(ipAddress, 'otp_send', {
+        email,
+        success: false,
+        metadata: { trigger: 'email_daily_limit' },
+      });
+
+      return {
+        allowed: false,
+        reason: 'OTP limit reached. Please try again later.',
+        retryAfter: dailyEmailTTL,
+        remainingAttempts: 0,
+      };
+    }
   }
 
   // Log successful attempt

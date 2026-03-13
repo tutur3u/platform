@@ -7,10 +7,7 @@ import {
 } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Database } from '@tuturuuu/types';
-import type {
-  Invoice,
-  RawInvoiceRow,
-} from '@tuturuuu/types/primitives/Invoice';
+import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import type { PendingInvoice } from '@tuturuuu/types/primitives/PendingInvoice';
 import { parseMonthsOwed } from '@tuturuuu/types/primitives/PendingInvoice';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
@@ -19,6 +16,7 @@ import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { z } from 'zod';
 import type { Product, Promotion, UserGroupProducts } from './types';
+import type { UserGroup } from './utils';
 
 // ==================== ZOD SCHEMAS ====================
 
@@ -254,39 +252,195 @@ export const useUsers = (wsId: string) => {
   return useQuery({
     queryKey: ['users', wsId],
     queryFn: async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('workspace_users')
-        .select('*')
-        .eq('ws_id', wsId)
-        .order('full_name', { ascending: true });
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users?limit=500`,
+        { cache: 'no-store' }
+      );
 
-      if (error) throw error;
-      return data as WorkspaceUser[];
+      if (!response.ok) {
+        throw new Error('Failed to fetch workspace users');
+      }
+
+      const payload = (await response.json()) as
+        | WorkspaceUser[]
+        | { data?: WorkspaceUser[] };
+
+      return (Array.isArray(payload) ? payload : payload.data || []) as
+        | WorkspaceUser[]
+        | [];
     },
   });
 };
+
+const INVOICE_CUSTOMER_PAGE_SIZE = 25;
+
+type WorkspaceUsersPage = {
+  data: WorkspaceUser[];
+  count: number;
+  offset: number;
+};
+
+function parseWorkspaceUsersPayload(
+  payload: WorkspaceUser[] | { data?: WorkspaceUser[]; count?: number }
+) {
+  if (Array.isArray(payload)) {
+    return {
+      data: payload,
+      count: payload.length,
+    };
+  }
+
+  return {
+    data: payload.data ?? [],
+    count: payload.count ?? payload.data?.length ?? 0,
+  };
+}
+
+async function fetchInvoiceCustomerPage(
+  wsId: string,
+  searchQuery: string,
+  offset: number
+): Promise<WorkspaceUsersPage> {
+  const searchParams = new URLSearchParams({
+    from: String(offset),
+    to: String(offset + INVOICE_CUSTOMER_PAGE_SIZE - 1),
+    limit: String(INVOICE_CUSTOMER_PAGE_SIZE),
+  });
+
+  if (searchQuery.trim()) {
+    searchParams.set('q', searchQuery.trim());
+  }
+
+  const response = await fetch(
+    `/api/v1/workspaces/${wsId}/users?${searchParams.toString()}`,
+    {
+      cache: 'no-store',
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch workspace users');
+  }
+
+  const payload = parseWorkspaceUsersPayload(
+    (await response.json()) as
+      | WorkspaceUser[]
+      | { data?: WorkspaceUser[]; count?: number }
+  );
+
+  return {
+    data: payload.data,
+    count: payload.count,
+    offset,
+  };
+}
+
+async function fetchWorkspaceUserById(
+  wsId: string,
+  userId: string
+): Promise<WorkspaceUser | null> {
+  const response = await fetch(`/api/v1/workspaces/${wsId}/users/${userId}`, {
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch workspace user');
+  }
+
+  const payload = (await response.json()) as WorkspaceUser[] | WorkspaceUser;
+  if (Array.isArray(payload)) {
+    return payload[0] ?? null;
+  }
+  return payload ?? null;
+}
+
+export function useInvoiceCustomerSearch(
+  wsId: string,
+  searchQuery: string,
+  selectedUserId: string
+) {
+  const normalizedSearchQuery = searchQuery.trim();
+
+  const usersQuery = useInfiniteQuery({
+    queryKey: ['invoice-customer-search', wsId, normalizedSearchQuery],
+    queryFn: async ({ pageParam = 0 }) =>
+      fetchInvoiceCustomerPage(wsId, normalizedSearchQuery, pageParam),
+    initialPageParam: 0,
+    placeholderData: (previousData) => previousData,
+    getNextPageParam: (lastPage, allPages) => {
+      const loadedCount = allPages.reduce(
+        (total, page) => total + page.data.length,
+        0
+      );
+      return loadedCount < lastPage.count ? loadedCount : undefined;
+    },
+    enabled: !!wsId,
+    staleTime: 30 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  const loadedCustomers =
+    usersQuery.data?.pages.flatMap((page) => page.data) ?? [];
+  const selectedUserQuery = useQuery({
+    queryKey: ['invoice-customer', wsId, selectedUserId],
+    queryFn: async () => fetchWorkspaceUserById(wsId, selectedUserId),
+    enabled:
+      !!wsId &&
+      !!selectedUserId &&
+      !loadedCustomers.some((user) => user.id === selectedUserId),
+    staleTime: 30 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  const customersById = new Map<string, WorkspaceUser>();
+
+  if (selectedUserQuery.data) {
+    customersById.set(selectedUserQuery.data.id, selectedUserQuery.data);
+  }
+
+  for (const customer of loadedCustomers) {
+    customersById.set(customer.id, customer);
+  }
+
+  const customers = Array.from(customersById.values());
+  const selectedUser =
+    (selectedUserId
+      ? customers.find((user) => user.id === selectedUserId)
+      : undefined) ?? undefined;
+
+  return {
+    ...usersQuery,
+    customers,
+    selectedUser,
+    error: usersQuery.error ?? selectedUserQuery.error,
+    isLoading: usersQuery.isLoading || selectedUserQuery.isLoading,
+    isFetchingSelectedUser: selectedUserQuery.isFetching,
+  };
+}
 
 // Users with selectable groups (groups where they have STUDENT role)
 export const useUsersWithSelectableGroups = (wsId: string) => {
   return useQuery({
     queryKey: ['users-with-selectable-groups', wsId],
     queryFn: async () => {
-      const supabase = createClient();
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users?limit=500`,
+        { cache: 'no-store' }
+      );
 
-      // Single query using join to get users with STUDENT role groups
-      const { data, error } = await supabase
-        .from('workspace_users')
-        .select(`
-          *,
-          workspace_user_groups_users!inner(role)
-        `)
-        .eq('ws_id', wsId)
-        .eq('workspace_user_groups_users.role', 'STUDENT')
-        .order('full_name', { ascending: true });
+      if (!response.ok) {
+        throw new Error('Failed to fetch workspace users');
+      }
 
-      if (error) throw error;
-      return data as WorkspaceUser[];
+      const payload = (await response.json()) as
+        | WorkspaceUser[]
+        | { data?: WorkspaceUser[] };
+
+      return (Array.isArray(payload) ? payload : payload.data || []) as
+        | WorkspaceUser[]
+        | [];
     },
   });
 };
@@ -295,39 +449,32 @@ export const useProducts = (wsId: string) => {
   return useQuery({
     queryKey: ['products', wsId],
     queryFn: async () => {
-      const supabase = createClient();
-      const { data: rawData, error } = await supabase
-        .from('workspace_products')
-        .select(
-          '*, product_categories(name), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, unit_id, warehouse_id, inventory_warehouses!inventory_products_warehouse_id_fkey(name), inventory_units!inventory_products_unit_id_fkey(name))'
-        )
-        .eq('ws_id', wsId)
-        .order('created_at', { ascending: false });
+      const pageSize = 500;
+      let page = 1;
+      let count = 0;
+      const products: Product[] = [];
 
-      if (error) throw error;
+      do {
+        const response = await fetch(
+          `/api/v1/workspaces/${wsId}/inventory/products?page=${page}&pageSize=${pageSize}`,
+          { cache: 'no-store' }
+        );
 
-      const data = rawData.map((item) => ({
-        id: item.id,
-        name: item.name,
-        manufacturer: item.manufacturer,
-        description: item.description,
-        usage: item.usage,
-        category: item.product_categories?.name,
-        category_id: item.category_id,
-        ws_id: item.ws_id,
-        created_at: item.created_at,
-        inventory: (item.inventory_products || []).map((inventory) => ({
-          unit_id: inventory.unit_id,
-          warehouse_id: inventory.warehouse_id,
-          amount: inventory.amount,
-          min_amount: inventory.min_amount || 0,
-          price: inventory.price || 0,
-          unit_name: inventory.inventory_units?.name || null,
-          warehouse_name: inventory.inventory_warehouses?.name || null,
-        })),
-      }));
+        if (!response.ok) {
+          throw new Error('Failed to fetch products');
+        }
 
-      return data as Product[];
+        const payload = (await response.json()) as {
+          data?: Product[];
+          count?: number;
+        };
+
+        products.push(...(payload.data ?? []));
+        count = payload.count ?? products.length;
+        page += 1;
+      } while (products.length < count);
+
+      return products;
     },
   });
 };
@@ -336,16 +483,18 @@ export const usePromotions = (wsId: string) => {
   return useQuery({
     queryKey: ['promotions', wsId],
     queryFn: async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('workspace_promotions')
-        .select('*')
-        .eq('ws_id', wsId)
-        .neq('promo_type', 'REFERRAL')
-        .order('code', { ascending: true });
+      const response = await fetch(`/api/v1/workspaces/${wsId}/promotions`, {
+        cache: 'no-store',
+      });
 
-      if (error) throw error;
-      return data as Promotion[];
+      if (!response.ok) {
+        throw new Error('Failed to fetch promotions');
+      }
+
+      const data = (await response.json()) as Array<
+        Promotion & { promo_type?: string | null }
+      >;
+      return data.filter((promotion) => promotion.promo_type !== 'REFERRAL');
     },
   });
 };
@@ -354,15 +503,15 @@ export const useWallets = (wsId: string) => {
   return useQuery({
     queryKey: ['wallets', wsId],
     queryFn: async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('workspace_wallets')
-        .select('*')
-        .eq('ws_id', wsId)
-        .order('name', { ascending: true });
+      const response = await fetch(`/api/v1/workspaces/${wsId}/wallets`, {
+        cache: 'no-store',
+      });
 
-      if (error) throw error;
-      return data as Wallet[];
+      if (!response.ok) {
+        throw new Error('Failed to fetch wallets');
+      }
+
+      return ((await response.json()) as Wallet[]) || [];
     },
   });
 };
@@ -371,15 +520,16 @@ export const useCategories = (wsId: string) => {
   return useQuery({
     queryKey: ['categories', wsId],
     queryFn: async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('transaction_categories')
-        .select('*')
-        .eq('ws_id', wsId)
-        .order('name', { ascending: true });
+      const response = await fetch(
+        `/api/workspaces/${wsId}/transactions/categories`,
+        { cache: 'no-store' }
+      );
 
-      if (error) throw error;
-      return data as TransactionCategory[];
+      if (!response.ok) {
+        throw new Error('Failed to fetch categories');
+      }
+
+      return ((await response.json()) as TransactionCategory[]) || [];
     },
   });
 };
@@ -420,16 +570,17 @@ export const useUserInvoices = (wsId: string, userId: string) => {
   return useQuery({
     queryKey: ['user-invoices', wsId, userId],
     queryFn: async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('finance_invoices')
-        .select('*')
-        .eq('ws_id', wsId)
-        .eq('customer_id', userId)
-        .order('created_at', { ascending: false });
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/finance/invoices?page=1&pageSize=100&customerIds=${userId}`,
+        { cache: 'no-store' }
+      );
 
-      if (error) throw error;
-      return data as Invoice[];
+      if (!response.ok) {
+        throw new Error('Failed to fetch user invoices');
+      }
+
+      const payload = (await response.json()) as InvoicesResponse;
+      return payload.data || [];
     },
     enabled: !!userId,
   });
@@ -442,122 +593,61 @@ export const useInfiniteUserInvoices = (
 ) => {
   return useInfiniteQuery({
     queryKey: ['infinite-user-invoices', wsId, userId],
-    queryFn: async ({ pageParam = null }: { pageParam: string | null }) => {
-      const supabase = createClient();
+    queryFn: async ({ pageParam = 1 }: { pageParam: number }) => {
+      const searchParams = new URLSearchParams({
+        page: String(pageParam),
+        pageSize: String(pageSize),
+      });
+      searchParams.append('customerIds', userId);
 
-      // Fetch count only on initial load (when no cursor)
-      let count: number | null = null;
-      if (!pageParam) {
-        const { count: totalCount, error: countError } = await supabase
-          .from('finance_invoices')
-          .select('*', { count: 'exact', head: true })
-          .eq('ws_id', wsId)
-          .eq('customer_id', userId);
-        if (countError) throw countError;
-        count = totalCount;
-      }
-
-      let query = supabase
-        .from('finance_invoices')
-        .select(
-          '*, legacy_creator:workspace_users!creator_id(id, full_name, display_name, email, avatar_url), platform_creator:users!platform_creator_id(id, display_name, avatar_url, user_private_details(full_name, email)), wallet_transactions!finance_invoices_transaction_id_fkey(wallet:workspace_wallets(name))'
-        )
-        .eq('ws_id', wsId)
-        .eq('customer_id', userId)
-        .order('created_at', { ascending: false });
-
-      // Cursor-based pagination: for subsequent loads, filter by created_at cursor
-      if (pageParam) {
-        query = query.lt('created_at', pageParam);
-      }
-
-      const { data: rawData, error } = await query.limit(pageSize + 1);
-
-      if (error) throw error;
-
-      const data = rawData.map(
-        ({
-          legacy_creator,
-          platform_creator,
-          wallet_transactions,
-          ...rest
-        }: RawInvoiceRow) => {
-          const creator = {
-            id: platform_creator?.id ?? legacy_creator?.id ?? '',
-            display_name:
-              platform_creator?.display_name ??
-              legacy_creator?.display_name ??
-              platform_creator?.user_private_details?.email ??
-              null,
-            full_name:
-              platform_creator?.user_private_details?.full_name ??
-              legacy_creator?.full_name ??
-              null,
-            email:
-              platform_creator?.user_private_details?.email ??
-              legacy_creator?.email ??
-              null,
-            avatar_url:
-              platform_creator?.avatar_url ??
-              legacy_creator?.avatar_url ??
-              null,
-          };
-
-          const wallet = wallet_transactions?.wallet
-            ? { name: wallet_transactions.wallet.name }
-            : null;
-
-          return {
-            ...rest,
-            creator,
-            wallet,
-          };
-        }
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/finance/invoices?${searchParams.toString()}`,
+        { cache: 'no-store' }
       );
 
-      // Check if there are more items (we fetched pageSize + 1)
-      const hasMore = data && data.length > pageSize;
-      const items = hasMore ? data.slice(0, pageSize) : data;
+      if (!response.ok) {
+        throw new Error('Failed to fetch user invoices');
+      }
 
-      // Get the cursor from the last item for the next page
-      const lastItem = items[items.length - 1];
-      const nextCursor = hasMore && lastItem ? lastItem.created_at : null;
+      const payload = (await response.json()) as InvoicesResponse;
+      const data = payload.data || [];
+      const count = payload.count ?? 0;
+      const fetchedCount = pageParam * pageSize;
 
       return {
-        data: (items as Invoice[]) || [],
+        data,
         count,
-        nextCursor,
-        hasMore,
+        nextPage: fetchedCount < count ? pageParam + 1 : null,
+        hasMore: fetchedCount < count,
       };
     },
-    initialPageParam: null as string | null,
-    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => lastPage.nextPage,
     enabled: !!userId,
   });
 };
 
 // Subscription-specific hooks
-export const useUserGroups = (userId: string) => {
+export const useUserGroups = (wsId: string, userId: string) => {
   return useQuery({
-    queryKey: ['user-groups', userId],
-    queryFn: async () => {
+    queryKey: ['user-groups', wsId, userId],
+    queryFn: async (): Promise<UserGroup[]> => {
       if (!userId) return [];
 
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('workspace_user_groups_users')
-        .select('workspace_user_groups(*)')
-        .eq('role', 'STUDENT')
-        .eq('user_id', userId);
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users/${userId}/user-groups`,
+        { cache: 'no-store' }
+      );
 
-      if (error) {
-        console.error('❌ User groups fetch error:', error);
-        throw error;
+      if (!response.ok) {
+        throw new Error('Failed to fetch user groups');
       }
 
-      return data || [];
+      return (((await response.json()) as UserGroup[]) || []).map((group) => ({
+        workspace_user_groups: group.workspace_user_groups ?? null,
+      }));
     },
-    enabled: !!userId,
+    enabled: !!wsId && !!userId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false,
@@ -641,6 +731,68 @@ export const useMultiGroupUserAttendance = (
     enabled: groupIds.length > 0 && !!userId && !!month,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+    retry: 3,
+  });
+};
+
+export const useSubscriptionInvoiceContext = (
+  wsId: string,
+  userId: string,
+  groupIds: string[],
+  month: string
+) => {
+  return useQuery({
+    queryKey: ['subscription-invoice-context', wsId, userId, groupIds, month],
+    queryFn: async () => {
+      if (!wsId || !userId || groupIds.length === 0 || !month) {
+        return {
+          attendance: [] as Array<{
+            status: string;
+            date: string;
+            group_id?: string;
+          }>,
+          latestInvoices: [] as Array<{
+            group_id?: string;
+            valid_until?: string | null;
+            created_at?: string | null;
+          }>,
+        };
+      }
+
+      const searchParams = new URLSearchParams({
+        userId,
+        month,
+      });
+      groupIds.forEach((groupId) => {
+        searchParams.append('groupIds', groupId);
+      });
+
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/finance/invoices/subscription/context?${searchParams.toString()}`,
+        { cache: 'no-store' }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch subscription invoice context');
+      }
+
+      return (await response.json()) as {
+        attendance: Array<{
+          status: string;
+          date: string;
+          group_id?: string;
+        }>;
+        latestInvoices: Array<{
+          group_id?: string;
+          valid_until?: string | null;
+          created_at?: string | null;
+        }>;
+      };
+    },
+    enabled: !!wsId && !!userId && groupIds.length > 0 && !!month,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
     retry: 3,
   });
@@ -770,26 +922,47 @@ export const useInvoiceBlockedGroups = (wsId: string) => {
 };
 
 // Get User's Group Products with improved caching
-export const useUserGroupProducts = (groupId: string) => {
+export const useUserGroupProducts = (wsId: string, groupId: string) => {
   return useQuery({
-    queryKey: ['user-group-products', groupId],
+    queryKey: ['user-group-products', wsId, groupId],
     queryFn: async () => {
-      const supabase = createClient();
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/linked-products`,
+        { cache: 'no-store' }
+      );
 
-      const { data, error } = await supabase
-        .from('user_group_linked_products')
-        .select(
-          'workspace_products(id, name, product_categories(name)), inventory_units(name, id), warehouse_id'
-        )
-        .eq('group_id', groupId);
-
-      if (error) {
-        console.error('❌ Group products fetch error:', error);
-        throw error;
+      if (!response.ok) {
+        throw new Error('Failed to fetch linked products');
       }
-      return data as UserGroupProducts[];
+
+      const payload = (await response.json()) as {
+        items?: Array<{
+          id: string;
+          name: string | null;
+          description?: string | null;
+          warehouse_id: string | null;
+          unit_id: string | null;
+        }>;
+      };
+
+      return (payload.items ?? []).map((item) => ({
+        workspace_products: {
+          id: item.id,
+          name: item.name,
+          product_categories: {
+            name: null,
+          },
+        },
+        inventory_units: item.unit_id
+          ? {
+              id: item.unit_id,
+              name: null,
+            }
+          : null,
+        warehouse_id: item.warehouse_id,
+      })) as UserGroupProducts[];
     },
-    enabled: !!groupId,
+    enabled: !!wsId && !!groupId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false,
@@ -798,28 +971,33 @@ export const useUserGroupProducts = (groupId: string) => {
 };
 
 // Get multiple groups' linked products combined (for multi-group selection)
-export const useMultiGroupProducts = (groupIds: string[]) => {
+export const useMultiGroupProducts = (wsId: string, groupIds: string[]) => {
   return useQuery({
-    queryKey: ['multi-group-products', groupIds],
+    queryKey: ['multi-group-products', wsId, groupIds],
     queryFn: async () => {
       if (groupIds.length === 0) return [];
 
-      const supabase = createClient();
+      const searchParams = new URLSearchParams();
+      groupIds.forEach((groupId) => {
+        searchParams.append('groupIds', groupId);
+      });
 
-      const { data, error } = await supabase
-        .from('user_group_linked_products')
-        .select(
-          'group_id, workspace_user_groups(name), workspace_products(id, name, product_categories(name)), inventory_units(name, id), warehouse_id'
-        )
-        .in('group_id', groupIds);
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/linked-products?${searchParams.toString()}`,
+        { cache: 'no-store' }
+      );
 
-      if (error) {
-        console.error('❌ Multi-group products fetch error:', error);
-        throw error;
+      if (!response.ok) {
+        throw new Error('Failed to fetch linked products');
       }
-      return (data || []) as (UserGroupProducts & { group_id?: string })[];
+
+      const payload = (await response.json()) as {
+        items?: Array<UserGroupProducts & { group_id?: string }>;
+      };
+
+      return payload.items ?? [];
     },
-    enabled: groupIds.length > 0,
+    enabled: !!wsId && groupIds.length > 0,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false,
@@ -965,24 +1143,36 @@ export const useMultiGroupLatestSubscriptionInvoice = (
 };
 
 // Get User's Linked Promotion
-export const useUserLinkedPromotions = (userId: string) => {
+export const useUserLinkedPromotions = (wsId: string, userId: string) => {
   return useQuery({
-    queryKey: ['user-linked-promotions', userId],
+    queryKey: ['user-linked-promotions', wsId, userId],
     queryFn: async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('user_linked_promotions')
-        .select('promo_id, workspace_promotions(name, code, value, use_ratio)')
-        .eq('user_id', userId);
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users/${userId}/linked-promotions`,
+        { cache: 'no-store' }
+      );
 
-      if (error) {
-        console.error('❌ User linked promotions fetch error:', error);
-        throw error;
+      if (!response.ok) {
+        throw new Error('Failed to fetch linked promotions');
       }
 
-      return data || [];
+      return (
+        ((await response.json()) as Array<{
+          promo_id: string | null;
+          workspace_promotions?: {
+            id?: string | null;
+            name?: string | null;
+            code?: string | null;
+            value?: number | null;
+            use_ratio?: boolean | null;
+            promo_type?: string | null;
+            max_uses?: number | null;
+            current_uses?: number | null;
+          } | null;
+        }>) || []
+      );
     },
-    enabled: !!userId,
+    enabled: !!wsId && !!userId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false,
@@ -995,17 +1185,19 @@ export const useUserReferralDiscounts = (wsId: string, userId: string) => {
   return useQuery({
     queryKey: ['user-referral-discounts', wsId, userId],
     queryFn: async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('v_user_referral_discounts')
-        .select('promo_id, calculated_discount_value')
-        .eq('ws_id', wsId)
-        .eq('user_id', userId);
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users/${userId}/referral-discounts`,
+        { cache: 'no-store' }
+      );
 
-      if (error) {
-        console.error('❌ User referral discounts fetch error:', error);
-        throw error;
+      if (!response.ok) {
+        throw new Error('Failed to fetch referral discounts');
       }
+
+      const data = (await response.json()) as Array<{
+        promo_id: string | null;
+        calculated_discount_value: number | null;
+      }>;
 
       return (
         (data || []).map((row) => ({
@@ -1040,29 +1232,58 @@ export const useAvailablePromotions = (wsId: string, userId: string) => {
   return useQuery({
     queryKey: ['available-promotions', wsId, userId],
     queryFn: async () => {
-      const supabase = createClient();
+      const [regularResponse, linkedResponse] = await Promise.all([
+        fetch(`/api/v1/workspaces/${wsId}/promotions`, {
+          cache: 'no-store',
+        }),
+        userId
+          ? fetch(
+              `/api/v1/workspaces/${wsId}/users/${userId}/linked-promotions`,
+              { cache: 'no-store' }
+            )
+          : Promise.resolve(null),
+      ]);
 
-      // Regular (non-referral) promotions
-      const { data: regular, error: regularErr } = await supabase
-        .from('workspace_promotions')
-        .select('id, name, code, value, use_ratio, max_uses, current_uses')
-        .eq('ws_id', wsId)
-        .neq('promo_type', 'REFERRAL')
-        .order('code', { ascending: true });
-      if (regularErr) throw regularErr;
+      if (!regularResponse.ok) {
+        throw new Error('Failed to fetch promotions');
+      }
 
-      // User-linked promotions (could include referral)
-      const { data: linked, error: linkedErr } = await supabase
-        .from('user_linked_promotions')
-        .select(
-          'promo_id, workspace_promotions(id, name, code, value, use_ratio, promo_type, max_uses, current_uses)'
-        )
-        .eq('user_id', userId);
-      if (linkedErr) throw linkedErr;
+      if (linkedResponse && !linkedResponse.ok) {
+        throw new Error('Failed to fetch linked promotions');
+      }
+
+      const regular = (await regularResponse.json()) as Array<{
+        id: string;
+        name: string | null;
+        code: string | null;
+        value: number | null;
+        use_ratio: boolean | null;
+        promo_type?: string | null;
+        max_uses?: number | null;
+        current_uses?: number | null;
+      }>;
+      const linked = linkedResponse
+        ? ((await linkedResponse.json()) as Array<{
+            promo_id: string | null;
+            workspace_promotions?: {
+              id?: string | null;
+              name?: string | null;
+              code?: string | null;
+              value?: number | null;
+              use_ratio?: boolean | null;
+              promo_type?: string | null;
+              max_uses?: number | null;
+              current_uses?: number | null;
+            } | null;
+          }>)
+        : [];
 
       // Build result: include all regular + only linked where promo_type == 'REFERRAL'
       const resultMap = new Map<string, AvailablePromotion>();
       for (const p of regular || []) {
+        if (p.promo_type === 'REFERRAL') {
+          continue;
+        }
         const maxUses = p.max_uses as number | null | undefined;
         const currentUses = p.current_uses as number | null | undefined;
         if (

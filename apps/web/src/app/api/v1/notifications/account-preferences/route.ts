@@ -71,7 +71,7 @@ export async function GET(_: Request) {
  */
 export async function PUT(request: Request) {
   try {
-    const supabase = await createClient();
+    const supabase = await createClient(request);
 
     // Get authenticated user
     const {
@@ -143,7 +143,7 @@ export async function PUT(request: Request) {
         scope: 'user' as const,
       }));
 
-      const { error: insertError } = await supabase
+      const { error: insertError } = await supabaseAdmin
         .from('notification_preferences')
         .insert(preferencesToInsert);
 

@@ -1,9 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
-import { getTasksForList } from '@tuturuuu/utils/task-helper';
 import { useCallback, useMemo, useState } from 'react';
 import type {
   ListPaginationState,
@@ -18,6 +16,7 @@ const PAGE_SIZE = 50;
  * tasks are deduplicated on merge so overlaps (e.g. from realtime) are safe.
  */
 export function useProgressiveBoardLoader(
+  wsId: string,
   boardId: string
 ): ProgressiveLoaderValue {
   const queryClient = useQueryClient();
@@ -44,11 +43,55 @@ export function useProgressiveBoardLoader(
       });
 
       try {
-        const supabase = createClient();
-        const result = await getTasksForList(supabase, listId, {
-          page,
-          limit: PAGE_SIZE,
+        const searchParams = new URLSearchParams({
+          listId,
+          limit: PAGE_SIZE.toString(),
+          offset: String(page * PAGE_SIZE),
         });
+
+        const response = await fetch(
+          `/api/v1/workspaces/${wsId}/tasks?${searchParams.toString()}`,
+          { cache: 'no-store' }
+        );
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            const emptyResult = {
+              tasks: [] as Task[],
+              hasMore: false,
+              totalCount: 0,
+            };
+
+            setPagination((prev) => ({
+              ...prev,
+              [listId]: {
+                page,
+                hasMore: false,
+                totalCount: 0,
+                isLoading: false,
+                isInitialLoad: false,
+              },
+            }));
+
+            return emptyResult;
+          }
+
+          const errorBody = await response.json().catch(() => null);
+          throw new Error(
+            errorBody?.error ||
+              `Failed to fetch list tasks (${response.status})`
+          );
+        }
+
+        const payload = (await response.json()) as { tasks?: Task[] };
+        const tasks = payload.tasks ?? [];
+        const hasMore = tasks.length === PAGE_SIZE;
+        const totalCount = page * PAGE_SIZE + tasks.length + (hasMore ? 1 : 0);
+        const result = {
+          tasks,
+          hasMore,
+          totalCount,
+        };
 
         // Merge into the shared ['tasks', boardId] cache (dedup by task ID)
         queryClient.setQueryData(
@@ -90,7 +133,7 @@ export function useProgressiveBoardLoader(
         throw error;
       }
     },
-    [boardId, queryClient]
+    [boardId, queryClient, wsId]
   );
 
   return useMemo(

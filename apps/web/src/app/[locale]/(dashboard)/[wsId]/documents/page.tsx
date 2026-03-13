@@ -1,5 +1,5 @@
 import { FilePlus } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Dialog, DialogTrigger } from '@tuturuuu/ui/dialog';
@@ -25,8 +25,6 @@ export default async function DocumentsPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ workspace, wsId }) => {
-        const documents = await getDocuments(wsId);
-
         const permissions = await getPermissions({
           wsId,
         });
@@ -34,6 +32,8 @@ export default async function DocumentsPage({ params }: Props) {
         const { withoutPermission } = permissions;
 
         if (withoutPermission('manage_documents')) redirect(`/${wsId}`);
+
+        const documents = await getDocuments(wsId);
 
         const t = await getTranslations();
 
@@ -101,7 +101,7 @@ export default async function DocumentsPage({ params }: Props) {
 }
 
 async function getDocuments(wsId: string) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const { data } = await supabase
     .from('workspace_documents')

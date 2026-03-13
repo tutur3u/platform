@@ -191,7 +191,9 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
                       padding: const EdgeInsets.only(bottom: 12),
                       child: _TaskBoardCard(
                         board: board,
-                        onTap: () {},
+                        onTap: () => context.push(
+                          Routes.taskBoardDetailPath(board.id),
+                        ),
                         onEdit: () => _openEditBoard(board),
                         onDuplicate: () => _duplicateBoard(board),
                         onArchive: () => _archiveBoard(board),

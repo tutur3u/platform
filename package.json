@@ -4,13 +4,13 @@
     "@biomejs/biome": "^2.4.6",
     "@lingual/i18n-check": "0.9.2",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@typescript/native-preview": "^7.0.0-dev.20260311.1",
-    "@vitest/coverage-v8": "^4.0.18",
+    "@typescript/native-preview": "^7.0.0-dev.20260312.1",
+    "@vitest/coverage-v8": "^4.1.0",
     "lucide-static": "^0.577.0",
     "turbo": "^2.8.16",
     "typescript": "^5.9.3",
-    "vite": "^7.3.1",
-    "vitest": "^4.0.18"
+    "vite": "^8.0.0",
+    "vitest": "^4.1.0"
   },
   "engines": {
     "node": ">=22"
@@ -71,7 +71,7 @@
     "trigger:dev": "bun run --filter @tuturuuu/trigger trigger:dev",
     "trigger:deploy": "bun run --filter @tuturuuu/trigger trigger:deploy",
     "test": "turbo run test",
-    "test:scripts": "node --test scripts/run-i18n-check.test.js scripts/run-tsgo-build.test.js scripts/type-check-consistency.test.js scripts/proxy-guard-parity.test.js",
+    "test:scripts": "node --test scripts/run-i18n-check.test.js scripts/run-tsgo-build.test.js scripts/type-check-consistency.test.js scripts/proxy-guard-parity.test.js scripts/internal-api-migration.test.js",
     "test:watch": "turbo run test:watch",
     "test:e2e": "turbo run test:e2e",
     "tc": "turbo run type-check",

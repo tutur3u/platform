@@ -1405,6 +1405,540 @@ abstract class AppLocalizations {
   /// **'Deleted boards will appear here before permanent removal.'**
   String get taskBoardsEmptyDeletedDescription;
 
+  /// No description provided for @taskBoardDetailLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load board details right now'**
+  String get taskBoardDetailLoadError;
+
+  /// No description provided for @taskBoardDetailUntitledBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled board'**
+  String get taskBoardDetailUntitledBoard;
+
+  /// No description provided for @taskBoardDetailUntitledList.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled list'**
+  String get taskBoardDetailUntitledList;
+
+  /// No description provided for @taskBoardDetailUntitledTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled task'**
+  String get taskBoardDetailUntitledTask;
+
+  /// No description provided for @taskBoardDetailListView.
+  ///
+  /// In en, this message translates to:
+  /// **'List view'**
+  String get taskBoardDetailListView;
+
+  /// No description provided for @taskBoardDetailKanbanView.
+  ///
+  /// In en, this message translates to:
+  /// **'Kanban view'**
+  String get taskBoardDetailKanbanView;
+
+  /// No description provided for @taskBoardDetailSearchPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Search tasks'**
+  String get taskBoardDetailSearchPlaceholder;
+
+  /// No description provided for @taskBoardDetailNoListsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No lists yet'**
+  String get taskBoardDetailNoListsTitle;
+
+  /// No description provided for @taskBoardDetailNoListsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a list to start organizing tasks in this board.'**
+  String get taskBoardDetailNoListsDescription;
+
+  /// No description provided for @taskBoardDetailNoTasksInList.
+  ///
+  /// In en, this message translates to:
+  /// **'No tasks in this list'**
+  String get taskBoardDetailNoTasksInList;
+
+  /// No description provided for @taskBoardDetailNoMatchingTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'No tasks match your search.'**
+  String get taskBoardDetailNoMatchingTasks;
+
+  /// No description provided for @taskBoardDetailTaskActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Task actions'**
+  String get taskBoardDetailTaskActions;
+
+  /// No description provided for @taskBoardDetailMoveTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Move task'**
+  String get taskBoardDetailMoveTask;
+
+  /// No description provided for @taskBoardDetailTaskMoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Task moved.'**
+  String get taskBoardDetailTaskMoved;
+
+  /// No description provided for @taskBoardDetailCreateTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Create task'**
+  String get taskBoardDetailCreateTask;
+
+  /// No description provided for @taskBoardDetailEditTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit task'**
+  String get taskBoardDetailEditTask;
+
+  /// No description provided for @taskBoardDetailTaskTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get taskBoardDetailTaskTitleLabel;
+
+  /// No description provided for @taskBoardDetailTaskTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled task'**
+  String get taskBoardDetailTaskTitleHint;
+
+  /// No description provided for @taskBoardDetailTaskTitleRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Task title is required'**
+  String get taskBoardDetailTaskTitleRequired;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get taskBoardDetailTaskDescriptionLabel;
+
+  /// No description provided for @taskBoardDetailTaskDescriptionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add description'**
+  String get taskBoardDetailTaskDescriptionHint;
+
+  /// No description provided for @taskBoardDetailTaskListLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'List'**
+  String get taskBoardDetailTaskListLabel;
+
+  /// No description provided for @taskBoardDetailTaskListSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose list'**
+  String get taskBoardDetailTaskListSelect;
+
+  /// No description provided for @taskBoardDetailPriority.
+  ///
+  /// In en, this message translates to:
+  /// **'Priority'**
+  String get taskBoardDetailPriority;
+
+  /// No description provided for @taskBoardDetailTaskDates.
+  ///
+  /// In en, this message translates to:
+  /// **'Dates'**
+  String get taskBoardDetailTaskDates;
+
+  /// No description provided for @taskBoardDetailTaskStartDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Start date'**
+  String get taskBoardDetailTaskStartDate;
+
+  /// No description provided for @taskBoardDetailTaskEndDate.
+  ///
+  /// In en, this message translates to:
+  /// **'End date'**
+  String get taskBoardDetailTaskEndDate;
+
+  /// No description provided for @taskBoardDetailTaskEstimation.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimation'**
+  String get taskBoardDetailTaskEstimation;
+
+  /// No description provided for @taskBoardDetailTaskEstimationNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No estimate'**
+  String get taskBoardDetailTaskEstimationNone;
+
+  /// No description provided for @taskBoardDetailTaskAssignees.
+  ///
+  /// In en, this message translates to:
+  /// **'Assignees'**
+  String get taskBoardDetailTaskAssignees;
+
+  /// No description provided for @taskBoardDetailTaskLabels.
+  ///
+  /// In en, this message translates to:
+  /// **'Labels'**
+  String get taskBoardDetailTaskLabels;
+
+  /// No description provided for @taskBoardDetailTaskProjects.
+  ///
+  /// In en, this message translates to:
+  /// **'Projects'**
+  String get taskBoardDetailTaskProjects;
+
+  /// No description provided for @taskBoardDetailTaskSelectAssignees.
+  ///
+  /// In en, this message translates to:
+  /// **'Select assignees'**
+  String get taskBoardDetailTaskSelectAssignees;
+
+  /// No description provided for @taskBoardDetailTaskSelectLabels.
+  ///
+  /// In en, this message translates to:
+  /// **'Select labels'**
+  String get taskBoardDetailTaskSelectLabels;
+
+  /// No description provided for @taskBoardDetailTaskSelectProjects.
+  ///
+  /// In en, this message translates to:
+  /// **'Select projects'**
+  String get taskBoardDetailTaskSelectProjects;
+
+  /// No description provided for @taskBoardDetailNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get taskBoardDetailNone;
+
+  /// No description provided for @taskBoardDetailNoDate.
+  ///
+  /// In en, this message translates to:
+  /// **'No date'**
+  String get taskBoardDetailNoDate;
+
+  /// No description provided for @taskBoardDetailDueAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Due {date}'**
+  String taskBoardDetailDueAt(String date);
+
+  /// No description provided for @taskBoardDetailStartsAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts {date}'**
+  String taskBoardDetailStartsAt(String date);
+
+  /// No description provided for @taskBoardDetailOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue'**
+  String get taskBoardDetailOverdue;
+
+  /// No description provided for @taskBoardDetailToday.
+  ///
+  /// In en, this message translates to:
+  /// **'today'**
+  String get taskBoardDetailToday;
+
+  /// No description provided for @taskBoardDetailTomorrow.
+  ///
+  /// In en, this message translates to:
+  /// **'tomorrow'**
+  String get taskBoardDetailTomorrow;
+
+  /// No description provided for @taskBoardDetailYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'yesterday'**
+  String get taskBoardDetailYesterday;
+
+  /// No description provided for @taskBoardDetailInDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{in {count} day} other{in {count} days}}'**
+  String taskBoardDetailInDays(int count);
+
+  /// No description provided for @taskBoardDetailDaysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} day ago} other{{count} days ago}}'**
+  String taskBoardDetailDaysAgo(int count);
+
+  /// No description provided for @taskBoardDetailInvalidDateRange.
+  ///
+  /// In en, this message translates to:
+  /// **'End date must be on or after start date'**
+  String get taskBoardDetailInvalidDateRange;
+
+  /// No description provided for @taskBoardDetailTaskSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Task updated.'**
+  String get taskBoardDetailTaskSaved;
+
+  /// No description provided for @taskBoardDetailTaskCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Task created.'**
+  String get taskBoardDetailTaskCreated;
+
+  /// No description provided for @taskBoardDetailNoMoveTargets.
+  ///
+  /// In en, this message translates to:
+  /// **'No other lists available for moving this task.'**
+  String get taskBoardDetailNoMoveTargets;
+
+  /// No description provided for @taskBoardDetailBoardActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Board actions'**
+  String get taskBoardDetailBoardActions;
+
+  /// No description provided for @taskBoardDetailRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh board'**
+  String get taskBoardDetailRefresh;
+
+  /// No description provided for @taskBoardDetailRenameBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename board'**
+  String get taskBoardDetailRenameBoard;
+
+  /// No description provided for @taskBoardDetailBoardRenamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Board renamed.'**
+  String get taskBoardDetailBoardRenamed;
+
+  /// No description provided for @taskBoardDetailCreateList.
+  ///
+  /// In en, this message translates to:
+  /// **'Create list'**
+  String get taskBoardDetailCreateList;
+
+  /// No description provided for @taskBoardDetailEditList.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit list'**
+  String get taskBoardDetailEditList;
+
+  /// No description provided for @taskBoardDetailRenameList.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename list'**
+  String get taskBoardDetailRenameList;
+
+  /// No description provided for @taskBoardDetailListActions.
+  ///
+  /// In en, this message translates to:
+  /// **'List actions'**
+  String get taskBoardDetailListActions;
+
+  /// No description provided for @taskBoardDetailListCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'List created.'**
+  String get taskBoardDetailListCreated;
+
+  /// No description provided for @taskBoardDetailListRenamed.
+  ///
+  /// In en, this message translates to:
+  /// **'List renamed.'**
+  String get taskBoardDetailListRenamed;
+
+  /// No description provided for @taskBoardDetailListUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'List updated.'**
+  String get taskBoardDetailListUpdated;
+
+  /// No description provided for @taskBoardDetailNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Name is required'**
+  String get taskBoardDetailNameRequired;
+
+  /// No description provided for @taskBoardDetailListNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'List name'**
+  String get taskBoardDetailListNameLabel;
+
+  /// No description provided for @taskBoardDetailStatusCategoryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Status category'**
+  String get taskBoardDetailStatusCategoryLabel;
+
+  /// No description provided for @taskBoardDetailColorLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Color'**
+  String get taskBoardDetailColorLabel;
+
+  /// No description provided for @taskBoardDetailFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters'**
+  String get taskBoardDetailFilters;
+
+  /// No description provided for @taskBoardDetailFiltersActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters active'**
+  String get taskBoardDetailFiltersActive;
+
+  /// No description provided for @taskBoardDetailFilterLists.
+  ///
+  /// In en, this message translates to:
+  /// **'Lists'**
+  String get taskBoardDetailFilterLists;
+
+  /// No description provided for @taskBoardDetailFilterStatuses.
+  ///
+  /// In en, this message translates to:
+  /// **'Statuses'**
+  String get taskBoardDetailFilterStatuses;
+
+  /// No description provided for @taskBoardDetailFilterAssignees.
+  ///
+  /// In en, this message translates to:
+  /// **'Assignees'**
+  String get taskBoardDetailFilterAssignees;
+
+  /// No description provided for @taskBoardDetailFilterLabels.
+  ///
+  /// In en, this message translates to:
+  /// **'Labels'**
+  String get taskBoardDetailFilterLabels;
+
+  /// No description provided for @taskBoardDetailFilterProjects.
+  ///
+  /// In en, this message translates to:
+  /// **'Projects'**
+  String get taskBoardDetailFilterProjects;
+
+  /// No description provided for @taskBoardDetailNoFilterOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'No options available'**
+  String get taskBoardDetailNoFilterOptions;
+
+  /// No description provided for @taskBoardDetailStatusNotStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Not started'**
+  String get taskBoardDetailStatusNotStarted;
+
+  /// No description provided for @taskBoardDetailStatusActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get taskBoardDetailStatusActive;
+
+  /// No description provided for @taskBoardDetailStatusDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get taskBoardDetailStatusDone;
+
+  /// No description provided for @taskBoardDetailStatusClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed'**
+  String get taskBoardDetailStatusClosed;
+
+  /// No description provided for @taskBoardDetailStatusDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'Documents'**
+  String get taskBoardDetailStatusDocuments;
+
+  /// No description provided for @taskBoardDetailColorGray.
+  ///
+  /// In en, this message translates to:
+  /// **'Gray'**
+  String get taskBoardDetailColorGray;
+
+  /// No description provided for @taskBoardDetailColorRed.
+  ///
+  /// In en, this message translates to:
+  /// **'Red'**
+  String get taskBoardDetailColorRed;
+
+  /// No description provided for @taskBoardDetailColorBlue.
+  ///
+  /// In en, this message translates to:
+  /// **'Blue'**
+  String get taskBoardDetailColorBlue;
+
+  /// No description provided for @taskBoardDetailColorGreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Green'**
+  String get taskBoardDetailColorGreen;
+
+  /// No description provided for @taskBoardDetailColorYellow.
+  ///
+  /// In en, this message translates to:
+  /// **'Yellow'**
+  String get taskBoardDetailColorYellow;
+
+  /// No description provided for @taskBoardDetailColorOrange.
+  ///
+  /// In en, this message translates to:
+  /// **'Orange'**
+  String get taskBoardDetailColorOrange;
+
+  /// No description provided for @taskBoardDetailColorPurple.
+  ///
+  /// In en, this message translates to:
+  /// **'Purple'**
+  String get taskBoardDetailColorPurple;
+
+  /// No description provided for @taskBoardDetailColorPink.
+  ///
+  /// In en, this message translates to:
+  /// **'Pink'**
+  String get taskBoardDetailColorPink;
+
+  /// No description provided for @taskBoardDetailColorIndigo.
+  ///
+  /// In en, this message translates to:
+  /// **'Indigo'**
+  String get taskBoardDetailColorIndigo;
+
+  /// No description provided for @taskBoardDetailColorCyan.
+  ///
+  /// In en, this message translates to:
+  /// **'Cyan'**
+  String get taskBoardDetailColorCyan;
+
+  /// No description provided for @taskBoardDetailClearFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear filters'**
+  String get taskBoardDetailClearFilters;
+
+  /// No description provided for @taskBoardDetailApplyFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply filters'**
+  String get taskBoardDetailApplyFilters;
+
   /// No description provided for @taskPlanningTitle.
   ///
   /// In en, this message translates to:
@@ -3781,6 +4315,12 @@ abstract class AppLocalizations {
   /// **'updated this request'**
   String get timerRequestActivityUpdated;
 
+  /// No description provided for @taskBoardDetailTaskAssigneeCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} assignee} other{{count} assignees}}'**
+  String taskBoardDetailTaskAssigneeCount(int count);
+
   /// No description provided for @timerRequestActivityFeedbackLabel.
   ///
   /// In en, this message translates to:
@@ -4306,7 +4846,7 @@ abstract class AppLocalizations {
   /// No description provided for @timerDays.
   ///
   /// In en, this message translates to:
-  /// **'{count} days'**
+  /// **'{count, plural, one{# day} other{# days}}'**
   String timerDays(int count);
 
   /// No description provided for @settingsTitle.

@@ -68,6 +68,7 @@ export interface AbuseEvent {
   id: string;
   ip_address: string;
   event_type: AbuseEventType;
+  email?: string;
   email_hash?: string;
   user_agent?: string;
   endpoint?: string;

@@ -60,6 +60,28 @@ async function deleteDocument(wsId: string, documentId: string) {
   }
 }
 
+async function updateDocument(
+  wsId: string,
+  documentId: string,
+  payload: Partial<Pick<WorkspaceDocument, 'name' | 'is_public' | 'content'>>
+) {
+  const response = await fetch(
+    `/api/v1/workspaces/${wsId}/documents/${documentId}`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to update document');
+  }
+}
+
 export function DocumentEditor({
   documentId,
   wsId,
@@ -153,11 +175,7 @@ export function DocumentEditor({
       });
 
       try {
-        const supabase = createClient();
-        await supabase
-          .from('workspace_documents')
-          .update({ is_public })
-          .eq('id', documentId);
+        await updateDocument(wsId, documentId, { is_public });
         setDocument((prevDoc) => ({ ...prevDoc, is_public }));
 
         updateSyncStatus({
@@ -194,13 +212,9 @@ export function DocumentEditor({
       });
 
       try {
-        const supabase = createClient();
         if (!document.id) return;
 
-        await supabase
-          .from('workspace_documents')
-          .update({ name: newName })
-          .eq('id', document.id);
+        await updateDocument(wsId, document.id, { name: newName });
 
         setDocument((prevDoc) => ({ ...prevDoc, name: newName }));
         updateSyncStatus({
@@ -230,14 +244,10 @@ export function DocumentEditor({
       });
 
       try {
-        const supabase = createClient();
         const contentString = newContent ? JSON.stringify(newContent) : null;
-        const { error } = await supabase
-          .from('workspace_documents')
-          .update({ content: contentString })
-          .eq('id', document.id);
-
-        if (error) throw error;
+        await updateDocument(wsId, document.id, {
+          content: contentString,
+        });
 
         updateSyncStatus({
           type: 'saved',
@@ -256,7 +266,7 @@ export function DocumentEditor({
         throw error;
       }
     },
-    [document?.id, t, updateSyncStatus]
+    [document?.id, t, updateSyncStatus, wsId]
   );
 
   const handleContentChange = useCallback(

@@ -14,13 +14,13 @@ export const useWorkspaceConfig = <T>(
       );
       if (!res.ok) {
         if (res.status === 404) {
-          return defaultValue;
+          return defaultValue ?? null;
         }
         throw new Error('Failed to fetch workspace config');
       }
       const data = await res.json();
       // The API returns { value: ... }
-      return (data.value as T) ?? defaultValue;
+      return (data.value as T | null | undefined) ?? defaultValue ?? null;
     },
     enabled: !!wsId && !!configId,
     staleTime: 30_000,
@@ -39,7 +39,8 @@ export const useWorkspaceConfigs = (wsId: string, configIds: string[]) => {
       if (!res.ok) {
         throw new Error('Failed to fetch workspace configs');
       }
-      return res.json() as Promise<Record<string, string | null>>;
+      const data = (await res.json()) as Record<string, string | null> | null;
+      return data ?? {};
     },
     enabled: !!wsId && configIds.length > 0,
     staleTime: 30_000,

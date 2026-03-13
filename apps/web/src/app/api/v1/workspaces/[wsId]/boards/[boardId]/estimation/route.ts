@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { Database } from '@tuturuuu/types';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
@@ -89,7 +92,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     // Verify the board exists and belongs to the workspace
-    const { data: existingBoard } = await supabase
+    const sbAdmin = await createAdminClient();
+
+    const { data: existingBoard } = await sbAdmin
       .from('workspace_boards')
       .select('id, ws_id')
       .eq('id', boardId)
@@ -122,7 +127,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       updateData.count_unestimated_issues = count_unestimated_issues;
     }
 
-    const { data: updatedBoard, error: updateError } = await supabase
+    const { data: updatedBoard, error: updateError } = await sbAdmin
       .from('workspace_boards')
       .update(updateData)
       .eq('id', boardId)

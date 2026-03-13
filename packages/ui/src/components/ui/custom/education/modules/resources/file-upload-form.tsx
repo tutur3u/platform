@@ -1,8 +1,6 @@
 'use client';
 
 import { Check, Trash } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import { EMPTY_FOLDER_PLACEHOLDER_NAME } from '@tuturuuu/types/primitives/StorageObject';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
@@ -17,7 +15,6 @@ import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { toast } from '@tuturuuu/ui/sonner';
-import { joinPath } from '@tuturuuu/utils/path-helper';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -42,6 +39,21 @@ interface Props {
   submitLabel?: string;
 }
 
+function normalizeWorkspaceStoragePath(wsId: string, value?: string): string {
+  if (!value) return '';
+
+  const normalized = value.replace(/^\/+|\/+$/g, '');
+  const prefix = `${wsId}/`;
+
+  if (normalized === wsId) {
+    return '';
+  }
+
+  return normalized.startsWith(prefix)
+    ? normalized.slice(prefix.length)
+    : normalized;
+}
+
 const FolderFormSchema = z.object({
   name: z.string().min(1).max(255),
 });
@@ -64,7 +76,6 @@ export function StorageFolderForm({
   const t = useTranslations();
 
   const router = useRouter();
-  const supabase = createClient();
 
   const [loading, setLoading] = useState(false);
 
@@ -77,23 +88,30 @@ export function StorageFolderForm({
 
   async function onSubmit(data: z.infer<typeof FolderFormSchema>) {
     setLoading(true);
+    const response = await fetch(`/api/v1/workspaces/${wsId}/storage/folders`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
+      body: JSON.stringify({
+        path: normalizeWorkspaceStoragePath(wsId, uploadPath),
+        name: data.name,
+      }),
+    });
 
-    const placeholderFile = new File([''], EMPTY_FOLDER_PLACEHOLDER_NAME);
-
-    const { error } = await supabase.storage
-      .from('workspaces')
-      .upload(
-        joinPath(wsId, uploadPath, data.name, placeholderFile.name),
-        placeholderFile
-      );
-
-    if (!error) {
+    if (response.ok) {
       onComplete?.();
       setLoading(false);
       router.refresh();
     } else {
+      const errorBody = (await response.json().catch(() => null)) as {
+        message?: string;
+      } | null;
       setLoading(false);
-      toast.error('An error occurred while creating the folder');
+      toast.error(
+        errorBody?.message || 'An error occurred while creating the folder'
+      );
     }
   }
 
@@ -143,7 +161,6 @@ export function StorageObjectForm({
   const t = useTranslations();
 
   const router = useRouter();
-  const supabase = createClient();
 
   const [loading, setLoading] = useState(false);
 
@@ -163,56 +180,64 @@ export function StorageObjectForm({
     if (loading || editingFile) return;
 
     setLoading(true);
+    const targetPath = normalizeWorkspaceStoragePath(wsId, path || uploadPath);
+    let hasErrors = false;
 
-    formData.files.forEach(async (file) => {
-      // if the file is already uploaded, skip it
-      if (fileStatuses[file.name] === 'uploaded') return;
+    await Promise.all(
+      formData.files.map(async (file) => {
+        if (fileStatuses[file.name] === 'uploaded') return;
 
-      // Set the status of the file to uploading
-      setFileStatuses((prev) => ({
-        ...prev,
-        [file.name]: 'uploading',
-      }));
-
-      const finalPath = path
-        ? joinPath(path, `${generateRandomUUID()}_${file.name}`)
-        : joinPath(wsId, uploadPath, `${generateRandomUUID()}_${file.name}`);
-
-      const { error } = await supabase.storage
-        .from('workspaces')
-        .upload(finalPath, file);
-
-      // const { error } = await supabase.storage
-      //   .from('workspaces')
-      //   .upload(
-      //     path ||
-      //       joinPath(wsId, uploadPath, `${generateRandomUUID()}_${file.name}`),
-      //     file
-      //   );
-
-      if (error) {
         setFileStatuses((prev) => ({
           ...prev,
-          [file.name]: 'error',
+          [file.name]: 'uploading',
         }));
-        return;
-      }
 
-      // Set the status of the file to uploaded
-      setFileStatuses((prev) => ({
-        ...prev,
-        [file.name]: 'uploaded',
-      }));
-    });
+        const uploadFile = new File(
+          [file],
+          `${generateRandomUUID()}_${file.name}`,
+          {
+            type: file.type,
+            lastModified: file.lastModified,
+          }
+        );
 
-    // if all files are uploaded, call onComplete
-    if (
-      formData.files.every((file) => fileStatuses[file.name] === 'uploaded')
-    ) {
+        const requestFormData = new FormData();
+        requestFormData.append('file', uploadFile);
+        requestFormData.append('path', targetPath);
+        requestFormData.append('upsert', 'false');
+
+        const response = await fetch(
+          `/api/v1/workspaces/${wsId}/storage/upload`,
+          {
+            method: 'POST',
+            cache: 'no-store',
+            body: requestFormData,
+          }
+        );
+
+        if (!response.ok) {
+          hasErrors = true;
+          setFileStatuses((prev) => ({
+            ...prev,
+            [file.name]: 'error',
+          }));
+          return;
+        }
+
+        setFileStatuses((prev) => ({
+          ...prev,
+          [file.name]: 'uploaded',
+        }));
+      })
+    );
+
+    if (!hasErrors) {
       onComplete?.();
+      router.refresh();
+    } else {
+      toast.error(t('common.error'));
     }
 
-    router.refresh();
     setLoading(false);
   }
 

@@ -44,7 +44,7 @@ export default function AttendanceDisplaySettings({ wsId }: Props) {
       show_managers_in_attendance: true,
     },
     values: useMemo(() => {
-      if (isLoading || configValue === undefined) return undefined;
+      if (isLoading || configValue == null) return undefined;
       return {
         show_managers_in_attendance:
           configValue.trim().toLowerCase() === 'true',

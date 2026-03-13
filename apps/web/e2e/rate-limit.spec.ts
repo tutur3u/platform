@@ -2,7 +2,8 @@ import { expect, test } from '@playwright/test';
 import { resetDbRateLimits } from './helpers/rate-limits';
 
 /**
- * E2E tests for IP-based rate limiting through the full Next.js stack.
+ * E2E tests for authenticated mutation rate limiting through the full Next.js
+ * stack. Read requests are intentionally not rate-limited.
  *
  * Two independent rate-limit layers exist:
  *   1. Proxy (middleware, `proxy.ts`) — uses `@upstash/ratelimit` + Redis.
@@ -18,8 +19,8 @@ import { resetDbRateLimits } from './helpers/rate-limits';
  *   - Session auth 429: { error, message, code }       (no Retry-After)
  *
  * Default limits for `/api/v1/users/me/*`:
- *   GET/HEAD  → 60 requests per 60 s window  (both layers)
- *   Mutations → 20 requests per 60 s window  (both layers)
+ *   GET/HEAD  → not rate-limited
+ *   Mutations → 20 requests per 60 s window
  */
 
 /** Safe, lightweight endpoint — reads/writes a user config value. */
@@ -110,26 +111,15 @@ test.describe('Rate limiting (session auth)', () => {
     expect(body).toHaveProperty('value');
   });
 
-  // -----------------------------------------------------------------------
-  // Default limits
-  // -----------------------------------------------------------------------
-
-  test('GET rate limit: 429 after 60 requests', async ({
+  test('GET requests stay open after repeated access', async ({
     context,
   }, testInfo) => {
     const addr = ip(1, testInfo.retry);
-    const total = 65;
+    const total = 80;
 
     const responses = await fireGets(context.request, total, addr);
 
-    const ok = responses.filter((r) => r.status() === 200).length;
-    const limited = responses.filter((r) => r.status() === 429).length;
-
-    // Exactly 60 should pass; allow ±2 tolerance for CI variance
-    expect(ok).toBeGreaterThanOrEqual(58);
-    expect(ok).toBeLessThanOrEqual(62);
-    expect(limited).toBeGreaterThanOrEqual(3);
-    expect(ok + limited).toBe(total);
+    expect(responses.every((r) => r.status() === 200)).toBe(true);
   });
 
   test('Mutation rate limit: 429 after 20 requests', async ({
@@ -202,7 +192,7 @@ test.describe('Rate limiting (session auth)', () => {
   // Budget isolation
   // -----------------------------------------------------------------------
 
-  test('GET and mutation budgets are independent', async ({
+  test('GET requests still succeed after exhausting the mutation budget', async ({
     context,
   }, testInfo) => {
     const addr = ip(4, testInfo.retry);
@@ -212,31 +202,33 @@ test.describe('Rate limiting (session auth)', () => {
     const putLimited = putResponses.filter((r) => r.status() === 429).length;
     expect(putLimited).toBeGreaterThanOrEqual(3);
 
-    // GET with the SAME IP should still succeed — read key is separate
+    // GET with the SAME IP should still succeed — reads are intentionally open.
     const getRes = await context.request.get(CONFIG_URL, {
       headers: { 'X-Forwarded-For': addr },
     });
     expect(getRes.status()).toBe(200);
   });
 
-  test('Different IPs have independent rate limits', async ({
+  test('Different IPs have independent mutation rate limits', async ({
     context,
   }, testInfo) => {
     const addrA = ip(5, testInfo.retry, 1);
     const addrB = ip(5, testInfo.retry, 2);
 
-    // Exhaust GET budget for IP A (61 requests — limit is 60)
-    await fireGets(context.request, 61, addrA);
+    // Exhaust mutation budget for IP A (21 requests — limit is 20)
+    await firePuts(context.request, 21, addrA);
 
     // Verify IP A is rate-limited
-    const resA = await context.request.get(CONFIG_URL, {
+    const resA = await context.request.put(CONFIG_URL, {
       headers: { 'X-Forwarded-For': addrA },
+      data: { value: 'rate-limit-test' },
     });
     expect(resA.status()).toBe(429);
 
     // IP B should still have a fresh budget
-    const resB = await context.request.get(CONFIG_URL, {
+    const resB = await context.request.put(CONFIG_URL, {
       headers: { 'X-Forwarded-For': addrB },
+      data: { value: 'rate-limit-test' },
     });
     expect(resB.status()).toBe(200);
   });

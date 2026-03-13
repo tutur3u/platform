@@ -12,6 +12,7 @@ export type Database = {
       abuse_events: {
         Row: {
           created_at: string;
+          email: string | null;
           email_hash: string | null;
           endpoint: string | null;
           event_type: Database['public']['Enums']['abuse_event_type'];
@@ -23,6 +24,7 @@ export type Database = {
         };
         Insert: {
           created_at?: string;
+          email?: string | null;
           email_hash?: string | null;
           endpoint?: string | null;
           event_type: Database['public']['Enums']['abuse_event_type'];
@@ -34,6 +36,7 @@ export type Database = {
         };
         Update: {
           created_at?: string;
+          email?: string | null;
           email_hash?: string | null;
           endpoint?: string | null;
           event_type?: Database['public']['Enums']['abuse_event_type'];
@@ -20138,6 +20141,23 @@ export type Database = {
         };
         Returns: string;
       };
+      create_task_list_with_next_position: {
+        Args: {
+          p_board_id: string;
+          p_color?: string;
+          p_name: string;
+          p_status: Database['public']['Enums']['task_board_status'];
+        };
+        Returns: {
+          archived: boolean;
+          board_id: string;
+          color: string;
+          id: string;
+          name: string;
+          position: number;
+          status: Database['public']['Enums']['task_board_status'];
+        }[];
+      };
       create_task_with_relationship: {
         Args: {
           p_current_task_id: string;
@@ -22491,6 +22511,10 @@ export type Database = {
         Returns: Json;
       };
       normalize_task_sort_keys: { Args: never; Returns: undefined };
+      normalize_workspace_user_search_text: {
+        Args: { input: string };
+        Returns: string;
+      };
       nova_get_all_challenges_with_user_stats: {
         Args: { user_id: string };
         Returns: Json;
@@ -22719,6 +22743,18 @@ export type Database = {
       };
       show_limit: { Args: never; Returns: number };
       show_trgm: { Args: { '': string }; Returns: string[] };
+      strict_payload_field_byte_limit: {
+        Args: { _column_name: string; _table_name: string };
+        Returns: number;
+      };
+      strict_text_field_byte_limit: {
+        Args: { _column_name: string; _table_name: string };
+        Returns: number;
+      };
+      strict_text_field_char_limit: {
+        Args: { _column_name: string; _table_name: string };
+        Returns: number;
+      };
       sum_quiz_scores: {
         Args: { p_set_id: string };
         Returns: {
@@ -22753,6 +22789,46 @@ export type Database = {
       update_session_total_score: {
         Args: { challenge_id_param: string; user_id_param: string };
         Returns: undefined;
+      };
+      update_task_with_relations: {
+        Args: {
+          p_assignee_ids?: string[];
+          p_label_ids?: string[];
+          p_project_ids?: string[];
+          p_replace_assignees?: boolean;
+          p_replace_labels?: boolean;
+          p_replace_projects?: boolean;
+          p_task_id: string;
+          p_task_updates?: Json;
+        };
+        Returns: {
+          board_id: string | null;
+          closed_at: string | null;
+          completed: boolean | null;
+          completed_at: string | null;
+          created_at: string | null;
+          creator_id: string | null;
+          deleted_at: string | null;
+          description: string | null;
+          description_yjs_state: number[] | null;
+          display_number: number | null;
+          embedding: string | null;
+          end_date: string | null;
+          estimation_points: number | null;
+          fts: unknown;
+          id: string;
+          list_id: string | null;
+          name: string;
+          priority: Database['public']['Enums']['task_priority'] | null;
+          sort_key: number | null;
+          start_date: string | null;
+        }[];
+        SetofOptions: {
+          from: '*';
+          to: 'tasks';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
       };
       update_time_tracking_request: {
         Args: {

@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -170,7 +170,7 @@ async function getEmailStats(
   failed: number;
   rateLimited: number;
 }> {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   let startDate: Date | undefined;
   let endDate: Date | undefined;
@@ -266,7 +266,7 @@ async function getData({
   data: EmailAuditRecord[];
   count: number;
 }> {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   let queryBuilder = supabase
     .from('email_audit')

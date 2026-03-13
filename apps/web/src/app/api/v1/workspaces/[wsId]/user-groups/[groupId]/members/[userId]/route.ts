@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
@@ -10,12 +10,11 @@ interface Params {
   }>;
 }
 
-export async function DELETE(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function DELETE(req: Request, { params }: Params) {
   const { groupId, userId, wsId } = await params;
 
   // Check permissions
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -27,7 +26,9 @@ export async function DELETE(_: Request, { params }: Params) {
     );
   }
 
-  const { error } = await supabase
+  const sbAdmin = await createAdminClient();
+
+  const { error } = await sbAdmin
     .from('workspace_user_groups_users')
     .delete()
     .eq('group_id', groupId)

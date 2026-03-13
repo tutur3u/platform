@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { getUserConfig, updateUserConfig } from '@tuturuuu/internal-api/users';
 
 /**
  * Hook to fetch and manage a user config value.
@@ -14,15 +15,7 @@ export function useUserConfig(configId: string, defaultValue: string = '') {
   return useQuery({
     queryKey: ['user-config', configId],
     queryFn: async () => {
-      const response = await fetch(`/api/v1/users/me/configs/${configId}`, {
-        cache: 'no-store',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch user config');
-      }
-
-      const data = await response.json();
+      const data = await getUserConfig(configId);
       return (data.value as string) ?? defaultValue;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -46,17 +39,7 @@ export function useUpdateUserConfig() {
       configId: string;
       value: string;
     }) => {
-      const response = await fetch(`/api/v1/users/me/configs/${configId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ value }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update user config');
-      }
-
-      return response.json();
+      return updateUserConfig(configId, value);
     },
     onMutate: async ({ configId, value }) => {
       // Cancel outgoing refetches

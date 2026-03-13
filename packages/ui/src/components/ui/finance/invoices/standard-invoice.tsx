@@ -2,7 +2,6 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { Calculator, Loader2, Plus } from '@tuturuuu/icons';
-import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -11,6 +10,7 @@ import { formatCurrency } from '@tuturuuu/utils/format';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useDebounce } from '../../../../hooks/use-debounce';
 import { useFinanceHref } from '../finance-route-context';
 import { InvoiceBlockedState } from './components/invoice-blocked-state';
 import { InvoiceCheckoutSummary } from './components/invoice-checkout-summary';
@@ -24,12 +24,12 @@ import {
   useAvailablePromotions,
   useCategories,
   useInvoiceBlockedGroups,
+  useInvoiceCustomerSearch,
   useInvoicePromotionConfig,
   useProducts,
   useUserGroups,
   useUserLinkedPromotions,
   useUserReferralDiscounts,
-  useUsersWithSelectableGroups,
   useWallets,
 } from './hooks';
 import { useBestPromotionSelection } from './hooks/use-best-promotion-selection';
@@ -60,6 +60,8 @@ export function StandardInvoice({
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const financeHref = useFinanceHref();
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [debouncedCustomerSearch] = useDebounce(customerSearch, 300);
 
   // Read from URL params
   const selectedUserId = searchParams.get('user_id') || '';
@@ -79,14 +81,24 @@ export function StandardInvoice({
   );
 
   // Data queries
-  const { data: users = [], isLoading: usersLoading } =
-    useUsersWithSelectableGroups(wsId);
+  const {
+    customers: users,
+    selectedUser,
+    isLoading: usersLoading,
+    error: usersError,
+    hasNextPage: hasMoreCustomers,
+    fetchNextPage: fetchMoreCustomers,
+    isFetching: isFetchingCustomers,
+    isFetchingNextPage: isFetchingMoreCustomers,
+  } = useInvoiceCustomerSearch(wsId, debouncedCustomerSearch, selectedUserId);
   const { data: products = [], isLoading: productsLoading } = useProducts(wsId);
   const { data: availablePromotions = [], isLoading: promotionsLoading } =
     useAvailablePromotions(wsId, selectedUserId);
   const { data: promotionsAllowed = true } = useInvoicePromotionConfig(wsId);
-  const { data: linkedPromotions = [] } =
-    useUserLinkedPromotions(selectedUserId);
+  const { data: linkedPromotions = [] } = useUserLinkedPromotions(
+    wsId,
+    selectedUserId
+  );
   const { data: referralDiscountRows = [] } = useUserReferralDiscounts(
     wsId,
     selectedUserId
@@ -97,8 +109,10 @@ export function StandardInvoice({
 
   // Blocked groups check
   const { data: blockedGroupIds = [] } = useInvoiceBlockedGroups(wsId);
-  const { data: userGroups = [], isLoading: userGroupsLoading } =
-    useUserGroups(selectedUserId);
+  const { data: userGroups = [], isLoading: userGroupsLoading } = useUserGroups(
+    wsId,
+    selectedUserId
+  );
 
   const isBlocked = useMemo(() => {
     if (
@@ -136,9 +150,6 @@ export function StandardInvoice({
   const [isCreating, setIsCreating] = useState(false);
   const [createPromotionOpen, setCreatePromotionOpen] = useState(false);
 
-  const selectedUser = users.find(
-    (user: WorkspaceUser) => user.id === selectedUserId
-  );
   const selectedPromotion =
     selectedPromotionId === 'none'
       ? null
@@ -343,8 +354,9 @@ export function StandardInvoice({
         setInvoiceNotes('');
         resetRounding();
         updateSearchParam('user_id', '');
-        setSelectedWalletId('');
+        setSelectedWalletId(defaultWalletId || '');
         setSelectedCategoryId('');
+        setCustomerSearch('');
       }
     } catch (error) {
       console.error('Error creating invoice:', error);
@@ -395,6 +407,18 @@ export function StandardInvoice({
           onSelect={(value) => updateSearchParam('user_id', value)}
           selectedUser={selectedUser}
           showUserPreview
+          loading={
+            usersLoading || (isFetchingCustomers && !isFetchingMoreCustomers)
+          }
+          isFetchingNextPage={isFetchingMoreCustomers}
+          hasNextPage={hasMoreCustomers}
+          onLoadMore={() => void fetchMoreCustomers()}
+          errorMessage={
+            usersError instanceof Error ? usersError.message : undefined
+          }
+          emptyMessage={t('ws-invoices.no_customers_found')}
+          searchValue={customerSearch}
+          onSearchChange={setCustomerSearch}
         >
           {/* Conditional User History Accordion */}
           {selectedUser && (

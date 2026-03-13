@@ -9,6 +9,10 @@ export const ABUSE_THRESHOLDS = {
   // OTP Send limits
   OTP_SEND_PER_MINUTE: 3,
   OTP_SEND_PER_HOUR: 10,
+  OTP_SEND_PER_DAY: 12,
+  OTP_SEND_EMAIL_COOLDOWN_WINDOW_MS: 15 * 60 * 1000, // 15 minutes
+  OTP_SEND_EMAIL_PER_HOUR: 2,
+  OTP_SEND_EMAIL_PER_DAY: 4,
 
   // OTP Verify limits (per IP)
   OTP_VERIFY_FAILED_WINDOW_MS: 5 * 60 * 1000, // 5 minutes
@@ -60,6 +64,13 @@ export const REDIS_KEYS = {
   // OTP Send attempts per IP (sliding window)
   OTP_SEND: (ip: string) => `otp:send:${ip}`,
   OTP_SEND_HOURLY: (ip: string) => `otp:send:hourly:${ip}`,
+  OTP_SEND_DAILY: (ip: string) => `otp:send:daily:${ip}`,
+  OTP_SEND_EMAIL_COOLDOWN: (emailHash: string) =>
+    `otp:send:email:cooldown:${emailHash}`,
+  OTP_SEND_EMAIL_HOURLY: (emailHash: string) =>
+    `otp:send:email:hourly:${emailHash}`,
+  OTP_SEND_EMAIL_DAILY: (emailHash: string) =>
+    `otp:send:email:daily:${emailHash}`,
 
   // OTP Verify failed attempts
   OTP_VERIFY_FAILED: (ip: string) => `otp:verify:failed:${ip}`,
@@ -90,6 +101,7 @@ export const REDIS_KEYS = {
  */
 export const WINDOW_MS = {
   ONE_MINUTE: 60 * 1000,
+  TEN_MINUTES: 10 * 60 * 1000,
   ONE_HOUR: 60 * 60 * 1000,
   TWENTY_FOUR_HOURS: 24 * 60 * 60 * 1000,
 } as const;

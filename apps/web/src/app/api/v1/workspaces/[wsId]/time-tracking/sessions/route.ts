@@ -368,6 +368,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
   async (request, { user, supabase }, { wsId }) => {
     try {
       const normalizedWsId = await normalizeWorkspaceId(wsId);
+      const sbAdmin = await createAdminClient();
 
       // Verify workspace access
       const { data: memberCheck } = await supabase
@@ -427,7 +428,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
 
       if (type === 'running') {
         // Get current running session
-        const { data, error } = await supabase
+        const { data, error } = await sbAdmin
           .from('time_tracking_sessions')
           .select(
             `
@@ -448,7 +449,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
       if (type === 'paused') {
         // Find the latest session that has an active break (break_end is null)
         // We must filter by ws_id to ensure we only get breaks for the current workspace
-        const { data: activeBreak } = await supabase
+        const { data: activeBreak } = await sbAdmin
           .from('time_tracking_breaks')
           .select(`
           session_id,
@@ -468,7 +469,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
         }
 
         // Fetch the session with relations
-        const { data: session, error } = await supabase
+        const { data: session, error } = await sbAdmin
           .from('time_tracking_sessions')
           .select(
             `
@@ -494,7 +495,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
       if (type === 'recent' || type === 'history') {
         // Build query for sessions
         // Filter out sessions with pending_approval=true (they haven't been approved yet)
-        let query = supabase
+        let query = sbAdmin
           .from('time_tracking_sessions')
           .select(
             `
@@ -508,7 +509,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
           .eq('pending_approval', false);
 
         // Build count query with same filters
-        let countQuery = supabase
+        let countQuery = sbAdmin
           .from('time_tracking_sessions')
           .select('*', { count: 'exact', head: true })
           .eq('ws_id', normalizedWsId)
@@ -653,7 +654,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
         const isPersonal = await isPersonalWorkspace(normalizedWsId);
 
         // Call the optimized RPC function
-        const { data, error } = await supabase.rpc('get_time_tracker_stats', {
+        const { data, error } = await sbAdmin.rpc('get_time_tracker_stats', {
           p_user_id: queryUserId,
           p_ws_id: normalizedWsId,
           p_is_personal: isPersonal,

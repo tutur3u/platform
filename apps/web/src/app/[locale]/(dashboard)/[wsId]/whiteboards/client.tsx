@@ -16,7 +16,6 @@ import {
   Trash,
   UserIcon,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,6 +49,7 @@ type ViewMode = 'grid' | 'list';
 
 export interface Whiteboard {
   id: string;
+  wsId: string;
   title: string;
   description?: string;
   dateCreated: Date;
@@ -391,19 +391,21 @@ function WhiteboardGrid({
 }
 
 function CardAction({ whiteboard, t }: { whiteboard: Whiteboard; t: any }) {
-  const supabase = createClient();
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
 
   const handleDelete = async (whiteboard: Whiteboard) => {
     try {
-      const { error } = await supabase
-        .from('workspace_whiteboards')
-        .delete()
-        .eq('id', whiteboard.id);
+      const response = await fetch(
+        `/api/v1/workspaces/${whiteboard.wsId}/whiteboards/${whiteboard.id}`,
+        {
+          method: 'DELETE',
+          cache: 'no-store',
+        }
+      );
 
-      if (error) {
+      if (!response.ok) {
         throw new Error('Failed to delete whiteboard');
       }
 
@@ -418,14 +420,21 @@ function CardAction({ whiteboard, t }: { whiteboard: Whiteboard; t: any }) {
   const handleArchiveToggle = async (whiteboard: Whiteboard) => {
     try {
       const isArchiving = !whiteboard.archivedAt;
-      const { error } = await supabase
-        .from('workspace_whiteboards')
-        .update({
-          archived_at: isArchiving ? new Date().toISOString() : null,
-        })
-        .eq('id', whiteboard.id);
+      const response = await fetch(
+        `/api/v1/workspaces/${whiteboard.wsId}/whiteboards/${whiteboard.id}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          cache: 'no-store',
+          body: JSON.stringify({
+            archived_at: isArchiving ? new Date().toISOString() : null,
+          }),
+        }
+      );
 
-      if (error) {
+      if (!response.ok) {
         throw new Error(
           isArchiving
             ? 'Failed to archive whiteboard'

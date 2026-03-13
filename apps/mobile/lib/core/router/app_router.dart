@@ -26,6 +26,7 @@ import 'package:mobile/features/settings/view/settings_page.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/task_portfolio/view/task_portfolio_page.dart';
 import 'package:mobile/features/task_portfolio/view/task_project_detail_page.dart';
+import 'package:mobile/features/tasks_boards/view/task_board_detail_page.dart';
 import 'package:mobile/features/tasks_boards/view/task_boards_page.dart';
 import 'package:mobile/features/tasks_estimates/view/task_estimates_page.dart';
 import 'package:mobile/features/time_tracker/view/time_tracker_page.dart';
@@ -190,6 +191,16 @@ GoRouter createAppRouter(
           GoRoute(
             path: Routes.taskBoards,
             builder: (context, state) => const TaskBoardsPage(),
+          ),
+          GoRoute(
+            path: Routes.taskBoardDetail,
+            builder: (context, state) {
+              final boardId = state.pathParameters['boardId'];
+              if (boardId == null || boardId.isEmpty) {
+                return const TaskBoardsPage();
+              }
+              return TaskBoardDetailPage(boardId: boardId);
+            },
           ),
           GoRoute(
             path: Routes.taskEstimates,

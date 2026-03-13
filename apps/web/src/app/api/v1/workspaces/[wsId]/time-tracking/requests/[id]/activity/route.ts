@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { MAX_SHORT_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -27,6 +30,7 @@ export async function GET(
   const { wsId, id: requestId } = await params;
 
   const supabase = await createClient(req);
+  const sbAdmin = await createAdminClient();
 
   const {
     data: { user },
@@ -37,19 +41,26 @@ export async function GET(
   }
 
   // Verify user has access to this workspace
-  const { data: member } = await supabase
+  const { data: member, error: memberError } = await supabase
     .from('workspace_members')
     .select('id:user_id')
     .eq('ws_id', wsId)
     .eq('user_id', user.id)
     .single();
 
+  if (memberError) {
+    return NextResponse.json(
+      { error: 'Failed to verify workspace access' },
+      { status: 500 }
+    );
+  }
+
   if (!member) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   // Verify the request belongs to this workspace
-  const { data: request, error: requestError } = await supabase
+  const { data: request, error: requestError } = await sbAdmin
     .from('time_tracking_requests')
     .select('id')
     .eq('id', requestId)
@@ -76,7 +87,7 @@ export async function GET(
   const offset = (page - 1) * limit;
 
   // Get total count
-  const { count: totalCount, error: countError } = await supabase
+  const { count: totalCount, error: countError } = await sbAdmin
     .from('time_tracking_request_activity_with_users')
     .select('*', { count: 'exact', head: true })
     .eq('request_id', requestId);
@@ -90,7 +101,7 @@ export async function GET(
   }
 
   // Fetch activity log with user details using the view
-  const { data: activities, error } = await supabase
+  const { data: activities, error } = await sbAdmin
     .from('time_tracking_request_activity_with_users')
     .select('*')
     .eq('request_id', requestId)

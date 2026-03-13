@@ -11,7 +11,7 @@ class TaskBoardsState extends Equatable {
     this.status = TaskBoardsStatus.initial,
     this.workspaceId,
     this.boards = const <TaskBoardSummary>[],
-    this.filter = TaskBoardsFilter.all,
+    this.filter = TaskBoardsFilter.active,
     this.currentPage = 1,
     this.pageSize = 20,
     this.totalCount = 0,

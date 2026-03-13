@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   MAX_LONG_TEXT_LENGTH,
   resolveWorkspaceId,
@@ -31,6 +34,7 @@ export async function POST(
     const { wsId, id: requestId } = await params;
     const resolvedWorkspaceId = resolveWorkspaceId(wsId);
     const supabase = await createClient(request);
+    const sbAdmin = await createAdminClient();
 
     // Get current user
     const {
@@ -42,31 +46,45 @@ export async function POST(
     }
 
     // Verify user has access to workspace
-    const { data: membership } = await supabase
+    const { data: membership, error: membershipError } = await supabase
       .from('workspace_members')
       .select('ws_id')
       .eq('ws_id', resolvedWorkspaceId)
       .eq('user_id', user.id)
       .single();
 
+    if (membershipError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
     if (!membership) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Verify request exists and belongs to workspace
-    const { data: requestExists } = await supabase
+    const { data: requestExists, error: requestError } = await sbAdmin
       .from('time_tracking_requests')
       .select('id')
       .eq('id', requestId)
       .eq('workspace_id', resolvedWorkspaceId)
       .single();
 
+    if (requestError) {
+      return NextResponse.json(
+        { error: 'Failed to verify request' },
+        { status: 500 }
+      );
+    }
+
     if (!requestExists) {
       return NextResponse.json({ error: 'Request not found' }, { status: 404 });
     }
 
     // Create comment
-    const { data: newComment, error: createError } = await supabase
+    const { data: newComment, error: createError } = await sbAdmin
       .from('time_tracking_request_comments')
       .insert({
         request_id: requestId,
@@ -121,6 +139,7 @@ export async function GET(
     const { wsId, id: requestId } = await params;
     const resolvedWorkspaceId = resolveWorkspaceId(wsId);
     const supabase = await createClient(request);
+    const sbAdmin = await createAdminClient();
 
     // Get current user
     const {
@@ -132,31 +151,45 @@ export async function GET(
     }
 
     // Verify user has access to workspace
-    const { data: membership } = await supabase
+    const { data: membership, error: membershipError } = await supabase
       .from('workspace_members')
       .select('ws_id')
       .eq('ws_id', resolvedWorkspaceId)
       .eq('user_id', user.id)
       .single();
 
+    if (membershipError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
     if (!membership) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Verify request exists and belongs to workspace
-    const { data: requestExists } = await supabase
+    const { data: requestExists, error: requestError } = await sbAdmin
       .from('time_tracking_requests')
       .select('id')
       .eq('id', requestId)
       .eq('workspace_id', resolvedWorkspaceId)
       .single();
 
+    if (requestError) {
+      return NextResponse.json(
+        { error: 'Failed to verify request' },
+        { status: 500 }
+      );
+    }
+
     if (!requestExists) {
       return NextResponse.json({ error: 'Request not found' }, { status: 404 });
     }
 
     // Fetch comments
-    const { data: comments, error: fetchError } = await supabase
+    const { data: comments, error: fetchError } = await sbAdmin
       .from('time_tracking_request_comments')
       .select(
         `

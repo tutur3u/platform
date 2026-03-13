@@ -2,7 +2,6 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Check, Tag, X } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -33,15 +32,15 @@ interface TagFilterProps {
 }
 
 async function fetchTransactionTags(wsId: string): Promise<TransactionTag[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('transaction_tags')
-    .select('id, name, color')
-    .eq('ws_id', wsId)
-    .order('name', { ascending: true });
+  const response = await fetch(`/api/workspaces/${wsId}/tags`, {
+    cache: 'no-store',
+  });
 
-  if (error) throw error;
-  return data || [];
+  if (!response.ok) {
+    throw new Error('Failed to fetch transaction tags');
+  }
+
+  return ((await response.json()) as TransactionTag[]) || [];
 }
 
 export function TagFilter({
