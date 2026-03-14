@@ -24,7 +24,7 @@ function FruitPlaceholder({
   return (
     <div
       className={cn(
-        'relative flex h-8 w-8 items-center justify-center rounded-full border-2 font-bold text-white shadow-md md:h-9 md:w-9 lg:h-10 lg:w-10',
+        'relative flex h-8 w-8 items-center justify-center rounded-full border-2 bg-foreground/10 font-bold text-white shadow-md md:h-9 md:w-9 lg:h-10 lg:w-10',
         fruit
           ? fruit?.type !== 'normal'
             ? ''
