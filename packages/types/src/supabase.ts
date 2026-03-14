@@ -7813,6 +7813,51 @@ export type Database = {
         };
         Relationships: [];
       };
+      platform_entity_creation_limits: {
+        Row: {
+          created_at: string;
+          enabled: boolean;
+          notes: string | null;
+          per_day: number | null;
+          per_hour: number | null;
+          per_month: number | null;
+          per_week: number | null;
+          table_name: string;
+          tier: Database['public']['Enums']['workspace_product_tier'];
+          total_limit: number | null;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          enabled?: boolean;
+          notes?: string | null;
+          per_day?: number | null;
+          per_hour?: number | null;
+          per_month?: number | null;
+          per_week?: number | null;
+          table_name: string;
+          tier: Database['public']['Enums']['workspace_product_tier'];
+          total_limit?: number | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          enabled?: boolean;
+          notes?: string | null;
+          per_day?: number | null;
+          per_hour?: number | null;
+          per_month?: number | null;
+          per_week?: number | null;
+          table_name?: string;
+          tier?: Database['public']['Enums']['workspace_product_tier'];
+          total_limit?: number | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
       platform_user_roles: {
         Row: {
           allow_challenge_management: boolean;
@@ -18402,36 +18447,7 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
+        Relationships: [];
       };
       calendar_event_participants: {
         Row: {
@@ -18493,6 +18509,141 @@ export type Database = {
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      entity_limit_source__tasks: {
+        Row: {
+          created_at: string | null;
+          user_id: string | null;
+          ws_id: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tasks_creator_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'tasks_creator_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'tasks_creator_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tasks_creator_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      entity_limit_source__workspace_whiteboards: {
+        Row: {
+          created_at: string | null;
+          user_id: string | null;
+          ws_id: string | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          user_id?: string | null;
+          ws_id?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          user_id?: string | null;
+          ws_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_whiteboards_creator_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_whiteboards_creator_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_whiteboards_creator_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_whiteboards_creator_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_whiteboards_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_whiteboards_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      entity_limit_source__workspaces: {
+        Row: {
+          created_at: string | null;
+          user_id: string | null;
+          ws_id: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspaces_creator_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspaces_creator_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspaces_creator_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspaces_creator_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
             referencedColumns: ['id'];
           },
         ];
@@ -19835,9 +19986,36 @@ export type Database = {
         Args: { p_balance_id: string };
         Returns: undefined;
       };
+      _resolve_platform_entity_limit_scope: {
+        Args: {
+          p_actor_user_id: string;
+          p_new_record: Json;
+          p_target_table: string;
+        };
+        Returns: {
+          user_id: string;
+          ws_id: string;
+        }[];
+      };
+      _resolve_user_personal_workspace_tier: {
+        Args: { p_user_id: string };
+        Returns: Database['public']['Enums']['workspace_product_tier'];
+      };
       _resolve_workspace_tier: {
         Args: { p_ws_id: string };
         Returns: Database['public']['Enums']['workspace_product_tier'];
+      };
+      _validate_platform_entity_limit_target: {
+        Args: { p_target_table: string };
+        Returns: undefined;
+      };
+      add_platform_entity_creation_limit_table: {
+        Args: {
+          p_notes?: string;
+          p_target_table: string;
+          p_updated_by?: string;
+        };
+        Returns: undefined;
       };
       admin_get_ai_credit_entity_detail: {
         Args: { p_user_id?: string; p_ws_id?: string };
@@ -20461,6 +20639,12 @@ export type Database = {
           sessions_this_week: number;
           sessions_today: number;
           total_sessions: number;
+        }[];
+      };
+      get_available_platform_entity_limit_tables: {
+        Args: never;
+        Returns: {
+          table_name: string;
         }[];
       };
       get_available_referral_users: {
@@ -22566,6 +22750,10 @@ export type Database = {
           transaction_id: string;
         }[];
       };
+      reattach_platform_entity_creation_limit_trigger: {
+        Args: { p_target_table: string };
+        Returns: undefined;
+      };
       record_email_bounce: {
         Args: {
           p_bounce_subtype?: string;
@@ -22786,6 +22974,66 @@ export type Database = {
           };
       update_expired_sessions: { Args: never; Returns: undefined };
       update_many_tasks: { Args: { updates: Json }; Returns: number };
+      update_platform_entity_creation_limit_metadata: {
+        Args: {
+          p_notes?: string;
+          p_target_table: string;
+          p_updated_by?: string;
+        };
+        Returns: {
+          created_at: string;
+          enabled: boolean;
+          notes: string | null;
+          per_day: number | null;
+          per_hour: number | null;
+          per_month: number | null;
+          per_week: number | null;
+          table_name: string;
+          tier: Database['public']['Enums']['workspace_product_tier'];
+          total_limit: number | null;
+          updated_at: string;
+          updated_by: string | null;
+        }[];
+        SetofOptions: {
+          from: '*';
+          to: 'platform_entity_creation_limits';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      update_platform_entity_creation_limit_tier: {
+        Args: {
+          p_enabled: boolean;
+          p_per_day?: number;
+          p_per_hour?: number;
+          p_per_month?: number;
+          p_per_week?: number;
+          p_target_table: string;
+          p_tier: Database['public']['Enums']['workspace_product_tier'];
+          p_total_limit?: number;
+          p_updated_by?: string;
+        };
+        Returns: {
+          created_at: string;
+          enabled: boolean;
+          notes: string | null;
+          per_day: number | null;
+          per_hour: number | null;
+          per_month: number | null;
+          per_week: number | null;
+          table_name: string;
+          tier: Database['public']['Enums']['workspace_product_tier'];
+          total_limit: number | null;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'platform_entity_creation_limits';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       update_session_total_score: {
         Args: { challenge_id_param: string; user_id_param: string };
         Returns: undefined;
