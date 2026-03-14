@@ -21,6 +21,10 @@ const BatchAttendanceSchema = z.array(AttendanceSchema);
 
 export async function GET(req: Request, { params }: Params) {
   const { wsId, groupId } = await params;
+
+  if (!z.string().uuid().safeParse(groupId).success) {
+    return NextResponse.json({ message: 'Invalid groupId' }, { status: 400 });
+  }
   const { searchParams } = new URL(req.url);
   const date = searchParams.get('date');
 
@@ -62,6 +66,10 @@ export async function GET(req: Request, { params }: Params) {
 
 export async function POST(req: Request, { params }: Params) {
   const { wsId, groupId } = await params;
+
+  if (!z.string().uuid().safeParse(groupId).success) {
+    return NextResponse.json({ message: 'Invalid groupId' }, { status: 400 });
+  }
 
   // Check permissions
   const permissions = await getPermissions({ wsId, request: req });

@@ -38,6 +38,7 @@ export const PROXY_ONLY_PUBLIC_TABLES = [
   'workspace_scheduling_metadata',
   'workspace_subscription_errors',
   'workspace_subscription_products',
+  'workspace_wallets',
 ] as const;
 
 const proxyOnlyPublicTableSet = new Set<string>(PROXY_ONLY_PUBLIC_TABLES);
