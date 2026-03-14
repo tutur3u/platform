@@ -39,11 +39,44 @@ const coreDepartments: { name: coreDepartmemt; color: string }[] = [
   { name: 'Marketing', color: 'text-dynamic-yellow' },
 ];
 
+const departmentStyles: Record<string, string> = {
+  FinLog: 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20',
+  Technology: 'bg-dynamic-blue/10 text-dynamic-blue border-dynamic-blue/20',
+  'Human Resources':
+    'bg-dynamic-purple/10 text-dynamic-purple border-dynamic-purple/20',
+  Marketing:
+    'bg-dynamic-orange/10 text-dynamic-orange border-dynamic-orange/20',
+};
+
+const renderMissionPoints = (mission: string[]) => {
+  return (
+    <ul className="list-disc space-y-2 pl-5">
+      {mission.map((point, index) => {
+        const separatorIndex = point.indexOf(':');
+
+        if (separatorIndex !== -1) {
+          const title = point.substring(0, separatorIndex).trim();
+          const description = point.substring(separatorIndex + 1).trim();
+          return (
+            <li key={index}>
+              <span className="font-semibold">{title}:</span> {description}
+            </li>
+          );
+        }
+
+        return <li key={index}>{point}</li>;
+      })}
+    </ul>
+  );
+};
+
 export default function Members() {
   const [hoveredDepartment, setHoveredDepartment] =
     useState<DepartmentName | null>(null);
   const [lockedDepartment, setLockedDepartment] =
     useState<DepartmentName | null>(null);
+  const [activeDepartmentCard, setActiveDepartmentCard] =
+    useState<DepartmentName>('Technology');
   const [selectedGeneration, setSelectedGeneration] = useState<6 | 7>(7);
 
   const activeDepartment = lockedDepartment || hoveredDepartment;
@@ -61,7 +94,7 @@ export default function Members() {
 
   const handleDepartmentClick = (departmentName: DepartmentName) => {
     if (lockedDepartment === departmentName) {
-      setLockedDepartment(null); // Unlock if clicking the same department
+      setLockedDepartment(null);
     } else {
       setLockedDepartment(departmentName);
     }
@@ -380,26 +413,29 @@ export default function Members() {
         our vision into reality.
       </div>
 
-      <div className="w-full px-2 text-center font-medium text-base text-muted-foreground md:px-40 md:text-lg">
-        Our club has 3 core departments:{' '}
-        {coreDepartments.map((core, index) => (
-          <span key={core.name}>
-            <span
-              className={`font-semibold ${core.color} cursor-pointer transition-all duration-200 hover:underline ${
-                lockedDepartment === core.name
-                  ? 'rounded px-1 underline ring-2 ring-current'
-                  : ''
-              }`}
-              onMouseEnter={() => setHoveredDepartment(core.name)}
-              onMouseLeave={() => setHoveredDepartment(null)}
-              onClick={() => handleDepartmentClick(core.name)}
-            >
-              {core.name}
-            </span>
-            {index < coreDepartments.length - 1 && ', '}
-          </span>
-        ))}
-        , each playing a core role in building our community.
+      <div className="w-full space-y-4 px-2 text-center md:px-40">
+        <p className="font-medium text-base text-muted-foreground md:text-lg">
+          Our club's success is driven by our three core departments. Select one
+          to see the team and their mission.
+        </p>
+        <div className="flex justify-center">
+          <div className="flex items-center space-x-1 rounded-lg border border-border bg-card p-1 shadow-sm">
+            {coreDepartments.map((core) => (
+              <button
+                type="button"
+                key={core.name}
+                onClick={() => setActiveDepartmentCard(core.name)}
+                className={`rounded-md px-3 py-1.5 font-semibold transition-colors duration-200 md:px-4 ${
+                  activeDepartmentCard === core.name
+                    ? `${core.color.replace('text-', 'bg-')}/10 ${core.color}`
+                    : `text-muted-foreground hover:${core.color}`
+                }`}
+              >
+                {core.name}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
       <motion.div
         key="departments"
@@ -407,29 +443,36 @@ export default function Members() {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -50 }}
         transition={{ duration: 0.5 }}
-        className="mt-8 grid w-full grid-cols-1 justify-items-center gap-8 px-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3"
+        className="mt-8 flex w-full justify-center px-4"
       >
-        {deparments.map((department) => (
-          <motion.div
-            key={department.name}
-            className={`relative flex justify-center transition-all duration-300 ${
-              isHidden([department.name as DepartmentName])
-                ? 'scale-95 opacity-20'
-                : 'scale-100 opacity-100'
-            }`}
-            variants={cardVariants}
-          >
-            {isHidden([department.name as DepartmentName]) && (
-              <div className="absolute inset-0 z-10 rounded-lg bg-black/20 backdrop-blur-[1px]" />
-            )}
-            <DepartmentCard
-              name={department.name}
-              image={resolveDepartmentImage(department.image)}
-              bio={department.bio}
-              quote="Together we create meaningful impact."
-            />
-          </motion.div>
-        ))}
+        {deparments
+          .filter((d) => d.name === activeDepartmentCard)
+          .map((department) => (
+            <motion.div
+              key={department.name}
+              className={`relative flex justify-center transition-all duration-300 ${
+                isHidden([department.name as DepartmentName])
+                  ? 'scale-95 opacity-20'
+                  : 'scale-100 opacity-100'
+              }`}
+              variants={cardVariants}
+            >
+              {isHidden([department.name as DepartmentName]) && (
+                <div className="absolute inset-0 z-10 rounded-lg bg-black/20 backdrop-blur-[1px]" />
+              )}
+              <DepartmentCard
+                name={department.name}
+                image={resolveDepartmentImage(department.image)}
+                bio={department.bio}
+                characteristics={department.characteristics}
+                quote={renderMissionPoints(department.mission)}
+                core={department.core}
+                className={`rounded-lg border-2 ${
+                  departmentStyles[department.name] ?? ''
+                }`}
+              />
+            </motion.div>
+          ))}
       </motion.div>
     </div>
   );
