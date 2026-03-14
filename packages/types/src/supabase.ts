@@ -22833,7 +22833,6 @@ export type Database = {
       update_time_tracking_request: {
         Args: {
           p_action: string;
-          p_bypass_rules?: boolean;
           p_needs_info_reason?: string;
           p_rejection_reason?: string;
           p_request_id: string;

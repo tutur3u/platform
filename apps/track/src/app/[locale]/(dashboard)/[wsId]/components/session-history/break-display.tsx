@@ -1,10 +1,14 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import type { WorkspaceBreakType } from '@tuturuuu/hooks/hooks/use-workspace-break-types';
 import * as Icons from '@tuturuuu/icons';
+import {
+  listWorkspaceBreakTypes,
+  type WorkspaceBreakType,
+} from '@tuturuuu/internal-api/time-tracking';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import dayjs from 'dayjs';
+import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
   BREAK_COLOR_CLASSES,
@@ -47,13 +51,29 @@ export const formatTime = (isoString: string): string => {
 export function BreakDisplay({ sessionId }: BreakDisplayProps) {
   const t = useTranslations('time-tracker.breaks');
   const supabase = createClient();
+  const params = useParams<{ wsId: string | string[] }>();
+  const wsId = Array.isArray(params.wsId) ? params.wsId[0] : params.wsId;
+
+  const { data: breakTypes = [] } = useQuery<WorkspaceBreakType[]>({
+    queryKey: ['workspace-break-types', wsId],
+    queryFn: async () => {
+      if (!wsId) return [];
+      return listWorkspaceBreakTypes(wsId);
+    },
+    enabled: Boolean(wsId),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const breakTypesById = new Map(
+    breakTypes.map((breakType) => [breakType.id, breakType])
+  );
 
   const { data: breaks, isLoading } = useQuery({
     queryKey: ['session-breaks', sessionId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('time_tracking_breaks')
-        .select('*, break_type_id:workspace_break_types(*)')
+        .select('*')
         .eq('session_id', sessionId)
         .order('break_start', { ascending: false });
 
@@ -84,8 +104,9 @@ export function BreakDisplay({ sessionId }: BreakDisplayProps) {
       </div>
       <div className="space-y-1.5">
         {breaks.map((breakRecord) => {
-          const breakType =
-            breakRecord.break_type_id as WorkspaceBreakType | null;
+          const breakType = breakRecord.break_type_id
+            ? (breakTypesById.get(breakRecord.break_type_id) ?? null)
+            : null;
           const breakTypeColor = getBreakTypeColor(breakType?.color);
           const breakClasses = BREAK_COLOR_CLASSES[breakTypeColor];
           const BreakIcon = getIconComponent(breakType?.icon);
@@ -139,13 +160,17 @@ export function BreakDisplay({ sessionId }: BreakDisplayProps) {
         })}
       </div>
       {breaks.some((b) => {
-        const breakType = b.break_type_id as any;
-        return breakType?.notes;
+        const breakType = b.break_type_id
+          ? breakTypesById.get(b.break_type_id)
+          : null;
+        return breakType?.description;
       }) && (
         <div className="space-y-1 border-border/20 border-t pt-2">
           {breaks.map((breakRecord) => {
-            const breakType = breakRecord.break_type_id as any;
-            return breakType?.notes ? (
+            const breakType = breakRecord.break_type_id
+              ? (breakTypesById.get(breakRecord.break_type_id) ?? null)
+              : null;
+            return breakType?.description ? (
               <p
                 key={`${breakRecord.id}-notes`}
                 className="px-1 text-muted-foreground text-xs italic"
@@ -156,7 +181,7 @@ export function BreakDisplay({ sessionId }: BreakDisplayProps) {
                     t('unnamed_break')}
                   :
                 </span>{' '}
-                {breakType.notes}
+                {breakType.description}
               </p>
             ) : null;
           })}

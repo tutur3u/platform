@@ -1,7 +1,7 @@
 'use client';
 
+import { useWorkspaceCategories } from '@tuturuuu/hooks/hooks/use-workspace-categories';
 import { Briefcase, Clock, Filter, Search, Sun, Tag } from '@tuturuuu/icons';
-import type { TimeTrackingCategory } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
@@ -15,32 +15,38 @@ import {
 } from '@tuturuuu/ui/select';
 import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import type { SessionWithRelations } from '../../types';
 import type { FilterState } from './session-types';
 
 interface SessionFiltersProps {
+  wsId: string;
   filters: FilterState;
   onFilterChange: <K extends keyof FilterState>(
     key: K,
     value: FilterState[K]
   ) => void;
   onClearFilters: () => void;
-  categories: TimeTrackingCategory[] | null;
   filteredSessions: SessionWithRelations[] | undefined;
   showAdvancedFilters: boolean;
   onToggleAdvancedFilters: () => void;
 }
 
 export function SessionFilters({
+  wsId,
   filters,
   onFilterChange,
   onClearFilters,
-  categories,
   filteredSessions,
   showAdvancedFilters,
   onToggleAdvancedFilters,
 }: SessionFiltersProps) {
   const t = useTranslations('time-tracker.session_history');
+  const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
+  const { data: categories } = useWorkspaceCategories({
+    wsId,
+    enabled: isFilterPopoverOpen,
+  });
 
   const hasActiveFilters =
     filters.categoryId !== 'all' ||
@@ -69,7 +75,7 @@ export function SessionFilters({
           </Button>
         )}
       </div>
-      <Popover>
+      <Popover open={isFilterPopoverOpen} onOpenChange={setIsFilterPopoverOpen}>
         <PopoverTrigger asChild>
           <Button variant="outline" size="sm" className="relative h-9 md:h-10">
             <Filter className="h-4 w-4 md:mr-2" />

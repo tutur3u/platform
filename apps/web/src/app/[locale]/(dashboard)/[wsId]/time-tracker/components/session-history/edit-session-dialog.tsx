@@ -1,7 +1,7 @@
 'use client';
 
+import { useWorkspaceCategories } from '@tuturuuu/hooks/hooks/use-workspace-categories';
 import { AlertTriangle } from '@tuturuuu/icons';
-import type { TimeTrackingCategory } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -53,7 +53,6 @@ interface EditSessionDialogProps {
   isEditing: boolean;
   isLoadingThreshold: boolean;
   thresholdDays: number | null | undefined;
-  categories: TimeTrackingCategory[] | null;
 }
 
 export function EditSessionDialog({
@@ -65,13 +64,16 @@ export function EditSessionDialog({
   isEditing,
   isLoadingThreshold,
   thresholdDays,
-  categories,
 }: EditSessionDialogProps) {
   const t = useTranslations('time-tracker.session_history');
   const userTimezone = dayjs.tz.guess();
 
   // Fetch tasks on-demand only when dialog is open
   const { data: tasks, isLoading: isLoadingTasks } = useWorkspaceTasks({
+    wsId: session?.ws_id || null,
+    enabled: !!session,
+  });
+  const { data: categories } = useWorkspaceCategories({
     wsId: session?.ws_id || null,
     enabled: !!session,
   });

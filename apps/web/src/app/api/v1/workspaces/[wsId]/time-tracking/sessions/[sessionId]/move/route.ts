@@ -2,15 +2,28 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+
+const routeParamsSchema = z.object({
+  sessionId: z.uuid(),
+});
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ wsId: string; sessionId: string }> }
 ) {
   try {
-    const { wsId, sessionId } = await params;
-    const supabase = await createClient();
+    const { wsId: id, sessionId } = await params;
+    const parsedResult = routeParamsSchema.safeParse({ sessionId });
+    if (!parsedResult.success) {
+      return NextResponse.json(
+        { error: 'Invalid session ID format' },
+        { status: 400 }
+      );
+    }
+    const supabase = await createClient(request);
 
     // Get authenticated user
     const {
@@ -20,6 +33,8 @@ export async function POST(
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const wsId = await normalizeWorkspaceId(id, supabase);
 
     // Verify workspace access
     const { data: memberCheck } = await supabase
@@ -61,8 +76,10 @@ export async function POST(
       );
     }
 
+    const sbAdmin = await createAdminClient();
+
     // Verify session exists and belongs to user
-    const { data: session, error: sessionError } = await supabase
+    const { data: session, error: sessionError } = await sbAdmin
       .from('time_tracking_sessions')
       .select(`
         *,
@@ -87,8 +104,6 @@ export async function POST(
         { status: 400 }
       );
     }
-
-    const sbAdmin = await createAdminClient();
 
     // Check if category exists in target workspace
     let targetCategoryId = null;

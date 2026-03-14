@@ -26,7 +26,6 @@ export interface StackedSession {
 export interface SessionHistoryProps {
   wsId: string;
   userId: string;
-  categories: TimeTrackingCategory[] | null;
   tasks: TaskWithDetails[] | null;
   workspace: Workspace;
   isPersonal?: boolean;

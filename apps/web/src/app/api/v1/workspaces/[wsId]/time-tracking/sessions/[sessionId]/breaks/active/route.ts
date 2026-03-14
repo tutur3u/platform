@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
@@ -20,9 +23,11 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const sbAdmin = await createAdminClient();
+
   try {
     // Verify session belongs to user's workspace
-    const { data: session, error: sessionError } = await supabase
+    const { data: session, error: sessionError } = await sbAdmin
       .from('time_tracking_sessions')
       .select('id, ws_id, user_id')
       .eq('id', sessionId)
@@ -35,7 +40,7 @@ export async function GET(
     }
 
     // Fetch active break (where break_end is null)
-    const { data: activeBreak, error: breakError } = await supabase
+    const { data: activeBreak, error: breakError } = await sbAdmin
       .from('time_tracking_breaks')
       .select(
         `
