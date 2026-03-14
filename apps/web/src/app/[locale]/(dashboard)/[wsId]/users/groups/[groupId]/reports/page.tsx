@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
@@ -70,9 +70,9 @@ export default async function UserGroupDetailsPage({ params }: Props) {
 }
 
 async function getData(wsId: string, groupId: string) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
-  const { data, error } = await supabase
+  const { data, error } = await sbAdmin
     .from('workspace_user_groups')
     .select('*')
     .eq('ws_id', wsId)
