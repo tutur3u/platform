@@ -1,4 +1,3 @@
-import { Fruit, getColorCode, getColorSrc } from './types';
 import {
   Bomb,
   ChevronDown,
@@ -10,6 +9,7 @@ import {
 } from '@ncthub/ui/icons';
 import { cn } from '@ncthub/utils/format';
 import Image from 'next/image';
+import { type Fruit, getColorCode, getColorSrc } from './types';
 
 function FruitPlaceholder({
   fruit,
@@ -31,7 +31,7 @@ function FruitPlaceholder({
             : 'border-transparent'
           : 'border-foreground/50',
         fruit?.type === 'rainbow'
-          ? 'bg-gradient-to-br from-red-600 via-violet-400 to-sky-400'
+          ? 'bg-linear-to-br from-red-600 via-violet-400 to-sky-400'
           : '',
         className
       )}

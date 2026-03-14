@@ -1,7 +1,8 @@
+import type React from 'react';
+import { useRef, useState } from 'react';
 import FruitPlaceholder from './fruit-placeholder';
-import { BOARD_SIZE, Fruits } from './types';
+import { BOARD_SIZE, type Fruits } from './types';
 import { useDragAndDrop } from './use-dnd';
-import React, { useRef, useState } from 'react';
 
 interface FruitGridProps {
   fruits: Fruits;
