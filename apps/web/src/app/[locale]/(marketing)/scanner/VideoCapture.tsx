@@ -25,14 +25,12 @@ interface VideoCaptureProps {
   onNewStudent: (name: string, studentNumber: string) => void;
 }
 
-interface CameraDevice {
-  deviceId: string;
-  label: string;
-}
-
 export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
-  const [availableDevices, setAvailableDevices] = useState<CameraDevice[]>([]);
-  const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
+  const [availableDevices, setAvailableDevices] = useState<MediaDeviceInfo[]>(
+    []
+  );
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
+  const [isFrontCamera, setIsFrontCamera] = useState<boolean>(false);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -44,31 +42,41 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
 
   const { toast } = useToast();
 
-  const getSelectedDeviceLabel = () => {
-    const device = availableDevices.find((d) => d.deviceId === selectedDevice);
+  const getSelectedDeviceIdLabel = () => {
+    const device = availableDevices.find(
+      (d) => d.deviceId === selectedDeviceId
+    );
     return device?.label || 'Select Camera';
+  };
+
+  // Detect if the camera is front-facing from track settings
+  const detectFrontCameraFromStream = (stream: MediaStream) => {
+    const videoTracks = stream.getVideoTracks();
+    if (videoTracks.length === 0) return false;
+
+    const settings = videoTracks[0]?.getSettings();
+    const facing = settings?.facingMode;
+
+    return facing === 'user';
   };
 
   // Enumerate available camera devices
   const enumerateDevices = useCallback(async () => {
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices
-        .filter((device) => device.kind === 'videoinput')
-        .map((device) => ({
-          deviceId: device.deviceId,
-          label: device.label || `Camera ${device.deviceId.slice(0, 8)}...`,
-        }));
+      const videoDevices = devices.filter(
+        (device) => device.kind === 'videoinput'
+      );
 
       setAvailableDevices(videoDevices);
 
-      if (videoDevices.length > 0 && !selectedDevice) {
-        setSelectedDevice(videoDevices[0]?.deviceId || null);
+      if (videoDevices.length > 0 && !selectedDeviceId) {
+        setSelectedDeviceId(videoDevices[0]?.deviceId || null);
       }
     } catch (error) {
       console.error('Error enumerating devices:', error);
     }
-  }, [selectedDevice]);
+  }, [selectedDeviceId]);
 
   const startCamera = async (deviceId: string) => {
     setCameraOn(true);
@@ -101,6 +109,9 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
 
+        // Detect camera type from actual stream
+        setIsFrontCamera(detectFrontCameraFromStream(stream));
+
         videoRef.current.onloadedmetadata = () => {
           setIsReady(true);
         };
@@ -125,20 +136,22 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
     }
 
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current.getTracks().forEach((track) => {
+        track.stop();
+      });
     }
   };
 
   const toggleCamera = async () => {
     if (!cameraOn) {
-      await startCamera(selectedDevice || '');
+      await startCamera(selectedDeviceId || '');
     } else {
       stopCamera();
     }
   };
 
   const handleDeviceChange = async (deviceId: string) => {
-    setSelectedDevice(deviceId);
+    setSelectedDeviceId(deviceId);
 
     // If camera is currently on, restart with new device
     if (cameraOn) {
@@ -172,12 +185,14 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
 
         const imageData = canvasRef.current.toDataURL('image/webp', 0.8);
         try {
-          const response = await fetch(`/api/capture`, {
+          const ocrURL =
+            process.env.NEXT_PUBLIC_OCR_SERVICE_URL || 'http://localhost:5000';
+          const response = await fetch(`${ocrURL}/capture`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ imageData }),
+            body: JSON.stringify({ image_data: imageData }),
           });
 
           if (!response.ok) {
@@ -236,13 +251,13 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
     <div className="space-y-6">
       {/* Camera Device Selection */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">Camera Selection</h3>
+        <h3 className="font-medium text-lg">Camera Selection</h3>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="w-64 justify-between">
               <div className="flex min-w-0 items-center gap-2">
                 <Video className="h-4 w-4" />
-                <span className="truncate">{getSelectedDeviceLabel()}</span>
+                <span className="truncate">{getSelectedDeviceIdLabel()}</span>
               </div>
               <ChevronDown className="h-4 w-4 opacity-50" />
             </Button>
@@ -254,7 +269,7 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
                 onClick={() => handleDeviceChange(device.deviceId)}
                 className={cn(
                   'cursor-pointer',
-                  selectedDevice === device.deviceId && 'bg-accent'
+                  selectedDeviceId === device.deviceId && 'bg-accent'
                 )}
               >
                 <Video className="mr-2 h-4 w-4" />
@@ -270,7 +285,7 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
         className={cn(
           'relative aspect-video overflow-hidden rounded-2xl border-4 transition-all duration-300',
           cameraOn
-            ? 'border-blue-500 shadow-lg shadow-blue-500/25'
+            ? 'border-blue-500 shadow-blue-500/25 shadow-lg'
             : 'border-gray-200'
         )}
       >
@@ -279,7 +294,10 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
           autoPlay
           playsInline
           muted
-          className="h-full w-full object-cover"
+          className={cn(
+            'h-full w-full object-cover',
+            isFrontCamera && 'scale-x-[-1]'
+          )}
         />
 
         {/* Camera Off Placeholder */}
@@ -290,10 +308,10 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
                 <CameraOff className="h-8 w-8 text-dynamic-gray" />
               </div>
               <div className="space-y-2">
-                <p className="text-lg font-medium text-gray-700">
+                <p className="font-medium text-gray-700 text-lg">
                   Camera is Off
                 </p>
-                <p className="text-sm text-gray-500">
+                <p className="text-gray-500 text-sm">
                   Click "Turn On Camera" to start scanning
                 </p>
               </div>
@@ -308,10 +326,10 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
             <div className="pointer-events-none absolute inset-0">
               <div className="absolute top-1/2 left-1/2 h-48 w-80 -translate-x-1/2 -translate-y-1/2">
                 {/* Corner Brackets */}
-                <div className="absolute top-0 left-0 h-8 w-8 rounded-tl-lg border-t-4 border-l-4 border-white shadow-lg"></div>
-                <div className="absolute top-0 right-0 h-8 w-8 rounded-tr-lg border-t-4 border-r-4 border-white shadow-lg"></div>
-                <div className="absolute bottom-0 left-0 h-8 w-8 rounded-bl-lg border-b-4 border-l-4 border-white shadow-lg"></div>
-                <div className="absolute right-0 bottom-0 h-8 w-8 rounded-br-lg border-r-4 border-b-4 border-white shadow-lg"></div>
+                <div className="absolute top-0 left-0 h-8 w-8 rounded-tl-lg border-white border-t-4 border-l-4 shadow-lg"></div>
+                <div className="absolute top-0 right-0 h-8 w-8 rounded-tr-lg border-white border-t-4 border-r-4 shadow-lg"></div>
+                <div className="absolute bottom-0 left-0 h-8 w-8 rounded-bl-lg border-white border-b-4 border-l-4 shadow-lg"></div>
+                <div className="absolute right-0 bottom-0 h-8 w-8 rounded-br-lg border-white border-r-4 border-b-4 shadow-lg"></div>
 
                 {/* Center Crosshair */}
                 <div className="absolute top-1/2 left-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2">
@@ -338,7 +356,7 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
               <LoadingIndicator className="mx-auto h-12 w-12 text-white" />
             </div>
             <div className="space-y-2 text-center">
-              <p className="text-lg font-semibold text-white">
+              <p className="font-semibold text-lg text-white">
                 Processing Image...
               </p>
               <p className="text-sm text-white/80">
@@ -358,10 +376,10 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
           size="lg"
           variant={cameraOn ? 'destructive' : 'default'}
           className={cn(
-            'h-14 flex-1 text-base font-medium transition-all duration-200',
+            'h-14 flex-1 font-medium text-base transition-all duration-200',
             cameraOn
               ? 'bg-red-500 shadow-lg shadow-red-500/25 hover:bg-red-600'
-              : 'bg-blue-500 text-white shadow-lg shadow-blue-500/25 hover:bg-blue-600'
+              : 'bg-blue-500 text-white shadow-blue-500/25 shadow-lg hover:bg-blue-600'
           )}
         >
           {cameraOn ? (
@@ -382,8 +400,8 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
           size="lg"
           disabled={!cameraOn || capturing || !isReady}
           className={cn(
-            'h-14 flex-1 text-base font-medium transition-all duration-200',
-            'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg hover:from-purple-600 hover:to-indigo-700'
+            'h-14 flex-1 font-medium text-base transition-all duration-200',
+            'bg-linear-to-r from-purple-500 to-indigo-600 text-white shadow-lg hover:from-purple-600 hover:to-indigo-700'
           )}
         >
           {capturing ? (
