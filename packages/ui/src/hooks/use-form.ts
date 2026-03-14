@@ -13,6 +13,7 @@ import {
   useWatch,
 } from 'react-hook-form';
 
+export type { Control, ControllerProps, FieldPath, FieldValues, UseFormReturn };
 export {
   Controller,
   FormProvider,
@@ -22,5 +23,3 @@ export {
   useFormState,
   useWatch,
 };
-
-export type { ControllerProps, FieldPath, FieldValues, UseFormReturn, Control };

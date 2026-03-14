@@ -637,7 +637,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
           ? filteredSessions.slice(0, limit)
           : filteredSessions;
         const lastSession =
-          hasMore && data && data[limit - 1] ? data[limit - 1] : null;
+          hasMore && data?.[limit - 1] ? data[limit - 1] : null;
         const nextCursor = lastSession
           ? `${lastSession.start_time}|${lastSession.id}`
           : null;

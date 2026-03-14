@@ -34,10 +34,10 @@ import {
 
 // Re-export types for convenience
 export type {
-  InvoiceTotalsByGroup,
-  InvoiceAnalyticsPeriod,
-  InvoiceAnalyticsMetric,
   InvoiceAnalyticsGroupBy,
+  InvoiceAnalyticsMetric,
+  InvoiceAnalyticsPeriod,
+  InvoiceTotalsByGroup,
 };
 
 // Chart display mode for creator view

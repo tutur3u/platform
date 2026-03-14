@@ -57,6 +57,9 @@ const EmailRequestSchema = z.object({
   date: z
     .string()
     .max(MAX_COLOR_LENGTH)
+    .optional()
+    .nullable()
+    .transform((val) => val || new Date().toISOString())
     .refine((value) => !Number.isNaN(Date.parse(value)), {
       message: 'Invalid date format',
     }),

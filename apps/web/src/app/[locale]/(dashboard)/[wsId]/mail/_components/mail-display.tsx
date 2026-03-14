@@ -445,6 +445,7 @@ function ThreadMessageItem({
           ) : message.isOriginal && mail.html_payload ? (
             <div
               className="prose prose-sm wrap-break-word max-w-full prose-a:text-dynamic-blue prose-blockquote:text-foreground prose-strong:text-foreground text-foreground prose-a:underline"
+              // biome-ignore lint/security/noDangerouslySetInnerHtml: content is already sanitized
               dangerouslySetInnerHTML={{
                 __html: DOMPurify.sanitize(message.content),
               }}
@@ -453,6 +454,7 @@ function ThreadMessageItem({
             // Handle HTML content in threaded messages
             <div
               className="prose prose-sm wrap-break-word max-w-full prose-a:text-dynamic-blue prose-blockquote:text-foreground prose-strong:text-foreground text-foreground prose-a:underline"
+              // biome-ignore lint/security/noDangerouslySetInnerHtml: content is already sanitized
               dangerouslySetInnerHTML={{
                 __html: DOMPurify.sanitize(
                   isCollapsed
@@ -1047,6 +1049,7 @@ export function MailDisplay({
                 <div
                   className="prose wrap-break-word max-w-full bg-background prose-a:text-dynamic-blue prose-blockquote:text-foreground prose-strong:text-foreground text-foreground prose-a:underline"
                   style={{ padding: '1.5rem' }}
+                  // biome-ignore lint/security/noDangerouslySetInnerHtml: content is already sanitized
                   dangerouslySetInnerHTML={{
                     __html: confidentialMode
                       ? `<div class="text-center text-muted-foreground py-8">

@@ -624,6 +624,7 @@ export function ComposeDialog({
                     ) : sanitizedHtml.trim().length > 0 ? (
                       <div
                         className="prose wrap-break-word max-w-full prose-a:text-dynamic-blue prose-blockquote:text-foreground prose-h1:text-foreground prose-h2:text-foreground prose-h3:text-foreground prose-h4:text-foreground prose-h5:text-foreground prose-h6:text-foreground prose-strong:text-foreground text-foreground prose-a:underline"
+                        // biome-ignore lint/security/noDangerouslySetInnerHtml: content is already sanitized
                         dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
                       />
                     ) : (

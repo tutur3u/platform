@@ -4,4 +4,4 @@ import {
   PUT,
 } from '@tuturuuu/apis/finance/transactions/categories/categoryId/route';
 
-export { GET, PUT, DELETE };
+export { DELETE, GET, PUT };

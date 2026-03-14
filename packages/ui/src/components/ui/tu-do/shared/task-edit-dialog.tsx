@@ -75,12 +75,11 @@ import { TaskShareDialog } from './task-share-dialog';
 import type { TaskFilters } from './types';
 import { UnsavedChangesWarningDialog } from './unsaved-changes-warning-dialog';
 
-export type { PendingRelationship, PendingRelationshipType, SharedTaskContext };
-
 export {
   type DialogHeaderInfo,
   getTaskDialogHeaderInfo,
 } from './task-edit-dialog/components/task-dialog-header';
+export type { PendingRelationship, PendingRelationshipType, SharedTaskContext };
 
 const supabase = createClient();
 

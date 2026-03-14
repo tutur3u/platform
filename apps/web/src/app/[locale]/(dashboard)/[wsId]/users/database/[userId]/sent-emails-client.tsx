@@ -268,6 +268,7 @@ export default function SentEmailsClient({
             <div className="min-h-0 flex-1 overflow-y-auto">
               <div
                 className="prose prose-sm max-w-none"
+                // biome-ignore lint/security/noDangerouslySetInnerHtml: content is already sanitized
                 dangerouslySetInnerHTML={{
                   __html: sanitizedContent,
                 }}
