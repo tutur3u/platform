@@ -6,7 +6,6 @@ import {
   type Fruits,
   type FruitType,
 } from './types';
-import { useSound } from './use-sound';
 import { checkForMatches } from './utils';
 
 export const useDragAndDrop = (
@@ -29,10 +28,6 @@ export const useDragAndDrop = (
   decrementTurns: () => void,
   disabled: boolean
 ) => {
-  const playSwipe = useSound('/media/sounds/swipe.mp3', 0.6);
-  const playPop = useSound('/media/sounds/pop.mp3', 0.5);
-  const playError = useSound('/media/sounds/error.mp3', 0.3);
-
   const dragStart = (
     e: React.DragEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>
   ) => {
@@ -130,18 +125,9 @@ export const useDragAndDrop = (
             draggedFruit?.type === 'normal' &&
             replacedFruit?.type === 'normal'
           ) {
-            // Invalid swap (no match created)
-            playError();
             const temp = newFruits[squareBeingDraggedId];
             newFruits[squareBeingDraggedId] = newFruits[squareBeingReplacedId];
             newFruits[squareBeingReplacedId] = temp;
-          } else {
-            // Valid swap (match created, or special fruit used)
-            if (hasMatch) {
-              playPop();
-            } else {
-              playSwipe();
-            }
           }
 
           if (
@@ -151,9 +137,6 @@ export const useDragAndDrop = (
           )
             decrementTurns();
           setFruits(newFruits);
-        } else {
-          // Tried to move across the board illegally
-          playError();
         }
 
         setSquareBeingDragged(null);
@@ -170,11 +153,10 @@ export const useDragAndDrop = (
       handleSpecialFruits,
       setFruits,
       setScore,
-      playSwipe,
-      playPop,
-      playError,
       disabled,
       decrementTurns,
+      setSquareBeingDragged,
+      setSquareBeingReplaced,
     ]
   );
 
