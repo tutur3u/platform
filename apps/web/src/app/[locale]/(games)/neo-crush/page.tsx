@@ -1,6 +1,5 @@
 'use client';
 
-import { NeoCrushGame } from './game';
 import { Button } from '@ncthub/ui/button';
 import {
   Dialog,
@@ -9,6 +8,7 @@ import {
   DialogTrigger,
 } from '@ncthub/ui/dialog';
 import Image from 'next/image';
+import { NeoCrushGame } from './game';
 
 export default function NeoCrushGamePage() {
   return (
@@ -22,7 +22,7 @@ export default function NeoCrushGamePage() {
         priority
       />
       <div className="grid gap-2">
-        <div className="font-serif text-5xl font-semibold tracking-wider">
+        <div className="font-semibold font-serif text-5xl tracking-wider">
           <span className="text-dynamic-yellow">N</span>
           <span className="text-dynamic-green">e</span>
           <span className="text-dynamic-red">o</span>

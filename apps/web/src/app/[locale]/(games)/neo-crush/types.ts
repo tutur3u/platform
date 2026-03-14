@@ -26,14 +26,21 @@ const FRUIT_COLOR_CODES = {
   null: NULL_COLOR,
 } as const;
 
+export type AssetType = 'library' | 'normal';
+
+const ASSET_TYPE = 'library';
+
+const ASSET_DIR =
+  ASSET_TYPE === 'library' ? '/neo-crush/library' : '/neo-crush';
+
 const FRUIT_COLOR_SOURCES = {
-  red: '/neo-crush/red.png',
-  blue: '/neo-crush/blue.png',
-  green: '/neo-crush/green.png',
-  yellow: '/neo-crush/yellow.png',
-  purple: '/neo-crush/purple.png',
-  pink: '/neo-crush/pink.png',
-  orange: '/neo-crush/orange.png',
+  red: `${ASSET_DIR}/red.png` as const,
+  blue: `${ASSET_DIR}/blue.png` as const,
+  green: `${ASSET_DIR}/green.png` as const,
+  yellow: `${ASSET_DIR}/yellow.png` as const,
+  purple: `${ASSET_DIR}/purple.png` as const,
+  pink: `${ASSET_DIR}/pink.png` as const,
+  orange: `${ASSET_DIR}/orange.png` as const,
   null: undefined,
 } as const;
 

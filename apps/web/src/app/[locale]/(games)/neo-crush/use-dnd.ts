@@ -1,6 +1,12 @@
-import { BOARD_SIZE, Fruit, FruitColorName, FruitType, Fruits } from './types';
-import { checkForMatches } from './utils';
 import { useCallback } from 'react';
+import {
+  BOARD_SIZE,
+  Fruit,
+  type FruitColorName,
+  type Fruits,
+  type FruitType,
+} from './types';
+import { checkForMatches } from './utils';
 
 export const useDragAndDrop = (
   fruits: Fruits,
@@ -147,6 +153,10 @@ export const useDragAndDrop = (
       handleSpecialFruits,
       setFruits,
       setScore,
+      disabled,
+      decrementTurns,
+      setSquareBeingDragged,
+      setSquareBeingReplaced,
     ]
   );
 
