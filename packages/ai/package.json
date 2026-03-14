@@ -43,7 +43,7 @@
     "@ncthub/supabase": "workspace:*",
     "@ncthub/utils": "workspace:*",
     "ai": "^4.3.19",
-    "dayjs": "^1.11.19",
+    "dayjs": "^1.11.20",
     "next": "16.1.6",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
@@ -52,10 +52,10 @@
   "devDependencies": {
     "@ncthub/types": "workspace:*",
     "@ncthub/typescript-config": "workspace:*",
-    "@types/node": "^25.4.0",
+    "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
+    "vitest": "^4.1.0"
   },
   "exports": {
     "./*": "./src/*.ts"
