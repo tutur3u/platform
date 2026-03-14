@@ -1,4 +1,12 @@
 // game.tsx
+
+import { Button } from '@ncthub/ui/button';
+import { Card } from '@ncthub/ui/card';
+import { Separator } from '@ncthub/ui/separator';
+import { cn } from '@ncthub/utils/format';
+import type React from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { DEV_MODE } from '@/constants/common';
 import { FruitGrid } from './fruit-grid';
 import FruitPlaceholder from './fruit-placeholder';
 import GameStats from './game-stats';
@@ -7,15 +15,9 @@ import {
   summonLineEraser,
   summonRainbowFruit,
 } from './summoner';
-import { DEFAULT_TURNS, Fruit, Fruits } from './types';
+import { DEFAULT_TURNS, Fruit, type Fruits } from './types';
 import { useGameLogic } from './use-game-logic';
 import { createBoard } from './utils';
-import { DEV_MODE } from '@/constants/common';
-import { Button } from '@ncthub/ui/button';
-import { Card } from '@ncthub/ui/card';
-import { Separator } from '@ncthub/ui/separator';
-import { cn } from '@ncthub/utils/format';
-import React, { useEffect, useMemo, useState } from 'react';
 
 export const NeoCrushGame: React.FC = () => {
   const [fruits, setFruits] = useState<Fruits>(createBoard());
@@ -57,7 +59,7 @@ export const NeoCrushGame: React.FC = () => {
       <Card className="w-full p-2 md:p-4">
         <div className={cn(turns <= 0 ? 'opacity-50' : '', 'relative')}>
           {turns === 0 && !unlimitedTurns && (
-            <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-foreground/20 text-5xl font-semibold text-white">
+            <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-foreground/20 font-semibold text-5xl text-white">
               GAME OVER
             </div>
           )}
@@ -72,7 +74,7 @@ export const NeoCrushGame: React.FC = () => {
             disabled={turns <= 0 && !unlimitedTurns}
           />
         </div>
-        <div className="mt-2 flex w-full items-center justify-center gap-4 text-center text-sm font-bold md:mt-4">
+        <div className="mt-2 flex w-full items-center justify-center gap-4 text-center font-bold text-sm md:mt-4">
           <div className="w-full">
             <span className="opacity-70">Turns:</span>{' '}
             <span className="md:text-xl lg:text-base">
