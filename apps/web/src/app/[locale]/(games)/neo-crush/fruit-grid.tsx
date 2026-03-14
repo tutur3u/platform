@@ -77,7 +77,7 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
       const target = e.target as HTMLDivElement;
       const currentId = parseInt(target.getAttribute('data-id') || '0');
 
-      let newId;
+      let newId: number;
       if (Math.abs(diffX) > Math.abs(diffY)) {
         // Horizontal swipe
         newId = currentId + (diffX > 0 ? 1 : -1);
