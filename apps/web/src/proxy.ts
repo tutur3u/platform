@@ -42,9 +42,11 @@ export const config = {
      * - gif
      * - webp
      * - glb
+     * - mp3
+     * - mp4
      */
 
-    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|monitoring|.*\\.(?:svg|png|jpg|jpeg|pdf|gif|webp|glb)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|monitoring|.*\\.(?:svg|png|jpg|jpeg|pdf|gif|webp|glb|mp3|mp4)$).*)',
   ],
 };
 
