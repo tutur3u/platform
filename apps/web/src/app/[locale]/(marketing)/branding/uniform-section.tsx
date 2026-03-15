@@ -1,49 +1,51 @@
 'use client';
 
-import { Button } from '@ncthub/ui/button';
-import { Download } from '@ncthub/ui/icons';
 import { cn } from '@ncthub/utils/format';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { useState } from 'react';
 import '@/style/checkerboard.css';
 
-const logoVariants = [
+const uniformVariants = [
   {
-    id: 'logo-only',
-    title: 'Logomark',
-    subtitle: 'The standalone emblem',
+    id: 'polo-uniform',
+    title: 'Polo Uniform',
+    subtitle: 'The primary club uniform',
     description:
-      'The iconic tilted "N" emblem. Use when space is limited or when the brand is already established in context.',
+      'Our official polo shirt featuring the embroidered NCT logo. Designed for a smart and professional look at events and activities.',
     images: [
       {
-        src: '/media/logos/transparent/dark-logo-only-transparent.png',
-        alt: 'NCT Dark Logomark',
-        theme: 'dark' as const,
+        src: '/uniform/polo1.png',
+        alt: 'Polo Uniform Front',
+        label: 'Front View',
+        theme: 'light' as const,
       },
       {
-        src: '/media/logos/transparent/light-logo-only-transparent.png',
-        alt: 'NCT Light Logomark',
+        src: '/uniform/polo2.png',
+        alt: 'Polo Uniform Back',
+        label: 'Back View',
         theme: 'light' as const,
       },
     ],
   },
   {
-    id: 'square-logo',
-    title: 'Full Lockup',
-    subtitle: 'The complete brand mark',
+    id: 'sport-uniform',
+    title: 'Sport Uniform',
+    subtitle: 'The activewear variant',
     description:
-      'The full logo including the "N" emblem and wordmark. This is the primary logo for most applications.',
+      'A lightweight and breathable t-shirt designed for active and casual club engagements.',
     images: [
       {
-        src: '/media/logos/transparent/dark-logo-transparent.png',
-        alt: 'NCT Dark Full Logo',
+        src: '/uniform/sport1.png',
+        alt: 'Sport Uniform Front',
+        label: 'Front View',
         theme: 'dark' as const,
       },
       {
-        src: '/media/logos/transparent/light-logo-transparent.png',
-        alt: 'NCT Light Full Logo',
-        theme: 'light' as const,
+        src: '/uniform/sport2.png',
+        alt: 'Sport Uniform Back',
+        label: 'Back View',
+        theme: 'dark' as const,
       },
     ],
   },
@@ -66,11 +68,11 @@ const stagger = {
   },
 };
 
-function LogoCard({
+function UniformCard({
   image,
   index,
 }: {
-  image: (typeof logoVariants)[0]['images'][0];
+  image: (typeof uniformVariants)[0]['images'][0];
   index: number;
 }) {
   const [isHovered, setIsHovered] = useState(false);
@@ -86,14 +88,14 @@ function LogoCard({
       {/* Specimen label */}
       <div className="mb-3 flex items-center justify-between">
         <span className="font-mono text-muted-foreground text-xs uppercase tracking-[0.2em]">
-          {isDark ? 'On Dark' : 'On Light'}
+          {image.label}
         </span>
         <span className="font-mono text-[10px] text-muted-foreground/50 tracking-widest">
           {String(index + 1).padStart(2, '0')}
         </span>
       </div>
 
-      {/* Logo display area */}
+      {/* Image display area */}
       <motion.div
         className={cn(
           'relative flex aspect-4/3 items-center justify-center overflow-hidden rounded-2xl border transition-colors duration-500',
@@ -112,7 +114,7 @@ function LogoCard({
         }}
         transition={{ duration: 0.4 }}
       >
-        {/* Logo image */}
+        {/* Uniform image */}
         <motion.div
           className="relative h-full w-full"
           animate={{ scale: isHovered ? 1.04 : 1 }}
@@ -125,39 +127,15 @@ function LogoCard({
             src={image.src}
             alt={image.alt}
             fill
-            className="object-contain drop-shadow-lg"
+            className="object-contain drop-shadow-2xl"
           />
-        </motion.div>
-
-        {/* Download button on hover */}
-        <motion.div
-          className="absolute right-3 bottom-3"
-          initial={false}
-          animate={{ opacity: isHovered ? 1 : 0, y: isHovered ? 0 : 8 }}
-          transition={{ duration: 0.3 }}
-        >
-          <Button
-            variant="ghost"
-            size="icon"
-            className={cn(
-              'h-8 w-8 rounded-lg backdrop-blur-md',
-              isDark
-                ? 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
-                : 'bg-black/5 text-black/50 hover:bg-black/10 hover:text-black'
-            )}
-            asChild
-          >
-            <a href={image.src} download>
-              <Download className="h-3.5 w-3.5" />
-            </a>
-          </Button>
         </motion.div>
       </motion.div>
     </motion.div>
   );
 }
 
-export default function LogoSection() {
+export default function UniformSection() {
   return (
     <section className="mx-auto max-w-6xl">
       {/* Section header */}
@@ -169,21 +147,20 @@ export default function LogoSection() {
         className="mb-16 space-y-6 text-center"
       >
         <h2 className="font-bold text-4xl tracking-tight md:text-5xl">
-          Logo Design
+          Uniform Design
         </h2>
 
         <p className="mx-auto max-w-2xl text-center text-muted-foreground leading-relaxed">
-          The logo features a tilted 45&deg; letter &ldquo;N&rdquo;,
-          representing Neo Culture Tech. The emblem uses dark blue, light blue,
-          and mustard yellow&mdash;the signature colours of the club. The dark
-          variant features a neon treatment with glowing blue and yellow
-          outlines. Set in Gotham, a geometric sans-serif.
+          Our official club apparel. We offer two variations: a smart polo for
+          formal events and meetings, and a lightweight sport t-shirt for active
+          engagements. Both uniform styles proudly feature the Neo Culture Tech
+          identity.
         </p>
       </motion.div>
 
-      {/* Logo groups */}
+      {/* Uniform groups */}
       <div className="space-y-24">
-        {logoVariants.map((variant, variantIndex) => (
+        {uniformVariants.map((variant, variantIndex) => (
           <motion.div
             key={variant.id}
             variants={stagger.container}
@@ -217,10 +194,10 @@ export default function LogoSection() {
               {variant.description}
             </motion.p>
 
-            {/* Logo grid */}
+            {/* Image grid */}
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {variant.images.map((image, imgIndex) => (
-                <LogoCard
+                <UniformCard
                   key={image.src}
                   image={image}
                   index={variantIndex * 2 + imgIndex}

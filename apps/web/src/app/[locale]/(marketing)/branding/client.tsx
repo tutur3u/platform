@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import ColorPaletteSection from './color-palette-section';
 import LogoSection from './logo-section';
 import TypographySection from './typography-section';
+import UniformSection from './uniform-section';
 
 export default function BrandingContent() {
   return (
@@ -68,6 +69,8 @@ export default function BrandingContent() {
       <ColorPaletteSection />
 
       <TypographySection />
+
+      <UniformSection />
     </div>
   );
 }
