@@ -114,7 +114,7 @@ function LogoCard({
       >
         {/* Logo image */}
         <motion.div
-          className="relative h-3/5 w-3/5"
+          className="relative h-full w-full"
           animate={{ scale: isHovered ? 1.04 : 1 }}
           transition={{
             duration: 0.6,
