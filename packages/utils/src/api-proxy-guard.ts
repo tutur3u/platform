@@ -51,10 +51,16 @@ const limiterCache = new Map<string, Limiters>();
 
 const NO_READ_RATE_LIMITS: RateLimitConfig[] = [];
 
-const DEFAULT_MUTATE_RATE_LIMITS: RateLimitConfig[] = [
-  { window: 'minute', limit: 12, duration: '1 m' },
-  { window: 'hour', limit: 120, duration: '1 h' },
-  { window: 'day', limit: 400, duration: '1 d' },
+const MEET_TOGETHER_MUTATE_RATE_LIMITS: RateLimitConfig[] = [
+  { window: 'minute', limit: 5, duration: '1 m' },
+  { window: 'hour', limit: 50, duration: '1 h' },
+  { window: 'day', limit: 200, duration: '1 d' },
+];
+
+const STUDENTS_MUTATE_RATE_LIMITS: RateLimitConfig[] = [
+  { window: 'minute', limit: 5, duration: '1 m' },
+  { window: 'hour', limit: 50, duration: '1 h' },
+  { window: 'day', limit: 200, duration: '1 d' },
 ];
 
 const USERS_ME_MUTATE_RATE_LIMITS: RateLimitConfig[] = [
@@ -63,43 +69,38 @@ const USERS_ME_MUTATE_RATE_LIMITS: RateLimitConfig[] = [
   { window: 'day', limit: 240, duration: '1 d' },
 ];
 
-const AUTH_RATE_LIMITS: RateLimitProfile = {
-  get: NO_READ_RATE_LIMITS,
-  mutate: [
-    { window: 'minute', limit: 3, duration: '1 m' },
-    { window: 'hour', limit: 12, duration: '1 h' },
-    { window: 'day', limit: 30, duration: '1 d' },
-  ],
-};
-
-const OTP_SEND_RATE_LIMITS: RateLimitProfile = {
-  get: NO_READ_RATE_LIMITS,
-  mutate: [
-    { window: 'minute', limit: 1, duration: '1 m' },
-    { window: 'hour', limit: 3, duration: '1 h' },
-    { window: 'day', limit: 6, duration: '1 d' },
-  ],
-};
+const DEFAULT_MUTATE_RATE_LIMITS: RateLimitConfig[] = [
+  { window: 'minute', limit: 12, duration: '1 m' },
+  { window: 'hour', limit: 120, duration: '1 h' },
+  { window: 'day', limit: 400, duration: '1 d' },
+];
 
 const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
   {
-    key: 'otp-send',
+    key: 'meet-together',
     matches: (req) =>
-      /^\/api\/v1\/auth\/mobile\/send-otp(?:\/|$)/.test(req.nextUrl.pathname),
-    rateLimits: OTP_SEND_RATE_LIMITS,
+      req.nextUrl.pathname === '/api/meet-together' ||
+      req.nextUrl.pathname.startsWith('/api/meet-together'),
+    rateLimits: {
+      get: NO_READ_RATE_LIMITS,
+      mutate: MEET_TOGETHER_MUTATE_RATE_LIMITS,
+    },
   },
   {
-    key: 'auth',
+    key: 'students',
     matches: (req) =>
-      req.nextUrl.pathname.startsWith('/api/auth/mfa/') ||
-      /^\/api\/v1\/auth\/mobile\/(?:verify-otp|password-login)(?:\/|$)/.test(
-        req.nextUrl.pathname
-      ),
-    rateLimits: AUTH_RATE_LIMITS,
+      req.nextUrl.pathname === '/api/students' ||
+      req.nextUrl.pathname.startsWith('/api/students'),
+    rateLimits: {
+      get: NO_READ_RATE_LIMITS,
+      mutate: STUDENTS_MUTATE_RATE_LIMITS,
+    },
   },
   {
     key: 'users-me',
-    matches: (req) => req.nextUrl.pathname.startsWith('/api/v1/users/me'),
+    matches: (req) =>
+      req.nextUrl.pathname === '/api/v1/users/me' ||
+      req.nextUrl.pathname.startsWith('/api/v1/users/me'),
     rateLimits: {
       get: NO_READ_RATE_LIMITS,
       mutate: USERS_ME_MUTATE_RATE_LIMITS,
@@ -139,14 +140,6 @@ function hasHeaderToken(
   return secrets.some((secret) => !!secret && headerValue === secret);
 }
 
-function hasPolarWebhookSignatureHeaders(headers: Headers) {
-  return (
-    !!headers.get('webhook-id') &&
-    !!headers.get('webhook-timestamp') &&
-    !!headers.get('webhook-signature')
-  );
-}
-
 const DEFAULT_TRUSTED_BYPASS_RULES: TrustedProxyBypassRule[] = [
   {
     matches: (pathname, headers) =>
@@ -164,13 +157,6 @@ const DEFAULT_TRUSTED_BYPASS_RULES: TrustedProxyBypassRule[] = [
           process.env.CRON_SECRET,
           process.env.VERCEL_CRON_SECRET,
         ])),
-  },
-  {
-    matches: (pathname, headers) =>
-      (pathname === '/api/payment/webhooks' ||
-        pathname.startsWith('/api/payment/webhooks/')) &&
-      !!process.env.POLAR_WEBHOOK_SECRET &&
-      hasPolarWebhookSignatureHeaders(headers),
   },
   {
     matches: (pathname, headers) =>
