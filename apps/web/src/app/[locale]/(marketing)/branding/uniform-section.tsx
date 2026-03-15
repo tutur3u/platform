@@ -116,7 +116,7 @@ function UniformCard({
       >
         {/* Uniform image */}
         <motion.div
-          className="relative h-4/5 w-4/5"
+          className="relative h-full w-full"
           animate={{ scale: isHovered ? 1.04 : 1 }}
           transition={{
             duration: 0.6,
