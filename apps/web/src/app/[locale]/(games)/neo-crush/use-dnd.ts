@@ -43,6 +43,19 @@ export const useDragAndDrop = (
 
     if (swipeAudioRef.current) swipeAudioRef.current.preload = 'auto';
     if (errorAudioRef.current) errorAudioRef.current.preload = 'auto';
+
+    return () => {
+      if (swipeAudioRef.current) {
+        swipeAudioRef.current.pause();
+        swipeAudioRef.current.src = '';
+        swipeAudioRef.current = null;
+      }
+      if (errorAudioRef.current) {
+        errorAudioRef.current.pause();
+        errorAudioRef.current.src = '';
+        errorAudioRef.current = null;
+      }
+    };
   }, []);
 
   const dragStart = (

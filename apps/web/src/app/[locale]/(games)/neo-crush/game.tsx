@@ -46,6 +46,19 @@ export const NeoCrushGame: React.FC = () => {
 
     if (winAudioRef.current) winAudioRef.current.preload = 'auto';
     if (loseAudioRef.current) loseAudioRef.current.preload = 'auto';
+
+    return () => {
+      if (winAudioRef.current) {
+        winAudioRef.current.pause();
+        winAudioRef.current.src = '';
+        winAudioRef.current = null;
+      }
+      if (loseAudioRef.current) {
+        loseAudioRef.current.pause();
+        loseAudioRef.current.src = '';
+        loseAudioRef.current = null;
+      }
+    };
   }, []);
 
   useEffect(() => {
