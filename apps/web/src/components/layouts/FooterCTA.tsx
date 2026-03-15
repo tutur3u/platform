@@ -12,11 +12,11 @@ export default function FooterCTA() {
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, delay: 0.5 }}
       viewport={{ once: true }}
-      className="mt-16 text-center"
+      className="mt-16 px-4 text-center md:px-32"
     >
-      <Card className="mx-auto max-w-2xl border-primary/20 bg-gradient-to-r from-primary/10 to-secondary/10">
+      <Card className="mx-auto max-w-2xl border-primary/20 bg-linear-to-r from-primary/10 to-secondary/10">
         <CardContent className="p-8">
-          <h3 className="mb-4 text-2xl font-bold">
+          <h3 className="mb-4 font-bold text-2xl">
             Ready to Join Our Community?
           </h3>
           <p className="mb-6 text-muted-foreground">
@@ -25,7 +25,7 @@ export default function FooterCTA() {
           </p>
           <Button
             size="lg"
-            className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-black hover:from-yellow-500 hover:to-yellow-700"
+            className="bg-linear-to-r from-yellow-400 to-yellow-600 text-black hover:from-yellow-500 hover:to-yellow-700"
           >
             Get Started Today
             <ArrowRight className="ml-2 h-5 w-5" />

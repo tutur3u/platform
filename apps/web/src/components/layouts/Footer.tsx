@@ -9,7 +9,7 @@ export default async function Footer() {
 
   return (
     <div className="w-full px-0 text-center md:px-4 lg:px-10">
-      <Separator className="mt-8 mb-5 bg-foreground/5" />
+      <Separator className="my-8" />
       {/* Client component with motion */}
       <FooterCTA />
 
