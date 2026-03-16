@@ -1,14 +1,35 @@
 import { Card, CardContent, CardHeader } from '@ncthub/ui/card';
 import { cn } from '@ncthub/utils/format';
 import Image from 'next/image';
-import type { ReactNode } from 'react';
+
+const renderMissionPoints = (mission: string[]) => {
+  return (
+    <ul className="list-disc space-y-2 pl-5">
+      {mission.map((point, index) => {
+        const separatorIndex = point.indexOf(':');
+
+        if (separatorIndex !== -1) {
+          const title = point.substring(0, separatorIndex).trim();
+          const description = point.substring(separatorIndex + 1).trim();
+          return (
+            <li key={index}>
+              <span className="font-semibold">{title}:</span> {description}
+            </li>
+          );
+        }
+
+        return <li key={index}>{point}</li>;
+      })}
+    </ul>
+  );
+};
 
 interface DepartmentCardProps {
   name: string;
   image: string;
   bio: string;
   characteristics: string;
-  quote: ReactNode;
+  mission: string[];
   core: string[];
   className?: string;
 }
@@ -18,7 +39,7 @@ export function DepartmentCard({
   image,
   bio,
   characteristics,
-  quote,
+  mission,
   core,
   className,
 }: DepartmentCardProps) {
@@ -43,7 +64,9 @@ export function DepartmentCard({
           <h3 className="mb-2 font-bold text-3xl text-white">
             {characteristics}
           </h3>
-          <div className="text-lg text-white">{quote}</div>
+          <div className="text-lg text-white">
+            {renderMissionPoints(mission)}
+          </div>
           <div className="mt-4 text-lg text-white">
             {core.map((item, index) => (
               <p key={index} className="mb-2">

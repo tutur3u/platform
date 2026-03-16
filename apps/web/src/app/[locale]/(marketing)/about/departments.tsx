@@ -3,7 +3,7 @@
 import { Award } from '@ncthub/ui/icons';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { type coreDepartmemt, departments } from './data';
+import { type DepartmentName, departments } from './data';
 import { DepartmentCard } from './department-card';
 
 const cardVariants = {
@@ -14,8 +14,12 @@ const cardVariants = {
   },
 };
 
-const departmentStyles: Record<string, string> = {
-  FinLog: 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20',
+type CoreDepartmentName = Extract<
+  DepartmentName,
+  'Technology' | 'Human Resources' | 'Marketing'
+>;
+
+const departmentStyles: Record<CoreDepartmentName, string> = {
   Technology: 'bg-dynamic-blue/10 text-dynamic-blue border-dynamic-blue/20',
   'Human Resources':
     'bg-dynamic-purple/10 text-dynamic-purple border-dynamic-purple/20',
@@ -23,49 +27,15 @@ const departmentStyles: Record<string, string> = {
     'bg-dynamic-orange/10 text-dynamic-orange border-dynamic-orange/20',
 };
 
-const coreDepartments: { name: coreDepartmemt; color: string }[] = [
+const coreDepartments: { name: CoreDepartmentName; color: string }[] = [
   { name: 'Technology', color: 'text-dynamic-blue' },
   { name: 'Human Resources', color: 'text-dynamic-purple' },
-  { name: 'Marketing', color: 'text-dynamic-yellow' },
+  { name: 'Marketing', color: 'text-dynamic-orange' },
 ];
-
-const renderMissionPoints = (mission: string[]) => {
-  return (
-    <ul className="list-disc space-y-2 pl-5">
-      {mission.map((point, index) => {
-        const separatorIndex = point.indexOf(':');
-
-        if (separatorIndex !== -1) {
-          const title = point.substring(0, separatorIndex).trim();
-          const description = point.substring(separatorIndex + 1).trim();
-          return (
-            <li key={index}>
-              <span className="font-semibold">{title}:</span> {description}
-            </li>
-          );
-        }
-
-        return <li key={index}>{point}</li>;
-      })}
-    </ul>
-  );
-};
 
 export default function Departments() {
   const [activeDepartmentCard, setActiveDepartmentCard] =
-    useState<coreDepartmemt>('Technology');
-
-  const resolveDepartmentImage = (imagePath: string) => {
-    if (imagePath === '/departments/test.jpg') {
-      return '/members/departments/test1.jpg';
-    }
-
-    if (imagePath.startsWith('/departments/')) {
-      return imagePath.replace('/departments/', '/members/departments/');
-    }
-
-    return imagePath;
-  };
+    useState<CoreDepartmentName>('Technology');
 
   const activeDepartments = departments.filter(
     (department) => department.name === activeDepartmentCard
@@ -153,13 +123,13 @@ export default function Departments() {
           >
             <DepartmentCard
               name={department.name}
-              image={resolveDepartmentImage(department.image)}
+              image={department.image}
               bio={department.bio}
               characteristics={department.characteristics}
-              quote={renderMissionPoints(department.mission)}
+              mission={department.mission}
               core={department.core}
               className={`rounded-lg border-2 ${
-                departmentStyles[department.name] ?? ''
+                departmentStyles[department.name as CoreDepartmentName] ?? ''
               }`}
             />
           </motion.div>

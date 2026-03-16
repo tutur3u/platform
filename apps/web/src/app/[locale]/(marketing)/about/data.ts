@@ -4,7 +4,7 @@ export type DepartmentName =
   | 'Human Resources'
   | 'Marketing'
   | 'Executive Board';
-export type coreDepartmemt = 'Technology' | 'Human Resources' | 'Marketing';
+
 export const timelineData: {
   year: string;
   title: string;
@@ -237,7 +237,7 @@ export const members: {
 ];
 
 export const departments: {
-  name: string;
+  name: DepartmentName;
   image: string;
   bio: string;
   characteristics: string;
@@ -246,7 +246,7 @@ export const departments: {
 }[] = [
   {
     name: 'Technology',
-    image: '/departments/test.jpg',
+    image: '/departments/test1.jpg',
     bio: 'The Technology department serves as the core technical engine of our organization, overseeing all software and hardware initiatives. We are dedicated to cultivating a rigorous and collaborative environment tailored for passionate technology enthusiasts and SSET students alike.',
     characteristics: 'Our Spirit',
     mission: [
