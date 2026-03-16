@@ -57,14 +57,15 @@ export async function handleStopAction({
     .maybeSingle();
 
   if (activeBreak) {
-    const { error: updateError } = await sbAdmin
+    const { data: updatedBreakRows, error: updateError } = await sbAdmin
       .from('time_tracking_breaks')
       .update({
         break_end: endTime,
       })
-      .eq('id', activeBreak.id);
+      .eq('id', activeBreak.id)
+      .select('id');
 
-    if (updateError) {
+    if (updateError || !updatedBreakRows || updatedBreakRows.length === 0) {
       console.error('Failed to close active break on stop:', updateError);
       return NextResponse.json(
         { error: 'Failed to close active break on stop' },

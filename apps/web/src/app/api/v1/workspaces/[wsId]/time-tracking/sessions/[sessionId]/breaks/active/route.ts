@@ -6,12 +6,12 @@ import { NextResponse } from 'next/server';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 export async function GET(
-  _req: Request,
+  req: Request,
   context: { params: Promise<{ wsId: string; sessionId: string }> }
 ) {
   const { wsId, sessionId } = await context.params;
   const normalizedWsId = await normalizeWorkspaceId(wsId);
-  const supabase = await createClient();
+  const supabase = await createClient(req);
 
   // Get current user
   const {

@@ -2,7 +2,10 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 
 // PATCH /api/v1/workspaces/[wsId]/time-tracking/break-types/[breakTypeId]
@@ -23,6 +26,49 @@ export async function PATCH(
     } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { data: memberCheck, error: memberError } = await supabase
+      .from('workspace_members')
+      .select('id:user_id')
+      .eq('ws_id', normalizedWsId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (memberError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!memberCheck) {
+      return NextResponse.json(
+        { error: 'Workspace access denied' },
+        { status: 403 }
+      );
+    }
+
+    const permissions = await getPermissions({
+      wsId: normalizedWsId,
+      request,
+    });
+
+    if (!permissions) {
+      return NextResponse.json(
+        { error: 'Failed to resolve permissions' },
+        { status: 500 }
+      );
+    }
+
+    if (
+      permissions.withoutPermission('manage_workspace_settings') ||
+      permissions.withoutPermission('manage_time_tracking_requests')
+    ) {
+      return NextResponse.json(
+        { error: 'Insufficient permissions to modify break types' },
+        { status: 403 }
+      );
     }
 
     const sbAdmin = await createAdminClient();
@@ -79,10 +125,24 @@ export async function PATCH(
     if (isDefault !== undefined) updateData.is_default = isDefault;
 
     // Update the break type
+    if (isDefault === true) {
+      const { error: clearDefaultError } = await sbAdmin
+        .from('workspace_break_types')
+        .update({ is_default: false })
+        .eq('ws_id', normalizedWsId)
+        .eq('is_default', true)
+        .neq('id', breakTypeId);
+
+      if (clearDefaultError) {
+        throw clearDefaultError;
+      }
+    }
+
     const { data: breakType, error } = await sbAdmin
       .from('workspace_break_types')
       .update(updateData)
       .eq('id', breakTypeId)
+      .eq('ws_id', normalizedWsId)
       .select()
       .single();
 
@@ -95,6 +155,13 @@ export async function PATCH(
         );
       }
       throw error;
+    }
+
+    if (!breakType) {
+      return NextResponse.json(
+        { error: 'Break type not found' },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json({ breakType });
@@ -127,6 +194,49 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { data: memberCheck, error: memberError } = await supabase
+      .from('workspace_members')
+      .select('id:user_id')
+      .eq('ws_id', normalizedWsId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (memberError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!memberCheck) {
+      return NextResponse.json(
+        { error: 'Workspace access denied' },
+        { status: 403 }
+      );
+    }
+
+    const permissions = await getPermissions({
+      wsId: normalizedWsId,
+      request,
+    });
+
+    if (!permissions) {
+      return NextResponse.json(
+        { error: 'Failed to resolve permissions' },
+        { status: 500 }
+      );
+    }
+
+    if (
+      permissions.withoutPermission('manage_workspace_settings') ||
+      permissions.withoutPermission('manage_time_tracking_requests')
+    ) {
+      return NextResponse.json(
+        { error: 'Insufficient permissions to delete break types' },
+        { status: 403 }
+      );
+    }
+
     const sbAdmin = await createAdminClient();
 
     // Verify break type exists and belongs to workspace
@@ -147,12 +257,20 @@ export async function DELETE(
     // Delete the break type
     // Note: Associated break records will have their break_type_id set to NULL (on delete set null)
     // but will retain break_type_name for historical reference
-    const { error } = await sbAdmin
+    const { data: deletedBreakType, error } = await sbAdmin
       .from('workspace_break_types')
       .delete()
-      .eq('id', breakTypeId);
+      .eq('id', breakTypeId)
+      .eq('ws_id', normalizedWsId)
+      .select()
+      .single();
 
-    if (error) throw error;
+    if (error || !deletedBreakType) {
+      return NextResponse.json(
+        { error: 'Break type not found' },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

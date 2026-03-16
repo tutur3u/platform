@@ -28,7 +28,7 @@ export async function PATCH(
     const { data: memberCheck } = await supabase
       .from('workspace_members')
       .select('id:user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -75,6 +75,7 @@ export async function PATCH(
         updated_at: new Date().toISOString(),
       })
       .eq('id', categoryId)
+      .eq('ws_id', normalizedWsId)
       .select('*')
       .single();
 
@@ -91,12 +92,13 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ wsId: string; categoryId: string }> }
 ) {
   try {
     const { wsId, categoryId } = await params;
-    const supabase = await createClient();
+    const supabase = await createClient(request);
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Get authenticated user
     const {
@@ -112,7 +114,7 @@ export async function DELETE(
     const { data: memberCheck } = await supabase
       .from('workspace_members')
       .select('id:user_id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
 
@@ -130,7 +132,7 @@ export async function DELETE(
       .from('time_tracking_categories')
       .select('id, name')
       .eq('id', categoryId)
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .single();
 
     if (!categoryCheck) {
@@ -143,7 +145,8 @@ export async function DELETE(
     const { error } = await sbAdmin
       .from('time_tracking_categories')
       .delete()
-      .eq('id', categoryId);
+      .eq('id', categoryId)
+      .eq('ws_id', normalizedWsId);
 
     if (error) throw error;
 

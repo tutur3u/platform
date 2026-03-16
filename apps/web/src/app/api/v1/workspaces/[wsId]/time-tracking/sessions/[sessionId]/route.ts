@@ -206,13 +206,18 @@ export async function DELETE(
         { status: 403 }
       );
     }
-    const { error } = await sbAdmin
+    const { data: deletedRows, error } = await sbAdmin
       .from('time_tracking_sessions')
       .delete()
+      .select('id')
       .eq('id', sessionId)
       .eq('ws_id', normalizedWsId);
 
     if (error) throw error;
+
+    if (!deletedRows || deletedRows.length === 0) {
+      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -266,12 +271,21 @@ async function authenticateAndResolveWorkspace(
     };
   }
 
-  const { data: memberCheck } = await supabase
+  const { data: memberCheck, error: memberCheckError } = await supabase
     .from('workspace_members')
     .select('id:user_id')
     .eq('ws_id', normalizedWsId)
     .eq('user_id', user.id)
     .maybeSingle();
+
+  if (memberCheckError) {
+    return {
+      error: NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      ),
+    };
+  }
 
   if (!memberCheck) {
     return {

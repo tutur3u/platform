@@ -94,12 +94,19 @@ export async function PATCH(
     }
 
     // Verify workspace access and admin permissions
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: memberErr } = await supabase
       .from('workspace_members')
       .select('id:user_id')
       .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .single();
+
+    if (memberErr) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(

@@ -8,7 +8,7 @@ export function useRequestImages(
   enabled: boolean
 ) {
   return useQuery({
-    queryKey: ['time-tracking-request-images', requestId, imagePaths],
+    queryKey: ['time-tracking-request-images', wsId, requestId, imagePaths],
     queryFn: async () => {
       if (!imagePaths || imagePaths.length === 0) {
         return [];
@@ -24,7 +24,8 @@ export function useRequestImages(
         .map((item) => item.signedUrl)
         .filter((url): url is string => Boolean(url));
     },
-    enabled: enabled && !!imagePaths && imagePaths.length > 0,
+    enabled:
+      enabled && !!wsId && !!requestId && !!imagePaths && imagePaths.length > 0,
     staleTime: 30 * 60 * 1000, // 30 minutes (URLs valid for 1 hour, refresh halfway)
   });
 }

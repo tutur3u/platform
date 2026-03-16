@@ -203,6 +203,7 @@ class _RequestImageEditorState extends State<RequestImageEditor> {
     if (oldWidget.wsId != widget.wsId ||
         oldWidget.requestId != widget.requestId ||
         !_samePaths(oldWidget.initialImages, widget.initialImages)) {
+      _initialImages = List<String>.from(widget.initialImages);
       _existingImages = List<String>.from(widget.initialImages);
       _newImages.clear();
       _existingUrlsFuture = resolveRequestImageUrlsWithIndices(

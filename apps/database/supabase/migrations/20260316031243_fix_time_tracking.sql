@@ -122,7 +122,8 @@ BEGIN
             needs_info_requested_at = NULL,
             needs_info_reason = NULL,
             updated_at = now()
-        WHERE id = p_request_id;
+                WHERE id = p_request_id
+                    AND workspace_id = p_workspace_id;
 
         RETURN jsonb_build_object(
             'success', true,
@@ -158,7 +159,8 @@ BEGIN
             needs_info_requested_at = NULL,
             needs_info_reason = NULL,
             updated_at = now()
-        WHERE id = p_request_id;
+                WHERE id = p_request_id
+                    AND workspace_id = p_workspace_id;
 
         RETURN jsonb_build_object(
             'success', true,
@@ -190,7 +192,8 @@ BEGIN
             needs_info_requested_at = now(),
             needs_info_reason = p_needs_info_reason,
             updated_at = now()
-        WHERE id = p_request_id;
+                WHERE id = p_request_id
+                    AND workspace_id = p_workspace_id;
 
         RETURN jsonb_build_object(
             'success', true,
@@ -218,7 +221,8 @@ BEGIN
             needs_info_requested_at = NULL,
             needs_info_reason = NULL,
             updated_at = now()
-        WHERE id = p_request_id;
+                WHERE id = p_request_id
+                    AND workspace_id = p_workspace_id;
 
         RETURN jsonb_build_object(
             'success', true,
@@ -233,3 +237,64 @@ $function$;
 
 REVOKE EXECUTE ON FUNCTION public.update_time_tracking_request(uuid, text, uuid, text, text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.update_time_tracking_request(uuid, text, uuid, text, text) TO authenticated;
+
+
+-- Prevent FK violations when logging deleted time tracking comments.
+CREATE OR REPLACE FUNCTION log_time_tracking_comment_activity()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        INSERT INTO time_tracking_request_activity (
+            request_id,
+            action_type,
+            actor_id,
+            comment_id,
+            comment_content
+        ) VALUES (
+            NEW.request_id,
+            'COMMENT_ADDED',
+            COALESCE(auth.uid(), NEW.user_id),
+            NEW.id,
+            NEW.content
+        );
+
+    ELSIF TG_OP = 'UPDATE' THEN
+        IF OLD.content IS DISTINCT FROM NEW.content THEN
+            INSERT INTO time_tracking_request_activity (
+                request_id,
+                action_type,
+                actor_id,
+                comment_id,
+                comment_content,
+                changed_fields
+            ) VALUES (
+                NEW.request_id,
+                'COMMENT_UPDATED',
+                COALESCE(auth.uid(), NEW.user_id),
+                NEW.id,
+                NEW.content,
+                jsonb_build_object(
+                    'content', jsonb_build_object('old', OLD.content, 'new', NEW.content)
+                )
+            );
+        END IF;
+
+    ELSIF TG_OP = 'DELETE' THEN
+        INSERT INTO time_tracking_request_activity (
+            request_id,
+            action_type,
+            actor_id,
+            comment_id,
+            comment_content
+        ) VALUES (
+            OLD.request_id,
+            'COMMENT_DELETED',
+            COALESCE(auth.uid(), OLD.user_id),
+            NULL,
+            OLD.content
+        );
+    END IF;
+
+    RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;

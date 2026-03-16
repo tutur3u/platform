@@ -33,7 +33,7 @@ export const POST = withSessionAuth(
       .select('id:user_id')
       .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (memberError) {
       return NextResponse.json(
@@ -121,6 +121,13 @@ export const POST = withSessionAuth(
         })),
       });
     } catch (error) {
+      if (
+        error instanceof SyntaxError ||
+        (error instanceof Error && error.name === 'SyntaxError')
+      ) {
+        return NextResponse.json({ error: 'Malformed JSON' }, { status: 400 });
+      }
+
       if (error instanceof z.ZodError) {
         return NextResponse.json(
           { error: 'Invalid request data', details: error.issues },

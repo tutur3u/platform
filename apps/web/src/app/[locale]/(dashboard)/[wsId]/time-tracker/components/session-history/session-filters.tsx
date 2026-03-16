@@ -45,7 +45,7 @@ export function SessionFilters({
   const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
   const { data: categories } = useWorkspaceCategories({
     wsId,
-    enabled: isFilterPopoverOpen,
+    enabled: true,
   });
 
   const hasActiveFilters =
