@@ -20,7 +20,7 @@ export async function GET(req: Request) {
     return Response.json({ error: 'ws_id is required' }, { status: 400 });
   }
 
-  const supabase = createAdminClient({ noCookie: true });
+  const supabase = await createAdminClient({ noCookie: true });
   const result = await batchFetch({
     table: 'finance_invoices',
     wsId,
@@ -36,7 +36,7 @@ export async function PUT(req: Request) {
   if (devModeError) return devModeError;
 
   const json = await req.json();
-  const supabase = createAdminClient({ noCookie: true });
+  const supabase = await createAdminClient({ noCookie: true });
   // Strip transaction_id - these reference wallet_transactions from source workspace
   // which won't exist in target. The link can be re-established manually if needed.
   const data = (json?.data || []).map((invoice: Record<string, unknown>) => {

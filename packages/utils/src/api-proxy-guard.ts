@@ -2,7 +2,7 @@ import { Ratelimit } from '@upstash/ratelimit';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { extractIPFromRequest, isIPBlockedEdge } from './abuse-protection/edge';
-import { MAX_PAYLOAD_SIZE } from './constants';
+import { DEV_MODE, MAX_PAYLOAD_SIZE } from './constants';
 import { validateRequestEmojiLimit } from './request-emoji-limit';
 import {
   getUpstashRatelimitRedisClient,
@@ -221,6 +221,11 @@ const DEFAULT_TRUSTED_BYPASS_RULES: TrustedProxyBypassRule[] = [
         pathname.startsWith('/api/v1/webhooks/')) &&
       !!process.env.SUPABASE_WEBHOOK_SECRET &&
       headers.get('x-webhook-secret') === process.env.SUPABASE_WEBHOOK_SECRET,
+  },
+  // Migration APIs: bypass rate limit in DEV_MODE (routes already return 403 in production)
+  {
+    matches: (pathname, _headers) =>
+      pathname.startsWith('/api/v1/infrastructure/migrate/') && DEV_MODE,
   },
 ];
 

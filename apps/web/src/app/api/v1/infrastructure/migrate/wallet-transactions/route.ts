@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import {
   batchUpsert,
@@ -20,7 +20,7 @@ export async function GET(req: Request) {
     return Response.json({ error: 'ws_id is required' }, { status: 400 });
   }
 
-  const supabase = await createClient();
+  const supabase = await createAdminClient({ noCookie: true });
 
   // Get wallet IDs for this workspace
   const { data: wallets, error: walletError } = await supabase
@@ -83,7 +83,7 @@ export async function PATCH(req: Request) {
   const devModeError = requireDevMode();
   if (devModeError) return devModeError;
 
-  const supabase = await createClient();
+  const supabase = await createAdminClient({ noCookie: true });
   const json = await req.json();
 
   // Expect array of { id, invoice_id } pairs

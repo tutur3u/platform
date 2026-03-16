@@ -56,7 +56,7 @@ export async function PUT(req: Request) {
   const result = await batchUpsert({
     table: 'finance_invoice_products',
     data: json?.data || [],
-    supabase: createAdminClient({ noCookie: true }),
+    supabase: await createAdminClient({ noCookie: true }),
     // No onConflict - table has no unique constraint
   });
   return createMigrationResponse(result, 'finance-invoice-products');

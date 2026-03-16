@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   batchUpsert,
   createMigrationResponse,
@@ -18,7 +18,7 @@ export async function GET(req: Request) {
     return Response.json({ error: 'ws_id is required' }, { status: 400 });
   }
 
-  const supabase = await createClient();
+  const supabase = await createAdminClient({ noCookie: true });
 
   // Junction table doesn't have ws_id - query via join with parent table
   // First get all tag IDs for this workspace
