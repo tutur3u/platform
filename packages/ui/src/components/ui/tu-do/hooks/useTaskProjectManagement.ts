@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useState } from 'react';
@@ -38,6 +38,14 @@ export function useTaskProjectManagement({
 
   // Toggle a project for the task (quick projects submenu)
   async function toggleTaskProject(projectId: string) {
+    if (!workspaceId) {
+      toast.error('Error', {
+        description:
+          'Workspace context is missing. Please refresh and try again.',
+      });
+      return;
+    }
+
     // CRITICAL: Get current task state from cache instead of stale prop
     // This ensures we read the most up-to-date state after optimistic updates
     const currentTask = taskId
@@ -159,39 +167,62 @@ export function useTaskProjectManagement({
     }
 
     try {
-      const supabase = createClient();
+      const internalApiOptions =
+        typeof window !== 'undefined'
+          ? { baseUrl: window.location.origin }
+          : undefined;
       let successCount = 0;
 
       if (active) {
-        // Remove project one by one to ensure triggers fire for each task
         for (const taskId of tasksToRemoveFrom) {
-          const { error } = await supabase
-            .from('task_project_tasks')
-            .delete()
-            .eq('task_id', taskId)
-            .eq('project_id', projectId);
-          if (error) {
+          const taskState = getTaskState(taskId);
+          if (!taskState) continue;
+
+          const nextProjectIds = (taskState.projects ?? [])
+            .map((entry) => entry.id)
+            .filter((id) => id !== projectId);
+
+          try {
+            await updateWorkspaceTask(
+              workspaceId,
+              taskId,
+              {
+                project_ids: nextProjectIds,
+              },
+              internalApiOptions
+            );
+            successCount++;
+          } catch (error) {
             console.error(
               `Failed to remove project from task ${taskId}:`,
               error
             );
-          } else {
-            successCount++;
           }
         }
       } else {
-        // Add project one by one to ensure triggers fire for each task
         for (const taskId of tasksNeedingProject) {
-          const { error } = await supabase.from('task_project_tasks').insert({
-            task_id: taskId,
-            project_id: projectId,
-          });
+          const taskState = getTaskState(taskId);
+          if (!taskState) continue;
 
-          // Ignore duplicate key errors (code '23505' for unique_violation)
-          if (error && error.code !== '23505') {
-            console.error(`Failed to add project to task ${taskId}:`, error);
-          } else {
+          const nextProjectIds = [
+            ...new Set([
+              ...(taskState.projects ?? []).map((entry) => entry.id),
+              projectId,
+            ]),
+          ];
+
+          try {
+            await updateWorkspaceTask(
+              workspaceId,
+              taskId,
+              {
+                project_ids: nextProjectIds,
+              },
+              internalApiOptions
+            );
             successCount++;
+          } catch (error) {
+            console.error(`Failed to add project to task ${taskId}:`, error);
           }
         }
       }
@@ -259,14 +290,13 @@ export function useTaskProjectManagement({
 
       // Auto-apply the newly created project to this task
       let linkSucceeded = false;
+      let previousTasks: unknown;
       try {
-        const supabase = createClient();
-
         // Cancel any outgoing refetches
         await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
 
         // Snapshot the previous value
-        const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+        previousTasks = queryClient.getQueryData(['tasks', boardId]);
 
         // Optimistically update the cache
         queryClient.setQueryData(
@@ -299,19 +329,35 @@ export function useTaskProjectManagement({
           );
         }
 
-        const { error: linkErr } = await supabase
-          .from('task_project_tasks')
-          .insert({ task_id: task.id, project_id: newProject.id });
-        if (linkErr) {
-          // Rollback on error
-          queryClient.setQueryData(['tasks', boardId], previousTasks);
-          toast.error(
-            'The project was created but could not be attached to the task. Refresh and try manually.'
-          );
-        } else {
-          linkSucceeded = true;
-        }
+        const taskState =
+          (queryClient.getQueryData(['task', task.id]) as Task | undefined) ??
+          task;
+        const nextProjectIds = [
+          ...new Set([
+            ...(taskState.projects ?? []).map((entry) => entry.id),
+            newProject.id,
+          ]),
+        ];
+
+        await updateWorkspaceTask(
+          workspaceId,
+          task.id,
+          {
+            project_ids: nextProjectIds,
+          },
+          typeof window !== 'undefined'
+            ? { baseUrl: window.location.origin }
+            : undefined
+        );
+        linkSucceeded = true;
       } catch (applyErr: any) {
+        queryClient.setQueryData(['tasks', boardId], previousTasks);
+        toast.error(
+          'The project was created but could not be attached to the task. Refresh and try manually.'
+        );
+        if (taskId) {
+          queryClient.invalidateQueries({ queryKey: ['task', taskId] });
+        }
         console.error('Failed to auto-apply new project', applyErr);
       }
 

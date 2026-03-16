@@ -1,4 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
@@ -12,6 +13,7 @@ import { useBoardBroadcast } from '../components/ui/tu-do/shared/board-broadcast
 interface UseTaskActionsProps {
   task?: Task; // Made optional to handle loading states
   boardId: string;
+  workspaceId?: string;
   targetCompletionList?: TaskList | null;
   targetClosedList?: TaskList | null;
   availableLists: TaskList[];
@@ -32,6 +34,7 @@ interface UseTaskActionsProps {
 export function useTaskActions({
   task,
   boardId,
+  workspaceId,
   targetCompletionList,
   targetClosedList,
   availableLists,
@@ -749,10 +752,27 @@ export function useTaskActions({
           }
         );
 
-        // Use direct Supabase update for bulk operations
-        if (shouldBulkUpdate) {
+        if (workspaceId) {
+          let successCount = 0;
+          for (const taskId of tasksToUpdate) {
+            try {
+              await updateWorkspaceTask(workspaceId, taskId, {
+                end_date: newDate,
+              });
+              successCount++;
+            } catch (error) {
+              console.error(
+                `Failed to update due date for task ${taskId}:`,
+                error
+              );
+            }
+          }
+
+          if (successCount === 0) {
+            throw new Error('Failed to update any tasks');
+          }
+        } else if (shouldBulkUpdate) {
           const supabase = createClient();
-          // Update one by one to ensure triggers fire for each task
           let successCount = 0;
           for (const taskId of tasksToUpdate) {
             const { error } = await supabase
@@ -769,19 +789,16 @@ export function useTaskActions({
             }
           }
           if (successCount === 0) throw new Error('Failed to update any tasks');
-          for (const tid of tasksToUpdate) {
-            broadcast?.('task:upsert', {
-              task: { id: tid, end_date: newDate },
-            });
-          }
         } else {
-          // Use mutation for single task
           await updateTaskMutation.mutateAsync({
             taskId: task.id,
             updates: { end_date: newDate },
           });
+        }
+
+        for (const tid of tasksToUpdate) {
           broadcast?.('task:upsert', {
-            task: { id: task.id, end_date: newDate },
+            task: { id: tid, end_date: newDate },
           });
         }
 
@@ -811,6 +828,7 @@ export function useTaskActions({
       task?.id,
       updateTaskMutation,
       setIsLoading,
+      workspaceId,
       isMultiSelectMode,
       selectedTasks,
       queryClient,
@@ -866,8 +884,26 @@ export function useTaskActions({
           }
         );
 
-        // Use direct Supabase update for bulk operations
-        if (shouldBulkUpdate) {
+        if (workspaceId) {
+          let successCount = 0;
+          for (const taskId of tasksToUpdate) {
+            try {
+              await updateWorkspaceTask(workspaceId, taskId, {
+                priority: newPriority,
+              });
+              successCount++;
+            } catch (error) {
+              console.error(
+                `Failed to update priority for task ${taskId}:`,
+                error
+              );
+            }
+          }
+
+          if (successCount === 0) {
+            throw new Error('Failed to update any tasks');
+          }
+        } else if (shouldBulkUpdate) {
           const supabase = createClient();
           console.log('🔄 Executing sequential Supabase updates:', {
             tasksToUpdate,
@@ -875,7 +911,6 @@ export function useTaskActions({
             priority: newPriority,
           });
 
-          // Update one by one to ensure triggers fire for each task
           let successCount = 0;
           for (const taskId of tasksToUpdate) {
             const { error } = await supabase
@@ -898,19 +933,16 @@ export function useTaskActions({
           });
 
           if (successCount === 0) throw new Error('Failed to update any tasks');
-          for (const tid of tasksToUpdate) {
-            broadcast?.('task:upsert', {
-              task: { id: tid, priority: newPriority },
-            });
-          }
         } else {
-          // Use mutation for single task
           await updateTaskMutation.mutateAsync({
             taskId: task.id,
             updates: { priority: newPriority },
           });
+        }
+
+        for (const tid of tasksToUpdate) {
           broadcast?.('task:upsert', {
-            task: { id: task.id, priority: newPriority },
+            task: { id: tid, priority: newPriority },
           });
         }
 
@@ -943,6 +975,7 @@ export function useTaskActions({
       task?.priority,
       updateTaskMutation,
       setIsLoading,
+      workspaceId,
       isMultiSelectMode,
       selectedTasks,
       queryClient,
@@ -1003,10 +1036,27 @@ export function useTaskActions({
           }
         );
 
-        // Use direct Supabase update for bulk operations
-        if (tasksToUpdate.length > 1) {
+        if (workspaceId) {
+          let successCount = 0;
+          for (const taskId of tasksToUpdate) {
+            try {
+              await updateWorkspaceTask(workspaceId, taskId, {
+                estimation_points: points,
+              });
+              successCount++;
+            } catch (error) {
+              console.error(
+                `Failed to update estimation for task ${taskId}:`,
+                error
+              );
+            }
+          }
+
+          if (successCount === 0) {
+            throw new Error('Failed to update any tasks');
+          }
+        } else if (tasksToUpdate.length > 1) {
           const supabase = createClient();
-          // Update one by one to ensure triggers fire for each task
           let successCount = 0;
           for (const taskId of tasksToUpdate) {
             const { error } = await supabase
@@ -1023,19 +1073,16 @@ export function useTaskActions({
             }
           }
           if (successCount === 0) throw new Error('Failed to update any tasks');
-          for (const tid of tasksToUpdate) {
-            broadcast?.('task:upsert', {
-              task: { id: tid, estimation_points: points },
-            });
-          }
         } else {
-          // Use mutation for single task
           await updateTaskMutation.mutateAsync({
             taskId: tasksToUpdate[0]!,
             updates: { estimation_points: points },
           });
+        }
+
+        for (const tid of tasksToUpdate) {
           broadcast?.('task:upsert', {
-            task: { id: tasksToUpdate[0]!, estimation_points: points },
+            task: { id: tid, estimation_points: points },
           });
         }
 
@@ -1064,6 +1111,7 @@ export function useTaskActions({
       task?.estimation_points,
       updateTaskMutation,
       setEstimationSaving,
+      workspaceId,
       isMultiSelectMode,
       selectedTasks,
       queryClient,

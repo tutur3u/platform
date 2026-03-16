@@ -386,6 +386,7 @@ function TaskCardInner({
   } = useTaskActions({
     task,
     boardId,
+    workspaceId: boardConfig?.ws_id,
     targetCompletionList,
     targetClosedList,
     availableLists,

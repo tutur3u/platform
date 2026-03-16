@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -7,85 +7,29 @@ import { transformTaskRecord } from './transformers';
 
 // Reorder task within the same list or move to a different list with specific position
 export async function reorderTask(
-  supabase: TypedSupabaseClient,
+  wsId: string,
   taskId: string,
   newListId: string,
   newSortKey: number
 ): Promise<Task> {
-  console.log('🗄️ reorderTask function called');
-  console.log('📋 Task ID:', taskId);
-  console.log('🎯 New List ID:', newListId);
-  console.log('🔢 New Sort Key:', newSortKey);
+  const baseUrl =
+    typeof window !== 'undefined' ? window.location.origin : undefined;
 
-  // Get the target list to check its status
-  const { data: targetList, error: listError } = await supabase
-    .from('task_lists')
-    .select('status, name')
-    .eq('id', newListId)
-    .single();
-
-  if (listError) {
-    console.log('❌ Error fetching target list:', listError);
-    throw listError;
-  }
-
-  console.log('📊 Target list details:', targetList);
-
-  // Determine archived status based on list status
-  const shouldArchive =
-    targetList.status === 'done' || targetList.status === 'closed';
-
-  console.log('📦 Will archive:', shouldArchive);
-  console.log('🔄 Updating task in database...');
-
-  const { data, error } = await supabase
-    .from('tasks')
-    .update({
+  const { task } = await updateWorkspaceTask(
+    wsId,
+    taskId,
+    {
       list_id: newListId,
       sort_key: newSortKey,
-      closed_at: shouldArchive ? new Date().toISOString() : null,
-    })
-    .eq('id', taskId)
-    .select(
-      `
-        *,
-        assignees:task_assignees(
-          user:users(
-            id,
-            display_name,
-            avatar_url
-          )
-        ),
-        labels:task_labels(
-          label:workspace_task_labels(
-            id,
-            name,
-            color,
-            created_at
-          )
-        ),
-        projects:task_project_tasks(
-          project:task_projects(
-            id,
-            name,
-            status
-          )
-        )
-      `
-    )
-    .single();
+    },
+    baseUrl ? { baseUrl } : undefined
+  );
 
-  if (error) {
-    console.log('❌ Error updating task:', error);
-    throw error;
-  }
-
-  console.log('✅ Task reordered successfully');
-  return transformTaskRecord(data) as Task;
+  return transformTaskRecord(task) as Task;
 }
 
 // React Query hook for reordering tasks
-export function useReorderTask(boardId: string) {
+export function useReorderTask(boardId: string, wsId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -98,9 +42,7 @@ export function useReorderTask(boardId: string) {
       newListId: string;
       newSortKey: number;
     }) => {
-      console.log('🚀 Starting reorderTask mutation');
-      const supabase = createClient();
-      return await reorderTask(supabase, taskId, newListId, newSortKey);
+      return reorderTask(wsId, taskId, newListId, newSortKey);
     },
     onMutate: async ({ taskId, newListId, newSortKey }) => {
       console.log('🎭 onMutate triggered - optimistic update for reorder');

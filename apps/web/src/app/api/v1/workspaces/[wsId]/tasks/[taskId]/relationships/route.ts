@@ -4,6 +4,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { isTaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type {
+  CreateTaskRelationshipInput,
   RelatedTaskInfo,
   TaskRelationshipsResponse,
 } from '@tuturuuu/types/primitives/TaskRelationship';
@@ -15,6 +16,12 @@ import { z } from 'zod';
 const paramsSchema = z.object({
   wsId: z.string().min(1),
   taskId: z.uuid(),
+});
+
+const relationshipMutationSchema = z.object({
+  source_task_id: z.uuid(),
+  target_task_id: z.uuid(),
+  type: z.enum(['parent_child', 'blocks', 'related']),
 });
 
 interface RelationshipTaskRow {
@@ -250,6 +257,345 @@ export async function GET(
     return NextResponse.json(result);
   } catch (error) {
     console.error('Error in task relationships GET route:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ wsId: string; taskId: string }> }
+) {
+  try {
+    const parsedParams = paramsSchema.safeParse(await params);
+
+    if (!parsedParams.success) {
+      return NextResponse.json(
+        { error: 'Invalid workspace or task ID' },
+        { status: 400 }
+      );
+    }
+
+    const supabase = await createClient(request);
+    const wsId = await normalizeWorkspaceId(parsedParams.data.wsId, supabase);
+    const routeTaskId = parsedParams.data.taskId;
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { data: membership, error: membershipError } = await supabase
+      .from('workspace_members')
+      .select('user_id')
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (membershipError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
+    if (!membership) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const body = relationshipMutationSchema.safeParse(await request.json());
+    if (!body.success) {
+      return NextResponse.json(
+        { error: 'Invalid relationship payload', details: body.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const input = body.data as CreateTaskRelationshipInput;
+
+    if (
+      input.source_task_id !== routeTaskId &&
+      input.target_task_id !== routeTaskId
+    ) {
+      return NextResponse.json(
+        { error: 'Relationship must include the task in the route' },
+        { status: 400 }
+      );
+    }
+
+    const sbAdmin = await createAdminClient();
+
+    const { data: sourceTask, error: sourceTaskError } = await sbAdmin
+      .from('tasks')
+      .select(
+        `
+        id,
+        list:task_lists!inner(
+          board:workspace_boards!inner(
+            ws_id
+          )
+        )
+      `
+      )
+      .eq('id', input.source_task_id)
+      .is('deleted_at', null)
+      .maybeSingle();
+
+    if (sourceTaskError) {
+      return NextResponse.json(
+        { error: 'Failed to load task' },
+        { status: 500 }
+      );
+    }
+
+    const sourceWsId = (
+      sourceTask as {
+        list?: {
+          board?: { ws_id?: string | null } | null;
+        } | null;
+      } | null
+    )?.list?.board?.ws_id;
+
+    if (!sourceTask || sourceWsId !== wsId) {
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+    }
+
+    const { data: targetTask, error: targetTaskError } = await sbAdmin
+      .from('tasks')
+      .select(
+        `
+        id,
+        list:task_lists!inner(
+          board:workspace_boards!inner(
+            ws_id
+          )
+        )
+      `
+      )
+      .eq('id', input.target_task_id)
+      .is('deleted_at', null)
+      .maybeSingle();
+
+    if (targetTaskError) {
+      return NextResponse.json(
+        { error: 'Failed to load task' },
+        { status: 500 }
+      );
+    }
+
+    const targetWsId = (
+      targetTask as {
+        list?: {
+          board?: { ws_id?: string | null } | null;
+        } | null;
+      } | null
+    )?.list?.board?.ws_id;
+
+    if (!targetTask || targetWsId !== wsId) {
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+    }
+
+    const { data: relationship, error: createError } = await sbAdmin
+      .from('task_relationships')
+      .insert({
+        source_task_id: input.source_task_id,
+        target_task_id: input.target_task_id,
+        type: input.type,
+      })
+      .select(
+        'id, source_task_id, target_task_id, type, created_at, created_by'
+      )
+      .single();
+
+    if (createError) {
+      const message = createError.message ?? '';
+      if (
+        message.includes('already exists') ||
+        createError.code === '23505' ||
+        createError.code === 'P0001'
+      ) {
+        return NextResponse.json(
+          { error: message || 'Relationship already exists' },
+          { status: 409 }
+        );
+      }
+
+      return NextResponse.json(
+        { error: 'Failed to create relationship' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ relationship }, { status: 201 });
+  } catch (error) {
+    console.error('Error in task relationships POST route:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ wsId: string; taskId: string }> }
+) {
+  try {
+    const parsedParams = paramsSchema.safeParse(await params);
+
+    if (!parsedParams.success) {
+      return NextResponse.json(
+        { error: 'Invalid workspace or task ID' },
+        { status: 400 }
+      );
+    }
+
+    const supabase = await createClient(request);
+    const wsId = await normalizeWorkspaceId(parsedParams.data.wsId, supabase);
+    const routeTaskId = parsedParams.data.taskId;
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { data: membership, error: membershipError } = await supabase
+      .from('workspace_members')
+      .select('user_id')
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (membershipError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
+    if (!membership) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const body = relationshipMutationSchema.safeParse(await request.json());
+    if (!body.success) {
+      return NextResponse.json(
+        { error: 'Invalid relationship payload', details: body.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const input = body.data;
+
+    if (
+      input.source_task_id !== routeTaskId &&
+      input.target_task_id !== routeTaskId
+    ) {
+      return NextResponse.json(
+        { error: 'Relationship must include the task in the route' },
+        { status: 400 }
+      );
+    }
+
+    const sbAdmin = await createAdminClient();
+
+    const { data: sourceTask, error: sourceTaskError } = await sbAdmin
+      .from('tasks')
+      .select(
+        `
+        id,
+        list:task_lists!inner(
+          board:workspace_boards!inner(
+            ws_id
+          )
+        )
+      `
+      )
+      .eq('id', input.source_task_id)
+      .is('deleted_at', null)
+      .maybeSingle();
+
+    if (sourceTaskError) {
+      return NextResponse.json(
+        { error: 'Failed to load task' },
+        { status: 500 }
+      );
+    }
+
+    const sourceWsId = (
+      sourceTask as {
+        list?: {
+          board?: { ws_id?: string | null } | null;
+        } | null;
+      } | null
+    )?.list?.board?.ws_id;
+
+    if (!sourceTask || sourceWsId !== wsId) {
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+    }
+
+    const { data: targetTask, error: targetTaskError } = await sbAdmin
+      .from('tasks')
+      .select(
+        `
+        id,
+        list:task_lists!inner(
+          board:workspace_boards!inner(
+            ws_id
+          )
+        )
+      `
+      )
+      .eq('id', input.target_task_id)
+      .is('deleted_at', null)
+      .maybeSingle();
+
+    if (targetTaskError) {
+      return NextResponse.json(
+        { error: 'Failed to load task' },
+        { status: 500 }
+      );
+    }
+
+    const targetWsId = (
+      targetTask as {
+        list?: {
+          board?: { ws_id?: string | null } | null;
+        } | null;
+      } | null
+    )?.list?.board?.ws_id;
+
+    if (!targetTask || targetWsId !== wsId) {
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+    }
+
+    const { error: deleteError } = await sbAdmin
+      .from('task_relationships')
+      .delete()
+      .eq('source_task_id', input.source_task_id)
+      .eq('target_task_id', input.target_task_id)
+      .eq('type', input.type);
+
+    if (deleteError) {
+      return NextResponse.json(
+        { error: 'Failed to delete relationship' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error in task relationships DELETE route:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

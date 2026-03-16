@@ -551,6 +551,7 @@ export function TaskMentionChip({
   } = useTaskActions({
     task: task || undefined,
     boardId: task?.board_id || '',
+    workspaceId: boardConfig?.ws_id,
     targetCompletionList,
     targetClosedList,
     availableLists,

@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useState } from 'react';
@@ -41,6 +41,14 @@ export function useTaskLabelManagement({
 
   // Toggle a label for the task (quick labels submenu)
   async function toggleTaskLabel(labelId: string) {
+    if (!workspaceId) {
+      toast.error('Error', {
+        description:
+          'Workspace context is missing. Please refresh and try again.',
+      });
+      return;
+    }
+
     // CRITICAL: Get current task state from cache instead of stale prop
     // This ensures we read the most up-to-date state after optimistic updates
     const currentTask = taskId
@@ -171,36 +179,59 @@ export function useTaskLabelManagement({
     }
 
     try {
-      const supabase = createClient();
+      const internalApiOptions =
+        typeof window !== 'undefined'
+          ? { baseUrl: window.location.origin }
+          : undefined;
       let successCount = 0;
 
       if (active) {
-        // Remove label one by one to ensure triggers fire for each task
         for (const taskId of tasksToRemoveFrom) {
-          const { error } = await supabase
-            .from('task_labels')
-            .delete()
-            .eq('task_id', taskId)
-            .eq('label_id', labelId);
-          if (error) {
-            console.error(`Failed to remove label from task ${taskId}:`, error);
-          } else {
+          const taskState = getTaskState(taskId);
+          if (!taskState) continue;
+
+          const nextLabelIds = (taskState.labels ?? [])
+            .map((entry) => entry.id)
+            .filter((id) => id !== labelId);
+
+          try {
+            await updateWorkspaceTask(
+              workspaceId,
+              taskId,
+              {
+                label_ids: nextLabelIds,
+              },
+              internalApiOptions
+            );
             successCount++;
+          } catch (error) {
+            console.error(`Failed to remove label from task ${taskId}:`, error);
           }
         }
       } else {
-        // Add label one by one to ensure triggers fire for each task
         for (const taskId of tasksNeedingLabel) {
-          const { error } = await supabase.from('task_labels').insert({
-            task_id: taskId,
-            label_id: labelId,
-          });
+          const taskState = getTaskState(taskId);
+          if (!taskState) continue;
 
-          // Ignore duplicate key errors (code '23505' for unique_violation)
-          if (error && error.code !== '23505') {
-            console.error(`Failed to add label to task ${taskId}:`, error);
-          } else {
+          const nextLabelIds = [
+            ...new Set([
+              ...(taskState.labels ?? []).map((entry) => entry.id),
+              labelId,
+            ]),
+          ];
+
+          try {
+            await updateWorkspaceTask(
+              workspaceId,
+              taskId,
+              {
+                label_ids: nextLabelIds,
+              },
+              internalApiOptions
+            );
             successCount++;
+          } catch (error) {
+            console.error(`Failed to add label to task ${taskId}:`, error);
           }
         }
       }
@@ -285,14 +316,13 @@ export function useTaskLabelManagement({
 
       // Auto-apply the newly created label to this task
       let linkSucceeded = false;
+      let previousTasks: unknown;
       try {
-        const supabase = createClient();
-
         // Cancel any outgoing refetches
         await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
 
         // Snapshot the previous value
-        const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+        previousTasks = queryClient.getQueryData(['tasks', boardId]);
 
         // Optimistically update the cache
         queryClient.setQueryData(
@@ -325,30 +355,37 @@ export function useTaskLabelManagement({
           );
         }
 
-        const { error: linkErr } = await supabase
-          .from('task_labels')
-          .insert({ task_id: task.id, label_id: newLabel.id });
-        if (linkErr) {
-          // Check error code first for proper duplicate detection
-          if (
-            linkErr.code === '23505' ||
-            (!linkErr.code &&
-              String(linkErr.message).toLowerCase().includes('duplicate'))
-          ) {
-            // Treat duplicates as success - label already exists on task
-            linkSucceeded = true;
-          } else {
-            // Rollback on other errors
-            queryClient.setQueryData(['tasks', boardId], previousTasks);
-            toast.error(
-              'The label was created but could not be attached to the task. Refresh and try manually.'
-            );
-          }
-        } else {
-          linkSucceeded = true;
+        const taskState =
+          (queryClient.getQueryData(['task', task.id]) as Task | undefined) ??
+          task;
+        const nextLabelIds = [
+          ...new Set([
+            ...(taskState.labels ?? []).map((entry) => entry.id),
+            newLabel.id,
+          ]),
+        ];
+
+        await updateWorkspaceTask(
+          workspaceId,
+          task.id,
+          {
+            label_ids: nextLabelIds,
+          },
+          typeof window !== 'undefined'
+            ? { baseUrl: window.location.origin }
+            : undefined
+        );
+        linkSucceeded = true;
+      } catch (linkErr: any) {
+        // Rollback on error
+        queryClient.setQueryData(['tasks', boardId], previousTasks);
+        toast.error(
+          'The label was created but could not be attached to the task. Refresh and try manually.'
+        );
+        if (taskId) {
+          queryClient.invalidateQueries({ queryKey: ['task', taskId] });
         }
-      } catch (applyErr: any) {
-        console.error('Failed to auto-apply new label', applyErr);
+        console.error('Failed to auto-apply new label', linkErr);
       }
 
       // Only show success toast and reset form if link succeeded

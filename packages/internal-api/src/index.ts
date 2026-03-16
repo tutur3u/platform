@@ -14,10 +14,15 @@ export {
 } from './finance';
 export {
   createWorkspaceTaskProject,
+  createWorkspaceTaskRelationship,
+  deleteWorkspaceTaskRelationship,
+  getWorkspaceTask,
   getWorkspaceTaskProject,
   getWorkspaceTaskProjectTasks,
   getWorkspaceTaskRelationships,
   listWorkspaceTaskProjects,
+  listWorkspaceTasks,
+  updateWorkspaceTask,
 } from './tasks';
 export {
   getWorkspaceTemplate,

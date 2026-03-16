@@ -19,6 +19,7 @@
     "@tiptap/react": "^3.20.1",
     "@tuturuuu/google": "workspace:*",
     "@tuturuuu/icons": "workspace:*",
+    "@tuturuuu/internal-api": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.37.0",

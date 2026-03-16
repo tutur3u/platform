@@ -6,6 +6,11 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
+import {
+  createWorkspaceTaskRelationship,
+  deleteWorkspaceTaskRelationship,
+  listWorkspaceTasks,
+} from '@tuturuuu/internal-api/tasks';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type {
@@ -13,7 +18,6 @@ import type {
   RestorableTaskRow,
   TaskListIdRow,
   WorkspaceTaskBoard,
-  WorkspaceTaskPickerRow,
 } from '@tuturuuu/types';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { isTaskPriority } from '@tuturuuu/types/primitives/Priority';
@@ -2978,13 +2982,23 @@ export function useTaskRelationships(taskId: string | undefined) {
 /**
  * React Query mutation hook for creating task relationships
  */
-export function useCreateTaskRelationship(_boardId?: string) {
+export function useCreateTaskRelationship(_boardId?: string, wsId?: string) {
   const queryClient = useQueryClient();
+  const baseUrl =
+    typeof window !== 'undefined' ? window.location.origin : undefined;
 
   return useMutation({
     mutationFn: async (input: CreateTaskRelationshipInput) => {
-      const supabase = createClient();
-      return createTaskRelationship(supabase, input);
+      if (!wsId) {
+        throw new Error('Workspace context is missing');
+      }
+      const { relationship } = await createWorkspaceTaskRelationship(
+        wsId,
+        input.source_task_id,
+        input,
+        baseUrl ? { baseUrl } : undefined
+      );
+      return relationship;
     },
     onSuccess: async (_, variables) => {
       // Invalidate relationships for both tasks involved
@@ -3006,8 +3020,10 @@ export function useCreateTaskRelationship(_boardId?: string) {
 /**
  * React Query mutation hook for deleting task relationships
  */
-export function useDeleteTaskRelationship(_boardId?: string) {
+export function useDeleteTaskRelationship(_boardId?: string, wsId?: string) {
   const queryClient = useQueryClient();
+  const baseUrl =
+    typeof window !== 'undefined' ? window.location.origin : undefined;
 
   return useMutation({
     mutationFn: async ({
@@ -3019,12 +3035,18 @@ export function useDeleteTaskRelationship(_boardId?: string) {
       targetTaskId: string;
       type: TaskRelationshipType;
     }) => {
-      const supabase = createClient();
-      return deleteTaskRelationshipByDetails(
-        supabase,
+      if (!wsId) {
+        throw new Error('Workspace context is missing');
+      }
+      return deleteWorkspaceTaskRelationship(
+        wsId,
         sourceTaskId,
-        targetTaskId,
-        type
+        {
+          source_task_id: sourceTaskId,
+          target_task_id: targetTaskId,
+          type,
+        },
+        baseUrl ? { baseUrl } : undefined
       );
     },
     onSuccess: async (_, variables) => {
@@ -3048,7 +3070,6 @@ export function useDeleteTaskRelationship(_boardId?: string) {
  * Fetch tasks for a workspace (for task picker across all boards)
  */
 export async function getWorkspaceTasks(
-  supabase: TypedSupabaseClient,
   wsId: string,
   options?: {
     excludeTaskIds?: string[];
@@ -3056,66 +3077,30 @@ export async function getWorkspaceTasks(
     limit?: number;
   }
 ): Promise<RelatedTaskInfo[]> {
-  let query = supabase
-    .from('tasks')
-    .select(
-      `
-      id,
-      name,
-      display_number,
-      completed_at,
-      closed_at,
-      priority,
-      board_id,
-      list:task_lists!inner(
-        board:workspace_boards!inner(
-          id,
-          name,
-          ws_id
-        )
-      )
-    `
-    )
-    .is('deleted_at', null)
-    .order('created_at', { ascending: false });
+  const { tasks } = await listWorkspaceTasks(
+    wsId,
+    {
+      q: options?.searchQuery,
+      limit: options?.limit,
+    },
+    typeof window !== 'undefined'
+      ? { baseUrl: window.location.origin }
+      : undefined
+  );
 
-  // Filter by workspace through the board
-  query = query.eq('list.board.ws_id', wsId);
-
-  // Exclude specific task IDs
-  if (options?.excludeTaskIds?.length) {
-    query = query.filter(
-      'id',
-      'not.in',
-      `(${options.excludeTaskIds.join(',')})`
-    );
-  }
-
-  // Search by name
-  if (options?.searchQuery) {
-    query = query.ilike('name', `%${options.searchQuery}%`);
-  }
-
-  // Limit results
-  if (options?.limit) {
-    query = query.limit(options.limit);
-  }
-
-  const { data, error } = await query;
-
-  if (error) throw error;
-
-  const workspaceTasks = (data ?? []) as WorkspaceTaskPickerRow[];
-
-  return workspaceTasks.map((task) => ({
-    id: task.id,
-    name: task.name,
-    display_number: task.display_number,
-    completed: !!task.closed_at || !!task.completed_at,
-    priority: task.priority,
-    board_id: task.board_id,
-    board_name: task.list?.board?.name ?? undefined,
-  }));
+  const excluded = new Set(options?.excludeTaskIds ?? []);
+  return tasks
+    .filter((task) => !excluded.has(task.id))
+    .map((task) => ({
+      id: task.id,
+      name: task.name,
+      display_number: task.display_number,
+      completed: !!task.closed_at || !!task.completed,
+      priority: isTaskPriority(task.priority) ? task.priority : null,
+      board_id: task.board_id ?? null,
+      board_name:
+        typeof task.board_name === 'string' ? task.board_name : undefined,
+    }));
 }
 
 /**
@@ -3140,8 +3125,7 @@ export function useWorkspaceTasks(
     ],
     queryFn: async () => {
       if (!wsId) return [];
-      const supabase = createClient();
-      return getWorkspaceTasks(supabase, wsId, options);
+      return getWorkspaceTasks(wsId, options);
     },
     enabled: !!wsId && (options?.enabled ?? true),
     staleTime: 30000, // 30 seconds

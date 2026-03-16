@@ -74,8 +74,8 @@ export function useTaskCardRelationships({
   });
 
   // Mutations
-  const createRelationship = useCreateTaskRelationship(boardId);
-  const deleteRelationship = useDeleteTaskRelationship(boardId);
+  const createRelationship = useCreateTaskRelationship(boardId, wsId);
+  const deleteRelationship = useDeleteTaskRelationship(boardId, wsId);
 
   const isSaving = createRelationship.isPending || deleteRelationship.isPending;
 

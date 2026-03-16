@@ -10,6 +10,7 @@ import {
   Clock,
   Flag,
 } from '@tuturuuu/icons';
+import { listWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
@@ -17,7 +18,7 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
-import { getTaskLists, getTasks } from '@tuturuuu/utils/task-helper';
+import { getTaskLists } from '@tuturuuu/utils/task-helper';
 import { getTimeFormatPattern } from '@tuturuuu/utils/time-helper';
 import { format } from 'date-fns';
 import { type JSX, useMemo } from 'react';
@@ -40,8 +41,14 @@ export function BoardSummary({
   const { data: tasks = [], isLoading } = useQuery<Task[]>({
     queryKey: ['tasks', boardId],
     queryFn: async () => {
-      const supabase = createClient();
-      return getTasks(supabase, boardId);
+      const baseUrl =
+        typeof window !== 'undefined' ? window.location.origin : undefined;
+      const { tasks } = await listWorkspaceTasks(
+        board.ws_id,
+        { boardId },
+        baseUrl ? { baseUrl } : undefined
+      );
+      return tasks as Task[];
     },
   });
 

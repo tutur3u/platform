@@ -1,9 +1,13 @@
 import type { TaskProjectWithRelations } from '@tuturuuu/types';
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type {
+  CreateTaskRelationshipInput,
   RelatedTaskInfo,
+  TaskRelationship,
   TaskRelationshipsResponse,
+  TaskRelationshipType,
 } from '@tuturuuu/types/primitives/TaskRelationship';
 import {
   encodePathSegment,
@@ -15,6 +19,47 @@ export interface InternalApiTaskProjectSummary {
   id: string;
   name: string;
   status: string | null;
+}
+
+export interface WorkspaceTaskUpdatePayload {
+  name?: string;
+  description?: string | null;
+  priority?: TaskPriority | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  list_id?: string;
+  estimation_points?: number | null;
+  label_ids?: string[];
+  assignee_ids?: string[];
+  project_ids?: string[];
+  completed?: boolean;
+  deleted?: boolean;
+  sort_key?: number;
+}
+
+export interface WorkspaceTaskApiTask extends Task, Record<string, unknown> {
+  assignee_ids?: string[];
+  label_ids?: string[];
+  project_ids?: string[];
+  description_yjs_state?: number[] | null;
+  board_id?: string | null;
+  deleted_at?: string;
+}
+
+export interface WorkspaceTaskResponse {
+  task: WorkspaceTaskApiTask;
+}
+
+export interface ListWorkspaceTasksOptions {
+  boardId?: string;
+  listId?: string;
+  q?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface WorkspaceTasksResponse {
+  tasks: WorkspaceTaskApiTask[];
 }
 
 interface TaskProjectApiRow {
@@ -61,6 +106,109 @@ export async function getWorkspaceTaskRelationships(
   return client.json<TaskRelationshipsResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}/relationships`,
     {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function listWorkspaceTasks(
+  workspaceId: string,
+  options?: ListWorkspaceTasksOptions,
+  clientOptions?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(clientOptions);
+  return client.json<WorkspaceTasksResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks`,
+    {
+      query: {
+        boardId: options?.boardId,
+        listId: options?.listId,
+        q: options?.q,
+        limit: options?.limit,
+        offset: options?.offset,
+      },
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function getWorkspaceTask(
+  workspaceId: string,
+  taskId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceTaskResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function updateWorkspaceTask(
+  workspaceId: string,
+  taskId: string,
+  payload: WorkspaceTaskUpdatePayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceTaskResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+interface WorkspaceTaskRelationshipResponse {
+  relationship: TaskRelationship;
+}
+
+export async function createWorkspaceTaskRelationship(
+  workspaceId: string,
+  taskId: string,
+  payload: CreateTaskRelationshipInput,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceTaskRelationshipResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}/relationships`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function deleteWorkspaceTaskRelationship(
+  workspaceId: string,
+  taskId: string,
+  payload: {
+    source_task_id: string;
+    target_task_id: string;
+    type: TaskRelationshipType;
+  },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: true }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}/relationships`,
+    {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
       cache: 'no-store',
     }
   );

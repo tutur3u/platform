@@ -110,8 +110,8 @@ export function useTaskDependencies({
   });
 
   // Mutations
-  const createRelationship = useCreateTaskRelationship(boardId);
-  const deleteRelationship = useDeleteTaskRelationship(boardId);
+  const createRelationship = useCreateTaskRelationship(boardId, wsId);
+  const deleteRelationship = useDeleteTaskRelationship(boardId, wsId);
   const createTaskWithRelationship = useCreateTaskWithRelationship(
     boardId,
     wsId
