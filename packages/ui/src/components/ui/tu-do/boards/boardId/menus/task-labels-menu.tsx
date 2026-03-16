@@ -8,6 +8,7 @@ import {
 import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
+import { normalizeBoardText } from '../board-text-utils';
 
 interface WorkspaceTaskLabel {
   id: string;
@@ -59,7 +60,7 @@ export function TaskLabelsMenu({
   const filteredLabels = availableLabels.filter(
     (label) =>
       !searchQuery ||
-      label.name.toLowerCase().includes(searchQuery.toLowerCase())
+      normalizeBoardText(label.name).includes(normalizeBoardText(searchQuery))
   );
 
   return (

@@ -2,7 +2,6 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Check, ChevronsUpDown } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -29,8 +28,6 @@ import {
 
 interface Props {
   wsId: string;
-  workspaceUserId?: string;
-  hasManageUsers: boolean;
   canCheckUserAttendance: boolean;
   canApproveReports: boolean;
   canCreateReports: boolean;
@@ -40,8 +37,6 @@ interface Props {
 
 export default function GroupReportsSelector({
   wsId,
-  workspaceUserId,
-  hasManageUsers,
   canCheckUserAttendance,
   canApproveReports,
   canCreateReports,
@@ -68,129 +63,56 @@ export default function GroupReportsSelector({
   const [query, setQuery] = useState('');
   const [debouncedQuery] = useDebounce(query, 300);
 
-  const supabase = createClient();
-
-  // Search groups (only active when searching)
-  const searchGroupsQuery = useQuery({
+  const reportGroupsQuery = useQuery({
     queryKey: [
-      'user-groups-search',
+      'ws',
       wsId,
-      workspaceUserId,
-      hasManageUsers,
+      'report-groups-selector',
       debouncedQuery,
+      selectedGroupId,
     ],
     queryFn: async () => {
-      if (hasManageUsers) {
-        let q = supabase
-          .from('workspace_user_groups_with_guest')
-          .select('id, name, ws_id')
-          .eq('ws_id', wsId);
-
-        if (debouncedQuery) {
-          q = q.ilike('name', `%${debouncedQuery}%`);
-        }
-
-        const { data, error } = await q.order('name').limit(20);
-
-        if (error) throw error;
-        return data || [];
-      }
-
-      if (!workspaceUserId) {
-        console.error(
-          'Cannot search groups without workspaceUserId when lacking manage_users permission'
-        );
-        return [];
-      }
-
-      let q = supabase
-        .from('workspace_user_groups')
-        .select('id, name, workspace_user_groups_users!inner(user_id)')
-        .eq('ws_id', wsId)
-        .eq('workspace_user_groups_users.user_id', workspaceUserId);
-
+      const searchParams = new URLSearchParams();
       if (debouncedQuery) {
-        q = q.ilike('name', `%${debouncedQuery}%`);
+        searchParams.set('q', debouncedQuery);
+      }
+      if (selectedGroupId) {
+        searchParams.set('selectedGroupId', selectedGroupId);
       }
 
-      const { data, error } = await q.order('name').limit(20);
-
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!wsId && (hasManageUsers || !!workspaceUserId),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-
-  // Fetch selected group details (to display correct name even if not in search results)
-  const selectedGroupQuery = useQuery({
-    queryKey: ['selected-group-details', selectedGroupId],
-    queryFn: async () => {
-      if (!selectedGroupId) return null;
-      const { data, error } = await supabase
-        .from('workspace_user_groups_with_guest')
-        .select('name')
-        .eq('id', selectedGroupId)
-        .single();
-
-      if (error) return null;
-      return data;
-    },
-    enabled: !!selectedGroupId,
-    staleTime: 10 * 60 * 1000, // 10 minutes
-  });
-
-  const groups = searchGroupsQuery.data ?? [];
-  const selectedGroup = selectedGroupQuery.data;
-
-  // Query to fetch all group managers (teachers) for the selected group
-  const groupManagersQuery = useQuery({
-    queryKey: ['ws', wsId, 'group', selectedGroupId, 'managers'],
-    enabled: Boolean(selectedGroupId),
-    queryFn: async (): Promise<
-      Array<{ id: string; full_name: string | null }>
-    > => {
-      const { data, error } = await supabase
-        .from('workspace_user_groups_users')
-        .select('user:workspace_users!inner(id, full_name, ws_id)')
-        .eq('group_id', selectedGroupId!)
-        .eq('role', 'TEACHER')
-        .eq('user.ws_id', wsId);
-      if (error) throw error;
-      const rows = (data ?? []) as Array<{ user: any }>;
-      const managers: Array<{ id: string; full_name: string | null }> = [];
-      for (const row of rows) {
-        const u = row?.user;
-        if (Array.isArray(u)) {
-          const first = u[0];
-          if (first)
-            managers.push({ id: first.id, full_name: first.full_name ?? null });
-        } else if (u) {
-          managers.push({ id: u.id, full_name: u.full_name ?? null });
-        }
-      }
-      return managers;
-    },
-  });
-
-  // Fetch aggregate report status per group for the workspace
-  const groupStatusQuery = useQuery({
-    queryKey: ['ws', wsId, 'group-report-status-summary'],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc(
-        'get_group_report_status_summary',
-        { _ws_id: wsId }
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users/reports/groups?${searchParams.toString()}`,
+        { cache: 'no-store' }
       );
-      if (error) throw error;
-      return data ?? [];
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch report groups');
+      }
+
+      return (await response.json()) as {
+        groupStatusSummary: Array<{
+          approved_count: number;
+          group_id: string;
+          pending_count: number;
+          rejected_count: number;
+        }>;
+        groups: Array<{ id: string; name: string | null }>;
+        selectedGroup: { id: string; name: string | null } | null;
+        selectedGroupManagers: Array<{ id: string; full_name: string | null }>;
+      };
     },
     enabled: !!wsId,
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 2 * 60 * 1000,
   });
+
+  const groups = reportGroupsQuery.data?.groups ?? [];
+  const selectedGroup = reportGroupsQuery.data?.selectedGroup ?? null;
+  const selectedGroupManagers =
+    reportGroupsQuery.data?.selectedGroupManagers ?? [];
 
   const groupStatusMap = useMemo(() => {
     const map = new Map<string, ReportStatusCounts>();
-    for (const row of groupStatusQuery.data ?? []) {
+    for (const row of reportGroupsQuery.data?.groupStatusSummary ?? []) {
       map.set(row.group_id, {
         pending_count: row.pending_count,
         approved_count: row.approved_count,
@@ -198,7 +120,7 @@ export default function GroupReportsSelector({
       });
     }
     return map;
-  }, [groupStatusQuery.data]);
+  }, [reportGroupsQuery.data?.groupStatusSummary]);
 
   // Auto-select first group when groups load and none is selected
   useEffect(() => {
@@ -244,7 +166,7 @@ export default function GroupReportsSelector({
                   onValueChange={setQuery}
                 />
                 <CommandList>
-                  {searchGroupsQuery.isLoading ? (
+                  {reportGroupsQuery.isLoading ? (
                     <div className="py-6 text-center text-muted-foreground text-sm">
                       {tc('loading')}
                     </div>
@@ -290,12 +212,12 @@ export default function GroupReportsSelector({
             </PopoverContent>
           </Popover>
 
-          {groupManagersQuery.data && groupManagersQuery.data.length > 0 && (
+          {selectedGroupManagers.length > 0 && (
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-muted-foreground text-sm">
                 {t('ws-user-groups.managers')}:
               </span>
-              {groupManagersQuery.data.map((manager) => (
+              {selectedGroupManagers.map((manager) => (
                 <Link
                   key={manager.id}
                   href={`/${wsId}/users/database/${manager.id}`}

@@ -83,9 +83,9 @@ export function SessionHistory({
   canBypassTimeTrackingRequestApproval,
 }: Omit<SessionHistoryProps, 'tasks'>) {
   const t = useTranslations('time-tracker.session_history');
-  const { data: cachedCategories } = useWorkspaceCategories({
+  const { data: categories } = useWorkspaceCategories({
     wsId,
-    enabled: false,
+    enabled: true,
   });
   const { data: thresholdData, isLoading: isLoadingThreshold } =
     useWorkspaceTimeThreshold(wsId);
@@ -484,7 +484,7 @@ export function SessionHistory({
                           sessions={sessions}
                           periodStats={periodStats}
                           startOfPeriod={startOfPeriod}
-                          categories={cachedCategories ?? null}
+                          categories={categories ?? null}
                           userTimezone={userTimezone}
                         />
                       </div>
@@ -620,7 +620,7 @@ export function SessionHistory({
       <MissedEntryDialog
         open={showMissedEntryDialog}
         onOpenChange={setShowMissedEntryDialog}
-        categories={cachedCategories ?? null}
+        categories={categories ?? null}
         wsId={wsId}
         workspace={workspace}
         prefillStartTime={prefillStartTime}

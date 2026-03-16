@@ -7,7 +7,6 @@ import {
   ChevronLeft,
   ChevronRight,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DialogClose,
@@ -20,7 +19,6 @@ import { Label } from '@tuturuuu/ui/label';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Separator } from '@tuturuuu/ui/separator';
 import { XLSX } from '@tuturuuu/ui/xlsx';
-import { generateUUID } from '@tuturuuu/utils/uuid-helper';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -70,11 +68,11 @@ export default function ImportDialogContent({ wsId }: { wsId: string }) {
       if (sheet) {
         const jsonData = XLSX.utils.sheet_to_json(sheet, {
           header: 1,
-        }) as any[][];
+        }) as string[][];
         const formattedData = jsonData
-          .map((row: any[]) => ({
+          .map((row) => ({
             fullName: sentenceCase(row[1]) || '',
-            email: row[0]?.toLowerCase(),
+            email: row[0]?.toLowerCase() || '',
           }))
           // only take rows with email
           .filter((row) => row.email)
@@ -117,70 +115,26 @@ export default function ImportDialogContent({ wsId }: { wsId: string }) {
     setPage((prevPage) => Math.max(prevPage - 1, 0));
   };
 
-  const fetchExistingUsers = async (supabase: any, wsId: string) => {
-    let existingUsers: any[] = [];
-    let from = 0;
-    const batchSize = 100;
-
-    while (true) {
-      const { data, error } = await supabase
-        .from('workspace_users')
-        .select('email')
-        .eq('ws_id', wsId)
-        .range(from, from + batchSize - 1);
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      if (data.length === 0) {
-        break;
-      }
-
-      existingUsers = existingUsers.concat(data);
-      from += batchSize;
-    }
-
-    return existingUsers;
-  };
-
   const handleImport = async () => {
     setUploading(true);
     setProgress(0);
 
-    const supabase = createClient();
-
     try {
-      // Fetch existing users in batches
-      const existingUsers = await fetchExistingUsers(supabase, wsId);
-      const existingEmails = new Set(existingUsers.map((user) => user.email));
-
-      // Filter out users that already exist
-      const newData = data.filter((row) => !existingEmails.has(row.email));
-
-      const rowsPerBatch = 100;
-      const totalBatches = Math.ceil(newData.length / rowsPerBatch);
-
-      for (let i = 0; i < totalBatches; i++) {
-        const batch = newData.slice(i * rowsPerBatch, (i + 1) * rowsPerBatch);
-        const formattedBatch = batch.map((row) => ({
-          id: generateUUID(wsId, row.email.toLowerCase()),
-          full_name: row.fullName,
-          email: row.email,
-          ws_id: wsId,
-        }));
-
-        const { error } = await supabase
-          .from('workspace_users')
-          .insert(formattedBatch);
-
-        if (error) {
-          throw new Error(error.message);
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/users/bulk-import`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
         }
+      );
 
-        setProgress(((i + 1) / totalBatches) * 100);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to import users');
       }
 
+      setProgress(100);
       setUploading(false);
       setUploaded(true);
       router.refresh();

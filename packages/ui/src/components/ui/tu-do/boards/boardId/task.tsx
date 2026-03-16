@@ -88,6 +88,7 @@ import {
 } from '../../utils/taskColorUtils';
 import { formatSmartDate } from '../../utils/taskDateUtils';
 import { getPriorityIndicator } from '../../utils/taskPriorityUtils';
+import { sortByDisplayName } from './board-text-utils';
 import {
   TaskAssigneesMenu,
   TaskBlockingMenu,
@@ -731,9 +732,7 @@ function TaskCardInner({
             }}
           >
             <TaskLabelsDisplay
-              labels={[...task.labels].sort((a, b) =>
-                a.name.toLowerCase().localeCompare(b.name.toLowerCase())
-              )}
+              labels={sortByDisplayName(task.labels)}
               size="sm"
               hiddenLabelsLabel={t('hidden_labels')}
             />

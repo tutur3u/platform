@@ -3,7 +3,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { CalendarIcon, RotateCcw } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import { Calendar } from '@tuturuuu/ui/calendar';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
@@ -134,8 +133,6 @@ export default function RecurringScheduleDialog({
         throw new Error(t('ws-user-group-schedule.no_end_date_set'));
       }
 
-      const supabase = createClient();
-
       // Generate all dates from start_date to ending_date for selected days of week
       const recurringDates = generateRecurringDates(
         values.start_date,
@@ -144,29 +141,30 @@ export default function RecurringScheduleDialog({
       );
 
       // Fetch existing sessions
-      const { data: groupData, error: fetchError } = await supabase
-        .from('workspace_user_groups')
-        .select('sessions')
-        .eq('ws_id', wsId)
-        .eq('id', groupId)
-        .single();
-
-      if (fetchError) throw fetchError;
+      const fetchRes = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}`,
+        { cache: 'no-store' }
+      );
+      if (!fetchRes.ok) throw new Error('Failed to fetch group details');
+      const { data: groupData } = await fetchRes.json();
 
       // Merge with existing sessions (avoid duplicates)
-      const existingSessions = new Set(groupData?.sessions || []);
-      recurringDates.forEach((date) => {
+      const existingSessions = new Set<string>(groupData?.sessions || []);
+      for (const date of recurringDates) {
         existingSessions.add(date);
-      });
+      }
 
       // Update the sessions
-      const { error } = await supabase
-        .from('workspace_user_groups')
-        .update({ sessions: Array.from(existingSessions) })
-        .eq('ws_id', wsId)
-        .eq('id', groupId);
+      const updateRes = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessions: Array.from(existingSessions) }),
+        }
+      );
 
-      if (error) throw error;
+      if (!updateRes.ok) throw new Error('Failed to update group sessions');
     },
     onSuccess: () => {
       toast.success(t('ws-user-group-schedule.recurring_schedule_created'));

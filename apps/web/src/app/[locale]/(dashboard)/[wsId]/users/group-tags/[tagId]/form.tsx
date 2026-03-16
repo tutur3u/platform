@@ -2,7 +2,6 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Users, X } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
 import SearchBar from '@tuturuuu/ui/custom/search-bar';
@@ -25,12 +24,34 @@ export default function UserGroupForm({ wsId, tagId }: UserGroupFormProps) {
 
   const workspaceGroupsQuery = useQuery({
     queryKey: ['workspaces', wsId, 'group-tags', 'user-groups', { query }],
-    queryFn: () => getWorkspaceUserGroups(wsId),
+    queryFn: async (): Promise<{ data: UserGroup[]; count: number }> => {
+      const searchParams = new URLSearchParams({
+        q: query,
+        limit: '100',
+      });
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/users/groups?${searchParams.toString()}`,
+        { cache: 'no-store' }
+      );
+      if (!res.ok) throw new Error('Failed to fetch workspace groups');
+      return await res.json();
+    },
   });
 
   const userGroupsQuery = useQuery({
     queryKey: ['workspaces', wsId, 'groups', 'tags', tagId, { query }],
-    queryFn: tagId ? () => getUserGroups(tagId, query) : undefined,
+    queryFn: async (): Promise<{ data: UserGroup[]; count: number }> => {
+      if (!tagId) return { data: [], count: 0 };
+      const searchParams = new URLSearchParams({
+        q: query,
+      });
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/group-tags/${tagId}/user-groups?${searchParams.toString()}`,
+        { cache: 'no-store' }
+      );
+      if (!res.ok) throw new Error('Failed to fetch user groups for tag');
+      return await res.json();
+    },
     enabled: !!tagId,
   });
 
@@ -123,37 +144,4 @@ export default function UserGroupForm({ wsId, tagId }: UserGroupFormProps) {
       )}
     </>
   );
-}
-
-async function getWorkspaceUserGroups(wsId: string) {
-  const supabase = await createClient();
-
-  const queryBuilder = supabase
-    .from('workspace_user_groups')
-    .select('*')
-    .eq('ws_id', wsId)
-    .order('id');
-
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
-
-  return { data, count } as { data: UserGroup[]; count: number };
-}
-
-async function getUserGroups(tagId: string, query?: string) {
-  const supabase = await createClient();
-
-  const queryBuilder = supabase
-    .from('workspace_user_group_tag_groups')
-    .select('...workspace_user_groups!inner(*)', {
-      count: 'exact',
-    })
-    .eq('tag_id', tagId);
-
-  if (query) queryBuilder.ilike('workspace_user_groups.name', `%${query}%`);
-
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
-
-  return { data, count } as { data: UserGroup[]; count: number };
 }

@@ -19,6 +19,7 @@ import type {
   PendingRelationshipType,
 } from '../shared/task-edit-dialog/types/pending-relationship';
 import { useOptionalWorkspacePresenceContext } from './workspace-presence-provider';
+
 export type { PendingRelationship, PendingRelationshipType };
 
 // Type definitions for Supabase join row responses

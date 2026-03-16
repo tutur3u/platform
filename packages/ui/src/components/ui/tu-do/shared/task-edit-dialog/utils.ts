@@ -1,9 +1,114 @@
 import type { QueryClient } from '@tanstack/react-query';
 import type { JSONContent } from '@tiptap/react';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import type { Json } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
+import { MAX_TASK_DESCRIPTION_LENGTH } from '@tuturuuu/utils/constants';
+import { getDescriptionText } from '@tuturuuu/utils/text-helper';
+import { updateWorkspaceTaskDescription } from './hooks/task-api';
 
-const supabase = createClient();
+function isErrorWithMessage(error: unknown): error is {
+  code?: string;
+  details?: string | null;
+  hint?: string | null;
+  message?: string;
+  status?: number;
+} {
+  return typeof error === 'object' && error !== null;
+}
+
+export function serializeTaskDescriptionContent(
+  content: JSONContent | null
+): string | null {
+  if (!content) return null;
+
+  try {
+    return JSON.stringify(content);
+  } catch {
+    return null;
+  }
+}
+
+export function getTaskDescriptionStorageLength(
+  content: JSONContent | null
+): number {
+  return serializeTaskDescriptionContent(content)?.length ?? 0;
+}
+
+export function buildTaskDescriptionUpdatePayload({
+  content,
+  yjsState,
+}: {
+  content: JSONContent | null;
+  yjsState?: number[] | null;
+}): TaskDescriptionUpdatePayload {
+  const descriptionString = serializeTaskDescriptionContent(content);
+  const payload: TaskDescriptionUpdatePayload = {};
+
+  if (descriptionString === null) {
+    payload.description = null;
+  } else if (descriptionString.length <= MAX_TASK_DESCRIPTION_LENGTH) {
+    payload.description = descriptionString;
+  }
+
+  if (yjsState !== undefined) {
+    payload.description_yjs_state = yjsState;
+  }
+
+  return payload;
+}
+
+export function updateTaskDescriptionCaches({
+  taskId,
+  descriptionString,
+  boardId,
+  queryClient,
+}: {
+  taskId: string;
+  descriptionString: string | null;
+  boardId?: string;
+  queryClient?: QueryClient;
+}) {
+  if (!queryClient) return;
+
+  queryClient.setQueryData<Task | undefined>(['task', taskId], (oldTask) =>
+    oldTask
+      ? { ...oldTask, description: descriptionString ?? undefined }
+      : oldTask
+  );
+
+  if (!boardId) return;
+
+  queryClient.setQueryData<Task[]>(['tasks', boardId], (oldTasks) => {
+    if (!oldTasks) return oldTasks;
+
+    return oldTasks.map((task) =>
+      task.id === taskId
+        ? { ...task, description: descriptionString ?? undefined }
+        : task
+    );
+  });
+}
+
+function describeTaskPersistenceError(error: unknown) {
+  if (error instanceof Error) {
+    return {
+      message: error.message,
+      name: error.name,
+    };
+  }
+
+  if (isErrorWithMessage(error)) {
+    return {
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+      message: error.message,
+      status: error.status,
+    };
+  }
+
+  return { error };
+}
 
 /**
  * Helper function to parse task description from various formats
@@ -49,56 +154,59 @@ export function getDescriptionContent(desc: any): JSONContent | null {
  * @param context - Optional context string for logging (e.g., 'close', 'force-close', 'auto-close')
  */
 export async function saveYjsDescriptionToDatabase({
+  wsId,
   taskId,
   getContent,
+  getYjsState,
   boardId,
   queryClient,
   context = 'save',
 }: {
+  wsId: string;
   taskId: string;
   getContent: () => JSONContent | null;
+  getYjsState?: () => number[] | null | undefined;
   boardId?: string;
   queryClient?: QueryClient;
   context?: string;
 }): Promise<boolean> {
   try {
     const currentDescription = getContent();
+    const descriptionString =
+      serializeTaskDescriptionContent(currentDescription);
+    const yjsState = getYjsState?.();
+    const payload = buildTaskDescriptionUpdatePayload({
+      content: currentDescription,
+      yjsState,
+    });
 
-    // Always update: null if empty, JSON string if has content
-    // This ensures clearing content is properly reflected in the database
-    const descriptionString = currentDescription
-      ? JSON.stringify(currentDescription)
-      : null;
-
-    const { error } = await supabase
-      .from('tasks')
-      .update({ description: descriptionString })
-      .eq('id', taskId);
-
-    if (error) {
-      console.error(`Error saving Yjs description (${context}):`, error);
-      return false;
+    if (Object.keys(payload).length === 0) {
+      return true;
     }
 
-    // Optimistically update the task's description in the cache so the task
-    // card badge (checkbox counts, etc.) reflects the latest editor state.
-    // This avoids full invalidation which would cause all tasks to flicker.
-    if (boardId && queryClient) {
-      queryClient.setQueryData<Task[]>(['tasks', boardId], (oldTasks) => {
-        if (!oldTasks) return oldTasks;
-        return oldTasks.map((t) =>
-          t.id === taskId
-            ? { ...t, description: descriptionString ?? undefined }
-            : t
-        );
-      });
-    }
+    await updateWorkspaceTaskDescription(wsId, taskId, payload);
+
+    updateTaskDescriptionCaches({
+      taskId,
+      descriptionString,
+      boardId,
+      queryClient,
+    });
 
     return true;
   } catch (error) {
-    console.error(`Failed to save Yjs description (${context}):`, error);
+    console.error(
+      `Failed to save Yjs description (${context}):`,
+      describeTaskPersistenceError(error)
+    );
     return false;
   }
+}
+
+export function getTaskDescriptionPreviewText(
+  content: JSONContent | null
+): string {
+  return getDescriptionText(content as Json);
 }
 
 /**
@@ -164,3 +272,7 @@ export function loadDraft(storageKey: string): any | null {
     return null;
   }
 }
+type TaskDescriptionUpdatePayload = {
+  description?: string | null;
+  description_yjs_state?: number[] | null;
+};

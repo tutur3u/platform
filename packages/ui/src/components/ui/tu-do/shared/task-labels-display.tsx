@@ -24,6 +24,10 @@ interface TaskLabelsDisplayProps {
   hiddenLabelsLabel?: string;
 }
 
+function getTaskLabelIdentity(label: TaskLabel) {
+  return [label.id ?? '', label.name ?? '', label.color ?? ''].join('::');
+}
+
 export function TaskLabelsDisplay({
   labels,
   maxDisplay,
@@ -37,6 +41,14 @@ export function TaskLabelsDisplay({
 
   if (!labels || labels.length === 0) return null;
 
+  const normalizedLabels = labels.filter(
+    (label, index, allLabels) =>
+      allLabels.findIndex(
+        (candidate) =>
+          getTaskLabelIdentity(candidate) === getTaskLabelIdentity(label)
+      ) === index
+  );
+
   // Derive sizing tokens
   const sizeClasses = {
     sm: 'h-5.5 px-1 text-[10px]',
@@ -49,8 +61,12 @@ export function TaskLabelsDisplay({
     lg: 'h-4 w-4',
   } as const;
 
-  const visibleLabels = maxDisplay ? labels.slice(0, maxDisplay) : labels;
-  const hiddenCount = maxDisplay ? Math.max(0, labels.length - maxDisplay) : 0;
+  const visibleLabels = maxDisplay
+    ? normalizedLabels.slice(0, maxDisplay)
+    : normalizedLabels;
+  const hiddenCount = maxDisplay
+    ? Math.max(0, normalizedLabels.length - maxDisplay)
+    : 0;
 
   return (
     <div className={cn('flex items-center gap-1 overflow-hidden', className)}>
@@ -58,7 +74,7 @@ export function TaskLabelsDisplay({
         const styles = computeAccessibleLabelStyles(label.color, isDark);
         return (
           <Badge
-            key={label.id}
+            key={getTaskLabelIdentity(label)}
             variant="outline"
             className={cn(
               'inline-flex items-center gap-1 truncate border font-medium ring-0',
@@ -75,7 +91,7 @@ export function TaskLabelsDisplay({
             }
           >
             {showIcon && <Tag className={iconSizes[size]} />}
-            <span className="truncate">{label.name}</span>
+            <span className="truncate">{label.name ?? ''}</span>
           </Badge>
         );
       })}
@@ -95,9 +111,9 @@ export function TaskLabelsDisplay({
           <TooltipContent side="bottom" className="max-w-xs">
             <div className="space-y-1">
               <p className="font-medium text-xs">{hiddenLabelsLabel}</p>
-              {labels.slice(maxDisplay).map((label) => (
-                <div key={label.id} className="text-xs">
-                  {label.name}
+              {normalizedLabels.slice(maxDisplay).map((label) => (
+                <div key={getTaskLabelIdentity(label)} className="text-xs">
+                  {label.name ?? ''}
                 </div>
               ))}
             </div>

@@ -100,6 +100,12 @@ export async function createWorkspaceBreakType(
     }
   );
 
+  if (!payload.breakType) {
+    throw new Error(
+      `missing breakType in createWorkspaceBreakType response (workspaceId=${workspaceId})`
+    );
+  }
+
   return payload.breakType;
 }
 
@@ -121,6 +127,12 @@ export async function updateWorkspaceBreakType(
       body: JSON.stringify(input),
     }
   );
+
+  if (!payload.breakType) {
+    throw new Error(
+      `missing breakType in updateWorkspaceBreakType response (workspaceId=${workspaceId}, breakTypeId=${breakTypeId})`
+    );
+  }
 
   return payload.breakType;
 }

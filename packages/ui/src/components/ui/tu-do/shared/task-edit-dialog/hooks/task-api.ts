@@ -18,12 +18,17 @@ export interface WorkspaceTaskUpdatePayload {
   deleted?: boolean;
 }
 
+export interface WorkspaceTaskApiTask extends Task, Record<string, unknown> {
+  assignee_ids?: string[];
+  label_ids?: string[];
+  project_ids?: string[];
+  description_yjs_state?: number[] | null;
+  board_id?: string | null;
+  deleted_at?: string;
+}
+
 interface TaskResponse {
-  task: Task & {
-    assignee_ids?: string[];
-    label_ids?: string[];
-    project_ids?: string[];
-  };
+  task: WorkspaceTaskApiTask;
 }
 
 async function getErrorMessage(response: Response, fallback: string) {
@@ -50,6 +55,74 @@ export async function updateWorkspaceTask(
   }
 
   return (await response.json()) as TaskResponse;
+}
+
+export async function fetchWorkspaceTask(wsId: string, taskId: string) {
+  const response = await fetch(`/api/v1/workspaces/${wsId}/tasks/${taskId}`, {
+    method: 'GET',
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error(await getErrorMessage(response, 'Failed to fetch task'));
+  }
+
+  return (await response.json()) as TaskResponse;
+}
+
+interface TaskDescriptionResponse {
+  description: string | null;
+  description_yjs_state: number[] | null;
+}
+
+export async function fetchWorkspaceTaskDescription(
+  wsId: string,
+  taskId: string
+) {
+  const response = await fetch(
+    `/api/v1/workspaces/${wsId}/tasks/${taskId}/description`,
+    {
+      method: 'GET',
+      cache: 'no-store',
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await getErrorMessage(response, 'Failed to fetch task description')
+    );
+  }
+
+  return (await response.json()) as TaskDescriptionResponse;
+}
+
+export async function updateWorkspaceTaskDescription(
+  wsId: string,
+  taskId: string,
+  payload: {
+    description?: string | null;
+    description_yjs_state?: number[] | null;
+  }
+) {
+  const response = await fetch(
+    `/api/v1/workspaces/${wsId}/tasks/${taskId}/description`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await getErrorMessage(response, 'Failed to update task description')
+    );
+  }
+
+  return (await response.json()) as TaskDescriptionResponse;
 }
 
 export async function createWorkspaceLabel(

@@ -10,6 +10,10 @@ const routeParamsSchema = z.object({
   sessionId: z.uuid(),
 });
 
+const routeBodySchema = z.object({
+  targetWorkspaceId: z.string().min(1),
+});
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ wsId: string; sessionId: string }> }
@@ -37,12 +41,19 @@ export async function POST(
     const wsId = await normalizeWorkspaceId(id, supabase);
 
     // Verify workspace access
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: memberError } = await supabase
       .from('workspace_members')
       .select('id:user_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (memberError) {
+      return NextResponse.json(
+        { error: 'Failed to verify source workspace access' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(
@@ -51,23 +62,48 @@ export async function POST(
       );
     }
 
-    const body = await request.json();
-    const { targetWorkspaceId } = body;
-
-    if (!targetWorkspaceId) {
+    const body = routeBodySchema.safeParse(await request.json());
+    if (!body.success) {
       return NextResponse.json(
         { error: 'Target workspace ID is required' },
         { status: 400 }
       );
     }
 
+    let targetWorkspaceId: string;
+    try {
+      targetWorkspaceId = await normalizeWorkspaceId(
+        body.data.targetWorkspaceId,
+        supabase
+      );
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid target workspace ID' },
+        { status: 400 }
+      );
+    }
+
+    if (!targetWorkspaceId) {
+      return NextResponse.json(
+        { error: 'Invalid target workspace ID' },
+        { status: 400 }
+      );
+    }
+
     // Verify access to target workspace
-    const { data: targetMemberCheck } = await supabase
+    const { data: targetMemberCheck, error: targetMemberError } = await supabase
       .from('workspace_members')
       .select('id:user_id')
       .eq('ws_id', targetWorkspaceId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (targetMemberError) {
+      return NextResponse.json(
+        { error: 'Failed to verify target workspace access' },
+        { status: 500 }
+      );
+    }
 
     if (!targetMemberCheck) {
       return NextResponse.json(
@@ -151,6 +187,8 @@ export async function POST(
         updated_at: new Date().toISOString(),
       })
       .eq('id', sessionId)
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
       .select(
         `
         *,
@@ -160,7 +198,7 @@ export async function POST(
       )
       .single();
 
-    if (moveError) {
+    if (moveError || !movedSession) {
       console.error('Error moving session:', moveError);
       return NextResponse.json(
         { error: 'Failed to move session' },

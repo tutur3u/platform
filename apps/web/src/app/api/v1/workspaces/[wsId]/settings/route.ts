@@ -64,3 +64,54 @@ export const GET = withSessionAuth<{ wsId: string }>(
   },
   { cache: { maxAge: 60, swr: 30 } }
 );
+
+export const POST = withSessionAuth<{ wsId: string }>(
+  async (request, { user, supabase }, { wsId }) => {
+    try {
+      const sbAdmin = await createAdminClient();
+
+      // Verify workspace access
+      const { data: memberCheck } = await supabase
+        .from('workspace_members')
+        .select('id:user_id')
+        .eq('ws_id', wsId)
+        .eq('user_id', user.id)
+        .single();
+
+      if (!memberCheck) {
+        return NextResponse.json(
+          { error: 'Workspace access denied' },
+          { status: 403 }
+        );
+      }
+
+      const body = await request.json();
+
+      // Update workspace settings
+      const { data: settings, error } = await sbAdmin
+        .from('workspace_settings')
+        .upsert({
+          ...body,
+          ws_id: wsId,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating workspace settings:', error);
+        return NextResponse.json(
+          { error: 'Failed to update workspace settings' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json(settings);
+    } catch (error) {
+      console.error('Error in workspace settings API:', error);
+      return NextResponse.json(
+        { error: 'Internal server error' },
+        { status: 500 }
+      );
+    }
+  }
+);

@@ -1,8 +1,8 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
 export async function GET(req: Request) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
   const { searchParams } = new URL(req.url);
   const wsId = searchParams.get('ws_id');
@@ -16,7 +16,7 @@ export async function GET(req: Request) {
     );
   }
 
-  const { data, error, count } = await supabase
+  const { data, error, count } = await sbAdmin
     .from('external_user_monthly_reports')
     .select('*, workspace_users!user_id!inner(ws_id)', { count: 'exact' })
     .eq('workspace_users.ws_id', wsId)

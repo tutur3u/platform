@@ -108,7 +108,8 @@ export default function Structure({
       }
       actions={actions}
       userPopover={userPopover}
-      children={children}
-    />
+    >
+      {children}
+    </BaseStructure>
   );
 }

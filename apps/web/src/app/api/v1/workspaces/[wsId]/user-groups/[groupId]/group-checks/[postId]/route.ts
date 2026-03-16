@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { MAX_URL_LENGTH } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
@@ -13,12 +13,12 @@ interface Params {
 }
 
 export async function PUT(req: Request, { params }: Params) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
   const data = await req.json();
   const { wsId, groupId, postId } = await params;
 
   // Check permissions
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -34,7 +34,7 @@ export async function PUT(req: Request, { params }: Params) {
   }
 
   // Ensure resource belongs to this workspace and group
-  const { data: post, error: postErr } = await supabase
+  const { data: post, error: postErr } = await sbAdmin
     .from('user_group_posts')
     .select(`
       id,
@@ -77,7 +77,7 @@ export async function PUT(req: Request, { params }: Params) {
   const validatedData = parse.data;
 
   if (multiple) {
-    const { error } = await supabase
+    const { error } = await sbAdmin
       .from('user_group_post_checks')
       .upsert(
         (
@@ -118,7 +118,7 @@ export async function PUT(req: Request, { params }: Params) {
       notes?: string | null;
     };
 
-    const { error } = await supabase
+    const { error } = await sbAdmin
       .from('user_group_post_checks')
       .upsert({
         post_id: postId,

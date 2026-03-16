@@ -189,7 +189,7 @@ export const PostItem = memo(function PostItem({
         </div>
       )}
       {configs.showStatus && groupId && post.id && (
-        <PostEmailStatus groupId={groupId} postId={post.id} />
+        <PostEmailStatus wsId={wsId} groupId={groupId} postId={post.id} />
       )}
     </div>
   );

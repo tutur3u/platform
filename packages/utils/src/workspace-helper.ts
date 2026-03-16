@@ -598,7 +598,7 @@ export async function getPermissions({
   const { data: defaultData, error: defaultError } = defaultRes;
 
   if (!workspaceData) {
-    console.error('Workspace not found in getPermissions', resolvedWorkspaceId);
+    console.info('Workspace not found in getPermissions', resolvedWorkspaceId);
     return null;
   }
 

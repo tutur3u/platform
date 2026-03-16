@@ -5,7 +5,10 @@ import {
   MAX_SEARCH_LENGTH,
 } from '@tuturuuu/utils/constants';
 import { sanitizeSearchQuery } from '@tuturuuu/utils/search-helper';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -113,12 +116,19 @@ export const GET = withSessionAuth<{ wsId: string }>(
       const sbAdmin = await createAdminClient();
 
       // Verify workspace access
-      const { data: memberCheck } = await supabase
+      const { data: memberCheck, error: memberCheckError } = await supabase
         .from('workspace_members')
         .select('id:user_id')
         .eq('ws_id', normalizedWsId)
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
+
+      if (memberCheckError) {
+        return NextResponse.json(
+          { error: 'Failed to verify workspace access' },
+          { status: 500 }
+        );
+      }
 
       if (!memberCheck) {
         return NextResponse.json(
@@ -165,16 +175,43 @@ export const GET = withSessionAuth<{ wsId: string }>(
       const dateToIso = dateTo.toISOString();
 
       // Determine which user's data to fetch
-      const queryUserId = targetUserId ?? user.id;
+      let queryUserId = user.id;
 
       // If targeting another user, verify they're in the same workspace
       if (targetUserId && targetUserId !== user.id) {
-        const { data: targetUserCheck } = await supabase
-          .from('workspace_members')
-          .select('id:user_id')
-          .eq('ws_id', normalizedWsId)
-          .eq('user_id', targetUserId)
-          .single();
+        const permissions = await getPermissions({
+          wsId: normalizedWsId,
+          request,
+        });
+
+        if (!permissions) {
+          return NextResponse.json(
+            { error: 'Failed to resolve permissions' },
+            { status: 500 }
+          );
+        }
+
+        if (permissions.withoutPermission('manage_time_tracking_requests')) {
+          return NextResponse.json(
+            { error: 'Insufficient permissions to view other users data' },
+            { status: 403 }
+          );
+        }
+
+        const { data: targetUserCheck, error: targetUserCheckError } =
+          await supabase
+            .from('workspace_members')
+            .select('id:user_id')
+            .eq('ws_id', normalizedWsId)
+            .eq('user_id', targetUserId)
+            .maybeSingle();
+
+        if (targetUserCheckError) {
+          return NextResponse.json(
+            { error: 'Failed to verify target user access' },
+            { status: 500 }
+          );
+        }
 
         if (!targetUserCheck) {
           return NextResponse.json(
@@ -182,6 +219,8 @@ export const GET = withSessionAuth<{ wsId: string }>(
             { status: 404 }
           );
         }
+
+        queryUserId = targetUserId;
       }
 
       const sanitizedSearchQuery = sanitizeSearchQuery(searchQuery);

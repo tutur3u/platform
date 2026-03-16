@@ -33,6 +33,10 @@ const CreateTaskSchema = z.object({
     .max(MAX_TASK_DESCRIPTION_LENGTH)
     .nullable()
     .optional(),
+  description_yjs_state: z
+    .array(z.number().int().min(0).max(255))
+    .nullable()
+    .optional(),
   listId: z.string().uuid(),
   priority: z.enum(['low', 'normal', 'high', 'critical']).nullable().optional(),
   start_date: z.string().max(MAX_COLOR_LENGTH).nullable().optional(),
@@ -557,6 +561,7 @@ export async function POST(
       .insert({
         name: taskName.trim(),
         description: description?.trim() || null,
+        description_yjs_state: validatedData.description_yjs_state ?? null,
         list_id: listId,
         priority: priority || null,
         start_date: start_date || null,

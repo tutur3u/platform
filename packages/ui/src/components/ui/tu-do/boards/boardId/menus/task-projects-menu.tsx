@@ -8,6 +8,7 @@ import {
 import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
+import { normalizeBoardText } from '../board-text-utils';
 
 interface TaskProject {
   id: string;
@@ -60,7 +61,7 @@ export function TaskProjectsMenu({
   const filteredProjects = availableProjects.filter(
     (project) =>
       !searchQuery ||
-      project.name.toLowerCase().includes(searchQuery.toLowerCase())
+      normalizeBoardText(project.name).includes(normalizeBoardText(searchQuery))
   );
 
   return (

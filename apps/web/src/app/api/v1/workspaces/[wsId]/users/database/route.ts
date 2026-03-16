@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
   MAX_SEARCH_LENGTH,
@@ -7,6 +7,7 @@ import {
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { buildPostgrestRateLimitResponse } from '@/lib/postgrest-rate-limit';
 
 function normalizeListParam(value: string | string[]) {
   const rawValues = Array.isArray(value) ? value : [value];
@@ -38,6 +39,10 @@ const SearchParamsSchema = z.object({
     .enum(['active', 'archived', 'archived_until', 'all'])
     .default('active'),
   linkStatus: z.enum(['all', 'linked', 'virtual']).default('all'),
+  withPromotions: z
+    .enum(['true', 'false'])
+    .catch('false')
+    .transform((val) => val === 'true'),
 });
 
 interface Params {
@@ -48,7 +53,6 @@ interface Params {
 
 export async function GET(request: Request, { params }: Params) {
   try {
-    const supabase = await createClient();
     const { wsId: id } = await params;
 
     // Resolve workspace ID
@@ -93,7 +97,9 @@ export async function GET(request: Request, { params }: Params) {
     const sp = SearchParamsSchema.parse(params_obj);
 
     // Fetch data using RPC with link_status parameter for efficient filtering
-    let queryBuilder = supabase
+    const sbAdmin = await createAdminClient();
+
+    let queryBuilder = sbAdmin
       .rpc(
         'get_workspace_users',
         {
@@ -131,6 +137,11 @@ export async function GET(request: Request, { params }: Params) {
     const { data, error, count } = await queryBuilder;
 
     if (error) {
+      const rateLimitResponse = buildPostgrestRateLimitResponse(error);
+      if (rateLimitResponse) {
+        return rateLimitResponse;
+      }
+
       console.error('Error fetching workspace users:', error);
       return NextResponse.json(
         { message: 'Error fetching workspace users' },
@@ -138,53 +149,132 @@ export async function GET(request: Request, { params }: Params) {
       );
     }
 
-    // Enrich each user with guest status
-    const withGuest = await Promise.all(
-      (data as unknown as WorkspaceUser[]).map(async (u) => {
-        const { data: isGuest } = await supabase.rpc('is_user_guest', {
-          user_uuid: u.id,
-        });
+    const workspaceUsers = (data as unknown as WorkspaceUser[]) ?? [];
+    const workspaceUserIds = workspaceUsers
+      .map((user) => user.id)
+      .filter((userId): userId is string => Boolean(userId));
 
-        // Sanitize data based on permissions
-        const sanitized: Record<string, unknown> = {
-          ...u,
-          is_guest: Boolean(isGuest),
-        };
+    let guestUserIds = new Set<string>();
+    const promotionsMap = new Map<
+      string,
+      {
+        id: string;
+        name: string | null;
+        code: string | null;
+        value: number | null;
+        use_ratio: boolean | null;
+        ws_id: string;
+      }[]
+    >();
 
-        // Remove private fields if user doesn't have permission
-        if (!hasPrivateInfo) {
-          delete sanitized.email;
-          delete sanitized.phone;
-          delete sanitized.birthday;
-          delete sanitized.gender;
-          delete sanitized.ethnicity;
-          delete sanitized.guardian;
-          delete sanitized.national_id;
-          delete sanitized.address;
-          delete sanitized.note;
+    if (workspaceUserIds.length > 0) {
+      const [guestResult, promotionsResult] = await Promise.all([
+        sbAdmin
+          .from('workspace_user_groups_users')
+          .select('user_id, workspace_user_groups!inner(is_guest, ws_id)')
+          .eq('workspace_user_groups.ws_id', wsId)
+          .eq('workspace_user_groups.is_guest', true)
+          .in('user_id', workspaceUserIds),
+        sp.withPromotions
+          ? sbAdmin
+              .from('user_linked_promotions')
+              .select(
+                'user_id, workspace_promotions!inner(id, name, code, value, use_ratio, ws_id)'
+              )
+              .eq('workspace_promotions.ws_id', wsId)
+              .in('user_id', workspaceUserIds)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
+
+      const guestMemberships = guestResult.data;
+      const guestError = guestResult.error;
+
+      if (guestError) {
+        const rateLimitResponse = buildPostgrestRateLimitResponse(guestError);
+        if (rateLimitResponse) {
+          return rateLimitResponse;
         }
 
-        // Remove public fields if user doesn't have permission
-        if (!hasPublicInfo) {
-          delete sanitized.avatar_url;
-          delete sanitized.full_name;
-          delete sanitized.display_name;
-          delete sanitized.group_count;
-          delete sanitized.linked_users;
-          delete sanitized.created_at;
-          delete sanitized.updated_at;
-        }
+        console.error('Error fetching guest workspace users:', guestError);
+        return NextResponse.json(
+          { message: 'Error fetching workspace users' },
+          { status: 500 }
+        );
+      }
 
-        if (!canCheckUserAttendance) {
-          delete sanitized.attendance_count;
-        }
+      guestUserIds = new Set(
+        (guestMemberships ?? [])
+          .map((membership) => membership.user_id)
+          .filter((userId): userId is string => Boolean(userId))
+      );
 
-        return sanitized as unknown as WorkspaceUser & { is_guest?: boolean };
-      })
-    );
+      if (sp.withPromotions && promotionsResult.data) {
+        for (const item of promotionsResult.data) {
+          const promotions = promotionsMap.get(item.user_id) || [];
+          promotions.push(item.workspace_promotions);
+          promotionsMap.set(item.user_id, promotions);
+        }
+      }
+    }
+
+    const withDetails = workspaceUsers.map((u) => {
+      // Sanitize data based on permissions
+      const sanitized: Record<string, unknown> = {
+        ...u,
+        is_guest: guestUserIds.has(u.id),
+      };
+
+      if (sp.withPromotions) {
+        const promos = promotionsMap.get(u.id) || [];
+        sanitized.linked_promotions = promos;
+        sanitized.linked_promotions_count = promos.length;
+        sanitized.linked_promotion_names = promos
+          .map((p) => p.name)
+          .filter(Boolean)
+          .join(', ');
+        sanitized.linked_promotion_codes = promos
+          .map((p) => p.code)
+          .filter(Boolean)
+          .join(', ');
+        sanitized.linked_promotion_values = promos
+          .map((p) => (p.use_ratio ? `${p.value}%` : p.value))
+          .filter((v) => v !== null && v !== undefined)
+          .join(', ');
+      }
+
+      // Remove private fields if user doesn't have permission
+      if (!hasPrivateInfo) {
+        delete sanitized.email;
+        delete sanitized.phone;
+        delete sanitized.birthday;
+        delete sanitized.gender;
+        delete sanitized.ethnicity;
+        delete sanitized.guardian;
+        delete sanitized.national_id;
+        delete sanitized.address;
+        delete sanitized.note;
+      }
+
+      // Remove public fields if user doesn't have permission
+      if (!hasPublicInfo) {
+        delete sanitized.avatar_url;
+        delete sanitized.full_name;
+        delete sanitized.display_name;
+        delete sanitized.group_count;
+        delete sanitized.linked_users;
+        delete sanitized.created_at;
+        delete sanitized.updated_at;
+      }
+
+      if (!canCheckUserAttendance) {
+        delete sanitized.attendance_count;
+      }
+
+      return sanitized as unknown as WorkspaceUser & { is_guest?: boolean };
+    });
 
     return NextResponse.json({
-      data: withGuest,
+      data: withDetails,
       count: count ?? 0,
       permissions: {
         hasPrivateInfo,

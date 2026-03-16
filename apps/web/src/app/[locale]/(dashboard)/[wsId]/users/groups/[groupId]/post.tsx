@@ -1,79 +1,41 @@
 import { useInViewport } from '@mantine/hooks';
 import { useQuery } from '@tanstack/react-query';
 import { Check, CircleHelp, Send, X } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { cn } from '@tuturuuu/utils/format';
 
-type UserGroupPostCheckRow = {
-  is_completed: boolean | null;
-};
-
-type UserRow = {
-  id: string | null;
-  user_group_post_checks?: UserGroupPostCheckRow[] | null;
-};
+interface PostStatusData {
+  sent: number | null;
+  checked: number | null;
+  failed: number | null;
+  tentative: number | null;
+  count: number | null;
+}
 
 export function PostEmailStatus({
+  wsId,
   groupId,
   postId,
 }: {
+  wsId: string;
   groupId: string;
   postId: string;
 }) {
   const { ref, inViewport } = useInViewport();
 
-  const { data } = useQuery({
+  const { data } = useQuery<PostStatusData>({
     queryKey: ['user-group-post-email-status', groupId, postId],
-    enabled: Boolean(inViewport && groupId && postId),
-    queryFn: async (): Promise<{
-      sent: number | null;
-      checked: number | null;
-      failed: number | null;
-      tentative: number | null;
-      count: number | null;
-    }> => {
-      const supabase = createClient();
+    enabled: Boolean(inViewport && wsId && groupId && postId),
+    queryFn: async (): Promise<PostStatusData> => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/posts/${postId}/status`,
+        { cache: 'no-store' }
+      );
 
-      const {
-        data: users,
-        count,
-        error: usersError,
-      } = await supabase
-        .from('workspace_user_groups_users')
-        .select(
-          '...workspace_users(id, user_group_post_checks!inner(post_id, is_completed))',
-          {
-            count: 'exact',
-          }
-        )
-        .eq('group_id', groupId)
-        .eq('workspace_users.user_group_post_checks.post_id', postId);
+      if (!response.ok) {
+        throw new Error('Failed to fetch post status');
+      }
 
-      if (usersError) throw usersError;
-
-      const { count: emailsCount, error: emailsError } = await supabase
-        .from('sent_emails')
-        .select('*', {
-          count: 'exact',
-          head: true,
-        })
-        .eq('post_id', postId);
-
-      if (emailsError) throw emailsError;
-
-      const safeUsers = (users ?? []) as UserRow[];
-
-      return {
-        sent: emailsCount,
-        checked: safeUsers.filter((user) =>
-          user?.user_group_post_checks?.find((check) => check?.is_completed)
-        ).length,
-        failed: safeUsers.filter((user) =>
-          user?.user_group_post_checks?.find((check) => !check?.is_completed)
-        ).length,
-        tentative: safeUsers.filter((user) => !user?.id).length,
-        count,
-      };
+      return await response.json();
     },
     staleTime: 30_000,
   });
