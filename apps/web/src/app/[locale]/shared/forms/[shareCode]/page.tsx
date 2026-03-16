@@ -1,29 +1,22 @@
 import type { Metadata } from 'next';
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import SharedFormContent from './content';
-import {
-  buildSharedFormMetadata,
-  fetchSharedFormData,
-} from './shared-form-data';
+import { buildSharedFormMetadata } from './shared-form-data';
+import { loadSharedFormForPage } from './shared-form-loader';
 
 interface PageProps {
   params: Promise<{ locale: string; shareCode: string }>;
 }
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { locale, shareCode } = await params;
   const t = await getTranslations('forms');
-  const cookieStore = await cookies();
-  const { status, data } = await fetchSharedFormData(shareCode, {
-    cookieHeader: cookieStore.toString(),
-  });
+  const { status, data } = await loadSharedFormForPage(shareCode);
 
   return buildSharedFormMetadata({
     locale,
@@ -46,10 +39,7 @@ export async function generateMetadata({
 export default async function SharedFormPage({ params }: PageProps) {
   const { shareCode } = await params;
   const t = await getTranslations('forms');
-  const cookieStore = await cookies();
-  const { status, data } = await fetchSharedFormData(shareCode, {
-    cookieHeader: cookieStore.toString(),
-  });
+  const { status, data } = await loadSharedFormForPage(shareCode);
 
   if (status === 401) {
     redirect(`/login?nextUrl=/shared/forms/${shareCode}`);

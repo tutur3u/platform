@@ -13,8 +13,10 @@ export const RESPONSE_COPY_ENTITY_TYPE = 'form_session';
 const RESPONSE_COPY_HOURLY_LIMIT = 2;
 const RESPONSE_COPY_DAILY_LIMIT = 6;
 
-export async function getAuthenticatedUserContext(request: NextRequest) {
-  const supabase = await createClient(request);
+export async function getAuthenticatedUserContext(
+  request?: NextRequest | Pick<Request, 'headers'>
+) {
+  const supabase = await createClient(request ?? undefined);
   const {
     data: { user },
   } = await supabase.auth.getUser();

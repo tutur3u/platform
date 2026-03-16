@@ -1,4 +1,3 @@
-import crypto from 'node:crypto';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   isTurnstileError,
@@ -8,20 +7,18 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { normalizeMarkdownToText } from '@/features/forms/content';
 import {
   getAuthenticatedUserContext,
-  hasSentResponseCopyEmail,
   maybeSendResponseCopyEmail,
 } from '@/features/forms/response-copy-email';
 
 export const dynamic = 'force-dynamic';
 
+import { loadSharedFormForPage } from '@/app/[locale]/shared/forms/[shareCode]/shared-form-loader';
 import {
   FORM_ACCESS_MODE_VALUES,
   formSubmitSchema,
 } from '@/features/forms/schema';
 import {
   fetchFormDefinition,
-  getReadOnlyAnswersForResponder,
-  getSessionMetadata,
   serializeAnswerForStorage,
   validateSubmittedAnswers,
 } from '@/features/forms/server';
@@ -119,105 +116,39 @@ function resolveAccessMode(value: string) {
 }
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ shareCode: string }> }
 ) {
   try {
     const { shareCode } = await params;
-    const { adminClient, shareLink, form, definition } =
-      await loadSharedForm(shareCode);
+    const { status, data } = await loadSharedFormForPage(shareCode);
 
-    if (!shareLink || !form || !definition) {
+    if (status === 401) {
+      return NextResponse.json(
+        { error: 'Authentication required to access this form' },
+        { status: 401 }
+      );
+    }
+
+    if (status === 404) {
       return NextResponse.json({ error: 'Form not found' }, { status: 404 });
     }
 
-    if (!isFormAcceptingResponses(form)) {
+    if (status === 410) {
       return NextResponse.json(
         { error: 'This form is not currently accepting responses' },
         { status: 410 }
       );
     }
 
-    const responder = await getResponderContext(
-      request,
-      resolveAccessMode(form.access_mode)
-    );
-
-    if (definition.settings.oneResponsePerUser && responder.user?.id) {
-      const { data: existingResponse } = await adminClient
-        .from('form_responses')
-        .select('id')
-        .eq('form_id', form.id)
-        .eq('respondent_user_id', responder.user.id)
-        .maybeSingle();
-
-      if (existingResponse) {
-        const readOnlyAnswers = await getReadOnlyAnswersForResponder(
-          adminClient,
-          definition,
-          {
-            formId: form.id,
-            respondentUserId: responder.user.id,
-          }
-        );
-        const responseCopyAlreadySent = readOnlyAnswers.sessionId
-          ? await hasSentResponseCopyEmail(
-              adminClient,
-              form.ws_id,
-              readOnlyAnswers.sessionId
-            )
-          : false;
-
-        return NextResponse.json({
-          form: definition,
-          readOnly: true,
-          initialAnswers: readOnlyAnswers.answers,
-          answerIssues: readOnlyAnswers.issues,
-          submittedAt: readOnlyAnswers.submittedAt,
-          responseCopyEmail: responder.authenticatedEmail,
-          readOnlyResponseId: readOnlyAnswers.responseId,
-          readOnlyResponseSessionId: readOnlyAnswers.sessionId,
-          canRequestResponseCopy: Boolean(
-            responder.authenticatedEmail &&
-              readOnlyAnswers.responseId &&
-              readOnlyAnswers.sessionId &&
-              !responseCopyAlreadySent
-          ),
-          responseCopyAlreadySent,
-        });
-      }
+    if (status !== 200 || !data) {
+      return NextResponse.json(
+        { error: 'Internal server error' },
+        { status: 500 }
+      );
     }
 
-    const metadata = getSessionMetadata(request);
-
-    const { data: session, error } = await adminClient
-      .from('form_sessions')
-      .insert({
-        form_id: form.id,
-        share_link_id: shareLink.id,
-        session_token: crypto.randomUUID(),
-        respondent_user_id: responder.user?.id ?? null,
-        respondent_email: responder.respondentEmail,
-        last_section_id: definition.sections[0]?.id ?? null,
-        referrer_domain: metadata.referrerDomain,
-        device_type: metadata.deviceType,
-        browser: metadata.browser,
-        os: metadata.os,
-        country: metadata.country,
-        city: metadata.city,
-      })
-      .select('id')
-      .single();
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    return NextResponse.json({
-      form: definition,
-      sessionId: session.id,
-      responseCopyEmail: responder.authenticatedEmail,
-    });
+    return NextResponse.json(data);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : 'Internal server error';

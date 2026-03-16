@@ -49,18 +49,9 @@ export async function fetchSharedFormData(
       }
     : undefined;
 
-  const revalidateSeconds = options?.revalidateSeconds;
-
   const response = await fetch(`${API_URL}/v1/shared/forms/${shareCode}`, {
-    cache:
-      revalidateSeconds !== undefined && revalidateSeconds > 0
-        ? 'force-cache'
-        : 'no-store',
+    cache: 'no-store',
     headers,
-    next:
-      revalidateSeconds !== undefined
-        ? { revalidate: revalidateSeconds }
-        : undefined,
   });
 
   if (!response.ok) {
