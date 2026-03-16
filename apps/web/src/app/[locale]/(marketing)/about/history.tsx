@@ -11,7 +11,7 @@ import {
 } from '@ncthub/ui/carousel';
 import { Award, Sparkles } from '@ncthub/ui/icons';
 import { motion } from 'framer-motion';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { timelineData } from './data';
 import { TimelineCard } from './timeline-card';
 
@@ -19,18 +19,15 @@ export default function History() {
   const [emblaApi, setEmblaApi] = useState<CarouselApi | null>(null);
   const [selectedIndex, setSelectedIndex] = useState(1);
 
-  const timelineDataWithNull = useMemo(
-    () => [null, ...timelineData, null],
-    [timelineData]
-  );
+  const timelineDataWithNull = useMemo(() => [null, ...timelineData, null], []);
 
-  const onSelect = () => {
+  const onSelect = useCallback(() => {
     if (!emblaApi) return;
 
     setSelectedIndex(emblaApi.selectedScrollSnap() + 1);
-  };
+  }, [emblaApi]);
 
-  const onScroll = () => {
+  const onScroll = useCallback(() => {
     if (!emblaApi) return;
 
     const root = emblaApi.rootNode();
@@ -71,14 +68,14 @@ export default function History() {
 
       return selectedIndex;
     });
-  };
+  }, [emblaApi]);
 
-  const onReInit = () => {
+  const onReInit = useCallback(() => {
     if (!emblaApi) return;
 
     emblaApi.scrollTo(0);
     setSelectedIndex(1);
-  };
+  }, [emblaApi]);
 
   useEffect(() => {
     if (!emblaApi) return;
@@ -93,10 +90,10 @@ export default function History() {
       emblaApi.off('scroll', onScroll);
       emblaApi.off('reInit', onReInit);
     };
-  }, [emblaApi]);
+  }, [emblaApi, onReInit, onSelect, onScroll]);
 
   return (
-    <div className="space-y-10">
+    <div className="mx-auto max-w-6xl space-y-10">
       <div className="space-y-8 text-center">
         {/* Hero Badge */}
         <motion.div
