@@ -2,6 +2,7 @@ import NewInvoicePage from '@tuturuuu/ui/finance/invoices/new-invoice-page';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 export const metadata: Metadata = {
@@ -26,7 +27,11 @@ export default async function WorkspaceInvoicesPage({ params }: Props) {
         const { withoutPermission } = permissions;
         if (withoutPermission('create_invoices')) notFound();
 
-        return <NewInvoicePage wsId={wsId} />;
+        return (
+          <Suspense fallback={<div className="p-8">Loading...</div>}>
+            <NewInvoicePage wsId={wsId} />
+          </Suspense>
+        );
       }}
     </WorkspaceWrapper>
   );

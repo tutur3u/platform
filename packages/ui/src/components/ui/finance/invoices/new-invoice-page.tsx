@@ -8,15 +8,15 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
-import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useQueryState } from 'nuqs';
 import { useState } from 'react';
+import { useLocalStorage } from '../../../../hooks/use-local-storage';
+import { useWorkspaceConfig } from '../../../../hooks/use-workspace-config';
 import { StandardInvoice } from './standard-invoice';
 import { SubscriptionInvoice } from './subscription-invoice';
 
@@ -26,8 +26,20 @@ interface Props {
 
 export default function NewInvoicePage({ wsId }: Props) {
   const t = useTranslations();
-  const searchParams = useSearchParams();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  const [invoiceType, setInvoiceType] = useQueryState('type', {
+    defaultValue: 'standard',
+    parse: (value) => (value === 'subscription' ? 'subscription' : 'standard'),
+    serialize: (value) => value,
+  });
+
+  const [prefillAmount] = useQueryState('amount', {
+    parse: (value) => {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    },
+  });
 
   const { data: defaultWalletId } = useWorkspaceConfig<string>(
     wsId,
@@ -63,15 +75,6 @@ export default function NewInvoicePage({ wsId }: Props) {
     printAfterCreateInitialized &&
     downloadImageAfterCreateInitialized;
 
-  const invoiceType =
-    searchParams.get('type') === 'subscription' ? 'subscription' : 'standard';
-  const prefillAmount = (() => {
-    const raw = searchParams.get('amount');
-    if (!raw) return undefined;
-    const parsed = Number(raw);
-    return Number.isFinite(parsed) ? parsed : undefined;
-  })();
-
   return (
     <>
       <FeatureSummary
@@ -82,12 +85,7 @@ export default function NewInvoicePage({ wsId }: Props) {
       <Tabs
         value={invoiceType}
         className="w-full"
-        onValueChange={(value) => {
-          // Update URL without refreshing
-          const url = new URL(window.location.href);
-          url.searchParams.set('type', value);
-          window.history.replaceState({}, '', url.toString());
-        }}
+        onValueChange={(value) => setInvoiceType(value as any)}
       >
         <div className="flex items-center justify-between">
           <TabsList>

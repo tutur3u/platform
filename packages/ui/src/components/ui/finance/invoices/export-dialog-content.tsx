@@ -1,7 +1,5 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Database } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DialogClose,
@@ -97,11 +95,6 @@ type CreatedInvoiceExportData = InvoiceExportRow & {
   } | null;
 };
 
-type PendingInvoiceRaw =
-  Database['public']['Functions']['get_pending_invoices']['Returns'][number];
-type PendingInvoiceGroupedRaw =
-  Database['public']['Functions']['get_pending_invoices_grouped_by_user']['Returns'][number];
-
 // Helper function to fetch pending invoices data for export
 async function getPendingInvoicesData(
   wsId: string,
@@ -119,108 +112,65 @@ async function getPendingInvoicesData(
     groupByUser?: boolean;
   }
 ): Promise<{ data: PendingInvoiceExportData[]; count: number }> {
-  const supabase = createClient();
-
-  const parsedPage = parseInt(page, 10);
-  const parsedSize = parseInt(pageSize, 10);
-  const offset = (parsedPage - 1) * parsedSize;
-
-  // Normalize userIds: treat empty array as no filter (undefined)
-  const ids = Array.isArray(userIds)
-    ? userIds.length > 0
-      ? userIds
-      : undefined
-    : userIds
-      ? [userIds]
-      : undefined;
-
-  // Fetch pending invoices data
-  if (groupByUser) {
-    const { data: rawData, error } = await supabase.rpc(
-      'get_pending_invoices_grouped_by_user',
-      {
-        p_ws_id: wsId,
-        p_limit: parsedSize,
-        p_offset: offset,
-        p_query: q || undefined,
-        p_user_ids: ids,
-      }
-    );
-
-    if (error) throw error;
-
-    const { data: countData, error: countError } = await supabase.rpc(
-      'get_pending_invoices_grouped_by_user_count',
-      {
-        p_ws_id: wsId,
-        p_query: q || undefined,
-        p_user_ids: ids,
-      }
-    );
-
-    if (countError) throw countError;
-
-    const transformedData = (rawData || []).map(
-      (invoice: PendingInvoiceGroupedRaw) => {
-        const monthsOwed = Array.isArray(invoice.months_owed)
-          ? invoice.months_owed.join(', ')
-          : '';
-
-        const groupNames = Array.isArray(invoice.group_names)
-          ? invoice.group_names.filter(Boolean)
-          : [];
-        const groupedName = groupNames.join(', ');
-        const groupIdValue = Array.isArray(invoice.group_ids)
-          ? invoice.group_ids.join(',')
-          : '';
-
-        return {
-          ...invoice,
-          group_id: groupIdValue,
-          group_name: groupedName,
-          months_owed: monthsOwed,
-          customer: {
-            full_name: invoice.user_name || '',
-            avatar_url: invoice.user_avatar_url || '',
-          },
-          creator: null,
-          wallet: null,
-        };
-      }
-    );
-
-    return { data: transformedData, count: (countData as number) || 0 };
-  }
-
-  const { data: rawData, error } = await supabase.rpc('get_pending_invoices', {
-    p_ws_id: wsId,
-    p_limit: parsedSize,
-    p_offset: offset,
-    p_query: q || undefined,
-    p_user_ids: ids,
+  const searchParams = new URLSearchParams({
+    page,
+    pageSize,
+    q: q || '',
+    groupByUser: String(groupByUser),
   });
 
-  if (error) throw error;
-
-  const { data: countData, error: countError } = await supabase.rpc(
-    'get_pending_invoices_count',
-    {
-      p_ws_id: wsId,
-      p_query: q || undefined,
-      p_user_ids: ids,
+  if (userIds) {
+    if (Array.isArray(userIds)) {
+      userIds.forEach((userId) => {
+        searchParams.append('userIds', userId);
+      });
+    } else {
+      searchParams.append('userIds', userIds);
     }
+  }
+
+  const response = await fetch(
+    `/api/v1/workspaces/${wsId}/finance/invoices/pending?${searchParams.toString()}`,
+    { cache: 'no-store' }
   );
 
-  if (countError) throw countError;
+  if (!response.ok) {
+    throw new Error('Failed to fetch pending invoices for export');
+  }
 
-  const transformedData = (rawData || []).map((invoice: PendingInvoiceRaw) => {
-    const monthsOwed =
-      typeof invoice.months_owed === 'string'
+  const payload = await response.json();
+  const rawData = payload.data || [];
+  const totalCount = payload.count || 0;
+
+  const transformedData = rawData.map((invoice: any) => {
+    const monthsOwed = Array.isArray(invoice.months_owed)
+      ? invoice.months_owed.join(', ')
+      : typeof invoice.months_owed === 'string'
         ? invoice.months_owed
-            .split(',')
-            .map((m: string) => m.trim())
-            .join(', ')
         : '';
+
+    if (groupByUser) {
+      const groupNames = Array.isArray(invoice.group_names)
+        ? invoice.group_names.filter(Boolean)
+        : [];
+      const groupedName = groupNames.join(', ');
+      const groupIdValue = Array.isArray(invoice.group_ids)
+        ? invoice.group_ids.join(',')
+        : '';
+
+      return {
+        ...invoice,
+        group_id: groupIdValue,
+        group_name: groupedName,
+        months_owed: monthsOwed,
+        customer: {
+          full_name: invoice.user_name || '',
+          avatar_url: invoice.user_avatar_url || '',
+        },
+        creator: null,
+        wallet: null,
+      };
+    }
 
     return {
       ...invoice,
@@ -239,7 +189,7 @@ async function getPendingInvoicesData(
     };
   });
 
-  return { data: transformedData, count: (countData as number) || 0 };
+  return { data: transformedData, count: totalCount };
 }
 
 export default function ExportDialogContent({
