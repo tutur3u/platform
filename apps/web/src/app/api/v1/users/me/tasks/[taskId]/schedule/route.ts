@@ -1,6 +1,6 @@
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TaskWithScheduling } from '@tuturuuu/types';
-import {createAdminClient} from '@tuturuuu/supabase/next/server';
-import type {TypedSupabaseClient} from '@tuturuuu/supabase/next/client';
 import { NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -22,7 +22,10 @@ type TaskCalendarEventRow = {
   };
 };
 
-async function getPersonalWorkspaceId(supabase: TypedSupabaseClient, userId: string) {
+async function getPersonalWorkspaceId(
+  supabase: TypedSupabaseClient,
+  userId: string
+) {
   const { data, error } = await supabase
     .from('workspaces')
     .select('id, workspace_members!inner(user_id)')
@@ -35,9 +38,7 @@ async function getPersonalWorkspaceId(supabase: TypedSupabaseClient, userId: str
   return data.id;
 }
 
-async function getTaskWorkspaceId(
-  taskId: string
-): Promise<string | null> {
+async function getTaskWorkspaceId(taskId: string): Promise<string | null> {
   const sbAdmin = await createAdminClient();
   const { data } = await sbAdmin
     .from('tasks')
