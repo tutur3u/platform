@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
 
     const sbAdmin = await createAdminClient();
     const { data, error } = await sbAdmin.rpc(
-      'admin_get_ai_credit_entity_detail',
+      'admin_get_ai_credit_entity_detail' as any,
       rpcParams
     );
 

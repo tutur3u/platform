@@ -152,6 +152,56 @@ export function duplicateSectionInput(
   };
 }
 
+const CHOICE_QUESTION_TYPES = [
+  'single_choice',
+  'multiple_choice',
+  'dropdown',
+] as const;
+
+/**
+ * Sanitizes form payload before save to prevent 400 errors from transient invalid state.
+ * Handles: empty strings for dates (schema expects null), and options with empty label/value.
+ */
+export function sanitizeFormStudioPayloadForSave(
+  input: FormStudioInput
+): FormStudioInput {
+  const openAt =
+    input.openAt === '' ||
+    (typeof input.openAt === 'string' && !input.openAt.trim())
+      ? null
+      : input.openAt;
+  const closeAt =
+    input.closeAt === '' ||
+    (typeof input.closeAt === 'string' && !input.closeAt.trim())
+      ? null
+      : input.closeAt;
+
+  const sections = input.sections.map((section) => ({
+    ...section,
+    questions: section.questions.map((question) => {
+      const isChoice = CHOICE_QUESTION_TYPES.includes(
+        question.type as (typeof CHOICE_QUESTION_TYPES)[number]
+      );
+      const options = isChoice
+        ? question.options.filter(
+            (opt) =>
+              (opt.label ?? '').trim().length > 0 &&
+              (opt.value ?? '').trim().length > 0
+          )
+        : question.options;
+
+      return { ...question, options };
+    }),
+  }));
+
+  return {
+    ...input,
+    openAt,
+    closeAt,
+    sections,
+  };
+}
+
 export function ensureIdentifiers(input: FormStudioInput): FormStudioInput {
   return {
     ...input,

@@ -2,6 +2,8 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 export const MAX_EMOJIS_PER_FIELD = 10;
 export const MAX_SHORT_TEXT_FIELD_GRAPHEMES = 280;
+/** Form description, task description, etc. Allow up to 16k to match form schema. */
+export const MAX_DESCRIPTION_FIELD_GRAPHEMES = 16_000;
 export const MAX_REPEATED_GRAPHEME_RUN = 48;
 
 export type RequestContentViolation = {
@@ -16,10 +18,10 @@ const BODY_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 const EXTENDED_PICTOGRAPHIC_RE = /\p{Extended_Pictographic}/u;
 const FLAG_RE = /^(?:\p{Regional_Indicator}{2})$/u;
 const KEYCAP_RE = /^(?:[#*0-9]\uFE0F?\u20E3)$/u;
+const DESCRIPTION_FIELD_NAMES = new Set(['description']);
 const SHORT_TEXT_FIELD_NAMES = new Set([
   'alias',
   'category',
-  'description',
   'displayName',
   'display_name',
   'fullName',
@@ -93,6 +95,11 @@ function isShortTextFieldPath(path: string): boolean {
   return fieldName ? SHORT_TEXT_FIELD_NAMES.has(fieldName) : false;
 }
 
+function isDescriptionFieldPath(path: string): boolean {
+  const fieldName = getLastFieldName(path);
+  return fieldName ? DESCRIPTION_FIELD_NAMES.has(fieldName) : false;
+}
+
 function getLongestRepeatedGraphemeRun(graphemes: string[]): number {
   let longestRun = 0;
   let currentRun = 0;
@@ -147,7 +154,17 @@ function getStringContentViolation(
     };
   }
 
-  if (
+  if (isDescriptionFieldPath(path)) {
+    if (graphemes.length > MAX_DESCRIPTION_FIELD_GRAPHEMES) {
+      return {
+        code: 'TEXT_BOMB_DETECTED',
+        count: graphemes.length,
+        limit: MAX_DESCRIPTION_FIELD_GRAPHEMES,
+        message: `Field "${path}" exceeds the maximum description length`,
+        path,
+      };
+    }
+  } else if (
     isShortTextFieldPath(path) &&
     graphemes.length > MAX_SHORT_TEXT_FIELD_GRAPHEMES
   ) {

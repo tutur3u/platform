@@ -279,7 +279,7 @@ export function SubscriptionGroupSelector({
                     locale={locale}
                     isLoadingSubscriptionData={isLoadingSubscriptionData}
                     onToggle={() => onGroupSelect(group.id)}
-                    t={t}
+                    t={t as (key: string) => string}
                   />
                 );
               })}
@@ -324,7 +324,7 @@ export function SubscriptionGroupSelector({
                           locale={locale}
                           isLoadingSubscriptionData={isLoadingSubscriptionData}
                           onToggle={() => onGroupSelect(group.id)}
-                          t={t}
+                          t={t as (key: string) => string}
                         />
                       );
                     })}
