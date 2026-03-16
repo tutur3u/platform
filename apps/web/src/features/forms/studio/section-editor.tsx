@@ -201,7 +201,8 @@ export function SectionEditor({
         ref={setNodeRef}
         style={style}
         className={cn(
-          'overflow-hidden rounded-[1.75rem] border-border/70 bg-card/85 shadow-sm transition-shadow',
+          'overflow-hidden rounded-[1.75rem] border-border/70 bg-card/85 shadow-sm',
+          !isDragging && 'transition-shadow',
           isDragging && 'z-10 opacity-70 shadow-lg'
         )}
       >
@@ -352,8 +353,17 @@ export function SectionEditor({
         />
         <DialogContent className="flex max-h-dvh max-w-[100vw] flex-col gap-0 overflow-hidden p-0 sm:max-h-[90vh] sm:max-w-5xl sm:rounded-3xl">
           <DialogHeader className="border-border/60 border-b px-5 py-4">
-            <DialogTitle className={cn('truncate', studioTitleClassName)}>
-              {sectionTitle || t('studio.untitled_section')}
+            <DialogTitle
+              className={cn('truncate', studioTitleClassName)}
+              asChild
+            >
+              <div>
+                <FormsMarkdown
+                  content={sectionTitle || t('studio.untitled_section')}
+                  variant="inline"
+                  className="truncate"
+                />
+              </div>
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto">

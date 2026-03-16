@@ -19,6 +19,23 @@ type ProgressPayload = {
   lastSectionId?: string | null;
 };
 
+type SaveFormVariables =
+  | FormStudioInput
+  | { payload: FormStudioInput; isAutosave?: boolean };
+
+function normalizeSaveVariables(v: SaveFormVariables): {
+  payload: FormStudioInput;
+  isAutosave: boolean;
+} {
+  if (v && typeof v === 'object' && 'payload' in v) {
+    return {
+      payload: v.payload,
+      isAutosave: v.isAutosave ?? false,
+    };
+  }
+  return { payload: v as FormStudioInput, isAutosave: false };
+}
+
 export function useSaveFormMutation({
   wsId,
   formId,
@@ -30,7 +47,8 @@ export function useSaveFormMutation({
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (payload: FormStudioInput) => {
+    mutationFn: async (variables: SaveFormVariables) => {
+      const { payload } = normalizeSaveVariables(variables);
       const path = formId
         ? `/api/v1/workspaces/${wsId}/forms/${formId}`
         : `/api/v1/workspaces/${wsId}/forms`;
@@ -42,17 +60,30 @@ export function useSaveFormMutation({
         body: JSON.stringify(payload),
       });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['forms', wsId] });
-      if (formId) {
-        queryClient.invalidateQueries({ queryKey: ['forms', wsId, formId] });
+    onSuccess: (data, variables) => {
+      const { isAutosave } = normalizeSaveVariables(variables);
+      const resolvedFormId = data?.id ?? formId;
+      if (!isAutosave) {
+        queryClient.invalidateQueries({ queryKey: ['forms', wsId] });
+        if (resolvedFormId) {
+          queryClient.invalidateQueries({
+            queryKey: ['forms', wsId, resolvedFormId],
+          });
+        }
+        toast.success(
+          formId ? t('toast.form_updated') : t('toast.form_created')
+        );
       }
-      toast.success(formId ? t('toast.form_updated') : t('toast.form_created'));
     },
-    onError: (error) => {
-      toast.error(
-        error instanceof Error ? error.message : t('toast.failed_to_save_form')
-      );
+    onError: (error, variables) => {
+      const { isAutosave } = normalizeSaveVariables(variables);
+      if (!isAutosave) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : t('toast.failed_to_save_form')
+        );
+      }
     },
   });
 }

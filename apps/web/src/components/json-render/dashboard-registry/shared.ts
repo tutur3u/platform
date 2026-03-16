@@ -6,6 +6,8 @@ import type { JsonRenderMultiQuizItem } from '@tuturuuu/types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 
+import { uploadToStorageUrl } from '@/lib/api-fetch';
+
 export const SignedUploadResponseSchema = z.object({
   uploads: z.array(
     z.object({
@@ -369,18 +371,7 @@ export function useCreateTimeTrackingRequest() {
             const file = files[index];
             if (!file) return;
 
-            const fileUploadRes = await fetch(upload.signedUrl, {
-              method: 'PUT',
-              headers: {
-                Authorization: `Bearer ${upload.token}`,
-                'Content-Type': file.type || 'application/octet-stream',
-              },
-              body: file,
-            });
-
-            if (!fileUploadRes.ok) {
-              throw new Error(`Failed to upload file "${file.name}"`);
-            }
+            await uploadToStorageUrl(upload.signedUrl, file, upload.token);
           })
         );
 
