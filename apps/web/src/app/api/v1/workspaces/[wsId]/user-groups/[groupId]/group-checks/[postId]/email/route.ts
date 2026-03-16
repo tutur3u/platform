@@ -57,6 +57,9 @@ const EmailRequestSchema = z.object({
   date: z
     .string()
     .max(MAX_COLOR_LENGTH)
+    .optional()
+    .nullable()
+    .transform((val) => val || new Date().toISOString())
     .refine((value) => !Number.isNaN(Date.parse(value)), {
       message: 'Invalid date format',
     }),
@@ -75,6 +78,16 @@ export async function POST(
     const supabase = await createClient();
     const { wsId, groupId, postId } = await params;
     const normalizedWsId = await normalizeWorkspaceId(wsId);
+
+    if (
+      !z.string().uuid().safeParse(groupId).success ||
+      !z.string().uuid().safeParse(postId).success
+    ) {
+      return NextResponse.json(
+        { message: 'Invalid groupId or postId' },
+        { status: 400 }
+      );
+    }
 
     console.log(
       `[POST /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/email] Request received`

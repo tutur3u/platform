@@ -350,11 +350,14 @@ async function getConfigs(wsId: string) {
   if (error) throw error;
 
   // Create a copy of availableConfigs to include in the response
-  const configs = [
-    ...availableConfigs.map(({ defaultValue, ...rest }) => ({
-      ...rest,
-      value: defaultValue,
-    })),
+  const configs: WorkspaceConfig[] = [
+    ...availableConfigs.map(
+      ({ defaultValue, ...rest }) =>
+        ({
+          ...rest,
+          value: defaultValue,
+        }) as unknown as WorkspaceConfig
+    ),
   ];
 
   // If rawData is not empty, merge it with availableConfigs
@@ -363,10 +366,24 @@ async function getConfigs(wsId: string) {
       const index = configs.findIndex((c) => c.id === config.id);
       if (index !== -1) {
         // Replace the default config with the one from the database
-        configs[index] = { ...configs[index], ...config };
+        configs[index] = {
+          ...configs[index],
+          ...config,
+          value: config.value || '',
+        };
       } else {
         // If the config does not exist in availableConfigs, add it
-        configs.push(config as any);
+        configs.push({
+          id: config.id,
+          ws_id: config.ws_id,
+          // @ts-expect-error - type is not in rawData but required in WorkspaceConfig
+          type: config.type,
+          // @ts-expect-error - name is not in rawData but required in WorkspaceConfig
+          name: config.name,
+          updated_at: config.updated_at,
+          created_at: config.created_at,
+          value: config.value || '',
+        } as unknown as WorkspaceConfig);
       }
     }
   }

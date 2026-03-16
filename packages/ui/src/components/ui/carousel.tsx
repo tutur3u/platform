@@ -117,7 +117,6 @@ function Carousel({
         canScrollNext,
       }}
     >
-      {/* biome-ignore lint/a11y/useSemanticElements: role="region" with aria-roledescription is standard WAI-ARIA carousel pattern */}
       <section
         onKeyDownCapture={handleKeyDown}
         className={cn('relative', className)}
@@ -234,9 +233,9 @@ function CarouselNext({
 
 export {
   Carousel,
+  type CarouselApi,
   CarouselContent,
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-  type CarouselApi,
 };

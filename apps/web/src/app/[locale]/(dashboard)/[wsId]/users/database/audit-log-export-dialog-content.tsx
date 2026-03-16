@@ -1,6 +1,5 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DialogClose,
@@ -40,32 +39,6 @@ interface Props {
 }
 
 type ExportFileType = 'excel' | 'csv';
-
-const AUDIT_LOG_SELECT = `
-  id,
-  user_id,
-  ws_id,
-  archived,
-  archived_until,
-  creator_id,
-  created_at,
-  user:user_id (full_name, display_name),
-  creator:creator_id (full_name, display_name)
-`;
-
-function mapAuditLogEntry(entry: any): AuditLogEntry {
-  return {
-    id: entry.id,
-    user_id: entry.user_id,
-    ws_id: entry.ws_id,
-    archived: entry.archived,
-    archived_until: entry.archived_until,
-    creator_id: entry.creator_id,
-    created_at: entry.created_at,
-    user_full_name: entry.user?.full_name || entry.user?.display_name,
-    creator_full_name: entry.creator?.full_name || entry.creator?.display_name,
-  };
-}
 
 function getFileExtension(fileType: ExportFileType) {
   return fileType === 'csv' ? 'csv' : 'xlsx';
@@ -172,38 +145,32 @@ export function AuditLogExportDialogContent({
     setIsExporting(true);
     setProgress(0);
 
-    const supabase = createClient();
     const allRows: AuditLogEntry[] = [];
     const pageSize = 500;
     let page = 1;
 
     try {
       while (true) {
-        const start = (page - 1) * pageSize;
-        const end = page * pageSize - 1;
+        const offset = (page - 1) * pageSize;
+        const searchParams = new URLSearchParams({
+          start: timeRange.start.toISOString(),
+          end: timeRange.end.toISOString(),
+          offset: String(offset),
+          limit: String(pageSize),
+        });
 
-        let query = supabase
-          .from('workspace_user_status_changes')
-          .select(AUDIT_LOG_SELECT)
-          .eq('ws_id', wsId)
-          .gte('created_at', timeRange.start.toISOString())
-          .lt('created_at', timeRange.end.toISOString())
-          .order('created_at', { ascending: false })
-          .range(start, end);
-
-        if (status === 'archived') {
-          query = query.eq('archived', true);
-        } else if (status === 'active') {
-          query = query.eq('archived', false);
+        if (status !== 'all') {
+          searchParams.set('status', status);
         }
 
-        const { data, error } = await query;
+        const res = await fetch(
+          `/api/v1/workspaces/${wsId}/users/audit-logs?${searchParams.toString()}`,
+          { cache: 'no-store' }
+        );
 
-        if (error) {
-          throw error;
-        }
+        if (!res.ok) throw new Error('Failed to fetch audit logs');
+        const rows = (await res.json()) as AuditLogEntry[];
 
-        const rows = (data || []).map(mapAuditLogEntry);
         allRows.push(...rows);
 
         if (rows.length < pageSize) {

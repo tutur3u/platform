@@ -270,12 +270,7 @@ export default function GroupReportsClient({
       dashboardQuery.data?.reports.map((r) => ({
         value: r.id,
         label: r.title || 'No title',
-        status: (r as any).report_approval_status as
-          | 'PENDING'
-          | 'APPROVED'
-          | 'REJECTED'
-          | null
-          | undefined,
+        status: r.report_approval_status,
       })) ?? [],
     [dashboardQuery.data?.reports]
   );

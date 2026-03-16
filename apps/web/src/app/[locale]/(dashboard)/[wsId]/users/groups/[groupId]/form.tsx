@@ -2,7 +2,6 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { User, X } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
@@ -31,7 +30,18 @@ export default function GroupMemberForm({
 
   const workspaceMembersQuery = useQuery({
     queryKey: ['workspaces', wsId, 'user-groups', 'members', { query }],
-    queryFn: () => getWorkspaceUsers(wsId),
+    queryFn: async (): Promise<{ data: WorkspaceUser[]; count: number }> => {
+      const searchParams = new URLSearchParams({
+        q: query,
+        limit: '100',
+      });
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/users?${searchParams.toString()}`,
+        { cache: 'no-store' }
+      );
+      if (!res.ok) throw new Error('Failed to fetch workspace users');
+      return await res.json();
+    },
   });
 
   const groupMembersQuery = useQuery({
@@ -44,7 +54,17 @@ export default function GroupMemberForm({
       'members',
       { query },
     ],
-    queryFn: groupId ? () => getUsers(groupId, query) : undefined,
+    queryFn: async (): Promise<{ data: WorkspaceUser[]; count: number }> => {
+      const searchParams = new URLSearchParams({
+        limit: '100',
+      });
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/members?${searchParams.toString()}`,
+        { cache: 'no-store' }
+      );
+      if (!res.ok) throw new Error('Failed to fetch group members');
+      return await res.json();
+    },
     enabled: !!groupId,
   });
 
@@ -170,37 +190,4 @@ export default function GroupMemberForm({
       )}
     </>
   );
-}
-
-async function getWorkspaceUsers(wsId: string) {
-  const supabase = createClient();
-
-  const queryBuilder = supabase
-    .from('workspace_users')
-    .select('*')
-    .eq('ws_id', wsId)
-    .order('id');
-
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
-
-  return { data, count } as { data: WorkspaceUser[]; count: number };
-}
-
-async function getUsers(groupId: string, query?: string) {
-  const supabase = createClient();
-
-  const queryBuilder = supabase
-    .from('workspace_user_groups_users')
-    .select('...workspace_users!inner(*)', {
-      count: 'exact',
-    })
-    .eq('group_id', groupId);
-
-  if (query) queryBuilder.ilike('workspace_users.display_name', `%${query}%`);
-
-  const { data, count, error } = await queryBuilder;
-  if (error) throw error;
-
-  return { data, count } as { data: WorkspaceUser[]; count: number };
 }

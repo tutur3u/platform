@@ -15,14 +15,14 @@ import {
 } from './mira-tool-render-ui';
 import type { MiraToolContext } from './mira-tool-types';
 
+export type { MiraToolContext } from './mira-tool-types';
+export type { MiraToolName };
 export {
+  executeMiraTool,
   MIRA_TOOL_DIRECTORY,
   MIRA_TOOL_PERMISSIONS,
   miraToolDefinitions,
-  executeMiraTool,
 };
-export type { MiraToolContext } from './mira-tool-types';
-export type { MiraToolName };
 
 export function createMiraStreamTools(
   ctx: MiraToolContext,

@@ -1,7 +1,6 @@
 'use client';
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { useTranslations } from 'next-intl';
 
 const GroupAttendanceStats = ({
@@ -16,31 +15,37 @@ const GroupAttendanceStats = ({
   const t = useTranslations();
 
   const fetchAttendance = async () => {
-    const supabase = createClient();
-    const date = new Date().toISOString();
+    const today = new Date().toISOString().split('T')[0];
+    if (!today) return { data: [], available: false };
 
     try {
-      const { data } = await supabase
-        .from('user_group_attendance')
-        .select('*')
-        .eq('group_id', groupId)
-        .eq('date', date);
+      const attRes = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/attendance?date=${today}`,
+        { cache: 'no-store' }
+      );
+      if (!attRes.ok) throw new Error('Failed to fetch attendance');
+      const data = await attRes.json();
 
-      const { data: classData } = await supabase
-        .from('workspace_user_groups')
-        .select('id')
-        .eq('id', groupId)
-        .contains('sessions', [date])
-        .maybeSingle();
+      const groupRes = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${groupId}`,
+        { cache: 'no-store' }
+      );
+      if (!groupRes.ok) throw new Error('Failed to fetch group details');
+      const { data: groupData } = await groupRes.json();
+
+      const sessions = (groupData?.sessions || []) as (string | undefined)[];
+      const available = sessions.some(
+        (s) => typeof s === 'string' && s.startsWith(today)
+      );
 
       return {
-        data,
-        available: !!classData,
+        data: data as Array<{ status: string }>,
+        available,
       };
     } catch (e) {
       console.error(e);
       return {
-        data: [],
+        data: [] as Array<{ status: string }>,
         available: false,
       };
     }

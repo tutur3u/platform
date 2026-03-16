@@ -1,7 +1,6 @@
 'use client';
 
 import { Layers, Link, Link2Off, Search, Users } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -61,18 +60,6 @@ interface ExportPageResult {
   data: ExportWorkspaceUser[];
   count: number;
   scannedCount: number;
-}
-
-interface LinkedPromotionData {
-  user_id: string;
-  workspace_promotions: {
-    id: string;
-    name: string | null;
-    code: string | null;
-    value: number | null;
-    use_ratio: boolean | null;
-    ws_id: string;
-  };
 }
 
 export default function ExportDialogContent({
@@ -467,118 +454,21 @@ async function getUsersWithLinkedPromotions(
     excludedGroups = [],
     status = 'active',
     linkStatus = 'all',
-    retry = true,
-  }: SearchParams & { retry?: boolean } = {}
+  }: SearchParams = {}
 ): Promise<ExportPageResult> {
-  const supabase = createClient();
-
-  const { data: linkedPromotions, error: linkedError } = await supabase
-    .from('user_linked_promotions')
-    .select(
-      `
-      user_id,
-      workspace_promotions!inner(id, name, code, value, use_ratio, ws_id)
-    `
-    )
-    .eq('workspace_promotions.ws_id', wsId);
-
-  if (linkedError) {
-    if (!retry) throw linkedError;
-    return getUsersWithLinkedPromotions(wsId, {
-      q,
-      page,
-      pageSize,
-      includedGroups,
-      excludedGroups,
-      status,
-      linkStatus,
-      retry: false,
-    });
-  }
-
-  const userPromotionsMap = new Map<
-    string,
-    Array<{
-      id: string;
-      name: string | null;
-      code: string | null;
-      value: number | null;
-      use_ratio: boolean | null;
-    }>
-  >();
-
-  for (const item of (linkedPromotions || []) as LinkedPromotionData[]) {
-    const promotions = userPromotionsMap.get(item.user_id) || [];
-
-    promotions.push({
-      id: item.workspace_promotions.id,
-      name: item.workspace_promotions.name,
-      code: item.workspace_promotions.code,
-      value: item.workspace_promotions.value,
-      use_ratio: item.workspace_promotions.use_ratio,
-    });
-
-    userPromotionsMap.set(item.user_id, promotions);
-  }
-
-  if (userPromotionsMap.size === 0) {
-    return { data: [], count: 0, scannedCount: 0 };
-  }
-
-  let response: WorkspaceUsersApiResponse;
-
-  try {
-    response = await fetchWorkspaceUsersPage(wsId, {
-      q,
-      page,
-      pageSize,
-      includedGroups,
-      excludedGroups,
-      status,
-      linkStatus,
-    });
-  } catch (error) {
-    if (!retry) throw error;
-    return getUsersWithLinkedPromotions(wsId, {
-      q,
-      page,
-      pageSize,
-      includedGroups,
-      excludedGroups,
-      status,
-      linkStatus,
-      retry: false,
-    });
-  }
+  const response = await fetchWorkspaceUsersPage(wsId, {
+    q,
+    page,
+    pageSize,
+    includedGroups,
+    excludedGroups,
+    status,
+    linkStatus,
+    withPromotions: true,
+  });
 
   return {
-    data: response.data
-      .filter((user) => userPromotionsMap.has(user.id))
-      .map((user) => {
-        const promotions = userPromotionsMap.get(user.id) || [];
-
-        return {
-          ...user,
-          linked_promotions_count: promotions.length,
-          linked_promotion_names: promotions
-            .map((promotion) => promotion.name || '')
-            .filter(Boolean)
-            .join(', '),
-          linked_promotion_codes: promotions
-            .map((promotion) => promotion.code || '')
-            .filter(Boolean)
-            .join(', '),
-          linked_promotion_values: promotions
-            .map((promotion) => {
-              if (promotion.value === null) return '';
-              return promotion.use_ratio
-                ? `${promotion.value}%`
-                : promotion.value.toString();
-            })
-            .filter(Boolean)
-            .join(', '),
-        };
-      }),
+    data: response.data,
     count: response.count,
     scannedCount: response.data.length,
   };
@@ -594,7 +484,8 @@ async function fetchWorkspaceUsersPage(
     excludedGroups = [],
     status = 'active',
     linkStatus = 'all',
-  }: SearchParams = {}
+    withPromotions = false,
+  }: SearchParams & { withPromotions?: boolean } = {}
 ): Promise<WorkspaceUsersApiResponse> {
   const searchParams = new URLSearchParams();
 
@@ -606,6 +497,9 @@ async function fetchWorkspaceUsersPage(
   searchParams.set('pageSize', String(pageSize));
   searchParams.set('status', status);
   searchParams.set('linkStatus', linkStatus);
+  if (withPromotions) {
+    searchParams.set('withPromotions', 'true');
+  }
 
   for (const group of normalizeStringArray(includedGroups)) {
     searchParams.append('includedGroups', group);

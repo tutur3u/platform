@@ -89,19 +89,16 @@ const RenderPart = ({ part }: { part: Part }) =>
       <SyntaxHighlighter
         language={(part.executableCode.language ?? 'text').toLowerCase()}
         style={dark}
-        children={part.executableCode.code ?? ''}
-      />
+      >
+        {part.executableCode.code ?? ''}
+      </SyntaxHighlighter>
     </div>
   ) : part.codeExecutionResult ? (
     <div className="part part-codeExecutionResult">
       <h5>codeExecutionResult: {part.codeExecutionResult.outcome}</h5>
-      <SyntaxHighlighter
-        language="json"
-        style={dark}
-        children={tryParseCodeExecutionResult(
-          part.codeExecutionResult.output ?? ''
-        )}
-      />
+      <SyntaxHighlighter language="json" style={dark}>
+        {tryParseCodeExecutionResult(part.codeExecutionResult.output ?? '')}
+      </SyntaxHighlighter>
     </div>
   ) : (
     <div className="part part-inlinedata">

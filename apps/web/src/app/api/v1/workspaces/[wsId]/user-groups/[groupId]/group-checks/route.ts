@@ -23,6 +23,52 @@ const SingleSchema = z.object({
 });
 const MultipleSchema = z.array(SingleSchema);
 
+export async function GET(req: Request, { params }: Params) {
+  const { wsId: id } = await params;
+  const { searchParams } = new URL(req.url);
+  const postId = searchParams.get('postId');
+
+  if (!postId) {
+    return NextResponse.json(
+      { message: 'Post ID is required' },
+      { status: 400 }
+    );
+  }
+
+  // Resolve workspace ID
+  const wsId = await normalizeWorkspaceId(id);
+
+  // Check permissions
+  const permissions = await getPermissions({ wsId, request: req });
+  if (!permissions) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+  const { withoutPermission } = permissions;
+  if (withoutPermission('view_user_groups_posts')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to view user group posts' },
+      { status: 403 }
+    );
+  }
+
+  const sbAdmin = await createAdminClient();
+
+  const { data, error } = await sbAdmin
+    .from('user_group_post_checks')
+    .select('*')
+    .eq('post_id', postId);
+
+  if (error) {
+    console.error(error);
+    return NextResponse.json(
+      { message: 'Error fetching group checks' },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json(data || []);
+}
+
 export async function POST(req: Request, { params }: Params) {
   const sbAdmin = await createAdminClient();
   const data = await req.json();

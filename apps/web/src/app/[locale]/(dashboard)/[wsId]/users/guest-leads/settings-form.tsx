@@ -1,7 +1,6 @@
 'use client';
 
 import { useMutation } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
@@ -54,13 +53,16 @@ export function GuestLeadSettingsForm({
 
   const mutation = useMutation({
     mutationFn: async (values: z.infer<typeof FormSchema>) => {
-      const supabase = createClient();
-      const { error } = await supabase.from('workspace_settings').upsert({
-        ws_id: wsId,
-        guest_user_checkup_threshold: values.guest_user_checkup_threshold,
+      const res = await fetch(`/api/v1/workspaces/${wsId}/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          guest_user_checkup_threshold: values.guest_user_checkup_threshold,
+        }),
       });
-      if (error) throw error;
-      return values;
+
+      if (!res.ok) throw new Error('Failed to update settings');
+      return await res.json();
     },
     onSuccess: () => {
       toast.success(t('common.success'));

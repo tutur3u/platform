@@ -121,6 +121,7 @@ const MermaidRenderer = ({ content }: { content: string }) => {
     <div
       ref={elementRef}
       className="overflow-x-auto"
+      // biome-ignore lint/security/noDangerouslySetInnerHtml: required for rendering SVG content
       dangerouslySetInnerHTML={{ __html: svgContent }}
     />
   );

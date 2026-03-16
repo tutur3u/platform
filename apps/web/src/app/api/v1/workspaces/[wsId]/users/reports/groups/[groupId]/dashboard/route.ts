@@ -43,23 +43,55 @@ type ReportWithNames = WorkspaceUserReport & {
   user_note?: string | null;
 };
 
-function mapReportWithNames(raw: any): ReportWithNames {
+function mapReportWithNames(raw: {
+  user?: any;
+  creator?: any;
+  group_name?: string | null;
+  name?: string | null;
+  [key: string]: any;
+}): ReportWithNames {
+  const user = raw.user as unknown as
+    | {
+        full_name: string | null;
+        archived: boolean;
+        archived_until: string | null;
+        note: string | null;
+      }
+    | {
+        full_name: string | null;
+        archived: boolean;
+        archived_until: string | null;
+        note: string | null;
+      }[]
+    | null;
+
+  const creator = raw.creator as unknown as
+    | { full_name: string | null }
+    | { full_name: string | null }[]
+    | null;
+
+  const userName = Array.isArray(user) ? user?.[0]?.full_name : user?.full_name;
+  const userArchived = Array.isArray(user)
+    ? user?.[0]?.archived
+    : user?.archived;
+  const userArchivedUntil = Array.isArray(user)
+    ? user?.[0]?.archived_until
+    : user?.archived_until;
+  const userNote = Array.isArray(user) ? user?.[0]?.note : user?.note;
+  const creatorName = Array.isArray(creator)
+    ? creator?.[0]?.full_name
+    : creator?.full_name;
+
+  const { user: _, creator: __, ...rest } = raw;
+
   return {
-    user_name: Array.isArray(raw.user)
-      ? raw.user?.[0]?.full_name
-      : raw.user?.full_name,
-    user_archived: Array.isArray(raw.user)
-      ? raw.user?.[0]?.archived
-      : raw.user?.archived,
-    user_archived_until: Array.isArray(raw.user)
-      ? raw.user?.[0]?.archived_until
-      : raw.user?.archived_until,
-    user_note: Array.isArray(raw.user) ? raw.user?.[0]?.note : raw.user?.note,
-    creator_name: Array.isArray(raw.creator)
-      ? raw.creator?.[0]?.full_name
-      : raw.creator?.full_name,
+    ...rest,
+    user_name: userName,
+    user_archived: userArchived,
+    user_archived_until: userArchivedUntil,
+    user_note: userNote,
+    creator_name: creatorName,
     group_name: raw.group_name ?? raw.name ?? null,
-    ...raw,
   } as ReportWithNames;
 }
 
@@ -221,20 +253,20 @@ export async function GET(request: Request, { params }: Params) {
 
     const userStatusSummary = (userStatusSummaryResult.data ??
       []) as ReportStatusSummaryRow[];
-    const reports = ((reportsResult.data ?? []) as any[]).map(
-      mapReportWithNames
+    const reports = (reportsResult.data || []).map((r) =>
+      mapReportWithNames(r as any)
     );
     const reportDetail = reportDetailResult.data
-      ? mapReportWithNames(reportDetailResult.data)
+      ? mapReportWithNames(reportDetailResult.data as any)
       : null;
-    const healthcareVitals = ((healthcareVitalsResult.data ?? []) as any[])
+    const healthcareVitals = (healthcareVitalsResult.data || [])
       .sort(
-        (left, right) =>
+        (left: any, right: any) =>
           new Date(left.healthcare_vitals.created_at ?? 0).getTime() -
           new Date(right.healthcare_vitals.created_at ?? 0).getTime()
       )
       .map(
-        (item): HealthcareVitalRow => ({
+        (item: any): HealthcareVitalRow => ({
           id: item.healthcare_vitals.id,
           name: item.healthcare_vitals.name,
           unit: item.healthcare_vitals.unit,

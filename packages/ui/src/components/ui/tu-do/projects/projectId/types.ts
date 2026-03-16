@@ -10,10 +10,8 @@ import type { WorkspaceMember } from '@tuturuuu/ui/hooks/use-workspace-members';
 import type { MotionProps } from 'framer-motion';
 
 // Re-export WorkspaceMember for convenience
-export type { WorkspaceMember };
-
 // Re-export ProjectUpdate from centralized types
-export type { ProjectUpdate };
+export type { ProjectUpdate, WorkspaceMember };
 
 export type TaskPriority = Database['public']['Enums']['task_priority'];
 export type HealthStatus = 'on_track' | 'at_risk' | 'off_track';

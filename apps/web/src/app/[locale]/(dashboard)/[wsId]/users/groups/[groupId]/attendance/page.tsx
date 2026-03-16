@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
@@ -81,9 +81,9 @@ export default async function UserGroupAttendancePage({
 }
 
 async function getData(wsId: string, groupId: string) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
-  const { data, error } = await supabase
+  const { data, error } = await sbAdmin
     .from('workspace_user_groups')
     .select('*')
     .eq('ws_id', wsId)
@@ -101,10 +101,10 @@ async function getInitialAttendanceData(
   groupId: string,
   dateYYYYMMDD: string
 ) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
 
   // Sessions
-  const { data: groupRow } = await supabase
+  const { data: groupRow } = await sbAdmin
     .from('workspace_user_groups')
     .select('sessions')
     .eq('ws_id', wsId)
@@ -112,26 +112,26 @@ async function getInitialAttendanceData(
     .maybeSingle();
 
   // Members (basic profile info)
-  const { data: membersRows } = await supabase
+  const { data: membersRows } = await sbAdmin
     .from('workspace_user_groups_users')
-    .select('workspace_users(*), role')
+    .select('workspace_users!inner(*), role')
     .eq('group_id', groupId);
 
   const members = await Promise.all(
-    (membersRows || []).map(async (row: any) => {
-      const { data: isGuest } = await supabase.rpc('is_user_guest', {
-        user_uuid: row.workspace_users?.id,
+    (membersRows || []).map(async (row) => {
+      const { data: isGuest } = await sbAdmin.rpc('is_user_guest', {
+        user_uuid: row.workspace_users.id,
       });
 
       return {
-        id: row.workspace_users?.id,
-        display_name: row.workspace_users?.display_name,
-        full_name: row.workspace_users?.full_name,
-        email: row.workspace_users?.email,
-        phone: row.workspace_users?.phone,
-        avatar_url: row.workspace_users?.avatar_url,
-        archived: row.workspace_users?.archived,
-        archived_until: row.workspace_users?.archived_until,
+        id: row.workspace_users.id,
+        display_name: row.workspace_users.display_name,
+        full_name: row.workspace_users.full_name,
+        email: row.workspace_users.email,
+        phone: row.workspace_users.phone,
+        avatar_url: row.workspace_users.avatar_url,
+        archived: row.workspace_users.archived,
+        archived_until: row.workspace_users.archived_until,
         role: row.role,
         isGuest: !!isGuest,
       };
@@ -139,25 +139,27 @@ async function getInitialAttendanceData(
   );
 
   // Initial attendance for the requested date (seed hydration)
-  const { data: attRows } = await supabase
+  const { data: attRows } = await sbAdmin
     .from('user_group_attendance')
-    .select('user_id,status,notes')
+    .select('user_id, status, notes')
     .eq('group_id', groupId)
     .eq('date', dateYYYYMMDD);
 
-  const attendance: Record<string, { status: unknown; note?: string }> = {};
-  (attRows || []).forEach((r) => {
-    attendance[(r as any).user_id] = {
-      status: (r as any).status,
-      note: (r as any).notes ?? '',
+  type AttendanceEntry = NonNullable<
+    InitialAttendanceProps['initialAttendance']
+  >[string];
+
+  const attendance: Record<string, AttendanceEntry> = {};
+  for (const r of attRows || []) {
+    attendance[r.user_id] = {
+      status: r.status as AttendanceEntry['status'],
+      note: r.notes ?? '',
     };
-  });
+  }
 
   return {
     sessions: (groupRow?.sessions as string[]) || [],
     members,
-    attendance: attendance as NonNullable<
-      InitialAttendanceProps['initialAttendance']
-    >,
+    attendance,
   };
 }

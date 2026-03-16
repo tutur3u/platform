@@ -16,6 +16,7 @@ export default function EventDescription({
   return (
     <div
       className={`event-description ${className}`}
+      // biome-ignore lint/security/noDangerouslySetInnerHtml: content is already sanitized
       dangerouslySetInnerHTML={{
         __html: containsHtml(description)
           ? sanitizeHtml(description)

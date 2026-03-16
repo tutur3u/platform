@@ -326,8 +326,8 @@ select is(
 
 select is(
   strict_text_field_char_limit('tasks', 'description'),
-  2000,
-  'task descriptions keep the larger special-case allowance'
+  100000,
+  'task descriptions preserve the 100,000 character allowance'
 );
 
 select is(

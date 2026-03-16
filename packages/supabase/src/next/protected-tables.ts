@@ -28,14 +28,17 @@ export const PROXY_ONLY_PUBLIC_TABLES = [
   'user_group_post_checks',
   'user_group_post_logs',
   'user_group_posts',
+  'user_linked_promotions',
   'workspace_calendar_sync_log',
   'workspace_calendars',
   'workspace_credit_packs',
   'workspace_debt_loans',
   'workspace_education_access_requests',
+  'workspace_promotions',
   'workspace_scheduling_metadata',
   'workspace_subscription_errors',
   'workspace_subscription_products',
+  'workspace_wallets',
 ] as const;
 
 const proxyOnlyPublicTableSet = new Set<string>(PROXY_ONLY_PUBLIC_TABLES);
