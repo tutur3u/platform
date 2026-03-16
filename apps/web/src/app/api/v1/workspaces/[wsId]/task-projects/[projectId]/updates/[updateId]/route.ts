@@ -60,12 +60,20 @@ export async function PATCH(
     }
 
     // Verify user has access to workspace
-    const { data: membership } = await supabase
+    const { data: membership, error: membershipError } = await supabase
       .from('workspace_members')
       .select('ws_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (membershipError) {
+      console.error('Membership lookup failed:', membershipError);
+      return NextResponse.json(
+        { error: 'Internal Server Error' },
+        { status: 500 }
+      );
+    }
 
     if (!membership) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -203,12 +211,20 @@ export async function DELETE(
     }
 
     // Verify user has access to workspace
-    const { data: membership } = await supabase
+    const { data: membership, error: membershipError } = await supabase
       .from('workspace_members')
       .select('ws_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (membershipError) {
+      console.error('Membership lookup failed:', membershipError);
+      return NextResponse.json(
+        { error: 'Internal Server Error' },
+        { status: 500 }
+      );
+    }
 
     if (!membership) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -256,17 +272,25 @@ export async function DELETE(
       );
     }
 
-    const { error: deleteError } = await sbAdmin
+    const { data: updatedRows, error: deleteError } = await sbAdmin
       .from('task_project_updates')
       .update({ deleted_at: new Date().toISOString() })
       .eq('id', updateId)
-      .eq('creator_id', user.id); // Extra safety: double-check creator
+      .eq('creator_id', user.id)
+      .select('id'); // Extra safety: double-check creator
 
     if (deleteError) {
       console.error('Error deleting project update:', deleteError);
       return NextResponse.json(
         { error: 'Failed to delete update' },
         { status: 500 }
+      );
+    }
+
+    if (!updatedRows || updatedRows.length === 0) {
+      return NextResponse.json(
+        { error: 'Update not found or already deleted' },
+        { status: 404 }
       );
     }
 

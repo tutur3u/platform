@@ -103,6 +103,14 @@ export async function GET(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Access Denied' }, { status: 404 });
     }
 
+    if (
+      template &&
+      template.visibility === 'private' &&
+      template.created_by !== user.id
+    ) {
+      return NextResponse.json({ error: 'Access Denied' }, { status: 404 });
+    }
+
     if (fetchError || !template) {
       console.error('Failed to fetch template:', fetchError);
       return NextResponse.json(
@@ -348,18 +356,27 @@ export async function DELETE(req: NextRequest, { params }: Params) {
 
     const sbAdmin = await createAdminClient();
 
-    const { error: deleteError } = await sbAdmin
+    const { data: deletedTemplate, error: deleteError } = await sbAdmin
       .from('board_templates')
       .delete()
       .eq('id', templateId)
       .eq('ws_id', wsId)
-      .eq('created_by', user.id);
+      .eq('created_by', user.id)
+      .select('id')
+      .maybeSingle();
 
     if (deleteError) {
       console.error('Failed to delete template:', deleteError);
       return NextResponse.json(
         { error: 'Failed to delete template' },
         { status: 500 }
+      );
+    }
+
+    if (!deletedTemplate) {
+      return NextResponse.json(
+        { error: 'Template not found or you are not the owner' },
+        { status: 404 }
       );
     }
 

@@ -8,8 +8,8 @@ import {
 import type { TaskProjectWithRelations, Workspace } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { TaskProjectDetail } from '@tuturuuu/ui/tu-do/projects/projectId/task-project-detail';
 import { useTranslations } from 'next-intl';
+import { TaskProjectDetail } from './task-project-detail';
 
 interface Props {
   wsId: string;

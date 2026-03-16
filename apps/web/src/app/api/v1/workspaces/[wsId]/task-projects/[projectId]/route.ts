@@ -92,8 +92,9 @@ export async function GET(
       .maybeSingle();
 
     if (membershipError) {
+      console.error('Membership lookup failed:', membershipError);
       return NextResponse.json(
-        { error: membershipError.message || 'Membership lookup failed' },
+        { error: 'Membership lookup failed' },
         { status: 500 }
       );
     }

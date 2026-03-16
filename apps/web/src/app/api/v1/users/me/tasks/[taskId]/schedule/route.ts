@@ -1,5 +1,5 @@
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { TaskWithScheduling } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { validate } from 'uuid';
@@ -120,10 +120,7 @@ export const GET = withSessionAuth<{ taskId: string }>(
         .maybeSingle();
 
       if (!memberCheck) {
-        return NextResponse.json(
-          { error: "You don't have access to this task" },
-          { status: 403 }
-        );
+        return NextResponse.json({ error: 'Task not found' }, { status: 404 });
       }
 
       // Fetch base task fields (shared, non-scheduling)
@@ -277,10 +274,7 @@ export const POST = withSessionAuth<{ taskId: string }>(
         .maybeSingle();
 
       if (!memberCheck) {
-        return NextResponse.json(
-          { error: "You don't have access to this task" },
-          { status: 403 }
-        );
+        return NextResponse.json({ error: 'Task not found' }, { status: 404 });
       }
 
       const sbAdmin = await createAdminClient();

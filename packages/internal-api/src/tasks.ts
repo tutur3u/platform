@@ -348,6 +348,32 @@ export async function createWorkspaceTaskProject(
   );
 }
 
+export async function resolveTaskProjectWorkspaceId(
+  input: {
+    boardId?: string | null;
+    projectIds?: string[];
+  },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const payload = await client.json<{ workspaceId?: string | null }>(
+    '/api/v1/task-projects/resolve-workspace',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        boardId: input.boardId ?? undefined,
+        projectIds: input.projectIds ?? [],
+      }),
+      cache: 'no-store',
+    }
+  );
+
+  return payload.workspaceId ?? null;
+}
+
 export async function getWorkspaceTaskProject(
   workspaceId: string,
   projectId: string,

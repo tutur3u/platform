@@ -73,8 +73,9 @@ export async function GET(
       .maybeSingle();
 
     if (membershipError) {
+      console.error('Membership lookup failed:', membershipError);
       return NextResponse.json(
-        { error: membershipError.message || 'Membership lookup failed' },
+        { error: 'Membership lookup failed' },
         { status: 500 }
       );
     }
@@ -85,11 +86,19 @@ export async function GET(
 
     const sbAdmin = await createAdminClient();
 
-    const { data: projectRecord } = await sbAdmin
+    const { data: projectRecord, error: projectRecordError } = await sbAdmin
       .from('task_projects')
       .select('ws_id')
       .eq('id', projectId)
-      .single();
+      .maybeSingle();
+
+    if (projectRecordError) {
+      console.error('Error loading project:', projectRecordError);
+      return NextResponse.json(
+        { error: 'Failed to load project' },
+        { status: 500 }
+      );
+    }
 
     if (!projectRecord || projectRecord.ws_id !== normalizedWorkspaceId) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
@@ -101,6 +110,11 @@ export async function GET(
         `
         task:tasks!inner(
           *,
+          task_lists(
+            workspace_boards(
+              ws_id
+            )
+          ),
           assignees:task_assignees(user:users(id, display_name, avatar_url)),
           labels:task_labels(label:workspace_task_labels(id, name, color, created_at)),
           projects:task_project_tasks(project:task_projects(id, name, status))
@@ -120,10 +134,14 @@ export async function GET(
 
     const rawTasks = (projectTasks ?? [])
       .map((pt) => pt.task)
-      .filter(
-        (task): task is NonNullable<typeof task> =>
-          task !== null && !task.deleted_at
-      );
+      .filter((task): task is NonNullable<typeof task> => {
+        if (!task || task.deleted_at) {
+          return false;
+        }
+
+        const boardWorkspaceId = task.task_lists?.workspace_boards?.ws_id;
+        return boardWorkspaceId === normalizedWorkspaceId;
+      });
 
     const listIds = [
       ...new Set(
@@ -261,8 +279,9 @@ export async function POST(
       .maybeSingle();
 
     if (membershipError) {
+      console.error('Membership lookup failed:', membershipError);
       return NextResponse.json(
-        { error: membershipError.message || 'Membership lookup failed' },
+        { error: 'Membership lookup failed' },
         { status: 500 }
       );
     }
@@ -277,11 +296,19 @@ export async function POST(
     const sbAdmin = await createAdminClient();
 
     // Ensure the project exists in the same workspace
-    const { data: projectRecord } = await sbAdmin
+    const { data: projectRecord, error: projectRecordError } = await sbAdmin
       .from('task_projects')
       .select('ws_id')
       .eq('id', projectId)
-      .single();
+      .maybeSingle();
+
+    if (projectRecordError) {
+      console.error('Error loading project:', projectRecordError);
+      return NextResponse.json(
+        { error: 'Failed to load project' },
+        { status: 500 }
+      );
+    }
 
     if (!projectRecord || projectRecord.ws_id !== normalizedWorkspaceId) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });

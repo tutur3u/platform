@@ -36,6 +36,7 @@ interface RelationshipTaskRow {
   list: {
     board: {
       name: string;
+      ws_id: string | null;
     } | null;
   } | null;
 }
@@ -154,7 +155,8 @@ export async function GET(
           deleted_at,
           list:task_lists(
             board:workspace_boards(
-              name
+              name,
+              ws_id
             )
           )
         )
@@ -185,7 +187,8 @@ export async function GET(
           deleted_at,
           list:task_lists(
             board:workspace_boards(
-              name
+              name,
+              ws_id
             )
           )
         )
@@ -211,7 +214,11 @@ export async function GET(
     for (const relationship of (sourceRelationships ??
       []) as SourceRelationshipRow[]) {
       const targetTask = relationship.target_task;
-      if (!targetTask || targetTask.deleted_at !== null) {
+      if (
+        !targetTask ||
+        targetTask.deleted_at !== null ||
+        targetTask.list?.board?.ws_id !== wsId
+      ) {
         continue;
       }
 
@@ -233,7 +240,11 @@ export async function GET(
     for (const relationship of (targetRelationships ??
       []) as TargetRelationshipRow[]) {
       const sourceTask = relationship.source_task;
-      if (!sourceTask || sourceTask.deleted_at !== null) {
+      if (
+        !sourceTask ||
+        sourceTask.deleted_at !== null ||
+        sourceTask.list?.board?.ws_id !== wsId
+      ) {
         continue;
       }
 

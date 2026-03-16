@@ -15,7 +15,6 @@ export async function DELETE(
   try {
     const { wsId: rawWsId, projectId, taskId } = await params;
     const supabase = await createClient(request);
-    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     const {
       data: { user },
@@ -26,12 +25,30 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: membership } = await supabase
+    let wsId: string;
+    try {
+      wsId = await normalizeWorkspaceId(rawWsId, supabase);
+    } catch {
+      return NextResponse.json(
+        { error: 'Workspace not found' },
+        { status: 404 }
+      );
+    }
+
+    const { data: membership, error: membershipError } = await supabase
       .from('workspace_members')
       .select('ws_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (membershipError) {
+      console.error('Membership lookup failed:', membershipError);
+      return NextResponse.json(
+        { error: 'Membership lookup failed' },
+        { status: 500 }
+      );
+    }
 
     if (!membership) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -39,11 +56,19 @@ export async function DELETE(
 
     const sbAdmin = await createAdminClient();
 
-    const { data: projectRecord } = await sbAdmin
+    const { data: projectRecord, error: projectError } = await sbAdmin
       .from('task_projects')
       .select('ws_id')
       .eq('id', projectId)
-      .single();
+      .maybeSingle();
+
+    if (projectError) {
+      console.error('Failed to load project:', projectError);
+      return NextResponse.json(
+        { error: 'Failed to load project' },
+        { status: 500 }
+      );
+    }
 
     if (!projectRecord || projectRecord.ws_id !== wsId) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });

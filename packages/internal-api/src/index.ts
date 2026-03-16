@@ -28,6 +28,7 @@ export {
   getWorkspaceTaskRelationships,
   listWorkspaceTaskProjects,
   listWorkspaceTasks,
+  resolveTaskProjectWorkspaceId,
   updateWorkspaceTask,
 } from './tasks';
 export {

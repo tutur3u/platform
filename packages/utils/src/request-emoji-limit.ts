@@ -221,7 +221,8 @@ export function isTrustedEmojiBypassRequest(
 }
 
 export async function getRequestContentViolationForRequest(
-  request: NextRequest
+  request: NextRequest,
+  options?: { allowDescriptionYjsState?: boolean }
 ): Promise<RequestContentViolation | null> {
   if (
     !shouldValidateEmojiLimit(request) ||
@@ -245,6 +246,7 @@ export async function getRequestContentViolationForRequest(
     const parsedBody = JSON.parse(rawBody);
 
     if (
+      options?.allowDescriptionYjsState === true &&
       parsedBody &&
       typeof parsedBody === 'object' &&
       'description_yjs_state' in parsedBody &&
@@ -285,8 +287,12 @@ export function createRequestContentViolationResponse(
 }
 
 export async function validateRequestEmojiLimit(
-  request: NextRequest
+  request: NextRequest,
+  options?: { allowDescriptionYjsState?: boolean }
 ): Promise<NextResponse | null> {
-  const violation = await getRequestContentViolationForRequest(request);
+  const violation = await getRequestContentViolationForRequest(
+    request,
+    options
+  );
   return violation ? createRequestContentViolationResponse(violation) : null;
 }

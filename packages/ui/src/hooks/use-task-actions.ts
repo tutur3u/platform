@@ -1090,13 +1090,13 @@ export function useTaskActions({
         );
 
         if (workspaceId) {
-          let successCount = 0;
+          const succeededIds: string[] = [];
           for (const taskId of tasksToUpdate) {
             try {
               await updateWorkspaceTask(workspaceId, taskId, {
                 estimation_points: points,
               });
-              successCount++;
+              succeededIds.push(taskId);
             } catch (error) {
               console.error(
                 `Failed to update estimation for task ${taskId}:`,
@@ -1105,18 +1105,55 @@ export function useTaskActions({
             }
           }
 
-          if (successCount === 0) {
+          if (succeededIds.length === 0) {
             throw new Error('Failed to update any tasks');
           }
 
-          if (successCount < tasksToUpdate.length) {
+          const failedIds = tasksToUpdate.filter(
+            (taskId) => !succeededIds.includes(taskId)
+          );
+
+          if (failedIds.length > 0 && previousTasks) {
+            const previousTaskMap = new Map(
+              previousTasks.map((t) => [t.id, t])
+            );
+            queryClient.setQueryData(
+              ['tasks', boardId],
+              (current: Task[] | undefined) => {
+                if (!current) return current;
+                return current.map((task) => {
+                  if (!failedIds.includes(task.id)) {
+                    return task;
+                  }
+
+                  return previousTaskMap.get(task.id) || task;
+                });
+              }
+            );
+
             throw new Error(
-              `Partial update failed (${successCount}/${tasksToUpdate.length} tasks updated)`
+              `Partial update failed (${succeededIds.length}/${tasksToUpdate.length} tasks updated). Failed task IDs: ${failedIds.join(', ')}`
             );
           }
+
+          for (const tid of succeededIds) {
+            broadcast?.('task:upsert', {
+              task: { id: tid, estimation_points: points },
+            });
+          }
+
+          const taskCount = succeededIds.length;
+          toast.success('Estimation updated', {
+            description:
+              taskCount > 1
+                ? `${taskCount} tasks updated`
+                : 'Estimation points updated successfully',
+          });
+
+          return;
         } else if (tasksToUpdate.length > 1) {
           const supabase = createClient();
-          let successCount = 0;
+          const succeededIds: string[] = [];
           for (const taskId of tasksToUpdate) {
             const { error } = await supabase
               .from('tasks')
@@ -1128,35 +1165,71 @@ export function useTaskActions({
                 error
               );
             } else {
-              successCount++;
+              succeededIds.push(taskId);
             }
           }
-          if (successCount === 0) throw new Error('Failed to update any tasks');
-          if (successCount < tasksToUpdate.length) {
+
+          if (succeededIds.length === 0)
+            throw new Error('Failed to update any tasks');
+
+          const failedIds = tasksToUpdate.filter(
+            (taskId) => !succeededIds.includes(taskId)
+          );
+
+          if (failedIds.length > 0 && previousTasks) {
+            const previousTaskMap = new Map(
+              previousTasks.map((t) => [t.id, t])
+            );
+            queryClient.setQueryData(
+              ['tasks', boardId],
+              (current: Task[] | undefined) => {
+                if (!current) return current;
+                return current.map((task) => {
+                  if (!failedIds.includes(task.id)) {
+                    return task;
+                  }
+
+                  return previousTaskMap.get(task.id) || task;
+                });
+              }
+            );
+
             throw new Error(
-              `Partial update failed (${successCount}/${tasksToUpdate.length} tasks updated)`
+              `Partial update failed (${succeededIds.length}/${tasksToUpdate.length} tasks updated). Failed task IDs: ${failedIds.join(', ')}`
             );
           }
+
+          for (const tid of succeededIds) {
+            broadcast?.('task:upsert', {
+              task: { id: tid, estimation_points: points },
+            });
+          }
+
+          const taskCount = succeededIds.length;
+          toast.success('Estimation updated', {
+            description:
+              taskCount > 1
+                ? `${taskCount} tasks updated`
+                : 'Estimation points updated successfully',
+          });
+
+          return;
         } else {
           await updateTaskMutation.mutateAsync({
             taskId: tasksToUpdate[0]!,
             updates: { estimation_points: points },
           });
-        }
 
-        for (const tid of tasksToUpdate) {
           broadcast?.('task:upsert', {
-            task: { id: tid, estimation_points: points },
+            task: { id: tasksToUpdate[0]!, estimation_points: points },
           });
-        }
 
-        const taskCount = tasksToUpdate.length;
-        toast.success('Estimation updated', {
-          description:
-            taskCount > 1
-              ? `${taskCount} tasks updated`
-              : 'Estimation points updated successfully',
-        });
+          toast.success('Estimation updated', {
+            description: 'Estimation points updated successfully',
+          });
+
+          return;
+        }
       } catch (e: any) {
         console.error('Failed to update estimation', e);
         // Rollback on error

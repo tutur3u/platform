@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { Database } from '@tuturuuu/types';
 import {
   MAX_COLOR_LENGTH,
   MAX_TASK_DESCRIPTION_LENGTH,
@@ -72,6 +73,8 @@ interface TaskProjectRelation {
   } | null;
 }
 
+type TaskInsert = Database['public']['Tables']['tasks']['Insert'];
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ wsId: string }> }
@@ -135,8 +138,7 @@ export async function GET(
     const listId = url.searchParams.get('listId');
     const searchQuery = url.searchParams.get('q')?.trim();
 
-    // Check if this is a request for time tracking (indicated by limit=100 and no specific filters)
-    const isTimeTrackingRequest = limit === 100 && !boardId && !listId;
+    const forTimeTracking = url.searchParams.get('forTimeTracking') === 'true';
 
     // Build the query for fetching tasks with relation details plus IDs.
     let query = sbAdmin
@@ -198,7 +200,7 @@ export async function GET(
     query = query.eq('task_lists.deleted', false);
 
     // IMPORTANT: If this is for time tracking, apply the same filters as the server-side helper
-    if (isTimeTrackingRequest) {
+    if (forTimeTracking) {
       query = query
         .is('closed_at', null) // Only non-archived tasks
         .in('task_lists.status', ['not_started', 'active']); // Only from active lists
@@ -543,22 +545,24 @@ export async function POST(
     const highestSortKey = existingTasks?.[0]?.sort_key ?? null;
     const newSortKey = calculateEndSortKey(highestSortKey);
 
+    const insertPayload: TaskInsert = {
+      name: taskName.trim(),
+      description: description?.trim() || null,
+      description_yjs_state: validatedData.description_yjs_state ?? null,
+      list_id: listId,
+      priority: priority || null,
+      start_date: start_date || null,
+      end_date: end_date || null,
+      estimation_points: estimation_points || null,
+      sort_key: newSortKey,
+      created_at: new Date().toISOString(),
+      deleted_at: null,
+      completed: false,
+    };
+
     const { data, error } = await sbAdmin
       .from('tasks')
-      .insert({
-        name: taskName.trim(),
-        description: description?.trim() || null,
-        description_yjs_state: validatedData.description_yjs_state ?? null,
-        list_id: listId,
-        priority: priority || null,
-        start_date: start_date || null,
-        end_date: end_date || null,
-        estimation_points: estimation_points || null,
-        sort_key: newSortKey,
-        created_at: new Date().toISOString(),
-        deleted_at: null,
-        completed: false,
-      } as any)
+      .insert(insertPayload)
       .select(
         `
         id,

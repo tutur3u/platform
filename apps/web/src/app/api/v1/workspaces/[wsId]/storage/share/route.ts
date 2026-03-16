@@ -1,7 +1,9 @@
 import {
   createAdminClient,
   createClient,
+  createDynamicAdminClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { MAX_MEDIUM_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import {
@@ -14,20 +16,98 @@ import { z } from 'zod';
 const shareSchema = z.object({
   path: z.string().max(MAX_MEDIUM_TEXT_LENGTH).min(1),
   expiresIn: z.number().int().min(60).max(31_536_000).optional(),
+  taskId: z.uuid().optional(),
 });
 
 const shareQuerySchema = z.object({
   path: z.string().max(MAX_MEDIUM_TEXT_LENGTH).min(1),
   expiresIn: z.coerce.number().int().min(60).max(31_536_000).optional(),
+  taskId: z.uuid().optional(),
 });
+
+async function hasSharedTaskAccess({
+  normalizedWsId,
+  taskId,
+  userId,
+  sbAdmin,
+}: {
+  normalizedWsId: string;
+  taskId: string;
+  userId: string;
+  sbAdmin: TypedSupabaseClient;
+}) {
+  const { data: taskRow, error: taskError } = await sbAdmin
+    .from('tasks')
+    .select('id, task_lists!inner(workspace_boards!inner(ws_id))')
+    .eq('id', taskId)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (taskError || !taskRow) {
+    return false;
+  }
+
+  const taskWorkspaceId = taskRow.task_lists?.workspace_boards?.ws_id;
+  if (taskWorkspaceId !== normalizedWsId) {
+    return false;
+  }
+
+  const { data: memberCheck } = await sbAdmin
+    .from('workspace_members')
+    .select('user_id')
+    .eq('ws_id', normalizedWsId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (memberCheck) {
+    return true;
+  }
+
+  const { data: userPrivateDetails } = await sbAdmin
+    .from('user_private_details')
+    .select('email')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  const email = userPrivateDetails?.email ?? null;
+
+  let shareQuery = sbAdmin
+    .from('task_shares')
+    .select('permission')
+    .eq('task_id', taskId);
+
+  if (email) {
+    shareQuery = shareQuery.or(
+      `shared_with_user_id.eq.${userId},and(shared_with_email.ilike."${email}")`
+    );
+  } else {
+    shareQuery = shareQuery.eq('shared_with_user_id', userId);
+  }
+
+  const { data: directShare } = await shareQuery.maybeSingle();
+  if (directShare) {
+    return true;
+  }
+
+  const { data: publicShare } = await sbAdmin
+    .from('task_share_links')
+    .select('id')
+    .eq('task_id', taskId)
+    .eq('public_access', 'view')
+    .eq('requires_invite', false)
+    .maybeSingle();
+
+  return !!publicShare;
+}
 
 async function resolveSignedUrl(
   request: Request,
   params: Promise<{ wsId: string }>,
-  input: { path: string; expiresIn?: number }
+  input: { path: string; expiresIn?: number; taskId?: string }
 ) {
   const { wsId } = await params;
   const supabase = await createClient(request);
+  const sbAdmin = await createAdminClient();
 
   const {
     data: { user },
@@ -44,10 +124,6 @@ async function resolveSignedUrl(
     request,
   });
 
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
   const sanitizedPath = sanitizePath(input.path);
   if (!sanitizedPath) {
     return NextResponse.json({ message: 'Invalid path' }, { status: 400 });
@@ -57,11 +133,28 @@ async function resolveSignedUrl(
     return NextResponse.json({ message: 'Invalid path' }, { status: 400 });
   }
 
-  const sbAdmin = await createAdminClient();
+  if (!permissions) {
+    if (!input.taskId) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const hasAccess = await hasSharedTaskAccess({
+      normalizedWsId,
+      taskId: input.taskId,
+      userId: user.id,
+      sbAdmin,
+    });
+
+    if (!hasAccess) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+  }
+
+  const sbStorageAdmin = await createDynamicAdminClient();
   const storagePath = `${normalizedWsId}/${sanitizedPath}`;
   const expiresIn = input.expiresIn ?? 31_536_000;
 
-  const { data, error } = await sbAdmin.storage
+  const { data, error } = await sbStorageAdmin.storage
     .from('workspaces')
     .createSignedUrl(storagePath, expiresIn);
 
@@ -113,6 +206,7 @@ export async function GET(
     const parsed = shareQuerySchema.safeParse({
       path: searchParams.get('path'),
       expiresIn: searchParams.get('expiresIn') ?? undefined,
+      taskId: searchParams.get('taskId') ?? undefined,
     });
 
     if (!parsed.success) {

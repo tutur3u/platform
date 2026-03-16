@@ -389,5 +389,12 @@ export async function guardApiProxyRequest(
     }
   }
 
-  return (await validateRequestEmojiLimit(req)) ?? null;
+  const allowDescriptionYjsState =
+    /\/api\/v1\/workspaces\/[^/]+\/tasks\/[^/]+\/description$/.test(
+      req.nextUrl.pathname
+    );
+
+  return (
+    (await validateRequestEmojiLimit(req, { allowDescriptionYjsState })) ?? null
+  );
 }

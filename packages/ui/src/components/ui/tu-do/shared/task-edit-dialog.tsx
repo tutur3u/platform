@@ -809,7 +809,13 @@ export function TaskEditDialog({
           file,
           { path: 'task-images' }
         );
-        return `/api/v1/workspaces/${encodeURIComponent(effectiveTaskWsId)}/storage/share?path=${encodeURIComponent(uploadResult.path)}`;
+
+        const query = new URLSearchParams({ path: uploadResult.path });
+        if (task?.id) {
+          query.set('taskId', task.id);
+        }
+
+        return `/api/v1/workspaces/${encodeURIComponent(effectiveTaskWsId)}/storage/share?${query.toString()}`;
       } catch (error) {
         const message =
           error instanceof Error ? error.message : 'Failed to upload image';
@@ -821,7 +827,7 @@ export function TaskEditDialog({
         throw error;
       }
     },
-    [effectiveTaskWsId, toast]
+    [effectiveTaskWsId, task?.id, toast]
   );
 
   const handleEstimationConfigSuccess = useCallback(async () => {

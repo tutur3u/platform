@@ -1,6 +1,9 @@
 'use client';
 
-import { listWorkspaceTaskProjectsByIds } from '@tuturuuu/internal-api/tasks';
+import {
+  listWorkspaceTaskProjectsByIds,
+  resolveTaskProjectWorkspaceId,
+} from '@tuturuuu/internal-api/tasks';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -501,25 +504,19 @@ export function TaskDialogProvider({
         status: string | null;
       }> = [];
       if (draft.project_ids && draft.project_ids.length > 0) {
-        const { data: boardRow } = draft.board_id
-          ? await supabase
-              .from('workspace_boards')
-              .select('ws_id')
-              .eq('id', draft.board_id)
-              .maybeSingle()
-          : { data: null };
+        let projectWorkspaceId: string | null = null;
 
-        let projectWorkspaceId = boardRow?.ws_id ?? null;
-
-        if (!projectWorkspaceId && draft.project_ids.length > 0) {
-          const { data: projectWorkspaceRow } = await supabase
-            .from('task_projects')
-            .select('ws_id')
-            .in('id', draft.project_ids)
-            .limit(1)
-            .maybeSingle();
-
-          projectWorkspaceId = projectWorkspaceRow?.ws_id ?? null;
+        try {
+          projectWorkspaceId = await resolveTaskProjectWorkspaceId({
+            boardId: draft.board_id ?? undefined,
+            projectIds: draft.project_ids,
+          });
+        } catch (error) {
+          console.error(
+            'Failed to resolve project workspace for draft:',
+            error
+          );
+          throw new Error('Unable to load project metadata for this draft');
         }
 
         if (projectWorkspaceId) {
@@ -535,6 +532,7 @@ export function TaskDialogProvider({
             }));
           } catch (error) {
             console.error('Failed to load draft projects metadata:', error);
+            throw new Error('Unable to load project metadata for this draft');
           }
         }
       }

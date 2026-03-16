@@ -6,7 +6,7 @@ import {
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { validate } from 'uuid';
+import { z } from 'zod';
 
 interface Params {
   params: Promise<{
@@ -15,27 +15,19 @@ interface Params {
   }>;
 }
 
+const templateIdSchema = z.uuid();
+
 export async function GET(req: NextRequest, { params }: Params) {
   try {
     const { wsId: rawWsId, templateId } = await params;
 
-    if (!validate(templateId)) {
+    if (!templateIdSchema.safeParse(templateId).success) {
       return NextResponse.json(
         { error: 'Invalid template ID' },
         { status: 400 }
       );
     }
     const supabase = await createClient(req);
-
-    let normalizedWsId: string;
-    try {
-      normalizedWsId = await normalizeWorkspaceId(rawWsId, supabase);
-    } catch {
-      return NextResponse.json(
-        { error: 'Invalid workspace ID' },
-        { status: 400 }
-      );
-    }
 
     const {
       data: { user },
@@ -49,9 +41,19 @@ export async function GET(req: NextRequest, { params }: Params) {
       );
     }
 
+    let normalizedWsId: string;
+    try {
+      normalizedWsId = await normalizeWorkspaceId(rawWsId, supabase);
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid workspace ID' },
+        { status: 400 }
+      );
+    }
+
     const { data: memberCheck, error: membershipError } = await supabase
       .from('workspace_members')
-      .select('id:user_id')
+      .select('user_id')
       .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
       .maybeSingle();

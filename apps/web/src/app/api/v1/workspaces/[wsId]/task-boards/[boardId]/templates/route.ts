@@ -3,6 +3,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { Json } from '@tuturuuu/types/supabase';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { validate } from 'uuid';
@@ -57,7 +58,7 @@ interface TemplateContent {
 
 export async function POST(req: NextRequest, { params }: Params) {
   try {
-    const { wsId, boardId } = await params;
+    const { wsId: rawWsId, boardId } = await params;
     const body: SaveTemplateRequest = await req.json();
 
     const {
@@ -77,14 +78,12 @@ export async function POST(req: NextRequest, { params }: Params) {
       );
     }
 
-    if (!validate(wsId) || !validate(boardId)) {
-      return NextResponse.json(
-        { error: 'Invalid workspace ID or board ID' },
-        { status: 400 }
-      );
+    if (!validate(boardId)) {
+      return NextResponse.json({ error: 'Invalid board ID' }, { status: 400 });
     }
 
     const supabase = await createClient(req);
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     // Get authenticated user
     const {

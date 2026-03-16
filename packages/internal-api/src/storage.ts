@@ -24,6 +24,8 @@ export async function uploadWorkspaceStorageFile(
   },
   clientOptions?: InternalApiClientOptions
 ) {
+  const fetchImpl = clientOptions?.fetch ?? globalThis.fetch;
+
   const uploadUrlResult = await createWorkspaceStorageUploadUrl(
     workspaceId,
     file.name,
@@ -31,7 +33,7 @@ export async function uploadWorkspaceStorageFile(
     clientOptions
   );
 
-  let uploadResponse = await fetch(uploadUrlResult.signedUrl, {
+  let uploadResponse = await fetchImpl(uploadUrlResult.signedUrl, {
     method: 'PUT',
     cache: 'no-store',
     headers: {
@@ -41,8 +43,8 @@ export async function uploadWorkspaceStorageFile(
     body: file,
   });
 
-  if (!uploadResponse.ok && file.type) {
-    uploadResponse = await fetch(uploadUrlResult.signedUrl, {
+  if (!uploadResponse.ok) {
+    uploadResponse = await fetchImpl(uploadUrlResult.signedUrl, {
       method: 'PUT',
       cache: 'no-store',
       headers: {

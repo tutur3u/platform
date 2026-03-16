@@ -112,6 +112,27 @@ export function useTaskRealtimeSync({
 
     console.log('🔄 Setting up realtime subscription for task:', taskId);
 
+    let isEffectActive = true;
+    let relationsRequestToken = 0;
+
+    const withLatestRelations = async <T>(
+      apply: (relations: {
+        labels: any[];
+        assignees: any[];
+        projects: any[];
+      }) => T
+    ) => {
+      relationsRequestToken += 1;
+      const token = relationsRequestToken;
+      const relations = await fetchTaskRelations();
+
+      if (!isEffectActive || token !== relationsRequestToken || !relations) {
+        return;
+      }
+
+      apply(relations);
+    };
+
     const fetchTaskRelations = async () => {
       try {
         const routeTask = await getWorkspaceTask(
@@ -140,11 +161,7 @@ export function useTaskRealtimeSync({
           details: error?.details,
           hint: error?.hint,
         });
-        return {
-          labels: [],
-          assignees: [],
-          projects: [],
-        };
+        return null;
       }
     };
 
@@ -246,9 +263,10 @@ export function useTaskRealtimeSync({
         },
         async () => {
           console.log('Received realtime update for task labels');
-          const relations = await fetchTaskRelations();
-          console.log('Updating labels from realtime:', relations.labels);
-          setSelectedLabels(relations.labels);
+          await withLatestRelations((relations) => {
+            console.log('Updating labels from realtime:', relations.labels);
+            setSelectedLabels(relations.labels);
+          });
         }
       )
       .on(
@@ -261,9 +279,13 @@ export function useTaskRealtimeSync({
         },
         async () => {
           console.log('Received realtime update for task assignees');
-          const relations = await fetchTaskRelations();
-          console.log('Updating assignees from realtime:', relations.assignees);
-          setSelectedAssignees(relations.assignees);
+          await withLatestRelations((relations) => {
+            console.log(
+              'Updating assignees from realtime:',
+              relations.assignees
+            );
+            setSelectedAssignees(relations.assignees);
+          });
         }
       )
       .on(
@@ -276,9 +298,10 @@ export function useTaskRealtimeSync({
         },
         async () => {
           console.log('Received realtime update for task projects');
-          const relations = await fetchTaskRelations();
-          console.log('Updating projects from realtime:', relations.projects);
-          setSelectedProjects(relations.projects);
+          await withLatestRelations((relations) => {
+            console.log('Updating projects from realtime:', relations.projects);
+            setSelectedProjects(relations.projects);
+          });
         }
       )
       .subscribe((status) => {
@@ -287,6 +310,7 @@ export function useTaskRealtimeSync({
 
     // Cleanup subscription on unmount or when task changes
     return () => {
+      isEffectActive = false;
       console.log('Cleaning up realtime subscription for task:', taskId);
       supabase.removeChannel(channel);
     };

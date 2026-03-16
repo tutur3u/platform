@@ -1,9 +1,20 @@
-import { useQueryClient } from '@tanstack/react-query';
-import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  createWorkspaceTaskProject,
+  updateWorkspaceTask,
+} from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useState } from 'react';
 import { useBoardBroadcast } from '../shared/board-broadcast-context';
+
+function getInternalApiOptions() {
+  if (typeof window === 'undefined') {
+    return undefined;
+  }
+
+  return { baseUrl: window.location.origin };
+}
 
 interface TaskProject {
   id: string;
@@ -34,7 +45,37 @@ export function useTaskProjectManagement({
   const queryClient = useQueryClient();
   const broadcast = useBoardBroadcast();
   const [newProjectName, setNewProjectName] = useState('');
-  const [creatingProject, setCreatingProject] = useState(false);
+
+  const createProjectMutation = useMutation({
+    mutationFn: async (name: string) => {
+      if (!workspaceId) {
+        throw new Error('Workspace context is missing');
+      }
+
+      return createWorkspaceTaskProject(
+        workspaceId,
+        { name: name.trim() },
+        getInternalApiOptions()
+      );
+    },
+    onSuccess: (newProject) => {
+      if (!workspaceId) return;
+
+      queryClient.setQueryData(
+        ['task_projects', workspaceId],
+        (old: TaskProject[] | undefined) => {
+          if (!old) return [newProject];
+          if (old.some((project) => project.id === newProject.id)) {
+            return old;
+          }
+
+          return [...old, newProject].sort((a, b) =>
+            a.name.localeCompare(b.name)
+          );
+        }
+      );
+    },
+  });
 
   // Toggle a project for the task (quick projects submenu)
   async function toggleTaskProject(projectId: string) {
@@ -167,76 +208,78 @@ export function useTaskProjectManagement({
     }
 
     try {
-      const internalApiOptions =
-        typeof window !== 'undefined'
-          ? { baseUrl: window.location.origin }
-          : undefined;
+      const internalApiOptions = getInternalApiOptions();
       const succeededTaskIds: string[] = [];
+      const targetTaskIds = active ? tasksToRemoveFrom : tasksNeedingProject;
 
-      if (active) {
-        for (const taskId of tasksToRemoveFrom) {
-          const taskState = getTaskState(taskId);
-          if (!taskState) continue;
+      const updateOperations = targetTaskIds.flatMap((taskId) => {
+        const taskState = getTaskState(taskId);
+        if (!taskState) {
+          return [];
+        }
 
-          const nextProjectIds = (taskState.projects ?? [])
-            .map((entry) => entry.id)
-            .filter((id) => id !== projectId);
+        const nextProjectIds = active
+          ? (taskState.projects ?? [])
+              .map((entry) => entry.id)
+              .filter((id) => id !== projectId)
+          : [
+              ...new Set([
+                ...(taskState.projects ?? []).map((entry) => entry.id),
+                projectId,
+              ]),
+            ];
 
-          try {
-            await updateWorkspaceTask(
+        return [
+          {
+            taskId,
+            promise: updateWorkspaceTask(
               workspaceId,
               taskId,
               {
                 project_ids: nextProjectIds,
               },
               internalApiOptions
-            );
-            succeededTaskIds.push(taskId);
-          } catch (error) {
-            console.error(
-              `Failed to remove project from task ${taskId}:`,
-              error
-            );
-          }
+            ),
+          },
+        ];
+      });
+
+      const settledResults = await Promise.allSettled(
+        updateOperations.map((operation) => operation.promise)
+      );
+
+      settledResults.forEach((result, index) => {
+        const operation = updateOperations[index];
+        if (!operation) return;
+
+        if (result.status === 'fulfilled') {
+          succeededTaskIds.push(operation.taskId);
+          return;
         }
-      } else {
-        for (const taskId of tasksNeedingProject) {
-          const taskState = getTaskState(taskId);
-          if (!taskState) continue;
 
-          const nextProjectIds = [
-            ...new Set([
-              ...(taskState.projects ?? []).map((entry) => entry.id),
-              projectId,
-            ]),
-          ];
-
-          try {
-            await updateWorkspaceTask(
-              workspaceId,
-              taskId,
-              {
-                project_ids: nextProjectIds,
-              },
-              internalApiOptions
-            );
-            succeededTaskIds.push(taskId);
-          } catch (error) {
-            console.error(`Failed to add project to task ${taskId}:`, error);
-          }
+        if (active) {
+          console.error(
+            `Failed to remove project from task ${operation.taskId}:`,
+            result.reason
+          );
+          return;
         }
-      }
 
-      const targetCount = active
-        ? tasksToRemoveFrom.length
-        : tasksNeedingProject.length;
-      if (targetCount > 0 && succeededTaskIds.length === 0) {
+        console.error(
+          `Failed to add project to task ${operation.taskId}:`,
+          result.reason
+        );
+      });
+
+      if (targetTaskIds.length > 0 && succeededTaskIds.length === 0) {
         throw new Error('Failed to update any tasks');
       }
 
-      const failedTaskIds = (
-        active ? tasksToRemoveFrom : tasksNeedingProject
-      ).filter((taskId) => !succeededTaskIds.includes(taskId));
+      const targetCount = targetTaskIds.length;
+
+      const failedTaskIds = targetTaskIds.filter(
+        (taskId) => !succeededTaskIds.includes(taskId)
+      );
 
       if (failedTaskIds.length > 0 && previousTasks) {
         const previousTaskMap = new Map(previousTasks.map((t) => [t.id, t]));
@@ -253,6 +296,13 @@ export function useTaskProjectManagement({
             });
           }
         );
+
+        if (taskId && failedTaskIds.includes(taskId)) {
+          const previousTask = previousTaskMap.get(taskId);
+          if (previousTask) {
+            queryClient.setQueryData(['task', taskId], previousTask);
+          }
+        }
       }
 
       // Broadcast relation changes for all affected tasks
@@ -281,6 +331,14 @@ export function useTaskProjectManagement({
       // Rollback on error
       if (previousTasks) {
         queryClient.setQueryData(['tasks', boardId], previousTasks);
+        if (taskId) {
+          const previousTask = previousTasks.find(
+            (entry) => entry.id === taskId
+          );
+          if (previousTask) {
+            queryClient.setQueryData(['task', taskId], previousTask);
+          }
+        }
       }
       console.error('Failed to toggle project:', e);
       toast.error('Error', {
@@ -293,43 +351,14 @@ export function useTaskProjectManagement({
   async function createNewProject() {
     if (!newProjectName.trim() || !workspaceId) return;
 
-    setCreatingProject(true);
     try {
-      const response = await fetch(
-        `/api/v1/workspaces/${workspaceId}/task-projects`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: newProjectName.trim(),
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to create project');
-      }
-
-      const newProject = await response.json();
-
-      // Optimistically add the new project to workspace projects cache
-      queryClient.setQueryData(
-        ['task_projects', workspaceId],
-        (old: TaskProject[] | undefined) => {
-          if (!old) return [newProject];
-          // Check if project already exists (shouldn't happen, but defensive)
-          if (old.some((p) => p.id === newProject.id)) return old;
-          // Add to sorted position by name
-          const updated = [...old, newProject];
-          return updated.sort((a, b) => a.name.localeCompare(b.name));
-        }
-      );
+      const newProject =
+        await createProjectMutation.mutateAsync(newProjectName);
+      const canonicalTaskId = taskId ?? task.id;
 
       // Auto-apply the newly created project to this task
       let linkSucceeded = false;
-      let previousTasks: unknown;
+      let previousTasks: Task[] | undefined;
       try {
         // Cancel any outgoing refetches
         await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
@@ -340,10 +369,10 @@ export function useTaskProjectManagement({
         // Optimistically update the cache
         queryClient.setQueryData(
           ['tasks', boardId],
-          (old: any[] | undefined) => {
+          (old: Task[] | undefined) => {
             if (!old) return old;
             return old.map((t) => {
-              if (t.id === task.id) {
+              if (t.id === canonicalTaskId) {
                 return {
                   ...t,
                   projects: [...(t.projects || []), newProject],
@@ -355,9 +384,9 @@ export function useTaskProjectManagement({
         );
 
         // CRITICAL: Also update individual task cache if taskId is provided
-        if (taskId) {
+        if (canonicalTaskId) {
           queryClient.setQueryData(
-            ['task', taskId],
+            ['task', canonicalTaskId],
             (old: Task | undefined) => {
               if (!old) return old;
               return {
@@ -369,8 +398,9 @@ export function useTaskProjectManagement({
         }
 
         const taskState =
-          (queryClient.getQueryData(['task', task.id]) as Task | undefined) ??
-          task;
+          (queryClient.getQueryData(['task', canonicalTaskId]) as
+            | Task
+            | undefined) ?? task;
         const nextProjectIds = [
           ...new Set([
             ...(taskState.projects ?? []).map((entry) => entry.id),
@@ -380,13 +410,11 @@ export function useTaskProjectManagement({
 
         await updateWorkspaceTask(
           workspaceId,
-          task.id,
+          canonicalTaskId,
           {
             project_ids: nextProjectIds,
           },
-          typeof window !== 'undefined'
-            ? { baseUrl: window.location.origin }
-            : undefined
+          getInternalApiOptions()
         );
         linkSucceeded = true;
       } catch (applyErr: any) {
@@ -394,15 +422,17 @@ export function useTaskProjectManagement({
         toast.error(
           'The project was created but could not be attached to the task. Refresh and try manually.'
         );
-        if (taskId) {
-          queryClient.invalidateQueries({ queryKey: ['task', taskId] });
+        if (canonicalTaskId) {
+          queryClient.invalidateQueries({
+            queryKey: ['task', canonicalTaskId],
+          });
         }
         console.error('Failed to auto-apply new project', applyErr);
       }
 
       // Only show success toast and reset form if link succeeded
       if (linkSucceeded) {
-        broadcast?.('task:relations-changed', { taskId: task.id });
+        broadcast?.('task:relations-changed', { taskId: canonicalTaskId });
 
         // Reset form and close dialog
         setNewProjectName('');
@@ -418,15 +448,13 @@ export function useTaskProjectManagement({
     } catch (e: any) {
       toast.error(e.message || 'Unable to create new project');
       throw e;
-    } finally {
-      setCreatingProject(false);
     }
   }
 
   return {
     newProjectName,
     setNewProjectName,
-    creatingProject,
+    creatingProject: createProjectMutation.isPending,
     toggleTaskProject,
     createNewProject,
   };

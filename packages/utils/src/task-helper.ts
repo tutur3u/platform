@@ -2982,16 +2982,13 @@ export function useTaskRelationships(taskId: string | undefined) {
 /**
  * React Query mutation hook for creating task relationships
  */
-export function useCreateTaskRelationship(_boardId?: string, wsId?: string) {
+export function useCreateTaskRelationship(wsId: string, _boardId?: string) {
   const queryClient = useQueryClient();
   const baseUrl =
     typeof window !== 'undefined' ? window.location.origin : undefined;
 
   return useMutation({
     mutationFn: async (input: CreateTaskRelationshipInput) => {
-      if (!wsId) {
-        throw new Error('Workspace context is missing');
-      }
       const { relationship } = await createWorkspaceTaskRelationship(
         wsId,
         input.source_task_id,
@@ -3020,7 +3017,7 @@ export function useCreateTaskRelationship(_boardId?: string, wsId?: string) {
 /**
  * React Query mutation hook for deleting task relationships
  */
-export function useDeleteTaskRelationship(_boardId?: string, wsId?: string) {
+export function useDeleteTaskRelationship(wsId: string, _boardId?: string) {
   const queryClient = useQueryClient();
   const baseUrl =
     typeof window !== 'undefined' ? window.location.origin : undefined;
@@ -3035,9 +3032,6 @@ export function useDeleteTaskRelationship(_boardId?: string, wsId?: string) {
       targetTaskId: string;
       type: TaskRelationshipType;
     }) => {
-      if (!wsId) {
-        throw new Error('Workspace context is missing');
-      }
       return deleteWorkspaceTaskRelationship(
         wsId,
         sourceTaskId,

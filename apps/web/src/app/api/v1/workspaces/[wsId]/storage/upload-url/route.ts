@@ -1,7 +1,7 @@
 import { posix } from 'node:path';
 import {
-  createAdminClient,
   createClient,
+  createDynamicAdminClient,
 } from '@tuturuuu/supabase/next/server';
 import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
 import {
@@ -24,7 +24,6 @@ export async function POST(
   try {
     const { wsId } = await params;
     const supabase = await createClient(request);
-    const sbAdmin = await createAdminClient();
 
     const {
       data: { user },
@@ -49,7 +48,17 @@ export async function POST(
       );
     }
 
-    const parsed = uploadUrlSchema.safeParse(await request.json());
+    let payload: unknown;
+    try {
+      payload = await request.json();
+    } catch {
+      return NextResponse.json(
+        { message: 'Invalid request body' },
+        { status: 400 }
+      );
+    }
+
+    const parsed = uploadUrlSchema.safeParse(payload);
     if (!parsed.success) {
       return NextResponse.json(
         { message: 'Invalid request body', errors: parsed.error.issues },
@@ -74,7 +83,8 @@ export async function POST(
       ? posix.join(normalizedWsId, sanitizedPath, sanitizedFilename)
       : posix.join(normalizedWsId, sanitizedFilename);
 
-    const { data, error } = await sbAdmin.storage
+    const sbStorageAdmin = await createDynamicAdminClient();
+    const { data, error } = await sbStorageAdmin.storage
       .from('workspaces')
       .createSignedUploadUrl(storagePath, {
         upsert: parsed.data.upsert ?? false,

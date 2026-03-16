@@ -100,12 +100,20 @@ export async function POST(
     }
 
     // Verify user has access to workspace
-    const { data: membership } = await supabase
+    const { data: membership, error: membershipError } = await supabase
       .from('workspace_members')
       .select('ws_id')
       .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (membershipError) {
+      console.error('Membership lookup failed:', membershipError);
+      return NextResponse.json(
+        { error: 'Internal server error' },
+        { status: 500 }
+      );
+    }
 
     if (!membership) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -114,12 +122,20 @@ export async function POST(
     const sbAdmin = await createAdminClient();
 
     // Verify project exists and belongs to workspace
-    const { data: project } = await sbAdmin
+    const { data: project, error: projectError } = await sbAdmin
       .from('task_projects')
       .select('id')
       .eq('id', projectId)
       .eq('ws_id', normalizedWsId)
-      .single();
+      .maybeSingle();
+
+    if (projectError) {
+      console.error('Error loading project:', projectError);
+      return NextResponse.json(
+        { error: 'Failed to verify project access' },
+        { status: 500 }
+      );
+    }
 
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
