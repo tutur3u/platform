@@ -11,8 +11,10 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { listForms } from '@/features/forms/server';
+import { normalizeMarkdownToText } from '@/features/forms/content';
 import { FormCardActions } from './form-card-actions';
 import { FormsImportButton } from './forms-import-button';
+import { FormsMarkdown } from '@/features/forms/forms-markdown';
 
 interface PageProps {
   params: Promise<{ wsId: string }>;
@@ -313,12 +315,18 @@ export default async function FormsPage({ params, searchParams }: PageProps) {
                         </span>
                       </div>
                       <CardTitle className="line-clamp-2 text-2xl">
-                        {form.title}
+                        <FormsMarkdown
+                          content={form.title}
+                          variant="inline"
+                          className="[&_p]:m-0"
+                        />
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <p className="line-clamp-3 text-muted-foreground text-sm">
-                        {form.description || t('pages.no_description')}
+                        {form.description
+                          ? normalizeMarkdownToText(form.description)
+                          : t('pages.no_description')}
                       </p>
                       <div className="grid grid-cols-3 gap-3 rounded-2xl border border-border/50 bg-muted/20 p-4 text-sm">
                         <div>
