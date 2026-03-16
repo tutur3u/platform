@@ -113,7 +113,6 @@ export const GET = withSessionAuth<{ wsId: string }>(
   async (request, { user, supabase }, { wsId }) => {
     try {
       const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-      const sbAdmin = await createAdminClient();
 
       // Verify workspace access
       const { data: memberCheck, error: memberCheckError } = await supabase
@@ -171,6 +170,16 @@ export const GET = withSessionAuth<{ wsId: string }>(
         projectContext,
       } = parsedQuery.data;
 
+      if (targetUserId) {
+        const targetUserIdValidation = z.uuid().safeParse(targetUserId);
+        if (!targetUserIdValidation.success) {
+          return NextResponse.json(
+            { error: 'Invalid target user ID format' },
+            { status: 400 }
+          );
+        }
+      }
+
       const dateFromIso = dateFrom.toISOString();
       const dateToIso = dateTo.toISOString();
 
@@ -224,6 +233,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
       }
 
       const sanitizedSearchQuery = sanitizeSearchQuery(searchQuery);
+      const sbAdmin = await createAdminClient();
 
       const { data: stats, error } = await sbAdmin.rpc(
         'get_time_tracking_period_stats',

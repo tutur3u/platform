@@ -3,6 +3,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 export async function GET(
@@ -10,6 +11,14 @@ export async function GET(
   context: { params: Promise<{ wsId: string; sessionId: string }> }
 ) {
   const { wsId, sessionId } = await context.params;
+  const sessionIdValidation = z.uuid().safeParse(sessionId);
+  if (!sessionIdValidation.success) {
+    return NextResponse.json(
+      { error: 'Invalid session ID format' },
+      { status: 400 }
+    );
+  }
+
   const normalizedWsId = await normalizeWorkspaceId(wsId);
   const supabase = await createClient(req);
 
@@ -21,6 +30,27 @@ export async function GET(
 
   if (userError || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { data: memberCheck, error: memberError } = await supabase
+    .from('workspace_members')
+    .select('id:user_id')
+    .eq('ws_id', normalizedWsId)
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (memberError) {
+    return NextResponse.json(
+      { error: 'Failed to verify workspace access' },
+      { status: 500 }
+    );
+  }
+
+  if (!memberCheck) {
+    return NextResponse.json(
+      { error: 'Workspace access denied' },
+      { status: 403 }
+    );
   }
 
   const sbAdmin = await createAdminClient();

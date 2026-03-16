@@ -74,12 +74,17 @@ export async function PATCH(
     const sbAdmin = await createAdminClient();
 
     // Verify break type exists and belongs to workspace
-    const { data: existingBreakType } = await sbAdmin
-      .from('workspace_break_types')
-      .select('id')
-      .eq('id', breakTypeId)
-      .eq('ws_id', normalizedWsId)
-      .single();
+    const { data: existingBreakType, error: existingBreakTypeError } =
+      await sbAdmin
+        .from('workspace_break_types')
+        .select('*')
+        .eq('id', breakTypeId)
+        .eq('ws_id', normalizedWsId)
+        .maybeSingle();
+
+    if (existingBreakTypeError) {
+      throw existingBreakTypeError;
+    }
 
     if (!existingBreakType) {
       return NextResponse.json(
@@ -122,39 +127,80 @@ export async function PATCH(
       updateData.description = description?.trim() || null;
     if (color !== undefined) updateData.color = color;
     if (icon !== undefined) updateData.icon = icon || null;
-    if (isDefault !== undefined) updateData.is_default = isDefault;
-
-    // Update the break type
-    if (isDefault === true) {
-      const { error: clearDefaultError } = await sbAdmin
-        .from('workspace_break_types')
-        .update({ is_default: false })
-        .eq('ws_id', normalizedWsId)
-        .eq('is_default', true)
-        .neq('id', breakTypeId);
-
-      if (clearDefaultError) {
-        throw clearDefaultError;
-      }
+    if (isDefault !== undefined && isDefault !== true) {
+      updateData.is_default = isDefault;
     }
 
-    const { data: breakType, error } = await sbAdmin
-      .from('workspace_break_types')
-      .update(updateData)
-      .eq('id', breakTypeId)
-      .eq('ws_id', normalizedWsId)
-      .select()
-      .single();
+    let breakType = existingBreakType;
+    if (Object.keys(updateData).length > 0) {
+      const { data, error } = await sbAdmin
+        .from('workspace_break_types')
+        .update(updateData)
+        .eq('id', breakTypeId)
+        .eq('ws_id', normalizedWsId)
+        .select()
+        .maybeSingle();
 
-    if (error) {
-      // Handle unique constraint violation
-      if (error.code === '23505') {
+      if (error) {
+        if (error.code === '23505') {
+          return NextResponse.json(
+            { error: 'A break type with this name already exists' },
+            { status: 409 }
+          );
+        }
+        throw error;
+      }
+
+      if (!data) {
         return NextResponse.json(
-          { error: 'A break type with this name already exists' },
-          { status: 409 }
+          { error: 'Break type not found' },
+          { status: 404 }
         );
       }
-      throw error;
+
+      breakType = data;
+    }
+
+    if (isDefault === true) {
+      const { data: defaultRows, error: setDefaultError } = await sbAdmin.rpc(
+        'set_default_break_type',
+        {
+          p_ws_id: normalizedWsId,
+          p_target_id: breakTypeId,
+        }
+      );
+
+      if (setDefaultError) {
+        throw setDefaultError;
+      }
+
+      if (!defaultRows || defaultRows.length === 0) {
+        return NextResponse.json(
+          { error: 'Break type not found' },
+          { status: 404 }
+        );
+      }
+
+      const { data: refreshedBreakType, error: refreshedBreakTypeError } =
+        await sbAdmin
+          .from('workspace_break_types')
+          .select('*')
+          .eq('id', breakTypeId)
+          .eq('ws_id', normalizedWsId)
+          .maybeSingle();
+
+      if (refreshedBreakTypeError) {
+        throw refreshedBreakTypeError;
+      }
+
+      if (!refreshedBreakType) {
+        return NextResponse.json(
+          { error: 'Break type not found' },
+          { status: 404 }
+        );
+      }
+
+      breakType = refreshedBreakType;
     }
 
     if (!breakType) {
@@ -240,12 +286,16 @@ export async function DELETE(
     const sbAdmin = await createAdminClient();
 
     // Verify break type exists and belongs to workspace
-    const { data: breakType } = await sbAdmin
+    const { data: breakType, error: breakTypeError } = await sbAdmin
       .from('workspace_break_types')
       .select('id')
       .eq('id', breakTypeId)
       .eq('ws_id', normalizedWsId)
-      .single();
+      .maybeSingle();
+
+    if (breakTypeError) {
+      throw breakTypeError;
+    }
 
     if (!breakType) {
       return NextResponse.json(
@@ -263,9 +313,16 @@ export async function DELETE(
       .eq('id', breakTypeId)
       .eq('ws_id', normalizedWsId)
       .select()
-      .single();
+      .maybeSingle();
 
-    if (error || !deletedBreakType) {
+    if (error) {
+      return NextResponse.json(
+        { error: error.message || error },
+        { status: 500 }
+      );
+    }
+
+    if (!deletedBreakType) {
       return NextResponse.json(
         { error: 'Break type not found' },
         { status: 404 }

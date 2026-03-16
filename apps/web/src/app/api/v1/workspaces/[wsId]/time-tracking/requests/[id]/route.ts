@@ -99,7 +99,7 @@ export async function PATCH(
       .select('id:user_id')
       .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (memberErr) {
       return NextResponse.json(

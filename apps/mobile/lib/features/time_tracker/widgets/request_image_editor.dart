@@ -86,7 +86,7 @@ enum _ImageSourceSelection { camera, gallery }
 
 class _RequestImageEditorState extends State<RequestImageEditor> {
   final ImagePicker _picker = ImagePicker();
-  late final List<String> _initialImages;
+  late List<String> _initialImages;
   late List<String> _existingImages;
   final List<XFile> _newImages = [];
   late Future<ResolvedRequestImageUrls> _existingUrlsFuture;

@@ -3,7 +3,10 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { MAX_LONG_TEXT_LENGTH } from '@tuturuuu/utils/constants';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -152,6 +155,28 @@ export async function POST(
       );
     }
 
+    const permissions = await getPermissions({
+      wsId: normalizedWsId,
+      request,
+    });
+
+    if (!permissions) {
+      return NextResponse.json(
+        { error: 'Failed to resolve permissions' },
+        { status: 500 }
+      );
+    }
+
+    if (
+      permissions.withoutPermission('manage_workspace_settings') ||
+      permissions.withoutPermission('manage_time_tracking_requests')
+    ) {
+      return NextResponse.json(
+        { error: 'Insufficient permissions to create break types' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const validatedData = createBreakTypeSchema.safeParse(body);
     if (!validatedData.success) {
@@ -165,18 +190,6 @@ export async function POST(
 
     const sbAdmin = await createAdminClient();
 
-    if (isDefault) {
-      const { error: clearDefaultError } = await sbAdmin
-        .from('workspace_break_types')
-        .update({ is_default: false })
-        .eq('ws_id', normalizedWsId)
-        .eq('is_default', true);
-
-      if (clearDefaultError) {
-        throw clearDefaultError;
-      }
-    }
-
     // Create the break type
     const { data: breakType, error } = await sbAdmin
       .from('workspace_break_types')
@@ -186,7 +199,7 @@ export async function POST(
         description: description?.trim() || null,
         color: color || 'RED',
         icon: icon || 'Coffee',
-        is_default: isDefault || false,
+        is_default: false,
       })
       .select()
       .single();
@@ -200,6 +213,29 @@ export async function POST(
         );
       }
       throw error;
+    }
+
+    if (isDefault && breakType) {
+      const { data: defaultRows, error: clearDefaultError } = await sbAdmin.rpc(
+        'set_default_break_type',
+        {
+          p_ws_id: normalizedWsId,
+          p_target_id: breakType.id,
+        }
+      );
+
+      if (clearDefaultError) {
+        throw clearDefaultError;
+      }
+
+      if (!defaultRows || defaultRows.length === 0) {
+        return NextResponse.json(
+          { error: 'Failed to set default break type' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({ breakType: defaultRows[0] }, { status: 201 });
     }
 
     return NextResponse.json({ breakType }, { status: 201 });

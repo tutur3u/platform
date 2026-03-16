@@ -25,12 +25,19 @@ export async function PATCH(
     }
 
     // Verify workspace access
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: memberError } = await supabase
       .from('workspace_members')
       .select('id:user_id')
       .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (memberError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(
@@ -42,12 +49,19 @@ export async function PATCH(
     const sbAdmin = await createAdminClient();
 
     // Verify category belongs to workspace
-    const { data: categoryCheck } = await sbAdmin
+    const { data: categoryCheck, error: categoryCheckError } = await sbAdmin
       .from('time_tracking_categories')
       .select('id')
       .eq('id', categoryId)
       .eq('ws_id', normalizedWsId)
-      .single();
+      .maybeSingle();
+
+    if (categoryCheckError) {
+      return NextResponse.json(
+        { error: 'Failed to verify category' },
+        { status: 500 }
+      );
+    }
 
     if (!categoryCheck) {
       return NextResponse.json(
@@ -77,9 +91,16 @@ export async function PATCH(
       .eq('id', categoryId)
       .eq('ws_id', normalizedWsId)
       .select('*')
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
+
+    if (!data) {
+      return NextResponse.json(
+        { error: 'Category not found' },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json({ category: data });
   } catch (error) {
@@ -111,12 +132,19 @@ export async function DELETE(
     }
 
     // Verify workspace access
-    const { data: memberCheck } = await supabase
+    const { data: memberCheck, error: memberError } = await supabase
       .from('workspace_members')
       .select('id:user_id')
       .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (memberError) {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
 
     if (!memberCheck) {
       return NextResponse.json(
@@ -128,12 +156,19 @@ export async function DELETE(
     const sbAdmin = await createAdminClient();
 
     // Verify category belongs to workspace
-    const { data: categoryCheck } = await sbAdmin
+    const { data: categoryCheck, error: categoryCheckError } = await sbAdmin
       .from('time_tracking_categories')
       .select('id, name')
       .eq('id', categoryId)
       .eq('ws_id', normalizedWsId)
-      .single();
+      .maybeSingle();
+
+    if (categoryCheckError) {
+      return NextResponse.json(
+        { error: 'Failed to verify category' },
+        { status: 500 }
+      );
+    }
 
     if (!categoryCheck) {
       return NextResponse.json(
@@ -142,13 +177,21 @@ export async function DELETE(
       );
     }
 
-    const { error } = await sbAdmin
+    const { data: deletedCategories, error } = await sbAdmin
       .from('time_tracking_categories')
       .delete()
       .eq('id', categoryId)
-      .eq('ws_id', normalizedWsId);
+      .eq('ws_id', normalizedWsId)
+      .select('id');
 
     if (error) throw error;
+
+    if (!deletedCategories || deletedCategories.length === 0) {
+      return NextResponse.json(
+        { error: 'Category not found' },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json({ message: 'Category deleted successfully' });
   } catch (error) {

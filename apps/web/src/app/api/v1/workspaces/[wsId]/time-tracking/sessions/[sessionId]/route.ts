@@ -211,7 +211,8 @@ export async function DELETE(
       .delete()
       .select('id')
       .eq('id', sessionId)
-      .eq('ws_id', normalizedWsId);
+      .eq('ws_id', normalizedWsId)
+      .eq('user_id', user.id);
 
     if (error) throw error;
 

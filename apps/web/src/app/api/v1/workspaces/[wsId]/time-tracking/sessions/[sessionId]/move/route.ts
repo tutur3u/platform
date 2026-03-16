@@ -62,7 +62,17 @@ export async function POST(
       );
     }
 
-    const body = routeBodySchema.safeParse(await request.json());
+    let payload: unknown;
+    try {
+      payload = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+    }
+
+    const body = routeBodySchema.safeParse(payload);
     if (!body.success) {
       return NextResponse.json(
         { error: 'Target workspace ID is required' },
@@ -125,9 +135,17 @@ export async function POST(
       .eq('id', sessionId)
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (sessionError || !session) {
+    if (sessionError) {
+      console.error('Error fetching session for move:', sessionError);
+      return NextResponse.json(
+        { error: sessionError.message || 'Failed to fetch session' },
+        { status: 500 }
+      );
+    }
+
+    if (!session) {
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
@@ -145,12 +163,22 @@ export async function POST(
     let targetCategoryId = null;
     if (session.category_id && session.category) {
       // Try to find the same category in target workspace
-      const { data: targetCategory } = await sbAdmin
+      const { data: targetCategory, error: targetCategoryError } = await sbAdmin
         .from('time_tracking_categories')
         .select('id')
         .eq('ws_id', targetWorkspaceId)
         .eq('name', session.category.name)
-        .single();
+        .maybeSingle();
+
+      if (targetCategoryError) {
+        console.error('Error looking up target category:', targetCategoryError);
+        return NextResponse.json(
+          {
+            error: targetCategoryError.message || 'Failed to resolve category',
+          },
+          { status: 500 }
+        );
+      }
 
       if (targetCategory) {
         targetCategoryId = targetCategory.id;
@@ -162,14 +190,22 @@ export async function POST(
     let targetTaskId = null;
     if (session.task_id && session.task) {
       // Try to find the same task in target workspace
-      const { data: targetTask } = await sbAdmin
+      const { data: targetTask, error: targetTaskError } = await sbAdmin
         .from('tasks')
         .select(
           'id, list:task_lists!inner(board:workspace_boards!inner(ws_id))'
         )
         .eq('list.board.ws_id', targetWorkspaceId)
         .eq('name', session.task.name)
-        .single();
+        .maybeSingle();
+
+      if (targetTaskError) {
+        console.error('Error looking up target task:', targetTaskError);
+        return NextResponse.json(
+          { error: targetTaskError.message || 'Failed to resolve task' },
+          { status: 500 }
+        );
+      }
 
       if (targetTask) {
         targetTaskId = targetTask.id;
@@ -196,14 +232,18 @@ export async function POST(
         task:tasks(*)
       `
       )
-      .single();
+      .maybeSingle();
 
-    if (moveError || !movedSession) {
+    if (moveError) {
       console.error('Error moving session:', moveError);
       return NextResponse.json(
         { error: 'Failed to move session' },
         { status: 500 }
       );
+    }
+
+    if (!movedSession) {
+      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
     // Get target workspace name for response
