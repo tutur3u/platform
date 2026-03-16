@@ -1,7 +1,8 @@
+import type React from 'react';
+import { useRef, useState } from 'react';
 import FruitPlaceholder from './fruit-placeholder';
-import { BOARD_SIZE, Fruits } from './types';
+import { BOARD_SIZE, type Fruits } from './types';
 import { useDragAndDrop } from './use-dnd';
-import React, { useRef, useState } from 'react';
 
 interface FruitGridProps {
   fruits: Fruits;
@@ -76,7 +77,7 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
       const target = e.target as HTMLDivElement;
       const currentId = parseInt(target.getAttribute('data-id') || '0');
 
-      let newId;
+      let newId: number;
       if (Math.abs(diffX) > Math.abs(diffY)) {
         // Horizontal swipe
         newId = currentId + (diffX > 0 ? 1 : -1);
@@ -132,7 +133,7 @@ export const FruitGrid: React.FC<FruitGridProps> = ({
           }
         }
       `}</style>
-      <div className="mx-auto grid w-fit grid-cols-8 gap-2 lg:gap-3">
+      <div className="mx-auto grid w-fit grid-cols-8 gap-2 rounded-xl bg-foreground/5 p-3 md:p-4 lg:gap-3 lg:p-5">
         {fruits.map((fruit, index) => (
           <FruitPlaceholder
             key={index}

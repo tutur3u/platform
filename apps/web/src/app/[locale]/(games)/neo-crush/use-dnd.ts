@@ -1,6 +1,12 @@
-import { BOARD_SIZE, Fruit, FruitColorName, FruitType, Fruits } from './types';
+import { useCallback, useEffect, useRef } from 'react';
+import {
+  BOARD_SIZE,
+  Fruit,
+  type FruitColorName,
+  type Fruits,
+  type FruitType,
+} from './types';
 import { checkForMatches } from './utils';
-import { useCallback } from 'react';
 
 export const useDragAndDrop = (
   fruits: Fruits,
@@ -22,6 +28,36 @@ export const useDragAndDrop = (
   decrementTurns: () => void,
   disabled: boolean
 ) => {
+  const swipeAudioRef = useRef<HTMLAudioElement | null>(null);
+  const errorAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  const playSfx = useCallback((audio: HTMLAudioElement | null) => {
+    if (!audio) return;
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    swipeAudioRef.current = new Audio('/neo-crush/audio/swipe.mp3');
+    errorAudioRef.current = new Audio('/neo-crush/audio/error.mp3');
+
+    if (swipeAudioRef.current) swipeAudioRef.current.preload = 'auto';
+    if (errorAudioRef.current) errorAudioRef.current.preload = 'auto';
+
+    return () => {
+      if (swipeAudioRef.current) {
+        swipeAudioRef.current.pause();
+        swipeAudioRef.current.src = '';
+        swipeAudioRef.current = null;
+      }
+      if (errorAudioRef.current) {
+        errorAudioRef.current.pause();
+        errorAudioRef.current.src = '';
+        errorAudioRef.current = null;
+      }
+    };
+  }, []);
+
   const dragStart = (
     e: React.DragEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>
   ) => {
@@ -114,22 +150,21 @@ export const useDragAndDrop = (
             squareBeingReplacedId
           );
 
-          if (
-            !hasMatch &&
-            draggedFruit?.type === 'normal' &&
-            replacedFruit?.type === 'normal'
-          ) {
+          const swapAccepted =
+            hasMatch ||
+            draggedFruit?.type !== 'normal' ||
+            replacedFruit?.type !== 'normal';
+
+          if (!swapAccepted) {
             const temp = newFruits[squareBeingDraggedId];
             newFruits[squareBeingDraggedId] = newFruits[squareBeingReplacedId];
             newFruits[squareBeingReplacedId] = temp;
+            playSfx(errorAudioRef.current);
+          } else {
+            playSfx(swipeAudioRef.current);
           }
 
-          if (
-            hasMatch ||
-            draggedFruit?.type !== 'normal' ||
-            replacedFruit?.type !== 'normal'
-          )
-            decrementTurns();
+          if (swapAccepted) decrementTurns();
           setFruits(newFruits);
         }
 
@@ -147,6 +182,11 @@ export const useDragAndDrop = (
       handleSpecialFruits,
       setFruits,
       setScore,
+      disabled,
+      decrementTurns,
+      setSquareBeingDragged,
+      setSquareBeingReplaced,
+      playSfx,
     ]
   );
 

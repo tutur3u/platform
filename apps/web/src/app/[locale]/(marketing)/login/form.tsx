@@ -1,7 +1,7 @@
 'use client';
 
-import { sendOtpAction, verifyOtpAction } from './actions';
-import { DEV_MODE } from '@/constants/common';
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
+import { resolveTurnstileClientState } from '@ncthub/turnstile/client';
 import { Button } from '@ncthub/ui/button';
 import {
   Form,
@@ -18,11 +18,13 @@ import { Mail } from '@ncthub/ui/icons';
 import { Input } from '@ncthub/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@ncthub/ui/input-otp';
 import { zodResolver } from '@ncthub/ui/resolvers';
-import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import * as z from 'zod';
+import { DEV_MODE } from '@/constants/common';
+import { sendOtpAction, verifyOtpAction } from './actions';
 
 const FormSchema = z.object({
   email: z.string().email(),
@@ -45,10 +47,30 @@ export default function LoginForm() {
 
   useEffect(() => {
     if (DEV_MODE) form.setFocus('email');
-  }, [DEV_MODE]);
+  }, [form]);
 
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string>();
+  const [captchaError, setCaptchaError] = useState<string>();
+  const captchaRef = useRef<TurnstileInstance>(null);
+  const turnstileClientState = resolveTurnstileClientState({
+    devMode: DEV_MODE,
+  });
+  const turnstileSiteKey = turnstileClientState.siteKey;
+
+  const resetCaptcha = useCallback(() => {
+    captchaRef.current?.reset();
+    setCaptchaToken(undefined);
+  }, []);
+
+  const handleCaptchaError = useCallback(() => {
+    setCaptchaError(t('captcha_error'));
+  }, [t]);
+
+  const handleCaptchaTimeout = useCallback(() => {
+    resetCaptcha();
+  }, [resetCaptcha]);
 
   // Resend cooldown
   const cooldown = 60;
@@ -85,7 +107,11 @@ export default function LoginForm() {
     const result = await sendOtpAction({
       email: data.email,
       locale,
+      captchaToken,
     });
+
+    resetCaptcha();
+    setCaptchaError(undefined);
 
     if (result.success) {
       // Notify user
@@ -208,7 +234,11 @@ export default function LoginForm() {
 
                   <Button
                     onClick={() => sendOtp({ email: form.getValues('email') })}
-                    disabled={loading || resendCooldown > 0}
+                    disabled={
+                      loading ||
+                      resendCooldown > 0 ||
+                      (turnstileClientState.isRequired && !captchaToken)
+                    }
                     className="md:w-full"
                     variant="secondary"
                     type="button"
@@ -226,6 +256,31 @@ export default function LoginForm() {
             </FormItem>
           )}
         />
+
+        {turnstileClientState.isRequired && (
+          <div className="flex flex-col items-center gap-2">
+            {turnstileClientState.canRenderWidget && turnstileSiteKey ? (
+              <Turnstile
+                ref={captchaRef}
+                siteKey={turnstileSiteKey}
+                onSuccess={(token) => {
+                  setCaptchaToken(token);
+                  setCaptchaError(undefined);
+                }}
+                onExpire={() => setCaptchaToken(undefined)}
+                onError={handleCaptchaError}
+                onTimeout={handleCaptchaTimeout}
+              />
+            ) : (
+              <p className="text-destructive text-sm">
+                {t('captcha_not_configured')}
+              </p>
+            )}
+            {captchaError && (
+              <p className="text-destructive text-sm">{captchaError}</p>
+            )}
+          </div>
+        )}
 
         {otpSent && (
           <div className="grid gap-2 md:grid-cols-2">
@@ -292,7 +347,8 @@ export default function LoginForm() {
               loading ||
               form.formState.isSubmitting ||
               !form.formState.isValid ||
-              (otpSent && !form.formState.dirtyFields.otp)
+              (otpSent && !form.formState.dirtyFields.otp) ||
+              (!otpSent && turnstileClientState.isRequired && !captchaToken)
             }
           >
             {loading ? t('processing') : t('continue')}

@@ -1,15 +1,6 @@
 'use client';
 
-import { LanguageWrapper } from './(dashboard)/_components/language-wrapper';
-import { LogoutDropdownItem } from './(dashboard)/_components/logout-dropdown-item';
-import { SystemLanguageWrapper } from './(dashboard)/_components/system-language-wrapper';
-import { ThemeDropdownItems } from './(dashboard)/_components/theme-dropdown-items';
-import DashboardMenuItem from './dashboard-menu-item';
-import InviteMembersMenuItem from './invite-members-menu-item';
-import MeetTogetherMenuItem from './meet-together-menu-item';
-import UserSettingsDialog from './settings-dialog';
-import UserPresenceIndicator from './user-presence-indicator';
-import { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
+import type { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@ncthub/ui/avatar';
 import { Dialog } from '@ncthub/ui/dialog';
 import {
@@ -28,9 +19,18 @@ import {
 import { Globe, Palette, Settings, User } from '@ncthub/ui/icons';
 import { cn } from '@ncthub/utils/format';
 import { getInitials } from '@ncthub/utils/name-helper';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { LanguageWrapper } from './(dashboard)/_components/language-wrapper';
+import { LogoutDropdownItem } from './(dashboard)/_components/logout-dropdown-item';
+import { SystemLanguageWrapper } from './(dashboard)/_components/system-language-wrapper';
+import { ThemeDropdownItems } from './(dashboard)/_components/theme-dropdown-items';
+import DashboardMenuItem from './dashboard-menu-item';
+import InviteMembersMenuItem from './invite-members-menu-item';
+import MeetTogetherMenuItem from './meet-together-menu-item';
+import UserSettingsDialog from './settings-dialog';
+import UserPresenceIndicator from './user-presence-indicator';
 
 export default function UserNavClient({
   user,
@@ -55,6 +55,7 @@ export default function UserNavClient({
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <button
+            type="button"
             className={cn(
               'flex h-10 w-full gap-2 rounded-md p-1 text-start transition',
               hideMetadata
@@ -78,10 +79,10 @@ export default function UserNavClient({
             </Avatar>
             {hideMetadata || (
               <div className="flex w-full flex-col items-start justify-center">
-                <div className="line-clamp-1 text-sm font-semibold break-all">
+                <div className="line-clamp-1 break-all font-semibold text-sm">
                   {user?.display_name || user?.handle || t('common.unnamed')}
                 </div>
-                <div className="line-clamp-1 text-xs break-all opacity-70">
+                <div className="line-clamp-1 break-all text-xs opacity-70">
                   {user?.email}
                 </div>
               </div>
@@ -98,11 +99,11 @@ export default function UserNavClient({
             <div className="flex flex-col">
               <Link
                 href="/settings/account"
-                className="line-clamp-1 w-fit text-sm font-medium break-all hover:underline"
+                className="line-clamp-1 w-fit break-all font-medium text-sm hover:underline"
               >
                 {user?.display_name || user?.handle || t('common.unnamed')}
               </Link>
-              <p className="line-clamp-1 text-xs break-all text-muted-foreground">
+              <p className="line-clamp-1 break-all text-muted-foreground text-xs">
                 {user?.email}
               </p>
             </div>

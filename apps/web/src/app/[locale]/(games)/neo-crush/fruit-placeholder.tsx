@@ -1,4 +1,3 @@
-import { Fruit, getColorCode, getColorSrc } from './types';
 import {
   Bomb,
   ChevronDown,
@@ -10,6 +9,7 @@ import {
 } from '@ncthub/ui/icons';
 import { cn } from '@ncthub/utils/format';
 import Image from 'next/image';
+import { type Fruit, getColorCode, getColorSrc } from './types';
 
 function FruitPlaceholder({
   fruit,
@@ -24,14 +24,14 @@ function FruitPlaceholder({
   return (
     <div
       className={cn(
-        'relative flex h-8 w-8 items-center justify-center rounded-full border-2 font-bold text-white shadow-md md:h-9 md:w-9 lg:h-10 lg:w-10',
+        'relative flex h-8 w-8 items-center justify-center rounded-full border-2 bg-foreground/10 font-bold text-white shadow-md md:h-9 md:w-9 lg:h-10 lg:w-10',
         fruit
           ? fruit?.type !== 'normal'
             ? ''
             : 'border-transparent'
           : 'border-foreground/50',
         fruit?.type === 'rainbow'
-          ? 'bg-gradient-to-br from-red-600 via-violet-400 to-sky-400'
+          ? 'bg-linear-to-br from-red-600 via-violet-400 to-sky-400'
           : '',
         className
       )}

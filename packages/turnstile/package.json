@@ -1,0 +1,25 @@
+{
+  "name": "@ncthub/turnstile",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts",
+    "./server": "./src/server.ts"
+  },
+  "license": "MIT",
+  "scripts": {
+    "type-check": "tsc --build",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "packageManager": "bun@1.3.10",
+  "devDependencies": {
+    "@ncthub/typescript-config": "workspace:*",
+    "@types/node": "^25.5.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.0"
+  }
+}

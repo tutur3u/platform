@@ -1,4 +1,12 @@
 // game.tsx
+
+import { Button } from '@ncthub/ui/button';
+import { Card } from '@ncthub/ui/card';
+import { Separator } from '@ncthub/ui/separator';
+import { cn } from '@ncthub/utils/format';
+import type React from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { DEV_MODE } from '@/constants/common';
 import { FruitGrid } from './fruit-grid';
 import FruitPlaceholder from './fruit-placeholder';
 import GameStats from './game-stats';
@@ -7,15 +15,9 @@ import {
   summonLineEraser,
   summonRainbowFruit,
 } from './summoner';
-import { DEFAULT_TURNS, Fruit, Fruits } from './types';
+import { DEFAULT_TURNS, Fruit, type Fruits, PTS_PER_FRUIT } from './types';
 import { useGameLogic } from './use-game-logic';
 import { createBoard } from './utils';
-import { DEV_MODE } from '@/constants/common';
-import { Button } from '@ncthub/ui/button';
-import { Card } from '@ncthub/ui/card';
-import { Separator } from '@ncthub/ui/separator';
-import { cn } from '@ncthub/utils/format';
-import React, { useEffect, useMemo, useState } from 'react';
 
 export const NeoCrushGame: React.FC = () => {
   const [fruits, setFruits] = useState<Fruits>(createBoard());
@@ -24,8 +26,40 @@ export const NeoCrushGame: React.FC = () => {
   const [unlimitedTurns, setUnlimitedTurns] = useState(false);
   const [turns, setTurns] = useState<number>(DEFAULT_TURNS);
 
+  const winAudioRef = useRef<HTMLAudioElement | null>(null);
+  const loseAudioRef = useRef<HTMLAudioElement | null>(null);
+  const hasPlayedGameOverSound = useRef(false);
+
+  const playGameOverSound = useCallback((isWin: boolean) => {
+    const audio = isWin ? winAudioRef.current : loseAudioRef.current;
+    if (!audio) return;
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
+  }, []);
+
   const { checkMatches, moveIntoSquareBelow, handleSpecialFruits } =
     useGameLogic(fruits, setFruits, setScore);
+
+  useEffect(() => {
+    winAudioRef.current = new Audio('/neo-crush/audio/win.mp3');
+    loseAudioRef.current = new Audio('/neo-crush/audio/lose.mp3');
+
+    if (winAudioRef.current) winAudioRef.current.preload = 'auto';
+    if (loseAudioRef.current) loseAudioRef.current.preload = 'auto';
+
+    return () => {
+      if (winAudioRef.current) {
+        winAudioRef.current.pause();
+        winAudioRef.current.src = '';
+        winAudioRef.current = null;
+      }
+      if (loseAudioRef.current) {
+        loseAudioRef.current.pause();
+        loseAudioRef.current.src = '';
+        loseAudioRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     setFruits(createBoard());
@@ -39,6 +73,19 @@ export const NeoCrushGame: React.FC = () => {
     }, 150);
     return () => clearInterval(timer);
   }, [fruits, checkMatches, moveIntoSquareBelow]);
+
+  useEffect(() => {
+    const winScore = DEFAULT_TURNS * PTS_PER_FRUIT * 3;
+
+    if (turns > 0) {
+      hasPlayedGameOverSound.current = false;
+      return;
+    }
+
+    if (unlimitedTurns || hasPlayedGameOverSound.current) return;
+    playGameOverSound(score >= winScore);
+    hasPlayedGameOverSound.current = true;
+  }, [turns, unlimitedTurns, score, playGameOverSound]);
 
   const presetFruits = useMemo(
     () => ({
@@ -57,7 +104,7 @@ export const NeoCrushGame: React.FC = () => {
       <Card className="w-full p-2 md:p-4">
         <div className={cn(turns <= 0 ? 'opacity-50' : '', 'relative')}>
           {turns === 0 && !unlimitedTurns && (
-            <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-foreground/20 text-5xl font-semibold text-white">
+            <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-foreground/20 font-semibold text-5xl text-white">
               GAME OVER
             </div>
           )}
@@ -72,7 +119,7 @@ export const NeoCrushGame: React.FC = () => {
             disabled={turns <= 0 && !unlimitedTurns}
           />
         </div>
-        <div className="mt-2 flex w-full items-center justify-center gap-4 text-center text-sm font-bold md:mt-4">
+        <div className="mt-2 flex w-full items-center justify-center gap-4 text-center font-bold text-sm md:mt-4">
           <div className="w-full">
             <span className="opacity-70">Turns:</span>{' '}
             <span className="md:text-xl lg:text-base">
@@ -95,6 +142,7 @@ export const NeoCrushGame: React.FC = () => {
               setUnlimitedTurns(false);
               setTurns(DEFAULT_TURNS);
               setScore(0);
+              hasPlayedGameOverSound.current = false;
             }}
             variant="destructive"
           >
@@ -105,6 +153,7 @@ export const NeoCrushGame: React.FC = () => {
             onClick={() => {
               setUnlimitedTurns((prev) => !prev);
               setTurns(DEFAULT_TURNS);
+              hasPlayedGameOverSound.current = false;
             }}
             disabled={turns !== DEFAULT_TURNS || unlimitedTurns}
             variant="secondary"

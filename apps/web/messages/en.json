@@ -474,6 +474,8 @@
     "email_description": "We'll send a verification code to your email",
     "otp_code": "Verification Code",
     "otp_description": "Enter the code sent to your email",
+    "captcha_error": "Security check failed. Retrying...",
+    "captcha_not_configured": "Security verification is not configured for this deployment yet.",
     "verify": "Verify",
     "continue": "Continue with Email",
     "success": "Success",

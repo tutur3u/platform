@@ -9,7 +9,7 @@ export default async function Footer() {
 
   return (
     <div className="w-full px-0 text-center md:px-4 lg:px-10">
-      <Separator className="mt-8 mb-5 bg-foreground/5" />
+      <Separator className="my-8" />
       {/* Client component with motion */}
       <FooterCTA />
 
@@ -70,52 +70,112 @@ export default async function Footer() {
           </div>
         </div>
 
-        <div className="flex flex-col flex-wrap items-center gap-8 md:flex-row md:items-start md:gap-16">
-          <div className="flex flex-col items-start gap-1">
+        <div className="grid grid-cols-1 gap-8 text-center sm:grid-cols-2 md:grid-cols-3 md:text-left lg:grid-cols-4">
+          {/* About */}
+          <div className="flex flex-col gap-1">
             <div className="font-semibold text-lg uppercase lg:text-xl">
-              {t('common.legal')}
+              {t('common.about')}
             </div>
-
             <Link
-              href="/terms"
-              target="_blank"
+              href="/about"
               className="text-foreground/50 hover:text-foreground/80"
             >
-              {t('common.terms')}
+              {t('common.about')}
             </Link>
-
             <Link
-              href="/privacy"
-              target="_blank"
+              href="/achievements"
               className="text-foreground/50 hover:text-foreground/80"
             >
-              {t('common.privacy')}
+              {t('common.hall-of-fame')}
+            </Link>
+            <Link
+              href="/contributors"
+              className="text-foreground/50 hover:text-foreground/80"
+            >
+              {t('common.contributors')}
+            </Link>
+            <Link
+              href="/projects"
+              className="text-foreground/50 hover:text-foreground/80"
+            >
+              {t('common.projects')}
+            </Link>
+            <Link
+              href="/branding"
+              className="text-foreground/50 hover:text-foreground/80"
+            >
+              {t('common.branding')}
             </Link>
           </div>
-          <div className="flex flex-col items-start gap-1">
-            <div className="font-semibold text-lg uppercase md:text-xl">
-              {t('common.resources')}
-            </div>
 
+          {/* Utilities */}
+          <div className="flex flex-col gap-1">
+            <div className="font-semibold text-lg uppercase lg:text-xl">
+              {t('common.utilities')}
+            </div>
             <Link
               href="/meet-together"
               className="text-foreground/50 hover:text-foreground/80"
             >
               {t('common.meet-together')}
             </Link>
+            <Link
+              href="/neo-meeting-agent"
+              className="text-foreground/50 hover:text-foreground/80"
+            >
+              Neo Meeting Agent
+            </Link>
+            <Link
+              href="/neo-generator"
+              className="text-foreground/50 hover:text-foreground/80"
+            >
+              Neo Generator
+            </Link>
+            <Link
+              href="/scanner"
+              className="text-foreground/50 hover:text-foreground/80"
+            >
+              Scanner
+            </Link>
           </div>
-          <div className="flex flex-col items-start gap-1">
-            <div className="font-semibold text-lg uppercase md:text-xl">
+
+          {/* Games */}
+          <div className="flex flex-col gap-1">
+            <div className="font-semibold text-lg uppercase lg:text-xl">
+              {t('common.games')}
+            </div>
+            <Link
+              href="/neo-crush"
+              className="text-foreground/50 hover:text-foreground/80"
+            >
+              Neo Crush
+            </Link>
+            <Link
+              href="/neo-chess"
+              className="text-foreground/50 hover:text-foreground/80"
+            >
+              Neo Chess
+            </Link>
+            <Link
+              href="/neo-pacman"
+              className="text-foreground/50 hover:text-foreground/80"
+            >
+              Neo Pacman
+            </Link>
+          </div>
+
+          {/* Developers */}
+          <div className="flex flex-col gap-1">
+            <div className="font-semibold text-lg uppercase lg:text-xl">
               {t('common.developers')}
             </div>
             <Link
               href="https://github.com/rmit-nct/hub"
               target="_blank"
-              className="text-foreground/50 hover:text-foreground/80 hover:underline"
+              className="text-foreground/50 hover:text-foreground/80"
             >
               {t('common.open-source')}
             </Link>
-
             <Link
               href="https://docs.rmitnct.club"
               target="_blank"
@@ -124,21 +184,14 @@ export default async function Footer() {
               {t('common.documentation')}
             </Link>
           </div>
-          <div className="flex flex-col items-start gap-1">
-            <div className="font-semibold text-lg uppercase md:text-xl">
-              Our Address:
-            </div>
-
-            <div className="text-left text-foreground/50 hover:text-foreground/80">
-              702 Nguyen Van Linh, Tan Hung Ward, <br /> Ho Chi Minh City,
-              Vietnam
-            </div>
-          </div>
         </div>
       </div>
 
-      <div className="text-balance p-4 text-center text-sm opacity-80 md:px-32 xl:px-64">
-        {t('common.copyright')}
+      <div className="p-4 text-center text-sm opacity-60 md:px-32 xl:px-64">
+        <div className="mb-1">
+          702 Nguyen Van Linh, Tan Hung Ward, Ho Chi Minh City, Vietnam
+        </div>
+        <div className="text-balance">{t('common.copyright')}</div>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
-import { FruitColorName, FruitType, Fruits } from './types';
 import { Separator } from '@ncthub/ui/separator';
 import { cn } from '@ncthub/utils/format';
+import type { FruitColorName, Fruits, FruitType } from './types';
 
 export default function GameStats({ fruits }: { fruits: Fruits }) {
   const fruitTypeCounts: {
@@ -63,7 +63,7 @@ export default function GameStats({ fruits }: { fruits: Fruits }) {
                 key === 'explosive' && 'text-dynamic-red',
                 key === 'big-explosive' && 'text-dynamic-purple',
                 key === 'rainbow' &&
-                  'bg-gradient-to-r from-pink-500 via-yellow-500 to-sky-600 bg-clip-text py-1 text-transparent dark:from-pink-300 dark:via-amber-300 dark:to-blue-300'
+                  'bg-linear-to-r from-pink-500 via-yellow-500 to-sky-600 bg-clip-text py-1 text-transparent dark:from-pink-300 dark:via-amber-300 dark:to-blue-300'
               )}
             >
               <span>{key}</span>:{' '}

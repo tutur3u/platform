@@ -1,15 +1,13 @@
 import Events from './events';
-import WhatIsNeo from './what-is-neo';
+import HeroSection from './hero-section';
 import WhyUs from './why-us';
 
 export default function MarketingPage() {
   return (
-    <div className="flex justify-center">
-      <div className="container flex flex-col items-center gap-6 text-foreground">
-        <WhatIsNeo />
-        <Events />
-        <WhyUs />
-      </div>
+    <div className="container mx-auto flex flex-col items-center gap-6 px-8 py-16">
+      <HeroSection />
+      <Events />
+      <WhyUs />
     </div>
   );
 }

@@ -9,15 +9,12 @@
     "dev:docs": "cd apps/docs && mintlify dev",
     "dev:nl": "turbo run dev -F @ncthub/neo-league",
     "dev:web": "turbo run dev -F @ncthub/web",
-    "dev:ocr": "turbo run dev -F @ncthub/ocr",
     "devx": "bun sb:stop && bun sb:start && bun dev",
     "devx:nl": "bun sb:stop && bun sb:start && bun dev:nl",
     "devx:web": "bun sb:stop && bun sb:start && bun dev:web",
-    "devx:ocr": "bun sb:stop && bun sb:start && bun sb:reset && bun dev:ocr",
     "devrs": "bun sb:stop && bun sb:start && bun sb:reset && bun dev",
     "devrs:nl": "bun sb:stop && bun sb:start && bun sb:reset && bun dev:nl",
     "devrs:web": "bun sb:stop && bun sb:start && bun sb:reset && bun dev:web",
-    "devrs:ocr": "bun sb:stop && bun sb:start && bun sb:reset && bun dev:ocr",
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",
     "type-check": "turbo run type-check",
@@ -46,13 +43,13 @@
     "update-all": "bun ./scripts/package-update.js"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.6",
+    "@biomejs/biome": "^2.4.7",
     "@ncthub/typescript-config": "workspace:*",
-    "@vitest/coverage-v8": "^4.0.18",
-    "turbo": "^2.8.16",
+    "@vitest/coverage-v8": "^4.1.0",
+    "turbo": "^2.8.17",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
-    "vitest": "^4.0.18"
+    "vitest": "^4.1.0"
   },
   "engines": {
     "node": ">=22"
