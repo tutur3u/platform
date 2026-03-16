@@ -144,6 +144,18 @@ begin
   from information_schema.columns c
   where c.table_schema = 'public'
     and c.table_name = v_source_view_name
+    and c.column_name = 'id'
+    and c.data_type = 'uuid';
+
+  if not found then
+    raise exception 'SOURCE_VIEW_REQUIRES_ID_UUID'
+      using errcode = 'P0001';
+  end if;
+
+  perform 1
+  from information_schema.columns c
+  where c.table_schema = 'public'
+    and c.table_name = v_source_view_name
     and c.column_name = 'created_at'
     and c.data_type = 'timestamp with time zone';
 
@@ -155,7 +167,8 @@ end;
 $$;
 
 create or replace function public._resolve_table_associated_ws_id(
-  p_target_table text
+  p_target_table text,
+  p_new_record jsonb
 )
 returns table (
   ws_id uuid,
@@ -168,6 +181,7 @@ as $$
 declare
   v_source_view_name text;
   v_source_ws_column text;
+  v_entity_id uuid;
 begin
   v_source_view_name := format('entity_limit_source__%s', p_target_table);
   v_source_ws_column := 'ws_id';
@@ -176,12 +190,20 @@ begin
     v_source_ws_column := 'personal_ws_id';
   end if;
 
-  execute format(
-    'select src.%I, src.user_id from public.%I src order by src.created_at desc limit 1',
-    v_source_ws_column,
-    v_source_view_name
-  )
-  into ws_id, user_id;
+  v_entity_id := nullif(p_new_record ->> 'id', '')::uuid;
+
+  if v_entity_id is not null then
+    execute format(
+      'select src.%I, src.user_id from public.%I src where src.id = $1',
+      v_source_ws_column,
+      v_source_view_name
+    )
+    into ws_id, user_id
+    using v_entity_id;
+  else
+    ws_id := nullif(p_new_record ->> 'ws_id', '')::uuid;
+    user_id := nullif(p_new_record ->> 'creator_id', '')::uuid;
+  end if;
 
   return query select ws_id, user_id;
 end;
@@ -212,27 +234,18 @@ begin
   v_actor_role := auth.role();
   v_is_service_role := v_actor_role = 'service_role';
 
-  if v_actor_user_id is null and not v_is_service_role then
-    raise exception 'ENTITY_LIMIT_AUTH_REQUIRED'
-      using errcode = 'P0001';
-  end if;
-
-  if v_actor_user_id is null then
-    v_actor_user_id := (to_jsonb(new) ->> 'creator_id')::uuid;
-  end if;
-
   if v_actor_user_id is null then
     if v_is_service_role then
       return new;
     end if;
 
-    raise exception 'ENTITY_LIMIT_ACTOR_REQUIRED'
+    raise exception 'ENTITY_LIMIT_USER_ID_REQUIRED'
       using errcode = 'P0001';
   end if;
 
   select s.ws_id, s.user_id
   into v_subject_ws_id, v_subject_user_id
-  from public._resolve_table_associated_ws_id(tg_table_name) s;
+  from public._resolve_table_associated_ws_id(tg_table_name, to_jsonb(new)) s;
 
   if v_subject_user_id is null then
     v_subject_user_id := v_actor_user_id;
@@ -264,7 +277,7 @@ begin
     and enabled is true
   limit 1;
 
-  if not found then
+  if not found THEN
     return new;
   end if;
 
@@ -298,7 +311,20 @@ begin
     end if;
   end if;
 
-  
+  if v_limit_row.per_day is not null then
+    execute format(
+      'select count(*) from public.%I src where %s and src.created_at >= $3',
+      v_source_view_name,
+      v_source_where_base
+    )
+    into v_count
+    using v_subject_ws_id, v_subject_user_id, now() - interval '1 day';
+
+    if v_count > v_limit_row.per_day then
+      raise exception 'ENTITY_DAILY_LIMIT_EXCEEDED'
+        using errcode = 'P0001';
+    end if;
+  end if;
 
   if v_limit_row.per_week is not null then
     execute format(
@@ -567,7 +593,7 @@ revoke all on table public.platform_entity_creation_limits from anon, authentica
 
 revoke all on function public._resolve_user_personal_workspace_id(uuid) from public, anon, authenticated;
 revoke all on function public._validate_platform_entity_limit_target(text) from public, anon, authenticated;
-revoke all on function public._resolve_table_associated_ws_id(text) from public, anon, authenticated;
+revoke all on function public._resolve_table_associated_ws_id(text, jsonb) from public, anon, authenticated;
 revoke all on function public.enforce_platform_entity_creation_limits() from public, anon, authenticated;
 revoke all on function public.add_platform_entity_creation_limit_table(text, text, uuid) from public, anon, authenticated;
 revoke all on function public.update_platform_entity_creation_limit_metadata(text, text, uuid) from public, anon, authenticated;
@@ -579,7 +605,7 @@ grant select, insert, update, delete on table public.platform_entity_creation_li
 
 grant execute on function public._resolve_user_personal_workspace_id(uuid) to service_role;
 grant execute on function public._validate_platform_entity_limit_target(text) to service_role;
-grant execute on function public._resolve_table_associated_ws_id(text) to service_role;
+grant execute on function public._resolve_table_associated_ws_id(text, jsonb) to service_role;
 grant execute on function public.enforce_platform_entity_creation_limits() to service_role;
 grant execute on function public.add_platform_entity_creation_limit_table(text, text, uuid) to service_role;
 grant execute on function public.update_platform_entity_creation_limit_metadata(text, text, uuid) to service_role;
