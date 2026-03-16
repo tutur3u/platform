@@ -20,7 +20,6 @@ import {
 } from '@ncthub/ui/icons';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import Image from 'next/image';
 
 const reasons = [
   {
@@ -76,36 +75,6 @@ const reasons = [
   },
 ];
 
-const departments = [
-  {
-    name: 'Human Resources',
-    description:
-      'Nurtures our people-first culture through recruitment, onboarding, and member care so every Neo feels supported.',
-    image: '/members/departments/test3.jpg',
-    focus: 'Talent growth / Welfare / Culture',
-    link: '/about#about-departments',
-    buttonText: 'Meet our departments',
-  },
-  {
-    name: 'Technology',
-    description:
-      'Builds the products, automations, and workshops that keep NEO Culture Tech experimenting on the frontier.',
-    image: '/members/departments/test1.jpg',
-    focus: 'Engineering / Automation / QA',
-    link: '/about#about-departments',
-    buttonText: 'Meet our departments',
-  },
-  {
-    name: 'Marketing',
-    description:
-      'Shapes our story across campus and online, turning launches and events into moments people remember.',
-    image: '/members/departments/TEST2.webp',
-    focus: 'Campaigns / Content / Partnerships',
-    link: '/about#about-departments',
-    buttonText: 'Meet our departments',
-  },
-];
-
 export default function WhyUs() {
   return (
     <motion.div
@@ -149,7 +118,7 @@ export default function WhyUs() {
       </div>
 
       {/* Cards Grid */}
-      <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-2">
+      <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
         {reasons.map((reason, index) => (
           <motion.div
             key={reason.title}
@@ -227,75 +196,6 @@ export default function WhyUs() {
                     </Button>
                   </Link>
                 )}
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
-      </div>
-
-      <div className="mt-20 flex flex-col items-center">
-        <h2 className="mb-4 pb-4 text-center font-bold text-4xl md:text-6xl lg:text-8xl">
-          What{' '}
-          <span className="whitespace-nowrap border-[#FBC721] border-b-4 text-[#5FC6E5]">
-            Departments?
-          </span>
-        </h2>
-        <p className="mb-10 max-w-3xl text-center text-lg text-muted-foreground">
-          Three core teams keep the club moving - people care, product
-          breakthroughs, and storytelling that attracts the next wave of NEOs.
-        </p>
-      </div>
-
-      <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-        {departments.map((department, index) => (
-          <motion.div
-            key={department.name}
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: index * 0.15 }}
-            viewport={{ once: true }}
-            whileHover={{ scale: 1.02 }}
-            className="group"
-          >
-            <Card className="relative h-full overflow-hidden border-2 bg-card shadow-lg backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-xl">
-              <div
-                className={`absolute inset-0 bg-linear-to-br opacity-20 transition-opacity duration-300 group-hover:opacity-30`}
-              />
-              <CardHeader className="relative pb-3">
-                <CardTitle className="text-2xl font-bold">
-                  {department.name}
-                </CardTitle>
-              </CardHeader>
-
-              <CardContent className="relative flex flex-col gap-4 pt-0">
-                <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-border bg-muted/60 shadow-sm">
-                  <Image
-                    src={department.image}
-                    alt={`${department.name} team`}
-                    fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    className="object-cover"
-                    priority
-                  />
-                </div>
-
-                <CardDescription className="text-base leading-relaxed">
-                  {department.description}
-                </CardDescription>
-
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Star className="h-4 w-4 fill-current text-yellow-400" />
-                  <span>{department.focus}</span>
-                </div>
-                <Link href={department.link} aria-label={department.buttonText}>
-                  <Button
-                    variant="outline"
-                    className="mt-4 w-full transition-all duration-300 group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-lg"
-                  >
-                    {department.buttonText}
-                    <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-                  </Button>
-                </Link>
               </CardContent>
             </Card>
           </motion.div>

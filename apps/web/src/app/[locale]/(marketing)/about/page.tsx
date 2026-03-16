@@ -1,3 +1,4 @@
+import Departments from './departments';
 import History from './history';
 import Members from './members';
 
@@ -9,6 +10,9 @@ export default function AboutPage() {
       </section>
       <section className="container">
         <Members />
+      </section>
+      <section className="container">
+        <Departments />
       </section>
     </div>
   );

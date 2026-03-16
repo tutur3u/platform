@@ -1,9 +1,7 @@
 import { Card, CardContent, CardFooter, CardHeader } from '@ncthub/ui/card';
 import { Facebook, Linkedin } from '@ncthub/ui/icons';
-import { cn } from '@ncthub/utils/format';
 import Image from 'next/image';
 import Link from 'next/link';
-import type { ReactNode } from 'react';
 
 interface MemberCardProps {
   name: string;
@@ -16,16 +14,6 @@ interface MemberCardProps {
     facebook?: string;
     linkedin?: string;
   };
-}
-
-interface DepartmentCardProps {
-  name: string;
-  image: string;
-  bio: string;
-  characteristics: string;
-  quote: ReactNode;
-  core: string[];
-  className?: string;
 }
 
 export default function MemberCard({
@@ -46,7 +34,7 @@ export default function MemberCard({
             alt={name}
             className="object-cover object-top"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/5 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/5 to-transparent" />
           <div className="absolute bottom-0 w-full p-4">
             <h3 className="font-bold text-white text-xl">{name}</h3>
             <p className="font-medium text-md text-muted-foreground">{role}</p>
@@ -82,52 +70,6 @@ export default function MemberCard({
           <Linkedin className="h-6 w-6 text-muted-foreground" />
         )}
       </CardFooter>
-    </Card>
-  );
-}
-
-export function DepartmentCard({
-  name,
-  image,
-  bio,
-  characteristics,
-  quote,
-  core,
-  className,
-}: DepartmentCardProps) {
-  return (
-    <Card
-      className={cn(
-        'group w-full max-w-7xl overflow-hidden rounded-lg border bg-secondary transition-all duration-300 ease-in-out hover:border-foreground/30 hover:shadow-lg hover:shadow-primary/20',
-        className
-      )}
-    >
-      <CardHeader className="p-6 text-center">
-        <h3 className="font-bold text-3xl text-white">{name}</h3>
-      </CardHeader>
-      <div className="grid grid-cols-1 md:grid-cols-2">
-        <div className="p-6 md:h-full">
-          <div className="relative h-64 w-full overflow-hidden rounded-lg transition-transform duration-300 ease-in-out group-hover:scale-105 md:h-full">
-            <Image src={image} fill alt={name} className="object-cover" />
-          </div>
-        </div>
-        <CardContent className="flex flex-1 flex-col justify-center p-6">
-          <h2 className="mb-4 font-bold text-2xl text-white">{bio}</h2>
-          <h3 className="mb-2 font-bold text-3xl text-white">
-            {characteristics}
-          </h3>
-          <div className="text-lg text-muted-foreground text-white">
-            {quote}
-          </div>
-          <div className="text-lg text-muted-foreground text-white">
-            {core.map((item, index) => (
-              <p key={index} className="mb-2">
-                {item}
-              </p>
-            ))}
-          </div>
-        </CardContent>
-      </div>
     </Card>
   );
 }

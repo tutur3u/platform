@@ -1,0 +1,58 @@
+import { Card, CardContent, CardHeader } from '@ncthub/ui/card';
+import { cn } from '@ncthub/utils/format';
+import Image from 'next/image';
+import type { ReactNode } from 'react';
+
+interface DepartmentCardProps {
+  name: string;
+  image: string;
+  bio: string;
+  characteristics: string;
+  quote: ReactNode;
+  core: string[];
+  className?: string;
+}
+
+export function DepartmentCard({
+  name,
+  image,
+  bio,
+  characteristics,
+  quote,
+  core,
+  className,
+}: DepartmentCardProps) {
+  return (
+    <Card
+      className={cn(
+        'group w-full max-w-7xl overflow-hidden rounded-lg border bg-secondary transition-all duration-300 ease-in-out hover:border-foreground/30 hover:shadow-lg hover:shadow-primary/20',
+        className
+      )}
+    >
+      <CardHeader className="p-6 text-center">
+        <h3 className="font-bold text-3xl text-white">{name}</h3>
+      </CardHeader>
+      <div className="grid grid-cols-1 md:grid-cols-2">
+        <div className="p-6 md:h-full">
+          <div className="relative h-64 w-full overflow-hidden rounded-lg transition-transform duration-300 ease-in-out group-hover:scale-105 md:h-full">
+            <Image src={image} fill alt={name} className="object-cover" />
+          </div>
+        </div>
+        <CardContent className="flex flex-1 flex-col justify-center p-6">
+          <h2 className="mb-4 font-bold text-2xl text-white">{bio}</h2>
+          <h3 className="mb-2 font-bold text-3xl text-white">
+            {characteristics}
+          </h3>
+          <div className="text-lg text-white">{quote}</div>
+          <div className="mt-4 text-lg text-white">
+            {core.map((item, index) => (
+              <p key={index} className="mb-2">
+                {item}
+              </p>
+            ))}
+          </div>
+        </CardContent>
+      </div>
+    </Card>
+  );
+}

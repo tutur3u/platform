@@ -47,66 +47,6 @@ export const timelineData: {
       "Made history with NEO League - Prompt the Future 2025, our first competition! This groundbreaking event attracted over 170 competitors, showcasing our growth from a small club to a major force in Vietnam's tech competition scene.",
   },
 ];
-export const deparments: {
-  name: string;
-  image: string;
-  bio: string;
-  characteristics: string;
-  mission: string[];
-  core: string[];
-}[] = [
-  {
-    name: 'Technology',
-    image: '/departments/test.jpg',
-    bio: 'The Technology department serves as the core technical engine of our organization, overseeing all software and hardware initiatives. We are dedicated to cultivating a rigorous and collaborative environment tailored for passionate technology enthusiasts and SSET students alike.',
-    characteristics: 'Our Spirit',
-    mission: [
-      'Creative',
-      'Passionate in Technology',
-      'Strive for improvement',
-      'Collaborative',
-      'Work Hard, Play Harder',
-    ],
-    core: [
-      'Project Development: Leading the end-to-end execution of web development, mobile applications, and innovative hardware projects.',
-      'Technical Workshops: Facilitating regular, skill-building sessions designed to continuously elevate the technical proficiency of our members.',
-    ],
-  },
-  {
-    name: 'Human Resources',
-    image: '/departments/TEST2.webp',
-    bio: 'The Human Resources department focuses on building a strong, inclusive community within the club. They organize team-building activities, provide support for members, and ensure a positive environment for everyone.',
-    characteristics: 'What is HR about?',
-    mission: [
-      'Recuitment & ONboarding',
-      'Operations',
-      'Event Management',
-      'Enagement',
-      'System & Data Management',
-      'Coporate Culture',
-      'Risk Management',
-      'Conflict Resolution',
-    ],
-    core: [],
-  },
-  {
-    name: 'Marketing',
-    image: '/departments/test3.jpg',
-    bio: 'The Marketing department is responsible for promoting the club and its events to the wider community. They handle branding, communications, and outreach initiatives.',
-    characteristics: 'Our Characteristics: ',
-    mission: [
-      'Strategic',
-      'Creative',
-      'Promotional',
-      'Brandng',
-      'Visualization',
-      'Collaborative',
-      'External Relations',
-      'Keo 502',
-    ],
-    core: [],
-  },
-];
 
 export const members: {
   name: string;
@@ -293,5 +233,66 @@ export const members: {
       facebook: 'https://www.facebook.com/kelly.candylovely',
       linkedin: 'https://www.linkedin.com/in/ngoc-khanh-dao-250693207/',
     },
+  },
+];
+
+export const departments: {
+  name: string;
+  image: string;
+  bio: string;
+  characteristics: string;
+  mission: string[];
+  core: string[];
+}[] = [
+  {
+    name: 'Technology',
+    image: '/departments/test.jpg',
+    bio: 'The Technology department serves as the core technical engine of our organization, overseeing all software and hardware initiatives. We are dedicated to cultivating a rigorous and collaborative environment tailored for passionate technology enthusiasts and SSET students alike.',
+    characteristics: 'Our Spirit',
+    mission: [
+      'Creative',
+      'Passionate in Technology',
+      'Strive for improvement',
+      'Collaborative',
+      'Work Hard, Play Harder',
+    ],
+    core: [
+      'Project Development: Leading the end-to-end execution of web development, mobile applications, and innovative hardware projects.',
+      'Technical Workshops: Facilitating regular, skill-building sessions designed to continuously elevate the technical proficiency of our members.',
+    ],
+  },
+  {
+    name: 'Human Resources',
+    image: '/departments/TEST2.webp',
+    bio: 'The Human Resources department focuses on building a strong, inclusive community within the club. They organize team-building activities, provide support for members, and ensure a positive environment for everyone.',
+    characteristics: 'What is HR about?',
+    mission: [
+      'Recuitment & ONboarding',
+      'Operations',
+      'Event Management',
+      'Enagement',
+      'System & Data Management',
+      'Coporate Culture',
+      'Risk Management',
+      'Conflict Resolution',
+    ],
+    core: [],
+  },
+  {
+    name: 'Marketing',
+    image: '/departments/test3.jpg',
+    bio: 'The Marketing department is responsible for promoting the club and its events to the wider community. They handle branding, communications, and outreach initiatives.',
+    characteristics: 'Our Characteristics: ',
+    mission: [
+      'Strategic',
+      'Creative',
+      'Promotional',
+      'Brandng',
+      'Visualization',
+      'Collaborative',
+      'External Relations',
+      'Keo 502',
+    ],
+    core: [],
   },
 ];
